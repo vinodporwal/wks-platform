@@ -1,7 +1,7 @@
 package com.wks.caseengine.rest.server;
 
-import java.util.UUID;
 
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -14,68 +14,31 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
 import com.wks.caseengine.message.vm.AOPMessageVM;
-import com.wks.caseengine.service.ProductionRangeService;
+import com.wks.caseengine.service.ShutdownSlowdownExportImportService;
+
 
 @RestController
 @RequestMapping("task")
-public class ProductionRangeController {
-
-    @Autowired
-    private ProductionRangeService productionRangeService;
-
-    @GetMapping(value = "/production-range")
-    public AOPMessageVM getProductionRange(
-            @RequestParam String plantId,
-            @RequestParam String year) {
-        return productionRangeService.getProductionRange(plantId, year);
-    }
-
-    @GetMapping(value = "/production-range-limit")
-    public AOPMessageVM getProductionRangeLimit(
-            @RequestParam String plantId,
-            @RequestParam String year) {
-        return productionRangeService.getProductionRangeLimit(plantId, year);
-    }
-    
-    @GetMapping(value = "/production-range-export")
-	public ResponseEntity<byte[]> exportProductionRange(
+public class ShutdownSlowdownExportImportController {
+	
+	@Autowired
+	private ShutdownSlowdownExportImportService shutdownSlowdownExportImportService;
+		
+	@GetMapping(value = "/shutdown-export-hiir")
+	public ResponseEntity<byte[]> exportShutdown(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year
 	        ) {
 	    try {
 			
-	        byte[] excelBytes = productionRangeService.exportProductionRange(year,plantId,false,null); 
+	        byte[] excelBytes = shutdownSlowdownExportImportService.exportShutdown(year,plantId,false,null); 
 
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(
 	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
 	        headers.setContentDisposition(ContentDisposition.builder("attachment")
-	                .filename("Production_Range.xlsx")
-	                .build());
-	        headers.setContentLength(excelBytes.length);
-
-	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
-	    } catch (Exception e) {
-	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-	    }
-	}
-
-	@GetMapping(value = "/production-range-limit-export")
-	public ResponseEntity<byte[]> exportProductionRangeLimit(
-	         @RequestParam("plantId") String plantId,
-            @RequestParam("year") String year
-	        ) {
-	    try {
-			
-	        byte[] excelBytes = productionRangeService.exportProductionRangeLimit(year,plantId,false,null); 
-
-	        HttpHeaders headers = new HttpHeaders();
-	        headers.setContentType(MediaType.parseMediaType(
-	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-	        headers.setContentDisposition(ContentDisposition.builder("attachment")
-	                .filename("Production_Range_Limit.xlsx")
+	                .filename("Shutdown.xlsx")
 	                .build());
 	        headers.setContentLength(excelBytes.length);
 
@@ -85,23 +48,46 @@ public class ProductionRangeController {
 	    }
 	}
 	
-	@PostMapping(value = "/production-range-import", consumes = "multipart/form-data")
-	public AOPMessageVM importProductionRange(
+	@PostMapping(value = "/shutdown-import-hiir", consumes = "multipart/form-data")
+	public AOPMessageVM importShutdown(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year,
 			@RequestParam("file") MultipartFile file
 	        ) {
-			return	productionRangeService.importProductionRange(year,UUID.fromString(plantId), file); 
+			return	shutdownSlowdownExportImportService.importShutdown(year,UUID.fromString(plantId), file); 
 	}
 	
-	@PostMapping(value = "/production-range-limit-import", consumes = "multipart/form-data")
-	public AOPMessageVM importProductionRangeLimit(
+	@GetMapping(value = "/slowdown-export-hiir")
+	public ResponseEntity<byte[]> exportSlowdown(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year
+	        ) {
+	    try {
+			
+	        byte[] excelBytes = shutdownSlowdownExportImportService.exportSlowdown(year,plantId,false,null); 
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("Shutdown.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+	
+	@PostMapping(value = "/slowdown-import-hiir", consumes = "multipart/form-data")
+	public AOPMessageVM importSlowdown(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year,
 			@RequestParam("file") MultipartFile file
 	        ) {
-			return	productionRangeService.importProductionRangeLimit(year,UUID.fromString(plantId), file); 
+			return	shutdownSlowdownExportImportService.importSlowdown(year,UUID.fromString(plantId), file); 
 	}
 
+	
 }
-

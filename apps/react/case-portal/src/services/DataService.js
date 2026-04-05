@@ -183,7 +183,13 @@ export const DataService = {
   getNaphthatabDate,
   getShutdownData,
   getShutdownSummary,
+  getFurnaceMaintenanceActivity,
+  saveFurnaceMaintenanceActivity,
+  deleteFurnaceMaintenanceActivity,
+  getFurnaceDropdownData,
+  getMaintenanceActivityData,
   slowdownconsumptionExportAllGrade,
+  saveSlowdownNormsExcelAllGrade,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -4247,6 +4253,99 @@ export async function getShutdownSummary(keycloak, PLANT_ID, AOP_YEAR) {
     return Promise.reject(e)
   }
 }
+
+export async function getFurnaceMaintenanceActivity(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url = `${Config.CaseEngineUrl}/task/furnace-maintenance-activity?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(e)
+    return Promise.reject(e)
+  }
+}
+
+export async function saveFurnaceMaintenanceActivity(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  data,
+) {
+  const url = `${Config.CaseEngineUrl}/task/furnace-maintenance-activity?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(e)
+    return Promise.reject(e)
+  }
+}
+
+export async function deleteFurnaceMaintenanceActivity(id, keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/furnace-maintenance-activity?id=${id}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'DELETE', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(e)
+    return Promise.reject(e)
+  }
+}
+
+export async function getFurnaceDropdownData(keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/furnace-dropdown-data`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(e)
+    return Promise.reject(e)
+  }
+}
+
+export async function getMaintenanceActivityData(keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/maintenance-activity-data`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(e)
+    return Promise.reject(e)
+  }
+}
 export async function slowdownconsumptionExportAllGrade(
   keycloak,
   plantId,
@@ -4278,5 +4377,37 @@ export async function slowdownconsumptionExportAllGrade(
   } catch (e) {
     console.error('Error exporting Shutdown Excel:', e)
     return Promise.reject(e)
+  }
+}
+async function saveSlowdownNormsExcelAllGrade(
+  file,
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  GRADE_ID,
+) {
+  let url = ''
+  url = `${Config.CaseEngineUrl}/task/slowdown-consumption-import?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+
+  if (GRADE_ID) {
+    url += `&gradeId=${GRADE_ID}`
+  }
+
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }

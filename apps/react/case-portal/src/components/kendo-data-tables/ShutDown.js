@@ -575,24 +575,6 @@ const ShutDown = ({ permissions }) => {
             remark: row.remark || 'null',
           }
         })
-      } else if (IS_ELASTOMER_JMD_IIR) {
-        // For Elastomer JMD, set start date to previous day and end date to today
-        shutdownDetails = newRow.map((row) => {
-          return {
-            discription: row.discription || row.discriptionDrpdwn,
-            durationInHrs: (() => {
-              const v = findDuration('1', row)
-              if (!v) return null
-              const [h = '00', m = '00'] = String(v).split('.')
-              return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
-            })(),
-            maintEndDateTime: addTimeOffset(row.maintEndDateTime),
-            maintStartDateTime: addTimeOffset(row.maintStartDateTime),
-            audityear: AOP_YEAR,
-            id: row.idFromApi || null,
-            remark: row.remark || 'null',
-          }
-        })
       } else {
         // Default: Use start/end date
         shutdownDetails = newRow.map((row) => ({

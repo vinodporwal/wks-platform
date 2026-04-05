@@ -105,7 +105,9 @@ const SlowDown = ({ permissions }) => {
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
   const IS_AROMATICS_SEZ_PX4 =
-    lowerVertName === 'aromatics' && lowerSiteName === 'sez' && lowerPlantName === 'px4'
+    lowerVertName === 'aromatics' &&
+    lowerSiteName === 'sez' &&
+    lowerPlantName === 'px4'
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const SHOW_EXCEL_UPLOAD_BUTTON =
     lowerVertName === 'pe' ||
@@ -1576,7 +1578,7 @@ const SlowDown = ({ permissions }) => {
       </Backdrop>
 
       {(lowerVertName === 'meg' ||
-        (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD)) && (
+        (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD && !IS_ELASTOMER_HMD_SBR )) && (
         <Box style={{ margin: 0, padding: 0 }}>
           <Tabs
             value={selectedTab}
@@ -1700,7 +1702,8 @@ const SlowDown = ({ permissions }) => {
       {/* TAB 2 FOR ELASTOMER */}
       {selectedTab === 1 &&
         lowerVertName === 'elastomer' &&
-        !IS_ELASTOMER_JMD && <ElastomerSlowdown />}
+        !IS_ELASTOMER_JMD &&
+        !IS_ELASTOMER_HMD_SBR && <ElastomerSlowdown />}
     </div>
   )
 }

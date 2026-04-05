@@ -49,6 +49,11 @@ public class AOPMCCalculatedDataController {
 		return aOPMCCalculatedDataService.getAOPMCCalculatedData(plantId, year);
 	}
 	
+	@GetMapping(value = "/average-mc-values")
+	public AOPMessageVM getAverageMCValues(@RequestParam String plantId, @RequestParam String year) {
+		return aOPMCCalculatedDataService.getAverageMCValues(plantId, year);
+	}
+	
 	@GetMapping(value = "/production-target-avg")
 	public AOPMessageVM getProductionTargetAvg(@RequestParam String plantId, @RequestParam String year) {
 		return aOPMCCalculatedDataService.getProductionTargetAvg(plantId, year);
