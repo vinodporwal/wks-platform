@@ -174,6 +174,50 @@ public class ExcelServiceImpl implements ExcelService {
                                 
                             }
                             
+                        
+                        }else if (sheetName.equalsIgnoreCase("t17")) {
+                            if (tableId.equalsIgnoreCase("t17Raw")) {
+                                // title = "Plant Production Summary (T-16)";
+                                Map<String, Object> map = excelDataService.getSpecificConsumptionNormsT17Report(plantId, year,dataInput,
+                                        headers);
+
+                                rows = (List<List<Object>>) map.get("rows");
+                                
+                            }
+                            else if (tableId.equalsIgnoreCase("t17catChem")) {
+                                // title = "Plant Production Summary (T-16)";
+                                Map<String, Object> map = excelDataService.getSpecificConsumptionNormsT17Report(plantId, year,dataInput,
+                                        headers);
+
+                                rows = (List<List<Object>>) map.get("rows");
+                                
+                            }
+                            else if (tableId.equalsIgnoreCase("t17Utility")) {
+                                // title = "Plant Production Summary (T-16)";
+                                Map<String, Object> map = excelDataService.getSpecificConsumptionNormsT17Report(plantId, year,dataInput,
+                                        headers);
+
+                                rows = (List<List<Object>>) map.get("rows");
+                                
+                            }
+                            else if (tableId.equalsIgnoreCase("t17byProduct")) {
+                                // title = "Plant Production Summary (T-16)";
+                                Map<String, Object> map = excelDataService.getSpecificConsumptionNormsT17Report(plantId, year,dataInput,
+                                        headers);
+
+                                rows = (List<List<Object>>) map.get("rows");
+                                
+                            }
+                            else if (tableId.equalsIgnoreCase("t17MaterialBalance")) {
+                                // title = "Plant Production Summary (T-16)";
+                                Map<String, Object> map = excelDataService.getSpecificConsumptionNormsT17Report(plantId, year,dataInput,
+                                        headers);
+
+                                rows = (List<List<Object>>) map.get("rows");
+                                
+                            }
+
+                            
                         }
                         else if (sheetName.equalsIgnoreCase("NormsforDurationofPlantshutdownSlowdownactivities")) {
                             if (tableId.equalsIgnoreCase("NormsforDurationofPlantshutdownSlowdownactivities")) {
