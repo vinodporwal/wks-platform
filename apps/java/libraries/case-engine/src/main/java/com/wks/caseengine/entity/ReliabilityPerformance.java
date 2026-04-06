@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
 
+import org.hibernate.annotations.GenericGenerator;
+
 @Entity
 @Table(name = "ReliabilityPerformance")
 @Data
@@ -15,9 +17,14 @@ import java.util.UUID;
 @Builder
 public class ReliabilityPerformance {
 
-    @Id
-    @Column(name = "id", nullable = false)
-    private UUID id;
+	 @Id
+	 @GeneratedValue(generator = "UUID")
+	 @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+	 @Column(name = "Id", nullable = false, updatable = false)
+	 private UUID id;
+    
+    @Column(name = "masterId")
+    private UUID masterId;
 
     @Column(name = "row_no")
     private Integer rowNo;

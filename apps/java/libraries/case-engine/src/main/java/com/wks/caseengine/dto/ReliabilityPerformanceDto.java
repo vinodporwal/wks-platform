@@ -35,5 +35,6 @@ public class ReliabilityPerformanceDto {
     private String saveStatus;
 	private String errDescription;
 	 private String tableId;
+	 private UUID masterId;
 
 }
