@@ -27,7 +27,6 @@ import { getRoleName } from 'services/role-service'
 import RemarkDialog from '../AdvanceKendoTable/components/RemarkDialog'
 import { NumericEditorWithMinMax } from '../utilities/NumericEditorWithMinMax'
 import { NumberCellEditor } from '../utilities/NumberCellEditor'
-import Notification from '../utilities/Notification'
 import { getColumnMenuCheckboxFilter } from '../utilities/ColumnMenu1'
 import valueFormatterByUOM, {
   recalcDuration,
@@ -40,6 +39,7 @@ import {
   NumberWithCheckboxDisplayCell,
 } from '../utilities/NumberWithCheckboxCellEditor'
 import dataGridStore from 'store/reducers/dataGridStore'
+import Notification from 'components/Utilities/Notification'
 
 // Helper function to extract flat row sequence from grouped data
 const extractFlatRowsFromGrouped = (data) => {
