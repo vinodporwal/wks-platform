@@ -43,7 +43,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
   const lowerVertName = vertName?.toLowerCase() || 'meg'
 
   const handleClick = (event) => {
-    if (drawerOpen) {
+    if (drawerOpen || isPopover) {
       setOpen(!open)
       setSelected(!selected ? menu.id : null)
     } else {
@@ -206,7 +206,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
           />
         ))}
 
-      {!drawerOpen && (
+      {!drawerOpen && !isPopover && (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <AppsIcon
             sx={{
@@ -227,7 +227,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
 
   return (
     <>
-      {drawerOpen ? (
+      {drawerOpen || isPopover ? (
         collapseButton
       ) : (
         <Tooltip title={menu.title} placement='right' arrow>
@@ -235,7 +235,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
         </Tooltip>
       )}
 
-      <Collapse in={open && drawerOpen} timeout='auto' unmountOnExit>
+      <Collapse in={open && (drawerOpen || isPopover)} timeout='auto' unmountOnExit>
         <List component='div' disablePadding sx={{ pl: 0 }}>
           {menus}
         </List>
@@ -243,7 +243,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
 
       <Popover
         id={`popover-${menu.id}`}
-        open={Boolean(anchorEl) && !drawerOpen}
+        open={Boolean(anchorEl) && !drawerOpen && !isPopover}
         anchorEl={anchorEl}
         onClose={handleClose}
         anchorOrigin={{
