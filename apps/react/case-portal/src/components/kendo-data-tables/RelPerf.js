@@ -180,6 +180,7 @@ export default function RelPerf() {
         ...item,
         id: item?.id || index,
         idFromAPI: item?.id,
+        rowNo: index + 1,
         originalRemark: item?.remarks || '',
       }))
 
@@ -197,6 +198,7 @@ export default function RelPerf() {
         id: item?.id || index,
         idFromAPI: item?.id,
         originalRemark: item?.remarks || '',
+        rowNo: index + 1,
       }))
 
       setFinancialRows(processedData2)
@@ -256,6 +258,7 @@ export default function RelPerf() {
         id: item?.id || index,
         idFromAPI: item?.id,
         originalRemark: item?.remarks || '',
+        rowNo: index + 1,
       }))
 
       setCommonParameterRows(processedData5)
