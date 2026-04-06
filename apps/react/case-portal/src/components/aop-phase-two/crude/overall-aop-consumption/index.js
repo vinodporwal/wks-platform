@@ -164,6 +164,14 @@ const OverallAopConsumption = () => {
       editable: false,
       format: valueFormat,
     },
+    {
+      field: 'avgNorms',
+      title: 'Avg Norms',
+      minWidth: 120,
+      type: 'number1',
+      editable: false,
+      format: valueFormat,
+    },
   ]
 
   useEffect(() => {
@@ -183,8 +191,34 @@ const OverallAopConsumption = () => {
         )
       const data =
         response?.data?.aopConsumptionNormDTOList?.map((item) => {
+          const monthFields = [
+            'april',
+            'may',
+            'june',
+            'july',
+            'aug',
+            'sep',
+            'oct',
+            'nov',
+            'dec',
+            'jan',
+            'feb',
+            'march',
+          ]
+
+          const monthValues = monthFields.map((field) => {
+            const val = item[field]
+            return val !== null && val !== undefined && !isNaN(val)
+              ? Number(val)
+              : 0
+          })
+
+          const sum = monthValues.reduce((acc, val) => acc + val, 0)
+          const avgNorms = sum / 12
+
           return {
             ...item,
+            avgNorms,
             isEditable: false,
           }
         }) || []
