@@ -70,6 +70,7 @@ const BusinessDemand = ({ permissions }) => {
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
+  const IS_CHEMICAL_JMD = lowerVertName === 'chemical' && lowerSiteName === 'jmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'
   const PRODUCTION_TARGET_LABEL = IS_VCM_VERTICAL
     ? 'Production Target (This is a reference for entering the Business Demand value)'
@@ -507,7 +508,8 @@ const BusinessDemand = ({ permissions }) => {
         IS_PVC_VMD ||
         IS_PVC_DMD ||
         IS_ELASTOMER_VERTICAL ||
-        lowerVertName === 'chemical'
+
+        (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD)
           ? true
           : false,
 

@@ -555,8 +555,14 @@ const SlowdownNorms = () => {
     setLoading(true)
     try {
       let response
-
-      if (
+       if ((IS_PE_PP && !IS_PE_NMD) || IS_ELASTOMER_JMD_HIIR) {
+        response = await DataService.saveSlowdownNormsExcelAllGrade(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (
         lowerVertName === 'vcm' ||
         IS_PTA ||
         IS_AROMATICS_SEZ_PX4 ||
@@ -681,10 +687,10 @@ const SlowdownNorms = () => {
         IS_PTA ||
         IS_CHEMICAL ||
         IS_AROMATICS_SEZ_PX4 ||
-        IS_ELASTOMER_JMD_HIIR
+        IS_ELASTOMER_HMD_SBR
           ? false
           : true,
-      uploadExcelBtn: IS_ELASTOMER_JMD_HIIR || IS_PE_PP ? false : true,
+      uploadExcelBtn:true,
       downloadExcelBtn:
         IS_PE_PP ||
         lowerVertName === 'vcm' ||

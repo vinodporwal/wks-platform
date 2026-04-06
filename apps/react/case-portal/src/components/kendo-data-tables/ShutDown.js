@@ -94,7 +94,6 @@ const ShutDown = ({ permissions }) => {
     lowerVertName === 'meg' ||
     lowerVertName === 'pe' ||
     lowerVertName === 'pp' ||
-    lowerVertName === 'chemical' ||
     IS_ELASTOMER_JMD_IIR
   const IS_PTA = lowerVertName === 'pta'
   const IS_CHEMICAL = lowerVertName === 'chemical'
@@ -1037,7 +1036,7 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_ELASTOMER_JMD_HIIR) {
+      if (IS_ELASTOMER_JMD_HIIR || lowerVertName === 'chemical') {
         response = await DtaDataService.exportShutdownElastomerjmd(
           keycloak,
           PLANT_ID,
@@ -1082,7 +1081,7 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_ELASTOMER_JMD_HIIR) {
+      if (IS_ELASTOMER_JMD_HIIR || lowerVertName === 'chemical') {
         response = await DtaDataService.ImportShutdownElastomerjmd(
           rawFile,
           keycloak,
