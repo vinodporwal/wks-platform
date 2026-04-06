@@ -73,16 +73,16 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 
 	             int idx = 0;
 	            
-	             dto.setId(row[idx] != null ? UUID.fromString(row[idx].toString()) : null);
+	             dto.setId(row[idx] != null ? (row[idx].toString()) : "");
 	             idx++;
 	             
-	             dto.setMasterId(row[idx] != null ? UUID.fromString(row[idx].toString()) : null);
+	             dto.setMasterId(row[idx] != null ? (row[idx].toString()) : "");
 	             idx++;
 	            
-	             dto.setParameter(row[idx] != null ? row[idx].toString() : null);
+	             dto.setParameter(row[idx] != null ? row[idx].toString() : "");
 	             idx++;
 	             
-	             dto.setUom(row[idx] != null ? row[idx].toString() : null);
+	             dto.setUom(row[idx] != null ? row[idx].toString() : "");
 	             idx++;
 	            
 	             if (row[idx] != null) {
@@ -113,10 +113,10 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 	             }
 	             idx++;
 	            
-	             dto.setLimit(row[idx] != null ? row[idx].toString() : null);
+	             dto.setLimit(row[idx] != null ? row[idx].toString() : "");
 	             idx++;
 	             
-	             dto.setRationale(row[idx] != null ? row[idx].toString() : null);
+	             dto.setRationale(row[idx] != null ? row[idx].toString() : "");
 	             idx++;
 	            
 	             if (row[idx] != null) {
@@ -136,19 +136,19 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 	             }
 	             idx++;
 	             // updated_by
-	             dto.setUpdatedBy(row[idx] != null ? row[idx].toString() : null);
+	             dto.setUpdatedBy(row[idx] != null ? row[idx].toString() : "");
 	             idx++;
 	             // remarks
-	             dto.setRemarks(row[idx] != null ? row[idx].toString() : null);
+	             dto.setRemarks(row[idx] != null ? row[idx].toString() : "");
 	             idx++;
 	             // aopYear
-	             dto.setAopYear(row[idx] != null ? row[idx].toString() : null);
+	             dto.setAopYear(row[idx] != null ? row[idx].toString() : "");
 	             idx++;
 	             // plantId
-	             dto.setPlantId(row[idx] != null ? UUID.fromString(row[idx].toString()) : null);
+	             dto.setPlantId(row[idx] != null ? (row[idx].toString()) : "");
 	             idx++;
 	             // reportType
-	             dto.setReportType(row[idx] != null ? row[idx].toString() : null);
+	             dto.setReportType(row[idx] != null ? row[idx].toString() : "");
 	             idx++;
 
 	             reliabilityPerformanceDtos.add(dto);
@@ -495,7 +495,7 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 							dto.setRemarks(getStringCellValue(row.getCell(9), dto));
 							String id=getStringCellValue(row.getCell(10), dto);
 							if(id!=null) {
-								dto.setId(UUID.fromString(id));
+								dto.setId((id));
 							}
 							dto.setTableId(getStringCellValue(row.getCell(11), dto));
 
@@ -988,19 +988,19 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 				}
 				ReliabilityPerformance reliabilityPerformance =null;
 				if(reliabilityPerformanceDto.getId()!=null) {
-					Optional<ReliabilityPerformance> reliabilityPerformanceOpt = reliabilityPerformanceRepository.findById(reliabilityPerformanceDto.getId());
+					Optional<ReliabilityPerformance> reliabilityPerformanceOpt = reliabilityPerformanceRepository.findById(UUID.fromString(reliabilityPerformanceDto.getId()));
 					if(reliabilityPerformanceOpt.isPresent()) {
 						 reliabilityPerformance = reliabilityPerformanceOpt.get();
 						 reliabilityPerformance.setUpdatedAt(new Date());	 
 					}
 				}else {
 						reliabilityPerformance=new ReliabilityPerformance();
-						reliabilityPerformance.setMasterId(reliabilityPerformanceDto.getMasterId());
+						reliabilityPerformance.setMasterId(UUID.fromString(reliabilityPerformanceDto.getMasterId()));
 						reliabilityPerformance.setReportType(reliabilityPerformanceDto.getReportType());
 						reliabilityPerformance.setUom(reliabilityPerformanceDto.getUom());
 						reliabilityPerformance.setCreatedAt(new Date());
 						reliabilityPerformance.setAopYear(reliabilityPerformanceDto.getAopYear());
-						reliabilityPerformance.setPlantId(reliabilityPerformanceDto.getPlantId());	
+						reliabilityPerformance.setPlantId(UUID.fromString(reliabilityPerformanceDto.getPlantId()));	
 				}
 				reliabilityPerformance.setActual(reliabilityPerformanceDto.getActual());
 				reliabilityPerformance.setAop(reliabilityPerformanceDto.getAop());
