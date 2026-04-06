@@ -504,7 +504,12 @@ const SlowdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL || IS_AROMATICS_SEZ_PX4) {
+      if (
+        lowerVertName === 'vcm' ||
+        IS_PTA ||
+        IS_CHEMICAL ||
+        IS_AROMATICS_SEZ_PX4
+      ) {
         // Use slowdownconsumptionExportVCM for VCM
         response = await DataService.slowdownconsumptionExportVCM(
           keycloak,
@@ -555,7 +560,7 @@ const SlowdownNorms = () => {
     setLoading(true)
     try {
       let response
-       if ((IS_PE_PP && !IS_PE_NMD) || IS_ELASTOMER_JMD_HIIR) {
+      if ((IS_PE_PP && !IS_PE_NMD) || IS_ELASTOMER_JMD_HIIR) {
         response = await DataService.saveSlowdownNormsExcelAllGrade(
           rawFile,
           keycloak,
@@ -579,8 +584,6 @@ const SlowdownNorms = () => {
           gradeId,
         )
       }
-    
-      
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -684,7 +687,7 @@ const SlowdownNorms = () => {
         IS_ELASTOMER_HMD_SBR
           ? false
           : true,
-      uploadExcelBtn:true,
+      uploadExcelBtn: true,
       downloadExcelBtn:
         IS_PE_PP ||
         lowerVertName === 'vcm' ||

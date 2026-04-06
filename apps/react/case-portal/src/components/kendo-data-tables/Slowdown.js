@@ -1578,7 +1578,9 @@ const SlowDown = ({ permissions }) => {
       </Backdrop>
 
       {(lowerVertName === 'meg' ||
-        (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD && !IS_ELASTOMER_HMD_SBR )) && (
+        (lowerVertName === 'elastomer' &&
+          !IS_ELASTOMER_JMD &&
+          !IS_ELASTOMER_HMD_SBR)) && (
         <Box style={{ margin: 0, padding: 0 }}>
           <Tabs
             value={selectedTab}
