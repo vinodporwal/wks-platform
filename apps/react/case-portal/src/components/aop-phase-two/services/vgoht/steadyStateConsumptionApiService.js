@@ -11,15 +11,8 @@ export const SteadyStateConsumptionApiService = {
 
 // ========================|| Steady State Consumption APIs ||=====================================//
 
-/**
- * Get Steady State Consumption Data
- * @param {Object} keycloak - Keycloak session object
- * @param {string} plantId - Plant ID
- * @param {string} year - AOP Year
- * @returns {Promise} Steady state consumption data
- */
 async function getSteadyStateConsumption(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis?year=${year}&plantFKId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/steady-state-norms?year=${year}&plantId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -37,43 +30,11 @@ async function getSteadyStateConsumption(keycloak, plantId, year) {
   }
 }
 
-/**
- * Save Steady State Consumption Data
- * @param {Object} keycloak - Keycloak session object
- * @param {String} plantId - Plant ID (UUID)
- * @param {String} year - AOP Year (e.g., "2026-27")
- * @param {Date} startDate - Start date from configuration
- * @param {Date} endDate - End date from configuration
- * @param {Array} data - Steady state consumption data to save
- * @returns {Promise<Object>} Save response
- */
-async function saveSteadyStateConsumption(
-  keycloak,
-  plantId,
-  year,
-  startDate,
-  endDate,
-  data,
-) {
-  // Format dates to YYYY-MM-DD
-  const formatDate = (date) => {
-    if (!date) return null
-    const d = new Date(date)
-    const year = d.getFullYear()
-    const month = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
-
-  const periodFrom = formatDate(startDate)
-  const periodTo = formatDate(endDate)
-
-  const baseUrl = `${Config.CaseEngineUrl}/task/vgoht/norms-basis`
+async function saveSteadyStateConsumption(keycloak, plantId, year, data) {
+  const baseUrl = `${Config.CaseEngineUrl}/task/steady-state-norms`
   const queryParams = new URLSearchParams({
     year,
-    plantFKId: plantId,
-    periodFrom,
-    periodTo,
+    plantId,
   })
   const url = `${baseUrl}?${queryParams.toString()}`
   const headers = {
@@ -101,19 +62,26 @@ async function saveSteadyStateConsumption(
   }
 }
 
-/**
- * Export Steady State Consumption to Excel
- * @param {Object} keycloak - Keycloak session object
- * @param {Number} plantId - Plant ID
- * @param {Number} year - AOP Year
- * @returns {Promise<Blob>} Excel file blob
- */
-async function exportSteadyStateConsumption(keycloak, plantId, year) {
-  const baseUrl = `${Config.CaseEngineUrl}/task/vgoht/steady-state-consumption/export`
+async function exportSteadyStateConsumption(
+  keycloak,
+  plantId,
+  year,
+  mode,
+  gradeId,
+) {
+  const baseUrl = `${Config.CaseEngineUrl}/task/steady-state-norms-export`
   const queryParams = new URLSearchParams({
     plantId,
     year,
   })
+
+  if (mode) {
+    queryParams.append('mode', mode)
+  }
+  if (gradeId) {
+    queryParams.append('gradeId', gradeId)
+  }
+
   const url = `${baseUrl}?${queryParams.toString()}`
   const headers = {
     Authorization: `Bearer ${keycloak.token}`,
@@ -130,20 +98,26 @@ async function exportSteadyStateConsumption(keycloak, plantId, year) {
   }
 }
 
-/**
- * Import Steady State Consumption from Excel
- * @param {Object} keycloak - Keycloak session object
- * @param {Number} plantId - Plant ID
- * @param {Number} year - AOP Year
- * @param {File} file - Excel file to import
- * @returns {Promise<Array>} Imported data
- */
-async function importSteadyStateConsumption(keycloak, plantId, year, file) {
-  const baseUrl = `${Config.CaseEngineUrl}/task/vgoht/steady-state-consumption/import`
+async function importSteadyStateConsumption(
+  keycloak,
+  plantId,
+  year,
+  file,
+  mode,
+  gradeId,
+) {
+  const baseUrl = `${Config.CaseEngineUrl}/task/steady-state-norms-import`
   const formData = new FormData()
   formData.append('file', file)
   formData.append('plantId', plantId)
   formData.append('year', year)
+
+  if (mode) {
+    formData.append('mode', mode)
+  }
+  if (gradeId) {
+    formData.append('gradeId', gradeId)
+  }
 
   const headers = {
     Authorization: `Bearer ${keycloak.token}`,
@@ -161,41 +135,11 @@ async function importSteadyStateConsumption(keycloak, plantId, year, file) {
   }
 }
 
-/**
- * Calculate Steady State Consumption
- * @param {Object} keycloak - Keycloak session object
- * @param {String} plantId - Plant ID (UUID)
- * @param {String} year - AOP Year (e.g., "2026-27")
- * @param {Date} startDate - Period start date
- * @param {Date} endDate - Period end date
- * @returns {Promise<Array>} Calculated data
- */
-async function calculateSteadyStateConsumption(
-  keycloak,
-  plantId,
-  year,
-  startDate,
-  endDate,
-) {
-  // Format dates to YYYY-MM-DD
-  const formatDate = (date) => {
-    if (!date) return null
-    const d = new Date(date)
-    const year = d.getFullYear()
-    const month = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
-
-  const periodFrom = formatDate(startDate)
-  const periodTo = formatDate(endDate)
-
-  const baseUrl = `${Config.CaseEngineUrl}/task/vgoht/norms-basis/calculate`
+async function calculateSteadyStateConsumption(keycloak, plantId, year) {
+  const baseUrl = `${Config.CaseEngineUrl}/task/vgoht/calculate-steady-state-norms`
   const queryParams = new URLSearchParams({
     year,
-    plantFKId: plantId,
-    periodFrom,
-    periodTo,
+    plantId,
   })
 
   const url = `${baseUrl}?${queryParams.toString()}`
@@ -206,9 +150,6 @@ async function calculateSteadyStateConsumption(
   }
   try {
     const resp = await fetch(url, { method: 'GET', headers })
-    if (!resp.ok) {
-      throw new Error(`HTTP error! Status: ${resp.status}`)
-    }
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)
