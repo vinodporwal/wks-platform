@@ -63,6 +63,8 @@ const defs = {
     UtilityPlant: 'Utility Plant',
     packagingConsumables: 'Consumíveis de Embalagem',
     productionOptimizer: 'Production Optimizer',
+
+    causticSodaLyeBasis: 'Caustic Soda Lye Norms',
   },
   pages: {
     dashboard: {
@@ -236,6 +238,8 @@ const defs = {
         plantTeam: 'People',
         packagingConsumables: 'Consumíveis de Embalagem',
         productionOptimizer: 'Production Optimizer',
+
+        causticSodaLyeBasis: 'Caustic Soda Lye Norms',
       },
     },
   },

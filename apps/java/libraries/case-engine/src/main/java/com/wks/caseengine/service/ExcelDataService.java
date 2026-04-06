@@ -56,14 +56,12 @@ public interface ExcelDataService {
             List<String> headers);
 
 
-     
+
 
      Map<String, Object> getMonthwiseOperatingHours(String plantId, String year, List<String> headers);
      Map<String, Object> getShutdownSummaryLastFourYear(String plantId, String year, List<String> headers);
      Map<String, Object> getShutdownDetails(String plantId, String year, String dataInput, List<String> headers);
 
      Map<String, Object> getPlantShutdownSlowdownNormsDuration(String plantId, String year, List<String> headers);
-
-     Map<String, Object> getSpecificConsumptionNormsT17Report(String plantId, String year, String dataInput, List<String> headers);
 
 }

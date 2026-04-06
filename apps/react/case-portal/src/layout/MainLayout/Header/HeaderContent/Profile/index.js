@@ -166,7 +166,7 @@ const Profile = ({ keycloak }) => {
                             </Stack>
                           </Stack>
                         </Grid>
-                        {/* <Grid item>
+                        <Grid item>
                           <IconButton
                             size='large'
                             color='secondary'
@@ -174,7 +174,7 @@ const Profile = ({ keycloak }) => {
                           >
                             <LogoutOutlined />
                           </IconButton>
-                        </Grid> */}
+                        </Grid>
                       </Grid>
                     </CardContent>
                     {open && (
@@ -226,9 +226,9 @@ const Profile = ({ keycloak }) => {
                             /> */}
                           </Tabs>
                         </Box>
-                        {/* <TabPanel value={value} index={0} dir={theme.direction}>
+                        <TabPanel value={value} index={0} dir={theme.direction}>
                           <ProfileTab handleLogout={handleLogout} />
-                        </TabPanel> */}
+                        </TabPanel>
                         {/* <TabPanel value={value} index={1} dir={theme.direction}>
                           <SettingTab />
                         </TabPanel> */}
