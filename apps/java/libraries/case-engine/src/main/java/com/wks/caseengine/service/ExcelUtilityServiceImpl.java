@@ -46,11 +46,15 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
 	        CellStyle boldBorderStyle = Utility.createBoldBorderedStyle(workbook);
 	        CellStyle borderStyle = Utility.createBorderedStyle(workbook);
 	        CellStyle boldStyle = Utility.createBoldStyle(workbook);
+	        
+	       
 	        CellStyle lockedStyle = workbook.createCellStyle();
 	        lockedStyle.cloneStyleFrom(borderStyle);
 	        lockedStyle.setLocked(true); 
 	        lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
 	        lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+	        
+	       
 	        CellStyle unlockedBorderStyle = workbook.createCellStyle();
 	        unlockedBorderStyle.cloneStyleFrom(borderStyle);
 	        unlockedBorderStyle.setLocked(false); 
@@ -71,12 +75,16 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
 	                String originalTemplateId = (String) table.get("originalTemplateId");
 	                Integer monthStartIndex = (Integer) table.get(ExcelConstants.STARTING_INDEX_OF_MONTHS);
 	                
+	                
+	                List<Integer> hiddenColumnsList = (List<Integer>) table.get(ExcelConstants.HIDDEN_COLUMNS);
+
 	                boolean isProposedCap = "ProposedOperatingCapacity".equalsIgnoreCase(originalTemplateId) 
 	                                     || "ProposedOperatingCapacity".equalsIgnoreCase(tableId);
 
 	                List<List<String>> headerTitles = (List<List<String>>) table.get(ExcelConstants.HEADERSTITLES);
 	                List<List<Object>> rows = data.get(tableId);
 	                
+	        
 	                String textBeforeTitle = (String) table.get(ExcelConstants.TEXT_BEFORE_TITLE);
 	                if (textBeforeTitle != null && !textBeforeTitle.isEmpty()) {
 	                    Row row = sheet.createRow(currentRow++);
@@ -92,6 +100,7 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
 	                    cell.setCellStyle(boldStyle);
 	                }
 
+	               
 	                int headerStartRow = currentRow;
 	                for (List<String> headerRowData : headerTitles) {
 	                    Row headerRow = sheet.createRow(currentRow++);
@@ -103,10 +112,10 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
 	                }
 	                mergeHeaderCells(sheet, headerTitles, headerStartRow);
 
+	                
 	                if (rows != null) {
 	                    for (List<Object> rowData : rows) {
 	                        Row row = sheet.createRow(currentRow++);
-	                        
 	                        for (int col = 0; col < rowData.size() - 1; col++) {
 	                            Cell cell = row.createCell(col);
 	                            Object value = rowData.get(col);
@@ -114,13 +123,15 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
 	                            if (value instanceof Number) cell.setCellValue(((Number) value).doubleValue());
 	                            else if (value instanceof Boolean) cell.setCellValue((Boolean) value);
 	                            else cell.setCellValue(value != null ? value.toString() : "");
+
 	                            boolean canEdit = false;
+	                            
 	                            if (isProposedCap && monthStartIndex != null) {
-	                               
-	                                if (col >= (monthStartIndex + 0) && col <= (monthStartIndex + 12)) {
+	                                if (col >= monthStartIndex && col <= (monthStartIndex + 12)) {
 	                                    canEdit = true;
 	                                }
 	                            }
+
 	                            if (canEdit) {
 	                                cell.setCellStyle(unlockedBorderStyle);
 	                            } else {
@@ -129,12 +140,22 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
 	                        }
 	                    }
 	                }
+
+	                
+	                if (hiddenColumnsList != null) {
+	                    for (Integer column : hiddenColumnsList) {
+	                        sheet.setColumnHidden(column, true);
+	                    }
+	                }
+
 	                currentRow += 2; 
 	            }
+
 	            for (int i = 0; i < columnCount; i++) {
 	                sheet.autoSizeColumn(i);
 	            }
 	            
+	           
 	            sheet.protectSheet("password123");
 	        }
 
