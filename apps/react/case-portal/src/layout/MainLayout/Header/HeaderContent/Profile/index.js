@@ -81,10 +81,10 @@ const Profile = ({ keycloak }) => {
                 </Stack>
               </MenuItem>
 
-              <MenuItem onClick={handleLogout}>
+              {/* <MenuItem onClick={handleLogout}>
                 <LogoutOutlined style={{ marginRight: 8 }} />
                 Logout
-              </MenuItem>
+              </MenuItem> */}
             </Paper>
           </ClickAwayListener>
         )}

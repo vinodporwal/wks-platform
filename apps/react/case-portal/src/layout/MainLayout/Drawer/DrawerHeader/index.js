@@ -4,6 +4,7 @@ import DrawerHeaderStyled from './DrawerHeaderStyled'
 import logo from 'assets/images/ril-logo2.png'
 import MenuOpenIcon from '@mui/icons-material/MenuOpen'
 import MenuIcon from '@mui/icons-material/Menu'
+import HomeIcon from '@mui/icons-material/Home'
 import { useNavigate } from 'react-router-dom'
 
 const DrawerHeader = ({ open, handleDrawerToggle }) => {
@@ -22,13 +23,23 @@ const DrawerHeader = ({ open, handleDrawerToggle }) => {
       >
         {/* LEFT LOGO + TEXT */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Box
+          <IconButton
+            onClick={() => navigate('/dashboard')}
+            size='small'
+            sx={{
+              // color: '#6a7b92',
+              '&:hover': { color: '#6a7b92' },
+            }}
+          >
+            <HomeIcon sx={{ width: 28, height: 28 }} />
+          </IconButton>
+          {/* <Box
             component='img'
             src={logo}
             alt='Logo'
             sx={{ width: 28, height: 28, cursor: 'pointer' }}
             onClick={() => navigate('/dashboard')}
-          />
+          /> */}
 
           {open && (
             <Box>

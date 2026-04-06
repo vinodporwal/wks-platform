@@ -56,26 +56,34 @@ const NavItem = ({ item, level, onItemClick, isPopover }) => {
         minHeight: 30,
         px: 1,
         py: 0.8,
-        mx: 0,
-        mb: 0,
+        mx: '4px',
+        mb: 0.5,
         justifyContent: drawerOpen || isPopover ? 'flex-start' : 'center',
 
-        borderRadius: 0, // ? REMOVE PILL
+        borderRadius: '6px', // ? RESTORE PILL RADIUS
         backgroundColor: 'transparent', // default sidebar
 
         color: '#6a7b92',
+        transition: 'all 0.3s ease',
 
         '&:hover': {
-          backgroundColor: 'rgba(255,255,255,0.04)',
+          backgroundColor: 'rgba(87, 91, 238, 0.08)',
+          color: '#575bee',
+          '& .MuiTypography-root': {
+            color: '#575bee !important',
+          },
+          '& .MuiListItemIcon-root': {
+            color: '#575bee !important',
+          },
         },
 
         /* ? SELECTED STYLE */
         '&.Mui-selected': {
-          backgroundColor: 'transparent', // ? NO CARD
+          backgroundColor: 'rgba(87, 91, 238, 0.1)', // Subtle selected background
           color: '#575bee',
 
           '&:hover': {
-            backgroundColor: 'rgba(255,255,255,0.04)',
+            backgroundColor: 'rgba(87, 91, 238, 0.15)',
           },
 
           '& .MuiTypography-root': {
@@ -91,10 +99,11 @@ const NavItem = ({ item, level, onItemClick, isPopover }) => {
         '&.Mui-selected::before': {
           content: '""',
           position: 'absolute',
-          left: 0,
-          top: 0,
-          bottom: 0,
+          left: -4,
+          top: '10%',
+          bottom: '10%',
           width: '3px',
+          borderRadius: '0 4px 4px 0',
           backgroundColor: isPopover ? 'transparent' : '#575bee',
         },
       }}
