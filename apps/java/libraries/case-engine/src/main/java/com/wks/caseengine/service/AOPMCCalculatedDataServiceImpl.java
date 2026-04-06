@@ -1872,6 +1872,10 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	    try {
 	        Plants plant = plantsRepository.findById(UUID.fromString(plantId))
 	                .orElseThrow(() -> new RuntimeException("Plant not found"));
+	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+	        Sites site = siteRepository.findById(plant.getSiteFkId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
 	        
 	        Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
 	                .findByExcelIdAndVerticalFkIdAndSiteFkId("production_target", plant.getVerticalFKId(), plant.getSiteFkId());
@@ -1945,7 +1949,12 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	                    data.put(tableId, dataList);
 	                }
 	            }
-	            return excelUtilityService.generateFlexibleExcel(structure, data);
+	            if(vertical.getName().equalsIgnoreCase("PE")) {
+	            	return excelUtilityService.generateFlexibleExcelPP(structure, data);
+	            }else {
+	            	return excelUtilityService.generateFlexibleExcel(structure, data);
+	            }
+	            
 	        }
 	    } catch (Exception e) {
 	        e.printStackTrace();
