@@ -52,7 +52,7 @@ const CausticSodaLyeBasis = () => {
   const IS_OLD_YEAR = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
-  const EXCEL_NAME = `${VERTICAL_NAME_U}_${SITE_NAME_U}_${PLANT_NAME_U}_Quality_Packaging_Basis_${AOP_YEAR}`
+  const EXCEL_NAME = `${VERTICAL_NAME_U}_${SITE_NAME_U}_${PLANT_NAME_U}_Caustic_Soda_Lye_Norms_${AOP_YEAR}`
 
   const timeoutIdsRef = useRef([])
   const isMountedRef = useRef(true)
