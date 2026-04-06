@@ -497,7 +497,7 @@ const KendoDataTablesReportsTcs = ({
             columnMenu={ColumnMenuCheckboxFilter}
             filter='numeric'
             format={col.format}
-            width={col?.widthT}
+            width={col?.widthT || 130}
           />
         )
       }
@@ -508,6 +508,7 @@ const KendoDataTablesReportsTcs = ({
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
+            width={col.widthT || 130}
             hidden={col.hidden}
             className={'k-number-right-disabled'}
             editable={col?.editable ? true : false}

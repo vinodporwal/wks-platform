@@ -1077,7 +1077,7 @@ const UserForm = ({ keycloak }) => {
                                 {siteIndex === 0 ? (
                                   <IconButton
                                     onClick={() =>
-                                      addSiteEntry(verticalId, siteEntry)
+                                      addSiteEntry(verticalId, null)
                                     }
                                     color='primary'
                                     sx={{ marginTop: '25px' }}
@@ -1278,7 +1278,7 @@ const UserForm = ({ keycloak }) => {
                                               addPlantEntry(
                                                 verticalId,
                                                 siteIndex,
-                                                plantEntry,
+                                                null,
                                               )
                                             }
                                             color='primary'

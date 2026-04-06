@@ -455,6 +455,7 @@ const KendoDataTablesCrackerNMD = ({
               filter='date'
               // columnMenu={DateColumnMenu}
               columnMenu={ColumnMenuCheckboxFilterDate}
+              width={col.widthT || 150}
             />
           )
         }
@@ -475,6 +476,7 @@ const KendoDataTablesCrackerNMD = ({
               editor='date'
               hidden={col.hidden}
               sortable={false}
+              width={col.widthT || 150}
             />
           )
         }
@@ -564,6 +566,7 @@ const KendoDataTablesCrackerNMD = ({
               key={col.field}
               field={col.field}
               title={col.title || col.headerName}
+              width={col.widthT || 130}
               hidden={col.hidden}
               className={
                 col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'
@@ -610,7 +613,7 @@ const KendoDataTablesCrackerNMD = ({
               key={col.field}
               field={col.field}
               title={col.title || col.headerName}
-              width={col.width}
+              width={col.width || 150}
               hidden={col.hidden}
               className={
                 col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'

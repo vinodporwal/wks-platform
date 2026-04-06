@@ -140,13 +140,13 @@ const TurnaroundReport = () => {
     {
       field: 'fromDateReport',
       title: 'Turnaround Period From',
-      width: 120,
+      widthT: 120,
       editable: true,
     },
     {
       field: 'toDateReport',
       title: 'Turnaround Period To',
-      width: 120,
+      widthT: 120,
       editable: true,
     },
 

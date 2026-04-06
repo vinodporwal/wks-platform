@@ -594,7 +594,7 @@ const KendoDataTablesReports = ({
             columnMenu={ColumnMenuCheckboxFilter}
             filter='numeric'
             format={col.format}
-            width={col?.widthT || col?.fixedWidth}
+            width={col?.widthT || col?.fixedWidth || 130}
           />
         )
       }
@@ -605,7 +605,7 @@ const KendoDataTablesReports = ({
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
-            width={col?.fixedWidth || col?.width || undefined}
+            width={col?.fixedWidth || col?.width || 130}
             hidden={col.hidden}
             className={'k-number-right-disabled'}
             editable={col?.editable ? true : false}
