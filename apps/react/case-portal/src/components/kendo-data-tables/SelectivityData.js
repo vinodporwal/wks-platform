@@ -131,7 +131,10 @@ const SelectivityData = (props) => {
 
       if (props?.configType !== 'grades') {
         //TST VALIDATION SEPERATED
-        if (lowerVertName == 'meg') {
+        if (
+          lowerVertName == 'meg' ||
+          (lowerVertName == 'chemical' && lowerSiteName == 'dmd')
+        ) {
           const monthNameMap = {
             jan: 'January',
             feb: 'February',
@@ -636,8 +639,7 @@ const SelectivityData = (props) => {
           lowerVertName == 'pta' ||
           lowerVertName == 'aromatics' ||
           lowerVertName == 'vcm' ||
-          lowerVertName == 'elastomer' ||
-          lowerVertName == 'chemical'
+          lowerVertName == 'elastomer'
         ) {
           await DataService.getConfigurationExcelType(
             keycloak,
