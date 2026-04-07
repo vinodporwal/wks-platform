@@ -55,11 +55,8 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
             List<Map<String, Object>> plantTurnAroundData = new ArrayList<>();
             String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
             List<Object[]> obj =null;
-            if(verticalName.equalsIgnoreCase("MEG")) {
+           
             	  obj = getPlantTurnAroundDataDB2(plantId, year, reportType);
-            }else {
-            	  obj = getPlantTurnAroundData(plantId, year, reportType);
-            }
            
             if (reportType.equalsIgnoreCase("currentYear")) {
                 for (Object[] row : obj) {

@@ -62,12 +62,7 @@ public class ProductionVolumeDataReportController {
 			@RequestParam String year,@RequestBody List<MonthWiseConsumptionSummaryDTO> dataList) {
 		String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 		AOPMessageVM response =null;
-		if(verticalName.equalsIgnoreCase("MEG")) {
 			 response = productionVolumeDataReportService.updateReportForMonthWiseConsumptionSummaryDataDB2(plantId, year, dataList);
-		}else {
-			 response = productionVolumeDataReportService.updateReportForMonthWiseConsumptionSummaryData(plantId, year, dataList);
-		}
-		
 		return ResponseEntity.status(response.getCode()).body(response);
 	}
 
@@ -85,12 +80,7 @@ public class ProductionVolumeDataReportController {
 			@RequestBody List<AnnualProductionPlanReportDto> dataList) {
 		String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 		AOPMessageVM response =null;
-		if(verticalName.equalsIgnoreCase("MEG")) {
 			 response =productionVolumeDataReportService.updateReportForPlantProductionPlanDataDB2(plantId, year, dataList,reportType);
-		}else {
-			 response = productionVolumeDataReportService.updateReportForPlantProductionPlanData(plantId, year, dataList,reportType);
-		}
-		
 		return ResponseEntity.status(response.getCode()).body(response);
 	}
 	

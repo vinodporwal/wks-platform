@@ -40,11 +40,9 @@ public class TurnAroundDataReportController {
 			@RequestParam String year,@RequestParam String reportType,@RequestBody List<TurnAroundPlanReportDTO> dataList) {
 		String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 		AOPMessageVM response = null;
-		if(verticalName.equalsIgnoreCase("MEG")) {
+	
 			 response = turnAroundDataReportService.updateReportForTurnAroundDataDB2(plantId, year,reportType, dataList);
-		}else {
-			 response = turnAroundDataReportService.updateReportForTurnAroundData(plantId, year,reportType, dataList);
-		}
+	
 		
 		return ResponseEntity.status(response.getCode()).body(response);
 	}
