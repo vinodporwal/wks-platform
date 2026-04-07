@@ -113,7 +113,7 @@ const SlowDown = ({ permissions }) => {
     lowerVertName === 'pe' ||
     lowerVertName === 'pp' ||
     lowerVertName === 'pet' ||
-    (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD) ||
+    lowerVertName === 'elastomer' ||
     lowerVertName == 'vcm' ||
     lowerVertName == 'pta' ||
     lowerVertName == 'chemical' ||
@@ -1362,7 +1362,15 @@ const SlowDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      
+      if (IS_ELASTOMER_JMD) {
+        response = await DtaDataService.exportSlowdownElastomerJmd(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
+      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
         response = await DtaDataService.exportSlowdownLineWise(
           keycloak,
           PLANT_ID,
@@ -1420,7 +1428,14 @@ const SlowDown = ({ permissions }) => {
     try {
       let response
 
-      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      if (IS_ELASTOMER_JMD) {
+        response = await DtaDataService.ImportSlowdownElastomerJmd(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
         response = await DtaDataService.ImportSlowdownLineWise(
           rawFile,
           keycloak,
@@ -1548,7 +1563,7 @@ const SlowDown = ({ permissions }) => {
       saveBtn: permissions?.saveBtn ?? true,
       customHeight: permissions?.customHeight,
       allAction: true,
-      downloadExcelBtn: IS_ELASTOMER_JMD ? false : true,
+      downloadExcelBtn: true,
       showTitleNameBusiness: true,
       titleName: SCREEN_NAME,
       uploadExcelBtn: SHOW_EXCEL_UPLOAD_BUTTON,
@@ -1602,7 +1617,7 @@ const SlowDown = ({ permissions }) => {
             />
 
             <Tab
-              label='Slowdown History Config'
+              label={lowerVertName === 'meg' ? 'Slowdown Config' : 'Slowdown History Config'}
               sx={{
                 border: '1px solid #ADD8E6',
                 borderBottom: '1px solid #ADD8E6',

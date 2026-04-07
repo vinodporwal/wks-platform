@@ -153,59 +153,75 @@ const FurnaceMaintenanceActivity = () => {
     }
   }
 
-      const fetchData = async () => {
-      setLoading(true)
-      try {
-        const data2 = await DataService.getFurnaceMaintenanceActivity(keycloak, PLANT_ID, AOP_YEAR)
+  const fetchData = async () => {
+    setLoading(true)
+    try {
+      const data2 = await DataService.getFurnaceMaintenanceActivity(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
-        const toDateObject = (value) =>
-          value ? moment(value, 'MMM D, YYYY').toDate() : null
+      const toDateObject = (value) =>
+        value ? moment(value, 'MMM D, YYYY').toDate() : null
 
-        if (data2?.code === 200) {
-          const dateColumns =
-            data2?.data?.columns
-              ?.filter((col) => col.type === 'date')
-              ?.map((col) => col.field) || []
+      if (data2?.code === 200) {
+        const dateColumns =
+          data2?.data?.columns
+            ?.filter((col) => col.type === 'date')
+            ?.map((col) => col.field) || []
 
-          const processedData = data2.data?.data.map((item, index) => {
-            const converted = {}
-            dateColumns.forEach((field) => {
-              converted[field] = toDateObject(item[field])
-            })
-            return {
-              ...item,
-              ...converted,
-              Id: item.Id,
-              id: index,
-              DisplayName: item.DisplayName || item.displayName || item.Name,
-              originalRemark: item?.Remarks?.trim(),
-              Remarks: item?.Remarks?.trim(),
-              isEditable: true,
-            }
+        const processedData = data2.data?.data.map((item, index) => {
+          const converted = {}
+          dateColumns.forEach((field) => {
+            converted[field] = toDateObject(item[field])
           })
+          return {
+            ...item,
+            ...converted,
+            Id: item.Id,
+            id: index,
+            DisplayName: item.DisplayName || item.displayName || item.Name,
+            originalRemark: item?.Remarks?.trim(),
+            Remarks: item?.Remarks?.trim(),
+            isEditable: true,
+          }
+        })
 
-          setRunLengthColumns(
-            (data2?.data?.columns || [])
-              .filter(
-                (col) =>
-                  !['DisplaySeq', 'AOPYear', 'Plant_FK_Id', 'Name', 'Id', 'isEditable'].includes(col.field),
-              )
-              .map((col) => ({
-                ...col,
-                editable: !['Pre_CR_Days', 'TA_Duration_Days', 'DisplayName'].includes(col.field),
-              })),
-          )
+        setRunLengthColumns(
+          (data2?.data?.columns || [])
+            .filter(
+              (col) =>
+                ![
+                  'DisplaySeq',
+                  'AOPYear',
+                  'Plant_FK_Id',
+                  'Name',
+                  'Id',
+                  'isEditable',
+                ].includes(col.field),
+            )
+            .map((col) => ({
+              ...col,
+              editable: ![
+                'Pre_CR_Days',
+                'TA_Duration_Days',
+                'DisplayName',
+              ].includes(col.field),
+            })),
+        )
 
-          setRows( processedData)
-        } else {
-          setRows([])
-        }
-      } catch (e) {                          // ? fixed, no extra brace
-        console.error('Error loading previous year:', e)
-      } finally {
-        setLoading(false)
+        setRows(processedData)
+      } else {
+        setRows([])
       }
+    } catch (e) {
+      // ? fixed, no extra brace
+      console.error('Error loading previous year:', e)
+    } finally {
+      setLoading(false)
     }
+  }
 
   useEffect(() => {
     fetchFurnaceDropdownData()
@@ -337,64 +353,67 @@ const FurnaceMaintenanceActivity = () => {
     }
   }
   const saveCrackerRunLength = async (newRow) => {
-      setLoading(true)
-      try {
-        //const referenceRows = getRows('IBR Plan')[2]
-  
-        // build payload like you already do
-        const apiFields = runLengthColumns.map((col) => col.field)
-  
-        const payload = newRow.map((row, idx) => {
-          const obj = {}
-          apiFields.forEach((field) => {
-            let value = row[field]
-            const colDef = runLengthColumns.find((col) => col.field === field)
-            if (colDef?.type === 'date' && value instanceof Date) {
-              obj[field] = value
-            } else {
-              obj[field] = value ?? null
-            }
-          })
-          return obj
-        })
-  
-  
-        const response = await DataService.saveCrackerRunLength(
-          PLANT_ID,
-          payload,
-          keycloak,
-          AOP_YEAR,
-        )
-  
-        if (response?.code == 200) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Data Saved Successfully!',
-            severity: 'success',
-          })
-          setModifiedCells({})
-        } else {
-          setSnackbarOpen(true)
-          setSnackbarData({ message: 'Data Save Failed!', severity: 'error' })
+    setLoading(true)
+    try {
+      //const referenceRows = getRows('IBR Plan')[2]
+
+      // build payload like you already do
+      const apiFields = runLengthColumns.map((col) => col.field)
+
+      const payload = newRow.map((row, idx) => {
+        const obj = {
+          Id: row.Id,
+          Plant_FK_Id: PLANT_ID,
+          AOPYear: AOP_YEAR,
         }
-        return response
-      } catch (error) {
-        console.error('Error saving data:', error)
+        apiFields.forEach((field) => {
+          let value = row[field]
+          const colDef = runLengthColumns.find((col) => col.field === field)
+          if (colDef?.type === 'date' && value instanceof Date) {
+            obj[field] = value
+          } else {
+            obj[field] = value ?? null
+          }
+        })
+        return obj
+      })
+
+      const response = await DataService.postIbr(
+        PLANT_ID,
+        payload,
+        keycloak,
+        AOP_YEAR,
+      )
+
+      if (response?.code == 200) {
         setSnackbarOpen(true)
-        setSnackbarData({ message: 'Error saving data', severity: 'error' })
-      } finally {
-        fetchData()
-        setLoading(false)
+        setSnackbarData({
+          message: 'Data Saved Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'Data Save Failed!', severity: 'error' })
       }
+      return response
+    } catch (error) {
+      console.error('Error saving data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({ message: 'Error saving data', severity: 'error' })
+    } finally {
+      fetchData()
+      setLoading(false)
     }
-  
+  }
+
   const saveChangesRunLength = React.useCallback(async () => {
-      try {
-        saveCrackerRunLength(Object.values(modifiedCells))
-      } catch (error) {
-        console.log('Error saving changes:', error)
-      }
-    }, [modifiedCells])
+    try {
+      saveCrackerRunLength(Object.values(modifiedCells))
+    } catch (error) {
+      console.log('Error saving changes:', error)
+    }
+  }, [modifiedCells])
 
   return (
     <React.Fragment>
@@ -417,11 +436,11 @@ const FurnaceMaintenanceActivity = () => {
         deleteRowData={deleteRowData}
         permissions={{
           remarksEditable: true,
-          saveBtn: !isOldYear,
+          saveBtn: true,
           saveBtnForRemark: true,
-          addButton: !isOldYear,
+          addButton: false,
           allAction: true,
-          deleteButton: true,
+          deleteButton: false,
           dynamicDropdownOptions: {
             furnace: furnaceDropdownData,
             maintenanceActivity: maintenanceActivityData,

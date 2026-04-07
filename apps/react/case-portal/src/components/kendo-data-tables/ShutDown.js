@@ -94,7 +94,8 @@ const ShutDown = ({ permissions }) => {
     lowerVertName === 'meg' ||
     lowerVertName === 'pe' ||
     lowerVertName === 'pp' ||
-    IS_ELASTOMER_JMD_IIR
+    IS_ELASTOMER_JMD_IIR ||
+    lowerVertName === 'chemical'
   const IS_PTA = lowerVertName === 'pta'
   const IS_CHEMICAL = lowerVertName === 'chemical'
   const IS_PTA_DMD = lowerVertName === 'pta' && lowerSiteName === 'dmd'
@@ -218,7 +219,7 @@ const ShutDown = ({ permissions }) => {
         } else {
           requiredFields = ['discription', 'remark']
         }
-      } else if (IS_PTA || IS_CHEMICAL || IS_ELASTOMER_JMD_HIIR) {
+      } else if (IS_PTA || IS_ELASTOMER_JMD_HIIR) {
         requiredFields = ['discription', 'monthly', 'remark']
       } else if (lowerVertName === 'pta') {
         requiredFields = ['discription', 'remark']
@@ -523,7 +524,7 @@ const ShutDown = ({ permissions }) => {
     try {
       let shutdownDetails
 
-      if (IS_PTA || IS_CHEMICAL || IS_ELASTOMER_JMD_HIIR) {
+      if (IS_PTA || IS_ELASTOMER_JMD_HIIR) {
         // PTA DMD: Use month instead of dates
         shutdownDetails = newRow.map((row) => ({
           discription: row.discription || row.discriptionDrpdwn,
@@ -556,7 +557,7 @@ const ShutDown = ({ permissions }) => {
           remark: row.remark || 'null',
           lineId: row.lineId,
         }))
-      } else if (IS_ELASTOMER_JMD_IIR) {
+      } else if (IS_ELASTOMER_JMD_IIR || IS_CHEMICAL) {
         // For Elastomer JMD, set start date to previous day and end date to today
         shutdownDetails = newRow.map((row) => {
           return {
@@ -885,7 +886,7 @@ const ShutDown = ({ permissions }) => {
       try {
         let data = []
 
-        if (IS_PTA || IS_CHEMICAL) {
+        if (IS_PTA) {
           data = await DataService.dropdownValuesDMD(
             keycloak,
             PLANT_ID,
@@ -932,8 +933,7 @@ const ShutDown = ({ permissions }) => {
       }
     }
 
-    if (lowerVertName == 'pta' || lowerVertName == 'chemical')
-      getAllDescriptionDrpdwn()
+    if (lowerVertName == 'pta') getAllDescriptionDrpdwn()
   }, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
 
   useEffect(() => {
@@ -1036,7 +1036,7 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_ELASTOMER_JMD_HIIR || lowerVertName === 'chemical') {
+      if (IS_ELASTOMER_JMD_HIIR) {
         response = await DtaDataService.exportShutdownElastomerjmd(
           keycloak,
           PLANT_ID,
@@ -1081,7 +1081,7 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_ELASTOMER_JMD_HIIR || lowerVertName === 'chemical') {
+      if (IS_ELASTOMER_JMD_HIIR) {
         response = await DtaDataService.ImportShutdownElastomerjmd(
           rawFile,
           keycloak,
@@ -1155,7 +1155,7 @@ const ShutDown = ({ permissions }) => {
 
       return response
     } catch (error) {
-      console.error('Error uploading xcel:', error)
+      console.error('Error uploading Excel:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Unexpected error occurred!',

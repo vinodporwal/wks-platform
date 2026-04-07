@@ -681,7 +681,8 @@ const SlowdownNorms = () => {
         IS_PTA ||
         IS_CHEMICAL ||
         IS_AROMATICS_SEZ_PX4 ||
-        IS_ELASTOMER_HMD_SBR
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR
           ? false
           : true,
       uploadExcelBtn:true,
