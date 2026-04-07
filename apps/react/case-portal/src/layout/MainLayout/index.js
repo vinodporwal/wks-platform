@@ -79,6 +79,7 @@ const MainLayout = ({ keycloak, authenticated }) => {
 
         <Box className='outlet-wrapper'>
           <Box className='outlet-border-box'>
+            <Breadcrumbs variant='dense' navigation={menu} divider={false} />
             <Outlet />
           </Box>
         </Box>

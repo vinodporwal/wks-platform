@@ -363,7 +363,8 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
             <Grid
               container
               sx={{
-                m: 0.5,
+                m: 0,
+                // p: 0.5,
                 width: '100%',
                 transition: 'none',
                 '&:hover': {

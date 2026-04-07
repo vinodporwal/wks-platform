@@ -395,3 +395,17 @@
   font-weight: 500 !important; /* Semi-bold/Medium */
   color: #334155; /* Slate color to match your buttons */
 }
+
+.kendo-data-grid .k-grid-content .k-grid-table {
+  border-collapse: collapse; /* ONE line only */
+  border-bottom-width: 1px !important;
+  border-bottom-color: var(
+    --kendo-grid-border,
+    var(--kendo-component-border, initial)
+  );
+  border-right-color: var(
+    --kendo-grid-border,
+    var(--kendo-component-border, initial)
+  );
+  border-right-width: 1px !important;
+}
