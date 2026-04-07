@@ -401,8 +401,8 @@ public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdown
 	public byte[] exportSlowdown(String year, String plantId, boolean isAfterSave, List<ShutDownPlanDTO> dtoList) {
 	    try {   
 	    	if (!isAfterSave) {
-				dtoList = shutDownPlanService.findMaintenanceDetailsByPlantIdAndType(UUID.fromString(plantId), "Slowdown", year);
-			}
+	    		dtoList = slowdownPlanService.findSlowdownDetailsByPlantIdAndType(UUID.fromString(plantId), "Slowdown", year);
+		    }
 
 	        Workbook workbook = new XSSFWorkbook();
 	        Sheet sheet = workbook.createSheet("Sheet1");
