@@ -171,7 +171,7 @@ const CPPUnitsSdPlan = ({
     ibrDueDate: {
       editable: true,
       type: 'dateTime',
-      minWidth: 100,
+      minWidth: 120,
       widthT: 120,
     },
     gtMaintenance: {
@@ -183,13 +183,13 @@ const CPPUnitsSdPlan = ({
         { value: 'RLA', label: 'RLA' },
       ],
       editable: true,
-      minWidth: 100,
+      minWidth: 150,
       widthT: 150,
     },
     noOfDays: {
       editable: true,
       type: 'wholeNumber',
-      minWidth: 80,
+      minWidth: 100,
       widthT: 100,
     },
     shutDownDate: {
