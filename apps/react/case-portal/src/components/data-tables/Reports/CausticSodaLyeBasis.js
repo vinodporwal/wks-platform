@@ -262,7 +262,7 @@ const CausticSodaLyeBasis = () => {
       }
 
       // Call the API that returns combined grids. Change REPORT_TYPE_FOR_ALL if needed.
-      const apiResponse = await DataSetaApiService.getQualityPackagingBasis(
+      const apiResponse = await DataService.getProductionVolDataBasisPe(
         keycloak,
         REPORT_TYPE_FOR_ALL,
         StartDate,
