@@ -49,6 +49,116 @@ THIN_BORDER = Border(
 
 
 # ============================================================
+# HELPER FUNCTIONS FOR ASSET DEFAULT VALUES
+# ============================================================
+
+def get_asset_default_min_load(asset_name: str, month: int, year: int) -> float:
+    """
+    Get default min load for an asset from database.
+    
+    Args:
+        asset_name: Asset name (GT1, GT2, GT3, STG)
+        month: Month number
+        year: Year
+        
+    Returns:
+        Default min load in MW
+    """
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Query for asset min operating capacity
+        query = """
+        SELECT TOP 1 MinOperatingCapacity 
+        FROM dbo.PowerAssetMaster 
+        WHERE AssetName LIKE ? AND IsActive = 1
+        ORDER BY Priority
+        """
+        
+        cursor.execute(query, (f'%{asset_name}%',))
+        result = cursor.fetchone()
+        
+        if result and result[0]:
+            return float(result[0])
+        else:
+            # Default fallback values based on asset type
+            defaults = {
+                'GT1': 11.0,
+                'GT2': 11.0, 
+                'GT3': 11.0,
+                'STG': 5.0
+            }
+            return defaults.get(asset_name, 0.0)
+            
+    except Exception as e:
+        print(f"Warning: Could not get default min load for {asset_name}: {e}")
+        # Default fallback values
+        defaults = {
+            'GT1': 11.0,
+            'GT2': 11.0,
+            'GT3': 11.0,
+            'STG': 5.0
+        }
+        return defaults.get(asset_name, 0.0)
+    finally:
+        conn.close()
+
+
+def get_asset_default_max_load(asset_name: str, month: int, year: int) -> float:
+    """
+    Get default max load for an asset from database.
+    
+    Args:
+        asset_name: Asset name (GT1, GT2, GT3, STG)
+        month: Month number
+        year: Year
+        
+    Returns:
+        Default max load in MW
+    """
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Query for asset max operating capacity
+        query = """
+        SELECT TOP 1 MaxOperatingCapacity 
+        FROM dbo.PowerAssetMaster 
+        WHERE AssetName LIKE ? AND IsActive = 1
+        ORDER BY Priority
+        """
+        
+        cursor.execute(query, (f'%{asset_name}%',))
+        result = cursor.fetchone()
+        
+        if result and result[0]:
+            return float(result[0])
+        else:
+            # Default fallback values based on asset type
+            defaults = {
+                'GT1': 22.0,
+                'GT2': 22.0,
+                'GT3': 22.0,
+                'STG': 25.0
+            }
+            return defaults.get(asset_name, 0.0)
+            
+    except Exception as e:
+        print(f"Warning: Could not get default max load for {asset_name}: {e}")
+        # Default fallback values
+        defaults = {
+            'GT1': 22.0,
+            'GT2': 22.0,
+            'GT3': 22.0,
+            'STG': 25.0
+        }
+        return defaults.get(asset_name, 0.0)
+    finally:
+        conn.close()
+
+
+# ============================================================
 # DATA EXTRACTION FUNCTIONS
 # ============================================================
 
@@ -352,12 +462,24 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
     
     # Process GTs
     gt_names = ['GT1', 'GT2', 'GT3']
+    
+    # Debug: Print all available asset names in dispatch
+    print(f"[DEBUG] Available assets in dispatch: {[asset.get('AssetName', 'Unknown') for asset in final_dispatch]}")
+    
     for gt_name in gt_names:
         gt_data = None
         for asset in final_dispatch:
             asset_name = asset.get('AssetName', '')
-            if gt_name in asset_name or f'Plant-{gt_name[-1]}' in asset_name or f'Plant {gt_name[-1]}' in asset_name:
+            # More flexible matching for GT assets - check multiple possible patterns
+            if (gt_name in asset_name.upper() or 
+                f'Plant-{gt_name[-1]}' in asset_name or 
+                f'Plant {gt_name[-1]}' in asset_name or
+                f'GT{gt_name[-1]}' in asset_name.upper() or
+                (gt_name == 'GT1' and ('GT1' in asset_name.upper() or '1' in asset_name and 'GT' in asset_name.upper())) or
+                (gt_name == 'GT2' and ('GT2' in asset_name.upper() or '2' in asset_name and 'GT' in asset_name.upper())) or
+                (gt_name == 'GT3' and ('GT3' in asset_name.upper() or '3' in asset_name and 'GT' in asset_name.upper()))):
                 gt_data = asset
+                print(f"[DEBUG] Found {gt_name} in dispatch: {asset_name}")
                 break
         
         if gt_data:
@@ -366,6 +488,8 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
             load_mw = gt_data.get('LoadMW', 0)
             min_mw = gt_data.get('MinMW', 0)
             max_mw = gt_data.get('CapacityMW', 22)
+            
+            print(f"[DEBUG] {gt_name} dispatch data: MinMW={min_mw}, MaxMW={max_mw}, LoadMW={load_mw}")
             
             # If no LoadMW, calculate from GrossMWh and Hours
             if load_mw == 0 and hours > 0:
@@ -379,12 +503,16 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
                 'avg_load_per_hr': round(load_mw, 2)
             })
         else:
-            # GT not in dispatch (not running) - show 0 for all
+            # GT not in dispatch (not running) - try to get default min load from database
+            print(f"[DEBUG] {gt_name} not found in dispatch, using database defaults")
+            default_min_mw = get_asset_default_min_load(gt_name, month, year)
+            default_max_mw = get_asset_default_max_load(gt_name, month, year)
+            
             generation_assets.append({
                 'asset_name': gt_name,
                 'availability_hr': 0,
-                'min_capacity': 0,
-                'max_capacity': 0,
+                'min_capacity': default_min_mw,
+                'max_capacity': default_max_mw,
                 'avg_load_per_hr': 0
             })
     
@@ -414,11 +542,15 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
             'avg_load_per_hr': round(load_mw, 2)
         })
     else:
+        # STG not in dispatch - get default min/max load from database
+        default_min_mw = get_asset_default_min_load('STG', month, year)
+        default_max_mw = get_asset_default_max_load('STG', month, year)
+        
         generation_assets.append({
             'asset_name': 'STG',
             'availability_hr': 0,
-            'min_capacity': 0,
-            'max_capacity': 0,
+            'min_capacity': default_min_mw,
+            'max_capacity': default_max_mw,
             'avg_load_per_hr': 0
         })
     
