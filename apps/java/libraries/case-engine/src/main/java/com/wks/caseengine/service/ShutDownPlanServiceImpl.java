@@ -2517,7 +2517,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					PlantMaintenanceTransaction plantMaintenanceTransaction = new PlantMaintenanceTransaction();
 					plantMaintenanceTransaction.setId(UUID.randomUUID());
 					plantMaintenanceTransaction.setPlantId(plantId);
-					if(verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("Chemical") || elastomer) {
+					if(verticalName.equalsIgnoreCase("PTA") || elastomer) {
 		            	if(shutDownPlanDTO.getMonth()!=null) {
 		            		shutDownPlanDTO.setMaintStartDateTime(getStartOfMonthDate(shutDownPlanDTO.getMonth(), year));
 		            		shutDownPlanDTO.setMaintEndDateTime(getEndOfMonthDate(shutDownPlanDTO.getMonth(), year));
@@ -2570,11 +2570,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 						Integer monthNumber = Month.valueOf(monthName).getValue();
 						saveHistory(plantId.toString(),year, monthNumber.toString(),plantMaintenanceTransaction.getDurationInHrs(),plantMaintenanceTransaction.getDiscription(),plantMaintenanceTransaction.getRemarks());
 					}
-					if(verticalName.equalsIgnoreCase("Chemical") && !descriptions.contains(plantMaintenanceTransaction.getDiscription())) {	
-						String monthName = shutDownPlanDTO.getMonth().toUpperCase(); 
-						Integer monthNumber = Month.valueOf(monthName).getValue();
-						saveHistory(plantId.toString(),year, monthNumber.toString(),plantMaintenanceTransaction.getDurationInHrs(),plantMaintenanceTransaction.getDiscription(),plantMaintenanceTransaction.getRemarks());
-					}
+					
 
 					String description = shutDownPlanDTO.getDiscription();
 					if (verticalName.equalsIgnoreCase("MEG")) {
@@ -2611,7 +2607,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 						if (plantMaintenance.isPresent()) {
 							PlantMaintenanceTransaction plantMaintenanceTransaction = plantMaintenance.get();
 							plantMaintenanceTransaction.setPlantId(plantId);
-							if(verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("Chemical") || elastomer) {
+							if(verticalName.equalsIgnoreCase("PTA") || elastomer) {
 				            	if(shutDownPlanDTO.getMonth()!=null) {
 				            		shutDownPlanDTO.setMaintStartDateTime(getStartOfMonthDate(shutDownPlanDTO.getMonth(), year));
 				            		shutDownPlanDTO.setMaintEndDateTime(getEndOfMonthDate(shutDownPlanDTO.getMonth(), year));
@@ -2643,7 +2639,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 							}
 							if (("ELASTOMER".equalsIgnoreCase(verticalName))
 									|| ("AROMATICS".equalsIgnoreCase(verticalName))
-									|| ("PTA".equalsIgnoreCase(verticalName)) || ("Chemical".equalsIgnoreCase(verticalName))) {
+									|| ("PTA".equalsIgnoreCase(verticalName))) {
 								if (plantMaintenanceTransaction
 										.getMaintForMonth() != (shutDownPlanDTO.getMaintStartDateTime().getMonth()
 												+ 1)) {
@@ -2679,14 +2675,18 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 							Date dtoEndDate = shutDownPlanDTO.getMaintEndDateTime();
 							if (!(entityEndDate != null && dtoEndDate != null
 									&& entityEndDate.compareTo(dtoEndDate) == 0)) {
-								changed = true;
+								if(!elastomer) {
+									changed = true;
+								}
 							}
 							plantMaintenanceTransaction.setMaintEndDateTime(shutDownPlanDTO.getMaintEndDateTime());
 							Date entityStartDate = plantMaintenanceTransaction.getMaintStartDateTime();
 							Date dtoStartDate = shutDownPlanDTO.getMaintStartDateTime();
 							if (!(entityStartDate != null && dtoStartDate != null
 									&& entityStartDate.compareTo(dtoStartDate) == 0)) {
-								changed = true;
+								if(!elastomer) {
+									changed = true;
+								}
 							}
 							plantMaintenanceTransaction.setMaintStartDateTime(shutDownPlanDTO.getMaintStartDateTime());
 							if(plantMaintenanceTransaction.getLineFKId()!=null && shutDownPlanDTO.getLineId()!=null && !plantMaintenanceTransaction.getLineFKId().toString().equalsIgnoreCase(shutDownPlanDTO.getLineId())) {
@@ -2708,11 +2708,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 								Integer monthNumber = Month.valueOf(monthName).getValue();
 								saveHistory(plantId.toString(),year, monthNumber.toString(),plantMaintenanceTransaction.getDurationInHrs(),plantMaintenanceTransaction.getDiscription(),plantMaintenanceTransaction.getRemarks());
 							}
-							if(verticalName.equalsIgnoreCase("Chemical") && !descriptions.contains(plantMaintenanceTransaction.getDiscription())) {	
-								String monthName = shutDownPlanDTO.getMonth().toUpperCase(); 
-								Integer monthNumber = Month.valueOf(monthName).getValue();
-								saveHistory(plantId.toString(),year, monthNumber.toString(),plantMaintenanceTransaction.getDurationInHrs(),plantMaintenanceTransaction.getDiscription(),plantMaintenanceTransaction.getRemarks());
-							}
+							
 						} else {
 							throw new RuntimeException("Record not found for ID: " + shutDownPlanDTO.getId());
 						}

@@ -114,11 +114,25 @@ public class SlowdownNormsController {
 	        ) {
 			return	slowdownNormsService.importSlowdownConsumption(year,UUID.fromString(plantId),gradeId, file); 
 	}
+	
+	@PostMapping(value = "/slowdown-consumption-import", consumes = "multipart/form-data")
+	public AOPMessageVM gradeWiseImportExcel(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,
+			@RequestParam("file") MultipartFile file
+	        ) {
+			return	slowdownNormsService.gradeWiseImportExcel(year,UUID.fromString(plantId), file); 
+	}
 
 	
 	@PostMapping(value="/slowdownNorms")
 	public List<SlowdownNormsValueDTO> saveSlowdownNormsData(@RequestBody List<SlowdownNormsValueDTO> slowdownNormsValueDTOList){
 		return	slowdownNormsService.saveSlowdownNormsData(slowdownNormsValueDTOList);
+	}
+	
+	@PostMapping(value="/slowdown-norms-hiir")
+	public List<SlowdownNormsValueDTO> saveSlowdownNorms(@RequestBody List<SlowdownNormsValueDTO> slowdownNormsValueDTOList){
+		return	slowdownNormsService.saveSlowdownNormsDataHIIR(slowdownNormsValueDTOList);
 	}
 	
 	@GetMapping(value="/getSlowdownNormsSPData")

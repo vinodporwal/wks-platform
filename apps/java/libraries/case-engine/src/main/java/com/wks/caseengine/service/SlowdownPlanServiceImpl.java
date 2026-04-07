@@ -2575,6 +2575,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	    Plants plant = plantsRepository.findById(plantId).orElseThrow();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		boolean pvc = verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 		Boolean monthDropdown = false;
 		if(verticalName.equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD")) {
 			monthDropdown=true;
@@ -2741,7 +2742,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                }
 	                boolean fieldsChanged = 
 	                	    !java.util.Objects.equals(originalDesc, newDesc) ||
-	                	    (!monthDropdown && (!java.util.Objects.equals(originalStart, newStart) || 
+	                	    (!monthDropdown && !elastomer && (!java.util.Objects.equals(originalStart, newStart) || 
 	                	                        !java.util.Objects.equals(originalEnd, newEnd))) ||
 	                	    !java.util.Objects.equals(originalRate, newRate) ||
 	                	    !java.util.Objects.equals(originalRPFDownTime, newRPFDownTime) ||

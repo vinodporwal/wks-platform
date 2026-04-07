@@ -72,62 +72,62 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 	             ReliabilityPerformanceDto dto = new ReliabilityPerformanceDto();
 
 	             int idx = 0;
-	             // id
-	             dto.setId(row[idx] != null ? UUID.fromString(row[idx].toString()) : null);
+	            
+	             dto.setId(row[idx] != null ? (row[idx].toString()) : "");
 	             idx++;
-	             // row_no
-	             dto.setRowNo(row[idx] != null ? ((Number) row[idx]).intValue() : null);
+	             
+	             dto.setMasterId(row[idx] != null ? (row[idx].toString()) : "");
 	             idx++;
-	             // parameter
-	             dto.setParameter(row[idx] != null ? row[idx].toString() : null);
+	            
+	             dto.setParameter(row[idx] != null ? row[idx].toString() : "");
 	             idx++;
-	             // uom
-	             dto.setUom(row[idx] != null ? row[idx].toString() : null);
+	             
+	             dto.setUom(row[idx] != null ? row[idx].toString() : "");
 	             idx++;
-	             // best_achieved as double
+	            
 	             if (row[idx] != null) {
 	                 dto.setBestAchieved(Double.parseDouble(row[idx].toString()));
 	             } else {
 	                 dto.setBestAchieved(null);
 	             }
 	             idx++;
-	             // aop
+	             
 	             if (row[idx] != null) {
 	                 dto.setAop(Double.parseDouble(row[idx].toString()));
 	             } else {
 	                 dto.setAop(null);
 	             }
 	             idx++;
-	             // actual
+	             
 	             if (row[idx] != null) {
 	                 dto.setActual(Double.parseDouble(row[idx].toString()));
 	             } else {
 	                 dto.setActual(null);
 	             }
 	             idx++;
-	             // plann
+	            
 	             if (row[idx] != null) {
 	                 dto.setPlann(Double.parseDouble(row[idx].toString()));
 	             } else {
 	                 dto.setPlann(null);
 	             }
 	             idx++;
-	             // limit
-	             dto.setLimit(row[idx] != null ? row[idx].toString() : null);
+	            
+	             dto.setLimit(row[idx] != null ? row[idx].toString() : "");
 	             idx++;
-	             // rationale
-	             dto.setRationale(row[idx] != null ? row[idx].toString() : null);
+	             
+	             dto.setRationale(row[idx] != null ? row[idx].toString() : "");
 	             idx++;
-	             // created_at → java.util.Date
+	            
 	             if (row[idx] != null) {
-	                 // assuming row[idx] is java.sql.Timestamp
+	                 
 	                 java.sql.Timestamp ts = (java.sql.Timestamp) row[idx];
 	                 dto.setCreatedAt(new Date(ts.getTime()));
 	             } else {
 	                 dto.setCreatedAt(null);
 	             }
 	             idx++;
-	             // updated_at
+	            
 	             if (row[idx] != null) {
 	                 java.sql.Timestamp ts = (java.sql.Timestamp) row[idx];
 	                 dto.setUpdatedAt(new Date(ts.getTime()));
@@ -136,19 +136,19 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 	             }
 	             idx++;
 	             // updated_by
-	             dto.setUpdatedBy(row[idx] != null ? row[idx].toString() : null);
+	             dto.setUpdatedBy(row[idx] != null ? row[idx].toString() : "");
 	             idx++;
 	             // remarks
-	             dto.setRemarks(row[idx] != null ? row[idx].toString() : null);
+	             dto.setRemarks(row[idx] != null ? row[idx].toString() : "");
 	             idx++;
 	             // aopYear
-	             dto.setAopYear(row[idx] != null ? row[idx].toString() : null);
+	             dto.setAopYear(row[idx] != null ? row[idx].toString() : "");
 	             idx++;
 	             // plantId
-	             dto.setPlantId(row[idx] != null ? UUID.fromString(row[idx].toString()) : null);
+	             dto.setPlantId(row[idx] != null ? (row[idx].toString()) : "");
 	             idx++;
 	             // reportType
-	             dto.setReportType(row[idx] != null ? row[idx].toString() : null);
+	             dto.setReportType(row[idx] != null ? row[idx].toString() : "");
 	             idx++;
 
 	             reliabilityPerformanceDtos.add(dto);
@@ -495,7 +495,7 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 							dto.setRemarks(getStringCellValue(row.getCell(9), dto));
 							String id=getStringCellValue(row.getCell(10), dto);
 							if(id!=null) {
-								dto.setId(UUID.fromString(id));
+								dto.setId((id));
 							}
 							dto.setTableId(getStringCellValue(row.getCell(11), dto));
 
@@ -986,23 +986,34 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 					failedList.add(reliabilityPerformanceDto);
 					continue;
 				}
-				Optional<ReliabilityPerformance> reliabilityPerformanceOpt = reliabilityPerformanceRepository.findById(reliabilityPerformanceDto.getId());
-				if(reliabilityPerformanceOpt.isPresent()) {
-					ReliabilityPerformance reliabilityPerformance = reliabilityPerformanceOpt.get();
-					reliabilityPerformance.setActual(reliabilityPerformanceDto.getActual());
-					reliabilityPerformance.setAop(reliabilityPerformanceDto.getAop());
-					reliabilityPerformance.setBestAchieved(reliabilityPerformanceDto.getBestAchieved());
-					reliabilityPerformance.setLimit(reliabilityPerformanceDto.getLimit());
-					reliabilityPerformance.setPlann(reliabilityPerformanceDto.getPlann());
-					reliabilityPerformance.setRationale(reliabilityPerformanceDto.getRationale());
-					reliabilityPerformance.setRemarks(reliabilityPerformanceDto.getRemarks());
-					reliabilityPerformance.setUpdatedAt(new Date());
-					reliabilityPerformance.setUpdatedBy(Utility.getUserName());
-					reliabilityPerformances.add(reliabilityPerformanceRepository.save(reliabilityPerformance));
-					
+				ReliabilityPerformance reliabilityPerformance =null;
+				if(reliabilityPerformanceDto.getId()!=null) {
+					Optional<ReliabilityPerformance> reliabilityPerformanceOpt = reliabilityPerformanceRepository.findById(UUID.fromString(reliabilityPerformanceDto.getId()));
+					if(reliabilityPerformanceOpt.isPresent()) {
+						 reliabilityPerformance = reliabilityPerformanceOpt.get();
+						 reliabilityPerformance.setUpdatedAt(new Date());	 
+					}
+				}else {
+						reliabilityPerformance=new ReliabilityPerformance();
+						reliabilityPerformance.setMasterId(UUID.fromString(reliabilityPerformanceDto.getMasterId()));
+						reliabilityPerformance.setReportType(reliabilityPerformanceDto.getReportType());
+						reliabilityPerformance.setUom(reliabilityPerformanceDto.getUom());
+						reliabilityPerformance.setCreatedAt(new Date());
+						reliabilityPerformance.setAopYear(reliabilityPerformanceDto.getAopYear());
+						reliabilityPerformance.setPlantId(UUID.fromString(reliabilityPerformanceDto.getPlantId()));	
 				}
+				reliabilityPerformance.setActual(reliabilityPerformanceDto.getActual());
+				reliabilityPerformance.setAop(reliabilityPerformanceDto.getAop());
+				reliabilityPerformance.setBestAchieved(reliabilityPerformanceDto.getBestAchieved());
+				reliabilityPerformance.setLimit(reliabilityPerformanceDto.getLimit());
+				reliabilityPerformance.setPlann(reliabilityPerformanceDto.getPlann());
+				reliabilityPerformance.setRationale(reliabilityPerformanceDto.getRationale());
+				reliabilityPerformance.setRemarks(reliabilityPerformanceDto.getRemarks());
+				reliabilityPerformance.setUpdatedBy(Utility.getUserName());
+				reliabilityPerformances.add(reliabilityPerformanceRepository.save(reliabilityPerformance));
 			}
 		}catch (Exception ex) {
+			ex.printStackTrace();
 	         throw new RuntimeException("Failed to update data", ex);
 	     }
 		Map<String,Object> map=new HashMap<>();

@@ -691,13 +691,9 @@ public class AOPReportServiceImpl implements AOPReportService {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 			List<Object[]> obj=null;
-			if(vertical.getName().equalsIgnoreCase("MEG")) {
-				 obj = getSpecificConsumptionNormsT17DataDB2(plantId, year, reportType);
-			}else {
-				 obj = getSpecificConsumptionNormsT17Data(plantId, year, reportType);
-			}
-
 			
+				 obj = getSpecificConsumptionNormsT17DataDB2(plantId, year, reportType);
+						
 			List<PlantContributionSummaryT17DTO> plantProductionData = new ArrayList<>();
 
 			for (Object[] row : obj) {

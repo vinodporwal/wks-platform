@@ -166,22 +166,7 @@ public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdown
 	    List<ShutDownPlanDTO> shutDownPlanDTOs = new ArrayList<>();
 
 	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
-	    	Map<String, String> idToMonth = new HashMap<>();
-	    	try {
-	    		List<ShutDownPlanDTO> existing = shutDownPlanService.findMaintenanceDetailsByPlantIdAndType(plantFKId, "Shutdown", year);
-	    		for (ShutDownPlanDTO existingDto : existing) {
-	    			if (existingDto == null || existingDto.getId() == null || existingDto.getMaintStartDateTime() == null) {
-	    				continue;
-	    			}
-	    			int monthValue = existingDto.getMaintStartDateTime()
-	    					.toInstant()
-	    					.atZone(java.time.ZoneId.systemDefault())
-	    					.getMonthValue();
-	    			String monthName = java.time.Month.of(monthValue).name(); // e.g., JANUARY
-	    			idToMonth.put(existingDto.getId(), monthName);
-	    		}
-	    	} catch (Exception ignored) {
-	    	}
+	    	
 
 	        Sheet sheet = workbook.getSheetAt(0);
 	        Iterator<Row> rowIterator = sheet.iterator();
@@ -198,6 +183,10 @@ public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdown
 	            	dto.setMonth(getStringCellValue(row.getCell(1), dto));
 	            	setMonthBoundaries(dto.getMonth(), dto);
 	                dto.setDurationInHrs(getValidatedDurationInHrs(row.getCell(2), dto));
+	                
+	                // Add month-based duration validation
+	                validateDurationByMonth(dto);
+	                
 	                dto.setRemark(getStringCellValue(row.getCell(3), dto));
 	                dto.setId(getStringCellValue(row.getCell(4), dto));
 	                dto.setPlantId(plantFKId);
@@ -209,10 +198,6 @@ public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdown
 	                dto.setSaveStatus("Failed");
 	            }
 
-	            if (dto.getId() != null) {
-	            	String monthName = idToMonth.get(dto.getId());
-	            	dto.setMonth(monthName);
-	            }
 	            shutDownPlanDTOs.add(dto);
 	        }
 
@@ -222,6 +207,39 @@ public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdown
 
 	    return shutDownPlanDTOs;
 	}
+	private void validateDurationByMonth(ShutDownPlanDTO dto) {
+		if (dto.getMonth() == null || dto.getMonth().isEmpty() || dto.getDurationInHrs() == null) {
+			return;
+		}
+		
+		try {
+			// Parse month name to get month index
+			Date date = new SimpleDateFormat("MMMM", Locale.ENGLISH).parse(dto.getMonth());
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(date);
+			int monthIndex = cal.get(Calendar.MONTH);
+			
+			// Get the maximum days in the month
+			Calendar monthCal = Calendar.getInstance();
+			monthCal.set(Calendar.MONTH, monthIndex);
+			int daysInMonth = monthCal.getActualMaximum(Calendar.DAY_OF_MONTH);
+			
+			
+			int maxHoursInMonth = daysInMonth * 24;
+			
+			// Check if duration exceeds maximum hours
+			if (dto.getDurationInHrs() > maxHoursInMonth) {
+				dto.setSaveStatus("Failed");
+				dto.setErrDescription("Please enter correct value in duration");
+			}
+			
+		} catch (ParseException e) {
+			// If month parsing fails, set error
+			dto.setSaveStatus("Failed");
+			dto.setErrDescription("Invalid month format");
+		}
+	}
+
 	public void setMonthBoundaries(String monthName, ShutDownPlanDTO dto) {
 	    if (monthName == null || monthName.isEmpty()) return;
 
@@ -383,8 +401,8 @@ public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdown
 	public byte[] exportSlowdown(String year, String plantId, boolean isAfterSave, List<ShutDownPlanDTO> dtoList) {
 	    try {   
 	    	if (!isAfterSave) {
-				dtoList = shutDownPlanService.findMaintenanceDetailsByPlantIdAndType(UUID.fromString(plantId), "Slowdown", year);
-			}
+	    		dtoList = slowdownPlanService.findSlowdownDetailsByPlantIdAndType(UUID.fromString(plantId), "Slowdown", year);
+		    }
 
 	        Workbook workbook = new XSSFWorkbook();
 	        Sheet sheet = workbook.createSheet("Sheet1");

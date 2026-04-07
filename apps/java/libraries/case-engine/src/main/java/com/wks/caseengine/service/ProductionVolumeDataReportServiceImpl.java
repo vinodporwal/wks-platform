@@ -96,11 +96,9 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 		List<Map<String, Object>> productionVolumeReportList = new ArrayList<>();
 		String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 		List<Object[]> obj = null;
-		if(verticalName.equalsIgnoreCase("MEG")) {
+		
 			obj=getProductionVolumnDataReportDB2(plantId, year);
-		}else {
-			obj=getProductionVolumnDataReport(plantId, year);
-		}
+		
 
 		for (Object[] row : obj) {
 			Map<String, Object> map = new HashMap<>();
@@ -183,13 +181,8 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 			List<Map<String, Object>> typeSecondDataList = new ArrayList<>();
 			List<Object[]> obj = null;
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
-			if(verticalName.equalsIgnoreCase("MEG")) {
 				obj=getMonthWiseProductionDataDB2(plantId, year);
-			}else {
-				obj = getMonthWiseProductionData(plantId, year);
-			}
 			
-
 			for (Object[] row : obj) {
 				Map<String, Object> map = new HashMap<>();
 				if ("MEG".equalsIgnoreCase(verticalName)) {
@@ -304,11 +297,8 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 			List<Map<String, Object>> summaryData = new ArrayList<>();
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 			List<Object[]> obj=null;
-			if(verticalName.equalsIgnoreCase("MEG")) {
+			
 				 obj = getMonthWiseConsumptionDataDB2(plantId, year, reportType);
-			}else {
-				 obj = getMonthWiseConsumptionData(plantId, year, reportType);
-			}
 			
 			for (Object[] row : obj) {
 				Map<String, Object> map = new HashMap<>();
@@ -432,11 +422,8 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 			List<Map<String, Object>> plantProductionData = new ArrayList<>();
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 			List<Object[]> obj = null;
-			if(verticalName.equalsIgnoreCase("MEG")) {
+			
 				obj=getPlantProductionDataDB2(plantId, year, reportType);
-			}else {
-				obj=getPlantProductionData(plantId, year, reportType);
-			}
 			
 			if (reportType.equalsIgnoreCase("assumptions")) {
 				for (Object[] row : obj) {
