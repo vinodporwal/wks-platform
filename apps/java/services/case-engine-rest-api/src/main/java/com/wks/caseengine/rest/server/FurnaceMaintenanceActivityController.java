@@ -16,7 +16,7 @@ public class FurnaceMaintenanceActivityController {
 	@Autowired
 	private FurnaceMaintenanceActivityService furnaceMaintenanceActivityService;
 	
-	@GetMapping(value="/furnace-maintenance-activities/ibr")
+	@GetMapping(value="/furnace-maintenance-activities")
 	public AOPMessageVM getFurnaceMaintenanceActivities(
 			@RequestParam(value = "plantId", required = true) String plantId,
 			@RequestParam(value = "aopYear", required = false) String aopYear) {
