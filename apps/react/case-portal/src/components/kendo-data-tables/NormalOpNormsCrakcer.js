@@ -1184,9 +1184,9 @@ const NormalOpNormsScreenCracker = () => {
 
       <Box sx={{ margin: 0, padding: 0 }}>
         <AopTabs
-          tabIndex={tabIndex}
-          setTabIndex={setTabIndex}
-          tabs={defaultTabs}
+          tabIndex={selectedTab}
+          setTabIndex={setSelectedTab}
+          tabs={tabLabels}
         />
       </Box>
 

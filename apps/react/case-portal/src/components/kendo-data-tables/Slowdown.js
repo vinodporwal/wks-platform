@@ -82,7 +82,7 @@ const SlowDown = ({ permissions }) => {
   const [rowModesModel, setRowModesModel] = useState({})
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [modifiedCells2, setModifiedCells2] = React.useState({})
-  const [colDefs2, setColDefs2] = React.useState({})
+  const [colDefs2, setColDefs2] = React.useState([])
   const [allProducts, setAllProducts] = useState([])
   const apiRef = useGridApiRef()
   const [open1, setOpen1] = useState(false)
@@ -1575,11 +1575,13 @@ const SlowDown = ({ permissions }) => {
       <LoaderBackdrop open={!!loading} />
 
       {(lowerVertName === 'meg' ||
-        (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD && !IS_ELASTOMER_HMD_SBR )) && (
+        (lowerVertName === 'elastomer' &&
+          !IS_ELASTOMER_JMD &&
+          !IS_ELASTOMER_HMD_SBR)) && (
         <Box style={{ margin: 0, padding: 0 }}>
           <AopTabs
             tabIndex={selectedTab}
-            setTabIndex={setSelectedTab}
+            setTabIndex={(newValue) => handleTabChange(null, newValue)}
             tabs={['Slowdown Details', 'Slowdown History Config']}
           />
         </Box>
