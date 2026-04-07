@@ -115,18 +115,18 @@ const Slowdown = ({
 
   // Column configuration for Slowdown - dynamically generated from API response
   const columnConfig = {
-    particulates: { editable: false, type: 'text', minWidth: 100, widthT: 100 },
+    particulates: { editable: false, type: 'text', minWidth: 140, widthT: 140 },
     durationInDays: {
       editable: true,
       type: 'wholeNumber',
-      minWidth: 100,
-      widthT: 100,
+      minWidth: 150,
+      widthT: 150,
     },
     throughputDuringSlowdown: {
       editable: true,
       type: 'wholeNumber',
-      minWidth: 100,
-      widthT: 100,
+      minWidth: 230,
+      widthT: 230,
     },
     throughputUOM: {
       editable: true,

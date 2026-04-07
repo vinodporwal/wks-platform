@@ -1172,7 +1172,15 @@ const KendoDataTablesCrackerRunLength = ({
         )
 
         if (res?.code === 200 && res.data && Array.isArray(res.data.columns)) {
-          const HIDDEN_FIELDS = ['Plant_FK_Id', 'AOPYear', 'Demo', 'Date']
+          const HIDDEN_FIELDS = [
+            'plant_FK_Id',
+            'aopYear',
+            'Plant_FK_Id',
+            'AOPYear',
+            'Demo',
+            'Date',
+          ]
+
           const columnsFromApi = res.data.columns
             .filter((col) => col.field && col.field.trim() !== '')
             .map((col) => ({

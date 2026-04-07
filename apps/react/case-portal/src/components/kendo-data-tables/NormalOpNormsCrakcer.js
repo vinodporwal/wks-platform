@@ -30,6 +30,8 @@ import CrakcerConstants from './CrakcerConstants'
 import { validateFields } from 'utils/validationUtils'
 import CrackerConfiguration from './CrackerConfiguration'
 import CrackerReportMannualEntry from './CrackerReportMannualEntry'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import AopTabs from 'components/AopTabs'
 // Constants
 const MONTHS = [
   'april',
@@ -1178,28 +1180,14 @@ const NormalOpNormsScreenCracker = () => {
   // UI render
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading1}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading1} />
 
       <Box sx={{ margin: 0, padding: 0 }}>
-        <Tabs
-          value={selectedTab}
-          onChange={handleTabChange}
-          sx={{
-            borderBottom: '0px solid #ccc',
-            '.MuiTabs-indicator': { display: 'none' },
-            margin: 0,
-            minHeight: '28px',
-          }}
-        >
-          {tabLabels.map((label) => (
-            <Tab key={label} label={label} sx={tabSx} />
-          ))}
-        </Tabs>
+        <AopTabs
+          tabIndex={selectedTab}
+          setTabIndex={setSelectedTab}
+          tabs={tabLabels}
+        />
       </Box>
 
       {selectedTab === 0 && <CrackerConfiguration tabIndex={0} />}

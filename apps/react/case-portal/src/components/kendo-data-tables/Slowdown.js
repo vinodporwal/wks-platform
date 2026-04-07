@@ -82,7 +82,7 @@ const SlowDown = ({ permissions }) => {
   const [rowModesModel, setRowModesModel] = useState({})
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [modifiedCells2, setModifiedCells2] = React.useState({})
-  const [colDefs2, setColDefs2] = React.useState({})
+  const [colDefs2, setColDefs2] = React.useState([])
   const [allProducts, setAllProducts] = useState([])
   const apiRef = useGridApiRef()
   const [open1, setOpen1] = useState(false)
@@ -106,6 +106,10 @@ const SlowDown = ({ permissions }) => {
   const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
+  const IS_AROMATICS_SEZ_PX4 =
+    lowerVertName === 'aromatics' &&
+    lowerSiteName === 'sez' &&
+    lowerPlantName === 'px4'
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const SHOW_EXCEL_UPLOAD_BUTTON =
     lowerVertName === 'pe' ||
@@ -116,6 +120,7 @@ const SlowDown = ({ permissions }) => {
     lowerVertName == 'pta' ||
     lowerVertName == 'chemical' ||
     lowerVertName == 'meg' ||
+    IS_AROMATICS_SEZ_PX4 ||
     IS_PVC_VMD ||
     IS_PVC_DMD
 
@@ -1435,6 +1440,7 @@ const SlowDown = ({ permissions }) => {
         (lowerVertName == 'elastomer' && !IS_ELASTOMER_HMD_SBR) ||
         lowerVertName == 'vcm' ||
         lowerVertName == 'pta' ||
+        IS_AROMATICS_SEZ_PX4 ||
         IS_CHEMICAL
       ) {
         response = await DataService.ImportSlowdownElastomerDetails(
@@ -1569,40 +1575,15 @@ const SlowDown = ({ permissions }) => {
       <LoaderBackdrop open={!!loading} />
 
       {(lowerVertName === 'meg' ||
-        (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD)) && (
+        (lowerVertName === 'elastomer' &&
+          !IS_ELASTOMER_JMD &&
+          !IS_ELASTOMER_HMD_SBR)) && (
         <Box style={{ margin: 0, padding: 0 }}>
-          <Tabs
-            value={selectedTab}
-            onChange={handleTabChange}
-            sx={{
-              borderBottom: '0px solid #ccc',
-              '.MuiTabs-indicator': { display: 'none' },
-              margin: '0px 0px 0px 0px',
-              minHeight: '28px',
-            }}
-          >
-            <Tab
-              label='Slowdown Details'
-              sx={{
-                border: '1px solid #ADD8E6',
-                borderBottom: '1px solid #ADD8E6',
-                fontSize: '0.75rem',
-                padding: '9px',
-                minHeight: '12px',
-              }}
-            />
-
-            <Tab
-              label='Slowdown History Config'
-              sx={{
-                border: '1px solid #ADD8E6',
-                borderBottom: '1px solid #ADD8E6',
-                fontSize: '0.75rem',
-                padding: '9px',
-                minHeight: '12px',
-              }}
-            />
-          </Tabs>
+          <AopTabs
+            tabIndex={selectedTab}
+            setTabIndex={(newValue) => handleTabChange(null, newValue)}
+            tabs={['Slowdown Details', 'Slowdown History Config']}
+          />
         </Box>
       )}
 
@@ -1693,7 +1674,8 @@ const SlowDown = ({ permissions }) => {
       {/* TAB 2 FOR ELASTOMER */}
       {selectedTab === 1 &&
         lowerVertName === 'elastomer' &&
-        !IS_ELASTOMER_JMD && <ElastomerSlowdown />}
+        !IS_ELASTOMER_JMD &&
+        !IS_ELASTOMER_HMD_SBR && <ElastomerSlowdown />}
     </div>
   )
 }

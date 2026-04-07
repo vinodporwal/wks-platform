@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { SpecificConsumptionService } from 'services/SpecificConsumptionService'
 import KendoDataTables from './index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const SpecificConsumptionCalculation = () => {
   const [loading, setLoading] = useState(false)
@@ -274,12 +275,7 @@ const SpecificConsumptionCalculation = () => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <Box sx={{ mb: 1, mt: 1 }}>
         <KendoDataTables

@@ -22,8 +22,8 @@ import { getRoleName } from 'services/role-service'
 import ProductionTarget from './ProductionTarget'
 import ManualEntryForFeedStreams from './ManualEntryForFeedStreams'
 import ModeSelection from './ModeSelection'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { ProductionVolumeDataApiService } from 'services/production-volume-data-api-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const BusinessDemand = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const keycloak = useSession()
@@ -71,6 +71,7 @@ const BusinessDemand = ({ permissions }) => {
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
+  const IS_CHEMICAL_JMD = lowerVertName === 'chemical' && lowerSiteName === 'jmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'
   const PRODUCTION_TARGET_LABEL = IS_VCM_VERTICAL
     ? 'Production Target (This is a reference for entering the Business Demand value)'
@@ -508,7 +509,8 @@ const BusinessDemand = ({ permissions }) => {
         IS_PVC_VMD ||
         IS_PVC_DMD ||
         IS_ELASTOMER_VERTICAL ||
-        lowerVertName === 'chemical'
+
+        (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD)
           ? true
           : false,
 
@@ -721,7 +723,6 @@ const BusinessDemand = ({ permissions }) => {
           </CustomAccordion>
         </>
       )}
-
       {IS_ELASTOMER_JMD && (
         <KendoDataTables
           setRows={setRowRate}

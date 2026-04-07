@@ -87,7 +87,7 @@ const Navigation = () => {
         sx={{
           flex: 1,
           px: 0,
-          pb: 0.5,
+          pb: 8,
           overflowY: 'auto',
           overflowX: 'hidden',
           '&::-webkit-scrollbar': {

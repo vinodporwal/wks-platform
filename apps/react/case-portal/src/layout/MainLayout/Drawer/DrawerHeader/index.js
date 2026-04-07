@@ -8,7 +8,7 @@ import HomeIcon from '@mui/icons-material/Home'
 import { useNavigate } from 'react-router-dom'
 
 const DrawerHeader = ({ open, handleDrawerToggle }) => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
   return (
     <DrawerHeaderStyled open={open}>
       <Box

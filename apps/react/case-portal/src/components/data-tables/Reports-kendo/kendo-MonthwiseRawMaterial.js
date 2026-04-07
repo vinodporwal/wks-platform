@@ -68,7 +68,7 @@ const MonthwiseRawMaterial = () => {
       align: 'left',
       headerAlign: 'left',
       flex: 1,
-      widthT: 50,
+      widthT: 80,
     },
 
     ...(lowerVertName === 'meg'
@@ -80,7 +80,7 @@ const MonthwiseRawMaterial = () => {
             align: 'left',
             headerAlign: 'left',
             flex: 1,
-            widthT: 50,
+            widthT: 80,
           },
         ]
       : []),

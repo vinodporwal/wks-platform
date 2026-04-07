@@ -575,6 +575,7 @@ const KendoDataTablesCracker = ({
               key={col.field}
               field={col.field}
               title={col.title || col.headerName}
+              width={col.widthT || 130}
               hidden={col.hidden}
               className={
                 col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'
@@ -598,6 +599,7 @@ const KendoDataTablesCracker = ({
               key={col.field}
               field={col.field}
               title={col.title || col.headerName}
+              width={col.widthT || 130}
               hidden={col.hidden}
               className={
                 col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'

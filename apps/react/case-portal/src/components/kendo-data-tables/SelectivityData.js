@@ -36,6 +36,7 @@ const SelectivityData = (props) => {
   const VERTICAL_ID = verticalObject?.id
   const VERTICAL_NAME = verticalObject?.name
   const SCREEN_NAME = screenTitle?.title
+  const revisionName = props?.revision ? `_REV_${props?.revision}` : ''
 
   const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
   const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
@@ -613,7 +614,7 @@ const SelectivityData = (props) => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
-          EXCEL_EXPORT_TITLE,
+          `${EXCEL_EXPORT_TITLE}${revisionName}`,
         )
 
         //NEW BUILD 17 NOV
@@ -627,7 +628,7 @@ const SelectivityData = (props) => {
           props?.configType,
           PLANT_ID,
           AOP_YEAR,
-          EXCEL_EXPORT_TITLE,
+          `${EXCEL_EXPORT_TITLE}${revisionName}`,
         )
       } else if (props?.tabIndex != 1) {
         if (
@@ -644,7 +645,7 @@ const SelectivityData = (props) => {
             PLANT_ID,
             AOP_YEAR,
             [props?.configType],
-            EXCEL_EXPORT_TITLE,
+            `${EXCEL_EXPORT_TITLE}${revisionName}`,
           )
         } else {
           var report_t = []
@@ -675,7 +676,7 @@ const SelectivityData = (props) => {
             report_t,
             PLANT_ID,
             AOP_YEAR,
-            EXCEL_EXPORT_TITLE,
+            `${EXCEL_EXPORT_TITLE}${revisionName}`,
           )
         }
       } else {
@@ -683,7 +684,7 @@ const SelectivityData = (props) => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
-          `${EXCEL_EXPORT_TITLE}_Production Norms Basis - Constant`,
+          `${EXCEL_EXPORT_TITLE}${revisionName}_Production Norms Basis - Constant`,
         )
       }
 

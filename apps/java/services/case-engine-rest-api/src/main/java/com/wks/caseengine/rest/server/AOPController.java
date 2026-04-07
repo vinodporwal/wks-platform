@@ -81,9 +81,8 @@ public class AOPController {
     @GetMapping(value = "/load-aop-approval-flow-report-data-plantwise")
     public AOPMessageVM loadAOPApprovalFlowReportDataPlantwise(
             @RequestParam String plantId,
-            @RequestParam String year,
-            @RequestParam(required = false, defaultValue = "GET") String action) {
-        return aopApprovalFlowReportService.loadAOPApprovalFlowReportDataPlantwise(plantId, year, action);
+            @RequestParam String year) {
+        return aopApprovalFlowReportService.loadAOPApprovalFlowReportDataPlantwise(plantId, year);
     }
     
     @GetMapping(value = "/aop-years")

@@ -2,7 +2,12 @@ import { useState, useEffect, useRef } from 'react'
 import { InputBase, Box } from '@mui/material'
 import NotificationTST from 'components/Utilities/NotificationTST'
 
-export const NoSpinnerNumericEditor = ({ dataItem, field, onChange }) => {
+export const NoSpinnerNumericEditor = ({
+  dataItem,
+  field,
+  onChange,
+  maxLength,
+}) => {
   const initialValue = dataItem[field] ?? ''
   const [localValue, setLocalValue] = useState(initialValue)
   const isFirstRender = useRef(true)
@@ -45,9 +50,10 @@ export const NoSpinnerNumericEditor = ({ dataItem, field, onChange }) => {
       <InputBase
         value={localValue}
         onChange={handleChange}
-        // maxLength={maxLength}
         autoComplete='off'
+        maxLength={maxLength}
         sx={{
+          width: '100%',
           fontSize: '0.8125rem',
           fontWeight: 600,
           color: '#1d3665', // Using your deep navy color for the text

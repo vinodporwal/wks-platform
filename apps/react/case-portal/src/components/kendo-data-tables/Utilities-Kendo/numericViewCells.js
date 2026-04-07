@@ -23,10 +23,20 @@ export const DurationEditor = (props) => {
     <Input
       value={raw}
       style={{
-        fontSize: '0.8rem',
-        padding: '2px 2px',
-        height: '22px',
-        lineHeight: '1rem',
+        width: '100%', // ✅ full width
+        display: 'block', // ✅ safer inside grid
+        fontSize: '0.8125rem',
+        fontWeight: 600,
+        color: '#1d3665',
+        padding: '0 8px',
+        height: '28px',
+        borderRadius: '6px',
+        backgroundColor: '#FFFFFF',
+        border: '1px solid #E0E4EC',
+        boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)',
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        boxSizing: 'border-box', // 🔥 important
+        textAlign: 'right', // align like numeric input
       }}
       onChange={handleChange}
       placeholder='HH:MM'

@@ -76,7 +76,7 @@ public class PlantServiceImpl implements PlantService {
 
 	@Override
 	public List<Plants> findUniqueNamesPlantsByVerticalAndSite(UUID verticalId, UUID siteId, String screenCode) {
-		return plantsRepository.findUniqueNamesPlantsByVerticalAndSite(verticalId, siteId);
+		return plantsRepository.findUniqueNamesPlantsByVerticalAndSite(verticalId, siteId, screenCode);
 	}
 
 }

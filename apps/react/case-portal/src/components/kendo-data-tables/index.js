@@ -8,7 +8,7 @@ import '@progress/kendo-theme-default/dist/all.css'
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports-kendo/ColumnMenu1'
 import { DateColumnMenu } from 'components/Utilities/DateColumnMenu'
 import Notification from 'components/Utilities/Notification'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import PropaneDropdown from './Utilities-Kendo/PropaneDropdown'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import { useSelector } from 'react-redux'
@@ -151,6 +151,8 @@ const CompactTextField = styled(TextField)({
   },
 })
 
+const ADJUST_PADDING = 4
+
 const KendoDataTables = ({
   resetEditSignal,
   setEditResetKey,
@@ -227,6 +229,8 @@ const KendoDataTables = ({
 }) => {
   const _export = useRef(null)
   const _grid = React.useRef(undefined)
+  const minGridWidth = useRef(0)
+  const gridRef = useRef(null)
   const [gridExpanded, setGridExpanded] = useState(true)
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [openResetDialogeBox, setOpenResetDialogeBox] = useState(false)
@@ -247,6 +251,8 @@ const KendoDataTables = ({
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
   const ColumnMenuCheckboxFilterDate = getColumnMenuDateFilter(rows)
   const [customModifiedCells, setCustomModifiedCells] = useState({})
+  const [applyMinWidth, setApplyMinWidth] = useState(false)
+  const [gridCurrent, setGridCurrent] = useState(0)
   const dataGridStore = useSelector((state) => state.dataGridStore)
 
   const keycloak = useSession()
@@ -447,6 +453,87 @@ const KendoDataTables = ({
   }
 
   const fileInputRef = useRef(null)
+
+  const extractAllColumns = useCallback((cols) => {
+    const allCols = []
+
+    const traverse = (columns) => {
+      columns?.forEach((col) => {
+        if (!col || Object.keys(col).length === 0) return
+
+        if (col.children && Array.isArray(col.children)) {
+          traverse(col.children)
+        } else if (col.field && col.hidden !== true) {
+          allCols.push(col)
+        }
+      })
+    }
+
+    traverse(cols)
+    return allCols
+  }, [])
+
+  useEffect(() => {
+    const gridEl = document.querySelector('.k-grid')
+    if (!gridEl) return
+
+    const updateGridSize = () => {
+      const currentWidth = gridEl.offsetWidth
+      setGridCurrent(currentWidth)
+
+      const allColumns = extractAllColumns(columns)
+      let minWidthSum = allColumns.reduce((sum, col) => {
+        return sum + (col.minWidth ?? 85)
+      }, 0)
+
+      if (permissions?.deleteButton) {
+        minWidthSum += 80
+      }
+
+      setApplyMinWidth(currentWidth < minWidthSum)
+    }
+
+    updateGridSize()
+
+    const observer = new ResizeObserver(updateGridSize)
+    observer.observe(gridEl)
+
+    return () => observer.disconnect()
+  }, [columns, permissions?.deleteButton, extractAllColumns])
+
+  const DEFAULT_COL_WIDTH = 110
+
+  const setWidth = useCallback(
+    (minWidth = DEFAULT_COL_WIDTH) => {
+      // if (applyMinWidth) {
+      //   return minWidth
+      // }
+
+      const allColumns = extractAllColumns(columns)
+
+      const totalMinWidth =
+        allColumns.reduce((sum, col) => {
+          return sum + (col.minWidth ?? DEFAULT_COL_WIDTH)
+        }, 0) + (permissions?.deleteButton ? 80 : 0)
+
+      if (totalMinWidth >= gridCurrent) {
+        return minWidth
+      }
+
+      const availableSpace = gridCurrent - totalMinWidth
+      const proportionalShare = (minWidth / totalMinWidth) * availableSpace
+      const width = minWidth + proportionalShare
+
+      return Math.max(minWidth, Math.round(width - ADJUST_PADDING))
+    },
+    [
+      applyMinWidth,
+      gridCurrent,
+      columns,
+      permissions?.deleteButton,
+      extractAllColumns,
+    ],
+  )
 
   const handleEditChange = useCallback((e) => {
     setEdit(e.edit)
@@ -869,7 +956,15 @@ const KendoDataTables = ({
     setRemarkDialogOpen(false)
   }
 
-  // console.log('columns', columns)
+  console.log('columns', columns)
+  const columnCount = useMemo(() => {
+    return (
+      columns?.filter(
+        (col) =>
+          col?.field && col?.hidden !== true && Object.keys(col).length > 0,
+      )?.length || 0
+    )
+  }, [columns])
 
   const handleAddRow = () => {
     setEdit({})
@@ -2247,9 +2342,9 @@ const KendoDataTables = ({
                 contextMenu={true}
                 grade={grades}
                 onRowClick={handleRowClick}
-                sortable={{
-                  mode: 'multiple',
-                }}
+                // sortable={{
+                //   mode: 'multiple',
+                // }}
                 groupable={
                   permissions?.isTotalFooterActive
                     ? {
@@ -2320,8 +2415,8 @@ const KendoDataTables = ({
                         editor='date'
                         hidden={col.hidden}
                         filter='date'
-                        // columnMenu={ColumnMenuCheckboxFilterDate}
-                        width={col?.widthT}
+                        columnMenu={ColumnMenuCheckboxFilterDate}
+                        width={setWidth(100)}
                         headerClassName={
                           isDateFilterActive.includes(col.field)
                             ? 'active-column'
@@ -2377,7 +2472,7 @@ const KendoDataTables = ({
                           // columnMenu={DateColumnMenu}
                           filter='date'
                           columnMenu={ColumnMenuCheckboxFilterDate}
-                          width={col?.widthT}
+                          width={setWidth(100)}
                           headerClassName={
                             isDateFilterActive.includes(col.field)
                               ? 'active-column'
@@ -2430,7 +2525,7 @@ const KendoDataTables = ({
                         // columnMenu={DateColumnMenu}
                         filter='date'
                         columnMenu={ColumnMenuCheckboxFilterDate}
-                        width={col?.widthT}
+                        width={setWidth(100)}
                         headerClassName={
                           isDateFilterActive.includes(col.field)
                             ? 'active-column'
@@ -2446,7 +2541,7 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.fixedWidth || undefined}
+                        width={setWidth(100)}
                         cells={{
                           edit: {
                             date: [
@@ -2502,10 +2597,10 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.widthT}
+                        width={setWidth(100)}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: NoSpinnerNumericEditor }, // <-- Add this line for editing
                           data: (props) => (
@@ -2517,7 +2612,7 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
                       />
@@ -2537,8 +2632,8 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        //columnMenu={ColumnMenuCheckboxFilter}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                        headerClassName={isActive ? 'active-column' : ''}
                       />
                     )
                   }
@@ -2547,7 +2642,7 @@ const KendoDataTables = ({
                       <GridColumn
                         key='limit'
                         field='limit'
-                        width={80}
+                        width={setWidth(100)}
                         title={col.title}
                         editable={col.editable || true}
                         cells={{
@@ -2559,8 +2654,8 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        //columnMenu={ColumnMenuCheckboxFilter}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                        headerClassName={isActive ? 'active-column' : ''}
                       />
                     )
                   }
@@ -2573,6 +2668,7 @@ const KendoDataTables = ({
                         title={col.title || col.headerName || 'Particulars'}
                         editable={col.editable || true}
                         hidden={col.hidden}
+                        width={setWidth(100)}
                         cells={{
                           data: (cellProps) => (
                             <ProductCell
@@ -2582,7 +2678,7 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2606,7 +2702,8 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                        width={setWidth(150)}
                       />
                     )
                   }
@@ -2617,7 +2714,7 @@ const KendoDataTables = ({
                         key='productName1'
                         field='productName1'
                         title={col.title || col.headerName || 'Particulars'}
-                        // width={210}
+                        width={setWidth(200)}
                         editable={col.editable || true}
                         hidden={col.hidden}
                         cells={{
@@ -2633,7 +2730,7 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2646,14 +2743,14 @@ const KendoDataTables = ({
                         title={col.title || col.headerName || 'month'}
                         editable={col.editable || true}
                         hidden={col.hidden}
-                        width={col.widthT}
+                        width={setWidth(100)}
                         cells={{
                           data: (cellProps) => (
                             <MonthCell {...cellProps} allMonths={allMonths} />
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2664,11 +2761,11 @@ const KendoDataTables = ({
                         key={col?.field}
                         field={col?.field}
                         title={col.title || col.headerName || 'Description'}
-                        width={col.widthT}
+                        width={setWidth(150)}
                         editable={true}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: TextCellEditor },
                           data: (props) =>
@@ -2693,16 +2790,16 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.widthT}
+                        width={setWidth(150)}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: descLimit },
                           data: toolTipRendererdescLimit,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2712,10 +2809,14 @@ const KendoDataTables = ({
                         key='UOM'
                         field='UOM'
                         title={col.title || col.headerName || 'UOM'}
-                        width={col?.widthT}
+                        // width={setWidth(110)}
+                        // width={setWidth(columnCount <= 10 ? 50 : 100)}
+                        width={setWidth(
+                          columnCount <= 6 ? 40 : columnCount <= 10 ? 50 : 100,
+                        )}
                         editable={false}
-                        // columnMenu={ColumnMenuCheckboxFilter}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                        headerClassName={isActive ? 'active-column' : ''}
                         hidden={col.hidden}
                         cells={{
                           data: toolTipRenderer,
@@ -2730,9 +2831,9 @@ const KendoDataTables = ({
                         key='ReceipeName'
                         field='ReceipeName'
                         title={col.title || col.headerName}
-                        width={col.width1}
+                        width={setWidth(100)}
                         editable={false}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
                         cells={{
                           data: toolTipRenderer,
@@ -2747,7 +2848,7 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.width1}
+                        width={setWidth(100)}
                         hidden={col.hidden}
                         className={
                           col?.isDisabled
@@ -2755,13 +2856,13 @@ const KendoDataTables = ({
                             : 'k-number-right'
                         }
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: NoSpinnerNumericEditor },
                           data: toolTipRenderer,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
                       />
@@ -2774,15 +2875,15 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.widthT}
+                        width={setWidth(100)}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           data: MaterialDisplayNameCell,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2793,10 +2894,10 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.width}
+                        width={setWidth(100)}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: MonthDropdownPEPP },
                           data: (props) =>
@@ -2811,7 +2912,7 @@ const KendoDataTables = ({
                             ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2822,16 +2923,16 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.width}
+                        width={setWidth(100)}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: MonthDropdownEditor },
                           data: ElastomerMonthDisplayCell,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2841,7 +2942,7 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.width}
+                        width={setWidth(100)}
                         editable={!!col?.editable}
                         cells={{
                           edit: { text: CategoryDropdownEditor },
@@ -2863,7 +2964,7 @@ const KendoDataTables = ({
                           },
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2876,16 +2977,16 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.width}
+                        width={setWidth(100)}
                         hidden={col.hidden}
                         editable={!!col?.editable}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: YearDropdownEditorWrapper },
                           data: ElastomerYearDisplayCell,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2895,10 +2996,10 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.width}
+                        width={setWidth(100)}
                         hidden={col.hidden}
                         editable={!!col?.editable}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: {
                             text: (props) => (
@@ -2911,7 +3012,7 @@ const KendoDataTables = ({
                           data: ElastomerSDDaysDisplayCell,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2931,7 +3032,7 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title}
-                        width={col.width}
+                        width={setWidth(100)}
                         editable={col.editable}
                         cells={{
                           edit: { text: LineDropdownEditorWrapper },
@@ -2947,7 +3048,7 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2957,9 +3058,9 @@ const KendoDataTables = ({
                         key='DisplayName'
                         field={col?.field}
                         title={col.title || col.headerName}
-                        width={col?.widthT}
+                        width={setWidth(100)}
                         editable={false}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
                         cells={{
                           data: toolTipRenderer,
@@ -2998,10 +3099,10 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
-                        width={col.widthT || ''}
+                        headerClassName={isActive ? 'active-column' : ''}
+                        width={setWidth(120)}
                       />
                     )
                   }
@@ -3011,9 +3112,9 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.widthT}
+                        width={setWidth(100)}
                         editable={true}
-                        //columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
                         format={'{0:n2}'}
                         className={
@@ -3035,7 +3136,7 @@ const KendoDataTables = ({
                             ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                       />
                     )
                   }
@@ -3046,9 +3147,9 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.widthT}
+                        width={setWidth(100)}
                         editable={true}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
                         format={'{0:n2}'}
                         className='k-number-right'
@@ -3058,7 +3159,7 @@ const KendoDataTables = ({
                             DurationDisplayWithTooltipCell(props),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                       />
                     )
                   }
@@ -3070,13 +3171,14 @@ const KendoDataTables = ({
                         field={col.field}
                         title={col.title || col.headerName}
                         hidden={col.hidden}
+                        width={setWidth(100)}
                         className={
                           col?.isDisabled
                             ? 'k-number-right-disabled'
                             : 'k-number-right'
                         }
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: NoSpinnerNumericEditor },
                           data: (props) => (
@@ -3091,7 +3193,6 @@ const KendoDataTables = ({
                         }}
                         format={col.format}
                         sortable={false}
-                        width={col?.widthT}
                       />
                     )
                   }
@@ -3102,16 +3203,16 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.width}
+                        width={setWidth(100)}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: PropaneDropdown }, // <-- Use your custom editor here
                           data: MonthDisplayCell,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -3123,10 +3224,10 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.width}
+                        width={setWidth(100)}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: {
                             text: (props) => (
@@ -3139,7 +3240,7 @@ const KendoDataTables = ({
                           data: MonthDisplayCell,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -3150,17 +3251,17 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.widthT}
+                        width={setWidth(100)}
                         hidden={col.hidden}
                         className={'k-number-right'}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: NoSpinnerNumericEditorNegative },
                           data: toolTipRenderer,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        //columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
                       />
@@ -3173,14 +3274,14 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.widthT}
+                        width={setWidth(100)}
                         hidden={col.hidden}
                         className={`
                   ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
                   ${col?.isBold ? 'bold-text' : ''}
                 `}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: NoSpinnerNumericEditorNegative },
                           data: (props) =>
@@ -3202,7 +3303,7 @@ const KendoDataTables = ({
                             ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        //columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
                       />
@@ -3215,14 +3316,14 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.widthT}
+                        width={setWidth(100)}
                         hidden={col.hidden}
                         className={`
                   ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
                   ${col?.isBold ? 'bold-text' : ''}
                 `}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: {
                             text: NoSpinnerNumericEditorWithUOMValidation,
@@ -3246,7 +3347,7 @@ const KendoDataTables = ({
                             ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
                       />
@@ -3260,9 +3361,9 @@ const KendoDataTables = ({
                         title={
                           col.title || col.headerName || 'Rate Reduced (TPH)'
                         }
-                        width={col.widthT}
+                        width={setWidth(100)}
                         editable={true}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
                         format={'{0:n2}'}
                         className={`
@@ -3282,7 +3383,7 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                       />
                     )
                   }
@@ -3293,14 +3394,14 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.widthT}
+                        width={setWidth(100)}
                         hidden={col.hidden}
                         className={`
                   ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
                   ${col?.isBold ? 'bold-text' : ''}
                 `}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: {
                             text: NoSpinnerNumericEditorCrackerValidation,
@@ -3324,7 +3425,7 @@ const KendoDataTables = ({
                             ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
                       />
@@ -3340,14 +3441,14 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.widthT}
+                        width={setWidth(100)}
                         hidden={col.hidden}
                         className={`
         ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
         ${col?.isBold ? 'bold-text' : ''}
       `}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: NoSpinnerNumericEditor },
                           data: (props) => {
@@ -3393,7 +3494,7 @@ const KendoDataTables = ({
                           },
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
                       />
@@ -3406,14 +3507,14 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.widthT}
+                        width={setWidth(100)}
                         hidden={col.hidden}
                         className={`
         ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
         ${col?.isBold ? 'bold-text' : ''}
       `}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: NoSpinnerNumericEditor },
                           data: (props) =>
@@ -3435,7 +3536,7 @@ const KendoDataTables = ({
                             ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
                       />
@@ -3462,7 +3563,7 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title='.'
-                        width={col.widthT}
+                        width={setWidth(100)}
                         hidden={col.hidden}
                         editable={true}
                         cells={{
@@ -3525,7 +3626,7 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title='.'
-                        width={col.widthT}
+                        width={setWidth(100)}
                         hidden={col.hidden}
                         editable={true}
                         cells={{
@@ -3567,7 +3668,7 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.width}
+                        width={setWidth(100)}
                         hidden={col.hidden}
                         className={
                           col?.isDisabled
@@ -3575,13 +3676,13 @@ const KendoDataTables = ({
                             : 'k-number-right'
                         }
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: NoSpinnerNumericEditor },
                           data: toolTipRenderer,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        //columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
                       />
@@ -3594,16 +3695,16 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.widthT}
+                        width={setWidth(80)}
                         hidden={col.hidden}
                         editable={!!col?.editable}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: NoSpinnerNumericEditor },
                           data: toolTipRenderer,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        //columnMenu={ColumnMenuCheckboxFilter}
+                        columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -3613,16 +3714,18 @@ const KendoDataTables = ({
                       key={col.field}
                       field={col.field}
                       title={col.title || col.headerName}
-                      width={col.widthT}
+                      width={setWidth(
+                        columnCount <= 6 ? 70 : columnCount <= 10 ? 100 : 150,
+                      )}
                       hidden={col.hidden}
                       editable={col?.editable ? true : false}
-                      headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                       cells={{
                         edit: { text: TextCellEditor },
                         data: toolTipRenderer,
                         headerCell: SimpleHeaderWithTooltip,
                       }}
-                      // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                     />
                   )
                 })}
@@ -3632,7 +3735,7 @@ const KendoDataTables = ({
                     key='actions'
                     field='actions'
                     title='Action'
-                    width={80}
+                    width={100}
                     className='k-text-center'
                     filterable={false}
                     editable={false}

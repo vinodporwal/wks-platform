@@ -29,10 +29,27 @@ const Profile = ({ keycloak }) => {
   }
 
   return (
-    <Box sx={{ flexShrink: 0, ml: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+    <Box
+      sx={{
+        flexShrink: 0,
+        ml: 1,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+      }}
+    >
       {/* ?? ICON ONLY */}
-      <Divider orientation='vertical' flexItem sx={{ border: '2px solid #dfdee3', mr: 1 }} />
-      <Typography fontSize='0.85rem' fontWeight={700} color='text.primary' textTransform='capitalize'>
+      <Divider
+        orientation='vertical'
+        flexItem
+        sx={{ border: '2px solid #dfdee3', mr: 1 }}
+      />
+      <Typography
+        fontSize='0.85rem'
+        fontWeight={700}
+        color='text.primary'
+        textTransform='capitalize'
+      >
         {keycloak?.idTokenParsed?.name}
       </Typography>
       <IconButton

@@ -165,16 +165,16 @@ const NetUnitCapacity = ({
       config[`${month}.kbpsd`] = {
         editable: false,
         type: 'number1',
-        minWidth: 80,
-        widthT: 100,
+        minWidth: 120,
+        widthT: 120,
         format: valueFormat,
         title: 'KBPSD',
       }
       config[`${month}.ktpd`] = {
         editable: false,
         type: 'number1',
-        minWidth: 80,
-        widthT: 100,
+        minWidth: 120,
+        widthT: 120,
         format: valueFormat,
         title: 'KTPD',
       }

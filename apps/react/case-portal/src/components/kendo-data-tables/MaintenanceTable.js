@@ -10,6 +10,7 @@ import KendoDataTables from './index'
 import AopTabs from 'components/AopTabs'
 import { Box } from '@mui/material'
 import { DataService } from 'services/DataService'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 //import ElastomerMaintenanceTable from './ElastomerMaintenanceTable'
 const MaintenanceTable = () => {
   // State for tabs
@@ -432,12 +433,7 @@ const MaintenanceTable = () => {
         </Box>
       )}
       <div>
-        <Backdrop
-          open={loading}
-          sx={{ color: '#fff', zIndex: (t) => t.zIndex.drawer + 1 }}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
+        <LoaderBackdrop open={!!loading} />
 
         <KendoDataTables
           columns={basecols}

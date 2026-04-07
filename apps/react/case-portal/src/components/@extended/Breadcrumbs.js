@@ -44,10 +44,6 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
   const VERTICAL_NAME = verticalObject?.name
   const SITE_NAME = siteObject?.name
 
-  const location = useLocation()
-  const [main, setMain] = useState()
-  const [item, setItem] = useState()
-
   const [notification, setNotification] = useState({
     open: false,
     message: '',
@@ -214,6 +210,10 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
     }
   }
 
+  const location = useLocation()
+  const [main, setMain] = useState()
+  const [item, setItem] = useState()
+
   useEffect(() => {
     let title = item?.title
 
@@ -260,6 +260,20 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
   let breadcrumbContent = <Typography />
   let itemTitle = ''
 
+  // collapse item
+  // if (main && main.type === 'collapse') {
+  //   mainContent = (
+  //     // <Typography component={Link} to={document.location.pathname} variant="h6" sx={{ textDecoration: 'none' }} color="textSecondary">
+  //     <Typography
+  //       variant='h6'
+  //       sx={{ textDecoration: 'none' }}
+  //       color='textSecondary'
+  //     >
+  //       {main.title}
+  //     </Typography>
+  //   )
+  // }
+
   // items
   if (item && item.type === 'item') {
     itemTitle = item.title
@@ -277,6 +291,9 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
 
     const normalizedTitle = itemTitle?.toLowerCase().replace(/\s/g, '')
 
+    // console.log('normalizedTitle', normalizedTitle)
+
+    // if (['productionaop', 'consumptionaop'].includes(normalizedTitle)) {
     if (
       normalizedTitle === 'production&normsbasis' &&
       (VERTICAL_NAME?.toLowerCase() === 'meg' ||
@@ -359,11 +376,44 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
             direction='column'
             justifyContent='flex-start'
             alignItems='flex-start'
+            // sx={{ marginTop: '-18px' }}
           >
+            {/* <Grid item sx={{ ml: 1.5, display: none }}> */}
+            {/* <MuiBreadcrumbs aria-label='breadcrumb'> */}
+            {/* HIDE HOME OPTION FROM Navigators MENU */}
+            {/* <Typography
+                  component={Link}
+                  to='/home'
+                  color='textSecondary'
+                  variant='h6'
+                  sx={{ textDecoration: 'none' }}
+                >
+                  Home
+                </Typography> */}
+
+            {/* {mainContent} */}
+
+            {/* <Typography
+                  component='div'
+                  sx={{
+                    textDecoration: 'none',
+                    fontWeight: 800,
+                    color: 'black',
+                    // fontStyle: 'italic',
+                    fontSize: '1rem',
+                  }}
+                >
+                  {verticalName} / {siteName} / {plantName}
+                </Typography>
+                {itemContent}
+              </MuiBreadcrumbs>
+            </Grid> */}
+
             <Grid
               container
               sx={{
-                m: 0.5,
+                m: 0,
+                // p: 0.5,
                 width: '100%',
                 transition: 'none',
                 '&:hover': {
@@ -420,6 +470,17 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
                   </Box>
                 )}
               </Grid>
+              {/* <Stack spacing={0.5} sx={{ alignItems: 'center' }}>
+                <Grid item>
+                  <Chip
+                    color='primary'
+                    variant='outlined'
+                    // label={getRoleName(verticalId, item?.id)}
+                    className='role-name'
+                    sx={{ border: 'none' }} // Remove the border
+                  />
+                </Grid>
+              </Stack> */}
             </Grid>
 
             {/* HIDE THE TITLE NAME */}

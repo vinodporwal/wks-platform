@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
 @Data
 public class ReliabilityPerformanceDto {
 
-    private UUID id;
+    private String id;
     private Integer rowNo;
     private String parameter;
     private String uom;
@@ -30,10 +30,11 @@ public class ReliabilityPerformanceDto {
     private String updatedBy;
     private String remarks;
     private String aopYear;
-    private UUID plantId;
+    private String plantId;
     private String reportType;
     private String saveStatus;
 	private String errDescription;
 	 private String tableId;
+	 private String masterId;
 
 }

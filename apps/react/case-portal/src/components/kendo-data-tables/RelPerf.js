@@ -42,9 +42,15 @@ export default function RelPerf() {
   })
 
   const [snackbarOpenFinancial, setSnackbarOpenFinancial] = useState(false)
+  const [snackbarOpenCommonParameter, setSnackbarOpenCommonParameter] = useState(false)
   const [OpenFinancial, setOpenFinancial] = useState(false)
+  const [OpenCommonParameter, setOpenCommonParameter] = useState(false)
 
   const [snackbarDataFinancial, setSnackbarDataFinancial] = useState({
+    message: '',
+    severity: 'info',
+  })
+  const [snackbarDataCommonParameter, setSnackbarDataCommonParameter] = useState({
     message: '',
     severity: 'info',
   })
@@ -99,6 +105,7 @@ export default function RelPerf() {
 
   const [modifiedReliabilityCells, setModifiedReliabilityCells] = useState({})
   const [modifiedFinancialCells, setModifiedFinancialCells] = useState({})
+  const [modifiedCommonParameterCells, setModifiedCommonParameterCells] = useState({})
   const [modifiedMajorIncidentsCells, setModifiedMajorIncidentsCells] =
     useState({})
   const [
@@ -112,10 +119,15 @@ export default function RelPerf() {
   const [currentRowIdReliability, setCurrentRowIdReliability] = useState(null)
 
   const [financialRows, setFinancialRows] = useState([])
+  const [commonParameterRows, setCommonParameterRows] = useState([])
   const [remarkDialogOpenFinancial, setRemarkDialogOpenFinancial] =
     useState(false)
+  const [remarkDialogOpenCommonParameter, setRemarkDialogOpenCommonParameter] =
+    useState(false)
   const [currentRemarkFinancial, setCurrentRemarkFinancial] = useState('')
+  const [currentRemarkCommonParameter, setCurrentRemarkCommonParameter] = useState('')
   const [currentRowIdFinancial, setCurrentRowIdFinancial] = useState(null)
+  const [currentRowIdCommonParameter, setCurrentRowIdCommonParameter] = useState(null)
 
   // Major Reliability Incidents Grid
   const majorIncidentsColumns = [
@@ -167,6 +179,9 @@ export default function RelPerf() {
 
       const processedData1 = data.data.map((item, index) => ({
         ...item,
+        id: item?.id || index,
+        idFromAPI: item?.id,
+        rowNo: index + 1,
         originalRemark: item?.remarks || '',
       }))
 
@@ -181,7 +196,10 @@ export default function RelPerf() {
 
       const processedData2 = data2.data.map((item, index) => ({
         ...item,
+        id: item?.id || index,
+        idFromAPI: item?.id,
         originalRemark: item?.remarks || '',
+        rowNo: index + 1,
       }))
 
       setFinancialRows(processedData2)
@@ -195,6 +213,8 @@ export default function RelPerf() {
 
       const processedData3 = data3.data.map((item, index) => ({
         ...item,
+        id: item?.id || index,
+        idFromAPI: item?.id,
         originalRemark: item?.remarks || '',
         targetDate: toDateObject(item?.targetDate) || '',
       }))
@@ -219,11 +239,30 @@ export default function RelPerf() {
 
       const processedDatar = data4.data.map((item, index) => ({
         ...item,
+        id: item?.id || index,
+        idFromAPI: item?.id,
         originalRemark: item?.remarks || '',
         targetDate: toDateObject(item?.targetDate) || '',
       }))
 
       setReliabilityInitiativeRows(processedDatar)
+
+      var data5 = await FunctionalApiService.getReliabilityPerformance(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        'Common Parameter',
+      )
+
+      const processedData5 = data5.data.map((item, index) => ({
+        ...item,
+        id: item?.id || index,
+        idFromAPI: item?.id,
+        originalRemark: item?.remarks || '',
+        rowNo: index + 1,
+      }))
+
+      setCommonParameterRows(processedData5)
 
       setLoading(false)
     } catch (error) {
@@ -517,6 +556,12 @@ export default function RelPerf() {
     setCurrentRowIdReliability(dataItem.id)
     setRemarkDialogOpenReliability(true)
   }
+  const handleRemarkCellClickCommonParameter = (dataItem) => {
+    if (READ_ONLY) return
+    setCurrentRemarkCommonParameter(dataItem.remarks || '')
+    setCurrentRowIdCommonParameter(dataItem.id)
+    setRemarkDialogOpenCommonParameter(true)
+  }
 
   const saveIncidents = async (newRows) => {
     try {
@@ -524,7 +569,7 @@ export default function RelPerf() {
         initiative: row?.initiative,
         outcome: row?.outcome,
         bestAchieved: row?.bestAchieved,
-        id: row?.id,
+        id: row?.idFromAPI || null,
         recommendation: row?.recommendation,
         responsible: row?.responsible,
         targetDate: row?.targetDate
@@ -561,7 +606,7 @@ export default function RelPerf() {
         initiative: row?.initiative,
         outcome: row?.outcome,
         bestAchieved: row?.bestAchieved,
-        id: row?.id,
+        id: row?.idFromAPI || null,
         recommendation: row?.recommendation,
         responsible: row?.responsible,
         targetDate: row?.targetDate
@@ -590,17 +635,101 @@ export default function RelPerf() {
       // fetchData()
     }
   }
+  const saveChangesCommonParameter = React.useCallback(async () => {
+    setLoading(true)
+
+    try {
+      if (Object.keys(modifiedCommonParameterCells).length === 0) {
+        setSnackbarOpenCommonParameter(true)
+        setSnackbarDataCommonParameter({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        setLoading(false)
+        return
+      }
+
+      var rawData = Object.values(modifiedCommonParameterCells)
+      const data = rawData.filter((row) => row.inEdit)
+      if (data.length == 0) {
+        setSnackbarOpenCommonParameter(true)
+        setSnackbarDataCommonParameter({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        setLoading(false)
+        return
+      }
+
+      const requiredFields = ['remarks']
+      const validationMessage = validateFields(data, requiredFields)
+
+      if (validationMessage) {
+        setSnackbarOpenCommonParameter(true)
+        setSnackbarDataCommonParameter({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false) 
+        return
+      }
+      saveCommonParameter(data)
+    } catch (error) {
+      console.log('Error saving changes:', error)
+    }
+  }, [modifiedCommonParameterCells])
+  const saveCommonParameter = async (newRows) => {
+    try {
+      const payloadData = newRows.map((row) => ({
+        actual: row?.actual,
+        aop: row?.aop,
+        bestAchieved: row?.bestAchieved,
+        id: row?.idFromAPI || null,
+        limit: row?.limit,
+        plann: row?.plann,
+        rationale: row?.rationale,
+        remarks: row?.remarks,
+        reportType: row?.reportType,
+        masterId: row?.masterId,
+        aopYear: row?.aopYear,
+        plantId: row?.plantId,
+      }))
+
+      const response = await FunctionalApiService.saveReliabilityPerformance(
+        payloadData,
+        keycloak,
+      )
+
+      setSnackbarOpenFinancial(true)
+      setSnackbarDataFinancial({
+        message: 'Saved Successfully!',
+        severity: 'success',
+      })
+      setModifiedFinancialCells({})
+
+      fetchData()
+      return response
+    } catch (error) {
+      console.error('Error in saving data!', error)
+    } finally {
+      // fetchData()
+    }
+  }
   const saveFinancial = async (newRows) => {
     try {
       const payloadData = newRows.map((row) => ({
         actual: row?.actual,
         aop: row?.aop,
         bestAchieved: row?.bestAchieved,
-        id: row?.id,
+        id: row?.idFromAPI || null,
         limit: row?.limit,
         plann: row?.plann,
         rationale: row?.rationale,
         remarks: row?.remarks,
+        reportType: row?.reportType,
+        masterId: row?.masterId,
+        aopYear: row?.aopYear,
+        plantId: row?.plantId,
       }))
 
       const response = await FunctionalApiService.saveReliabilityPerformance(
@@ -629,11 +758,15 @@ export default function RelPerf() {
         actual: row?.actual,
         aop: row?.aop,
         bestAchieved: row?.bestAchieved,
-        id: row?.id,
+        id: row?.idFromAPI || null,
         limit: row?.limit,
         plann: row?.plann,
         rationale: row?.rationale,
         remarks: row?.remarks,
+        reportType: row?.reportType,
+        masterId: row?.masterId,
+        aopYear: row?.aopYear,
+        plantId: row?.plantId,
       }))
 
       const response = await FunctionalApiService.saveReliabilityPerformance(
@@ -1040,8 +1173,8 @@ export default function RelPerf() {
           ...gridPermissions,
           titleName: 'Reliability Performance',
           ExcelName: 'Reliability_Performance',
-          downloadExcelBtn: true,
-          uploadExcelBtn: true,
+          downloadExcelBtn: false,
+          uploadExcelBtn: false,
         }}
         columns={reliabilityPerformanceColumns}
         saveChanges={saveChangesReliabilityPerformance}
@@ -1083,6 +1216,34 @@ export default function RelPerf() {
         setOpenFinancial={setOpenFinancial}
         handleRemarkCellClick={handleRemarkCellClickFinancial}
         OpenFinancial={OpenFinancial}
+      />
+      {/* Common Parameter Grid */}
+      <KendoDataTables
+        rows={commonParameterRows}
+        setRows={setCommonParameterRows}
+        title='Common Parameter'
+        modifiedCells={modifiedCommonParameterCells}
+        setModifiedCells={setModifiedCommonParameterCells}
+        remarkDialogOpen={remarkDialogOpenCommonParameter}
+        setRemarkDialogOpen={setRemarkDialogOpenCommonParameter}
+        currentRemark={currentRemarkCommonParameter}
+        setCurrentRemark={setCurrentRemarkCommonParameter}
+        currentRowId={currentRowIdCommonParameter}
+        setCurrentRowId={setCurrentRowIdCommonParameter}
+        permissions={{
+          ...gridPermissions,
+          titleName: 'Common Parameter',
+          ExcelName: 'Common_Parameter',
+        }}
+        columns={financialAspectColumns}
+        saveChanges={saveChangesCommonParameter}
+        snackbarData={snackbarDataCommonParameter}
+        snackbarOpen={snackbarOpenCommonParameter}
+        setSnackbarOpen={setSnackbarOpenCommonParameter}
+        setSnackbarData={setSnackbarDataCommonParameter}
+        setOpenFinancial={setOpenCommonParameter}
+        handleRemarkCellClick={handleRemarkCellClickCommonParameter}
+        OpenFinancial={OpenCommonParameter}
       />
 
       {/* Major Reliability Incidents Grid */}

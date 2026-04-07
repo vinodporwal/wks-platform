@@ -594,7 +594,7 @@ const KendoDataTablesReports = ({
             columnMenu={ColumnMenuCheckboxFilter}
             filter='numeric'
             format={col.format}
-            width={col?.widthT || col?.fixedWidth}
+            width={col?.widthT || col?.fixedWidth || 130}
           />
         )
       }
@@ -605,7 +605,7 @@ const KendoDataTablesReports = ({
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
-            width={col?.fixedWidth || col?.width || undefined}
+            width={col?.fixedWidth || col?.width || 130}
             hidden={col.hidden}
             className={'k-number-right-disabled'}
             editable={col?.editable ? true : false}
@@ -813,7 +813,7 @@ const KendoDataTablesReports = ({
                 variant='contained'
                 onClick={handleExport}
                 // disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
-                disabled={isButtonDisabled || rows?.length === 0}
+                disabled={isButtonDisabled || READ_ONLY}
                 className='btn-export'
                 startIcon={<DownloadIcon fontSize='small' />}
               >
@@ -828,7 +828,7 @@ const KendoDataTablesReports = ({
                 // disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
 
                 //ANY ONE CAN EXPORT
-                disabled={isButtonDisabled || rows?.length === 0}
+                disabled={isButtonDisabled || READ_ONLY}
                 className='btn-export'
                 startIcon={<DownloadIcon fontSize='small' />}
               >
@@ -841,7 +841,7 @@ const KendoDataTablesReports = ({
                 variant='contained'
                 onClick={handleExport}
                 startIcon={<UploadIcon sx={{ fontSize: 16 }} />}
-                disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
+                disabled={isButtonDisabled || READ_ONLY}
                 className='btn-import'
               >
                 Import

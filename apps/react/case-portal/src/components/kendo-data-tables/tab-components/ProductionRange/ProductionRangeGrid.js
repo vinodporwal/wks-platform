@@ -10,6 +10,7 @@ import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-bas
 import { validateFields } from 'utils/validationUtils'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { ProductionRangeApiService } from 'services/production-range-api-service copy'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
   const [rows, setRows] = useState([])
   const [NormsRows, setNormsRows] = useState([])
@@ -457,12 +458,7 @@ const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       <Box>
         <KendoDataTables
           modifiedCells={modifiedCells}

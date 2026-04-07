@@ -14,7 +14,6 @@ export default function StepperNav() {
 
   const { items: menuItems } = useMenuContext()
   const { drawerOpen } = useSelector((state) => state.menu)
-
   const { verticalChange } = useSelector((state) => state.dataGridStore)
 
   const lowerVertName = verticalChange?.selectedVertical?.toLowerCase() || 'meg'
@@ -49,7 +48,7 @@ export default function StepperNav() {
         label: item.title,
         url: item.url,
         key: item.id,
-        icon: item.icon, // 🔥 use icon from config
+        icon: item.icon,
       }))
     },
     [collectItems],
@@ -86,7 +85,7 @@ export default function StepperNav() {
   }, [steps, location.pathname])
 
   // -------------------------
-  // Render
+  // Tabs UI
   // -------------------------
   const TabsElement = (
     <Box
@@ -101,30 +100,14 @@ export default function StepperNav() {
           navigate(steps[newValue].url)
         }}
         variant='scrollable'
-        scrollButtons={false} // no arrows
-        allowScrollButtonsMobile={false}
+        scrollButtons='auto' // ✅ FIXED
+        allowScrollButtonsMobile
         sx={{
           minHeight: 40,
 
-          /* 👇 Target the REAL scroll container */
-          '& .MuiTabs-scroller': {
-            overflowX: 'auto !important',
-
-            /* thin scrollbar */
-            '&::-webkit-scrollbar': {
-              height: '6px',
-            },
-            '&::-webkit-scrollbar-track': {
-              background: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              background: '#94a3b8',
-              borderRadius: '10px',
-            },
-
-            /* Firefox */
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#94a3b8 transparent',
+          // ✅ FORCE SINGLE LINE (NO WRAP BUG)
+          '& .MuiTabs-flexContainer': {
+            flexWrap: 'nowrap',
           },
 
           '& .MuiTabs-indicator': {
@@ -190,6 +173,9 @@ export default function StepperNav() {
     </Box>
   )
 
+  // -------------------------
+  // Render
+  // -------------------------
   return (
     <>
       {USE_FIXED ? (
@@ -201,6 +187,13 @@ export default function StepperNav() {
                 ? `${drawerWidth + 8}px`
                 : `${miniDrawerWidth + 10}px`,
               right: '8px',
+
+              // ✅ CRITICAL FIXES
+              width: `calc(100% - ${
+                drawerOpen ? drawerWidth + 16 : miniDrawerWidth + 18
+              }px)`,
+              overflow: 'hidden',
+
               zIndex: (theme) => (theme.zIndex?.appBar ?? 1100) + 1,
               transition: 'all 0.3s ease',
             }}

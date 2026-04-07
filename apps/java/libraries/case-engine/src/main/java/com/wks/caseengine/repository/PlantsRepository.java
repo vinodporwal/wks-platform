@@ -41,31 +41,23 @@ public interface PlantsRepository extends JpaRepository<Plants, UUID> {
       @Query(value = "Exec dbo.CPP_NMD_GetPlantConsumptionByMaterial @CPPPlantId = :plantId, @AOPYear = :year", nativeQuery = true)
       List<PlantConsumpProjection> findPlantConsumptionByMaterial(@Param("plantId") UUID plantId, @Param("year") String year);
 	
-      //get all the plants for given vertical and site
-    //   @Query(
-    //      value = "SELECT p.* FROM Plants p " +
-	// 			 "JOIN UserScreenMapping usm ON usm.PlantFKId = p.Id " + 
-	// 			 "WHERE usm.ScreenCode = :screenCode " +
-	// 			 "AND p.Vertical_FK_Id = :verticalId " +
+
+
+	//   @Query(
+  
+	// 	value = "SELECT p.* FROM Plants p " +
+	// 			 "where p.Vertical_FK_Id = :verticalId " +
 	// 			 "AND p.Site_FK_Id = :siteId",
 				 
     //      nativeQuery = true
     //    )
        
-    //   List<Plants> findUniqueNamesPlantsByVerticalAndSite1(@Param("verticalId") UUID verticalId, @Param("siteId") UUID siteId, @Param("screenCode") String screenCode);
+    //   List<Plants> findUniqueNamesPlantsByVerticalAndSite(@Param("verticalId") UUID verticalId, @Param("siteId") UUID siteId);
 
 
-
-	  @Query(
-  
-		value = "SELECT p.* FROM Plants p " +
-				 "where p.Vertical_FK_Id = :verticalId " +
-				 "AND p.Site_FK_Id = :siteId",
-				 
-         nativeQuery = true
-       )
-       
-      List<Plants> findUniqueNamesPlantsByVerticalAndSite(@Param("verticalId") UUID verticalId, @Param("siteId") UUID siteId);
-
-
+	@Query(value = "SELECT p.* FROM Plants p " +
+				 "WHERE p.Id IN (SELECT DISTINCT PlantFKId FROM UserScreenMapping WHERE ScreenCode = :screenCode AND verticalfkid = :verticalId) " +
+				 "AND p.Site_FK_Id = :siteId", nativeQuery = true)
+	List<Plants> findUniqueNamesPlantsByVerticalAndSite(@Param("verticalId") UUID verticalId, @Param("siteId") UUID siteId, @Param("screenCode") String screenCode);
+	
 }

@@ -65,6 +65,8 @@ from services.steam_service import (
 from services.demand_service import (
     calculate_all_demands,
     calculate_u4u_power,
+    calculate_u4u_lp_steam,
+    calculate_u4u_mp_steam,
     print_demand_summary,
 )
 from database.connection import get_connection
@@ -428,6 +430,106 @@ def calculate_stg_extraction_requirements_load_based(
 
 
 # ============================================================
+# NORM FETCH HELPER
+# ============================================================
+
+def _fetch_lp_norm(month: int, year: int, utility_name: str, material_name: str) -> float:
+    """Fetch a single steam norm from NormsMonthDetail for the given month/year."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT nmd.Norms
+            FROM NormsMonthDetail nmd
+            INNER JOIN NormsHeader nh ON nh.Id = nmd.NormsHeader_FK_Id
+            INNER JOIN Plants p ON p.Id = nh.Plant_FK_Id
+            INNER JOIN FinancialYearMonth fym ON fym.Id = nmd.FinancialYearMonth_FK_Id
+            WHERE fym.Month = ? AND fym.Year = ?
+              AND p.Name = 'NMD - Utility Plant'
+              AND nh.UtilityName = ?
+              AND nh.MaterialName = ?
+              AND nh.IsActive = 1
+        """, (month, year, utility_name, material_name))
+        row = cursor.fetchone()
+        return float(row[0]) if row and row[0] is not None else 0.0
+    except Exception as e:
+        print(f"  [NORM FETCH] Error fetching norm {utility_name}/{material_name}: {e}")
+        return 0.0
+    finally:
+        conn.close()
+
+
+def _fetch_cpp_norm(month: int, year: int, utility_name: str, material_name: str) -> float:
+    """
+    Fetch a norm from CPPNorms (AOP norms) using the month's column (Apr_Norms, May_Norms, etc.).
+    Filters by FinancialYear derived from month/year (Apr-Mar fiscal year convention).
+    Used for MP steam norms where NormsMonthDetail has zero/incorrect values.
+    """
+    month_col_map = {
+        1: 'Jan_Norms', 2: 'Feb_Norms',  3: 'Mar_Norms', 4: 'Apr_Norms',
+        5: 'May_Norms', 6: 'Jun_Norms',  7: 'Jul_Norms', 8: 'Aug_Norms',
+        9: 'Sep_Norms', 10: 'Oct_Norms', 11: 'Nov_Norms', 12: 'Dec_Norms',
+    }
+    col = month_col_map.get(month, 'Apr_Norms')
+    # Financial year: Apr-Mar convention. Apr(4)-Dec(12) → year/year+1, Jan(1)-Mar(3) → year-1/year
+    if month >= 4:
+        financial_year = f"{year}-{str(year + 1)[-2:]}"
+    else:
+        financial_year = f"{year - 1}-{str(year)[-2:]}"
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(f"""
+            SELECT TOP 1 cn.{col}
+            FROM CPPNorms cn
+            INNER JOIN NormsHeader nh ON nh.Id = cn.NormsHeader_FK_Id
+            INNER JOIN Plants p ON p.Id = nh.Plant_FK_Id
+            WHERE p.Name = 'NMD - Utility Plant'
+              AND nh.UtilityName = ?
+              AND nh.MaterialName = ?
+              AND nh.IsActive = 1
+              AND cn.FinancialYear = ?
+        """, (utility_name, material_name, financial_year))
+        row = cursor.fetchone()
+        return float(row[0]) if row and row[0] is not None else 0.0
+    except Exception as e:
+        print(f"  [CPP NORM FETCH] Error fetching {utility_name}/{material_name}: {e}")
+        return 0.0
+    finally:
+        conn.close()
+
+
+def _fetch_mp_tsc_qty(month: int, year: int) -> float:
+    """
+    Fetch Treated Spent Caustic (TSC) generation quantity (KL) for the month/year.
+    TSC qty is stored in NormsMonthDetail.QTY for UtilityName='Treated Spent Caustic',
+    MaterialName='MP Steam_Dis'.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT nmd.QTY
+            FROM NormsMonthDetail nmd
+            INNER JOIN NormsHeader nh ON nh.Id = nmd.NormsHeader_FK_Id
+            INNER JOIN Plants p ON p.Id = nh.Plant_FK_Id
+            INNER JOIN FinancialYearMonth fym ON fym.Id = nmd.FinancialYearMonth_FK_Id
+            WHERE fym.Month = ? AND fym.Year = ?
+              AND p.Name = 'NMD - Utility Plant'
+              AND nh.UtilityName = 'Treated Spent Caustic'
+              AND nh.MaterialName = 'MP Steam_Dis'
+              AND nh.IsActive = 1
+        """, (month, year))
+        row = cursor.fetchone()
+        return float(row[0]) if row and row[0] is not None else 0.0
+    except Exception as e:
+        print(f"  [MP TSC QTY FETCH] Error: {e}")
+        return 0.0
+    finally:
+        conn.close()
+
+
+# ============================================================
 # USD ITERATION MAIN FUNCTION
 # ============================================================
 
@@ -445,6 +547,8 @@ def usd_iterate(
     shp_fixed: float,
     bfw_ufu: float = 0.0,
     export_available: bool = False,
+    dm_process: float = 54779.0,       # DM Water process consumption (M3)
+    dm_fixed: float = 0.0,             # DM Water fixed consumption (M3)
 ) -> dict:
     """
     Execute USD iteration loop to balance power and steam.
@@ -642,7 +746,7 @@ def usd_iterate(
     
     # Other utilities (process values from defaults)
     bfw_process = 0.0
-    dm_process = 54779.0
+    dm_process_display = dm_process + dm_fixed
     cw1_process = 15194.0
     cw2_process = 9016.0
     air_process = 6095102.0
@@ -650,7 +754,7 @@ def usd_iterate(
     effluent_process = 243000.0
     
     print(f"  | BFW                  | M3     | {0:>13,.2f} | {bfw_process:>13,.2f} | {'(calc)':>13} | {'(calc)':>13} |")
-    print(f"  | DM Water             | M3     | {0:>13,.2f} | {dm_process:>13,.2f} | {'(calc)':>13} | {'(calc)':>13} |")
+    print(f"  | DM Water             | M3     | {dm_fixed:>13,.2f} | {dm_process:>13,.2f} | {'(calc)':>13} | {'(calc)':>13} |")
     print(f"  | Cooling Water 1      | KM3    | {0:>13,.2f} | {cw1_process:>13,.2f} | {0:>13,.2f} | {cw1_process:>13,.2f} |")
     print(f"  | Cooling Water 2      | KM3    | {0:>13,.2f} | {cw2_process:>13,.2f} | {'(calc)':>13} | {'(calc)':>13} |")
     print(f"  | Compressed Air       | NM3    | {0:>13,.2f} | {air_process:>13,.2f} | {'(calc)':>13} | {'(calc)':>13} |")
@@ -701,6 +805,8 @@ def usd_iterate(
     final_steam_balance = None
     final_shp_capacity = None
     final_u4u_power = None
+    final_u4u_lp_steam = None
+    final_u4u_mp_steam = None
     final_hrsg_availability = None
     final_lp_balance = None  # STG load-based LP balance
     final_mp_balance = None  # STG load-based MP balance
@@ -711,6 +817,34 @@ def usd_iterate(
     # KEY: Start with utility aux power = 0, then iterate
     previous_utility_aux_mwh = 0.0
     current_utility_aux_mwh = 0.0
+
+    # LP U4U convergence tracking
+    previous_lp_u4u_mt = 0.0
+    LP_U4U_TOLERANCE = 0.1  # MT tolerance for LP U4U convergence
+
+    # Fetch LP steam U4U norms from DB once (norms are fixed for the month/year)
+    # These are fetched from NormsMonthDetail (CPPNorms table) per month/year
+    _lp_u4u_norm_bfw   = _fetch_lp_norm(month, year, 'Boiler Feed Water',  'LP Steam_Dis')
+    _lp_u4u_norm_hrsg1 = _fetch_lp_norm(month, year, 'HRSG1_SHP STEAM',    'LP Steam_Dis')
+    _lp_u4u_norm_hrsg2 = _fetch_lp_norm(month, year, 'HRSG2_SHP STEAM',    'LP Steam_Dis')
+    _lp_u4u_norm_hrsg3 = _fetch_lp_norm(month, year, 'HRSG3_SHP STEAM',    'LP Steam_Dis')
+
+    # LP U4U running value — updated each iteration using previous iteration HRSG output.
+    # Starts at 0 for the first iteration; converges as HRSG dispatch stabilises.
+    _prev_lp_u4u_mt = 0.0
+    _lp_u4u_from_prev_iter = 0.0  # Value of _prev_lp_u4u_mt BEFORE update — used for convergence check
+
+    # Fetch MP steam U4U norms from DB once (fixed for the month/year)
+    # MP steam genuine U4U: Treated Spent Caustic only (LP PRDS is already in steam cascade mp_for_lp)
+    _mp_u4u_norm_tsc     = _fetch_cpp_norm(month, year, 'Treated Spent Caustic','MP Steam_Dis')
+    # TSC quantity is fixed for the month (from NormsMonthDetail QTY column)
+    _mp_u4u_tsc_qty_kl = _fetch_mp_tsc_qty(month, year)
+    print(f"  [MP U4U] TSC norm: {_mp_u4u_norm_tsc:.6f}  TSC qty: {_mp_u4u_tsc_qty_kl:.2f} KL")
+
+    # MP U4U running value — updated each iteration as lp_from_prds changes.
+    _prev_mp_u4u_mt = 0.0
+    _mp_u4u_from_prev_iter = 0.0  # Value of _prev_mp_u4u_mt BEFORE update — for convergence check
+    MP_U4U_TOLERANCE = 0.1  # MT tolerance for MP U4U convergence
     
     # STG Reduction tracking (for SHP balance)
     stg_reduction_mwh = 0.0  # How much to reduce STG generation
@@ -872,7 +1006,8 @@ def usd_iterate(
                 lp_fixed=lp_fixed,
                 bfw_ufu=bfw_ufu,
                 stg_lp_extraction_tph=extraction_data["lp_extraction_tph"],
-                stg_operating_hours=stg_op_hours
+                stg_operating_hours=stg_op_hours,
+                lp_ufu_mt=_prev_lp_u4u_mt if _prev_lp_u4u_mt > 0 else None,
             )
             mp_for_lp = lp_balance["mp_for_prds_lp"]
             mp_balance = calculate_mp_balance_stg_based(
@@ -880,7 +1015,8 @@ def usd_iterate(
                 mp_fixed=mp_fixed,
                 mp_for_lp=mp_for_lp,
                 stg_mp_extraction_tph=extraction_data["mp_extraction_tph"],
-                stg_operating_hours=stg_op_hours
+                stg_operating_hours=stg_op_hours,
+                mp_ufu_mt=_prev_mp_u4u_mt if _prev_mp_u4u_mt > 0 else None,
             )
             
             print(f"\n  [STG EXTRACTION - Load Based]")
@@ -953,7 +1089,9 @@ def usd_iterate(
             shp_process=shp_process,
             shp_fixed=shp_fixed,
             bfw_ufu=bfw_ufu,
-            stg_shp_power=stg_shp_required
+            stg_shp_power=stg_shp_required,
+            lp_ufu_mt=_prev_lp_u4u_mt if _prev_lp_u4u_mt > 0 else None,
+            mp_ufu_mt=_prev_mp_u4u_mt if _prev_mp_u4u_mt > 0 else None,
         )
         
         shp_demand = steam_balance["summary"]["total_shp_demand"]
@@ -1182,10 +1320,9 @@ def usd_iterate(
         bfw_fixed = 300.0  # Fixed BFW consumption
         bfw_total_estimate = bfw_hrsg + bfw_hp_prds + bfw_mp_prds + bfw_lp_prds + bfw_fixed
         
-        # DM = 0.86 * BFW + Process DM (54,779 M3)
+        # DM = 0.86 * BFW + Process DM + Fixed DM
         dm_for_bfw = bfw_total_estimate * NORM_DM_PER_M3_BFW
-        dm_process = 54779.0  # Process DM consumption
-        dm_total_estimate = dm_for_bfw + dm_process
+        dm_total_estimate = dm_for_bfw + dm_process + dm_fixed
         
         # CW1 = Process (fixed)
         cw1_total_estimate = 15194.0  # Process demand
@@ -1228,6 +1365,56 @@ def usd_iterate(
             oxygen_total_mt=oxygen_total,
             effluent_total_m3=effluent_total,
         )
+
+        # Calculate U4U LP Steam from utilities (BFW deaerator + HRSG drum heating)
+        # Extract per-HRSG SHP output from hrsg_dispatch_result
+        # Normalize name by removing dashes/spaces so "HRSG-2" matches "HRSG2"
+        _hrsg_dispatch_list = hrsg_dispatch_result.get("hrsg_dispatch", []) if hrsg_dispatch_result else []
+        _shp_hrsg1 = 0.0
+        _shp_hrsg2 = 0.0
+        _shp_hrsg3 = 0.0
+        for _h in _hrsg_dispatch_list:
+            _hname = _h.get("name", "").upper().replace("-", "").replace(" ", "")
+            _shp_mt = _h.get("total_shp_mt", 0.0)
+            if "HRSG1" in _hname:
+                _shp_hrsg1 = _shp_mt
+            elif "HRSG2" in _hname:
+                _shp_hrsg2 = _shp_mt
+            elif "HRSG3" in _hname:
+                _shp_hrsg3 = _shp_mt
+        u4u_lp_steam = calculate_u4u_lp_steam(
+            bfw_total_m3=bfw_total_estimate,
+            shp_from_hrsg1_mt=_shp_hrsg1,
+            shp_from_hrsg2_mt=_shp_hrsg2,
+            shp_from_hrsg3_mt=_shp_hrsg3,
+            norm_bfw=_lp_u4u_norm_bfw,
+            norm_hrsg1=_lp_u4u_norm_hrsg1,
+            norm_hrsg2=_lp_u4u_norm_hrsg2,
+            norm_hrsg3=_lp_u4u_norm_hrsg3,
+        )
+        # Track previous LP U4U value (before update) for convergence check
+        _lp_u4u_from_prev_iter = _prev_lp_u4u_mt
+        # Update running LP U4U for the NEXT iteration's steam balance calculation
+        _prev_lp_u4u_mt = u4u_lp_steam["total_mt"]
+        
+        # LP U4U convergence: compare current vs previous iteration total
+        current_lp_u4u_mt = u4u_lp_steam.get("total_mt", 0.0)
+        lp_u4u_error = abs(current_lp_u4u_mt - _lp_u4u_from_prev_iter)
+
+        # -----------------------------------------------------------
+        # MP U4U: MP steam consumed by Treated Spent Caustic only.
+        # LP Steam via PRDS is already in mp_for_lp (steam cascade) — not added here.
+        # -----------------------------------------------------------
+        u4u_mp_steam = calculate_u4u_mp_steam(
+            tsc_qty_kl=_mp_u4u_tsc_qty_kl,
+            norm_tsc=_mp_u4u_norm_tsc,
+        )
+        # Track previous MP U4U (before update) for convergence check
+        _mp_u4u_from_prev_iter = _prev_mp_u4u_mt
+        # Update for NEXT iteration's steam balance calculation
+        _prev_mp_u4u_mt = u4u_mp_steam["total_mt"]
+        current_mp_u4u_mt = u4u_mp_steam.get("total_mt", 0.0)
+        mp_u4u_error = abs(current_mp_u4u_mt - _mp_u4u_from_prev_iter)
         
         # Total U4U = Power Aux + Utility Power
         utility_power_mwh = u4u_power["utility_power"]["total_mwh"]
@@ -1274,10 +1461,16 @@ def usd_iterate(
         print(f"  | Power Aux Error (MWh)            | {aux_power_error:>14.6f} |                |")
         print(f"  | SHP Deficit (MT)                 | {shp_deficit:>14.2f} | {previous_shp_deficit or 0:>14.2f} |")
         print(f"  | SHP Deficit Error (MT)           | {shp_deficit_error:>14.2f} |                |")
+        print(f"  | LP U4U (MT)                      | {current_lp_u4u_mt:>14.2f} | {_lp_u4u_from_prev_iter:>14.2f} |")
+        print(f"  | LP U4U Error (MT)                | {lp_u4u_error:>14.2f} |                |")
+        print(f"  | MP U4U (MT)                      | {current_mp_u4u_mt:>14.2f} | {_mp_u4u_from_prev_iter:>14.2f} |")
+        print(f"  | MP U4U Error (MT)                | {mp_u4u_error:>14.2f} |                |")
         print(f"  | STG Reduction (MWh)              | {stg_reduction_mwh:>14.2f} |                |")
         print(f"  | Import Compensation (MWh)        | {import_compensation_mwh:>14.2f} |                |")
         print(f"  +----------------------------------+----------------+----------------+")
         print(f"  | Tolerance (MWh)                  | {USD_TOLERANCE:>14.6f} |                |")
+        print(f"  | LP U4U Tolerance (MT)           | {LP_U4U_TOLERANCE:>14.6f} |                |")
+        print(f"  | MP U4U Tolerance (MT)           | {MP_U4U_TOLERANCE:>14.6f} |                |")
         print(f"  +----------------------------------+----------------+----------------+")
         
         # Record iteration
@@ -1307,12 +1500,15 @@ def usd_iterate(
         
         # ---------------------------------------------------------
         # STEP 3g: Check Convergence
-        # Converged when BOTH:
+        # Converged when ALL THREE:
         # 1. Power Aux stabilized (error <= tolerance)
         # 2. SHP can be met (deficit <= 0)
+        # 3. LP U4U stabilized (error <= tolerance)
         # ---------------------------------------------------------
         power_converged = aux_power_error <= USD_TOLERANCE
         shp_converged = can_meet_shp
+        lp_u4u_converged = lp_u4u_error <= LP_U4U_TOLERANCE
+        mp_u4u_converged = mp_u4u_error <= MP_U4U_TOLERANCE
         
         # ---------------------------------------------------------
         # STEP 3g.1: EXCESS STEAM BALANCING (NEW DISPATCH LOGIC)
@@ -1461,24 +1657,30 @@ def usd_iterate(
                 iteration_record["status"] = "SHP_EXCESS_RECOVERY"
         
         # Now check for final convergence
-        if power_converged and shp_converged and not stg_increased:
-            print(f"\n  [CONVERGED] Both Power and Steam balanced!")
+        if power_converged and shp_converged and lp_u4u_converged and mp_u4u_converged and not stg_increased:
+            print(f"\n  [CONVERGED] Power, SHP, LP U4U, and MP U4U all balanced!")
             print(f"       Power Aux Error: {aux_power_error:.6f} MWh <= {USD_TOLERANCE} MWh")
             print(f"       SHP Deficit: {shp_deficit:.2f} MT <= 0 (CAN MEET)")
+            print(f"       LP U4U Error: {lp_u4u_error:.2f} MT <= {LP_U4U_TOLERANCE} MT")
+            print(f"       MP U4U Error: {mp_u4u_error:.2f} MT <= {MP_U4U_TOLERANCE} MT")
             
             iteration_record["action"] = "CONVERGED"
             iteration_record["status"] = "CONVERGED"
             iteration_history.append(iteration_record)
             converged = True
-            
-            # Store final values
+
+            # Store final values — steam_balance already uses previous-iter LP/MP U4U
+            # (which converge to the same value as current-iter U4U at convergence)
             final_dispatch = current_dispatch
             final_power_result = power_result
             final_steam_balance = steam_balance
             final_shp_capacity = shp_capacity
             final_hrsg_availability = hrsg_availability
-            final_lp_balance = lp_balance  # STG load-based LP balance
-            final_mp_balance = mp_balance  # STG load-based MP balance
+            final_lp_balance = lp_balance
+            final_mp_balance = mp_balance
+            final_u4u_power = u4u_power  # Store final U4U calculation for Excel
+            final_u4u_lp_steam = u4u_lp_steam  # Store final LP steam U4U for Excel
+            final_u4u_mp_steam = u4u_mp_steam  # Store final MP steam U4U for Excel
             break
         
         # ---------------------------------------------------------
@@ -1551,6 +1753,10 @@ def usd_iterate(
             print(f"\n  [CONTINUE] Power Aux not stabilized yet...")
             iteration_record["action"] = f"AUX_ERROR_{aux_power_error:.6f}_MWH"
             iteration_record["status"] = "POWER_ITERATING"
+        elif not lp_u4u_converged:
+            print(f"\n  [CONTINUE] LP U4U not stabilized yet...")
+            iteration_record["action"] = f"LP_U4U_ERROR_{lp_u4u_error:.2f}_MT"
+            iteration_record["status"] = "LP_U4U_ITERATING"
         
         iteration_history.append(iteration_record)
         
@@ -1563,6 +1769,7 @@ def usd_iterate(
         final_lp_balance = lp_balance  # STG load-based LP balance
         final_mp_balance = mp_balance  # STG load-based MP balance
         final_u4u_power = u4u_power  # Store final U4U calculation for Excel
+        final_u4u_lp_steam = u4u_lp_steam  # Store final LP steam U4U for Excel
         
         # ---------------------------------------------------------
         # Calculate STG limit based on steam availability for NEXT iteration
@@ -1594,6 +1801,7 @@ def usd_iterate(
         
         # Update for next iteration
         previous_utility_aux_mwh = current_utility_aux_mwh
+        previous_lp_u4u_mt = current_lp_u4u_mt
         previous_shp_deficit = shp_deficit
     
     # =========================================================
@@ -1761,6 +1969,12 @@ def usd_iterate(
         
         # U4U Power (final calculation matching console output)
         "final_u4u_power": final_u4u_power,
+
+        # U4U LP Steam (final calculation - BFW deaerator + HRSG drum heating)
+        "final_u4u_lp_steam": final_u4u_lp_steam,
+
+        # U4U MP Steam (final calculation - LP via PRDS + Treated Spent Caustic)
+        "final_u4u_mp_steam": final_u4u_mp_steam,
         
         # Iteration history
         "iteration_history": iteration_history,

@@ -37,7 +37,7 @@ import com.wks.caseengine.repository.PlantContributionSummaryT22Repository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
-
+import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
@@ -484,6 +484,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 
 	
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getPlantContributionFiveYearSummaryReport(String reportType, String plantId, String year) {
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -684,35 +685,52 @@ public class AOPReportServiceImpl implements AOPReportService {
 	public AOPMessageVM getSpecificConsumptionNormsT17Report(String reportType, String plantId, String year) {
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
-			
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 
-			List<Object[]> obj = getSpecificConsumptionNormsT17Data(plantId, year, reportType);
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			List<Object[]> obj=null;
+			if(vertical.getName().equalsIgnoreCase("MEG")) {
+				 obj = getSpecificConsumptionNormsT17DataDB2(plantId, year, reportType);
+			}else {
+				 obj = getSpecificConsumptionNormsT17Data(plantId, year, reportType);
+			}
+
 			
 			List<PlantContributionSummaryT17DTO> plantProductionData = new ArrayList<>();
 
 			for (Object[] row : obj) {
 			    PlantContributionSummaryT17DTO dto = new PlantContributionSummaryT17DTO();
-
-			    dto.setSno(row[0] != null ? Integer.parseInt(row[0].toString()) : 0);
-			    dto.setId(row[1] != null ? row[1].toString() : "");
-			    dto.setMaterial(row[2] != null ? row[2].toString() : "");
-			    dto.setPrice(row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0);
-			    dto.setUom(row[4] != null ? row[4].toString() : "");
-			    dto.setDesign(row[5] != null ? Double.parseDouble(row[5].toString()) : 0.0);
-			    dto.setDesignRsMt(row[6] != null ? Double.parseDouble(row[6].toString()) : 0.0);
-			    dto.setBestAchivedActual(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
-			    dto.setBestAchivedActualRsMT(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
-			    dto.setGlobalBenchmark(row[9] != null ? row[9].toString() : "0");
-			    dto.setGlobalBenchmarkRsMT(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
-			    dto.setBudgetPrevYear(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
-			    dto.setBudgetPrevYearRsMT(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
-			    dto.setActualPrevYear(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0);
-			    dto.setActualPrevYearRsMT(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
-			    dto.setProposedBudget(row[15] != null ? Double.parseDouble(row[15].toString()) : 0.0);
-			    dto.setProposedBudgetRsMT(row[16] != null ? Double.parseDouble(row[16].toString()) : 0.0);
-			    dto.setPlantFkId(row[17] != null ? row[17].toString() : "");
-			    dto.setAopYear(row[18] != null ? row[18].toString() : "");
-			    dto.setRemarks(row[19] != null ? row[19].toString() : "");
+			    if(reportType.equalsIgnoreCase("MaterialBalanceProposedNorms")) {
+			    	dto.setSno(row[0] != null ? Integer.parseInt(row[0].toString()) : 0);
+			    	 dto.setMaterial(row[1] != null ? row[1].toString() : "");
+			    	 dto.setProposedBudget(row[2] != null ? Double.parseDouble(row[2].toString()) : 0.0);
+			    	 dto.setPlantFkId(row[3] != null ? row[3].toString() : "");
+					 dto.setAopYear(row[4] != null ? row[4].toString() : "");
+					 dto.setType(row[5] != null ? row[5].toString() : "");
+			    }else {
+			    	dto.setSno(row[0] != null ? Integer.parseInt(row[0].toString()) : 0);
+				    dto.setId(row[1] != null ? row[1].toString() : "");
+				    dto.setMaterial(row[2] != null ? row[2].toString() : "");
+				    dto.setPrice(row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0);
+				    dto.setUom(row[4] != null ? row[4].toString() : "");
+				    dto.setDesign(row[5] != null ? Double.parseDouble(row[5].toString()) : 0.0);
+				    dto.setDesignRsMt(row[6] != null ? Double.parseDouble(row[6].toString()) : 0.0);
+				    dto.setBestAchivedActual(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
+				    dto.setBestAchivedActualRsMT(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
+				    dto.setGlobalBenchmark(row[9] != null ? row[9].toString() : "0");
+				    dto.setGlobalBenchmarkRsMT(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
+				    dto.setBudgetPrevYear(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
+				    dto.setBudgetPrevYearRsMT(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
+				    dto.setActualPrevYear(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0);
+				    dto.setActualPrevYearRsMT(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
+				    dto.setProposedBudget(row[15] != null ? Double.parseDouble(row[15].toString()) : 0.0);
+				    dto.setProposedBudgetRsMT(row[16] != null ? Double.parseDouble(row[16].toString()) : 0.0);
+				    dto.setPlantFkId(row[17] != null ? row[17].toString() : "");
+				    dto.setAopYear(row[18] != null ? row[18].toString() : "");
+				    dto.setRemarks(row[19] != null ? row[19].toString() : "");
+			    }
 
 			    plantProductionData.add(dto);
 			}			
@@ -815,8 +833,40 @@ public class AOPReportServiceImpl implements AOPReportService {
 		}
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
+	public List<Object[]> getSpecificConsumptionNormsT17DataDB2(String plantId, String aopYear, String reportType) {
+		try {
+   			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			String storedProcedure=null;
+			if(!verticalName.equalsIgnoreCase("MEG")) {
+				 storedProcedure = verticalName + "_" + site.getName() + "_GetSpecificConsumptionNormsReport";
+			}else {
+				storedProcedure = "GetSpecificConsumptionNormsReport";
+			}
+			
+			String sql = "EXEC " + storedProcedure
+					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
+
+			Query query = entityManager.createNativeQuery(sql);
+
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+			query.setParameter("reportType", reportType);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM updatePlantContributionFiveYearSummaryReport(
 			List<PlantContributionSummaryDTO> plantContributionSummaryDTOs) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -1371,6 +1421,33 @@ public class AOPReportServiceImpl implements AOPReportService {
 			default:
 				return "string";
 		}
+	}
+
+	@Override
+	@Transactional(transactionManager = "db2TransactionManager")
+	public AOPMessageVM updateSpecificConsumptionNormsT17ReportDB2(
+			List<PlantContributionSummaryT17DTO> plantContributionSummaryT17DTOs, String plantId, String year) {
+		List<PlantContributionSummaryBusinessDemandBasis> plantContributionSummaryBusinessDemandBasisList = new ArrayList<>();
+		try {
+			
+			for(PlantContributionSummaryT17DTO plantContributionSummaryT17DTO:plantContributionSummaryT17DTOs) {
+				if(plantContributionSummaryT17DTO.getId()!=null) {
+					Optional<PlantContributionSummaryBusinessDemandBasis> plantContributionSummaryBusinessDemandBasisOpt=	plantContributionSummaryBusinessDemandBasisRepository.findById(UUID.fromString(plantContributionSummaryT17DTO.getId()));
+					if(plantContributionSummaryBusinessDemandBasisOpt.isPresent()) {
+						PlantContributionSummaryBusinessDemandBasis plantContributionSummaryBusinessDemandBasis=plantContributionSummaryBusinessDemandBasisOpt.get();
+						plantContributionSummaryBusinessDemandBasis.setRemarks(plantContributionSummaryT17DTO.getRemarks());
+						plantContributionSummaryBusinessDemandBasisList.add(plantContributionSummaryBusinessDemandBasisRepository.save(plantContributionSummaryBusinessDemandBasis));
+					}
+				}
+			}
+		}catch (Exception ex) {
+			throw new RuntimeException("Failed to update data", ex);
+		}
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setData(plantContributionSummaryBusinessDemandBasisList);
+		aopMessageVM.setMessage("Data updated successfully");
+		return aopMessageVM;
 	}
 
 	@Override

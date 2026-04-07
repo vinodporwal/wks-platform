@@ -11,6 +11,7 @@ import crackercolumns from '../../assets/CrackerMaintenanceColumn.json'
 import crackercolumnsDMD from '../../assets/CrackerMaintenanceColumn_DMD.json'
 import KendoDataTables from './index'
 import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const MaintenanceProcessTableNMD = ({ viewOnly }) => {
   const keycloak = useSession()
 
@@ -474,12 +475,7 @@ const MaintenanceProcessTableNMD = ({ viewOnly }) => {
 
   return (
     <div>
-      <Backdrop
-        open={loading}
-        sx={{ color: '#fff', zIndex: (t) => t.zIndex.drawer + 1 }}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       <KendoDataTables
         columns={basecols}
         rows={rows}

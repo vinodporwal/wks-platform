@@ -96,7 +96,7 @@ export default function HeaderContent({ keycloak }) {
     '/user-form',
   ].includes(location.pathname)
 
-  // Individual dropdown visibility � extends HIDE_DASHBOARD_DROPDOWN with utils.js config
+  // Individual dropdown visibility ? extends HIDE_DASHBOARD_DROPDOWN with utils.js config
   const hideVertical =
     HIDE_DASHBOARD_DROPDOWN ||
     HIDE_VERTICAL_PATHS.some((s) => location.pathname.includes(s))
@@ -447,8 +447,10 @@ export default function HeaderContent({ keycloak }) {
     }
   }
 
+  const navigate = useNavigate()
+
   useEffect(() => {
-    console.log(1)
+    // console.log(1)
 
     if (!verticalFromDashboard?.v_id || !verticalFromDashboard?.sid) return
 
@@ -463,7 +465,7 @@ export default function HeaderContent({ keycloak }) {
     const site = sites.find((s) => s?.id === verticalFromDashboard?.sid)
 
     if (!site) {
-      console.log('Site not found:', verticalFromDashboard?.sid)
+      // console.log('Site not found:', verticalFromDashboard?.sid)
       return
     }
 
@@ -477,17 +479,77 @@ export default function HeaderContent({ keycloak }) {
     )
   }, [verticalFromDashboard?.sid, sites, dispatch])
 
-  const navigate = useNavigate()
-
   useEffect(() => {
-    console.log(2)
+    // console.log(2)
 
     if (!verticalFromDashboard?.v_id || !verticalFromDashboard?.sid) {
       return
     }
-    setTimeout(() => {
-      dispatch(openDrawer({ drawerOpen: true }))
-    }, 1500)
+    // setTimeout(() => {
+    //   dispatch(openDrawer({ drawerOpen: true }))
+    // }, 1500)
+    navigate('/production-norms-plan/configuration', { replace: true })
+  }, [verticalFromDashboard?.trigger])
+
+  useEffect(() => {
+    // console.log('--- Plant Effect Triggered ---')
+    // console.log('Dashboard PID:', verticalFromDashboard?.pid)
+    // console.log('Plants List:', plants)
+
+    if (!verticalFromDashboard?.pid) {
+      // console.log('⛔ No PID from dashboard')
+      return
+    }
+
+    if (!plants.length) {
+      // console.log('⛔ Plants not loaded yet')
+      return
+    }
+
+    const plant = plants.find((p) => p?.id === verticalFromDashboard?.pid)
+
+    // console.log('Matched Plant:', plant)
+
+    if (!plant) {
+      // console.log('❌ Plant not found for PID:', verticalFromDashboard?.pid)
+      return
+    }
+
+    // console.log('✅ Setting Plant:', plant.id, plant.name)
+
+    setSelectedPlant(plant.id)
+
+    localStorage.setItem(
+      'selectedPlant',
+      JSON.stringify({
+        id: plant.id,
+        name: plant.displayName ?? plant.name ?? '',
+      }),
+    )
+
+    dispatch(
+      setPlantObject({
+        id: plant.id,
+        name: plant.displayName ?? plant.name ?? '',
+      }),
+    )
+
+    dispatch(setSitePlantChange({ sitePlantChange: true }))
+
+    dispatch(
+      setPlantID({
+        plantId: plant.id,
+        plantName: plant.displayName ?? plant.name ?? '',
+      }),
+    )
+
+    // console.log('🚀 Dispatched plant to Redux')
+  }, [verticalFromDashboard?.pid, plants, dispatch])
+  // 4. Navigation Effect (Existing)
+  useEffect(() => {
+    if (!verticalFromDashboard?.v_id || !verticalFromDashboard?.sid) {
+      return
+    }
     navigate('/production-norms-plan/configuration', { replace: true })
   }, [verticalFromDashboard?.trigger])
 

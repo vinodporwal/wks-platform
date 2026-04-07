@@ -28,4 +28,5 @@ public class AnnualConfigPrizeDTO {
     private String grade;
     private String price;
     private String remarks;
+    private String UOM;
 }

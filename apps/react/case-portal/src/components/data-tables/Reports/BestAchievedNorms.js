@@ -627,7 +627,7 @@ export default function BestAchievedNorms() {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <LoaderBackdrop open={!!loading || !!isExporting} />
 
       {SITE_NAME !== 'VMD' && (
         <Typography component='div' className='grid-title' sx={{ mb: 0 }}>

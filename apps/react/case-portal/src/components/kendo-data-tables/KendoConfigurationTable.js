@@ -302,7 +302,6 @@ const ConfigurationAccordian = ({
 const ConfigurationTable = () => {
   const hasExecutedRef = useRef(false)
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const fetchDataTokenRef = useRef(0)
   const fetchConstantsTokenRef = useRef(0)
@@ -750,7 +749,9 @@ const ConfigurationTable = () => {
       )
       if (response?.code == 200) {
         const parsedData = JSON.parse(response?.data)
+
         setTabs(parsedData)
+
         setLoading(false)
       } else {
         setTabs([])
@@ -1440,12 +1441,14 @@ const ConfigurationTable = () => {
     )
   }, [openConfirmDialogRev])
 
-  if (
-    (lowerVertName == 'meg' || lowerVertName == 'pvc') &&
-    lowerVertName !== 'cracker'
-  ) {
+  if (lowerVertName == 'meg' && lowerVertName !== 'cracker') {
     // const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
-    const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
+    const megTabs = [
+      'Configuration',
+      'Constants',
+      'Report Manual Entry',
+      'NSR & Material Prices',
+    ]
     const auditYear = AOP_YEAR
     let displayYear = ''
     if (auditYear) {
@@ -1455,9 +1458,6 @@ const ConfigurationTable = () => {
     const megTabsDisplay = megTabs.map((tab) =>
       tab === 'Report Manual Entry' ? `${tab} ${displayYear}` : tab,
     )
-
-    // HERE LOADING1
-    //loading1
 
     return (
       <div>
@@ -1647,78 +1647,78 @@ const ConfigurationTable = () => {
           })}
         />
 
-          {lowerVertName === 'aromatics' &&
-            !IS_AROMATICS_HMD &&
-            tabs?.length > 0 && (
-          <Box
-            mt={1}
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              p: '3px',
-              bgcolor: 'rgba(0, 0, 0, 0.04)', // Light track background
-              borderRadius: '8px',
-              border: '1px solid rgba(0, 0, 0, 0.05)',
-            }}
-          >
-            <Typography
-              variant='caption'
+        {lowerVertName === 'aromatics' &&
+          !IS_AROMATICS_HMD &&
+          tabs?.length > 0 && (
+            <Box
+              mt={1}
               sx={{
-                px: 1,
-                fontWeight: 700,
-                color: 'text.secondary',
-                fontSize: '0.65rem',
-                textTransform: 'uppercase',
+                display: 'inline-flex',
+                alignItems: 'center',
+                p: '3px',
+                bgcolor: 'rgba(0, 0, 0, 0.04)', // Light track background
+                borderRadius: '8px',
+                border: '1px solid rgba(0, 0, 0, 0.05)',
               }}
             >
-              Revision
-            </Typography>
+              <Typography
+                variant='caption'
+                sx={{
+                  px: 1,
+                  fontWeight: 700,
+                  color: 'text.secondary',
+                  fontSize: '0.65rem',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Revision
+              </Typography>
 
-            <Box sx={{ display: 'flex', gap: '2px' }}>
-              {['1', '2', '3'].map((num) => {
-                const selected = revision === num
+              <Box sx={{ display: 'flex', gap: '2px' }}>
+                {['1', '2', '3'].map((num) => {
+                  const selected = revision === num
 
-                return (
-                  <Button
-                    key={num}
-                    onClick={() => handleOpenDialogRev(num)}
-                    variant='text'
-                    size='small'
-                    sx={{
-                      textTransform: 'none',
-                      fontSize: '0.72rem',
-                      minWidth: '45px',
-                      height: '24px',
-                      borderRadius: '6px',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  return (
+                    <Button
+                      key={num}
+                      onClick={() => handleOpenDialogRev(num)}
+                      variant='text'
+                      size='small'
+                      sx={{
+                        textTransform: 'none',
+                        fontSize: '0.72rem',
+                        minWidth: '45px',
+                        height: '24px',
+                        borderRadius: '6px',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
 
-                      // Active State
-                      ...(selected && {
-                        bgcolor: '#fff',
-                        color: '#0100cb',
-                        boxShadow: '0 2px 6px rgba(1, 0, 203, 0.15)',
-                        fontWeight: 800,
-                        '&:hover': { bgcolor: '#fff' },
-                      }),
-
-                      // Inactive State
-                      ...(!selected && {
-                        color: 'text.secondary',
-                        fontWeight: 500,
-                        '&:hover': {
-                          bgcolor: 'rgba(1, 0, 203, 0.04)',
+                        // Active State
+                        ...(selected && {
+                          bgcolor: '#fff',
                           color: '#0100cb',
-                        },
-                      }),
-                    }}
-                  >
-                    R{num}
-                  </Button>
-                )
-              })}
+                          boxShadow: '0 2px 6px rgba(1, 0, 203, 0.15)',
+                          fontWeight: 800,
+                          '&:hover': { bgcolor: '#fff' },
+                        }),
+
+                        // Inactive State
+                        ...(!selected && {
+                          color: 'text.secondary',
+                          fontWeight: 500,
+                          '&:hover': {
+                            bgcolor: 'rgba(1, 0, 203, 0.04)',
+                            color: '#0100cb',
+                          },
+                        }),
+                      }}
+                    >
+                      R{num}
+                    </Button>
+                  )
+                })}
+              </Box>
             </Box>
-          </Box>
-        )}
+          )}
         <Box>
           {(() => {
             const currentTabId = tabs[tabIndex]?.toLowerCase()
@@ -1732,6 +1732,7 @@ const ConfigurationTable = () => {
               case getTheId('Configuration'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={configurationRows}
                     loading={loading}
                     fetchData={fetchData}
@@ -1747,6 +1748,7 @@ const ConfigurationTable = () => {
               case getTheId('StartupLosses'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={startUpRows}
                     loading={loading}
                     fetchData={fetchData}
@@ -1762,6 +1764,7 @@ const ConfigurationTable = () => {
               case getTheId('Otherlosses'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={otherLossRows}
                     loading={loading}
                     fetchData={fetchData}
@@ -1777,6 +1780,7 @@ const ConfigurationTable = () => {
               case getTheId('ShutdownNorms'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={shutdownNormsRows}
                     loading={loading}
                     setRows={setShutdownRows}
@@ -1792,6 +1796,7 @@ const ConfigurationTable = () => {
               case getTheId('Constant'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={constantsRows}
                     loading={loading}
                     setRows={setConstantsRows}
@@ -1807,6 +1812,7 @@ const ConfigurationTable = () => {
               case getTheId('Receipe'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={gradeData}
                     loading={loading}
                     fetchData={fetchGradeData}
@@ -1822,6 +1828,7 @@ const ConfigurationTable = () => {
               case getTheId('ContineGradeChange'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={continiousGradeData}
                     loading={loading}
                     setRows={setContiniousGradeData}
@@ -1836,6 +1843,7 @@ const ConfigurationTable = () => {
               case getTheId('DisContineGradeChange'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={discontiniousGradeData}
                     loading={loading}
                     setRows={setDiscontiniousGradeData}
@@ -1851,6 +1859,7 @@ const ConfigurationTable = () => {
               case getTheId('Report Manual Entry'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={reportManualEntry}
                     loading={loading}
                     setRows={setReportManualEntry}
@@ -1867,6 +1876,7 @@ const ConfigurationTable = () => {
               case getTheId('PIO Impact'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={PIO}
                     loading={loading}
                     setRows={setPIO}
@@ -1881,6 +1891,7 @@ const ConfigurationTable = () => {
               case getTheId('Constants'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={productionRowsConstants}
                     loading={loading}
                     fetchData={fetchDataConstants}

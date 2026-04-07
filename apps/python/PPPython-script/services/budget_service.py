@@ -530,6 +530,8 @@ def calculate_budget_with_iteration(
         shp_fixed=shp_fixed,
         bfw_ufu=bfw_ufu,
         export_available=export_available,
+        dm_process=dm_process,
+        dm_fixed=dm_fixed,
     )
     
     # Print summary if verbose
@@ -695,6 +697,8 @@ def calculate_budget_with_iteration(
     
     # Calculate utilities
     utilities = calculate_utilities_from_dispatch(
+        month=month,
+        year=year,
         gt1_gross_mwh=gt1_gross,
         gt2_gross_mwh=gt2_gross,
         gt3_gross_mwh=gt3_gross,

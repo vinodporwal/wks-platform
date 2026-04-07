@@ -1,6 +1,7 @@
 import React from 'react'
 import Backdrop from '@mui/material/Backdrop'
-import CircularProgress from '@mui/material/CircularProgress'
+import Box from '@mui/material/Box'
+import Logo from 'assets/images/ril-logo2.png'
 
 const LoaderBackdrop = ({ open }) => {
   return (
@@ -8,25 +9,50 @@ const LoaderBackdrop = ({ open }) => {
       open={open}
       sx={{
         zIndex: (theme) => theme.zIndex.drawer + 1,
-        color: '#fff',
-        backdropFilter: 'blur(10px) saturate(120%)',
-        WebkitBackdropFilter: 'blur(10px) saturate(120%)',
-        background:
-          'radial-gradient(circle at center, rgba(255,255,255,0.06), rgba(0,0,0,0.55))',
-        animation: 'fadeIn 180ms ease-out',
-        '@keyframes fadeIn': {
-          from: { opacity: 0 },
-          to: { opacity: 1 },
-        },
+        backgroundColor: 'transparent',
+        // pointerEvents: 'none',
       }}
     >
-      <CircularProgress
-        size={48}
-        thickness={4}
+      <Box
         sx={{
-          filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.35))',
+          position: 'relative',
+          width: 50,
+          height: 50,
         }}
-      />
+      >
+        {/* Spinner Ring */}
+        <Box
+          sx={{
+            width: '100%',
+            height: '100%',
+            border: '3px solid rgba(0,0,0,0.15)',
+            borderTop: '3px solid #1976d2',
+            borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite',
+
+            '@keyframes spin': {
+              from: { transform: 'rotate(0deg)' },
+              to: { transform: 'rotate(360deg)' },
+            },
+          }}
+        />
+
+        {/* Center Logo (static) */}
+        <Box
+          component='img'
+          src={Logo}
+          alt='logo'
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: 20,
+            height: 20,
+            transform: 'translate(-50%, -50%)',
+            objectFit: 'contain',
+          }}
+        />
+      </Box>
     </Backdrop>
   )
 }

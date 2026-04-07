@@ -67,6 +67,7 @@ const ShutdownNorms = () => {
   const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
   const SCREEN_NAME = screenTitle?.title
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${SCREEN_NAME}_${AOP_YEAR}`
   const headerMap = generateHeaderNames(AOP_YEAR)
 
   const IS_PE_PP_VERTICAL = ['pe', 'pp'].includes(lowerVertName)
@@ -97,6 +98,11 @@ const ShutdownNorms = () => {
     lowerVertName === 'elastomer' &&
     SITE_NAME_LOWERCASE === 'jmd' &&
     PLANT_NAME_LOWERCASE === 'hiir'
+
+  const IS_AROMATICS_SEZ_PX4 =
+    lowerVertName === 'aromatics' &&
+    SITE_NAME_LOWERCASE === 'sez' &&
+    PLANT_NAME_LOWERCASE === 'px4'
 
   const IS_PVC_DMD =
     ['pvc'].includes(lowerVertName) && ['dmd'].includes(SITE_NAME_LOWERCASE)
@@ -623,7 +629,7 @@ const ShutdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || lowerVertName === 'pta' || IS_CHEMICAL) {
+      if (lowerVertName === 'vcm' || lowerVertName === 'pta' || IS_CHEMICAL || IS_AROMATICS_SEZ_PX4) {
         // Use shutdownNormsExportNonGrade for VCM
         response =
           await NormalOperationNormsApiService.shutdownNormsExportNonGrade(
@@ -631,6 +637,7 @@ const ShutdownNorms = () => {
             PLANT_ID,
             AOP_YEAR,
             gradeId,
+            EXCEL_EXPORT_TITLE,
           )
       } else if (IS_PE_PP_VERTICAL) {
         // Use shutdownNormsExport for PE/PP/Elastomer
@@ -678,7 +685,7 @@ const ShutdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || lowerVertName === 'pta' || IS_CHEMICAL) {
+      if (lowerVertName === 'vcm' || lowerVertName === 'pta' || IS_CHEMICAL || IS_AROMATICS_SEZ_PX4) {
         // Use saveShutdownNormsExcelNonGrade for VCM
         response =
           await NormalOperationNormsApiService.saveShutdownNormsExcelNonGrade(
@@ -800,7 +807,9 @@ const ShutdownNorms = () => {
 
       //VCM(VMD) && elastomer we required to show calculate btn
       showCalculate:
-        lowerVertName == 'elastomer' && SITE_NAME_LOWERCASE != 'jmd'
+        lowerVertName == 'elastomer' &&
+        SITE_NAME_LOWERCASE != 'jmd' &&
+        !(SITE_NAME_LOWERCASE === 'hmd' && PLANT_NAME_LOWERCASE === 'sbr')
           ? true
           : lowerVertName == 'meg' ||
               lowerVertName == 'vcm' ||
@@ -851,6 +860,7 @@ const ShutdownNorms = () => {
         IS_PVC_DMD ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta' ||
+        IS_AROMATICS_SEZ_PX4 ||
         IS_CHEMICAL
           ? false
           : true,
@@ -864,6 +874,7 @@ const ShutdownNorms = () => {
         IS_PE_HMD ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta' ||
+        IS_AROMATICS_SEZ_PX4 ||
         IS_CHEMICAL
           ? true
           : false,
@@ -879,6 +890,8 @@ const ShutdownNorms = () => {
         IS_PET_VERTICAL ||
         IS_PVC_VMD ||
         IS_ELASTOMER_JMD_HIIR ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_ELASTOMER_HMD_SBR ||
         IS_PVC_DMD
           ? true
           : false,
@@ -892,7 +905,7 @@ const ShutdownNorms = () => {
               IS_CHEMICAL
             ? `Shutdown Consumption (Norms/Quantity)`
             : SCREEN_NAME,
-      ExcelName: `${VERTICAL_NAME}-${SCREEN_NAME}`,
+      ExcelName: EXCEL_EXPORT_TITLE,
     },
     isOldYear,
   )
