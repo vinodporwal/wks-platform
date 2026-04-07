@@ -9,6 +9,8 @@ import Configuration from './Configuration'
 import Constants from './Constants'
 import TabAccessApiService from 'components/aop-phase-two/services/common/tabAccessApiService'
 import PIMSThroughput from './PIMSThroughput'
+import { ProductionNormsApiService } from 'components/aop-phase-two/services/coker/productionNormsApiService'
+import Notification from 'components/aop-phase-two/common/utilities/Notification'
 
 const ProductionNormsBasisCoker = () => {
   const keycloak = useSession()
@@ -28,6 +30,16 @@ const ProductionNormsBasisCoker = () => {
   const [loading, setLoading] = useState(false)
   const [tabs, setTabs] = useState([])
   const [availableTabs, setAvailableTabs] = useState([])
+  const [startDate, setStartDate] = useState(null)
+  const [endDate, setEndDate] = useState(null)
+  const [normCalculationLoading, setNormCalculationLoading] = useState(false)
+  const [refreshData, setRefreshData] = useState(false)
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+    autoHide: true,
+  })
 
   const getConfigurationTabsMatrix = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR || !SITE_ID || !VERTICAL_ID) return
@@ -84,6 +96,94 @@ const ProductionNormsBasisCoker = () => {
     getConfigurationAvailableTabs,
   ])
 
+  // Callback to receive dates from ConfigurationAccordian
+  const handleDatesChange = (start, end) => {
+    setStartDate(start)
+    setEndDate(end)
+  }
+
+  // Helper function to format date for API
+  const formatDateForAPI = (date) => {
+    if (!date) return null
+    const d = new Date(date)
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  // Handler for Load Norm Calculation button
+  const handleLoadNormCalculation = async () => {
+    if (!startDate || !endDate) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Please select both start date and end date',
+        severity: 'warning',
+        autoHide: true,
+      })
+      return
+    }
+
+    if (!PLANT_ID || !AOP_YEAR || !SITE_ID) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Missing required parameters',
+        severity: 'error',
+        autoHide: true,
+      })
+      return
+    }
+
+    setNormCalculationLoading(true)
+    try {
+      const periodFrom = formatDateForAPI(startDate)
+      const periodTo = formatDateForAPI(endDate)
+
+      const response =
+        await ProductionNormsApiService.loadButtonNormCalculation(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          SITE_ID,
+          periodFrom,
+          periodTo,
+        )
+
+      if (response?.code === 422) {
+        // Then show validation error after a delay
+        setTimeout(() => {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: response.message || 'Validation error occurred.',
+            severity: 'error',
+            autoHide: false,
+          })
+          setRefreshData(true)
+        }, 500)
+      } else {
+        // Code 200 - show only success notification
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message:
+            response?.message || 'Norm calculation completed successfully!',
+          severity: 'success',
+          autoHide: true,
+        })
+        setRefreshData(true)
+      }
+    } catch (error) {
+      console.error('Error in norm calculation:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to calculate norms. Please try again.',
+        severity: 'error',
+        autoHide: true,
+      })
+    } finally {
+      setNormCalculationLoading(false)
+    }
+  }
+
   const [start, end] = AOP_YEAR ? AOP_YEAR.split('-').map(Number) : [0, 0]
   const prevYearFormatted = `${start - 1}-${(start - 1 + 1).toString().slice(-2)}`
 
@@ -97,43 +197,57 @@ const ProductionNormsBasisCoker = () => {
   }
 
   // Dynamic tab list from API (filtered to exclude 'Report Manual Entry')
-  const tablist = tabs
+  const filteredTabs = tabs
     .map((tabId) => {
-      if (!tabId || !availableTabs.length) return ''
       const tabInfo = availableTabs.find(
         (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
       )
 
-      if (tabInfo) {
-        const originalName = tabInfo.displayName
-        return originalName
+      if (!tabInfo) return null
+
+      const name = tabInfo.displayName
+
+      if (name === 'Report Manual Entry' || name === 'Configuration') {
+        return null
       }
-      return tabId
+
+      return {
+        id: tabId,
+        name,
+      }
     })
-    .filter((tab) => tab !== null)
+    .filter(Boolean)
 
   const renderTab = () => {
-    if (!tabs.length || !availableTabs.length) {
+    if (!filteredTabs.length || !availableTabs.length) {
       return null
     }
 
-    const currentTabId = tabs[tabIndex]
+    const currentTabId = filteredTabs[tabIndex]?.id
     if (!currentTabId) return null
 
-    const currentTabName = getTabName(currentTabId)
+    const tabData = getTabName(currentTabId)
+    const currentTabName = typeof tabData === 'object' ? tabData.name : tabData
 
     switch (currentTabName) {
       case 'Configuration':
-        return <Configuration />
+        return (
+          <Configuration
+            startDate={startDate}
+            endDate={endDate}
+            refreshData={refreshData}
+          />
+        )
       case 'Constants':
-        return <Constants />
+        return <Constants startDate={startDate} endDate={endDate} />
       case 'PIMS Throughput':
-        return <PIMSThroughput />
+        return <PIMSThroughput startDate={startDate} endDate={endDate} />
       default:
         return null
     }
   }
 
+  console.log('filteredTabs', filteredTabs)
   return (
     <div>
       <Stack sx={{ mt: 1, mb: 1 }}>
@@ -142,6 +256,9 @@ const ProductionNormsBasisCoker = () => {
           AOP_YEAR={AOP_YEAR}
           isOldYear={isOldYear}
           isSummaryRequired={false}
+          onDatesChange={handleDatesChange}
+          // onLoadNormCalculation={handleLoadNormCalculation}
+          normCalculationLoading={normCalculationLoading}
         />
       </Stack>
 
@@ -154,13 +271,21 @@ const ProductionNormsBasisCoker = () => {
           <TabSection
             tabIndex={tabIndex}
             setTabIndex={setTabIndex}
-            tabs={tablist}
+            tabs={filteredTabs}
           />
         </Stack>
       )}
 
       {/* Tab Content */}
       <Box sx={{ mt: 2 }}>{renderTab()}</Box>
+      {/* Notification */}
+      <Notification
+        open={snackbarOpen}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarData.message}
+        severity={snackbarData.severity}
+        autoHide={snackbarData.autoHide}
+      />
     </div>
   )
 }
