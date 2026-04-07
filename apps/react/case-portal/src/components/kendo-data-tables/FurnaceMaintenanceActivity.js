@@ -42,6 +42,7 @@ const FurnaceMaintenanceActivity = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
   const [rows, setRows] = useState()
+  const [runLengthColumns, setRunLengthColumns] = useState([])
   const [furnaceDropdownData, setFurnaceDropdownData] = useState([])
   const [maintenanceActivityData, setMaintenanceActivityData] = useState([])
 
@@ -61,49 +62,49 @@ const FurnaceMaintenanceActivity = () => {
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
-  const columnsGrid = [
-    {
-      field: 'furnace',
-      title: 'Furnace',
-      width: 150,
-      editable: true,
-      type: 'dynamicDropdown',
-    },
-    {
-      field: 'maintenanceActivity',
-      title: 'Maintenance Activity',
-      width: 150,
-      editable: true,
-      type: 'dynamicDropdown',
-    },
-    {
-      field: 'maintStartDateTime',
-      title: 'Start Date',
-      widthT: 200,
-      editable: true,
-    },
-    {
-      field: 'maintEndDateTime',
-      title: 'End Date',
-      widthT: 200,
-      editable: true,
-    },
-    {
-      field: 'duration',
-      title: 'Duration (Days)',
-      widthT: 150,
-      type: 'number',
-      editable: false,
-      align: 'right',
-      headerAlign: 'right',
-    },
-    {
-      field: 'remarks',
-      title: 'Remark',
-      widthT: 300,
-      editable: true,
-    },
-  ]
+  // const columnsGrid = [
+  //   {
+  //     field: 'furnace',
+  //     title: 'Furnace',
+  //     width: 150,
+  //     editable: true,
+  //     type: 'dynamicDropdown',
+  //   },
+  //   {
+  //     field: 'maintenanceActivity',
+  //     title: 'Maintenance Activity',
+  //     width: 150,
+  //     editable: true,
+  //     type: 'dynamicDropdown',
+  //   },
+  //   {
+  //     field: 'maintStartDateTime',
+  //     title: 'Start Date',
+  //     widthT: 200,
+  //     editable: true,
+  //   },
+  //   {
+  //     field: 'maintEndDateTime',
+  //     title: 'End Date',
+  //     widthT: 200,
+  //     editable: true,
+  //   },
+  //   {
+  //     field: 'duration',
+  //     title: 'Duration (Days)',
+  //     widthT: 150,
+  //     type: 'number',
+  //     editable: false,
+  //     align: 'right',
+  //     headerAlign: 'right',
+  //   },
+  //   {
+  //     field: 'remarks',
+  //     title: 'Remark',
+  //     widthT: 300,
+  //     editable: true,
+  //   },
+  // ]
 
   const mapData = (data, tag) =>
     (data?.data?.furnaceMaintenanceActivity || []).map((item, i) => ({
@@ -152,54 +153,59 @@ const FurnaceMaintenanceActivity = () => {
     }
   }
 
-  const fetchData = async () => {
-    setLoading(true)
-    try {
-      // const response = await DataService.getFurnaceMaintenanceActivity(
-      //   keycloak,
-      //   PLANT_ID,
-      //   AOP_YEAR,
-      // )
-      // MOCK DATA FETCH
-      const mockResult = {
-        code: 200,
-        data: {
-          furnaceMaintenanceActivity: [
-            {
-              Id: 1,
-              furnace: 'H101-SF',
-              maintenanceActivity: 'TLE',
-              maintStartDateTime: new Date('2024-04-01').toISOString(),
-              maintEndDateTime: new Date('2024-04-05').toISOString(),
-              duration: 5,
-              remarks: 'Mock data 1',
-            },
-            {
-              Id: 2,
-              furnace: 'H103-SF',
-              maintenanceActivity: 'IBR',
-              maintStartDateTime: new Date('2024-05-10').toISOString(),
-              maintEndDateTime: new Date('2024-05-20').toISOString(),
-              duration: 11,
-              remarks: 'Mock data 2',
-            },
-          ],
-        },
-      }
+      const fetchData = async () => {
+      setLoading(true)
+      try {
+        const data2 = await DataService.getFurnaceMaintenanceActivity(keycloak, PLANT_ID, AOP_YEAR)
 
-      await new Promise((resolve) => setTimeout(resolve, 800)) // delay to simulate network
+        const toDateObject = (value) =>
+          value ? moment(value, 'MMM D, YYYY').toDate() : null
 
-      if (mockResult?.code === 200) {
-        setRows(mapData(mockResult, 'VMD'))
-      } else {
-        setRows([])
+        if (data2?.code === 200) {
+          const dateColumns =
+            data2?.data?.columns
+              ?.filter((col) => col.type === 'date')
+              ?.map((col) => col.field) || []
+
+          const processedData = data2.data?.data.map((item, index) => {
+            const converted = {}
+            dateColumns.forEach((field) => {
+              converted[field] = toDateObject(item[field])
+            })
+            return {
+              ...item,
+              ...converted,
+              Id: item.Id,
+              id: index,
+              DisplayName: item.DisplayName || item.displayName || item.Name,
+              originalRemark: item?.Remarks?.trim(),
+              Remarks: item?.Remarks?.trim(),
+              isEditable: true,
+            }
+          })
+
+          setRunLengthColumns(
+            (data2?.data?.columns || [])
+              .filter(
+                (col) =>
+                  !['DisplaySeq', 'AOPYear', 'Plant_FK_Id', 'Name', 'Id', 'isEditable'].includes(col.field),
+              )
+              .map((col) => ({
+                ...col,
+                editable: !['Pre_CR_Days', 'TA_Duration_Days', 'DisplayName'].includes(col.field),
+              })),
+          )
+
+          setRows( processedData)
+        } else {
+          setRows([])
+        }
+      } catch (e) {                          // ? fixed, no extra brace
+        console.error('Error loading previous year:', e)
+      } finally {
+        setLoading(false)
       }
-    } catch (e) {
-      console.error('Error loading previous year:', e)
-    } finally {
-      setLoading(false)
     }
-  }
 
   useEffect(() => {
     fetchFurnaceDropdownData()
@@ -330,6 +336,65 @@ const FurnaceMaintenanceActivity = () => {
       console.error('Error deleting Record!', error)
     }
   }
+  const saveCrackerRunLength = async (newRow) => {
+      setLoading(true)
+      try {
+        //const referenceRows = getRows('IBR Plan')[2]
+  
+        // build payload like you already do
+        const apiFields = runLengthColumns.map((col) => col.field)
+  
+        const payload = newRow.map((row, idx) => {
+          const obj = {}
+          apiFields.forEach((field) => {
+            let value = row[field]
+            const colDef = runLengthColumns.find((col) => col.field === field)
+            if (colDef?.type === 'date' && value instanceof Date) {
+              obj[field] = value
+            } else {
+              obj[field] = value ?? null
+            }
+          })
+          return obj
+        })
+  
+  
+        const response = await DataService.saveCrackerRunLength(
+          PLANT_ID,
+          payload,
+          keycloak,
+          AOP_YEAR,
+        )
+  
+        if (response?.code == 200) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Data Saved Successfully!',
+            severity: 'success',
+          })
+          setModifiedCells({})
+        } else {
+          setSnackbarOpen(true)
+          setSnackbarData({ message: 'Data Save Failed!', severity: 'error' })
+        }
+        return response
+      } catch (error) {
+        console.error('Error saving data:', error)
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'Error saving data', severity: 'error' })
+      } finally {
+        fetchData()
+        setLoading(false)
+      }
+    }
+  
+  const saveChangesRunLength = React.useCallback(async () => {
+      try {
+        saveCrackerRunLength(Object.values(modifiedCells))
+      } catch (error) {
+        console.log('Error saving changes:', error)
+      }
+    }, [modifiedCells])
 
   return (
     <React.Fragment>
@@ -337,14 +402,14 @@ const FurnaceMaintenanceActivity = () => {
         modifiedCells={modifiedCells}
         rows={rows}
         setRows={setRows}
-        columns={columnsGrid}
+        columns={runLengthColumns}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
         setCurrentRowId={setCurrentRowId}
-        saveChanges={saveChanges}
+        saveChanges={saveChangesRunLength}
         handleRemarkCellClick={handleRemarkCellClick}
         loading={loading}
         fetchData={fetchData}
