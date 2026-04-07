@@ -46,6 +46,7 @@ export const NoSpinnerNumericEditor = ({ dataItem, field, onChange }) => {
         value={localValue}
         onChange={handleChange}
         autoComplete='off'
+        maxLength={maxLength}
         sx={{
           fontSize: '0.8125rem',
           fontWeight: 600,

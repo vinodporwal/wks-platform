@@ -91,6 +91,14 @@ const NSRAndMaterialPrices = () => {
       editable: false,
       widthT: 200,
     },
+
+    {
+      field: 'UOM',
+      title: 'UOM',
+      editable: false,
+      widthT: 100,
+    },
+
     {
       field: 'price',
       title: 'Price',

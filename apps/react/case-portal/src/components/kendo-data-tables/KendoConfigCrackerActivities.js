@@ -822,24 +822,16 @@ const DecokingConfig = () => {
       const row = newRows[i]
       const rowLabel = row.DisplayName || `Row ${i + 1}`
 
-      console.log(`\n?? Validating ${rowLabel}`, row)
-
-      // Only apply rule when IsCR is true
       if (row.IsCR === true) {
         const post = row.Post_CR_Days
         const pre = row.Pre_CR_Days
 
-        console.log('IsCR = true')
-        console.log('Post_CR_Days:', post)
-        console.log('Pre_CR_Days:', pre)
-
-        // ? blank / empty / whitespace
+        // 1. Keep the empty check
         if (
           post === null ||
           post === undefined ||
           (typeof post === 'string' && post.trim() === '')
         ) {
-          console.error('? Post_CR_Days is blank')
           return {
             valid: false,
             message: `Error in ${rowLabel}: Post_CR_Days must be filled when IsCR is true`,
@@ -849,31 +841,25 @@ const DecokingConfig = () => {
         const postNum = Number(post)
         const preNum = Number(pre)
 
-        // ? non-numeric
+        // 2. Keep the numeric check
         if (isNaN(postNum) || isNaN(preNum)) {
-          console.error('? Non-numeric CR days')
           return {
             valid: false,
             message: `Error in ${rowLabel}: Pre_CR_Days and Post_CR_Days must be numeric`,
           }
         }
 
-        // ? Post >= Pre
-        if (postNum >= preNum) {
-          console.error('? Post_CR_Days >= Pre_CR_Days')
+        // 3. REVERSED LOGIC:
+        // Now errors if Post is LESS THAN Pre
+        if (postNum <= preNum) {
           return {
             valid: false,
-            message: `Error in ${rowLabel}: Post_CR_Days must be less than Pre_CR_Days`,
+            message: `Error in ${rowLabel}: Post_CR_Days must be greater than Pre_CR_Days`,
           }
         }
-
-        console.log('? CR validation passed')
-      } else {
-        console.log('?? IsCR is false ? skipping')
       }
     }
 
-    console.log('\n?? validatePostCrDays passed for all rows')
     return { valid: true }
   }
 
@@ -1515,7 +1501,7 @@ const DecokingConfig = () => {
       <LoaderBackdrop open={!!loading} />
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
-        <Box sx={{ display: 'flex', gap: 1, mb: 0, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 1, mt: 1, alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
               TA Start Date

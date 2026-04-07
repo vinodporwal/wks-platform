@@ -113,6 +113,8 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
   const IS_PP_HMD = VERTICAL_NAME === 'pp' && SITE_NAME === 'hmd'
   const IS_PTA_HMD = VERTICAL_NAME === 'pta' && SITE_NAME === 'hmd'
   const IS_CRACKER_VMD = VERTICAL_NAME === 'cracker' && SITE_NAME === 'vmd'
+  const IS_AROMATICS_SEZ_PX4 =
+    VERTICAL_NAME === 'aromatics' && SITE_NAME === 'sez' && PLANT_NAME === 'px4'
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [rows, setRows] = useState()
   const [rowsPercentageSummary, setRowsPercentageSummary] = useState()
@@ -1100,7 +1102,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' ? true : false,
 
       downloadExcelBtnFromUI:
-        IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PVC_DMD ? false : true,
+        IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PVC_DMD || IS_AROMATICS_SEZ_PX4 ? false : true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Max Achieved Capacity`,
     },
     isOldYear,
@@ -1116,11 +1118,27 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     if (IS_PP_SEZ && unitDesignCapacity === 'TPD') {
       return false
     }
-    if (IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PP_SEZ) {
+    if (IS_AROMATICS_SEZ_PX4 && unitDesignCapacity === 'TPD') {
+      return false
+    }
+    if (IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PP_SEZ || IS_AROMATICS_SEZ_PX4) {
       return true
     }
     return false
-  }, [IS_PE_PP, IS_PET, IS_PVC_VMD, IS_PP_SEZ, unitDesignCapacity])
+  }, [IS_PE_PP, IS_PET, IS_PVC_VMD, IS_PP_SEZ, unitDesignCapacity, IS_AROMATICS_SEZ_PX4])
+
+  const excelUploadBtnGrid2 = useMemo(() => {
+    if (IS_PP_SEZ && unitDesignCapacity === 'TPD') {
+      return false
+    }
+    if (IS_AROMATICS_SEZ_PX4 && unitDesignCapacity === 'TPD') {
+      return false
+    }
+    if (IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PP_SEZ || IS_AROMATICS_SEZ_PX4) {
+      return true
+    }
+    return false
+  }, [IS_PE_PP, IS_PET, IS_PVC_VMD, IS_PP_SEZ, unitDesignCapacity, IS_AROMATICS_SEZ_PX4])
   const adjustedPermissionsGrid2 = getAdjustedPermissions(
     {
       showAction: permissions?.showAction ?? false,
@@ -1137,9 +1155,9 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
 
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
       downloadExcelBtnFromUI:
-        IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PP_SEZ ? false : true,
+        IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PP_SEZ || IS_AROMATICS_SEZ_PX4 ? false : true,
       downloadExcelBtn: excelBtnGrid2,
-      uploadExcelBtn: excelBtnGrid2,
+      uploadExcelBtn: excelUploadBtnGrid2,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Design Capacity`,
 
       showTitleAndInformation:
@@ -1186,9 +1204,9 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
           ? true
           : false,
       downloadExcelBtn:
-        IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PVC_DMD ? false : true,
+        IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PVC_DMD || IS_AROMATICS_SEZ_PX4 ? false : true,
       uploadExcelBtn:
-        IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PVC_DMD ? false : true,
+        IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PVC_DMD || IS_AROMATICS_SEZ_PX4 ? false : true,
 
       showTitleAndInformation:
         VERTICAL_NAME == 'cracker' || VERTICAL_NAME == 'vcm' ? true : false,
@@ -1268,7 +1286,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
           EXCEL_EXPORT_TITLE,
           LineName,
         )
-      } else if (IS_PE_PP || IS_PET || IS_PVC_VMD) {
+      } else if (IS_PE_PP || IS_PET || IS_PVC_VMD || IS_AROMATICS_SEZ_PX4) {
         await ProductionVolumeDataApiService.getProductionVolExcelCommon(
           keycloak,
           PLANT_ID,

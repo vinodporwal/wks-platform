@@ -1029,7 +1029,7 @@ const DecokingConfigNMD = () => {
       <LoaderBackdrop open={!!loading} />
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
-        <Box sx={{ display: 'flex', gap: 1, mb: 0, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 1, mt: 1, alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
               TA Start Date

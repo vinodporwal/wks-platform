@@ -32,7 +32,7 @@ const MONTH_GRID_NAME = 'Month wise Quantity, Tonnes / Month'
 
 const OptimizerReport = () => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const [dataMap, setDataMap] = useState({})
   const [gridNames, setGridNames] = useState([])
   const [loading, setLoading] = useState(false)
@@ -494,8 +494,7 @@ const OptimizerReport = () => {
           <Button
             variant='contained'
             onClick={calculateMonthWiseData}
-            // disabled={READ_ONLY || calculating || loading}
-            disabled={calculating || loading}
+            disabled={READ_ONLY || calculating || loading}
             className='btn-calculate'
             color='primary'
           >
