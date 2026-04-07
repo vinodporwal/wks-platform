@@ -990,6 +990,45 @@ const ProductionNorms = ({ permissions }) => {
     setSelectedUnitIIR(unit)
   }
   const isCellEditable = (params) => params.row.id !== 'total'
+  
+  useEffect(() => {
+    if (
+      IS_ELASTOMER_JMD_IIR &&
+      rows.length > 0 &&
+      (rowsInKT.length > 0 || rowsInMT.length > 0)
+    ) {
+      const enrichedData = rows
+        .filter((row) => row.displayName !== 'Total' && row.id !== 'total')
+        .map((row) => ({
+          ...row,
+          total: row.total ?? findSum('1', row),
+        }))
+
+      const result = validateTotalsWithIIR({
+        data: enrichedData,
+        rowsInKT,
+        rowsInMT,
+        selectedUnit,
+      })
+
+      if (!result.allMatch) {
+        const message = result.mismatches
+          .map((m) =>
+            m.error
+              ? `${m.displayName}: ${m.error}`
+              : `${m.displayName}: Expected ${m.iirValue.toFixed(2)} ${m.unit || 'MT'}, got ${m.calculatedTotal.toFixed(2)} ${m.unit || 'MT'}`,
+          )
+          .join('\n')
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `Total validation failed:\n${message}`,
+          severity: 'error',
+        })
+      }
+    }
+  }, [rows, rowsInKT, rowsInMT, selectedUnit, IS_ELASTOMER_JMD_IIR])
+
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
       fetchDataAnnualproduction()
