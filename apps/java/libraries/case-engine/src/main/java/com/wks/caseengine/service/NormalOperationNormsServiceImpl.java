@@ -205,6 +205,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					mCUNormsValueDTO.setProductName(row[28] != null ? row[28].toString() : null);
 					if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("Chemical")) {
 						mCUNormsValueDTO.setWtAverage(row[29] != null ? Double.parseDouble(row[29].toString()) : null);
+						mCUNormsValueDTO.setSapCode(row[30] != null ? row[30].toString() : "");
 					}
 				}
 				mCUNormsValueDTOList.add(mCUNormsValueDTO);
