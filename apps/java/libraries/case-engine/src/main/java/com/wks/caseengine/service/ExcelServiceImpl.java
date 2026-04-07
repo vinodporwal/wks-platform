@@ -178,7 +178,10 @@ public class ExcelServiceImpl implements ExcelService {
                         else if (sheetName.equalsIgnoreCase("NormsforDurationofPlantshutdownSlowdownactivities")) {
                             if (tableId.equalsIgnoreCase("NormsforDurationofPlantshutdownSlowdownactivities")) {
                                 // title = "Plant Production Summary (T-16)";
-                                rows = excelDataService.getReportForMonthWiseProductionData(plantId, year, headers);
+                                 Map<String, Object> map = excelDataService.getPlantShutdownSlowdownNormsDuration(plantId, year,
+                                        headers);
+
+                                rows = (List<List<Object>>) map.get("rows");
                             }
                             
                         }

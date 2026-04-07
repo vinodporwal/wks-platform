@@ -62,21 +62,27 @@ STEAM_TO_POWER_MT_PER_MWH = 3.56  # MT of SHP steam per MWh of power
 def calculate_lp_balance(
     lp_process: float,
     lp_fixed: float,
-    bfw_ufu: float = 0.0
+    bfw_ufu: float = 0.0,
+    lp_ufu_mt: float = None,
 ) -> dict:
     """
     Calculate LP Steam Balance using FIXED ratios (legacy).
-    
+
     Args:
         lp_process: Process LP requirement (MT)
         lp_fixed: Fixed LP requirement (MT)
-        bfw_ufu: BFW for UFU (M3) - generates additional LP demand
-    
+        bfw_ufu: BFW for UFU (M3) - used only when lp_ufu_mt is not provided
+        lp_ufu_mt: Direct LP U4U in MT (overrides bfw_ufu * NORM when provided)
+
     Returns:
         dict with LP balance details and downstream requirements
     """
-    # Step 1: Calculate LP from UFU (BFW)
-    lp_ufu = bfw_ufu * NORM_LP_PER_BFW
+    # Step 1: Calculate LP from UFU
+    # If lp_ufu_mt is given directly (DB-norm based), use it; else fall back to BFW ratio
+    if lp_ufu_mt is not None:
+        lp_ufu = lp_ufu_mt
+    else:
+        lp_ufu = bfw_ufu * NORM_LP_PER_BFW
     
     # Step 2: Total LP Demand
     lp_total = lp_process + lp_fixed + lp_ufu
@@ -116,26 +122,32 @@ def calculate_lp_balance_stg_based(
     lp_fixed: float,
     bfw_ufu: float,
     stg_lp_extraction_tph: float,
-    stg_operating_hours: float
+    stg_operating_hours: float,
+    lp_ufu_mt: float = None,
 ) -> dict:
     """
     Calculate LP Steam Balance using STG extraction lookup.
-    
+
     LP from STG is determined by STG load (from lookup table), not fixed ratio.
     Remaining LP demand comes from PRDS.
-    
+
     Args:
         lp_process: Process LP requirement (MT)
         lp_fixed: Fixed LP requirement (MT)
-        bfw_ufu: BFW for UFU (M3) - generates additional LP demand
+        bfw_ufu: BFW for UFU (M3) - used only when lp_ufu_mt is not provided
         stg_lp_extraction_tph: LP extraction rate from STG (TPH) - from lookup table
         stg_operating_hours: STG operating hours for the month
-    
+        lp_ufu_mt: Direct LP U4U in MT (overrides bfw_ufu * NORM when provided)
+
     Returns:
         dict with LP balance details and downstream requirements
     """
-    # Step 1: Calculate LP from UFU (BFW)
-    lp_ufu = bfw_ufu * NORM_LP_PER_BFW
+    # Step 1: Calculate LP from UFU
+    # If lp_ufu_mt is given directly (DB-norm based), use it; else fall back to BFW ratio
+    if lp_ufu_mt is not None:
+        lp_ufu = lp_ufu_mt
+    else:
+        lp_ufu = bfw_ufu * NORM_LP_PER_BFW
     
     # Step 2: Total LP Demand
     lp_total = lp_process + lp_fixed + lp_ufu
@@ -190,7 +202,8 @@ def calculate_lp_balance_stg_based(
 def calculate_mp_balance(
     mp_process: float,
     mp_fixed: float,
-    mp_for_lp: float = 0.0
+    mp_for_lp: float = 0.0,
+    mp_ufu_mt: float = None,
 ) -> dict:
     """
     Calculate MP Steam Balance using FIXED ratios (legacy).
@@ -199,12 +212,14 @@ def calculate_mp_balance(
         mp_process: Process MP requirement (MT)
         mp_fixed: Fixed MP requirement (MT)
         mp_for_lp: MP required for LP PRDS (from LP balance)
+        mp_ufu_mt: Direct MP U4U in MT (from norm-based calculation, e.g. TSC + LP PRDS)
     
     Returns:
         dict with MP balance details and downstream requirements
     """
-    # Step 1: Total MP Demand
-    mp_total = mp_process + mp_fixed + mp_for_lp
+    # Step 1: Total MP Demand (includes U4U if provided)
+    mp_ufu = mp_ufu_mt if mp_ufu_mt is not None else 0.0
+    mp_total = mp_process + mp_fixed + mp_for_lp + mp_ufu
     
     # Step 2: Split MP between suppliers (FIXED RATIO)
     mp_from_prds = mp_total * NORM_MP_FROM_PRDS
@@ -225,6 +240,7 @@ def calculate_mp_balance(
         "mp_process": round(mp_process, 2),
         "mp_fixed": round(mp_fixed, 2),
         "mp_for_lp": round(mp_for_lp, 2),
+        "mp_ufu": round(mp_ufu, 2),
         "mp_total": round(mp_total, 2),
         "mp_from_prds": round(mp_from_prds, 2),
         "mp_from_stg": round(mp_from_stg, 2),
@@ -245,7 +261,8 @@ def calculate_mp_balance_stg_based(
     mp_fixed: float,
     mp_for_lp: float,
     stg_mp_extraction_tph: float,
-    stg_operating_hours: float
+    stg_operating_hours: float,
+    mp_ufu_mt: float = None,
 ) -> dict:
     """
     Calculate MP Steam Balance using STG extraction lookup.
@@ -259,12 +276,14 @@ def calculate_mp_balance_stg_based(
         mp_for_lp: MP required for LP PRDS (from LP balance)
         stg_mp_extraction_tph: MP extraction rate from STG (TPH) - from lookup table
         stg_operating_hours: STG operating hours for the month
+        mp_ufu_mt: Direct MP U4U in MT (from norm-based calculation, e.g. TSC + LP PRDS)
     
     Returns:
         dict with MP balance details and downstream requirements
     """
-    # Step 1: Total MP Demand
-    mp_total = mp_process + mp_fixed + mp_for_lp
+    # Step 1: Total MP Demand (includes U4U if provided)
+    mp_ufu = mp_ufu_mt if mp_ufu_mt is not None else 0.0
+    mp_total = mp_process + mp_fixed + mp_for_lp + mp_ufu
     
     # Step 2: Calculate MP from STG based on extraction rate
     # MP from STG = Extraction Rate (TPH) × Operating Hours
@@ -298,6 +317,7 @@ def calculate_mp_balance_stg_based(
         "mp_process": round(mp_process, 2),
         "mp_fixed": round(mp_fixed, 2),
         "mp_for_lp": round(mp_for_lp, 2),
+        "mp_ufu": round(mp_ufu, 2),
         "mp_total": round(mp_total, 2),
         "mp_from_prds": round(mp_from_prds, 2),
         "mp_from_stg": round(mp_from_stg, 2),
@@ -319,31 +339,34 @@ def calculate_mp_balance_stg_based(
 # ============================================================
 def calculate_hp_balance(
     hp_process: float,
-    hp_fixed: float = 0.0
+    hp_fixed: float = 0.0,
+    hp_for_mp: float = 0.0,
 ) -> dict:
     """
     Calculate HP Steam Balance.
-    
+
     Args:
         hp_process: Process HP requirement (MT)
         hp_fixed: Fixed HP requirement (MT)
-    
+        hp_for_mp: HP consumed to produce MP via HP→MP PRDS reduction (MT)
+
     Returns:
         dict with HP balance details and downstream requirements
     """
-    # Step 1: Total HP Demand
-    hp_total = hp_process + hp_fixed
-    
-    # Step 2: All HP comes from PRDS
+    # Step 1: Total HP Demand (process + fixed + HP consumed for MP via PRDS)
+    hp_total = hp_process + hp_fixed + hp_for_mp
+
+    # Step 2: All HP comes from PRDS (SHP→HP)
     hp_from_prds = hp_total * NORM_HP_FROM_PRDS
-    
-    # Step 3: Calculate what PRDS needs
+
+    # Step 3: Calculate what PRDS needs (SHP and BFW to make this HP)
     shp_for_hp_prds = hp_from_prds * NORM_SHP_PER_HP_PRDS
     bfw_for_hp_prds = hp_from_prds * NORM_BFW_PER_HP_PRDS
-    
+
     return {
         "hp_process": round(hp_process, 2),
         "hp_fixed": round(hp_fixed, 2),
+        "hp_for_mp": round(hp_for_mp, 2),
         "hp_total": round(hp_total, 2),
         "hp_from_prds": round(hp_from_prds, 2),
         "shp_for_hp_prds": round(shp_for_hp_prds, 2),
@@ -440,30 +463,34 @@ def calculate_steam_balance(
     shp_process: float,
     shp_fixed: float,
     bfw_ufu: float = 0.0,
-    stg_shp_power: float = 0.0
+    stg_shp_power: float = 0.0,
+    lp_ufu_mt: float = None,
+    mp_ufu_mt: float = None,
 ) -> dict:
     """
     Calculate complete steam balance for all headers.
-    
+
     Args:
         lp_process, lp_fixed: LP Steam demands (MT)
         mp_process, mp_fixed: MP Steam demands (MT)
         hp_process, hp_fixed: HP Steam demands (MT)
         shp_process, shp_fixed: SHP Steam demands (MT)
-        bfw_ufu: BFW for UFU (M3)
+        bfw_ufu: BFW for UFU (M3) - used only when lp_ufu_mt is not provided
         stg_shp_power: SHP for STG power generation (MT)
-    
+        lp_ufu_mt: Direct LP U4U in MT (overrides bfw_ufu * NORM when provided)
+        mp_ufu_mt: Direct MP U4U in MT (from norm-based TSC + LP PRDS calculation)
+
     Returns:
         dict with complete steam balance for all headers
     """
     # Step 1: LP Balance
-    lp = calculate_lp_balance(lp_process, lp_fixed, bfw_ufu)
+    lp = calculate_lp_balance(lp_process, lp_fixed, bfw_ufu, lp_ufu_mt=lp_ufu_mt)
     
-    # Step 2: MP Balance (uses mp_for_lp from LP balance)
-    mp = calculate_mp_balance(mp_process, mp_fixed, lp["mp_for_prds_lp"])
-    
-    # Step 3: HP Balance
-    hp = calculate_hp_balance(hp_process, hp_fixed)
+    # Step 2: MP Balance (uses mp_for_lp from LP balance + optional MP U4U)
+    mp = calculate_mp_balance(mp_process, mp_fixed, lp["mp_for_prds_lp"], mp_ufu_mt=mp_ufu_mt)
+
+    # Step 3: HP Balance (includes HP consumed for MP via PRDS: mp_from_prds is HP reduced to MP)
+    hp = calculate_hp_balance(hp_process, hp_fixed, hp_for_mp=mp["mp_from_prds"])
     
     # Step 4: SHP Balance (uses outputs from LP, MP, HP)
     shp = calculate_shp_balance(

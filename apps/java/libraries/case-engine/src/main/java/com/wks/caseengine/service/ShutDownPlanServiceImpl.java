@@ -2478,6 +2478,8 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		Plants plant = plantsRepository.findById(plantId).orElseThrow();
 		
 		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+		
+		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
 		List<String> items = List.of(
 			    "Partial Preheater Cleaning",
@@ -2515,7 +2517,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					PlantMaintenanceTransaction plantMaintenanceTransaction = new PlantMaintenanceTransaction();
 					plantMaintenanceTransaction.setId(UUID.randomUUID());
 					plantMaintenanceTransaction.setPlantId(plantId);
-					if(verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("Chemical")) {
+					if(verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("Chemical") || elastomer) {
 		            	if(shutDownPlanDTO.getMonth()!=null) {
 		            		shutDownPlanDTO.setMaintStartDateTime(getStartOfMonthDate(shutDownPlanDTO.getMonth(), year));
 		            		shutDownPlanDTO.setMaintEndDateTime(getEndOfMonthDate(shutDownPlanDTO.getMonth(), year));
@@ -2609,7 +2611,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 						if (plantMaintenance.isPresent()) {
 							PlantMaintenanceTransaction plantMaintenanceTransaction = plantMaintenance.get();
 							plantMaintenanceTransaction.setPlantId(plantId);
-							if(verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("Chemical")) {
+							if(verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("Chemical") || elastomer) {
 				            	if(shutDownPlanDTO.getMonth()!=null) {
 				            		shutDownPlanDTO.setMaintStartDateTime(getStartOfMonthDate(shutDownPlanDTO.getMonth(), year));
 				            		shutDownPlanDTO.setMaintEndDateTime(getEndOfMonthDate(shutDownPlanDTO.getMonth(), year));
@@ -2677,14 +2679,18 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 							Date dtoEndDate = shutDownPlanDTO.getMaintEndDateTime();
 							if (!(entityEndDate != null && dtoEndDate != null
 									&& entityEndDate.compareTo(dtoEndDate) == 0)) {
-								changed = true;
+								if(!elastomer) {
+									changed = true;
+								}
 							}
 							plantMaintenanceTransaction.setMaintEndDateTime(shutDownPlanDTO.getMaintEndDateTime());
 							Date entityStartDate = plantMaintenanceTransaction.getMaintStartDateTime();
 							Date dtoStartDate = shutDownPlanDTO.getMaintStartDateTime();
 							if (!(entityStartDate != null && dtoStartDate != null
 									&& entityStartDate.compareTo(dtoStartDate) == 0)) {
-								changed = true;
+								if(!elastomer) {
+									changed = true;
+								}
 							}
 							plantMaintenanceTransaction.setMaintStartDateTime(shutDownPlanDTO.getMaintStartDateTime());
 							if(plantMaintenanceTransaction.getLineFKId()!=null && shutDownPlanDTO.getLineId()!=null && !plantMaintenanceTransaction.getLineFKId().toString().equalsIgnoreCase(shutDownPlanDTO.getLineId())) {

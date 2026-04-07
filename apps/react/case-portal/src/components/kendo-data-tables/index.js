@@ -2320,7 +2320,7 @@ const KendoDataTables = ({
                         editor='date'
                         hidden={col.hidden}
                         filter='date'
-                        // columnMenu={ColumnMenuCheckboxFilterDate}
+                      columnMenu={ColumnMenuCheckboxFilterDate}
                         width={col?.widthT || 150}
                         headerClassName={
                           isDateFilterActive.includes(col.field)
@@ -2517,7 +2517,7 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
                       />
@@ -2537,8 +2537,8 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        //columnMenu={ColumnMenuCheckboxFilter}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                      headerClassName={isActive ? 'active-column' : ''}
                       />
                     )
                   }
@@ -2559,8 +2559,8 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        //columnMenu={ColumnMenuCheckboxFilter}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                      headerClassName={isActive ? 'active-column' : ''}
                       />
                     )
                   }
@@ -2582,7 +2582,7 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2606,7 +2606,7 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2633,7 +2633,7 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2653,7 +2653,7 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2666,9 +2666,9 @@ const KendoDataTables = ({
                         title={col.title || col.headerName || 'Description'}
                         width={col.widthT || 150}
                         editable={true}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: TextCellEditor },
                           data: (props) =>
@@ -2696,13 +2696,13 @@ const KendoDataTables = ({
                         width={col.widthT || 150}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: descLimit },
                           data: toolTipRendererdescLimit,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2714,8 +2714,8 @@ const KendoDataTables = ({
                         title={col.title || col.headerName || 'UOM'}
                         width={col?.widthT || 80}
                         editable={false}
-                        // columnMenu={ColumnMenuCheckboxFilter}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                      headerClassName={isActive ? 'active-column' : ''}
                         hidden={col.hidden}
                         cells={{
                           data: toolTipRenderer,
@@ -2732,7 +2732,7 @@ const KendoDataTables = ({
                         title={col.title || col.headerName}
                         width={col.width1 || 150}
                         editable={false}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
                         cells={{
                           data: toolTipRenderer,
@@ -2755,13 +2755,13 @@ const KendoDataTables = ({
                             : 'k-number-right'
                         }
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: NoSpinnerNumericEditor },
                           data: toolTipRenderer,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
                       />
@@ -2777,12 +2777,12 @@ const KendoDataTables = ({
                         width={col.widthT || 150}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           data: MaterialDisplayNameCell,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2796,7 +2796,7 @@ const KendoDataTables = ({
                         width={col.width || 150}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: MonthDropdownPEPP },
                           data: (props) =>
@@ -2811,7 +2811,7 @@ const KendoDataTables = ({
                             ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2825,13 +2825,13 @@ const KendoDataTables = ({
                         width={col.width || 150}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: MonthDropdownEditor },
                           data: ElastomerMonthDisplayCell,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2863,7 +2863,7 @@ const KendoDataTables = ({
                           },
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2879,13 +2879,13 @@ const KendoDataTables = ({
                         width={col.width || 150}
                         hidden={col.hidden}
                         editable={!!col?.editable}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: YearDropdownEditorWrapper },
                           data: ElastomerYearDisplayCell,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2898,7 +2898,7 @@ const KendoDataTables = ({
                         width={col.width || 150}
                         hidden={col.hidden}
                         editable={!!col?.editable}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: {
                             text: (props) => (
@@ -2911,7 +2911,7 @@ const KendoDataTables = ({
                           data: ElastomerSDDaysDisplayCell,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2947,7 +2947,7 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -2959,7 +2959,7 @@ const KendoDataTables = ({
                         title={col.title || col.headerName}
                         width={col?.widthT || 150}
                         editable={false}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
                         cells={{
                           data: toolTipRenderer,
@@ -2998,9 +2998,9 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         width={col.widthT || ''}
                       />
                     )
@@ -3013,7 +3013,7 @@ const KendoDataTables = ({
                         title={col.title || col.headerName}
                         width={col.widthT || 150}
                         editable={true}
-                        //columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
                         format={'{0:n2}'}
                         className={
@@ -3035,7 +3035,7 @@ const KendoDataTables = ({
                             ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                       />
                     )
                   }
@@ -3048,7 +3048,7 @@ const KendoDataTables = ({
                         title={col.title || col.headerName}
                         width={col.widthT}
                         editable={true}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
                         format={'{0:n2}'}
                         className='k-number-right'
@@ -3058,7 +3058,7 @@ const KendoDataTables = ({
                             DurationDisplayWithTooltipCell(props),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                       />
                     )
                   }
@@ -3076,7 +3076,7 @@ const KendoDataTables = ({
                             : 'k-number-right'
                         }
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: NoSpinnerNumericEditor },
                           data: (props) => (
@@ -3105,13 +3105,13 @@ const KendoDataTables = ({
                         width={col.width}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: PropaneDropdown }, // <-- Use your custom editor here
                           data: MonthDisplayCell,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -3126,7 +3126,7 @@ const KendoDataTables = ({
                         width={col.width}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: {
                             text: (props) => (
@@ -3139,7 +3139,7 @@ const KendoDataTables = ({
                           data: MonthDisplayCell,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -3154,13 +3154,13 @@ const KendoDataTables = ({
                         hidden={col.hidden}
                         className={'k-number-right'}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: NoSpinnerNumericEditorNegative },
                           data: toolTipRenderer,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        //columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
                       />
@@ -3180,7 +3180,7 @@ const KendoDataTables = ({
                   ${col?.isBold ? 'bold-text' : ''}
                 `}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: NoSpinnerNumericEditorNegative },
                           data: (props) =>
@@ -3202,7 +3202,7 @@ const KendoDataTables = ({
                             ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        //columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
                       />
@@ -3222,7 +3222,7 @@ const KendoDataTables = ({
                   ${col?.isBold ? 'bold-text' : ''}
                 `}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: {
                             text: NoSpinnerNumericEditorWithUOMValidation,
@@ -3246,7 +3246,7 @@ const KendoDataTables = ({
                             ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
                       />
@@ -3262,7 +3262,7 @@ const KendoDataTables = ({
                         }
                         width={col.widthT}
                         editable={true}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
                         format={'{0:n2}'}
                         className={`
@@ -3282,7 +3282,7 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                       />
                     )
                   }
@@ -3300,7 +3300,7 @@ const KendoDataTables = ({
                   ${col?.isBold ? 'bold-text' : ''}
                 `}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: {
                             text: NoSpinnerNumericEditorCrackerValidation,
@@ -3324,7 +3324,7 @@ const KendoDataTables = ({
                             ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
                       />
@@ -3347,7 +3347,7 @@ const KendoDataTables = ({
         ${col?.isBold ? 'bold-text' : ''}
       `}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: NoSpinnerNumericEditor },
                           data: (props) => {
@@ -3413,7 +3413,7 @@ const KendoDataTables = ({
         ${col?.isBold ? 'bold-text' : ''}
       `}
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: NoSpinnerNumericEditor },
                           data: (props) =>
@@ -3435,7 +3435,7 @@ const KendoDataTables = ({
                             ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        // columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
                       />
@@ -3575,13 +3575,13 @@ const KendoDataTables = ({
                             : 'k-number-right'
                         }
                         editable={col?.editable ? true : false}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: NoSpinnerNumericEditor },
                           data: toolTipRenderer,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        //columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
                       />
@@ -3597,13 +3597,13 @@ const KendoDataTables = ({
                         width={col.widthT}
                         hidden={col.hidden}
                         editable={!!col?.editable}
-                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: NoSpinnerNumericEditor },
                           data: toolTipRenderer,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        //columnMenu={ColumnMenuCheckboxFilter}
+                      columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -3616,13 +3616,13 @@ const KendoDataTables = ({
                       width={col.widthT}
                       hidden={col.hidden}
                       editable={col?.editable ? true : false}
-                      headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                    headerClassName={isActive ? 'active-column' : ''}
                       cells={{
                         edit: { text: TextCellEditor },
                         data: toolTipRenderer,
                         headerCell: SimpleHeaderWithTooltip,
                       }}
-                      // columnMenu={ColumnMenuCheckboxFilter}
+                    columnMenu={ColumnMenuCheckboxFilter}
                     />
                   )
                 })}

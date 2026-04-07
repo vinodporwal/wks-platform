@@ -33,6 +33,7 @@ import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/ind
 import { getRoleName } from 'services/role-service'
 import CrakcerConstants from './CrakcerConstants'
 import CrakcerProductionConst from './CrakcerProductionConst'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const AopDesignBasis = () => {
   const hasExecutedRef = useRef(false)
@@ -650,12 +651,7 @@ const AopDesignBasis = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading1}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       {ConfigurationAccordian}
       <Notification
         open={snackbarOpen}

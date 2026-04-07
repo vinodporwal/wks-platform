@@ -10,6 +10,7 @@ import { useSession } from 'SessionStoreContext'
 import NormsHistorianBasisAromatics1 from './NormsHistorianBasisAromatics1'
 import NormsHistorianBasisAromatics2 from './NormsHistorianBasisAromatics2'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import AopTabs from 'components/AopTabs'
 
 const REPORT_TYPE_FOR_ALL = 'NormsHistorian'
 
@@ -115,28 +116,11 @@ const NormsHistorianBasisAromatics = () => {
       <LoaderBackdrop open={!!loading} />
 
       {activeTabs.length > 1 && (
-        <Tabs
-          value={tabIndex}
-          onChange={(e, newIndex) => setTabIndex(newIndex)}
-          variant='scrollable'
-          scrollButtons='auto'
-          textColor='primary'
-          indicatorColor='primary'
-        >
-          {activeTabs.map((label, idx) => (
-            <Tab
-              key={idx}
-              label={label}
-              sx={{
-                border: '1px solid #ADD8E6',
-                borderBottom: '1px solid #ADD8E6',
-                fontSize: '0.75rem',
-                padding: '9px',
-                minHeight: '12px',
-              }}
-            />
-          ))}
-        </Tabs>
+        <AopTabs
+          tabIndex={tabIndex}
+          setTabIndex={setTabIndex}
+          tabs={activeTabs}
+        />
       )}
 
       <Box display='flex' flexDirection='column' gap={2}>

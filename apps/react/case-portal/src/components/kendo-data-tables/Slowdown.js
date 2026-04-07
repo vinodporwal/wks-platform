@@ -1571,38 +1571,11 @@ const SlowDown = ({ permissions }) => {
       {(lowerVertName === 'meg' ||
         (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD)) && (
         <Box style={{ margin: 0, padding: 0 }}>
-          <Tabs
-            value={selectedTab}
-            onChange={handleTabChange}
-            sx={{
-              borderBottom: '0px solid #ccc',
-              '.MuiTabs-indicator': { display: 'none' },
-              margin: '0px 0px 0px 0px',
-              minHeight: '28px',
-            }}
-          >
-            <Tab
-              label='Slowdown Details'
-              sx={{
-                border: '1px solid #ADD8E6',
-                borderBottom: '1px solid #ADD8E6',
-                fontSize: '0.75rem',
-                padding: '9px',
-                minHeight: '12px',
-              }}
-            />
-
-            <Tab
-              label='Slowdown History Config'
-              sx={{
-                border: '1px solid #ADD8E6',
-                borderBottom: '1px solid #ADD8E6',
-                fontSize: '0.75rem',
-                padding: '9px',
-                minHeight: '12px',
-              }}
-            />
-          </Tabs>
+          <AopTabs
+            tabIndex={selectedTab}
+            setTabIndex={setSelectedTab}
+            tabs={['Slowdown Details', 'Slowdown History Config']}
+          />
         </Box>
       )}
 

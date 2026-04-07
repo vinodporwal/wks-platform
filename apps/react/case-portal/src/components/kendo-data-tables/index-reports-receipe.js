@@ -49,6 +49,7 @@ import { RemarkCell } from './Utilities-Kendo/RemarkCell'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 export const particulars = [
   'normParameterId',
@@ -549,14 +550,7 @@ const KendoDataTablesReciepe = ({
 
   return (
     <div style={{ position: 'relative' }}>
-      {loading && (
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={!!loading}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
-      )}
+      {loading && <LoaderBackdrop open={!!loading} />}
 
       {(permissions?.allAction ?? true) && (
         <Box

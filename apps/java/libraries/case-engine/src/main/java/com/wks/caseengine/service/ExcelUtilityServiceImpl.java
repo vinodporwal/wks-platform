@@ -39,7 +39,137 @@ import com.wks.caseengine.utility.Utility;
 
 @Service
 public class ExcelUtilityServiceImpl implements ExcelUtilityService {
+	
+	public byte[] generateFlexibleExcelPP(Map<String, Object> structure, Map<String, List<List<Object>>> data) {
+	    try {
+	        Workbook workbook = new XSSFWorkbook();
+	        CellStyle boldBorderStyle = Utility.createBoldBorderedStyle(workbook);
+	        CellStyle borderStyle = Utility.createBorderedStyle(workbook);
+	        CellStyle boldStyle = Utility.createBoldStyle(workbook);
+	        
+	       
+	        CellStyle lockedStyle = workbook.createCellStyle();
+	        lockedStyle.cloneStyleFrom(borderStyle);
+	        lockedStyle.setLocked(true); 
+	        lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+	        lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+	        
+	       
+	        CellStyle unlockedBorderStyle = workbook.createCellStyle();
+	        unlockedBorderStyle.cloneStyleFrom(borderStyle);
+	        unlockedBorderStyle.setLocked(false); 
 
+	        for (String sheetName : structure.keySet()) {
+	            Map<String, Object> sheetData = (Map<String, Object>) structure.get(sheetName);
+	            List<Map<String, Object>> tables = (List<Map<String, Object>>) sheetData.get(ExcelConstants.TABLES);
+	            int columnCount = (Integer) sheetData.get(ExcelConstants.COULMNCOUNT);
+
+	            Sheet sheet = workbook.createSheet(sheetName);
+	            int currentRow = 0;
+
+	            for (Map<String, Object> table : tables) {
+	                boolean hideTable = (boolean) (table.get(ExcelConstants.HIDE_TABLE) != null ? table.get(ExcelConstants.HIDE_TABLE) : false);
+	                if (hideTable) continue;
+
+	                String tableId = (String) table.get(ExcelConstants.TABLEID);
+	                String originalTemplateId = (String) table.get("originalTemplateId");
+	                Integer monthStartIndex = (Integer) table.get(ExcelConstants.STARTING_INDEX_OF_MONTHS);
+	                
+	                
+	                List<Integer> hiddenColumnsList = (List<Integer>) table.get(ExcelConstants.HIDDEN_COLUMNS);
+
+	                boolean isProposedCap = "ProposedOperatingCapacity".equalsIgnoreCase(originalTemplateId) 
+	                                     || "ProposedOperatingCapacity".equalsIgnoreCase(tableId);
+
+	                List<List<String>> headerTitles = (List<List<String>>) table.get(ExcelConstants.HEADERSTITLES);
+	                List<List<Object>> rows = data.get(tableId);
+	                
+	        
+	                String textBeforeTitle = (String) table.get(ExcelConstants.TEXT_BEFORE_TITLE);
+	                if (textBeforeTitle != null && !textBeforeTitle.isEmpty()) {
+	                    Row row = sheet.createRow(currentRow++);
+	                    Cell cell = row.createCell(0);
+	                    cell.setCellValue(textBeforeTitle);
+	                    cell.setCellStyle(boldStyle);
+	                }
+	                String title = (String) table.get(ExcelConstants.TITLE);
+	                if (title != null && !title.isEmpty()) {
+	                    Row row = sheet.createRow(currentRow++);
+	                    Cell cell = row.createCell(0);
+	                    cell.setCellValue(title);
+	                    cell.setCellStyle(boldStyle);
+	                }
+
+	               
+	                int headerStartRow = currentRow;
+	                for (List<String> headerRowData : headerTitles) {
+	                    Row headerRow = sheet.createRow(currentRow++);
+	                    for (int col = 0; col < headerRowData.size(); col++) {
+	                        Cell cell = headerRow.createCell(col);
+	                        cell.setCellValue(headerRowData.get(col));
+	                        cell.setCellStyle(boldBorderStyle);
+	                    }
+	                }
+	                mergeHeaderCells(sheet, headerTitles, headerStartRow);
+
+	                
+	                if (rows != null) {
+	                    for (List<Object> rowData : rows) {
+	                        Row row = sheet.createRow(currentRow++);
+	                        for (int col = 0; col < rowData.size() - 1; col++) {
+	                            Cell cell = row.createCell(col);
+	                            Object value = rowData.get(col);
+
+	                            if (value instanceof Number) cell.setCellValue(((Number) value).doubleValue());
+	                            else if (value instanceof Boolean) cell.setCellValue((Boolean) value);
+	                            else cell.setCellValue(value != null ? value.toString() : "");
+
+	                            boolean canEdit = false;
+	                            
+	                            if (isProposedCap && monthStartIndex != null) {
+	                                if (col >= monthStartIndex && col <= (monthStartIndex + 12)) {
+	                                    canEdit = true;
+	                                }
+	                            }
+
+	                            if (canEdit) {
+	                                cell.setCellStyle(unlockedBorderStyle);
+	                            } else {
+	                                cell.setCellStyle(lockedStyle);
+	                            }
+	                        }
+	                    }
+	                }
+
+	                
+	                if (hiddenColumnsList != null) {
+	                    for (Integer column : hiddenColumnsList) {
+	                        sheet.setColumnHidden(column, true);
+	                    }
+	                }
+
+	                currentRow += 2; 
+	            }
+
+	            for (int i = 0; i < columnCount; i++) {
+	                sheet.autoSizeColumn(i);
+	            }
+	            
+	           
+	            sheet.protectSheet("password123");
+	        }
+
+	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+	        workbook.write(outputStream);
+	        workbook.close();
+	        return outputStream.toByteArray();
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return null;
+	    }
+	}
+	
     public byte[] generateFlexibleExcel(Map<String, Object> structure, Map<String, List<List<Object>>> data) {
         try {
         	

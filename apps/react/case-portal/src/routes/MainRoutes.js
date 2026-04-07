@@ -124,6 +124,7 @@ import OtherProduction from 'components/kendo-data-tables/other-production/index
 import SapBasedRefNorms from 'components/data-tables/Reports-kendo/SapBasedRefNorms'
 import SpecificConsumptionCalculation from 'components/kendo-data-tables/SpecificConsumptionCalculation'
 import ProductionOptimizer from 'components/kendo-data-tables/ProductionOptimizer'
+import CausticSodaLyeBasis from 'components/data-tables/Reports/CausticSodaLyeBasis'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -895,6 +896,15 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='quality-packaging-basis'>
                 <QualityPackagingBasis />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'caustic-soda-lye-basis',
+            element: (
+              <PrivateRoute routeId='caustic-soda-lye-basis'>
+                <CausticSodaLyeBasis />
               </PrivateRoute>
             ),
           },

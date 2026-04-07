@@ -11,6 +11,7 @@ import { Box } from '@mui/material'
 import { DataService } from 'services/DataService'
 import { ProductionNormsApiService } from 'services/production-norms-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ProductionOptimizer = () => {
   const [tabIndex, setTabIndex] = useState(0)
@@ -440,12 +441,7 @@ const ProductionOptimizer = () => {
       </Box>
 
       <div>
-        <Backdrop
-          open={loading}
-          sx={{ color: '#fff', zIndex: (t) => t.zIndex.drawer + 1 }}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
+        <LoaderBackdrop open={!!loading} />
 
         <KendoDataTables
           columns={columns}

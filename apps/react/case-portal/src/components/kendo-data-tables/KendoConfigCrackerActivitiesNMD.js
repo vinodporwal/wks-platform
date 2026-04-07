@@ -28,6 +28,7 @@ import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment'
 import { getRoleName } from 'services/role-service.js'
 import MaintenanceProcessTableNMD from './processTableNMD.js'
 import SDTAActivitiesGridNMD from './SDTAActivitiesGridNMD.js'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop.js'
 const DecokingConfigNMD = () => {
   const keycloak = useSession()
 
@@ -1025,12 +1026,7 @@ const DecokingConfigNMD = () => {
       : ibrGridThree
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
         <Box sx={{ display: 'flex', gap: 1, mb: 0, alignItems: 'center' }}>

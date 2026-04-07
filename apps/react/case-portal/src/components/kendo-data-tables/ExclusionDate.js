@@ -9,6 +9,7 @@ import { ExclusionDateApiDataService } from 'services/exclusion-date-api-service
 import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
 import KendoDataTables from './index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ExclusionDate = ({
   permissions,
@@ -567,12 +568,7 @@ const ExclusionDate = ({
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <KendoDataTables
         modifiedCells={modifiedCells}

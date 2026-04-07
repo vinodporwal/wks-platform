@@ -9,6 +9,7 @@ import { validateFields } from 'utils/validationUtils'
 import { ProductionNormsApiService } from 'services/production-norms-api-service'
 import KendoDataTables from 'components/kendo-data-tables/index'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const NSRAndMaterialPrices = () => {
   const [rows, setRows] = useState([])
@@ -252,12 +253,7 @@ const NSRAndMaterialPrices = () => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <KendoDataTables
         modifiedCells={modifiedCells}

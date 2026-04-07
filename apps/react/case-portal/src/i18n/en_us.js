@@ -120,6 +120,8 @@ const defs = {
     // New Data Sets
     sapBasedRefNorms: 'SAP Based Reference Norms',
     productionOptimizer: 'Production Optimizer',
+
+    causticSodaLyeBasis: 'Caustic Soda Lye Norms',
   },
   pages: {
     dashboard: {
@@ -326,6 +328,8 @@ const defs = {
         sapBasedRefNorms: 'SAP Based Reference Norms',
         specificConsumptionC3: 'Feed Availability',
         productionOptimizer: 'Production Optimizer',
+
+        causticSodaLyeBasis: 'Caustic Soda Lye Norms',
       },
     },
   },
