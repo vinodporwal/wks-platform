@@ -140,7 +140,12 @@ export const MockSpecificConsumptionNormsAPI = {
               align: 'right',
               format: '{0:0}',
             },
-            { field: 'utilityName', title: 'By Product', editable: false, widthT: 200 },
+            {
+              field: 'utilityName',
+              title: 'By Product',
+              editable: false,
+              widthT: 200,
+            },
             { field: 'unit', title: 'Unit', widthT: 80, editable: false },
             { field: 'design', title: 'Design', editable: false, widthT: 100 },
             {
@@ -250,7 +255,12 @@ export const MockSpecificConsumptionNormsAPI = {
               align: 'right',
               format: '{0:0}',
             },
-            { field: 'utilityName', title: 'Catchem', editable: false, widthT: 200 },
+            {
+              field: 'utilityName',
+              title: 'Catchem',
+              editable: false,
+              widthT: 200,
+            },
             { field: 'unit', title: 'Unit', widthT: 80, editable: false },
             { field: 'design', title: 'Design', editable: false, widthT: 100 },
             {
@@ -361,7 +371,12 @@ export const MockSpecificConsumptionNormsAPI = {
               format: '{0:0}',
             },
             // { field: 'materialID', title: 'Material ID', editable: false },
-            { field: 'utilityName', title: 'Utilities', editable: false, widthT: 200 },
+            {
+              field: 'utilityName',
+              title: 'Utilities',
+              editable: false,
+              widthT: 200,
+            },
             { field: 'unit', title: 'Unit', widthT: 80, editable: false },
             { field: 'design', title: 'Design', editable: false, widthT: 100 },
             {
@@ -472,7 +487,12 @@ export const MockSpecificConsumptionNormsAPI = {
               format: '{0:0}',
             },
             // { field: 'materialID', title: 'Material ID', editable: false },
-            { field: 'utilityName', title: 'Name', editable: false, widthT: 200 },
+            {
+              field: 'utilityName',
+              title: 'Name',
+              editable: false,
+              widthT: 200,
+            },
             { field: 'unit', title: 'Unit', widthT: 80, editable: false },
             { field: 'design', title: 'Design', editable: false, widthT: 100 },
             {
@@ -580,7 +600,12 @@ export const MockSpecificConsumptionNormsAPI = {
               format: '{0:0}',
             },
             // { field: 'materialID', title: 'Material ID', editable: false },
-            { field: 'utilityName', title: 'Other Cost', editable: false, widthT: 200 },
+            {
+              field: 'utilityName',
+              title: 'Other Cost',
+              editable: false,
+              widthT: 200,
+            },
             { field: 'unit', title: 'Unit', widthT: 80, editable: false },
             { field: 'design', title: 'Design', editable: false, widthT: 100 },
             {

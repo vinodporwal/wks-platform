@@ -1187,10 +1187,7 @@ const ShutDown = ({ permissions }) => {
       <LoaderBackdrop open={!!loading} />
 
       {lowerVertName === 'meg' && (
-        <Typography
-          component='div'
-          className='text-note'
-        >
+        <Typography component='div' className='text-note'>
           * for the case of turnaround planning kindly specify turnaround text
           in the shutdown desc column
         </Typography>

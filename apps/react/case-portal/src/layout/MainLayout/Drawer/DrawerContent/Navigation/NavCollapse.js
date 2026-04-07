@@ -104,7 +104,15 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
       )
     }
     return menuItems.map(renderMenuItem)
-  }, [menu?.children, lowerVertName, plantName, level, SITE_NAME, isPopover, drawerOpen])
+  }, [
+    menu?.children,
+    lowerVertName,
+    plantName,
+    level,
+    SITE_NAME,
+    isPopover,
+    drawerOpen,
+  ])
 
   const collapseButton = (
     <ListItemButton
@@ -235,7 +243,11 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
         </Tooltip>
       )}
 
-      <Collapse in={open && (drawerOpen || isPopover)} timeout='auto' unmountOnExit>
+      <Collapse
+        in={open && (drawerOpen || isPopover)}
+        timeout='auto'
+        unmountOnExit
+      >
         <List component='div' disablePadding sx={{ pl: 0 }}>
           {menus}
         </List>
@@ -287,7 +299,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
               gap: 1,
             }}
           >
-              <AppsIcon sx={{ fontSize: 16,color:"#4f46e5" }} />
+            <AppsIcon sx={{ fontSize: 16, color: '#4f46e5' }} />
             <Typography
               sx={{
                 fontWeight: 700,

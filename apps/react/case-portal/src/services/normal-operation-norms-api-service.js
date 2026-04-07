@@ -772,7 +772,7 @@ export async function shutdownNormsExportNonGrade(
   plantId,
   year,
   gradeId,
-  excelName
+  excelName,
 ) {
   const url =
     `${Config.CaseEngineUrl}/task/export-shutdown-consumption` +
@@ -797,7 +797,9 @@ export async function shutdownNormsExportNonGrade(
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = excelName ? `${excelName}.xlsx` : `Shutdown_Consumption_${year}.xlsx`
+    a.download = excelName
+      ? `${excelName}.xlsx`
+      : `Shutdown_Consumption_${year}.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
