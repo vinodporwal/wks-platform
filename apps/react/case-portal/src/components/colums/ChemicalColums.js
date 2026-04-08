@@ -1,0 +1,176 @@
+export const NormalOpNormChemicalColumns = [
+  {
+    field: 'Particulars',
+    title: 'Type',
+    widthT: 220,
+    groupable: true,
+    editable: false,
+    hidden: true,
+  },
+  {
+    field: 'materialFkId',
+    title: 'Particulars',
+    width: 120,
+    hidden: true,
+  },
+  {
+    field: 'sapCode',
+    title: 'Sap Mat Code',
+    width: 130,
+  },
+  {
+    field: 'productName',
+    title: 'Particulars',
+    widthT: 130,
+  },
+
+  {
+    field: 'UOM',
+    title: 'UOM / MT',
+    widthT: 60,
+    editable: false,
+  },
+
+  {
+    field: 'april',
+    title: 4,
+    editable: true,
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'negativeNumber',
+  },
+  {
+    field: 'may',
+    title: 5,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'negativeNumber',
+  },
+  {
+    field: 'june',
+    title: 6,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'negativeNumber',
+  },
+  {
+    field: 'july',
+    title: 7,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'negativeNumber',
+  },
+
+  {
+    field: 'august',
+    title: 8,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'negativeNumber',
+  },
+  {
+    field: 'september',
+    title: 9,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'negativeNumber',
+  },
+  {
+    field: 'october',
+    title: 10,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'negativeNumber',
+  },
+  {
+    field: 'november',
+    title: 11,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'negativeNumber',
+  },
+  {
+    field: 'december',
+    title: 12,
+    editable: true,
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'negativeNumber',
+  },
+  {
+    field: 'january',
+    title: 1,
+    editable: true,
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'negativeNumber',
+  },
+  {
+    field: 'february',
+    title: 2,
+    editable: true,
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'negativeNumber',
+  },
+  {
+    field: 'march',
+    title: 3,
+    editable: true,
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'negativeNumber',
+  },
+  {
+    field: 'wtAverage',
+    title: 'Weighted Average',
+    width: 120,
+    editable: false,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'negativeNumber',
+  },
+  {
+    field: 'remarks',
+    title: 'Remark',
+    widthT: 80,
+    editable: true,
+  },
+
+  {
+    field: 'idFromApi',
+    title: 'idFromApi',
+    hidden: true,
+  },
+  {
+    field: 'isEditable',
+    title: 'isEditable',
+    hidden: true,
+  },
+]
