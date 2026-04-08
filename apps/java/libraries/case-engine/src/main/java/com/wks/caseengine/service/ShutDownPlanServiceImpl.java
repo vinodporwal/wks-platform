@@ -2856,11 +2856,11 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
 					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 			List<Map<String, Object>> mapList = new ArrayList<Map<String, Object>>();
-			String viewName = "vwScrnShutdown" + vertical.getName();
+			String viewName = "vwScrnShutdown" + vertical.getName()+ site.getName();
 			List<Object[]> results = getDescriptionDropdownData(vertical.getId(), viewName);
 			for (Object[] obj : results) {
 				Map<String, Object> map = new HashMap<String, Object>();
