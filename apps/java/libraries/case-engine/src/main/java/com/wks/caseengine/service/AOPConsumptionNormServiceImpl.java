@@ -159,8 +159,12 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 					dto.setProductName(row[24] != null ? row[24].toString() : null);
 					if(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("Chemical")) {
 						dto.setWtAverage(row[25] != null ? Double.parseDouble(row[25].toString()) : null);
+						
+					}
+					if(vertical.getName().equalsIgnoreCase("Chemical")) {
 						dto.setSapCode(row[26] != null ? row[26].toString() : "");
 					}
+					
 				}
 				
 				aOPConsumptionNormDTOList.add(dto);
