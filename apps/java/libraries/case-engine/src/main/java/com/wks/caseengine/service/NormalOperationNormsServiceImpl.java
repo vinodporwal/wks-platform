@@ -261,13 +261,6 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			for (MCUNormsValueDTO dto : mCUNormsValueDTOList) {
-
-  if(dto.getId() == null || dto.getId().isEmpty()) {  
-// Import functionality : skip the empty rows
-	continue;
-  }
-
-
 				System.out.println(dto.getProductName());
 				Boolean changed = false;
 				if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) {
