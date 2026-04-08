@@ -70,8 +70,7 @@ const BusinessDemand = ({ permissions }) => {
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
-  const IS_CHEMICAL_JMD =
-    lowerVertName === 'chemical' && lowerSiteName === 'jmd'
+  const IS_CHEMICAL_JMD = lowerVertName === 'chemical' && lowerSiteName === 'jmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'
   const PRODUCTION_TARGET_LABEL = IS_VCM_VERTICAL
     ? 'Production Target (This is a reference for entering the Business Demand value)'
@@ -177,7 +176,8 @@ const BusinessDemand = ({ permissions }) => {
           inEdit: false,
           Particulars: item.normParameterTypeDisplayName,
           expanded: false,
-          UOM: IS_VCM_VERTICAL ? '%' : item?.UOM,
+          UOM:
+            IS_VCM_VERTICAL || lowerVertName === 'chemical' ? '%' : item?.UOM,
         }))
 
       setRows(formattedData)
@@ -289,7 +289,8 @@ const BusinessDemand = ({ permissions }) => {
         // FOR PTA THIS CONDITION IS REMOVED
         // IS_PTA_VERTICAL ||
         IS_PET_VERTICAL ||
-        IS_ELASTOMER_VERTICAL
+        IS_ELASTOMER_VERTICAL ||
+        (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD)
       ) {
         const productionRows = (rows || []).filter(
           (row) => row.Particulars?.toLowerCase() === 'production',
@@ -509,6 +510,7 @@ const BusinessDemand = ({ permissions }) => {
         IS_PVC_VMD ||
         IS_PVC_DMD ||
         IS_ELASTOMER_VERTICAL ||
+
         (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD)
           ? true
           : false,

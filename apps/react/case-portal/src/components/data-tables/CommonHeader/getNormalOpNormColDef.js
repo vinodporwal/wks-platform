@@ -11,6 +11,7 @@ import { NormalOpNormPtaColumns } from 'components/colums/PtaColums'
 import { NormalOpNormVcmDmdColumns } from 'components/colums/VcmDmdColumns'
 import { verticalEnums } from 'enums/verticalEnums'
 import { useSelector } from 'react-redux'
+import { NormalOpNormChemicalColumns } from 'components/colums/ChemicalColums'
 
 const colDefsCache = new Map()
 
@@ -22,6 +23,7 @@ const VERTICAL_COLDEFS_MAP = {
   [verticalEnums.MEG]: NormalOpNormMegColumns,
   [verticalEnums.CRACKER]: CrackerColums,
   [verticalEnums.VCM]: NormalOpNormVcmColumns,
+  [verticalEnums.CHEMICAL]: NormalOpNormChemicalColumns,
 }
 
 const getNormalOpNormColDef = ({

@@ -103,7 +103,9 @@ const RawMaterialGrid = ({
           b2232Id: row.b2232Id,
           name: row.name,
           type: row.type || 'Raw Material',
-          isEditable: IS_ELASTOMER_JMD_IIR ? !disabledRows.includes(row.grade) : true,
+          isEditable: IS_ELASTOMER_JMD_IIR
+            ? !disabledRows.includes(row.grade)
+            : true,
         }),
       )
 

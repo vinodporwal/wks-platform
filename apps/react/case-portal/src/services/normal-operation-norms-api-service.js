@@ -33,6 +33,8 @@ export const NormalOperationNormsApiService = {
   shutdownNormsExport,
   shutdownNormsExportNonGrade,
   shutdownNormsExportAllGarde,
+  getNormalOpsNormsExcelChemicalDmd,
+  saveNormalOpsNormsExcelChemicalDmd,
 }
 
 async function BestAchivedColorCodes(keycloak, plantId, year, mode) {
@@ -772,7 +774,7 @@ export async function shutdownNormsExportNonGrade(
   plantId,
   year,
   gradeId,
-  excelName
+  excelName,
 ) {
   const url =
     `${Config.CaseEngineUrl}/task/export-shutdown-consumption` +
@@ -797,7 +799,9 @@ export async function shutdownNormsExportNonGrade(
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = excelName ? `${excelName}.xlsx` : `Shutdown_Consumption_${year}.xlsx`
+    a.download = excelName
+      ? `${excelName}.xlsx`
+      : `Shutdown_Consumption_${year}.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -845,5 +849,73 @@ export async function shutdownNormsExportAllGarde(
   } catch (e) {
     console.error('Error exporting Shutdown_Consumption Excel:', e)
     return Promise.reject(e)
+  }
+}
+async function getNormalOpsNormsExcelChemicalDmd(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_EXPORT_TITLE,
+  SCREEN_NAME,
+) {
+  var url = `${Config.CaseEngineUrl}/task/steady-state-norms-export-chemical?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Failed to edit data: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error Editing data:', e)
+    return Promise.reject(e)
+  }
+}
+async function saveNormalOpsNormsExcelChemicalDmd(
+  file,
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  GRADE_ID,
+) {
+  let url = ''
+  url = `${Config.CaseEngineUrl}/task/steady-state-norms-import-chemical?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+
+  if (GRADE_ID) {
+    url += `&gradeId=${GRADE_ID}`
+  }
+
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }

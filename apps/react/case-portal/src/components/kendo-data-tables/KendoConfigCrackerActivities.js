@@ -29,6 +29,7 @@ import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment'
 import { getRoleName } from 'services/role-service.js'
 import DecokingConfigNMD from './KendoConfigCrackerActivitiesNMD.js'
 import DownsteamShutdownDMD from './downsteamShutdownDMD.js'
+import FurnaceMaintenanceActivity from './FurnaceMaintenanceActivity.js'
 
 const DecokingConfig = () => {
   const keycloak = useSession()
@@ -67,6 +68,7 @@ const DecokingConfig = () => {
   const SCREEN_NAME = screenTitle?.title
   const siteName = siteObject?.name?.toLowerCase()
   const IS_DMD = siteObject?.name?.toLowerCase() == 'dmd'
+  const IS_CRACKER_VMD = lowerVertName === 'cracker' && siteName === 'vmd'
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -1629,6 +1631,24 @@ const DecokingConfig = () => {
           </Box>
         </CustomAccordionDetails>
       </CustomAccordion>
+
+      {IS_CRACKER_VMD && (
+        <CustomAccordion defaultExpanded disableGutters sx={{ mt: 1.5 }}>
+          <CustomAccordionSummary
+            aria-controls='meg-grid-content'
+            id='meg-grid-header'
+          >
+            <Typography component='span' className='grid-title'>
+              Furnace Maintenance Activity
+            </Typography>
+          </CustomAccordionSummary>
+          <CustomAccordionDetails>
+            <Box sx={{ width: '100%', margin: 0 }}>
+              <FurnaceMaintenanceActivity />
+            </Box>
+          </CustomAccordionDetails>
+        </CustomAccordion>
+      )}
     </Box>
   )
 }
