@@ -1261,11 +1261,13 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	                                }
 	                            }
 
-	                            if (overlapsFile) {
-	                                    dto.setSaveStatus("Failed");
+	                            if (overlapsFile ) {
+	                            	if(!(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP"))) {
+	                            		dto.setSaveStatus("Failed");
 	                                    dto.setErrDescription(
 	                                        "The maintenance period overlaps with an already validated period in the file.");
 	                                    alreadyFailed = true;
+	                            	}      
 	                            }
 	                            
 	                            if (!alreadyFailed && !(vertical.getName().equalsIgnoreCase("Elastomer") || vertical.getName().equalsIgnoreCase("PVC"))) {
@@ -1289,9 +1291,11 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	                                }
 
 	                                if (overlapsSlowdown) {
-	                                    dto.setSaveStatus("Failed");
-	                                    dto.setErrDescription("The date range is overlapping with an existing Slowdown period.");
-	                                    alreadyFailed = true;
+	                                	if(!(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP"))) {
+		                                    dto.setSaveStatus("Failed");
+		                                    dto.setErrDescription("The date range is overlapping with an existing Slowdown period.");
+		                                    alreadyFailed = true;
+	                                	}
 	                                }
 	                            }
 	                            
