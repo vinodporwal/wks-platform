@@ -3510,7 +3510,7 @@ export async function slowdownconsumptionExportVCM(
   plantId,
   year,
   gradeId,
-  excelName
+  excelName,
 ) {
   const url =
     `${Config.CaseEngineUrl}/task/export-slowdown-consumption?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}` +
@@ -4411,4 +4411,3 @@ async function saveSlowdownNormsExcelAllGrade(
     return await Promise.reject(e)
   }
 }
-

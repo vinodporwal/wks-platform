@@ -27,7 +27,7 @@ const getEnhancedColDefs = ({
     colDefs = productionColDefsPta
   } else if (lowerVertName === 'vcm') {
     colDefs = productionColDefsVcm
-  } else if(lowerVertName === 'chemical') {
+  } else if (lowerVertName === 'chemical') {
     colDefs = productionColDefsChemical
   }
 

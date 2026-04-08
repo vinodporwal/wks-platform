@@ -990,7 +990,7 @@ const ProductionNorms = ({ permissions }) => {
     setSelectedUnitIIR(unit)
   }
   const isCellEditable = (params) => params.row.id !== 'total'
-  
+
   useEffect(() => {
     if (
       IS_ELASTOMER_JMD_IIR &&

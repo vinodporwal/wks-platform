@@ -967,8 +967,11 @@ const UserForm = ({ keycloak }) => {
                                         ...prev,
                                         [`${verticalId}-${siteIndex}`]: false,
                                       }))
-                                      if (siteEntry.site && siteEntry.site.length > 1) {
-                                        const currentSites = siteEntry.site;
+                                      if (
+                                        siteEntry.site &&
+                                        siteEntry.site.length > 1
+                                      ) {
+                                        const currentSites = siteEntry.site
                                         handleSiteChange(
                                           verticalId,
                                           siteIndex,
@@ -976,11 +979,9 @@ const UserForm = ({ keycloak }) => {
                                           [currentSites[0]],
                                         )
                                         currentSites.slice(1).forEach((id) => {
-                                          addSiteEntry(
-                                            verticalId,
-                                            siteEntry,
-                                            [id],
-                                          )
+                                          addSiteEntry(verticalId, siteEntry, [
+                                            id,
+                                          ])
                                         })
                                       }
                                     }}
@@ -1136,8 +1137,12 @@ const UserForm = ({ keycloak }) => {
                                                 ...prev,
                                                 [`${verticalId}-${siteIndex}-${plantIndex}`]: false,
                                               }))
-                                              if (plantEntry.plantId && plantEntry.plantId.length > 1) {
-                                                const currentPlants = plantEntry.plantId;
+                                              if (
+                                                plantEntry.plantId &&
+                                                plantEntry.plantId.length > 1
+                                              ) {
+                                                const currentPlants =
+                                                  plantEntry.plantId
                                                 handlePlantChange(
                                                   verticalId,
                                                   siteIndex,
@@ -1145,14 +1150,16 @@ const UserForm = ({ keycloak }) => {
                                                   'plantId',
                                                   [currentPlants[0]],
                                                 )
-                                                currentPlants.slice(1).forEach((id) => {
-                                                  addPlantEntry(
-                                                    verticalId,
-                                                    siteIndex,
-                                                    plantEntry,
-                                                    [id],
-                                                  )
-                                                })
+                                                currentPlants
+                                                  .slice(1)
+                                                  .forEach((id) => {
+                                                    addPlantEntry(
+                                                      verticalId,
+                                                      siteIndex,
+                                                      plantEntry,
+                                                      [id],
+                                                    )
+                                                  })
                                               }
                                             }}
                                             value={plantEntry.plantId || []}

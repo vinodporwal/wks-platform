@@ -1362,7 +1362,7 @@ const SlowDown = ({ permissions }) => {
 
     try {
       let response
-      
+
       if (IS_ELASTOMER_JMD) {
         response = await DtaDataService.exportSlowdownElastomerJmd(
           keycloak,
@@ -1593,7 +1593,9 @@ const SlowDown = ({ permissions }) => {
       </Backdrop>
 
       {(lowerVertName === 'meg' ||
-        (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD && !IS_ELASTOMER_HMD_SBR )) && (
+        (lowerVertName === 'elastomer' &&
+          !IS_ELASTOMER_JMD &&
+          !IS_ELASTOMER_HMD_SBR)) && (
         <Box style={{ margin: 0, padding: 0 }}>
           <Tabs
             value={selectedTab}
@@ -1617,7 +1619,11 @@ const SlowDown = ({ permissions }) => {
             />
 
             <Tab
-              label={lowerVertName === 'meg' ? 'Slowdown Config' : 'Slowdown History Config'}
+              label={
+                lowerVertName === 'meg'
+                  ? 'Slowdown Config'
+                  : 'Slowdown History Config'
+              }
               sx={{
                 border: '1px solid #ADD8E6',
                 borderBottom: '1px solid #ADD8E6',

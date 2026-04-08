@@ -41,7 +41,8 @@ export default function RelPerf() {
   })
 
   const [snackbarOpenFinancial, setSnackbarOpenFinancial] = useState(false)
-  const [snackbarOpenCommonParameter, setSnackbarOpenCommonParameter] = useState(false)
+  const [snackbarOpenCommonParameter, setSnackbarOpenCommonParameter] =
+    useState(false)
   const [OpenFinancial, setOpenFinancial] = useState(false)
   const [OpenCommonParameter, setOpenCommonParameter] = useState(false)
 
@@ -49,10 +50,11 @@ export default function RelPerf() {
     message: '',
     severity: 'info',
   })
-  const [snackbarDataCommonParameter, setSnackbarDataCommonParameter] = useState({
-    message: '',
-    severity: 'info',
-  })
+  const [snackbarDataCommonParameter, setSnackbarDataCommonParameter] =
+    useState({
+      message: '',
+      severity: 'info',
+    })
 
   const [
     snackbarOpenReliabilityPerformance,
@@ -104,7 +106,8 @@ export default function RelPerf() {
 
   const [modifiedReliabilityCells, setModifiedReliabilityCells] = useState({})
   const [modifiedFinancialCells, setModifiedFinancialCells] = useState({})
-  const [modifiedCommonParameterCells, setModifiedCommonParameterCells] = useState({})
+  const [modifiedCommonParameterCells, setModifiedCommonParameterCells] =
+    useState({})
   const [modifiedMajorIncidentsCells, setModifiedMajorIncidentsCells] =
     useState({})
   const [
@@ -124,9 +127,11 @@ export default function RelPerf() {
   const [remarkDialogOpenCommonParameter, setRemarkDialogOpenCommonParameter] =
     useState(false)
   const [currentRemarkFinancial, setCurrentRemarkFinancial] = useState('')
-  const [currentRemarkCommonParameter, setCurrentRemarkCommonParameter] = useState('')
+  const [currentRemarkCommonParameter, setCurrentRemarkCommonParameter] =
+    useState('')
   const [currentRowIdFinancial, setCurrentRowIdFinancial] = useState(null)
-  const [currentRowIdCommonParameter, setCurrentRowIdCommonParameter] = useState(null)
+  const [currentRowIdCommonParameter, setCurrentRowIdCommonParameter] =
+    useState(null)
 
   // Major Reliability Incidents Grid
   const majorIncidentsColumns = [
@@ -562,7 +567,6 @@ export default function RelPerf() {
     setRemarkDialogOpenCommonParameter(true)
   }
 
-
   const saveIncidents = async (newRows) => {
     try {
       const payloadData = newRows.map((row) => ({
@@ -670,7 +674,7 @@ export default function RelPerf() {
           message: validationMessage,
           severity: 'error',
         })
-        setLoading(false) 
+        setLoading(false)
         return
       }
       saveCommonParameter(data)

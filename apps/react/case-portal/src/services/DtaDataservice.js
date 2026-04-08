@@ -294,7 +294,12 @@ export async function exportSlowdownElastomerJmd(
     return Promise.reject(e)
   }
 }
-export async function ImportSlowdownElastomerJmd(file, keycloak, plantId, year) {
+export async function ImportSlowdownElastomerJmd(
+  file,
+  keycloak,
+  plantId,
+  year,
+) {
   const url = `${Config.CaseEngineUrl}/task/slowdown-import-hiir?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(year)}`
   const formData = new FormData()
   formData.append('file', file)

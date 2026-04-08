@@ -774,7 +774,7 @@ export async function shutdownNormsExportNonGrade(
   plantId,
   year,
   gradeId,
-  excelName
+  excelName,
 ) {
   const url =
     `${Config.CaseEngineUrl}/task/export-shutdown-consumption` +
