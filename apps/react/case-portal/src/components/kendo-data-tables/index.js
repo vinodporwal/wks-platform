@@ -50,6 +50,8 @@ import DatePickerNoLimit from './Utilities-Kendo/DatePickerNoLimit'
 
 import { descLimit } from './Utilities-Kendo/descLimit'
 import {
+  calculateMonthDuration,
+  getMonthStartEndDate,
   recalcDuration,
   recalcEndDate,
 } from './Utilities-Kendo/durationHelpers'
@@ -213,6 +215,7 @@ const KendoDataTables = ({
   const IS_OLD_YEAR = oldYear?.oldYear
   const AOP_YEAR = year?.selectedYear
   const PLANT_ID = plantObject?.id
+  const plantName = plantObject?.name
   const SiteName = siteObject?.name
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
@@ -590,6 +593,28 @@ const KendoDataTables = ({
             }
           }
 
+          const lowerPlantName = plantName?.toLowerCase()
+          const IS_ELASTOMER_JMD_HIIR =
+            lowerVertName === 'elastomer' &&
+            lowerSiteName === 'jmd' &&
+            lowerPlantName === 'hiir'
+
+          if (
+            screenType === 'shutdown' &&
+            IS_ELASTOMER_JMD_HIIR &&
+            field === 'monthly'
+          ) {
+            const monthDur = calculateMonthDuration(value, AOP_YEAR)
+            const [start, end] = getMonthStartEndDate(value, AOP_YEAR)
+            if (monthDur) {
+              updated.durationInHrs = monthDur
+            }
+            if (start && end) {
+              updated.maintStartDateTime = start
+              updated.maintEndDateTime = end
+            }
+          }
+
           // percentChange logic: adjust months if enabled and percentChange field changed
           if (field === 'percentChange' && permissions?.percentChangeLogic) {
             const pct = parsePctOrNull(value)
@@ -731,6 +756,28 @@ const KendoDataTables = ({
             }
           }
 
+          const lowerPlantName = plantName?.toLowerCase()
+          const IS_ELASTOMER_JMD_HIIR =
+            lowerVertName === 'elastomer' &&
+            lowerSiteName === 'jmd' &&
+            lowerPlantName === 'hiir'
+
+          if (
+            screenType === 'shutdown' &&
+            IS_ELASTOMER_JMD_HIIR &&
+            field === 'monthly'
+          ) {
+            const monthDur = calculateMonthDuration(value, AOP_YEAR)
+            const [start, end] = getMonthStartEndDate(value, AOP_YEAR)
+            if (monthDur) {
+              base.durationInHrs = monthDur
+            }
+            if (start && end) {
+              base.maintStartDateTime = start
+              base.maintEndDateTime = end
+            }
+          }
+
           return { ...prev, [uniqueItemId]: base }
         })
       }
@@ -762,6 +809,9 @@ const KendoDataTables = ({
       setCustomModifiedCells,
       lowerVertName,
       lowerSiteName,
+      plantName,
+      AOP_YEAR,
+      screenType,
     ],
   )
 

@@ -28,6 +28,7 @@ import {
 } from 'components/colums/ShutdownColumn'
 import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
 import { getRoleName } from 'services/role-service'
+import { calculateMonthDuration } from './Utilities-Kendo/durationHelpers'
 import ElastomerShutDown from './ElastomerShutDown'
 import PtaShutDown from './PtaShutdown'
 const ShutDown = ({ permissions }) => {
@@ -204,6 +205,27 @@ const ShutDown = ({ permissions }) => {
             setSnackbarOpen(true)
             setSnackbarData({
               message: `Dates must be between ${formatDateDDMMYYYY(startLimit)} and ${formatDateDDMMYYYY(endLimit)} for selected year. `,
+              severity: 'error',
+            })
+            return
+          }
+        }
+      }
+
+      if (IS_ELASTOMER_JMD_HIIR) {
+        for (const record of data) {
+          const expectedDuration = calculateMonthDuration(
+            record.monthly,
+            AOP_YEAR,
+          )
+          if (
+            record.durationInHrs &&
+            record.durationInHrs !== expectedDuration
+          ) {
+            record.isError = true
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: `Duration hrs for ${record.monthly} should be ${expectedDuration}. It cannot be less than or greater than the selected month.`,
               severity: 'error',
             })
             return
