@@ -568,8 +568,7 @@ const SelectivityData = (props) => {
       saveWithRemark: true,
       saveBtn: true,
       downloadExcelBtn: true,
-      uploadExcelBtn:
-        lowerVertName === 'chemical' && lowerSiteName === 'dmd' ? false : true,
+      uploadExcelBtn: true,
       showLoad: true,
       allAction: true,
 
