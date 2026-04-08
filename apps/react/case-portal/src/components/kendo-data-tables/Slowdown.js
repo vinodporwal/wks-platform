@@ -1621,7 +1621,7 @@ const SlowDown = ({ permissions }) => {
             <Tab
               label={
                 lowerVertName === 'meg'
-? 'Slowdown Configuration'
+                  ? 'Slowdown Configuration'
                   : 'Slowdown History Config'
               }
               sx={{
