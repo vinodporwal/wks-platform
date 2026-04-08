@@ -229,7 +229,7 @@ const ConfigurationTable = () => {
       if (
         lowerVertName == verticalEnums.MEG ||
         lowerVertName == verticalEnums.CRACKER ||
-        lowerVertName == verticalEnums.CHEMICAL
+        IS_CHEMICAL_DMD
       ) {
         data = data?.filter(
           (item) =>
