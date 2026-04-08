@@ -107,6 +107,28 @@ public class NormalOperationNormsController {
 	    }
 	}
 
+	@GetMapping(value = "/steady-state-norms-export-chemical")
+	public ResponseEntity<byte[]> exportSteadyStateNormsChemical(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year
+	        ) {
+	    try {
+			
+	        byte[] excelBytes = normalOperationNormsService.exportSteadyStateNormsChemical(year,UUID.fromString(plantId),false,null); 
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("plant_production_plan.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+
 	@GetMapping(value = "/steady-state-norms-all-grades-export")
 	public ResponseEntity<byte[]> exportSteadyStateNorms(
 	         @RequestParam("plantId") String plantId,
@@ -137,6 +159,15 @@ public class NormalOperationNormsController {
 			@RequestParam("file") MultipartFile file,@RequestParam(required = false) String mode
 	        ) {
 			return	normalOperationNormsService.importExcel(year,UUID.fromString(plantId),gradeId, file,mode); 
+	}
+	
+	@PostMapping(value = "/steady-state-norms-import-chemical", consumes = "multipart/form-data")
+	public AOPMessageVM importChemicalExcel(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,
+			@RequestParam("file") MultipartFile file
+	        ) {
+			return	normalOperationNormsService.importChemicalExcel(year,UUID.fromString(plantId), file); 
 	}
 	
 }
