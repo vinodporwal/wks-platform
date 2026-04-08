@@ -29,6 +29,8 @@ import com.wks.caseengine.cpp.dto.heatrate.HRSGHeatRateLookupDTO;
 import com.wks.caseengine.cpp.dto.heatrate.HeatRateDTO;
 import com.wks.caseengine.cpp.dto.heatrate.HeatRateProjection;
 import com.wks.caseengine.cpp.dto.heatrate.SelectedHeatRateType;
+import com.wks.caseengine.cpp.dto.heatrate.STGHeatRateDTO;
+import com.wks.caseengine.cpp.dto.heatrate.STGHeatRateProjection;
 import com.wks.caseengine.cpp.dto.heatrate.STGExtractionLookupDTO;
 import com.wks.caseengine.cpp.entity.HRSGHeatRateLookup;
 import com.wks.caseengine.cpp.entity.STGExtractionLookup;
@@ -511,6 +513,85 @@ public class HeatRateService {
         return proposedHeatRateMap;
     }
 
+    public List<STGHeatRateDTO> getSTGHeatRate(String financialYear) {
+        logger.info("========== SERVICE: getSTGHeatRate ==========");
+        logger.info("Input Parameters - financialYear: {}", financialYear);
+
+        String previousFinancialYear = calculatePreviousFinancialYear(financialYear);
+        List<STGHeatRateProjection> projections = heatRateRepository.findStgHeatRateByFinancialYear(financialYear, previousFinancialYear);
+
+        List<STGHeatRateDTO> result = projections.stream()
+                .map(projection -> {
+                    STGHeatRateDTO dto = new STGHeatRateDTO();
+                    dto.setId(projection.getId());
+                    dto.setEquipType(projection.getEquipType());
+                    dto.setCppUtility(projection.getCPPUtility());
+                    dto.setStgLoad(projection.getSTGLoad());
+                    dto.setHeatRate(projection.getHeatRate());
+                    dto.setRemarks(projection.getRemarks());
+                    dto.setPreviousYearHeatRate(projection.getPreviousYearHeatRate());
+                    dto.setFinalHeatRate(projection.getFinalHeatRate());
+                    dto.setOemHeatRate(projection.getOEMHeatRate());
+                    dto.setSelectedHeatRate(projection.getSelectedHeatRate());
+                    return dto;
+                })
+                .toList();
+
+        logger.info("Returning {} STG heat rate records", result.size());
+        logger.info("========== SERVICE: getSTGHeatRate COMPLETED ==========");
+        return result;
+    }
+
+    public List<STGHeatRateDTO> getSTGHeatRateWithProposed(String financialYear, String startDate, String endDate) {
+        logger.info("========== SERVICE: getSTGHeatRateWithProposed ==========");
+        logger.info("Input Parameters - financialYear: {}, startDate: {}, endDate: {}", financialYear, startDate, endDate);
+
+        List<STGHeatRateDTO> stgHeatRateDTOs = getSTGHeatRate(financialYear);
+
+        if (startDate != null && !startDate.trim().isEmpty() && endDate != null && !endDate.trim().isEmpty()) {
+            java.util.Map<Double, Double> proposedHeatRateMap = calculateProposedSTGHeatRates(startDate, endDate);
+
+            for (STGHeatRateDTO dto : stgHeatRateDTOs) {
+                Double proposedHeatRate = proposedHeatRateMap.get(dto.getStgLoad());
+                if (proposedHeatRate != null) {
+                    dto.setProposedHeatRate(proposedHeatRate);
+                }
+            }
+
+            logger.info("Merged proposed STG heat rates for {} load points", proposedHeatRateMap.size());
+        }
+
+        logger.info("Returning {} STG heat rate records with proposed data", stgHeatRateDTOs.size());
+        logger.info("========== SERVICE: getSTGHeatRateWithProposed COMPLETED ==========");
+        return stgHeatRateDTOs;
+    }
+
+    private java.util.Map<Double, Double> calculateProposedSTGHeatRates(String startDate, String endDate) {
+        logger.info("========== calculateProposedSTGHeatRates START ==========");
+        logger.info("Calculating proposed STG heat rates for dateRange: {} to {}", startDate, endDate);
+
+        String sql = "EXEC CPP_CalculateSTGHeatRate_ByDateRange @StartDate = ?, @EndDate = ?";
+        java.util.Map<Double, Double> proposedHeatRateMap = new java.util.HashMap<>();
+
+        try {
+            jdbcTemplate.query(sql,
+                (rs) -> {
+                    Double stgLoad = rs.getDouble("STGLoad");
+                    Double heatRate = rs.getDouble("HeatRate");
+                    if (!rs.wasNull()) {
+                        proposedHeatRateMap.put(stgLoad, heatRate);
+                    }
+                },
+                startDate, endDate
+            );
+        } catch (Exception e) {
+            logger.error("Error calling STG stored procedure: {}", e.getMessage(), e);
+        }
+
+        logger.info("========== calculateProposedSTGHeatRates END ==========");
+        return proposedHeatRateMap;
+    }
+
     public List<STGExtractionLookupDTO> getSTGExtractionLookup() {
         return stgExtractionLookupRepository.findAllByOrderByLoadMWAsc().stream()
                 .map(this::mapToSTGExtractionDTO)
@@ -623,6 +704,41 @@ public class HeatRateService {
             logger.warn("No records to update");
         }
         logger.info("=============================================");
+    }
+
+    public void updateSTGHeatRate(List<STGHeatRateDTO> stgHeatRateDTOs) {
+        logger.info("========== SERVICE: updateSTGHeatRate ==========");
+        logger.info("Received {} records to update", stgHeatRateDTOs != null ? stgHeatRateDTOs.size() : 0);
+
+        List<Object[]> updates = new ArrayList<>();
+        for (STGHeatRateDTO stgHeatRateDTO : stgHeatRateDTOs) {
+            String selectedHeatRate = stgHeatRateDTO.getSelectedHeatRate();
+            if (selectedHeatRate != null && !selectedHeatRate.trim().isEmpty()) {
+                if (!SelectedHeatRateType.isValid(selectedHeatRate)) {
+                    throw new IllegalArgumentException(
+                        String.format("Invalid selectedHeatRate value: '%s'. Must be one of: OEM, PREVIOUS_YEAR, PROPOSED, OTHER",
+                            selectedHeatRate));
+                }
+            } else {
+                selectedHeatRate = SelectedHeatRateType.PROPOSED.getValue();
+                stgHeatRateDTO.setSelectedHeatRate(selectedHeatRate);
+            }
+
+            updates.add(new Object[] {
+                stgHeatRateDTO.getStgLoad(),
+                stgHeatRateDTO.getFinalHeatRate(),
+                stgHeatRateDTO.getOemHeatRate(),
+                selectedHeatRate,
+                stgHeatRateDTO.getRemarks(),
+                stgHeatRateDTO.getId()
+            });
+        }
+
+        if (updates.size() > 0) {
+            String sql = "UPDATE CPP_STGHeatRate SET STGLoad = ?, FinalHeatRate = ?, OEMHeatRate = ?, SelectedHeatRate = ?, Remarks = ?, UpdatedDate = GETDATE() WHERE Id = ?";
+            jdbcTemplate.batchUpdate(sql, updates);
+        }
+        logger.info("========== SERVICE: updateSTGHeatRate COMPLETED ==========");
     }
 
     public void updateHRSGHeatRateLookup(List<HRSGHeatRateLookupDTO> hrsgHeatRateLookupDTOs) {
@@ -893,6 +1009,86 @@ public byte[] exportHeatRate(String assetId, String financialYear, String startD
     return outputStream.toByteArray();
 }
 
+public byte[] exportSTGHeatRate(String financialYear, String startDate, String endDate) throws IOException {
+    List<STGHeatRateDTO> data;
+
+    if (startDate != null && !startDate.trim().isEmpty() && endDate != null && !endDate.trim().isEmpty()) {
+        data = getSTGHeatRateWithProposed(financialYear, startDate, endDate);
+    } else {
+        data = getSTGHeatRate(financialYear);
+    }
+
+    Workbook workbook = new XSSFWorkbook();
+    Sheet sheet = workbook.createSheet("STG Heat Rate");
+    CellStyle headerStyle = createHeaderStyle(workbook);
+    CellStyle dataStyle = createDataStyle(workbook);
+    CellStyle remarksStyle = createRemarksStyle(workbook);
+
+    int rowNum = 0;
+
+    Row headerRow = sheet.createRow(rowNum++);
+    String[] headers = {"Equipment Type", "CPP Utility", "STG Load", "OEM HR", "PREVIOUS YEAR BUDGET HR", "PROPOSED HR (Based On Actual Data)", "Final HR", "Remark", "Selected Heat Rate", "Id"};
+    for (int i = 0; i < headers.length; i++) {
+        Cell cell = headerRow.createCell(i);
+        cell.setCellValue(headers[i]);
+        cell.setCellStyle(headerStyle);
+    }
+
+    sheet.setColumnHidden(8, true);
+    sheet.setColumnHidden(9, true);
+
+    for (STGHeatRateDTO dto : data) {
+        Row row = sheet.createRow(rowNum++);
+        int colNum = 0;
+
+        Cell cell = row.createCell(colNum++);
+        cell.setCellValue(dto.getEquipType() != null ? dto.getEquipType() : "");
+        cell.setCellStyle(dataStyle);
+        cell = row.createCell(colNum++);
+        cell.setCellValue(dto.getCppUtility() != null ? dto.getCppUtility() : "");
+        cell.setCellStyle(dataStyle);
+        cell = row.createCell(colNum++);
+        cell.setCellValue(dto.getStgLoad() != null ? dto.getStgLoad() : 0.0);
+        cell.setCellStyle(dataStyle);
+        cell = row.createCell(colNum++);
+        cell.setCellValue(dto.getOemHeatRate() != null ? dto.getOemHeatRate() : 0.0);
+        cell.setCellStyle(dataStyle);
+        cell = row.createCell(colNum++);
+        cell.setCellValue(dto.getPreviousYearHeatRate() != null ? dto.getPreviousYearHeatRate() : 0.0);
+        cell.setCellStyle(dataStyle);
+        cell = row.createCell(colNum++);
+        cell.setCellValue(dto.getProposedHeatRate() != null ? dto.getProposedHeatRate() : 0.0);
+        cell.setCellStyle(dataStyle);
+        cell = row.createCell(colNum++);
+        cell.setCellValue(dto.getFinalHeatRate() != null ? dto.getFinalHeatRate() : 0.0);
+        cell.setCellStyle(dataStyle);
+        cell = row.createCell(colNum++);
+        cell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
+        cell.setCellStyle(remarksStyle);
+        cell = row.createCell(colNum++);
+        cell.setCellValue(dto.getSelectedHeatRate() != null ? dto.getSelectedHeatRate() : "");
+        cell.setCellStyle(dataStyle);
+        cell = row.createCell(colNum++);
+        cell.setCellValue(dto.getId() != null ? dto.getId().toString() : "");
+        cell.setCellStyle(dataStyle);
+    }
+
+    for (int i = 0; i < headers.length; i++) {
+        if (i == 7) {
+            sheet.setColumnWidth(i, 8000);
+            continue;
+        }
+        sheet.autoSizeColumn(i);
+        applyHeaderMinWidth(sheet, i, headers[i]);
+    }
+
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    workbook.write(outputStream);
+    workbook.close();
+
+    return outputStream.toByteArray();
+}
+
 // ============================================================
 // IMPORT METHODS
 // ============================================================
@@ -1022,6 +1218,42 @@ public void importHeatRate(MultipartFile file) throws IOException {
     
     if (!dtos.isEmpty()) {
         updateHeatRate(dtos);
+    }
+}
+
+public void importSTGHeatRate(MultipartFile file) throws IOException {
+    List<STGHeatRateDTO> dtos = new ArrayList<>();
+
+    try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+        Sheet sheet = workbook.getSheetAt(0);
+        int totalRows = sheet.getLastRowNum();
+
+        for (int i = 1; i <= totalRows; i++) {
+            Row row = sheet.getRow(i);
+            if (row == null) continue;
+
+            STGHeatRateDTO dto = new STGHeatRateDTO();
+
+            String idStr = getCellValueAsString(row, 9);
+            if (idStr != null && !idStr.isEmpty()) {
+                dto.setId(UUID.fromString(idStr));
+            }
+
+            dto.setEquipType(getCellValueAsString(row, 0));
+            dto.setCppUtility(getCellValueAsString(row, 1));
+            dto.setStgLoad(getCellValueAsDouble(row, 2));
+            dto.setOemHeatRate(getCellValueAsDouble(row, 3));
+            dto.setPreviousYearHeatRate(getCellValueAsDouble(row, 4));
+            dto.setFinalHeatRate(getCellValueAsDouble(row, 6));
+            dto.setRemarks(getCellValueAsString(row, 7));
+            dto.setSelectedHeatRate(getCellValueAsString(row, 8));
+
+            dtos.add(dto);
+        }
+    }
+
+    if (!dtos.isEmpty()) {
+        updateSTGHeatRate(dtos);
     }
 }
 
