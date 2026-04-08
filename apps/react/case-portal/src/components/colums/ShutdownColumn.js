@@ -421,23 +421,23 @@ export const ShutDownChemicalColumns = [
     editable: false,
     hidden: true,
   },
-  // {
-  //   field: 'maintStartDateTime',
-  //   title: 'SD - From',
-  //   editable: true,
-  // },
-  // {
-  //   field: 'maintEndDateTime',
-  //   title: 'SD - To',
-  //   editable: true,
-  // },
   {
-    field: 'monthly',
-    title: 'Month',
-    type: 'monthDropdownPEPP',
+    field: 'maintStartDateTime',
+    title: 'SD - From',
     editable: true,
-    width: 150,
   },
+  {
+    field: 'maintEndDateTime',
+    title: 'SD - To',
+    editable: true,
+  },
+  // {
+  //   field: 'monthly',
+  //   title: 'Month',
+  //   type: 'monthDropdownPEPP',
+  //   editable: true,
+  //   width: 150,
+  // },
   {
     field: 'durationInHrs',
     title: 'Duration (hrs)',

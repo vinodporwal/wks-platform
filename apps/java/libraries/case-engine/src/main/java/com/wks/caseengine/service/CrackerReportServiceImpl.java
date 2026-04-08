@@ -27,6 +27,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.CatChemNormDTO;
@@ -110,6 +111,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public List<Object[]> getSpyroInputReportData(String plantId, String AopYear, String Mode) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
@@ -138,7 +140,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
-
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public List<String> getSpyroInputReportColumns(String plantId, String AopYear, String Mode) {
 		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
 			List<String> columnNames = new ArrayList<>();
@@ -170,7 +172,8 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 			return columnNames;
 		});
 	}
-
+	
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public List<Map<String, Object>> getSpyroInputReportColumnMetadata(String plantId, String AopYear, String Mode) {
 		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
 			List<Map<String, Object>> columnMetadata = new ArrayList<>();
@@ -503,6 +506,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 	
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public AOPMessageVM getFinalNormsProductionReport(String plantId, String AopYear,String reportType) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
@@ -535,6 +539,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 		}
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public List<Object[]> getFinalNormsProductionReportData(String plantId, String aopYear,String reportType) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
@@ -562,6 +567,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 		}
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public List<String> getFinalNormsProductionReportColumns(String plantId, String aopYear, String reportType) {
 		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
 			List<String> columnNames = new ArrayList<>();
@@ -591,6 +597,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 		});
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public List<Map<String, Object>> getFinalNormsProductionReportColumnMetadata(String plantId, String aopYear) {
 		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
 			List<Map<String, Object>> columnMetadata = new ArrayList<>();
@@ -2142,6 +2149,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 
 	
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public AOPMessageVM getFurnaceReport(String plantId, String year, String reportType){
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
@@ -2175,7 +2183,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 		}
 
 	}
-
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public List<Object[]> getFurnaceReportData(String plantId, String aopYear, String reportType) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
@@ -2204,6 +2212,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 		}
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public List<String> getFurnaceReportColumns(String plantId, String aopYear, String reportType) {
 		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
 			List<String> columnNames = new ArrayList<>();
@@ -2235,6 +2244,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 		});
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public List<Map<String, Object>> getFurnaceReportColumnMetadata(String plantId, String aopYear, String reportType) {
 		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
 			List<Map<String, Object>> columnMetadata = new ArrayList<>();
@@ -2458,6 +2468,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public AOPMessageVM getMonthWiseRawDataByMethod(String plantId,String year,String mode,String method) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
@@ -2491,6 +2502,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public List<Object[]> getMonthWiseData(String plantId,String year,String mode,String method) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
@@ -2519,6 +2531,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 		}
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public List<String> getMonthWiseDataColumns(String plantId,String year,String mode,String method) {
 		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
 			List<String> columnNames = new ArrayList<>();
@@ -2550,6 +2563,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 		});
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public List<Map<String, Object>> getMonthWiseDataColumnMetadata(String plantId,String year,String mode,String method) {
 		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
 			List<Map<String, Object>> columnMetadata = new ArrayList<>();

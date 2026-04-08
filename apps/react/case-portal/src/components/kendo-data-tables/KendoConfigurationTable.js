@@ -80,6 +80,8 @@ const ConfigurationTable = () => {
   const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
   const IS_AROMATICS_HMD =
     lowerVertName === 'aromatics' && lowerSiteName === 'hmd'
+  const IS_CHEMICAL_DMD =
+    lowerVertName === 'chemical' && lowerSiteName === 'dmd'
   const [tabIndex, setTabIndex] = useState(0)
   const [loadBtnClicked, setLoadBtnClicked] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -226,7 +228,8 @@ const ConfigurationTable = () => {
 
       if (
         lowerVertName == verticalEnums.MEG ||
-        lowerVertName == verticalEnums.CRACKER
+        lowerVertName == verticalEnums.CRACKER ||
+        IS_CHEMICAL_DMD
       ) {
         data = data?.filter(
           (item) =>
@@ -596,7 +599,11 @@ const ConfigurationTable = () => {
     getAopSummary()
 
     setTimeout(() => {
-      if (lowerVertName != 'cracker' && lowerVertName != 'meg') {
+      if (
+        lowerVertName != 'cracker' &&
+        lowerVertName != 'meg' &&
+        !IS_CHEMICAL_DMD
+      ) {
         if (lowerVertName === 'aromatics') {
           getRevision()
         }
@@ -1133,14 +1140,19 @@ const ConfigurationTable = () => {
     )
   }, [openConfirmDialogRev])
 
-  if (lowerVertName == 'meg' && lowerVertName !== 'cracker') {
+  if (
+    (lowerVertName == 'meg' || IS_CHEMICAL_DMD) &&
+    lowerVertName !== 'cracker'
+  ) {
     // const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
-    const megTabs = [
-      'Configuration',
-      'Constants',
-      'Report Manual Entry',
-      'NSR & Material Prices',
-    ]
+    const megTabs = IS_CHEMICAL_DMD
+      ? ['Configuration', 'Constants']
+      : [
+          'Configuration',
+          'Constants',
+          'Report Manual Entry',
+          'NSR & Material Prices',
+        ]
     const auditYear = AOP_YEAR
     let displayYear = ''
     if (auditYear) {

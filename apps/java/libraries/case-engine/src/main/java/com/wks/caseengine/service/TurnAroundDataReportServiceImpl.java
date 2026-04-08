@@ -55,11 +55,8 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
             List<Map<String, Object>> plantTurnAroundData = new ArrayList<>();
             String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
             List<Object[]> obj =null;
-            if(verticalName.equalsIgnoreCase("MEG")) {
+           
             	  obj = getPlantTurnAroundDataDB2(plantId, year, reportType);
-            }else {
-            	  obj = getPlantTurnAroundData(plantId, year, reportType);
-            }
            
             if (reportType.equalsIgnoreCase("currentYear")) {
                 for (Object[] row : obj) {
@@ -168,6 +165,7 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
             throw new RuntimeException("Failed to fetch data", ex);
         }
     }
+
 
 	@Override
 	public AOPMessageVM updateReportForTurnAroundData(String plantId, String year,

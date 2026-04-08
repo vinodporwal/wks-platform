@@ -118,6 +118,10 @@ const ShutdownNorms = () => {
   const IS_PTA_DMD =
     ['pta'].includes(lowerVertName) && ['dmd'].includes(SITE_NAME_LOWERCASE)
   const IS_CHEMICAL = ['chemical'].includes(lowerVertName)
+  const IS_ELASTOMER_JMD_IIR =
+    ['elastomer'].includes(lowerVertName) &&
+    ['jmd'].includes(SITE_NAME_LOWERCASE) &&
+    ['iir'].includes(PLANT_NAME_LOWERCASE)
 
   const textNote =
     IS_PE_PP_VERTICAL || IS_PVC_DMD || IS_ELASTOMER_JMD_HIIR
@@ -628,7 +632,13 @@ const ShutdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || lowerVertName === 'pta' || IS_CHEMICAL || IS_AROMATICS_SEZ_PX4) {
+      if (
+        lowerVertName === 'vcm' ||
+        lowerVertName === 'pta' ||
+        IS_CHEMICAL ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_ELASTOMER_JMD_IIR
+      ) {
         // Use shutdownNormsExportNonGrade for VCM
         response =
           await NormalOperationNormsApiService.shutdownNormsExportNonGrade(
@@ -684,7 +694,13 @@ const ShutdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || lowerVertName === 'pta' || IS_CHEMICAL || IS_AROMATICS_SEZ_PX4) {
+      if (
+        lowerVertName === 'vcm' ||
+        lowerVertName === 'pta' ||
+        IS_CHEMICAL ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_ELASTOMER_JMD_IIR
+      ) {
         // Use saveShutdownNormsExcelNonGrade for VCM
         response =
           await NormalOperationNormsApiService.saveShutdownNormsExcelNonGrade(
@@ -874,7 +890,8 @@ const ShutdownNorms = () => {
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta' ||
         IS_AROMATICS_SEZ_PX4 ||
-        IS_CHEMICAL
+        IS_CHEMICAL ||
+        IS_ELASTOMER_JMD_IIR
           ? true
           : false,
       uploadExcelBtn:
@@ -891,7 +908,8 @@ const ShutdownNorms = () => {
         IS_ELASTOMER_JMD_HIIR ||
         IS_AROMATICS_SEZ_PX4 ||
         IS_ELASTOMER_HMD_SBR ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_ELASTOMER_JMD_IIR
           ? true
           : false,
       showTitleNameBusiness: true,

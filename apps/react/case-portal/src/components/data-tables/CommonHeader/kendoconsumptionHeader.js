@@ -4,6 +4,7 @@ import productionColDefsElastomer from '../../../assets/kendo_consumption_aop_el
 import productionColDefs1 from '../../../assets/kendo_consumption_aop_cracker.json'
 import productionColDefsVcm from '../../../assets/kendo_consumption_aop_vcm.json'
 import productionColDefsPta from '../../../assets/kendo_consumption_aop_pta.json'
+import productionColDefsChemical from '../../../assets/kendo_consumption_aop_chemical.json'
 // import productionColDefsVcmDmd from '../../../assets/kendo_consumption_aop_vcmdmd.json'
 const getEnhancedColDefs = ({
   headerMap,
@@ -26,6 +27,8 @@ const getEnhancedColDefs = ({
     colDefs = productionColDefsPta
   } else if (lowerVertName === 'vcm') {
     colDefs = productionColDefsVcm
+  } else if (lowerVertName === 'chemical') {
+    colDefs = productionColDefsChemical
   }
 
   const enhancedColDefs = colDefs.map((col) => {

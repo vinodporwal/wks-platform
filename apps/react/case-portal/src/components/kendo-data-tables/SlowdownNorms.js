@@ -504,7 +504,12 @@ const SlowdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL || IS_AROMATICS_SEZ_PX4) {
+      if (
+        lowerVertName === 'vcm' ||
+        IS_PTA ||
+        IS_CHEMICAL ||
+        IS_AROMATICS_SEZ_PX4
+      ) {
         // Use slowdownconsumptionExportVCM for VCM
         response = await DataService.slowdownconsumptionExportVCM(
           keycloak,
@@ -687,10 +692,11 @@ const SlowdownNorms = () => {
         IS_PTA ||
         IS_CHEMICAL ||
         IS_AROMATICS_SEZ_PX4 ||
-        IS_ELASTOMER_HMD_SBR
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR
           ? false
           : true,
-      uploadExcelBtn:true,
+      uploadExcelBtn: true,
       downloadExcelBtn:
         IS_PE_PP ||
         lowerVertName === 'vcm' ||

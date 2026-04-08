@@ -691,13 +691,9 @@ public class AOPReportServiceImpl implements AOPReportService {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 			List<Object[]> obj=null;
-			if(vertical.getName().equalsIgnoreCase("MEG")) {
-				 obj = getSpecificConsumptionNormsT17DataDB2(plantId, year, reportType);
-			}else {
-				 obj = getSpecificConsumptionNormsT17Data(plantId, year, reportType);
-			}
-
 			
+				 obj = getSpecificConsumptionNormsT17DataDB2(plantId, year, reportType);
+						
 			List<PlantContributionSummaryT17DTO> plantProductionData = new ArrayList<>();
 
 			for (Object[] row : obj) {
@@ -750,7 +746,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
-
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getPlantContributionData(String plantId, String aopYear, String reportType) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
@@ -1302,7 +1298,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 			return columnMetadata;
 		});
 	}
-	
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getGradewiseConsumptionNormsData(String plantId,String year) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
@@ -1329,7 +1325,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
-
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<String> getGradewiseConsumptionNormsDataColumns(String plantId,String year) {
 		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
 			List<String> columnNames = new ArrayList<>();
@@ -1359,7 +1355,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 			return columnNames;
 		});
 	}
-
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Map<String, Object>> getGradewiseConsumptionNormsColumnMetadata(String plantId,String year) {
 		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
 			List<Map<String, Object>> columnMetadata = new ArrayList<>();
