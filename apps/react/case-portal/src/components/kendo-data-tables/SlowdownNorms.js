@@ -560,7 +560,7 @@ const SlowdownNorms = () => {
     setLoading(true)
     try {
       let response
-       if ((IS_PE_PP && !IS_PE_NMD) || IS_ELASTOMER_JMD_HIIR) {
+      if ((IS_PE_PP && !IS_PE_NMD) || IS_ELASTOMER_JMD_HIIR) {
         response = await DataService.saveSlowdownNormsExcelAllGrade(
           rawFile,
           keycloak,
@@ -584,14 +584,6 @@ const SlowdownNorms = () => {
           gradeId,
         )
       }
-      // else if ((IS_PE_PP || IS_PE_NMD) || IS_ELASTOMER_JMD_HIIR) {
-      //   response = await DataService.saveSlowdownNormsExcelAllGrade(
-      //     rawFile,
-      //     keycloak,
-      //     PLANT_ID,
-      //     AOP_YEAR,
-      //   )
-      // }
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
