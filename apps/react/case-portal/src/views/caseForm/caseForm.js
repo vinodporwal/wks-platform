@@ -2146,19 +2146,17 @@ console.log('*****  taskId:  ', taskId);
   )
 }
 
-const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
 
 const fetchAndCacheOptions = async (serviceMethod, cacheKey, mapCallback) => {
-  const cached = JSON.parse(localStorage.getItem(cacheKey));
-  const now = Date.now();
-  if (cached && cached.options && cached.options.length > 0 && (now - cached.timestamp) < CACHE_TTL_MS) {
+  const cachedOptions = JSON.parse(localStorage.getItem(cacheKey)) || [];
+  if (cachedOptions.length > 0) {
     console.log(`Using cached options for ${cacheKey}`);
-    return cached.options;
+    return cachedOptions;
   }
   try {
     const data = await serviceMethod();
     const options = data.map(mapCallback);
-    localStorage.setItem(cacheKey, JSON.stringify({ options, timestamp: now }));
+    localStorage.setItem(cacheKey, JSON.stringify(options));
     console.log(`Fetched and cached options for ${cacheKey}`);
     return options;
   } catch (error) {
