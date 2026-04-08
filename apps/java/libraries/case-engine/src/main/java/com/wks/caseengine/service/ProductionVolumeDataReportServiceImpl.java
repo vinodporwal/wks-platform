@@ -639,6 +639,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 		}
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getPlantContributionData(String plantId, String aopYear, String reportType) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
