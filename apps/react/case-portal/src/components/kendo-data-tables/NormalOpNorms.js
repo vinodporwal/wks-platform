@@ -736,6 +736,16 @@ const NormalOpNormsScreen = () => {
 
     try {
       if (
+        lowerVertName === 'chemical' && lowerSiteName === 'dmd'
+      ) {
+        await NormalOperationNormsApiService.getNormalOpsNormsExcelChemicalDmd(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+          SCREEN_NAME,
+        )
+      } else if (
         isPEPP ||
         isPET ||
         IS_ELASTOMER_HMD_SBR ||
@@ -781,14 +791,24 @@ const NormalOpNormsScreen = () => {
   const saveExcelFile = async (rawFile) => {
     setLoading(true)
     try {
-      const response =
-        await NormalOperationNormsApiService.saveNormalOpsNormsExcel(
+      let response 
+      if( lowerVertName === 'chemical' && lowerSiteName === 'dmd'){
+       response = await NormalOperationNormsApiService.saveNormalOpsNormsExcelChemicalDmd(
           rawFile,
           keycloak,
           PLANT_ID,
           AOP_YEAR,
           gradeId,
         )
+
+      } else {
+        response = await NormalOperationNormsApiService.saveNormalOpsNormsExcel(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          gradeId,
+        )}
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
