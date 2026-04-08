@@ -374,7 +374,7 @@ const AdvanceKendoTable = ({
   const setWidth = useCallback(
     (minWidth) => {
       if (minWidth === undefined) {
-        minWidth = 50
+        minWidth = 120
       }
 
       if (applyMinWidth) {
@@ -384,8 +384,8 @@ const AdvanceKendoTable = ({
       const allColumns = extractAllColumns(columns)
       const totalMinWidth =
         allColumns.reduce((sum, col) => {
-          return sum + (col.minWidth || 50)
-        }, 0) + (permissions?.deleteButton ? 80 : 0)
+          return sum + (col.minWidth || 120)
+        }, 0) + (permissions?.deleteButton ? 120 : 0)
 
       // If total minWidth exceeds grid width, just use minWidth
       if (totalMinWidth >= gridCurrent) {
@@ -1523,7 +1523,7 @@ const AdvanceKendoTable = ({
             title={col.title || col.headerName}
             hidden={col.hidden}
             editable={isEditable}
-            className={!isEditable ? 'k-right-disabled' : undefined}
+            className={!isEditable ? 'k-left-disabled' : undefined}
             headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
             cells={{
               edit: { text: TextCellEditorUpdated },
