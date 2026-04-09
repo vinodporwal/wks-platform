@@ -51,7 +51,7 @@ import java.sql.Connection;
 @Service
 public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDataReportService {
 
-	@PersistenceContext
+	@PersistenceContext(unitName = "db2")
 	private EntityManager entityManager;
 
 	@Autowired
@@ -91,6 +91,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getReportForProductionVolumnData(String plantId, String year) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		List<Map<String, Object>> productionVolumeReportList = new ArrayList<>();
