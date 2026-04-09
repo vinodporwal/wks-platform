@@ -2,11 +2,15 @@ package com.wks.caseengine.tcs.service;
 
 import java.util.List;
 
+import org.camunda.community.rest.client.dto.TaskDto;
+
 import com.wks.caseengine.tcs.dto.camundadto.PlantSubmissionAuditTrailDTO;
 
 public interface TCSWorkFlowService {
     
     void completePlantSubmissionTask(String plantName, String siteId, PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO, String finacialYear);
+
+    void completeCTSTechTask(String plantName, String siteId, PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO, String finacialYear);
 
     void ebsApproval(String siteId, PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO, String finacialYear);
 
@@ -45,5 +49,7 @@ public interface TCSWorkFlowService {
     void resetProcessVariables(String businessKey);
 
     List<PlantSubmissionAuditTrailDTO> getAuditTrail(String verticalId, String siteId, String finacialYear);
+
+    List<TaskDto> getTasks(String businessKey);
 
 }

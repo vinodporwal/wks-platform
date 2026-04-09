@@ -68,19 +68,33 @@ public class TCSWorkFlowServiceImpl implements TCSWorkFlowService {
 
     private static final String SUBMIT_PLANT_TASK_DEFINITION_KEY = "SubmitPlantData";
 
-    private static final String EBS_APPROVAL_TASK_DEFINITION_KEY = "EBS_Approval";
+    private static final String CTS_TECH_SUBMISSION_TASK_DEFINITION_KEY = "CTS_Tech_Approval";
 
+    //private static final String EBS_APPROVAL_TASK_DEFINITION_KEY = "EPS_Approval"; AOP_Approval
+
+    // stage 2
+    private static final String AOM_APPROVAL_TASK_DEFINITION_KEY = "AOM_Approval";
+
+    // stage 3
     private static final String CTS_APPROVAL_TASK_DEFINITION_KEY = "CTS_APPROVAL";
 
+    // stage 4
+    private static final String EPS_APPROVAL_TASK_DEFINITION_KEY = "EPS_Approval"; 
+
+  // stage 5
     private static final String CLUSTER_HEAD_APPROVAL_TASK_DEFINITION_KEY = "Cluster_Head_APPROVAL";
 
-    private static final String EBS_SUBMISSION_VARIABLE_NAME = "ebs_approved";
+    //approval Status variables
+    private static final String AOM_SUBMISSION_VARIABLE_NAME = "aom_approved";
+    private static final String CTS_SUBMISSION_VARIABLE_NAME = "cts_approved";
+    private static final String EPS_SUBMISSION_VARIABLE_NAME = "eps_approved";
+    private static final String CLUSTER_HEAD_APPROVAL_VARIABLE_NAME = "cluster_head_approved";
+
     private static final String TOTAL_PLANTS_VARIABLE_NAME = "total_plants";
     private static final String APPROVED_PLANTS_VARIABLE_NAME = "approved_plants";
     private static final String ALL_PLANTS_APPROVED_VARIABLE_NAME = "all_plants_approved";
 
-    private static final String CTS_SUBMISSION_VARIABLE_NAME = "cts_approved";
-    private static final String CLUSTER_HEAD_APPROVAL_VARIABLE_NAME = "cluster_head_approved";
+    
 
     // for email notification
 
@@ -178,6 +192,7 @@ public class TCSWorkFlowServiceImpl implements TCSWorkFlowService {
 
 
         Map<String, Boolean> submissionStatusMap = new HashMap<>();
+        Map<String, Boolean> ctsTechSubmissionStatusMap = new HashMap<>();
         Map<String, Boolean> approvalStatusMap = new HashMap<>();
         Map<String, Integer> plantCountMap = new HashMap<>();
 
@@ -185,10 +200,12 @@ public class TCSWorkFlowServiceImpl implements TCSWorkFlowService {
         for(String plantName : plantList) {
             System.out.println("putting submissionStatusMap for plantName: " + plantName);
             submissionStatusMap.put(plantName, false);
+            ctsTechSubmissionStatusMap.put(plantName, false);
         }
 
-        approvalStatusMap.put(EBS_SUBMISSION_VARIABLE_NAME, false);
+        approvalStatusMap.put(AOM_SUBMISSION_VARIABLE_NAME, false);
         approvalStatusMap.put(CTS_SUBMISSION_VARIABLE_NAME, false);
+        approvalStatusMap.put(EPS_SUBMISSION_VARIABLE_NAME, false);
         approvalStatusMap.put(CLUSTER_HEAD_APPROVAL_VARIABLE_NAME, false);
 
         plantCountMap.put(TOTAL_PLANTS_VARIABLE_NAME, plantList.size());
@@ -199,11 +216,13 @@ public class TCSWorkFlowServiceImpl implements TCSWorkFlowService {
 		ObjectMapper objectMapper = new ObjectMapper();
 
 String submissionStatusJson = null;
+String ctsTechSubmissionStatusJson = null;
 String plantListJson = null;
 String approvalStatusJson = null;
 String plantCountJson = null;
 try {
 	submissionStatusJson = objectMapper.writeValueAsString( submissionStatusMap );
+    ctsTechSubmissionStatusJson = objectMapper.writeValueAsString( ctsTechSubmissionStatusMap );
     plantListJson = objectMapper.writeValueAsString(plantList);
     approvalStatusJson = objectMapper.writeValueAsString( approvalStatusMap );
     plantCountJson = objectMapper.writeValueAsString( plantCountMap );
@@ -220,6 +239,12 @@ try {
 	ProcessVariable submissionStatus = ProcessVariable.builder()
     .name("submissionStatus")
     .value(submissionStatusJson)   // String JSON
+    .type("Json")
+    .build();
+
+    ProcessVariable ctsTechSubmissionStatus = ProcessVariable.builder()
+    .name("ctsTechSubmissionStatus")
+    .value(ctsTechSubmissionStatusJson)   // String JSON
     .type("Json")
     .build();
 
@@ -241,6 +266,13 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
     ))
     .build();
 
+// adding new process variable for exclusion gate way 
+ProcessVariable approvedVariable = ProcessVariable.builder()
+    .name("approved")
+    .value(false)
+    .type("Boolean")
+    .build();
+
   ProcessVariable plantCountVariable = ProcessVariable.builder()
     .name("plantCount")
     .value(plantCountJson)
@@ -248,13 +280,18 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
     .build();
 
 		processVariables.add(submissionStatus);
+		processVariables.add(ctsTechSubmissionStatus);
 		processVariables.add(plantListVariable);
         processVariables.add(approvalStatus);
 
         processVariables.add(plantCountVariable);
 
+        processVariables.add(approvedVariable);
+
 		ProcessInstance processInstance = processEngineClientFacade.startProcess(key, Optional.ofNullable(businessKey), processVariables);
     }
+
+   
 
     @Override
     public String deleteProcess(String verticalId, String siteId, String finacialYear) {
@@ -347,8 +384,10 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
         // --- Reset approvalStatus: restore all approval flags to false ---
         Map<String, Boolean> approvalStatusMap = new HashMap<>();
-        approvalStatusMap.put(EBS_SUBMISSION_VARIABLE_NAME, false);
+        
+        approvalStatusMap.put(AOM_SUBMISSION_VARIABLE_NAME, false);
         approvalStatusMap.put(CTS_SUBMISSION_VARIABLE_NAME, false);
+        approvalStatusMap.put(EPS_SUBMISSION_VARIABLE_NAME, false);
         approvalStatusMap.put(CLUSTER_HEAD_APPROVAL_VARIABLE_NAME, false);
 
         String approvalStatusJson;
@@ -550,6 +589,123 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
           tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getPlantStatus(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getUserName(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
     }
 
+
+    @Override
+    public void completeCTSTechTask(String plantName, String siteId, PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO, String finacialYear) {
+    
+        String verticalId = String.valueOf(plantSubmissionAuditTrailDTO.getVerticalId());
+
+        if(plantName == null || plantName.isEmpty()) {  
+            throw new RuntimeException("Plant name is required");
+        }
+
+        dataValidation( siteId, finacialYear, verticalId);
+
+          String businessKey =  generateBusinessKey(verticalId, siteId, finacialYear);
+
+    ObjectMapper objectMapper = new ObjectMapper();
+
+    
+List<TaskDto> tasks = getTasks(businessKey);
+
+    ProcessInstance processInstance = getProcessInstance(businessKey);
+// **************   // variable update and audit trail logic for re-submission *******************
+
+ int totalSubmissionTasks =   tasks.stream().filter(t -> CTS_TECH_SUBMISSION_TASK_DEFINITION_KEY.equals(t.getTaskDefinitionKey())).toList().size();
+
+      if(totalSubmissionTasks == 0) {  
+
+        List<ProcessVariable> ctsTechSubmissionStatusVariables = Arrays.stream(processEngineClientFacade.findVariables(processInstance.getId())).filter(v -> v.getName().equals("ctsTechSubmissionStatus")).toList();
+        if(ctsTechSubmissionStatusVariables.isEmpty()) {
+            throw new RuntimeException("No submission status variables found for given process instance");
+        }
+        if(ctsTechSubmissionStatusVariables.size() > 1) {
+            throw new RuntimeException("Multiple submission status variables found for given process instance");
+        }
+        updatesubmissionStatusVariable(ctsTechSubmissionStatusVariables, plantName, objectMapper, true);
+
+        Map<String, VariableValueDto> variablesMap = c7VariablesMapper.toEngineFormat(ctsTechSubmissionStatusVariables);
+
+        // get variable with name "submissionStatus"
+        VariableValueDto ctsTechSubmissionStatusVariable = variablesMap.get("ctsTechSubmissionStatus");
+
+        processEngineClientFacade.updateProcessVariable(processInstance.getId(), "ctsTechSubmissionStatus", ctsTechSubmissionStatusVariable);
+
+
+         plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+       //  plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
+      
+
+        System.out.println("submissionDateTime: " + plantSubmissionAuditTrailDTO.getSubmissionDateTime());
+
+        plantSubmissionAuditTrailDTO.setType("PLANT");
+        plantSubmissionAuditTrailDTO.setPlantName(plantName);
+        plantSubmissionAuditTrailDTO.setPlantStatus(Status.PENDING.name());
+     //   plantSubmissionAuditTrailDTO.setStatus("PENDING");
+     plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
+       
+
+        tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getPlantStatus(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getUserName(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
+
+     return;
+
+    }
+
+ // **************    finished audit trail logic for re-submission *******************
+
+  List<TaskDto> taskForPlant = tasks.stream()
+    .filter(t -> CTS_TECH_SUBMISSION_TASK_DEFINITION_KEY.equals(t.getTaskDefinitionKey()))
+    .toList();
+
+    if(taskForPlant.isEmpty()) {  
+        throw new RuntimeException("No CTS Tech Submission task found for business key: " + businessKey + " and process definition key: " + PROCESS_DEFINITION_KEY);
+    }
+    
+ // compelete one of the pending multi-instance task
+  TaskDto taskToComplete = taskForPlant.get(0);
+
+  System.out.println("taskToComplete Id: " + taskToComplete.getId() + "name: " + taskToComplete.getName());
+
+  // update process variable corresponding to given Plant 
+  List<ProcessVariable> processVariables = Arrays.stream(processEngineClientFacade.findVariables(processInstance.getId())).filter(v -> v.getName().equals("ctsTechSubmissionStatus")).toList();
+
+  if(processVariables.isEmpty()) { 
+    throw new RuntimeException("No process variables found for given process instance");
+  }
+
+  if(processVariables.size() > 1) { 
+    throw new RuntimeException("Multiple process variables found for given process instance");
+  }
+ 
+      updatesubmissionStatusVariable(processVariables, plantName, objectMapper, true);
+
+  System.out.println("processVariables: " + processVariables);
+
+  
+
+  processEngineClientFacade.complete(taskToComplete.getId(), processVariables);
+
+  // code for audit trail   
+
+  DateFormat dateTimeFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+
+       plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+  //    plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
+
+      System.out.println("submissionDateTime: " + plantSubmissionAuditTrailDTO.getSubmissionDateTime());
+
+      plantSubmissionAuditTrailDTO.setType("PLANT");
+      plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
+      plantSubmissionAuditTrailDTO.setPlantStatus(Status.PENDING.name());
+
+      tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getPlantStatus(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getUserName(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
+}
+
+
+
+
+
+
     // ebs submit buttons 
     @Override
     public void ebsApproval(String siteId, PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO, String finacialYear) {  
@@ -567,7 +723,7 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
         List<TaskDto> tasks = getTasks(businessKey);
 
       List<TaskDto> taskForPlant = tasks.stream()
-        .filter(t -> EBS_APPROVAL_TASK_DEFINITION_KEY.equals(t.getTaskDefinitionKey()))
+        .filter(t -> AOM_APPROVAL_TASK_DEFINITION_KEY.equals(t.getTaskDefinitionKey()))
         .toList();
         
      // compelete one of the pending multi-instance task
@@ -577,6 +733,9 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
         List<ProcessVariable> submissionStatusVariables = Arrays.stream(processEngineClientFacade.findVariables(processInstance.getId())).filter(v -> v.getName().equals("approvalStatus")).toList();
         List<ProcessVariable> plantCountVariables = Arrays.stream(processEngineClientFacade.findVariables(processInstance.getId())).filter(v -> v.getName().equals("plantCount")).toList();
+        List<ProcessVariable> approvedVariables = Arrays.stream(processEngineClientFacade.findVariables(processInstance.getId())).filter(v -> v.getName().equals("approved")).toList();
+
+       
 
         if(submissionStatusVariables.isEmpty()) {
             throw new RuntimeException("No submission status variables found for given process instance");
@@ -594,22 +753,27 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
             throw new RuntimeException("Multiple plant count variables found for given process instance");
         }
 
-        updatesubmissionStatusVariable(submissionStatusVariables, EBS_SUBMISSION_VARIABLE_NAME, objectMapper, true);
+        updatesubmissionStatusVariable(submissionStatusVariables, AOM_SUBMISSION_VARIABLE_NAME, objectMapper, true);
 
         // reset the approved plants count to 0 for ebs submission
         updatePlantCountVariable(plantCountVariables, APPROVED_PLANTS_VARIABLE_NAME, objectMapper, false, true);
 
+        updateApprovedVariable(approvedVariables, true);
 
         Map<String, VariableValueDto> variablesMap = c7VariablesMapper.toEngineFormat(submissionStatusVariables);
 
         Map<String, VariableValueDto> plantCountVariablesMap = c7VariablesMapper.toEngineFormat(plantCountVariables);
 
+        Map<String, VariableValueDto> approvedVariablesMap = c7VariablesMapper.toEngineFormat(approvedVariables);
+
         // get variable with name "submissionStatus"
         VariableValueDto submissionStatusVariable = variablesMap.get("approvalStatus");
         VariableValueDto plantCountVariable = plantCountVariablesMap.get("plantCount");
+        VariableValueDto approvedVariable = approvedVariablesMap.get("approved");
 
         processEngineClientFacade.updateProcessVariable(processInstance.getId(), "approvalStatus", submissionStatusVariable);
         processEngineClientFacade.updateProcessVariable(processInstance.getId(), "plantCount", plantCountVariable);
+        processEngineClientFacade.updateProcessVariable(processInstance.getId(), "approved", approvedVariable);
 
          plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
       //  plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
@@ -656,7 +820,7 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
       List<ProcessVariable> plantCountVariables = Arrays.stream(processEngineClientFacade.findVariables(processInstance.getId())).filter(v -> v.getName().equals("plantCount")).toList();
 
     
-      updatesubmissionStatusVariable(submissionStatusVariables, EBS_SUBMISSION_VARIABLE_NAME, objectMapper, true);
+      updatesubmissionStatusVariable(submissionStatusVariables, AOM_SUBMISSION_VARIABLE_NAME, objectMapper, true);
 
       updatePlantCountVariable(plantCountVariables, APPROVED_PLANTS_VARIABLE_NAME, objectMapper, true, true);
     
@@ -707,9 +871,11 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
         List<ProcessVariable> submissionStatusVariables = Arrays.stream(processEngineClientFacade.findVariables(processInstance.getId())).filter(v -> v.getName().equals("submissionStatus")).toList();
 
+        List<ProcessVariable> ctsTechSubmissionStatusVariables = Arrays.stream(processEngineClientFacade.findVariables(processInstance.getId())).filter(v -> v.getName().equals("ctsTechSubmissionStatus")).toList();
+
         List<ProcessVariable> plantCountVariables = Arrays.stream(processEngineClientFacade.findVariables(processInstance.getId())).filter(v -> v.getName().equals("plantCount")).toList();
 
-        if(submissionStatusVariables.isEmpty()) {
+        if(submissionStatusVariables.isEmpty() || ctsTechSubmissionStatusVariables.isEmpty()) {
             throw new RuntimeException("No submission status variables found for given process instance");
         }
 
@@ -727,19 +893,24 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
         updatesubmissionStatusVariable(submissionStatusVariables, plantName, objectMapper, approvalStatus);
 
+        updatesubmissionStatusVariable(ctsTechSubmissionStatusVariables, plantName, objectMapper, approvalStatus);
+
         updatePlantCountVariable(plantCountVariables, APPROVED_PLANTS_VARIABLE_NAME, objectMapper, approvalStatus, false);
 
         //  **************  update process variable  *******************
         Map<String, VariableValueDto> variablesMap = c7VariablesMapper.toEngineFormat(submissionStatusVariables);
         Map<String, VariableValueDto> plantCountVariablesMap = c7VariablesMapper.toEngineFormat(plantCountVariables);
+        Map<String, VariableValueDto> ctsTechSubmissionStatusVariablesMap = c7VariablesMapper.toEngineFormat(ctsTechSubmissionStatusVariables);
 
         // get variable with name "submissionStatus"
         VariableValueDto submissionStatusVariable = variablesMap.get("submissionStatus");
         VariableValueDto plantCountVariable = plantCountVariablesMap.get("plantCount");
+        VariableValueDto ctsTechSubmissionStatusVariable = ctsTechSubmissionStatusVariablesMap.get("ctsTechSubmissionStatus");
 
         
         processEngineClientFacade.updateProcessVariable(processInstance.getId(), "submissionStatus", submissionStatusVariable);
         processEngineClientFacade.updateProcessVariable(processInstance.getId(), "plantCount", plantCountVariable);
+        processEngineClientFacade.updateProcessVariable(processInstance.getId(), "ctsTechSubmissionStatus", ctsTechSubmissionStatusVariable);
 
         // *************** finished updating process variable  *******************
 
@@ -1422,6 +1593,18 @@ tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailD
                 }
             }
         
+    }
+
+
+    public void updateApprovedVariable(List<ProcessVariable> variables, boolean approved) {
+
+        for (ProcessVariable variable : variables) {
+      System.out.println("looping through approved variables: variable: " + variable);
+            if ("approved".equals(variable.getName())) {
+                variable.setValue(approved);
+                break;
+            }
+        }
     }
 
 
