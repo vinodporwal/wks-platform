@@ -86,7 +86,8 @@ const TcsOutput = () => {
     setHistoryDialogOpen(true)
   }
 
-  const handleReviewClick = () => {
+  const handleReviewClick = async () => {
+    await checkSubmitEligibility()
     setApproveDialogOpen(true)
   }
 
@@ -382,8 +383,8 @@ const TcsOutput = () => {
     }
   }
 
-  // Handle approval for CTS_HEAD and EPS_HEAD
-  const handleApprove = async (remark) => {
+  // Handle approve/reject actions for CTS_HEAD, EPS_HEAD, and CLUSTER_HEAD
+  const handleReviewAction = async (action, remark) => {
     try {
       // Validate required parameters
       if (!keycloak || !SITE_ID || !VERTICAL_ID || !userRole || !AOP_YEAR) {
@@ -397,138 +398,56 @@ const TcsOutput = () => {
 
       setIsSubmittingRemark(true)
 
-      // Call appropriate approve APIs based on role
-      if (userRole === ROLES.CLUSTER_HEAD) {
-        // First API: Approve/Reject with true
-        await TcsWorkflowApiService.clusterHeadApproveReject(
-          keycloak,
-          SITE_ID,
-          true, // approvalStatus = true for approve
-          AOP_YEAR,
-          remark,
-          userRole, // verifiedBy
-          userName,
-          VERTICAL_ID,
-        )
+      const isApprove = action === 'approve'
 
-        // Second API: Submission
-        await TcsWorkflowApiService.clusterHeadSubmission(
-          keycloak,
-          SITE_ID,
-          AOP_YEAR,
-          remark,
-          userRole, // verifiedBy
-          userName,
-          VERTICAL_ID,
-        )
+      // Create common payload object
+      const payload = {
+        keycloak,
+        SITE_ID,
+        VERTICAL_ID,
+        AOP_YEAR,
+        remark,
+        userRole,
+        userName,
+      }
+
+      // Call appropriate APIs based on role
+      if (userRole === ROLES.CLUSTER_HEAD) {
+        // CLUSTER_HEAD
+        // First API: Approve/Reject
+        await TcsWorkflowApiService.clusterHeadApproveReject(payload, isApprove)
+
+        // Second API: Submission (only for approve)
+        if (isApprove) {
+          await TcsWorkflowApiService.clusterHeadSubmission(payload)
+        }
       } else {
         // CTS_HEAD or EPS_HEAD
-        // First API: Approve/Reject with true
-        await TcsWorkflowApiService.ctsHeadApproveReject(
-          keycloak,
-          SITE_ID,
-          true, // approvalStatus = true for approve
-          AOP_YEAR,
-          remark,
-          userRole, // submittedBy
-          userName,
-          VERTICAL_ID,
-        )
+        // First API: Approve/Reject
+        await TcsWorkflowApiService.ctsHeadApproveReject(payload, isApprove)
 
-        // Second API: Submission
-        await TcsWorkflowApiService.ctsHeadSubmission(
-          keycloak,
-          SITE_ID,
-          AOP_YEAR,
-          remark,
-          userRole, // submittedBy
-          userName,
-          VERTICAL_ID,
-        )
+        // Second API: Submission (only for approve)
+        if (isApprove) {
+          await TcsWorkflowApiService.ctsHeadSubmission(payload)
+        }
       }
 
       setSnackbarData({
-        message: 'Approved successfully!',
+        message: `${isApprove ? 'Approved' : 'Rejected'} successfully!`,
         severity: 'success',
       })
       setSnackbarOpen(true)
 
-      // Refresh eligibility after approval
+      // Refresh eligibility after action
       await checkSubmitEligibility()
 
       // Close the remark dialog on success
       setRemarkDialogOpen(false)
     } catch (err) {
-      console.error('Error approving:', err)
+      console.error(`Error ${action}ing:`, err)
 
       setSnackbarData({
-        message: 'Failed to approve. Please try again.',
-        severity: 'error',
-      })
-      setSnackbarOpen(true)
-      throw err
-    } finally {
-      setIsSubmittingRemark(false)
-    }
-  }
-
-  // Handle rejection for CTS_HEAD and EPS_HEAD
-  const handleReject = async (remark) => {
-    try {
-      // Validate required parameters
-      if (!keycloak || !SITE_ID || !VERTICAL_ID || !userRole || !AOP_YEAR) {
-        setSnackbarData({
-          message: 'Missing required parameters. Please refresh and try again.',
-          severity: 'error',
-        })
-        setSnackbarOpen(true)
-        return
-      }
-
-      setIsSubmittingRemark(true)
-
-      // Call appropriate reject API based on role
-      if (userRole === ROLES.CLUSTER_HEAD) {
-        await TcsWorkflowApiService.clusterHeadApproveReject(
-          keycloak,
-          SITE_ID,
-          false, // approvalStatus = false for reject
-          AOP_YEAR,
-          remark,
-          userRole, // verifiedBy
-          userName,
-          VERTICAL_ID,
-        )
-      } else {
-        // CTS_HEAD or EPS_HEAD
-        await TcsWorkflowApiService.ctsHeadApproveReject(
-          keycloak,
-          SITE_ID,
-          false, // approvalStatus = false for reject
-          AOP_YEAR,
-          remark,
-          userRole, // verifiedBy
-          userName,
-          VERTICAL_ID,
-        )
-      }
-
-      setSnackbarData({
-        message: 'Rejected successfully!',
-        severity: 'success',
-      })
-      setSnackbarOpen(true)
-
-      // Refresh eligibility after rejection
-      await checkSubmitEligibility()
-
-      // Close the remark dialog on success
-      setRemarkDialogOpen(false)
-    } catch (err) {
-      console.error('Error rejecting:', err)
-
-      setSnackbarData({
-        message: 'Failed to reject. Please try again.',
+        message: `Failed to ${action}. Please try again.`,
         severity: 'error',
       })
       setSnackbarOpen(true)
@@ -549,9 +468,6 @@ const TcsOutput = () => {
         setSnackbarOpen(true)
         return
       }
-
-      setIsSubmittingRemark(true)
-
       // Call reset workflow API
       await TcsWorkflowApiService.resetWorkflow(
         keycloak,
@@ -560,7 +476,6 @@ const TcsOutput = () => {
         userRole,
         VERTICAL_ID,
       )
-
       setSnackbarData({
         message: 'Workflow reset successfully!',
         severity: 'success',
@@ -570,16 +485,12 @@ const TcsOutput = () => {
       // Refresh eligibility after reset
       await checkSubmitEligibility()
     } catch (err) {
-      console.error('Error resetting workflow:', err)
-
       setSnackbarData({
         message: 'Failed to reset workflow. Please try again.',
         severity: 'error',
       })
       setSnackbarOpen(true)
       throw err
-    } finally {
-      setIsSubmittingRemark(false)
     }
   }
 
@@ -599,17 +510,6 @@ const TcsOutput = () => {
         {/* Tabs Section - Flex grow to fill available space */}
         <Box sx={{ flex: 1, overflowX: 'auto' }}>
           <Tabs
-            // sx={{
-            //   '& .MuiTabs-indicator': {
-            //     background: `linear-gradient(90deg, #1e3a8a 0%, #1e40af 100%)`,
-            //   },
-            //   '& .MuiTab-root.Mui-selected': {
-            //     background: `linear-gradient(90deg, #1e3a8a 0%, #1e40af 100%)`,
-            //     backgroundClip: 'text',
-            //     WebkitBackgroundClip: 'text',
-            //     WebkitTextFillColor: 'transparent',
-            //   },
-            // }}
             sx={{
               borderBottom: '0px solid #ccc',
               '.MuiTabs-indicator': { display: 'none' },
@@ -681,8 +581,8 @@ const TcsOutput = () => {
         handleClose={() => setRemarkDialogOpen(false)}
         placeholder='Enter your remarks here...'
         onSubmit={handleRemarkSubmit}
-        onApprove={handleApprove}
-        onReject={handleReject}
+        onApprove={(remark) => handleReviewAction('approve', remark)}
+        onReject={(remark) => handleReviewAction('reject', remark)}
         maxLength={1000}
         role={userRole}
         keycloak={keycloak}

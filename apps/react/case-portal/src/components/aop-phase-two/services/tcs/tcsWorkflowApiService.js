@@ -382,25 +382,25 @@ async function getEpsEngineerSubmissionHistory(
 // ============ CTS/EPS HEAD APIs ============
 // ========================================================================
 
-async function ctsHeadApproveReject(
-  keycloak,
-  siteId,
-  approvalStatus,
-  financialYear,
-  remark,
-  userRole,
-  userName,
-  verticalId,
-) {
-  const url = `${Config.CaseEngineUrl}/task/cts-approve-reject/${siteId}/${approvalStatus}/${financialYear}`
+async function ctsHeadApproveReject(payload, approvalStatus) {
+  const {
+    keycloak,
+    SITE_ID,
+    AOP_YEAR,
+    remark,
+    userRole,
+    userName,
+    VERTICAL_ID,
+  } = payload
+  const url = `${Config.CaseEngineUrl}/task/cts-approve-reject/${SITE_ID}/${approvalStatus}/${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
   const body = JSON.stringify({
-    siteId,
-    verticalId,
+    siteId: SITE_ID,
+    verticalId: VERTICAL_ID,
     submissionRemark: remark,
     submittedBy: getRoleLabel(userRole),
     userName,
@@ -423,24 +423,25 @@ async function ctsHeadApproveReject(
   }
 }
 
-async function ctsHeadSubmission(
-  keycloak,
-  siteId,
-  financialYear,
-  remark,
-  userRole,
-  userName,
-  verticalId,
-) {
-  const url = `${Config.CaseEngineUrl}/task/cts-submission/${siteId}/${financialYear}`
+async function ctsHeadSubmission(payload) {
+  const {
+    keycloak,
+    SITE_ID,
+    AOP_YEAR,
+    remark,
+    userRole,
+    userName,
+    VERTICAL_ID,
+  } = payload
+  const url = `${Config.CaseEngineUrl}/task/cts-submission/${SITE_ID}/${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
   const body = JSON.stringify({
-    siteId,
-    verticalId,
+    siteId: SITE_ID,
+    verticalId: VERTICAL_ID,
     submissionRemark: remark,
     submittedBy: getRoleLabel(userRole),
     userName,
@@ -519,25 +520,25 @@ async function getCtsHeadApproveRejectAuditTrail(
 // ============ CLUSTER HEAD APIs ============
 // ========================================================================
 
-async function clusterHeadApproveReject(
-  keycloak,
-  siteId,
-  approvalStatus,
-  financialYear,
-  remark,
-  userRole,
-  userName,
-  verticalId,
-) {
-  const url = `${Config.CaseEngineUrl}/task/cluster-head-approve-reject/${siteId}/${approvalStatus}/${financialYear}`
+async function clusterHeadApproveReject(payload, approvalStatus) {
+  const {
+    keycloak,
+    SITE_ID,
+    AOP_YEAR,
+    remark,
+    userRole,
+    userName,
+    VERTICAL_ID,
+  } = payload
+  const url = `${Config.CaseEngineUrl}/task/cluster-head-approve-reject/${SITE_ID}/${approvalStatus}/${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
   const body = JSON.stringify({
-    siteId,
-    verticalId,
+    siteId: SITE_ID,
+    verticalId: VERTICAL_ID,
     submissionRemark: remark,
     submittedBy: getRoleLabel(userRole),
     userName,
@@ -560,24 +561,25 @@ async function clusterHeadApproveReject(
   }
 }
 
-async function clusterHeadSubmission(
-  keycloak,
-  siteId,
-  financialYear,
-  remark,
-  userRole,
-  userName,
-  verticalId,
-) {
-  const url = `${Config.CaseEngineUrl}/task/cluster-head-submission/${siteId}/${financialYear}`
+async function clusterHeadSubmission(payload) {
+  const {
+    keycloak,
+    SITE_ID,
+    AOP_YEAR,
+    remark,
+    userRole,
+    userName,
+    VERTICAL_ID,
+  } = payload
+  const url = `${Config.CaseEngineUrl}/task/cluster-head-submission/${SITE_ID}/${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
   const body = JSON.stringify({
-    siteId,
-    verticalId,
+    siteId: SITE_ID,
+    verticalId: VERTICAL_ID,
     submissionRemark: remark,
     submittedBy: getRoleLabel(userRole),
     userName,
