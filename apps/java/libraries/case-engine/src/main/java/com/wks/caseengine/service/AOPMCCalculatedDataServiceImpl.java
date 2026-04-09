@@ -1688,17 +1688,17 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 						dto.setTableId(tableId);
 						dto.setProductName(getStringCellValue(row.getCell(0), dto));
 						dto.setApril(getNumericCellValue(row.getCell(1), dto));
-						dto.setMay(getNumericCellValue(row.getCell(2), dto));
-						dto.setJune(getNumericCellValue(row.getCell(3), dto));
-						dto.setJuly(getNumericCellValue(row.getCell(4), dto));
-						dto.setAugust(getNumericCellValue(row.getCell(5), dto));
-						dto.setSeptember(getNumericCellValue(row.getCell(6), dto));
-						dto.setOctober(getNumericCellValue(row.getCell(7), dto));
-						dto.setNovember(getNumericCellValue(row.getCell(8), dto));
-						dto.setDecember(getNumericCellValue(row.getCell(9), dto));
-						dto.setJanuary(getNumericCellValue(row.getCell(10), dto));
-						dto.setFebruary(getNumericCellValue(row.getCell(11), dto));
-						dto.setMarch(getNumericCellValue(row.getCell(12), dto));
+						dto.setMay(getNumericCellValue(row.getCell(1), dto));
+						dto.setJune(getNumericCellValue(row.getCell(1), dto));
+						dto.setJuly(getNumericCellValue(row.getCell(1), dto));
+						dto.setAugust(getNumericCellValue(row.getCell(1), dto));
+						dto.setSeptember(getNumericCellValue(row.getCell(1), dto));
+						dto.setOctober(getNumericCellValue(row.getCell(1), dto));
+						dto.setNovember(getNumericCellValue(row.getCell(1), dto));
+						dto.setDecember(getNumericCellValue(row.getCell(1), dto));
+						dto.setJanuary(getNumericCellValue(row.getCell(1), dto));
+						dto.setFebruary(getNumericCellValue(row.getCell(1), dto));
+						dto.setMarch(getNumericCellValue(row.getCell(1), dto));
 						dto.setRemarks(getStringCellValue(row.getCell(13), dto));
 						dto.setId(getStringCellValue(row.getCell(14), dto));
 						dto.setMaterialFKId(getStringCellValue(row.getCell(15), dto));
@@ -2017,6 +2017,8 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	                    table.put(ExcelConstants.TABLEID, newTableId);
 
 	                    String dataInput = (String) table.get(ExcelConstants.DATA_INPUT);
+	                    // Keep the template's original dataInput so Excel generator can apply grid-specific locking.
+	                    table.put("originalTemplateId", dataInput);
 	                    List<String> headers = (List<String>) table.get(ExcelConstants.HEADERS);
 	                    List<List<String>> headersOuterTitles = (List<List<String>>) table.get(ExcelConstants.HEADERSTITLES);
 	                    Integer startingIndexofMonths = (Integer) table.get(ExcelConstants.STARTING_INDEX_OF_MONTHS);
@@ -2079,6 +2081,130 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	            }
 
 	            return excelUtilityService.generateFlexibleExcel(combinedStructure, data);
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+
+	public byte[] exportLineWiseProductionTargetDTA(String year, String plantId, boolean isAfterSave,
+	        Map<String, List<AOPMCCalculatedDataDTO>> mapForExcel,String lineId) {
+	    try {
+	        Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+	                .orElseThrow(() -> new RuntimeException("Plant not found"));
+	        
+	        Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
+	                .findByExcelIdAndVerticalFkIdAndSiteFkId("production_target", plant.getVerticalFKId(), plant.getSiteFkId());
+
+	        if (optExcelConfiguration.isPresent()) {
+	            String structureJson = optExcelConfiguration.get().getJsonValue();
+	            ObjectMapper mapper = new ObjectMapper();
+	            Map<String, Object> baseStructure = mapper.readValue(structureJson, Map.class);
+
+	            // Build one sheet per line (sheet name = line display name)
+	            List<Map<String, String>> allLines = getAllLinesForPlant(plantId);
+	            if (allLines == null || allLines.isEmpty()) {
+	            	return null;
+	            }
+
+	            Map<String, Object> combinedStructure = new LinkedHashMap<>();
+	            Map<String, List<List<Object>>> data = new HashMap<>();
+	            Set<String> usedSheetNames = new HashSet<>();
+
+	            // Base template has one sheet definition; clone it per line.
+	            String templateSheetName = baseStructure.keySet().iterator().next();
+	            Map<String, Object> templateSheetData = (Map<String, Object>) baseStructure.get(templateSheetName);
+
+	            for (Map<String, String> line : allLines) {
+	            	String currentLineId = line.get("id");
+	            	String currentLineName = line.get("displayName") != null ? line.get("displayName") : line.get("name");
+	            	if (currentLineId == null || currentLineId.trim().isEmpty()) {
+	            		continue;
+	            	}
+	            	if (currentLineName == null || currentLineName.trim().isEmpty()) {
+	            		currentLineName = "Line";
+	            	}
+
+	            	String sanitized = Utility.sanitizeSheetName(currentLineName);
+	            	String uniqueSheetName = sanitized;
+	            	int suffix = 2;
+	            	while (usedSheetNames.contains(uniqueSheetName)) {
+	            		uniqueSheetName = Utility.sanitizeSheetName(sanitized + "_" + suffix++);
+	            	}
+	            	usedSheetNames.add(uniqueSheetName);
+
+	            	Map<String, Object> clonedSheetData = mapper.convertValue(templateSheetData, Map.class);
+	            	List<Map<String, Object>> tables = (List<Map<String, Object>>) clonedSheetData.get(ExcelConstants.TABLES);
+
+	            	for (Map<String, Object> table : tables) {
+	            		String originalTableId = (String) table.get(ExcelConstants.TABLEID);
+	                    String newTableId = originalTableId + "_" + currentLineId;
+	                    table.put(ExcelConstants.TABLEID, newTableId);
+
+	                    String dataInput = (String) table.get(ExcelConstants.DATA_INPUT);
+	                    List<String> headers = (List<String>) table.get(ExcelConstants.HEADERS);
+	                    List<List<String>> headersOuterTitles = (List<List<String>>) table.get(ExcelConstants.HEADERSTITLES);
+	                    Integer startingIndexofMonths = (Integer) table.get(ExcelConstants.STARTING_INDEX_OF_MONTHS);
+	                    if (startingIndexofMonths != null) {
+	                    	if ("DesignCapacity".equalsIgnoreCase(dataInput) || "MaxAchievedCapacity".equalsIgnoreCase(dataInput)) {
+	                    	     headersOuterTitles.get(0).addAll(startingIndexofMonths, excelUtilityService.getMonths(year));
+	                        } else {
+	                            headersOuterTitles.get(0).addAll(startingIndexofMonths, excelUtilityService.getAcademicYearMonths(year));
+	                        }
+	                    }
+
+	                    List<List<Object>> dataList = new ArrayList<>();
+	                    if (isAfterSave) {
+	                    	List<AOPMCCalculatedDataDTO> failedForTable = null;
+	                    	if (mapForExcel != null) {
+	                    		failedForTable = mapForExcel.get(newTableId);
+	                    		if (failedForTable == null) {
+	                    			failedForTable = mapForExcel.get(originalTableId);
+	                    		}
+	                    	}
+	                    	if (failedForTable == null || failedForTable.isEmpty()) {
+	                    		table.put("hideTable", true);
+	                    		continue;
+	                    	}
+	                    	headers.add("saveStatus");
+	                    	headers.add("errDescription");
+	                    	headersOuterTitles.get(0).add("SaveStatus");
+	                    	headersOuterTitles.get(0).add("ErrDescription");
+	                    	populateRowsFromDTOs(failedForTable, headers, newTableId, dataList);
+	                    } else {
+	                    	List<AOPMCCalculatedDataDTO> sourceDTOs = new ArrayList<>();
+	                    	AOPMessageVM vm = null;
+
+	                    	if ("DesignCapacity".equalsIgnoreCase(dataInput)) {
+	                            vm = getLineWiseDesignCapacity(plantId, year, currentLineId);
+	                        } else if ("MaxAchievedCapacity".equalsIgnoreCase(dataInput)) {
+	                            vm = getLineWiseMaxAchievedCapacity(plantId, year, currentLineId);
+	                        } else if ("ProposedOperatingCapacity".equalsIgnoreCase(dataInput)) {
+	                            vm = getProductionTarget(plantId, year, currentLineId);
+	                        } else if ("SummaryProposedOperatingCapacity".equalsIgnoreCase(dataInput)) {
+	                            vm = getLineWiseSummaryOfProposedOperating(plantId, year, currentLineId);
+	                        }
+
+	                    	if (vm != null && vm.getData() != null) {
+	                    		Map<String, Object> dataMap = (Map<String, Object>) vm.getData();
+	                    		sourceDTOs = (List<AOPMCCalculatedDataDTO>) dataMap.get("aopMCCalculatedDataDTOList");
+	                    	}
+
+	                    	if (sourceDTOs == null || sourceDTOs.isEmpty()) {
+	                    		table.put("hideTable", true);
+	                    		continue;
+	                    	}
+	                    	populateRowsFromDTOs(sourceDTOs, headers, newTableId, dataList);
+	                    }
+
+	                    data.put(newTableId, dataList);
+	            	}
+
+	            	combinedStructure.put(uniqueSheetName, clonedSheetData);
+	            }
+
+	            return excelUtilityService.generateFlexibleExcelDTA(combinedStructure, data);
 	        }
 	    } catch (Exception e) {
 	        e.printStackTrace();
