@@ -337,10 +337,10 @@ public class PeopleInitiativeServiceImpl implements PeopleInitiativeService{
 	            for (int col = 0; col < rowData.size(); col++) {
 	                Cell cell = row.createCell(col);
 	                Object value = rowData.get(col);
-	                if (value instanceof Number) {
-	                    cell.setCellValue(((Number) value).doubleValue());
-	                } else if (value instanceof Boolean) {
-	                    cell.setCellValue((Boolean) value);
+	                if (value instanceof Number number) {
+	                    cell.setCellValue(number.doubleValue());
+	                } else if (value instanceof Boolean boolean1) {
+	                    cell.setCellValue(boolean1);
 	                } else if (value != null) {
 	                    cell.setCellValue(value.toString());
 	                } else {
@@ -480,10 +480,10 @@ public class PeopleInitiativeServiceImpl implements PeopleInitiativeService{
 	            for (int col = 0; col < rowData.size(); col++) {
 	                Cell cell = row.createCell(col);
 	                Object value = rowData.get(col);
-	                if (value instanceof Number) {
-	                    cell.setCellValue(((Number) value).doubleValue());
-	                } else if (value instanceof Boolean) {
-	                    cell.setCellValue((Boolean) value);
+	                if (value instanceof Number number) {
+	                    cell.setCellValue(number.doubleValue());
+	                } else if (value instanceof Boolean boolean1) {
+	                    cell.setCellValue(boolean1);
 	                } else if (value != null) {
 	                    cell.setCellValue(value.toString());
 	                } else {

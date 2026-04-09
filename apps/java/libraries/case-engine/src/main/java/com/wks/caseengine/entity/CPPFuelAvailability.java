@@ -40,40 +40,53 @@ public class CPPFuelAvailability {
     @Column(name = "UOM", nullable = false, length = 20)
     private String uom;
     
-    @Column(name = "Apr", precision = 18, scale = 4)
+    //@Column(name = "Apr", precision = 18, scale = 4)
+    @Column(name = "Apr")
+
     private Double apr;
     
-    @Column(name = "May", precision = 18, scale = 4)
+   // @Column(name = "May", precision = 18, scale = 4)
+   @Column(name = "May")
     private Double may;
     
-    @Column(name = "Jun", precision = 18, scale = 4)
+   // @Column(name = "Jun", precision = 18, scale = 4)
+   @Column(name = "Jun")
+
     private Double jun;
     
-    @Column(name = "Jul", precision = 18, scale = 4)
+   // @Column(name = "Jul", precision = 18, scale = 4)
+   @Column(name = "Jul")
+
     private Double jul;
     
-    @Column(name = "Aug", precision = 18, scale = 4)
+   // @Column(name = "Aug", precision = 18, scale = 4)
+   @Column(name = "Aug")
+
     private Double aug;
     
-    @Column(name = "Sep", precision = 18, scale = 4)
+   // @Column(name = "Sep", precision = 18, scale = 4)
+   @Column(name = "Sep")
+
     private Double sep;
     
-    @Column(name = "Oct", precision = 18, scale = 4)
+  //  @Column(name = "Oct", precision = 18, scale = 4)
+  @Column(name = "Oct")
+
     private Double oct;
     
-    @Column(name = "Nov", precision = 18, scale = 4)
+    @Column(name = "Nov")
     private Double nov;
     
-    @Column(name = "Dec", precision = 18, scale = 4)
+    @Column(name = "Dec")
     private Double dec;
     
-    @Column(name = "Jan", precision = 18, scale = 4)
+    @Column(name = "Jan")
     private Double jan;
     
-    @Column(name = "Feb", precision = 18, scale = 4)
+    @Column(name = "Feb")
     private Double feb;
     
-    @Column(name = "Mar", precision = 18, scale = 4)
+    @Column(name = "Mar")
     private Double mar;
     
     @Column(name = "FinancialYear", nullable = false, length = 10)

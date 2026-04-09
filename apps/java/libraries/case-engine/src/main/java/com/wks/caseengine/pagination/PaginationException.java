@@ -11,8 +11,11 @@
  */
 package com.wks.caseengine.pagination;
 
+import java.io.Serial;
+
 public class PaginationException extends RuntimeException {
 
+	@Serial
 	private static final long serialVersionUID = 5032038649247198464L;
 
 	public PaginationException(String message) {

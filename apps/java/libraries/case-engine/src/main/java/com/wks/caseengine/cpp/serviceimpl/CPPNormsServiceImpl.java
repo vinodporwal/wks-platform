@@ -27,8 +27,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+
 import com.wks.caseengine.cpp.dto.norm.CPPNormsRequestDTO;
 import com.wks.caseengine.cpp.dto.norm.CPPNormsResponseDTO;
 import com.wks.caseengine.cpp.repository.CPPNormsRepository;
@@ -54,11 +56,10 @@ public class CPPNormsServiceImpl implements CPPNormsService {
     private final ObjectMapper objectMapper;
 
     public CPPNormsServiceImpl() {
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false);
-        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        this.objectMapper.configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true);
-        this.objectMapper.setSerializationInclusion(JsonInclude.Include.ALWAYS);
+        this.objectMapper = new JsonMapper();
+        // this.objectMapper.configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false);
+        // this.objectMapper.configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true);
+        // this.objectMapper.setDefaultPropertyInclusion(JsonInclude.Include.ALWAYS);
     }
 
     @Override
@@ -973,12 +974,12 @@ public class CPPNormsServiceImpl implements CPPNormsService {
 
             if (errorCount > 0) {
                 vm.setCode(207); // Multi-Status
-                vm.setMessage(String.format("Processed %d records. Success: %d, Errors: %d", 
-                    dtoList.size(), successCount, errorCount));
+                vm.setMessage("Processed %d records. Success: %d, Errors: %d".formatted(
+						dtoList.size(), successCount, errorCount));
                 vm.setData(errorMessages);
             } else {
                 vm.setCode(200);
-                vm.setMessage(String.format("Successfully processed all %d records", successCount));
+                vm.setMessage("Successfully processed all %d records".formatted(successCount));
                 vm.setData(null);
             }
 
@@ -1041,7 +1042,7 @@ public class CPPNormsServiceImpl implements CPPNormsService {
             log.info("Calculated norms result count: {}", rawResults.size());
 
             vm.setCode(200);
-            vm.setMessage(String.format("Successfully calculated and saved %d utility norms records", rawResults.size()));
+            vm.setMessage("Successfully calculated and saved %d utility norms records".formatted(rawResults.size()));
             vm.setData(rawResults.size());
 
         } catch (Exception e) {

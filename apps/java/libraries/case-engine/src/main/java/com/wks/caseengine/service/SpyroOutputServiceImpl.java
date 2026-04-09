@@ -29,7 +29,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import com.wks.caseengine.dto.SpyroOutputDTO;
 import com.wks.caseengine.dto.YieldDMDDTO;
@@ -200,7 +201,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 				}
 				UUID normParameterFKId = UUID.fromString(spyroOutputDTO.getNormParameterFKID());
 				Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
-				if (!optionNormParameters.isPresent()) {
+				if (optionNormParameters.isEmpty()) {
 					spyroOutputDTO.setSaveStatus("Failed");
 					spyroOutputDTO.setErrDescription("Norm Paramter not found");
 					failedList.add(spyroOutputDTO);
@@ -649,10 +650,10 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	            for (int col = 0; col < rowData.size(); col++) {
 	                Cell cell = row.createCell(col);
 	                Object value = rowData.get(col);
-	                if (value instanceof Number) {
-	                    cell.setCellValue(((Number) value).doubleValue());
-	                } else if (value instanceof Boolean) {
-	                    cell.setCellValue((Boolean) value);
+	                if (value instanceof Number number) {
+	                    cell.setCellValue(number.doubleValue());
+	                } else if (value instanceof Boolean boolean1) {
+	                    cell.setCellValue(boolean1);
 	                } else if (value != null) {
 	                    cell.setCellValue(value.toString());
 	                } else {
@@ -771,10 +772,10 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	            for (int col = 0; col < rowData.size(); col++) {
 	                Cell cell = row.createCell(col);
 	                Object value = rowData.get(col);
-	                if (value instanceof Number) {
-	                    cell.setCellValue(((Number) value).doubleValue());
-	                } else if (value instanceof Boolean) {
-	                    cell.setCellValue((Boolean) value);
+	                if (value instanceof Number number) {
+	                    cell.setCellValue(number.doubleValue());
+	                } else if (value instanceof Boolean boolean1) {
+	                    cell.setCellValue(boolean1);
 	                } else if (value != null) {
 	                    cell.setCellValue(value.toString());
 	                } else {
@@ -863,10 +864,10 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	            for (int col = 0; col < rowData.size(); col++) {
 	                Cell cell = row.createCell(col);
 	                Object value = rowData.get(col);
-	                if (value instanceof Number) {
-	                    cell.setCellValue(((Number) value).doubleValue());
-	                } else if (value instanceof Boolean) {
-	                    cell.setCellValue((Boolean) value);
+	                if (value instanceof Number number) {
+	                    cell.setCellValue(number.doubleValue());
+	                } else if (value instanceof Boolean boolean1) {
+	                    cell.setCellValue(boolean1);
 	                } else if (value != null) {
 	                    cell.setCellValue(value.toString());
 	                } else {
@@ -1648,7 +1649,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 			Map<String, List<SpyroOutputDTO>> mapForExcel) {
 		try {
 			String structureJson = getJson();
-			ObjectMapper mapper = new ObjectMapper();
+			ObjectMapper mapper = new JsonMapper();
 			Map<String, List<List<Object>>> data = new HashMap<>();
 			Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
 			Map<String, List<Map<String, Object>>> spyroOutputDataListMap = new HashMap<>();

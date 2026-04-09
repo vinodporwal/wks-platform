@@ -8,7 +8,7 @@ logging:
          wks: INFO
          wks.bpm.engine.camunda: INFO
       org.springframework.web.client.RestTemplate: ERROR
-      org.apache.http: ERROR
+      org.apache.hc.core5.http: ERROR
       httpclient.wire: ERROR
       
 spring.mvc.converters.preferred-json-mapper: gson    

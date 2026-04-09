@@ -34,6 +34,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -79,6 +80,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 
+@DependsOnDatabaseInitialization
 @Service
 public class DecokingActivitiesServiceImpl implements DecokingActivitiesService {
 
@@ -526,10 +528,10 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	                Cell cell = row.createCell(i);
 	                Object value = dataMap.get(allColumns.get(i));
 
-	                if (value instanceof Number) {
-	                    cell.setCellValue(((Number) value).doubleValue());
-	                } else if (value instanceof Boolean) {
-	                    cell.setCellValue((Boolean) value);
+	                if (value instanceof Number number) {
+	                    cell.setCellValue(number.doubleValue());
+	                } else if (value instanceof Boolean boolean1) {
+	                    cell.setCellValue(boolean1);
 	                } else if (value != null) {
 	                    cell.setCellValue(value.toString());
 	                } else {
@@ -898,7 +900,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	                continue;
 	            }
 	            Optional<DecokeRunLength> decokeRunLengthOpt = decokeRunLengthRepository.findById(decokeRunLengthUuid);
-	            if (!decokeRunLengthOpt.isPresent()) {
+	            if (decokeRunLengthOpt.isEmpty()) {
 	                decokeRunLengthDTO.setSaveStatus("Failed: Record not found with ID: " + decokeRunLengthDTO.getId());
 	                failedList.add(decokeRunLengthDTO);
 	                continue;
@@ -976,7 +978,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	    int start = Integer.parseInt(parts[0].trim());
 	    int next = start + 1;
 	    // Format next start and next+1
-	    return String.format("%04d-%02d", next, (next + 1) % 100);
+	    return "%04d-%02d".formatted(next, (next + 1) % 100);
 	    
 	}
 

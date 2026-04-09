@@ -1,6 +1,5 @@
 package com.wks.caseengine.tcs.serviceimpl;
 
-import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -22,18 +21,20 @@ import java.util.stream.Collectors;
 import org.camunda.community.rest.client.dto.TaskDto;
 import org.camunda.community.rest.client.dto.VariableValueDto;
 import org.keycloak.representations.idm.UserRepresentation;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DatabindException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 import com.wks.bpm.engine.client.VariablesMapper;
 import com.wks.bpm.engine.client.facade.BpmEngineClientFacade;
 import com.wks.bpm.engine.model.spi.ProcessInstance;
@@ -196,7 +197,7 @@ public class TCSWorkFlowServiceImpl implements TCSWorkFlowService {
         
         List<ProcessVariable> processVariables = new ArrayList<>();
 
-		ObjectMapper objectMapper = new ObjectMapper();
+		ObjectMapper objectMapper = new JsonMapper();
 
 String submissionStatusJson = null;
 String plantListJson = null;
@@ -211,7 +212,7 @@ try {
     // totalPlantsJson = objectMapper.writeValueAsString( totalPlants );
     // approvedPlantsJson = objectMapper.writeValueAsString( approvedPlants );
     // allPlantsApprovedJson = objectMapper.writeValueAsString( allPlantsApproved );
-} catch (JsonProcessingException e) {
+} catch (JacksonException e) {
 
 	throw new RestResourceNotFoundException("Error converting submissionStatusDTO to JSON: " + e.getMessage());
 }
@@ -296,7 +297,7 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
     @Override
     public void resetProcessVariables(String businessKey) {
 
-        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = new JsonMapper();
 
         ProcessInstance[] processInstances = processEngineClientFacade.findProcessInstances(
                 Optional.ofNullable(PROCESS_DEFINITION_KEY), Optional.ofNullable(businessKey), Optional.empty());
@@ -337,7 +338,7 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
                     new TypeReference<Map<String, Boolean>>() {});
             submissionStatusMap.replaceAll((plant, status) -> false);
             submissionStatusVar.setValue(objectMapper.writeValueAsString(submissionStatusMap));
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException("Error resetting submissionStatus variable: " + e.getMessage());
         }
 
@@ -354,7 +355,7 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
         String approvalStatusJson;
         try {
             approvalStatusJson = objectMapper.writeValueAsString(approvalStatusMap);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException("Error serializing approvalStatus variable: " + e.getMessage());
         }
 
@@ -452,7 +453,7 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
               String businessKey =  generateBusinessKey(verticalId, siteId, finacialYear);
 
-        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = new JsonMapper();
 
         
    List<TaskDto> tasks = getTasks(businessKey);
@@ -560,7 +561,7 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
         String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
-        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = new JsonMapper();
 
 
         ProcessInstance processInstance = getProcessInstance(businessKey);
@@ -699,7 +700,7 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
         String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
-        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = new JsonMapper();
 
         // get the process instance 
 
@@ -802,7 +803,7 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
         String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
-        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = new JsonMapper();
 
       ProcessInstance processInstance = getProcessInstance(businessKey);
       List<TaskDto> tasks = getTasks(businessKey);
@@ -1181,7 +1182,7 @@ tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailD
 
         String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
-        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = new JsonMapper();
 
         // get process Instance for given business key and process definition key
         ProcessInstance processInstance = getProcessInstance(businessKey);
@@ -1346,9 +1347,9 @@ tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailD
         
                 Object value = variable.getValue();
         
-                if (value instanceof String) {
+                if (value instanceof String string) {
                     // Value is already JSON string
-                    rootNode = objectMapper.readTree((String) value);
+                    rootNode = objectMapper.readTree(string);
                 } else {
                     // Value is Map / LinkedHashMap / Object
                     rootNode = objectMapper.valueToTree(value);
@@ -1382,9 +1383,9 @@ tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailD
         
                 Object value = variable.getValue();
         
-                if (value instanceof String) {
+                if (value instanceof String string) {
                     // Value is already JSON string
-                    rootNode = objectMapper.readTree((String) value);
+                    rootNode = objectMapper.readTree(string);
                 } else {
                     // Value is Map / LinkedHashMap / Object
                     rootNode = objectMapper.valueToTree(value);
@@ -1685,7 +1686,7 @@ tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailD
     public void notifyPlantManagers() {
           
          // get all the users with role Plant_Manager
-             ObjectMapper objectMapper = new ObjectMapper();
+             ObjectMapper objectMapper = new JsonMapper();
              Map<String, List<UUID>> result = new HashMap<>();
 
             List<UserRepresentation> userRepresentations;
@@ -1700,7 +1701,7 @@ tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailD
             String userIdsJson;
             try {
                 userIdsJson = objectMapper.writeValueAsString(userRepresentations.stream().map(UserRepresentation::getId).map(UUID::fromString).collect(Collectors.toList()));
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 throw new RestResourceNotFoundException("Error converting userIds to JSON: " + e.getMessage());
             }
 
@@ -1720,9 +1721,9 @@ tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailD
     JsonNode root;
     try {
         root = objectMapper.readTree(jsonResult);
-    } catch (JsonMappingException e) {
+    } catch (DatabindException e) {
         throw new RestResourceNotFoundException("Error converting submissionStatusDTO to JSON: " + e.getMessage());
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
         throw new RestResourceNotFoundException("Error converting submissionStatusDTO to JSON: " + e.getMessage());
     }
 
@@ -1732,14 +1733,14 @@ tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailD
     if (dataArray != null && dataArray.isArray()) {
         for (JsonNode node : dataArray) {
 
-            String plantName = node.get("PlantName").asText();
+            String plantName = node.get("PlantName").asString();
             List<UUID> users = new ArrayList<>();
 
             JsonNode userIdsNode = node.get("UserIds");
 
             if (userIdsNode != null && userIdsNode.isArray()) {
                 for (JsonNode userNode : userIdsNode) {
-                    UUID userId = UUID.fromString(userNode.get("UserId").asText());
+                    UUID userId = UUID.fromString(userNode.get("UserId").asString());
                     users.add(userId);
                 }
             }
@@ -1827,7 +1828,7 @@ for(UUID siteId : sites) {
 
             String submissionStatusJson = processVariable.getValue().toString();
 
-            objectMapper = new ObjectMapper();
+            objectMapper = new JsonMapper();
     
             // Convert JSON -> Map<String, Boolean>
             Map<String, Boolean> submissionStatusMap;
@@ -1836,10 +1837,10 @@ for(UUID siteId : sites) {
                         submissionStatusJson,
                         new TypeReference<Map<String, Boolean>>() {}
                 );
-            } catch (JsonMappingException e) {
+            } catch (DatabindException e) {
                 throw new RestResourceNotFoundException("Error converting submissionStatusDTO to JSON: " + e.getMessage());
                 
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                
                 throw new RestResourceNotFoundException("Error converting submissionStatusDTO to JSON: " + e.getMessage());
             }

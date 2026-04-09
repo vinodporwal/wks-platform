@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import com.wks.caseengine.entity.PlantMaintenanceTransaction;
@@ -12,7 +12,7 @@ import com.wks.caseengine.entity.PlantMaintenanceTransaction;
 @Repository
 public interface SlowdownPlanRepository extends JpaRepository<PlantMaintenanceTransaction, UUID> {
 	
-	@Query(value = "SELECT " +
+	@NativeQuery("SELECT " +
             "pm.Discription, " +
             "pm.MaintStartDateTime, " +
             "pm.MaintEndDateTime, " +
@@ -27,14 +27,13 @@ public interface SlowdownPlanRepository extends JpaRepository<PlantMaintenanceTr
             "LEFT JOIN NormParameterType NPT ON NPT.Id=np.NormParameterType_FK_Id "+
             "WHERE mt.Name = :maintenanceTypeName "  +
             "and pmt.Plant_FK_Id = :plantId " +
-			"and AuditYear = :year order by pm.MaintStartDateTime",
-            nativeQuery = true)
+			"and AuditYear = :year order by pm.MaintStartDateTime")
 	List<Object[]> findSlowdownPlanDetailsByPlantIdAndType( 
         @Param("maintenanceTypeName") String maintenanceTypeName, @Param("plantId") String plantId,  @Param("year") String year);
 
         //List<Object[]> findSlowdownPlanDetailsByPlantIdAndType(String maintenanceTypeName, String plantId, String year);
 
-	@Query(value = "SELECT " +
+	@NativeQuery("SELECT " +
             "pm.Discription " +
             "FROM PlantMaintenanceTransaction pm " +
             "JOIN PlantMaintenance pmt ON pm.PlantMaintenance_FK_Id = pmt.Id " +
@@ -43,8 +42,7 @@ public interface SlowdownPlanRepository extends JpaRepository<PlantMaintenanceTr
             "LEFT JOIN NormParameterType NPT ON NPT.Id=np.NormParameterType_FK_Id "+
             "WHERE mt.Name = :maintenanceTypeName "  +
             "and pmt.Plant_FK_Id = :plantId " +
-			"and AuditYear = :year and Discription = :discription order by np.DisplayOrder,pm.CreatedOn desc",
-            nativeQuery = true)
+			"and AuditYear = :year and Discription = :discription order by np.DisplayOrder,pm.CreatedOn desc")
 	List<Object[]> findDiscriptionByPlantIdAndType( 
         @Param("maintenanceTypeName") String maintenanceTypeName, @Param("plantId") String plantId,  @Param("year") String year, @Param("discription") String discription);
 

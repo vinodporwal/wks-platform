@@ -6,7 +6,7 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,10 +19,7 @@ import com.wks.caseengine.entity.DummyEntity;
 @org.springframework.stereotype.Repository
 public interface PowerGenerationRepository extends JpaRepository<DummyEntity, Long> {
 
-    @Query(
-        value = "EXEC dbo.CPP_NMD_GetPowerGenerationOperationalHoursv1 :cppPlantId, :financialYear",
-        nativeQuery = true
-    )
+    @NativeQuery("EXEC dbo.CPP_NMD_GetPowerGenerationOperationalHoursv1 :cppPlantId, :financialYear")
     List<AssetMonthlyOperationalProjection> getOperationalHours(
         @Param("cppPlantId") UUID cppPlantId,
         @Param("financialYear") String financialYear
@@ -32,12 +29,12 @@ public interface PowerGenerationRepository extends JpaRepository<DummyEntity, Lo
 
     @Modifying
     @Transactional
-    @Query(value = """
+    @NativeQuery("""
         UPDATE OperationalHours
         SET OperationalHours = :hours
         WHERE Asset_FK_Id = :assetId
           AND FinancialMonthId = :financialMonthId
-        """, nativeQuery = true)
+        """)
     int updateOperationalHours(
             @Param("assetId") UUID assetId,
             @Param("financialMonthId") UUID financialMonthId,
@@ -46,10 +43,10 @@ public interface PowerGenerationRepository extends JpaRepository<DummyEntity, Lo
 
     @Modifying
     @Transactional
-    @Query(value = """
+    @NativeQuery("""
         INSERT INTO OperationalHours (Id, Asset_FK_Id, FinancialMonthId, OperationalHours)
         VALUES (NEWID(), :assetId, :financialMonthId, :hours)
-        """, nativeQuery = true)
+        """)
     void insertOperationalHours(
             @Param("assetId") UUID assetId,
             @Param("financialMonthId") UUID financialMonthId,
@@ -58,7 +55,7 @@ public interface PowerGenerationRepository extends JpaRepository<DummyEntity, Lo
 
     @Modifying
     @Transactional
-    @Query(value = """
+    @NativeQuery("""
         MERGE OperationalHours AS target
         USING (SELECT :assetId AS Asset_FK_Id, :financialMonthId AS FinancialMonthId) AS source
         ON target.Asset_FK_Id = source.Asset_FK_Id
@@ -68,7 +65,7 @@ public interface PowerGenerationRepository extends JpaRepository<DummyEntity, Lo
         WHEN NOT MATCHED THEN
             INSERT (Id, Asset_FK_Id, FinancialMonthId, OperationalHours)
             VALUES (NEWID(), :assetId, :financialMonthId, :hours);
-        """, nativeQuery = true)
+        """)
     void upsertOperationalHours(
             @Param("assetId") UUID assetId,
             @Param("financialMonthId") UUID financialMonthId,
@@ -79,23 +76,20 @@ public interface PowerGenerationRepository extends JpaRepository<DummyEntity, Lo
     // @Query(value = "select Name, NormType_FK_Id, SAPMaterialCode, AssetId from NormParameters where AssetId in :assetIds", nativeQuery = true)
     // List<PowerGenerationNormParametersProjection> getNormParametersByAssetIds(@Param("assetIds") List<UUID> assetIds);
 
-    @Query(value = "select np.Name, np.NormType_FK_Id, np.SAPMaterialCode, anm.AssetId from  CPP_AssetNorms_Mapping anm WITH(NOLOCK) join NormParameters np WITH(NOLOCK) on anm.NormParameters_ID = np.Id where anm.AssetId in :assetIds", nativeQuery = true)
+    @NativeQuery("select np.Name, np.NormType_FK_Id, np.SAPMaterialCode, anm.AssetId from  CPP_AssetNorms_Mapping anm WITH(NOLOCK) join NormParameters np WITH(NOLOCK) on anm.NormParameters_ID = np.Id where anm.AssetId in :assetIds")
     List<PowerGenerationNormParametersProjection> getNormParametersByAssetIds(@Param("assetIds") List<UUID> assetIds);
 
 
-    @Query(value = "select * from UtilityPlantAssets WITH(NOLOCK) where PowerGenerationAsset_FK_Id = :powerGenerationAssetId", nativeQuery = true)
+    @NativeQuery("select * from UtilityPlantAssets WITH(NOLOCK) where PowerGenerationAsset_FK_Id = :powerGenerationAssetId")
     List<PowerGenerationSteamResposeProject> getPowerGenerationSteamResposeProject(@Param("powerGenerationAssetId") UUID powerGenerationAssetId);
 
-    @Query(value = """
+    @NativeQuery("""
             EXEC dbo.CPP_NMD_Get_UtilityPlantAssets :cppPlantId, :financialYear
-            """, nativeQuery = true)
+            """)
     List<PowerGenerationSteamResposeProject> getUtilityPlantAssets(@Param("cppPlantId") UUID cppPlantId, @Param("financialYear") String financialYear);
 
 
-    @Query(
-        value = "EXEC dbo.CPP_NMD_Get_UtilityPlant_OperationalHours :cppPlantId, :financialYear",
-        nativeQuery = true
-    )
+    @NativeQuery("EXEC dbo.CPP_NMD_Get_UtilityPlant_OperationalHours :cppPlantId, :financialYear")
     List<AssetMonthlyOperationalProjection> getLinkedOperationalHoursforUtilityPlant(
         @Param("cppPlantId") UUID cppPlantId,
         @Param("financialYear") String financialYear

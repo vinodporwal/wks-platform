@@ -14,6 +14,7 @@ import javax.sql.DataSource;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,6 +52,8 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+@DependsOnDatabaseInitialization
 @Service
 public class BasisReportServiceImpl implements BasisReportService {
 
@@ -88,11 +91,9 @@ public class BasisReportServiceImpl implements BasisReportService {
 	public List<String> extractTypes(Map<String, Object> typeMap) {
 	    List<String> types = new ArrayList<>();
 	    Object dataObj = typeMap.get("data");
-	    if (dataObj instanceof List<?>) {
-	        List<?> dataList = (List<?>) dataObj;
+	    if (dataObj instanceof List<?> dataList) {
 	        for (Object elem : dataList) {
-	            if (elem instanceof Map<?, ?>) {
-	                Map<?, ?> row = (Map<?, ?>) elem;
+	            if (elem instanceof Map<?, ?> row) {
 	                Object typeObj = row.get("TYPE");
 	                if (typeObj != null) {
 	                    types.add(typeObj.toString());
@@ -692,8 +693,8 @@ public class BasisReportServiceImpl implements BasisReportService {
 	                    if (rowData != null && rowData.length > 0 && isMonth(key)) {
 	                        try {
 	                            Object[] dataRow = null;
-	                            if (rowData.length > 0 && rowData[0] instanceof Object[]) {
-	                                dataRow = (Object[]) rowData[0];
+	                            if (rowData.length > 0 && rowData[0] instanceof Object[] objects) {
+	                                dataRow = objects;
 	                            } else {
 	                                dataRow = rowData; 
 	                            }
@@ -1012,22 +1013,22 @@ public class BasisReportServiceImpl implements BasisReportService {
 				BasisReportDTO basisReportDTO = new BasisReportDTO();
 				basisReportDTO.setUom(row[0] != null ? row[0].toString() : null);
 				basisReportDTO.setApril(
-					    row[1] instanceof Number ? ((Number) row[1]).doubleValue()
+					    row[1] instanceof Number n ? n.doubleValue()
 					                            : row[1] != null ? Double.parseDouble(row[1].toString())
 					                                            : null
 					);
 					// Repeat similarly for other months:
-					basisReportDTO.setMay(row[2] instanceof Number ? ((Number) row[2]).doubleValue() : row[2] != null ? Double.parseDouble(row[2].toString()) : null);
-					basisReportDTO.setJune(row[3] instanceof Number ? ((Number) row[3]).doubleValue() : row[3] != null ? Double.parseDouble(row[3].toString()) : null);
-					basisReportDTO.setJuly(row[4] instanceof Number ? ((Number) row[4]).doubleValue() : row[4] != null ? Double.parseDouble(row[4].toString()) : null);
-					basisReportDTO.setAugust(row[5] instanceof Number ? ((Number) row[5]).doubleValue() : row[5] != null ? Double.parseDouble(row[5].toString()) : null);
-					basisReportDTO.setSeptember(row[6] instanceof Number ? ((Number) row[6]).doubleValue() : row[6] != null ? Double.parseDouble(row[6].toString()) : null);
-					basisReportDTO.setOctober(row[7] instanceof Number ? ((Number) row[7]).doubleValue() : row[7] != null ? Double.parseDouble(row[7].toString()) : null);
-					basisReportDTO.setNovember(row[8] instanceof Number ? ((Number) row[8]).doubleValue() : row[8] != null ? Double.parseDouble(row[8].toString()) : null);
-					basisReportDTO.setDecember(row[9] instanceof Number ? ((Number) row[9]).doubleValue() : row[9] != null ? Double.parseDouble(row[9].toString()) : null);
-					basisReportDTO.setJanuary(row[10] instanceof Number ? ((Number) row[10]).doubleValue() : row[10] != null ? Double.parseDouble(row[10].toString()) : null);
-					basisReportDTO.setFebruary(row[11] instanceof Number ? ((Number) row[11]).doubleValue() : row[11] != null ? Double.parseDouble(row[11].toString()) : null);
-					basisReportDTO.setMarch(row[12] instanceof Number ? ((Number) row[12]).doubleValue() : row[12] != null ? Double.parseDouble(row[12].toString()) : null);
+					basisReportDTO.setMay(row[2] instanceof Number n ? n.doubleValue() : row[2] != null ? Double.parseDouble(row[2].toString()) : null);
+					basisReportDTO.setJune(row[3] instanceof Number n ? n.doubleValue() : row[3] != null ? Double.parseDouble(row[3].toString()) : null);
+					basisReportDTO.setJuly(row[4] instanceof Number n ? n.doubleValue() : row[4] != null ? Double.parseDouble(row[4].toString()) : null);
+					basisReportDTO.setAugust(row[5] instanceof Number n ? n.doubleValue() : row[5] != null ? Double.parseDouble(row[5].toString()) : null);
+					basisReportDTO.setSeptember(row[6] instanceof Number n ? n.doubleValue() : row[6] != null ? Double.parseDouble(row[6].toString()) : null);
+					basisReportDTO.setOctober(row[7] instanceof Number n ? n.doubleValue() : row[7] != null ? Double.parseDouble(row[7].toString()) : null);
+					basisReportDTO.setNovember(row[8] instanceof Number n ? n.doubleValue() : row[8] != null ? Double.parseDouble(row[8].toString()) : null);
+					basisReportDTO.setDecember(row[9] instanceof Number n ? n.doubleValue() : row[9] != null ? Double.parseDouble(row[9].toString()) : null);
+					basisReportDTO.setJanuary(row[10] instanceof Number n ? n.doubleValue() : row[10] != null ? Double.parseDouble(row[10].toString()) : null);
+					basisReportDTO.setFebruary(row[11] instanceof Number n ? n.doubleValue() : row[11] != null ? Double.parseDouble(row[11].toString()) : null);
+					basisReportDTO.setMarch(row[12] instanceof Number n ? n.doubleValue() : row[12] != null ? Double.parseDouble(row[12].toString()) : null);
 
 				basisReportDTO.setNormParameterDisplayName(row[13] != null ? row[13].toString() : null);
 				basisReportDTO.setProductName(row[14] != null ? row[14].toString() : null);

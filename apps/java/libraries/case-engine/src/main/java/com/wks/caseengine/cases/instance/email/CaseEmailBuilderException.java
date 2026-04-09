@@ -11,8 +11,11 @@
  */
 package com.wks.caseengine.cases.instance.email;
 
+import java.io.Serial;
+
 public class CaseEmailBuilderException extends RuntimeException {
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	public CaseEmailBuilderException(String message) {

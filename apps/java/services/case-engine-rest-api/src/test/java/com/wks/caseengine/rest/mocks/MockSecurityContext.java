@@ -11,6 +11,7 @@
  */
 package com.wks.caseengine.rest.mocks;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -23,6 +24,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 
 public class MockSecurityContext implements SecurityContext {
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	private Authentication authz;
@@ -46,6 +48,7 @@ public class MockSecurityContext implements SecurityContext {
 
 	static class MockAuthentication implements Authentication {
 
+		@Serial
 		private static final long serialVersionUID = 1L;
 
 		private Jwt credentials;

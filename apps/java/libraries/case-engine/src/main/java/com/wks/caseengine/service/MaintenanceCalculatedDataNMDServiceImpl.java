@@ -34,7 +34,9 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+
 import com.wks.caseengine.dto.AOPMaintenanceDesignRemarksDTO;
 import com.wks.caseengine.dto.BudgetMaintenanceDto;
 import com.wks.caseengine.dto.DecokePlanningDTO;
@@ -361,10 +363,10 @@ public class MaintenanceCalculatedDataNMDServiceImpl implements MaintenanceCalcu
 	            for (int col = 0; col < rowData.size(); col++) {
 	                Cell cell = row.createCell(col);
 	                Object value = rowData.get(col);
-	                if (value instanceof Number) {
-	                    cell.setCellValue(((Number) value).doubleValue());
-	                } else if (value instanceof Boolean) {
-	                    cell.setCellValue((Boolean) value);
+	                if (value instanceof Number number) {
+	                    cell.setCellValue(number.doubleValue());
+	                } else if (value instanceof Boolean boolean1) {
+	                    cell.setCellValue(boolean1);
 	                } else if (value != null) {
 	                    cell.setCellValue(value.toString());
 	                } else {
@@ -791,7 +793,7 @@ public class MaintenanceCalculatedDataNMDServiceImpl implements MaintenanceCalcu
 	    	Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 	        String structureJson = getJson();
-	        ObjectMapper mapper = new ObjectMapper();
+	        ObjectMapper mapper = new JsonMapper();
 	        Map<String, List<List<Object>>> data = new HashMap<>();
 	        Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
 	        Map<String, List<BudgetMaintenanceDto>> budgetMaintenanceListMap = new HashMap<>();
@@ -1359,8 +1361,8 @@ public class MaintenanceCalculatedDataNMDServiceImpl implements MaintenanceCalcu
 	        }
 	        
 	        // Depending on what your database/stored proc returns, it may be a BigDecimal, Double, Number etc.
-	        if (singleResult instanceof Number) {
-	            return ((Number) singleResult).doubleValue();
+	        if (singleResult instanceof Number number) {
+	            return number.doubleValue();
 	        } else {
 	            // Unexpected type; try converting
 	            return Double.parseDouble(singleResult.toString());

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -61,7 +62,7 @@ public interface NormAttributeTransactionsRepository extends JpaRepository<NormA
 			@Param("auditYear") String auditYear,
 			@Param("normParameterFKId") UUID normParameterFKId);
 
-	@Query(value = """
+	@NativeQuery("""
 							         SELECT
 			    NP.NormParameter_FK_Id AS NormParameter_FK_Id,
 			    MAX(CASE WHEN NAT.AOPMonth = '1' THEN NAT.AttributeValue ELSE NULL END) AS Jan,
@@ -105,10 +106,10 @@ public interface NormAttributeTransactionsRepository extends JpaRepository<NormA
 
 
 
-							 """, nativeQuery = true)
+							 """)
 	List<Object[]> findByYearAndPlantFkIdPE(@Param("year") String year, @Param("plantFKId") UUID plantFKId);
 
-	@Query(value = """
+	@NativeQuery("""
 				SELECT
 			    NP.Id AS NormParameter_FK_Id,
 			    MAX(CASE WHEN NAT.AOPMonth = '1' THEN NAT.AttributeValue ELSE NULL END) AS Jan,
@@ -139,57 +140,54 @@ public interface NormAttributeTransactionsRepository extends JpaRepository<NormA
 			  AND NP.Plant_FK_Id = :plantFKId
 			GROUP BY NP.Id
 			ORDER BY NP.Id;
-						""", nativeQuery = true)
+						""")
 	List<Object[]> findByYearAndPlantFkIdMEG(@Param("year") String year, @Param("plantFKId") UUID plantFKId);
 
-	@Query(value = """
+	@NativeQuery("""
 				SELECT * FROM NormAttributeTransactions d WHERE d.NormParameter_FK_Id = :normParameterFKId  AND d.AOPMonth = :month 
 				AND d.AuditYear = :auditYear AND PlantMaintenanceTransaction_FK_Id IS NULL
-			""", nativeQuery = true)
+			""")
 	Optional<NormAttributeTransactions> findByNormParameterFKIdAndAOPMonthAndAuditYear(
 			@Param("normParameterFKId") UUID normParameterFKId,
 			@Param("month") Integer month, @Param("auditYear") String auditYear);
 	
-	@Query(value = """
+	@NativeQuery("""
 			SELECT * FROM NormAttributeTransactions d WHERE d.NormParameter_FK_Id = :normParameterFKId  AND d.AOPMonth = :month 
 			AND d.AuditYear = :auditYear AND d.AttributeValueVersion= :version AND PlantMaintenanceTransaction_FK_Id IS NULL
-		""", nativeQuery = true)
+		""")
 Optional<NormAttributeTransactions> findByNormParameterFKIdAndAOPMonthAndAuditYearAndVersion(
 		@Param("normParameterFKId") UUID normParameterFKId,
 		@Param("month") Integer month, @Param("auditYear") String auditYear, @Param("version") String version);
 
-	@Query(value = """
+	@NativeQuery("""
 				SELECT Params FROM [dbo].[vwConfigurationUpdate]
-			""", nativeQuery = true)
+			""")
 
 	List<Object[]> getPythonScriptName();
 
-    @Query(value =
-            "SELECT * FROM [RIL.AOP].dbo.vwGetExecutionDetails " +
-            "WHERE PlantId = :plantId AND AuditYear = :year",
-            nativeQuery = true
-        )
+    @NativeQuery("SELECT * FROM [RIL.AOP].dbo.vwGetExecutionDetails " +
+            "WHERE PlantId = :plantId AND AuditYear = :year")
         List<Object[]> findByPlantIdAndYearForExecutionDetails(
             @Param("plantId") UUID plantId,
             @Param("year") String year
         );
 		
-		@Query(value = "EXEC GetHistorianExecutionDetails @plantId = :plantId, @aopYear = :year", nativeQuery = true)
+		@NativeQuery("EXEC GetHistorianExecutionDetails @plantId = :plantId, @aopYear = :year")
 	List<Object[]> findByPlantIdAndYear(
 			@Param("plantId") UUID plantId,
 			@Param("year") String year);
 	
-	@Query(value = "EXEC GetHistorianExecutionNormsDetails @plantId = :plantId, @aopYear = :year", nativeQuery = true)
+	@NativeQuery("EXEC GetHistorianExecutionNormsDetails @plantId = :plantId, @aopYear = :year")
 	List<Object[]> findByPlantIdAndYearForNorms(
 			@Param("plantId") UUID plantId,
 			@Param("year") String year);
 	
 	Optional<NormAttributeTransactions> findByNormParameterFKId(UUID normParameterFKId);
 	
-	@Query(value = "SELECT * FROM NormAttributeTransactions " +
+	@NativeQuery("SELECT * FROM NormAttributeTransactions " +
             "WHERE PlantMaintenanceTransaction_FK_Id = :maintenanceId " +
             "AND NormParameter_FK_Id = :normParameterFKId " +
-            "AND AuditYear = :auditYear AND AOPMonth = :month", nativeQuery = true)
+            "AND AuditYear = :auditYear AND AOPMonth = :month")
 	List<NormAttributeTransactions> findByMaintenanceIdAndNormParameterFKIdAndAuditYear(
 	     @Param("maintenanceId") UUID maintenanceId,
 	     @Param("normParameterFKId") UUID normParameterFKId,
@@ -200,33 +198,30 @@ Optional<NormAttributeTransactions> findByNormParameterFKIdAndAOPMonthAndAuditYe
 	
 	
 	
-	@Query(value = "SELECT * FROM NormAttributeTransactions " +
+	@NativeQuery("SELECT * FROM NormAttributeTransactions " +
             "WHERE AOPMonth = 4 " +
             "AND NormParameter_FK_Id = :normParameterFKId " +
-            "AND AuditYear = :auditYear", nativeQuery = true)
+            "AND AuditYear = :auditYear")
 	NormAttributeTransactions findByNormParameterFKIdAndAuditYear(
 	     @Param("normParameterFKId") UUID normParameterFKId,
 	     @Param("auditYear") String auditYear
 );
 	
-	@Query(value = "SELECT * FROM NormAttributeTransactions " +
-            "WHERE PlantMaintenanceTransaction_FK_Id = :maintenanceId" 
-            , nativeQuery = true)
+	@NativeQuery("SELECT * FROM NormAttributeTransactions " +
+            "WHERE PlantMaintenanceTransaction_FK_Id = :maintenanceId")
 	List<NormAttributeTransactions> findByMaintenanceId(
 	     @Param("maintenanceId") UUID maintenanceId);
 
-	@Query(value = "SELECT * FROM NormAttributeTransactions WHERE  NormParameter_FK_Id = :normParameterFKId AND AuditYear = :auditYear" 
-           , nativeQuery = true)
+	@NativeQuery("SELECT * FROM NormAttributeTransactions WHERE  NormParameter_FK_Id = :normParameterFKId AND AuditYear = :auditYear")
 	List<NormAttributeTransactions> findByNormParameterIdAndAuditYear(
 	     @Param("normParameterFKId") UUID normParameterFKId,
 	     @Param("auditYear") String auditYear	    
 	);
 	
-	@Query(value = "SELECT * FROM [RIL.AOP].[dbo].[NormAttributeTransactions] " +
+	@NativeQuery("SELECT * FROM [RIL.AOP].[dbo].[NormAttributeTransactions] " +
             "WHERE [AuditYear] = :auditYear " +
             "AND [NormParameter_FK_Id] = :normParamId " +
-            "AND [ShutdownType_FK_Id] = :shutdownTypeId", 
-    nativeQuery = true)
+            "AND [ShutdownType_FK_Id] = :shutdownTypeId")
 	List<NormAttributeTransactions> findByAuditYearAndIds(
 	 @Param("auditYear") String auditYear, 
 	 @Param("normParamId") UUID normParamId, 

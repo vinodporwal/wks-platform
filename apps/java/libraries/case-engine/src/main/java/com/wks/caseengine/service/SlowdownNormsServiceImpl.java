@@ -43,6 +43,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -76,6 +77,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
 
+@DependsOnDatabaseInitialization
 @Service
 public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 
@@ -330,10 +332,10 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 						Cell cell = row.createCell(col);
 						Object value = rowData.get(col);
 
-						if (value instanceof Number) {
-							cell.setCellValue(((Number) value).doubleValue());
-						} else if (value instanceof Boolean) {
-							cell.setCellValue((Boolean) value);
+						if (value instanceof Number number) {
+							cell.setCellValue(number.doubleValue());
+						} else if (value instanceof Boolean boolean1) {
+							cell.setCellValue(boolean1);
 						} else if (value != null) {
 							cell.setCellValue(value.toString());
 						} else {
@@ -791,10 +793,10 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 					Cell cell = row.createCell(col);
 					Object value = rowData.get(col);
 
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
+					if (value instanceof Number number) {
+						cell.setCellValue(number.doubleValue()); // Handles Integer, Double, etc.
+					} else if (value instanceof Boolean boolean1) {
+						cell.setCellValue(boolean1);
 					} else if (value != null) {
 						cell.setCellValue(value.toString());
 					} else {

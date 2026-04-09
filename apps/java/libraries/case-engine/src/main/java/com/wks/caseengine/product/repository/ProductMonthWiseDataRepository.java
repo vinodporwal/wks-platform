@@ -1,7 +1,7 @@
 package com.wks.caseengine.product.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -12,7 +12,7 @@ import java.util.List;
 @Repository
 public interface ProductMonthWiseDataRepository extends JpaRepository<ProductMonthWiseData, Long>{
 	
-	@Query(value = "SELECT month_number, plant_id, SUM(month_value) as total_value " +
+	@NativeQuery("SELECT month_number, plant_id, SUM(month_value) as total_value " +
 	        "FROM ( " +
 	        "  SELECT " +
 	        "    CASE " +
@@ -36,8 +36,7 @@ public interface ProductMonthWiseDataRepository extends JpaRepository<ProductMon
 	        "  WHERE type = :type " +
 	        ") AS month_data " +
 	        "WHERE ((year = :currentYear " +
-	        "GROUP BY month_number, plant_id", 
-	        nativeQuery = true)
+	        "GROUP BY month_number, plant_id")
 	List<Object[]> getMonthWiseDataByTypeAndYear(@Param("type") String type, 
 	                                             @Param("currentYear") String currentYear
 	                                            );

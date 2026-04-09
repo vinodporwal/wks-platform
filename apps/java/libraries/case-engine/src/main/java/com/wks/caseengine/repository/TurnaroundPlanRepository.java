@@ -3,7 +3,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -12,7 +12,7 @@ import com.wks.caseengine.entity.PlantMaintenanceTransaction;
 @Repository
 public interface TurnaroundPlanRepository extends JpaRepository<PlantMaintenanceTransaction, UUID>{
 	
-	@Query(value = "SELECT " +
+	@NativeQuery("SELECT " +
             "pm.Discription, " +
             "pm.MaintStartDateTime, " +
             "pm.MaintEndDateTime, " +
@@ -27,8 +27,7 @@ public interface TurnaroundPlanRepository extends JpaRepository<PlantMaintenance
             "LEFT JOIN NormParameterType NPT ON NPT.Id=np.NormParameterType_FK_Id "+
             "WHERE mt.Name = :maintenanceTypeName "  +
             "and pmt.Plant_FK_Id = :plantId " +
-			"and AuditYear = :year order by NPT.DisplayOrder",
-            nativeQuery = true)
+			"and AuditYear = :year order by NPT.DisplayOrder")
 	List<Object[]> findTurnaroundPlanDetailsByPlantIdAndType( 
         @Param("maintenanceTypeName") String maintenanceTypeName, @Param("plantId") String plantId,  @Param("year") String year);
 

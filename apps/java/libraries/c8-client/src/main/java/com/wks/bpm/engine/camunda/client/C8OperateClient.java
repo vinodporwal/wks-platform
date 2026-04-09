@@ -38,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class C8OperateClient {
 
-	@Autowired
+	@Autowired (required = false)
 	private CamundaOperateClient operateClient;
 
 	public String getProcessDefinitionXML(String processDefinitionId, final BpmEngine bpmEngine) {

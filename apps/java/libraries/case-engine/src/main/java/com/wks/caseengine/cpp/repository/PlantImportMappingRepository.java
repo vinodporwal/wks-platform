@@ -5,7 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -22,10 +22,10 @@ public interface PlantImportMappingRepository extends JpaRepository<PlantImportM
     List<UUID> assetIds
 );
 
-    @Query(value = "select Plant_FK_Id from PowerConsumptionPlantMapping WITH(NOLOCK) where Consumption_FK_Id = :id", nativeQuery = true)
+    @NativeQuery("select Plant_FK_Id from PowerConsumptionPlantMapping WITH(NOLOCK) where Consumption_FK_Id = :id")
     List<UUID> findPlantIdsByConsumptionId(@Param("id") UUID id);
 
-    @Query(value = "select Id, Name from Plants WITH(NOLOCK) where Id in :ids", nativeQuery = true)
+    @NativeQuery("select Id, Name from Plants WITH(NOLOCK) where Id in :ids")
     List<Object[]> findPlantsByIds(@Param("ids") List<UUID> ids);
 }
 

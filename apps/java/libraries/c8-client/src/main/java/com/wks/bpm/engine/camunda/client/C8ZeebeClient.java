@@ -30,7 +30,7 @@ import io.camunda.zeebe.client.api.response.ProcessInstanceEvent;
 @Component
 public class C8ZeebeClient {
 
-	@Autowired
+	@Autowired(required = false)
 	private ZeebeClient zeebeClient;
 
 	@Autowired

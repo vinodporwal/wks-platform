@@ -31,7 +31,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.utility.ExcelConstants;
@@ -158,10 +158,10 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
                                 Cell cell = row.createCell(col);
                                 Object value = rowData.get(col);
 
-                                if (value instanceof Number) {
-                                    cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
-                                } else if (value instanceof Boolean) {
-                                    cell.setCellValue((Boolean) value);
+                                if (value instanceof Number number) {
+                                    cell.setCellValue(number.doubleValue()); // Handles Integer, Double, etc.
+                                } else if (value instanceof Boolean boolean1) {
+                                    cell.setCellValue(boolean1);
                                 } else if (value != null) {
                                     cell.setCellValue(value.toString());
                                 } else {
@@ -318,8 +318,8 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
                 	SimpleDateFormat dateFormatter = new SimpleDateFormat("dd-MM-yyyy");
                 	Object dateValue = metadataValues.get("date");
                 	String formattedDate = "";
-                	if (dateValue instanceof Date) {
-                	    formattedDate = dateFormatter.format((Date) dateValue);
+                	if (dateValue instanceof Date date) {
+                	    formattedDate = dateFormatter.format(date);
                 	}
                     String formattedSheetName = sheetName.replace("BudgetMaintenance", "Budget Maintenance");
                     String date = metadataValues.containsKey("date") ? "Date: " + formattedDate : "";
@@ -501,10 +501,10 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
                                 Cell cell = row.createCell(col);
                                 Object value = rowData.get(col);
 
-                                if (value instanceof Number) {
-                                    cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
-                                } else if (value instanceof Boolean) {
-                                    cell.setCellValue((Boolean) value);
+                                if (value instanceof Number number) {
+                                    cell.setCellValue(number.doubleValue()); // Handles Integer, Double, etc.
+                                } else if (value instanceof Boolean boolean1) {
+                                    cell.setCellValue(boolean1);
                                 } else if (value != null) {
                                     cell.setCellValue(value.toString());
                                 } else {
@@ -617,9 +617,9 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
  // Helper function to handle cell value setting (Date/String/N/A)
     private void setFormattedCellValue(Cell valueCell, Object value, CellStyle style) {
         if (value != null) {
-            if (value instanceof Date) {
+            if (value instanceof Date date) {
                 SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
-                valueCell.setCellValue(dateFormat.format((Date) value));
+                valueCell.setCellValue(dateFormat.format(date));
             } else {
                 valueCell.setCellValue(value.toString());
             }
@@ -736,10 +736,10 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
                                 Cell cell = row.createCell(col);
                                 Object value = rowData.get(col);
 
-                                if (value instanceof Number) {
-                                    cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
-                                } else if (value instanceof Boolean) {
-                                    cell.setCellValue((Boolean) value);
+                                if (value instanceof Number number) {
+                                    cell.setCellValue(number.doubleValue()); // Handles Integer, Double, etc.
+                                } else if (value instanceof Boolean boolean1) {
+                                    cell.setCellValue(boolean1);
                                 } else if (value != null) {
                                     cell.setCellValue(value.toString());
                                 } else {

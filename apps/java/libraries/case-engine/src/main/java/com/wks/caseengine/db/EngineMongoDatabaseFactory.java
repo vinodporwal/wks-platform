@@ -54,7 +54,7 @@ public class EngineMongoDatabaseFactory extends SimpleMongoClientDatabaseFactory
 	private String getTenantDatabase() {
 		Optional<String> tenantId = holder.getTenantId();
 
-		if (!tenantId.isEmpty()) {
+		if (tenantId.isPresent()) {
 			log.debug("using tenate database {}", tenantId.get());
 			return tenantId.get();
 		}

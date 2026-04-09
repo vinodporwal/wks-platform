@@ -1271,10 +1271,9 @@ public class PowerGenerationService {
 
         if(shutdownHrs > totalHours) {  
             throw new IllegalArgumentException(
-                String.format(
-                    "Shutdown hours cannot be greater than total hours for %d-%02d",
-                    year, month
-                )
+					"Shutdown hours cannot be greater than total hours for %d-%02d".formatted(
+							year, month
+					)
             );
         }
 

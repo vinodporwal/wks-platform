@@ -11,12 +11,15 @@
  */
 package com.wks.caseengine.record.type;
 
+import java.io.Serial;
+
 /**
  * @author victor.franca
  *
  */
 public class RecordTypeNotFoundException extends RuntimeException {
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	private static final String DEFAULT_MESSAGE = "Record Type not found";

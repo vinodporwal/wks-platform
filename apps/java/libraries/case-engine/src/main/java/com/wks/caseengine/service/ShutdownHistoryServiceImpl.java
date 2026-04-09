@@ -528,7 +528,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 				UUID uuid = Optional.ofNullable(results)
 					    .filter(res -> !res.isEmpty() && res.get(0).length > 0)
 					    .map(res -> res.get(0)[0])
-					    .map(val -> (val instanceof UUID) ? (UUID) val : UUID.fromString(val.toString()))
+					    .map(val -> (val instanceof UUID uuid1) ? uuid1 : UUID.fromString(val.toString()))
 					    .orElse(null);				
 				List<NormAttributeTransactions> normAttributeTransactions =normAttributeTransactionsRepository.findByAuditYearAndIds(year,normAttributeTransactionsDTO.getNormParameterFKId(),uuid);
 				if(normAttributeTransactions!=null && normAttributeTransactions.size()>0) {

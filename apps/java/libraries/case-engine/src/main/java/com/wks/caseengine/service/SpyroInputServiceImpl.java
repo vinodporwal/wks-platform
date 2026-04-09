@@ -24,7 +24,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+
 import com.wks.caseengine.dto.SpyroInputDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.ExcelConfigurations;
@@ -225,7 +227,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 
 				UUID normParameterFKId = UUID.fromString(spyroInputDTO.getNormParameterFKID());
 				Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
-				if (!optionNormParameters.isPresent()) {
+				if (optionNormParameters.isEmpty()) {
 					spyroInputDTO.setSaveStatus("Failed");
 					spyroInputDTO.setErrDescription("Norm Parameter not found");
 					continue;
@@ -391,7 +393,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 				String structureJson = optExcelConfiguration.get().getJsonValue();
 
 				// String structureJson = getJson();
-				ObjectMapper mapper = new ObjectMapper();
+				ObjectMapper mapper = new JsonMapper();
 				Map<String, List<List<Object>>> data = new HashMap<>();
 				Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
 				Map<String, List<Map<String, Object>>> spyroInputDataListMap = new HashMap<>();

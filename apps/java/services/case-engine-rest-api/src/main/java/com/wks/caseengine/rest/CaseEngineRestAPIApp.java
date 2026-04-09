@@ -12,11 +12,16 @@
 package com.wks.caseengine.rest;
 
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
+import org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 
-@SpringBootApplication(exclude = UserDetailsServiceAutoConfiguration.class)
+//@SpringBootApplication(exclude = UserDetailsServiceAutoConfiguration.class)
+@SpringBootApplication( excludeName = {
+	"io.camunda.zeebe.spring.client.CamundaAutoConfiguration"
+})
+
 @ComponentScan(
 
 		basePackageClasses = { com.wks.api.security.config.ApiSecurityScan.class,

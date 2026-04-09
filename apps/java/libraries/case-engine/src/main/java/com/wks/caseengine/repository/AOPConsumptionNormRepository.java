@@ -4,7 +4,7 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,7 +14,7 @@ import com.wks.caseengine.entity.AOPConsumptionNorm;
 @Repository
 public interface AOPConsumptionNormRepository extends JpaRepository<AOPConsumptionNorm,UUID>{
 	
-	@Query(value = """
+	@NativeQuery("""
 		    SELECT 
 		        acn.Id,
 		        acn.Site_FK_Id,
@@ -43,22 +43,21 @@ public interface AOPConsumptionNormRepository extends JpaRepository<AOPConsumpti
 		    JOIN NormParameterType npt ON np.NormParameterType_FK_Id = npt.Id
 		    WHERE acn.Plant_FK_Id = :plantFkId 
 		    AND acn.AOPYear = :aopYear ORDER BY npt.DisplayOrder
-		    """, nativeQuery = true)
+		    """)
 		List<Object[]> findByPlantFkIdAndAopYear(@Param("plantFkId") UUID plantFkId, @Param("aopYear") String aopYear);
 
 	@Modifying
 		@Transactional
-    @Query(value = "EXEC MEG_HMD_CalculateConsumptionAOPValues :finYear", nativeQuery = true)
+    @NativeQuery("EXEC MEG_HMD_CalculateConsumptionAOPValues :finYear")
 		int calculateExpressionConsumptionNorms(@Param("finYear") String finYear);
 
 
-		@Query(value = "SELECT TOP 1 Id FROM AOPConsumptionNorm " +
+		@NativeQuery("SELECT TOP 1 Id FROM AOPConsumptionNorm " +
                 "WHERE Plant_FK_Id = :plantId " +
                 "AND Site_FK_Id = :siteId " +
                 "AND Vertical_FK_Id = :verticalId " +
                 "AND Material_FK_Id = :materialId " +
-                "AND AOPYear = :financialYear", 
-        nativeQuery = true)
+                "AND AOPYear = :financialYear")
 		UUID findIdByFilters(@Param("plantId") UUID plantId,
                       @Param("siteId") UUID siteId,
                       @Param("verticalId") UUID verticalId,

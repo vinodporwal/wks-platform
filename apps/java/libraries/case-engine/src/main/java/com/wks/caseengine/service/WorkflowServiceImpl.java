@@ -26,6 +26,7 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.process.instance.ProcessInstanceService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -63,6 +64,7 @@ import com.wks.caseengine.repository.WorkflowRepository;
 import com.wks.caseengine.repository.WorkflowStepsMasterRepository;
 import com.wks.caseengine.tasks.TaskService;
 
+@DependsOnDatabaseInitialization
 @Service
 public class WorkflowServiceImpl implements WorkflowService {
 
@@ -527,8 +529,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 	public static List<String> extractRoles() {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-		if (authentication instanceof JwtAuthenticationToken) {
-			JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) authentication;
+		if (authentication instanceof JwtAuthenticationToken jwtAuth) {
 			Jwt jwt = jwtAuth.getToken();
 
 			String userId = jwt.getClaimAsString("sub"); // or "preferred_username"
@@ -542,13 +543,10 @@ public class WorkflowServiceImpl implements WorkflowService {
 
 			Object realmAccessObj = claims.get("realm_access");
 
-			if (realmAccessObj instanceof Map<?, ?>) {
-				Map<?, ?> realmAccessMap = (Map<?, ?>) realmAccessObj;
+			if (realmAccessObj instanceof Map<?, ?> realmAccessMap) {
 				Object rolesObj = realmAccessMap.get("roles");
 
-				if (rolesObj instanceof List<?>) {
-					// Safe cast with filtering
-					List<?> rawList = (List<?>) rolesObj;
+				if (rolesObj instanceof List<?> rawList) {
 					return rawList.stream()
 							.filter(item -> item instanceof String)
 							.map(String.class::cast)

@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -17,6 +17,6 @@ public interface ImportPowerSourceRepository extends JpaRepository<CPPImportPowe
     
     List<CPPImportPowerSourceMapping> findByCppPlantFkIdAndIsActive(UUID cppPlantFkId, Boolean isActive);
     
-    @Query(value = "SELECT * FROM CPPImportPowerSourceMapping WITH(NOLOCK) WHERE SourceName = :sourceName AND Plant_FK_Id = :plantId", nativeQuery = true)
+    @NativeQuery("SELECT * FROM CPPImportPowerSourceMapping WITH(NOLOCK) WHERE SourceName = :sourceName AND Plant_FK_Id = :plantId")
     CPPImportPowerSourceMapping findBySourceNameAndPlantId(@Param("sourceName") String sourceName, @Param("plantId") UUID plantId);
 }

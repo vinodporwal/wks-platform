@@ -11,7 +11,7 @@ logging:
       com.wks.caseengine.pagination: INFO
       org.springframework.web.client.RestTemplate: INFO
       org.springframework.security: INFO
-      org.apache.http: INFO
+      org.apache.hc.core5.http: INFO
       httpclient.wire: INFO
       org.hibernate.SQL: DEBUG
       org.hibernate.type.descriptor.sql.BasicBinder: TRACE

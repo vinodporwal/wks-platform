@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.beans.factory.annotation.Autowired;
-
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -66,6 +66,7 @@ import java.util.*;
 import java.sql.Connection;
 import javax.sql.DataSource;
 
+@DependsOnDatabaseInitialization
 @Service
 public class NormalOperationNormsServiceImpl implements NormalOperationNormsService {
 
@@ -282,7 +283,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					MCUNormsValueGrade value = optionalValue.get();
 					Optional<NormParameters> normParametersOpt = normParametersRepository
 							.findById(value.getMaterialFkId());
-					if (!normParametersOpt.isEmpty() && (!normParametersOpt.get().getIsEditable())) {
+					if (normParametersOpt.isPresent() && (!normParametersOpt.get().getIsEditable())) {
 						continue;
 					}
 
@@ -328,7 +329,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					MCUNormsValue value = optionalValue.get();
 					Optional<NormParameters> normParametersOpt = normParametersRepository
 							.findById(value.getMaterialFkId());
-					if (!normParametersOpt.isEmpty() && (!normParametersOpt.get().getIsEditable())) {
+					if (normParametersOpt.isPresent() && (!normParametersOpt.get().getIsEditable())) {
 						continue;
 					}
 
@@ -394,7 +395,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 							if (mCUNormsValueGrade.getMaterialFkId() != null) {
 								Optional<NormParameters> normParametersOpt = normParametersRepository
 										.findById(mCUNormsValueGrade.getMaterialFkId());
-								if (!normParametersOpt.isEmpty() && (!normParametersOpt.get().getIsEditable())) {
+								if (normParametersOpt.isPresent() && (!normParametersOpt.get().getIsEditable())) {
 									continue;
 								}
 
@@ -554,7 +555,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 							if (mCUNormsValue.getMaterialFkId() != null) {
 								Optional<NormParameters> normParametersOpt = normParametersRepository
 										.findById(mCUNormsValue.getMaterialFkId());
-								if (!normParametersOpt.isEmpty() && (!normParametersOpt.get().getIsEditable())) {
+								if (normParametersOpt.isPresent() && (!normParametersOpt.get().getIsEditable())) {
 									continue;
 								}
 							}
@@ -1547,10 +1548,10 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 						Cell cell = row.createCell(col);
 						Object value = rowData.get(col);
 
-						if (value instanceof Number) {
-							cell.setCellValue(((Number) value).doubleValue());
-						} else if (value instanceof Boolean) {
-							cell.setCellValue((Boolean) value);
+						if (value instanceof Number number) {
+							cell.setCellValue(number.doubleValue());
+						} else if (value instanceof Boolean boolean1) {
+							cell.setCellValue(boolean1);
 						} else if (value != null) {
 							cell.setCellValue(value.toString());
 						} else {
@@ -1686,10 +1687,10 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					Cell cell = row.createCell(col);
 					Object value = rowData.get(col);
 
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
+					if (value instanceof Number number) {
+						cell.setCellValue(number.doubleValue()); // Handles Integer, Double, etc.
+					} else if (value instanceof Boolean boolean1) {
+						cell.setCellValue(boolean1);
 					} else if (value != null) {
 						cell.setCellValue(value.toString());
 					} else {

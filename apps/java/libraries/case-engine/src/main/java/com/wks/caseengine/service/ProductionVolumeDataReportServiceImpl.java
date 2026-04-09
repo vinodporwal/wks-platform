@@ -10,6 +10,7 @@ import java.util.UUID;
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,6 +49,7 @@ import java.sql.CallableStatement;
 import java.sql.SQLException;
 import java.sql.Connection;
 
+@DependsOnDatabaseInitialization
 @Service
 public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDataReportService {
 

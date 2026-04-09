@@ -29,8 +29,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+
 import com.wks.caseengine.cpp.dto.norm.NormBasedUtilityBudgetMonthDTO;
 import com.wks.caseengine.cpp.dto.norm.NormBasedUtilityBudgetResponseDTO;
 import com.wks.caseengine.cpp.dto.norm.NormsMonthUpdateRequestDTO;
@@ -67,11 +69,10 @@ public class NormBasedUtilityBudgetServiceImpl implements NormBasedUtilityBudget
     private JdbcTemplate jdbcTemplate;
 
     public NormBasedUtilityBudgetServiceImpl() {
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false);
-        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        this.objectMapper.configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true);
-        this.objectMapper.setSerializationInclusion(JsonInclude.Include.ALWAYS);
+        this.objectMapper = new JsonMapper();
+        // this.objectMapper.configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false);
+        // this.objectMapper.configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true);
+        // this.objectMapper.setDefaultPropertyInclusion(JsonInclude.Include.ALWAYS);
     }
 
     @Override
@@ -305,12 +306,12 @@ public class NormBasedUtilityBudgetServiceImpl implements NormBasedUtilityBudget
             return null;
         }
 
-        if (obj instanceof Integer) {
-            return (Integer) obj;
+        if (obj instanceof Integer integer) {
+            return integer;
         }
 
-        if (obj instanceof Number) {
-            return ((Number) obj).intValue();
+        if (obj instanceof Number number) {
+            return number.intValue();
         }
 
         try {
@@ -450,16 +451,14 @@ public class NormBasedUtilityBudgetServiceImpl implements NormBasedUtilityBudget
         AOPMessageVM vm = new AOPMessageVM();
         vm.setCode(200);
 
-        String message = String.format(
-                "Successfully updated %d month(s): %s",
-                updatedMonths.size(),
-                String.join(", ", updatedMonths));
+        String message = "Successfully updated %d month(s): %s".formatted(
+				updatedMonths.size(),
+				String.join(", ", updatedMonths));
 
         if (!skippedMonths.isEmpty()) {
-            message += String.format(
-                    ". Skipped %d month(s) with no data: %s",
-                    skippedMonths.size(),
-                    String.join(", ", skippedMonths));
+            message += ". Skipped %d month(s) with no data: %s".formatted(
+					skippedMonths.size(),
+					String.join(", ", skippedMonths));
         }
 
         vm.setMessage(message);
@@ -499,7 +498,7 @@ public class NormBasedUtilityBudgetServiceImpl implements NormBasedUtilityBudget
                             headerId,
                             dto.getFinancialYearMonthFkId());
 
-            if (!optional.isPresent()) {
+            if (optional.isEmpty()) {
                 errors.add(monthName + " (record not found in database)");
                 return;
             }

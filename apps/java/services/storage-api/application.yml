@@ -5,7 +5,7 @@ logging:
    level:
       root: INFO
       com.wks.api.security: INFO
-      org.apache.http: INFO
+      org.apache.hc.core5.http: INFO
             
 spring.mvc.converters.preferred-json-mapper: gson
 

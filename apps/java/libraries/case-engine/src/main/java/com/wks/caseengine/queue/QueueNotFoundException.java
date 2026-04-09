@@ -11,12 +11,15 @@
  */
 package com.wks.caseengine.queue;
 
+import java.io.Serial;
+
 /**
  * @author victor.franca
  *
  */
 public class QueueNotFoundException extends RuntimeException {
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	private static final String DEFAULT_MESSAGE = "Queue not found";

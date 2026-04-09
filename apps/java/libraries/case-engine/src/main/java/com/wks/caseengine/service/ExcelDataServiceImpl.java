@@ -324,9 +324,9 @@ public class ExcelDataServiceImpl implements ExcelDataService {
             for (List<Object> row : rows) {
                 for (int i = 0; i < row.size(); i++) {
                     Object value = row.get(i);
-                    if (value instanceof Number) {
+                    if (value instanceof Number number) {
                         Double existing = columnSums.get(i);
-                        columnSums.set(i, existing + ((Number) value).doubleValue());
+                        columnSums.set(i, existing + number.doubleValue());
                     }
                 }
             }

@@ -62,10 +62,10 @@ public class ExcelExportUtil {
                 cellIndex = 0;
                 for (Object value : dataRow.values()) {
                     Cell cell = row.createCell(cellIndex++);
-                    if (value instanceof Number) {
-                        cell.setCellValue(((Number) value).doubleValue());
-                    } else if (value instanceof Boolean) {
-                        cell.setCellValue((Boolean) value);
+                    if (value instanceof Number number) {
+                        cell.setCellValue(number.doubleValue());
+                    } else if (value instanceof Boolean boolean1) {
+                        cell.setCellValue(boolean1);
                     } else {
                         cell.setCellValue(value != null ? value.toString() : "");
                     }

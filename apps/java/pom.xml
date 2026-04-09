@@ -22,10 +22,10 @@
 
 		<servlet-api.version>2.5</servlet-api.version>
 
-		<spring.boot.version>3.1.1</spring.boot.version>
+		<spring.boot.version>4.0.5</spring.boot.version>
 		<snakeyaml.version>2.0</snakeyaml.version>
 		<spring.shell.version>2.0.1.RELEASE</spring.shell.version>
-		<spring.doc.version>2.5.0</spring.doc.version>
+		<spring.doc.version>3.0.2</spring.doc.version>
 
 		<camunda7.version>7.20.0</camunda7.version>
 		<camunda8.version>8.4.5</camunda8.version>
@@ -75,23 +75,33 @@
 
 	<modules>
 		<!-- Libraries -->
+		<module>services/case-engine-rest-api</module>
 		<module>libraries/case-engine</module>
+
+		 <module>libraries/c7-client</module>
 		<module>libraries/bpm-engine-interface</module>
-		<module>libraries/bpm-engine-client</module>
+		
+		<module>libraries/c7-plugins</module>
+		
+		
+		
+
+		<module>services/demo-data-loader</module>
 		<module>libraries/api-security</module>
 		<module>libraries/case-engine-rest-dto</module>
 		<module>libraries/case-engine-rest-client</module>
+		
 
-		<module>libraries/c7-plugins</module>
-		<module>libraries/c7-client</module>
-		<module>libraries/c8-client</module>
-
-		<!-- Services -->
-		<module>services/case-engine-rest-api</module>
-		<module>services/c7-external-tasks</module>
+    <module>libraries/c8-client</module>
+	<module>libraries/bpm-engine-client</module>
+		
+		
+		 <module>services/c7-external-tasks</module> 
 		<module>services/c8-external-tasks</module>
 		<module>services/storage-api</module>
-		<module>services/demo-data-loader</module>
+		
+		
+		
 	</modules>
 
 	<build>
@@ -114,6 +124,16 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.11.0</version>
+            <configuration>
+                <parameters>true</parameters>
+                <source>17</source>  <!-- or your Java version -->
+                <target>17</target>
+            </configuration>
+        </plugin>
 		</plugins>
 	</build>
 

@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +16,7 @@ import com.wks.caseengine.entity.MCUNormsValue;
 @Repository
 public interface NormalOperationNormsRepository extends JpaRepository<MCUNormsValue, UUID> {
 
-	@Query(value = """
+	@NativeQuery("""
 			   SELECT MNV.Id, MNV.Site_FK_Id, MNV.Plant_FK_Id, MNV.Vertical_FK_Id, MNV.Material_FK_Id, MNV.April, MNV.May, MNV.June, MNV.July, MNV.August,
 			          MNV.September, MNV.October, MNV.November, MNV.December, MNV.January, MNV.February, MNV.March, MNV.FinancialYear, MNV.Remarks,
 			          MNV.CreatedOn, MNV.ModifiedOn, MNV.MCUVersion, MNV.UpdatedBy,NPT.Id AS NormParameterTypeId,
@@ -25,12 +25,12 @@ public interface NormalOperationNormsRepository extends JpaRepository<MCUNormsVa
 			   FROM MCUNormsValue MNV JOIN NormParameterType NPT ON MNV.NormParameterType_FK_Id = NPT.Id
 			   JOIN NormParameters NP ON NP.Id=MNV.Material_FK_Id
 			   WHERE MNV.FinancialYear = :year AND MNV.Plant_FK_Id = :plantId ORDER BY NPT.DisplayOrder
-			   """, nativeQuery = true)
+			   """)
 	List<Object[]> findByYearAndPlantFkId(@Param("year") String year, @Param("plantId") UUID plantId);
 
 	@Modifying
 	@Transactional
-	@Query(value = "EXEC MEG_HMD_CalculateShutdownNorms :finYear", nativeQuery = true)
+	@NativeQuery("EXEC MEG_HMD_CalculateShutdownNorms :finYear")
 	int calculateExpressionConsumptionNorms(@Param("finYear") String finYear);
 
 	

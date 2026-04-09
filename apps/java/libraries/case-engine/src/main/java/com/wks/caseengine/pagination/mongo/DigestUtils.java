@@ -11,11 +11,11 @@
  */
 package com.wks.caseengine.pagination.mongo;
 
-import org.springframework.util.Base64Utils;
-
 import com.wks.caseengine.pagination.PaginationException;
 
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.Base64;
 
 @Slf4j
 public final class DigestUtils {
@@ -26,7 +26,7 @@ public final class DigestUtils {
 		}
 
 		try {
-			byte[] decrypted = Base64Utils.decodeFromUrlSafeString(token.toString());
+			byte[] decrypted = Base64.getUrlDecoder().decode(token.toString());
 			return new String(decrypted);
 		} catch (Exception e) {
 			log.error("Error encrypting token", e);
@@ -40,7 +40,7 @@ public final class DigestUtils {
 		}
 
 		try {
-			return Base64Utils.encodeToUrlSafeString(token.toString().getBytes());
+			return Base64.getUrlEncoder().encodeToString(token.toString().getBytes());
 		} catch (Exception e) {
 			log.error("Error encrypting token", e);
 			throw new PaginationException("Error encrypting token", e);

@@ -6,7 +6,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -16,36 +16,30 @@ import com.wks.caseengine.entity.DummyEntity;
 @Repository
 public interface AssetCapacityRepository extends JpaRepository<DummyEntity, Long> {
 
-    @Query(
-        value = "EXEC dbo.CPP_NMD_GetAssetCapacity " +
+    @NativeQuery("EXEC dbo.CPP_NMD_GetAssetCapacity " +
                 "@CppId = :cppId, " +
-                "@FinancialYear = :financialYear",
-        nativeQuery = true
-    )
+                "@FinancialYear = :financialYear")
     List<AssetCapacityProjection> getAssetAvailabilityByCPPAndFY(
             @Param("cppId") UUID cppId,
             @Param("financialYear") String financialYear
     );
 // query to get all AssetCapacity for given AssetIds and FinancialYearMonthIds. data to determine whether to insert or update 
-  @Query(
-    value = """
+  @NativeQuery("""
         SELECT AssetId, FinancialYearMonthId
         FROM AssetAvailability WITH(NOLOCK)
         WHERE AssetId IN (:assetIds)
           AND FinancialYearMonthId IN (:financialYearMonthIds)
-        """,
-    nativeQuery = true
-)
+        """)
 List<Object[]> getAssetCapacitiesByAssetsAndFYMonths(
         @Param("assetIds") Collection<UUID> assetIds,
         @Param("financialYearMonthIds") Collection<UUID> financialYearMonthIds
 );
 
-@Query(value = """
+@NativeQuery("""
     SELECT AssetId
     FROM PowerGenerationAssets WITH(NOLOCK)
     WHERE AssetName = :assetName
-    """, nativeQuery = true)
+    """)
 UUID  getAssetIdByAssetName(@Param("assetName") String assetName);
 
 }

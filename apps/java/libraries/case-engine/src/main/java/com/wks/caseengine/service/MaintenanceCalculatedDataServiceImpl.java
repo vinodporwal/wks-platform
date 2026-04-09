@@ -52,7 +52,9 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+
 import com.wks.caseengine.dto.AOPMaintenanceDesignRemarksDTO;
 import com.wks.caseengine.dto.BudgetMaintenanceDto;
 import com.wks.caseengine.dto.DecokePlanningDTO;
@@ -182,7 +184,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	        UUID plantUUID = UUID.fromString(plantId);
 	        Optional<Plants> plantOpt = plantsRepository.findById(plantUUID);
 	        
-	        if (!plantOpt.isPresent()) {
+	        if (plantOpt.isEmpty()) {
 	            throw new RuntimeException("Plant not found for ID: " + plantId);
 	        }
 
@@ -203,7 +205,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	            for (Map<String, Object> row : rows) {
 	                for (String colName : numericColumns) {
 	                    Object val = row.get(colName);
-	                    double currentVal = (val instanceof Number) ? ((Number) val).doubleValue() : 0.0;
+	                    double currentVal = (val instanceof Number n) ? n.doubleValue() : 0.0;
 	                    double existingTotal = totalsMap.containsKey(colName) ? totalsMap.get(colName) : 0.0;
 	                    totalsMap.put(colName, existingTotal + currentVal);
 	                }
@@ -249,7 +251,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	        UUID plantUUID = UUID.fromString(plantId);
 	        Optional<Plants> plantOpt = plantsRepository.findById(plantUUID);
 	        
-	        if (!plantOpt.isPresent()) {
+	        if (plantOpt.isEmpty()) {
 	            throw new RuntimeException("Plant not found for ID: " + plantId);
 	        }
 
@@ -270,7 +272,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	            for (Map<String, Object> row : rows) {
 	                for (String colName : numericColumns) {
 	                    Object val = row.get(colName);
-	                    double currentVal = (val instanceof Number) ? ((Number) val).doubleValue() : 0.0;
+	                    double currentVal = (val instanceof Number n) ? n.doubleValue() : 0.0;
 	                    double existingTotal = totalsMap.containsKey(colName) ? totalsMap.get(colName) : 0.0;
 	                    totalsMap.put(colName, existingTotal + currentVal);
 	                }
@@ -544,8 +546,8 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	                Cell cell = row.createCell(colIdx);
 	                Object value = rowData.get(key);
 	                
-	                if (value instanceof Number) {
-	                    double val = ((Number) value).doubleValue();
+	                if (value instanceof Number number) {
+	                    double val = number.doubleValue();
 	                    cell.setCellValue(val);
 	                    totalsMap.put(key, totalsMap.getOrDefault(key, 0.0) + val);
 	                } else if (value != null) {
@@ -947,8 +949,8 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	                        value = getNumericCellValue(cell);
 	                    }
 
-	                    if (value instanceof Number && !columnName.equalsIgnoreCase("Id") && !columnName.equalsIgnoreCase("PlantId")) {
-	                        double numericValue = ((Number) value).doubleValue();
+	                    if (value instanceof Number number && !columnName.equalsIgnoreCase("Id") && !columnName.equalsIgnoreCase("PlantId")) {
+	                        double numericValue = number.doubleValue();
 	                        int maxDays = getMaxDaysInMonth(currentRowMonth, baseYearValue);
 	                        
 	                        if (numericValue < 0 || numericValue > maxDays) {
@@ -1134,7 +1136,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	    	Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 	        String structureJson = getJson();
-	        ObjectMapper mapper = new ObjectMapper();
+	        ObjectMapper mapper = new JsonMapper();
 	        Map<String, List<List<Object>>> data = new HashMap<>();
 	        Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
 	        Map<String, List<BudgetMaintenanceDto>> budgetMaintenanceListMap = new HashMap<>();
@@ -1702,8 +1704,8 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	        }
 	        
 	        // Depending on what your database/stored proc returns, it may be a BigDecimal, Double, Number etc.
-	        if (singleResult instanceof Number) {
-	            return ((Number) singleResult).doubleValue();
+	        if (singleResult instanceof Number number) {
+	            return number.doubleValue();
 	        } else {
 	            // Unexpected type; try converting
 	            return Double.parseDouble(singleResult.toString());

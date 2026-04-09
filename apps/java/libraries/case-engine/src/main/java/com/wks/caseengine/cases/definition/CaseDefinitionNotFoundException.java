@@ -11,10 +11,13 @@
  */
 package com.wks.caseengine.cases.definition;
 
+import java.io.Serial;
+
 public class CaseDefinitionNotFoundException extends RuntimeException {
 
 	private static final String DEFAULT_MESSAGE = "Case Definition not found";
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	public CaseDefinitionNotFoundException() {

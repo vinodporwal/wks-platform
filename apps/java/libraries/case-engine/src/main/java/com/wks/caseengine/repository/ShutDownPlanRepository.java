@@ -3,7 +3,7 @@ import java.util.UUID;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import com.wks.caseengine.entity.PlantMaintenanceTransaction;
@@ -11,7 +11,7 @@ import com.wks.caseengine.entity.PlantMaintenanceTransaction;
 @Repository
 public interface ShutDownPlanRepository extends JpaRepository<PlantMaintenanceTransaction, UUID>{
 	
-	@Query(value = "SELECT " +
+	@NativeQuery("SELECT " +
             "pm.Discription, " +
             "pm.MaintStartDateTime, " +
             "pm.MaintEndDateTime, " +
@@ -26,12 +26,11 @@ public interface ShutDownPlanRepository extends JpaRepository<PlantMaintenanceTr
             "LEFT JOIN NormParameterType NPT ON NPT.Id=np.NormParameterType_FK_Id "+
             "WHERE mt.Name = :maintenanceTypeName "  +
             "and pmt.Plant_FK_Id = :plantId " +
-			"and pm.AuditYear = :year order by pm.MaintStartDateTime",
-            nativeQuery = true)
+			"and pm.AuditYear = :year order by pm.MaintStartDateTime")
 	List<Object[]> findMaintenanceDetailsByPlantIdAndType( 
         @Param("maintenanceTypeName") String maintenanceTypeName, @Param("plantId") String plantId,  @Param("year") String year);
 
-	@Query(value = "SELECT " +
+	@NativeQuery("SELECT " +
             "pm.Discription " +
             "FROM PlantMaintenanceTransaction pm " +
             "JOIN PlantMaintenance pmt ON pm.PlantMaintenance_FK_Id = pmt.Id " +
@@ -40,27 +39,24 @@ public interface ShutDownPlanRepository extends JpaRepository<PlantMaintenanceTr
             "LEFT JOIN NormParameterType NPT ON NPT.Id=np.NormParameterType_FK_Id "+
             "WHERE mt.Name = :maintenanceTypeName "  +
             "and pmt.Plant_FK_Id = :plantId " +
-			"and pm.AuditYear = :year and pm.Discription = :discription order by pm.CreatedOn desc",
-            nativeQuery = true)
+			"and pm.AuditYear = :year and pm.Discription = :discription order by pm.CreatedOn desc")
 	List<Object[]> findDiscriptionByPlantIdAndType( 
         @Param("maintenanceTypeName") String maintenanceTypeName, @Param("plantId") String plantId,  @Param("year") String year, @Param("discription") String discription);
 	
-    @Query(value = "SELECT " +
+    @NativeQuery("SELECT " +
             "pm.Id " +
             "FROM PlantMaintenance pm " +
-            "WHERE pm.MaintenanceText = :productName", 
-            nativeQuery = true)
+            "WHERE pm.MaintenanceText = :productName")
     UUID findPlantMaintenanceId( 
             @Param("productName") String productName);
     
-    @Query(value = "SELECT TOP(1) pm.Id FROM PlantMaintenance pm " +
+    @NativeQuery("SELECT TOP(1) pm.Id FROM PlantMaintenance pm " +
             "JOIN MaintenanceTypes mt ON pm.MaintenanceType_FK_Id = mt.Id " +
-            "WHERE pm.Plant_FK_Id = :plantFkId AND mt.Name = :maintenanceTypeName", 
-    nativeQuery = true)
+            "WHERE pm.Plant_FK_Id = :plantFkId AND mt.Name = :maintenanceTypeName")
 	UUID findIdByPlantIdAndMaintenanceTypeName(@Param("plantFkId") UUID plantFkId, 
 	                                                   @Param("maintenanceTypeName") String maintenanceTypeName);
     
-    @Query(value = """
+    @NativeQuery("""
     	    SELECT 
     	        FORMAT(t.MaintStartDateTime, 'MMM-yyyy') AS monthYear, 
     	        p.MaintenanceText AS product, 
@@ -74,7 +70,7 @@ public interface ShutDownPlanRepository extends JpaRepository<PlantMaintenanceTr
     	        AND p.Plant_FK_Id = :plantId 
     	    GROUP BY FORMAT(t.MaintStartDateTime, 'MMM-yyyy'), p.MaintenanceText
     	    ORDER BY monthYear, product
-    	""", nativeQuery = true)
+    	""")
     	List<Object[]> getMonthlyShutdownHours(@Param("auditYear") String auditYear, @Param("plantId") UUID plantId);
 
 }

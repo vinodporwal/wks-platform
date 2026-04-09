@@ -11,8 +11,11 @@
  */
 package com.wks.caseengine.cases.definition.action;
 
+import java.io.Serial;
+
 public class CaseActionTypeNotIdentifiedException extends Exception{
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 }

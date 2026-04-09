@@ -311,12 +311,12 @@ public class CPPModelCalculationLogController {
                         if (compressedBlob.length >= 10) {
                             StringBuilder hexDump = new StringBuilder();
                             for (int i = 0; i < Math.min(10, compressedBlob.length); i++) {
-                                hexDump.append(String.format("%02X ", compressedBlob[i]));
+                                hexDump.append("%02X ".formatted(compressedBlob[i]));
                             }
                             log.info("[CPPModelCalculationLogController] First 10 bytes (hex): {}", hexDump.toString().trim());
-                            log.info("[CPPModelCalculationLogController] GZIP magic number check: 0x{}{} (should be 0x1F8B)", 
-                                    String.format("%02X", compressedBlob[0]), 
-                                    String.format("%02X", compressedBlob[1]));
+                            log.info("[CPPModelCalculationLogController] GZIP magic number check: 0x{}{} (should be 0x1F8B)",
+									"%02X".formatted(compressedBlob[0]),
+									"%02X".formatted(compressedBlob[1]));
                             
                             boolean isValidGzip = (compressedBlob[0] == (byte)0x1F && compressedBlob[1] == (byte)0x8B);
                             log.info("[CPPModelCalculationLogController] Valid GZIP header: {}", isValidGzip);
@@ -356,7 +356,7 @@ public class CPPModelCalculationLogController {
                         if (excelContent.length >= 4) {
                             StringBuilder excelHeader = new StringBuilder();
                             for (int i = 0; i < Math.min(4, excelContent.length); i++) {
-                                excelHeader.append(String.format("%02X ", excelContent[i]));
+                                excelHeader.append("%02X ".formatted(excelContent[i]));
                             }
                             log.info("[CPPModelCalculationLogController] Decompressed data first 4 bytes: {}", excelHeader.toString().trim());
                             

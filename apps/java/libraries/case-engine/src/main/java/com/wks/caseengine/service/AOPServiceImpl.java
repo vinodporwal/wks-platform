@@ -16,6 +16,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.AOPDTO;
@@ -51,6 +52,7 @@ import java.sql.SQLException;
 import java.sql.Connection;
 import jakarta.persistence.Query;
 
+@DependsOnDatabaseInitialization
 @Service
 public class AOPServiceImpl implements AOPService {
 
@@ -374,7 +376,7 @@ public class AOPServiceImpl implements AOPService {
 					Optional<UUID> Id = aopRepository.findAopIdByFilters(Site, Vertical, Material, Plant,
 							aOPDTO.getAopYear());
 					aOP = new AOP();
-					if (Id != null && !Id.isEmpty()) {
+					if (Id != null && Id.isPresent()) {
 						aOP.setId(Id.get());
 					}
 
@@ -714,10 +716,10 @@ public class AOPServiceImpl implements AOPService {
 	            for (int col = 0; col < rowData.size(); col++) {
 	                Cell cell = row.createCell(col);
 	                Object value = rowData.get(col);
-	                if (value instanceof Number) {
-	                    cell.setCellValue(((Number) value).doubleValue());
-	                } else if (value instanceof Boolean) {
-	                    cell.setCellValue((Boolean) value);
+	                if (value instanceof Number number) {
+	                    cell.setCellValue(number.doubleValue());
+	                } else if (value instanceof Boolean boolean1) {
+	                    cell.setCellValue(boolean1);
 	                } else if (value != null) {
 	                    cell.setCellValue(value.toString());
 	                } else {
@@ -766,7 +768,7 @@ public class AOPServiceImpl implements AOPService {
 
 	    
 	    int yy = displayYear % 100;  
-	    String yyStr = String.format("%02d", yy);
+	    String yyStr = "%02d".formatted(yy);
 
 	    return mname + "-" + yyStr;
 	}

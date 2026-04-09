@@ -2,7 +2,7 @@ package com.wks.caseengine.repository;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import com.wks.caseengine.entity.WorkflowStepsMaster;
@@ -12,7 +12,7 @@ public interface WorkflowStepsMasterRepository extends JpaRepository<WorkflowSte
 
     
 
-    @Query(value = "SELECT Id "+
+    @NativeQuery("SELECT Id "+
       ",Name " +
       ",DisplayName "+
       ",Sequence "+
@@ -22,8 +22,7 @@ public interface WorkflowStepsMasterRepository extends JpaRepository<WorkflowSte
       ",ModifiedOn "+
       "FROM dbo.WorkflowStepsMaster "+
       "where WorkflowMaster_FK_Id = :workflowMasterId " +
-      "order by Sequence ",
-            nativeQuery = true)
+      "order by Sequence ")
       List<Object[]> findAllByWorkflowMasterFKId(@Param("workflowMasterId") 
             UUID workflowMasterId);
     

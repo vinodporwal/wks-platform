@@ -2,7 +2,7 @@ package com.wks.caseengine.repository;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import com.wks.caseengine.entity.BusinessDemand;
@@ -12,7 +12,7 @@ public interface BusinessDemandDataRepository extends JpaRepository<BusinessDema
 	
 	public List<BusinessDemand> findAllByYearAndPlantId(String year,UUID plantId);
 	
-	@Query(value = """
+	@NativeQuery("""
 		    SELECT 
 		        Id,
 		        Remark,
@@ -47,13 +47,11 @@ public interface BusinessDemandDataRepository extends JpaRepository<BusinessDema
 		    WHERE 
 		        (Year = :year OR Year IS NULL) 
 		        AND Plant_FK_Id = :plantFkId
-		    ORDER BY NormTypeDisplayOrder,MaterialDisplayOrder """, 
-		    nativeQuery = true
-		)
+		    ORDER BY NormTypeDisplayOrder,MaterialDisplayOrder """)
  	    List<Object[]> findByYearAndPlantFkId(@Param("year") String year, @Param("plantFkId") UUID plantFkId);
 	
-		 @Query(value = """
-			SELECT [Id], [DisplayName] , [PLANT_FK_ID] FROM [dbo].[vwScrnMEGBusinessDemand] WHERE [PLANT_FK_ID]= :plantId """, nativeQuery = true)
+		 @NativeQuery("""
+			SELECT [Id], [DisplayName] , [PLANT_FK_ID] FROM [dbo].[vwScrnMEGBusinessDemand] WHERE [PLANT_FK_ID]= :plantId """)
 List<Object[]> getAllBusinessDemandData(@Param("plantId") String plantId);
 
 }

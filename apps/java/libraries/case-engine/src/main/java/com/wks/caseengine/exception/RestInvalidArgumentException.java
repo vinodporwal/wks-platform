@@ -11,18 +11,21 @@
  */
 package com.wks.caseengine.exception;
 
+import java.io.Serial;
+
 /**
  * @author victor.franca
  *
  */
 public class RestInvalidArgumentException extends RuntimeException {
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	private static final String DEFAULT_MESSAGE = "The provided %s is empty or invalid.";
 
 	public RestInvalidArgumentException(final String argumentName, final Throwable t) {
-		super(String.format(DEFAULT_MESSAGE, argumentName), t);
+		super(DEFAULT_MESSAGE.formatted(argumentName), t);
 	}
 
 }

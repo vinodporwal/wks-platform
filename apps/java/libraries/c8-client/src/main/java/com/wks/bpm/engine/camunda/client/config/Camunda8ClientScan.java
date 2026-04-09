@@ -24,4 +24,5 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(value = "wks.bpm.engine.camunda.version", havingValue = "camunda8", matchIfMissing = false)
 public class Camunda8ClientScan {
 
+    
 }

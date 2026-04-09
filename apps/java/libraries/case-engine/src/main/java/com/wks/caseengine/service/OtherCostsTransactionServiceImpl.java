@@ -288,10 +288,10 @@ public class OtherCostsTransactionServiceImpl implements OtherCostsTransactionSe
 	            for (int col = 0; col < rowData.size(); col++) {
 	                Cell cell = row.createCell(col);
 	                Object value = rowData.get(col);
-	                if (value instanceof Number) {
-	                    cell.setCellValue(((Number) value).doubleValue());
-	                } else if (value instanceof Boolean) {
-	                    cell.setCellValue((Boolean) value);
+	                if (value instanceof Number number) {
+	                    cell.setCellValue(number.doubleValue());
+	                } else if (value instanceof Boolean boolean1) {
+	                    cell.setCellValue(boolean1);
 	                } else if (value != null) {
 	                    cell.setCellValue(value.toString());
 	                } else {
@@ -317,7 +317,7 @@ public class OtherCostsTransactionServiceImpl implements OtherCostsTransactionSe
 	    int endYearSuffix = Integer.parseInt(parts[1]);
 	    int nextStartYear = startYear - 1;
 	    int nextEndYearSuffix = endYearSuffix - 1;
-	    return nextStartYear + "-" + String.format("%02d", nextEndYearSuffix % 100);
+	    return nextStartYear + "-" + "%02d".formatted(nextEndYearSuffix % 100);
 	}
 
 	@Override

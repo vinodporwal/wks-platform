@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import com.wks.caseengine.entity.NormParameterMonthlyTransaction;
@@ -13,7 +13,7 @@ import com.wks.caseengine.entity.NormParameterMonthlyTransaction;
 @Repository
 public interface NormParameterMonthlyTransactionRepository extends JpaRepository<NormParameterMonthlyTransaction, UUID>{
 	
-	@Query(value = """
+	@NativeQuery("""
 	        WITH MonthlyData AS (
 	            SELECT 
 	                np.Name AS Product,
@@ -64,7 +64,7 @@ public interface NormParameterMonthlyTransactionRepository extends JpaRepository
 	        FROM PivotedData
 	        GROUP BY Product, :dynamicColumns
 	        ORDER BY Product
-	    """, nativeQuery = true)
+	    """)
 	    List<Map<String, Object>> getBusinessDemandData(@Param("year") String year, @Param("nextYear") String nextYear, @Param("dynamicColumns") String dynamicColumns);
 
 }

@@ -94,7 +94,7 @@ public class PlantImportMappingServiceImpl {
                 if (fmOpt.isPresent()) {
                     fyMonths.add(fmOpt.get());
                 } else {
-                    missingEntries.add(String.format("%s-%d", Month.of(my.month).name(), my.year));
+                    missingEntries.add("%s-%d".formatted(Month.of(my.month).name(), my.year));
                 }
             }
 

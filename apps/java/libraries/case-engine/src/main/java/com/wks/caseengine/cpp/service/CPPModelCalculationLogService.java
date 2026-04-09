@@ -11,14 +11,15 @@
  */
 package com.wks.caseengine.cpp.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.wks.caseengine.cpp.dto.*;
 import com.wks.caseengine.cpp.entity.CPPModelCalculationLog;
 import com.wks.caseengine.cpp.repository.CPPModelCalculationLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.core.JacksonException;
+
 import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
@@ -247,7 +248,7 @@ public class CPPModelCalculationLogService {
         String financialYearDisplay = null;
         if (parent.getFinancialYear() != null) {
             int nextYear = (parent.getFinancialYear() + 1) % 100; // Get last 2 digits of next year
-            financialYearDisplay = parent.getFinancialYear() + "-" + String.format("%02d", nextYear);
+            financialYearDisplay = parent.getFinancialYear() + "-" + "%02d".formatted(nextYear);
         }
 
         // Format execution datetime as "DD-MM-YYYY HH:MM AM/PM"
@@ -284,7 +285,7 @@ public class CPPModelCalculationLogService {
         String financialYearDisplay = null;
         if (monthlyLog.getFinancialYear() != null) {
             int nextYear = (monthlyLog.getFinancialYear() + 1) % 100;
-            financialYearDisplay = monthlyLog.getFinancialYear() + "-" + String.format("%02d", nextYear);
+            financialYearDisplay = monthlyLog.getFinancialYear() + "-" + "%02d".formatted(nextYear);
         }
         
         return MonthlyLogDTO.builder()
@@ -399,7 +400,7 @@ public class CPPModelCalculationLogService {
                     .assets(assets)
                     .build();
 
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("[CPPModelCalculationLogService] Failed to parse asset status JSON: {}", e.getMessage(), e);
             return null;
         }
@@ -456,7 +457,7 @@ public class CPPModelCalculationLogService {
                     .demand(demand)
                     .build();
 
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("[CPPModelCalculationLogService] Failed to parse power balance JSON: {}", e.getMessage(), e);
             return null;
         }
@@ -491,7 +492,7 @@ public class CPPModelCalculationLogService {
             log.debug("[CPPModelCalculationLogService] Successfully parsed steam balance JSON for all steam types");
             return result;
 
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("[CPPModelCalculationLogService] Failed to parse steam balance JSON: {}", e.getMessage(), e);
             return null;
         }
@@ -533,7 +534,7 @@ public class CPPModelCalculationLogService {
 
     private String getStringOrNull(JsonNode node, String fieldName) {
         JsonNode field = node.get(fieldName);
-        return (field != null && !field.isNull()) ? field.asText() : null;
+        return (field != null && !field.isNull()) ? field.asString() : null;
     }
     
     private Integer getIntegerOrNull(JsonNode node, String fieldName) {

@@ -300,8 +300,8 @@ public class HeatRateService {
                     logger.error("Invalid selectedHeatRate value: '{}' for ID: {}. Must be one of: OEM, PREVIOUS_YEAR, PROPOSED, OTHER", 
                         selectedHeatRate, dto.getId());
                     throw new IllegalArgumentException(
-                        String.format("Invalid selectedHeatRate value: '%s'. Must be one of: OEM, PREVIOUS_YEAR, PROPOSED, OTHER", 
-                        selectedHeatRate));
+							"Invalid selectedHeatRate value: '%s'. Must be one of: OEM, PREVIOUS_YEAR, PROPOSED, OTHER".formatted(
+									selectedHeatRate));
                 }
             } else {
                 // Set default value to PROPOSED if null or empty
@@ -449,7 +449,7 @@ public class HeatRateService {
         int prevStartYear = startYear - 1;
         int prevEndYear = endYear - 1;
         
-        return prevStartYear + "-" + String.format("%02d", prevEndYear);
+        return prevStartYear + "-" + "%02d".formatted(prevEndYear);
     }
 
     /**
@@ -588,8 +588,8 @@ public class HeatRateService {
                     logger.error("Invalid selectedHeatRate value: '{}' for ID: {}. Must be one of: OEM, PREVIOUS_YEAR, PROPOSED, OTHER", 
                         selectedHeatRate, heatRateDTO.getId());
                     throw new IllegalArgumentException(
-                        String.format("Invalid selectedHeatRate value: '%s'. Must be one of: OEM, PREVIOUS_YEAR, PROPOSED, OTHER", 
-                        selectedHeatRate));
+							"Invalid selectedHeatRate value: '%s'. Must be one of: OEM, PREVIOUS_YEAR, PROPOSED, OTHER".formatted(
+									selectedHeatRate));
                 }
             } else {
                 // Set default value to PROPOSED if null or empty

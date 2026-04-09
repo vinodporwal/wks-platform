@@ -11,12 +11,15 @@
  */
 package com.wks.caseengine.cases.instance.email;
 
+import java.io.Serial;
+
 /**
  * @author victor.franca
  *
  */
 public class CaseEmailNotFoundException extends RuntimeException {
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	private static final String DEFAULT_MESSAGE = "Case Email not found";

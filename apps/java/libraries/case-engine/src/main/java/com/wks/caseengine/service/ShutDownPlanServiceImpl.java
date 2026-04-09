@@ -37,6 +37,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import java.time.Duration;
@@ -84,6 +85,7 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.time.YearMonth;
 
+@DependsOnDatabaseInitialization
 @Service
 public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 
@@ -212,7 +214,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					double durationDouble = (durationObject != null) ? durationObject.doubleValue() : 0.0;
 					int hours = (int) durationDouble;
 					int minutes = (int) Math.round((durationDouble - hours) * 100);
-					String formattedDuration = String.format("%02d:%02d", hours, minutes);
+					String formattedDuration = "%02d:%02d".formatted(hours, minutes);
 
 					list.add(dto.getDiscription());
 					String productString = dto.getProduct();
@@ -299,13 +301,13 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					Cell cell = row.createCell(col);
 					Object value = rowData.get(col);
 
-					if (value instanceof Date) {
-						cell.setCellValue((Date) value);
+					if (value instanceof Date date) {
+						cell.setCellValue(date);
 						cell.setCellStyle(dateTimeStyle);
-					} else if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue());
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
+					} else if (value instanceof Number number) {
+						cell.setCellValue(number.doubleValue());
+					} else if (value instanceof Boolean boolean1) {
+						cell.setCellValue(boolean1);
 					} else if (value != null) {
 						cell.setCellValue(value.toString());
 					} else {
@@ -360,7 +362,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					Double excelTimeValue = durationDouble / 24.0;
 					int hours = (int) durationDouble;
 					int minutes = (int) Math.round((durationDouble - hours) * 100);
-					String formattedDuration = String.format("%02d:%02d", hours, minutes);
+					String formattedDuration = "%02d:%02d".formatted(hours, minutes);
 
 					list.add(dto.getDiscription());
 
@@ -447,19 +449,19 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					Cell cell = row.createCell(col);
 					Object value = rowData.get(col);
 
-					if (value instanceof Date) {
-						cell.setCellValue((Date) value);
+					if (value instanceof Date date) {
+						cell.setCellValue(date);
 						cell.setCellStyle(dateTimeStyle);
-					} else if (value instanceof Number) {
+					} else if (value instanceof Number number) {
 						if(vertical.getName().equalsIgnoreCase("PTA")) {
 							if (col == 2) {
 		                        cell.setCellStyle(decimalStyle);
 		                    }
 						}
 						
-						cell.setCellValue(((Number) value).doubleValue());
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
+						cell.setCellValue(number.doubleValue());
+					} else if (value instanceof Boolean boolean1) {
+						cell.setCellValue(boolean1);
 					} else if (value != null) {
 						cell.setCellValue(value.toString());
 					} else {
@@ -518,7 +520,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					Double excelTimeValue = durationDouble / 24.0;
 					int hours = (int) durationDouble;
 					int minutes = (int) Math.round((durationDouble - hours) * 100);
-					String formattedDuration = String.format("%02d:%02d", hours, minutes);
+					String formattedDuration = "%02d:%02d".formatted(hours, minutes);
 
 					list.add(dto.getDiscription());
 					String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
@@ -614,19 +616,19 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					Cell cell = row.createCell(col);
 					Object value = rowData.get(col);
 
-					if (value instanceof Date) {
-						cell.setCellValue((Date) value);
+					if (value instanceof Date date) {
+						cell.setCellValue(date);
 						cell.setCellStyle(dateTimeStyle);
-					} else if (value instanceof Number) {
+					} else if (value instanceof Number number) {
 						if(vertical.getName().equalsIgnoreCase("PTA")) {
 							if (col == 2) {
 		                        cell.setCellStyle(decimalStyle);
 		                    }
 						}
 						
-						cell.setCellValue(((Number) value).doubleValue());
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
+						cell.setCellValue(number.doubleValue());
+					} else if (value instanceof Boolean boolean1) {
+						cell.setCellValue(boolean1);
 					} else if (value != null) {
 						cell.setCellValue(value.toString());
 					} else {

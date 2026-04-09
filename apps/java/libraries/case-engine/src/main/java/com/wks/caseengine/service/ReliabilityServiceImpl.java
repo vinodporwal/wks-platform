@@ -29,7 +29,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+
 import com.wks.caseengine.dto.BudgetMaintenanceDto;
 import com.wks.caseengine.dto.ReliabilityPerformanceDto;
 import com.wks.caseengine.dto.ReliabilityRecordDto;
@@ -171,7 +173,7 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		        Map<String, List<ReliabilityPerformanceDto>> mapForExcel) {
 		    try {
 		        String structureJson = getJson();
-		        ObjectMapper mapper = new ObjectMapper();
+		        ObjectMapper mapper = new JsonMapper();
 		        Map<String, List<List<Object>>> data = new HashMap<>();
 		        Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
 		        Map<String, List<ReliabilityPerformanceDto>> reliabilityPerformanceListMap = new HashMap<>();
@@ -266,7 +268,7 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		        Map<String, List<ReliabilityRecordDto>> mapForExcel) {
 		    try {
 		        String structureJson = getReliabilityRecordsJson();
-		        ObjectMapper mapper = new ObjectMapper();
+		        ObjectMapper mapper = new JsonMapper();
 		        Map<String, List<List<Object>>> data = new HashMap<>();
 		        Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
 		        Map<String, List<ReliabilityRecordDto>> reliabilityRecordListMap = new HashMap<>();
@@ -323,8 +325,7 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		                        Method method = dto.getClass().getMethod(methodName);
 		                        Object value = method.invoke(dto);
 		                        if(methodName.equalsIgnoreCase("getTargetDate")) {
-		                        	if (value instanceof Date) {
-		                        	    Date date = (Date) value; 
+		                        	if (value instanceof Date date) { 
 		                        	    SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
 		                        	    String formattedDateString = formatter.format(date);
 		                        	    row.add(formattedDateString);
@@ -849,14 +850,10 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 	        	 dto.setRecommendation(row[6] != null ? row[6].toString() : null);
 	        	 if (row[7] != null) {
 	        		    Object dbValue = row[7];
-	        		    if (dbValue instanceof java.sql.Timestamp) {
-	        		        // If it's a Timestamp, convert it to a util.Date
-	        		        java.sql.Timestamp sqlTimestamp = (java.sql.Timestamp) dbValue;
+	        		    if (dbValue instanceof java.sql.Timestamp sqlTimestamp) {
 	        		        java.util.Date utilDate = new java.util.Date(sqlTimestamp.getTime());
 	        		        dto.setTargetDate(utilDate);
-	        		    } else if (dbValue instanceof java.sql.Date) {
-	        		        // If it's a Date, handle it as originally intended
-	        		        java.sql.Date sqlDate = (java.sql.Date) dbValue;
+	        		    } else if (dbValue instanceof java.sql.Date sqlDate) {
 	        		        java.util.Date utilDate = new java.util.Date(sqlDate.getTime());
 	        		        dto.setTargetDate(utilDate);
 	        		    } else {
@@ -869,11 +866,9 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 	        	 dto.setResponsible(row[8] != null ? row[8].toString() : null);
 	        	 if (row[9] != null) {
 	        		    Object createdAtValue = row[9];
-	        		    if (createdAtValue instanceof java.sql.Timestamp) {
-	        		        java.sql.Timestamp sqlTimestamp = (java.sql.Timestamp) createdAtValue;
+	        		    if (createdAtValue instanceof java.sql.Timestamp sqlTimestamp) {
 	        		        dto.setCreatedAt(new java.util.Date(sqlTimestamp.getTime()));
-	        		    } else if (createdAtValue instanceof java.sql.Date) {
-	        		        java.sql.Date sqlDate = (java.sql.Date) createdAtValue;
+	        		    } else if (createdAtValue instanceof java.sql.Date sqlDate) {
 	        		        dto.setCreatedAt(new java.util.Date(sqlDate.getTime()));
 	        		    } else {
 	        		        dto.setCreatedAt(null);
@@ -884,11 +879,9 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 
 	        		if (row[10] != null) {
 	        		    Object updatedAtValue = row[10];
-	        		    if (updatedAtValue instanceof java.sql.Timestamp) {
-	        		        java.sql.Timestamp sqlTimestamp = (java.sql.Timestamp) updatedAtValue;
+	        		    if (updatedAtValue instanceof java.sql.Timestamp sqlTimestamp) {
 	        		        dto.setUpdatedAt(new java.util.Date(sqlTimestamp.getTime()));
-	        		    } else if (updatedAtValue instanceof java.sql.Date) {
-	        		        java.sql.Date sqlDate = (java.sql.Date) updatedAtValue;
+	        		    } else if (updatedAtValue instanceof java.sql.Date sqlDate) {
 	        		        dto.setUpdatedAt(new java.util.Date(sqlDate.getTime()));
 	        		    } else {
 	        		        dto.setUpdatedAt(null);

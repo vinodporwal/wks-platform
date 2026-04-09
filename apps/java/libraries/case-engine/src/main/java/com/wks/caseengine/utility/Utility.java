@@ -26,8 +26,7 @@ public class Utility {
         public static String getUserName() {
         	Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     		String userId=null;
-    		if (authentication instanceof JwtAuthenticationToken) {
-    		    JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) authentication;
+    		if (authentication instanceof JwtAuthenticationToken jwtAuth) {
     		    Jwt jwt = jwtAuth.getToken();
     		    userId = jwt.getClaimAsString("preferred_username"); // or "preferred_username"
     		}	

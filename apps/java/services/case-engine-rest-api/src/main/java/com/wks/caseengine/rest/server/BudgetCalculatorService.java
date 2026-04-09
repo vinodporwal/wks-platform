@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
@@ -24,6 +25,7 @@ import com.google.gson.JsonSyntaxException;
  * Service to execute Python Budget Calculator via SQL Server stored procedure.
  * This service calls usp_CalculateBalanceUSDIteration stored procedure using xp_cmdshell.
  */
+@DependsOnDatabaseInitialization
 @Service
 public class BudgetCalculatorService {
 
@@ -112,10 +114,10 @@ public class BudgetCalculatorService {
         // Extract financial_year from request (can come as Number or String depending on client)
         Integer financialYear = null;
         Object yearObj = request.get("financial_year");
-        if (yearObj instanceof Number) {
-            financialYear = ((Number) yearObj).intValue();
-        } else if (yearObj instanceof String) {
-            String yearStr = ((String) yearObj).trim();
+        if (yearObj instanceof Number number) {
+            financialYear = number.intValue();
+        } else if (yearObj instanceof String string) {
+            String yearStr = string.trim();
             if (!yearStr.isEmpty()) {
                 try {
                     financialYear = Integer.parseInt(yearStr);

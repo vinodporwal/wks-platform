@@ -36,7 +36,7 @@ import org.apache.poi.ss.usermodel.*;
 
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
-
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.stereotype.Service;
@@ -96,6 +96,7 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
+@DependsOnDatabaseInitialization
 @Service
 public class ConfigurationServiceImpl implements ConfigurationService {
 
@@ -259,10 +260,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					Cell cell = row.createCell(col);
 					Object value = rowData.get(col);
 
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue()); 
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
+					if (value instanceof Number number) {
+						cell.setCellValue(number.doubleValue()); 
+					} else if (value instanceof Boolean boolean1) {
+						cell.setCellValue(boolean1);
 					} else if (value != null) {
 						cell.setCellValue(value.toString());
 					} else {
@@ -395,10 +396,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					Cell cell = row.createCell(col);
 					Object value = rowData.get(col);
 
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue()); 
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
+					if (value instanceof Number number) {
+						cell.setCellValue(number.doubleValue()); 
+					} else if (value instanceof Boolean boolean1) {
+						cell.setCellValue(boolean1);
 					} else if (value != null) {
 						cell.setCellValue(value.toString());
 					} else {
@@ -1176,10 +1177,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				map.put("Remarks", row[7]);
 				boolean isEditable;
 				Object flagObj = row[8];
-				if (flagObj instanceof Boolean) {
-					isEditable = (Boolean) flagObj;
-				} else if (flagObj instanceof Number) {
-					isEditable = ((Number) flagObj).intValue() == 1;
+				if (flagObj instanceof Boolean boolean1) {
+					isEditable = boolean1;
+				} else if (flagObj instanceof Number number) {
+					isEditable = number.intValue() == 1;
 				} else {
 					isEditable = false; // or default
 				}
@@ -1221,10 +1222,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				List<Object> list = new ArrayList<>();
 				boolean isEditable;
 				Object flagObj = row[8];
-				if (flagObj instanceof Boolean) {
-					isEditable = (Boolean) flagObj;
-				} else if (flagObj instanceof Number) {
-					isEditable = ((Number) flagObj).intValue() == 1;
+				if (flagObj instanceof Boolean boolean1) {
+					isEditable = boolean1;
+				} else if (flagObj instanceof Number number) {
+					isEditable = number.intValue() == 1;
 				} else {
 					isEditable = false; // or default
 				}
@@ -1264,10 +1265,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					Cell cell = row.createCell(col);
 					Object value = rowData.get(col);
 
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
+					if (value instanceof Number number) {
+						cell.setCellValue(number.doubleValue()); // Handles Integer, Double, etc.
+					} else if (value instanceof Boolean boolean1) {
+						cell.setCellValue(boolean1);
 					} else if (value != null) {
 						cell.setCellValue(value.toString());
 					} else {
@@ -1317,10 +1318,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				map.put("Remarks", row[7]);
 				boolean isEditable;
 				Object flagObj = row[8];
-				if (flagObj instanceof Boolean) {
-					isEditable = (Boolean) flagObj;
-				} else if (flagObj instanceof Number) {
-					isEditable = ((Number) flagObj).intValue() == 1;
+				if (flagObj instanceof Boolean boolean1) {
+					isEditable = boolean1;
+				} else if (flagObj instanceof Number number) {
+					isEditable = number.intValue() == 1;
 				} else {
 					isEditable = false; 
 				}
@@ -1462,7 +1463,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				UUID normParameterFKId = UUID.fromString(configurationDTO.getNormParameterFKId());
 
 				Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
-				if (!optionNormParameters.isPresent()) {
+				if (optionNormParameters.isEmpty()) {
 					configurationDTO.setSaveStatus("Failed");
 					configurationDTO.setErrDescription("Norm Paramter not found");
 					failedList.add(configurationDTO);
@@ -1555,7 +1556,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	}
 
 	private Optional<String> getAttributeValue(Optional<UUID> idOpt, String year) {
-	    if (!idOpt.isPresent()) {
+	    if (idOpt.isEmpty()) {
 	        return Optional.empty();
 	    }
 
@@ -1746,7 +1747,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		boolean attributeChanged = newValue != null 
 		    && !newValue.equalsIgnoreCase(existingValue);
 
-		if(newValue!=null && newValue.equalsIgnoreCase("0.0") && !existingRecord.isPresent()) {
+		if(newValue!=null && newValue.equalsIgnoreCase("0.0") && existingRecord.isEmpty()) {
 			return;
 		}
 		if (remarksChanged) {
@@ -2736,10 +2737,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				List<Object> list = new ArrayList<>();
 				boolean isEditable;
 				Object flagObj = row[8];
-				if (flagObj instanceof Boolean) {
-					isEditable = (Boolean) flagObj;
-				} else if (flagObj instanceof Number) {
-					isEditable = ((Number) flagObj).intValue() == 1;
+				if (flagObj instanceof Boolean boolean1) {
+					isEditable = boolean1;
+				} else if (flagObj instanceof Number number) {
+					isEditable = number.intValue() == 1;
 				} else {
 					isEditable = false; // or default
 				}
@@ -2783,10 +2784,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					Cell cell = row.createCell(col);
 					Object value = rowData.get(col);
 
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
+					if (value instanceof Number number) {
+						cell.setCellValue(number.doubleValue()); // Handles Integer, Double, etc.
+					} else if (value instanceof Boolean boolean1) {
+						cell.setCellValue(boolean1);
 					} else if (value != null) {
 						cell.setCellValue(value.toString());
 					} else {
@@ -2873,10 +2874,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					Cell cell = row.createCell(col);
 					Object value = rowData.get(col);
 
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
+					if (value instanceof Number number) {
+						cell.setCellValue(number.doubleValue()); // Handles Integer, Double, etc.
+					} else if (value instanceof Boolean boolean1) {
+						cell.setCellValue(boolean1);
 					} else if (value != null) {
 						cell.setCellValue(value.toString());
 					} else {
@@ -3081,10 +3082,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	            for (int col = 0; col < rowData.size(); col++) {
 	                Cell cell = row.createCell(col);
 	                Object value = rowData.get(col);
-	                if (value instanceof Number) {
-	                    cell.setCellValue(((Number) value).doubleValue());
-	                } else if (value instanceof Boolean) {
-	                    cell.setCellValue((Boolean) value);
+	                if (value instanceof Number number) {
+	                    cell.setCellValue(number.doubleValue());
+	                } else if (value instanceof Boolean boolean1) {
+	                    cell.setCellValue(boolean1);
 	                } else if (value != null) {
 	                    cell.setCellValue(value.toString());
 	                } else {
@@ -3313,7 +3314,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				UUID normParameterFKId = UUID.fromString(configurationDTO.getNormParameterFKId());
 
 				Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
-				if (!optionNormParameters.isPresent()) {
+				if (optionNormParameters.isEmpty()) {
 					configurationDTO.setSaveStatus("Failed");
 					configurationDTO.setErrDescription("Norm Paramter not found");
 					failedList.add(configurationDTO);

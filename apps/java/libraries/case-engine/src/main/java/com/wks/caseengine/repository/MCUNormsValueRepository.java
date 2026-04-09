@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import com.wks.caseengine.entity.MCUNormsValue;
@@ -14,7 +14,7 @@ import com.wks.caseengine.entity.MCUNormsValue;
 public interface MCUNormsValueRepository extends JpaRepository<MCUNormsValue,UUID>{
 
 
-	@Query(value = """
+	@NativeQuery("""
 				SELECT 
       [Material_FK_Id]
       ,[ModeType_January]
@@ -31,10 +31,10 @@ public interface MCUNormsValueRepository extends JpaRepository<MCUNormsValue,UUI
       ,[ModeType_December]
   FROM [dbo].[CRACKER_NormsMonthwiseModeType]
   where Plant_FK_Id = :plantFKId and AOPYear = :year and ModeOfOperation = :mode
-						""", nativeQuery = true)
+						""")
 	List<Object[]> getNormsMonthWiseModeTypeData(@Param("year") String year, @Param("plantFKId") String plantFKId, @Param("mode") String mode);
 	
-	@Query(value = """
+	@NativeQuery("""
 			SELECT 
   [Material_FK_Id]
   ,[ModeType_January]
@@ -51,13 +51,10 @@ public interface MCUNormsValueRepository extends JpaRepository<MCUNormsValue,UUI
   ,[ModeType_December]
 FROM [dbo].[CRACKER_NormsMonthwiseModeType]
 where Plant_FK_Id = :plantFKId and AOPYear = :year and Material_FK_Id = :normParameterId and ModeOfOperation = :mode
-					""", nativeQuery = true)
+					""")
 Object[] findByNormParameterId(@Param("year") String year, @Param("plantFKId") String plantFKId, @Param("normParameterId") String normParameterId, @Param("mode") String mode);
 	
-	@Query(
-	        value = "SELECT * FROM MCUNormsValue WHERE Material_FK_Id = :materialFkId AND isChecked = 1",
-	        nativeQuery = true
-	    )
+	@NativeQuery("SELECT * FROM MCUNormsValue WHERE Material_FK_Id = :materialFkId AND isChecked = 1")
 	    List<MCUNormsValue> findCheckedNormsByMaterialFkIdNative(
 	        @Param("materialFkId") UUID materialFkId
 	    );

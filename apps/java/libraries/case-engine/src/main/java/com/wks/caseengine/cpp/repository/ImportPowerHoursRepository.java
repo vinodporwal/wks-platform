@@ -5,7 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -18,9 +18,9 @@ public interface ImportPowerHoursRepository extends JpaRepository<CPPImportPower
     
     Optional<CPPImportPowerOperationalHours> findByImportPowerSourceFkIdAndFinancialYear(UUID importPowerSourceFkId, String financialYear);
     
-    @Query(value = """
+    @NativeQuery("""
         EXEC dbo.CPP_Get_ImportPowerOperationalHours :cppPlantId, :financialYear
-    """, nativeQuery = true)
+    """)
     List<ImportPowerHoursProjection> getImportPowerOperationalHours(
         @Param("cppPlantId") UUID cppPlantId,
         @Param("financialYear") String financialYear

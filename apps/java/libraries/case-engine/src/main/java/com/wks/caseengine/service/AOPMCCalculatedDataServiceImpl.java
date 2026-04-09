@@ -34,10 +34,13 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+
 import com.wks.caseengine.dto.AOPMCCalculatedDataDTO;
 
 import com.wks.caseengine.entity.AOPMCCalculatedData;
@@ -69,6 +72,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.sql.Connection;
 
+@DependsOnDatabaseInitialization
 @Service
 public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataService {
 
@@ -692,7 +696,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 				AOPMCCalculatedData aOPMCCalculatedData = new AOPMCCalculatedData();
 				if (aOPMCCalculatedDataDTO.getId() == null || aOPMCCalculatedDataDTO.getId().contains("#")) {
 					aOPMCCalculatedDataOptional =	aOPMCCalculatedDataRepository.findByPlantYearAndMaterial(UUID.fromString(plantId),year,UUID.fromString(aOPMCCalculatedDataDTO.getMaterialFKId()));
-					if (!aOPMCCalculatedDataOptional.isPresent()) {
+					if (aOPMCCalculatedDataOptional.isEmpty()) {
 						aOPMCCalculatedData.setPlantFKId(UUID.fromString(plantId));
 						aOPMCCalculatedData.setFinancialYear(year);
 						aOPMCCalculatedData.setMaterialFKId(UUID.fromString(aOPMCCalculatedDataDTO.getMaterialFKId()));
@@ -704,7 +708,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 					 aOPMCCalculatedDataOptional = aOPMCCalculatedDataRepository
 							.findById(UUID.fromString(aOPMCCalculatedDataDTO.getId()));
 
-					if (!aOPMCCalculatedDataOptional.isPresent()) {
+					if (aOPMCCalculatedDataOptional.isEmpty()) {
 						aOPMCCalculatedDataDTO.setSaveStatus("Failed");
 						aOPMCCalculatedDataDTO.setErrDescription("Record not found");
 						failedList.add(aOPMCCalculatedDataDTO);
@@ -1082,10 +1086,10 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 					Cell cell = row1.createCell(col);
 					Object value = rowData.get(col);
 
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
+					if (value instanceof Number number) {
+						cell.setCellValue(number.doubleValue()); // Handles Integer, Double, etc.
+					} else if (value instanceof Boolean boolean1) {
+						cell.setCellValue(boolean1);
 					} else if (value != null) {
 						cell.setCellValue(value.toString());
 					} else {
@@ -1490,7 +1494,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 
 	        if (optExcelConfiguration.isPresent()) {
 	            String structureJson = optExcelConfiguration.get().getJsonValue();
-	            ObjectMapper mapper = new ObjectMapper();
+	            ObjectMapper mapper = new JsonMapper();
 	            Map<String, List<List<Object>>> data = new HashMap<>();
 	            Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
 

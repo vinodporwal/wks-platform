@@ -523,10 +523,10 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 				map.put("Remarks", row[7]);
 				boolean isEditable;
 				Object flagObj = row[8];
-				if (flagObj instanceof Boolean) {
-					isEditable = (Boolean) flagObj;
-				} else if (flagObj instanceof Number) {
-					isEditable = ((Number) flagObj).intValue() == 1;
+				if (flagObj instanceof Boolean boolean1) {
+					isEditable = boolean1;
+				} else if (flagObj instanceof Number number) {
+					isEditable = number.intValue() == 1;
 				} else {
 					isEditable = false; 
 				}

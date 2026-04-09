@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,31 +15,31 @@ import com.wks.caseengine.entity.PlantMaintenanceTransaction;
 @Repository
 public interface PlantMaintenanceTransactionRepository extends JpaRepository<PlantMaintenanceTransaction, UUID> {
 
-	@Query(value = "SELECT Id FROM MaintenanceTypes WHERE Name = :name", nativeQuery = true)
+	@NativeQuery("SELECT Id FROM MaintenanceTypes WHERE Name = :name")
 	UUID findIdByName(@Param("name") String name);
 
-	@Query(value = "SELECT Id FROM NormParameters WHERE Name = :name AND Plant_FK_Id = :plantFkId", nativeQuery = true)
+	@NativeQuery("SELECT Id FROM NormParameters WHERE Name = :name AND Plant_FK_Id = :plantFkId")
 	UUID findIdByNameAndPlantFkId(@Param("name") String name, @Param("plantFkId") UUID plantFkId);
 
 	@Modifying
 	@Transactional
-	@Query(value = "DELETE FROM PlantMaintenanceTransaction "
+	@NativeQuery("DELETE FROM PlantMaintenanceTransaction "
 			+ "WHERE "
 			+ " NormParameter_FK_Id = :normParamId "
-			+ "AND Name = :name", nativeQuery = true)
+			+ "AND Name = :name")
 	int deleteRampActivitiesByNormAndDate(
 			@Param("normParamId") UUID normParamId,
 			@Param("name") String name);
 	
-	@Query(value = "SELECT Id FROM PlantMaintenanceTransaction "
+	@NativeQuery("SELECT Id FROM PlantMaintenanceTransaction "
             + "WHERE NormParameter_FK_Id = :normParamId "
-            + "AND Name = :name", nativeQuery = true)
+            + "AND Name = :name")
 	List<UUID> findRampActivityIdsByNormAndName(
 	       @Param("normParamId") UUID normParamId,
 	       @Param("name") String name);
 
 	
-	@Query(value = "SELECT " +
+	@NativeQuery("SELECT " +
             "pm.Discription, " +
             "pm.MaintForMonth " +
             "FROM PlantMaintenanceTransaction pm " +
@@ -49,21 +49,17 @@ public interface PlantMaintenanceTransactionRepository extends JpaRepository<Pla
             "LEFT JOIN NormParameterType NPT ON NPT.Id=np.NormParameterType_FK_Id "+
             "WHERE mt.Name = :maintenanceTypeName "  +
             "and pmt.Plant_FK_Id = :plantId " +
-			"and AuditYear = :year order by pm.MaintForMonth",
-            nativeQuery = true)
+			"and AuditYear = :year order by pm.MaintForMonth")
 	List<Object[]> findDescriptionsByPlantFkId( 
         @Param("maintenanceTypeName") String maintenanceTypeName, @Param("plantId") String plantId,  @Param("year") String year);
 
-	@Query(
-			  value = "SELECT Id FROM PlantMaintenanceTransaction inner join  WHERE Discription LIKE CONCAT('%', :discription, '%') AND NormParameter_FK_Id = :normParameterFKId",
-			  nativeQuery = true
-			)
+	@NativeQuery("SELECT Id FROM PlantMaintenanceTransaction inner join  WHERE Discription LIKE CONCAT('%', :discription, '%') AND NormParameter_FK_Id = :normParameterFKId")
 			UUID findIdByNormIdAndDiscription(
 			  @Param("discription") String discription,
 			  @Param("normParameterFKId") UUID normParameterFKId
 			);
 	
-	@Query(value = """
+	@NativeQuery("""
 	        SELECT PMT.Id
 	        FROM PlantMaintenance D
 	        INNER JOIN PlantMaintenanceTransaction PMT
@@ -73,8 +69,7 @@ public interface PlantMaintenanceTransactionRepository extends JpaRepository<Pla
 	          AND PMT.AuditYear = :auditYear
 	          AND D.Plant_FK_Id = :plantId
 	          AND PMT.Discription = :description
-	        """,
-	        nativeQuery = true)
+	        """)
 	    UUID findTransactionIdByDynamicParams(
 	        @Param("maintenanceText") String maintenanceText,
 	        @Param("auditYear") String auditYear,
@@ -82,15 +77,12 @@ public interface PlantMaintenanceTransactionRepository extends JpaRepository<Pla
 	        @Param("description") String description
 	    );
 	
-	@Query(
-		      value = "SELECT COUNT(*) " +
+	@NativeQuery("SELECT COUNT(*) " +
 		              "FROM PlantMaintenanceTransaction PMT " +
 		              "JOIN PlantMaintenance PM ON PMT.PlantMaintenance_FK_Id = PM.Id " +
 		              "JOIN MaintenanceTypes MT ON PM.MaintenanceType_FK_Id = MT.Id " +
 		              "WHERE PM.Plant_FK_Id = :plantId " +
-		              "AND PMT.MaintForMonth = :month AND MT.Name= :name AND PMT.AuditYear = :year",
-		      nativeQuery = true
-		    )
+		              "AND PMT.MaintForMonth = :month AND MT.Name= :name AND PMT.AuditYear = :year")
 		    Long countByPlantAndMonth(
 		        @Param("plantId") UUID plantId,
 		        @Param("month") int month,

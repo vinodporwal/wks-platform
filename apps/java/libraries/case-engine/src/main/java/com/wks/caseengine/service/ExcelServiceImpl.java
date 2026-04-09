@@ -6,7 +6,9 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+
 import com.wks.caseengine.entity.ExcelConfigurations;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
@@ -81,7 +83,7 @@ public class ExcelServiceImpl implements ExcelService {
                         .replaceAll("previous4YearJson", previous4Year)
                         .replaceAll("nextYearJson", nextYear);
                 dataStr = dataStr.replace("\"monthsJson\"", quotedMonths);
-                ObjectMapper mapper = new ObjectMapper();
+                ObjectMapper mapper = new JsonMapper();
                 Map<String, Object> data = mapper.readValue(dataStr, Map.class);
                 LocalDate today = LocalDate.now();
                 String formattedDate = today.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
@@ -256,10 +258,10 @@ public class ExcelServiceImpl implements ExcelService {
                                 Cell cell = row.createCell(col);
                                 Object value = rowData.get(col);
 
-                                if (value instanceof Number) {
-                                    cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
-                                } else if (value instanceof Boolean) {
-                                    cell.setCellValue((Boolean) value);
+                                if (value instanceof Number number) {
+                                    cell.setCellValue(number.doubleValue()); // Handles Integer, Double, etc.
+                                } else if (value instanceof Boolean boolean1) {
+                                    cell.setCellValue(boolean1);
                                 } else if (value != null) {
                                     cell.setCellValue(value.toString());
                                 } else {
@@ -514,7 +516,7 @@ public class ExcelServiceImpl implements ExcelService {
     public static String getPreviousYear(String year) {
         int start = Integer.parseInt(year.substring(0, 4));
         int end = Integer.parseInt(year.substring(5));
-        return String.format("%d-%02d", start - 1, start % 100);
+        return "%d-%02d".formatted(start - 1, start % 100);
     }
 
     public static String getPrevious2Year(String year) {
@@ -523,27 +525,27 @@ public class ExcelServiceImpl implements ExcelService {
         int year1 = start - 2; 
         int year2 = start - 1; 
         int year2_short = year2 % 100; 
-        return String.format("%d-%02d", year1, year2_short);
+        return "%d-%02d".formatted(year1, year2_short);
     }
 
     public static String getPrevious3Year(String year) {
         int start = Integer.parseInt(year.substring(0, 4));
         int year1 = start - 3; 
         int year2_short = (start - 2) % 100; 
-        return String.format("%d-%02d", year1, year2_short); 
+        return "%d-%02d".formatted(year1, year2_short); 
     }
 
     public static String getPrevious4Year(String year) {
         int start = Integer.parseInt(year.substring(0, 4));
         int year1 = start - 4; 
         int year2_short = (start - 3) % 100; 
-        return String.format("%d-%02d", year1, year2_short); 
+        return "%d-%02d".formatted(year1, year2_short); 
     }
 
     public static String getNextYear(String year) {
         int start = Integer.parseInt(year.substring(0, 4));
         int end = Integer.parseInt(year.substring(5));
-        return String.format("%d-%02d", start + 1, (start + 2) % 100);
+        return "%d-%02d".formatted(start + 1, (start + 2) % 100);
     }
 
     public static List<String> getAcademicYearMonths(String year) {

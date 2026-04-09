@@ -19,10 +19,10 @@ import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
+import org.springframework.boot.persistence.autoconfigure.EntityScan;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
+//import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -31,6 +31,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
@@ -90,23 +91,55 @@ public class DB1Config {
         		.build();
     }
 
+    // @Primary
+    // @Bean(name = "db1EntityManagerFactory")
+    // public LocalContainerEntityManagerFactoryBean db1EntityManagerFactory(
+    //         EntityManagerFactoryBuilder builder) {
+    //     return builder
+    //             .dataSource(db1DataSource())
+    //             .packages(
+    //                 "com.wks.caseengine.rest.db1.entity", 
+    //                 "com.wks.caseengine.entity",
+    //                 "com.wks.caseengine.cpp.entity",
+    //                 "com.wks.caseengine.tcs.entity",
+    //                 "com.wks.caseengine.crude.entity"
+    //             ) // Include both packages
+    //             .persistenceUnit("db1")
+    //             .properties(hibernateProperties())
+    //             .build();
+    // }
+
     @Primary
-    @Bean(name = "db1EntityManagerFactory")
-    public LocalContainerEntityManagerFactoryBean db1EntityManagerFactory(
-            EntityManagerFactoryBuilder builder) {
-        return builder
-                .dataSource(db1DataSource())
-                .packages(
-                    "com.wks.caseengine.rest.db1.entity", 
-                    "com.wks.caseengine.entity",
-                    "com.wks.caseengine.cpp.entity",
-                    "com.wks.caseengine.tcs.entity",
-                    "com.wks.caseengine.crude.entity"
-                ) // Include both packages
-                .persistenceUnit("db1")
-                .properties(hibernateProperties())
-                .build();
-    }
+@Bean(name = "db1EntityManagerFactory")
+public LocalContainerEntityManagerFactoryBean db1EntityManagerFactory() {
+
+    LocalContainerEntityManagerFactoryBean em =
+            new LocalContainerEntityManagerFactoryBean();
+
+    // 1. Set the datasource
+    em.setDataSource(db1DataSource());
+
+    // 2. Replace .packages() → setPackagesToScan()
+    em.setPackagesToScan(
+        "com.wks.caseengine.rest.db1.entity",
+        "com.wks.caseengine.entity",
+        "com.wks.caseengine.cpp.entity",
+        "com.wks.caseengine.tcs.entity",
+        "com.wks.caseengine.crude.entity"
+    );
+
+    // 3. Set persistence unit name
+    em.setPersistenceUnitName("db1");
+
+    // 4. Set JPA vendor adapter (replaces the builder's implicit setup)
+    HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+    em.setJpaVendorAdapter(vendorAdapter);
+
+    // 5. Replace .properties(Map) → setJpaPropertyMap()
+    em.setJpaPropertyMap(hibernateProperties());
+
+    return em;
+}
 
     
     private Map<String, Object> hibernateProperties() {

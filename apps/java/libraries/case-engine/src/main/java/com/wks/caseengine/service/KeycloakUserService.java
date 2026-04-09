@@ -9,8 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+
 import com.wks.caseengine.entity.UserScreenMapping;
 import com.wks.caseengine.repository.UserScreenMappingRepository;
 import com.wks.caseengine.utility.KeycloakAdminClient;
@@ -163,7 +165,7 @@ public class KeycloakUserService {
 
 		                        plantIds.add(plantId);
 
-		                        ObjectMapper objectMapper = new ObjectMapper();
+		                        ObjectMapper objectMapper = new JsonMapper();
 		                        String permissionsString = objectMapper.writeValueAsString(permissions);	                        
 		                        
 		                        List<UserScreenMapping> existingMappings = userScreenMappingRepository
@@ -210,7 +212,7 @@ public class KeycloakUserService {
 		            .orElseGet(HashMap::new);
 
 		        // Step 2: Parse existing plants data if available
-		        ObjectMapper objectMapper = new ObjectMapper();
+		        ObjectMapper objectMapper = new JsonMapper();
 		        List<Map<String, List<Map<String, List<String>>>>> existingPlantMapping = new ArrayList<>();
 
 		        if (attributes.containsKey("plants")) {
@@ -275,8 +277,7 @@ public class KeycloakUserService {
 		        System.out.println("User attributes updated..");
 
 		        // Assign realm role
-		        if (roleObj instanceof String && !((String) roleObj).isBlank()) {
-		            String roleName = (String) roleObj;
+		        if (roleObj instanceof String roleName && !roleName.isBlank()) {
 		            RoleRepresentation roleToAdd = keycloak.realm(keycloakRealmName).roles().get(roleName)
 		                .toRepresentation();
 		            userResource.roles().realmLevel().add(Collections.singletonList(roleToAdd));
@@ -390,7 +391,7 @@ public class KeycloakUserService {
 
 							plantIds.add(plantId);
 
-							ObjectMapper objectMapper = new ObjectMapper();
+							ObjectMapper objectMapper = new JsonMapper();
 							String permissionsString = objectMapper.writeValueAsString(permissions);
 
 							
@@ -425,7 +426,7 @@ public class KeycloakUserService {
 
 			Map<String, List<String>> attributes = Optional.ofNullable(user.getAttributes()).orElseGet(HashMap::new);
 
-			ObjectMapper objectMapper = new ObjectMapper();
+			ObjectMapper objectMapper = new JsonMapper();
 
 			String finalPlantMappingJson = objectMapper.writeValueAsString(plantMapping);
 			attributes.put("plants", Collections.singletonList(finalPlantMappingJson));

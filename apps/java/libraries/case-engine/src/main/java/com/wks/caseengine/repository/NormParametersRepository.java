@@ -5,7 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -16,13 +16,13 @@ public interface NormParametersRepository extends JpaRepository<NormParameters, 
 
 	List<NormParameters> findAllByType(String type);
 
-	@Query(value = "SELECT * FROM vwScrnPEConfigurationGrades WHERE Plant_FK_Id = :plantId", nativeQuery = true)
+	@NativeQuery("SELECT * FROM vwScrnPEConfigurationGrades WHERE Plant_FK_Id = :plantId")
 	List<NormParameters> getAllGrades(@Param("plantId") String plantId);
 	
-	@Query(value = "SELECT Id FROM NormParameters WHERE Name = :name AND Plant_FK_Id = :plantId", nativeQuery = true)
+	@NativeQuery("SELECT Id FROM NormParameters WHERE Name = :name AND Plant_FK_Id = :plantId")
 	UUID findNormParameterIdByNameAndPlant(@Param("name") String name, @Param("plantId") UUID plantId);
 	
-	@Query(value = "SELECT Id FROM NormParameters WHERE DisplayName = :name AND Plant_FK_Id = :plantId", nativeQuery = true)
+	@NativeQuery("SELECT Id FROM NormParameters WHERE DisplayName = :name AND Plant_FK_Id = :plantId")
 	UUID findNormParameterIdByDisplayNameAndPlant(@Param("name") String name, @Param("plantId") UUID plantId);
 
     Optional<NormParameters> findFirstOneByName(String string);
@@ -35,27 +35,25 @@ public interface NormParametersRepository extends JpaRepository<NormParameters, 
     
     List<NormParameters> findByPlantFkId(UUID plantFKId);
     
-    @Query(value = "SELECT DisplayName FROM NormParameters WHERE Id = :id", nativeQuery = true)
+    @NativeQuery("SELECT DisplayName FROM NormParameters WHERE Id = :id")
 	String findNormParameterIdByGrade(@Param("id") UUID id);
     
-    @Query(value = "SELECT Name FROM NormParameters WHERE Id = :id", nativeQuery = true)
+    @NativeQuery("SELECT Name FROM NormParameters WHERE Id = :id")
 	String findNormParameterName(@Param("id") UUID id);
     
-    @Query(value = "SELECT Id FROM NormParameters WHERE Name = :name and Plant_FK_Id = :plantId", nativeQuery = true)
+    @NativeQuery("SELECT Id FROM NormParameters WHERE Name = :name and Plant_FK_Id = :plantId")
 	List<UUID> findNormParameterIds(@Param("name") String name,@Param("plantId") UUID plantId);
 
-    @Query(value = "SELECT Id FROM NormParameters WHERE Plant_FK_Id = :plantFKId AND Name = :name AND Type = :type", nativeQuery = true)
+    @NativeQuery("SELECT Id FROM NormParameters WHERE Plant_FK_Id = :plantFKId AND Name = :name AND Type = :type")
     UUID findIdByPlantFkIdAndNameAndType(@Param("plantFKId") UUID plantFKId,
                                          @Param("name") String name,
                                          @Param("type") String type);
     
-    @Query(
-    	      value = "SELECT * FROM NormParameters " +
+    @NativeQuery("SELECT * FROM NormParameters " +
     	              "WHERE Plant_FK_Id = :plantFkId " +
     	              "AND DisplayName = :displayName " +
     	              "AND NormType_FK_Id = :normTypeFkId " +
-    	              "AND DependantAttributeId = :dependantAttributeId",
-    	      nativeQuery = true)
+    	              "AND DependantAttributeId = :dependantAttributeId")
     	    List<NormParameters> findByPlantAndDisplayNameAndNormTypeAndDependantAttribute(
     	        @Param("plantFkId") UUID plantFkId,
     	        @Param("displayName") String displayName,

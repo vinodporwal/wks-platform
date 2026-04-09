@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -28,11 +28,11 @@ public interface HRSGHeatRateLookupRepository extends JpaRepository<HRSGHeatRate
     Optional<HRSGHeatRateLookup> findByEquipmentNameAndHrsgLoad(String equipmentName, BigDecimal hrsgLoad);
 
     // Find the closest lower HRSGLoad for interpolation
-    @Query(value = "SELECT TOP 1 * FROM HRSGHeatRateLookup WITH(NOLOCK) WHERE EquipmentName = :equipmentName AND HRSGLoad <= :hrsgLoad ORDER BY HRSGLoad DESC", nativeQuery = true)
+    @NativeQuery("SELECT TOP 1 * FROM HRSGHeatRateLookup WITH(NOLOCK) WHERE EquipmentName = :equipmentName AND HRSGLoad <= :hrsgLoad ORDER BY HRSGLoad DESC")
     Optional<HRSGHeatRateLookup> findClosestLowerLoad(@Param("equipmentName") String equipmentName, @Param("hrsgLoad") BigDecimal hrsgLoad);
 
     // Find the closest higher HRSGLoad for interpolation
-    @Query(value = "SELECT TOP 1 * FROM HRSGHeatRateLookup WITH(NOLOCK) WHERE EquipmentName = :equipmentName AND HRSGLoad >= :hrsgLoad ORDER BY HRSGLoad ASC", nativeQuery = true)
+    @NativeQuery("SELECT TOP 1 * FROM HRSGHeatRateLookup WITH(NOLOCK) WHERE EquipmentName = :equipmentName AND HRSGLoad >= :hrsgLoad ORDER BY HRSGLoad ASC")
     Optional<HRSGHeatRateLookup> findClosestHigherLoad(@Param("equipmentName") String equipmentName, @Param("hrsgLoad") BigDecimal hrsgLoad);
 
 }

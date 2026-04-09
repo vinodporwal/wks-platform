@@ -266,7 +266,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 						double durationDouble = durationObject.doubleValue();
 						int hours = (int) durationDouble; 
 						int minutes = (int) Math.round((durationDouble - hours) * 100); 
-						formattedDuration = String.format("%02d:%02d", hours, minutes);
+						formattedDuration = "%02d:%02d".formatted(hours, minutes);
 					}
 				} catch (Exception e) {
 					formattedDuration = "Invalid Duration"; 
@@ -339,13 +339,13 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
                     Cell cell = row.createCell(col);
                     Object value = rowData.get(col);
 
-                    if (value instanceof Date) {
-                        cell.setCellValue((Date) value);
+                    if (value instanceof Date date) {
+                        cell.setCellValue(date);
                         cell.setCellStyle(dateTimeStyle);
-                    } else if (value instanceof Number) {
-                        cell.setCellValue(((Number) value).doubleValue());
-                    } else if (value instanceof Boolean) {
-                        cell.setCellValue((Boolean) value);
+                    } else if (value instanceof Number number) {
+                        cell.setCellValue(number.doubleValue());
+                    } else if (value instanceof Boolean boolean1) {
+                        cell.setCellValue(boolean1);
                     } else if (value != null) {
                         cell.setCellValue(value.toString());
                     } else {
@@ -401,7 +401,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 						double durationDouble = durationObject.doubleValue();
 						int hours = (int) durationDouble; 
 						int minutes = (int) Math.round((durationDouble - hours) * 100); 
-						formattedDuration = String.format("%02d:%02d", hours, minutes);
+						formattedDuration = "%02d:%02d".formatted(hours, minutes);
 					}
 				} catch (Exception e) {
 					formattedDuration = "Invalid Duration"; 
@@ -493,13 +493,13 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
                     Cell cell = row.createCell(col);
                     Object value = rowData.get(col);
 
-                    if (value instanceof Date) {
-                        cell.setCellValue((Date) value);
+                    if (value instanceof Date date) {
+                        cell.setCellValue(date);
                         cell.setCellStyle(dateTimeStyle);
-                    } else if (value instanceof Number) {
-                        cell.setCellValue(((Number) value).doubleValue());
-                    } else if (value instanceof Boolean) {
-                        cell.setCellValue((Boolean) value);
+                    } else if (value instanceof Number number) {
+                        cell.setCellValue(number.doubleValue());
+                    } else if (value instanceof Boolean boolean1) {
+                        cell.setCellValue(boolean1);
                     } else if (value != null) {
                         cell.setCellValue(value.toString());
                     } else {
@@ -610,16 +610,16 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                Cell cell = row.createCell(col);
 	                Object value = rowData.get(col);
 
-	                if (value instanceof Date) {
-	                    cell.setCellValue((Date) value);
+	                if (value instanceof Date date) {
+	                    cell.setCellValue(date);
 	                    cell.setCellStyle(dateTimeStyle);
-	                } else if (value instanceof Number) {
-	                    cell.setCellValue(((Number) value).doubleValue());
+	                } else if (value instanceof Number number) {
+	                    cell.setCellValue(number.doubleValue());
 	                    if (col == 3) {
 	                        cell.setCellStyle(decimalStyle);
 	                    }
-	                } else if (value instanceof Boolean) {
-	                    cell.setCellValue((Boolean) value);
+	                } else if (value instanceof Boolean boolean1) {
+	                    cell.setCellValue(boolean1);
 	                } else if (value != null) {
 	                    cell.setCellValue(value.toString());
 	                } else {
@@ -732,16 +732,16 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                Cell cell = row.createCell(col);
 	                Object value = rowData.get(col);
 
-	                if (value instanceof Date) {
-	                    cell.setCellValue((Date) value);
+	                if (value instanceof Date date) {
+	                    cell.setCellValue(date);
 	                    cell.setCellStyle(dateTimeStyle);
-	                } else if (value instanceof Number) {
-	                    cell.setCellValue(((Number) value).doubleValue());
+	                } else if (value instanceof Number number) {
+	                    cell.setCellValue(number.doubleValue());
 	                    if (col == 3) {
 	                        cell.setCellStyle(decimalStyle);
 	                    }
-	                } else if (value instanceof Boolean) {
-	                    cell.setCellValue((Boolean) value);
+	                } else if (value instanceof Boolean boolean1) {
+	                    cell.setCellValue(boolean1);
 	                } else if (value != null) {
 	                    cell.setCellValue(value.toString());
 	                } else {
@@ -826,7 +826,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                    double durationDouble = durationObject.doubleValue();
 	                    int hours = (int) durationDouble;
 	                    int minutes = (int) Math.round((durationDouble - hours) * 100);
-	                    formattedDuration = String.format("%02d:%02d", hours, minutes);
+	                    formattedDuration = "%02d:%02d".formatted(hours, minutes);
 	                }
 	            } catch (Exception e) {
 	                formattedDuration = "Invalid Duration";
@@ -903,19 +903,19 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 					 Cell cell = row.createCell(col);
 					 Object value = rowData.get(col);
 				
-					 if (value instanceof Date) {
-					 cell.setCellValue((Date) value);
+					 if (value instanceof Date date) {
+					 cell.setCellValue(date);
 					 cell.setCellStyle(dateTimeStyle);
-					 } else if (value instanceof Number) {
-					 cell.setCellValue(((Number) value).doubleValue());
+					 } else if (value instanceof Number number) {
+					 cell.setCellValue(number.doubleValue());
 	                    
 	                 
 	                    if (col == 3) {
 	                        cell.setCellStyle(decimalStyle);
 	                    }
 	                    
-						} else if (value instanceof Boolean) {
-							cell.setCellValue((Boolean) value);
+						} else if (value instanceof Boolean boolean1) {
+							cell.setCellValue(boolean1);
 							 } else if (value != null) {
 							 cell.setCellValue(value.toString());
 							} else {
@@ -1029,17 +1029,17 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                Cell cell = row.createCell(col);
 	                Object value = rowData.get(col);
 	            
-	                if (value instanceof Date) {
-	                    cell.setCellValue((Date) value);
+	                if (value instanceof Date date) {
+	                    cell.setCellValue(date);
 	                    cell.setCellStyle(dateTimeStyle);
-	                } else if (value instanceof Number) {
-	                    cell.setCellValue(((Number) value).doubleValue());
+	                } else if (value instanceof Number number) {
+	                    cell.setCellValue(number.doubleValue());
 	                   
 	                    if (col == 2 || col == 3 || col == 4 || col == 5)  {
 	                        cell.setCellStyle(decimalStyle);
 	                    }
-	                } else if (value instanceof Boolean) {
-	                    cell.setCellValue((Boolean) value);
+	                } else if (value instanceof Boolean boolean1) {
+	                    cell.setCellValue(boolean1);
 	                } else if (value != null) {
 	                    cell.setCellValue(value.toString());
 	                } else {

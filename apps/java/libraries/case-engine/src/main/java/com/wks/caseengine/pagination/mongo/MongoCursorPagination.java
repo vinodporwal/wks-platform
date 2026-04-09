@@ -88,7 +88,7 @@ public final class MongoCursorPagination implements CursorPagination {
 
 			if (args.sort() != null) {
 				Object sort = PropertyUtils.getProperty(persistentEntity, args.sort(), record);
-				next = String.format("%s|%s", next, sort);
+				next = "%s|%s".formatted(next, sort);
 			}
 
 			next = CoreUtils.encode(next);
@@ -101,7 +101,7 @@ public final class MongoCursorPagination implements CursorPagination {
 
 			if (args.sort() != null) {
 				Object sort = PropertyUtils.getProperty(persistentEntity, args.sort(), record);
-				previous = String.format("%s|%s", previous, sort);
+				previous = "%s|%s".formatted(previous, sort);
 			}
 
 			previous = CoreUtils.encode(previous);

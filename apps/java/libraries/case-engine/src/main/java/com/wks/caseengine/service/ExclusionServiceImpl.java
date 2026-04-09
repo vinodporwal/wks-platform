@@ -302,14 +302,14 @@ public class ExclusionServiceImpl implements ExclusionService{
 	                Cell cell = row.createCell(col);
 	                Object value = dataValues[col];
 
-	                if (value instanceof java.util.Date) {
+	                if (value instanceof java.util.Date date) {
 	                   
-	                    cell.setCellValue((java.util.Date) value);
+	                    cell.setCellValue(date);
 	                    cell.setCellStyle(dateCellStyle);
-	                } else if (value instanceof Number) {
-	                    cell.setCellValue(((Number) value).doubleValue());
-	                } else if (value instanceof Boolean) {
-	                    cell.setCellValue((Boolean) value);
+	                } else if (value instanceof Number number) {
+	                    cell.setCellValue(number.doubleValue());
+	                } else if (value instanceof Boolean boolean1) {
+	                    cell.setCellValue(boolean1);
 	                } else if (value != null) {
 	                    cell.setCellValue(value.toString());
 	                } else {

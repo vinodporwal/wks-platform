@@ -32,7 +32,9 @@ public class PlantImportMapping {
     private UUID financialMonthId;
 
     @NotNull(message = "Value is required")
-    @Column(name = "Value", precision = 18, scale = 2, nullable = false)
+   // @Column(name = "Value", precision = 18, scale = 2, nullable = false)
+   @Column(name = "Value", nullable = false)
+
     private Double value;
 
     @NotNull

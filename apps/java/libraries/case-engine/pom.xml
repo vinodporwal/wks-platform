@@ -41,9 +41,8 @@
 	
 	    <!-- Your preferred database driver (e.g., MySQL, PostgreSQL) -->
 	    <dependency>
-		    <groupId>mysql</groupId>
-		    <artifactId>mysql-connector-java</artifactId>
-		    <version>8.0.33</version>  <!-- Replace with the latest stable version if needed -->
+		    <groupId>com.mysql</groupId>
+		    <artifactId>mysql-connector-j</artifactId>  <!-- Replace with the latest stable version if needed -->
 		    <scope>runtime</scope>
 		</dependency>
 
@@ -61,13 +60,8 @@
 		
 		<dependency>
 		    <groupId>org.springframework.boot</groupId>
-		    <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+		    <artifactId>spring-boot-starter-security-oauth2-resource-server</artifactId>
 		    <scope>provided</scope>
-		</dependency>
-		
-		<dependency>
-			<groupId>jakarta.annotation</groupId>
-			<artifactId>jakarta.annotation-api</artifactId>
 		</dependency>
 
 		<dependency>
@@ -161,9 +155,8 @@
 	    </dependency>
 	    
 		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-	    	<version>2.15.2</version> <!-- Or any other latest version -->
+			<groupId>tools.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId> <!-- Or any other latest version -->
 		</dependency>
 		
 		<dependency>
@@ -178,7 +171,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.22.2</version>
+				<version>3.5.5</version>
 			</plugin>
 		</plugins>
 	</build>

@@ -58,7 +58,7 @@ public final class PropertyUtils {
 			throw new PaginationException("Null value not allowed for property " + key.getFieldName());
 		}
 
-		return (object instanceof Date) ? ((Date) object).getTime() : object;
+		return (object instanceof Date d) ? d.getTime() : object;
 	}
 
 }

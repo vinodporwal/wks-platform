@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -19,28 +19,28 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public interface FixedConsumptionRepository extends JpaRepository<DummyEntity, Long> {
    // @Transactional
-    @Query(value = "EXEC dbo.CPP_NMD_GetFixedConsumptionByPlant :plantId, :financialYear", nativeQuery = true)
+    @NativeQuery("EXEC dbo.CPP_NMD_GetFixedConsumptionByPlant :plantId, :financialYear")
     List<FixedConsumptionProjection> getFixedConsumption(@Param("plantId") UUID plantId, @Param("financialYear") String financialYear);
 
-    @Query(value = "SELECT Id, Year, Month FROM FinancialYearMonth WITH(NOLOCK)", nativeQuery = true)
+    @NativeQuery("SELECT Id, Year, Month FROM FinancialYearMonth WITH(NOLOCK)")
     List<FinancialYearMonthProjection> getFinancialYearMonth();
 
-    @Query(value = "SELECT CostCenterId FROM CPPCostCenters WITH(NOLOCK) WHERE CostCenterCode IN :costCenterCodes", nativeQuery = true)
+    @NativeQuery("SELECT CostCenterId FROM CPPCostCenters WITH(NOLOCK) WHERE CostCenterCode IN :costCenterCodes")
     List<String> getCostCenterIds(@Param("costCenterCodes") List<String> costCenterCodes);
 
-    @Query(value = "SELECT Id FROM NormParameters np WITH(NOLOCK) WHERE np.Id IN ( Select NormParameterFK_Id from CostCenterNormParameterMapping WITH(NOLOCK) where CostCenterFK_Id IN :costCenterIds)", nativeQuery = true)
+    @NativeQuery("SELECT Id FROM NormParameters np WITH(NOLOCK) WHERE np.Id IN ( Select NormParameterFK_Id from CostCenterNormParameterMapping WITH(NOLOCK) where CostCenterFK_Id IN :costCenterIds)")
     List<String> getNormParameterIds(@Param("costCenterIds") List<String> costCenterIds);
 
-    @Query(value = "SELECT Id from UtilityFixedConsumption WITH(NOLOCK) WHERE CostCenter_FK_Id IN :costCenterIds AND NormParameter_FK_Id = :normParameterId AND FinancialYearMonth_FK_Id IN :financialYearMonthIds", nativeQuery = true)
+    @NativeQuery("SELECT Id from UtilityFixedConsumption WITH(NOLOCK) WHERE CostCenter_FK_Id IN :costCenterIds AND NormParameter_FK_Id = :normParameterId AND FinancialYearMonth_FK_Id IN :financialYearMonthIds")
     List<String> getUtilityFixedConsumptionIds(@Param("costCenterIds") List<String> costCenterIds, @Param("normParameterId") String normParameterId, @Param("financialYearMonthIds") List<String> financialYearMonthIds);
 
    @Modifying
    @Transactional
-   @Query(value = "UPDATE UtilityFixedConsumption SET ConsumptionValue = :consumptionValue WHERE Id IN :utilityFixedConsumptionIds AND FinancialYearMonth_FK_Id = :financialYearMonthId", nativeQuery = true)
+   @NativeQuery("UPDATE UtilityFixedConsumption SET ConsumptionValue = :consumptionValue WHERE Id IN :utilityFixedConsumptionIds AND FinancialYearMonth_FK_Id = :financialYearMonthId")
    void updateUtilityFixedConsumption(@Param("consumptionValue") Double consumptionValue, @Param("utilityFixedConsumptionIds") List<String> utilityFixedConsumptionIds, @Param("financialYearMonthId") String financialYearMonthId);
 
    //get FinancialYearMonthIds for UtilityFixedConsumptionIds
-   @Query(value = "SELECT FinancialYearMonth_FK_Id FROM UtilityFixedConsumption WITH(NOLOCK) WHERE Id IN :utilityFixedConsumptionIds", nativeQuery = true)
+   @NativeQuery("SELECT FinancialYearMonth_FK_Id FROM UtilityFixedConsumption WITH(NOLOCK) WHERE Id IN :utilityFixedConsumptionIds")
    List<String> getFinancialYearMonthIdsForUtilityFixedConsumptionIds(@Param("utilityFixedConsumptionIds") List<String> utilityFixedConsumptionIds);
 
    // data entry for missing month
@@ -66,12 +66,10 @@ public interface FixedConsumptionRepository extends JpaRepository<DummyEntity, L
 
 
  @Transactional
-@Query(value = 
-    "INSERT INTO UtilityFixedConsumption " +
+@NativeQuery("INSERT INTO UtilityFixedConsumption " +
     "(FinancialYearMonth_FK_Id, NormParameter_FK_Id, CostCenter_FK_Id, ConsumptionValue) " +
     "OUTPUT INSERTED.Id " +
-    "SELECT :financialYearMonthId, :normParameterId, :costCenterId, :consumptionValue",
-    nativeQuery = true)
+    "SELECT :financialYearMonthId, :normParameterId, :costCenterId, :consumptionValue")
 String insertUtilityFixedConsumption(
         @Param("financialYearMonthId") String financialYearMonthId,
         @Param("normParameterId") String normParameterId,
@@ -79,7 +77,7 @@ String insertUtilityFixedConsumption(
         @Param("consumptionValue") Double consumptionValue);
 
 
-      @Query(value = "SELECT Id FROM UtilityFixedConsumption_Remarks WITH(NOLOCK) where Id  In (:remarkIds)", nativeQuery = true)
+      @NativeQuery("SELECT Id FROM UtilityFixedConsumption_Remarks WITH(NOLOCK) where Id  In (:remarkIds)")
       List<UUID> getExistingRemarkIds(@Param("remarkIds") List<UUID> remarkIds);
      
     

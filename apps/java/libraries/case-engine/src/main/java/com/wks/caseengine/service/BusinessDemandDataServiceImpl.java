@@ -40,6 +40,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,6 +59,7 @@ import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.Utility;
 
+@DependsOnDatabaseInitialization
 @Service
 public class BusinessDemandDataServiceImpl implements BusinessDemandDataService {
 
@@ -391,10 +393,10 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 					Cell cell = row.createCell(col);
 					Object value = rowData.get(col);
 
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
+					if (value instanceof Number number) {
+						cell.setCellValue(number.doubleValue()); // Handles Integer, Double, etc.
+					} else if (value instanceof Boolean boolean1) {
+						cell.setCellValue(boolean1);
 					} else if (value != null) {
 						cell.setCellValue(value.toString());
 					} else {
@@ -452,7 +454,7 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 
 	    
 	    int yy = displayYear % 100;  
-	    String yyStr = String.format("%02d", yy);
+	    String yyStr = "%02d".formatted(yy);
 
 	    return mname + "-" + yyStr;
 	}
@@ -597,10 +599,10 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 	                    for (BusinessDemandDataDTO dto : productionDtos) {
 	                        if (!"Failed".equalsIgnoreCase(dto.getSaveStatus())) {
 	                            dto.setSaveStatus("Failed");
-	                            dto.setErrDescription(month + " Production sum is " + String.format("%.2f", sum) + ", but must be 100.");
+	                            dto.setErrDescription(month + " Production sum is " + "%.2f".formatted(sum) + ", but must be 100.");
 	                        } else {
 	                            String existingError = dto.getErrDescription() != null ? dto.getErrDescription() : "";
-	                            dto.setErrDescription(existingError + "; " + month + " Production sum is " + String.format("%.2f", sum) + ", but must be 100.");
+	                            dto.setErrDescription(existingError + "; " + month + " Production sum is " + "%.2f".formatted(sum) + ", but must be 100.");
 	                        }
 	                    }
 	                }
@@ -1023,7 +1025,7 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 				UUID normParameterFKId = UUID.fromString(businessDemandMonthlyDTO.getNormParameterFKId());
 
 				Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
-				if (!optionNormParameters.isPresent()) {
+				if (optionNormParameters.isEmpty()) {
 					businessDemandMonthlyDTO.setSaveStatus("Failed");
 					businessDemandMonthlyDTO.setErrDescription("Norm Paramter not found");
 					failedList.add(businessDemandMonthlyDTO);

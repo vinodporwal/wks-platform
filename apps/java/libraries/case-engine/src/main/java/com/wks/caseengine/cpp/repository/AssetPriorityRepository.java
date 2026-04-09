@@ -6,9 +6,9 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
-import org.springframework.security.access.method.P;
+//import org.springframework.security.access.method.P;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,14 +25,11 @@ public interface AssetPriorityRepository extends JpaRepository<DummyEntity, UUID
 
   
 
-    @Query(
-        value = """
+    @NativeQuery("""
             EXEC dbo.CPP_NMD_GetAssetPriority
                  @CppId = :cppId,
                  @FinancialYear = :financialYear
-        """,
-        nativeQuery = true
-    )
+        """)
     List<AssetPriorityProjection> 
         getAssetAvailabilityPriorityByCPP(
             @Param("cppId") UUID cppId,
@@ -42,27 +39,27 @@ public interface AssetPriorityRepository extends JpaRepository<DummyEntity, UUID
 
         // code for post
 
-    @Query(value = """
+    @NativeQuery("""
         SELECT COUNT(1)
         FROM AssetAvailability WITH(NOLOCK)
         WHERE AssetId = :assetId
           AND FinancialYearMonthId = :fymId
-        """, nativeQuery = true)  
+        """)  
     public long exists(@Param("assetId") UUID assetId, @Param("fymId") UUID fymId);
 
 @Modifying
 @Transactional
-    @Query(value = """
+    @NativeQuery("""
         UPDATE AssetAvailability
         SET Priority = :priority
         WHERE AssetId = :assetId
           AND FinancialYearMonthId = :fymId
-        """, nativeQuery = true)
+        """)
     public void updatePriority(@Param("assetId") UUID assetId, @Param("fymId") UUID fymId, @Param("priority") Integer priority);
 
     @Modifying
 @Transactional
-    @Query(value = """
+    @NativeQuery("""
         INSERT INTO AssetAvailability
         (
             Id,
@@ -79,36 +76,33 @@ public interface AssetPriorityRepository extends JpaRepository<DummyEntity, UUID
             1,
             :priority
         )
-        """, nativeQuery = true)
+        """)
     public void insertPriority(@Param("assetId") UUID assetId, @Param("fymId") UUID fymId, @Param("priority") Integer priority);
 
-    @Query(value = """
+    @NativeQuery("""
         SELECT AssetId as assetId, FinancialYearMonthId as fymId, Priority as priority
         FROM AssetAvailability WITH(NOLOCK)
         WHERE AssetId IN (:assetIds)
           AND FinancialYearMonthId IN (:fymIds)
-        """, nativeQuery = true)
+        """)
     List<ExistingAssetAvailabilityProjection> findExistingByAssetIdsAndFymIds(
         @Param("assetIds") List<UUID> assetIds,
         @Param("fymIds") List<UUID> fymIds
     );
 
     
-    @Query(
-        value = """
+    @NativeQuery("""
             SELECT AssetId, FinancialYearMonthId
             FROM AssetAvailability WITH(NOLOCK)
             WHERE AssetId IN (:assetIds)
               AND FinancialYearMonthId IN (:financialYearMonthIds)
-            """,
-        nativeQuery = true
-    )
+            """)
     List<Object[]> getAssetCapacitiesByAssetsAndFYMonths(
             @Param("assetIds") Collection<UUID> assetIds,
             @Param("financialYearMonthIds") Collection<UUID> financialYearMonthIds
     );
 
-@Query(value = """
+@NativeQuery("""
      SELECT 
         a.Id,
         a.AssetId,
@@ -120,8 +114,7 @@ public interface AssetPriorityRepository extends JpaRepository<DummyEntity, UUID
         SELECT pga.AssetId
         FROM powergenerationassets pga WITH(NOLOCK)
         WHERE pga.AssetName = :assetName)
-    """,
-     nativeQuery = true)
+    """)
     List<Object[]> getAssetAvailabilityByAssetName(@Param("assetName") String assetName);
 
 }

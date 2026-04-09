@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -22,11 +22,11 @@ public interface STGExtractionLookupRepository extends JpaRepository<STGExtracti
     Optional<STGExtractionLookup> findByLoadMW(BigDecimal loadMW);
 
     // Find the closest lower LoadMW for interpolation
-    @Query(value = "SELECT TOP 1 * FROM STGExtractionLookup WITH(NOLOCK) WHERE LoadMW <= :loadMW ORDER BY LoadMW DESC", nativeQuery = true)
+    @NativeQuery("SELECT TOP 1 * FROM STGExtractionLookup WITH(NOLOCK) WHERE LoadMW <= :loadMW ORDER BY LoadMW DESC")
     Optional<STGExtractionLookup> findClosestLowerLoad(@Param("loadMW") BigDecimal loadMW);
 
     // Find the closest higher LoadMW for interpolation
-    @Query(value = "SELECT TOP 1 * FROM STGExtractionLookup WITH(NOLOCK) WHERE LoadMW >= :loadMW ORDER BY LoadMW ASC", nativeQuery = true)
+    @NativeQuery("SELECT TOP 1 * FROM STGExtractionLookup WITH(NOLOCK) WHERE LoadMW >= :loadMW ORDER BY LoadMW ASC")
     Optional<STGExtractionLookup> findClosestHigherLoad(@Param("loadMW") BigDecimal loadMW);
 
 }

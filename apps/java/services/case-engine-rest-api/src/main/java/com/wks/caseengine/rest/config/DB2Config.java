@@ -18,14 +18,16 @@ import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
+//import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
@@ -70,15 +72,43 @@ public class DB2Config {
         		.build();
     }
 
+    // @Bean(name = "db2EntityManagerFactory")
+    // public LocalContainerEntityManagerFactoryBean db2EntityManagerFactory(
+    //     EntityManagerFactoryBuilder builder) {
+    //     return builder
+    //         .dataSource(db2DataSource())
+    //         .packages("com.wks.caseengine.rest.db2.entity") // Change to your model package
+    //         .persistenceUnit("db2")
+    //         .properties(hibernatePropertiesForDb2())
+    //         .build();
+    // }
+
+   
     @Bean(name = "db2EntityManagerFactory")
-    public LocalContainerEntityManagerFactoryBean db2EntityManagerFactory(
-        EntityManagerFactoryBuilder builder) {
-        return builder
-            .dataSource(db2DataSource())
-            .packages("com.wks.caseengine.rest.db2.entity") // Change to your model package
-            .persistenceUnit("db2")
-            .properties(hibernatePropertiesForDb2())
-            .build();
+    public LocalContainerEntityManagerFactoryBean db1EntityManagerFactory() {
+    
+        LocalContainerEntityManagerFactoryBean em =
+                new LocalContainerEntityManagerFactoryBean();
+    
+        // 1. Set the datasource
+        em.setDataSource(db2DataSource());
+    
+        // 2. Replace .packages() → setPackagesToScan()
+        em.setPackagesToScan(
+           "com.wks.caseengine.rest.db2.entity"
+        );
+    
+        // 3. Set persistence unit name
+        em.setPersistenceUnitName("db2");
+    
+        // 4. Set JPA vendor adapter (replaces the builder's implicit setup)
+        HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+        em.setJpaVendorAdapter(vendorAdapter);
+    
+        // 5. Replace .properties(Map) → setJpaPropertyMap()
+        em.setJpaPropertyMap(hibernatePropertiesForDb2());
+    
+        return em;
     }
     
     private Map<String, Object> hibernatePropertiesForDb2() {

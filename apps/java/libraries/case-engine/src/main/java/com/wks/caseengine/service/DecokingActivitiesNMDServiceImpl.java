@@ -32,6 +32,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,6 +76,7 @@ import com.wks.caseengine.utility.Utility;
 import jakarta.persistence.PersistenceContext;
 
 
+@DependsOnDatabaseInitialization
 @Service
 public class DecokingActivitiesNMDServiceImpl implements DecokingActivitiesNMDService {
 
@@ -557,10 +559,10 @@ public class DecokingActivitiesNMDServiceImpl implements DecokingActivitiesNMDSe
 					Cell cell = row.createCell(col);
 					Object value = rowData.get(col);
 
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
+					if (value instanceof Number number) {
+						cell.setCellValue(number.doubleValue()); // Handles Integer, Double, etc.
+					} else if (value instanceof Boolean boolean1) {
+						cell.setCellValue(boolean1);
 					} else if (value != null) {
 						cell.setCellValue(value.toString());
 					} else {
@@ -855,7 +857,7 @@ public class DecokingActivitiesNMDServiceImpl implements DecokingActivitiesNMDSe
 	                continue;
 	            }
 	            Optional<DecokeRunLength> decokeRunLengthOpt = decokeRunLengthRepository.findById(decokeRunLengthUuid);
-	            if (!decokeRunLengthOpt.isPresent()) {
+	            if (decokeRunLengthOpt.isEmpty()) {
 	                decokeRunLengthDTO.setSaveStatus("Failed: Record not found with ID: " + decokeRunLengthDTO.getId());
 	                failedList.add(decokeRunLengthDTO);
 	                continue;
@@ -933,7 +935,7 @@ public class DecokingActivitiesNMDServiceImpl implements DecokingActivitiesNMDSe
 	    int start = Integer.parseInt(parts[0].trim());
 	    int next = start + 1;
 	    // Format next start and next+1
-	    return String.format("%04d-%02d", next, (next + 1) % 100);
+	    return "%04d-%02d".formatted(next, (next + 1) % 100);
 	    
 	}
 
@@ -1028,11 +1030,11 @@ public class DecokingActivitiesNMDServiceImpl implements DecokingActivitiesNMDSe
 				dto.setIsCr(row[13] != null ? (Boolean) row[13] : null);
 	            dto.setRemarks(row[16] != null ? row[16].toString() : "");
 	            Object val = row[18];
-	            if (val instanceof Number) {
-	                int i = ((Number) val).intValue();
+	            if (val instanceof Number number) {
+	                int i = number.intValue();
 	                dto.setIsEditable(i != 0);
-	            } else if (val instanceof Boolean) {
-	                dto.setIsEditable((Boolean) val);
+	            } else if (val instanceof Boolean boolean1) {
+	                dto.setIsEditable(boolean1);
 	            } else {
 	                dto.setIsEditable(null); // or choose default
 	            }

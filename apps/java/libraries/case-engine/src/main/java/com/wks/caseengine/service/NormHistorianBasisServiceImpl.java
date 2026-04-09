@@ -15,6 +15,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.entity.Plants;
@@ -32,6 +33,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 
 
+@DependsOnDatabaseInitialization
 @Service
 public class NormHistorianBasisServiceImpl  implements NormHistorianBasisService{
 

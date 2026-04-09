@@ -11,7 +11,9 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+
 import com.wks.caseengine.dto.CatalystAttributesDTO;
 import com.wks.caseengine.dto.NormAttributeTransactionsDTO;
 import com.wks.caseengine.entity.NormAttributeTransactions;
@@ -142,7 +144,7 @@ public class NormAttributeTransactionsServiceImpl implements NormAttributeTransa
 	        }
 
 	        // Step 6: Convert result to JSON
-	        ObjectMapper objectMapper = new ObjectMapper();
+	        ObjectMapper objectMapper = new JsonMapper();
 	        return objectMapper.writeValueAsString(output);
 
 	    } catch (Exception e) {
