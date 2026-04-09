@@ -6,11 +6,12 @@ import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatt
 import { InputApiService } from 'components/aop-phase-two/services/cpp/inputApiService'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
-
-const STGHeatRate = () => {
+import { customValueFormatterPhaseTwo as customValueFormat } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const keycloak = useSession()
 
   const [modifiedCells, setModifiedCells] = useState({})
+  const [customModifiedCells, setCustomModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -36,81 +37,118 @@ const STGHeatRate = () => {
 
   const columns = [
     {
-      field: 'loadMW',
-      title: 'Load (MW)',
-      width: 100,
+      field: 'equipType',
+      title: 'Equipment Type',
+      widthT: 150,
+      minWidth: 150,
+      type: 'text',
+      editable: false,
+      locked: true,
+    },
+    {
+      field: 'cppUtility',
+      title: 'CPP Utility',
+      widthT: 120,
+      minWidth: 120,
+      type: 'text',
+      editable: false,
+    },
+    {
+      field: 'stgLoad',
+      title: 'STG Load (MW)',
+      width: 120,
+      minWidth: 120,
       type: 'number1',
       editable: false,
-      minWidth: 80,
     },
     {
-      field: 'svhInletTPH',
-      title: 'SVH Inlet (TPH)',
-      width: 120,
-      type: 'number1',
-      format: valueFormat,
+      field: 'oemHeatRate',
+      title: 'OEM HR',
+      widthT: 150,
+      minWidth: 150,
+      type: 'numberWithRadio',
+      format: customValueFormat(1),
       editable: true,
-      minWidth: 100,
+      numericEditable: true,
+      radioGroupField: 'selectedHeatRate',
+      targetField: 'finalHeatRate',
+      radioValue: 'OEM',
     },
     {
-      field: 'smBleedFlowTPH',
-      title: 'SM Bleed Flow (TPH)',
-      width: 140,
-      type: 'number1',
-      format: valueFormat,
+      field: 'previousYearHeatRate',
+      title: 'PREVIOUS YEAR BUDGET HR',
+      widthT: 200,
+      minWidth: 200,
+      type: 'numberWithRadio',
+      format: customValueFormat(1),
       editable: true,
-      minWidth: 120,
+      numericEditable: false,
+      radioGroupField: 'selectedHeatRate',
+      targetField: 'finalHeatRate',
+      radioValue: 'PREVIOUS_YEAR',
     },
     {
-      field: 'slExtFlowTPH',
-      title: 'SL Ext Flow (TPH)',
-      width: 130,
-      type: 'number1',
-      format: valueFormat,
+      field: 'heatRate',
+      title: 'PROPOSED HR',
+      subtitle: '(Based On Actual Data)',
+      widthT: 200,
+      minWidth: 200,
+      type: 'numberWithRadio',
+      format: customValueFormat(1),
       editable: true,
-      minWidth: 110,
+      numericEditable: false,
+      radioGroupField: 'selectedHeatRate',
+      targetField: 'finalHeatRate',
+      radioValue: 'PROPOSED',
     },
     {
-      field: 'condensingLoadM3Hr',
-      title: 'Condensing load (m3/hr)',
-      width: 150,
+      field: 'finalHeatRate',
+      title: 'Final HR',
+      widthT: 150,
+      minWidth: 150,
       type: 'number1',
-      format: valueFormat,
+      format: customValueFormat(1),
       editable: true,
-      minWidth: 130,
     },
-    {
-      field: 'heatRateKcalKWH',
-      title: 'Heat Rate Calc (Kcal/KWH)',
-      width: 160,
-      type: 'number1',
-      format: valueFormat,
-      editable: true,
-      minWidth: 140,
-    },
+
     {
       field: 'remarks',
       title: 'Remark',
       width: 230,
       type: 'textarea',
       editable: true,
-      minWidth: 150,
+      minWidth: 230,
     },
   ]
 
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
 
+  console.log('startDate', startDate)
+  console.log('endDate', endDate)
   useEffect(() => {
-    if (PLANT_ID) {
+    if (AOP_YEAR && startDate && endDate) {
       fetchHeatRateData()
     }
-  }, [PLANT_ID])
+  }, [AOP_YEAR, startDate, endDate])
+
+  const formatDate = (date) => {
+    if (!date) return ''
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
 
   const fetchHeatRateData = async () => {
     setLoading(true)
     try {
-      const res = await InputApiService.getSTGHeatRateData(keycloak, PLANT_ID)
+      const res = await InputApiService.getSTGHeatRateData(
+        keycloak,
+        AOP_YEAR,
+        formatDate(startDate),
+        formatDate(endDate),
+      )
 
       if (res?.length === 0) {
         setRows([])
@@ -173,12 +211,10 @@ const STGHeatRate = () => {
 
     // Custom validation: If any row data is updated, remarks must be filled and different from original
     const fieldsToCheck = [
-      'loadMW',
-      'svhInletTPH',
-      'smBleedFlowTPH',
-      'slExtFlowTPH',
-      'condensingLoadM3Hr',
-      'heatRateKcalKWH',
+      'oemHeatRate',
+      'previousYearHeatRate',
+      'heatRate',
+      'finalHeatRate',
     ]
     const validationError = validateRowDataWithRemarks(
       data,
@@ -203,12 +239,7 @@ const STGHeatRate = () => {
       })
       const tempPayload = JSON.stringify(payload)
 
-      const res = await InputApiService.saveSTGHeatRateData(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        payload,
-      )
+      await InputApiService.saveSTGHeatRateData(keycloak, AOP_YEAR, payload)
 
       setModifiedCells({})
       setSnackbarOpen(true)
@@ -216,6 +247,7 @@ const STGHeatRate = () => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+      await fetchHeatRateData()
     } catch (error) {
       console.error('Error saving heat rate data:', error)
       setSnackbarOpen(true)
@@ -236,8 +268,6 @@ const STGHeatRate = () => {
       const response = await InputApiService.saveSTGHeatRateExcel(
         file,
         keycloak,
-        PLANT_ID,
-        AOP_YEAR,
       )
 
       if (response?.success) {
@@ -275,7 +305,15 @@ const STGHeatRate = () => {
     })
 
     try {
-      await InputApiService.exportSTGHeatRateExcel(keycloak)
+      const formattedStartDate = startDate ? formatDate(startDate) : null
+      const formattedEndDate = endDate ? formatDate(endDate) : null
+
+      await InputApiService.exportSTGHeatRateExcel(
+        keycloak,
+        AOP_YEAR,
+        formattedStartDate,
+        formattedEndDate,
+      )
       setSnackbarData({
         message: 'Excel download completed successfully!',
         severity: 'success',
@@ -296,6 +334,207 @@ const STGHeatRate = () => {
     setRemarkDialogOpen(true)
   }
 
+  // Custom itemChange handler for radio selection with bidirectional sync
+  const handleCustomItemChange = (e, setRows) => {
+    const { dataItem, field, value } = e
+    const itemId = dataItem.id
+
+    // When radio selection changes, update the Final Heat Rate
+    if (field === 'selectedHeatRate') {
+      // Map radioValue to field name
+      const fieldMapping = {
+        OEM: 'oemHeatRate',
+        PREVIOUS_YEAR: 'previousYearHeatRate',
+        PROPOSED: 'heatRate',
+      }
+
+      const selectedField = fieldMapping[value]
+      const selectedValue = selectedField ? dataItem[selectedField] : null
+
+      setRows((prev) =>
+        prev.map((r) => {
+          if (r.id === dataItem.id) {
+            return {
+              ...r,
+              selectedHeatRate: value,
+              finalHeatRate: selectedValue,
+            }
+          }
+          return r
+        }),
+      )
+
+      // Track both fields in modifiedCells
+      setModifiedCells((prev) => {
+        const currentRow = rows.find((r) => r.id === itemId)
+        return {
+          ...prev,
+          [itemId]: {
+            ...(prev[itemId] || currentRow),
+            selectedHeatRate: value,
+            finalHeatRate: selectedValue,
+            inEdit: true,
+          },
+        }
+      })
+
+      setCustomModifiedCells((prev) => ({
+        ...prev,
+        [itemId]: {
+          ...(prev[itemId] || {}),
+          selectedHeatRate: value,
+          finalHeatRate: selectedValue,
+        },
+      }))
+
+      return
+    }
+
+    // When a source column is edited, update finalHeatRate ONLY if that source is currently selected
+    const sourceFieldMapping = {
+      oemHeatRate: 'OEM',
+      previousYearHeatRate: 'PREVIOUS_YEAR',
+      heatRate: 'PROPOSED',
+    }
+
+    if (sourceFieldMapping[field]) {
+      const radioValueForThisField = sourceFieldMapping[field]
+
+      setRows((prev) =>
+        prev.map((r) => {
+          if (r.id === dataItem.id) {
+            // Only update finalHeatRate if this source is currently selected
+            if (r.selectedHeatRate === radioValueForThisField) {
+              return {
+                ...r,
+                [field]: value,
+                finalHeatRate: value,
+              }
+            }
+            // Otherwise just update the source field
+            return {
+              ...r,
+              [field]: value,
+            }
+          }
+          return r
+        }),
+      )
+
+      // Track changes in modifiedCells and customModifiedCells
+      const currentRow = rows.find((r) => r.id === itemId)
+      if (currentRow?.selectedHeatRate === radioValueForThisField) {
+        // Update both source field and finalHeatRate
+        setModifiedCells((prev) => ({
+          ...prev,
+          [itemId]: {
+            ...(prev[itemId] || currentRow),
+            [field]: value,
+            finalHeatRate: value,
+            inEdit: true,
+          },
+        }))
+
+        setCustomModifiedCells((prev) => ({
+          ...prev,
+          [itemId]: {
+            ...(prev[itemId] || {}),
+            [field]: value,
+            finalHeatRate: value,
+          },
+        }))
+      } else {
+        // Still track the source field change even if not selected (for orange highlighting)
+        setModifiedCells((prev) => ({
+          ...prev,
+          [itemId]: {
+            ...(prev[itemId] || currentRow),
+            [field]: value,
+            inEdit: true,
+          },
+        }))
+
+        setCustomModifiedCells((prev) => ({
+          ...prev,
+          [itemId]: {
+            ...(prev[itemId] || {}),
+            [field]: value,
+          },
+        }))
+      }
+
+      return
+    }
+
+    // When Final Heat Rate is manually edited, check if it matches any source column
+    if (field === 'finalHeatRate') {
+      const sourceFields = [
+        {
+          radioValue: 'OEM',
+          field: 'oemHeatRate',
+          value: dataItem.oemHeatRate,
+        },
+        {
+          radioValue: 'PREVIOUS_YEAR',
+          field: 'previousYearHeatRate',
+          value: dataItem.previousYearHeatRate,
+        },
+        { radioValue: 'PROPOSED', field: 'heatRate', value: dataItem.heatRate },
+      ]
+
+      let matchedRadioValue = null
+
+      // Check if the entered value matches any source column value
+      for (const source of sourceFields) {
+        if (
+          source.value !== null &&
+          source.value !== undefined &&
+          parseFloat(value) === parseFloat(source.value)
+        ) {
+          matchedRadioValue = source.radioValue
+          break
+        }
+      }
+
+      setRows((prev) =>
+        prev.map((r) => {
+          if (r.id === dataItem.id) {
+            return {
+              ...r,
+              finalHeatRate: value,
+              // Auto-select radio if value matches a source, otherwise set to OTHER
+              selectedHeatRate: matchedRadioValue || 'OTHER',
+            }
+          }
+          return r
+        }),
+      )
+
+      // Track both fields in modifiedCells
+      setModifiedCells((prev) => {
+        const currentRow = rows.find((r) => r.id === itemId)
+        return {
+          ...prev,
+          [itemId]: {
+            ...(prev[itemId] || currentRow),
+            finalHeatRate: value,
+            selectedHeatRate: matchedRadioValue || 'OTHER',
+            inEdit: true,
+          },
+        }
+      })
+
+      setCustomModifiedCells((prev) => ({
+        ...prev,
+        [itemId]: {
+          ...(prev[itemId] || {}),
+          finalHeatRate: value,
+          selectedHeatRate: matchedRadioValue || 'OTHER',
+        },
+      }))
+    }
+  }
+
   return (
     <Box>
       <Backdrop
@@ -311,6 +550,8 @@ const STGHeatRate = () => {
         setRows={setRows}
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
+        externalCustomModifiedCells={customModifiedCells}
+        externalSetCustomModifiedCells={setCustomModifiedCells}
         title='STG Heat Rate'
         permissions={permissions}
         handleRemarkCellClick={handleRemarkCellClick}
@@ -327,6 +568,7 @@ const STGHeatRate = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
+        customItemChange={handleCustomItemChange}
       />
     </Box>
   )
