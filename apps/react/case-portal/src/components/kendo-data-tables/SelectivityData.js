@@ -523,7 +523,15 @@ const SelectivityData = (props) => {
     FORMATE_VALUE = '{0:0.000}'
   }
   if (
-    (props?.configType == 'Constant' ||
+    (props?.configType === 'Constant' ||
+      props?.configType === 'PIO Impact' ||
+      props?.configType === 'Configuration') &&
+    (lowerVertName === 'pta' && lowerSiteName === 'dmd')
+  ) {
+    FORMATE_VALUE = '{0:0.0000}'
+  }
+  if (
+    (props?.configType === 'Constant' ||
       props?.configType == 'PIO Impact' ||
       props?.configType == 'Configuration') &&
     lowerVertName == 'aromatics' &&
