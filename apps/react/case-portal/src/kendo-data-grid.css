@@ -209,6 +209,14 @@
   text-align: right !important;
 }
 
+.disabled-cell,
+.non-editable-cell {
+  background-color: #e3e3e3 !important;
+  border-right: 1px solid rgb(169, 169, 169) !important;
+  border-bottom: 1px solid rgb(169, 169, 169) !important;
+  text-align: left !important;
+}
+
 /* ===============================
    ERROR ROWS
    =============================== */
