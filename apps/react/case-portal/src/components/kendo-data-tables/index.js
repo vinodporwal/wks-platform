@@ -272,6 +272,29 @@ const KendoDataTables = ({
       </td>
     )
   }
+  const ShutdownRateDisplayCell = (props) => {
+    const { dataItem, field, allDescriptionDrpdwn, tdProps = {} } = props
+    // Find the display label from the dropdown options
+    const option = allDescriptionDrpdwn?.find(
+      (opt) =>
+        opt.displayName === dataItem[field] || opt.id === dataItem[field],
+    )
+    const displayLabel = option ? option.displayName : dataItem[field]
+
+    return (
+      <td
+        {...tdProps}
+        style={{
+          padding: '0.5rem 1rem',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
+        {displayLabel}
+      </td>
+    )
+  }
   const isMcuMaxCapRedCell = useCallback(
     (productName, field) => {
       if (!mcuMaxCapValues?.aopMaxCapMCValueList?.length) return false
@@ -2412,6 +2435,9 @@ const KendoDataTables = ({
                     />
                   )
                 }
+                const ShutdownRateDropdownEditorWrapper = (props) => (
+                  <ProductCell {...props} allProducts={allDescriptionDrpdwn} />
+                )
                 if (
                   col?.field === 'shutdownRate' &&
                   col?.type === 'shutdownRateDropdown'
@@ -2424,12 +2450,8 @@ const KendoDataTables = ({
                       editable={col.editable || true}
                       hidden={col.hidden}
                       cells={{
-                        data: (cellProps) => (
-                          <ProductCell
-                            {...cellProps}
-                            allProducts={allDescriptionDrpdwn}
-                          />
-                        ),
+                        edit: { text: ShutdownRateDropdownEditorWrapper },
+                        data: ShutdownRateDisplayCell,
                         headerCell: SimpleHeaderWithTooltip,
                       }}
                       columnMenu={ColumnMenuCheckboxFilter}
