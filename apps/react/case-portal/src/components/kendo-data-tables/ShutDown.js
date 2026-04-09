@@ -107,6 +107,7 @@ const ShutDown = ({ permissions }) => {
   const IS_PP_HMD = lowerVertName === 'pp' && lowerSiteName === 'hmd'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
+  const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const DELETE_NOTE =
     'Warning: Please verify the shutdown consumption quantity before deleting the shutdown activity.'
 
@@ -456,7 +457,9 @@ const ShutDown = ({ permissions }) => {
           !IS_PVC_VMD &&
           !IS_CHEMICAL &&
           !IS_PP_SEZ &&
-          !IS_ELASTOMER_JMD_HIIR
+          !IS_ELASTOMER_JMD_HIIR &&
+          !IS_PP_DTA &&
+          !IS_PE_PP
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]

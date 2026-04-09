@@ -837,7 +837,10 @@ const SlowDown = ({ permissions }) => {
           !IS_PTA_HMD &&
           !IS_PVC_VMD &&
           !IS_CHEMICAL &&
-          !IS_PP_SEZ
+          !IS_PP_SEZ &&
+          !IS_PP_DTA &&
+          !IS_PE_PP
+
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
