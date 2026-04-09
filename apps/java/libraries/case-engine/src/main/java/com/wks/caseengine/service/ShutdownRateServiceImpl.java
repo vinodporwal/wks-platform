@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.sql.DataSource;
 
@@ -19,7 +20,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.SiteRepository;
+import com.wks.caseengine.repository.VerticalsRepository;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -32,6 +38,15 @@ public class ShutdownRateServiceImpl implements ShutdownRateService {
 	
 	@Autowired
 	private DataSource dataSource;
+	
+	@Autowired
+	private PlantsRepository plantsRepository;
+	
+	@Autowired
+	private VerticalsRepository verticalRepository;
+	
+	@Autowired
+	private SiteRepository siteRepository;
 
 	@Override
 	@Transactional
@@ -63,8 +78,13 @@ public class ShutdownRateServiceImpl implements ShutdownRateService {
 	private List<Map<String, Object>> getShutdownRateData(String plantId, String aopYear) {
 		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
 			List<Map<String, Object>> dataList = new ArrayList<>();
-			
-			String sql = "{call [dbo].[PE_C2_GetShutdownRate](?, ?)}";
+			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			String spName = verticalName + "_" + site.getName() + "_GetShutdownRate";
+	        
+	        String sql = "{call [dbo].[" + spName + "](?, ?)}";
 			
 			try (CallableStatement callableStatement = connection.prepareCall(sql)) {
 				callableStatement.setString(1, plantId);
@@ -96,8 +116,14 @@ public class ShutdownRateServiceImpl implements ShutdownRateService {
 	private List<Map<String, Object>> getShutdownRateColumnMetadata(String plantId, String aopYear) {
 		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
 			List<Map<String, Object>> columnMetadata = new ArrayList<>();
+			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			
-			String sql = "{call [dbo].[PE_C2_GetShutdownRate](?, ?)}";
+			String spName = verticalName + "_" + site.getName() + "_GetShutdownRate";
+	        
+	        String sql = "{call [dbo].[" + spName + "](?, ?)}";
 			
 			try (CallableStatement callableStatement = connection.prepareCall(sql)) {
 				callableStatement.setString(1, plantId);

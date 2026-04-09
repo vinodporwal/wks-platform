@@ -19,13 +19,7 @@ public class ShutdownRateController {
 	@GetMapping(value="/shutdown-rate-manual-entry")
 	public AOPMessageVM getShutdownRate(
 			@RequestParam(value = "plantId", required = true) String plantId,
-			@RequestParam(value = "aopYear", required = false) String aopYear) {
-		
-		// Set default aopYear if not provided (matching stored procedure default)
-		if (aopYear == null || aopYear.trim().isEmpty()) {
-			aopYear = "2025-26";
-		}
-		
-		return shutdownRateService.getShutdownRate(plantId, aopYear);
+			@RequestParam(value = "year", required = false) String year) {
+		return shutdownRateService.getShutdownRate(plantId, year);
 	}
 }
