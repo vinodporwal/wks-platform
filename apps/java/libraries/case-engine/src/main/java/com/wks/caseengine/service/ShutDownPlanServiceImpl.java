@@ -1541,7 +1541,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	                                }
 	                            }
 
-	                            if (overlapsFile) {
+	                            if (overlapsFile && !vertical.getName().equalsIgnoreCase("PP")) {
 	                                    dto.setSaveStatus("Failed");
 	                                    dto.setErrDescription(
 	                                        "The maintenance period overlaps with an already validated period in the file.");
@@ -1568,7 +1568,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	                                    }
 	                                }
 
-	                                if (overlapsSlowdown && !isPPSEZ) {
+	                                if (overlapsSlowdown && !vertical.getName().equalsIgnoreCase("PP")) {
 	                                    dto.setSaveStatus("Failed");
 	                                    dto.setErrDescription("The date range is overlapping with an existing Slowdown period.");
 	                                    alreadyFailed = true;
