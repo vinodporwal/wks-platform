@@ -154,6 +154,7 @@ const CrackerConfig = () => {
       editButton: false,
       showUnit: false,
       showModes:
+        !IS_CRACKER_HMD &&
         lowerVertName === 'cracker' &&
         currentTabDisplay !== 'Naphtha' &&
         currentTabDisplay !== 'External Streams',
@@ -396,6 +397,9 @@ const CrackerConfig = () => {
         let transformedData1 = []
         let transformedData12 = []
         var spyroVM1 = []
+        if (IS_CRACKER_HMD){
+          mode = currentTabDisplay
+        }
         if (currentTabDisplay == 'Constant') {
           spyroVM1 = await DataService.getSpyroInputData(
             keycloak,
@@ -737,9 +741,11 @@ const CrackerConfig = () => {
   const saveSpyroInputExcelFile = async (rawFile) => {
     setLoading(true)
     try {
-      const mode = selectMode || ''
+      let mode = selectMode || ''
       let response
-
+      if (IS_CRACKER_HMD){
+        mode = currentTabDisplay
+      }
       if (currentTabDisplay == 'Naphtha') {
         response = await DataService.importNaphthaExcel(
           rawFile,
@@ -813,7 +819,10 @@ const CrackerConfig = () => {
       severity: 'success',
     })
 
-    const mode = selectMode
+    let mode = selectMode
+    if (IS_CRACKER_HMD){
+      mode = currentTabDisplay
+    }
     const EXCEL_NAME =
       currentTabDisplay == 'Naphtha'
         ? `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_Optimizer_Input_${AOP_YEAR}`
@@ -883,6 +892,7 @@ const CrackerConfig = () => {
       setSnackbarOpen(false)
     }
   }
+
   const handleLoadNaphthaData = async (startDate, endDate) => {
     try {
       setLoading(true)
@@ -962,6 +972,7 @@ const CrackerConfig = () => {
       }
     }
   }, [currentTabDisplay, PLANT_ID, AOP_YEAR, keycloak])
+
   return (
     <Box>
       <Backdrop
