@@ -345,7 +345,7 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
       const fieldMapping = {
         OEM: 'oemHeatRate',
         PREVIOUS_YEAR: 'previousYearHeatRate',
-        PROPOSED: 'heatRate',
+        PROPOSED: 'proposedHeatRate',
       }
 
       const selectedField = fieldMapping[value]
@@ -394,7 +394,7 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
     const sourceFieldMapping = {
       oemHeatRate: 'OEM',
       previousYearHeatRate: 'PREVIOUS_YEAR',
-      heatRate: 'PROPOSED',
+      proposedHeatRate: 'PROPOSED',
     }
 
     if (sourceFieldMapping[field]) {
@@ -479,7 +479,11 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
           field: 'previousYearHeatRate',
           value: dataItem.previousYearHeatRate,
         },
-        { radioValue: 'PROPOSED', field: 'heatRate', value: dataItem.heatRate },
+        {
+          radioValue: 'PROPOSED',
+          field: 'proposedHeatRate',
+          value: dataItem.proposedHeatRate,
+        },
       ]
 
       let matchedRadioValue = null
