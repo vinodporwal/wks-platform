@@ -14,7 +14,7 @@ import PCGOutlook from './PCGOutlook'
 import NetUnitCapacity from './NetUnitCapacity'
 import RemarkDialog from './workflow/RemarkDialog'
 import SubmitSection from './workflow/SubmitSection'
-import { getUserRole } from '../utils/roleUtils'
+import { getUserRole, ROLES } from '../utils/roleUtils'
 import { TcsWorkflowApiService } from 'components/aop-phase-two/services/tcs/tcsWorkflowApiService'
 import AuditTrail from './workflow/AuditTrail'
 
@@ -329,19 +329,22 @@ const TcsInput = () => {
         workflowWasTriggered = triggerResult
       }
 
-      // Complete plant submission task with remark
-      // if (workflowWasTriggered) {
-      await TcsWorkflowApiService.saveRemark(
+      const payload = {
         keycloak,
-        PLANT_ID,
-        PLANT_NAME,
-        SITE_ID,
-        VERTICAL_ID,
+        plantId: PLANT_ID,
+        plantName: PLANT_NAME,
+        siteId: SITE_ID,
+        verticalId: VERTICAL_ID,
         userRole,
         userName,
         remark,
-        AOP_YEAR,
-      )
+        aopYear: AOP_YEAR,
+      }
+      if (userRole == ROLES.PLANT_MANAGER) {
+        await TcsWorkflowApiService.savePlantManagerRemark(payload)
+      } else {
+        await TcsWorkflowApiService.saveCTSTechManagerRemark(payload)
+      }
 
       setSnackbarData({
         message: `${PLANT_NAME} TCS data submission completed successfully`,

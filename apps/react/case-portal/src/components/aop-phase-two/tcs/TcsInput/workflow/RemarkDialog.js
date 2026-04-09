@@ -106,8 +106,9 @@ const RemarkDialog = ({
   const getTitle = () => {
     switch (role) {
       case ROLES.PLANT_MANAGER:
-        // return 'Plant Manager Remark Submission'
-        return 'CTS Engineer Remark Submission'
+        return 'Plant Manager Remark Submission'
+      case ROLES.CTS_TECH_MANAGER:
+        return 'CTS Tech Manager Remark Submission'
       case ROLES.EPS_ENGINEER:
         return 'AOM Remark Submission'
       case ROLES.CTS_HEAD:
@@ -115,7 +116,7 @@ const RemarkDialog = ({
       case ROLES.EPS_HEAD:
         return 'EPS Head Remark Submission'
       case ROLES.CLUSTER_HEAD:
-        return 'Cluster Head Remark Submission'
+        return 'Site President Remark Submission'
       default:
         return title
     }
@@ -125,7 +126,8 @@ const RemarkDialog = ({
     setRemark(event.target.value)
   }
 
-  // Fetch previous level submission data for CTS/EPS Head and Cluster Head
+  // Fetch previous level submission data
+  // Workflow: AOM -> CTS Head -> EPS Head -> Cluster Head
   useEffect(() => {
     const fetchPreviousLevelData = async () => {
       if (!open || !keycloak || !SITE_ID || !VERTICAL_ID) {
@@ -144,8 +146,8 @@ const RemarkDialog = ({
       setLoadingPreviousData(true)
       try {
         let response
-        if (role === ROLES.CTS_HEAD || role === ROLES.EPS_HEAD) {
-          // CTS/EPS Head gets AOM approve/reject remark
+        if (role === ROLES.CTS_HEAD) {
+          // CTS Head gets AOM (EPS Engineer) approve/reject remark
           response =
             await TcsWorkflowApiService.getCtsHeadApproveRejectAuditTrail(
               keycloak,
@@ -153,8 +155,17 @@ const RemarkDialog = ({
               VERTICAL_ID,
               AOP_YEAR,
             )
+        } else if (role === ROLES.EPS_HEAD) {
+          // EPS Head gets CTS Head approve/reject remark
+          response =
+            await TcsWorkflowApiService.getEPSHeadApproveRejectAuditTrail(
+              keycloak,
+              SITE_ID,
+              VERTICAL_ID,
+              AOP_YEAR,
+            )
         } else if (role === ROLES.CLUSTER_HEAD) {
-          // Cluster Head gets CTS/EPS Head approve/reject remark
+          // Cluster Head gets EPS Head approve/reject remark
           response =
             await TcsWorkflowApiService.getClusterHeadApproveRejectAuditTrail(
               keycloak,

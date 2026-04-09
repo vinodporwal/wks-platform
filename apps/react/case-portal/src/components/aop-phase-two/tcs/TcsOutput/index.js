@@ -122,36 +122,48 @@ const TcsOutput = () => {
       if (userRole === ROLES.EPS_ENGINEER) {
         // Check if already submitted
         if (approvalStatus?.ebs_approved === true) {
-          return 'You have already submitted to CTS Head/EPS Head'
+          return 'You have already submitted to CTS Head'
         }
         return 'All plants must be approved before submission'
-      } else if (userRole === ROLES.CTS_HEAD || userRole === ROLES.EPS_HEAD) {
+      } else if (userRole === ROLES.CTS_HEAD) {
         // Check if already submitted
-        if (approvalStatus?.cts_approved === true) {
-          return 'You have already submitted to Cluster Head'
+        if (approvalStatus?.cts_head_approved === true) {
+          return 'You have already submitted to EPS Head'
         }
         // Check if EPS Engineer has submitted
         if (approvalStatus?.ebs_approved === false) {
           return 'Waiting for AOM submission'
         }
         return 'Waiting for AOM submission, or you have already submitted.'
+      } else if (userRole === ROLES.EPS_HEAD) {
+        // Check if already submitted
+        if (approvalStatus?.eps_head_approved === true) {
+          return 'You have already submitted to Cluster Head'
+        }
+        // Check if CTS Head has submitted
+        if (approvalStatus?.cts_head_approved === false) {
+          return 'Waiting for CTS Head submission'
+        }
+        return 'Waiting for CTS Head submission, or you have already submitted.'
       } else if (userRole === ROLES.CLUSTER_HEAD) {
         // Check if already submitted
         if (approvalStatus?.cluster_head_approved === true) {
           return 'You have already finalized the data for PIMS Output'
         }
-        // Check if CTS/EPS Head has submitted
-        if (approvalStatus?.cts_approved === false) {
-          return 'Waiting for CTS Head/EPS Head submission'
+        // Check if EPS Head has submitted
+        if (approvalStatus?.eps_head_approved === false) {
+          return 'Waiting for EPS Head submission'
         }
-        return 'Waiting for CTS/EPS Head submission, or you have already submitted.'
+        return 'Waiting for EPS Head submission, or you have already submitted.'
       }
 
       return 'Submission not available'
     } else {
       if (userRole === ROLES.EPS_ENGINEER) {
-        return 'Submit all approved plants to CTS Head/EPS Head'
-      } else if (userRole === ROLES.CTS_HEAD || userRole === ROLES.EPS_HEAD) {
+        return 'Submit all approved plants to CTS Head'
+      } else if (userRole === ROLES.CTS_HEAD) {
+        return 'Submit to EPS Head'
+      } else if (userRole === ROLES.EPS_HEAD) {
         return 'Submit to Cluster Head'
       } else if (userRole === ROLES.CLUSTER_HEAD) {
         return 'Finalize data for PIMS Output'
@@ -233,23 +245,32 @@ const TcsOutput = () => {
               }
             }
           }
-          // For CTS Head/EPS Head: Check if EBS approved is true AND CTS approved is false
-          else if (userRole === ROLES.CTS_HEAD || userRole === ROLES.EPS_HEAD) {
+          // For CTS Head: Check if EBS approved is true AND CTS Head not yet approved
+          else if (userRole === ROLES.CTS_HEAD) {
             const ebsApproved = approvalStatus.ebs_approved === true
-            const ctsApproved = approvalStatus.cts_approved === true
+            const ctsHeadApproved = approvalStatus.cts_head_approved === true
 
-            // Enable submit button only if EBS is approved but CTS is not yet approved
-            const canSubmit = ebsApproved && !ctsApproved
+            // Enable submit button only if EBS is approved but CTS Head is not yet approved
+            const canSubmit = ebsApproved && !ctsHeadApproved
             setIsSubmitEligible(canSubmit)
           }
-          // For Cluster Head: Check if CTS approved is true AND Cluster Head approved is false
+          // For EPS Head: Check if CTS Head approved is true AND EPS Head not yet approved
+          else if (userRole === ROLES.EPS_HEAD) {
+            const ctsHeadApproved = approvalStatus.cts_head_approved === true
+            const epsHeadApproved = approvalStatus.eps_head_approved === true
+
+            // Enable submit button only if CTS Head is approved but EPS Head is not yet approved
+            const canSubmit = ctsHeadApproved && !epsHeadApproved
+            setIsSubmitEligible(canSubmit)
+          }
+          // For Cluster Head: Check if EPS Head approved is true AND Cluster Head not yet approved
           else if (userRole === ROLES.CLUSTER_HEAD) {
-            const ctsApproved = approvalStatus.cts_approved === true
+            const epsHeadApproved = approvalStatus.eps_head_approved === true
             const clusterHeadApproved =
               approvalStatus.cluster_head_approved === true
 
-            // Enable submit button only if CTS is approved but Cluster Head is not yet approved
-            const canSubmit = ctsApproved && !clusterHeadApproved
+            // Enable submit button only if EPS Head is approved but Cluster Head is not yet approved
+            const canSubmit = epsHeadApproved && !clusterHeadApproved
             setIsSubmitEligible(canSubmit)
           } else {
             setIsSubmitEligible(false)
@@ -412,23 +433,32 @@ const TcsOutput = () => {
       }
 
       // Call appropriate APIs based on role
-      if (userRole === ROLES.CLUSTER_HEAD) {
-        // CLUSTER_HEAD
-        // First API: Approve/Reject
-        await TcsWorkflowApiService.clusterHeadApproveReject(payload, isApprove)
-
-        // Second API: Submission (only for approve)
-        if (isApprove) {
-          await TcsWorkflowApiService.clusterHeadSubmission(payload)
-        }
-      } else {
-        // CTS_HEAD or EPS_HEAD
+      if (userRole === ROLES.CTS_HEAD) {
+        // CTS_HEAD - Approves after EPS_ENGINEER
         // First API: Approve/Reject
         await TcsWorkflowApiService.ctsHeadApproveReject(payload, isApprove)
 
         // Second API: Submission (only for approve)
         if (isApprove) {
           await TcsWorkflowApiService.ctsHeadSubmission(payload)
+        }
+      } else if (userRole === ROLES.EPS_HEAD) {
+        // EPS_HEAD - Approves after CTS_HEAD
+        // First API: Approve/Reject
+        await TcsWorkflowApiService.epsHeadApproveReject(payload, isApprove)
+
+        // Second API: Submission (only for approve)
+        if (isApprove) {
+          await TcsWorkflowApiService.epsHeadSubmission(payload)
+        }
+      } else if (userRole === ROLES.CLUSTER_HEAD) {
+        // CLUSTER_HEAD - Final approval after EPS_HEAD
+        // First API: Approve/Reject
+        await TcsWorkflowApiService.clusterHeadApproveReject(payload, isApprove)
+
+        // Second API: Submission (only for approve)
+        if (isApprove) {
+          await TcsWorkflowApiService.clusterHeadSubmission(payload)
         }
       }
 

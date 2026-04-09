@@ -210,12 +210,17 @@ const AuditTrail = ({
   const getTitle = () => {
     switch (userRole) {
       case ROLES.PLANT_MANAGER:
-        return 'CTS Engineer History'
+        return 'Plant Manager History'
+      case ROLES.CTS_TECH_MANAGER:
+        return 'CTS Tech Manager History'
       case ROLES.CTS_HEAD:
+        return 'CTS Head History'
       case ROLES.EPS_HEAD:
-        return 'EPS/CTS Head History'
+        return 'EPS Head History'
       case ROLES.EPS_ENGINEER:
         return 'AOM History'
+      case ROLES.CLUSTER_HEAD:
+        return 'Site President History'
       default:
         return title
     }
@@ -244,7 +249,7 @@ const AuditTrail = ({
 
       <DialogContent sx={{ p: 0 }}>
         {/* Timeline Tab */}
-        <Box sx={{ width: '100%', p: 3 }}>
+        <Box sx={{ width: '100%', p: 1 }}>
           <WorkflowTimeline steps={workflowSteps} />
         </Box>
 
