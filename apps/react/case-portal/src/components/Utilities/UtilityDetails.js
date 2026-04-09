@@ -10,19 +10,21 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import SparklesIcon from '@mui/icons-material/AutoAwesome'
 
-const TOTAL_STEPS = 11 // fixed as requested
+// const TOTAL_STEPS = 11 // fixed as requested
 
 export default function UtilityDetails({ navigation }) {
-  const [expanded, setExpanded] = useState(true) // default expanded
+  const [expanded, setExpanded] = useState(false) // default expanded
   const dispatch = useDispatch()
   const location = useLocation()
   const currentTitle = useSelector((s) => s.dataGridStore.screenTitle?.title)
 
   const [currentStep, setCurrentStep] = useState(null)
+  const [totalSteps, setTotalSteps] = useState(0)
 
   useEffect(() => {
     if (!navigation?.items) {
       setCurrentStep(null)
+      setTotalSteps(0)
       return
     }
 
@@ -42,10 +44,20 @@ export default function UtilityDetails({ navigation }) {
       if (g.type !== 'group') continue
       // check branch contains path
       const items = collectItems(g, [])
+
+      const allItems = collectItems(g, [])
+
+      // 2. Filter to only include the specific path prefix
+      const productionItems = allItems.filter((it) =>
+        it.url?.startsWith('/production-norms-plan/'),
+      )
+
       matchedIndex = items.findIndex((it) => it.url === location.pathname)
       if (matchedIndex !== -1) {
         // set current step (1-based)
         setCurrentStep(matchedIndex + 1)
+        setTotalSteps(productionItems.length)
+
         // dispatch title if changed
         const matchedTitle = items[matchedIndex]?.title
         if (matchedTitle && matchedTitle !== currentTitle) {
@@ -57,6 +69,7 @@ export default function UtilityDetails({ navigation }) {
 
     if (matchedIndex === -1) {
       setCurrentStep(null)
+      setTotalSteps(0)
     }
   }, [navigation, location.pathname, currentTitle, dispatch])
 
@@ -100,7 +113,7 @@ export default function UtilityDetails({ navigation }) {
               m: 0,
             }}
           >
-            {currentTitle ?? 'Production Target'}
+            {currentTitle}
           </Typography>
 
           <Box
@@ -120,69 +133,73 @@ export default function UtilityDetails({ navigation }) {
             }}
           >
             {currentStep
-              ? `${currentStep} of ${TOTAL_STEPS} Steps`
-              : `— of ${TOTAL_STEPS} Steps`}
+              ? `${currentStep} of ${totalSteps} Steps`
+              : `— of ${totalSteps} Steps`}
           </Box>
         </Stack>
 
-        <Stack
-          direction='row'
-          spacing={0.5}
-          alignItems='center'
-          sx={{ p: 0, m: 0 }}
-        >
-          <IconButton
-            onClick={toggleExpanded}
-            size='small'
-            sx={{
-              border: '1px solid rgba(0,0,0,0.06)',
-              borderRadius: '6px',
-              p: 0.4,
-              width: 34,
-              height: 34,
-            }}
+        {/* HIDE AS OF NOW  */}
+        {/* HIDE AS OF NOW */}
+        {false && (
+          <Stack
+            direction='row'
+            spacing={0.5}
+            alignItems='center'
+            sx={{ p: 0, m: 0 }}
           >
-            {expanded ? (
-              <ExpandLessIcon fontSize='small' />
-            ) : (
-              <ExpandMoreIcon fontSize='small' />
-            )}
-          </IconButton>
+            <IconButton
+              onClick={toggleExpanded}
+              size='small'
+              sx={{
+                border: '1px solid rgba(0,0,0,0.06)',
+                borderRadius: '6px',
+                p: 0.4,
+                width: 34,
+                height: 34,
+              }}
+            >
+              {expanded ? (
+                <ExpandLessIcon fontSize='small' />
+              ) : (
+                <ExpandMoreIcon fontSize='small' />
+              )}
+            </IconButton>
 
-          <IconButton
-            aria-label='tiny-action'
-            sx={{
-              width: 34,
-              height: 34,
-              borderRadius: '6px',
-              border: '1px solid rgba(98,68,255,0.12)',
-              background: 'transparent',
-              color: '#6c5ce7',
-              p: 0.4,
-            }}
-          >
-            <SparklesIcon fontSize='small' />
-          </IconButton>
+            <IconButton
+              aria-label='tiny-action'
+              sx={{
+                width: 34,
+                height: 34,
+                borderRadius: '6px',
+                border: '1px solid rgba(98,68,255,0.12)',
+                background: 'transparent',
+                color: '#6c5ce7',
+                p: 0.4,
+              }}
+            >
+              <SparklesIcon fontSize='small' />
+            </IconButton>
 
-          <Button
-            variant='contained'
-            size='small'
-            onClick={() => {}}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 700,
-              borderRadius: '8px',
-              px: 1,
-              py: 0.4,
-              minWidth: 0,
-              background: 'linear-gradient(90deg, #3b82f6 0%, #7c3aed 100%)',
-              boxShadow: 'none',
-              fontSize: '0.8rem',
-            }}
-          >
-            Mark as Complete
-          </Button>
-        </Stack>
+            <Button
+              variant='contained'
+              size='small'
+              onClick={() => {}}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 700,
+                borderRadius: '8px',
+                px: 1,
+                py: 0.4,
+                minWidth: 0,
+                background: 'linear-gradient(90deg, #3b82f6 0%, #7c3aed 100%)',
+                boxShadow: 'none',
+                fontSize: '0.8rem',
+              }}
+            >
+              Mark as Complete
+            </Button>
+          </Stack>
+        )}
       </Stack>
 
       {/* cards (compact) */}

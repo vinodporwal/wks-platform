@@ -94,7 +94,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'august',
+      field: 'aug',
       title: headerMap[8],
       // widthT: 100,
       minWidth: 120,
@@ -103,7 +103,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'september',
+      field: 'sep',
       title: headerMap[9],
       // widthT: 100,
       minWidth: 120,
@@ -112,7 +112,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'october',
+      field: 'oct',
       title: headerMap[10],
       // widthT: 100,
       minWidth: 120,
@@ -121,7 +121,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'november',
+      field: 'nov',
       title: headerMap[11],
       // widthT: 100,
       minWidth: 120,
@@ -130,7 +130,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'december',
+      field: 'dec',
       title: headerMap[12],
       // widthT: 100,
       minWidth: 120,
@@ -139,7 +139,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'january',
+      field: 'jan',
       title: headerMap[1],
       // widthT: 100,
       minWidth: 120,
@@ -148,7 +148,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'february',
+      field: 'feb',
       title: headerMap[2],
       // widthT: 100,
       minWidth: 120,
@@ -160,6 +160,14 @@ const OverallAopConsumption = () => {
       field: 'march',
       title: headerMap[3],
       // widthT: 100,
+      minWidth: 120,
+      type: 'number1',
+      editable: false,
+      format: valueFormat,
+    },
+    {
+      field: 'avgNorms',
+      title: 'Avg Norms',
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -184,8 +192,34 @@ const OverallAopConsumption = () => {
         )
       const data =
         response?.data?.aopConsumptionNormDTOList?.map((item) => {
+          const monthFields = [
+            'april',
+            'may',
+            'june',
+            'july',
+            'aug',
+            'sep',
+            'oct',
+            'nov',
+            'dec',
+            'jan',
+            'feb',
+            'march',
+          ]
+
+          const monthValues = monthFields.map((field) => {
+            const val = item[field]
+            return val !== null && val !== undefined && !isNaN(val)
+              ? Number(val)
+              : 0
+          })
+
+          const sum = monthValues.reduce((acc, val) => acc + val, 0)
+          const avgNorms = sum / 12
+
           return {
             ...item,
+            avgNorms,
             isEditable: false,
           }
         }) || []

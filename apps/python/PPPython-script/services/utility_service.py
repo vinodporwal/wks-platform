@@ -2500,6 +2500,7 @@ def print_budget_summary(
     free_steam_val = shp_capacity.get("total_free_steam_mt", 0) if shp_capacity else 0
     supp_max_val = shp_capacity.get("total_supplementary_max_mt", 0) if shp_capacity else 0
     shp_capacity_val = shp_capacity.get("total_max_shp_capacity", 0) if shp_capacity else 0
+    net_shp_demand_val = max(0, shp_demand_val - free_steam_val)
     supp_needed_val = max(0, shp_demand_val - free_steam_val) if shp_demand_val > free_steam_val else 0
     
     # Get HRSG MIN load data (actual dispatch - HRSGs run at MIN load)
@@ -2510,18 +2511,19 @@ def print_budget_summary(
     
     for hrsg in hrsg_min_details:
         hrsg_name = hrsg.get("name", "")
+        hrsg_name_norm = hrsg_name.upper().replace("-", "").replace(" ", "")
         free_steam = hrsg.get("free_steam_mt", 0)
         min_supp = hrsg.get("min_supp_firing_mt", 0)
         min_prod = hrsg.get("min_production_mt", 0)
-        if "HRSG1" in hrsg_name:
+        if "HRSG1" in hrsg_name_norm:
             hrsg1_free = free_steam
             hrsg1_min_supp = min_supp
             hrsg1_min_prod = min_prod
-        elif "HRSG2" in hrsg_name:
+        elif "HRSG2" in hrsg_name_norm:
             hrsg2_free = free_steam
             hrsg2_min_supp = min_supp
             hrsg2_min_prod = min_prod
-        elif "HRSG3" in hrsg_name:
+        elif "HRSG3" in hrsg_name_norm:
             hrsg3_free = free_steam
             hrsg3_min_supp = min_supp
             hrsg3_min_prod = min_prod
@@ -2538,6 +2540,7 @@ def print_budget_summary(
         print(f"  {'-'*55}")
         print(f"  {'SHP Demand (Total)':<40} {shp_demand_val:>15,.2f}")
         print(f"  {'Free Steam (from GT exhaust)':<40} {free_steam_val:>15,.2f}")
+        print(f"  {'Net SHP Demand for HRSG':<40} {net_shp_demand_val:>15,.2f}")
         print(f"  {'Min Supp Firing (60 MT/hr rule)':<40} {total_min_supp:>15,.2f}")
         print(f"  {'Total MIN SHP Production':<40} {total_min_prod:>15,.2f}")
         if excess_steam > 0:
@@ -2608,13 +2611,14 @@ def print_budget_summary(
     shp_for_hp_prds = shp_breakdown.get("shp_for_hp_prds", 0)
     shp_for_mp_prds = mp_breakdown.get("shp_for_prds_mp", 0)  # SHP for MP via PRDS (from mp_balance)
     total_shp_demand = shp_breakdown.get("shp_total_demand", shp_demand_val) if shp_breakdown else shp_demand_val
+    net_shp_demand = max(0, total_shp_demand - total_free_steam)
     
     # Power balance status
     power_balance = total_demand_mwh - (import_mwh + total_net)
     power_status = "✓ BALANCED" if abs(power_balance) < 1 else f"⚠ DIFF: {power_balance:,.2f}"
     
     # Steam balance status
-    steam_balance_val = total_shp_supply - total_shp_demand
+    steam_balance_val = total_shp_supply - net_shp_demand
     steam_status = "✓ BALANCED" if abs(steam_balance_val) < 1 else f"⚠ DIFF: {steam_balance_val:,.2f}"
     
     # =============================================
@@ -2685,11 +2689,12 @@ def print_budget_summary(
         ("SHP for MP Extraction (STG)", shp_for_mp_ext, "MT"),
         ("SHP for HP PRDS", shp_for_hp_prds, "MT"),
         ("SHP for MP PRDS", shp_for_mp_prds, "MT"),
+        ("Free Steam Offset", -total_free_steam, "MT"),
     ]
     
     # SHP supply items - from HRSG dispatch
     shp_supply_items = [
-        ("Free Steam (from GT exhaust)", total_free_steam, "MT"),
+        ("Supplementary SHP Supply", total_shp_supply, "MT"),
     ]
     
     # Add individual HRSG dispatch
@@ -2718,7 +2723,7 @@ def print_budget_summary(
         print(f"{demand_str:<55} {supply_str}")
     
     print(f"  {'─'*45}     {'─'*45}")
-    print(f"  {'TOTAL SHP DEMAND':<35} {total_shp_demand:>12,.2f} MT      {'TOTAL SHP SUPPLY':<35} {total_shp_supply:>12,.2f} MT")
+    print(f"  {'NET SHP DEMAND':<35} {net_shp_demand:>12,.2f} MT      {'TOTAL SHP SUPPLY':<35} {total_shp_supply:>12,.2f} MT")
     print(f"\n  {'SHP STATUS:':<20} {steam_status}")
     
     # =============================================
@@ -2774,7 +2779,7 @@ def print_budget_summary(
     print(f"""  ┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
   │  STEAM (SHP)                                                                                                   │
   │  ────────────────────────────────────────────────────────────────────────────────────────────────────────────  │
-  │  Total Demand:         {total_shp_demand:>12,.2f} MT           Total Supply:         {total_shp_supply:>12,.2f} MT           {steam_status:<15}  │
+  │  Total Demand:         {total_shp_demand:>12,.2f} MT           Net Demand:           {net_shp_demand:>12,.2f} MT           {steam_status:<15}  │
   │  Free Steam (GT):      {total_free_steam:>12,.2f} MT           Dispatched Supp:      {total_dispatched_supp:>12,.2f} MT                              │
   │  Excess Steam:         {max(0, steam_balance_val):>12,.2f} MT                                                                               │
   └────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
