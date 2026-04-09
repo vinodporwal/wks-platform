@@ -113,9 +113,11 @@ const ModeSelection = ({ permissions }) => {
     { field: 'uom', title: 'UOM', editable: false, widthT: 55 },
     { field: 'normType', title: 'Norm Type', editable: false, hidden: true },
     ...dynamicYearMonthColumns,
-    { field: 'remarks', title: 'Remarks', editable: true },
+    // Only include the remarks column if NON_EDITABLE_GRID is false/undefined
+    ...(!permissions?.hideRemarkForNonEditableRows
+      ? [{ field: 'remarks', title: 'Remarks', editable: true }]
+      : []),
   ]
-
   const fetchModes = useCallback(async () => {
     try {
       const resp = await OptimizerDataApiService.fetchModes(
@@ -141,6 +143,9 @@ const ModeSelection = ({ permissions }) => {
       fetchModes()
     }
   }, [keycloak, fetchModes, AOP_YEAR, PLANT_ID])
+
+  // console.log('permissions?.NON_EDITABLE_GRID', permissions?.NON_EDITABLE_GRID)
+
   // Fetch data
   const fetchData = async () => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
@@ -157,7 +162,8 @@ const ModeSelection = ({ permissions }) => {
         inEdit: false,
         originalRemark: item.remarks || '', // Store original
         remarks: item.remarks || '', // Editable field
-        Particulars: 'Mode Selection',
+        Particulars: ' ',
+        isEditable: permissions?.NON_EDITABLE_GRID ? false : true,
       }))
       setRows(formattedData)
     } catch (error) {
@@ -168,7 +174,7 @@ const ModeSelection = ({ permissions }) => {
 
   useEffect(() => {
     fetchData()
-  }, [PLANT_ID, SITE_ID, VERTICAL_ID, AOP_YEAR, keycloak])
+  }, [PLANT_ID, SITE_ID, VERTICAL_ID, AOP_YEAR, keycloak, permissions])
 
   const savePropaneBusiness = async () => {
     setLoading(true)
@@ -294,6 +300,7 @@ const ModeSelection = ({ permissions }) => {
           uploadExcelBtn: false,
           titleName: 'Mode Selection',
           dynamicDropdownOptions: dynamicDropdownOptions,
+          NON_EDITABLE_GRID: true,
         },
         isOldYear,
       ),
@@ -323,7 +330,7 @@ const ModeSelection = ({ permissions }) => {
         setCurrentRowId={setCurrentRowId}
         handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissions}
-        groupBy='Particulars'
+        groupBy={permissions?.NON_EDITABLE_GRID ? undefined : 'Particulars'}
         // Add other props as needed
       />
     </div>

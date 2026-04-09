@@ -218,16 +218,17 @@ const ShutDown = ({ permissions }) => {
             record.monthly,
             AOP_YEAR,
           )
-          if (
-            record.durationInHrs &&
-            record.durationInHrs !== expectedDuration
-          ) {
+
+          // Only block if greater (lower is allowed)
+          if (record.durationInHrs > expectedDuration) {
             record.isError = true
+
             setSnackbarOpen(true)
             setSnackbarData({
-              message: `Duration hrs for ${record.monthly} should be ${expectedDuration}. It cannot be less than or greater than the selected month.`,
+              message: `Duration hrs for ${record.monthly} should not exceed ${expectedDuration}.`,
               severity: 'error',
             })
+
             return
           }
         }

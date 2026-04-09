@@ -12,6 +12,7 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import StartAndEndPicker from './Utilities-Kendo/StartAndEndPicker'
 import NaphthaLimsDataSet from './NaphthaLimsDataSet'
+import ModeSelection from './ModeSelection'
 
 const CrackerConfig = () => {
   const keycloak = useSession()
@@ -95,6 +96,8 @@ const CrackerConfig = () => {
   const [optimizing, setOptimizing] = useState([])
   const [furnace, setFurnance] = useState([])
 
+  const IS_CRACKER_HMD = lowerVertName === 'cracker' && SITE_NAME === 'HMD'
+
   // const allModes = ['5F', '4F', '4F+D']
 
   const [selectMode, setSelectMode] = useState('')
@@ -169,6 +172,14 @@ const CrackerConfig = () => {
           ? false
           : true,
       hideRemarkForNonEditableRows: true,
+    },
+    isOldYear,
+  )
+
+  const adjustedPermissionsReadyOnly = getAdjustedPermissions(
+    {
+      hideRemarkForNonEditableRows: true,
+      NON_EDITABLE_GRID: true,
     },
     isOldYear,
   )
@@ -872,6 +883,7 @@ const CrackerConfig = () => {
       setSnackbarOpen(false)
     }
   }
+
   const handleLoadNaphthaData = async (startDate, endDate) => {
     try {
       setLoading(true)
@@ -951,6 +963,7 @@ const CrackerConfig = () => {
       }
     }
   }, [currentTabDisplay, PLANT_ID, AOP_YEAR, keycloak])
+
   return (
     <Box>
       <Backdrop
@@ -959,6 +972,10 @@ const CrackerConfig = () => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
+
+      {IS_CRACKER_HMD && (
+        <ModeSelection permissions={adjustedPermissionsReadyOnly} />
+      )}
 
       <Box sx={{ overflowX: 'auto', width: '100%' }}>
         <Tabs

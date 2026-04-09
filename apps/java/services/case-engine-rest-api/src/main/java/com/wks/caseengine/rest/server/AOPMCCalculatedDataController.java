@@ -187,7 +187,8 @@ public class AOPMCCalculatedDataController {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
         Sites site = siteRepository.findById(plant.getSiteFkId()).get();
         boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
-        if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc) {
+        boolean aromatics=vertical.getName().equalsIgnoreCase("Aromatics") && site.getName().equalsIgnoreCase("SEZ") && plant.getName().equalsIgnoreCase("PX4");
+        if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc || aromatics) {
         	return aOPMCCalculatedDataService.importExcelPE(year, plantId, file);
         }else {
         	return aOPMCCalculatedDataService.importExcel(year, plantId, file);
