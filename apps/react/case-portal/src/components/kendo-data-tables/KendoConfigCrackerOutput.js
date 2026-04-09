@@ -47,6 +47,8 @@ const CrackerConfig = () => {
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
 
+  const IS_CRACKER_HMD = lowerVertName === 'cracker' && SITE_NAME === 'HMD'
+
   const [modifiedCells, setModifiedCells] = useState({})
 
   const [snackbarData, setSnackbarData] = useState({
@@ -148,6 +150,7 @@ const CrackerConfig = () => {
       showUnit: false,
       showModes:
         lowerVertName === 'cracker' &&
+        !IS_CRACKER_HMD &&
         (SITE_NAME === 'VMD' || currentTabDisplay !== 'Yield'),
       saveWithRemark: true,
       saveBtn:
@@ -309,7 +312,9 @@ const CrackerConfig = () => {
       if (!PLANT_ID || !AOP_YEAR) return
       try {
         setLoading(true)
-
+        if (IS_CRACKER_HMD){
+          mode = currentTabDisplay
+        }
         const spyroVM = await DataService.getSpyroOutputData(
           keycloak,
           mode,
@@ -349,6 +354,9 @@ const CrackerConfig = () => {
       try {
         setLoading(true)
         var spyroVMYield1 = []
+        if (IS_CRACKER_HMD){
+          mode = currentTabDisplay
+        }
         if (currentTabDisplay == 'Yield') {
           if (SITE_NAME == 'NMD') {
             spyroVMYield1 = await DataService.getSpyroOutputDataYield(
@@ -744,8 +752,10 @@ const CrackerConfig = () => {
     setLoading(true)
 
     try {
-      const mode = selectMode || '' // Optional
-
+      let mode = selectMode || '' // Optional
+      if (IS_CRACKER_HMD){
+        mode = currentTabDisplay
+      }
       let response
 
       if (currentTabDisplay === 'Yield') {
@@ -858,8 +868,10 @@ const CrackerConfig = () => {
       severity: 'success',
     })
 
-    const mode = selectMode // Can be empty � that's fine
-
+    let mode = selectMode // Can be empty  that's fine
+    if (IS_CRACKER_HMD){
+      mode = currentTabDisplay
+    }
     try {
       let response
       if (currentTabDisplay === 'Yield') {
