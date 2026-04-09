@@ -172,6 +172,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 				}
 				dto.setDisplayOrder(result[8] != null ? ((Integer) result[8]) : null);
 				dto.setLineId(result[9] != null ? result[9].toString() : null);
+				dto.setShutdownRate(result[10] != null ? result[10].toString() : null);
 				dtoList.add(dto);
 			}
 			return dtoList;
@@ -2543,7 +2544,9 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					} else {
 						plantMaintenanceTransaction.setDurationInMins(0);
 					}
-
+					if(verticalName.equalsIgnoreCase("PE") && site.getName().equalsIgnoreCase("C2")) {
+						plantMaintenanceTransaction.setShutdownRate(shutDownPlanDTO.getShutdownRate());
+					}
 					plantMaintenanceTransaction.setMaintEndDateTime(shutDownPlanDTO.getMaintEndDateTime());
 					plantMaintenanceTransaction.setMaintStartDateTime(shutDownPlanDTO.getMaintStartDateTime());
 					plantMaintenanceTransaction
@@ -2640,6 +2643,9 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 
 							} else {
 								plantMaintenanceTransaction.setDurationInMins(0);
+							}
+							if(verticalName.equalsIgnoreCase("PE") && site.getName().equalsIgnoreCase("C2")) {
+								plantMaintenanceTransaction.setShutdownRate(shutDownPlanDTO.getShutdownRate());
 							}
 							if (("ELASTOMER".equalsIgnoreCase(verticalName))
 									|| ("AROMATICS".equalsIgnoreCase(verticalName))
