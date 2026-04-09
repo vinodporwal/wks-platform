@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.camunda.community.rest.client.dto.TaskDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -273,6 +274,21 @@ public class TCSOutPutWorkFlowController {
 
 		
 		
+	}
+
+	@PostMapping(value = "/complete-cts-tech-task/{plantName}/{siteId}/{finacialYear}")
+	public ResponseEntity<String> completeCTSTechTask(@PathVariable final String plantName, @PathVariable final String siteId, @PathVariable final String finacialYear, @RequestBody final PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO) {
+		if(plantName == null || plantName.isEmpty()) { 
+			throw new RestResourceNotFoundException("Plant name is required to complete CTS tech task");
+		}
+		if(siteId == null || siteId.isEmpty()) {
+			throw new RestResourceNotFoundException("Site ID is required to complete CTS tech task");
+		}
+		if(finacialYear == null || finacialYear.isEmpty()) {
+			throw new RestResourceNotFoundException("Financial Year is required to complete CTS tech task");
+		}
+		tcsWorkFlowService.completeCTSTechTask(plantName, siteId, plantSubmissionAuditTrailDTO, finacialYear);
+		return ResponseEntity.ok("CTS tech task completed successfully");
 	}
 
 	@PostMapping(value = "ebs-submission/{siteId}/{finacialYear}")
@@ -603,10 +619,11 @@ public class TCSOutPutWorkFlowController {
 		return ResponseEntity.ok("Plant managers notified successfully");
 	}
 
-	
-
-
-
+	@GetMapping("get-tasks/{businessKey}")
+	public ResponseEntity<List<TaskDto>> getTasks(@PathVariable final String businessKey) {
+		List<TaskDto> tasks = tcsWorkFlowService.getTasks(businessKey);
+		return ResponseEntity.ok(tasks);
+	}
 }
 
 
