@@ -1668,6 +1668,8 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 			for (int s = 0; s < workbook.getNumberOfSheets(); s++) {
 				Sheet sheet = workbook.getSheetAt(s);
+				String sheetName = sheet.getSheetName();
+				String lineId=getLineIdForPlant(plantFKId.toString(),sheetName);
 				Iterator<Row> rowIterator = sheet.iterator();
 				if (rowIterator.hasNext()) {
 					rowIterator.next(); // Skip header
@@ -1683,6 +1685,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 						continue;
 					}
 
+					
 					AOPMCCalculatedDataDTO dto = new AOPMCCalculatedDataDTO();
 					try {
 						dto.setTableId(tableId);
@@ -1706,6 +1709,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 						dto.setSiteFKId(site.getId().toString());
 						dto.setPlantFKId(plant.getId().toString());
 						dto.setFinancialYear(year);
+						dto.setLineId(lineId);
 					} catch (Exception e) {
 						e.printStackTrace();
 						dto.setErrDescription(e.getMessage());
@@ -2118,7 +2122,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 
 	            for (Map<String, String> line : allLines) {
 	            	String currentLineId = line.get("id");
-	            	String currentLineName = line.get("displayName") != null ? line.get("displayName") : line.get("name");
+	            	String currentLineName = line.get("name") != null ? line.get("name") : line.get("name");
 	            	if (currentLineId == null || currentLineId.trim().isEmpty()) {
 	            		continue;
 	            	}
@@ -2232,6 +2236,33 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch line details", ex);
 		}
+	}
+	
+	private String getLineIdForPlant(String plantId, String name) {
+	    try {
+	       
+	        String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+	        String viewName = "vwScrn" + verticalName + "GetLineDetails";
+	        
+	        
+	        String sql = "SELECT Id FROM " + viewName + " WHERE PlantId = :plantId AND Name = :name";
+	        Query query = entityManager.createNativeQuery(sql);
+	        query.setParameter("plantId", plantId);
+	        query.setParameter("name", name);
+	        
+	       
+	        List<?> results = query.getResultList();
+	        
+	        if (!results.isEmpty()) {
+	            Object result = results.get(0);
+	            return result != null ? result.toString() : null;
+	        }
+	        
+	        return null; 
+	    } catch (Exception ex) {
+	        
+	        throw new RuntimeException("Failed to fetch Line ID for Plant: " + plantId + " and Name: " + name, ex);
+	    }
 	}
 
 
