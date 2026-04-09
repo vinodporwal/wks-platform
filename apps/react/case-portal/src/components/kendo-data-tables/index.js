@@ -2387,6 +2387,7 @@ const KendoDataTables = ({
                     />
                   )
                 }
+
                 if (
                   col?.field === 'discription' &&
                   col?.type === 'discriptionDrpdwn'
@@ -2411,7 +2412,30 @@ const KendoDataTables = ({
                     />
                   )
                 }
-
+                if (
+                  col?.field === 'shutdownRate' &&
+                  col?.type === 'shutdownRateDropdown'
+                ) {
+                  return (
+                    <GridColumn
+                      key='shutdownRate'
+                      field='shutdownRate'
+                      title={col.title || col.headerName || 'Particulars'}
+                      editable={col.editable || true}
+                      hidden={col.hidden}
+                      cells={{
+                        data: (cellProps) => (
+                          <ProductCell
+                            {...cellProps}
+                            allProducts={allDescriptionDrpdwn}
+                          />
+                        ),
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                    />
+                  )
+                }
                 if (col?.field === 'productName1') {
                   return (
                     <GridColumn
