@@ -88,7 +88,7 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
       radioValue: 'PREVIOUS_YEAR',
     },
     {
-      field: 'heatRate',
+      field: 'proposedHeatRate',
       title: 'PROPOSED HR',
       subtitle: '(Based On Actual Data)',
       widthT: 200,
@@ -213,7 +213,7 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
     const fieldsToCheck = [
       'oemHeatRate',
       'previousYearHeatRate',
-      'heatRate',
+      'proposedHeatRate',
       'finalHeatRate',
     ]
     const validationError = validateRowDataWithRemarks(
