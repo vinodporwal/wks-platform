@@ -25,7 +25,6 @@ import {
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
 import HistoryIcon from '@mui/icons-material/History'
-import HistoryDialog from './HistoryDialog'
 import { TcsWorkflowApiService } from 'components/aop-phase-two/services/tcs/tcsWorkflowApiService'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -249,12 +248,17 @@ const ApproveDialog = ({
     }
   }
 
-  const handleBulkApprove = async () => {
+  const handleBulkAction = async (isApprove) => {
     if (selectedPlants.length === 0 || !bulkRemark.trim()) {
       return
     }
 
-    setBulkApproveLoading(true)
+    const setLoadingState = isApprove
+      ? setBulkApproveLoading
+      : setBulkRejectLoading
+    const actionLabel = isApprove ? 'approve' : 'reject'
+
+    setLoadingState(true)
     setError(null)
 
     try {
@@ -276,12 +280,12 @@ const ApproveDialog = ({
       await TcsWorkflowApiService.epsEngineerMultipleApproveReject(
         keycloak,
         SITE_ID,
-        true, // approvalStatus = true for approve
+        isApprove,
         AOP_YEAR,
         plantSubmissionList,
       )
 
-      // Refresh entries after bulk approval
+      // Refresh entries after bulk action
       const response = await TcsWorkflowApiService.getPlantDataForApproveReject(
         keycloak,
         SITE_ID,
@@ -295,71 +299,18 @@ const ApproveDialog = ({
       setBulkRemark('')
       setError(null)
 
-      // Close dialog after successful bulk approval
+      // Close dialog after successful bulk action
       onClose()
     } catch (err) {
-      console.error('Error in bulk approve:', err)
-      setError('Failed to approve plants. Please try again.')
+      console.error(`Error in bulk ${actionLabel}:`, err)
+      setError(`Failed to ${actionLabel} plants. Please try again.`)
     } finally {
-      setBulkApproveLoading(false)
+      setLoadingState(false)
     }
   }
 
-  const handleBulkReject = async () => {
-    if (selectedPlants.length === 0 || !bulkRemark.trim()) {
-      return
-    }
-
-    setBulkRejectLoading(true)
-    setError(null)
-
-    try {
-      // Build array of PlantSubmissionAuditTrailDTO objects
-      const plantSubmissionList = selectedPlants.map((plantId) => {
-        const plant = uniquePlants.find((p) => p.plantId === plantId)
-        return {
-          plantId,
-          plantName: plant?.plantName || '',
-          siteId: SITE_ID,
-          verticalId: VERTICAL_ID,
-          submissionRemark: bulkRemark,
-          submittedBy: getRoleLabel(userRole),
-          userName,
-        }
-      })
-
-      // Call bulk API with all plants at once
-      await TcsWorkflowApiService.epsEngineerMultipleApproveReject(
-        keycloak,
-        SITE_ID,
-        false, // approvalStatus = false for reject
-        AOP_YEAR,
-        plantSubmissionList,
-      )
-
-      // Refresh entries after bulk rejection
-      const response = await TcsWorkflowApiService.getPlantDataForApproveReject(
-        keycloak,
-        SITE_ID,
-        VERTICAL_ID,
-        AOP_YEAR,
-      )
-      setEntries(response || [])
-
-      // Reset bulk action states
-      setSelectedPlants([])
-      setBulkRemark('')
-      setError(null)
-
-      // Close dialog after successful bulk rejection
-      onClose()
-    } catch (err) {
-      console.error('Error in bulk reject:', err)
-      setError('Failed to reject plants. Please try again.')
-    } finally {
-      setBulkRejectLoading(false)
-    }
-  }
+  const handleBulkApprove = () => handleBulkAction(true)
+  const handleBulkReject = () => handleBulkAction(false)
 
   const handleCancel = () => {
     setRemarks({})
@@ -1006,18 +957,6 @@ const ApproveDialog = ({
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* History Dialog */}
-      {selectedPlantHistory && (
-        <HistoryDialog
-          open={historyDialogOpen}
-          onClose={handleCloseHistory}
-          plantId={selectedPlantHistory.plantId}
-          userRole={userRole}
-          type='PLANT_WISE'
-          timelineData={timelineData}
-        />
-      )}
     </>
   )
 }

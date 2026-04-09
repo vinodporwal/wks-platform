@@ -1,10 +1,11 @@
 // Role definitions and utilities for TCS workflow
 
 export const ROLES = {
-  // CTS_HEAD: 'cts_head',
+  CTS_HEAD: 'cts_head',
   EPS_HEAD: 'eps_head',
   EPS_ENGINEER: 'eps_engineer',
   PLANT_MANAGER: 'plant_manager',
+  CTS_TECH_MANAGER: 'cts_tect_manager',
   CLUSTER_HEAD: 'cluster_head',
 }
 
@@ -22,8 +23,10 @@ export const getUserRole = (keycloakRoles = []) => {
   const rolePriority = [
     ROLES.CLUSTER_HEAD,
     ROLES.EPS_HEAD,
+    ROLES.CTS_HEAD,
     ROLES.EPS_ENGINEER,
     ROLES.PLANT_MANAGER,
+    ROLES.CTS_TECH_MANAGER,
   ]
 
   for (const role of rolePriority) {

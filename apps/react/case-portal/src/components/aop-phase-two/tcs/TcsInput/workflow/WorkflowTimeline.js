@@ -16,6 +16,38 @@ const WorkflowTimeline = ({ steps, currentStep }) => {
       status === 'completed' &&
       step.role?.toLowerCase().includes('cluster head')
 
+    // For parallel steps, show detailed status of each sub-step
+    if (step.isParallel && step.parallelSteps) {
+      return (
+        <div style={{ padding: '4px' }}>
+          <div style={{ fontWeight: 600, marginBottom: '8px' }}>
+            {step.label}
+          </div>
+          {step.parallelSteps.map((pStep, idx) => (
+            <div key={idx} style={{ marginBottom: '6px', fontSize: '0.75rem' }}>
+              <div style={{ fontWeight: 600, color: '#fff' }}>{pStep.role}</div>
+              <div
+                style={{
+                  color:
+                    pStep.status === 'completed'
+                      ? '#a7f3d0'
+                      : pStep.status === 'active'
+                        ? '#93c5fd'
+                        : '#d1d5db',
+                }}
+              >
+                {pStep.status === 'completed'
+                  ? '✓ Completed'
+                  : pStep.status === 'active'
+                    ? '⏳ Pending'
+                    : '○ Pending'}
+              </div>
+            </div>
+          ))}
+        </div>
+      )
+    }
+
     return (
       <div style={{ padding: '4px' }}>
         <div style={{ fontWeight: 600, marginBottom: '4px' }}>{step.role}</div>
@@ -42,6 +74,24 @@ const WorkflowTimeline = ({ steps, currentStep }) => {
         )}
       </div>
     )
+  }
+
+  const getStepLabel = (step) => {
+    if (step.isParallel && step.parallelSteps) {
+      return (
+        <>
+          {step.parallelSteps.map((pStep, idx) => (
+            <React.Fragment key={idx}>
+              {idx > 0 && (
+                <div style={{ textAlign: 'center', margin: '2px 0' }}>&</div>
+              )}
+              <div>{pStep.role}</div>
+            </React.Fragment>
+          ))}
+        </>
+      )
+    }
+    return step.role
   }
 
   return (
@@ -88,7 +138,7 @@ const WorkflowTimeline = ({ steps, currentStep }) => {
 
                 {/* Step Details - Only Label */}
                 <div className='step-details'>
-                  <div className='step-label'>{step.role}</div>
+                  <div className='step-label'>{getStepLabel(step)}</div>
                 </div>
               </div>
             </div>

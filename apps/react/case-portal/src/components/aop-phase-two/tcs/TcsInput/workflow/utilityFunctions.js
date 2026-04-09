@@ -10,13 +10,26 @@ export const transformApprovalStatusToSteps = (
   selectedPlant,
   submissionStatusJson,
 ) => {
-  // Fixed sequence of workflow steps
+  // Fixed sequence of workflow steps with parallel steps support
   const workflowSequence = [
     {
       id: 1,
       label: 'Step 1',
       role: 'CTS Engineer',
       key: 'plant_manager_approved', // Not in API response, always completed
+      // isParallel: true, // Indicates this step has parallel sub-steps
+      // parallelSteps: [
+      //   {
+      //     id: '1a',
+      //     role: 'Plant Manager',
+      //     key: 'plant_manager_approved',
+      //   },
+      //   {
+      //     id: '1b',
+      //     role: 'CTS Tech Manager',
+      //     key: 'cts_tech_manager_approved',
+      //   },
+      // ],
     },
     {
       id: 2,
@@ -27,29 +40,32 @@ export const transformApprovalStatusToSteps = (
     {
       id: 3,
       label: 'Step 3',
-      role: 'EPS Head / CTS Head',
-      key: 'cts_approved',
+      role: 'CTS Head',
+      key: 'cts_head_approved',
     },
     {
       id: 4,
       label: 'Step 4',
-      role: 'R&M Cluster Head',
+      role: 'EPS Head',
+      key: 'eps_head_approved',
+    },
+    {
+      id: 5,
+      label: 'Step 5',
+      role: 'Site President',
       key: 'cluster_head_approved',
     },
   ]
 
-  // Check if Step 1 (Plant Manager) is completed
-  // If selectedPlant is provided, check that specific plant
-  // Otherwise, check if ANY plant is submitted (EPS Engineer can start working)
+  // Check if Step 1 (parallel steps) is completed
+  // Both Plant Manager AND CTS Tech Manager must be approved
   let isStep1Completed = false
-  if (selectedPlant && submissionStatusJson) {
-    isStep1Completed = submissionStatusJson[selectedPlant] === true
-  } else if (submissionStatusJson) {
-    // Check if any plant is submitted
-    const allPlants = Object.keys(submissionStatusJson)
-    isStep1Completed =
-      allPlants.length > 0 &&
-      allPlants.some((plant) => submissionStatusJson[plant] === true)
+  const parallelStep = workflowSequence[0]
+  if (parallelStep.isParallel && parallelStep.parallelSteps) {
+    const allParallelCompleted = parallelStep.parallelSteps.every(
+      (pStep) => approvalStatusJson[pStep.key] === true,
+    )
+    isStep1Completed = allParallelCompleted
   }
 
   // Find the first false status in sequence (only if Step 1 is completed)
@@ -68,13 +84,28 @@ export const transformApprovalStatusToSteps = (
   const timelineSteps = workflowSequence.map((step, index) => {
     let status = 'pending'
 
-    if (index === 0) {
-      // Plant Manager step - check submission status
+    if (index === 0 && step.isParallel) {
+      // Parallel steps - check if all are completed
       if (isStep1Completed) {
         status = 'completed'
       } else {
-        // If Step 1 is not completed, it should be active (first step)
+        // At least one parallel step is active
         status = 'active'
+      }
+
+      // Add parallel steps status
+      const parallelStepsStatus = step.parallelSteps.map((pStep) => ({
+        id: pStep.id,
+        role: pStep.role,
+        status: approvalStatusJson[pStep.key] === true ? 'completed' : 'active',
+      }))
+
+      return {
+        id: step.id,
+        label: step.label,
+        isParallel: true,
+        parallelSteps: parallelStepsStatus,
+        status,
       }
     } else if (!isStep1Completed) {
       // If Step 1 is not completed, all other steps are pending
