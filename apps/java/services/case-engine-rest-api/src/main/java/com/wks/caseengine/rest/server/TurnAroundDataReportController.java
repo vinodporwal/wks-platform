@@ -38,12 +38,7 @@ public class TurnAroundDataReportController {
 	@PostMapping(value = "/report/turn-around")
 	public ResponseEntity<AOPMessageVM> updateReportForTurnAroundData(@RequestParam String plantId,
 			@RequestParam String year,@RequestParam String reportType,@RequestBody List<TurnAroundPlanReportDTO> dataList) {
-		String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
-		AOPMessageVM response = null;
-	
-			 response = turnAroundDataReportService.updateReportForTurnAroundDataDB2(plantId, year,reportType, dataList);
-	
-		
+		 AOPMessageVM	 response = turnAroundDataReportService.updateReportForTurnAroundDataDB2(plantId, year,reportType, dataList);
 		return ResponseEntity.status(response.getCode()).body(response);
 	}
 	

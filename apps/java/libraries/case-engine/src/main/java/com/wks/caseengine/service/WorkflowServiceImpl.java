@@ -80,6 +80,9 @@ public class WorkflowServiceImpl implements WorkflowService {
 
 	@PersistenceContext
 	private EntityManager entityManager;
+	
+	@PersistenceContext(unitName="db2")
+	private EntityManager entityManagerDB2;
 
 	@Autowired
 	private DataSource dataSource;
@@ -244,6 +247,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public Map<String, Object> getWorkFlow(String plantId, String year) {
 		Map<String, Object> map = new HashMap<>();
 
@@ -279,20 +283,13 @@ public class WorkflowServiceImpl implements WorkflowService {
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getProductionAOPWorkflowData(String plantId, String year) {
 		Map<String, Object> map = new HashMap<>();
 		Map<String, Object> finalMap = new HashMap<>();
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
-		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
-		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-		String verticalName = vertical.getName();
 		try {
-			List<Object[]> results =null;
-			if(verticalName.equalsIgnoreCase("MEG")){
-				results=getProductionWorkflowDataDB2(plantId, year);
-			}else {
-				results=getProductionWorkflowData(plantId, year);
-			}
+			 List<Object[]> results =getProductionWorkflowDataDB2(plantId, year);
 			
 			List<WorkflowYearDTO> workflowList = new ArrayList<>();
 			for (Object[] row : results) {
@@ -329,6 +326,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 		}
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getData(String plantId, String aopYear) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
@@ -343,7 +341,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 			// Prepare native SQL call with parameters
 			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			// Set parameters
 			query.setParameter("plantId", plantId);
@@ -376,7 +374,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 			// Prepare native SQL call with parameters
 			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			// Set parameters
 			query.setParameter("plantId", plantId);

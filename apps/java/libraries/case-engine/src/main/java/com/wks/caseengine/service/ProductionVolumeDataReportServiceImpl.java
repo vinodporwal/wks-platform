@@ -51,8 +51,11 @@ import java.sql.Connection;
 @Service
 public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDataReportService {
 
-	@PersistenceContext(unitName = "db2")
+	@PersistenceContext
 	private EntityManager entityManager;
+	
+	@PersistenceContext(unitName="db2")
+	private EntityManager entityManagerDB2;
 
 	@Autowired
 	PlantProductionSummaryRepository plantProductionSummaryRepository;
@@ -95,12 +98,9 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	public AOPMessageVM getReportForProductionVolumnData(String plantId, String year) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		List<Map<String, Object>> productionVolumeReportList = new ArrayList<>();
-		String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
-		List<Object[]> obj = null;
 		
-			obj=getProductionVolumnDataReportDB2(plantId, year);
+		 List<Object[]>	obj=getProductionVolumnDataReportDB2(plantId, year);
 		
-
 		for (Object[] row : obj) {
 			Map<String, Object> map = new HashMap<>();
 			map.put("RowNo", row[0]);
@@ -113,7 +113,6 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 			map.put("VarBudgetPer", row[7]);
 			map.put("VarActualMT", row[8]);
 			map.put("VarActualPer", row[9]);
-			// map.put("Remark", row[10]);
 			map.put("Remark", row[10] != null ? row[10] : "");
 
 			map.put("Id", row[11]);
@@ -137,7 +136,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 			}
 			String sql = "EXEC " + storedProcedure + " @plantId = :plantId, @year = :year";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("year", year);
@@ -175,14 +174,13 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getReportForMonthWiseProductionData(String plantId, String year) {
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<Map<String, Object>> typeOneDataList = new ArrayList<>();
-			List<Map<String, Object>> typeSecondDataList = new ArrayList<>();
-			List<Object[]> obj = null;
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
-				obj=getMonthWiseProductionDataDB2(plantId, year);
+			List<Object[]> obj=getMonthWiseProductionDataDB2(plantId, year);
 			
 			for (Object[] row : obj) {
 				Map<String, Object> map = new HashMap<>();
@@ -270,7 +268,6 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
-			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			String storedProcedure = "MonthWiseProductionPlanReport";
 
@@ -278,7 +275,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 				storedProcedure = verticalName + "_" + site.getName() + "_MonthWiseProductionPlanReport";
 			}
 			String sql = "EXEC " + storedProcedure + " @plantId = :plantId, @aopYear = :aopYear";
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
@@ -292,14 +289,13 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getReportForMonthWiseConsumptionSummaryData(String plantId, String year, String reportType) {
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<Map<String, Object>> summaryData = new ArrayList<>();
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
-			List<Object[]> obj=null;
-			
-				 obj = getMonthWiseConsumptionDataDB2(plantId, year, reportType);
+			 List<Object[]>	 obj = getMonthWiseConsumptionDataDB2(plantId, year, reportType);
 			
 			for (Object[] row : obj) {
 				Map<String, Object> map = new HashMap<>();
@@ -376,7 +372,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 			}
 			String sql = "EXEC " + storedProcedure + " @plantId = :plantId, @year = :year, @ReportType = :ReportType";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("year", year);
@@ -417,14 +413,13 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getReportForPlantProductionPlanData(String plantId, String year, String reportType) {
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<Map<String, Object>> plantProductionData = new ArrayList<>();
-			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
-			List<Object[]> obj = null;
 			
-				obj=getPlantProductionDataDB2(plantId, year, reportType);
+			List<Object[]>	obj=getPlantProductionDataDB2(plantId, year, reportType);
 			
 			if (reportType.equalsIgnoreCase("assumptions")) {
 				for (Object[] row : obj) {
@@ -507,7 +502,6 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
-			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			String storedProcedure = "AnnualProductionPlan";
 			if (!"MEG".equalsIgnoreCase(verticalName)) {
@@ -516,7 +510,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
@@ -639,13 +633,11 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
-
 	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getPlantContributionData(String plantId, String aopYear, String reportType) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
-			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			String storedProcedure = "PlantContributionReport";
 			if (!"MEG".equalsIgnoreCase(verticalName)) {
@@ -654,7 +646,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);

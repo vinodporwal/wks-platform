@@ -57,6 +57,9 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 
 	@PersistenceContext
 	private EntityManager entityManager;
+	
+	@PersistenceContext(unitName="db2")
+	private EntityManager entityManagerDB2;
 
 	@Autowired
 	private DataSource dataSource;
@@ -378,6 +381,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getFinalNormsReport(String plantId, String AopYear, String reportType) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
@@ -410,6 +414,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 		}
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getFinalNormsReportData(String plantId, String aopYear, String reportType) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
@@ -423,7 +428,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
@@ -437,6 +442,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 		}
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<String> getFinalNormsReportColumns(String plantId, String aopYear,String reportType) {
 		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
 			List<String> columnNames = new ArrayList<>();
@@ -467,6 +473,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 		});
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Map<String, Object>> getFinalNormsReportColumnMetadata(String plantId, String aopYear) {
 		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
 			List<Map<String, Object>> columnMetadata = new ArrayList<>();
@@ -553,7 +560,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType= :reportType";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
@@ -2197,7 +2204,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);

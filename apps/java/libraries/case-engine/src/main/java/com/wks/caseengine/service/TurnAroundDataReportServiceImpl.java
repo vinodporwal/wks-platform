@@ -32,6 +32,9 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
 
     @PersistenceContext
     private EntityManager entityManager;
+    
+    @PersistenceContext(unitName="db2")
+    private EntityManager entityManagerDB2;
 
     @Autowired
     private PlantsRepository plantsRepository;
@@ -47,16 +50,14 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
     private TurnAroundPlanReportRepository turnAroundPlanReportRepository;
 
     @Override
+    @Transactional(transactionManager = "db2TransactionManager", readOnly = true)
     public AOPMessageVM getReportForTurnAroundPlanData(String plantId, String year, String reportType) {
         // TODO Auto-generated method stub
 
         try {
             AOPMessageVM aopMessageVM = new AOPMessageVM();
             List<Map<String, Object>> plantTurnAroundData = new ArrayList<>();
-            String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
-            List<Object[]> obj =null;
-           
-            	  obj = getPlantTurnAroundDataDB2(plantId, year, reportType);
+            List<Object[]>  obj = getPlantTurnAroundDataDB2(plantId, year, reportType);
            
             if (reportType.equalsIgnoreCase("currentYear")) {
                 for (Object[] row : obj) {
@@ -116,7 +117,6 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
         try {
             String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
             Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
-			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
             String storedProcedure = "TurnAroundPlanReport";
             if (!"MEG".equalsIgnoreCase(verticalName)) {
@@ -125,7 +125,7 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
             String sql = "EXEC " + storedProcedure
                     + " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
 
-            Query query = entityManager.createNativeQuery(sql);
+            Query query = entityManagerDB2.createNativeQuery(sql);
 
             query.setParameter("plantId", plantId);
             query.setParameter("aopYear", aopYear);
@@ -234,7 +234,6 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
 				 turnAroundPlan.setReportType(reportType);
 			}
 			
-			//optional.get().setRemark(dto.getRemark());
 			if(dto.getActivity()!=null) {
 				turnAroundPlan.setActivity(dto.getActivity());
 			}

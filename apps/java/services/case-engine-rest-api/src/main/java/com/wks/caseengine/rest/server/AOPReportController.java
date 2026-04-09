@@ -69,7 +69,6 @@ public class AOPReportController {
 	
 	@PostMapping(value="/specific-consumption-t17")
 	public AOPMessageVM updateSpecificConsumptionNormsT17Report(@RequestBody List<PlantContributionSummaryT17DTO> plantContributionSummaryT17DTOs,@RequestParam String plantId,@RequestParam String year) {
-		String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 			return aopReportService.updateSpecificConsumptionNormsT17ReportDB2(plantContributionSummaryT17DTOs,plantId,year);
 	}
 	

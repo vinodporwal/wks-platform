@@ -47,6 +47,9 @@ public class AOPReportServiceImpl implements AOPReportService {
 
 	@PersistenceContext
 	private EntityManager entityManager;
+	
+	@PersistenceContext(unitName="db2")
+	private EntityManager entityManagerDB2;
 
 	@Autowired
 	private DataSource dataSource;
@@ -682,17 +685,12 @@ public class AOPReportServiceImpl implements AOPReportService {
 	}
 	
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getSpecificConsumptionNormsT17Report(String reportType, String plantId, String year) {
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
-			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
-					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-
-			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
-					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
-			List<Object[]> obj=null;
 			
-				 obj = getSpecificConsumptionNormsT17DataDB2(plantId, year, reportType);
+			 List<Object[]> obj = getSpecificConsumptionNormsT17DataDB2(plantId, year, reportType);
 						
 			List<PlantContributionSummaryT17DTO> plantProductionData = new ArrayList<>();
 
@@ -760,7 +758,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
@@ -846,7 +844,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
