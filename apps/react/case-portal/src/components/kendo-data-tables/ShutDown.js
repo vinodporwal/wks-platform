@@ -10,7 +10,10 @@ import CircularProgress from '@mui/material/CircularProgress'
 import { validateFields } from 'utils/validationUtils'
 import { verticalEnums } from 'enums/verticalEnums'
 import KendoDataTables from './index'
-import { ShutDownPeColumns } from 'components/colums/ShutdownColumn'
+import {
+  ShutDownPeColumns,
+  ShutDownPeC2Columns,
+} from 'components/colums/ShutdownColumn'
 import { ShutDownPeColumnsldpe12 } from 'components/colums/ShutdownColumn'
 import {
   ShutDownPpColumns,
@@ -633,6 +636,7 @@ const ShutDown = ({ permissions }) => {
           audityear: AOP_YEAR,
           id: row.idFromApi || null,
           remark: row.remark || 'null',
+          shutdownRate: row.shutdownRate || row.shutdownRateDrpdwn,
         }))
       }
 
@@ -768,6 +772,9 @@ const ShutDown = ({ permissions }) => {
         const descriptionObj = allDescriptionDrpdwn.find(
           (p) => p.name === item.discription,
         )
+        const shutdownRateObj = allDescriptionDrpdwn.find(
+          (p) => p.name === item.shutdownRate,
+        )
 
         if (lowerVertName == 'pta') {
           return {
@@ -814,6 +821,7 @@ const ShutDown = ({ permissions }) => {
           maintStartDateTime: new Date(item?.maintStartDateTime),
           maintEndDateTime: new Date(item?.maintEndDateTime),
           productName1: productObj ? productObj.displayName : '',
+          shutdowRate: shutdownRateObj ? shutdownRateObj.displayName : '',
         }
       })
 
@@ -982,6 +990,62 @@ const ShutDown = ({ permissions }) => {
     lowerVertName,
   ])
 
+  useEffect(() => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    const getShutdownRateDrpdwn = async () => {
+      try {
+        let data = []
+
+        if (lowerVertName == 'pe' && siteName?.toLowerCase() === 'c2') {
+          data = await DataService.dropdownValuesPeC2(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+        }
+
+        // let data = {
+        //   code: 200,
+        //   message: 'Data fetched successfully',
+        //   data: [
+        //     {
+        //       DisplayName: 'Catalyst Full Topup',
+        //       Name: 'Catalyst Full Topup',
+        //     },
+        //     {
+        //       DisplayName: 'Catalyst Partial Topup',
+        //       Name: 'Catalyst Partial Topup',
+        //     },
+        //     {
+        //       DisplayName: 'Preheater Cleaning',
+        //       Name: 'Preheater Cleaning',
+        //     },
+        //     {
+        //       DisplayName: 'Preheater Cleaning',
+        //       Name: 'Other',
+        //     },
+        //   ],
+        // }
+
+        let ShutdownRateObjList = []
+        {
+          ShutdownRateObjList = data?.map((product) => ({
+            id: product.name,
+            name: product.name,
+            displayName: product.displayName,
+          }))
+        }
+        setAllDescriptionDrpdwn(ShutdownRateObjList)
+      } catch (error) {
+        console.error('Error fetching products', error)
+      }
+    }
+
+    if (lowerVertName == 'pe' && siteName?.toLowerCase() === 'c2')
+      getShutdownRateDrpdwn()
+  }, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
+
   const colDefs = useMemo(() => {
     switch (lowerVertName) {
       case verticalEnums.PE:
@@ -991,6 +1055,8 @@ const ShutDown = ({ permissions }) => {
             plantName?.toLowerCase() === 'lldpe2')
         ) {
           return ShutDownPeColumnsldpe12
+        } else if (siteName?.toLowerCase() === 'c2') {
+          return ShutDownPeC2Columns
         }
         return ShutDownPeColumns
 
