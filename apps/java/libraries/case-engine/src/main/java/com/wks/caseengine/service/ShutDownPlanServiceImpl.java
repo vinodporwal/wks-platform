@@ -172,6 +172,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 				}
 				dto.setDisplayOrder(result[8] != null ? ((Integer) result[8]) : null);
 				dto.setLineId(result[9] != null ? result[9].toString() : null);
+				dto.setShutdownRate(result[10] != null ? result[10].toString() : null);
 				dtoList.add(dto);
 			}
 			return dtoList;
@@ -1261,11 +1262,13 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	                                }
 	                            }
 
-	                            if (overlapsFile) {
-	                                    dto.setSaveStatus("Failed");
+	                            if (overlapsFile ) {
+	                            	if(!(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP"))) {
+	                            		dto.setSaveStatus("Failed");
 	                                    dto.setErrDescription(
 	                                        "The maintenance period overlaps with an already validated period in the file.");
 	                                    alreadyFailed = true;
+	                            	}      
 	                            }
 	                            
 	                            if (!alreadyFailed && !(vertical.getName().equalsIgnoreCase("Elastomer") || vertical.getName().equalsIgnoreCase("PVC"))) {
@@ -1289,9 +1292,11 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	                                }
 
 	                                if (overlapsSlowdown) {
-	                                    dto.setSaveStatus("Failed");
-	                                    dto.setErrDescription("The date range is overlapping with an existing Slowdown period.");
-	                                    alreadyFailed = true;
+	                                	if(!(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP"))) {
+		                                    dto.setSaveStatus("Failed");
+		                                    dto.setErrDescription("The date range is overlapping with an existing Slowdown period.");
+		                                    alreadyFailed = true;
+	                                	}
 	                                }
 	                            }
 	                            
@@ -1537,7 +1542,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	                                }
 	                            }
 
-	                            if (overlapsFile) {
+	                            if (overlapsFile && !vertical.getName().equalsIgnoreCase("PP")) {
 	                                    dto.setSaveStatus("Failed");
 	                                    dto.setErrDescription(
 	                                        "The maintenance period overlaps with an already validated period in the file.");
@@ -1564,7 +1569,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	                                    }
 	                                }
 
-	                                if (overlapsSlowdown && !isPPSEZ) {
+	                                if (overlapsSlowdown && !vertical.getName().equalsIgnoreCase("PP")) {
 	                                    dto.setSaveStatus("Failed");
 	                                    dto.setErrDescription("The date range is overlapping with an existing Slowdown period.");
 	                                    alreadyFailed = true;
@@ -2539,7 +2544,9 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					} else {
 						plantMaintenanceTransaction.setDurationInMins(0);
 					}
-
+					if(verticalName.equalsIgnoreCase("PE") && site.getName().equalsIgnoreCase("C2")) {
+						plantMaintenanceTransaction.setShutdownRate(shutDownPlanDTO.getShutdownRate());
+					}
 					plantMaintenanceTransaction.setMaintEndDateTime(shutDownPlanDTO.getMaintEndDateTime());
 					plantMaintenanceTransaction.setMaintStartDateTime(shutDownPlanDTO.getMaintStartDateTime());
 					plantMaintenanceTransaction
@@ -2636,6 +2643,9 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 
 							} else {
 								plantMaintenanceTransaction.setDurationInMins(0);
+							}
+							if(verticalName.equalsIgnoreCase("PE") && site.getName().equalsIgnoreCase("C2")) {
+								plantMaintenanceTransaction.setShutdownRate(shutDownPlanDTO.getShutdownRate());
 							}
 							if (("ELASTOMER".equalsIgnoreCase(verticalName))
 									|| ("AROMATICS".equalsIgnoreCase(verticalName))
@@ -2856,11 +2866,11 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
 					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 			List<Map<String, Object>> mapList = new ArrayList<Map<String, Object>>();
-			String viewName = "vwScrnShutdown" + vertical.getName();
+			String viewName = "vwScrnShutdown" + vertical.getName()+ site.getName();
 			List<Object[]> results = getDescriptionDropdownData(vertical.getId(), viewName);
 			for (Object[] obj : results) {
 				Map<String, Object> map = new HashMap<String, Object>();

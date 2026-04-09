@@ -1,0 +1,37 @@
+[
+  {
+    "field": "DisplayName",
+    "title": "Particular",
+    "editable": false,
+    "widthT": 125
+  },
+
+  {
+    "field": "UOM",
+    "title": "UOM",
+    "editable": false,
+    "widthT": 90
+  },
+
+  {
+    "field": "MajorShutdown",
+    "title": "Major Shutdown",
+    "editable": true,
+    "type": "number",
+    "widthT": 125
+  },
+  {
+    "field": "OneDayShutdown",
+    "title": "One Day Shutdown",
+    "type": "number",
+    "editable": true,
+    "align": "left",
+    "widthT": 125
+  },
+
+  {
+    "field": "remarks",
+    "title": "Remarks",
+    "widthT": 125
+  }
+]

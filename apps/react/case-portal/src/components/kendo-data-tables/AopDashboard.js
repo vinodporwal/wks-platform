@@ -14,7 +14,18 @@ import {
   IconAdjustments,
   IconDots,
 } from '@tabler/icons-react'
-import { Card, Box, Typography, Switch, FormControlLabel, Menu, MenuItem, Checkbox, ListItemText, Divider } from '@mui/material'
+import {
+  Card,
+  Box,
+  Typography,
+  Switch,
+  FormControlLabel,
+  Menu,
+  MenuItem,
+  Checkbox,
+  ListItemText,
+  Divider,
+} from '@mui/material'
 import { useDispatch, useSelector } from 'react-redux'
 import Notification from 'components/Utilities/Notification'
 import { BusinessDemandDataApiService } from 'services/business-demand-data-api-service'
@@ -69,15 +80,19 @@ export default function AopDashboardCompact() {
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState('sites')
 
-  const handleStatusMenuOpen = (event) => setStatusMenuAnchor(event.currentTarget)
+  const handleStatusMenuOpen = (event) =>
+    setStatusMenuAnchor(event.currentTarget)
   const handleStatusMenuClose = () => setStatusMenuAnchor(null)
   const toggleStatus = (status) => {
     if (status === 'all') {
-      if (selectedStatuses.length === ALL_STATUSES.length) setSelectedStatuses([])
+      if (selectedStatuses.length === ALL_STATUSES.length)
+        setSelectedStatuses([])
       else setSelectedStatuses(ALL_STATUSES)
     } else {
-      setSelectedStatuses((prev) => 
-        prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+      setSelectedStatuses((prev) =>
+        prev.includes(status)
+          ? prev.filter((s) => s !== status)
+          : [...prev, status],
       )
     }
   }
@@ -236,22 +251,23 @@ export default function AopDashboardCompact() {
       // Expand the first site and its sub-categories by default initially
       const tempGrouped = Object.values(
         apiRows.reduce((acc, item) => {
-          const site = item.site_name || 'Unknown Site';
-          if (!acc[site]) acc[site] = { site, businessCategories: new Set() };
-          if (item.business_category) acc[site].businessCategories.add(item.business_category);
-          return acc;
-        }, {})
-      );
+          const site = item.site_name || 'Unknown Site'
+          if (!acc[site]) acc[site] = { site, businessCategories: new Set() }
+          if (item.business_category)
+            acc[site].businessCategories.add(item.business_category)
+          return acc
+        }, {}),
+      )
       if (tempGrouped.length > 0) {
-        const firstSite = tempGrouped[0].site;
-        setExpandedSites((prev) => ({ ...prev, [firstSite]: true }));
+        const firstSite = tempGrouped[0].site
+        setExpandedSites((prev) => ({ ...prev, [firstSite]: true }))
         setExpandedSubSites((prev) => {
-          const next = { ...prev };
+          const next = { ...prev }
           Array.from(tempGrouped[0].businessCategories).forEach((cat) => {
-            next[`${firstSite}-${cat}`] = true;
-          });
-          return next;
-        });
+            next[`${firstSite}-${cat}`] = true
+          })
+          return next
+        })
       }
     } catch (error) {
       console.error('Error fetching dashboard data', error)
@@ -320,8 +336,9 @@ export default function AopDashboardCompact() {
       data = data.filter(
         (row) =>
           (row.site_name && row.site_name.toLowerCase().includes(q)) ||
-          (row.business_category && row.business_category.toLowerCase().includes(q)) ||
-          (row.verticalName && row.verticalName.toLowerCase().includes(q))
+          (row.business_category &&
+            row.business_category.toLowerCase().includes(q)) ||
+          (row.verticalName && row.verticalName.toLowerCase().includes(q)),
       )
     }
 
@@ -334,11 +351,14 @@ export default function AopDashboardCompact() {
       const grouped = Object.values(
         filteredData.reduce((acc, item) => {
           const site = item.site_name || 'Unknown Site'
-          if (!acc[site]) acc[site] = { site, rows: [], businessCategories: new Set() }
+          if (!acc[site])
+            acc[site] = { site, rows: [], businessCategories: new Set() }
           const verticalName = item.vertical_name || 'N/A'
           acc[site].rows.push({
             idx: idx++,
-            id: idMap[verticalName.toUpperCase().replace(/\s+/g, '_')] ?? item.vertical_id,
+            id:
+              idMap[verticalName.toUpperCase().replace(/\s+/g, '_')] ??
+              item.vertical_id,
             sId: item.site_id,
             verticalName: verticalName,
             status: item.status,
@@ -348,9 +368,10 @@ export default function AopDashboardCompact() {
             display_order: item.display_order,
             v_id: item.v_id,
           })
-          if (item.business_category) acc[site].businessCategories.add(item.business_category)
+          if (item.business_category)
+            acc[site].businessCategories.add(item.business_category)
           return acc
-        }, {})
+        }, {}),
       ).map((siteGroup) => ({
         ...siteGroup,
         businessCategories: Array.from(siteGroup.businessCategories).sort(),
@@ -360,11 +381,18 @@ export default function AopDashboardCompact() {
       const grouped = Object.values(
         filteredData.reduce((acc, item) => {
           const business = item.business_category || 'Other'
-          if (!acc[business]) acc[business] = { site: business, rows: [], businessCategories: new Set() }
+          if (!acc[business])
+            acc[business] = {
+              site: business,
+              rows: [],
+              businessCategories: new Set(),
+            }
           const verticalName = item.vertical_name || 'N/A'
           acc[business].rows.push({
             idx: idx++,
-            id: idMap[verticalName.toUpperCase().replace(/\s+/g, '_')] ?? item.vertical_id,
+            id:
+              idMap[verticalName.toUpperCase().replace(/\s+/g, '_')] ??
+              item.vertical_id,
             sId: item.site_id,
             verticalName: verticalName,
             status: item.status,
@@ -374,9 +402,10 @@ export default function AopDashboardCompact() {
             display_order: item.display_order,
             v_id: item.v_id,
           })
-          if (item.site_name) acc[business].businessCategories.add(item.site_name)
+          if (item.site_name)
+            acc[business].businessCategories.add(item.site_name)
           return acc
-        }, {})
+        }, {}),
       ).map((bGroup) => ({
         ...bGroup,
         businessCategories: Array.from(bGroup.businessCategories).sort(),
@@ -385,10 +414,17 @@ export default function AopDashboardCompact() {
     }
   }, [filteredData, viewMode, idMap])
 
-  const overallStatusSummary = getSiteStatusSummary(filteredData);
-  const totalSites = [...new Set(filteredData.map(item => item.site_name).filter(Boolean))]?.length || 0;
-  const totalBusinesses = [...new Set(filteredData.map(item => item.business_category).filter(Boolean))]?.length || 0;
-  const totalPlants = filteredData?.length || 0;
+  const overallStatusSummary = getSiteStatusSummary(filteredData)
+  const totalSites =
+    [...new Set(filteredData.map((item) => item.site_name).filter(Boolean))]
+      ?.length || 0
+  const totalBusinesses =
+    [
+      ...new Set(
+        filteredData.map((item) => item.business_category).filter(Boolean),
+      ),
+    ]?.length || 0
+  const totalPlants = filteredData?.length || 0
 
   return (
     <Box className='dashboard-root-v3'>
@@ -426,23 +462,29 @@ export default function AopDashboardCompact() {
               <Typography className='value'>{totalPlants}</Typography>
             </Box>
           </Box>
-          
+
           <Box className='top-summary-divider' />
 
           <Box className='top-statuses-section'>
             {ALL_STATUSES.map((status) => {
-              const count = overallStatusSummary[status] || 0;
-              let StatusIcon = IconCircleCheck;
-              if (status === 'Development') StatusIcon = IconCode;
-              if (status === 'UAT') StatusIcon = IconSearch;
-              if (status === 'Pre-UAT' || status === 'Pre UAT') StatusIcon = IconEye;
-              if (status === 'Not Started') StatusIcon = IconClock;
+              const count = overallStatusSummary[status] || 0
+              let StatusIcon = IconCircleCheck
+              if (status === 'Development') StatusIcon = IconCode
+              if (status === 'UAT') StatusIcon = IconSearch
+              if (status === 'Pre-UAT' || status === 'Pre UAT')
+                StatusIcon = IconEye
+              if (status === 'Not Started') StatusIcon = IconClock
 
               return (
-                <Box key={status} className={`top-status-box ${getStatusClass(status)}`}>
+                <Box
+                  key={status}
+                  className={`top-status-box ${getStatusClass(status)}`}
+                >
                   <Box className='top-status-header'>
                     <StatusIcon size={18} />
-                    <Typography className='status-label-text'>{status.replace('-', ' ')}</Typography>
+                    <Typography className='status-label-text'>
+                      {status.replace('-', ' ')}
+                    </Typography>
                   </Box>
                   <Typography className='top-status-value'>{count}</Typography>
                 </Box>
@@ -454,13 +496,13 @@ export default function AopDashboardCompact() {
 
       <Box className='dashboard-filters-row'>
         <Box className='view-toggle-group'>
-          <Box 
+          <Box
             className={`view-toggle-btn ${viewMode === 'sites' ? 'active' : ''}`}
             onClick={() => setViewMode('sites')}
           >
             <IconMapPin size={16} /> View by Sites
           </Box>
-          <Box 
+          <Box
             className={`view-toggle-btn ${viewMode === 'businesses' ? 'active' : ''}`}
             onClick={() => setViewMode('businesses')}
           >
@@ -470,9 +512,9 @@ export default function AopDashboardCompact() {
         <Box className='filters-right'>
           <Box className='search-input-wrapper'>
             <IconSearch size={16} className='search-icon' />
-            <input 
-              type='text' 
-              placeholder='Search for Site or Business name...' 
+            <input
+              type='text'
+              placeholder='Search for Site or Business name...'
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -480,19 +522,20 @@ export default function AopDashboardCompact() {
           <Box className='status-dropdown' onClick={handleStatusMenuOpen}>
             <IconAdjustments size={16} className='dropdown-icon' />
             <Typography component='span'>
-              Status: <strong>
+              Status:{' '}
+              <strong>
                 {selectedStatuses.length === ALL_STATUSES.length
                   ? 'All'
                   : selectedStatuses.length === 0
-                  ? 'None'
-                  : selectedStatuses.length === 1
-                  ? selectedStatuses[0].replace('-', ' ')
-                  : `${selectedStatuses.length} selected`}
+                    ? 'None'
+                    : selectedStatuses.length === 1
+                      ? selectedStatuses[0].replace('-', ' ')
+                      : `${selectedStatuses.length} selected`}
               </strong>
             </Typography>
             <IconChevronDown size={14} className='dropdown-chevron' />
           </Box>
-          
+
           <Menu
             anchorEl={statusMenuAnchor}
             open={Boolean(statusMenuAnchor)}
@@ -502,34 +545,51 @@ export default function AopDashboardCompact() {
                 minWidth: 200,
                 borderRadius: 8,
                 boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                border: '1px solid #e2e8f0'
-              }
+                border: '1px solid #e2e8f0',
+              },
             }}
             MenuListProps={{
-              style: { padding: '4px 0' }
+              style: { padding: '4px 0' },
             }}
           >
             <MenuItem onClick={() => toggleStatus('all')} sx={{ py: 0 }}>
-              <Checkbox checked={selectedStatuses.length === ALL_STATUSES.length} size="small" />
-              <ListItemText primary="Select all" primaryTypographyProps={{ fontSize: 14, fontWeight: 600 }} />
+              <Checkbox
+                checked={selectedStatuses.length === ALL_STATUSES.length}
+                size='small'
+              />
+              <ListItemText
+                primary='Select all'
+                primaryTypographyProps={{ fontSize: 14, fontWeight: 600 }}
+              />
             </MenuItem>
             <Divider sx={{ my: 0, margin: `0px !important` }} />
-            
+
             {ALL_STATUSES.map((status, index) => (
               <React.Fragment key={status}>
                 <MenuItem onClick={() => toggleStatus(status)} sx={{ py: 0 }}>
-                  <Checkbox checked={selectedStatuses.includes(status)} size="small" />
-                  <ListItemText primary={status.replace('-', ' ')} primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }} />
+                  <Checkbox
+                    checked={selectedStatuses.includes(status)}
+                    size='small'
+                  />
+                  <ListItemText
+                    primary={status.replace('-', ' ')}
+                    primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }}
+                  />
                 </MenuItem>
-                {index < ALL_STATUSES.length - 1 && <Divider sx={{ my: 0, margin: `0px !important` }} />}
+                {index < ALL_STATUSES.length - 1 && (
+                  <Divider sx={{ my: 0, margin: `0px !important` }} />
+                )}
               </React.Fragment>
             ))}
           </Menu>
 
-          <Box className='more-btn' onClick={(e) => setMoreMenuAnchor(e.currentTarget)}>
+          <Box
+            className='more-btn'
+            onClick={(e) => setMoreMenuAnchor(e.currentTarget)}
+          >
             <IconDots size={20} />
           </Box>
-          
+
           <Menu
             anchorEl={moreMenuAnchor}
             open={Boolean(moreMenuAnchor)}
@@ -540,16 +600,24 @@ export default function AopDashboardCompact() {
                 borderRadius: 8,
                 boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                 border: '1px solid #e2e8f0',
-                marginTop: 4
-              }
+                marginTop: 4,
+              },
             }}
           >
             <MenuItem onClick={() => handleExpandCollapseAll(true)}>
-              <Typography sx={{ fontSize: 14, fontWeight: 500, color: '#303030' }}>Expand All</Typography>
+              <Typography
+                sx={{ fontSize: 14, fontWeight: 500, color: '#303030' }}
+              >
+                Expand All
+              </Typography>
             </MenuItem>
             <Divider sx={{ margin: `4px 0px !important` }} />
             <MenuItem onClick={() => handleExpandCollapseAll(false)}>
-              <Typography sx={{ fontSize: 14, fontWeight: 500, color: '#303030' }}>Collapse All</Typography>
+              <Typography
+                sx={{ fontSize: 14, fontWeight: 500, color: '#303030' }}
+              >
+                Collapse All
+              </Typography>
             </MenuItem>
           </Menu>
         </Box>
@@ -570,7 +638,11 @@ export default function AopDashboardCompact() {
               >
                 <Box className='summary-item summary-item-site'>
                   <Box className='summary-icon-box'>
-                    {viewMode === 'sites' ? <IconMapPin size={20} /> : <IconBriefcase size={20} />}
+                    {viewMode === 'sites' ? (
+                      <IconMapPin size={20} />
+                    ) : (
+                      <IconBriefcase size={20} />
+                    )}
                   </Box>
                   <Typography className='summary-label'>{site.site}</Typography>
                 </Box>
@@ -579,7 +651,11 @@ export default function AopDashboardCompact() {
 
                 <Box className='summary-item business'>
                   <Box className='summary-icon-box'>
-                    {viewMode === 'sites' ? <IconBriefcase size={20} /> : <IconMapPin size={20} />}
+                    {viewMode === 'sites' ? (
+                      <IconBriefcase size={20} />
+                    ) : (
+                      <IconMapPin size={20} />
+                    )}
                   </Box>
                   <Box>
                     <Typography
@@ -669,7 +745,10 @@ export default function AopDashboardCompact() {
                               )}
                               <Box className='sub-header-plants'>
                                 {viewMode === 'sites' ? (
-                                  <IconBriefcase size={18} className='sub-icon' />
+                                  <IconBriefcase
+                                    size={18}
+                                    className='sub-icon'
+                                  />
                                 ) : (
                                   <IconMapPin size={18} className='sub-icon' />
                                 )}

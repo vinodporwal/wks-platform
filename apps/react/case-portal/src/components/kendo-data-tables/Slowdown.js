@@ -837,7 +837,10 @@ const SlowDown = ({ permissions }) => {
           !IS_PTA_HMD &&
           !IS_PVC_VMD &&
           !IS_CHEMICAL &&
-          !IS_PP_SEZ
+          !IS_PP_SEZ &&
+          !IS_PP_DTA &&
+          !IS_PE_PP
+
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
@@ -1279,6 +1282,11 @@ const SlowDown = ({ permissions }) => {
       PLANT_NAME_LOWER === 'vcm' &&
       SITE_NAME_LOWER === 'dmd'
 
+    var IS_VCM_HMD_VCM =
+      lowerVertName === 'vcm' &&
+      PLANT_NAME_LOWER === 'vcm' &&
+      SITE_NAME_LOWER === 'hmd'
+
     var IS_ELASTOMER_HMD_SBR =
       lowerVertName === 'elastomer' &&
       PLANT_NAME_LOWER === 'sbr' &&
@@ -1309,7 +1317,9 @@ const SlowDown = ({ permissions }) => {
       case verticalEnums.PVC:
         return IS_PVC_VMD ? SlowDownPeColumns : SlowDownPpDtaColumns
       case verticalEnums.VCM:
-        return IS_VCM_DMD_VCM ? SlowDownVcmColumns : SlowDownDmdVcmColumns
+        return IS_VCM_DMD_VCM || IS_VCM_HMD_VCM
+          ? SlowDownVcmColumns
+          : SlowDownDmdVcmColumns
       case verticalEnums.PET:
         return SlowDownPeColumns
       case verticalEnums.CHEMICAL:
