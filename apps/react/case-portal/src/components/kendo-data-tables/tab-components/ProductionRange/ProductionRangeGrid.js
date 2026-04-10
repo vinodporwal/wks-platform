@@ -67,7 +67,7 @@ const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
       field: 'displayName', // matches API
       title: 'Particulars',
       editable: false,
-      widthT: 200,
+      widthT: 100,
     },
     {
       field: 'uom',
@@ -79,14 +79,14 @@ const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
       field: 'apr',
       title: 'Min',
       editable: true,
-      widthT: 120,
+      widthT: 100,
       type: 'number',
     },
     {
       field: 'may',
       title: 'Max',
       editable: true,
-      widthT: 120,
+      widthT: 100,
       type: 'number',
     },
 
@@ -94,7 +94,7 @@ const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
       field: 'remarks',
       title: 'Remark',
       editable: false,
-      widthT: 135,
+      widthT: 105,
       type: 'string',
     },
     {

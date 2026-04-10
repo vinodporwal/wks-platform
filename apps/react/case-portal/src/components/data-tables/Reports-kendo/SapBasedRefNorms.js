@@ -1,6 +1,7 @@
 import { Box, Button, Typography } from '@mui/material'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
+import DownloadIcon from '@mui/icons-material/Download'
 import { DataGrid } from '@mui/x-data-grid'
 import {
   ExcelExport,
@@ -450,6 +451,7 @@ const SapBasedRefNorms = () => {
         <Button
           variant='contained'
           onClick={exportAllGrids}
+          startIcon={<DownloadIcon sx={{ fontSize: 16 }} />}
           className='btn-save'
         >
           Export

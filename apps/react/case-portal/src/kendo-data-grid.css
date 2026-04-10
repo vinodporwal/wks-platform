@@ -198,6 +198,24 @@
 /* ===============================
    DISABLED / NON-EDITABLE
    =============================== */
+.k-number-right .k-column-title,
+.k-number-right-disabled .k-column-title {
+  width: 100%;
+  text-align: right;
+  display: block;
+}
+
+/* Ensure header text right-aligns for numeric cols */
+.k-grid th.k-header.k-number-right,
+.k-grid th.k-header.k-number-right-disabled {
+  text-align: right;
+}
+
+/* Right-align cell content for number types */
+.k-number-right td,
+.k-number-right-disabled td {
+  text-align: right !important;
+}
 
 .disabled-cell,
 .non-editable-cell,

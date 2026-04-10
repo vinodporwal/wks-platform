@@ -493,7 +493,7 @@ const KendoDataTables = ({
       setApplyMinWidth(currentWidth < minWidthSum)
     }
 
-    updateGridSize()
+    // updateGridSize()
 
     const observer = new ResizeObserver(updateGridSize)
     observer.observe(gridEl)
@@ -503,37 +503,72 @@ const KendoDataTables = ({
 
   const DEFAULT_COL_WIDTH = 110
 
-  const setWidth = useCallback(
-    (minWidth = DEFAULT_COL_WIDTH) => {
-      // if (applyMinWidth) {
-      //   return minWidth
-      // }
+  const flexibleFields = [
+    'discription',
+    'discriptionDrpdwn',
+    'remark',
+    'remarks',
+    'Remarks',
+    'aopRemarks',
+    'productName',
+    'productName1',
+    'displayName',
+    'Particulars',
+    'materialDisplayName',
+    'TypeDisplayName',
+    'ParticularsType',
+    'Method',
+    'particular',
+    'particulars',
+    'Remark',
+  ]
 
+  const setWidth = useCallback(
+    (minWidth = DEFAULT_COL_WIDTH, field = '') => {
       const allColumns = extractAllColumns(columns)
+      const deleteColWidth = permissions?.deleteButton ? 80 : 0
+      const columnCount = allColumns.length
 
       const totalMinWidth =
-        allColumns.reduce((sum, col) => {
-          return sum + (col.minWidth ?? DEFAULT_COL_WIDTH)
-        }, 0) + (permissions?.deleteButton ? 80 : 0)
+        allColumns.reduce(
+          (sum, col) => sum + (col.minWidth ?? DEFAULT_COL_WIDTH),
+          0,
+        ) + deleteColWidth
 
-      if (totalMinWidth >= gridCurrent) {
+      // If grid is narrower than minimum total, give each column its minimum
+      if (gridCurrent <= totalMinWidth) return minWidth
+
+      // Distribute extra space
+      const extraSpace =
+        gridCurrent - totalMinWidth - ADJUST_PADDING * columnCount
+
+      // Identify flexible columns in the current view (visible and in flexibleFields)
+      const flexibleCols = allColumns.filter((col) =>
+        flexibleFields.includes(col.field),
+      )
+
+      if (flexibleCols.length > 0) {
+        if (flexibleFields.includes(field)) {
+          // If many columns, we distribute extra space among string columns to fill the screen
+          // If columnCount > 4, we prioritize these even more
+          const share = 1 / flexibleCols.length
+          return Math.max(minWidth, Math.floor(minWidth + extraSpace * share))
+        }
+        // Numeric/Fixed columns stay at their base minWidth to leave room for strings
         return minWidth
       }
 
-      const availableSpace = gridCurrent - totalMinWidth
-      const proportionalShare = (minWidth / totalMinWidth) * availableSpace
-      const width = minWidth + proportionalShare
-
-      return Math.max(minWidth, Math.round(width - ADJUST_PADDING))
+      // Fallback: Proportional distribution if no explicitly flexible columns found
+      const share = minWidth / totalMinWidth
+      return Math.max(minWidth, Math.floor(minWidth + extraSpace * share))
     },
-    [
-      applyMinWidth,
-      gridCurrent,
-      columns,
-      permissions?.deleteButton,
-      extractAllColumns,
-    ],
+    [gridCurrent, columns, permissions?.deleteButton, extractAllColumns],
   )
+
+  const numericHeaderClass = (isActive, col) =>
+    [isActive ? 'active-column' : '', 'k-number-right']
+      .filter(Boolean)
+      .join(' ')  
 
   const handleEditChange = useCallback((e) => {
     setEdit(e.edit)
@@ -2055,6 +2090,20 @@ const KendoDataTables = ({
                 </Button>
               )}
 
+              {permissions?.downloadExcelBtnFromUI && (
+                <Button
+                  variant='contained'
+                  className='btn-export'
+                  startIcon={<DownloadIcon fontSize='small' />}
+                  onClick={excelExport}
+                  // disabled={READ_ONLY || rows?.length === 0}
+                  disabled={rows?.length === 0}
+                  //ANY ONE CAN EXPORT
+                >
+                  Export
+                </Button>
+              )}
+
               {permissions?.uploadExcelBtn && (
                 <>
                   <Button
@@ -2096,22 +2145,6 @@ const KendoDataTables = ({
                 </Button>
               )}
 
-              {permissions?.showResetButton && (
-                <Button
-                  variant='contained'
-                  className='btn-save'
-                  onClick={resetDataModalOpen}
-                  disabled={
-                    isButtonDisabled ||
-                    READ_ONLY ||
-                    (!summaryEdited && Object.keys(modifiedCells).length === 0)
-                  }
-                  startIcon={<RestartAltIcon />}
-                >
-                  Reset
-                </Button>
-              )}
-
               {permissions?.showCalculate && (
                 <Button
                   variant='contained'
@@ -2129,6 +2162,23 @@ const KendoDataTables = ({
                   Calculate
                 </Button>
               )}
+
+              {permissions?.showResetButton && (
+                <Button
+                  variant='contained'
+                  className='btn-save'
+                  onClick={resetDataModalOpen}
+                  disabled={
+                    isButtonDisabled ||
+                    READ_ONLY ||
+                    (!summaryEdited && Object.keys(modifiedCells).length === 0)
+                  }
+                  startIcon={<RestartAltIcon />}
+                >
+                  Reset
+                </Button>
+              )}
+              
 
               {permissions?.showRefresh && (
                 <Button
@@ -2149,20 +2199,6 @@ const KendoDataTables = ({
                   disabled={isButtonDisabled || READ_ONLY}
                 >
                   Refresh
-                </Button>
-              )}
-
-              {permissions?.downloadExcelBtnFromUI && (
-                <Button
-                  variant='contained'
-                  className='btn-export'
-                  startIcon={<DownloadIcon fontSize='small' />}
-                  onClick={excelExport}
-                  // disabled={READ_ONLY || rows?.length === 0}
-                  disabled={rows?.length === 0}
-                  //ANY ONE CAN EXPORT
-                >
-                  Export
                 </Button>
               )}
 
@@ -2416,7 +2452,8 @@ const KendoDataTables = ({
                         hidden={col.hidden}
                         filter='date'
                         columnMenu={ColumnMenuCheckboxFilterDate}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         headerClassName={
                           isDateFilterActive.includes(col.field)
                             ? 'active-column'
@@ -2472,7 +2509,8 @@ const KendoDataTables = ({
                           // columnMenu={DateColumnMenu}
                           filter='date'
                           columnMenu={ColumnMenuCheckboxFilterDate}
-                          width={setWidth(100)}
+                          width={setWidth(col?.widthT || col?.width, col.field)}
+                          minWidth={setWidth(100, col.field)}
                           headerClassName={
                             isDateFilterActive.includes(col.field)
                               ? 'active-column'
@@ -2525,7 +2563,8 @@ const KendoDataTables = ({
                         // columnMenu={DateColumnMenu}
                         filter='date'
                         columnMenu={ColumnMenuCheckboxFilterDate}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         headerClassName={
                           isDateFilterActive.includes(col.field)
                             ? 'active-column'
@@ -2541,7 +2580,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         cells={{
                           edit: {
                             date: [
@@ -2597,7 +2637,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}
@@ -2623,7 +2664,8 @@ const KendoDataTables = ({
                       <GridColumn
                         key='symbol'
                         field='symbol'
-                        width={80}
+                        width={setWidth(col?.widthT || col?.width || 80, col.field)}
+                        minWidth={setWidth(80, col.field)}
                         title={col.title}
                         editable={col.editable || true}
                         cells={{
@@ -2642,7 +2684,8 @@ const KendoDataTables = ({
                       <GridColumn
                         key='limit'
                         field='limit'
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         title={col.title}
                         editable={col.editable || true}
                         cells={{
@@ -2668,7 +2711,8 @@ const KendoDataTables = ({
                         title={col.title || col.headerName || 'Particulars'}
                         editable={col.editable || true}
                         hidden={col.hidden}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         cells={{
                           data: (cellProps) => (
                             <ProductCell
@@ -2703,7 +2747,8 @@ const KendoDataTables = ({
                           headerCell: SimpleHeaderWithTooltip,
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}
-                        width={setWidth(150)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                       />
                     )
                   }
@@ -2714,7 +2759,8 @@ const KendoDataTables = ({
                         key='productName1'
                         field='productName1'
                         title={col.title || col.headerName || 'Particulars'}
-                        width={setWidth(200)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         editable={col.editable || true}
                         hidden={col.hidden}
                         cells={{
@@ -2743,7 +2789,8 @@ const KendoDataTables = ({
                         title={col.title || col.headerName || 'month'}
                         editable={col.editable || true}
                         hidden={col.hidden}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         cells={{
                           data: (cellProps) => (
                             <MonthCell {...cellProps} allMonths={allMonths} />
@@ -2761,7 +2808,8 @@ const KendoDataTables = ({
                         key={col?.field}
                         field={col?.field}
                         title={col.title || col.headerName || 'Description'}
-                        width={setWidth(150)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         editable={true}
                         columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
@@ -2790,7 +2838,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(150)}
+                        width={setWidth(col?.widthT || col?.width || 150, col.field)}
+                        minWidth={setWidth(150, col.field)}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}
@@ -2812,8 +2861,10 @@ const KendoDataTables = ({
                         // width={setWidth(110)}
                         // width={setWidth(columnCount <= 10 ? 50 : 100)}
                         width={setWidth(
-                          columnCount <= 6 ? 40 : columnCount <= 10 ? 50 : 100,
+                          columnCount <= 6 ? 80 : columnCount <= 10 ? 80 : 100,
+                          col.field
                         )}
+                        minWidth={setWidth(col?.widthT || col?.width || 80, col.field)}
                         editable={false}
                         columnMenu={ColumnMenuCheckboxFilter}
                         headerClassName={isActive ? 'active-column' : ''}
@@ -2831,7 +2882,8 @@ const KendoDataTables = ({
                         key='ReceipeName'
                         field='ReceipeName'
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         editable={false}
                         columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
@@ -2848,7 +2900,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         hidden={col.hidden}
                         className={
                           col?.isDisabled
@@ -2856,7 +2909,7 @@ const KendoDataTables = ({
                             : 'k-number-right'
                         }
                         editable={col?.editable ? true : false}
-                        headerClassName={isActive ? 'active-column' : ''}
+                        headerClassName={numericHeaderClass(isActive, col)}
                         cells={{
                           edit: { text: NoSpinnerNumericEditor },
                           data: toolTipRenderer,
@@ -2875,7 +2928,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}
@@ -2894,7 +2948,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}
@@ -2923,7 +2978,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}
@@ -2942,7 +2998,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         editable={!!col?.editable}
                         cells={{
                           edit: { text: CategoryDropdownEditor },
@@ -2977,7 +3034,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         hidden={col.hidden}
                         editable={!!col?.editable}
                         headerClassName={isActive ? 'active-column' : ''}
@@ -2996,7 +3054,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         hidden={col.hidden}
                         editable={!!col?.editable}
                         headerClassName={isActive ? 'active-column' : ''}
@@ -3032,7 +3091,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         editable={col.editable}
                         cells={{
                           edit: { text: LineDropdownEditorWrapper },
@@ -3058,7 +3118,8 @@ const KendoDataTables = ({
                         key='DisplayName'
                         field={col?.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         editable={false}
                         columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
@@ -3102,7 +3163,8 @@ const KendoDataTables = ({
                         columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
                         headerClassName={isActive ? 'active-column' : ''}
-                        width={setWidth(120)}
+                        width={setWidth(col?.widthT || col?.width || 120, col.field)}
+                        minWidth={setWidth(120, col.field)}
                       />
                     )
                   }
@@ -3112,7 +3174,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         editable={true}
                         columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
@@ -3147,7 +3210,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         editable={true}
                         columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
@@ -3171,7 +3235,8 @@ const KendoDataTables = ({
                         field={col.field}
                         title={col.title || col.headerName}
                         hidden={col.hidden}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         className={
                           col?.isDisabled
                             ? 'k-number-right-disabled'
@@ -3203,7 +3268,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}
@@ -3224,7 +3290,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}
@@ -3251,11 +3318,12 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         hidden={col.hidden}
                         className={'k-number-right'}
                         editable={col?.editable ? true : false}
-                        headerClassName={isActive ? 'active-column' : ''}
+                        headerClassName={numericHeaderClass(isActive, col)}
                         cells={{
                           edit: { text: NoSpinnerNumericEditorNegative },
                           data: toolTipRenderer,
@@ -3274,14 +3342,15 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         hidden={col.hidden}
                         className={`
                   ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
                   ${col?.isBold ? 'bold-text' : ''}
                 `}
                         editable={col?.editable ? true : false}
-                        headerClassName={isActive ? 'active-column' : ''}
+                        headerClassName={numericHeaderClass(isActive, col)}
                         cells={{
                           edit: { text: NoSpinnerNumericEditorNegative },
                           data: (props) =>
@@ -3316,14 +3385,15 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         hidden={col.hidden}
                         className={`
                   ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
                   ${col?.isBold ? 'bold-text' : ''}
                 `}
                         editable={col?.editable ? true : false}
-                        headerClassName={isActive ? 'active-column' : ''}
+                        headerClassName={numericHeaderClass(isActive, col)}
                         cells={{
                           edit: {
                             text: NoSpinnerNumericEditorWithUOMValidation,
@@ -3361,7 +3431,8 @@ const KendoDataTables = ({
                         title={
                           col.title || col.headerName || 'Rate Reduced (TPH)'
                         }
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         editable={true}
                         columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col.hidden}
@@ -3394,7 +3465,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         hidden={col.hidden}
                         className={`
                   ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
@@ -3441,14 +3513,15 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         hidden={col.hidden}
                         className={`
         ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
         ${col?.isBold ? 'bold-text' : ''}
       `}
                         editable={col?.editable ? true : false}
-                        headerClassName={isActive ? 'active-column' : ''}
+                        headerClassName={numericHeaderClass(isActive, col)}
                         cells={{
                           edit: { text: NoSpinnerNumericEditor },
                           data: (props) => {
@@ -3507,14 +3580,15 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         hidden={col.hidden}
                         className={`
         ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
         ${col?.isBold ? 'bold-text' : ''}
       `}
                         editable={col?.editable ? true : false}
-                        headerClassName={isActive ? 'active-column' : ''}
+                        headerClassName={numericHeaderClass(isActive, col)}
                         cells={{
                           edit: { text: NoSpinnerNumericEditor },
                           data: (props) =>
@@ -3563,7 +3637,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title='.'
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         hidden={col.hidden}
                         editable={true}
                         cells={{
@@ -3626,7 +3701,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title='.'
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         hidden={col.hidden}
                         editable={true}
                         cells={{
@@ -3668,7 +3744,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(100)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(100, col.field)}
                         hidden={col.hidden}
                         className={
                           col?.isDisabled
@@ -3676,7 +3753,7 @@ const KendoDataTables = ({
                             : 'k-number-right'
                         }
                         editable={col?.editable ? true : false}
-                        headerClassName={isActive ? 'active-column' : ''}
+                        headerClassName={numericHeaderClass(isActive, col)}
                         cells={{
                           edit: { text: NoSpinnerNumericEditor },
                           data: toolTipRenderer,
@@ -3695,7 +3772,8 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={setWidth(80)}
+                        width={setWidth(col?.widthT || col?.width, col.field)}
+                        minWidth={setWidth(80, col.field)}
                         hidden={col.hidden}
                         editable={!!col?.editable}
                         headerClassName={isActive ? 'active-column' : ''}
@@ -3714,9 +3792,11 @@ const KendoDataTables = ({
                       key={col.field}
                       field={col.field}
                       title={col.title || col.headerName}
-                      width={setWidth(
-                        columnCount <= 6 ? 70 : columnCount <= 10 ? 100 : 150,
+                      minWidth={setWidth(
+                        columnCount <= 6 ? 80 : columnCount <= 10 ? 100 : 120,
+                        col.field
                       )}
+                      width={setWidth(col?.widthT || col?.width, col.field)}
                       hidden={col.hidden}
                       editable={col?.editable ? true : false}
                       headerClassName={isActive ? 'active-column' : ''}

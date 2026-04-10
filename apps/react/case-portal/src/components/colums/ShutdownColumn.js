@@ -35,6 +35,7 @@ export const ShutDownAllColumns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'descLimit',
+    widthT: 100,
   },
   {
     field: 'maintenanceId',
@@ -61,6 +62,7 @@ export const ShutDownAllColumns = [
     field: 'remark',
     title: 'Shutdown Basis',
     editable: true,
+    widthT: 100,
   },
 ]
 export const ShutDown_Elastomer_JMD_IIR_Columns = [
@@ -103,6 +105,7 @@ export const ShutDown_Elastomer_JMD_HIIR_Columns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'descLimit',
+    widthT: 100,
   },
   {
     field: 'maintenanceId',
@@ -115,7 +118,7 @@ export const ShutDown_Elastomer_JMD_HIIR_Columns = [
     title: 'Month',
     type: 'monthDropdownPEPP',
     editable: true,
-    width: 150,
+    width: 100,
   },
   {
     field: 'durationInHrs',
@@ -170,6 +173,7 @@ export const ShutDownPeColumns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'descLimit',
+    widthT: 100,
   },
   // {
   //   field: 'productName1',
@@ -202,6 +206,7 @@ export const ShutDownPeColumns = [
     field: 'remark',
     title: 'Shutdown Basis',
     editable: true,
+    widthT: 100,
   },
 ]
 export const ShutDownPeColumnsldpe12 = [
@@ -210,6 +215,7 @@ export const ShutDownPeColumnsldpe12 = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'descLimit',
+    widthT: 100,
   },
 
   {
@@ -237,6 +243,7 @@ export const ShutDownPeColumnsldpe12 = [
     field: 'remark',
     title: 'Shutdown Basis',
     editable: true,
+    widthT: 100,
   },
 ]
 
@@ -247,6 +254,7 @@ export const ShutDownPpColumns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'descLimit',
+    widthT: 100,
   },
   // {
   //   field: 'productName1',
@@ -279,6 +287,7 @@ export const ShutDownPpColumns = [
     field: 'remark',
     title: 'Shutdown Basis',
     editable: true,
+    widthT: 100,
   },
 ]
 export const ShutDownPpDtaColumns = [
@@ -287,13 +296,14 @@ export const ShutDownPpDtaColumns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'descLimit',
+    widthT: 100,
   },
   {
     field: 'lineId',
     title: 'Line',
     type: 'lineDropdown',
     editable: true,
-    width: 130,
+    width: 100,
   },
   // {
   //   field: 'productName1',
@@ -326,6 +336,7 @@ export const ShutDownPpDtaColumns = [
     field: 'remark',
     title: 'Shutdown Basis',
     editable: true,
+    widthT: 100,
   },
 ]
 
@@ -335,6 +346,7 @@ export const ShutDownPTAColumns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'discriptionDrpdwn',
+    widthT: 50,
   },
 
   {
@@ -362,6 +374,7 @@ export const ShutDownPTAColumns = [
     field: 'remark',
     title: 'Shutdown Basis',
     editable: true,
+    widthT: 100,
   },
 ]
 
@@ -371,6 +384,7 @@ export const ShutDownPTADMDColumns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'discriptionDrpdwn',
+    widthT: 50,
   },
 
   {
@@ -394,7 +408,7 @@ export const ShutDownPTADMDColumns = [
     title: 'Month',
     type: 'monthDropdownPEPP',
     editable: true,
-    width: 150,
+    width: 100,
   },
   {
     field: 'durationInHrs',
@@ -405,6 +419,7 @@ export const ShutDownPTADMDColumns = [
     field: 'remark',
     title: 'Shutdown Basis',
     editable: true,
+    widthT: 100,
   },
 ]
 export const ShutDownChemicalColumns = [
@@ -413,6 +428,7 @@ export const ShutDownChemicalColumns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'descLimit',
+    widthT: 100,
   },
 
   {
@@ -436,7 +452,7 @@ export const ShutDownChemicalColumns = [
     title: 'Month',
     type: 'monthDropdownPEPP',
     editable: true,
-    width: 150,
+    width: 100,
   },
   {
     field: 'durationInHrs',
@@ -447,5 +463,6 @@ export const ShutDownChemicalColumns = [
     field: 'remark',
     title: 'Shutdown Basis',
     editable: true,
+    widthT: 100,
   },
 ]

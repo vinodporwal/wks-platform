@@ -28,10 +28,10 @@ const DrawerHeader = ({ open, handleDrawerToggle }) => {
             size='small'
             sx={{
               // color: '#6a7b92',
-              '&:hover': { color: '#6a7b92' },
+              '&:hover': { color: '#6a7b92ff' },
             }}
           >
-            <HomeIcon sx={{ width: 28, height: 28 }} />
+            <HomeIcon sx={{ width: 28, height: 28, color: '#bfa161ff' }} />
           </IconButton>
           {/* <Box
             component='img'
@@ -49,7 +49,7 @@ const DrawerHeader = ({ open, handleDrawerToggle }) => {
                 Reliance
               </Typography>
               <Typography sx={{ fontSize: 12, color: '#6a7b92' }}>
-                Monitoring Dashboard
+                AOP Dashboard
               </Typography>
             </Box>
           )}

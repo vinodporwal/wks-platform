@@ -70,33 +70,33 @@ const NSRAndMaterialPrices = () => {
       field: 'plantName',
       title: 'Plant Name',
       editable: false,
-      widthT: 150,
+      widthT: 120,
       hidden: false,
     },
     {
       field: 'plantCode',
       title: 'Plant Code',
       editable: false,
-      widthT: 120,
+      widthT: 100,
     },
     {
       field: 'materialCode',
       title: 'Material Code',
       editable: false,
-      widthT: 150,
+      widthT: 100,
     },
     {
       field: 'materialDescription',
       title: 'Mat Desc',
       editable: false,
-      widthT: 200,
+      widthT: 100,
     },
 
     {
       field: 'UOM',
       title: 'UOM',
       editable: false,
-      widthT: 100,
+      widthT: 80,
     },
 
     {
@@ -104,7 +104,7 @@ const NSRAndMaterialPrices = () => {
       title: 'Price',
       editable: true,
       type: 'number',
-      widthT: 120,
+      widthT: 100,
       format: FORMATE_VALUE,
     },
   ]

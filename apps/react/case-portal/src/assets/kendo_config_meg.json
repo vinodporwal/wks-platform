@@ -2,7 +2,7 @@
   {
     "field": "Particulars",
     "title": "Type",
-    "widthT": 200,
+    "widthT": 100,
     "editable": false,
     "hidden": true
   },
@@ -14,14 +14,14 @@
   {
     "field": "productName",
     "title": "Particulars",
-    "widthT": 140,
+    "widthT": 100,
     "editable": false
   },
   {
     "field": "UOM",
     "title": "UOM",
     "editable": false,
-    "widthT": 60
+    "widthT": 80
   },
   {
     "field": "apr",
@@ -98,7 +98,7 @@
   {
     "field": "remarks",
     "title": "Remark",
-    "widthT": 130,
+    "widthT": 100,
     "editable": true
   },
 

@@ -71,7 +71,7 @@ const ProductionRangeGridLimit = ({
       field: 'displayName', // matches API
       title: 'Particulars',
       editable: false,
-      widthT: 200,
+      widthT: 100,
     },
     {
       field: 'uom',
@@ -84,21 +84,21 @@ const ProductionRangeGridLimit = ({
       field: 'productionLimit',
       title: 'Limit',
       editable: false,
-      widthT: 120,
+      widthT: 100,
     },
 
     {
       field: 'apr',
       title: 'Value',
       editable: true,
-      widthT: 120,
+      widthT: 100,
       type: 'number',
     },
     {
       field: 'remarks',
       title: 'Remark',
       editable: false,
-      widthT: 135,
+      widthT: 105,
       type: 'string',
     },
     {

@@ -3,7 +3,7 @@
     "field": "DisplayName",
     "title": "Particulars",
     "editable": false,
-    "widthT": 220,
+    "widthT": 100,
     "hidden": false
   },
   {
@@ -17,7 +17,7 @@
     "title": "Value",
     "editable": true,
     "type": "number",
-    "widthT": 120
+    "widthT": 100
   },
 
   {

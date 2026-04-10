@@ -776,6 +776,53 @@ const KendoDataTablesReports = ({
                 Add Item
               </Button>
             )}
+            {permissions?.showExport && (
+              <Button
+                variant='contained'
+                onClick={handleExport}
+                // disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
+
+                //ANY ONE CAN EXPORT
+                disabled={isButtonDisabled || READ_ONLY}
+                className='btn-export'
+                startIcon={<DownloadIcon fontSize='small' />}
+              >
+                Export
+              </Button>
+            )}
+
+            {permissions?.showImport && (
+              <Button
+                variant='contained'
+                onClick={handleExcelUpload}
+                startIcon={<UploadIcon sx={{ fontSize: 16 }} />}
+                disabled={isButtonDisabled || READ_ONLY}
+                className='btn-import'
+              >
+                Import
+              </Button>
+            )}
+            {permissions?.uploadExcelBtn && (
+              <>
+                <Button
+                  variant='contained'
+                  onClick={triggerFileUpload}
+                  startIcon={<UploadIcon sx={{ fontSize: 16 }} />}
+                  disabled={isButtonDisabled || READ_ONLY}
+                  className='btn-save'
+                >
+                  Import
+                </Button>
+
+                <input
+                  type='file'
+                  accept='.xlsx,.xls'
+                  onChange={onFileChange}
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                />
+              </>
+            )}
             {permissions?.saveBtn && (
               <Button
                 variant='contained'
@@ -807,65 +854,6 @@ const KendoDataTablesReports = ({
               >
                 Calculate
               </Button>
-            )}
-            {permissions?.showCalculate && (
-              <Button
-                variant='contained'
-                onClick={handleExport}
-                // disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
-                disabled={isButtonDisabled || READ_ONLY}
-                className='btn-export'
-                startIcon={<DownloadIcon fontSize='small' />}
-              >
-                Export
-              </Button>
-            )}
-
-            {permissions?.showExport && (
-              <Button
-                variant='contained'
-                onClick={handleExport}
-                // disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
-
-                //ANY ONE CAN EXPORT
-                disabled={isButtonDisabled || READ_ONLY}
-                className='btn-export'
-                startIcon={<DownloadIcon fontSize='small' />}
-              >
-                Export
-              </Button>
-            )}
-
-            {permissions?.showImport && (
-              <Button
-                variant='contained'
-                onClick={handleExport}
-                startIcon={<UploadIcon sx={{ fontSize: 16 }} />}
-                disabled={isButtonDisabled || READ_ONLY}
-                className='btn-import'
-              >
-                Import
-              </Button>
-            )}
-            {permissions?.uploadExcelBtn && (
-              <>
-                <Button
-                  variant='contained'
-                  onClick={triggerFileUpload}
-                  disabled={isButtonDisabled || READ_ONLY}
-                  className='btn-save'
-                >
-                  Import
-                </Button>
-
-                <input
-                  type='file'
-                  accept='.xlsx,.xls'
-                  onChange={onFileChange}
-                  ref={fileInputRef}
-                  style={{ display: 'none' }}
-                />
-              </>
             )}
 
             {permissions?.showFinalSubmit && (

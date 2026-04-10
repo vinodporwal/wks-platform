@@ -5,31 +5,32 @@
     "groupable": true,
     "editable": false,
     "hidden": true,
-    "widthT": 300
+    "widthT": 100
   },
 
   {
     "field": "productName",
     "title": "Particulars",
     "editable": false,
-    "widthT": 300
+    "widthT": 100
   },
   {
     "field": "UOM",
     "title": "UOM",
     "editable": false,
-    "widthT": 60
+    "widthT": 80
   },
   {
     "field": "apr",
     "title": "Value",
     "editable": true,
     "type": "number",
-    "widthT": 120
+    "widthT": 100
   },
   {
     "field": "remarks",
     "title": "Remark",
+    "widthT": 100,
     "editable": true
   }
 ]

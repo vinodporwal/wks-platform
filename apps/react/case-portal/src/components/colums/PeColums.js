@@ -160,7 +160,7 @@ export const SlowDownPeColumns = [
   {
     field: 'productName1',
     title: 'Particulars',
-    widthT: 160,
+    widthT: 100,
     editable: true,
   },
 

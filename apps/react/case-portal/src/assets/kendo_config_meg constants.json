@@ -5,26 +5,26 @@
     "groupable": true,
     "editable": false,
     "hidden": true,
-    "widthT": 300
+    "widthT": 100
   },
   {
     "field": "DisplayName",
     "title": "Particulars",
     "editable": false,
-    "widthT": 300
+    "widthT": 100
   },
   {
     "field": "UOM",
     "title": "UOM",
     "editable": false,
-    "widthT": 60
+    "widthT": 80
   },
   {
     "field": "ConstantValue",
     "title": "Value",
     "editable": true,
     "type": "number",
-    "widthT": 120
+    "widthT": 100
   },
 
   {

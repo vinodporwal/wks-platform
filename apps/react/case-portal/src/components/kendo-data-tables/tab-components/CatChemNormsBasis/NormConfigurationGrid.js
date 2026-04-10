@@ -71,7 +71,7 @@ const NormsConfigurationGrid = ({
       field: 'displayName', // matches API
       title: 'Particulars',
       editable: false,
-      widthT: 220,
+      widthT: 100,
     },
     {
       field: 'uom',
@@ -83,7 +83,7 @@ const NormsConfigurationGrid = ({
       field: 'apr',
       title: 'Value',
       editable: false,
-      widthT: 120,
+      widthT: 100,
       type: 'number',
     },
 
