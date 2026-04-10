@@ -112,9 +112,7 @@ export const transformApprovalStatusToSteps = (
   const timelineSteps = workflowSequence.map((step, index) => {
     if (index === 0) {
       // Always a parallel step
-      const overallStatus = isStep1Completed
-        ? 'completed'
-        : 'active'
+      const overallStatus = isStep1Completed ? 'completed' : 'active'
 
       return {
         id: step.id,
