@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.TurnAroundPlanReportDTO;
+import com.wks.caseengine.db2.entity.TurnAroundPlanDB2;
+import com.wks.caseengine.db2.repository.TurnAroundPlanReportDB2Repository;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.TurnAroundPlan;
@@ -48,6 +50,9 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
     
     @Autowired
     private TurnAroundPlanReportRepository turnAroundPlanReportRepository;
+    
+    @Autowired
+    private TurnAroundPlanReportDB2Repository turnAroundPlanReportDB2Repository;
 
     @Override
     @Transactional(transactionManager = "db2TransactionManager", readOnly = true)
@@ -221,14 +226,14 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
 	public AOPMessageVM updateReportForTurnAroundDataDB2(String plantId, String year,
 			String reportType,List<TurnAroundPlanReportDTO> dataList) {
 		try {
-		List<TurnAroundPlan> turnAroundPlanList = new ArrayList<>();
+		List<TurnAroundPlanDB2> turnAroundPlanList = new ArrayList<>();
 		for (TurnAroundPlanReportDTO dto : dataList) {
-			TurnAroundPlan turnAroundPlan=null;
+			TurnAroundPlanDB2 turnAroundPlan=null;
 			if(dto.getId()!=null) {
-				turnAroundPlan = turnAroundPlanReportRepository
+				turnAroundPlan = turnAroundPlanReportDB2Repository
 						.findById(UUID.fromString(dto.getId())).get();
 			}else {
-				 turnAroundPlan=new TurnAroundPlan();
+				 turnAroundPlan=new TurnAroundPlanDB2();
 				 turnAroundPlan.setPlantFkId(UUID.fromString(plantId));
 				 turnAroundPlan.setAopYear(year);
 				 turnAroundPlan.setReportType(reportType);
@@ -253,7 +258,7 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
 				turnAroundPlan.setRemark(dto.getRemark());
 			}
 			
-			turnAroundPlanList.add(turnAroundPlanReportRepository.save(turnAroundPlan));
+			turnAroundPlanList.add(turnAroundPlanReportDB2Repository.save(turnAroundPlan));
 		}
 		AOPMessageVM response = new AOPMessageVM();
 		response.setCode(200);
@@ -268,11 +273,11 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
 	@Override
 	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM deleteReportForTurnAroundData(String id) {
-		TurnAroundPlan turnAroundPlan=null;
-		Optional<TurnAroundPlan> turnAroundPlanOpt=turnAroundPlanReportRepository.findById(UUID.fromString(id));
+		TurnAroundPlanDB2 turnAroundPlan=null;
+		Optional<TurnAroundPlanDB2> turnAroundPlanOpt=turnAroundPlanReportDB2Repository.findById(UUID.fromString(id));
 		if(turnAroundPlanOpt.isPresent()) {
 			turnAroundPlan = turnAroundPlanOpt.get();
-			turnAroundPlanReportRepository.delete(turnAroundPlan);
+			turnAroundPlanReportDB2Repository.delete(turnAroundPlan);
 		}
 		AOPMessageVM response = new AOPMessageVM();
 		response.setCode(200);

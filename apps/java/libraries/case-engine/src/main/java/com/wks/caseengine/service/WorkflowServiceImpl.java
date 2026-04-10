@@ -484,24 +484,14 @@ public class WorkflowServiceImpl implements WorkflowService {
 
 	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	private String resolveDb2ProcedureName(String plantId, String defaultProcedureName) {
-		String contextSql = """
-				SELECT v.Name, s.Name
-				FROM Plants p
-				JOIN Verticals v ON v.Id = p.Vertical_FK_Id
-				JOIN Sites s ON s.Id = p.Site_FK_Id
-				WHERE p.Id = :plantId
-				""";
-
-		Query contextQuery = entityManagerDB2.createNativeQuery(contextSql);
-		contextQuery.setParameter("plantId", UUID.fromString(plantId));
-		List<?> contextRows = contextQuery.getResultList();
-		if (contextRows.isEmpty()) {
-			throw new RuntimeException("Plant context not found in DB2 for ID: " + plantId);
-		}
-
-		Object[] context = (Object[]) contextRows.get(0);
-		String verticalName = context[0] != null ? context[0].toString() : null;
-		String siteName = context[1] != null ? context[1].toString() : null;
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+				.orElseThrow(() -> new RuntimeException("Plant not found for ID: " + plantId));
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+				.orElseThrow(() -> new RuntimeException("Vertical not found for ID: " + plant.getVerticalFKId()));
+		Sites site = siteRepository.findById(plant.getSiteFkId())
+				.orElseThrow(() -> new RuntimeException("Site not found for ID: " + plant.getSiteFkId()));
+		String verticalName = vertical.getName();
+		String siteName = site.getName();
 
 		if ("MEG".equalsIgnoreCase(verticalName)) {
 			return defaultProcedureName;
