@@ -590,6 +590,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getSpecificConsumptionNormsReport(String reportType, String plantId, String year) {
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -772,6 +773,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 		}
 	}
 	
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getSpecificConsumptionNormsData(String plantId, String aopYear, String reportType) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
@@ -783,7 +785,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
@@ -890,6 +892,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getGradewiseConsumptionNorms(String plantId,String year,String reportType) {
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
 	    try {
@@ -1310,7 +1313,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @year = :year";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("year", year);

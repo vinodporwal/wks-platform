@@ -80,6 +80,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 	private ConfigurationService configurationService;
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public AOPMessageVM getSpyroInputReport(String plantId, String AopYear, String Mode) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
@@ -128,7 +129,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @AopYear = :AopYear, @Mode = :Mode, @siteId = :siteId, @verticalId = :verticalId";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("AopYear", AopYear);
@@ -425,9 +426,8 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetFinalNormsReport";
 
-			String sql = "EXEC " + storedProcedure
-					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
-
+			String sql = "EXEC " + storedProcedure+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
+			
 			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
@@ -2523,7 +2523,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @year = :year, @mode = :mode, @method = :method";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("year", year);
