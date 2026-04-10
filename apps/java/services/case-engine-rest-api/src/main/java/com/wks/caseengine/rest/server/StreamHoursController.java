@@ -7,17 +7,18 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.wks.caseengine.message.vm.AOPMessageVM;
-import com.wks.caseengine.service.CrackerHmdOnStreamHoursService;
+import com.wks.caseengine.service.StreamHoursService;
 
 @RestController
 @RequestMapping("task")
-public class CrackerHmdOnStreamHoursController {
+public class StreamHoursController {
 
     @Autowired
-    private CrackerHmdOnStreamHoursService crackerHmdOnStreamHoursService;
+    private StreamHoursService streamHoursService;
 
-    @GetMapping(value = "/cracker-hmd-on-stream-hours")
-    public AOPMessageVM getCrackerHmdOnStreamHours(@RequestParam String year, @RequestParam String plantId) {
-        return crackerHmdOnStreamHoursService.getCrackerHmdOnStreamHours(year, plantId);
+    @GetMapping(value = "/stream-hours")
+    public AOPMessageVM getStreamHours(@RequestParam String year, @RequestParam String plantId) {
+        return streamHoursService.getStreamHours(year, plantId);
     }
 }
+
