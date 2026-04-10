@@ -2870,7 +2870,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 			List<Map<String, Object>> mapList = new ArrayList<Map<String, Object>>();
-			String viewName = "vwScrnShutdown" + vertical.getName()+ site.getName();
+			String viewName = "vwScrnSlowdown" + vertical.getName()+ site.getName();
 			List<Object[]> results = getDescriptionDropdownData(vertical.getId(), viewName);
 			for (Object[] obj : results) {
 				Map<String, Object> map = new HashMap<String, Object>();
