@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions
     xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
     xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     id="Definitions_1"
@@ -14,7 +17,9 @@
     <!-- Start -->
     <bpmn:startEvent id="StartEvent" name="Process Initiated"/>
 
-    <!-- Parallel Gateway: fork into SubmitPlantData + CTS_Tech_Approval -->
+ 
+    <bpmn:exclusiveGateway id="gw_loop_merge" name="Loop Merge"/>
+
     <bpmn:parallelGateway id="gw_parallel_fork" name="Fork"/>
 
     <bpmn:userTask id="SubmitPlantData" name="Submit Plant Data">
@@ -52,7 +57,7 @@
 
       <bpmn:exclusiveGateway id="gw_cts"/>
 
-      <!-- Stage 3 — NEW -->
+      <!-- Stage 3 -->
       <bpmn:userTask id="EPS_APPROVAL"
                      name="EPS Approval"
                      camunda:candidateGroups="EPS_ENGINEER"/>
@@ -104,7 +109,7 @@
         </bpmn:conditionExpression>
       </bpmn:sequenceFlow>
 
-      <!-- EPS (NEW) -->
+      <!-- EPS -->
       <bpmn:sequenceFlow id="s_eps1" sourceRef="EPS_APPROVAL" targetRef="gw_eps"/>
       <bpmn:sequenceFlow id="s_eps2" sourceRef="gw_eps" targetRef="Cluster_Head_APPROVAL">
         <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">
@@ -139,11 +144,21 @@
     <bpmn:endEvent id="EndEvent" name="Process Completed"/>
 
     <!-- ═══════════════════════════════════════════
-         Main Flow
+         MAIN FLOW
          ═══════════════════════════════════════════ -->
 
-    <!-- Start → Fork -->
-    <bpmn:sequenceFlow id="flow0" sourceRef="StartEvent" targetRef="gw_parallel_fork"/>
+    <!-- Start → Loop Merge (XOR) -->
+    <bpmn:sequenceFlow id="flow0"  sourceRef="StartEvent"       targetRef="gw_loop_merge"/>
+
+    <!-- FIX: rejection loop now targets the XOR merge, NOT the parallel fork -->
+    <bpmn:sequenceFlow id="flow4"  sourceRef="ApprovalFlow"     targetRef="gw_loop_merge">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">
+        ${approved == false}
+      </bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <!-- Loop Merge (XOR) → Parallel Fork -->
+    <bpmn:sequenceFlow id="flow0b" sourceRef="gw_loop_merge"    targetRef="gw_parallel_fork"/>
 
     <!-- Fork → SubmitPlantData -->
     <bpmn:sequenceFlow id="flow1a" sourceRef="gw_parallel_fork" targetRef="SubmitPlantData"/>
@@ -152,76 +167,132 @@
     <bpmn:sequenceFlow id="flow1b" sourceRef="gw_parallel_fork" targetRef="CTS_Tech_Approval"/>
 
     <!-- SubmitPlantData → Join -->
-    <bpmn:sequenceFlow id="flow2a" sourceRef="SubmitPlantData" targetRef="gw_parallel_join"/>
+    <bpmn:sequenceFlow id="flow2a" sourceRef="SubmitPlantData"  targetRef="gw_parallel_join"/>
 
     <!-- CTS_Tech_Approval → Join -->
     <bpmn:sequenceFlow id="flow2b" sourceRef="CTS_Tech_Approval" targetRef="gw_parallel_join"/>
 
     <!-- Join → ApprovalFlow (both tasks must be done) -->
-    <bpmn:sequenceFlow id="flow2" sourceRef="gw_parallel_join" targetRef="ApprovalFlow"/>
+    <bpmn:sequenceFlow id="flow2"  sourceRef="gw_parallel_join" targetRef="ApprovalFlow"/>
 
     <!-- Approved → End -->
-    <bpmn:sequenceFlow id="flow3" sourceRef="ApprovalFlow" targetRef="EndEvent">
+    <bpmn:sequenceFlow id="flow3"  sourceRef="ApprovalFlow"     targetRef="EndEvent">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">
         ${approved == true}
       </bpmn:conditionExpression>
     </bpmn:sequenceFlow>
 
-    <!-- Rejected → BACK TO Fork (restarts both parallel tasks) -->
-    <bpmn:sequenceFlow id="flow4" sourceRef="ApprovalFlow" targetRef="gw_parallel_fork">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">
-        ${approved == false}
-      </bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-
   </bpmn:process>
 
-
+  <!-- ═══════════════════════════════════════════
+       DIAGRAM (DI) — updated to include gw_loop_merge shape/edge
+       ═══════════════════════════════════════════ -->
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-  <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="TCS_APPROVAL_PROCESS">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="TCS_APPROVAL_PROCESS">
 
-    <!-- Start Event -->
-    <bpmndi:BPMNShape id="StartEvent_di" bpmnElement="StartEvent">
-      <dc:Bounds x="100" y="200" width="36" height="36"/>
-    </bpmndi:BPMNShape>
+      <!-- Start Event -->
+      <bpmndi:BPMNShape id="StartEvent_di" bpmnElement="StartEvent">
+        <dc:Bounds x="100" y="200" width="36" height="36"/>
+      </bpmndi:BPMNShape>
 
-    <!-- Parallel Fork -->
-    <bpmndi:BPMNShape id="gw_parallel_fork_di" bpmnElement="gw_parallel_fork">
-      <dc:Bounds x="200" y="190" width="50" height="50"/>
-    </bpmndi:BPMNShape>
+      <!-- XOR Loop Merge (NEW) -->
+      <bpmndi:BPMNShape id="gw_loop_merge_di" bpmnElement="gw_loop_merge" isMarkerVisible="true">
+        <dc:Bounds x="185" y="193" width="50" height="50"/>
+      </bpmndi:BPMNShape>
 
-    <!-- SubmitPlantData -->
-    <bpmndi:BPMNShape id="SubmitPlantData_di" bpmnElement="SubmitPlantData">
-      <dc:Bounds x="320" y="120" width="140" height="80"/>
-    </bpmndi:BPMNShape>
+      <!-- Parallel Fork -->
+      <bpmndi:BPMNShape id="gw_parallel_fork_di" bpmnElement="gw_parallel_fork">
+        <dc:Bounds x="290" y="193" width="50" height="50"/>
+      </bpmndi:BPMNShape>
 
-    <!-- CTS Tech Approval -->
-    <bpmndi:BPMNShape id="CTS_Tech_Approval_di" bpmnElement="CTS_Tech_Approval">
-      <dc:Bounds x="320" y="260" width="140" height="80"/>
-    </bpmndi:BPMNShape>
+      <!-- SubmitPlantData -->
+      <bpmndi:BPMNShape id="SubmitPlantData_di" bpmnElement="SubmitPlantData">
+        <dc:Bounds x="400" y="120" width="140" height="80"/>
+      </bpmndi:BPMNShape>
 
-    <!-- Parallel Join -->
-    <bpmndi:BPMNShape id="gw_parallel_join_di" bpmnElement="gw_parallel_join">
-      <dc:Bounds x="520" y="190" width="50" height="50"/>
-    </bpmndi:BPMNShape>
+      <!-- CTS Tech Approval -->
+      <bpmndi:BPMNShape id="CTS_Tech_Approval_di" bpmnElement="CTS_Tech_Approval">
+        <dc:Bounds x="400" y="260" width="140" height="80"/>
+      </bpmndi:BPMNShape>
 
-    <!-- SubProcess -->
-    <bpmndi:BPMNShape id="ApprovalFlow_di" bpmnElement="ApprovalFlow" isExpanded="true">
-      <dc:Bounds x="620" y="100" width="800" height="300"/>
-    </bpmndi:BPMNShape>
+      <!-- Parallel Join -->
+      <bpmndi:BPMNShape id="gw_parallel_join_di" bpmnElement="gw_parallel_join">
+        <dc:Bounds x="600" y="193" width="50" height="50"/>
+      </bpmndi:BPMNShape>
 
-    <!-- End Event -->
-    <bpmndi:BPMNShape id="EndEvent_di" bpmnElement="EndEvent">
-      <dc:Bounds x="1450" y="200" width="36" height="36"/>
-    </bpmndi:BPMNShape>
+      <!-- SubProcess -->
+      <bpmndi:BPMNShape id="ApprovalFlow_di" bpmnElement="ApprovalFlow" isExpanded="true">
+        <dc:Bounds x="700" y="100" width="800" height="300"/>
+      </bpmndi:BPMNShape>
 
-    <!-- Example Flow -->
-    <bpmndi:BPMNEdge id="flow0_di" bpmnElement="flow0">
-      <di:waypoint x="136" y="218"/>
-      <di:waypoint x="200" y="215"/>
-    </bpmndi:BPMNEdge>
+      <!-- End Event -->
+      <bpmndi:BPMNShape id="EndEvent_di" bpmnElement="EndEvent">
+        <dc:Bounds x="1530" y="200" width="36" height="36"/>
+      </bpmndi:BPMNShape>
 
-  </bpmndi:BPMNPlane>
-</bpmndi:BPMNDiagram>
+      <!-- Edges -->
+
+      <!-- Start → XOR Merge -->
+      <bpmndi:BPMNEdge id="flow0_di" bpmnElement="flow0">
+        <di:waypoint x="136" y="218"/>
+        <di:waypoint x="185" y="218"/>
+      </bpmndi:BPMNEdge>
+
+      <!-- XOR Merge → Parallel Fork -->
+      <bpmndi:BPMNEdge id="flow0b_di" bpmnElement="flow0b">
+        <di:waypoint x="235" y="218"/>
+        <di:waypoint x="290" y="218"/>
+      </bpmndi:BPMNEdge>
+
+      <!-- Fork → SubmitPlantData -->
+      <bpmndi:BPMNEdge id="flow1a_di" bpmnElement="flow1a">
+        <di:waypoint x="315" y="193"/>
+        <di:waypoint x="315" y="160"/>
+        <di:waypoint x="400" y="160"/>
+      </bpmndi:BPMNEdge>
+
+      <!-- Fork → CTS Tech Approval -->
+      <bpmndi:BPMNEdge id="flow1b_di" bpmnElement="flow1b">
+        <di:waypoint x="315" y="243"/>
+        <di:waypoint x="315" y="300"/>
+        <di:waypoint x="400" y="300"/>
+      </bpmndi:BPMNEdge>
+
+      <!-- SubmitPlantData → Join -->
+      <bpmndi:BPMNEdge id="flow2a_di" bpmnElement="flow2a">
+        <di:waypoint x="540" y="160"/>
+        <di:waypoint x="625" y="160"/>
+        <di:waypoint x="625" y="193"/>
+      </bpmndi:BPMNEdge>
+
+      <!-- CTS Tech Approval → Join -->
+      <bpmndi:BPMNEdge id="flow2b_di" bpmnElement="flow2b">
+        <di:waypoint x="540" y="300"/>
+        <di:waypoint x="625" y="300"/>
+        <di:waypoint x="625" y="243"/>
+      </bpmndi:BPMNEdge>
+
+      <!-- Join → ApprovalFlow -->
+      <bpmndi:BPMNEdge id="flow2_di" bpmnElement="flow2">
+        <di:waypoint x="650" y="218"/>
+        <di:waypoint x="700" y="218"/>
+      </bpmndi:BPMNEdge>
+
+      <!-- ApprovalFlow → End (approved) -->
+      <bpmndi:BPMNEdge id="flow3_di" bpmnElement="flow3">
+        <di:waypoint x="1500" y="218"/>
+        <di:waypoint x="1530" y="218"/>
+      </bpmndi:BPMNEdge>
+
+      <!-- ApprovalFlow → XOR Merge (rejected — loops back) -->
+      <bpmndi:BPMNEdge id="flow4_di" bpmnElement="flow4">
+        <di:waypoint x="1500" y="260"/>
+        <di:waypoint x="1500" y="420"/>
+        <di:waypoint x="210"  y="420"/>
+        <di:waypoint x="210"  y="243"/>
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
 
 </bpmn:definitions>
