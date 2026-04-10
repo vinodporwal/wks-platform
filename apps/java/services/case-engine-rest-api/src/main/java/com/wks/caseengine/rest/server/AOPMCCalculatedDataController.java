@@ -119,9 +119,18 @@ public class AOPMCCalculatedDataController {
 	public ResponseEntity<byte[]> exportLineWiseProductionTarget(
 			@RequestParam String plantId, @RequestParam String year,@RequestParam(required=false) String lineId) {
 	    try {
-			
-	        byte[] excelBytes = aOPMCCalculatedDataService.exportLineWiseProductionTarget(year, plantId, false, null,lineId);
-
+	    	Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+	        Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+	        byte[] excelBytes=null;
+	        if(vertical.getName().equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("DTA")) {
+	        	excelBytes = aOPMCCalculatedDataService.exportLineWiseProductionTargetDTA(year, plantId, false, null,lineId);
+	        }else {
+	        	 excelBytes = aOPMCCalculatedDataService.exportLineWiseProductionTarget(year, plantId, false, null,lineId);
+	        }
+	        
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(
 	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
@@ -193,8 +202,6 @@ public class AOPMCCalculatedDataController {
         }else {
         	return aOPMCCalculatedDataService.importExcel(year, plantId, file);
         }
-		
-
 	}
 
 	@PostMapping(value = "/production-target-line-import", consumes = "multipart/form-data")
