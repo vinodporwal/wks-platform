@@ -167,17 +167,8 @@ const TcsInput = () => {
           }
         }
 
-        // Fallback to original eligibility check
-        const eligible = response?.isEligible !== false
-        setIsSubmitEligible(eligible)
-
-        if (!eligible) {
-          setSnackbarData({
-            message: response?.message || 'Submit is not eligible at this time',
-            severity: 'warning',
-          })
-          setSnackbarOpen(true)
-        }
+        // Fallback for all other roles - eligible by default
+        setIsSubmitEligible(false)
       }
     } catch (err) {
       console.error('Error checking submit eligibility:', err)
@@ -428,8 +419,6 @@ const TcsInput = () => {
       //     severity: 'success',
       //   })
       // }
-
-      setSnackbarOpen(true)
 
       // Refresh submit eligibility after submission (without showing "already submitted" message)
       await checkSubmitEligibility(false)

@@ -96,7 +96,10 @@ const AuditTrail = ({
 
   // For Plant Manager, show plant-specific workflow
   // For other roles (AOM, EPS Head, Cluster Head), show site-level workflow
-  const selectedPlant = userRole === ROLES.PLANT_MANAGER ? PLANT_NAME : null
+  const selectedPlant =
+    userRole === ROLES.PLANT_MANAGER || userRole === ROLES.CTS_TECH_MANAGER
+      ? PLANT_NAME
+      : null
 
   const workflowSteps = parseApprovalStatusResponse(
     timelineData || [],

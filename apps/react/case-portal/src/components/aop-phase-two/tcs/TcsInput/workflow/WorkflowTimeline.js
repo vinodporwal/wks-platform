@@ -50,6 +50,7 @@ const WorkflowTimeline = ({ steps, currentStep }) => {
 
     return (
       <div style={{ padding: '4px' }}>
+        <div style={{ fontWeight: 600, marginBottom: '8px' }}>{step.label}</div>
         <div style={{ fontWeight: 600, marginBottom: '4px' }}>{step.role}</div>
         {showFinalizedMessage && (
           <div
