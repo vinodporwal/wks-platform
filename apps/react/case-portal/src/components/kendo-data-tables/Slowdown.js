@@ -104,6 +104,7 @@ const SlowDown = ({ permissions }) => {
   const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
+  const IS_AROMATICS = lowerVertName === 'aromatics'
   const IS_AROMATICS_SEZ_PX4 =
     lowerVertName === 'aromatics' &&
     lowerSiteName === 'sez' &&
@@ -757,7 +758,8 @@ const SlowDown = ({ permissions }) => {
         lowerVertName === 'pet' ||
         lowerVertName === 'vcm' ||
         IS_PVC_VMD ||
-        IS_CHEMICAL
+        IS_CHEMICAL ||
+        IS_AROMATICS
       ) {
         // Month span check
         //check timeframe Multiple month spilt into single
@@ -839,8 +841,8 @@ const SlowDown = ({ permissions }) => {
           !IS_CHEMICAL &&
           !IS_PP_SEZ &&
           !IS_PP_DTA &&
-          !IS_PE_PP
-
+          !IS_PE_PP &&
+          !IS_AROMATICS
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]

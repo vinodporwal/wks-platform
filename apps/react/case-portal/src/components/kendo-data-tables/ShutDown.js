@@ -102,7 +102,7 @@ const ShutDown = ({ permissions }) => {
     lowerVertName === 'chemical'
   const IS_PTA = lowerVertName === 'pta'
   const IS_CHEMICAL = lowerVertName === 'chemical'
-  const IS_PP = lowerVertName === 'pp'  
+  const IS_PP = lowerVertName === 'pp'
   const IS_PTA_DMD = lowerVertName === 'pta' && lowerSiteName === 'dmd'
   const IS_PP_DTA = lowerVertName === 'pp' && lowerSiteName === 'dta'
   const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
@@ -112,6 +112,7 @@ const ShutDown = ({ permissions }) => {
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
+  const IS_AROMATICS = lowerVertName === 'aromatics'
   const DELETE_NOTE =
     'Warning: Please verify the shutdown consumption quantity before deleting the shutdown activity.'
 
@@ -379,7 +380,8 @@ const ShutDown = ({ permissions }) => {
         lowerVertName == 'pp' ||
         lowerVertName == 'pet' ||
         IS_PVC_VMD ||
-        IS_CHEMICAL
+        IS_CHEMICAL ||
+        lowerVertName === 'aromatics'
       ) {
         // Check for shutdown timeframe spanning multiple months
         const monthSpanRows = new Set() // Add this line
@@ -388,7 +390,8 @@ const ShutDown = ({ permissions }) => {
           lowerVertName != 'vcm' &&
           !IS_PTA &&
           !IS_CHEMICAL &&
-          !IS_ELASTOMER_JMD_HIIR
+          !IS_ELASTOMER_JMD_HIIR &&
+          !IS_AROMATICS
         ) {
           for (const row of allRecords) {
             const start = new Date(row.maintStartDateTime)
@@ -463,7 +466,8 @@ const ShutDown = ({ permissions }) => {
           !IS_PP_SEZ &&
           !IS_ELASTOMER_JMD_HIIR &&
           !IS_PP_DTA &&
-          !IS_PE_PP
+          !IS_PE_PP &&
+          !IS_AROMATICS
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
