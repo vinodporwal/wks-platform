@@ -1,6 +1,7 @@
 package com.wks.caseengine.service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,13 +12,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.wks.caseengine.dto.CrackerHmdOnStreamHoursDTO;
+import com.wks.caseengine.dto.SteamHourDataDto;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
+import com.wks.caseengine.entity.SteamHourData;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
+import com.wks.caseengine.repository.SteamHourDataRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 
 import jakarta.persistence.EntityManager;
@@ -38,6 +42,9 @@ public class StreamHoursServiceImpl implements StreamHoursService {
 
     @Autowired
     private VerticalsRepository verticalRepository;
+
+    @Autowired
+    private SteamHourDataRepository steamHourDataRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -96,6 +103,115 @@ public class StreamHoursServiceImpl implements StreamHoursService {
         } catch (Exception ex) {
             throw new RuntimeException("Failed to fetch stream hours", ex);
         }
+    }
+
+    @Override
+    @Transactional
+    public AOPMessageVM saveSteamHourData(List<SteamHourDataDto> dtos) {
+        AOPMessageVM vm = new AOPMessageVM();
+        try {
+            if (dtos == null) {
+                vm.setCode(400);
+                vm.setMessage("Request body is required");
+                return vm;
+            }
+            List<SteamHourDataDto> saved = new ArrayList<>();
+            for (SteamHourDataDto dto : dtos) {
+                if (dto == null) {
+                    throw new IllegalArgumentException("List contains a null item");
+                }
+                saved.add(toDto(saveOneSteamHour(dto)));
+            }
+            vm.setCode(200);
+            vm.setMessage("Saved successfully");
+            vm.setData(saved);
+            return vm;
+        } catch (IllegalArgumentException e) {
+            vm.setCode(400);
+            vm.setMessage(e.getMessage());
+            return vm;
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to save steam hour data", ex);
+        }
+    }
+
+    private SteamHourData saveOneSteamHour(SteamHourDataDto dto) {
+        if (dto.getPlantId() == null) {
+            throw new IllegalArgumentException("plantId is required");
+        }
+        plantsRepository.findById(dto.getPlantId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+        Date now = new Date();
+        SteamHourData saved;
+
+        if (dto.getId() != null && steamHourDataRepository.existsById(dto.getId())) {
+            SteamHourData existing = steamHourDataRepository.findById(dto.getId()).orElseThrow();
+            Date createdOn = existing.getCreatedOn();
+            applyDtoToEntity(dto, existing);
+            if (createdOn != null) {
+                existing.setCreatedOn(createdOn);
+            } else if (existing.getCreatedOn() == null) {
+                existing.setCreatedOn(now);
+            }
+            existing.setModifiedOn(now);
+            saved = steamHourDataRepository.save(existing);
+        } else {
+            SteamHourData entity = new SteamHourData();
+            if (dto.getId() != null) {
+                entity.setId(dto.getId());
+            }
+            applyDtoToEntity(dto, entity);
+            if (entity.getCreatedOn() == null) {
+                entity.setCreatedOn(now);
+            }
+            entity.setModifiedOn(now);
+            saved = steamHourDataRepository.save(entity);
+        }
+        return saved;
+    }
+
+    private static void applyDtoToEntity(SteamHourDataDto dto, SteamHourData entity) {
+        entity.setParameterName(dto.getParameterName());
+        entity.setApr(dto.getApr());
+        entity.setMay(dto.getMay());
+        entity.setJune(dto.getJune());
+        entity.setJuly(dto.getJuly());
+        entity.setAug(dto.getAug());
+        entity.setSep(dto.getSep());
+        entity.setOct(dto.getOct());
+        entity.setNov(dto.getNov());
+        entity.setDec(dto.getDec());
+        entity.setJan(dto.getJan());
+        entity.setFeb(dto.getFeb());
+        entity.setMar(dto.getMar());
+        entity.setFinancialYear(dto.getFinancialYear());
+        entity.setUpdatedBy(dto.getUpdatedBy());
+        entity.setPlantId(dto.getPlantId());
+    }
+
+    private static SteamHourDataDto toDto(SteamHourData entity) {
+        return SteamHourDataDto.builder()
+                .id(entity.getId())
+                .parameterName(entity.getParameterName())
+                .apr(entity.getApr())
+                .may(entity.getMay())
+                .june(entity.getJune())
+                .july(entity.getJuly())
+                .aug(entity.getAug())
+                .sep(entity.getSep())
+                .oct(entity.getOct())
+                .nov(entity.getNov())
+                .dec(entity.getDec())
+                .jan(entity.getJan())
+                .feb(entity.getFeb())
+                .mar(entity.getMar())
+                .financialYear(entity.getFinancialYear())
+                .createdOn(entity.getCreatedOn())
+                .modifiedOn(entity.getModifiedOn())
+                .updatedBy(entity.getUpdatedBy())
+                .plantId(entity.getPlantId())
+                .build();
     }
 }
 
