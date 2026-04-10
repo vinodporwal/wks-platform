@@ -5,7 +5,7 @@ import { SessionStoreProvider } from './SessionStoreContext'
 import { CaseService, RecordService, FormService } from 'services'
 import menuItemsDefs from './menu'
 import { RegisterInjectUserSession, RegisteOptions } from './plugins'
-import { accountStore, sessionStore } from './store'
+import { sessionStore } from './store'
 import './App.css'
 import formPayload from './createFormJSON.json'
 import dtrPayload from './DTR.json'
@@ -13,6 +13,7 @@ import rejectPayload from './Reject.json'
 import assetTrainCreateCasePayload from './AssetTrainCreateCase.json'
 import caseManagementPayload from './CaseManagement.json'
 import Config from './consts'
+import { useIframeSso } from './hooks/useIframeSso'
 
 const ScrollTop = lazy(() => import('./components/ScrollTop'))
 
@@ -23,44 +24,66 @@ const App = () => {
   const [casesDefinitions, setCasesDefinitions] = useState([])
   const [menu, setMenu] = useState({ items: [] })
   const [formChecked, setFormChecked] = useState(false)
- 
-  useEffect(() => {
-    localStorage.setItem('baseUrl', `${Config.CaseEngineUrl}`)
-    
-    const { keycloak } = sessionStore.bootstrap()
 
-    const storedToken = localStorage.getItem('keycloakToken')
-    if (storedToken) {
-      keycloak.token = storedToken;
+  const isInIframe = window.self !== window.top
+
+  // Iframe SSO flow: receive token from APM via postMessage
+  useIframeSso({
+    onSuccess: (token) => {
+      // Build a minimal keycloak-like object from the token for service calls
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      const kcMock = {
+        token,
+        tokenParsed: payload,
+        idTokenParsed: payload,
+        isTokenExpired: () => payload.exp * 1000 < Date.now(),
+        updateToken: () => Promise.resolve(false),
+      }
+      initApp(kcMock, true)
+    },
+    onFailure: (err) => {
+      console.error('SSO iframe login failed:', err)
+    },
+  })
+
+  function initApp(kc, authenticated) {
+    localStorage.setItem('baseUrl', `${Config.CaseEngineUrl}`)
+    setKeycloak(kc)
+    setAuthenticated(authenticated)
+
+    if (authenticated) {
+      localStorage.setItem('keycloakToken', kc.token)
+      localStorage.setItem('userId', kc.idTokenParsed.sub)
     }
 
-    keycloak.init({ onLoad: 'login-required', checkLoginIframe: true }).then((authenticated) => {
-    // keycloak.init({ onLoad: 'check-sso', checkLoginIframe: true }).then((authenticated) => {
-      if(!authenticated){
-        keycloak.login();
-      }
-      setKeycloak(keycloak)
-      setAuthenticated(authenticated)
+    buildMenuItems(kc)
+    RegisterInjectUserSession(kc)
+    RegisteOptions(kc)
 
-      if (authenticated) {
-        localStorage.setItem('keycloakToken', keycloak.token)
-        localStorage.setItem('keycloak', JSON.stringify(keycloak))
-        localStorage.setItem('userId', keycloak.idTokenParsed.sub)
-      }
+    if (!formChecked) {
+      checkAndPostForm(kc)
+      checkAndPostDTR(kc)
+      checkAndPostReject(kc)
+      checkAndPostAssetTrainCreateCase(kc)
+      checkAndPostCaseManagement(kc)
+      setFormChecked(true)
+    }
+  }
 
-      buildMenuItems(keycloak)
-      RegisterInjectUserSession(keycloak)
-      RegisteOptions(keycloak)
-      forceLogoutIfUserNoMinimalRoleForSystem(keycloak)
+  useEffect(() => {
+    // Skip standard Keycloak init when inside iframe — SSO hook handles it
+    if (isInIframe) return
 
-      if (!formChecked) {
-          checkAndPostForm(keycloak);
-          checkAndPostDTR(keycloak);
-          checkAndPostReject(keycloak);
-          checkAndPostAssetTrainCreateCase(keycloak); 
-          checkAndPostCaseManagement(keycloak);
-          setFormChecked(true) // Ensure it runs only once per session
+    localStorage.setItem('baseUrl', `${Config.CaseEngineUrl}`)
+
+    const { keycloak } = sessionStore.bootstrap()
+
+    keycloak.init({ onLoad: 'login-required', checkLoginIframe: false }).then((authenticated) => {
+      if (!authenticated) {
+        keycloak.login()
+        return
       }
+      initApp(keycloak, authenticated)
     })
 
     keycloak.onAuthRefreshError = () => {
@@ -75,16 +98,11 @@ const App = () => {
             console.info('Token refreshed: ' + refreshed)
             RegisterInjectUserSession(keycloak)
             RegisteOptions(keycloak)
-
             localStorage.setItem('keycloakToken', keycloak.token)
           } else {
             console.info(
               'Token not refreshed, valid for ' +
-                Math.round(
-                  keycloak.tokenParsed.exp +
-                    keycloak.timeSkew -
-                    new Date().getTime() / 1000,
-                ) +
+                Math.round(keycloak.tokenParsed.exp + keycloak.timeSkew - new Date().getTime() / 1000) +
                 ' seconds',
             )
           }
@@ -96,15 +114,7 @@ const App = () => {
     }
   }, [])
 
-  async function forceLogoutIfUserNoMinimalRoleForSystem(keycloak) {
-    // if (!accountStore.hasAnyRole(keycloak)) {
-    //   console.log('User dont have required roles.');
-    //   localStorage.removeItem('keycloakToken')
-    //   return keycloak.logout({ redirectUri: window.location.origin })
-    // }
-  }
 
-  
    async function buildMenuItems(keycloak, userGroups = []) {
 
     const token = keycloak.tokenParsed;

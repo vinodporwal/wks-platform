@@ -14,6 +14,8 @@ package com.wks.caseengine.rest.config.security;
 import java.util.Arrays;
 import java.util.Optional;
 
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -44,8 +46,12 @@ public class ApiSecurityConfig {
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http.cors().and().csrf().disable()
-				.authorizeRequests(authz -> authz.filterSecurityInterceptorOncePerRequest(false).anyRequest()
-						.authenticated().accessDecisionManager(accessDecisionManager()))
+				.authorizeRequests(authz -> authz
+						.filterSecurityInterceptorOncePerRequest(false)
+						// SSO endpoints are validated internally, no Bearer token required
+						.requestMatchers("/api/sso/**").permitAll()
+						.anyRequest().authenticated()
+						.accessDecisionManager(accessDecisionManager()))
 				.oauth2ResourceServer(oauth2 -> oauth2
 						.authenticationManagerResolver(new JwksIssuerAuthenticationManagerResolver(keycloakUrl)));
 		return http.build();
