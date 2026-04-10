@@ -946,14 +946,15 @@ public void AOMApproveReject(String plantName, String siteId, boolean approvalSt
         // PlantSubmissionAuditTrailProjection latestPlantSubmission = tcsAuditTrailRepository.getLatestPlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), businessKey, "PLANT");
 
 
-        PlantSubmissionAuditTrailProjection latestPlantSubmission = tcsAuditTrailRepository.getLatestPendingPlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), businessKey, "PLANT", Status.PENDING.name());
+        List<PlantSubmissionAuditTrailProjection> latestPlantSubmission = tcsAuditTrailRepository.getLatestPendingPlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), businessKey, "PLANT", Status.PENDING.name());
 
-        if(latestPlantSubmission == null)  {
+        if(latestPlantSubmission.isEmpty()  || latestPlantSubmission.size() > 2)  {
             throw new RuntimeException("No latest plant submission found for given site and vertical");
         }
         // tcsAuditTrailRepository.updateSubmissionStatusById(UUID.fromString(latestPlantSubmission.getId()), approvalStatus ? "APPROVED" : "REJECTED");
-
-        tcsAuditTrailRepository.updatePlantSubmissionStatusById(UUID.fromString(latestPlantSubmission.getId()), approvalStatus ? Status.APPROVED.name() : Status.REJECTED.name());
+for(PlantSubmissionAuditTrailProjection plantSubmissionAuditTrailProjection : latestPlantSubmission) {
+        tcsAuditTrailRepository.updatePlantSubmissionStatusById(UUID.fromString(plantSubmissionAuditTrailProjection.getId()), approvalStatus ? Status.APPROVED.name() : Status.REJECTED.name());
+}
 
         
      tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getPlantStatus(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getUserName(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
