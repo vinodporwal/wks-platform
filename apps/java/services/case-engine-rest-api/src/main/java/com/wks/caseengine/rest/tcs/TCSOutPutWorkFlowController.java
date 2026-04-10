@@ -532,16 +532,16 @@ public class TCSOutPutWorkFlowController {
 
 
 
-	@GetMapping(value = "ebs-approve-reject-audit-trail/{siteId}/{verticalId}/{finacialYear}")
-	public ResponseEntity<List<PlantSubmissionAuditTrailDTO>> ebsApproveRejectAuditTrail(@PathVariable final String siteId, @PathVariable final String verticalId, @PathVariable final String finacialYear) {
+	@GetMapping(value = "aom-approve-reject-audit-trail/{siteId}/{verticalId}/{finacialYear}")
+	public ResponseEntity<List<PlantSubmissionAuditTrailDTO>> aomApproveRejectAuditTrail(@PathVariable final String siteId, @PathVariable final String verticalId, @PathVariable final String finacialYear) {
 		if(siteId == null || siteId.isEmpty()) {
-			throw new RestResourceNotFoundException("Site ID is required to create EBS approve reject audit trail");
+			throw new RestResourceNotFoundException("Site ID is required to create AOM approve reject audit trail");
 		}
 		if(verticalId == null || verticalId.isEmpty()) { 
-			throw new RestResourceNotFoundException("Vertical ID is required to create EBS approve reject audit trail");
+			throw new RestResourceNotFoundException("Vertical ID is required to create AOM approve reject audit trail");
 		}
 		if(finacialYear == null || finacialYear.isEmpty()) {
-			throw new RestResourceNotFoundException("Financial Year is required to create EBS approve reject audit trail");
+			throw new RestResourceNotFoundException("Financial Year is required to create AOM approve reject audit trail");
 		}
 
 		List<PlantSubmissionAuditTrailDTO> auditTrails = tcsWorkFlowService.getLatestPlantWiseSubmissionAuditTrail(siteId, verticalId, "PLANT", finacialYear);
