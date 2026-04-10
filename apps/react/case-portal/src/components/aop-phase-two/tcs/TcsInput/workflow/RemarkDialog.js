@@ -200,6 +200,21 @@ const RemarkDialog = ({
     fetchPreviousLevelData()
   }, [open, keycloak, SITE_ID, VERTICAL_ID, role])
 
+  const getRemarkHeaderLabel = (userRole) => {
+    if (userRole === ROLES.PLANT_MANAGER) {
+      return 'CTS Tech Manager Remark'
+    } else if (userRole === ROLES.CTS_TECH_MANAGER) {
+      return 'Plant Manager Remark'
+    } else if (userRole === ROLES.CTS_HEAD) {
+      return 'AOM Remark'
+    } else if (userRole === ROLES.EPS_HEAD) {
+      return 'CTS Head Remark'
+    } else if (userRole === ROLES.CLUSTER_HEAD) {
+      return 'EPS Head Remark'
+    }
+    return 'Remark'
+  }
+
   return (
     <>
       <Dialog
@@ -261,9 +276,7 @@ const RemarkDialog = ({
                   fontWeight={600}
                   sx={{ mb: 1.5, color: '#1976d2' }}
                 >
-                  {role === ROLES.CTS_HEAD || role === ROLES.EPS_HEAD
-                    ? 'AOM Submission'
-                    : 'CTS/EPS Head Submission'}
+                  {getRemarkHeaderLabel(role)}
                 </Typography>
                 {loadingPreviousData ? (
                   <Box

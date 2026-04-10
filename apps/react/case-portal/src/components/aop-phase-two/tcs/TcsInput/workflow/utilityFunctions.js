@@ -35,19 +35,19 @@ export const transformApprovalStatusToSteps = (
       id: 2,
       label: 'Step 2',
       role: 'AOM',
-      key: 'ebs_approved',
+      key: 'aom_approved',
     },
     {
       id: 3,
       label: 'Step 3',
       role: 'CTS Head',
-      key: 'cts_head_approved',
+      key: 'cts_approved',
     },
     {
       id: 4,
       label: 'Step 4',
       role: 'EPS Head',
-      key: 'eps_head_approved',
+      key: 'eps_approved',
     },
     {
       id: 5,

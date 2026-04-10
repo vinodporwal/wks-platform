@@ -16,6 +16,9 @@ export const TcsWorkflowApiService = {
   // ============ CTS Tech Manager APIs ============
   saveCTSTechManagerRemark,
 
+  // ============ Combined Plant Submission (Both Roles Approved) ============
+  submitPlantToAOM,
+
   // ============ EPS Engineer APIs ============
   epsEngineerSingleApproveReject,
   epsEngineerMultipleApproveReject,
@@ -112,7 +115,7 @@ async function getPlantDataForApproveReject(
   verticalId,
   year,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/ebs-approve-reject-audit-trail/${siteId}/${verticalId}/${year}`
+  const url = `${Config.CaseEngineUrl}/task/aom-approve-reject-audit-trail/${siteId}/${verticalId}/${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -233,6 +236,54 @@ async function saveCTSTechManagerRemark(payload) {
 }
 
 // ========================================================================
+// ============ COMBINED PLANT SUBMISSION (Both Roles Approved) ============
+// ========================================================================
+
+async function submitPlantToAOM(payload) {
+  const {
+    keycloak,
+    plantId,
+    plantName,
+    siteId,
+    verticalId,
+    userRole,
+    userName,
+    aopYear,
+  } = payload
+
+  const url = `${Config.CaseEngineUrl}/task/complete-plant-to-aom/${plantName}/${siteId}/${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify({
+    plantId,
+    plantName,
+    siteId,
+    verticalId,
+    submittedBy: getRoleLabel(userRole),
+    userName,
+  })
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    // Backend returns plain text, not JSON
+    const result = await resp.text()
+    return { success: true, message: result }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+// ========================================================================
 // ============ EPS ENGINEER APIs ============
 // ========================================================================
 
@@ -248,7 +299,7 @@ async function epsEngineerSingleApproveReject(
   userName,
   plantName,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/ebs-approve-reject/${plantName}/${siteId}/${approvalStatus}/${year}`
+  const url = `${Config.CaseEngineUrl}/task/aom-approve-reject/${plantName}/${siteId}/${approvalStatus}/${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -288,7 +339,7 @@ async function epsEngineerMultipleApproveReject(
   year,
   plantSubmissionList,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/bulk-ebs-approve-reject/${siteId}/${approvalStatus}/${year}`
+  const url = `${Config.CaseEngineUrl}/task/bulk-aom-approve-reject/${siteId}/${approvalStatus}/${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -323,7 +374,7 @@ async function epsEngineerSubmission(
   userRole,
   userName,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/ebs-submission/${siteId}/${financialYear}`
+  const url = `${Config.CaseEngineUrl}/task/aom-submission/${siteId}/${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -480,7 +531,7 @@ async function epsHeadApproveReject(payload, approvalStatus) {
     userName,
     VERTICAL_ID,
   } = payload
-  const url = `${Config.CaseEngineUrl}/task/eps-head-approve-reject/${SITE_ID}/${approvalStatus}/${AOP_YEAR}`
+  const url = `${Config.CaseEngineUrl}/task/eps-approve-reject/${SITE_ID}/${approvalStatus}/${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -521,7 +572,7 @@ async function epsHeadSubmission(payload) {
     userName,
     VERTICAL_ID,
   } = payload
-  const url = `${Config.CaseEngineUrl}/task/eps-head-submission/${SITE_ID}/${AOP_YEAR}`
+  const url = `${Config.CaseEngineUrl}/task/eps-submission/${SITE_ID}/${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
