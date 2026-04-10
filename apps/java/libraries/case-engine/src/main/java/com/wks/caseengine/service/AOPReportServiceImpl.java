@@ -25,6 +25,10 @@ import com.wks.caseengine.dto.AOPReportDTO;
 import com.wks.caseengine.dto.FiveYearSummaryReportDTO;
 import com.wks.caseengine.dto.PlantContributionSummaryDTO;
 import com.wks.caseengine.dto.PlantContributionSummaryT17DTO;
+import com.wks.caseengine.db2.entity.PlantContributionSummaryBusinessDemandBasisDB2;
+import com.wks.caseengine.db2.entity.PlantContributionSummaryT22DB2;
+import com.wks.caseengine.db2.repository.PlantContributionSummaryBusinessDemandBasisDB2Repository;
+import com.wks.caseengine.db2.repository.PlantContributionSummaryT22DB2Repository;
 import com.wks.caseengine.entity.PlantContributionSummaryBusinessDemandBasis;
 import com.wks.caseengine.entity.PlantContributionSummaryT22;
 import com.wks.caseengine.entity.Plants;
@@ -47,6 +51,9 @@ public class AOPReportServiceImpl implements AOPReportService {
 
 	@PersistenceContext
 	private EntityManager entityManager;
+	
+	@PersistenceContext(unitName="db2")
+	private EntityManager entityManagerDB2;
 
 	@Autowired
 	private DataSource dataSource;
@@ -65,6 +72,12 @@ public class AOPReportServiceImpl implements AOPReportService {
 	
 	@Autowired
 	private PlantContributionSummaryBusinessDemandBasisRepository plantContributionSummaryBusinessDemandBasisRepository;
+	
+	@Autowired
+	private PlantContributionSummaryBusinessDemandBasisDB2Repository plantContributionSummaryBusinessDemandBasisDB2Repository;
+	
+	@Autowired
+	private PlantContributionSummaryT22DB2Repository plantContributionSummaryT22DB2Repository;
 
 	@Override
 	public AOPMessageVM getAnnualAOPReport(String plantId, String year, String reportType, String AopYearFilter) {
@@ -587,6 +600,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getSpecificConsumptionNormsReport(String reportType, String plantId, String year) {
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -682,17 +696,12 @@ public class AOPReportServiceImpl implements AOPReportService {
 	}
 	
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getSpecificConsumptionNormsT17Report(String reportType, String plantId, String year) {
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
-			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
-					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-
-			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
-					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
-			List<Object[]> obj=null;
 			
-				 obj = getSpecificConsumptionNormsT17DataDB2(plantId, year, reportType);
+			 List<Object[]> obj = getSpecificConsumptionNormsT17DataDB2(plantId, year, reportType);
 						
 			List<PlantContributionSummaryT17DTO> plantProductionData = new ArrayList<>();
 
@@ -760,7 +769,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
@@ -774,6 +783,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 		}
 	}
 	
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getSpecificConsumptionNormsData(String plantId, String aopYear, String reportType) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
@@ -785,7 +795,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
@@ -846,7 +856,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
@@ -866,18 +876,18 @@ public class AOPReportServiceImpl implements AOPReportService {
 	public AOPMessageVM updatePlantContributionFiveYearSummaryReport(
 			List<PlantContributionSummaryDTO> plantContributionSummaryDTOs) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
-		List<PlantContributionSummaryT22> plantContributionSummaryT22s=new ArrayList<PlantContributionSummaryT22>();
+		List<PlantContributionSummaryT22DB2> plantContributionSummaryT22s=new ArrayList<PlantContributionSummaryT22DB2>();
 		try {
 			for(PlantContributionSummaryDTO plantContributionSummaryDTO:plantContributionSummaryDTOs) {
-				Optional<PlantContributionSummaryT22> plantContributionSummaryT22Opt = plantContributionSummaryT22Repository.findById(plantContributionSummaryDTO.getId());
+				Optional<PlantContributionSummaryT22DB2> plantContributionSummaryT22Opt = plantContributionSummaryT22DB2Repository.findById(plantContributionSummaryDTO.getId());
 				if(plantContributionSummaryT22Opt.isPresent()) {
-					PlantContributionSummaryT22 plantContributionSummaryT22=plantContributionSummaryT22Opt.get();
+					PlantContributionSummaryT22DB2 plantContributionSummaryT22=plantContributionSummaryT22Opt.get();
 					plantContributionSummaryT22.setActual4(plantContributionSummaryDTO.getActualFourYearsAgo());
 					plantContributionSummaryT22.setActual3(plantContributionSummaryDTO.getActualThreeYearsAgo());
 					plantContributionSummaryT22.setActual2(plantContributionSummaryDTO.getActualTwoYearsAgo());
 					plantContributionSummaryT22.setActual1(plantContributionSummaryDTO.getActualLastYear());
 					plantContributionSummaryT22.setBudgetCurrentYear(plantContributionSummaryDTO.getBudgetCurrent());
-					plantContributionSummaryT22s.add(plantContributionSummaryT22Repository.save(plantContributionSummaryT22));
+					plantContributionSummaryT22s.add(plantContributionSummaryT22DB2Repository.save(plantContributionSummaryT22));
 				}
 				
 			}
@@ -892,6 +902,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getGradewiseConsumptionNorms(String plantId,String year,String reportType) {
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
 	    try {
@@ -1312,7 +1323,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @year = :year";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("year", year);
@@ -1327,7 +1338,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 	}
 	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<String> getGradewiseConsumptionNormsDataColumns(String plantId,String year) {
-		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+		return entityManagerDB2.unwrap(Session.class).doReturningWork(connection -> {
 			List<String> columnNames = new ArrayList<>();
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
 					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
@@ -1357,7 +1368,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 	}
 	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Map<String, Object>> getGradewiseConsumptionNormsColumnMetadata(String plantId,String year) {
-		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+		return entityManagerDB2.unwrap(Session.class).doReturningWork(connection -> {
 			List<Map<String, Object>> columnMetadata = new ArrayList<>();
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
 					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
@@ -1423,16 +1434,16 @@ public class AOPReportServiceImpl implements AOPReportService {
 	@Transactional(transactionManager = "db2TransactionManager")
 	public AOPMessageVM updateSpecificConsumptionNormsT17ReportDB2(
 			List<PlantContributionSummaryT17DTO> plantContributionSummaryT17DTOs, String plantId, String year) {
-		List<PlantContributionSummaryBusinessDemandBasis> plantContributionSummaryBusinessDemandBasisList = new ArrayList<>();
+		List<PlantContributionSummaryBusinessDemandBasisDB2> plantContributionSummaryBusinessDemandBasisList = new ArrayList<>();
 		try {
 			
 			for(PlantContributionSummaryT17DTO plantContributionSummaryT17DTO:plantContributionSummaryT17DTOs) {
 				if(plantContributionSummaryT17DTO.getId()!=null) {
-					Optional<PlantContributionSummaryBusinessDemandBasis> plantContributionSummaryBusinessDemandBasisOpt=	plantContributionSummaryBusinessDemandBasisRepository.findById(UUID.fromString(plantContributionSummaryT17DTO.getId()));
+					Optional<PlantContributionSummaryBusinessDemandBasisDB2> plantContributionSummaryBusinessDemandBasisOpt=	plantContributionSummaryBusinessDemandBasisDB2Repository.findById(UUID.fromString(plantContributionSummaryT17DTO.getId()));
 					if(plantContributionSummaryBusinessDemandBasisOpt.isPresent()) {
-						PlantContributionSummaryBusinessDemandBasis plantContributionSummaryBusinessDemandBasis=plantContributionSummaryBusinessDemandBasisOpt.get();
+						PlantContributionSummaryBusinessDemandBasisDB2 plantContributionSummaryBusinessDemandBasis=plantContributionSummaryBusinessDemandBasisOpt.get();
 						plantContributionSummaryBusinessDemandBasis.setRemarks(plantContributionSummaryT17DTO.getRemarks());
-						plantContributionSummaryBusinessDemandBasisList.add(plantContributionSummaryBusinessDemandBasisRepository.save(plantContributionSummaryBusinessDemandBasis));
+						plantContributionSummaryBusinessDemandBasisList.add(plantContributionSummaryBusinessDemandBasisDB2Repository.save(plantContributionSummaryBusinessDemandBasis));
 					}
 				}
 			}

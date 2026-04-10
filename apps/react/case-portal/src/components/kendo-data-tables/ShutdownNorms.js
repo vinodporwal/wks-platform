@@ -93,6 +93,8 @@ const ShutdownNorms = () => {
     SITE_NAME_LOWERCASE === 'hmd' &&
     PLANT_NAME_LOWERCASE === 'sbr'
 
+  const IS_PE_C2 = lowerVertName === 'pe' && SITE_NAME_LOWERCASE === 'c2'
+
   const IS_ELASTOMER_JMD_HIIR =
     lowerVertName === 'elastomer' &&
     SITE_NAME_LOWERCASE === 'jmd' &&
@@ -836,7 +838,9 @@ const ShutdownNorms = () => {
               !IS_PTA_DMD ||
               IS_PVC_DMD ||
               IS_ELASTOMER_JMD
-            ? false
+            ? IS_PE_C2
+              ? true
+              : false // ? only change
             : true,
 
       showCalculateVisibility:
@@ -854,6 +858,8 @@ const ShutdownNorms = () => {
         IS_PVC_DMD
           ? true
           : false,
+
+      IS_PE_C2_HIDE: IS_PE_C2 ? false : true,
       marginBottom:
         IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||

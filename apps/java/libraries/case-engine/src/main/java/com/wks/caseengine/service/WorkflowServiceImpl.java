@@ -26,6 +26,7 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.process.instance.ProcessInstanceService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -80,9 +81,16 @@ public class WorkflowServiceImpl implements WorkflowService {
 
 	@PersistenceContext
 	private EntityManager entityManager;
+	
+	@PersistenceContext(unitName="db2")
+	private EntityManager entityManagerDB2;
 
 	@Autowired
 	private DataSource dataSource;
+	
+	@Autowired
+	@Qualifier("db2DataSource")
+	private DataSource db2DataSource;
 
 	@Autowired
 	private AnnualAOPCostRepository annualAOPCostRepository;
@@ -244,6 +252,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public Map<String, Object> getWorkFlow(String plantId, String year) {
 		Map<String, Object> map = new HashMap<>();
 
@@ -279,20 +288,13 @@ public class WorkflowServiceImpl implements WorkflowService {
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getProductionAOPWorkflowData(String plantId, String year) {
 		Map<String, Object> map = new HashMap<>();
 		Map<String, Object> finalMap = new HashMap<>();
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
-		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
-		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-		String verticalName = vertical.getName();
 		try {
-			List<Object[]> results =null;
-			if(verticalName.equalsIgnoreCase("MEG")){
-				results=getProductionWorkflowDataDB2(plantId, year);
-			}else {
-				results=getProductionWorkflowData(plantId, year);
-			}
+			 List<Object[]> results =getProductionWorkflowDataDB2(plantId, year);
 			
 			List<WorkflowYearDTO> workflowList = new ArrayList<>();
 			for (Object[] row : results) {
@@ -329,21 +331,14 @@ public class WorkflowServiceImpl implements WorkflowService {
 		}
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getData(String plantId, String aopYear) {
 		try {
-			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
-			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-			String verticalName = vertical.getName();
-			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			// Stored procedure name
-			String procedureName = "GetAnnualAOPCost";
-			if (!"MEG".equalsIgnoreCase(verticalName)) {
-				procedureName = verticalName + "_" + site.getName() + "_GetAnnualAOPCost";
-			}
+			String procedureName = resolveDb2ProcedureName(plantId, "GetAnnualAOPCost");
 			// Prepare native SQL call with parameters
 			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			// Set parameters
 			query.setParameter("plantId", plantId);
@@ -360,23 +355,11 @@ public class WorkflowServiceImpl implements WorkflowService {
 	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getProductionWorkflowDataDB2(String plantId, String aopYear) {
 		try {
-			// Stored procedure name
-			// Fetch plant and vertical to determine procedure name
-			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(
-					() -> new RuntimeException("Plant not found for ID: " + plantId));
-			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(
-					() -> new RuntimeException("Vertical not found for ID: " + plant.getVerticalFKId()));
-			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			// Determine stored procedure name dynamically
-			String verticalName = vertical.getName();
-			String procedureName = "GetAnnualProductionCost";
-			if (!"MEG".equalsIgnoreCase(verticalName)) {
-				procedureName = verticalName + "_" + site.getName() + "_GetAnnualProductionCost";
-			}
+			String procedureName = resolveDb2ProcedureName(plantId, "GetAnnualProductionCost");
 			// Prepare native SQL call with parameters
 			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			// Set parameters
 			query.setParameter("plantId", plantId);
@@ -424,25 +407,11 @@ public class WorkflowServiceImpl implements WorkflowService {
 
 	public List<String> getHeaders(String plantId, String aopYear) {
 		List<String> headers = new ArrayList<>();
-
-		// Fetch plant and vertical to determine procedure name
-		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(
-				() -> new RuntimeException("Plant not found for ID: " + plantId));
-		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(
-				() -> new RuntimeException("Vertical not found for ID: " + plant.getVerticalFKId()));
-
-		// Determine stored procedure name dynamically
-		String verticalName = vertical.getName();
-		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-		// Stored procedure name
-		String procedureName = "GetAnnualAOPCost";
-		if (!"MEG".equalsIgnoreCase(verticalName)) {
-			procedureName = verticalName + "_" + site.getName() + "_GetAnnualAOPCost";
-		}
+		String procedureName = resolveDb2ProcedureName(plantId, "GetAnnualAOPCost");
 
 		String callableSql = "{call " + procedureName + "(?, ?)}";
 
-		try (Connection conn = dataSource.getConnection();
+		try (Connection conn = db2DataSource.getConnection();
 				CallableStatement stmt = conn.prepareCall(callableSql)) {
 
 			stmt.setString(1, plantId);
@@ -478,21 +447,10 @@ public class WorkflowServiceImpl implements WorkflowService {
 	public List<String> getProductionWorkflowHeaders(String plantId, String aopYear) {
 		List<String> headers = new ArrayList<>();
 
-		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(
-				() -> new RuntimeException("Plant not found for ID: " + plantId));
-		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(
-				() -> new RuntimeException("Vertical not found for ID: " + plant.getVerticalFKId()));
-
-		// Determine stored procedure name dynamically
-		String verticalName = vertical.getName();
-		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-		String procedureName = "GetAnnualProductionCost";
-		if (!"MEG".equalsIgnoreCase(verticalName)) {
-			procedureName = verticalName + "_" + site.getName() + "_GetAnnualProductionCost";
-		}
+		String procedureName = resolveDb2ProcedureName(plantId, "GetAnnualProductionCost");
 		String callableSql = "{call " + procedureName + "(?, ?)}";
 
-		try (Connection conn = dataSource.getConnection();
+		try (Connection conn = db2DataSource.getConnection();
 				CallableStatement stmt = conn.prepareCall(callableSql)) {
 
 			stmt.setString(1, plantId);
@@ -522,6 +480,24 @@ public class WorkflowServiceImpl implements WorkflowService {
 		}
 
 		return headers;
+	}
+
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
+	private String resolveDb2ProcedureName(String plantId, String defaultProcedureName) {
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+				.orElseThrow(() -> new RuntimeException("Plant not found for ID: " + plantId));
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+				.orElseThrow(() -> new RuntimeException("Vertical not found for ID: " + plant.getVerticalFKId()));
+		Sites site = siteRepository.findById(plant.getSiteFkId())
+				.orElseThrow(() -> new RuntimeException("Site not found for ID: " + plant.getSiteFkId()));
+		String verticalName = vertical.getName();
+		String siteName = site.getName();
+
+		if ("MEG".equalsIgnoreCase(verticalName)) {
+			return defaultProcedureName;
+		}
+
+		return verticalName + "_" + siteName + "_" + defaultProcedureName;
 	}
 
 	public List<WorkflowStepsMasterDTO> updateStatuses(List<WorkflowStepsMasterDTO> items) {

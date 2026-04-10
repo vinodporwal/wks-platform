@@ -235,7 +235,7 @@ export const ShutDownPeC2Columns = [
   },
   {
     field: 'shutdownRate',
-    title: 'Shutdown Rate',
+    title: 'Shutdown Type',
     type: 'shutdownRateDropdown',
     editable: true,
   },
