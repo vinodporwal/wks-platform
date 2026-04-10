@@ -214,7 +214,7 @@ PlantSubmissionAuditTrailProjection getLatestPlantSubmissionAuditTrail(
               AND VerifiedDate IS NULL
             ORDER BY SubmissionDate DESC
             """, nativeQuery = true)
-        PlantSubmissionAuditTrailProjection getLatestEbsSubmissionAuditTrail(
+        PlantSubmissionAuditTrailProjection getLatestAOMSubmissionAuditTrail(
                 @Param("siteId") UUID siteId,
                 @Param("verticalId") UUID verticalId,
                 @Param("businessKey") String businessKey,
