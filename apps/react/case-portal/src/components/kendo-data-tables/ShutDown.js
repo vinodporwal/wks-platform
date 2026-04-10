@@ -102,6 +102,7 @@ const ShutDown = ({ permissions }) => {
     lowerVertName === 'chemical'
   const IS_PTA = lowerVertName === 'pta'
   const IS_CHEMICAL = lowerVertName === 'chemical'
+  const IS_PP = lowerVertName === 'pp'  
   const IS_PTA_DMD = lowerVertName === 'pta' && lowerSiteName === 'dmd'
   const IS_PP_DTA = lowerVertName === 'pp' && lowerSiteName === 'dta'
   const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
@@ -419,7 +420,7 @@ const ShutDown = ({ permissions }) => {
         }
 
         //Shutdown timeframe overlapping of same time.
-        if (!IS_PTA && !IS_CHEMICAL && !IS_ELASTOMER_JMD_HIIR) {
+        if (!IS_PTA && !IS_CHEMICAL && !IS_ELASTOMER_JMD_HIIR && !IS_PP) {
           for (let i = 0; i < allRecords.length; i++) {
             const a = allRecords[i]
             const aStart = new Date(a.maintStartDateTime).getTime()
