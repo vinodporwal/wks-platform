@@ -102,7 +102,7 @@ const ShutDown = ({ permissions }) => {
     lowerVertName === 'chemical'
   const IS_PTA = lowerVertName === 'pta'
   const IS_CHEMICAL = lowerVertName === 'chemical'
-  const IS_PP = lowerVertName === 'pp'
+  const IS_PP = lowerVertName === 'pp'  
   const IS_PTA_DMD = lowerVertName === 'pta' && lowerSiteName === 'dmd'
   const IS_PP_DTA = lowerVertName === 'pp' && lowerSiteName === 'dta'
   const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
@@ -1039,6 +1039,8 @@ const ShutDown = ({ permissions }) => {
             id: product.name,
             name: product.name,
             displayName: product.displayName,
+            value: product.name,
+            text: product.displayName,
           }))
         }
         setAllDescriptionDrpdwn(ShutdownRateObjList)

@@ -8,7 +8,7 @@ import '@progress/kendo-theme-default/dist/all.css'
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports-kendo/ColumnMenu1'
 import { DateColumnMenu } from 'components/Utilities/DateColumnMenu'
 import Notification from 'components/Utilities/Notification'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import PropaneDropdown from './Utilities-Kendo/PropaneDropdown'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import { useSelector } from 'react-redux'
@@ -72,6 +72,8 @@ import { getColumnMenuDateFilter } from 'components/data-tables/Reports-kendo/Co
 import DateTimePickerEditor24HourFormat from './Utilities-Kendo/DatePickeronSelectedYr24HourFomat'
 import { NoSpinnerNumericEditorCrackerValidation } from './Utilities-Kendo/numbericColumnsCrackerValidation'
 import DynamicDropdown from './Utilities-Kendo/DynamicDropdown'
+import ShutdownRateDropdown from './Utilities-Kendo/ShutdownRateDropdown'
+import MonthDropdownPEPP1 from './Utilities-Kendo/MonthDropdownPEPP1'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -269,29 +271,6 @@ const KendoDataTables = ({
         }}
       >
         {children}
-      </td>
-    )
-  }
-  const ShutdownRateDisplayCell = (props) => {
-    const { dataItem, field, allDescriptionDrpdwn, tdProps = {} } = props
-    // Find the display label from the dropdown options
-    const option = allDescriptionDrpdwn?.find(
-      (opt) =>
-        opt.displayName === dataItem[field] || opt.id === dataItem[field],
-    )
-    const displayLabel = option ? option.displayName : dataItem[field]
-
-    return (
-      <td
-        {...tdProps}
-        style={{
-          padding: '0.5rem 1rem',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
-      >
-        {displayLabel}
       </td>
     )
   }
@@ -1766,6 +1745,9 @@ const KendoDataTables = ({
                   className='dropdown-select'
                   variant='outlined'
                   label={permissions?.dropdownLabel || 'Select'}
+                  sx={{
+                    display: permissions?.IS_PE_C2_HIDE ? 'block' : 'none', // 🔥 condition applied
+                  }}
                   InputLabelProps={{
                     shrink: true,
                     sx: {
@@ -2435,29 +2417,7 @@ const KendoDataTables = ({
                     />
                   )
                 }
-                const ShutdownRateDropdownEditorWrapper = (props) => (
-                  <ProductCell {...props} allProducts={allDescriptionDrpdwn} />
-                )
-                if (
-                  col?.field === 'shutdownRate' &&
-                  col?.type === 'shutdownRateDropdown'
-                ) {
-                  return (
-                    <GridColumn
-                      key='shutdownRate'
-                      field='shutdownRate'
-                      title={col.title || col.headerName || 'Particulars'}
-                      editable={col.editable || true}
-                      hidden={col.hidden}
-                      cells={{
-                        edit: { text: ShutdownRateDropdownEditorWrapper },
-                        data: ShutdownRateDisplayCell,
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                    />
-                  )
-                }
+
                 if (col?.field === 'productName1') {
                   return (
                     <GridColumn
@@ -2634,6 +2594,73 @@ const KendoDataTables = ({
                   )
                 }
                 // ...existing code...
+                if (col.type === 'monthDropdownPEPP') {
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title || col.headerName}
+                      width={col.width}
+                      hidden={col.hidden}
+                      editable={col?.editable ? true : false}
+                      headerClassName={isActive ? 'active-column' : ''}
+                      cells={{
+                        edit: { text: MonthDropdownPEPP },
+                        data: (props) =>
+                          permissions?.MonthDropdownPEPPHighlight ? (
+                            <SimpleHighlightCell
+                              {...props}
+                              customModifiedCells={customModifiedCells}
+                              highlight={true}
+                            />
+                          ) : (
+                            MonthDropdownPEPPDisplayCell(props)
+                          ),
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                    />
+                  )
+                }
+                if (
+                  col?.field === 'shutdownRate' &&
+                  col?.type === 'shutdownRateDropdown'
+                ) {
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title || col.headerName}
+                      width={col.width}
+                      hidden={col.hidden}
+                      editable={col?.editable ? true : false}
+                      headerClassName={isActive ? 'active-column' : ''}
+                      cells={{
+                        edit: {
+                          text: (props) => (
+                            <MonthDropdownPEPP1
+                              {...props}
+                              options={allDescriptionDrpdwn}
+                            />
+                          ),
+                        },
+                        data: (props) =>
+                          permissions?.MonthDropdownPEPPHighlight ? (
+                            <SimpleHighlightCell
+                              {...props}
+                              customModifiedCells={customModifiedCells}
+                              highlight={true}
+                            />
+                          ) : (
+                            MonthDropdownPEPPDisplayCell(props)
+                          ),
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                    />
+                  )
+                }
+
                 if (col.type === 'monthDropdownPEPP') {
                   return (
                     <GridColumn

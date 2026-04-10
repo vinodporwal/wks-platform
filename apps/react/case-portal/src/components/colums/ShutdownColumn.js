@@ -211,12 +211,7 @@ export const ShutDownPeC2Columns = [
     editable: true,
     type: 'descLimit',
   },
-  // {
-  //   field: 'productName1',
-  //   title: 'Particulars',
-  //   editable: true,
-  //   widthT: 130,
-  // },
+
   {
     field: 'maintenanceId',
     title: 'Maintenance ID',
@@ -240,7 +235,7 @@ export const ShutDownPeC2Columns = [
   },
   {
     field: 'shutdownRate',
-    title: 'Rate',
+    title: 'Shutdown Type',
     type: 'shutdownRateDropdown',
     editable: true,
   },
