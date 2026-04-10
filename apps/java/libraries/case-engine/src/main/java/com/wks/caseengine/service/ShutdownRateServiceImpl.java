@@ -1,7 +1,7 @@
 package com.wks.caseengine.service;
 
 import java.sql.CallableStatement;
-
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 
@@ -22,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
+import com.wks.caseengine.dto.ShutdownRateDTO;
+import com.wks.caseengine.dto.ShutdownRateDropdownDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
@@ -219,5 +221,35 @@ public class ShutdownRateServiceImpl implements ShutdownRateService {
 			default:
 				return "string";
 		}
+	}
+	
+	@Override
+	public List<ShutdownRateDropdownDTO> getShutdownRateDropdown(String plantId) {
+		List<ShutdownRateDropdownDTO> dropdownList = new ArrayList<>();
+		
+		try {
+			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			String viewName="vwScrn"+verticalName+"ShutdownRateDropdown";
+			String sql = "SELECT Name, DisplayName, DisplayOrder FROM [dbo].[" + viewName + "] ORDER BY DisplayOrder";
+			List<Object[]> obj = entityManager.createNativeQuery(sql).getResultList();
+			
+			for (Object[] row : obj) {
+				ShutdownRateDropdownDTO dropdown = new ShutdownRateDropdownDTO();
+				
+				dropdown.setName(row[0] != null ? row[0].toString() : null);
+				dropdown.setDisplayName(row[1] != null ? row[1].toString() : null);
+				dropdown.setDisplayOrder(row[2] != null ? Integer.parseInt(row[2].toString()) : null);
+				
+				dropdownList.add(dropdown);
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		return dropdownList;
 	}
 }

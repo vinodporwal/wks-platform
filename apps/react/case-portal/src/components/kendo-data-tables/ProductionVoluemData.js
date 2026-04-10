@@ -1116,7 +1116,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
   }, [tabIndex, PLANT_ID])
 
   const excelBtnGrid2 = useMemo(() => {
-    if (IS_PP_SEZ && unitDesignCapacity === 'TPD') {
+    if (IS_PE_PP && unitDesignCapacity === 'TPD') {
       return false
     }
     if (IS_AROMATICS_SEZ_PX4 && unitDesignCapacity === 'TPD') {
@@ -1136,7 +1136,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
   ])
 
   const excelUploadBtnGrid2 = useMemo(() => {
-    if (IS_PP_SEZ && unitDesignCapacity === 'TPD') {
+    if (IS_PE_PP && unitDesignCapacity === 'TPD') {
       return false
     }
     if (IS_AROMATICS_SEZ_PX4 && unitDesignCapacity === 'TPD') {

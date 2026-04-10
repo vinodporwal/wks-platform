@@ -10,7 +10,10 @@ import CircularProgress from '@mui/material/CircularProgress'
 import { validateFields } from 'utils/validationUtils'
 import { verticalEnums } from 'enums/verticalEnums'
 import KendoDataTables from './index'
-import { ShutDownPeColumns } from 'components/colums/ShutdownColumn'
+import {
+  ShutDownPeColumns,
+  ShutDownPeC2Columns,
+} from 'components/colums/ShutdownColumn'
 import { ShutDownPeColumnsldpe12 } from 'components/colums/ShutdownColumn'
 import {
   ShutDownPpColumns,
@@ -99,6 +102,7 @@ const ShutDown = ({ permissions }) => {
     lowerVertName === 'chemical'
   const IS_PTA = lowerVertName === 'pta'
   const IS_CHEMICAL = lowerVertName === 'chemical'
+  const IS_PP = lowerVertName === 'pp'  
   const IS_PTA_DMD = lowerVertName === 'pta' && lowerSiteName === 'dmd'
   const IS_PP_DTA = lowerVertName === 'pp' && lowerSiteName === 'dta'
   const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
@@ -107,6 +111,8 @@ const ShutDown = ({ permissions }) => {
   const IS_PP_HMD = lowerVertName === 'pp' && lowerSiteName === 'hmd'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
+  const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
+  const IS_AROMATICS = lowerVertName === 'aromatics'
   const DELETE_NOTE =
     'Warning: Please verify the shutdown consumption quantity before deleting the shutdown activity.'
 
@@ -374,7 +380,8 @@ const ShutDown = ({ permissions }) => {
         lowerVertName == 'pp' ||
         lowerVertName == 'pet' ||
         IS_PVC_VMD ||
-        IS_CHEMICAL
+        IS_CHEMICAL ||
+        lowerVertName === 'aromatics'
       ) {
         // Check for shutdown timeframe spanning multiple months
         const monthSpanRows = new Set() // Add this line
@@ -383,7 +390,8 @@ const ShutDown = ({ permissions }) => {
           lowerVertName != 'vcm' &&
           !IS_PTA &&
           !IS_CHEMICAL &&
-          !IS_ELASTOMER_JMD_HIIR
+          !IS_ELASTOMER_JMD_HIIR &&
+          !IS_AROMATICS
         ) {
           for (const row of allRecords) {
             const start = new Date(row.maintStartDateTime)
@@ -415,7 +423,7 @@ const ShutDown = ({ permissions }) => {
         }
 
         //Shutdown timeframe overlapping of same time.
-        if (!IS_PTA && !IS_CHEMICAL && !IS_ELASTOMER_JMD_HIIR) {
+        if (!IS_PTA && !IS_CHEMICAL && !IS_ELASTOMER_JMD_HIIR && !IS_PP) {
           for (let i = 0; i < allRecords.length; i++) {
             const a = allRecords[i]
             const aStart = new Date(a.maintStartDateTime).getTime()
@@ -456,7 +464,10 @@ const ShutDown = ({ permissions }) => {
           !IS_PVC_VMD &&
           !IS_CHEMICAL &&
           !IS_PP_SEZ &&
-          !IS_ELASTOMER_JMD_HIIR
+          !IS_ELASTOMER_JMD_HIIR &&
+          !IS_PP_DTA &&
+          !IS_PE_PP &&
+          !IS_AROMATICS
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
@@ -630,6 +641,7 @@ const ShutDown = ({ permissions }) => {
           audityear: AOP_YEAR,
           id: row.idFromApi || null,
           remark: row.remark || 'null',
+          shutdownRate: row.shutdownRate || row.shutdownRateDrpdwn,
         }))
       }
 
@@ -765,6 +777,9 @@ const ShutDown = ({ permissions }) => {
         const descriptionObj = allDescriptionDrpdwn.find(
           (p) => p.name === item.discription,
         )
+        const shutdownRateObj = allDescriptionDrpdwn.find(
+          (p) => p.name === item.shutdownRate,
+        )
 
         if (lowerVertName == 'pta') {
           return {
@@ -811,6 +826,7 @@ const ShutDown = ({ permissions }) => {
           maintStartDateTime: new Date(item?.maintStartDateTime),
           maintEndDateTime: new Date(item?.maintEndDateTime),
           productName1: productObj ? productObj.displayName : '',
+          shutdowRate: shutdownRateObj ? shutdownRateObj.displayName : '',
         }
       })
 
@@ -979,6 +995,64 @@ const ShutDown = ({ permissions }) => {
     lowerVertName,
   ])
 
+  useEffect(() => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    const getShutdownRateDrpdwn = async () => {
+      try {
+        let data = []
+
+        if (lowerVertName == 'pe' && siteName?.toLowerCase() === 'c2') {
+          data = await DataService.dropdownValuesPeC2(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+        }
+
+        // let data = {
+        //   code: 200,
+        //   message: 'Data fetched successfully',
+        //   data: [
+        //     {
+        //       DisplayName: 'Catalyst Full Topup',
+        //       Name: 'Catalyst Full Topup',
+        //     },
+        //     {
+        //       DisplayName: 'Catalyst Partial Topup',
+        //       Name: 'Catalyst Partial Topup',
+        //     },
+        //     {
+        //       DisplayName: 'Preheater Cleaning',
+        //       Name: 'Preheater Cleaning',
+        //     },
+        //     {
+        //       DisplayName: 'Preheater Cleaning',
+        //       Name: 'Other',
+        //     },
+        //   ],
+        // }
+
+        let ShutdownRateObjList = []
+        {
+          ShutdownRateObjList = data?.map((product) => ({
+            id: product.name,
+            name: product.name,
+            displayName: product.displayName,
+            value: product.name,
+            text: product.displayName,
+          }))
+        }
+        setAllDescriptionDrpdwn(ShutdownRateObjList)
+      } catch (error) {
+        console.error('Error fetching products', error)
+      }
+    }
+
+    if (lowerVertName == 'pe' && siteName?.toLowerCase() === 'c2')
+      getShutdownRateDrpdwn()
+  }, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
+
   const colDefs = useMemo(() => {
     switch (lowerVertName) {
       case verticalEnums.PE:
@@ -988,6 +1062,8 @@ const ShutDown = ({ permissions }) => {
             plantName?.toLowerCase() === 'lldpe2')
         ) {
           return ShutDownPeColumnsldpe12
+        } else if (siteName?.toLowerCase() === 'c2') {
+          return ShutDownPeC2Columns
         }
         return ShutDownPeColumns
 
