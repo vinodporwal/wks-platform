@@ -116,6 +116,9 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	
 	@Autowired
 	private AOPMaintenanceDesignRemarksService aopMaintenanceDesignRemarksService;
+	
+	@Autowired
+	private ShutdownHistoryService shutdownHistoryService;
 
 	@Override
 	public List<MaintenanceDetailsDTO> getMaintenanceCalculatedData(String plantId, String year) {
@@ -609,6 +612,188 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	        default:
 	            return "string"; 
 	    }
+	}
+
+
+	private int[] parseFiscalYearBounds(String aopYear) {
+		if (aopYear == null || aopYear.isBlank()) {
+			int y = java.time.Year.now(java.time.ZoneId.systemDefault()).getValue();
+			return new int[] { y, y + 1 };
+		}
+		String trimmed = aopYear.trim();
+		int dash = trimmed.indexOf('-');
+		if (dash < 0) {
+			try {
+				int y = Integer.parseInt(trimmed);
+				return new int[] { y, y + 1 };
+			} catch (NumberFormatException e) {
+				int y = java.time.Year.now(java.time.ZoneId.systemDefault()).getValue();
+				return new int[] { y, y + 1 };
+			}
+		}
+		String first = trimmed.substring(0, dash).trim();
+		String second = trimmed.substring(dash + 1).trim();
+		try {
+			int startYear = Integer.parseInt(first);
+			int endYear;
+			if (second.length() <= 2) {
+				int century = (startYear / 100) * 100;
+				endYear = century + Integer.parseInt(second);
+				if (endYear <= startYear) {
+					endYear += 100;
+				}
+			} else {
+				endYear = Integer.parseInt(second);
+			}
+			return new int[] { startYear, endYear };
+		} catch (NumberFormatException e) {
+			int y = java.time.Year.now(java.time.ZoneId.systemDefault()).getValue();
+			return new int[] { y, y + 1 };
+		}
+	}
+
+	private static String twoDigitYear(int fullYear) {
+		return String.format("%02d", fullYear % 100);
+	}
+
+	private List<String> buildFiscalMonthHeaders(int startYear, int endYear) {
+		String yy1 = twoDigitYear(startYear);
+		String yy2 = twoDigitYear(endYear);
+		List<String> headers = new ArrayList<>(12);
+		String[] aprToDec = { "Apr-", "May-", "Jun-", "Jul-", "Aug-", "Sep-", "Oct-", "Nov-", "Dec-" };
+		for (String m : aprToDec) {
+			headers.add(m + yy1);
+		}
+		String[] janToMar = { "Jan-", "Feb-", "Mar-" };
+		for (String m : janToMar) {
+			headers.add(m + yy2);
+		}
+		return headers;
+	}
+
+	private String uniqueMaintenanceSheetName(String sanitizedBase, Set<String> used) {
+		String name = sanitizedBase;
+		int counter = 1;
+		while (used.contains(name)) {
+			String suffix = "_" + (++counter);
+			int maxBase = Math.max(1, 31 - suffix.length());
+			String base = sanitizedBase.length() > maxBase ? sanitizedBase.substring(0, maxBase) : sanitizedBase;
+			name = base + suffix;
+			if (name.length() > 31) {
+				name = name.substring(0, 31);
+			}
+		}
+		return name;
+	}
+
+	private static void setCellDouble(Cell cell, Double value) {
+		if (value != null) {
+			cell.setCellValue(value.doubleValue());
+		}
+	}
+
+	private static double sumMaintenanceMonths(MaintenanceDetailsDTO dto) {
+		double s = 0;
+		Double[] v = { dto.getApril(), dto.getMay(), dto.getJune(), dto.getJuly(), dto.getAug(), dto.getSep(),
+				dto.getOct(), dto.getNov(), dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar() };
+		for (Double d : v) {
+			if (d != null) {
+				s += d.doubleValue();
+			}
+		}
+		return s;
+	}
+
+	private void writeMaintenanceLineSheet(Workbook workbook, Sheet sheet, List<String> monthHeaders,
+			List<MaintenanceDetailsDTO> dtoList) {
+		CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+		int currentRow = 0;
+		Row headerRow = sheet.createRow(currentRow++);
+		Cell descH = headerRow.createCell(0);
+		descH.setCellValue("Description");
+		descH.setCellStyle(headerStyle);
+		for (int col = 0; col < monthHeaders.size(); col++) {
+			Cell cell = headerRow.createCell(col + 1);
+			cell.setCellValue(monthHeaders.get(col));
+			cell.setCellStyle(headerStyle);
+		}
+		Cell totalH = headerRow.createCell(1 + monthHeaders.size());
+		totalH.setCellValue("Total Hrs");
+		totalH.setCellStyle(headerStyle);
+
+		for (MaintenanceDetailsDTO dto : dtoList) {
+			Row row = sheet.createRow(currentRow++);
+			int col = 0;
+			row.createCell(col++).setCellValue(dto.getName() != null ? dto.getName() : "");
+			setCellDouble(row.createCell(col++), dto.getApril());
+			setCellDouble(row.createCell(col++), dto.getMay());
+			setCellDouble(row.createCell(col++), dto.getJune());
+			setCellDouble(row.createCell(col++), dto.getJuly());
+			setCellDouble(row.createCell(col++), dto.getAug());
+			setCellDouble(row.createCell(col++), dto.getSep());
+			setCellDouble(row.createCell(col++), dto.getOct());
+			setCellDouble(row.createCell(col++), dto.getNov());
+			setCellDouble(row.createCell(col++), dto.getDec());
+			setCellDouble(row.createCell(col++), dto.getJan());
+			setCellDouble(row.createCell(col++), dto.getFeb());
+			setCellDouble(row.createCell(col++), dto.getMar());
+			double total = dto.getTotal() != null ? dto.getTotal().doubleValue() : sumMaintenanceMonths(dto);
+			row.createCell(col).setCellValue(total);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public byte[] exportMaintenanceDetails(String year, String plantId) {
+		try {
+			AOPMessageVM lineVm = shutdownHistoryService.getLineDetails(plantId, year);
+			List<Map<String, Object>> lines = new ArrayList<>();
+			if (lineVm != null && lineVm.getData() instanceof List) {
+				for (Object o : (List<?>) lineVm.getData()) {
+					if (o instanceof Map) {
+						lines.add((Map<String, Object>) o);
+					}
+				}
+			}
+
+			int[] bounds = parseFiscalYearBounds(year);
+			List<String> monthHeaders = buildFiscalMonthHeaders(bounds[0], bounds[1]);
+
+			Workbook workbook = new XSSFWorkbook();
+			Set<String> usedSheetNames = new HashSet<>();
+
+			if (lines.isEmpty()) {
+				Sheet sheet = workbook.createSheet("Maintenance");
+				writeMaintenanceLineSheet(workbook, sheet, monthHeaders, new ArrayList<>());
+			} else {
+				for (Map<String, Object> line : lines) {
+					Object idObj = line.get("id");
+					if (idObj == null || idObj.toString().isBlank()) {
+						continue;
+					}
+					String lineId = idObj.toString();
+					String display = line.get("displayName") != null ? line.get("displayName").toString()
+							: (line.get("name") != null ? line.get("name").toString() : "Line");
+					String sheetName = uniqueMaintenanceSheetName(Utility.sanitizeSheetName(display), usedSheetNames);
+					usedSheetNames.add(sheetName);
+
+					List<MaintenanceDetailsDTO> dtoList = getMaintenanceCalculatedLineData(plantId, year, lineId);
+					Sheet sheet = workbook.createSheet(sheetName);
+					writeMaintenanceLineSheet(workbook, sheet, monthHeaders, dtoList);
+				}
+				if (usedSheetNames.isEmpty()) {
+					Sheet sheet = workbook.createSheet("Maintenance");
+					writeMaintenanceLineSheet(workbook, sheet, monthHeaders, new ArrayList<>());
+				}
+			}
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	public byte[] maintenanceExport(String year, String plantId, boolean isAfterSave, List<Map<String, Object>> dynamicData) {
