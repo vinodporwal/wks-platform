@@ -126,7 +126,7 @@ const ShutdownNorms = () => {
     ['iir'].includes(PLANT_NAME_LOWERCASE)
 
   const textNote =
-    IS_PE_PP_VERTICAL || IS_PVC_DMD || IS_ELASTOMER_JMD_HIIR
+    (IS_PE_PP_VERTICAL || IS_PVC_DMD || IS_ELASTOMER_JMD_HIIR) && !IS_PE_C2
       ? '*Adding shutdown consumption to all grades will replace any existing individual grade consumption entries.'
       : '*Quantities are per day basis'
   const textNoteWhileSaving =
@@ -803,6 +803,7 @@ const ShutdownNorms = () => {
       showUnit: false,
       units: ['TPH', 'TPD'],
       saveWithRemark: false,
+      showCalulcationPromt: IS_PE_C2 ? true : false,
 
       showNote:
         lowerVertName === 'meg' ||

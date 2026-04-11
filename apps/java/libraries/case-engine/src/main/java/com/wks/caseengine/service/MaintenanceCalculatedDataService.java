@@ -27,5 +27,6 @@ public interface MaintenanceCalculatedDataService {
 	AOPMessageVM importExcel(String year, String plantFKId, String budgetCategory, MultipartFile file);
 	byte[] maintenanceExport(String year, String plantId, boolean isAfterSave,
 			 List<Map<String, Object>> dynamicData);
+	public byte[] exportMaintenanceDetails(String year, String plantFKId);
 	public AOPMessageVM maintenanceImport(String year,UUID plantId,MultipartFile file);
 }
