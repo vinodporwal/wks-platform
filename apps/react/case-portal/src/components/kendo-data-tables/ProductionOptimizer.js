@@ -12,6 +12,11 @@ import { DataService } from 'services/DataService'
 import { ProductionNormsApiService } from 'services/production-norms-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
+const MONTH_FIELDS = [
+  'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
+  'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar',
+]
+
 const ProductionOptimizer = () => {
   const [tabIndex, setTabIndex] = useState(0)
   const [tabs, setTabs] = useState([])
@@ -75,6 +80,60 @@ const ProductionOptimizer = () => {
 
   const valueFormat = ValueFormatterProduction()
 
+  const monthKeyMap = {
+    Apr: 4, May: 5, Jun: 6, Jul: 7, Aug: 8, Sep: 9,
+    Oct: 10, Nov: 11, Dec: 12, Jan: 1, Feb: 2, Mar: 3,
+  }
+
+
+  const addTotalColumnAndRow = useCallback(
+    (dynamicColumns, mappedRows) => {
+      const totalColumn = {
+        field: 'Total',
+        title: 'Total',
+        editable: false,
+        align: 'right',
+        format: valueFormat,
+        type: 'number',
+        isEditable: false,
+      }
+      const updatedColumns = [...dynamicColumns, totalColumn]
+      const rowsWithRowTotal = mappedRows.map((row) => {
+        const rowTotal = MONTH_FIELDS.reduce((sum, month) => {
+          return sum + (parseFloat(row[month]) || 0)
+        }, 0)
+        return { ...row, Total: rowTotal }
+      })
+      const totalRow = {
+        id: 'total-row',
+        sno: 'Total',
+        isEditable: false,
+        isTotalRow: true,
+      }
+
+      updatedColumns.forEach((col) => {
+        const isNumericOrMonth =
+          col.type === 'number' ||
+          MONTH_FIELDS.includes(col.field) ||
+          col.field === 'Total'
+
+        if (isNumericOrMonth) {
+          totalRow[col.field] = rowsWithRowTotal.reduce(
+            (sum, row) => sum + (parseFloat(row[col.field]) || 0),
+            0,
+          )
+        } else if (col.field !== 'sno') {
+          totalRow[col.field] = 'Total'
+        }
+      })
+
+      return {
+        updatedColumns,
+        rowsWithTotal: [...rowsWithRowTotal, totalRow],
+      }
+    },
+    [valueFormat],
+  )
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remarks || '')
@@ -183,20 +242,7 @@ const ProductionOptimizer = () => {
         selectedMode,
       )
       if (res?.code === 200) {
-        const monthKeyMap = {
-          Apr: 4,
-          May: 5,
-          Jun: 6,
-          Jul: 7,
-          Aug: 8,
-          Sep: 9,
-          Oct: 10,
-          Nov: 11,
-          Dec: 12,
-          Jan: 1,
-          Feb: 2,
-          Mar: 3,
-        }
+        // Build dynamic columns from API response
         const dynamicColumns = res?.data?.columns?.map((col) => {
           const monthKey = monthKeyMap[col.field]
           const isMonth = !!monthKey
@@ -210,14 +256,20 @@ const ProductionOptimizer = () => {
             isEditable: false,
           }
         })
-        setColumns(dynamicColumns || [])
+
         const mapped = res?.data?.data?.map((item, index) => ({
           id: index + 1,
           sno: index + 1,
           ...item,
           isEditable: false,
         }))
-        setRows(mapped || [])
+        const { updatedColumns, rowsWithTotal } = addTotalColumnAndRow(
+          dynamicColumns || [],
+          mapped || [],
+        )
+
+        setColumns(updatedColumns)
+        setRows(rowsWithTotal)
       } else {
         setRows([])
         setColumns([])
@@ -229,7 +281,7 @@ const ProductionOptimizer = () => {
     } finally {
       setLoading(false)
     }
-  }, [PLANT_ID, AOP_YEAR, keycloak, tabIndex, lineDetails, selectedMode])
+  }, [PLANT_ID, AOP_YEAR, keycloak, tabIndex, lineDetails, selectedMode, addTotalColumnAndRow])
 
   const fetchDataCombined = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR || !selectedCombinedMode) return
@@ -243,20 +295,7 @@ const ProductionOptimizer = () => {
         selectedCombinedMode,
       )
       if (res?.code === 200) {
-        const monthKeyMap = {
-          Apr: 4,
-          May: 5,
-          Jun: 6,
-          Jul: 7,
-          Aug: 8,
-          Sep: 9,
-          Oct: 10,
-          Nov: 11,
-          Dec: 12,
-          Jan: 1,
-          Feb: 2,
-          Mar: 3,
-        }
+        // Build dynamic columns from API response
         const dynamicColumns = res?.data?.columns?.map((col) => {
           const monthKey = monthKeyMap[col.field]
           const isMonth = !!monthKey
@@ -269,14 +308,20 @@ const ProductionOptimizer = () => {
             type: col.type,
           }
         })
-        setColumns1(dynamicColumns || [])
+
         const mapped = res?.data?.data?.map((item, index) => ({
           id: index + 1,
           sno: index + 1,
           ...item,
           isEditable: false,
         }))
-        setRows1(mapped || [])
+        const { updatedColumns, rowsWithTotal } = addTotalColumnAndRow(
+          dynamicColumns || [],
+          mapped || [],
+        )
+
+        setColumns1(updatedColumns)
+        setRows1(rowsWithTotal)
       } else {
         setRows1([])
         setColumns1([])
@@ -288,7 +333,7 @@ const ProductionOptimizer = () => {
     } finally {
       setLoading(false)
     }
-  }, [PLANT_ID, AOP_YEAR, keycloak, selectedCombinedMode])
+  }, [PLANT_ID, AOP_YEAR, keycloak, selectedCombinedMode, addTotalColumnAndRow])
 
   useEffect(() => {
     if (selectedMode) {
