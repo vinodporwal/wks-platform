@@ -79,7 +79,7 @@ public class TCSWorkFlowServiceImpl implements TCSWorkFlowService {
     private static final String CTS_APPROVAL_TASK_DEFINITION_KEY = "CTS_APPROVAL";
 
     // stage 4
-    private static final String EPS_APPROVAL_TASK_DEFINITION_KEY = "EPS_Approval"; 
+    private static final String EPS_APPROVAL_TASK_DEFINITION_KEY = "EPS_APPROVAL"; 
 
   // stage 5
     private static final String CLUSTER_HEAD_APPROVAL_TASK_DEFINITION_KEY = "Cluster_Head_APPROVAL";
