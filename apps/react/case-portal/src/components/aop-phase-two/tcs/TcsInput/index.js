@@ -532,7 +532,7 @@ const TcsInput = () => {
         title='TCS Input Submission'
         placeholder='Enter your remarks here...'
         onSubmit={handleRemarkSubmit}
-        maxLength={1000}
+        maxLength={500}
         role={userRole}
         keycloak={keycloak}
         snackbarData={snackbarData}

@@ -613,7 +613,7 @@ const TcsOutput = () => {
         onSubmit={handleRemarkSubmit}
         onApprove={(remark) => handleReviewAction('approve', remark)}
         onReject={(remark) => handleReviewAction('reject', remark)}
-        maxLength={1000}
+        maxLength={500}
         role={userRole}
         keycloak={keycloak}
       />

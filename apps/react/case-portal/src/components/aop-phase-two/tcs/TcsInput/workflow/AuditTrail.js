@@ -178,20 +178,20 @@ const AuditTrail = ({
     {
       field: 'submittedBy',
       header: 'Submission Role',
-      width: '12%',
-      minWidth: '120px',
+      width: '10%',
+      minWidth: '100px',
     },
     {
       field: 'submissionRemark',
       header: 'Submission Remarks',
-      width: '20%',
-      minWidth: '180px',
+      width: '24%',
+      minWidth: '220px',
     },
 
     {
       field: 'status',
       header: 'Status',
-      width: '10%',
+      width: '8%',
       minWidth: '100px',
       isChip: true,
     },

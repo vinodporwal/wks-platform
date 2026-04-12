@@ -37,6 +37,7 @@ const ApproveDialog = ({
   userRole,
   userName,
   timelineData,
+  maxLength = 500,
 }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -334,30 +335,35 @@ const ApproveDialog = ({
 
   console.log('entries', entries)
 
-  // Parse submissionStatus from timelineData to get not-submitted plants
-  const notSubmittedPlants = useMemo(() => {
-    if (!timelineData || !Array.isArray(timelineData)) {
-      return []
-    }
-
-    const submissionStatusEntry = timelineData.find(
-      (item) => item.name === 'submissionStatus' && item.type === 'Json',
+  // Helper to parse not-submitted plants from a named variable in timelineData
+  const getNotSubmittedPlants = (variableName) => {
+    if (!timelineData || !Array.isArray(timelineData)) return []
+    const entry = timelineData.find(
+      (item) => item.name === variableName && item.type === 'Json',
     )
-
-    if (!submissionStatusEntry || !submissionStatusEntry.value) {
-      return []
-    }
-
+    if (!entry || !entry.value) return []
     try {
-      const submissionStatus = JSON.parse(submissionStatusEntry.value)
-      return Object.entries(submissionStatus)
-        .filter(([plant, isSubmitted]) => !isSubmitted)
+      const statusMap = JSON.parse(entry.value)
+      return Object.entries(statusMap)
+        .filter(([, submitted]) => !submitted)
         .map(([plant]) => plant)
     } catch (err) {
-      console.error('Error parsing submissionStatus:', err)
+      console.error(`Error parsing ${variableName}:`, err)
       return []
     }
-  }, [timelineData])
+  }
+
+  // Plant Manager: not-submitted plants from submissionStatus
+  const pmNotSubmittedPlants = useMemo(
+    () => getNotSubmittedPlants('submissionStatus'),
+    [timelineData],
+  )
+
+  // CTS Tech Manager: not-submitted plants from ctsTechSubmissionStatus
+  const ctsNotSubmittedPlants = useMemo(
+    () => getNotSubmittedPlants('ctsTechSubmissionStatus'),
+    [timelineData],
+  )
 
   return (
     <>
@@ -387,47 +393,97 @@ const ApproveDialog = ({
         <Divider />
 
         <DialogContent sx={{ p: 0 }}>
-          {/* Not Submitted Plants Alert - Show at top when dialog opens */}
-          {notSubmittedPlants.length > 0 && (
+          {/* Pending Submissions Split by Role */}
+          {(pmNotSubmittedPlants.length > 0 || ctsNotSubmittedPlants.length > 0) && (
             <Box
               sx={{
                 p: 2,
                 m: 2,
                 bgcolor: '#fafafa',
                 border: '1px solid #e0e0e0',
+                borderRadius: 1,
                 boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1.5,
               }}
             >
-              <Typography
-                variant='body2'
-                color='text.secondary'
-                sx={{ mb: 1, fontWeight: 500 }}
-              >
-                Pending Submissions ({notSubmittedPlants.length})
-              </Typography>
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 0.75,
-                }}
-              >
-                {notSubmittedPlants.map((plant) => (
-                  <Box
-                    key={plant}
-                    sx={{
-                      px: 1,
-                      py: 0.25,
-                      bgcolor: '#f5f5f5',
-                      color: 'text.secondary',
-                      borderRadius: 0.5,
-                      fontSize: '0.75rem',
-                      border: '1px solid #e0e0e0',
-                    }}
-                  >
-                    {plant}
+              {/* Plant Manager pending */}
+              <Box>
+                <Typography
+                  variant='body2'
+                  sx={{ mb: 0.75, fontWeight: 600, color: '#f57c00' }}
+                >
+                  Plant Manager — Pending Submissions
+                  {pmNotSubmittedPlants.length > 0
+                    ? ` (${pmNotSubmittedPlants.length})`
+                    : ''}
+                </Typography>
+                {pmNotSubmittedPlants.length === 0 ? (
+                  <Typography variant='caption' color='text.secondary'>
+                    All plants submitted ✓
+                  </Typography>
+                ) : (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                    {pmNotSubmittedPlants.map((plant) => (
+                      <Box
+                        key={plant}
+                        sx={{
+                          px: 1,
+                          py: 0.25,
+                          bgcolor: '#fff3e0',
+                          color: '#e65100',
+                          borderRadius: 0.5,
+                          fontSize: '0.75rem',
+                          border: '1px solid #ffcc80',
+                          fontWeight: 500,
+                        }}
+                      >
+                        {plant}
+                      </Box>
+                    ))}
                   </Box>
-                ))}
+                )}
+              </Box>
+
+              <Divider />
+
+              {/* CTS Tech Manager pending */}
+              <Box>
+                <Typography
+                  variant='body2'
+                  sx={{ mb: 0.75, fontWeight: 600, color: '#1565c0' }}
+                >
+                  CTS Tech Manager — Pending Submissions
+                  {ctsNotSubmittedPlants.length > 0
+                    ? ` (${ctsNotSubmittedPlants.length})`
+                    : ''}
+                </Typography>
+                {ctsNotSubmittedPlants.length === 0 ? (
+                  <Typography variant='caption' color='text.secondary'>
+                    All plants submitted ✓
+                  </Typography>
+                ) : (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                    {ctsNotSubmittedPlants.map((plant) => (
+                      <Box
+                        key={plant}
+                        sx={{
+                          px: 1,
+                          py: 0.25,
+                          bgcolor: '#e3f2fd',
+                          color: '#0d47a1',
+                          borderRadius: 0.5,
+                          fontSize: '0.75rem',
+                          border: '1px solid #90caf9',
+                          fontWeight: 500,
+                        }}
+                      >
+                        {plant}
+                      </Box>
+                    ))}
+                  </Box>
+                )}
               </Box>
             </Box>
           )}
@@ -453,6 +509,7 @@ const ApproveDialog = ({
                 onChange={(e) => setBulkRemark(e.target.value)}
                 placeholder='Enter remark for all selected plants...'
                 variant='outlined'
+                inputProps={{ maxLength }}
                 sx={{
                   bgcolor: 'white',
                   '& .MuiOutlinedInput-root': {
@@ -460,6 +517,13 @@ const ApproveDialog = ({
                   },
                 }}
               />
+              <Typography
+                variant='caption'
+                color='text.secondary'
+                sx={{ display: 'block', mt: 0.5, textAlign: 'right' }}
+              >
+                {bulkRemark.length}/{maxLength}
+              </Typography>
               <Box sx={{ display: 'flex', gap: 1, mt: 1.5 }}>
                 <Button
                   variant='contained'
@@ -767,12 +831,23 @@ const ApproveDialog = ({
                             isAnyIndividualActionLoading ||
                             plant.plantStatus !== 'PENDING'
                           }
+                          inputProps={{ maxLength }}
                           sx={{
                             '& .MuiOutlinedInput-root': {
                               fontSize: '0.875rem',
                             },
                           }}
                         />
+                        <Typography
+                          variant='caption'
+                          color='text.secondary'
+                          sx={{ display: 'block', mt: 0.5, textAlign: 'right' }}
+                        >
+                          {plant.plantStatus !== 'PENDING'
+                            ? plant.verifiedRemark?.length || 0
+                            : remarks[plant.plantId]?.length || 0}
+                          /{maxLength}
+                        </Typography>
                       </TableCell>
                       <TableCell align='center'>
                         <Box

@@ -29,7 +29,7 @@ const RemarkDialog = ({
   onApprove,
   onReject,
   disabled = false,
-  maxLength = 1000,
+  maxLength = 500,
   role = '',
   historyData = [],
   keycloak,
