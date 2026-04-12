@@ -1774,7 +1774,8 @@ const KendoDataTables = ({
                   variant='outlined'
                   label={permissions?.dropdownLabel || 'Select'}
                   sx={{
-                    display: permissions?.IS_PE_C2_HIDE ? 'block' : 'none',
+                    display:
+                      permissions?.IS_PE_C2_HIDE !== false ? 'block' : 'none',
                   }}
                   InputLabelProps={{
                     shrink: true,
