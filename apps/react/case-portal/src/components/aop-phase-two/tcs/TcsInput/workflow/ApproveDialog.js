@@ -394,7 +394,8 @@ const ApproveDialog = ({
 
         <DialogContent sx={{ p: 0 }}>
           {/* Pending Submissions Split by Role */}
-          {(pmNotSubmittedPlants.length > 0 || ctsNotSubmittedPlants.length > 0) && (
+          {(pmNotSubmittedPlants.length > 0 ||
+            ctsNotSubmittedPlants.length > 0) && (
             <Box
               sx={{
                 p: 2,
