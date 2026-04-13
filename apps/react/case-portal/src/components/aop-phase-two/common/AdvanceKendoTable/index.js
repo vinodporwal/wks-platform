@@ -1282,7 +1282,12 @@ const AdvanceKendoTable = ({
               edit: {
                 date:
                   col?.type == 'dateTime'
-                    ? DateTimePickerEditor
+                    ? (props) => (
+                        <DateTimePickerEditor
+                          {...props}
+                          isFinancialYear={col.isFinancialYear !== false}
+                        />
+                      )
                     : DateOnlyPicker,
               },
               data: (props) => (

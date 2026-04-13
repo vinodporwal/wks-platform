@@ -49,7 +49,7 @@ const NetUnitCapacity = ({
         SITE_ID,
         VERTICAL_ID,
         apiYear,
-        'currentOperating',
+        'maxAchieved',
       )
 
       let transformedData = []

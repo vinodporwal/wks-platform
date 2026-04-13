@@ -50,7 +50,7 @@ const NetUnitCapacity = ({
         keycloak,
         PLANT_ID,
         apiYear,
-        'currentOperating',
+        'maxAchieved',
       )
 
       let transformedData = []
