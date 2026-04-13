@@ -127,10 +127,10 @@ NORM_AIR_PER_MT_SHP_HRSG = 9.7440           # ~468720 NM3 per ~48000 MT SHP (sca
 # Iteration Constants
 USD_ITERATION_LIMIT = 50
 USD_TOLERANCE = 0.001  # MWh tolerance for aux power convergence
-EXCESS_STEAM_ACTION_THRESHOLD_MT = 5.0
-EXCESS_STEAM_PRACTICAL_TOLERANCE_MT = 5.0
+EXCESS_STEAM_ACTION_THRESHOLD_MT = 1.0
+EXCESS_STEAM_PRACTICAL_TOLERANCE_MT = 0.1
 STALL_ITERATION_LIMIT = 3
-STALL_EXCESS_STEAM_DELTA_MT = 5.0
+STALL_EXCESS_STEAM_DELTA_MT = 1.1
 STALL_POWER_AUX_DELTA_MWH = 0.001
 STALL_STG_DELTA_MWH = 0.001
 
@@ -1578,6 +1578,8 @@ def usd_iterate(
             actual_stg_increase = min(actual_stg_increase, gt_available_reduction)
             damped_stg_increase = actual_stg_increase * 0.5
             actual_stg_increase = min(actual_stg_increase, damped_stg_increase if damped_stg_increase > 0 else actual_stg_increase)
+            damped_stg_increase = actual_stg_increase * 0.5
+            actual_stg_increase = min(actual_stg_increase, damped_stg_increase if damped_stg_increase > 0 else actual_stg_increase)
             
             action_threshold_mwh = EXCESS_STEAM_ACTION_THRESHOLD_MT / STEAM_TO_POWER_MT_PER_MWH
             if actual_stg_increase > action_threshold_mwh:
@@ -1591,6 +1593,7 @@ def usd_iterate(
                 print(f"  STG Max Capacity:                   {stg_db_max_mwh:>12.2f} MWh")
                 print(f"  STG Available Increase:             {stg_available_increase:>12.2f} MWh")
                 print(f"  GT Available Reduction:             {gt_available_reduction:>12.2f} MWh")
+                print(f"  Damped STG Increase (50%):          {damped_stg_increase:>12.2f} MWh")
                 print(f"  Damped STG Increase (50%):          {damped_stg_increase:>12.2f} MWh")
                 print(f"  Actual STG Increase:                {actual_stg_increase:>12.2f} MWh")
                 print(f"  ─────────────────────────────────────────────")

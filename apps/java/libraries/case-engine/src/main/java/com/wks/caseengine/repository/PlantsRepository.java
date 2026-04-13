@@ -59,5 +59,13 @@ public interface PlantsRepository extends JpaRepository<Plants, UUID> {
 				 "WHERE p.Id IN (SELECT DISTINCT PlantFKId FROM UserScreenMapping WHERE ScreenCode = :screenCode AND verticalfkid = :verticalId) " +
 				 "AND p.Site_FK_Id = :siteId", nativeQuery = true)
 	List<Plants> findUniqueNamesPlantsByVerticalAndSite(@Param("verticalId") UUID verticalId, @Param("siteId") UUID siteId, @Param("screenCode") String screenCode);
+
+
+
+	
+	@Query(value = "SELECT p.* FROM Plants p " +
+				 "WHERE p.Vertical_FK_Id = :verticalId " +
+				 "AND p.Site_FK_Id = :siteId " , nativeQuery = true)
+	List<Plants> getPlantListForWorkflow(@Param("verticalId") UUID verticalId, @Param("siteId") UUID siteId);
 	
 }
