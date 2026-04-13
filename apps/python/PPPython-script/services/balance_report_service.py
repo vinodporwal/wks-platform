@@ -1851,19 +1851,7 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
         row += 1
 
     elif steam_type == 'HP':
-        # HP consumed to produce MP via HP→MP PRDS reduction
-        # hp_for_mp is stored directly in hp_balance from steam_service
-        final_steam = usd_result.get('final_steam_balance', {}) or {}
-        hp_balance = final_steam.get('hp_balance', {}) or {}
-        hp_for_mp = hp_balance.get('hp_for_mp', 0)
-        hp_total_val = hp_balance.get('hp_total', 0)
-        ws[f'A{row}'] = "  MP Steam (via PRDS)"
-        ws[f'B{row}'] = round(hp_for_mp / hp_total_val, 4) if hp_total_val else ''
-        ws[f'C{row}'] = round(hp_for_mp, 2)
-        u4u_total += hp_for_mp
-        for col in range(1, 6):
-            ws.cell(row=row, column=col).border = THIN_BORDER
-        row += 1
+        pass
 
     elif steam_type == 'LP':
         # LP consumed by BFW deaerator and HRSG drum heating
