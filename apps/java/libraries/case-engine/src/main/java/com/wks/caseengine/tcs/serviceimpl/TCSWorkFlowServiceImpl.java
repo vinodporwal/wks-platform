@@ -150,10 +150,11 @@ public class TCSWorkFlowServiceImpl implements TCSWorkFlowService {
     @Override
     public List<String> getPlantList(UUID verticalId, UUID siteId) {  
   
-            // fetch the plants for given vertical if atleast one user and plant is mapped to menu.tcs in UserScreenMapping  (8)
-         //   List<Plants> plants = plantService.findUniqueNamesPlantsByVerticalAndSite(verticalId, siteId, screenCode);
+        //    fetch the plants for given vertical if atleast one user has permission  and plant is mapped to menu.tcs in UserScreenMapping  (8)
+         //  List<Plants> plants = plantService.findUniqueNamesPlantsByVerticalAndSite(verticalId, siteId, screenCode);
 
-         List<Plants> plants = plantService.getPlantListForWorkflow(verticalId, siteId, true);
+           // fetch all the plants under crude and given site (37)
+         List<Plants> plants = plantService.getPlantListForWorkflow(verticalId, siteId);
         
         
             List<String> plantList1 = plants.stream().map(Plants::getDisplayName).toList();
@@ -161,10 +162,10 @@ public class TCSWorkFlowServiceImpl implements TCSWorkFlowService {
         System.out.println("total plants: " + plantList1.size());
                 System.out.println("plantList1: " + plantList1);
 
-        
-      //  List<String> plantList = plantList1.stream().filter(plantName -> plantName.equals("CDU-1") || plantName.equals("CDU-2")).toList();
+        // hardcoded to filter only cdu-1 and cdu-2 plants
+        List<String> plantList = plantList1.stream().filter(plantName -> plantName.equals("CDU-1") || plantName.equals("CDU-2")).toList();
 
-        return plantList1;
+        return plantList;
 
     }
 

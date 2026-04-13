@@ -11,7 +11,7 @@ public interface PlantService {
 	public List<Object[]> getPlantAndSite();
 	public List getShutdownMonths(UUID plantId,String maintenanceName,String year,String gradeId);
 	public List<Plants> findUniqueNamesPlantsByVerticalAndSite(UUID verticalId, UUID siteId, String screenCode);
-	public List<Plants> getPlantListForWorkflow(UUID verticalId, UUID siteId, boolean workflowEnabled);
+	public List<Plants> getPlantListForWorkflow(UUID verticalId, UUID siteId);
 	
 
 }
