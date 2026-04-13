@@ -86,7 +86,8 @@ const TcsOutput = () => {
     setHistoryDialogOpen(true)
   }
 
-  const handleReviewClick = () => {
+  const handleReviewClick = async () => {
+    await checkSubmitEligibility()
     setApproveDialogOpen(true)
   }
 
@@ -120,38 +121,50 @@ const TcsOutput = () => {
     if (!isSubmitEligible) {
       if (userRole === ROLES.EPS_ENGINEER) {
         // Check if already submitted
-        if (approvalStatus?.ebs_approved === true) {
-          return 'You have already submitted to CTS Head/EPS Head'
+        if (approvalStatus?.aom_approved === true) {
+          return 'You have already submitted to CTS Head'
         }
         return 'All plants must be approved before submission'
-      } else if (userRole === ROLES.CTS_HEAD || userRole === ROLES.EPS_HEAD) {
+      } else if (userRole === ROLES.CTS_HEAD) {
         // Check if already submitted
         if (approvalStatus?.cts_approved === true) {
-          return 'You have already submitted to Cluster Head'
+          return 'You have already submitted to EPS Head'
         }
         // Check if EPS Engineer has submitted
-        if (approvalStatus?.ebs_approved === false) {
+        if (approvalStatus?.aom_approved === false) {
           return 'Waiting for AOM submission'
         }
         return 'Waiting for AOM submission, or you have already submitted.'
+      } else if (userRole === ROLES.EPS_HEAD) {
+        // Check if already submitted
+        if (approvalStatus?.eps_approved === true) {
+          return 'You have already submitted to Site President'
+        }
+        // Check if CTS Head has submitted
+        if (approvalStatus?.cts_approved === false) {
+          return 'Waiting for CTS Head submission'
+        }
+        return 'Waiting for CTS Head submission, or you have already submitted.'
       } else if (userRole === ROLES.CLUSTER_HEAD) {
         // Check if already submitted
         if (approvalStatus?.cluster_head_approved === true) {
           return 'You have already finalized the data for PIMS Output'
         }
-        // Check if CTS/EPS Head has submitted
-        if (approvalStatus?.cts_approved === false) {
-          return 'Waiting for CTS Head/EPS Head submission'
+        // Check if EPS Head has submitted
+        if (approvalStatus?.eps_approved === false) {
+          return 'Waiting for EPS Head submission'
         }
-        return 'Waiting for CTS/EPS Head submission, or you have already submitted.'
+        return 'Waiting for EPS Head submission, or you have already submitted.'
       }
 
       return 'Submission not available'
     } else {
       if (userRole === ROLES.EPS_ENGINEER) {
-        return 'Submit all approved plants to CTS Head/EPS Head'
-      } else if (userRole === ROLES.CTS_HEAD || userRole === ROLES.EPS_HEAD) {
-        return 'Submit to Cluster Head'
+        return 'Submit all approved plants to CTS Head'
+      } else if (userRole === ROLES.CTS_HEAD) {
+        return 'Submit to EPS Head'
+      } else if (userRole === ROLES.EPS_HEAD) {
+        return 'Submit to Site President'
       } else if (userRole === ROLES.CLUSTER_HEAD) {
         return 'Finalize data for PIMS Output'
       }
@@ -199,13 +212,13 @@ const TcsOutput = () => {
           // Parse the JSON value
           const approvalStatus = JSON.parse(approvalStatusVar.value)
 
-          // For EPS Engineer: Check if all plants have been approved and EBS not yet submitted
+          // For EPS Engineer: Check if all plants have been approved and AOM not yet submitted
           if (userRole === ROLES.EPS_ENGINEER) {
-            // Check if EBS approval is already done from approvalStatus
-            const ebsApproved = approvalStatus.ebs_approved === true
+            // Check if AOM approval is already done from approvalStatus
+            const aomApproved = approvalStatus.aom_approved === true
 
-            // If EBS already approved, EPS Engineer cannot submit again
-            if (ebsApproved) {
+            // If AOM already approved, EPS Engineer cannot submit again
+            if (aomApproved) {
               setIsSubmitEligible(false)
             } else {
               // Check if approved count equals total count
@@ -232,23 +245,32 @@ const TcsOutput = () => {
               }
             }
           }
-          // For CTS Head/EPS Head: Check if EBS approved is true AND CTS approved is false
-          else if (userRole === ROLES.CTS_HEAD || userRole === ROLES.EPS_HEAD) {
-            const ebsApproved = approvalStatus.ebs_approved === true
+          // For CTS Head: Check if EBS approved is true AND CTS Head not yet approved
+          else if (userRole === ROLES.CTS_HEAD) {
+            const aomApproved = approvalStatus.aom_approved === true
             const ctsApproved = approvalStatus.cts_approved === true
 
-            // Enable submit button only if EBS is approved but CTS is not yet approved
-            const canSubmit = ebsApproved && !ctsApproved
+            // Enable submit button only if AOM is approved but CTS Head is not yet approved
+            const canSubmit = aomApproved && !ctsApproved
             setIsSubmitEligible(canSubmit)
           }
-          // For Cluster Head: Check if CTS approved is true AND Cluster Head approved is false
-          else if (userRole === ROLES.CLUSTER_HEAD) {
+          // For EPS Head: Check if CTS Head approved is true AND EPS Head not yet approved
+          else if (userRole === ROLES.EPS_HEAD) {
             const ctsApproved = approvalStatus.cts_approved === true
+            const epsApproved = approvalStatus.eps_approved === true
+
+            // Enable submit button only if CTS Head is approved but EPS Head is not yet approved
+            const canSubmit = ctsApproved && !epsApproved
+            setIsSubmitEligible(canSubmit)
+          }
+          // For Cluster Head: Check if EPS Head approved is true AND Cluster Head not yet approved
+          else if (userRole === ROLES.CLUSTER_HEAD) {
+            const epsApproved = approvalStatus.eps_approved === true
             const clusterHeadApproved =
               approvalStatus.cluster_head_approved === true
 
-            // Enable submit button only if CTS is approved but Cluster Head is not yet approved
-            const canSubmit = ctsApproved && !clusterHeadApproved
+            // Enable submit button only if EPS Head is approved but Cluster Head is not yet approved
+            const canSubmit = epsApproved && !clusterHeadApproved
             setIsSubmitEligible(canSubmit)
           } else {
             setIsSubmitEligible(false)
@@ -382,8 +404,8 @@ const TcsOutput = () => {
     }
   }
 
-  // Handle approval for CTS_HEAD and EPS_HEAD
-  const handleApprove = async (remark) => {
+  // Handle approve/reject actions for CTS_HEAD, EPS_HEAD, and CLUSTER_HEAD
+  const handleReviewAction = async (action, remark) => {
     try {
       // Validate required parameters
       if (!keycloak || !SITE_ID || !VERTICAL_ID || !userRole || !AOP_YEAR) {
@@ -397,138 +419,65 @@ const TcsOutput = () => {
 
       setIsSubmittingRemark(true)
 
-      // Call appropriate approve APIs based on role
-      if (userRole === ROLES.CLUSTER_HEAD) {
-        // First API: Approve/Reject with true
-        await TcsWorkflowApiService.clusterHeadApproveReject(
-          keycloak,
-          SITE_ID,
-          true, // approvalStatus = true for approve
-          AOP_YEAR,
-          remark,
-          userRole, // verifiedBy
-          userName,
-          VERTICAL_ID,
-        )
+      const isApprove = action === 'approve'
 
-        // Second API: Submission
-        await TcsWorkflowApiService.clusterHeadSubmission(
-          keycloak,
-          SITE_ID,
-          AOP_YEAR,
-          remark,
-          userRole, // verifiedBy
-          userName,
-          VERTICAL_ID,
-        )
-      } else {
-        // CTS_HEAD or EPS_HEAD
-        // First API: Approve/Reject with true
-        await TcsWorkflowApiService.ctsHeadApproveReject(
-          keycloak,
-          SITE_ID,
-          true, // approvalStatus = true for approve
-          AOP_YEAR,
-          remark,
-          userRole, // submittedBy
-          userName,
-          VERTICAL_ID,
-        )
+      // Create common payload object
+      const payload = {
+        keycloak,
+        SITE_ID,
+        VERTICAL_ID,
+        AOP_YEAR,
+        remark,
+        userRole,
+        userName,
+      }
 
-        // Second API: Submission
-        await TcsWorkflowApiService.ctsHeadSubmission(
-          keycloak,
-          SITE_ID,
-          AOP_YEAR,
-          remark,
-          userRole, // submittedBy
-          userName,
-          VERTICAL_ID,
-        )
+      // Call appropriate APIs based on role
+      if (userRole === ROLES.CTS_HEAD) {
+        // CTS_HEAD - Approves after EPS_ENGINEER
+        // First API: Approve/Reject
+        await TcsWorkflowApiService.ctsHeadApproveReject(payload, isApprove)
+
+        // Second API: Submission (only for approve)
+        if (isApprove) {
+          await TcsWorkflowApiService.ctsHeadSubmission(payload)
+        }
+      } else if (userRole === ROLES.EPS_HEAD) {
+        // EPS_HEAD - Approves after CTS_HEAD
+        // First API: Approve/Reject
+        await TcsWorkflowApiService.epsHeadApproveReject(payload, isApprove)
+
+        // Second API: Submission (only for approve)
+        if (isApprove) {
+          await TcsWorkflowApiService.epsHeadSubmission(payload)
+        }
+      } else if (userRole === ROLES.CLUSTER_HEAD) {
+        // CLUSTER_HEAD - Final approval after EPS_HEAD
+        // First API: Approve/Reject
+        await TcsWorkflowApiService.clusterHeadApproveReject(payload, isApprove)
+
+        // Second API: Submission (only for approve)
+        if (isApprove) {
+          await TcsWorkflowApiService.clusterHeadSubmission(payload)
+        }
       }
 
       setSnackbarData({
-        message: 'Approved successfully!',
+        message: `${isApprove ? 'Approved' : 'Rejected'} successfully!`,
         severity: 'success',
       })
       setSnackbarOpen(true)
 
-      // Refresh eligibility after approval
+      // Refresh eligibility after action
       await checkSubmitEligibility()
 
       // Close the remark dialog on success
       setRemarkDialogOpen(false)
     } catch (err) {
-      console.error('Error approving:', err)
+      console.error(`Error ${action}ing:`, err)
 
       setSnackbarData({
-        message: 'Failed to approve. Please try again.',
-        severity: 'error',
-      })
-      setSnackbarOpen(true)
-      throw err
-    } finally {
-      setIsSubmittingRemark(false)
-    }
-  }
-
-  // Handle rejection for CTS_HEAD and EPS_HEAD
-  const handleReject = async (remark) => {
-    try {
-      // Validate required parameters
-      if (!keycloak || !SITE_ID || !VERTICAL_ID || !userRole || !AOP_YEAR) {
-        setSnackbarData({
-          message: 'Missing required parameters. Please refresh and try again.',
-          severity: 'error',
-        })
-        setSnackbarOpen(true)
-        return
-      }
-
-      setIsSubmittingRemark(true)
-
-      // Call appropriate reject API based on role
-      if (userRole === ROLES.CLUSTER_HEAD) {
-        await TcsWorkflowApiService.clusterHeadApproveReject(
-          keycloak,
-          SITE_ID,
-          false, // approvalStatus = false for reject
-          AOP_YEAR,
-          remark,
-          userRole, // verifiedBy
-          userName,
-          VERTICAL_ID,
-        )
-      } else {
-        // CTS_HEAD or EPS_HEAD
-        await TcsWorkflowApiService.ctsHeadApproveReject(
-          keycloak,
-          SITE_ID,
-          false, // approvalStatus = false for reject
-          AOP_YEAR,
-          remark,
-          userRole, // verifiedBy
-          userName,
-          VERTICAL_ID,
-        )
-      }
-
-      setSnackbarData({
-        message: 'Rejected successfully!',
-        severity: 'success',
-      })
-      setSnackbarOpen(true)
-
-      // Refresh eligibility after rejection
-      await checkSubmitEligibility()
-
-      // Close the remark dialog on success
-      setRemarkDialogOpen(false)
-    } catch (err) {
-      console.error('Error rejecting:', err)
-
-      setSnackbarData({
-        message: 'Failed to reject. Please try again.',
+        message: `Failed to ${action}. Please try again.`,
         severity: 'error',
       })
       setSnackbarOpen(true)
@@ -549,9 +498,6 @@ const TcsOutput = () => {
         setSnackbarOpen(true)
         return
       }
-
-      setIsSubmittingRemark(true)
-
       // Call reset workflow API
       await TcsWorkflowApiService.resetWorkflow(
         keycloak,
@@ -560,7 +506,6 @@ const TcsOutput = () => {
         userRole,
         VERTICAL_ID,
       )
-
       setSnackbarData({
         message: 'Workflow reset successfully!',
         severity: 'success',
@@ -570,16 +515,12 @@ const TcsOutput = () => {
       // Refresh eligibility after reset
       await checkSubmitEligibility()
     } catch (err) {
-      console.error('Error resetting workflow:', err)
-
       setSnackbarData({
         message: 'Failed to reset workflow. Please try again.',
         severity: 'error',
       })
       setSnackbarOpen(true)
       throw err
-    } finally {
-      setIsSubmittingRemark(false)
     }
   }
 
@@ -599,17 +540,6 @@ const TcsOutput = () => {
         {/* Tabs Section - Flex grow to fill available space */}
         <Box sx={{ flex: 1, overflowX: 'auto' }}>
           <Tabs
-            // sx={{
-            //   '& .MuiTabs-indicator': {
-            //     background: `linear-gradient(90deg, #1e3a8a 0%, #1e40af 100%)`,
-            //   },
-            //   '& .MuiTab-root.Mui-selected': {
-            //     background: `linear-gradient(90deg, #1e3a8a 0%, #1e40af 100%)`,
-            //     backgroundClip: 'text',
-            //     WebkitBackgroundClip: 'text',
-            //     WebkitTextFillColor: 'transparent',
-            //   },
-            // }}
             sx={{
               borderBottom: '0px solid #ccc',
               '.MuiTabs-indicator': { display: 'none' },
@@ -681,9 +611,9 @@ const TcsOutput = () => {
         handleClose={() => setRemarkDialogOpen(false)}
         placeholder='Enter your remarks here...'
         onSubmit={handleRemarkSubmit}
-        onApprove={handleApprove}
-        onReject={handleReject}
-        maxLength={1000}
+        onApprove={(remark) => handleReviewAction('approve', remark)}
+        onReject={(remark) => handleReviewAction('reject', remark)}
+        maxLength={500}
         role={userRole}
         keycloak={keycloak}
       />

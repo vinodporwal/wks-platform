@@ -172,6 +172,7 @@ const CPPUnitsSdPlan = ({
       type: 'dateTime',
       minWidth: 100,
       widthT: 120,
+      isFinancialYear: false,
     },
     gtMaintenance: {
       type: 'multi-select',
@@ -196,12 +197,14 @@ const CPPUnitsSdPlan = ({
       type: 'dateTime',
       minWidth: 100,
       widthT: 120,
+      isFinancialYear: false,
     },
     startUpDate: {
       editable: true,
       type: 'dateTime',
       minWidth: 100,
       widthT: 120,
+      isFinancialYear: false,
     },
     majorJobs: { editable: true, type: 'textarea', minWidth: 200, widthT: 300 },
   }

@@ -18,7 +18,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
+import org.camunda.community.rest.client.dto.TaskDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -275,22 +277,37 @@ public class TCSOutPutWorkFlowController {
 		
 	}
 
-	@PostMapping(value = "ebs-submission/{siteId}/{finacialYear}")
-	public ResponseEntity<String> ebsSubmission(@PathVariable final String siteId, @PathVariable final String finacialYear, @RequestBody final PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO) { 
-
+	@PostMapping(value = "/complete-cts-tech-task/{plantName}/{siteId}/{finacialYear}")
+	public ResponseEntity<String> completeCTSTechTask(@PathVariable final String plantName, @PathVariable final String siteId, @PathVariable final String finacialYear, @RequestBody final PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO) {
+		if(plantName == null || plantName.isEmpty()) { 
+			throw new RestResourceNotFoundException("Plant name is required to complete CTS tech task");
+		}
 		if(siteId == null || siteId.isEmpty()) {
-			throw new RestResourceNotFoundException("Site ID is required to complete EBS approval");
+			throw new RestResourceNotFoundException("Site ID is required to complete CTS tech task");
 		}
 		if(finacialYear == null || finacialYear.isEmpty()) {
-			throw new RestResourceNotFoundException("Financial Year is required to complete EBS approval");
+			throw new RestResourceNotFoundException("Financial Year is required to complete CTS tech task");
+		}
+		tcsWorkFlowService.completeCTSTechTask(plantName, siteId, plantSubmissionAuditTrailDTO, finacialYear);
+		return ResponseEntity.ok("CTS tech task completed successfully");
+	}
+
+	@PostMapping(value = "aom-submission/{siteId}/{finacialYear}")
+	public ResponseEntity<String> AOMSubmission(@PathVariable final String siteId, @PathVariable final String finacialYear, @RequestBody final PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO) { 
+
+		if(siteId == null || siteId.isEmpty()) {
+			throw new RestResourceNotFoundException("Site ID is required to complete AOM approval");
+		}
+		if(finacialYear == null || finacialYear.isEmpty()) {
+			throw new RestResourceNotFoundException("Financial Year is required to complete AOM approval");
 		}
 
 		if(siteId == null || siteId.isEmpty()) {  
-			throw new RestResourceNotFoundException("Site ID is required to complete EBS approval");
+			throw new RestResourceNotFoundException("Site ID is required to complete AOM approval");
 		}
 
-		tcsWorkFlowService.ebsApproval(siteId, plantSubmissionAuditTrailDTO, finacialYear);
-		return ResponseEntity.ok("EBS approval completed successfully");
+		tcsWorkFlowService.AOMApproval(siteId, plantSubmissionAuditTrailDTO, finacialYear);
+		return ResponseEntity.ok("AOM approval completed successfully");
 
 	}
 
@@ -309,6 +326,49 @@ public class TCSOutPutWorkFlowController {
 		return ResponseEntity.ok("CTS approval completed successfully");
 	}
 
+	@PostMapping(value = "cts-approve-reject/{siteId}/{approvalStatus}/{finacialYear}")
+	public ResponseEntity<String> ebsApproveReject(@PathVariable final String siteId, @PathVariable final boolean approvalStatus, @PathVariable final String finacialYear, @RequestBody final PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO) { 
+		
+		if(siteId == null || siteId.isEmpty()) {  
+			throw new RestResourceNotFoundException("Site ID is required to complete EBS approval");
+		}
+		if(finacialYear == null || finacialYear.isEmpty()) {
+			throw new RestResourceNotFoundException("Financial Year is required to complete EBS approval");
+		}
+
+		tcsWorkFlowService.ctsApproveReject(siteId, approvalStatus, plantSubmissionAuditTrailDTO, finacialYear);
+		return ResponseEntity.ok("EBS approval completed successfully");
+
+	}
+
+	@PostMapping(value = "eps-submission/{siteId}/{finacialYear}")
+	public ResponseEntity<String> epsSubmission( @PathVariable final String siteId, @PathVariable final String finacialYear, @RequestBody final PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO) { 
+		
+		if(siteId == null || siteId.isEmpty()) {
+			throw new RestResourceNotFoundException("Site ID is required to complete EPS approval");
+		}
+
+		if(finacialYear == null || finacialYear.isEmpty()) { 
+			throw new RestResourceNotFoundException("Financial Year is required to complete EPS approval");
+		}
+		
+		tcsWorkFlowService.epsApproval(siteId, plantSubmissionAuditTrailDTO, finacialYear);
+		return ResponseEntity.ok("EPS approval completed successfully");
+	}
+
+	@PostMapping(value = "eps-approve-reject/{siteId}/{approvalStatus}/{finacialYear}")
+	public ResponseEntity<String> epsApproveReject(@PathVariable final String siteId, @PathVariable final boolean approvalStatus, @PathVariable final String finacialYear, @RequestBody final PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO) { 
+		if(siteId == null || siteId.isEmpty()) {  
+			throw new RestResourceNotFoundException("Site ID is required to complete EPS approval");
+		}
+		if(finacialYear == null || finacialYear.isEmpty()) {
+			throw new RestResourceNotFoundException("Financial Year is required to complete EPS approval");
+		}
+		tcsWorkFlowService.epsApproveReject(siteId, approvalStatus, plantSubmissionAuditTrailDTO, finacialYear);
+		return ResponseEntity.ok("EPS approval completed successfully");
+	}
+
+
 	@PostMapping(value = "cluster-head-submission/{siteId}/{finacialYear}")
 	public ResponseEntity<String> clusterHeadSubmission(@PathVariable final String siteId, @PathVariable final String finacialYear, @RequestBody final PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO) { 
 		
@@ -324,37 +384,23 @@ public class TCSOutPutWorkFlowController {
 		return ResponseEntity.ok("Cluster Head approval completed successfully");
 	}
 
-	@PostMapping(value = "ebs-approve-reject/{plantName}/{siteId}/{approvalStatus}/{finacialYear}")
-	public ResponseEntity<String> ebsApproveReject(@PathVariable final String plantName, @PathVariable final String siteId, @PathVariable final boolean approvalStatus, @PathVariable final String finacialYear, @RequestBody final PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO) { 
+	@PostMapping(value = "aom-approve-reject/{plantName}/{siteId}/{approvalStatus}/{finacialYear}")
+	public ResponseEntity<String> AOMApproveReject(@PathVariable final String plantName, @PathVariable final String siteId, @PathVariable final boolean approvalStatus, @PathVariable final String finacialYear, @RequestBody final PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO) { 
 		if(plantName == null || plantName.isEmpty()) { 
-			throw new RestResourceNotFoundException("Plant name is required to complete EBS approval");
+			throw new RestResourceNotFoundException("Plant name is required to complete AOM approval");
 		}
 		if(siteId == null || siteId.isEmpty()) {  
-			throw new RestResourceNotFoundException("Site ID is required to complete EBS approval");
+			throw new RestResourceNotFoundException("Site ID is required to complete AOM approval");
 		}
 		if(finacialYear == null || finacialYear.isEmpty()) {
-			throw new RestResourceNotFoundException("Financial Year is required to complete EBS approval");
+			throw new RestResourceNotFoundException("Financial Year is required to complete AOM approval");
 		}
 
-		tcsWorkFlowService.ebsApproveReject(plantName, siteId, approvalStatus, plantSubmissionAuditTrailDTO, finacialYear);
-		return ResponseEntity.ok("EBS approval completed successfully");
+		tcsWorkFlowService.AOMApproveReject(plantName, siteId, approvalStatus, plantSubmissionAuditTrailDTO, finacialYear);
+		return ResponseEntity.ok("AOM approval completed successfully");
 
 	}
 
-	@PostMapping(value = "cts-approve-reject/{siteId}/{approvalStatus}/{finacialYear}")
-	public ResponseEntity<String> ebsApproveReject(@PathVariable final String siteId, @PathVariable final boolean approvalStatus, @PathVariable final String finacialYear, @RequestBody final PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO) { 
-		
-		if(siteId == null || siteId.isEmpty()) {  
-			throw new RestResourceNotFoundException("Site ID is required to complete EBS approval");
-		}
-		if(finacialYear == null || finacialYear.isEmpty()) {
-			throw new RestResourceNotFoundException("Financial Year is required to complete EBS approval");
-		}
-
-		tcsWorkFlowService.ctsApproveReject(siteId, approvalStatus, plantSubmissionAuditTrailDTO, finacialYear);
-		return ResponseEntity.ok("EBS approval completed successfully");
-
-	}
 
 	@PostMapping(value = "cluster-head-approve-reject/{siteId}/{approvalStatus}/{finacialYear}")
 	public ResponseEntity<String> clusterHeadApproveReject(@PathVariable final String siteId, @PathVariable final boolean approvalStatus, @PathVariable final String finacialYear, @RequestBody final PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO) { 
@@ -371,22 +417,22 @@ public class TCSOutPutWorkFlowController {
 
 	}
 
-	@PostMapping(value = "bulk-ebs-approve-reject/{siteId}/{approvalStatus}/{finacialYear}")  
-	public ResponseEntity<String> bulkEbsApproveReject(@PathVariable final String siteId, @PathVariable final boolean approvalStatus, @PathVariable final String finacialYear, @RequestBody final List<PlantSubmissionAuditTrailDTO> plantSubmissionAuditTrailDTOList) {
+	@PostMapping(value = "bulk-aom-approve-reject/{siteId}/{approvalStatus}/{finacialYear}")  
+	public ResponseEntity<String> bulkAOMApproveReject(@PathVariable final String siteId, @PathVariable final boolean approvalStatus, @PathVariable final String finacialYear, @RequestBody final List<PlantSubmissionAuditTrailDTO> plantSubmissionAuditTrailDTOList) {
 		if(siteId == null || siteId.isEmpty()) {
-			throw new RestResourceNotFoundException("Site ID is required to complete bulk EBS approval");
+			throw new RestResourceNotFoundException("Site ID is required to complete bulk AOM approval");
 		}
 		if(finacialYear == null || finacialYear.isEmpty()) {
-			throw new RestResourceNotFoundException("Financial Year is required to complete bulk EBS approval");
+			throw new RestResourceNotFoundException("Financial Year is required to complete bulk AOM approval");
 		}
 		if(plantSubmissionAuditTrailDTOList == null || plantSubmissionAuditTrailDTOList.isEmpty()) {
-			throw new RestResourceNotFoundException("Plant submission audit trail DTO list is required to complete bulk EBS approval");
+			throw new RestResourceNotFoundException("Plant submission audit trail DTO list is required to complete bulk AOM approval");
 		}
 		   
 		  for(PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO : plantSubmissionAuditTrailDTOList) {  
-			tcsWorkFlowService.ebsApproveReject(plantSubmissionAuditTrailDTO.getPlantName(), siteId, approvalStatus, plantSubmissionAuditTrailDTO, finacialYear);
+			tcsWorkFlowService.AOMApproveReject(plantSubmissionAuditTrailDTO.getPlantName(), siteId, approvalStatus, plantSubmissionAuditTrailDTO, finacialYear);
 		  }
-		return ResponseEntity.ok("Bulk EBS approval completed successfully");
+		return ResponseEntity.ok("Bulk AOM approval completed successfully");
 	}
 
 
@@ -487,16 +533,16 @@ public class TCSOutPutWorkFlowController {
 
 
 
-	@GetMapping(value = "ebs-approve-reject-audit-trail/{siteId}/{verticalId}/{finacialYear}")
-	public ResponseEntity<List<PlantSubmissionAuditTrailDTO>> ebsApproveRejectAuditTrail(@PathVariable final String siteId, @PathVariable final String verticalId, @PathVariable final String finacialYear) {
+	@GetMapping(value = "aom-approve-reject-audit-trail/{siteId}/{verticalId}/{finacialYear}")
+	public ResponseEntity<List<PlantSubmissionAuditTrailDTO>> aomApproveRejectAuditTrail(@PathVariable final String siteId, @PathVariable final String verticalId, @PathVariable final String finacialYear) {
 		if(siteId == null || siteId.isEmpty()) {
-			throw new RestResourceNotFoundException("Site ID is required to create EBS approve reject audit trail");
+			throw new RestResourceNotFoundException("Site ID is required to create AOM approve reject audit trail");
 		}
 		if(verticalId == null || verticalId.isEmpty()) { 
-			throw new RestResourceNotFoundException("Vertical ID is required to create EBS approve reject audit trail");
+			throw new RestResourceNotFoundException("Vertical ID is required to create AOM approve reject audit trail");
 		}
 		if(finacialYear == null || finacialYear.isEmpty()) {
-			throw new RestResourceNotFoundException("Financial Year is required to create EBS approve reject audit trail");
+			throw new RestResourceNotFoundException("Financial Year is required to create AOM approve reject audit trail");
 		}
 
 		List<PlantSubmissionAuditTrailDTO> auditTrails = tcsWorkFlowService.getLatestPlantWiseSubmissionAuditTrail(siteId, verticalId, "PLANT", finacialYear);
@@ -515,7 +561,23 @@ public class TCSOutPutWorkFlowController {
 			throw new RestResourceNotFoundException("Financial Year is required to create CTS approve reject audit trail");
 		}
 
-		PlantSubmissionAuditTrailDTO auditTrail = tcsWorkFlowService.getLatestEBSSubmissionAuditTrail(siteId, verticalId, "EBS", finacialYear);
+		PlantSubmissionAuditTrailDTO auditTrail = tcsWorkFlowService.getLatestAOMSubmissionAuditTrail(siteId, verticalId, "AOM", finacialYear);
+		return ResponseEntity.ok(auditTrail);
+	}
+
+	@GetMapping(value = "eps-approve-reject-audit-trail/{siteId}/{verticalId}/{finacialYear}")
+	public ResponseEntity<PlantSubmissionAuditTrailDTO> epsApproveRejectAuditTrail(@PathVariable final String siteId, @PathVariable final String verticalId, @PathVariable final String finacialYear) {
+		if(siteId == null || siteId.isEmpty()) {
+			throw new RestResourceNotFoundException("Site ID is required to create EPS approve reject audit trail");
+		}
+		if(verticalId == null || verticalId.isEmpty()) {
+			throw new RestResourceNotFoundException("Vertical ID is required to create EPS approve reject audit trail");
+		}
+		if(finacialYear == null || finacialYear.isEmpty()) {
+			throw new RestResourceNotFoundException("Financial Year is required to create EPS approve reject audit trail");
+		}
+
+		PlantSubmissionAuditTrailDTO auditTrail = tcsWorkFlowService.getLatestAOMSubmissionAuditTrail(siteId, verticalId, "CTS", finacialYear);
 		return ResponseEntity.ok(auditTrail);
 	}
 
@@ -531,7 +593,7 @@ public class TCSOutPutWorkFlowController {
 			throw new RestResourceNotFoundException("Financial Year is required to create cluster head approve reject audit trail");
 		}
 
-		PlantSubmissionAuditTrailDTO auditTrail = tcsWorkFlowService.getLatestEBSSubmissionAuditTrail(siteId, verticalId, "CTS", finacialYear);
+		PlantSubmissionAuditTrailDTO auditTrail = tcsWorkFlowService.getLatestAOMSubmissionAuditTrail(siteId, verticalId, "EPS", finacialYear);
 		return ResponseEntity.ok(auditTrail);
 	}
 
@@ -603,10 +665,17 @@ public class TCSOutPutWorkFlowController {
 		return ResponseEntity.ok("Plant managers notified successfully");
 	}
 
-	
+	@GetMapping("get-tasks/{businessKey}")
+	public ResponseEntity<List<TaskDto>> getTasks(@PathVariable final String businessKey) {
+		List<TaskDto> tasks = tcsWorkFlowService.getTasks(businessKey);
+		return ResponseEntity.ok(tasks);
+	}
 
-
-
+	@GetMapping("get-plant-list/{verticalId}/{siteId}")
+	public ResponseEntity<List<String>> getPlantList(@PathVariable final String verticalId, @PathVariable final String siteId) {
+		List<String> plantList = tcsWorkFlowService.getPlantList(UUID.fromString(verticalId), UUID.fromString(siteId));
+		return ResponseEntity.ok(plantList);
+	}
 }
 
 

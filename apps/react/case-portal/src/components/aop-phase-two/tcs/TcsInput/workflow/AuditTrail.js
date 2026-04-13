@@ -96,7 +96,10 @@ const AuditTrail = ({
 
   // For Plant Manager, show plant-specific workflow
   // For other roles (AOM, EPS Head, Cluster Head), show site-level workflow
-  const selectedPlant = userRole === ROLES.PLANT_MANAGER ? PLANT_NAME : null
+  const selectedPlant =
+    userRole === ROLES.PLANT_MANAGER || userRole === ROLES.CTS_TECH_MANAGER
+      ? PLANT_NAME
+      : null
 
   const workflowSteps = parseApprovalStatusResponse(
     timelineData || [],
@@ -175,20 +178,20 @@ const AuditTrail = ({
     {
       field: 'submittedBy',
       header: 'Submission Role',
-      width: '12%',
-      minWidth: '120px',
+      width: '10%',
+      minWidth: '100px',
     },
     {
       field: 'submissionRemark',
       header: 'Submission Remarks',
-      width: '20%',
-      minWidth: '180px',
+      width: '24%',
+      minWidth: '220px',
     },
 
     {
       field: 'status',
       header: 'Status',
-      width: '10%',
+      width: '8%',
       minWidth: '100px',
       isChip: true,
     },
@@ -210,12 +213,17 @@ const AuditTrail = ({
   const getTitle = () => {
     switch (userRole) {
       case ROLES.PLANT_MANAGER:
-        return 'CTS Engineer History'
+        return 'Plant Manager History'
+      case ROLES.CTS_TECH_MANAGER:
+        return 'CTS Tech Manager History'
       case ROLES.CTS_HEAD:
+        return 'CTS Head History'
       case ROLES.EPS_HEAD:
-        return 'EPS/CTS Head History'
+        return 'EPS Head History'
       case ROLES.EPS_ENGINEER:
         return 'AOM History'
+      case ROLES.CLUSTER_HEAD:
+        return 'Site President History'
       default:
         return title
     }
@@ -244,7 +252,7 @@ const AuditTrail = ({
 
       <DialogContent sx={{ p: 0 }}>
         {/* Timeline Tab */}
-        <Box sx={{ width: '100%', p: 3 }}>
+        <Box sx={{ width: '100%', p: 1 }}>
           <WorkflowTimeline steps={workflowSteps} />
         </Box>
 

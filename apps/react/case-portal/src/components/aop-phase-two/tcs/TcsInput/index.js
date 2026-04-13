@@ -14,7 +14,7 @@ import PCGOutlook from './PCGOutlook'
 import NetUnitCapacity from './NetUnitCapacity'
 import RemarkDialog from './workflow/RemarkDialog'
 import SubmitSection from './workflow/SubmitSection'
-import { getUserRole } from '../utils/roleUtils'
+import { getUserRole, ROLES } from '../utils/roleUtils'
 import { TcsWorkflowApiService } from 'components/aop-phase-two/services/tcs/tcsWorkflowApiService'
 import AuditTrail from './workflow/AuditTrail'
 
@@ -106,52 +106,69 @@ const TcsInput = () => {
       if (variables.length == 0) {
         setIsSubmitEligible(true)
       } else {
-        // Find submissionStatus variable
+        // Find submissionStatus variable (for PLANT_MANAGER)
         const submissionStatusVar = variables?.find(
           (v) => v.name === 'submissionStatus',
         )
 
-        if (submissionStatusVar && submissionStatusVar.value) {
-          try {
-            // Parse the JSON value
-            const submissionStatus = JSON.parse(submissionStatusVar.value)
+        // Find ctsTechSubmissionStatus variable (for CTS_TECH_MANAGER)
+        const ctsTechSubmissionStatusVar = variables?.find(
+          (v) => v.name === 'ctsTechSubmissionStatus',
+        )
 
-            // Check if current plant has already been submitted
-            const isPlantSubmitted = submissionStatus[PLANT_NAME] === true
+        // Check based on user role
+        if (userRole === ROLES.PLANT_MANAGER) {
+          if (submissionStatusVar && submissionStatusVar.value) {
+            try {
+              const submissionStatus = JSON.parse(submissionStatusVar.value)
+              const isPlantSubmitted = submissionStatus[PLANT_NAME] === true
 
-            if (isPlantSubmitted) {
-              // Plant already submitted - disable submit button
-              setIsSubmitEligible(false)
-              // Only show message if showMessage is true (on page load, not after submission)
-              // if (showMessage) {
-              //   setSnackbarData({
-              //     message: `${PLANT_NAME} has already been submitted`,
-              //     severity: 'info',
-              //   })
-              //   setSnackbarOpen(true)
-              // }
-              return
-            } else {
-              // Plant not yet submitted - enable submit button
-              setIsSubmitEligible(true)
-              return
+              if (isPlantSubmitted) {
+                setIsSubmitEligible(false)
+                return
+              } else {
+                setIsSubmitEligible(true)
+                return
+              }
+            } catch (parseError) {
+              console.error('Error parsing submissionStatus:', parseError)
             }
-          } catch (parseError) {
-            console.error('Error parsing submissionStatus:', parseError)
+          } else {
+            // No submission status yet - enable submit
+            setIsSubmitEligible(true)
+            return
+          }
+        } else if (userRole === ROLES.CTS_TECH_MANAGER) {
+          if (ctsTechSubmissionStatusVar && ctsTechSubmissionStatusVar.value) {
+            try {
+              const ctsTechSubmissionStatus = JSON.parse(
+                ctsTechSubmissionStatusVar.value,
+              )
+              const isCtsTechSubmitted =
+                ctsTechSubmissionStatus[PLANT_NAME] === true
+
+              if (isCtsTechSubmitted) {
+                setIsSubmitEligible(false)
+                return
+              } else {
+                setIsSubmitEligible(true)
+                return
+              }
+            } catch (parseError) {
+              console.error(
+                'Error parsing ctsTechSubmissionStatus:',
+                parseError,
+              )
+            }
+          } else {
+            // No submission status yet - enable submit
+            setIsSubmitEligible(true)
+            return
           }
         }
 
-        // Fallback to original eligibility check
-        const eligible = response?.isEligible !== false
-        setIsSubmitEligible(eligible)
-
-        if (!eligible) {
-          setSnackbarData({
-            message: response?.message || 'Submit is not eligible at this time',
-            severity: 'warning',
-          })
-          setSnackbarOpen(true)
-        }
+        // Fallback for all other roles - eligible by default
+        setIsSubmitEligible(false)
       }
     } catch (err) {
       console.error('Error checking submit eligibility:', err)
@@ -197,6 +214,7 @@ const TcsInput = () => {
 
   const userRole = useMemo(() => {
     let allUsers = keycloak?.realmAccess?.roles
+    console.log('allUsers', allUsers)
     return getUserRole(allUsers)
   }, [keycloak?.realmAccess?.roles])
 
@@ -329,25 +347,78 @@ const TcsInput = () => {
         workflowWasTriggered = triggerResult
       }
 
-      // Complete plant submission task with remark
-      // if (workflowWasTriggered) {
-      await TcsWorkflowApiService.saveRemark(
+      const payload = {
         keycloak,
-        PLANT_ID,
-        PLANT_NAME,
-        SITE_ID,
-        VERTICAL_ID,
+        plantId: PLANT_ID,
+        plantName: PLANT_NAME,
+        siteId: SITE_ID,
+        verticalId: VERTICAL_ID,
         userRole,
         userName,
         remark,
-        AOP_YEAR,
-      )
+        aopYear: AOP_YEAR,
+      }
 
-      setSnackbarData({
-        message: `${PLANT_NAME} TCS data submission completed successfully`,
-        severity: 'success',
-      })
-      setSnackbarOpen(true)
+      // Step 1: Save the current role's remark
+      if (userRole == ROLES.PLANT_MANAGER) {
+        await TcsWorkflowApiService.savePlantManagerRemark(payload)
+      } else if (userRole == ROLES.CTS_TECH_MANAGER) {
+        await TcsWorkflowApiService.saveCTSTechManagerRemark(payload)
+      }
+
+      // Step 2: Check if the other role has already submitted (using existing timelineData)
+      // Note: Current role is NOW submitting (will be true after API call above)
+      // So we only need to check if the OTHER role has already submitted
+      // const submissionStatusVar = timelineData?.find(
+      //   (v) => v.name === 'submissionStatus',
+      // )
+      // const ctsTechSubmissionStatusVar = timelineData?.find(
+      //   (v) => v.name === 'ctsTechSubmissionStatus',
+      // )
+
+      // let otherRoleAlreadyApproved = false
+
+      // if (userRole === ROLES.PLANT_MANAGER) {
+      //   // Current role is PLANT_MANAGER (now submitting = true)
+      //   // Check if CTS_TECH_MANAGER already submitted
+      //   if (ctsTechSubmissionStatusVar) {
+      //     try {
+      //       const ctsTechSubmissionStatus = JSON.parse(
+      //         ctsTechSubmissionStatusVar.value,
+      //       )
+      //       otherRoleAlreadyApproved =
+      //         ctsTechSubmissionStatus[PLANT_NAME] === true
+      //     } catch (parseError) {
+      //       console.error('Error parsing ctsTechSubmissionStatus:', parseError)
+      //     }
+      //   }
+      // } else if (userRole === ROLES.CTS_TECH_MANAGER) {
+      //   // Current role is CTS_TECH_MANAGER (now submitting = true)
+      //   // Check if PLANT_MANAGER already submitted
+      //   if (submissionStatusVar) {
+      //     try {
+      //       const submissionStatus = JSON.parse(submissionStatusVar.value)
+      //       otherRoleAlreadyApproved = submissionStatus[PLANT_NAME] === true
+      //     } catch (parseError) {
+      //       console.error('Error parsing submissionStatus:', parseError)
+      //     }
+      //   }
+      // }
+
+      // // Step 3: If other role already approved, submit plant to AOM
+      // // (Current role just approved in Step 1, so both are now approved)
+      // if (otherRoleAlreadyApproved) {
+      //   await TcsWorkflowApiService.submitPlantToAOM(payload)
+      //   setSnackbarData({
+      //     message: `${PLANT_NAME} TCS data submitted to AOM successfully (both roles approved)`,
+      //     severity: 'success',
+      //   })
+      // } else {
+      //   setSnackbarData({
+      //     message: `${PLANT_NAME} TCS data submission completed successfully. Waiting for ${userRole === ROLES.PLANT_MANAGER ? 'CTS Tech Manager' : 'Plant Manager'} approval.`,
+      //     severity: 'success',
+      //   })
+      // }
 
       // Refresh submit eligibility after submission (without showing "already submitted" message)
       await checkSubmitEligibility(false)
@@ -377,6 +448,8 @@ const TcsInput = () => {
       setIsSubmittingRemark(false)
     }
   }
+
+  console.log('userRole', userRole)
 
   return (
     <Box
@@ -459,7 +532,7 @@ const TcsInput = () => {
         title='TCS Input Submission'
         placeholder='Enter your remarks here...'
         onSubmit={handleRemarkSubmit}
-        maxLength={1000}
+        maxLength={500}
         role={userRole}
         keycloak={keycloak}
         snackbarData={snackbarData}

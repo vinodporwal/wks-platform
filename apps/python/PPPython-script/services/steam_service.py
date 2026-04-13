@@ -340,7 +340,6 @@ def calculate_mp_balance_stg_based(
 def calculate_hp_balance(
     hp_process: float,
     hp_fixed: float = 0.0,
-    hp_for_mp: float = 0.0,
 ) -> dict:
     """
     Calculate HP Steam Balance.
@@ -348,13 +347,12 @@ def calculate_hp_balance(
     Args:
         hp_process: Process HP requirement (MT)
         hp_fixed: Fixed HP requirement (MT)
-        hp_for_mp: HP consumed to produce MP via HP→MP PRDS reduction (MT)
 
     Returns:
         dict with HP balance details and downstream requirements
     """
-    # Step 1: Total HP Demand (process + fixed + HP consumed for MP via PRDS)
-    hp_total = hp_process + hp_fixed + hp_for_mp
+    # Step 1: Total HP Demand (process + fixed only)
+    hp_total = hp_process + hp_fixed
 
     # Step 2: All HP comes from PRDS (SHP→HP)
     hp_from_prds = hp_total * NORM_HP_FROM_PRDS
@@ -366,7 +364,6 @@ def calculate_hp_balance(
     return {
         "hp_process": round(hp_process, 2),
         "hp_fixed": round(hp_fixed, 2),
-        "hp_for_mp": round(hp_for_mp, 2),
         "hp_total": round(hp_total, 2),
         "hp_from_prds": round(hp_from_prds, 2),
         "shp_for_hp_prds": round(shp_for_hp_prds, 2),
@@ -489,8 +486,8 @@ def calculate_steam_balance(
     # Step 2: MP Balance (uses mp_for_lp from LP balance + optional MP U4U)
     mp = calculate_mp_balance(mp_process, mp_fixed, lp["mp_for_prds_lp"], mp_ufu_mt=mp_ufu_mt)
 
-    # Step 3: HP Balance (includes HP consumed for MP via PRDS: mp_from_prds is HP reduced to MP)
-    hp = calculate_hp_balance(hp_process, hp_fixed, hp_for_mp=mp["mp_from_prds"])
+    # Step 3: HP Balance (HP demand comes from process + fixed only)
+    hp = calculate_hp_balance(hp_process, hp_fixed)
     
     # Step 4: SHP Balance (uses outputs from LP, MP, HP)
     shp = calculate_shp_balance(
@@ -539,14 +536,14 @@ HRSG_ASSETS_DEFAULT = {
         "linked_gt": "GT1",
     },
     "HRSG2": {
-        "min_capacity_mt": 64.0,
+        "min_capacity_mt": 60.0,
         "max_capacity_mt": 136.0,
         "efficiency": 1.03,
         "steam_type": "SHP",
         "linked_gt": "GT2",
     },
     "HRSG3": {
-        "min_capacity_mt": 66.0,
+        "min_capacity_mt": 60.0,
         "max_capacity_mt": 136.0,
         "efficiency": 1.03,
         "steam_type": "SHP",

@@ -874,8 +874,6 @@ const KendoDataTables = ({
     setRemarkDialogOpen(false)
   }
 
-  // console.log('columns', columns)
-
   const handleAddRow = () => {
     setEdit({})
     if (isButtonDisabled) return
@@ -971,9 +969,38 @@ const KendoDataTables = ({
   }
 
   const handleCalculateBtn = async () => {
+    if (permissions?.showCalulcationPromt) {
+      openCalculateDialogBox()
+    } else {
+      // old code
+      setSelectedGrade('')
+      setIsButtonDisabled(true)
+
+      handleCalculate()
+
+      setTimeout(() => {
+        setIsButtonDisabled(false)
+      }, 500)
+    }
+  }
+
+  const [openCalculateDialogeBox, setOpenCalculateDialogeBox] = useState(false)
+
+  const openCalculateDialogBox = () => {
+    setOpenCalculateDialogeBox(true)
+  }
+
+  const closeCalculateDialogBox = () => {
+    setOpenCalculateDialogeBox(false)
+  }
+
+  const handleCalculateConfirmation = async () => {
+    closeCalculateDialogBox()
     setSelectedGrade('')
     setIsButtonDisabled(true)
-    handleCalculate()
+
+    await handleCalculate()
+
     setTimeout(() => {
       setIsButtonDisabled(false)
     }, 500)
@@ -1037,6 +1064,7 @@ const KendoDataTables = ({
       </td>
     )
   }
+
   const ElastomerSDDaysDisplayCell = (props) => {
     const { dataItem, field, tdProps, sdDaysValues = [] } = props
     const value = dataItem[field]
@@ -1746,7 +1774,8 @@ const KendoDataTables = ({
                   variant='outlined'
                   label={permissions?.dropdownLabel || 'Select'}
                   sx={{
-                    display: permissions?.IS_PE_C2_HIDE ? 'block' : 'none', // 🔥 condition applied
+                    display:
+                      permissions?.IS_PE_C2_HIDE !== false ? 'block' : 'none',
                   }}
                   InputLabelProps={{
                     shrink: true,
@@ -2392,7 +2421,6 @@ const KendoDataTables = ({
                     />
                   )
                 }
-
                 if (
                   col?.field === 'discription' &&
                   col?.type === 'discriptionDrpdwn'
@@ -2789,6 +2817,7 @@ const KendoDataTables = ({
                     />
                   )
                 }
+
                 const LineDropdownEditorWrapper = (props) => (
                   <LineDropdownEditor
                     {...props}
@@ -2799,6 +2828,7 @@ const KendoDataTables = ({
                     rowId={props.dataItem?.id}
                   />
                 )
+
                 if (col.type === 'lineDropdown') {
                   return (
                     <GridColumn
@@ -2825,6 +2855,7 @@ const KendoDataTables = ({
                     />
                   )
                 }
+
                 if (col?.field === 'DisplayName') {
                   return (
                     <GridColumn
@@ -3588,6 +3619,7 @@ const KendoDataTables = ({
         severity={snackbarData?.severity || 'info'}
         onClose={() => setSnackbarOpen(false)}
       />
+
       <Dialog
         open={openDeleteDialogeBox}
         onClose={() => setOpenDeleteDialogeBox(false)}
@@ -3610,6 +3642,36 @@ const KendoDataTables = ({
           <Button onClick={() => setOpenDeleteDialogeBox(false)}>Cancel</Button>
           <Button onClick={deleteTheRecord} autoFocus disabled={READ_ONLY}>
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={openCalculateDialogeBox}
+        onClose={closeCalculateDialogBox}
+        aria-labelledby='alert-dialog-title'
+        aria-describedby='alert-dialog-description'
+        disableScrollLock
+        slotProps={{
+          backdrop: { disableScrollLock: true },
+        }}
+      >
+        <DialogTitle id='alert-dialog-title'>{'Calculate ?'}</DialogTitle>
+
+        <DialogContent>
+          <DialogContentText
+            id='alert-dialog-description'
+            sx={{ color: 'text.primary' }}
+          >
+            Are you sure you want to calculate? This will override the existing
+            values.
+          </DialogContentText>
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={closeCalculateDialogBox}>Cancel</Button>
+          <Button onClick={handleCalculateConfirmation} autoFocus>
+            Calculate
           </Button>
         </DialogActions>
       </Dialog>
