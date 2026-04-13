@@ -1,7 +1,6 @@
 package com.wks.caseengine.rest.server;
 
 import java.util.List;
-import java.util.Base64;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ContentDisposition;
@@ -144,28 +143,19 @@ public class ShutDownPlanController {
 	}
 
 	@PostMapping(value = "/shutdown-export-excel-import", consumes = "multipart/form-data")
-	public ResponseEntity<?> importShutdownExportExcel(
+	public AOPMessageVM importShutdownExportExcel(
 			@RequestParam("plantId") String plantId,
 			@RequestParam("year") String year,
 			@RequestParam String maintenanceTypeName,
 			@RequestParam("file") MultipartFile file) {
 		try {
-			AOPMessageVM result = shutDownPlanService.importShutdownExportExcel(year, UUID.fromString(plantId),
+			return shutDownPlanService.importShutdownExportExcel(year, UUID.fromString(plantId),
 					maintenanceTypeName, file);
-			if (result != null && result.getCode() == 400 && result.getData() != null) {
-				byte[] errorBytes = Base64.getDecoder().decode(result.getData().toString());
-				HttpHeaders headers = new HttpHeaders();
-				headers.setContentType(MediaType.parseMediaType(
-						"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-				headers.setContentDisposition(ContentDisposition.builder("attachment")
-						.filename("shutdown-import-errors.xlsx")
-						.build());
-				headers.setContentLength(errorBytes.length);
-				return new ResponseEntity<>(errorBytes, headers, HttpStatus.OK);
-			}
-			return new ResponseEntity<>(result, HttpStatus.OK);
 		} catch (Exception e) {
-			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(500);
+			aopMessageVM.setMessage("Failed to import shutdown export excel");
+			return aopMessageVM;
 		}
 	}
 	
