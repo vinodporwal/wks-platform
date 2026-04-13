@@ -1,6 +1,7 @@
 package com.wks.caseengine.tcs.service;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.camunda.community.rest.client.dto.TaskDto;
 
@@ -55,5 +56,7 @@ public interface TCSWorkFlowService {
     List<PlantSubmissionAuditTrailDTO> getAuditTrail(String verticalId, String siteId, String finacialYear);
 
     List<TaskDto> getTasks(String businessKey);
+
+    List<String> getPlantList(UUID verticalId, UUID siteId);
 
 }

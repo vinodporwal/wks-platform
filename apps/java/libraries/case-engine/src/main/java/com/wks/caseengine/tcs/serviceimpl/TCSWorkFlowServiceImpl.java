@@ -147,12 +147,14 @@ public class TCSWorkFlowServiceImpl implements TCSWorkFlowService {
         return vertical.getName() + "-" + siteId + "-" + finacialYear;
     }
 
+    @Override
     public List<String> getPlantList(UUID verticalId, UUID siteId) {  
   
-            // fetch the plants for given vertical and site and plants with access to tcs input screen
-            List<Plants> plants = plantService.findUniqueNamesPlantsByVerticalAndSite(verticalId, siteId, screenCode);
+            // fetch the plants for given vertical if atleast one user and plant is mapped to menu.tcs in UserScreenMapping  (8)
+         //   List<Plants> plants = plantService.findUniqueNamesPlantsByVerticalAndSite(verticalId, siteId, screenCode);
+
+         List<Plants> plants = plantService.getPlantListForWorkflow(verticalId, siteId, true);
         
-            //    List<String> plantList1 = plants.stream().map(Plants::getName).toList();
         
             List<String> plantList1 = plants.stream().map(Plants::getDisplayName).toList();
 
@@ -160,12 +162,9 @@ public class TCSWorkFlowServiceImpl implements TCSWorkFlowService {
                 System.out.println("plantList1: " + plantList1);
 
         
-                // temporary short the list for cdu-1, crude-1, hpid
-        
-        //    List<String> plantList = plantList1.stream().filter(plantName -> plantName.equals("CDU-1") || plantName.equals("Crude-1") || plantName.equals("HPIB")).toList();
-        List<String> plantList = plantList1.stream().filter(plantName -> plantName.equals("CDU-1") || plantName.equals("CDU-2")).toList();
+      //  List<String> plantList = plantList1.stream().filter(plantName -> plantName.equals("CDU-1") || plantName.equals("CDU-2")).toList();
 
-        return plantList;
+        return plantList1;
 
     }
 
