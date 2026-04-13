@@ -162,8 +162,20 @@ const Slowdown = ({
         { value: 'KTPD', label: 'KTPD' },
       ],
     },
-    startDate: { editable: true, type: 'dateTime', minWidth: 150, widthT: 150 },
-    endDate: { editable: true, type: 'dateTime', minWidth: 150, widthT: 150 },
+    startDate: {
+      editable: true,
+      type: 'dateTime',
+      isFinancialYear: false,
+      minWidth: 150,
+      widthT: 150,
+    },
+    endDate: {
+      editable: true,
+      type: 'dateTime',
+      isFinancialYear: false,
+      minWidth: 150,
+      widthT: 150,
+    },
     purpose: { editable: true, type: 'text', minWidth: 200, widthT: 200 },
   }
 

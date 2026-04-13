@@ -126,7 +126,13 @@ NORM_AIR_PER_MT_SHP_HRSG = 9.7440           # ~468720 NM3 per ~48000 MT SHP (sca
 
 # Iteration Constants
 USD_ITERATION_LIMIT = 50
-USD_TOLERANCE = 0.0000001  # 0.0001 KWh = 0.0000001 MWh tolerance for aux power convergence
+USD_TOLERANCE = 0.001  # MWh tolerance for aux power convergence
+EXCESS_STEAM_ACTION_THRESHOLD_MT = 1.0
+EXCESS_STEAM_PRACTICAL_TOLERANCE_MT = 0.1
+STALL_ITERATION_LIMIT = 3
+STALL_EXCESS_STEAM_DELTA_MT = 1.1
+STALL_POWER_AUX_DELTA_MWH = 0.001
+STALL_STG_DELTA_MWH = 0.001
 
 
 # ============================================================
@@ -862,6 +868,12 @@ def usd_iterate(
     gt_reduction_for_balance_mwh = 0.0  # GT reduction to balance power when STG increases
     excess_steam_balancing_active = False  # Flag to track if we're in excess steam balancing phase
     power_initially_converged = False  # Flag to track if power has converged at least once
+    excess_steam_controller_mode = None
+    repeated_stall_count = 0
+    previous_excess_steam_mt = None
+    previous_stg_override_mwh = None
+    previous_gt_reduction_for_balance_mwh = None
+    previous_aux_power_error_mwh = None
     
     for iteration in range(1, USD_ITERATION_LIMIT + 1):
         
@@ -1059,7 +1071,7 @@ def usd_iterate(
             free_steam = hrsg_detail.get("free_steam_mt", 0) or 0
             supp_min = hrsg_detail.get("supp_min_mt_month", 0) or 0
             supp_max = hrsg_detail.get("supp_max_mt_month", 0) or 0
-            total_max = free_steam + supp_max
+            total_max = supp_max
             print(f"  | {hrsg_name:<14} | {is_avail:>10} | {hours:>10.2f} | {free_steam:>10.2f} | {supp_min:>10.2f} | {supp_max:>10.2f} | {total_max:>10.2f} |")
         
         total_free_steam = shp_capacity["total_free_steam_mt"]
@@ -1095,23 +1107,22 @@ def usd_iterate(
         )
         
         shp_demand = steam_balance["summary"]["total_shp_demand"]
+        net_shp_demand = max(0.0, shp_demand - total_free_steam)
         
         # ---------------------------------------------------------
         # STEP 3d: SHP Balance Analysis
         # (HRSG capacity already printed above)
         # ---------------------------------------------------------
-        shp_deficit = shp_demand - max_shp_capacity
+        shp_deficit = net_shp_demand - max_shp_capacity
         
-        if shp_demand > 0:
-            deficit_percent = (shp_deficit / shp_demand) * 100
-            utilization_percent = (shp_demand / max_shp_capacity) * 100 if max_shp_capacity > 0 else 0
+        if net_shp_demand > 0:
+            deficit_percent = (shp_deficit / net_shp_demand) * 100
+            utilization_percent = (net_shp_demand / max_shp_capacity) * 100 if max_shp_capacity > 0 else 0
         else:
             deficit_percent = 0.0
             utilization_percent = 0.0
         
-        # Calculate supplementary firing needed (Free Steam is display only, not subtracted)
-        # Full demand must be met by supplementary firing
-        supplementary_firing_needed = shp_demand  # Free steam excluded from balance
+        supplementary_firing_needed = net_shp_demand
         
         print("\n" + "="*90)
         print("SHP BALANCE ANALYSIS")
@@ -1129,15 +1140,16 @@ def usd_iterate(
         print(f"  +----------------------------------+----------------+")
         print(f"  | TOTAL SHP DEMAND                 | {shp_demand:>14.2f} |")
         print(f"  +----------------------------------+----------------+")
-        print(f"  | SHP SUPPLY                       |                |")
+        print(f"  | SHP OFFSET / SUPPLY              |                |")
         print(f"  +----------------------------------+----------------+")
-        print(f"  | Free Steam (display only)        | {total_free_steam:>14.2f} |")
+        print(f"  | Free Steam Offset                | {total_free_steam:>14.2f} |")
+        print(f"  | Net SHP Demand for HRSG          | {net_shp_demand:>14.2f} |")
         print(f"  | Supplementary Firing Needed      | {supplementary_firing_needed:>14.2f} |")
         print(f"  | Supplementary Max Capacity       | {total_supp_max:>14.2f} |")
         print(f"  +----------------------------------+----------------+")
         print(f"  | Total Max SHP Capacity           | {max_shp_capacity:>14.2f} |")
         print(f"  +----------------------------------+----------------+")
-        print(f"  | SHP DEFICIT (Demand - Capacity)  | {shp_deficit:>14.2f} |")
+        print(f"  | SHP DEFICIT (Net Demand - Capacity) | {shp_deficit:>11.2f} |")
         print(f"  | Deficit %                        | {deficit_percent:>13.4f}% |")
         print(f"  | Utilization %                    | {utilization_percent:>13.2f}% |")
         print(f"  +----------------------------------+----------------+")
@@ -1276,11 +1288,14 @@ def usd_iterate(
                 print(f"  |   {h_name}: {h_hours:.0f} hrs x {h_max_cap} MT/hr x {h_eff} = {h_supp_max:,.2f} MT")
         print(f"  |   Total Supp Max = {total_supp_max:,.2f} MT")
         print(f"  " + "-"*90)
-        print(f"  | Total SHP Capacity = Supp Max (Free Steam is display only)")
-        print(f"  |                    = {total_supp_max:,.2f} MT")
+        print(f"  | Net SHP Demand = MAX(0, SHP Demand - Free Steam)")
+        print(f"  |                = {net_shp_demand:,.2f} MT")
         print(f"  " + "-"*90)
-        print(f"  | Supplementary Firing Needed = SHP Demand (Free Steam not subtracted)")
-        print(f"  |                             = {shp_demand:,.2f} MT")
+        print(f"  | Total SHP Capacity = Supplementary Max")
+        print(f"  |                    = {max_shp_capacity:,.2f} MT")
+        print(f"  " + "-"*90)
+        print(f"  | Supplementary Firing Needed = Net SHP Demand")
+        print(f"  |                             = {supplementary_firing_needed:,.2f} MT")
         print(f"  " + "="*90)
         
         # ---------------------------------------------------------
@@ -1311,8 +1326,8 @@ def usd_iterate(
         # These must match the NMD output calculations
         
         # BFW = HRSG BFW + PRDS BFW + Fixed (300 M3)
-        # HRSG BFW based on supplementary firing only (free steam is display only)
-        total_shp_from_hrsg = supplementary_firing_needed  # Free steam excluded
+        # HRSG BFW based on total HRSG SHP supply (free steam + supplementary firing)
+        total_shp_from_hrsg = hrsg_dispatch_result.get("total_shp_supply_mt", supplementary_firing_needed)
         bfw_hrsg = total_shp_from_hrsg * NORM_BFW_PER_MT_SHP
         bfw_hp_prds = hp_process * 0.0768
         bfw_mp_prds = mp_total * 0.09
@@ -1483,10 +1498,12 @@ def usd_iterate(
             "gt_gross_mwh": round(gt_gross_mwh, 2),
             "stg_shp_required_mt": round(stg_shp_required, 2),
             "shp_demand_mt": round(shp_demand, 2),
+            "net_shp_demand_mt": round(net_shp_demand, 2),
             "free_steam_mt": round(total_free_steam, 2),
             "supplementary_firing_mt": round(supplementary_firing_needed, 2),
             "max_shp_capacity_mt": round(max_shp_capacity, 2),
             "shp_deficit_mt": round(shp_deficit, 2),
+            "excess_steam_mt": round(excess_steam_mt, 2),
             "deficit_percent": round(deficit_percent, 4),
             "utilization_percent": round(utilization_percent, 2),
             "previous_aux_mwh": round(previous_utility_aux_mwh, 4),
@@ -1494,6 +1511,8 @@ def usd_iterate(
             "aux_power_error_mwh": round(aux_power_error, 6),
             "stg_reduction_mwh": round(stg_reduction_mwh, 2),
             "import_compensation_mwh": round(import_compensation_mwh, 2),
+            "stg_min_override_mwh": round(stg_min_override_mwh, 2) if stg_min_override_mwh is not None else None,
+            "gt_reduction_for_balance_mwh": round(gt_reduction_for_balance_mwh, 2),
             "action": None,
             "status": "PENDING",
         }
@@ -1509,6 +1528,7 @@ def usd_iterate(
         shp_converged = can_meet_shp
         lp_u4u_converged = lp_u4u_error <= LP_U4U_TOLERANCE
         mp_u4u_converged = mp_u4u_error <= MP_U4U_TOLERANCE
+        practical_excess_steam_converged = excess_steam_mt <= EXCESS_STEAM_PRACTICAL_TOLERANCE_MT
         
         # ---------------------------------------------------------
         # STEP 3g.1: EXCESS STEAM BALANCING (NEW DISPATCH LOGIC)
@@ -1556,8 +1576,13 @@ def usd_iterate(
             
             # Actual increase is limited by both STG capacity AND GT reduction available
             actual_stg_increase = min(actual_stg_increase, gt_available_reduction)
+            damped_stg_increase = actual_stg_increase * 0.5
+            actual_stg_increase = min(actual_stg_increase, damped_stg_increase if damped_stg_increase > 0 else actual_stg_increase)
+            damped_stg_increase = actual_stg_increase * 0.5
+            actual_stg_increase = min(actual_stg_increase, damped_stg_increase if damped_stg_increase > 0 else actual_stg_increase)
             
-            if actual_stg_increase > 50:  # Only if meaningful (> 50 MWh)
+            action_threshold_mwh = EXCESS_STEAM_ACTION_THRESHOLD_MT / STEAM_TO_POWER_MT_PER_MWH
+            if actual_stg_increase > action_threshold_mwh:
                 print("\n" + "="*90)
                 print("⚡ EXCESS STEAM BALANCING (ITERATIVE)")
                 print("="*90)
@@ -1568,6 +1593,8 @@ def usd_iterate(
                 print(f"  STG Max Capacity:                   {stg_db_max_mwh:>12.2f} MWh")
                 print(f"  STG Available Increase:             {stg_available_increase:>12.2f} MWh")
                 print(f"  GT Available Reduction:             {gt_available_reduction:>12.2f} MWh")
+                print(f"  Damped STG Increase (50%):          {damped_stg_increase:>12.2f} MWh")
+                print(f"  Damped STG Increase (50%):          {damped_stg_increase:>12.2f} MWh")
                 print(f"  Actual STG Increase:                {actual_stg_increase:>12.2f} MWh")
                 print(f"  ─────────────────────────────────────────────")
                 
@@ -1587,6 +1614,7 @@ def usd_iterate(
                 # GT reduction = how much STG increased from its natural dispatch
                 gt_reduction_for_balance_mwh = actual_stg_increase
                 excess_steam_balancing_active = True
+                excess_steam_controller_mode = "HRSG_MIN_EXCESS"
                 
                 # Store adjustment for next iteration
                 excess_steam_adjustment_mwh = actual_stg_increase
@@ -1594,7 +1622,7 @@ def usd_iterate(
                 
                 iteration_record["action"] = f"EXCESS_STEAM_BALANCE_STG+{actual_stg_increase:.2f}_GT-{gt_reduction_needed:.2f}"
                 iteration_record["status"] = "EXCESS_STEAM_BALANCING"
-            elif excess_steam_mt > 100:
+            elif excess_steam_mt > EXCESS_STEAM_PRACTICAL_TOLERANCE_MT and (stg_available_increase <= action_threshold_mwh or gt_available_reduction <= action_threshold_mwh):
                 # Excess steam exists but can't be absorbed (GTs at MIN or STG at MAX)
                 print("\n" + "="*90)
                 print("⚠️ EXCESS STEAM - CANNOT BE FULLY ABSORBED")
@@ -1617,16 +1645,40 @@ def usd_iterate(
                 
                 iteration_record["action"] = f"EXCESS_STEAM_UNABSORBED_{excess_steam_mt:.2f}_MT"
                 iteration_record["status"] = "EXCESS_STEAM_LIMIT_REACHED"
+                excess_steam_balancing_active = False
+                excess_steam_controller_mode = None
+                stg_min_override_mwh = None
+                gt_reduction_for_balance_mwh = 0.0
+            elif excess_steam_mt > EXCESS_STEAM_PRACTICAL_TOLERANCE_MT:
+                print(f"\n  [INFO] Excess steam ({excess_steam_mt:.2f} MT) remains solvable; preserving current STG/GT override for next iteration")
+                excess_steam_balancing_active = True
+                excess_steam_controller_mode = "HRSG_MIN_EXCESS"
+                iteration_record["action"] = f"HOLD_EXCESS_STEAM_OVERRIDE_{excess_steam_mt:.2f}_MT"
+                iteration_record["status"] = "EXCESS_STEAM_HOLD"
             else:
                 # Excess steam is small, no adjustment needed
                 print(f"\n  [INFO] Excess steam ({excess_steam_mt:.2f} MT) is small, no balancing needed")
+                excess_steam_balancing_active = False
+                excess_steam_controller_mode = None
+                stg_min_override_mwh = None
+                gt_reduction_for_balance_mwh = 0.0
+        elif excess_steam_mt <= 0:
+            excess_steam_balancing_active = False
+            excess_steam_controller_mode = None
+            stg_min_override_mwh = None
+            gt_reduction_for_balance_mwh = 0.0
+        elif not power_initially_converged:
+            excess_steam_balancing_active = False
+            excess_steam_controller_mode = None
+            stg_min_override_mwh = None
+            gt_reduction_for_balance_mwh = 0.0
         
         # ---------------------------------------------------------
         # STEP 3g.2: Check if we can INCREASE STG to consume excess steam
         # Per flowchart: "Increase STG Generation to consume excess SHP Steam"
         # This should happen BEFORE declaring convergence
         # ---------------------------------------------------------
-        if can_meet_shp and shp_deficit < 0 and stg_reduction_mwh > 0:
+        if can_meet_shp and shp_deficit < 0 and stg_reduction_mwh > 0 and excess_steam_controller_mode is None:
             # We have excess SHP AND we previously reduced STG
             # Try to recover some STG generation
             excess_shp = abs(shp_deficit)
@@ -1655,14 +1707,49 @@ def usd_iterate(
                 
                 iteration_record["action"] = f"INCREASE_STG_{actual_recovery:.2f}_MWH"
                 iteration_record["status"] = "SHP_EXCESS_RECOVERY"
+        elif excess_steam_controller_mode == "HRSG_MIN_EXCESS" and stg_reduction_mwh > 0:
+            print(f"\n  [INFO] Skipping SHP excess recovery while HRSG MIN excess controller is active")
+
+        if previous_excess_steam_mt is not None:
+            same_excess_steam = abs(excess_steam_mt - previous_excess_steam_mt) <= STALL_EXCESS_STEAM_DELTA_MT
+            same_aux_power = previous_aux_power_error_mwh is not None and abs(aux_power_error - previous_aux_power_error_mwh) <= STALL_POWER_AUX_DELTA_MWH
+            same_stg_override = abs((stg_min_override_mwh or 0.0) - (previous_stg_override_mwh or 0.0)) <= STALL_STG_DELTA_MWH
+            same_gt_reduction = abs(gt_reduction_for_balance_mwh - (previous_gt_reduction_for_balance_mwh or 0.0)) <= STALL_STG_DELTA_MWH
+            if same_excess_steam and same_aux_power and same_stg_override and same_gt_reduction:
+                repeated_stall_count += 1
+            else:
+                repeated_stall_count = 0
+        else:
+            repeated_stall_count = 0
+
+        if repeated_stall_count >= STALL_ITERATION_LIMIT - 1 and power_converged and lp_u4u_converged and mp_u4u_converged:
+            print(f"\n  [STALL DETECTED] Iteration state repeated for {STALL_ITERATION_LIMIT} iterations; preserving best current state")
+            print(f"       Excess Steam: {excess_steam_mt:.2f} MT")
+            print(f"       Power Aux Error: {aux_power_error:.6f} MWh")
+            iteration_record["action"] = f"STALL_STOP_{excess_steam_mt:.2f}_MT"
+            iteration_record["status"] = "PRACTICAL_CONVERGENCE"
+            iteration_history.append(iteration_record)
+            converged = practical_excess_steam_converged or can_meet_shp
+            final_dispatch = current_dispatch
+            final_power_result = power_result
+            final_steam_balance = steam_balance
+            final_shp_capacity = shp_capacity
+            final_hrsg_availability = hrsg_availability
+            final_lp_balance = lp_balance
+            final_mp_balance = mp_balance
+            final_u4u_power = u4u_power
+            final_u4u_lp_steam = u4u_lp_steam
+            final_u4u_mp_steam = u4u_mp_steam
+            break
         
         # Now check for final convergence
-        if power_converged and shp_converged and lp_u4u_converged and mp_u4u_converged and not stg_increased:
+        if power_converged and shp_converged and lp_u4u_converged and mp_u4u_converged and practical_excess_steam_converged and not stg_increased:
             print(f"\n  [CONVERGED] Power, SHP, LP U4U, and MP U4U all balanced!")
             print(f"       Power Aux Error: {aux_power_error:.6f} MWh <= {USD_TOLERANCE} MWh")
             print(f"       SHP Deficit: {shp_deficit:.2f} MT <= 0 (CAN MEET)")
             print(f"       LP U4U Error: {lp_u4u_error:.2f} MT <= {LP_U4U_TOLERANCE} MT")
             print(f"       MP U4U Error: {mp_u4u_error:.2f} MT <= {MP_U4U_TOLERANCE} MT")
+            print(f"       Excess Steam: {excess_steam_mt:.2f} MT <= {EXCESS_STEAM_PRACTICAL_TOLERANCE_MT} MT")
             
             iteration_record["action"] = "CONVERGED"
             iteration_record["status"] = "CONVERGED"
@@ -1715,6 +1802,10 @@ def usd_iterate(
                 print(f"       - Verify GT operational hours are set correctly")
                 print(f"       - Consider reducing process SHP demand")
                 
+                excess_steam_balancing_active = False
+                excess_steam_controller_mode = None
+                stg_min_override_mwh = None
+                gt_reduction_for_balance_mwh = 0.0
                 iteration_record["action"] = "SHP_IMPOSSIBLE"
                 iteration_record["status"] = "FAILED"
                 iteration_record["failure_reason"] = "SHP_DEFICIT_UNSOLVABLE"
@@ -1803,6 +1894,10 @@ def usd_iterate(
         previous_utility_aux_mwh = current_utility_aux_mwh
         previous_lp_u4u_mt = current_lp_u4u_mt
         previous_shp_deficit = shp_deficit
+        previous_excess_steam_mt = excess_steam_mt
+        previous_stg_override_mwh = stg_min_override_mwh
+        previous_gt_reduction_for_balance_mwh = gt_reduction_for_balance_mwh
+        previous_aux_power_error_mwh = aux_power_error
     
     # =========================================================
     # STEP 4: FINAL RESULTS
@@ -1814,10 +1909,28 @@ def usd_iterate(
     # Calculate final SHP balance
     final_shp_balance = None
     if final_steam_balance and final_shp_capacity:
+        final_total_shp_demand = final_steam_balance["summary"]["total_shp_demand"]
+        final_total_free_steam = final_shp_capacity.get("total_free_steam_mt", 0.0)
+        final_net_shp_demand = max(0.0, final_total_shp_demand - final_total_free_steam)
         final_shp_balance = check_shp_balance(
-            final_steam_balance["summary"]["total_shp_demand"],
+            final_net_shp_demand,
             final_shp_capacity
         )
+        if final_hrsg_dispatch:
+            final_shp_balance.update({
+                "actual_shp_supply_mt": round(final_hrsg_dispatch.get("total_shp_supply_mt", 0.0), 2),
+                "actual_free_steam_mt": round(final_hrsg_dispatch.get("total_free_steam_mt", 0.0), 2),
+                "net_shp_demand_mt": round(final_net_shp_demand, 2),
+                "actual_supplementary_firing_mt": round(final_hrsg_dispatch.get("total_dispatched_supp_mt", 0.0), 2),
+                "min_shp_supply_mt": round(final_hrsg_dispatch.get("min_supply_mt", 0.0), 2),
+                "max_shp_supply_mt": round(final_hrsg_dispatch.get("max_supply_mt", 0.0), 2),
+                "required_supplementary_firing_mt": round(final_hrsg_dispatch.get("required_supp_firing_mt", 0.0), 2),
+                "actual_balance_mt": round(
+                    final_hrsg_dispatch.get("total_shp_supply_mt", 0.0) - final_net_shp_demand,
+                    2
+                ),
+                "excess_steam_mt": round(final_hrsg_dispatch.get("excess_steam_mt", 0.0), 2),
+            })
     
     final_aux_power = current_utility_aux_mwh if iteration_history else 0.0
     

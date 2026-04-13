@@ -49,6 +49,116 @@ THIN_BORDER = Border(
 
 
 # ============================================================
+# HELPER FUNCTIONS FOR ASSET DEFAULT VALUES
+# ============================================================
+
+def get_asset_default_min_load(asset_name: str, month: int, year: int) -> float:
+    """
+    Get default min load for an asset from database.
+    
+    Args:
+        asset_name: Asset name (GT1, GT2, GT3, STG)
+        month: Month number
+        year: Year
+        
+    Returns:
+        Default min load in MW
+    """
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Query for asset min operating capacity
+        query = """
+        SELECT TOP 1 MinOperatingCapacity 
+        FROM dbo.PowerAssetMaster 
+        WHERE AssetName LIKE ? AND IsActive = 1
+        ORDER BY Priority
+        """
+        
+        cursor.execute(query, (f'%{asset_name}%',))
+        result = cursor.fetchone()
+        
+        if result and result[0]:
+            return float(result[0])
+        else:
+            # Default fallback values based on asset type
+            defaults = {
+                'GT1': 11.0,
+                'GT2': 11.0, 
+                'GT3': 11.0,
+                'STG': 5.0
+            }
+            return defaults.get(asset_name, 0.0)
+            
+    except Exception as e:
+        print(f"Warning: Could not get default min load for {asset_name}: {e}")
+        # Default fallback values
+        defaults = {
+            'GT1': 11.0,
+            'GT2': 11.0,
+            'GT3': 11.0,
+            'STG': 5.0
+        }
+        return defaults.get(asset_name, 0.0)
+    finally:
+        conn.close()
+
+
+def get_asset_default_max_load(asset_name: str, month: int, year: int) -> float:
+    """
+    Get default max load for an asset from database.
+    
+    Args:
+        asset_name: Asset name (GT1, GT2, GT3, STG)
+        month: Month number
+        year: Year
+        
+    Returns:
+        Default max load in MW
+    """
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Query for asset max operating capacity
+        query = """
+        SELECT TOP 1 MaxOperatingCapacity 
+        FROM dbo.PowerAssetMaster 
+        WHERE AssetName LIKE ? AND IsActive = 1
+        ORDER BY Priority
+        """
+        
+        cursor.execute(query, (f'%{asset_name}%',))
+        result = cursor.fetchone()
+        
+        if result and result[0]:
+            return float(result[0])
+        else:
+            # Default fallback values based on asset type
+            defaults = {
+                'GT1': 22.0,
+                'GT2': 22.0,
+                'GT3': 22.0,
+                'STG': 25.0
+            }
+            return defaults.get(asset_name, 0.0)
+            
+    except Exception as e:
+        print(f"Warning: Could not get default max load for {asset_name}: {e}")
+        # Default fallback values
+        defaults = {
+            'GT1': 22.0,
+            'GT2': 22.0,
+            'GT3': 22.0,
+            'STG': 25.0
+        }
+        return defaults.get(asset_name, 0.0)
+    finally:
+        conn.close()
+
+
+# ============================================================
 # DATA EXTRACTION FUNCTIONS
 # ============================================================
 
@@ -352,12 +462,24 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
     
     # Process GTs
     gt_names = ['GT1', 'GT2', 'GT3']
+    
+    # Debug: Print all available asset names in dispatch
+    print(f"[DEBUG] Available assets in dispatch: {[asset.get('AssetName', 'Unknown') for asset in final_dispatch]}")
+    
     for gt_name in gt_names:
         gt_data = None
         for asset in final_dispatch:
             asset_name = asset.get('AssetName', '')
-            if gt_name in asset_name or f'Plant-{gt_name[-1]}' in asset_name or f'Plant {gt_name[-1]}' in asset_name:
+            # More flexible matching for GT assets - check multiple possible patterns
+            if (gt_name in asset_name.upper() or 
+                f'Plant-{gt_name[-1]}' in asset_name or 
+                f'Plant {gt_name[-1]}' in asset_name or
+                f'GT{gt_name[-1]}' in asset_name.upper() or
+                (gt_name == 'GT1' and ('GT1' in asset_name.upper() or '1' in asset_name and 'GT' in asset_name.upper())) or
+                (gt_name == 'GT2' and ('GT2' in asset_name.upper() or '2' in asset_name and 'GT' in asset_name.upper())) or
+                (gt_name == 'GT3' and ('GT3' in asset_name.upper() or '3' in asset_name and 'GT' in asset_name.upper()))):
                 gt_data = asset
+                print(f"[DEBUG] Found {gt_name} in dispatch: {asset_name}")
                 break
         
         if gt_data:
@@ -366,6 +488,8 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
             load_mw = gt_data.get('LoadMW', 0)
             min_mw = gt_data.get('MinMW', 0)
             max_mw = gt_data.get('CapacityMW', 22)
+            
+            print(f"[DEBUG] {gt_name} dispatch data: MinMW={min_mw}, MaxMW={max_mw}, LoadMW={load_mw}")
             
             # If no LoadMW, calculate from GrossMWh and Hours
             if load_mw == 0 and hours > 0:
@@ -379,12 +503,16 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
                 'avg_load_per_hr': round(load_mw, 2)
             })
         else:
-            # GT not in dispatch (not running) - show 0 for all
+            # GT not in dispatch (not running) - try to get default min load from database
+            print(f"[DEBUG] {gt_name} not found in dispatch, using database defaults")
+            default_min_mw = get_asset_default_min_load(gt_name, month, year)
+            default_max_mw = get_asset_default_max_load(gt_name, month, year)
+            
             generation_assets.append({
                 'asset_name': gt_name,
                 'availability_hr': 0,
-                'min_capacity': 0,
-                'max_capacity': 0,
+                'min_capacity': default_min_mw,
+                'max_capacity': default_max_mw,
                 'avg_load_per_hr': 0
             })
     
@@ -414,11 +542,15 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
             'avg_load_per_hr': round(load_mw, 2)
         })
     else:
+        # STG not in dispatch - get default min/max load from database
+        default_min_mw = get_asset_default_min_load('STG', month, year)
+        default_max_mw = get_asset_default_max_load('STG', month, year)
+        
         generation_assets.append({
             'asset_name': 'STG',
             'availability_hr': 0,
-            'min_capacity': 0,
-            'max_capacity': 0,
+            'min_capacity': default_min_mw,
+            'max_capacity': default_max_mw,
             'avg_load_per_hr': 0
         })
     
@@ -1682,6 +1814,15 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
         for col in range(1, 6):
             ws.cell(row=row, column=col).border = THIN_BORDER
         row += 1
+
+        hrsg_dispatch = usd_result.get('hrsg_dispatch', {}) or {}
+        free_steam_offset = hrsg_dispatch.get('total_free_steam_mt', 0) or 0
+        ws[f'A{row}'] = "  Free Steam Offset"
+        ws[f'C{row}'] = round(-free_steam_offset, 2)
+        u4u_total -= free_steam_offset
+        for col in range(1, 6):
+            ws.cell(row=row, column=col).border = THIN_BORDER
+        row += 1
     
     elif steam_type == 'MP':
         # MP consumed by PRDS to generate LP (steam cascade)
@@ -1710,19 +1851,7 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
         row += 1
 
     elif steam_type == 'HP':
-        # HP consumed to produce MP via HP→MP PRDS reduction
-        # hp_for_mp is stored directly in hp_balance from steam_service
-        final_steam = usd_result.get('final_steam_balance', {}) or {}
-        hp_balance = final_steam.get('hp_balance', {}) or {}
-        hp_for_mp = hp_balance.get('hp_for_mp', 0)
-        hp_total_val = hp_balance.get('hp_total', 0)
-        ws[f'A{row}'] = "  MP Steam (via PRDS)"
-        ws[f'B{row}'] = round(hp_for_mp / hp_total_val, 4) if hp_total_val else ''
-        ws[f'C{row}'] = round(hp_for_mp, 2)
-        u4u_total += hp_for_mp
-        for col in range(1, 6):
-            ws.cell(row=row, column=col).border = THIN_BORDER
-        row += 1
+        pass
 
     elif steam_type == 'LP':
         # LP consumed by BFW deaerator and HRSG drum heating
@@ -1768,7 +1897,9 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
     
     # SHP uses 'shp_total_demand' key, others use '{type}_total'
     if steam_type == 'SHP':
-        total_demand_actual = steam_result.get('shp_total_demand', 0)
+        hrsg_dispatch = usd_result.get('hrsg_dispatch', {}) or {}
+        free_steam_offset = hrsg_dispatch.get('total_free_steam_mt', 0) or 0
+        total_demand_actual = max(0, steam_result.get('shp_total_demand', 0) - free_steam_offset)
     else:
         total_demand_actual = steam_result.get(f'{steam_type_lower}_total', 0)
     
@@ -1795,26 +1926,25 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
     
     # Extract supply sources based on steam type
     if steam_type == 'SHP':
-        # SHP from HRSGs — always list HRSG-1/2/3 even when 0
         hrsg_dispatch = usd_result.get('hrsg_dispatch', {})
         hrsg_dispatch_list = hrsg_dispatch.get('hrsg_dispatch', [])
-        
-        # Build name → MT map from dispatch list
+
+        # Build name → supplementary MT map from dispatch list
         hrsg_shp_gen = {'HRSG-1': 0.0, 'HRSG-2': 0.0, 'HRSG-3': 0.0}
         for hrsg_data in hrsg_dispatch_list:
             raw_name = hrsg_data.get('name', '')
-            total_shp_mt = hrsg_data.get('total_shp_mt', 0) or 0
+            dispatched_supp_mt = hrsg_data.get('dispatched_supp_mt', 0) or 0
             norm = (raw_name.upper()
                     .replace('NMD-', '').replace('NMD ', '')
                     .replace('_SHP STEAM', '').replace('SHP STEAM', '')
                     .strip())
             # Map to canonical labels
             if '1' in norm:
-                hrsg_shp_gen['HRSG-1'] = total_shp_mt
+                hrsg_shp_gen['HRSG-1'] = dispatched_supp_mt
             elif '2' in norm:
-                hrsg_shp_gen['HRSG-2'] = total_shp_mt
+                hrsg_shp_gen['HRSG-2'] = dispatched_supp_mt
             elif '3' in norm:
-                hrsg_shp_gen['HRSG-3'] = total_shp_mt
+                hrsg_shp_gen['HRSG-3'] = dispatched_supp_mt
         
         for hrsg_label, shp_mt in hrsg_shp_gen.items():
             ws[f'D{gen_row}'] = hrsg_label

@@ -340,7 +340,6 @@ def calculate_mp_balance_stg_based(
 def calculate_hp_balance(
     hp_process: float,
     hp_fixed: float = 0.0,
-    hp_for_mp: float = 0.0,
 ) -> dict:
     """
     Calculate HP Steam Balance.
@@ -348,13 +347,12 @@ def calculate_hp_balance(
     Args:
         hp_process: Process HP requirement (MT)
         hp_fixed: Fixed HP requirement (MT)
-        hp_for_mp: HP consumed to produce MP via HP→MP PRDS reduction (MT)
 
     Returns:
         dict with HP balance details and downstream requirements
     """
-    # Step 1: Total HP Demand (process + fixed + HP consumed for MP via PRDS)
-    hp_total = hp_process + hp_fixed + hp_for_mp
+    # Step 1: Total HP Demand (process + fixed only)
+    hp_total = hp_process + hp_fixed
 
     # Step 2: All HP comes from PRDS (SHP→HP)
     hp_from_prds = hp_total * NORM_HP_FROM_PRDS
@@ -366,7 +364,6 @@ def calculate_hp_balance(
     return {
         "hp_process": round(hp_process, 2),
         "hp_fixed": round(hp_fixed, 2),
-        "hp_for_mp": round(hp_for_mp, 2),
         "hp_total": round(hp_total, 2),
         "hp_from_prds": round(hp_from_prds, 2),
         "shp_for_hp_prds": round(shp_for_hp_prds, 2),
@@ -489,8 +486,8 @@ def calculate_steam_balance(
     # Step 2: MP Balance (uses mp_for_lp from LP balance + optional MP U4U)
     mp = calculate_mp_balance(mp_process, mp_fixed, lp["mp_for_prds_lp"], mp_ufu_mt=mp_ufu_mt)
 
-    # Step 3: HP Balance (includes HP consumed for MP via PRDS: mp_from_prds is HP reduced to MP)
-    hp = calculate_hp_balance(hp_process, hp_fixed, hp_for_mp=mp["mp_from_prds"])
+    # Step 3: HP Balance (HP demand comes from process + fixed only)
+    hp = calculate_hp_balance(hp_process, hp_fixed)
     
     # Step 4: SHP Balance (uses outputs from LP, MP, HP)
     shp = calculate_shp_balance(
@@ -1389,9 +1386,8 @@ def calculate_hrsg_min_load_and_excess_steam(
             min_supp_firing = min_capacity_per_hr * hours * efficiency
             total_min_supp_firing += min_supp_firing
             
-            # Total MIN production = Only Supplementary Firing (Free Steam is display only)
-            # Free steam is NOT added to total HRSG generation for balance calculation
-            min_production = min_supp_firing  # Exclude free steam from total
+            # Total MIN production is supplementary firing only
+            min_production = min_supp_firing
             total_min_shp_production += min_production
             
             # Get linked GT info for priority
@@ -1434,8 +1430,10 @@ def calculate_hrsg_min_load_and_excess_steam(
                 "min_production_mt": 0.0,
             })
     
+    net_shp_demand = max(0.0, shp_demand - total_free_steam)
+
     # Calculate excess steam
-    excess_steam_mt = max(0.0, total_min_shp_production - shp_demand)
+    excess_steam_mt = max(0.0, total_min_shp_production - net_shp_demand)
     
     # Convert excess steam to power (3.56 MT = 1 MWh)
     excess_power_mwh = excess_steam_mt / STEAM_TO_POWER_MT_PER_MWH if excess_steam_mt > 0 else 0.0
@@ -1458,6 +1456,8 @@ def calculate_hrsg_min_load_and_excess_steam(
     print(f"{'TOTAL':<10} {'':<12} {'':<10} {'':<12} {'':<8} {total_free_steam:>10.2f}   {total_min_supp_firing:>10.2f}   {total_min_shp_production:>10.2f}")
     
     print(f"\n  SHP Demand:                     {shp_demand:>12.2f} MT")
+    print(f"  Free Steam Offset:              {total_free_steam:>12.2f} MT")
+    print(f"  Net SHP Demand for HRSG:        {net_shp_demand:>12.2f} MT")
     print(f"  Total MIN SHP Production:       {total_min_shp_production:>12.2f} MT")
     print(f"  ─────────────────────────────────────────────")
     
@@ -1512,7 +1512,7 @@ def dispatch_hrsg_load(
         - Increase HRSG supp firing above MIN
         - Increase HIGH priority HRSG first (lower priority number)
         
-    Case B: Demand < MIN Supply AND HRSGs above MIN
+    Case B: Demand < MIN Supply AND HRSGs above MIN 
         - Decrease HRSG supp firing towards MIN
         - Decrease LOW priority HRSG first (higher priority number)
         
@@ -1566,12 +1566,11 @@ def dispatch_hrsg_load(
     total_min_supp = sum(h["min_supp_mt"] for h in available_hrsgs)
     total_max_supp = sum(h["max_supp_mt"] for h in available_hrsgs)
     
-    # Calculate MIN and MAX total supply (Free Steam is display only, not included in balance)
-    min_supply = total_min_supp  # Exclude free steam
-    max_supply = total_max_supp  # Exclude free steam
+    net_shp_demand = max(0.0, shp_demand - total_free_steam)
+    min_supply = total_min_supp
+    max_supply = total_max_supp
     
-    # Calculate required supp firing = Demand (Free Steam not subtracted)
-    required_supp_firing = shp_demand  # Full demand must be met by supp firing
+    required_supp_firing = net_shp_demand
     
     # Initialize dispatch result
     dispatch_result = {
@@ -1581,6 +1580,7 @@ def dispatch_hrsg_load(
         "min_supply_mt": round(min_supply, 2),
         "max_supply_mt": round(max_supply, 2),
         "shp_demand_mt": round(shp_demand, 2),
+        "net_shp_demand_mt": round(net_shp_demand, 2),
         "required_supp_firing_mt": round(required_supp_firing, 2),
         "can_meet_demand": True,
         "excess_steam_mt": 0.0,
@@ -1596,7 +1596,7 @@ def dispatch_hrsg_load(
     # =========================================================
     # CASE A: Demand > MIN Supply - Need to INCREASE load
     # =========================================================
-    if shp_demand > min_supply:
+    if net_shp_demand > min_supply:
         # Group HRSGs by priority for equal distribution within same priority
         sorted_hrsgs = sorted(available_hrsgs, key=lambda x: x["priority"])
         
@@ -1654,7 +1654,7 @@ def dispatch_hrsg_load(
         sorted_hrsgs = sorted(available_hrsgs, key=lambda x: x["priority"], reverse=True)
         
         # Calculate excess at MIN load
-        excess_at_min = min_supply - shp_demand
+        excess_at_min = min_supply - net_shp_demand
         
         if excess_at_min > 0:
             # We have excess steam even at MIN load
@@ -1683,13 +1683,13 @@ def dispatch_hrsg_load(
             "min_supp_mt": round(hrsg["min_supp_mt"], 2),
             "max_supp_mt": round(hrsg["max_supp_mt"], 2),
             "dispatched_supp_mt": round(dispatched, 2),
-            "total_shp_mt": round(dispatched, 2),  # HRSG SHP = supp firing only (free steam is separate)
+            "total_shp_mt": round(hrsg["free_steam_mt"] + dispatched, 2),
             "hourly_rate_mt_hr": round(dispatched / hrsg["hours"], 2) if hrsg["hours"] > 0 else 0,
         })
     
     dispatch_result["total_dispatched_supp_mt"] = round(total_dispatched_supp, 2)
-    # Total SHP supply = Only Dispatched Supp Firing (Free Steam is display only)
-    dispatch_result["total_shp_supply_mt"] = round(total_dispatched_supp, 2)  # Exclude free steam
+    dispatch_result["total_shp_supply_mt"] = round(total_dispatched_supp, 2)
+    dispatch_result["actual_total_shp_output_mt"] = round(total_free_steam + total_dispatched_supp, 2)
     
     # =========================================================
     # HRSG HOURLY RATE CONSTRAINT VALIDATION
@@ -1751,11 +1751,12 @@ def dispatch_hrsg_load(
     print(f"  {'TOTAL':<10} {'':<12} {'':<10} {'':<8} {dispatch_result['total_min_supp_mt']:>10.2f}   {dispatch_result['total_max_supp_mt']:>10.2f}   {dispatch_result['total_dispatched_supp_mt']:>10.2f}   {'':<12}")
     print("  " + "="*107)
     print(f"\n  SHP BALANCE SUMMARY:")
-    print(f"  ├─ Free Steam (display only):   {dispatch_result['total_free_steam_mt']:>12.2f} MT")
+    print(f"  ├─ Free Steam:                  {dispatch_result['total_free_steam_mt']:>12.2f} MT")
+    print(f"  ├─ Net SHP Demand:              {dispatch_result['net_shp_demand_mt']:>12.2f} MT")
     print(f"  ├─ Dispatched Supp Firing:      {dispatch_result['total_dispatched_supp_mt']:>12.2f} MT")
-    print(f"  ├─ Total SHP Supply (Supp):     {dispatch_result['total_shp_supply_mt']:>12.2f} MT")
+    print(f"  ├─ Total SHP Supply:            {dispatch_result['total_shp_supply_mt']:>12.2f} MT")
     print(f"  ├─ SHP Demand:                  {dispatch_result['shp_demand_mt']:>12.2f} MT")
-    print(f"  └─ Balance:                     {dispatch_result['total_shp_supply_mt'] - dispatch_result['shp_demand_mt']:>12.2f} MT")
+    print(f"  └─ Balance:                     {dispatch_result['total_shp_supply_mt'] - dispatch_result['net_shp_demand_mt']:>12.2f} MT")
     
     # Check for HRSG capacity violations
     if dispatch_result["has_capacity_violation"]:
