@@ -23,6 +23,7 @@ import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.SteamHourDataRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
+import com.wks.caseengine.utility.Utility;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -72,21 +73,21 @@ public class StreamHoursServiceImpl implements StreamHoursService {
             List<CrackerHmdOnStreamHoursDTO> streamHoursList = new ArrayList<>();
             for (Object[] row : obj) {
                 CrackerHmdOnStreamHoursDTO streamHoursDTO = new CrackerHmdOnStreamHoursDTO();
-
-                streamHoursDTO.setMetric(row[0] != null ? row[0].toString() : null);
-                streamHoursDTO.setApr(row[1] != null ? Double.parseDouble(row[1].toString()) : 0.0);
-                streamHoursDTO.setMay(row[2] != null ? Double.parseDouble(row[2].toString()) : 0.0);
-                streamHoursDTO.setJune(row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0);
-                streamHoursDTO.setJuly(row[4] != null ? Double.parseDouble(row[4].toString()) : 0.0);
-                streamHoursDTO.setAug(row[5] != null ? Double.parseDouble(row[5].toString()) : 0.0);
-                streamHoursDTO.setSep(row[6] != null ? Double.parseDouble(row[6].toString()) : 0.0);
-                streamHoursDTO.setOct(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
-                streamHoursDTO.setNov(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
-                streamHoursDTO.setDec(row[9] != null ? Double.parseDouble(row[9].toString()) : 0.0);
-                streamHoursDTO.setJan(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
-                streamHoursDTO.setFeb(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
-                streamHoursDTO.setMar(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
-                streamHoursDTO.setTotalHours(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0);
+                streamHoursDTO.setId(row[0] != null ? row[0].toString() : null);
+                streamHoursDTO.setMetric(row[1] != null ? row[1].toString() : null);
+                streamHoursDTO.setApr(row[2] != null ? Double.parseDouble(row[2].toString()) : 0.0);
+                streamHoursDTO.setMay(row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0);
+                streamHoursDTO.setJune(row[4] != null ? Double.parseDouble(row[4].toString()) : 0.0);
+                streamHoursDTO.setJuly(row[5] != null ? Double.parseDouble(row[5].toString()) : 0.0);
+                streamHoursDTO.setAug(row[6] != null ? Double.parseDouble(row[6].toString()) : 0.0);
+                streamHoursDTO.setSep(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
+                streamHoursDTO.setOct(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
+                streamHoursDTO.setNov(row[9] != null ? Double.parseDouble(row[9].toString()) : 0.0);
+                streamHoursDTO.setDec(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
+                streamHoursDTO.setJan(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
+                streamHoursDTO.setFeb(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
+                streamHoursDTO.setMar(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0);
+                streamHoursDTO.setTotalHours(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
 
                 streamHoursList.add(streamHoursDTO);
             }
@@ -131,43 +132,29 @@ public class StreamHoursServiceImpl implements StreamHoursService {
             vm.setMessage(e.getMessage());
             return vm;
         } catch (Exception ex) {
+        	ex.printStackTrace();
             throw new RuntimeException("Failed to save steam hour data", ex);
         }
     }
 
     private SteamHourData saveOneSteamHour(SteamHourDataDto dto) {
-        if (dto.getPlantId() == null) {
-            throw new IllegalArgumentException("plantId is required");
+       
+        if (dto.getId() == null) {
+            throw new IllegalArgumentException("id is required for update");
         }
-        plantsRepository.findById(dto.getPlantId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 
         Date now = new Date();
-        SteamHourData saved;
-
-        if (dto.getId() != null && steamHourDataRepository.existsById(dto.getId())) {
-            SteamHourData existing = steamHourDataRepository.findById(dto.getId()).orElseThrow();
-            Date createdOn = existing.getCreatedOn();
-            applyDtoToEntity(dto, existing);
-            if (createdOn != null) {
-                existing.setCreatedOn(createdOn);
-            } else if (existing.getCreatedOn() == null) {
-                existing.setCreatedOn(now);
-            }
-            existing.setModifiedOn(now);
-            saved = steamHourDataRepository.save(existing);
-        } else {
-            SteamHourData entity = new SteamHourData();
-            if (dto.getId() != null) {
-                entity.setId(dto.getId());
-            }
-            applyDtoToEntity(dto, entity);
-            if (entity.getCreatedOn() == null) {
-                entity.setCreatedOn(now);
-            }
-            entity.setModifiedOn(now);
-            saved = steamHourDataRepository.save(entity);
+        SteamHourData existing = steamHourDataRepository.findById(dto.getId())
+                .orElseThrow(() -> new IllegalArgumentException("No record found for the provided id"));
+        Date createdOn = existing.getCreatedOn();
+        applyDtoToEntity(dto, existing);
+        if (createdOn != null) {
+            existing.setCreatedOn(createdOn);
+        } else if (existing.getCreatedOn() == null) {
+            existing.setCreatedOn(now);
         }
+        existing.setModifiedOn(now);
+        SteamHourData saved = steamHourDataRepository.save(existing);
         return saved;
     }
 
@@ -185,9 +172,7 @@ public class StreamHoursServiceImpl implements StreamHoursService {
         entity.setJan(dto.getJan());
         entity.setFeb(dto.getFeb());
         entity.setMar(dto.getMar());
-        entity.setFinancialYear(dto.getFinancialYear());
-        entity.setUpdatedBy(dto.getUpdatedBy());
-        entity.setPlantId(dto.getPlantId());
+        entity.setUpdatedBy(Utility.getUserName());
     }
 
     private static SteamHourDataDto toDto(SteamHourData entity) {

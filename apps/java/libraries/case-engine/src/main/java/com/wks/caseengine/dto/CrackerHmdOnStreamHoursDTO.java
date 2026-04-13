@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 public class CrackerHmdOnStreamHoursDTO {
 
     private String metric;
-
+    private String id;
     private Double apr;
     private Double may;
     private Double june;
