@@ -217,23 +217,6 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 
 					list.add(dto.getDiscription());
 					String productString = dto.getProduct();
-					if (productString != null) {
-						try {
-							UUID product = UUID.fromString(productString);
-							Optional<NormParameters> normParameter = normParametersRepository.findById(product);
-							if (normParameter.isPresent()) {
-								list.add(normParameter.get().getDisplayName());
-							} else {
-								list.add(productString);
-							}
-						} catch (IllegalArgumentException e) {
-
-							list.add("Invalid Product ID");
-							throw new Exception("Invalid Product UUID: " + productString, e);
-						}
-					} else {
-						list.add(null);
-					}
 
 					Date startDate = dto.getMaintStartDateTime();
 					Date endDate = dto.getMaintEndDateTime();
@@ -241,6 +224,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					list.add(startDate != null ? formatter.format(startDate) : null);
 					list.add(endDate != null ? formatter.format(endDate) : null);
 					list.add(formattedDuration);
+					list.add(dto.getShutdownRate());
 					list.add(dto.getRemark());
 					list.add(dto.getId());
 					list.add(productString);
@@ -255,8 +239,8 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					list.add(dto.getDiscription());
 					list.add(null);
 					list.add(null);
-					list.add(null);
 					list.add("00:00");
+					list.add(null);
 					list.add(dto.getRemark());
 					list.add(dto.getId());
 					list.add(dto.getProduct());
@@ -272,10 +256,10 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 			List<String> innerHeaders = new ArrayList<>();
 
 			innerHeaders.add("Shutdown Desc");
-			innerHeaders.add("Particulars");
 			innerHeaders.add("SD-From");
 			innerHeaders.add("SD-To");
 			innerHeaders.add("Duration (hrs)");
+			innerHeaders.add("Shutdown Type");
 			innerHeaders.add("Shutdown Basis");
 			innerHeaders.add("Id");
 			innerHeaders.add("Product");
@@ -721,6 +705,153 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 			// return ResponseEntity.internalServerError().build();
 		}
 		return null;
+	}
+
+	@Override
+	public AOPMessageVM importShutdownExportExcel(String year, UUID plantId, String maintenanceTypeName,
+			MultipartFile file) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			List<ShutDownPlanDTO> data = readShutdownExportExcelData(file.getInputStream(), plantId, year);
+			List<ShutDownPlanDTO> failedList = saveShutdownPlantData(plantId, data);
+			if (failedList != null && failedList.size() > 0) {
+				byte[] fileByteArray = shutdownExport(year, plantId.toString(), maintenanceTypeName, true, failedList);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+			return aopMessageVM;
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException("Failed to import shutdown export excel", e);
+		}
+	}
+
+	private List<ShutDownPlanDTO> readShutdownExportExcelData(InputStream inputStream, UUID plantFKId, String year) {
+		List<ShutDownPlanDTO> dtoList = new ArrayList<>();
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+			DataFormatter formatter = new DataFormatter();
+
+			if (rowIterator.hasNext()) {
+				rowIterator.next(); // skip header
+			}
+
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+				if (isCompletelyBlankRow(row, 8)) {
+					continue;
+				}
+				ShutDownPlanDTO dto = new ShutDownPlanDTO();
+				dto.setPlantId(plantFKId);
+				dto.setAudityear(year);
+
+				dto.setDiscription(readAsString(row.getCell(0), formatter));
+				dto.setMaintStartDateTime(readAsDateTime(row.getCell(1), formatter));
+				dto.setMaintEndDateTime(readAsDateTime(row.getCell(2), formatter));
+
+				Double durationHrs = parseDurationHours(readAsString(row.getCell(3), formatter));
+				if (durationHrs == null && dto.getMaintStartDateTime() != null && dto.getMaintEndDateTime() != null) {
+					long mins = Duration.between(
+							dto.getMaintStartDateTime().toInstant(),
+							dto.getMaintEndDateTime().toInstant()).toMinutes();
+					if (mins >= 0) {
+						durationHrs = mins / 60.0;
+					}
+				}
+				dto.setDurationInHrs(durationHrs);
+
+				dto.setShutdownRate(readAsString(row.getCell(4), formatter)); 
+				dto.setRemark(readAsString(row.getCell(5), formatter)); 
+
+				String id = readAsString(row.getCell(6), formatter);
+				dto.setId(id != null && !id.isBlank() ? id : null);
+
+				String product = readAsString(row.getCell(7), formatter);
+				dto.setProduct(product);
+				if (product != null && !product.isBlank()) {
+					try {
+						dto.setProductId(UUID.fromString(product));
+					} catch (Exception ignored) {
+						// no validation path for import reader
+					}
+				}
+
+				dtoList.add(dto);
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to read shutdown export excel", e);
+		}
+		return dtoList;
+	}
+
+	private static boolean isCompletelyBlankRow(Row row, int uptoColExclusive) {
+		if (row == null) {
+			return true;
+		}
+		for (int i = 0; i < uptoColExclusive; i++) {
+			Cell cell = row.getCell(i);
+			if (cell != null && cell.getCellType() != CellType.BLANK) {
+				String value = new DataFormatter().formatCellValue(cell);
+				if (value != null && !value.trim().isEmpty()) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	private static String readAsString(Cell cell, DataFormatter formatter) {
+		if (cell == null) {
+			return null;
+		}
+		String text = formatter.formatCellValue(cell);
+		return text != null ? text.trim() : null;
+	}
+
+	private static Date readAsDateTime(Cell cell, DataFormatter formatter) {
+		if (cell == null) {
+			return null;
+		}
+		try {
+			if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+				return cell.getDateCellValue();
+			}
+			String text = formatter.formatCellValue(cell);
+			if (text == null || text.trim().isEmpty()) {
+				return null;
+			}
+			DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm", Locale.US);
+			LocalDateTime ldt = LocalDateTime.parse(text.trim(), dtf);
+			return Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant());
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	private static Double parseDurationHours(String durationText) {
+		if (durationText == null || durationText.trim().isEmpty()) {
+			return null;
+		}
+		String val = durationText.trim();
+		try {
+			if (val.contains(":")) {
+				String[] parts = val.split(":");
+				if (parts.length == 2) {
+					int hh = Integer.parseInt(parts[0].trim());
+					int mm = Integer.parseInt(parts[1].trim());
+					return hh + (mm / 100.0);
+				}
+			}
+			return Double.parseDouble(val);
+		} catch (Exception e) {
+			return null;
+		}
 	}
 
 	@Override

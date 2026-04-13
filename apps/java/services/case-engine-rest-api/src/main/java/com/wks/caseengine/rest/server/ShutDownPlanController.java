@@ -1,6 +1,7 @@
 package com.wks.caseengine.rest.server;
 
 import java.util.List;
+import java.util.Base64;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ContentDisposition;
@@ -71,6 +72,25 @@ public class ShutDownPlanController {
 	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
 	}
+
+	@GetMapping(value = "/shutdown-export-excel")
+	public ResponseEntity<byte[]> shutdownExportExcel(
+			@RequestParam String plantId,
+			@RequestParam String maintenanceTypeName,
+			@RequestParam String year) {
+		try {
+			byte[] excelBytes = shutDownPlanService.shutdownExport(year, plantId, maintenanceTypeName, false, null);
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType
+					.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(
+					ContentDisposition.builder("attachment").filename("shutdown-details.xlsx").build());
+			headers.setContentLength(excelBytes.length);
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 	
 	@GetMapping(value = "/shutdown-export-non-product")
 	public ResponseEntity<byte[]> shutdownNonProductExport(
@@ -121,6 +141,32 @@ public class ShutDownPlanController {
 			@RequestParam("file") MultipartFile file
 	        ) {
 			return	shutDownPlanService.importShutdownExcel(year,UUID.fromString(plantId),  maintenanceTypeName, file); 
+	}
+
+	@PostMapping(value = "/shutdown-export-excel-import", consumes = "multipart/form-data")
+	public ResponseEntity<?> importShutdownExportExcel(
+			@RequestParam("plantId") String plantId,
+			@RequestParam("year") String year,
+			@RequestParam String maintenanceTypeName,
+			@RequestParam("file") MultipartFile file) {
+		try {
+			AOPMessageVM result = shutDownPlanService.importShutdownExportExcel(year, UUID.fromString(plantId),
+					maintenanceTypeName, file);
+			if (result != null && result.getCode() == 400 && result.getData() != null) {
+				byte[] errorBytes = Base64.getDecoder().decode(result.getData().toString());
+				HttpHeaders headers = new HttpHeaders();
+				headers.setContentType(MediaType.parseMediaType(
+						"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+				headers.setContentDisposition(ContentDisposition.builder("attachment")
+						.filename("shutdown-import-errors.xlsx")
+						.build());
+				headers.setContentLength(errorBytes.length);
+				return new ResponseEntity<>(errorBytes, headers, HttpStatus.OK);
+			}
+			return new ResponseEntity<>(result, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 	
 	@PostMapping(value = "/shutdown-import-non-product", consumes = "multipart/form-data")
