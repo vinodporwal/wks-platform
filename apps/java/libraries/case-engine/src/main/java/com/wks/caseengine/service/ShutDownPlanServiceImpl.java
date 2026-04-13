@@ -713,7 +713,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
 			List<ShutDownPlanDTO> data = readShutdownExportExcelData(file.getInputStream(), plantId, year);
-			List<ShutDownPlanDTO> failedList = saveShutdownPlantData(plantId, data);
+			List<ShutDownPlanDTO> failedList = saveShutdownPlantDataC2(plantId, data);
 			if (failedList != null && failedList.size() > 0) {
 				byte[] fileByteArray = shutdownExport(year, plantId.toString(), maintenanceTypeName, true, failedList);
 				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
@@ -2836,6 +2836,282 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 							}
 							if (changed && (plantMaintenanceTransaction.getRemarks()
 									.equalsIgnoreCase(shutDownPlanDTO.getRemark()))) {
+								shutDownPlanDTO.setSaveStatus("Failed");
+								shutDownPlanDTO.setErrDescription("Please update remark");
+								failedList.add(shutDownPlanDTO);
+								continue;
+							}
+							plantMaintenanceTransaction.setRemarks(shutDownPlanDTO.getRemark());
+							// Save updated record
+							plantMaintenanceTransactionRepository.save(plantMaintenanceTransaction);
+							if(verticalName.equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD") && !descriptions.contains(plantMaintenanceTransaction.getDiscription())) {	
+								String monthName = shutDownPlanDTO.getMonth().toUpperCase(); 
+								Integer monthNumber = Month.valueOf(monthName).getValue();
+								saveHistory(plantId.toString(),year, monthNumber.toString(),plantMaintenanceTransaction.getDurationInHrs(),plantMaintenanceTransaction.getDiscription(),plantMaintenanceTransaction.getRemarks());
+							}
+							
+						} else {
+							throw new RuntimeException("Record not found for ID: " + shutDownPlanDTO.getId());
+						}
+					} catch (IllegalArgumentException e) {
+						e.printStackTrace();
+						throw new RuntimeException("Invalid ID format: " + shutDownPlanDTO.getId(), e);
+					}
+				}
+			}
+			List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("shutdown-plan");
+			for (ScreenMapping screenMapping : screenMappingList) {
+				AopCalculation aopCalculation = new AopCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(plantId);
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
+			return failedList;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to save data", ex);
+		}
+	}
+
+	@Override
+	public List<ShutDownPlanDTO> saveShutdownPlantDataC2(UUID plantId, List<ShutDownPlanDTO> shutDownPlanDTOList) {
+		String year = null;
+		String verticalName = plantsService.findVerticalNameByPlantId(plantId);
+		Plants plant = plantsRepository.findById(plantId).orElseThrow();
+		
+		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+		
+		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
+		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
+		List<String> items = List.of(
+			    "Partial Preheater Cleaning",
+			    "Full Preheater Cleaning",
+			    "Catalyst Full Topup",
+			    "Catalyst Partial Topup",
+			    "Other"
+			);
+
+			
+			String descriptions = String.join(", ", items);
+		try {
+			UUID plantMaintenanceId = findIdByPlantIdAndMaintenanceTypeName(plantId, "Shutdown");
+			if (plantMaintenanceId == null) {
+				UUID maintenanceTypesId = plantMaintenanceTransactionRepository.findIdByName("Shutdown");
+				PlantMaintenance plantMaintenance = new PlantMaintenance();
+				plantMaintenance.setMaintenanceText("Shutdown");
+				plantMaintenance.setIsDefault(true);
+				plantMaintenance.setPlantFkId(plantId);
+				plantMaintenance.setMaintenanceTypeFkId(maintenanceTypesId);
+				plantMaintenanceRepository.save(plantMaintenance);
+				plantMaintenanceId = findIdByPlantIdAndMaintenanceTypeName(plantId, "Shutdown");
+			}
+
+			for (ShutDownPlanDTO shutDownPlanDTO : shutDownPlanDTOList) {
+				if (shutDownPlanDTO.getSaveStatus() != null
+						&& shutDownPlanDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(shutDownPlanDTO);
+					continue;
+				}
+				year = shutDownPlanDTO.getAudityear();
+
+				if (shutDownPlanDTO.getId() == null || shutDownPlanDTO.getId().isEmpty()) {
+					// Creating a new record
+					PlantMaintenanceTransaction plantMaintenanceTransaction = new PlantMaintenanceTransaction();
+					plantMaintenanceTransaction.setId(UUID.randomUUID());
+					plantMaintenanceTransaction.setPlantId(plantId);
+					if(verticalName.equalsIgnoreCase("PTA") || elastomer) {
+		            	if(shutDownPlanDTO.getMonth()!=null) {
+		            		shutDownPlanDTO.setMaintStartDateTime(getStartOfMonthDate(shutDownPlanDTO.getMonth(), year));
+		            		shutDownPlanDTO.setMaintEndDateTime(getEndOfMonthDate(shutDownPlanDTO.getMonth(), year));
+		            	}
+		            }
+					// Set mandatory fields with default values if missing
+					plantMaintenanceTransaction
+							.setDiscription(shutDownPlanDTO.getDiscription() != null ? shutDownPlanDTO.getDiscription()
+									: "Default Description");
+
+					if (shutDownPlanDTO.getDurationInHrs() != null) {
+
+						plantMaintenanceTransaction
+								.setDurationInMins((int) (Math.floor(shutDownPlanDTO.getDurationInHrs()) * 60)
+										+ (int) Math.round((shutDownPlanDTO.getDurationInHrs()
+												- Math.floor(shutDownPlanDTO.getDurationInHrs())) * 100));
+						plantMaintenanceTransaction.setDurationInHrs(shutDownPlanDTO.getDurationInHrs());
+
+					} else {
+						plantMaintenanceTransaction.setDurationInMins(0);
+					}
+					if(verticalName.equalsIgnoreCase("PE") && site.getName().equalsIgnoreCase("C2")) {
+						plantMaintenanceTransaction.setShutdownRate(shutDownPlanDTO.getShutdownRate());
+					}
+					plantMaintenanceTransaction.setMaintEndDateTime(shutDownPlanDTO.getMaintEndDateTime());
+					plantMaintenanceTransaction.setMaintStartDateTime(shutDownPlanDTO.getMaintStartDateTime());
+					plantMaintenanceTransaction
+							.setMaintForMonth(shutDownPlanDTO.getMaintStartDateTime().getMonth() + 1);
+					plantMaintenanceTransaction.setUser(Utility.getUserName());
+					plantMaintenanceTransaction.setName("Default Name");
+					plantMaintenanceTransaction.setVersion("V1");
+					plantMaintenanceTransaction.setCreatedOn(new Date());
+					plantMaintenanceTransaction.setPlantMaintenanceFkId(plantMaintenanceId);
+
+					plantMaintenanceTransaction.setRemarks(shutDownPlanDTO.getRemark());
+
+					if (shutDownPlanDTO.getProductId() != null) {
+						plantMaintenanceTransaction.setNormParametersFKId(shutDownPlanDTO.getProductId());
+					}
+
+					plantMaintenanceTransaction.setAuditYear(shutDownPlanDTO.getAudityear());
+					if(shutDownPlanDTO.getLineId()!=null) {
+						plantMaintenanceTransaction.setLineFKId(UUID.fromString(shutDownPlanDTO.getLineId()));
+					}
+
+					// Save new record
+					
+					plantMaintenanceTransactionRepository.save(plantMaintenanceTransaction);
+					
+					if(verticalName.equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD") && !descriptions.contains(plantMaintenanceTransaction.getDiscription())) {	
+						String monthName = shutDownPlanDTO.getMonth().toUpperCase(); 
+						Integer monthNumber = Month.valueOf(monthName).getValue();
+						saveHistory(plantId.toString(),year, monthNumber.toString(),plantMaintenanceTransaction.getDurationInHrs(),plantMaintenanceTransaction.getDiscription(),plantMaintenanceTransaction.getRemarks());
+					}
+					
+
+					String description = shutDownPlanDTO.getDiscription();
+					if (verticalName.equalsIgnoreCase("MEG")) {
+						shutDownPlanDTO.setCreatedOn(plantMaintenanceTransaction.getCreatedOn());
+						// shutDownPlanDTO.setMaintEndDateTime(shutDownPlanDTO.getMaintStartDateTime());
+						shutDownPlanDTO
+								.setPlantMaintenanceTransactionName(plantMaintenanceTransaction.getId().toString());
+						List<ShutDownPlanDTO> list = new ArrayList<>();
+						shutDownPlanDTO.setDurationInHrs(0.00);
+						shutDownPlanDTO.setDurationInMins(0);
+						shutDownPlanDTO.setDiscription(description + " Ramp Up");
+						shutDownPlanDTO.setProductId(
+								plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId("EO", plantId));
+						list.add(shutDownPlanDTO);
+						slowdownPlanService.saveRampUpData(plantId, list);
+
+						List<ShutDownPlanDTO> list2 = new ArrayList<>();
+						shutDownPlanDTO.setDiscription(description + " Ramp Down");
+						shutDownPlanDTO.setProductId(
+								plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId("EOE", plantId));
+						shutDownPlanDTO.setDurationInHrs(0.00);
+						shutDownPlanDTO.setDurationInMins(0);
+						list2.add(shutDownPlanDTO);
+						slowdownPlanService.saveRampDownData(plantId, list2);
+					}
+				} else {
+					// Updating an existing record
+
+					try {
+						Boolean changed = false;
+						Optional<PlantMaintenanceTransaction> plantMaintenance = shutDownPlanRepository
+								.findById(UUID.fromString(shutDownPlanDTO.getId()));
+
+						if (plantMaintenance.isPresent()) {
+							PlantMaintenanceTransaction plantMaintenanceTransaction = plantMaintenance.get();
+							plantMaintenanceTransaction.setPlantId(plantId);
+							if(verticalName.equalsIgnoreCase("PTA") || elastomer) {
+				            	if(shutDownPlanDTO.getMonth()!=null) {
+				            		shutDownPlanDTO.setMaintStartDateTime(getStartOfMonthDate(shutDownPlanDTO.getMonth(), year));
+				            		shutDownPlanDTO.setMaintEndDateTime(getEndOfMonthDate(shutDownPlanDTO.getMonth(), year));
+				            	}
+				            }
+							if (!plantMaintenanceTransaction.getDiscription()
+									.equalsIgnoreCase(shutDownPlanDTO.getDiscription())) {
+								changed = true;
+							}
+							plantMaintenanceTransaction.setDiscription(shutDownPlanDTO.getDiscription());
+							if (shutDownPlanDTO.getProductId() != null) {
+								if (!(plantMaintenanceTransaction.getNormParametersFKId().toString()
+										.equalsIgnoreCase(shutDownPlanDTO.getProductId().toString()))) {
+									changed = true;
+								}
+								plantMaintenanceTransaction.setNormParametersFKId(shutDownPlanDTO.getProductId());
+							}
+							if (shutDownPlanDTO.getDurationInHrs() != null) {
+								// plantMaintenanceTransaction.setDurationInMins((int)
+								// (shutDownPlanDTO.getDurationInHrs() * 60));
+								plantMaintenanceTransaction
+										.setDurationInMins((int) (Math.floor(shutDownPlanDTO.getDurationInHrs()) * 60)
+												+ (int) Math.round((shutDownPlanDTO.getDurationInHrs()
+														- Math.floor(shutDownPlanDTO.getDurationInHrs())) * 100));
+								plantMaintenanceTransaction.setDurationInHrs(shutDownPlanDTO.getDurationInHrs());
+
+							} else {
+								plantMaintenanceTransaction.setDurationInMins(0);
+							}
+							if(verticalName.equalsIgnoreCase("PE") && site.getName().equalsIgnoreCase("C2")) {
+								String existingShutdownRate = plantMaintenanceTransaction.getShutdownRate();
+								String incomingShutdownRate = shutDownPlanDTO.getShutdownRate();
+								if (!Objects.equals(existingShutdownRate, incomingShutdownRate)) {
+									changed = true;
+								}
+								plantMaintenanceTransaction.setShutdownRate(shutDownPlanDTO.getShutdownRate());
+							}
+							if (("ELASTOMER".equalsIgnoreCase(verticalName))
+									|| ("AROMATICS".equalsIgnoreCase(verticalName))
+									|| ("PTA".equalsIgnoreCase(verticalName))) {
+								if (plantMaintenanceTransaction
+										.getMaintForMonth() != (shutDownPlanDTO.getMaintStartDateTime().getMonth()
+												+ 1)) {
+									int month = plantMaintenanceTransaction.getMaintForMonth();
+									Long count = plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId,
+											month, "Shutdown", year);
+									if (count == 1) {
+										List<ShutdownNormsValue> shutdownNormsValues = shutdownNormsRepository
+												.findByPlantFkIdAndFinancialYear(plantId,
+														plantMaintenanceTransaction.getAuditYear());
+										for (ShutdownNormsValue shutdownNormsValue : shutdownNormsValues) {
+											setMonthShutdown(month, shutdownNormsValue);
+										}
+									}
+								}
+							}
+							if (("PE".equalsIgnoreCase(verticalName)) || ("PP".equalsIgnoreCase(verticalName)) || ("PET".equalsIgnoreCase(verticalName))) {
+								int month = plantMaintenanceTransaction.getMaintForMonth();
+								Long count = plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId, month,
+										"Shutdown", year);
+								if (count == 1) {
+									List<GradeShutdownNormsValue> shutdownNormsValues = gradeShutdownNormsValueRepository
+											.findByPlantFkIdAndFinancialYear(plantId,
+													plantMaintenanceTransaction.getAuditYear());
+									for (GradeShutdownNormsValue shutdownNormsValue : shutdownNormsValues) {
+										setMonthShutdown(month, shutdownNormsValue);
+									}
+								}
+							}
+							plantMaintenanceTransaction
+									.setMaintForMonth(shutDownPlanDTO.getMaintStartDateTime().getMonth() + 1);
+							Date entityEndDate = plantMaintenanceTransaction.getMaintEndDateTime();
+							Date dtoEndDate = shutDownPlanDTO.getMaintEndDateTime();
+							if (!(entityEndDate != null && dtoEndDate != null
+									&& entityEndDate.compareTo(dtoEndDate) == 0)) {
+								if(!elastomer) {
+									changed = true;
+								}
+							}
+							plantMaintenanceTransaction.setMaintEndDateTime(shutDownPlanDTO.getMaintEndDateTime());
+							Date entityStartDate = plantMaintenanceTransaction.getMaintStartDateTime();
+							Date dtoStartDate = shutDownPlanDTO.getMaintStartDateTime();
+							if (!(entityStartDate != null && dtoStartDate != null
+									&& entityStartDate.compareTo(dtoStartDate) == 0)) {
+								if(!elastomer) {
+									changed = true;
+								}
+							}
+							plantMaintenanceTransaction.setMaintStartDateTime(shutDownPlanDTO.getMaintStartDateTime());
+							if(plantMaintenanceTransaction.getLineFKId()!=null && shutDownPlanDTO.getLineId()!=null && !plantMaintenanceTransaction.getLineFKId().toString().equalsIgnoreCase(shutDownPlanDTO.getLineId())) {
+								changed = true;
+								plantMaintenanceTransaction.setLineFKId(UUID.fromString(shutDownPlanDTO.getLineId()));
+							}
+							if (changed && (plantMaintenanceTransaction.getRemarks()
+									.equalsIgnoreCase(shutDownPlanDTO.getRemark()))) {
+								// Prevent dirty managed entity changes from being flushed on failure.
+								entityManager.detach(plantMaintenanceTransaction);
 								shutDownPlanDTO.setSaveStatus("Failed");
 								shutDownPlanDTO.setErrDescription("Please update remark");
 								failedList.add(shutDownPlanDTO);
