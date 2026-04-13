@@ -73,8 +73,8 @@ public class StreamHoursServiceImpl implements StreamHoursService {
             List<CrackerHmdOnStreamHoursDTO> streamHoursList = new ArrayList<>();
             for (Object[] row : obj) {
                 CrackerHmdOnStreamHoursDTO streamHoursDTO = new CrackerHmdOnStreamHoursDTO();
-                streamHoursDTO.setId(row[0] != null ? row[0].toString() : null);
-                streamHoursDTO.setMetric(row[1] != null ? row[1].toString() : null);
+                streamHoursDTO.setId(row[0] != null ? row[0].toString() : "");
+                streamHoursDTO.setMetric(row[1] != null ? row[1].toString() : "");
                 streamHoursDTO.setApr(row[2] != null ? Double.parseDouble(row[2].toString()) : 0.0);
                 streamHoursDTO.setMay(row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0);
                 streamHoursDTO.setJune(row[4] != null ? Double.parseDouble(row[4].toString()) : 0.0);
