@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.camunda.community.rest.client.dto.TaskDto;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -668,6 +669,12 @@ public class TCSOutPutWorkFlowController {
 	public ResponseEntity<List<TaskDto>> getTasks(@PathVariable final String businessKey) {
 		List<TaskDto> tasks = tcsWorkFlowService.getTasks(businessKey);
 		return ResponseEntity.ok(tasks);
+	}
+
+	@GetMapping("get-plant-list/{verticalId}/{siteId}")
+	public ResponseEntity<List<String>> getPlantList(@PathVariable final String verticalId, @PathVariable final String siteId) {
+		List<String> plantList = tcsWorkFlowService.getPlantList(UUID.fromString(verticalId), UUID.fromString(siteId));
+		return ResponseEntity.ok(plantList);
 	}
 }
 
