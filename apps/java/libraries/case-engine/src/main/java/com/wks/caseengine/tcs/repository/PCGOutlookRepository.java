@@ -21,7 +21,6 @@ public interface PCGOutlookRepository extends JpaRepository<DummyEntity, Long> {
             EXEC Get_TCS_PCGOutlook
                @verticalId = :verticalId,
                 @Site_FK_Id = :siteId,
-                @Vertical_FK_Id = :verticalId,
                 @FinancialYear = :financialYear
         """,
         nativeQuery = true
