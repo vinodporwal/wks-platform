@@ -301,6 +301,8 @@ if(plantId != null) {
     public AOPMessageVM saveOrUpdate(
         String plantId,
         String year,
+        String verticalId,
+        String siteId,
         List<TCSSlowdownDTO> dtoList) {
 
         if (dtoList == null || dtoList.isEmpty()) {
@@ -354,6 +356,8 @@ if(plantId != null) {
                 }
                 entity.setPlantFkId(UUID.fromString(plantId));
                 entity.setAopYear(year);
+                entity.setVerticalFkId(UUID.fromString(verticalId));
+                entity.setSiteFkId(UUID.fromString(siteId));
                 entity.setTentativeDurationInDays(dto.getDurationInDays());
                 entity.setThroughputDuringSlowdown(dto.getThroughputDuringSlowdown());
                 entity.setThroughputUOM(dto.getThroughputUOM());
@@ -536,6 +540,8 @@ if(plantId != null) {
     public AOPMessageVM importExcel(
         String plantId,
         String year,
+        String verticalId,
+        String siteId,
         MultipartFile file) {
         
         try {
@@ -578,7 +584,7 @@ if(plantId != null) {
             // Try to save valid records
             if (!validRecords.isEmpty()) {
                 try {
-                    saveOrUpdate(plantId, year, validRecords);
+                    saveOrUpdate(plantId, year, verticalId, siteId, validRecords);
                 } catch (Exception e) {
                     // Mark all valid records as failed if save fails
                     System.out.println("Save failed: " + e.getMessage());
