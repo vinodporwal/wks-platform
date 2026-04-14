@@ -8,7 +8,6 @@ import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatt
 import {
   extractYear,
   generateCalendarYearHeaders,
-  generateHeaderNames,
 } from 'components/aop-phase-two/common/utilities/generateHeaders'
 
 const NetUnitCapacity = ({
@@ -54,41 +53,54 @@ const NetUnitCapacity = ({
 
       let transformedData = []
       if (response?.results && Array.isArray(response.results)) {
-        transformedData = response.results.map((item, index) => {
-          // Backend data is in KBPSD, create nested structure for each month with both KBPSD and KTPD
-          const months = [
-            'jan',
-            'feb',
-            'mar',
-            'apr',
-            'may',
-            'jun',
-            'jul',
-            'aug',
-            'sep',
-            'oct',
-            'nov',
-            'dec',
-          ]
-          const monthData = {}
-
-          months.forEach((month) => {
-            const kbpsdValue = item[month] || 0
-            monthData[month] = {
-              kbpsd: kbpsdValue,
-              ktpd: convertFromKBPSD(kbpsdValue, 'KTPD'),
-            }
-          })
-
-          return {
-            id: item.id || `row_${index}`,
+        transformedData = response.results.flatMap((item, index) => {
+          const kbpsdRow = {
+            id: `${item.id || `row_${index}`}_kbpsd`,
             particulates: item.particulates,
-            ...monthData,
-            remark: item.remark,
+            uom: 'KBPSD',
+            jan: item.jan || 0,
+            feb: item.feb || 0,
+            mar: item.mar || 0,
+            apr: item.apr || 0,
+            may: item.may || 0,
+            jun: item.jun || 0,
+            jul: item.jul || 0,
+            aug: item.aug || 0,
+            sep: item.sep || 0,
+            oct: item.oct || 0,
+            nov: item.nov || 0,
+            dec: item.dec || 0,
+            remark: item.remark || '',
             insertedDateTime: item.insertedDateTime,
             inEdit: false,
+            isKBPSD: true,
             isEditable: false,
           }
+
+          const ktpdRow = {
+            id: `${item.id || `row_${index}`}_ktpd`,
+            particulates: item.particulates,
+            uom: 'KTPD',
+            jan: convertFromKBPSD(item.jan || 0, 'KTPD'),
+            feb: convertFromKBPSD(item.feb || 0, 'KTPD'),
+            mar: convertFromKBPSD(item.mar || 0, 'KTPD'),
+            apr: convertFromKBPSD(item.apr || 0, 'KTPD'),
+            may: convertFromKBPSD(item.may || 0, 'KTPD'),
+            jun: convertFromKBPSD(item.jun || 0, 'KTPD'),
+            jul: convertFromKBPSD(item.jul || 0, 'KTPD'),
+            aug: convertFromKBPSD(item.aug || 0, 'KTPD'),
+            sep: convertFromKBPSD(item.sep || 0, 'KTPD'),
+            oct: convertFromKBPSD(item.oct || 0, 'KTPD'),
+            nov: convertFromKBPSD(item.nov || 0, 'KTPD'),
+            dec: convertFromKBPSD(item.dec || 0, 'KTPD'),
+            remark: '',
+            insertedDateTime: item.insertedDateTime,
+            inEdit: false,
+            isKBPSD: false,
+            isEditable: false,
+          }
+
+          return [kbpsdRow, ktpdRow]
         })
       }
 
@@ -127,145 +139,132 @@ const NetUnitCapacity = ({
     }
   }, [SITE_ID, VERTICAL_ID, AOP_YEAR])
 
-  // Column configuration for Unit Capacity with monthly nested KBPSD and KTPD
-  const columnConfig = useMemo(() => {
-    const config = {
-      id: {
-        editable: false,
-        type: 'text',
-        minWidth: 50,
-        widthT: 100,
-        hidden: true,
-      },
-      particulates: {
-        editable: false,
-        type: 'text',
-        minWidth: 150,
-        widthT: 150,
-      },
-    }
-
-    // Add monthly columns with KBPSD and KTPD sub-columns
-    const months = [
-      'jan',
-      'feb',
-      'mar',
-      'apr',
-      'may',
-      'jun',
-      'jul',
-      'aug',
-      'sep',
-      'oct',
-      'nov',
-      'dec',
-    ]
-    months.forEach((month) => {
-      config[`${month}.kbpsd`] = {
-        editable: false,
-        type: 'number1',
-        minWidth: 80,
-        widthT: 100,
-        format: valueFormat,
-        title: 'KBPSD',
-      }
-      config[`${month}.ktpd`] = {
-        editable: false,
-        type: 'number1',
-        minWidth: 80,
-        widthT: 100,
-        format: valueFormat,
-        title: 'KTPD',
-      }
-    })
-
-    // config.remark = {
-    //   title: 'Remark',
-    //   editable: false,
-    //   type: 'text',
-    //   minWidth: 200,
-    //   widthT: 250,
-    // }
-
-    return config
-  }, [valueFormat])
-
+  // Column definitions - static configuration with KBPSD and KTPD read-only
   const columns = useMemo(() => {
-    const { headers, keys } = apiMetadata
-
-    if (!headers || !keys || headers.length === 0 || !headerMap) {
-      return []
-    }
-
-    // Map keys to their headers from backend
-    const columnMap = {}
-    headers.forEach((header, index) => {
-      columnMap[keys[index]] = header
-    })
-
-    // Build columns using columnConfig for type/formatting
-    const cols = Object.entries(columnConfig).map(([key, config]) => ({
-      field: key,
-      title: config.title || columnMap[key] || key,
-      ...config,
-    }))
-
-    // Group monthly columns with KBPSD and KTPD sub-columns
-    const months = [
-      { key: 'jan', headerKey: 1 },
-      { key: 'feb', headerKey: 2 },
-      { key: 'mar', headerKey: 3 },
-      { key: 'apr', headerKey: 4 },
-      { key: 'may', headerKey: 5 },
-      { key: 'jun', headerKey: 6 },
-      { key: 'jul', headerKey: 7 },
-      { key: 'aug', headerKey: 8 },
-      { key: 'sep', headerKey: 9 },
-      { key: 'oct', headerKey: 10 },
-      { key: 'nov', headerKey: 11 },
-      { key: 'dec', headerKey: 12 },
+    const monthColumns = [
+      {
+        field: 'jan',
+        title: headerMap[1],
+        editable: false,
+        widthT: 80,
+        type: 'number1',
+        format: valueFormat,
+      },
+      {
+        field: 'feb',
+        title: headerMap[2],
+        editable: false,
+        widthT: 80,
+        type: 'number1',
+        format: valueFormat,
+      },
+      {
+        field: 'mar',
+        title: headerMap[3],
+        editable: false,
+        widthT: 80,
+        type: 'number1',
+        format: valueFormat,
+      },
+      {
+        field: 'apr',
+        title: headerMap[4],
+        editable: false,
+        widthT: 80,
+        type: 'number1',
+        format: valueFormat,
+      },
+      {
+        field: 'may',
+        title: headerMap[5],
+        editable: false,
+        widthT: 80,
+        type: 'number1',
+        format: valueFormat,
+      },
+      {
+        field: 'jun',
+        title: headerMap[6],
+        editable: false,
+        widthT: 80,
+        type: 'number1',
+        format: valueFormat,
+      },
+      {
+        field: 'jul',
+        title: headerMap[7],
+        editable: false,
+        widthT: 80,
+        type: 'number1',
+        format: valueFormat,
+      },
+      {
+        field: 'aug',
+        title: headerMap[8],
+        editable: false,
+        widthT: 80,
+        type: 'number1',
+        format: valueFormat,
+      },
+      {
+        field: 'sep',
+        title: headerMap[9],
+        editable: false,
+        widthT: 80,
+        type: 'number1',
+        format: valueFormat,
+      },
+      {
+        field: 'oct',
+        title: headerMap[10],
+        editable: false,
+        widthT: 80,
+        type: 'number1',
+        format: valueFormat,
+      },
+      {
+        field: 'nov',
+        title: headerMap[11],
+        editable: false,
+        widthT: 80,
+        type: 'number1',
+        format: valueFormat,
+      },
+      {
+        field: 'dec',
+        title: headerMap[12],
+        editable: false,
+        widthT: 80,
+        type: 'number1',
+        format: valueFormat,
+      },
     ]
 
-    const otherCols = cols.filter(
-      (col) => !months.some((m) => col.field.startsWith(`${m.key}.`)),
-    )
-
-    const result = []
-    // Position 0: id
-    result.push(otherCols.find((col) => col.field === 'id'))
-    // Position 1: particulates
-    result.push(otherCols.find((col) => col.field === 'particulates'))
-
-    // Position 2: Capacity with monthly columns (Apr to Mar)
-    const monthlyColumns = months
-      .map((month) => {
-        const kbpsdCol = cols.find((col) => col.field === `${month.key}.kbpsd`)
-        const ktpdCol = cols.find((col) => col.field === `${month.key}.ktpd`)
-
-        return {
-          title: headerMap[month.headerKey] || month.key.toUpperCase(),
-          children: [kbpsdCol, ktpdCol].filter(Boolean),
-        }
-      })
-      .filter((col) => col.children.length > 0)
-
-    if (monthlyColumns.length > 0) {
-      result.push({
+    return [
+      { field: 'id', title: 'ID', hidden: true },
+      {
+        field: 'particulates',
+        title: 'Particulates',
+        widthT: 150,
+        minWidth: 150,
+        type: 'text',
+        editable: false,
+        hidden: false,
+      },
+      {
+        field: 'uom',
+        title: 'UOM',
+        editable: false,
+        widthT: 100,
+        minWidth: 100,
+        type: 'text',
+      },
+      {
         title: 'Capacity',
-        children: monthlyColumns,
-      })
-    }
-
-    // Position 3: remark and other remaining columns
-    const remainingCols = otherCols.filter(
-      (col) =>
-        col.field !== 'id' &&
-        col.field !== 'particulates' &&
-        col.field !== 'insertedDateTime',
-    )
-    result.push(...remainingCols)
-    return result
-  }, [apiMetadata, columnConfig, headerMap])
+        children: monthColumns,
+      },
+    ]
+  }, [headerMap, valueFormat])
 
   // Handle remark cell click
   const handleRemarkCellClick = (row) => {
@@ -322,6 +321,7 @@ const NetUnitCapacity = ({
           modifiedCells={modifiedCells}
           setModifiedCells={setModifiedCells}
           permissions={permissions}
+          groupBy={['particulates']}
         />
       </Stack>
     </Box>
