@@ -59,6 +59,7 @@ public class FurnaceService {
     public MasterFurnaceDTO getFurnaceData(
             String financialYear,
             UUID siteId,
+            UUID verticalId,
             UUID plantId
     ) {
 
@@ -69,7 +70,7 @@ if(plantId != null) {
     projections = furnaceRepository.getFurnaceData(financialYear, siteId, plantId);
 }
 else {
-    projections = furnaceRepository.getFurnaceOutputData(financialYear, siteId);
+    projections = furnaceRepository.getFurnaceOutputData(financialYear, verticalId, siteId);
 }
 
         List<FurnaceDTO> furnaceDTOs = projections.stream().map(p -> {
@@ -319,10 +320,10 @@ else {
     }
 }
 
-    public byte[] exportFurnace(UUID siteId, String financialYear, UUID plantId) {
+    public byte[] exportFurnace( UUID verticalId, UUID siteId, String financialYear, UUID plantId) {
         try {
             // Get data
-            MasterFurnaceDTO masterData = getFurnaceData(financialYear, siteId, plantId);
+            MasterFurnaceDTO masterData = getFurnaceData(financialYear, verticalId, siteId, plantId);
             List<FurnaceDTO> dtoList = masterData.getFurnaceData();
             
             System.out.println("Furnace Data list: " + dtoList);
