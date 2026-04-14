@@ -234,7 +234,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: FORMAT_VALUES_PRICE,
                 type: 'number',
               },
-              { field: 'unit', title: 'Unit', widthT: 60, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
