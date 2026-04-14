@@ -1,5 +1,6 @@
 import { Box } from '@mui/material'
 import UnitCapacityGrid from './UnitCapacityComponents/UnitCapacityGrid'
+import UnitCapacityGridRowwise from './UnitCapacityComponents/UnitCapacityGridRowwise'
 
 const UnitCapacity = ({
   PLANT_ID,
@@ -21,7 +22,8 @@ const UnitCapacity = ({
   return (
     <Box>
       {capacityTypes.map((type) => (
-        <UnitCapacityGrid
+        // <UnitCapacityGrid
+        <UnitCapacityGridRowwise
           key={type.key}
           capacityType={type.key}
           title={type.title}
