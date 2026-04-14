@@ -369,56 +369,57 @@ const TcsInput = () => {
       // Step 2: Check if the other role has already submitted (using existing timelineData)
       // Note: Current role is NOW submitting (will be true after API call above)
       // So we only need to check if the OTHER role has already submitted
-      // const submissionStatusVar = timelineData?.find(
-      //   (v) => v.name === 'submissionStatus',
-      // )
-      // const ctsTechSubmissionStatusVar = timelineData?.find(
-      //   (v) => v.name === 'ctsTechSubmissionStatus',
-      // )
+      const submissionStatusVar = timelineData?.find(
+        (v) => v.name === 'submissionStatus',
+      )
+      const ctsTechSubmissionStatusVar = timelineData?.find(
+        (v) => v.name === 'ctsTechSubmissionStatus',
+      )
 
-      // let otherRoleAlreadyApproved = false
+      let otherRoleAlreadyApproved = false
 
-      // if (userRole === ROLES.PLANT_MANAGER) {
-      //   // Current role is PLANT_MANAGER (now submitting = true)
-      //   // Check if CTS_TECH_MANAGER already submitted
-      //   if (ctsTechSubmissionStatusVar) {
-      //     try {
-      //       const ctsTechSubmissionStatus = JSON.parse(
-      //         ctsTechSubmissionStatusVar.value,
-      //       )
-      //       otherRoleAlreadyApproved =
-      //         ctsTechSubmissionStatus[PLANT_NAME] === true
-      //     } catch (parseError) {
-      //       console.error('Error parsing ctsTechSubmissionStatus:', parseError)
-      //     }
-      //   }
-      // } else if (userRole === ROLES.CTS_TECH_MANAGER) {
-      //   // Current role is CTS_TECH_MANAGER (now submitting = true)
-      //   // Check if PLANT_MANAGER already submitted
-      //   if (submissionStatusVar) {
-      //     try {
-      //       const submissionStatus = JSON.parse(submissionStatusVar.value)
-      //       otherRoleAlreadyApproved = submissionStatus[PLANT_NAME] === true
-      //     } catch (parseError) {
-      //       console.error('Error parsing submissionStatus:', parseError)
-      //     }
-      //   }
-      // }
+      if (userRole === ROLES.PLANT_MANAGER) {
+        // Current role is PLANT_MANAGER (now submitting = true)
+        // Check if CTS_TECH_MANAGER already submitted
+        if (ctsTechSubmissionStatusVar) {
+          try {
+            const ctsTechSubmissionStatus = JSON.parse(
+              ctsTechSubmissionStatusVar.value,
+            )
+            otherRoleAlreadyApproved =
+              ctsTechSubmissionStatus[PLANT_NAME] === true
+          } catch (parseError) {
+            console.error('Error parsing ctsTechSubmissionStatus:', parseError)
+          }
+        }
+      } else if (userRole === ROLES.CTS_TECH_MANAGER) {
+        // Current role is CTS_TECH_MANAGER (now submitting = true)
+        // Check if PLANT_MANAGER already submitted
+        if (submissionStatusVar) {
+          try {
+            const submissionStatus = JSON.parse(submissionStatusVar.value)
+            otherRoleAlreadyApproved = submissionStatus[PLANT_NAME] === true
+          } catch (parseError) {
+            console.error('Error parsing submissionStatus:', parseError)
+          }
+        }
+      }
 
       // // Step 3: If other role already approved, submit plant to AOM
       // // (Current role just approved in Step 1, so both are now approved)
-      // if (otherRoleAlreadyApproved) {
-      //   await TcsWorkflowApiService.submitPlantToAOM(payload)
-      //   setSnackbarData({
-      //     message: `${PLANT_NAME} TCS data submitted to AOM successfully (both roles approved)`,
-      //     severity: 'success',
-      //   })
-      // } else {
-      //   setSnackbarData({
-      //     message: `${PLANT_NAME} TCS data submission completed successfully. Waiting for ${userRole === ROLES.PLANT_MANAGER ? 'CTS Tech Manager' : 'Plant Manager'} approval.`,
-      //     severity: 'success',
-      //   })
-      // }
+      if (otherRoleAlreadyApproved) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `${PLANT_NAME} TCS data submitted to AOM successfully (both roles approved)`,
+          severity: 'success',
+        })
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `${PLANT_NAME} TCS data submission completed successfully. Waiting for ${userRole === ROLES.PLANT_MANAGER ? 'CTS Tech Manager' : 'Plant Manager'} approval.`,
+          severity: 'success',
+        })
+      }
 
       // Refresh submit eligibility after submission (without showing "already submitted" message)
       await checkSubmitEligibility(false)

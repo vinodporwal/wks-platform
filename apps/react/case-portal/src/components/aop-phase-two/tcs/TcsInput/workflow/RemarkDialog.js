@@ -19,6 +19,7 @@ import { TextArea } from '@progress/kendo-react-inputs'
 import { useSelector } from 'react-redux'
 import { TcsWorkflowApiService } from 'components/aop-phase-two/services/tcs/tcsWorkflowApiService'
 import { ROLES } from '../../utils/roleUtils'
+import { formatToIST } from 'components/aop-phase-two/common/commonUtilityFunctions'
 
 const RemarkDialog = ({
   open,
@@ -313,7 +314,9 @@ const RemarkDialog = ({
                         variant='body2'
                         sx={{ color: 'text.secondary' }}
                       >
-                        {previousLevelData.submissionDateTime || '-'}
+                        {formatToIST(
+                          previousLevelData.submissionDateTime || '-',
+                        )}
                       </Typography>
                     </Box>
                     <Box

@@ -422,7 +422,7 @@ const ApproveDialog = ({
                 </Typography>
                 {pmNotSubmittedPlants.length === 0 ? (
                   <Typography variant='caption' color='text.secondary'>
-                    All plants submitted ?
+All plants submitted.
                   </Typography>
                 ) : (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
@@ -462,7 +462,7 @@ const ApproveDialog = ({
                 </Typography>
                 {ctsNotSubmittedPlants.length === 0 ? (
                   <Typography variant='caption' color='text.secondary'>
-                    All plants submitted ?
+All plants submitted.
                   </Typography>
                 ) : (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
@@ -670,7 +670,7 @@ const ApproveDialog = ({
                         fontWeight: 600,
                         bgcolor: '#f5f5f5',
                         borderBottom: '2px solid #e0e0e0',
-                        width: '15%',
+                        width: '20%',
                       }}
                     >
                       Plant Name
@@ -680,12 +680,12 @@ const ApproveDialog = ({
                         fontWeight: 600,
                         bgcolor: '#f5f5f5',
                         borderBottom: '2px solid #e0e0e0',
-                        width: '10%',
+                        width: '12%',
                       }}
                     >
                       Status
                     </TableCell>
-                    <TableCell
+                    {/* <TableCell
                       sx={{
                         fontWeight: 600,
                         bgcolor: '#f5f5f5',
@@ -694,16 +694,16 @@ const ApproveDialog = ({
                       }}
                     >
                       Submission Remark
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell
                       sx={{
                         fontWeight: 600,
                         bgcolor: '#f5f5f5',
                         borderBottom: '2px solid #e0e0e0',
-                        width: '30%',
+                        width: '48%',
                       }}
                     >
-                      Individual Remark
+                      AOM Remark
                     </TableCell>
                     <TableCell
                       align='center'
@@ -711,7 +711,7 @@ const ApproveDialog = ({
                         fontWeight: 600,
                         bgcolor: '#f5f5f5',
                         borderBottom: '2px solid #e0e0e0',
-                        width: '15%',
+                        width: '20%',
                       }}
                     >
                       Action
@@ -778,7 +778,7 @@ const ApproveDialog = ({
                           {plant.plantStatus}
                         </Box>
                       </TableCell>
-                      <TableCell>
+                      {/* <TableCell>
                         <Tooltip
                           title={
                             plant.submissionRemark || 'No submission remark'
@@ -804,7 +804,7 @@ const ApproveDialog = ({
                             {plant.submissionRemark || 'No submission remark'}
                           </Typography>
                         </Tooltip>
-                      </TableCell>
+                      </TableCell>*/}
                       <TableCell>
                         <TextField
                           fullWidth
@@ -858,141 +858,101 @@ const ApproveDialog = ({
                             justifyContent: 'center',
                           }}
                         >
-                          {selectedPlants.length > 1 ? (
-                            <Tooltip title='View History' arrow>
-                              <IconButton
-                                size='small'
-                                onClick={() => handleViewHistory(plant)}
-                                disabled={
-                                  bulkApproveLoading || bulkRejectLoading
-                                }
-                                sx={{
-                                  color: '#1976d2',
-                                  '&:hover': {
-                                    backgroundColor: '#e3f2fd',
-                                  },
-                                }}
-                              >
-                                <HistoryIcon fontSize='small' />
-                              </IconButton>
-                            </Tooltip>
-                          ) : (
-                            <>
-                              <Tooltip
-                                title={
-                                  plant.plantStatus !== 'PENDING'
-                                    ? `Already ${plant.plantStatus.toLowerCase()}`
-                                    : individualLoading[plant.plantId] ===
-                                        'approve'
-                                      ? 'Approving...'
-                                      : 'Approve'
-                                }
-                                arrow
-                              >
-                                <span>
-                                  <IconButton
-                                    size='small'
-                                    onClick={() =>
-                                      handleApproveClick(plant.plantId)
-                                    }
-                                    disabled={
-                                      remarks[plant.plantId] === '' ||
-                                      bulkApproveLoading ||
-                                      bulkRejectLoading ||
-                                      isAnyIndividualActionLoading ||
-                                      plant.plantStatus !== 'PENDING'
-                                    }
-                                    sx={{
-                                      color: '#2e7d32',
-                                      '&:hover': {
-                                        backgroundColor: '#e8f5e9',
-                                      },
-                                      '&.Mui-disabled': {
-                                        color: 'rgba(0, 0, 0, 0.26)',
-                                      },
-                                    }}
-                                  >
-                                    {individualLoading[plant.plantId] ===
-                                    'approve' ? (
-                                      <CircularProgress
-                                        size={20}
-                                        sx={{ color: '#2e7d32' }}
-                                      />
-                                    ) : (
-                                      <CheckCircleIcon fontSize='small' />
-                                    )}
-                                  </IconButton>
-                                </span>
-                              </Tooltip>
-
-                              <Tooltip
-                                title={
-                                  plant.plantStatus !== 'PENDING'
-                                    ? `Already ${plant.plantStatus.toLowerCase()}`
-                                    : individualLoading[plant.plantId] ===
-                                        'reject'
-                                      ? 'Rejecting...'
-                                      : 'Reject'
-                                }
-                                arrow
-                              >
-                                <span>
-                                  <IconButton
-                                    size='small'
-                                    onClick={() =>
-                                      handleRejectClick(plant.plantId)
-                                    }
-                                    disabled={
-                                      remarks[plant.plantId] === '' ||
-                                      bulkApproveLoading ||
-                                      bulkRejectLoading ||
-                                      isAnyIndividualActionLoading ||
-                                      plant.plantStatus !== 'PENDING'
-                                    }
-                                    sx={{
-                                      color: '#d32f2f',
-                                      '&:hover': {
-                                        backgroundColor: '#ffebee',
-                                      },
-                                      '&.Mui-disabled': {
-                                        color: 'rgba(0, 0, 0, 0.26)',
-                                      },
-                                    }}
-                                  >
-                                    {individualLoading[plant.plantId] ===
-                                    'reject' ? (
-                                      <CircularProgress
-                                        size={20}
-                                        sx={{ color: '#d32f2f' }}
-                                      />
-                                    ) : (
-                                      <CancelIcon fontSize='small' />
-                                    )}
-                                  </IconButton>
-                                </span>
-                              </Tooltip>
-
-                              {/* <Tooltip title='View History' arrow>
+                          <>
+                            <Tooltip
+                              title={
+                                plant.plantStatus !== 'PENDING'
+                                  ? `Already ${plant.plantStatus.toLowerCase()}`
+                                  : individualLoading[plant.plantId] ===
+                                      'approve'
+                                    ? 'Approving...'
+                                    : 'Approve'
+                              }
+                              arrow
+                            >
+                              <span>
                                 <IconButton
                                   size='small'
-                                  onClick={() => handleViewHistory(plant)}
+                                  onClick={() =>
+                                    handleApproveClick(plant.plantId)
+                                  }
                                   disabled={
+                                    remarks[plant.plantId] === '' ||
                                     bulkApproveLoading ||
                                     bulkRejectLoading ||
-                                    isAnyIndividualActionLoading
+                                    isAnyIndividualActionLoading ||
+                                    plant.plantStatus !== 'PENDING'
                                   }
                                   sx={{
-                                    color: '#1976d2',
+                                    color: '#2e7d32',
                                     '&:hover': {
-                                      backgroundColor: '#e3f2fd',
+                                      backgroundColor: '#e8f5e9',
+                                    },
+                                    '&.Mui-disabled': {
+                                      color: 'rgba(0, 0, 0, 0.26)',
                                     },
                                   }}
                                 >
-                                  <HistoryIcon fontSize='small' />
+                                  {individualLoading[plant.plantId] ===
+                                  'approve' ? (
+                                    <CircularProgress
+                                      size={20}
+                                      sx={{ color: '#2e7d32' }}
+                                    />
+                                  ) : (
+                                    <CheckCircleIcon fontSize='small' />
+                                  )}
                                 </IconButton>
-                              </Tooltip> */}
-                            </>
-                          )}
+                              </span>
+                            </Tooltip>
+
+                            <Tooltip
+                              title={
+                                plant.plantStatus !== 'PENDING'
+                                  ? `Already ${plant.plantStatus.toLowerCase()}`
+                                  : individualLoading[plant.plantId] ===
+                                      'reject'
+                                    ? 'Rejecting...'
+                                    : 'Reject'
+                              }
+                              arrow
+                            >
+                              <span>
+                                <IconButton
+                                  size='small'
+                                  onClick={() =>
+                                    handleRejectClick(plant.plantId)
+                                  }
+                                  disabled={
+                                    remarks[plant.plantId] === '' ||
+                                    bulkApproveLoading ||
+                                    bulkRejectLoading ||
+                                    isAnyIndividualActionLoading ||
+                                    plant.plantStatus !== 'PENDING'
+                                  }
+                                  sx={{
+                                    color: '#d32f2f',
+                                    '&:hover': {
+                                      backgroundColor: '#ffebee',
+                                    },
+                                    '&.Mui-disabled': {
+                                      color: 'rgba(0, 0, 0, 0.26)',
+                                    },
+                                  }}
+                                >
+                                  {individualLoading[plant.plantId] ===
+                                  'reject' ? (
+                                    <CircularProgress
+                                      size={20}
+                                      sx={{ color: '#d32f2f' }}
+                                    />
+                                  ) : (
+                                    <CancelIcon fontSize='small' />
+                                  )}
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                          </>
                         </Box>
                       </TableCell>
                     </TableRow>
