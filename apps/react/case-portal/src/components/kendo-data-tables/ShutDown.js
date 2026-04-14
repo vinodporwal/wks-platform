@@ -113,6 +113,7 @@ const ShutDown = ({ permissions }) => {
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_AROMATICS = lowerVertName === 'aromatics'
+  const IS_PE_C2 = lowerVertName === 'pe' && lowerSiteName === 'c2'
   const DELETE_NOTE =
     'Warning: Please verify the shutdown consumption quantity before deleting the shutdown activity.'
 
@@ -1142,6 +1143,13 @@ const ShutDown = ({ permissions }) => {
           AOP_YEAR,
           EXCEL_EXPORT_TITLE,
         )
+      } else if (IS_PE_C2) {
+        response = await DtaDataService.exportShutdownPEC2(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
       } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
         response = await DtaDataService.exportShutdownLineWise(
           keycloak,
@@ -1182,6 +1190,13 @@ const ShutDown = ({ permissions }) => {
       let response
       if (IS_ELASTOMER_JMD_HIIR) {
         response = await DtaDataService.ImportShutdownElastomerjmd(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (IS_PE_C2) {
+        response = await DtaDataService.ImportShutdownPEC2(
           rawFile,
           keycloak,
           PLANT_ID,

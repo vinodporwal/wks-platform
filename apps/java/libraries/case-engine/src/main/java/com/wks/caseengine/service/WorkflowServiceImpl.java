@@ -11,7 +11,7 @@ import jakarta.persistence.Query;
 import java.util.List;
 import java.util.UUID;
 
-import com.wks.caseengine.entity.AnnualAOPCost;
+import com.wks.caseengine.db2.entity.AnnualAOPCostDB2;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
@@ -54,7 +54,7 @@ import com.wks.caseengine.dto.WorkflowPageDTO;
 import com.wks.caseengine.dto.WorkflowStepsMasterDTO;
 import com.wks.caseengine.dto.WorkflowSubmitDTO;
 import com.wks.caseengine.dto.WorkflowYearDTO;
-import com.wks.caseengine.repository.AnnualAOPCostRepository;
+import com.wks.caseengine.db2.repository.AnnualAOPCostDB2Repository;
 import com.wks.caseengine.repository.AopCalculationRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
@@ -93,7 +93,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 	private DataSource db2DataSource;
 
 	@Autowired
-	private AnnualAOPCostRepository annualAOPCostRepository;
+	private AnnualAOPCostDB2Repository annualAOPCostRepository;
 
 	@Autowired
 	private ProcessInstanceService processInstanceService;
@@ -584,7 +584,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 			for (WorkflowYearDTO workflowYearDTO : workflowYearDTOList) {
 				System.out.println("workflowYearDTO.getParticulates()" + workflowYearDTO.getParticulates());
 				System.out.println("workflowYearDTO.getFyAop()" + workflowYearDTO.getFyAop());
-				List<AnnualAOPCost> list = annualAOPCostRepository
+				List<AnnualAOPCostDB2> list = annualAOPCostRepository
 						.findAllByAopYearAndPlantFkIdAndParticulatesAndAopType(
 								workflowYearDTO.getAopYear(),
 								UUID.fromString(plantId),
@@ -594,7 +594,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 					if (workflowYearDTO.getRemark() == null || workflowYearDTO.getRemark().isBlank()) {
 						// annualAOPCost.setRemark(null);
 					} else {
-						AnnualAOPCost annualAOPCost = new AnnualAOPCost();
+						AnnualAOPCostDB2 annualAOPCost = new AnnualAOPCostDB2();
 						annualAOPCost.setParticulates(workflowYearDTO.getParticulates());
 						annualAOPCost.setAopYear(workflowYearDTO.getAopYear());
 						annualAOPCost.setAopType("Remark");
@@ -604,7 +604,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 						annualAOPCostRepository.save(annualAOPCost);
 					}
 				} else {
-					for (AnnualAOPCost annualAOPCost : list) {
+					for (AnnualAOPCostDB2 annualAOPCost : list) {
 						// System.out.println("id:"+id);
 						// Optional<AnnualAOPCost> AnnualAOPCostOp =
 						// annualAOPCostRepository.findById(id);

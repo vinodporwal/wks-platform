@@ -95,6 +95,8 @@ export const dateFields1 = [
   'exclusionEndDate',
   'exclusionStartDate',
   'shutdownDate',
+  'StartDate',
+  'EndDate',
 ]
 
 export const monthMap = {
@@ -592,6 +594,22 @@ const KendoDataTables = ({
               updated.durationInHrs = '16.00'
             } else if (desc === 'Annual Turn Around') {
               updated.durationInHrs = '684.00'
+            }
+          }
+
+          if (
+            (field === 'StartDate' || field === 'EndDate') &&
+            updated.StartDate &&
+            updated.EndDate
+          ) {
+            const start = new Date(updated.StartDate)
+            const end = new Date(updated.EndDate)
+            const diffMs = end.getTime() - start.getTime()
+            const totalDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+            if (totalDays >= 0) {
+              updated.Duration = `${totalDays}`
+            } else {
+              updated.Duration = 'Invalid'
             }
           }
 
@@ -2292,6 +2310,8 @@ const KendoDataTables = ({
                             'sdED',
                             'sdSD',
                             'targetDate',
+                            'StartDate',
+                            'EndDate',
                           ].includes(col.field)
                             ? DateOnlyPicker
                             : DateOnlyPicker,
@@ -2315,6 +2335,8 @@ const KendoDataTables = ({
                           'sdED',
                           'sdSD',
                           'targetDate',
+                          'StartDate',
+                          'EndDate',
                         ].includes(col.field)
                           ? '{0:dd-MM-yyyy}'
                           : '{0:dd-MM-yyyy}'
@@ -3022,6 +3044,35 @@ const KendoDataTables = ({
                 if (col.type === 'dynamicDropdown') {
                   const dropdownOptions =
                     permissions?.dynamicDropdownOptions || []
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title || col.headerName}
+                      width={col.width}
+                      hidden={col.hidden}
+                      editable={col?.editable ? true : false}
+                      headerClassName={isActive ? 'active-column' : ''}
+                      cells={{
+                        edit: {
+                          text: (props) => (
+                            <DynamicDropdown
+                              {...props}
+                              options={dropdownOptions}
+                            />
+                          ),
+                        },
+                        data: MonthDisplayCell,
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                    />
+                  )
+                }
+
+                if (col.type === 'dynamicDropdownshared') {
+                  const dropdownOptions =
+                    permissions?.dynamicDropdownOptions?.[col.field] || []
                   return (
                     <GridColumn
                       key={col.field}
