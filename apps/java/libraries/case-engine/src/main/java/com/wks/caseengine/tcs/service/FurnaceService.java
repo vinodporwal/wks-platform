@@ -70,6 +70,9 @@ if(plantId != null) {
     projections = furnaceRepository.getFurnaceData(financialYear, siteId, plantId);
 }
 else {
+    System.out.println("verticalId: " + verticalId);
+    System.out.println("siteId: " + siteId);
+    System.out.println("financialYear: " + financialYear);
     projections = furnaceRepository.getFurnaceOutputData(financialYear, verticalId, siteId);
 }
 
@@ -323,7 +326,7 @@ else {
     public byte[] exportFurnace( UUID verticalId, UUID siteId, String financialYear, UUID plantId) {
         try {
             // Get data
-            MasterFurnaceDTO masterData = getFurnaceData(financialYear, verticalId, siteId, plantId);
+            MasterFurnaceDTO masterData = getFurnaceData(financialYear, siteId, verticalId, plantId);
             List<FurnaceDTO> dtoList = masterData.getFurnaceData();
             
             System.out.println("Furnace Data list: " + dtoList);
