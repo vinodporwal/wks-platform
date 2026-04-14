@@ -596,20 +596,21 @@ const KendoDataTables = ({
               updated.durationInHrs = '684.00'
             }
           }
-
-          if (
-            (field === 'StartDate' || field === 'EndDate') &&
-            updated.StartDate &&
-            updated.EndDate
-          ) {
-            const start = new Date(updated.StartDate)
-            const end = new Date(updated.EndDate)
-            const diffMs = end.getTime() - start.getTime()
-            const totalDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-            if (totalDays >= 0) {
-              updated.Duration = `${totalDays}`
-            } else {
-              updated.Duration = 'Invalid'
+          if (lowerVertName === 'cracker' && lowerSiteName === 'vmd') {
+            if (
+              (field === 'StartDate' || field === 'EndDate') &&
+              updated.StartDate &&
+              updated.EndDate
+            ) {
+              const start = new Date(updated.StartDate)
+              const end = new Date(updated.EndDate)
+              const diffMs = end.getTime() - start.getTime()
+              const totalDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+              if (totalDays >= 0) {
+                updated.Duration = `${totalDays}`
+              } else {
+                updated.Duration = 'Invalid'
+              }
             }
           }
 
