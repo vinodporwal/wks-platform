@@ -298,6 +298,8 @@ if(plantId != null) {
     public AOPMessageVM saveOrUpdate(
         String plantId,
         String year,
+        String verticalId,
+        String siteId,
         List<TCSShutdownDTO> dtoList) {
 
         if (dtoList == null || dtoList.isEmpty()) {
@@ -347,6 +349,8 @@ if(plantId != null) {
                 entity.setPurpose(dto.getPurpose());
                 entity.setAopYear(year);
                 entity.setPlantFkId(UUID.fromString(plantId));
+                entity.setVerticalFkId(UUID.fromString(verticalId));
+                entity.setSiteFkId(UUID.fromString(siteId));
       System.out.println("entity to save: " + entity);
                 tcsShutdownRepository.save(entity);
                 savedList.add(entity);
@@ -498,6 +502,8 @@ if(plantId != null) {
     public AOPMessageVM importExcel(
         String plantId,
         String year,
+        String verticalId,
+        String siteId,
         MultipartFile file) {
         
         try {
@@ -544,7 +550,7 @@ if(plantId != null) {
             System.out.println("all records : " + data);
             if (!validRecords.isEmpty()) {
                 try {
-                    saveOrUpdate(plantId, year, validRecords);
+                    saveOrUpdate(plantId, year, verticalId, siteId, validRecords);
                 } catch (Exception e) {
                     // Mark all valid records as failed if save fails
                     System.out.println("Save failed: " + e.getMessage());

@@ -32,7 +32,7 @@ public class FurnaceController {
     @Autowired
     private FurnaceService furnaceService;
 
-    @GetMapping({"/furnace/{financialYear}/{siteId}/{plantId}" , "/furnace/{financialYear}/{siteId}/{verticalId}"})
+    @GetMapping({"/furnace/{financialYear}/{siteId}/{plantId}" , "/furnace-output/{financialYear}/{siteId}/{verticalId}"})
     public MasterFurnaceDTO getFurnaceData(@PathVariable String financialYear, @PathVariable String siteId, @PathVariable(required = false) String verticalId, @PathVariable(required = false) String plantId) {
 
         if (plantId == null) { 

@@ -20,6 +20,8 @@ public class TCSShutdownDTO {
     private Date endDate;
     private String purpose;
     private Date insertedDateTime;
+    private String verticalId;
+    private String siteId;
     
     // Fields for import/export status
     private String saveStatus;
