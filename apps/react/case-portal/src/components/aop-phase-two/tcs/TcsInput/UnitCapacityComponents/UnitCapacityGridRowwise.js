@@ -221,7 +221,7 @@ const UnitCapacityGridRowwise = ({
                 insertedDateTime: item.insertedDateTime,
                 inEdit: false,
                 isKBPSD: false,
-                isEditable: false,
+                isEditable: true,
               }
 
               return [kbpsdRow, ktpdRow]
@@ -284,7 +284,7 @@ const UnitCapacityGridRowwise = ({
         { field: 'id', title: 'ID', hidden: true },
         {
           field: 'particulates',
-          title: 'Particulates',
+          title: 'Particulars',
           widthT: 150,
           minWidth: 150,
           type: 'text',
@@ -426,7 +426,7 @@ const UnitCapacityGridRowwise = ({
         { field: 'id', title: 'ID', hidden: true },
         {
           field: 'particulates',
-          title: 'Particulates',
+          title: 'Particulars',
           widthT: 150,
           minWidth: 150,
           type: 'text',
