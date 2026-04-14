@@ -14,6 +14,7 @@ import { Stack } from '../../../../../node_modules/@mui/material/index'
 const PCGOutlook = ({
   PLANT_ID,
   SITE_ID,
+  VERTICAL_ID,
   AOP_YEAR,
   currentTab,
   snackbarData,
@@ -40,6 +41,7 @@ const PCGOutlook = ({
 
       const carryForwardResponse = await TcsApiService.carryForwardPcgOutlook(
         keycloak,
+        VERTICAL_ID,
         AOP_YEAR,
         SITE_ID,
       )
@@ -72,6 +74,7 @@ const PCGOutlook = ({
 
         const response = await TcsApiService.getPcgOutlookData(
           keycloak,
+          VERTICAL_ID,
           SITE_ID,
           AOP_YEAR,
         )
@@ -346,6 +349,7 @@ const PCGOutlook = ({
 
       const response = await TcsApiService.savePcgOutlookData(
         keycloak,
+        VERTICAL_ID,
         SITE_ID,
         AOP_YEAR,
         cleanedData,
@@ -387,7 +391,12 @@ const PCGOutlook = ({
     })
 
     try {
-      await TcsApiService.exportPcgOutlookExcel(keycloak, SITE_ID, AOP_YEAR)
+      await TcsApiService.exportPcgOutlookExcel(
+        keycloak,
+        VERTICAL_ID,
+        SITE_ID,
+        AOP_YEAR,
+      )
 
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -410,6 +419,7 @@ const PCGOutlook = ({
     try {
       const response = await TcsApiService.importPcgOutlookExcel(
         keycloak,
+        VERTICAL_ID,
         SITE_ID,
         AOP_YEAR,
         file,

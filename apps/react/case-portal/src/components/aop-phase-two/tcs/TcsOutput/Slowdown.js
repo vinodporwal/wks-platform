@@ -259,6 +259,7 @@ const Slowdown = ({
           permissions={permissions}
           readonly={true}
           handleExport={handleExport}
+          groupBy={['particulates']}
         />
       </Stack>
     </Box>

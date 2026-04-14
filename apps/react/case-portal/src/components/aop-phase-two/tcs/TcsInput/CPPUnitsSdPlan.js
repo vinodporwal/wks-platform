@@ -18,6 +18,7 @@ const CPPUnitsSdPlan = ({
   AOP_YEAR,
   currentTab,
   SITE_ID,
+  VERTICAL_ID,
   snackbarData,
   setSnackbarData,
   snackbarOpen,
@@ -64,6 +65,7 @@ const CPPUnitsSdPlan = ({
       const carryForwardResponse =
         await TcsApiService.carryForwardCppUnitsSdPlan(
           keycloak,
+          VERTICAL_ID,
           apiYear,
           SITE_ID,
         )
@@ -99,6 +101,7 @@ const CPPUnitsSdPlan = ({
 
         const response = await TcsApiService.getCPPUnitsSdPlanData(
           keycloak,
+          VERTICAL_ID,
           apiYear,
           SITE_ID,
         )
@@ -332,6 +335,7 @@ const CPPUnitsSdPlan = ({
 
       const response = await TcsApiService.saveCPPUnitsSdPlanData(
         keycloak,
+        VERTICAL_ID,
         apiYear,
         SITE_ID,
         formattedData,
@@ -409,7 +413,12 @@ const CPPUnitsSdPlan = ({
     })
 
     try {
-      await TcsApiService.exportCPPUnitsSdPlanExcel(keycloak, SITE_ID, apiYear)
+      await TcsApiService.exportCPPUnitsSdPlanExcel(
+        keycloak,
+        VERTICAL_ID,
+        SITE_ID,
+        apiYear,
+      )
 
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -432,6 +441,7 @@ const CPPUnitsSdPlan = ({
     try {
       const response = await TcsApiService.importCPPUnitsSdPlanExcel(
         keycloak,
+        VERTICAL_ID,
         SITE_ID,
         apiYear,
         file,
