@@ -519,6 +519,7 @@ const TcsInput = () => {
           PLANT_NAME,
           AOP_YEAR,
           SITE_ID,
+          VERTICAL_ID,
           snackbarData,
           setSnackbarData,
           snackbarOpen,

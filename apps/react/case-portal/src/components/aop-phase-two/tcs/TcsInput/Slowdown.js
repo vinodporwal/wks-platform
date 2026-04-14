@@ -16,6 +16,8 @@ import { extractYear } from 'components/aop-phase-two/common/utilities/generateH
 
 const Slowdown = ({
   PLANT_ID,
+  VERTICAL_ID,
+  SITE_ID,
   PLANT_NAME,
   AOP_YEAR,
   currentTab,
@@ -317,6 +319,8 @@ const Slowdown = ({
 
         const response = await TcsApiService.saveSlowdownData(
           keycloak,
+          VERTICAL_ID,
+          SITE_ID,
           PLANT_ID,
           apiYear,
           formattedData,
@@ -544,6 +548,8 @@ const Slowdown = ({
     try {
       const response = await TcsApiService.importSlowdownExcel(
         keycloak,
+        VERTICAL_ID,
+        SITE_ID,
         PLANT_ID,
         apiYear,
         file,

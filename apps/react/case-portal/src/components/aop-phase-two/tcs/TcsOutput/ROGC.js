@@ -13,6 +13,7 @@ import { Stack } from '../../../../../node_modules/@mui/material/index'
 const ROGC = ({
   PLANT_ID,
   SITE_ID,
+  VERTICAL_ID,
   AOP_YEAR,
   currentTab,
   snackbarData,
@@ -44,7 +45,7 @@ const ROGC = ({
       const response = await TcsOutputApiService.getTcsRogcData(
         keycloak,
         SITE_ID,
-        PLANT_ID,
+        VERTICAL_ID,
         AOP_YEAR,
       )
       console.log('TCS ROGC Response:', response)
@@ -284,7 +285,12 @@ const ROGC = ({
     })
 
     try {
-      await TcsOutputApiService.exportRogcExcel(keycloak, SITE_ID, AOP_YEAR)
+      await TcsOutputApiService.exportRogcExcel(
+        keycloak,
+        VERTICAL_ID,
+        SITE_ID,
+        AOP_YEAR,
+      )
 
       setSnackbarData({
         message: 'Excel download completed successfully!',

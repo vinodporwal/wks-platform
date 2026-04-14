@@ -14,6 +14,7 @@ const CrudBlendWindowGrid = ({
   PLANT_ID,
   AOP_YEAR,
   SITE_ID,
+  VERTICAL_ID,
   tableData,
   snackbarData,
   setSnackbarData,
@@ -254,6 +255,7 @@ const CrudBlendWindowGrid = ({
 
       const response = await TcsApiService.saveCrudBlendWindowData(
         keycloak,
+        VERTICAL_ID,
         PLANT_ID,
         apiYear,
         SITE_ID,
@@ -420,6 +422,7 @@ const CrudBlendWindowGrid = ({
     try {
       await TcsApiService.exportCrudBlendWindowExcel(
         keycloak,
+        VERTICAL_ID,
         PLANT_ID,
         SITE_ID,
         apiYear,
@@ -446,6 +449,7 @@ const CrudBlendWindowGrid = ({
     try {
       const response = await TcsApiService.importCrudBlendWindowExcel(
         keycloak,
+        VERTICAL_ID,
         PLANT_ID,
         SITE_ID,
         apiYear,

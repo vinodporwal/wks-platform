@@ -243,6 +243,7 @@ const Shutdown = ({
           readonly={true}
           onApproveClick={() => setOpenApproveDialogeBox(true)}
           handleExport={handleExport}
+          groupBy={['particulates']}
         />
       </Stack>
     </Box>
