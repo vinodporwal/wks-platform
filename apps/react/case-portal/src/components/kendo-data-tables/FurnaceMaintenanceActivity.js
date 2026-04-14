@@ -267,7 +267,7 @@ const FurnaceMaintenanceActivity = () => {
         }
       }
 
-      function formatDateDDMMYYYY(date) {
+      const formatDateDDMMYYYY = (date) => {
         if (!(date instanceof Date) || isNaN(date)) return ''
         const d = date.getDate().toString().padStart(2, '0')
         const m = (date.getMonth() + 1).toString().padStart(2, '0')
