@@ -132,6 +132,7 @@ if(plantId != null) {
                 aopYear,
                 vertical.getName().toUpperCase(),
                 site.getId(),
+                vertical.getId(),
                 site.getName().toUpperCase());
             map.put("headers", headers);
 
