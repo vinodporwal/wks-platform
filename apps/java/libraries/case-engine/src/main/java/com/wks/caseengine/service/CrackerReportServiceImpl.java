@@ -248,6 +248,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public AOPMessageVM getSpyroOutputReport(String plantId, String AopYear, String Mode) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
@@ -281,6 +282,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public List<Object[]> getSpyroOutputReportData(String plantId, String AopYear, String Mode) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
@@ -294,7 +296,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @AopYear = :AopYear, @Mode = :Mode, @siteId = :siteId, @verticalId = :verticalId";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("AopYear", AopYear);
@@ -310,8 +312,9 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 		}
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public List<String> getSpyroOutputReportColumns(String plantId, String AopYear, String Mode) {
-		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+		return entityManagerDB2.unwrap(Session.class).doReturningWork(connection -> {
 			List<String> columnNames = new ArrayList<>();
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
 					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
@@ -342,8 +345,9 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 		});
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = false)
 	public List<Map<String, Object>> getSpyroOutputReportColumnMetadata(String plantId, String AopYear, String Mode) {
-		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+		return entityManagerDB2.unwrap(Session.class).doReturningWork(connection -> {
 			List<Map<String, Object>> columnMetadata = new ArrayList<>();
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
 					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));

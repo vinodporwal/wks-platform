@@ -30,6 +30,7 @@ import { getRoleName } from 'services/role-service.js'
 import DecokingConfigNMD from './KendoConfigCrackerActivitiesNMD.js'
 import DownsteamShutdownDMD from './downsteamShutdownDMD.js'
 import FurnaceMaintenanceActivity from './FurnaceMaintenanceActivity.js'
+import SteamHourTable from './steamHourTable.js'
 
 const DecokingConfig = () => {
   const keycloak = useSession()
@@ -69,6 +70,7 @@ const DecokingConfig = () => {
   const siteName = siteObject?.name?.toLowerCase()
   const IS_DMD = siteObject?.name?.toLowerCase() == 'dmd'
   const IS_CRACKER_VMD = lowerVertName === 'cracker' && siteName === 'vmd'
+  const IS_CRACKER_HMD = lowerVertName === 'cracker' && siteName === 'hmd'
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -1493,7 +1495,9 @@ const DecokingConfig = () => {
   if (siteName === 'nmd') {
     return <DecokingConfigNMD pid={PLANT_ID} />
   }
-
+  if (siteName === 'hmd') {
+    return <SteamHourTable pid={PLANT_ID} />
+  }
   return (
     <Box>
       <Backdrop
@@ -1502,6 +1506,23 @@ const DecokingConfig = () => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
+      {IS_CRACKER_VMD && (
+        <CustomAccordion defaultExpanded disableGutters sx={{ mt: 1.5 }}>
+          <CustomAccordionSummary
+            aria-controls='meg-grid-content'
+            id='meg-grid-header'
+          >
+            <Typography component='span' className='grid-title'>
+              Furnace Maintenance Activity
+            </Typography>
+          </CustomAccordionSummary>
+          <CustomAccordionDetails>
+            <Box sx={{ width: '100%', margin: 0 }}>
+              <FurnaceMaintenanceActivity />
+            </Box>
+          </CustomAccordionDetails>
+        </CustomAccordion>
+      )}
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
         <Box
@@ -1631,24 +1652,23 @@ const DecokingConfig = () => {
           </Box>
         </CustomAccordionDetails>
       </CustomAccordion>
-
-      {IS_CRACKER_VMD && (
-        <CustomAccordion defaultExpanded disableGutters sx={{ mt: 1.5 }}>
+      {/* {IS_CRACKER_HMD && (
+        <CustomAccordion defaultExpanded disableGutters>
           <CustomAccordionSummary
             aria-controls='meg-grid-content'
             id='meg-grid-header'
           >
             <Typography component='span' className='grid-title'>
-              Furnace Maintenance Activity
+              Steam Hour Details
             </Typography>
           </CustomAccordionSummary>
           <CustomAccordionDetails>
             <Box sx={{ width: '100%', margin: 0 }}>
-              <FurnaceMaintenanceActivity />
+              <SteamHourTable />
             </Box>
           </CustomAccordionDetails>
         </CustomAccordion>
-      )}
+      )} */}
     </Box>
   )
 }

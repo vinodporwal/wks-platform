@@ -409,11 +409,15 @@ const MaintenanceTable = () => {
           saveWithRemark: false,
           saveBtn: dataConfig.isCracker,
           allAction: true,
-          downloadExcelBtnFromUI: true,
+          downloadExcelBtnFromUI:
+            IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD ? false : true,
           ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
           showRefresh: false,
           showTitleNameBusiness: true,
           titleName: SCREEN_NAME,
+
+          downloadExcelBtn:
+            IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD ? true : false,
         },
         isOldYear,
       ),
@@ -422,6 +426,32 @@ const MaintenanceTable = () => {
   // if (lowerVertName == 'elastomer') {
   //   return <ElastomerMaintenanceTable />
   // }
+
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      let response
+      response = await MaintenanceDetailsApiService.MaintenanceExportLineWise(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
+      )
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
 
   return (
     <>
@@ -454,6 +484,7 @@ const MaintenanceTable = () => {
           setSnackbarData={setSnackbarData}
           permissions={adjustedPermissions}
           currentRowId={currentRowId}
+          downloadExcelForConfiguration={downloadExcelForConfiguration}
         />
       </div>
     </>

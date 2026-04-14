@@ -6,7 +6,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -14,15 +13,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.sql.DataSource;
-
 import org.hibernate.Session;
-import org.hibernate.jdbc.ReturningWork;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.wks.caseengine.dto.FurnaceMaintenanceActivityDTO;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
@@ -36,12 +31,15 @@ import jakarta.persistence.PersistenceContext;
 
 @Service
 public class FurnaceMaintenanceActivityServiceImpl implements FurnaceMaintenanceActivityService {
+	private static final List<String> METADATA_TABLE_CANDIDATES = List.of(
+			"FurnaceActivity",
+			"FurnaceMaintenanceActivity",
+			"Furnace-run-length",
+			"DecokeMaintenance",
+			"Sd-Ta-Activities");
 
 	@PersistenceContext
 	private EntityManager entityManager;
-	
-	@Autowired
-	private DataSource dataSource;
 	
 	@Autowired
 	private PlantsRepository plantsRepository;
@@ -134,6 +132,12 @@ public class FurnaceMaintenanceActivityServiceImpl implements FurnaceMaintenance
 				if (hasResultSet) {
 					try (ResultSet resultSet = callableStatement.getResultSet()) {
 						ResultSetMetaData metaData = resultSet.getMetaData();
+						List<String> columnNames = new ArrayList<>();
+						for (int i = 1; i <= metaData.getColumnCount(); i++) {
+							columnNames.add(metaData.getColumnLabel(i));
+						}
+						Map<String, String> columnTitleMap = resolveColumnTitles(connection, site.getName(), columnNames);
+						Map<String, String> columnIsVisibleMap = resolveColumnVisibility(connection, site.getName(), columnNames);
 						
 						for (int i = 1; i <= metaData.getColumnCount(); i++) {
 							Map<String, Object> columnInfo = new HashMap<>();
@@ -141,9 +145,8 @@ public class FurnaceMaintenanceActivityServiceImpl implements FurnaceMaintenance
 							String columnType = metaData.getColumnTypeName(i);
 							
 							columnInfo.put("field", columnName);
-							columnInfo.put("title", formatTitle(columnName));
-							columnInfo.put("editable", false);
-							columnInfo.put("isVisible", "true");
+							columnInfo.put("title", getIgnoreCase(columnTitleMap, columnName, formatTitle(columnName)));
+							columnInfo.put("isVisible", getIgnoreCase(columnIsVisibleMap, columnName, "true"));
 							columnInfo.put("type", getFrontendType(columnType));
 							columnMetadata.add(columnInfo);
 						}
@@ -153,6 +156,122 @@ public class FurnaceMaintenanceActivityServiceImpl implements FurnaceMaintenance
 			
 			return columnMetadata;
 		});
+	}
+
+	private Map<String, String> loadColumnTitles(
+			Connection connection,
+			String viewName,
+			String siteName,
+			String tableName) throws SQLException {
+
+		Map<String, String> titleMap = new HashMap<>();
+
+		String sql = "SELECT [Key], [Value] " +
+				"FROM " + viewName + " " +
+				"WHERE TableName = ? AND SiteName = ?";
+
+		try (PreparedStatement ps = connection.prepareStatement(sql)) {
+			ps.setString(1, tableName);
+			ps.setString(2, siteName);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					String key = rs.getString("Key");
+					String value = rs.getString("Value");
+					if (value != null) {
+						titleMap.put(key, value);
+					}
+				}
+			}
+		}
+		return titleMap;
+	}
+
+	private Map<String, String> loadIsVisible(
+			Connection connection,
+			String viewName,
+			String siteName,
+			String tableName) throws SQLException {
+
+		Map<String, String> visibleMap = new HashMap<>();
+
+		String sql = "SELECT [Key], [IsVisible] " +
+				"FROM " + viewName + " " +
+				"WHERE TableName = ? AND SiteName = ?";
+
+		try (PreparedStatement ps = connection.prepareStatement(sql)) {
+			ps.setString(1, tableName);
+			ps.setString(2, siteName);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					String key = rs.getString("Key");
+					String isVisible = rs.getString("IsVisible");
+					if (isVisible != null) {
+						visibleMap.put(key, isVisible);
+					}
+				}
+			}
+		}
+		return visibleMap;
+	}
+
+	private Map<String, String> resolveColumnTitles(
+			Connection connection,
+			String siteName,
+			List<String> columnNames) throws SQLException {
+		Map<String, String> bestMap = new HashMap<>();
+		int bestScore = -1;
+
+		for (String tableName : METADATA_TABLE_CANDIDATES) {
+			Map<String, String> candidate = loadColumnTitles(connection, "vwScrnCrackerKeyValueColumns", siteName, tableName);
+			int score = countMatchingKeys(candidate, columnNames);
+			if (score > bestScore) {
+				bestScore = score;
+				bestMap = candidate;
+			}
+		}
+		return bestMap;
+	}
+
+	private Map<String, String> resolveColumnVisibility(
+			Connection connection,
+			String siteName,
+			List<String> columnNames) throws SQLException {
+		Map<String, String> bestMap = new HashMap<>();
+		int bestScore = -1;
+
+		for (String tableName : METADATA_TABLE_CANDIDATES) {
+			Map<String, String> candidate = loadIsVisible(connection, "vwScrnCrackerKeyValueColumns", siteName, tableName);
+			int score = countMatchingKeys(candidate, columnNames);
+			if (score > bestScore) {
+				bestScore = score;
+				bestMap = candidate;
+			}
+		}
+		return bestMap;
+	}
+
+	private int countMatchingKeys(Map<String, String> configMap, List<String> columnNames) {
+		int count = 0;
+		for (String columnName : columnNames) {
+			for (String key : configMap.keySet()) {
+				if (key != null && key.equalsIgnoreCase(columnName)) {
+					count++;
+					break;
+				}
+			}
+		}
+		return count;
+	}
+
+	private String getIgnoreCase(Map<String, String> map, String key, String fallbackValue) {
+		for (Map.Entry<String, String> entry : map.entrySet()) {
+			if (entry.getKey() != null && entry.getKey().equalsIgnoreCase(key)) {
+				return entry.getValue();
+			}
+		}
+		return fallbackValue;
 	}
 	
 	private String formatTitle(String columnName) {
