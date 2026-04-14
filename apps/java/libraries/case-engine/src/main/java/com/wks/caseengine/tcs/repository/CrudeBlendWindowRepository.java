@@ -39,12 +39,14 @@ public interface CrudeBlendWindowRepository extends JpaRepository<DummyEntity, L
                  Remarks, Type
           FROM CrudeBlendWindow
           WHERE 
+            Vertical_FK_Id = :verticalId
              Site_FK_Id = :siteId
             AND FinancialYear = :financialYear
           """,
       nativeQuery = true
   )
-       List<CrudeBlendProjection> findCrudeBlendBySiteId(@Param("siteId") UUID siteId, @Param("financialYear") String financialYear);
+       List<CrudeBlendProjection> findCrudeBlendBySiteIdAndVerticalId(@Param("verticalId") UUID verticalId, @Param("siteId") UUID siteId, @Param("financialYear") String financialYear);
+
 
      // fetch crude specific constraints data
      @Query(

@@ -64,7 +64,7 @@ public class CrudeBlendWindowService {
      
  //   public List<MasterCrudeBlendDTO> getCrudeBlendWindowData(String plantId, String siteId) {
 
- public List<CrudeBlendScreenDTO> getCrudeBlendWindowData(String plantId, String siteId, String financialYear) {
+ public List<CrudeBlendScreenDTO> getCrudeBlendWindowData(String plantId, String siteId, String verticalId, String financialYear) {
 
         // List<MasterCrudeBlendDTO> responseList = new java.util.ArrayList<>();
 
@@ -85,7 +85,7 @@ public class CrudeBlendWindowService {
         if(plantId != null) {
     // Ignore Plant Id for first and third grid (Crude Blend Window and Crude Specific Constraints)
    //   crudeBlend = crudeRepo.findCrudeBlendByPlantIdAndSiteId(java.util.UUID.fromString(plantId), java.util.UUID.fromString(siteId), financialYear).stream().map(proj -> {
-    crudeBlend = crudeRepo.findCrudeBlendBySiteId(java.util.UUID.fromString(siteId), financialYear).stream().map(proj -> {
+    crudeBlend = crudeRepo.findCrudeBlendBySiteIdAndVerticalId(java.util.UUID.fromString(verticalId), java.util.UUID.fromString(siteId), financialYear).stream().map(proj -> {
             CrudeBlendDTO dto = new CrudeBlendDTO();
             dto.setId(proj.getId());
             dto.setProperty(proj.getProperty());
@@ -102,7 +102,7 @@ public class CrudeBlendWindowService {
 
         else {   
 
-            crudeBlend = crudeRepo.findCrudeBlendBySiteId(java.util.UUID.fromString(siteId), financialYear).stream().map(proj -> {
+            crudeBlend = crudeRepo.findCrudeBlendBySiteIdAndVerticalId(java.util.UUID.fromString(verticalId), java.util.UUID.fromString(siteId), financialYear).stream().map(proj -> {
                 CrudeBlendDTO dto = new CrudeBlendDTO();
                 dto.setId(proj.getId());
                 dto.setProperty(proj.getProperty());
@@ -221,12 +221,12 @@ public class CrudeBlendWindowService {
     }
 
     @Transactional
-    public AOPMessageVM carryForwardCrudeBlendWindow(String financialYear, UUID siteId, UUID plantId) {
+    public AOPMessageVM carryForwardCrudeBlendWindow(String financialYear, UUID verticalId, UUID siteId, UUID plantId) {
        
           try {
-           executeCarryForwardStoredProcedure("CrudeBlendWindow_CarryForward", financialYear, siteId, plantId);
-           executeCarryForwardStoredProcedure("CrudeSpecificConstraints_CarryForward", financialYear, siteId, plantId);
-           executeCarryForwardStoredProcedure("VGOVRDrop_CarryForward", financialYear, siteId, plantId);
+           executeCarryForwardStoredProcedure("CrudeBlendWindow_CarryForward", financialYear, verticalId, siteId, plantId);
+           executeCarryForwardStoredProcedure("CrudeSpecificConstraints_CarryForward", financialYear, verticalId, siteId, plantId);
+           executeCarryForwardStoredProcedure("VGOVRDrop_CarryForward", financialYear, verticalId, siteId, plantId);
           } catch (Exception e) {
             throw new RuntimeException("Failed to carry forward crude blend window data", e);
           }
@@ -236,11 +236,12 @@ public class CrudeBlendWindowService {
           return aopMessageVM;
     }
 
-    public void executeCarryForwardStoredProcedure(String procedureName, String financialYear, UUID siteId, UUID plantId) {
+    public void executeCarryForwardStoredProcedure(String procedureName, String financialYear, UUID verticalId, UUID siteId, UUID plantId) {
         try {
-            String sql = "EXEC " + procedureName + " @targetYear = :financialYear, @siteId = :siteId, @plantId = :plantId";
+            String sql = "EXEC " + procedureName + " @targetYear = :financialYear, @verticalId = :verticalId, @siteId = :siteId, @plantId = :plantId";
             Query query = entityManager.createNativeQuery(sql);
             query.setParameter("financialYear", financialYear);
+            query.setParameter("verticalId", verticalId);
             query.setParameter("siteId", siteId);
             query.setParameter("plantId", plantId);
             query.executeUpdate();
@@ -255,7 +256,7 @@ public class CrudeBlendWindowService {
 
 
 
-    public void updateCrudeBlendWindowData(CrudeBlendWindowPostRequestDTO<?> payload, String plantId, String siteId, String financialYear, String table) {
+    public void updateCrudeBlendWindowData(CrudeBlendWindowPostRequestDTO<?> payload, String plantId, String verticalId, String siteId, String financialYear, String table) {
    
         if(financialYear == null || financialYear.isEmpty()) {
             throw new IllegalArgumentException("Financial year must be provided");
@@ -281,10 +282,14 @@ public class CrudeBlendWindowService {
        if(table == null || table.isEmpty()) {
            throw new IllegalArgumentException("Table name must be provided");  }
 
+        if(verticalId == null || verticalId.isEmpty()) {
+            throw new IllegalArgumentException("Vertical ID must be provided");
+        }
+
         if(table.equals("CrudeBlendWindow")) {
  
               List<CrudeBlendDTO> crudeBlendDTOs =  convertList(payload.getResults(), CrudeBlendDTO.class);
-              handleCrudeBlendWindowUpdate(crudeBlendDTOs, plantId, siteId, financialYear);
+              handleCrudeBlendWindowUpdate(crudeBlendDTOs, plantId, verticalId, siteId, financialYear);
 
               System.out.println("dtos to be updated: " + crudeBlendDTOs);
 
@@ -294,18 +299,18 @@ public class CrudeBlendWindowService {
        if(table.equals("CrudeSpecificConstraints")) { 
             List<CrudeSpecificConstraintsDTO> crudeSpecificConstraintsDTOs =  convertList(payload.getResults(), CrudeSpecificConstraintsDTO.class);
             System.out.println("dtos to be updated: " + crudeSpecificConstraintsDTOs);
-            handleCrudeSpecificConstraintsUpdate(crudeSpecificConstraintsDTOs, plantId, siteId, financialYear);
+            handleCrudeSpecificConstraintsUpdate(crudeSpecificConstraintsDTOs, plantId, verticalId, siteId, financialYear);
         }
 
        if(table.equals("VGOVRDrop")) {
             List<VGOVRDropDTO> vgovrDropDTOs =  convertList(payload.getResults(), VGOVRDropDTO.class);
             System.out.println("dtos to be updated: " + vgovrDropDTOs);
-            handleVGOVRDropUpdate(vgovrDropDTOs, plantId, siteId, financialYear);
+            handleVGOVRDropUpdate(vgovrDropDTOs, plantId, verticalId, siteId, financialYear);
         }
         
     }
 
-    public void handleCrudeBlendWindowUpdate(List<CrudeBlendDTO> crudeBlendDTOs, String plantId, String siteId, String financialYear) {
+    public void handleCrudeBlendWindowUpdate(List<CrudeBlendDTO> crudeBlendDTOs, String plantId, String verticalId, String siteId, String financialYear) {
 
            List<Object[]> updates = new ArrayList<>();
            List<Object[]> inserts = new ArrayList<>();
@@ -313,7 +318,7 @@ public class CrudeBlendWindowService {
        for( CrudeBlendDTO dto : crudeBlendDTOs) {
 
         if(dto.getId() == null) { 
-            inserts.add(new Object[] {dto.getProperty(), dto.getStream(), dto.getUnit(), dto.getMinValue(), dto.getMaxValue(), dto.getCriticality(), dto.getRemarks(), plantId, siteId, dto.getType(), financialYear });
+            inserts.add(new Object[] {dto.getProperty(), dto.getStream(), dto.getUnit(), dto.getMinValue(), dto.getMaxValue(), dto.getCriticality(), dto.getRemarks(), plantId, verticalId, siteId, dto.getType(), financialYear });
         }
         else {
       
@@ -330,20 +335,20 @@ public class CrudeBlendWindowService {
              }
 
              if (!inserts.isEmpty()) { 
-              String insertSql = " insert into CrudeBlendWindow (Property, Stream, Unit, MinValue, MaxValue, Criticality, Remarks, Plant_FK_Id, Site_FK_Id, Type, FinancialYear) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+              String insertSql = " insert into CrudeBlendWindow (Property, Stream, Unit, MinValue, MaxValue, Criticality, Remarks, Plant_FK_Id, Vertical_FK_Id, Site_FK_Id, Type, FinancialYear) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
               jdbcTemplate.batchUpdate(insertSql, inserts);
              }
          
     }
 
-    public void handleCrudeSpecificConstraintsUpdate(List<CrudeSpecificConstraintsDTO> crudeSpecificConstraintsDTOs, String plantId, String siteId, String financialYear) { 
+    public void handleCrudeSpecificConstraintsUpdate(List<CrudeSpecificConstraintsDTO> crudeSpecificConstraintsDTOs, String plantId, String verticalId, String siteId, String financialYear) { 
 
         List<Object[]> updates = new ArrayList<>();
         List<Object[]> inserts = new ArrayList<>();
 
         for( CrudeSpecificConstraintsDTO dto : crudeSpecificConstraintsDTOs) {
           if(dto.getId() == null) {
-            inserts.add(new Object[] { dto.getCrude(), dto.getMaxBlendLimit(), dto.getReasons(), plantId, siteId, financialYear });
+            inserts.add(new Object[] { dto.getCrude(), dto.getMaxBlendLimit(), dto.getReasons(), plantId, verticalId, siteId, financialYear });
           }
 
           else {
@@ -357,19 +362,19 @@ public class CrudeBlendWindowService {
         }
 
         if (!inserts.isEmpty()) { 
-            String insertSql = " insert into CrudeSpecificConstraints (Crude, MaxBlendLimit, Reasons, Plant_FK_Id, Site_FK_Id, FinancialYear) values (?, ?, ?, ?, ?, ?)";
+            String insertSql = " insert into CrudeSpecificConstraints (Crude, MaxBlendLimit, Reasons, Plant_FK_Id, Vertical_FK_Id, Site_FK_Id, FinancialYear) values (?, ?, ?, ?, ?, ?, ?)";
             jdbcTemplate.batchUpdate(insertSql, inserts);
         }
     }
 
-    public void handleVGOVRDropUpdate(List<VGOVRDropDTO> vgovrDropDTOs, String plantId, String siteId, String financialYear) {
+    public void handleVGOVRDropUpdate(List<VGOVRDropDTO> vgovrDropDTOs, String plantId, String verticalId, String siteId, String financialYear) {
 
         List<Object[]> updates = new ArrayList<>();
         List<Object[]> inserts = new ArrayList<>();
 
         for( VGOVRDropDTO dto : vgovrDropDTOs) {
           if(dto.getId() == null) {
-            inserts.add(new Object[] { dto.getKbpsd(), dto.getValue_345(), dto.getRemarks(), plantId, siteId, financialYear });
+            inserts.add(new Object[] { dto.getKbpsd(), dto.getValue_345(), dto.getRemarks(), plantId, verticalId, siteId, financialYear });
           }
           else {
           updates.add(new Object[] { dto.getKbpsd(), dto.getValue_345(), dto.getRemarks(), dto.getId() });           
@@ -381,7 +386,7 @@ public class CrudeBlendWindowService {
         }
 
         if (!inserts.isEmpty()) { 
-            String insertSql = " insert into VGOVRDrop (Kbpsd, Value_345, Remarks, Plant_FK_Id, Site_FK_Id, FinancialYear) values (?, ?, ?, ?, ?, ?)";
+            String insertSql = " insert into VGOVRDrop (Kbpsd, Value_345, Remarks, Plant_FK_Id, Vertical_FK_Id, Site_FK_Id, FinancialYear) values (?, ?, ?, ?, ?, ?, ?)";
             jdbcTemplate.batchUpdate(insertSql, inserts);
         }
     }
@@ -421,11 +426,12 @@ private <T> List<T> convertList(List<?> raw, Class<T> clazz) {
         String plantId,
         String siteId,
         String financialYear,
+        String verticalId,
         String table) {
         
         try {
             // Get data
-            List<CrudeBlendScreenDTO> screenData = getCrudeBlendWindowData(plantId, siteId, financialYear);
+            List<CrudeBlendScreenDTO> screenData = getCrudeBlendWindowData(plantId, siteId, verticalId, financialYear);
             
     
             
@@ -743,6 +749,7 @@ private <T> List<T> convertList(List<?> raw, Class<T> clazz) {
     // Excel Import for CrudeBlendWindow, CrudeSpecificConstraints, and VGOVRDrop
     public AOPMessageVM importExcel(
         String plantId,
+        String verticalId,
         String siteId,
         String financialYear,
         String table,
@@ -757,11 +764,11 @@ private <T> List<T> convertList(List<?> raw, Class<T> clazz) {
             // Import based on table type
             switch (table) {
                 case "CrudeBlendWindow":
-                    return importCrudeBlendWindowData(plantId, siteId, financialYear, file);
+                    return importCrudeBlendWindowData(plantId, verticalId, siteId, financialYear, file);
                 case "CrudeSpecificConstraints":
-                    return importCrudeSpecificConstraintsData(plantId, siteId, financialYear, file);
+                    return importCrudeSpecificConstraintsData(plantId, verticalId, siteId, financialYear, file);
                 case "VGOVRDrop":
-                    return importVGOVRDropData(plantId, siteId, financialYear, file);
+                    return importVGOVRDropData(plantId, verticalId, siteId, financialYear, file);
                 default:
                     AOPMessageVM errorVM = new AOPMessageVM();
                     errorVM.setCode(400);
@@ -779,6 +786,7 @@ private <T> List<T> convertList(List<?> raw, Class<T> clazz) {
     
     private AOPMessageVM importCrudeBlendWindowData(
         String plantId,
+        String verticalId,
         String siteId,
         String financialYear,
         MultipartFile file) {
@@ -823,7 +831,7 @@ private <T> List<T> convertList(List<?> raw, Class<T> clazz) {
             // Try to save valid records
             if (!validRecords.isEmpty()) {
                 try {
-                    handleCrudeBlendWindowUpdate(validRecords, plantId, siteId, financialYear);
+                    handleCrudeBlendWindowUpdate(validRecords, plantId, verticalId, siteId, financialYear);
                 } catch (Exception e) {
                     // Mark all valid records as failed if save fails
                     System.out.println("Save failed: " + e.getMessage());
@@ -860,6 +868,7 @@ private <T> List<T> convertList(List<?> raw, Class<T> clazz) {
     
     private AOPMessageVM importCrudeSpecificConstraintsData(
         String plantId,
+        String verticalId,
         String siteId,
         String financialYear,
         MultipartFile file) {
@@ -903,7 +912,7 @@ private <T> List<T> convertList(List<?> raw, Class<T> clazz) {
             // Try to save valid records
             if (!validRecords.isEmpty()) {
                 try {
-                    handleCrudeSpecificConstraintsUpdate(validRecords, plantId, siteId, financialYear);
+                    handleCrudeSpecificConstraintsUpdate(validRecords, plantId, verticalId, siteId, financialYear);
                 } catch (Exception e) {
                     // Mark all valid records as failed if save fails
                     System.out.println("Save failed: " + e.getMessage());
@@ -940,6 +949,7 @@ private <T> List<T> convertList(List<?> raw, Class<T> clazz) {
     
     private AOPMessageVM importVGOVRDropData(
         String plantId,
+        String verticalId,
         String siteId,
         String financialYear,
         MultipartFile file) {
@@ -983,7 +993,7 @@ private <T> List<T> convertList(List<?> raw, Class<T> clazz) {
             // Try to save valid records
             if (!validRecords.isEmpty()) {
                 try {
-                    handleVGOVRDropUpdate(validRecords, plantId, siteId, financialYear);
+                    handleVGOVRDropUpdate(validRecords, plantId, verticalId, siteId, financialYear);
                 } catch (Exception e) {
                     // Mark all valid records as failed if save fails
                     System.out.println("Save failed: " + e.getMessage());

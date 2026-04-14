@@ -111,6 +111,7 @@ if(plantId != null) {
                 aopYear,
                 vertical.getName().toUpperCase(),
                 site.getId(),
+                UUID.fromString(verticalId),
                 site.getName().toUpperCase());
             List<TCSShutdownDTO> resultsList = new ArrayList<>();
             //values mapping
@@ -175,6 +176,7 @@ if(plantId != null) {
         String aopYear,
         String verticalName,
         UUID siteId,
+        UUID verticalId,
         String siteName) {
             
         try {            
@@ -198,7 +200,7 @@ if(plantId != null) {
         
         } 
         else {
-            sql = "EXEC " + procedureName + " @siteId = :siteId, @aopYear = :aopYear";
+            sql = "EXEC " + procedureName + " @verticalId = :verticalId, @siteId = :siteId, @aopYear = :aopYear";
         }
 
             // Call the stored procedure
@@ -209,6 +211,7 @@ if(plantId != null) {
             query.setParameter("aopYear", aopYear);  }
 
             else {
+                query.setParameter("verticalId", verticalId);
                 query.setParameter("siteId", siteId);
                 query.setParameter("aopYear", aopYear);
             }

@@ -33,12 +33,14 @@ public interface FurnaceRepository extends JpaRepository<DummyEntity, UUID> {
         value = """
             EXEC dbo.GetFurnaceData_Output
                 @FinancialYear = :financialYear,
+                @Vertical_FK_Id = :verticalId,
                 @Site_FK_Id = :siteId
         """,
         nativeQuery = true
     )
     List<FurnaceProjection> getFurnaceOutputData(
         @Param("financialYear") String financialYear,
+        @Param("verticalId") UUID verticalId,
         @Param("siteId") UUID siteId
       
     );
