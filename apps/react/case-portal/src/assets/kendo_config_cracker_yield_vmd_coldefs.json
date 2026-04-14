@@ -3,9 +3,9 @@
     "field": "particulars",
     "title": "Particulars",
     "editable": false,
-    "widthT": 130,
-    "fixedWidth": 130,
-    "width": 130
+    "widthT": 120,
+    "fixedWidth": 120,
+    "width": 120
   },
   {
     "field": "fiveNE",

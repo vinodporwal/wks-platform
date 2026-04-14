@@ -70,7 +70,7 @@ const NSRAndMaterialPrices = () => {
       field: 'plantName',
       title: 'Plant Name',
       editable: false,
-      widthT: 120,
+      widthT: 100,
       hidden: false,
     },
     {

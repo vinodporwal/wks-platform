@@ -2,7 +2,7 @@
   {
     "field": "particulars",
     "headerName": "Particulars",
-    "widthT": 100,
+    "widthT": 120,
     "editable": false,
     "filterType": "text"
   },
@@ -13,6 +13,7 @@
     "align": "left",
     "headerAlign": "left",
     "filterType": "text",
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -22,6 +23,7 @@
     "align": "left",
     "headerAlign": "left",
     "filterType": "text",
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -31,6 +33,7 @@
     "align": "left",
     "headerAlign": "left",
     "filterType": "text",
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -40,6 +43,7 @@
     "align": "left",
     "headerAlign": "left",
     "filterType": "text",
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -49,6 +53,7 @@
     "align": "left",
     "headerAlign": "left",
     "filterType": "text",
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -58,6 +63,7 @@
     "align": "left",
     "headerAlign": "left",
     "filterType": "text",
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -76,6 +82,7 @@
     "align": "left",
     "headerAlign": "left",
     "filterType": "text",
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -85,6 +92,7 @@
     "align": "left",
     "headerAlign": "left",
     "filterType": "text",
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -94,6 +102,7 @@
     "align": "left",
     "headerAlign": "left",
     "filterType": "text",
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -103,6 +112,7 @@
     "align": "left",
     "headerAlign": "left",
     "filterType": "text",
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -112,6 +122,7 @@
     "align": "left",
     "headerAlign": "left",
     "filterType": "text",
+    "widthT": 100,
     "type": "number"
   },
 
@@ -120,6 +131,7 @@
     "headerName": "Total",
     "editable": false,
     "filterType": "text",
+    "widthT": 100,
     "type": "number"
   }
 ]

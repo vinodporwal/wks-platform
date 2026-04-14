@@ -538,7 +538,7 @@ const SelectivityData = (props) => {
     configType: props?.configType,
     FORMATE_VALUE,
   })
-  
+
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {

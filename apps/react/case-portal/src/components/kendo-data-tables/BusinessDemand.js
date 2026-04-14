@@ -130,17 +130,19 @@ const BusinessDemand = ({ permissions }) => {
       field: 'materialDisplayName',
       title: 'Particulars',
       editable: false,
-      widthT: 200,
+      widthT: 220,
+      autoAdjust: false
     },
     {
       field: 'april',
       title: 'Value',
       editable: false,
-      widthT: 200,
+      widthT: 220,
       align: 'left',
       headerAlign: 'left',
       type: 'number',
       format: '{0:n2}',
+      autoAdjust: false
     },
 
     {

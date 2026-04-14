@@ -11,7 +11,8 @@
     "field": "DisplayName",
     "title": "Particulars",
     "editable": false,
-    "widthT": 100
+    "widthT": 300,
+    "autoAdjust": false
   },
   {
     "field": "UOM",
@@ -30,6 +31,8 @@
   {
     "field": "remarks",
     "title": "Remark",
+    "widthT": 250,
+    "autoAdjust": false,
     "editable": true
   }
 ]

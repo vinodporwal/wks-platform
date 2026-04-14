@@ -91,7 +91,7 @@ export default function Capex() {
     },
     { field: 'targetPlan', title: 'Target', editable: true },
     { field: 'statusPlan', title: 'Status', editable: true },
-    { field: 'remarks', title: 'Remarks', widthT: 150, editable: true },
+    { field: 'remarks', title: 'Remarks', widthT: 100, editable: true },
   ]
 
   const fetchData = useCallback(async () => {

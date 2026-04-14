@@ -235,7 +235,7 @@ const NormalOpNormsScreenCracker = () => {
         widthT: 130,
         editable: false,
       },
-      { field: 'uom', title: 'UOM', widthT: 60, editable: false },
+      { field: 'uom', title: 'UOM', widthT: 80, editable: false },
       ...MONTHS.map((m, i) => ({
         field: m,
         title: headerMap[monthIndexMap[m]] || m,
@@ -269,7 +269,7 @@ const NormalOpNormsScreenCracker = () => {
         widthT: 130,
         editable: false,
       },
-      { field: 'uom', title: 'UOM', widthT: 60, editable: false },
+      { field: 'uom', title: 'UOM', widthT: 80, editable: false },
       ...MONTHS.map((m, i) => ({
         field: m,
         title: headerMap[monthIndexMap[m]] || m,
@@ -305,7 +305,7 @@ const NormalOpNormsScreenCracker = () => {
         widthT: 130,
         editable: false,
       },
-      { field: 'uom', title: 'UOM', widthT: 60, editable: false },
+      { field: 'uom', title: 'UOM', widthT: 80, editable: false },
       ...MONTHS.map((m, i) => ({
         field: m,
         title: headerMap[monthIndexMap[m]] || m,

@@ -12,7 +12,8 @@
     "field": "productName",
     "title": "Particulars",
     "editable": false,
-    "widthT": 100
+    "autoAdjust": false,
+    "widthT": 300
   },
   {
     "field": "UOM",
@@ -30,7 +31,8 @@
   {
     "field": "remarks",
     "title": "Remark",
-    "widthT": 100,
+    "widthT": 250,
+    "autoAdjust": false,
     "editable": true
   }
 ]

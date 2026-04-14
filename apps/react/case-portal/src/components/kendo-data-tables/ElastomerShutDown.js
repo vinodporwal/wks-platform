@@ -1013,12 +1013,14 @@ const ElastomerShutDown = ({ permissions }) => {
       title: 'Type of SD (Days)',
       type: 'typesdDropdown',
       editable: true,
+      widthT: 150,
     },
     {
       field: 'remarks',
       title: 'Remark',
       editable: true,
-      width: 200,
+      widthT: 250,
+      autoAdjust: false
     },
   ]
   const finishingShutdownColumns = [
@@ -1032,38 +1034,41 @@ const ElastomerShutDown = ({ permissions }) => {
       title: 'Year',
       type: 'yeardropdown',
       editable: true,
-      width: 200,
+      width: 150,
     },
     {
       field: 'monthly',
       title: 'Month',
       type: 'monthDropdown',
       editable: true,
-      width: 200,
+      width: 150,
     },
     {
       field: 'durationInHrs',
       title: 'Shutdown Hours',
       editable: true,
+      widthT: 150,
     },
     {
       field: 'shutdownDate',
       title: 'Shutdown Date',
       type: 'date',
       editable: true,
+      widthT: 150,
     },
     {
       field: 'category',
       title: 'Category',
       type: 'Categorydropdown',
       editable: true,
-      width: 200,
+      width: 150,
     },
     {
       field: 'remarks',
       title: 'Remark',
       editable: true,
-      width: 200,
+      widthT: 200,
+      autoAdjust: false
     },
   ]
   const deleteRowData = async (paramsForDelete) => {

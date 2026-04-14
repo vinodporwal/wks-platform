@@ -3,7 +3,7 @@
     "field": "sapCode",
     "title": "SAP MAT Code",
     "editable": false,
-    "width": 200
+    "width": 100
   },
   {
     "field": "Particulars",
@@ -27,7 +27,7 @@
     "field": "UOM",
     "title": "UOM / MT",
     "editable": false,
-    "widthT": 60
+    "widthT": 80
   },
   {
     "field": "april",

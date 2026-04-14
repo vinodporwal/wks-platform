@@ -164,7 +164,7 @@ export default function QualityPackagingNorms() {
       field: 'unit',
       title: 'Unit',
       editable: false,
-      widthT: 60,
+      widthT: 80,
     },
 
     {

@@ -3,7 +3,8 @@
     "field": "particulars",
     "title": "Particulars",
     "editable": false,
-    "widthT": 100,
+    "widthT": 250,
+    "autoAdjust": false,
     "hidden": false
   },
   {
@@ -17,20 +18,20 @@
     "title": "IIR",
     "editable": true,
     "type": "number",
-    "widthT": 100
+    "widthT": 120
   },
   {
     "field": "CIIR",
     "title": "CIIR",
     "editable": true,
     "type": "number",
-    "widthT": 100
+    "widthT": 120
   },
   {
     "field": "BIIR",
     "title": "BIIR",
     "editable": true,
     "type": "number",
-    "widthT": 100
+    "widthT": 120
   }
 ]

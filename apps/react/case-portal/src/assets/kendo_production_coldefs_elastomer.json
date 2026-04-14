@@ -23,13 +23,13 @@
     "field": "productName",
     "title": "Particulars",
     "editable": false,
-    "widthT": 200
+    "widthT": 120
   },
   {
     "field": "april",
     "title": "Value",
     "editable": true,
-    "widthT": 200,
+    "widthT": 100,
     "align": "left",
     "headerAlign": "left",
     "type": "number",

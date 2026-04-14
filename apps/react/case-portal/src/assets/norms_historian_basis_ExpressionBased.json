@@ -7,14 +7,14 @@
   {
     "field": "uom",
     "headerName": "UOM",
-    "widthT": 60,
+    "widthT": 80,
     "editable": false
   },
   {
     "field": "april",
     "headerName": 4,
     "editable": false,
-    "width": 120,
+    "widthT": 100,
     "align": "right",
     "format": "{0:#.###}",
     "type": "number"
@@ -23,7 +23,7 @@
     "field": "may",
     "headerName": 5,
     "editable": false,
-    "width": 120,
+    "widthT": 100,
     "align": "right",
     "format": "{0:#.###}",
     "type": "number"
@@ -33,7 +33,7 @@
     "headerName": 6,
     "editable": false,
     "type": "number",
-    "width": 120,
+    "widthT": 100,
     "align": "right",
     "format": "{0:#.###}"
   },
@@ -42,7 +42,7 @@
     "headerName": 7,
     "editable": false,
     "type": "number",
-    "width": 120,
+    "widthT": 100,
     "align": "right",
     "format": "{0:#.###}"
   },
@@ -50,7 +50,7 @@
     "field": "august",
     "headerName": 8,
     "editable": false,
-    "width": 120,
+    "widthT": 100,
     "type": "number",
     "align": "right",
     "format": "{0:#.###}"
@@ -59,7 +59,7 @@
     "field": "september",
     "headerName": 9,
     "editable": false,
-    "width": 120,
+    "widthT": 100,
     "align": "right",
     "type": "number",
     "format": "{0:#.###}"
@@ -68,7 +68,7 @@
     "field": "october",
     "headerName": 10,
     "editable": false,
-    "width": 120,
+    "widthT": 100,
     "type": "number",
     "align": "right",
     "format": "{0:#.###}"
@@ -77,7 +77,7 @@
     "field": "november",
     "headerName": 11,
     "editable": false,
-    "width": 120,
+    "widthT": 100,
     "align": "right",
     "type": "number",
     "format": "{0:#.###}"
@@ -86,7 +86,7 @@
     "field": "december",
     "headerName": 12,
     "editable": false,
-    "width": 120,
+    "widthT": 100,
     "align": "right",
     "type": "number",
     "format": "{0:#.###}"
@@ -95,7 +95,7 @@
     "field": "january",
     "headerName": 1,
     "editable": false,
-    "width": 120,
+    "widthT": 100,
     "align": "right",
     "type": "number",
     "format": "{0:#.###}"
@@ -104,7 +104,7 @@
     "field": "february",
     "headerName": 2,
     "editable": false,
-    "width": 120,
+    "widthT": 100,
     "type": "number",
     "align": "right",
     "format": "{0:#.###}"
@@ -113,7 +113,7 @@
     "field": "march",
     "headerName": 3,
     "editable": false,
-    "width": 120,
+    "widthT": 100,
     "type": "number",
     "align": "right",
     "format": "{0:#.###}"

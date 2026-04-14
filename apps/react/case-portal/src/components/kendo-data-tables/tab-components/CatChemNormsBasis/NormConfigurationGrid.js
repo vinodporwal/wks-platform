@@ -71,7 +71,8 @@ const NormsConfigurationGrid = ({
       field: 'displayName', // matches API
       title: 'Particulars',
       editable: false,
-      widthT: 100,
+      widthT: 300,
+      autoAdjust: false,
     },
     {
       field: 'uom',

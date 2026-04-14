@@ -127,7 +127,7 @@ const CrakcerProductionConst = () => {
       field: 'DisplayName',
       title: 'Particulars',
       editable: false,
-      widthT: 220,
+      widthT: 150,
       hidden: false,
     },
     {
@@ -149,6 +149,9 @@ const CrakcerProductionConst = () => {
       field: 'remarks',
       title: 'Remark',
       editable: false,
+      widthT: 140,
+      minWidth: 80,
+      autoAdjust: false,
       type: 'string',
     },
   ]

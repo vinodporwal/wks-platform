@@ -74,6 +74,9 @@ const ProductionTargetBasis = () => {
 
   const enrichColumns = useCallback(
     (backendCols = []) => {
+      const filteredCols = backendCols.filter((col) => col.field !== 'GRID_TYPE')
+      const applyFixedWidth = filteredCols.length < 7
+      const fixedWidth = applyFixedWidth ? 150 : 121
       return backendCols
         .filter((col) => col.field !== 'GRID_TYPE')
         .map((col) => {
@@ -88,6 +91,7 @@ const ProductionTargetBasis = () => {
             ...(isNumberCol ? { format: '{0:0.0000}' } : {}),
             editable: false,
             isRightAlligned: isNumberCol ? 'numeric' : undefined,
+            ...(fixedWidth ? { widthT: fixedWidth } : {}),
           }
         })
     },
@@ -216,12 +220,18 @@ const ProductionTargetBasis = () => {
           Array.isArray(g.columns) && g.columns.length
             ? g.columns
             : inferColumnsFromRows(rawRows)
-        const enrichedCols = enrichColumns(inferredCols)
+        let enrichedCols = enrichColumns(inferredCols)
 
         const rowsWithId = rawRows.map((r, i) => {
           const parsed = normalizeRowValues(r, inferredCols)
           return { ...parsed, id: i, isEditable: false }
         })
+
+        if (g.gridName === 'Raw Data - Max Achieved Capacity') {
+          enrichedCols = enrichedCols.map((col) => {
+            return { ...col, widthT: 120 }
+          })
+        }
 
         newMap[g.gridName] = { rows: rowsWithId, columns: enrichedCols }
       })

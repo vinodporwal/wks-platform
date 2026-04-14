@@ -85,7 +85,7 @@ const TurnaroundReport = () => {
     {
       field: 'activity',
       title: 'Activities',
-      widthT: 300,
+      widthT: 130,
       editable: true,
     },
 
@@ -112,7 +112,7 @@ const TurnaroundReport = () => {
     {
       field: 'durationInHrs',
       title: 'Duration, hrs',
-      widthT: 100,
+      widthT: 120,
       editable: true,
       align: 'right',
       headerAlign: 'right',
@@ -122,7 +122,7 @@ const TurnaroundReport = () => {
     {
       field: 'remarks',
       title: 'Remark',
-      widthT: 300,
+      widthT: 80,
       editable: true,
     },
   ]
@@ -133,7 +133,7 @@ const TurnaroundReport = () => {
     {
       field: 'activity',
       title: 'Activities',
-      widthT: 300,
+      widthT: 130,
       editable: true,
     },
 
@@ -153,7 +153,7 @@ const TurnaroundReport = () => {
     {
       field: 'durationInHrs1',
       title: 'Duration, hrs',
-      widthT: 150,
+      widthT: 110,
       type: 'number',
       editable: true,
       align: 'right',
@@ -163,7 +163,7 @@ const TurnaroundReport = () => {
     {
       field: 'periodInMonths',
       title: 'Period in Months',
-      widthT: 150,
+      widthT: 110,
       type: 'number',
       editable: true,
       align: 'right',
@@ -173,7 +173,7 @@ const TurnaroundReport = () => {
     {
       field: 'remarks',
       title: 'Remark',
-      widthT: 300,
+      widthT: 100,
       editable: true,
     },
   ]
@@ -488,7 +488,6 @@ const TurnaroundReport = () => {
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
         setCurrentRowId={setCurrentRowId}
-        loading={loading}
         handleRemarkCellClick={handleRemarkCellClick}
         title='Turnaround Details (T-19A)'
         setModifiedCells={setModifiedCells}
@@ -527,7 +526,6 @@ const TurnaroundReport = () => {
         setCurrentRowId={setCurrentRowId2}
         saveChanges={saveChanges2}
         handleRemarkCellClick={handleRemarkCellClick2}
-        loading={loading}
         fetchData={fetchPreviousYear}
         setModifiedCells={setModifiedCells2}
         deleteRowData={deleteRowData}

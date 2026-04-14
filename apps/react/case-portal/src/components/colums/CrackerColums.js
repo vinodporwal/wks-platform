@@ -13,14 +13,14 @@ export const CrackerColums = [
   {
     field: 'uom',
     title: 'UOM',
-    widthT: 60,
+    widthT: 80,
     editable: false,
   },
   {
     field: 'april',
     title: 4,
     editable: true,
-    width: 120,
+    width: 100,
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
@@ -30,7 +30,7 @@ export const CrackerColums = [
     title: 5,
     editable: true,
 
-    width: 120,
+    width: 100,
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
@@ -40,7 +40,7 @@ export const CrackerColums = [
     title: 6,
     editable: true,
 
-    width: 120,
+    width: 100,
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
@@ -50,7 +50,7 @@ export const CrackerColums = [
     title: 7,
     editable: true,
 
-    width: 120,
+    width: 100,
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
@@ -61,7 +61,7 @@ export const CrackerColums = [
     title: 8,
     editable: true,
 
-    width: 120,
+    width: 100,
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
@@ -71,7 +71,7 @@ export const CrackerColums = [
     title: 9,
     editable: true,
 
-    width: 120,
+    width: 100,
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
@@ -81,7 +81,7 @@ export const CrackerColums = [
     title: 10,
     editable: true,
 
-    width: 120,
+    width: 100,
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
@@ -91,7 +91,7 @@ export const CrackerColums = [
     title: 11,
     editable: true,
 
-    width: 120,
+    width: 100,
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
@@ -100,7 +100,7 @@ export const CrackerColums = [
     field: 'december',
     title: 12,
     editable: true,
-    width: 120,
+    width: 100,
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
@@ -109,7 +109,7 @@ export const CrackerColums = [
     field: 'january',
     title: 1,
     editable: true,
-    width: 120,
+    width: 100,
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
@@ -118,7 +118,7 @@ export const CrackerColums = [
     field: 'february',
     title: 2,
     editable: true,
-    width: 120,
+    width: 100,
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
@@ -127,7 +127,7 @@ export const CrackerColums = [
     field: 'march',
     title: 3,
     editable: true,
-    width: 120,
+    width: 100,
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
@@ -149,7 +149,7 @@ export const CrackerColumsForYearlyNorms = [
   {
     field: 'uom',
     title: 'UOM',
-    widthT: 60,
+    widthT: 80,
     editable: false,
   },
 
@@ -177,7 +177,7 @@ export const ShutdownConsumptionCrackerColumns = [
     widthT: 130,
     editable: false,
   },
-  { field: 'UOM', headerName: 'UOM', widthT: 60, editable: false },
+  { field: 'UOM', headerName: 'UOM', widthT: 80, editable: false },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12

@@ -691,25 +691,25 @@ const SiteAOPReport = ({ permissions }) => {
       format: '{0:0}',
     },
     { field: 'plant', title: 'Plant', widthT: 120, editable: true },
-    { field: 'tph', title: 'TPH', widthT: 100, editable: true, type: 'number' },
+    { field: 'tph', title: 'TPH', widthT: 120, editable: true, type: 'number' },
     {
       field: 'fy26Aop',
       title: 'FY26 AOP',
-      widthT: 100,
+      widthT: 150,
       editable: true,
       type: 'number',
     },
     {
       field: 'fy26Actual',
       title: 'FY26 Actual',
-      widthT: 100,
+      widthT: 150,
       editable: true,
       type: 'number',
     },
     {
       field: 'fy27Aop',
       title: 'FY27 AOP',
-      widthT: 100,
+      widthT: 150,
       editable: true,
       type: 'number',
     },
@@ -800,7 +800,7 @@ const SiteAOPReport = ({ permissions }) => {
       editable: true,
       type: 'date',
     },
-    { field: 'resp', title: 'Resp.', widthT: 100, editable: true },
+    { field: 'resp', title: 'Resp.', widthT: 200, editable: true },
   ]
 
   const majorProcessIncidentsFy26Rows = [

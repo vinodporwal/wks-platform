@@ -2,7 +2,7 @@
   {
     "field": "Particulars",
     "title": "Type",
-    "widthT": 200,
+    "widthT": 100,
     "editable": false,
     "hidden": true
   },

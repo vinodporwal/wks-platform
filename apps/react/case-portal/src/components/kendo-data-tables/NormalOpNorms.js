@@ -320,7 +320,7 @@ const NormalOpNormsScreen = () => {
     {
       field: 'UOM',
       title: 'UOM',
-      widthT: 60,
+      widthT: 80,
       editable: false,
     },
     {

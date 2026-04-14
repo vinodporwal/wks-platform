@@ -12,7 +12,7 @@ export function getColDefsPercentageSummary(headerMap = {}, valueFormat) {
     {
       field: 'productName',
       title: 'Particulars',
-      widthT: 100,
+      widthT: 120,
       editable: false,
     },
     ...generateMonthColumnsFixedWidth(headerMap, false, valueFormat),
@@ -40,11 +40,12 @@ export function getColDefsPercentageSummaryElastomerJMD(
       title: 'Particulars',
       widthT: 200,
       editable: false,
+      autoAdjust: false
     },
     {
       field: 'april',
       title: 'Value',
-      widthT: 200,
+      widthT: 100,
       editable: false,
       type: 'number',
       format: valueFormat,
@@ -69,7 +70,7 @@ export function getColDefsPercentageSummaryPEPP(headerMap = {}, valueFormat) {
     {
       field: 'productName',
       title: 'Particulars',
-      widthT: 100,
+      widthT: 120,
       editable: false,
     },
     ...generateMonthColumnsPercentageSummaryPPE(headerMap, false, valueFormat),
@@ -91,7 +92,7 @@ export function getColDefsDesignCapacity(headerMap = {}, valueFormat) {
     {
       field: 'productName',
       title: 'Particulars',
-      widthT: 100,
+      widthT: 120,
       editable: false,
     },
     ...generateMonthColumns(headerMap, true, valueFormat),
@@ -101,7 +102,7 @@ export function getColDefsDesignCapacity(headerMap = {}, valueFormat) {
       editable: true,
       align: 'left',
       headerAlign: 'left',
-      widthT: 90,
+      widthT: 100,
     },
   ]
 }
@@ -118,7 +119,7 @@ export function getColDefsDesignCapacityPTA(headerMap = {}, valueFormat) {
     {
       field: 'productName',
       title: 'Particulars',
-      widthT: 100,
+      widthT: 120,
       editable: false,
     },
     ...generateMonthColumnsPTA(headerMap, true, valueFormat),
@@ -128,7 +129,7 @@ export function getColDefsDesignCapacityPTA(headerMap = {}, valueFormat) {
       editable: true,
       align: 'left',
       headerAlign: 'left',
-      widthT: 90,
+      widthT: 100,
     },
   ]
 }
@@ -144,7 +145,7 @@ export function getColDefsDesignCapacityPTADMD(headerMap = {}, valueFormat) {
     {
       field: 'productName',
       title: 'Particulars',
-      widthT: 100,
+      widthT: 120,
       editable: false,
     },
     ...generateMonthColumnsPTA(headerMap, true, valueFormat),
@@ -172,13 +173,14 @@ export function getColDefsDesignCapacityAROMATICS(headerMap = {}, valueFormat) {
       title: 'Particulars',
       widthT: 200,
       editable: false,
+      autoAdjust: false
     },
     {
       field: 'april',
       title: 'PAREX#1',
       editable: true,
       align: 'left',
-      widthT: 200,
+      widthT: 110,
       headerAlign: 'left',
       type: 'number',
       format: valueFormat,
@@ -188,7 +190,7 @@ export function getColDefsDesignCapacityAROMATICS(headerMap = {}, valueFormat) {
       title: 'PAREX#2',
       editable: true,
       align: 'left',
-      widthT: 200,
+      widthT: 110,
       headerAlign: 'left',
       type: 'number',
       format: valueFormat,
@@ -198,7 +200,7 @@ export function getColDefsDesignCapacityAROMATICS(headerMap = {}, valueFormat) {
       title: 'PAREX#3',
       editable: true,
       align: 'left',
-      widthT: 200,
+      widthT: 110,
       headerAlign: 'left',
       type: 'number',
       format: valueFormat,
@@ -208,7 +210,7 @@ export function getColDefsDesignCapacityAROMATICS(headerMap = {}, valueFormat) {
       title: 'Total',
       editable: false,
       align: 'left',
-      widthT: 200,
+      widthT: 110,
       headerAlign: 'left',
       type: 'number',
       format: valueFormat,
@@ -219,6 +221,7 @@ export function getColDefsDesignCapacityAROMATICS(headerMap = {}, valueFormat) {
       editable: true,
       align: 'left',
       headerAlign: 'left',
+      autoAdjust: false
     },
   ]
 }
@@ -237,15 +240,16 @@ export function getColDefsDesignCapacityELASTOMERJMD(
     {
       field: 'productName',
       title: 'Particulars',
-      widthT: 200,
+      widthT: 250,
       editable: false,
+      autoAdjust: false
     },
     {
       field: 'april',
       title: 'Value',
       editable: false,
       align: 'left',
-      widthT: 200,
+      widthT: 100,
       headerAlign: 'left',
       type: 'number',
       format: valueFormat,
@@ -265,7 +269,7 @@ export function getColDefsDesignCapacityPEPP(headerMap = {}, valueFormat) {
     {
       field: 'productName',
       title: 'Particulars',
-      widthT: 100,
+      widthT: 250,
       editable: false,
     },
     ...generateMonthColumnsForPEPP(headerMap, false, valueFormat, true),
@@ -284,7 +288,7 @@ export function getColDefsMaxAchievedCapacity(headerMap = {}, valueFormat) {
     {
       field: 'productName',
       title: 'Particulars',
-      widthT: 100,
+      widthT: 120,
       editable: false,
     },
     ...generateMonthColumnsFixedWidth(headerMap, true, valueFormat),
@@ -303,7 +307,7 @@ export function getColDefsMaxAchievedCapacityPTA(headerMap = {}, valueFormat) {
     {
       field: 'productName',
       title: 'Particulars',
-      widthT: 100,
+      widthT: 120,
       editable: false,
     },
     ...generateMonthColumnsFixedWidthPTA(headerMap, true, valueFormat),
@@ -322,7 +326,7 @@ export function getColDefsMaxAchievedCapacityPEPP(headerMap = {}, valueFormat) {
     {
       field: 'productName',
       title: 'Particulars',
-      widthT: 100,
+      widthT: 120,
       editable: false,
     },
     ...generateMonthColumnsFixedWidthPEPP(headerMap, true, valueFormat),
@@ -346,12 +350,13 @@ export function getColDefsMaxAchievedCapacityAROMATICS(
       title: 'Particulars',
       widthT: 200,
       editable: false,
+      autoAdjust: false
     },
     {
       field: 'april',
       title: 'PAREX#1',
       align: 'left',
-      widthT: 200,
+      widthT: 110,
       editable: true,
       headerAlign: 'left',
       type: 'number',
@@ -361,7 +366,7 @@ export function getColDefsMaxAchievedCapacityAROMATICS(
       field: 'may',
       title: 'PAREX#2',
       align: 'left',
-      widthT: 200,
+      widthT: 110,
       editable: true,
       headerAlign: 'left',
       type: 'number',
@@ -371,7 +376,7 @@ export function getColDefsMaxAchievedCapacityAROMATICS(
       field: 'june',
       title: 'PAREX#3',
       editable: true,
-      widthT: 200,
+      widthT: 110,
       align: 'left',
       headerAlign: 'left',
       type: 'number',
@@ -382,7 +387,7 @@ export function getColDefsMaxAchievedCapacityAROMATICS(
       title: 'Total',
       editable: false,
       align: 'left',
-      widthT: 200,
+      widthT: 110,
       headerAlign: 'left',
       type: 'number',
       format: valueFormat,
@@ -393,6 +398,7 @@ export function getColDefsMaxAchievedCapacityAROMATICS(
       editable: true,
       align: 'left',
       headerAlign: 'left',
+      autoAdjust: false
     },
   ]
 }
@@ -411,14 +417,15 @@ export function getColDefsMaxAchievedCapacityELASTOMERJMD(
     {
       field: 'productName',
       title: 'Particulars',
-      widthT: 200,
+      widthT: 250,
       editable: false,
+      autoAdjust: false
     },
     {
       field: 'april',
       title: 'Value',
       align: 'left',
-      widthT: 200,
+      widthT: 100,
       editable: false,
       headerAlign: 'left',
       type: 'number',
@@ -441,7 +448,7 @@ export function getColDefsNonEditable(headerMap = {}, valueFormat) {
     {
       field: 'productName',
       title: 'Particulars',
-      widthT: 100,
+      widthT: 120,
       editable: false,
     },
     ...generateMonthColumns(headerMap, false, valueFormat),

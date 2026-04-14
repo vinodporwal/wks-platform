@@ -3,7 +3,7 @@
     "field": "Particulars",
     "title": "Type",
     "editable": false,
-    "width": 200,
+    "width": 100,
     "hidden": true
   },
   {
@@ -21,7 +21,7 @@
     "field": "UOM",
     "title": "UOM / MT",
     "editable": false,
-    "widthT": 60
+    "widthT": 80
   },
   {
     "field": "april",

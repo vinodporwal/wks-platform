@@ -135,16 +135,18 @@ export default function RelPerf() {
       field: 'incidentDescription',
       title: 'Incident Description',
       editable: true,
+      widthT: 170,
     },
     {
       field: 'rootCauseAnalysis',
       title: 'Root Cause Analysis',
       editable: true,
+      widthT: 170,
     },
-    { field: 'recommendation', title: 'Recommendation', editable: true },
-    { field: 'targetDate', title: 'Target Date', editable: true, type: 'date' },
-    { field: 'responsible', title: 'Resp.', editable: true },
-    { field: 'remarks', title: 'Remarks', editable: true },
+    { field: 'recommendation', title: 'Recommendation', editable: true, widthT: 170 },
+    { field: 'targetDate', title: 'Target Date', editable: true, type: 'date', widthT: 170 },
+    { field: 'responsible', title: 'Resp.', editable: true, widthT: 170 },
+    { field: 'remarks', title: 'Remarks', editable: true, widthT: 200 },
   ]
 
   const [majorIncidentsRows, setMajorIncidentsRows] = useState([])
@@ -283,14 +285,15 @@ export default function RelPerf() {
       editable: false,
       type: 'number',
     },
-    { field: 'parameter', title: 'Parameter', editable: false },
-    { field: 'uom', title: 'UOM', editable: false, widthT: 70 },
+    { field: 'parameter', title: 'Parameter', editable: false, widthT: 130 },
+    { field: 'uom', title: 'UOM', editable: false, widthT: 80 },
     {
       field: 'bestAchieved',
       title: 'Best Achieved',
       editable: true,
       type: 'numberWithUOMValidation',
       format: FORMATE_DECIMAL,
+      widthT: 120,
     },
     {
       field: 'aop',
@@ -298,6 +301,7 @@ export default function RelPerf() {
       editable: true,
       type: 'numberWithUOMValidation',
       format: FORMATE_DECIMAL,
+      widthT: 120,
     },
     {
       field: 'actual',
@@ -305,6 +309,7 @@ export default function RelPerf() {
       editable: true,
       type: 'numberWithUOMValidation',
       format: FORMATE_DECIMAL,
+      widthT: 100,
     },
     {
       field: 'plann',
@@ -312,17 +317,20 @@ export default function RelPerf() {
       editable: true,
       type: 'numberWithUOMValidation',
       format: FORMATE_DECIMAL,
+      widthT: 100,
     },
-    { field: 'limit', title: 'Limit', editable: true },
+    { field: 'limit', title: 'Limit', editable: true, widthT: 100 },
     {
       field: 'rationale',
       title: 'Rationale / Reasons for Changes',
       editable: true,
+      widthT: 120,
     },
     {
       field: 'remarks',
       title: 'Remarks',
       editable: true,
+      widthT: 120,
     },
   ]
 
@@ -470,14 +478,14 @@ export default function RelPerf() {
       editable: false,
       type: 'number',
     },
-    { field: 'parameter', title: 'Parameter', editable: false },
-    { field: 'uom', title: 'UOM', editable: false, widthT: 70 },
+    { field: 'parameter', title: 'Parameter', editable: false, widthT: 140 },
+    { field: 'uom', title: 'UOM', editable: false, widthT: 80 },
     {
       field: 'bestAchieved',
       title: 'Best Achieved',
       editable: true,
       format: FORMATE_DECIMAL,
-
+      widthT: 120,
       type: 'numberWithUOMValidation',
     },
     {
@@ -485,7 +493,7 @@ export default function RelPerf() {
       title: `FY${startYear.slice(-2)} AOP`,
       editable: true,
       format: FORMATE_DECIMAL,
-
+      widthT: 120,
       type: 'numberWithUOMValidation',
     },
     {
@@ -493,7 +501,7 @@ export default function RelPerf() {
       title: `FY${startYear.slice(-2)} Actual`,
       editable: true,
       format: FORMATE_DECIMAL,
-
+      widthT: 120,
       type: 'numberWithUOMValidation',
     },
     {
@@ -501,7 +509,7 @@ export default function RelPerf() {
       title: `FY${endYear} Plan`,
       editable: true,
       format: FORMATE_DECIMAL,
-
+      widthT: 120,
       type: 'numberWithUOMValidation',
     },
     // { field: 'limit', title: 'Limit', editable: true },
@@ -510,18 +518,19 @@ export default function RelPerf() {
       field: 'rationale',
       title: 'Rationale / Reasons for Changes',
       editable: true,
+      widthT: 120,
     },
-    { field: 'remarks', title: 'Remarks', editable: true },
+    { field: 'remarks', title: 'Remarks', editable: true, widthT: 160 },
   ]
 
   // Reliability Improvement Initiative Grid
   const reliabilityInitiativeColumns = [
-    { field: 'initiative', title: 'Initiative', editable: true },
-    { field: 'outcome', title: 'Outcome', editable: true },
-    { field: 'recommendation', title: 'Recommendation', editable: true },
-    { field: 'targetDate', title: 'Target Date', editable: true, type: 'date' },
-    { field: 'responsible', title: 'Resp.', editable: true },
-    { field: 'remarks', title: 'Remarks', editable: true },
+    { field: 'initiative', title: 'Initiative', editable: true, widthT: 170 },
+    { field: 'outcome', title: 'Outcome', editable: true, widthT: 170 },
+    { field: 'recommendation', title: 'Recommendation', editable: true, widthT: 170 },
+    { field: 'targetDate', title: 'Target Date', editable: true, type: 'date', widthT: 170 },
+    { field: 'responsible', title: 'Resp.', editable: true, widthT: 170 },
+    { field: 'remarks', title: 'Remarks', editable: true, widthT: 200 },
   ]
 
   // Permissions (reuse for all grids or customize per grid)

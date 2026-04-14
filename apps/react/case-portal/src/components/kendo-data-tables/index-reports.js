@@ -53,6 +53,7 @@ import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
 import DownloadIcon from '@mui/icons-material/Download'
 import UploadIcon from '@mui/icons-material/Upload'
 import CalculateIcon from '@mui/icons-material/Calculate'
+import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import SaveIcon from '@mui/icons-material/Save'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
@@ -862,6 +863,8 @@ const KendoDataTablesReports = ({
                 onClick={handleRelease}
                 disabled={isReleaseDisabled || READ_ONLY}
                 className='btn-save'
+                sx={{ color: '#bfa161ff' }}
+                startIcon={<TrendingUpIcon sx={{ fontSize: 16, color: '#bfa161ff' }} />}
               >
                 {/* Submit */}
                 Release

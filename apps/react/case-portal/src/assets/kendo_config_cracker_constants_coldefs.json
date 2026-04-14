@@ -3,7 +3,8 @@
     "field": "DisplayName",
     "title": "Particulars",
     "editable": false,
-    "widthT": 100,
+    "widthT": 250,
+    "autoAdjust": false,
     "hidden": false
   },
   {
@@ -24,6 +25,8 @@
     "field": "remarks",
     "title": "Remark",
     "editable": false,
+    "widthT": 250,
+    "autoAdjust": false,
     "type": "string"
   },
   {

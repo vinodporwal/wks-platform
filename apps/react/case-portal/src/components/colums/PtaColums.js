@@ -11,7 +11,7 @@ export const BusinessDemandPtaColumns = [
     field: 'normParameterId',
     title: 'Particulars',
     editable: false,
-    width: 125,
+    width: 100,
     hidden: true,
   },
 
@@ -147,6 +147,8 @@ export const SlowDownPtaColumns = [
     field: 'discription',
     title: 'Slowdown Desc',
     editable: true,
+    widthT: 150,
+    autoAdjust: false
   },
 
   {
@@ -193,6 +195,8 @@ export const SlowDownPtaColumns = [
     field: 'remark',
     title: 'Remarks',
     editable: true,
+    widthT: 150,
+    autoAdjust: false
   },
 ]
 export const SlowDownPtadmdColumns = [
@@ -201,7 +205,8 @@ export const SlowDownPtadmdColumns = [
     title: 'Slowdown Desc',
     editable: true,
     type: 'discriptionDrpdwn',
-    widthT: 100,
+    widthT: 150,
+    autoAdjust: false
   },
   {
     field: 'maintenanceId',
@@ -250,6 +255,8 @@ export const SlowDownPtadmdColumns = [
     title: 'Remarks',
     editable: true,
     width: 100,
+    widthT: 150,
+    autoAdjust: false
   },
 ]
 
@@ -271,13 +278,13 @@ export const NormalOpNormPtaColumns = [
   {
     field: 'productName',
     title: 'Particulars',
-    widthT: 100,
+    widthT: 120,
   },
 
   {
     field: 'UOM',
     title: 'UOM / MT',
-    widthT: 100,
+    widthT: 90,
     editable: false,
   },
 
@@ -409,7 +416,7 @@ export const NormalOpNormPtaColumns = [
   {
     field: 'remarks',
     title: 'Remark',
-    width: 125,
+    width: 100,
     editable: true,
   },
 
@@ -443,10 +450,10 @@ export const ShutdownConsumptionPtaColumns = [
   {
     field: 'productName',
     headerName: 'Particulars',
-    width: 180,
+    width: 120,
     editable: false,
   },
-  { field: 'UOM', headerName: 'UOM/MT', width: 150, editable: false },
+  { field: 'UOM', headerName: 'UOM/MT', width: 90, editable: false },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
@@ -495,10 +502,10 @@ export const ShutdownConsumptionPtadmdColumns = [
   {
     field: 'productName',
     headerName: 'Particulars',
-    width: 180,
+    width: 120,
     editable: false,
   },
-  { field: 'UOM', headerName: 'UOM', width: 150, editable: false },
+  { field: 'UOM', headerName: 'UOM', width: 80, editable: false },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
@@ -548,10 +555,10 @@ export const SlowdownNormsPtaColumns = [
   {
     field: 'productName',
     headerName: 'Particulars',
-    width: 180,
+    width: 120,
     editable: false,
   },
-  { field: 'UOM', headerName: 'UOM', width: 150, editable: false },
+  { field: 'UOM', headerName: 'UOM', width: 80, editable: false },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12

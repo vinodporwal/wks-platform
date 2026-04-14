@@ -962,6 +962,7 @@ const ProductionNorms = ({ permissions }) => {
       title: 'Product',
       widthT: 200,
       editable: false,
+      autoAdjust: false
     },
     {
       field: 'value',
@@ -970,6 +971,7 @@ const ProductionNorms = ({ permissions }) => {
       type: 'number',
       widthT: 200,
       format: valueFormat,
+      autoAdjust: false
     },
     {
       field: 'type',

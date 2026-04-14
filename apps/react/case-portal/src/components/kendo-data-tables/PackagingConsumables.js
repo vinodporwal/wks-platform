@@ -245,7 +245,7 @@ const PackagingConsumables = (permissions) => {
     {
       field: 'UOM',
       title: 'UOM',
-      widthT: 60,
+      widthT: 80,
       editable: false,
     },
     ...monthColumns,

@@ -82,16 +82,16 @@ const TurnaroundReportCracker = () => {
     {
       field: 'sapCode',
       headerName: 'SAP MAT Code',
-      widthT: 130,
+      widthT: 100,
       editable: false,
     },
     {
       field: 'productName',
       headerName: 'Particulars',
-      widthT: 130,
+      widthT: 100,
       editable: false,
     },
-    { field: 'UOM', headerName: 'UOM', widthT: 60, editable: false },
+    { field: 'UOM', headerName: 'UOM', widthT: 80, editable: false },
 
     ...Array.from({ length: 12 }, (_, i) => {
       const monthIndex = (i + 4) % 12 || 12

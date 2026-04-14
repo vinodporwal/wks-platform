@@ -13,14 +13,14 @@
   {
     "field": "DisplayName",
     "title": "Particulars",
-    "widthT": 140,
+    "widthT": 120,
     "editable": false
   },
   {
     "field": "UOM",
     "title": "UOM",
     "editable": false,
-    "widthT": 60
+    "widthT": 80
   },
   {
     "field": "Apr",

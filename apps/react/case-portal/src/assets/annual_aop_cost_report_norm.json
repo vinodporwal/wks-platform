@@ -2,7 +2,7 @@
   {
     "field": "norm",
     "headerName": "Type",
-    "minWidth": 125,
+    "widthT": 125,
     "editable": false
   },
   {
@@ -18,7 +18,7 @@
     "editable": false,
     "align": "left",
     "headerAlign": "left",
-    "minWidth": 125,
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -27,7 +27,7 @@
     "editable": false,
     "align": "left",
     "headerAlign": "left",
-    "minWidth": 125,
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -36,7 +36,7 @@
     "editable": false,
     "align": "left",
     "headerAlign": "left",
-    "minWidth": 125,
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -45,7 +45,7 @@
     "editable": false,
     "align": "left",
     "headerAlign": "left",
-    "minWidth": 125,
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -54,7 +54,7 @@
     "editable": false,
     "align": "left",
     "headerAlign": "left",
-    "minWidth": 125,
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -63,7 +63,7 @@
     "editable": false,
     "align": "left",
     "headerAlign": "left",
-    "minWidth": 125,
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -72,7 +72,7 @@
     "editable": false,
     "align": "left",
     "headerAlign": "left",
-    "minWidth": 125,
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -81,7 +81,7 @@
     "editable": false,
     "align": "left",
     "headerAlign": "left",
-    "minWidth": 125,
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -90,7 +90,7 @@
     "editable": false,
     "align": "left",
     "headerAlign": "left",
-    "minWidth": 125,
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -99,7 +99,7 @@
     "editable": false,
     "align": "left",
     "headerAlign": "left",
-    "minWidth": 125,
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -108,7 +108,7 @@
     "editable": false,
     "align": "left",
     "headerAlign": "left",
-    "minWidth": 125,
+    "widthT": 100,
     "type": "number"
   },
   {
@@ -117,14 +117,14 @@
     "editable": false,
     "align": "left",
     "headerAlign": "left",
-    "minWidth": 125,
+    "widthT": 100,
     "type": "number"
   },
   {
     "field": "total",
     "headerName": "Total",
     "editable": false,
-    "minWidth": 125,
+    "widthT": 100,
     "type": "number"
   }
 ]
