@@ -71,14 +71,18 @@ public class CrudeBlendWindowController {
     }
 
 
-    @PostMapping("/crude-blend-window/{plantId}/{siteId}/{financialYear}/{table}")
-    public void updateCrudeBlendWindow(@RequestBody CrudeBlendWindowPostRequestDTO<?> payload, @PathVariable String plantId, @PathVariable String siteId, @PathVariable String financialYear, @PathVariable String table) {
+    @PostMapping("/crude-blend-window/{plantId}/{verticalId}/{siteId}/{financialYear}/{table}")
+    public void updateCrudeBlendWindow(@RequestBody CrudeBlendWindowPostRequestDTO<?> payload, @PathVariable String plantId, @PathVariable String verticalId, @PathVariable String siteId, @PathVariable String financialYear, @PathVariable String table) {
 
         if(financialYear == null || financialYear.length() != 4) {
             throw new IllegalArgumentException("Financial year must be 4 digits");
         }
 
-       crudeBlendWindowService.updateCrudeBlendWindowData(payload, plantId, siteId, financialYear, table);
+        if(verticalId == null || verticalId.isEmpty()) {
+            throw new IllegalArgumentException("Vertical ID is required");
+        }
+
+       crudeBlendWindowService.updateCrudeBlendWindowData(payload, plantId, verticalId, siteId, financialYear, table);
         
     }
 
@@ -128,6 +132,7 @@ public class CrudeBlendWindowController {
     @PostMapping("/crude-blend-window/import")
     public AOPMessageVM importCrudeBlendWindow(
         @RequestParam String plantId,
+        @RequestParam String verticalId,
         @RequestParam String siteId,
         @RequestParam String financialYear,
         @RequestParam String table,
@@ -141,6 +146,9 @@ public class CrudeBlendWindowController {
         if(plantId == null || plantId.isEmpty()) {
             throw new IllegalArgumentException("Plant ID is required");
         }
+        if(verticalId == null || verticalId.isEmpty()) {
+            throw new IllegalArgumentException("Vertical ID is required");
+        }
         if(siteId == null || siteId.isEmpty()) {
             throw new IllegalArgumentException("Site ID is required");
         }
@@ -150,6 +158,7 @@ public class CrudeBlendWindowController {
 
         return crudeBlendWindowService.importExcel(
             plantId,
+            verticalId,
             siteId,
             financialYear,
             table,
