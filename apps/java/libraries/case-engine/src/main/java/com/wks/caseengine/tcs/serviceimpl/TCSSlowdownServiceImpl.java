@@ -106,7 +106,7 @@ if(plantId != null) {
                 aopYear,
                 vertical.getName().toUpperCase(),
                 site.getId(),
-                UUID.fromString(verticalId),
+                plantId != null ? null : UUID.fromString(verticalId),
                 site.getName().toUpperCase());
             List<TCSSlowdownDTO> resultsList = new ArrayList<>();
             //values mapping
@@ -228,6 +228,7 @@ if(plantId != null) {
         String aopYear,
         String verticalName,
         UUID siteId1,
+        UUID verticalId,
         String siteName) {
 
            String siteId = siteId1.toString();
@@ -248,7 +249,7 @@ if(plantId != null) {
         callableSql = "{call " + procedureName + "(?, ?)}";
         }
         else {
-            callableSql = "{call " + procedureName + "(?, ?)}";
+            callableSql = "{call " + procedureName + "(?, ?, ?)}";
         }
 
         List<String> headers = new ArrayList<>();
@@ -263,8 +264,9 @@ if(plantId != null) {
             }
             else {
              //   stmt.setString(1, siteId.toString());
-                stmt.setString(1, siteId);
-                stmt.setString(2, aopYear);
+                stmt.setString(1, String.valueOf(verticalId));
+                stmt.setString(2, String.valueOf(siteId));
+                stmt.setString(3, aopYear);
             }
 
 			boolean hasResultSet = stmt.execute();

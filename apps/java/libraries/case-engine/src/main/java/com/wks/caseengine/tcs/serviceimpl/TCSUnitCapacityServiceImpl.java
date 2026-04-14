@@ -126,7 +126,7 @@ Verticals vertical = null;
                 aopYear,
                 vertical.getName().toUpperCase(),
                 site.getId(),
-                UUID.fromString(verticalId),
+                plantId != null ? null : UUID.fromString(verticalId),
                 capacityType
                // uom
             );  
@@ -222,7 +222,7 @@ Verticals vertical = null;
             }
             else {
               //  sql = "EXEC " + procedureName + " @aopYear = :aopYear, @capacityType = :capacityType";
-              sql = "EXEC " + procedureName + " ?, ?, ? , ?";
+              sql = "EXEC " + procedureName + " @verticalId = :verticalId, @siteId = :siteId, @aopYear = :aopYear, @capacityType = :capacityType";
 
             }
 

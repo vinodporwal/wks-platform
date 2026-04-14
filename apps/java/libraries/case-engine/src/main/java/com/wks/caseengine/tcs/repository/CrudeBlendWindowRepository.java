@@ -39,8 +39,8 @@ public interface CrudeBlendWindowRepository extends JpaRepository<DummyEntity, L
                  Remarks, Type
           FROM CrudeBlendWindow
           WHERE 
-            Vertical_FK_Id = :verticalId
-             Site_FK_Id = :siteId
+            Vertical_FK_Id = :verticalId  
+            AND Site_FK_Id = :siteId
             AND FinancialYear = :financialYear
           """,
       nativeQuery = true
