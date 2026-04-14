@@ -10,6 +10,8 @@ import { useSession } from 'SessionStoreContext'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
+import ModeSelection from './ModeSelection'
+
 const CrackerConfig = () => {
   const keycloak = useSession()
 
@@ -312,7 +314,7 @@ const CrackerConfig = () => {
       if (!PLANT_ID || !AOP_YEAR) return
       try {
         setLoading(true)
-        if (IS_CRACKER_HMD){
+        if (IS_CRACKER_HMD) {
           mode = currentTabDisplay
         }
         const spyroVM = await DataService.getSpyroOutputData(
@@ -354,7 +356,7 @@ const CrackerConfig = () => {
       try {
         setLoading(true)
         var spyroVMYield1 = []
-        if (IS_CRACKER_HMD){
+        if (IS_CRACKER_HMD) {
           mode = currentTabDisplay
         }
         if (currentTabDisplay == 'Yield') {
@@ -753,7 +755,7 @@ const CrackerConfig = () => {
 
     try {
       let mode = selectMode || '' // Optional
-      if (IS_CRACKER_HMD){
+      if (IS_CRACKER_HMD) {
         mode = currentTabDisplay
       }
       let response
@@ -869,7 +871,7 @@ const CrackerConfig = () => {
     })
 
     let mode = selectMode // Can be empty  that's fine
-    if (IS_CRACKER_HMD){
+    if (IS_CRACKER_HMD) {
       mode = currentTabDisplay
     }
     try {
@@ -939,6 +941,14 @@ const CrackerConfig = () => {
     }
   }
 
+  const adjustedPermissionsReadyOnly = getAdjustedPermissions(
+    {
+      hideRemarkForNonEditableRows: true,
+      NON_EDITABLE_GRID: true,
+    },
+    isOldYear,
+  )
+
   return (
     <Box>
       <Backdrop
@@ -947,6 +957,11 @@ const CrackerConfig = () => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
+
+      {IS_CRACKER_HMD && (
+        <ModeSelection permissions={adjustedPermissionsReadyOnly} />
+      )}
+
       <Box sx={{ overflowX: 'auto', width: '100%' }}>
         <Tabs
           sx={{

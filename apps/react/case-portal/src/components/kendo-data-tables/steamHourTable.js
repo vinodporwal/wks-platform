@@ -12,6 +12,8 @@ import crackercolumnsDMD from '../../assets/CrackerMaintenanceColumn_DMD.json'
 import KendoDataTables from './index'
 import { getRoleName } from 'services/role-service'
 import MaintenanceProcessTableNMD from './processTableNMD'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
+import { ProductionRangeApiService } from 'services/production-range-api-service copy'
 const MaintenanceProcessTable = ({ viewOnly }) => {
   const keycloak = useSession()
 
@@ -129,33 +131,45 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
   const saveStreamHoursData = async (newRows) => {
     setLoading(true)
     try {
-      const excludeFields = [
-        'id',
-        'idFromApi',
-        'isEditable',
-        'originalRemark',
-        'inEdit',
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
       ]
 
-      // Dynamically build payload for each row
       const payload = newRows.map((row) => {
-        const obj = {}
-        Object.keys(row).forEach((key) => {
-          if (!excludeFields.includes(key)) {
-            obj[key] = row[key]
-          }
+        const obj = {
+          auditYear: AOP_YEAR,
+          normParameterFKId: row.NormParamId,
+          remarks: row.Remarks || '',
+          id: null,
+        }
+
+        months.forEach((m) => {
+          const lowerMonth = m.toLowerCase()
+          obj[lowerMonth] = row[m] !== undefined ? parseFloat(row[m]) || 0 : 0
         })
+
         return obj
       })
 
-      const response = await MaintenanceDetailsApiService.saveSteamHoursData(
+      const response = await ProductionRangeApiService.postData(
         keycloak,
+        payload,
         PLANT_ID,
         AOP_YEAR,
-        payload,
       )
 
-      if (response?.code === 200) {
+      if (response) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Saved successfully!',
@@ -181,6 +195,8 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
       setLoading(false)
     }
   }
+
+  const FORMATE_DECIMAL = ValueFormatterProduction()
 
   const fetchData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) {
@@ -217,18 +233,31 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
         align: months.includes(col.field) ? 'right' : 'left',
         editable: months.includes(col.field) ? true : col.editable,
         hidden: hiddenFields.includes(col.field) ? true : col.hidden,
+        type: months.includes(col.field) ? 'number' : undefined,
+        format: months.includes(col.field) ? FORMATE_DECIMAL : undefined,
       }))
 
       setColumns(dynamicColumns)
 
-      const formatted = (raw || []).map((item, idx, arr) => ({
-        ...item,
-        idFromApi: item.Id,
-        id: idx,
-        isEditable: item?.isEditable,
-        originalRemark: item?.Remarks?.trim(),
-        Particulars: item.SectionName,
-      }))
+      const formatted = (raw || []).map((item, idx) => {
+        const newItem = { ...item }
+        months.forEach((month) => {
+          if (newItem[month]) {
+            newItem[month] = parseFloat(newItem[month]) || 0
+          }
+        })
+        if (newItem.Total) {
+          newItem.Total = parseFloat(newItem.Total) || 0
+        }
+        return {
+          ...newItem,
+          idFromApi: item.Id,
+          id: idx,
+          isEditable: item?.isEditable,
+          originalRemark: item?.Remarks?.trim(),
+          Particulars: item.SectionName,
+        }
+      })
 
       const finalData = [...formatted]
 
