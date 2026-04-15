@@ -140,7 +140,7 @@ public class CrudeBlendWindowService {
         List<CrudeSpecificConstraintsDTO> crudeSpecificConstraints = new ArrayList<>();
         if(plantId != null) {
     //    crudeSpecificConstraints = crudeRepo.findCrudeSpecificConstraintsByPlant_FK_IdAndSite_FK_Id(java.util.UUID.fromString(plantId), java.util.UUID.fromString(siteId), financialYear).stream().map(proj -> {
-        crudeSpecificConstraints = crudeRepo.findCrudeSpecificConstraintsBySite_FK_Id(java.util.UUID.fromString(siteId), financialYear).stream().map(proj -> {  
+        crudeSpecificConstraints = crudeRepo.findCrudeSpecificConstraintsByVertical_FK_IdAndSite_FK_Id(java.util.UUID.fromString(verticalId), java.util.UUID.fromString(siteId), financialYear).stream().map(proj -> {  
     
     CrudeSpecificConstraintsDTO dto = new CrudeSpecificConstraintsDTO();
             dto.setId(proj.getId());
@@ -151,7 +151,7 @@ public class CrudeBlendWindowService {
         }).toList();
         }
         else {
-            crudeSpecificConstraints = crudeRepo.findCrudeSpecificConstraintsBySite_FK_Id(java.util.UUID.fromString(siteId), financialYear).stream().map(proj -> {
+            crudeSpecificConstraints = crudeRepo.findCrudeSpecificConstraintsByVertical_FK_IdAndSite_FK_Id(java.util.UUID.fromString(verticalId), java.util.UUID.fromString(siteId), financialYear).stream().map(proj -> {
                 CrudeSpecificConstraintsDTO dto = new CrudeSpecificConstraintsDTO();
                 dto.setId(proj.getId());
                 dto.setCrude(proj.getCrude());
@@ -192,7 +192,7 @@ public class CrudeBlendWindowService {
         }  
     
         else {
-            vgovrDrop = crudeRepo.findVGOVRDropBySite_FK_Id(java.util.UUID.fromString(siteId), financialYear).stream().map(proj -> {
+            vgovrDrop = crudeRepo.findVGOVRDropByVertical_FK_IdAndSite_FK_Id(java.util.UUID.fromString(verticalId), java.util.UUID.fromString(siteId), financialYear).stream().map(proj -> {
                 com.wks.caseengine.tcs.dto.VGOVRDropDTO dto = new com.wks.caseengine.tcs.dto.VGOVRDropDTO();
                 dto.setId(proj.getId());
                 dto.setKbpsd(proj.getkbpsd());
