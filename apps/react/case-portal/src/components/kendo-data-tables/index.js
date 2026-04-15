@@ -594,6 +594,10 @@ const KendoDataTables = ({
               updated.durationInHrs = '16.00'
             } else if (desc === 'Annual Turn Around') {
               updated.durationInHrs = '684.00'
+            } else if (desc === 'FSD (Catalyst full replacement/Partial Preheater cleaning)') {
+              updated.durationInHrs = '168.00'
+            } else if (desc === 'FSD (Catalyst partial replacement/Partial Preheater cleaning)') {
+              updated.durationInHrs = '158.00'
             }
           }
           if (lowerVertName === 'cracker' && lowerSiteName === 'vmd') {
@@ -2964,6 +2968,32 @@ const KendoDataTables = ({
                         headerCell: SimpleHeaderWithTooltip,
                       }}
                       headerClassName={isActive ? 'active-column' : ''}
+                    />
+                  )
+                }
+                if (col.field === 'Duration') {
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title || col.headerName}
+                      width={col.widthT || col.width || 120}
+                      hidden={col.hidden}
+                      editable={false}
+                      headerClassName={isActive ? 'active-column' : ''}
+                      cells={{
+                        data: (props) => (
+                          <td
+                            {...props.tdProps}
+                            title={props.dataItem[props.field]}
+                            style={{ textAlign: 'right' }}
+                          >
+                            {props.dataItem[props.field]}
+                          </td>
+                        ),
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
                     />
                   )
                 }

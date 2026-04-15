@@ -9,6 +9,7 @@ import java.util.UUID;
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,7 +40,8 @@ public class AOPApprovalFlowReportServiceImpl implements AOPApprovalFlowReportSe
 	private PlantsRepository plantsRepository;
     
     @Autowired
-    private DataSource dataSource;
+    @Qualifier("db2DataSource")
+    private DataSource db2DataSource;
     
     @Transactional(transactionManager = "db2TransactionManager")
     public int executeDynamicUpdateProcedure(String procedureName, String plantId, String siteId,
@@ -48,7 +50,7 @@ public class AOPApprovalFlowReportServiceImpl implements AOPApprovalFlowReportSe
 			
 			String callSql = "{call " + procedureName + "(?, ?, ?)}";
 
-	        try (Connection connection = dataSource.getConnection();
+	        try (Connection connection = db2DataSource.getConnection();
 	             CallableStatement stmt = connection.prepareCall(callSql)) {
 
 	           

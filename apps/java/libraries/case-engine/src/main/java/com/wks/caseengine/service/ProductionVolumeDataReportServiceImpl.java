@@ -22,14 +22,15 @@ import com.wks.caseengine.dto.YearWiseContributionDataDTO;
 import com.wks.caseengine.db2.entity.MonthwiseConsumptionReportDB2;
 import com.wks.caseengine.db2.entity.AnnualProductionPlanReportDB2;
 import com.wks.caseengine.db2.entity.PlantContributionDB2;
+import com.wks.caseengine.db2.entity.PlantProductionSummaryDB2;
 import com.wks.caseengine.db2.repository.MonthwiseConsumptionReportDB2Repository;
 import com.wks.caseengine.db2.repository.AnnualProductionPlanReportDB2Repository;
 import com.wks.caseengine.db2.repository.PlantContributionDB2Repository;
+import com.wks.caseengine.db2.repository.PlantProductionSummaryDB2Repository;
 import com.wks.caseengine.entity.AnnualProductionPlanReport;
 import com.wks.caseengine.entity.MonthWiseProductionPlan;
 import com.wks.caseengine.entity.MonthwiseConsumptionReport;
 import com.wks.caseengine.entity.PlantContribution;
-import com.wks.caseengine.entity.PlantProductionSummary;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.TurnAroundPlan;
@@ -41,7 +42,6 @@ import com.wks.caseengine.repository.AnnualProductionPlanReportRepository;
 import com.wks.caseengine.repository.MonthWiseProductionPlanRepository;
 import com.wks.caseengine.repository.MonthwiseConsumptionReportRepository;
 import com.wks.caseengine.repository.PlantContributionRepository;
-import com.wks.caseengine.repository.PlantProductionSummaryRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.TurnAroundPlanReportRepository;
@@ -62,9 +62,6 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	
 	@PersistenceContext(unitName="db2")
 	private EntityManager entityManagerDB2;
-
-	@Autowired
-	PlantProductionSummaryRepository plantProductionSummaryRepository;
 
 	@Autowired
 	private PlantsRepository plantsRepository;
@@ -102,6 +99,9 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	
 	@Autowired
 	private PlantContributionDB2Repository plantContributionDB2Repository;
+
+	@Autowired
+	private PlantProductionSummaryDB2Repository plantProductionSummaryDB2Repository;
 
 	// Inject or set your DataSource (e.g., via constructor or setter)
 	public ProductionVolumeDataReportServiceImpl(DataSource dataSource) {
@@ -681,18 +681,18 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	}
 
 	@Override
-	@Transactional
+	@Transactional(transactionManager = "db2TransactionManager")
 	public AOPMessageVM savePlantProductionData(String plantId, String year, List<PlantProductionDataDTO> dataList) {
 		try {
 			for (PlantProductionDataDTO dto : dataList) {
-				Optional<PlantProductionSummary> optional = plantProductionSummaryRepository
-						.findById(UUID.fromString(dto.getId()));
-
-				optional.get().setRemark(dto.getRemark());
+				PlantProductionSummaryDB2 record = plantProductionSummaryDB2Repository
+						.findById(UUID.fromString(dto.getId()))
+						.orElseThrow(() -> new RuntimeException("PlantProductionSummary not found for id: " + dto.getId()));
+				record.setRemark(dto.getRemark());
 				if (dto.getActualPrevYear() != null) {
-					optional.get().setActualPrevYear(dto.getActualPrevYear());
+					record.setActualPrevYear(dto.getActualPrevYear());
 				}
-				plantProductionSummaryRepository.save(optional.get());
+				plantProductionSummaryDB2Repository.save(record);
 			}
 			AOPMessageVM response = new AOPMessageVM();
 			response.setCode(200);
