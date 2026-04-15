@@ -1930,8 +1930,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 									if (conflictingIndex != -1) {
 										if (!alreadyFailed) {
 											dto.setSaveStatus("Failed");
-											dto.setErrDescription("The maintenance period overlaps with a period in row "
-													+ (conflictingIndex + 2) + ".");
+											dto.setErrDescription("The maintenance period overlaps with an existing record in the table.");
 											alreadyFailed = true;
 										}
 
@@ -1939,9 +1938,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 										if (conflictingDto.getSaveStatus() == null
 												|| !conflictingDto.getSaveStatus().equals("Failed")) {
 											conflictingDto.setSaveStatus("Failed");
-											conflictingDto.setErrDescription(
-													"The maintenance period overlaps with a period in row "
-															+ (currentRowIndex + 2) + ".");
+											conflictingDto.setErrDescription("The maintenance period overlaps with an existing record in the table.");
 										}
 										final int finalConflictingIndex = conflictingIndex;
 										validTimeRangesWithIndex.removeIf(p -> p.getIndex() == finalConflictingIndex);
