@@ -88,7 +88,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: false,
-      widthT: 70,
+      widthT: 100,
       align: 'right',
     },
     {
@@ -96,6 +96,7 @@ const AnnualProductionPlan = () => {
       headerName: 'Assumptions & remarks',
       editable: true,
       flex: 1,
+      widthT: 300
     },
     {
       field: 'idFromApi',
@@ -108,7 +109,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: false,
-      widthT: 70,
+      widthT: 100,
       align: 'right',
     },
     {
@@ -116,6 +117,7 @@ const AnnualProductionPlan = () => {
       headerName: 'Max hourly rate achieved',
       editable: true,
       flex: 1,
+      widthT: 300
     },
     {
       field: 'id',
@@ -127,7 +129,7 @@ const AnnualProductionPlan = () => {
       editable: true,
       flex: 1,
       align: 'right',
-      widthT: 130,
+      widthT: 150,
       type: 'number',
       format: '{0:#.##}',
     },
@@ -139,7 +141,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: false,
-      widthT: 70,
+      widthT: 100,
       align: 'right',
     },
     {
@@ -147,6 +149,7 @@ const AnnualProductionPlan = () => {
       headerName: 'Calculation of Operating hours',
       editable: true,
       flex: 1,
+      widthT: 300
     },
     {
       field: 'id',
@@ -177,7 +180,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: false,
-      widthT: 70,
+      widthT: 100,
       align: 'right',
     },
     {
@@ -185,6 +188,7 @@ const AnnualProductionPlan = () => {
       headerName: 'Throughput  limiting causes',
       editable: true,
       flex: 1,
+      widthT: 300
     },
     {
       field: 'id',
@@ -214,8 +218,9 @@ const AnnualProductionPlan = () => {
       headerName: 'Period from',
       editable: true,
       flex: 1,
+      widthT: 150
     },
-    { field: 'periodTo', headerName: 'Period to', editable: true, flex: 1 },
+    { field: 'periodTo', headerName: 'Period to', editable: true, flex: 1, widthT: 150 },
   ]
 
   const year4 = AOP_YEAR
