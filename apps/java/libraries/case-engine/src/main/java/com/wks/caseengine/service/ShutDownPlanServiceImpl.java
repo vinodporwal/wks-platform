@@ -1806,7 +1806,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 		String verticalName = plantsService.findVerticalNameByPlantId(plantFKId);
-
+		boolean aromatics=vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("SEZ");
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
@@ -1916,12 +1916,12 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 									}
 								}
 
-								else if (verticalName.equalsIgnoreCase("PTA") && ldtStart != null) {
+								else if ((verticalName.equalsIgnoreCase("PTA") || aromatics) && ldtStart != null) {
 									int conflictingIndex = -1;
 									for (TimeRangeWithIndex prevPeriod : validTimeRangesWithIndex) {
 										LocalDateTime prevLdtStart = prevPeriod.getStart();
 										LocalDateTime prevLdtEnd = prevPeriod.getEnd();
-										if (ldtStart.isBefore(prevLdtEnd) && ldtEnd.isAfter(prevLdtStart)) {
+										if (!ldtStart.isAfter(prevLdtEnd) && !ldtEnd.isBefore(prevLdtStart)) {
 											conflictingIndex = prevPeriod.getIndex();
 											break;
 										}
@@ -1930,8 +1930,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 									if (conflictingIndex != -1) {
 										if (!alreadyFailed) {
 											dto.setSaveStatus("Failed");
-											dto.setErrDescription("The maintenance period overlaps with a period in row "
-													+ (conflictingIndex + 2) + ".");
+											dto.setErrDescription("The maintenance period overlaps with an existing record in the table.");
 											alreadyFailed = true;
 										}
 
@@ -1939,9 +1938,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 										if (conflictingDto.getSaveStatus() == null
 												|| !conflictingDto.getSaveStatus().equals("Failed")) {
 											conflictingDto.setSaveStatus("Failed");
-											conflictingDto.setErrDescription(
-													"The maintenance period overlaps with a period in row "
-															+ (currentRowIndex + 2) + ".");
+											conflictingDto.setErrDescription("The maintenance period overlaps with an existing record in the table.");
 										}
 										final int finalConflictingIndex = conflictingIndex;
 										validTimeRangesWithIndex.removeIf(p -> p.getIndex() == finalConflictingIndex);
@@ -2019,7 +2016,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 						}
 					}
 
-					if (verticalName.equalsIgnoreCase("PTA") && !alreadyFailed && ldtStart != null && ldtEnd != null) {
+					if ((verticalName.equalsIgnoreCase("PTA") || aromatics)  && !alreadyFailed && ldtStart != null && ldtEnd != null) {
 						validTimeRangesWithIndex.add(new TimeRangeWithIndex(ldtStart, ldtEnd, currentRowIndex));
 					}
 
