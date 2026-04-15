@@ -594,9 +594,15 @@ const KendoDataTables = ({
               updated.durationInHrs = '16.00'
             } else if (desc === 'Annual Turn Around') {
               updated.durationInHrs = '684.00'
-            } else if (desc === 'FSD (Catalyst full replacement/Partial Preheater cleaning)') {
+            } else if (
+              desc ===
+              'FSD (Catalyst full replacement/Partial Preheater cleaning)'
+            ) {
               updated.durationInHrs = '168.00'
-            } else if (desc === 'FSD (Catalyst partial replacement/Partial Preheater cleaning)') {
+            } else if (
+              desc ===
+              'FSD (Catalyst partial replacement/Partial Preheater cleaning)'
+            ) {
               updated.durationInHrs = '158.00'
             }
           }
@@ -2971,7 +2977,11 @@ const KendoDataTables = ({
                     />
                   )
                 }
-                if (col.field === 'Duration') {
+                if (
+                  col.field === 'Duration' &&
+                  lowerVertName === 'cracker' &&
+                  lowerSiteName === 'vmd'
+                ) {
                   return (
                     <GridColumn
                       key={col.field}
