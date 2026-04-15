@@ -56,6 +56,11 @@ const RawMaterialGrid = ({
 
   const FORMATE_VALUE = '{0:0.000}'
 
+  const IS_ELASTOMER_JMD_IIR =
+    VERTICAL_NAME_NO_CASE === 'ELASTOMER' &&
+    SITE_NAME_NO_CASE === 'JMD' &&
+    PLANT_NAME_NO_CASE === 'IIR'
+
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remark || '')
@@ -84,7 +89,7 @@ const RawMaterialGrid = ({
         AOP_YEAR,
         'Configuration',
       )
-
+      const disabledRows = ['Total Fillers', 'Net Rubber']
       const formattedData = response?.data?.gradeWiseNormConfigurationList?.map(
         (row, index) => ({
           id: row.id || index,
@@ -99,6 +104,9 @@ const RawMaterialGrid = ({
           b2232Id: row.b2232Id,
           name: row.name,
           type: row.type || 'Raw Material',
+          isEditable: IS_ELASTOMER_JMD_IIR
+            ? !disabledRows.includes(row.grade)
+            : true,
         }),
       )
 

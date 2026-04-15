@@ -190,6 +190,7 @@ export const DataService = {
   getMaintenanceActivityData,
   slowdownconsumptionExportAllGrade,
   saveSlowdownNormsExcelAllGrade,
+  dropdownValuesPeC2,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -4259,7 +4260,7 @@ export async function getFurnaceMaintenanceActivity(
   PLANT_ID,
   AOP_YEAR,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/furnace-maintenance-activity?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const url = `${Config.CaseEngineUrl}/task/furnace-maintenance-activities?plantId=${PLANT_ID}&aopYear=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -4405,6 +4406,22 @@ async function saveSlowdownNormsExcelAllGrade(
       headers,
       body: formData,
     })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function dropdownValuesPeC2(keycloak, PLANT_ID, AOP_YEAR) {
+  // const url = `${Config.CaseEngineUrl}/task/description-drpdwn?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const url = `${Config.CaseEngineUrl}/task/shutdown-rate-dropdown?plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)

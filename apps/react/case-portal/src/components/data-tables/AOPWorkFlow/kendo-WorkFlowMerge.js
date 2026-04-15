@@ -148,7 +148,9 @@ const WorkFlowMerge = () => {
 
   const handleCalculate = async () => {
     try {
-      if (lowerVertName === 'meg') {
+      const a = true
+
+      if (a) {
         return handleCalculateForMEG()
       }
 
@@ -708,8 +710,10 @@ const WorkFlowMerge = () => {
     'Plant Contribution Summary (T-22)',
     'Specific Consumption Norms (T-17)',
     'Norms Entry Sheet',
-    // 'Shutdown Report (T-19B)',
-    // 'Shutdown Break-up Last Four Year (T-19C)',
+    'Shutdown Report (T-19B)',
+    'Shutdown Break-up Last Four Year (T-19C)',
+    'Norms for Shutdown & Slowdown (T-19D)',
+    'MonthWise Operating Hours (T-20)',
   ]
   const PPTabs = [
     'Annual AOP Cost',
@@ -720,8 +724,13 @@ const WorkFlowMerge = () => {
     'Annual Production Plan (T-15)',
     'Plant Contribution (T-21)',
     'Plant Contribution Summary (T-22)',
+    'Shutdown Report (T-19B)',
+    'Shutdown Break-up Last Four Year (T-19C)',
+    'Norms for Shutdown & Slowdown (T-19D)',
+    'MonthWise Operating Hours (T-20)',
   ]
   const crackerTabs = [
+    'Annual AOP Cost',
     'Optimizer Input / Output',
     'Month Wise Production Plan (T-16)',
     'Month Wise Norms',
@@ -776,7 +785,7 @@ const WorkFlowMerge = () => {
   } else if (lowerVertName === 'pe') {
     activeTabs = customPETabs
   } else if (lowerVertName === 'pp') {
-    activeTabs = customPPTabs
+    activeTabs = customPETabs
   } else if (lowerVertName === 'pta') {
     activeTabs = ptaTabs
   } else if (lowerVertName === 'meg') {
@@ -987,13 +996,11 @@ const WorkFlowMerge = () => {
               lowerVertName === 'pet') && (
               <>{tabIndex === 9 && <SpecificConsumptionNorm />}</>
             )}
-            {/* {(lowerVertName === 'pe') && (
-              <>{tabIndex === 10 && <ShutdownReport/>}</>
-            )}
-            {(lowerVertName === 'pe') && (
-              <>{tabIndex === 11 && <ShutdownSummaryReport/>}</>
-            )} */}
-
+            {tabIndex === 10 && <ShutdownReport />} {/* T-19B */}
+            {tabIndex === 11 && <ShutdownSummaryReport />} {/* T-19C */}
+            {tabIndex === 12 && <PlantShutdownSlowdown />} {/* T-19D */}
+            {/* Remaining Reports */}
+            {tabIndex === 13 && <MonthwiseOperatingHours />} {/* T-20 */}
             <Notification
               open={snackbarOpen}
               message={snackbarData.message}
@@ -1086,14 +1093,72 @@ const WorkFlowMerge = () => {
         {/* For CRACKER */}
         {lowerVertName === 'cracker' && (
           <>
-            {tabIndex === 0 && <OptimizerReport />}
-            {tabIndex === 1 && <BestAchievedReport />}
-            {tabIndex === 2 && <MonthWiseRawData />}
-            {tabIndex === 3 && <FurnaceRawData />}
-            {tabIndex === 4 && <TurnaroundReportCracker />}
+            {tabIndex === 0 && (
+              <>
+                <ProductionAopView
+                  handleCalculate={handleCalculate}
+                  handleExport={handleExport}
+                  fetchSecondGridData={fetchData}
+                />
+                {tabIndex === 0 && (
+                  <KendoDataTablesReports
+                    title='Annual AOP Cost'
+                    modifiedCells={modifiedCells}
+                    autoHeight={true}
+                    rows={rows}
+                    setRows={setRows}
+                    onRowUpdate={(updatedRow) =>
+                      console.log('Row Updated:', updatedRow)
+                    }
+                    columns={columns}
+                    loading={loadingCalculate}
+                    remarkDialogOpen={remarkDialogOpen}
+                    unsavedChangesRef={unsavedChangesRef}
+                    setRemarkDialogOpen={setRemarkDialogOpen}
+                    currentRemark={currentRemark}
+                    setCurrentRemark={setCurrentRemark}
+                    currentRowId={currentRowId}
+                    setCurrentRowId={setCurrentRowId}
+                    rowModesModel={rowModesModel}
+                    onRowModesModelChange={onRowModesModelChange}
+                    handleCalculate={handleCalculate}
+                    handleExport={handleExport}
+                    isCreatingCase={isCreatingCase}
+                    createCase={createCase}
+                    saveChanges={saveChanges}
+                    showCreateCasebutton={showCreateCasebutton}
+                    permissions={{
+                      saveBtn: !isOldYear,
+                      saveBtnForWorkflow: true,
+                      remarksEditable: true,
+                      showCreateCasebutton: showCreateCasebutton,
+                      showTitle: true,
+                      showWorkFlowBtns: true,
+                      // approveBtn: false,
+                    }}
+                    openAuditPopup={openAuditPopup}
+                    handleAuditOpen={handleAuditOpen}
+                    handleAuditClose={handleAuditClose}
+                    handleRejectClick={handleRejectClick}
+                    openRejectDialog={openRejectDialog}
+                    handleRejectCancel={handleRejectCancel}
+                    handleRemarkCellClick={handleRemarkCellClick}
+                    handleSubmit={handleSubmit}
+                    taskId={taskId}
+                    text={text}
+                    setText={setText}
+                  />
+                )}
+              </>
+            )}
+            {tabIndex === 1 && <OptimizerReport />}
+            {tabIndex === 2 && <BestAchievedReport />}
+            {tabIndex === 3 && <MonthWiseRawData />}
+            {tabIndex === 4 && <FurnaceRawData />}
+            {tabIndex === 5 && <TurnaroundReportCracker />}
 
-            {tabIndex === 5 && <PlantContribution />}
-            {tabIndex === 6 && <PlantContributionLastFourYears />}
+            {tabIndex === 6 && <PlantContribution />}
+            {tabIndex === 7 && <PlantContributionLastFourYears />}
 
             <Notification
               open={snackbarOpen}

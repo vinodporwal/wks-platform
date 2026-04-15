@@ -64,6 +64,8 @@ import DynamicDropdown from './Utilities-Kendo/DynamicDropdown'
 
 import { descLimit } from './Utilities-Kendo/descLimit'
 import {
+  calculateMonthDuration,
+  getMonthStartEndDate,
   recalcDuration,
   recalcEndDate,
 } from './Utilities-Kendo/durationHelpers'
@@ -83,6 +85,8 @@ import { getRoleName } from 'services/role-service'
 import { getColumnMenuDateFilter } from 'components/data-tables/Reports-kendo/ColumnMenuDateFilter'
 import DateTimePickerEditor24HourFormat from './Utilities-Kendo/DatePickeronSelectedYr24HourFomat'
 import { NoSpinnerNumericEditorCrackerValidation } from './Utilities-Kendo/numbericColumnsCrackerValidation'
+import ShutdownRateDropdown from './Utilities-Kendo/ShutdownRateDropdown'
+import MonthDropdownPEPP1 from './Utilities-Kendo/MonthDropdownPEPP1'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import { keyframes } from '@mui/material/styles'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
@@ -116,6 +120,8 @@ export const dateFields1 = [
   'exclusionEndDate',
   'exclusionStartDate',
   'shutdownDate',
+  'StartDate',
+  'EndDate',
 ]
 
 export const monthMap = {
@@ -228,8 +234,10 @@ const KendoDataTables = ({
   key = [],
 }) => {
   const _export = useRef(null)
+
   const _grid = React.useRef(undefined)
   const minGridWidth = useRef(0)
+  const grid = React.useRef(null)
   const gridRef = useRef(null)
   const [gridExpanded, setGridExpanded] = useState(true)
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
@@ -255,6 +263,9 @@ const KendoDataTables = ({
   const [gridCurrent, setGridCurrent] = useState(0)
   const dataGridStore = useSelector((state) => state.dataGridStore)
 
+  const ADJUST_PADDING = 4
+  const COLUMN_MIN = 4
+
   const keycloak = useSession()
 
   const { verticalChange, oldYear, year, plantObject, siteObject } =
@@ -262,6 +273,7 @@ const KendoDataTables = ({
   const IS_OLD_YEAR = oldYear?.oldYear
   const AOP_YEAR = year?.selectedYear
   const PLANT_ID = plantObject?.id
+  const plantName = plantObject?.name
   const SiteName = siteObject?.name
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
@@ -473,119 +485,39 @@ const KendoDataTables = ({
     return allCols
   }, [])
 
-  useEffect(() => {
-    const gridEl = document.querySelector('.k-grid')
-    if (!gridEl) return
+  React.useEffect(() => {
+    grid.current = document.querySelector('.k-grid')
+    window.addEventListener('resize', handleResize)
+    columns.map((item) =>
+      item.minWidth !== undefined
+        ? (minGridWidth.current += item.minWidth)
+        : minGridWidth.current,
+    )
+    setGridCurrent(grid.current.offsetWidth)
+    setApplyMinWidth(grid.current.offsetWidth < minGridWidth.current)
+  }, [])
 
-    const updateGridSize = () => {
-      const currentWidth = gridEl.offsetWidth
-      setGridCurrent(currentWidth)
-
-      const allColumns = extractAllColumns(columns)
-      let minWidthSum = allColumns.reduce((sum, col) => {
-        return sum + (col.minWidth ?? 85)
-      }, 0)
-
-      if (permissions?.deleteButton) {
-        minWidthSum += 80
-      }
-
-      setApplyMinWidth(currentWidth < minWidthSum)
+  const handleResize = () => {
+    if (grid.current.offsetWidth < minGridWidth.current && !applyMinWidth) {
+      setApplyMinWidth(true)
+    } else if (grid.current.offsetWidth > minGridWidth.current) {
+      setGridCurrent(grid.current.offsetWidth)
+      setApplyMinWidth(false)
     }
+  }
 
-    // updateGridSize()
-
-    const observer = new ResizeObserver(updateGridSize)
-    observer.observe(gridEl)
-
-    return () => observer.disconnect()
-  }, [columns, permissions?.deleteButton, extractAllColumns])
-
-  const DEFAULT_COL_WIDTH = 100
-
-  const flexibleFields = [
-    'discription',
-    'discriptionDrpdwn',
-    'remark',
-    'remarks',
-    'Remarks',
-    'aopRemarks',
-    'productName',
-    'productName1',
-    'displayName',
-    'Particulars',
-    'materialDisplayName',
-    'TypeDisplayName',
-    'ParticularsType',
-    'Method',
-    'particular',
-    'particulars',
-    'Remark',
-  ]
-
-  const setWidth = useCallback(
-    (minWidth = DEFAULT_COL_WIDTH, field = '') => {
-      const allColumns = extractAllColumns(columns)
-      const currentCol = allColumns.find((c) => c.field === field)
-
-      if (currentCol && currentCol.autoAdjust !== true) {
-        return minWidth
-      }
-
-      const deleteColWidth = permissions?.deleteButton ? 80 : 0
-      const columnCount = allColumns.length
-
-      const totalMinWidth =
-        allColumns.reduce(
-          (sum, col) => sum + (col.minWidth ?? DEFAULT_COL_WIDTH),
-          0,
-        ) + deleteColWidth
-
-      // If grid is narrower than minimum total, give each column its minimum
-      if (gridCurrent <= totalMinWidth) return minWidth
-
-      // Distribute extra space
-      const extraSpace =
-        gridCurrent - totalMinWidth - ADJUST_PADDING * columnCount
-
-      if (columnCount < 7) {
-        // Broad distribution to fill grid without horizontal scroll
-        const share = 1 / columnCount
-        return Math.max(minWidth, Math.floor(minWidth + extraSpace * share))
-      }
-
-      // Identify flexible columns in the current view (visible and in flexibleFields)
-      const flexibleCols = allColumns.filter((col) =>
-        flexibleFields.includes(col.field),
-      )
-
-      if (flexibleCols.length > 0) {
-        if (flexibleFields.includes(field)) {
-          // If many columns, we distribute extra space among string columns to fill the screen
-          // If columnCount > 4, we prioritize these even more
-          const share = 1 / flexibleCols.length
-          return Math.max(minWidth, Math.floor(minWidth + extraSpace * share))
-        }
-        // Numeric/Fixed columns stay at their base minWidth to leave room for strings
-        return minWidth
-      }
-
-      // Fallback: Proportional distribution if no explicitly flexible columns found
-      const share = minWidth / totalMinWidth
-      return Math.max(minWidth, Math.floor(minWidth + extraSpace * share))
-    },
-    [
-      gridCurrent,
-      columns,
-      permissions?.deleteButton,
-      extractAllColumns,
-    ],
-  )
-
-  const numericHeaderClass = (isActive, col) =>
-    [isActive ? 'active-column' : '', 'k-number-right']
-      .filter(Boolean)
-      .join(' ')  
+  const setWidth = (minWidth) => {
+    if (minWidth === undefined) {
+      minWidth = 0
+    }
+    let width = applyMinWidth
+      ? minWidth
+      : minWidth + (gridCurrent - minGridWidth.current) / columns.length
+    if (width >= COLUMN_MIN) {
+      width -= ADJUST_PADDING
+    }
+    return width
+  }
 
   const handleEditChange = useCallback((e) => {
     setEdit(e.edit)
@@ -775,6 +707,45 @@ const KendoDataTables = ({
               updated.durationInHrs = '684.00'
             }
           }
+          if (lowerVertName === 'cracker' && lowerSiteName === 'vmd') {
+            if (
+              (field === 'StartDate' || field === 'EndDate') &&
+              updated.StartDate &&
+              updated.EndDate
+            ) {
+              const start = new Date(updated.StartDate)
+              const end = new Date(updated.EndDate)
+              const diffMs = end.getTime() - start.getTime()
+              const totalDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+              if (totalDays >= 0) {
+                updated.Duration = `${totalDays}`
+              } else {
+                updated.Duration = 'Invalid'
+              }
+            }
+          }
+
+          const lowerPlantName = plantName?.toLowerCase()
+          const IS_ELASTOMER_JMD_HIIR =
+            lowerVertName === 'elastomer' &&
+            lowerSiteName === 'jmd' &&
+            lowerPlantName === 'hiir'
+
+          if (
+            screenType === 'shutdown' &&
+            IS_ELASTOMER_JMD_HIIR &&
+            field === 'monthly'
+          ) {
+            const monthDur = calculateMonthDuration(value, AOP_YEAR)
+            const [start, end] = getMonthStartEndDate(value, AOP_YEAR)
+            if (monthDur) {
+              updated.durationInHrs = monthDur
+            }
+            if (start && end) {
+              updated.maintStartDateTime = start
+              updated.maintEndDateTime = end
+            }
+          }
 
           // percentChange logic: adjust months if enabled and percentChange field changed
           if (field === 'percentChange' && permissions?.percentChangeLogic) {
@@ -917,6 +888,28 @@ const KendoDataTables = ({
             }
           }
 
+          const lowerPlantName = plantName?.toLowerCase()
+          const IS_ELASTOMER_JMD_HIIR =
+            lowerVertName === 'elastomer' &&
+            lowerSiteName === 'jmd' &&
+            lowerPlantName === 'hiir'
+
+          if (
+            screenType === 'shutdown' &&
+            IS_ELASTOMER_JMD_HIIR &&
+            field === 'monthly'
+          ) {
+            const monthDur = calculateMonthDuration(value, AOP_YEAR)
+            const [start, end] = getMonthStartEndDate(value, AOP_YEAR)
+            if (monthDur) {
+              base.durationInHrs = monthDur
+            }
+            if (start && end) {
+              base.maintStartDateTime = start
+              base.maintEndDateTime = end
+            }
+          }
+
           return { ...prev, [uniqueItemId]: base }
         })
       }
@@ -948,6 +941,9 @@ const KendoDataTables = ({
       setCustomModifiedCells,
       lowerVertName,
       lowerSiteName,
+      plantName,
+      AOP_YEAR,
+      screenType,
     ],
   )
 
@@ -1113,9 +1109,38 @@ const KendoDataTables = ({
   }
 
   const handleCalculateBtn = async () => {
+    if (permissions?.showCalulcationPromt) {
+      openCalculateDialogBox()
+    } else {
+      // old code
+      setSelectedGrade('')
+      setIsButtonDisabled(true)
+
+      handleCalculate()
+
+      setTimeout(() => {
+        setIsButtonDisabled(false)
+      }, 500)
+    }
+  }
+
+  const [openCalculateDialogeBox, setOpenCalculateDialogeBox] = useState(false)
+
+  const openCalculateDialogBox = () => {
+    setOpenCalculateDialogeBox(true)
+  }
+
+  const closeCalculateDialogBox = () => {
+    setOpenCalculateDialogeBox(false)
+  }
+
+  const handleCalculateConfirmation = async () => {
+    closeCalculateDialogBox()
     setSelectedGrade('')
     setIsButtonDisabled(true)
-    handleCalculate()
+
+    await handleCalculate()
+
     setTimeout(() => {
       setIsButtonDisabled(false)
     }, 500)
@@ -2011,6 +2036,10 @@ const KendoDataTables = ({
                   className='dropdown-select'
                   variant='outlined'
                   label={permissions?.dropdownLabel || 'Select'}
+                  sx={{
+                    display:
+                      permissions?.IS_PE_C2_HIDE !== false ? 'block' : 'none',
+                  }}
                   InputLabelProps={{
                     shrink: true,
                     sx: {
@@ -2195,7 +2224,6 @@ const KendoDataTables = ({
                   Reset
                 </Button>
               )}
-              
 
               {permissions?.showRefresh && (
                 <Button
@@ -2359,21 +2387,12 @@ const KendoDataTables = ({
                 style={{
                   flex: 1,
                   overflow: 'auto',
-                  // height: 'auto',
-                  // height: permissions?.isHeight ? '60vh' : '60vh',
-                  // height: '60vh',
-                  // height: `${gridHeight}px`,
-
                   height:
-                    // lowerVertName === 'meg' ||
                     supressGridHeight == true
                       ? undefined
                       : rows?.length > 10
                         ? `${calculatedVH}vh`
                         : undefined,
-
-                  // height: rows?.length > 10 ? '60vh' : `${calculatedVH}vh`,
-                  // height: `${calculatedVH}vh`,
                 }}
                 key={groupBy}
                 modifiedCells={modifiedCells}
@@ -2395,9 +2414,6 @@ const KendoDataTables = ({
                 contextMenu={true}
                 grade={grades}
                 onRowClick={handleRowClick}
-                // sortable={{
-                //   mode: 'multiple',
-                // }}
                 groupable={
                   permissions?.isTotalFooterActive
                     ? {
