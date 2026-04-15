@@ -485,6 +485,8 @@ const UnitCapacityGridRowwise = ({
       ? currentRow.id.replace('_kbpsd', '_ktpd')
       : currentRow.id.replace('_ktpd', '_kbpsd')
 
+    const pairedRow = rows.find((r) => r.id === pairedRowId)
+
     // Update rows and modifiedCells together
     setRows((prevRows) =>
       prevRows.map((row) =>
@@ -497,11 +499,13 @@ const UnitCapacityGridRowwise = ({
     setModifiedCells((prev) => ({
       ...prev,
       [currentRowId]: {
+        ...currentRow,
         ...prev[currentRowId],
         remark: currentRemark,
         inEdit: true,
       },
       [pairedRowId]: {
+        ...pairedRow,
         ...prev[pairedRowId],
         remark: currentRemark,
         inEdit: true,
