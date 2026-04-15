@@ -95,7 +95,7 @@ const UnitCapacityGridRowwise = ({
             oct: convertFromKBPSD(item.oct || 0, 'KTPD'),
             nov: convertFromKBPSD(item.nov || 0, 'KTPD'),
             dec: convertFromKBPSD(item.dec || 0, 'KTPD'),
-            remark: '',
+            remark: item.remark || '',
             insertedDateTime: item.insertedDateTime,
             inEdit: false,
           }
@@ -142,7 +142,7 @@ const UnitCapacityGridRowwise = ({
         { field: 'id', title: 'ID', hidden: true },
         {
           field: 'particulates',
-          title: 'Particulates',
+          title: 'Particulars',
           widthT: 150,
           minWidth: 150,
           type: 'text',
@@ -284,7 +284,7 @@ const UnitCapacityGridRowwise = ({
         { field: 'id', title: 'ID', hidden: true },
         {
           field: 'particulates',
-          title: 'Particulates',
+          title: 'Particulars',
           widthT: 150,
           minWidth: 150,
           type: 'text',
