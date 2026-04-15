@@ -56,6 +56,14 @@ import dataGridStore from 'store/reducers/dataGridStore'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import Notification from 'components/Utilities/Notification'
 
+import AddIcon from '@mui/icons-material/Add'
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
+import DownloadIcon from '@mui/icons-material/Download'
+import UploadIcon from '@mui/icons-material/Upload'
+import CalculateIcon from '@mui/icons-material/Calculate'
+import SaveIcon from '@mui/icons-material/Save'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+
 // Helper function to get nested value from object
 const getNestedValue = (obj, path) => {
   if (!path || !obj) return undefined
@@ -1982,8 +1990,8 @@ const AdvanceKendoTable = ({
             {permissions?.addButton && (
               <Button
                 variant='contained'
-                // className='custom-btn-additem'
-                className='btn-save'
+                className='btn-add'
+                startIcon={<AddIcon />}
                 onClick={handleAddRow}
                 disabled={isButtonDisabled || READ_ONLY}
               >
@@ -1996,7 +2004,7 @@ const AdvanceKendoTable = ({
                 onClick={saveModalOpen}
                 disabled={isButtonDisabled || READ_ONLY}
                 className='btn-save'
-                // className='custom-btn-save'
+                startIcon={<SaveIcon sx={{ fontSize: 16 }} />}
               >
                 Save
               </Button>
@@ -2007,8 +2015,8 @@ const AdvanceKendoTable = ({
                 variant='contained'
                 onClick={handleCalculateBtn}
                 disabled={isButtonDisabled || READ_ONLY}
-                className='btn-save'
-                // className='custom-btn-calculate'
+                className='btn-calculate'
+                startIcon={<CalculateIcon sx={{ fontSize: 16 }} />}
               >
                 Calculate
               </Button>
@@ -2019,8 +2027,8 @@ const AdvanceKendoTable = ({
                 variant='contained'
                 onClick={handleExport}
                 disabled={isButtonDisabled}
-                className='btn-save'
-                // className='custom-btn-export'
+                className='btn-export'
+                startIcon={<DownloadIcon fontSize='small' />}
               >
                 Export
               </Button>
@@ -2029,10 +2037,10 @@ const AdvanceKendoTable = ({
             {permissions?.downloadExcelBtnFromUI && (
               <Button
                 variant='contained'
-                className='btn-save'
+                className='btn-export'
+                startIcon={<DownloadIcon fontSize='small' />}
                 onClick={excelExport}
                 disabled={rows?.length === 0}
-                // className='custom-btn-export'
               >
                 Export
               </Button>
@@ -2044,8 +2052,8 @@ const AdvanceKendoTable = ({
                   variant='contained'
                   onClick={triggerFileUpload}
                   disabled={isButtonDisabled || READ_ONLY}
-                  className='btn-save'
-                  // className='custom-btn-import'
+                  className='btn-import'
+                  startIcon={<UploadIcon sx={{ fontSize: 16 }} />}
                 >
                   Import
                 </Button>
