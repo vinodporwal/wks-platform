@@ -1,15 +1,11 @@
-import PropTypes from 'prop-types'
 import { Box, Typography, IconButton } from '@mui/material'
-import DrawerHeaderStyled from './DrawerHeaderStyled'
 import logo from 'assets/images/ril-logo2.png'
 import MenuOpenIcon from '@mui/icons-material/MenuOpen'
 import MenuIcon from '@mui/icons-material/Menu'
 import HomeIcon from '@mui/icons-material/Home'
 import { useNavigate } from 'react-router-dom'
-
 const DrawerHeader = ({ open, handleDrawerToggle }) => {
   const navigate = useNavigate()
-  return (
     <DrawerHeaderStyled open={open}>
       <Box
         sx={{
@@ -28,10 +24,10 @@ const DrawerHeader = ({ open, handleDrawerToggle }) => {
             size='small'
             sx={{
               // color: '#6a7b92',
-              '&:hover': { color: '#6a7b92' },
+              '&:hover': { color: '#6a7b92ff' },
             }}
           >
-            <HomeIcon sx={{ width: 28, height: 28 }} />
+            <HomeIcon sx={{ width: 28, height: 28, color: '#bfa161ff' }} />
           </IconButton>
           {/* <Box
             component='img'
@@ -49,7 +45,7 @@ const DrawerHeader = ({ open, handleDrawerToggle }) => {
                 Reliance
               </Typography>
               <Typography sx={{ fontSize: 12, color: '#6a7b92' }}>
-                Monitoring Dashboard
+                AOP Dashboard
               </Typography>
             </Box>
           )}
@@ -70,13 +66,4 @@ const DrawerHeader = ({ open, handleDrawerToggle }) => {
           </IconButton>
         )}
       </Box>
-    </DrawerHeaderStyled>
-  )
-}
-
-DrawerHeader.propTypes = {
-  open: PropTypes.bool,
   handleDrawerToggle: PropTypes.func,
-}
-
-export default DrawerHeader
