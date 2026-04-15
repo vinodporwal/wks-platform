@@ -630,22 +630,21 @@ const WorkFlowMerge = () => {
   }
   const saveChanges = async () => {
     try {
-      // console.log(rows, 'workflowDto')
       await AOPWorkFlowService.saveAnnualWorkFlowData(keycloak, rows, PLANT_ID)
       setSnackbarData({
         message: 'Data Saved Successfully!',
         severity: 'success',
       })
       setActionDisabled(true)
-      // getCaseId()
     } catch (err) {
       console.error('Error while save', err)
-      setSnackbarData({ message: err.message, severity: 'error' })
+      setSnackbarData({
+        message: err.message || 'Save failed!',
+        severity: 'error',
+      })
       setActionDisabled(false)
     } finally {
-      setSnackbarOpen(true)
-      setOpenRejectDialog(false)
-      setText('')
+      setSnackbarOpen(true) // ✅ THIS was the only missing piece
     }
   }
 
@@ -1095,6 +1094,12 @@ const WorkFlowMerge = () => {
             {tabIndex === 10 && <MonthwiseOperatingHours />} {/* T-20 */}
             {tabIndex === 11 && <PlantContribution />} {/* T-21 */}
             {tabIndex === 12 && <PlantContributionLastFourYears />}
+            <Notification
+              open={snackbarOpen}
+              message={snackbarData.message}
+              severity={snackbarData.severity}
+              onClose={() => setSnackbarOpen(false)}
+            />
             {/* T-22 */}
           </>
         )}
@@ -1240,7 +1245,6 @@ const WorkFlowMerge = () => {
                 setText={setText}
               />
             )}
-
             {tabIndex === 1 && <PlantsProductionSummary />}
             {tabIndex === 2 && <MonthwiseProduction />}
             {tabIndex === 3 && <MonthwiseRawMaterial />}
@@ -1248,7 +1252,6 @@ const WorkFlowMerge = () => {
             {tabIndex === 5 && <AnnualProductionPlan />}
             {tabIndex === 6 && <PlantContribution />}
             {tabIndex === 7 && <PlantContributionLastFourYears />}
-
             <Notification
               open={snackbarOpen}
               message={snackbarData.message}
