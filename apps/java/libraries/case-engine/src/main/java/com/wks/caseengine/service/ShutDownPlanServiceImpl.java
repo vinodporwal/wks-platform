@@ -3360,4 +3360,16 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		return aopMessageVM;
 	}
 
+	@Override
+	public AOPMessageVM deleteMultipleSlowdown(List<UUID> plantMaintenanceTransactionId, UUID plantId) {
+		for(UUID id:plantMaintenanceTransactionId) {
+			deletePlanData(id,plantId);
+		}
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setData(plantMaintenanceTransactionId);
+		aopMessageVM.setMessage("Data deleted successfully");
+		return aopMessageVM;
+	}
+
 }
