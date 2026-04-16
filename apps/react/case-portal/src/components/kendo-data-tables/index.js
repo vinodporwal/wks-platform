@@ -145,7 +145,7 @@ const KendoDataTables = ({
   NormParameterIdCell = () => {},
   setModifiedCells = () => {},
   remarkDialogOpen = false,
-  handleDeleteSelected = () => {},
+  handleDeleteSelected = (selectedItems) => {},
   saveChanges = () => {},
   deleteRowData = () => {},
   handleAddPlantSite = () => {},
@@ -194,7 +194,6 @@ const KendoDataTables = ({
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [openResetDialogeBox, setOpenResetDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
-  const showDeleteAll = permissions?.deleteAllBtn && selectedUsers.length > 1
   const [selectedUnit, setSelectedUnit] = useState(permissions?.units?.[0])
   const [selectedGrade, setSelectedGrade] = useState()
   const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
@@ -210,10 +209,14 @@ const KendoDataTables = ({
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
   const ColumnMenuCheckboxFilterDate = getColumnMenuDateFilter(rows)
   const [customModifiedCells, setCustomModifiedCells] = useState({})
+  const [selectedRows, setSelectedRows] = useState([])
+  const [deleteMultipleConfirms, setDeleteMultipleConfirms] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
 
   const keycloak = useSession()
-
+  const showDeleteAll =
+    (permissions?.deleteAllBtn && selectedUsers.length > 1) ||
+    (permissions?.deleteMultiple && selectedRows.length > 0)
   const { verticalChange, oldYear, year, plantObject, siteObject } =
     dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
@@ -412,6 +415,36 @@ const KendoDataTables = ({
     setEdit(e.edit)
   }, [])
 
+  const onSelectionChange = (event) => {
+    const newSelectedRows = event?.dataItems?.map((item) => item?.idFromApi)
+    setSelectedRows(newSelectedRows)
+  }
+
+  const onHeaderSelectionChange = (event) => {
+    const checked = event?.syntheticEvent?.target?.checked
+    if (checked) {
+      const allRowIds = rows.map((item) => item?.idFromApi)
+      setSelectedRows(allRowIds)
+    } else {
+      setSelectedRows([])
+    }
+  }
+
+  const handleDeleteMultiple = () => {
+    if (permissions?.deleteMultiple && selectedRows?.length > 0) {
+      handleDeleteSelected(selectedRows)
+      setSelectedRows([])
+      setDeleteMultipleConfirms(false)
+    } else {
+      handleDeleteSelected()
+      setDeleteMultipleConfirms(false)
+    }
+  }
+
+  const handleOpenDeleteMultipleDialog = () => {
+   setDeleteMultipleConfirms(true)
+  }
+
   const excelExport = () => {
     if (_export.current !== null) {
       _export.current.save()
@@ -594,9 +627,15 @@ const KendoDataTables = ({
               updated.durationInHrs = '16.00'
             } else if (desc === 'Annual Turn Around') {
               updated.durationInHrs = '684.00'
-            } else if (desc === 'FSD (Catalyst full replacement/Partial Preheater cleaning)') {
+            } else if (
+              desc ===
+              'FSD (Catalyst full replacement/Partial Preheater cleaning)'
+            ) {
               updated.durationInHrs = '168.00'
-            } else if (desc === 'FSD (Catalyst partial replacement/Partial Preheater cleaning)') {
+            } else if (
+              desc ===
+              'FSD (Catalyst partial replacement/Partial Preheater cleaning)'
+            ) {
               updated.durationInHrs = '158.00'
             }
           }
@@ -2108,6 +2147,8 @@ const KendoDataTables = ({
               sortable={{
                 mode: 'multiple',
               }}
+              onHeaderSelectionChange={onHeaderSelectionChange}
+              onSelectionChange={onSelectionChange}
               groupable={
                 permissions?.isTotalFooterActive
                   ? {
@@ -2142,6 +2183,51 @@ const KendoDataTables = ({
                     : false
               }
             >
+              {permissions?.deleteMultiple && (
+                <GridColumn
+                  field='selected'
+                  width='50px'
+                  headerSelectionValue={
+                    selectedRows?.length > 0 && selectedRows?.length === rows?.length
+                  }
+                  cells={{
+                    data: (props) => (
+                      <td style={{ textAlign: 'center' }}>
+                        <Checkbox
+                          checked={selectedRows?.includes(props.dataItem?.idFromApi)}
+                          onChange={() => {
+                            const id = props.dataItem?.idFromApi
+                            if (selectedRows?.includes(id)) {
+                              setSelectedRows(selectedRows?.filter((r) => r !== id))
+                            } else {
+                              setSelectedRows([...selectedRows, id])
+                            }
+                          }}
+                        />
+                      </td>
+                    ),
+                    headerCell: () => (
+                      <th className='k-header' style={{ textAlign: 'center' }}>
+                        <Checkbox
+                          checked={
+                            selectedRows?.length > 0 &&
+                            selectedRows?.length === rows?.length
+                          }
+                          onChange={(e) => {
+                            const checked =
+                              e?.value ?? e?.target?.checked ?? false
+                            if (checked) {
+                              setSelectedRows(rows.map((r) => r?.idFromApi))
+                            } else {
+                              setSelectedRows([])
+                            }
+                          }}
+                        />
+                      </th>
+                    ),
+                  }}
+                />
+              )}
               {groupBy && <ExcelExportColumn field={groupBy} title='Type' />}
 
               {columns?.map((col) => {
@@ -3682,7 +3768,7 @@ const KendoDataTables = ({
           <Button
             variant='contained'
             className='btn-save'
-            onClick={handleDeleteSelected}
+            onClick={handleOpenDeleteMultipleDialog}
             disabled={isButtonDisabled || READ_ONLY}
             loading={loading} // Use the loading prop to trigger loading state
             loadingposition='start' // Use loadingPosition to control where the spinner appears
@@ -3720,6 +3806,29 @@ const KendoDataTables = ({
         <DialogActions>
           <Button onClick={() => setOpenDeleteDialogeBox(false)}>Cancel</Button>
           <Button onClick={deleteTheRecord} autoFocus disabled={READ_ONLY}>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={deleteMultipleConfirms}
+        onClose={() => setDeleteMultipleConfirms(false)}
+        aria-labelledby='alert-dialog-title'
+        aria-describedby='alert-dialog-description'
+        disableScrollLock
+      >
+        <DialogTitle id='alert-dialog-title'>{'Delete ?'}</DialogTitle>
+        <DialogContent>
+          <DialogContentText
+            id='alert-dialog-description'
+            sx={{ color: 'text.primary' }}
+          >
+            {'Are you sure you want to delete?'}{' '}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteMultipleConfirms(false)}>Cancel</Button>
+          <Button onClick={handleDeleteMultiple} autoFocus disabled={READ_ONLY}>
             Delete
           </Button>
         </DialogActions>

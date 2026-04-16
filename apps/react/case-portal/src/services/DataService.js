@@ -42,6 +42,8 @@ export const DataService = {
   getSpyroInputData,
   deleteSlowdownData,
   deleteShutdownData,
+  deleteMultipleShutdown,
+  deleteMultipleSlowdown,
   deleteTurnAroundData,
   handleRefresh,
   getSlowdownNormsData,
@@ -280,6 +282,52 @@ async function deleteSlowdownData(maintenanceId, keycloak, PLANT_ID) {
     return await resp.text() // Handle text response from the backend
   } catch (e) {
     console.error('Error deleting slowdown data:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function deleteMultipleSlowdown(ids, keycloak, PLANT_ID) {
+  const url = `${Config.CaseEngineUrl}/task/slowdown?plantMaintenanceTransactionIds=${ids.join(',')}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to delete data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    return await resp.text() // Handle text response from the backend
+  } catch (e) {
+    console.error('Error deleting multiple slowdown data:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function deleteMultipleShutdown(ids, keycloak, PLANT_ID) {
+  const url = `${Config.CaseEngineUrl}/task/shutdown?plantMaintenanceTransactionIds=${ids.join(',')}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to delete data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    return await resp.text() // Handle text response from the backend
+  } catch (e) {
+    console.error('Error deleting multiple shutdown data:', e)
     return Promise.reject(e)
   }
 }

@@ -1365,6 +1365,42 @@ const SlowDown = ({ permissions }) => {
     }
   }
 
+  const handleDeleteSelected = async (deleteIds) => {
+    if (!deleteIds || deleteIds?.length === 0) return
+    setLoading(true)
+
+    try {
+
+      await DataService.deleteMultipleSlowdown(
+        deleteIds,
+        keycloak,
+        PLANT_ID,
+      )
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Records Deleted successfully!',
+        severity: 'success',
+      })
+      fetchData()
+
+      await MaintenanceDetailsApiService.getMaintenanceData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+    } catch (error) {
+      console.error('Error deleting Records', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error deleting records!',
+        severity: 'error',
+      })
+      setLoading(false)
+    }
+  }
+
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)
     setSnackbarData({
@@ -1591,6 +1627,7 @@ const SlowDown = ({ permissions }) => {
         lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
       highlightLine:
         IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD ? true : false,
+      deleteMultiple: IS_PP_DTA ? true : false,
     },
     isOldYear,
   )
@@ -1678,6 +1715,7 @@ const SlowDown = ({ permissions }) => {
           currentRowId={currentRowId}
           unsavedChangesRef={unsavedChangesRef}
           deleteRowData={deleteRowData}
+          handleDeleteSelected={handleDeleteSelected}
           permissions={adjustedPermissions}
           handleCancelClick={handleCancelClick}
           focusFirstField={focusFirstField}

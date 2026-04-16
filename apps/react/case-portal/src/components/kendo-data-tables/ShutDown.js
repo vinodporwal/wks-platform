@@ -1126,6 +1126,41 @@ const ShutDown = ({ permissions }) => {
       console.error('Error deleting Record', error)
     }
   }
+  const handleDeleteSelected = async (deleteIds) => {
+    if (!deleteIds || deleteIds?.length === 0) return
+    setLoading(true)
+
+    try {
+
+        await DataService.deleteMultipleShutdown(
+          deleteIds,
+          keycloak,
+          PLANT_ID,
+        )
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Records Deleted successfully!',
+          severity: 'success',
+        })
+        fetchData()
+
+        await MaintenanceDetailsApiService.getMaintenanceData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      
+    } catch (error) {
+      console.error('Error deleting Records', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error deleting records!',
+        severity: 'error',
+      })
+      setLoading(false)
+    }
+  }
 
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)
@@ -1343,6 +1378,7 @@ const ShutDown = ({ permissions }) => {
         lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
       highlightLine:
         IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD ? true : false,
+      deleteMultiple: IS_PP_DTA ? true : false,
     },
     isOldYear,
   )
@@ -1393,6 +1429,7 @@ const ShutDown = ({ permissions }) => {
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
         deleteRowData={deleteRowData}
+        handleDeleteSelected={handleDeleteSelected}
         permissions={adjustedPermissions}
         disableRedHighlight={true}
         allProducts={allProducts}
