@@ -37,5 +37,6 @@ public interface ShutDownPlanService {
 	public AOPMessageVM getShutdownDescription(String plantId);
 	
 	void deleteShutPlanData(UUID plantMaintenanceTransactionId, UUID plantId);
+	AOPMessageVM deleteMultipleShutdown(List<UUID> plantMaintenanceTransactionId, UUID plantId);
 	
 }
