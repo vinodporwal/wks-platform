@@ -1354,7 +1354,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 
 	        AOPMessageVM aopMessageVM = new AOPMessageVM();
 	        if (failedRecords != null && !failedRecords.isEmpty()) {
-	            byte[] fileByteArray = createCatChemNormsExcelResponse(year, plantId, configurationDTOs);
+	            byte[] fileByteArray = createCatChemNormsExcelResponse(year, plantId, failedRecords);
 	            String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 	            aopMessageVM.setData(base64File);
 	            aopMessageVM.setCode(400);
@@ -1383,6 +1383,8 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 	        innerHeaders.add("Value");
 	        innerHeaders.add("Remark");
 	        innerHeaders.add("NormParameterId");
+	        innerHeaders.add("saveStatus");
+	        innerHeaders.add("errDescription");
 
 	        Row headerRow = sheet.createRow(currentRow++);
 	        for (int col = 0; col < innerHeaders.size(); col++) {
@@ -1399,6 +1401,8 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 	                setCellValue(row, 2, dto.getApr());
 	                setCellValue(row, 3, dto.getRemarks());
 	                setCellValue(row, 4, dto.getNormParameterFKId());
+	                setCellValue(row, 5, dto.getSaveStatus());
+	                setCellValue(row, 6, dto.getErrDescription());
 	            }
 	        }
 
