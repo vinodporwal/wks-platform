@@ -1283,7 +1283,7 @@ def usd_iterate(
                 h_name = hrsg_detail.get("name", "")
                 h_hours = hrsg_detail.get("hours", 0)
                 h_max_cap = hrsg_detail.get("max_capacity_per_hr", 136.0)
-                h_eff = hrsg_detail.get("efficiency", 1.03)
+                h_eff = hrsg_detail.get("efficiency", 1.00)
                 h_supp_max = hrsg_detail.get("supp_max_mt_month", 0)
                 print(f"  |   {h_name}: {h_hours:.0f} hrs x {h_max_cap} MT/hr x {h_eff} = {h_supp_max:,.2f} MT")
         print(f"  |   Total Supp Max = {total_supp_max:,.2f} MT")
