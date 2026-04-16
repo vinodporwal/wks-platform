@@ -105,12 +105,14 @@ const getEnhancedAOPColDefs = ({
         title: 'Recipe',
         editable: false,
         width1: 100,
+        minWidth: 100,
       },
       {
         field: 'UOM',
         title: 'UOM',
         editable: false,
         width1: 85,
+        minWidth: 90,
       },
     ]
     allGradesReciepes?.forEach((field) => {
@@ -121,6 +123,7 @@ const getEnhancedAOPColDefs = ({
         width1: 100,
         type: 'number',
         format: FORMATE_VALUE,
+        minWidth: 100,
       })
     })
   } else if (configType == 'lines') {
@@ -130,12 +133,14 @@ const getEnhancedAOPColDefs = ({
         title: 'Grade',
         editable: false,
         widthT: 100,
+        minWidth: 100,
       },
       {
         field: 'UOM',
         title: 'UOM',
         editable: false,
         widthT: 85,
+        minWidth: 85,
       },
     ]
     allGradesRecipes?.forEach((line) => {
@@ -146,6 +151,7 @@ const getEnhancedAOPColDefs = ({
         widthT: 100,
         type: 'number',
         format: FORMATE_VALUE,
+        minWidth: 100,
       })
     })
   } else {
@@ -168,6 +174,7 @@ const getEnhancedAOPColDefs = ({
           ...col,
           type: 'number',
           format: FORMATE_VALUE,
+          minWidth: 100,
         }
       }
       if (col?.title == 'IIR' || col?.title == 'CIIR' || col?.title == 'BIIR') {
@@ -175,6 +182,7 @@ const getEnhancedAOPColDefs = ({
           ...col,
           type: 'number',
           format: FORMATE_VALUE,
+          minWidth: 100,
         }
       }
 
@@ -193,6 +201,7 @@ const getEnhancedAOPColDefs = ({
           align: 'right',
           type: 'negativeNumber',
           format: FORMATE_VALUE,
+          minWidth: 100,
         }
       }
 
@@ -210,6 +219,7 @@ const getEnhancedAOPColDefs = ({
           widthT: 100,
           fixedWidth: 100,
           width: 100,
+          minWidth: 100,
         }
       }
 
@@ -224,6 +234,7 @@ const getEnhancedAOPColDefs = ({
           align: 'right',
           type: 'number',
           format: FORMATE_VALUE,
+          minWidth: 100,
         }
       }
 
@@ -238,6 +249,7 @@ const getEnhancedAOPColDefs = ({
           align: 'right',
           type: 'number',
           format: FORMATE_VALUE,
+          minWidth: 100,
         }
       }
 

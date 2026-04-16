@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.cpp.dto.heatrate.HRSGHeatRateLookupDTO;
 import com.wks.caseengine.cpp.dto.heatrate.HeatRateDTO;
+import com.wks.caseengine.cpp.dto.heatrate.STGHeatRateDTO;
 import com.wks.caseengine.cpp.dto.heatrate.STGExtractionLookupDTO;
 import com.wks.caseengine.cpp.service.HeatRateService;
 
@@ -137,6 +138,32 @@ public class HeatRateController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping({"/stg-heat-rate/{financialYear}", "/stg-heat-rate/{financialYear}/{startDate}/{endDate}"})
+    public ResponseEntity<List<STGHeatRateDTO>> getSTGHeatRate(
+            @PathVariable String financialYear,
+            @PathVariable(required = false) String startDate,
+            @PathVariable(required = false) String endDate) {
+        
+        logger.info("========== GET STG HEAT RATE REQUEST ==========");
+        logger.info("Request Parameters - financialYear: {}", financialYear);
+        logger.info("Optional Parameters - startDate: {}, endDate: {}", startDate, endDate);
+        
+        List<STGHeatRateDTO> result;
+        
+        if (startDate != null && !startDate.trim().isEmpty() && endDate != null && !endDate.trim().isEmpty()) {
+            logger.info("Date range provided - calling getSTGHeatRateWithProposed");
+            result = heatRateService.getSTGHeatRateWithProposed(financialYear, startDate, endDate);
+        } else {
+            logger.info("No date range provided - calling standard getSTGHeatRate");
+            result = heatRateService.getSTGHeatRate(financialYear);
+        }
+        
+        logger.info("Service returned {} STG heat rate records", result != null ? result.size() : 0);
+        logger.info("========== RESPONSE BEING SENT ==========");
+        
+        return ResponseEntity.ok(result);
+    }
+
          // *****************
          
     @GetMapping("/stg-extraction-lookup")
@@ -213,6 +240,19 @@ public class HeatRateController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/stg-heat-rate/{financialYear}")
+    public ResponseEntity<Void> updateSTGHeatRate(@RequestBody List<STGHeatRateDTO> stgHeatRateDTOs, @PathVariable String financialYear) {
+        logger.info("========== UPDATE STG HEAT RATE REQUEST ==========");
+        logger.info("Request Parameters - financialYear: {}", financialYear);
+        logger.info("Received {} STG heat rate records to update", stgHeatRateDTOs != null ? stgHeatRateDTOs.size() : 0);
+        
+        heatRateService.updateSTGHeatRate(stgHeatRateDTOs);
+        logger.info("STG heat rate update completed successfully");
+        logger.info("==========================================");
+        
+        return ResponseEntity.ok().build();
+    }
+
     // update stg extraction
     @PostMapping("/stg-extraction-lookup/{financialYear}")
     public ResponseEntity<Void> updateSTGExtraction(@RequestBody List<STGExtractionLookupDTO> stgExtractionLookupDTOs, @PathVariable String financialYear) {
@@ -267,6 +307,22 @@ public class HeatRateController {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
             headers.setContentDispositionFormData("attachment", "Heat_Rate.xlsx");
+            return new ResponseEntity<>(excelData, headers, HttpStatus.OK);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping({"/stg-heat-rate/export/{financialYear}", "/stg-heat-rate/export/{financialYear}/{startDate}/{endDate}"})
+    public ResponseEntity<byte[]> exportSTGHeatRate(
+            @PathVariable String financialYear,
+            @PathVariable(required = false) String startDate,
+            @PathVariable(required = false) String endDate) {
+        try {
+            byte[] excelData = heatRateService.exportSTGHeatRate(financialYear, startDate, endDate);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", "STG_Heat_Rate.xlsx");
             return new ResponseEntity<>(excelData, headers, HttpStatus.OK);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -328,6 +384,16 @@ public class HeatRateController {
     public ResponseEntity<Void> importHeatRate(@RequestParam("file") MultipartFile file) {
         try {
             heatRateService.importHeatRate(file);
+            return ResponseEntity.ok().build();
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/stg-heat-rate/import")
+    public ResponseEntity<Void> importSTGHeatRate(@RequestParam("file") MultipartFile file) {
+        try {
+            heatRateService.importSTGHeatRate(file);
             return ResponseEntity.ok().build();
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

@@ -145,8 +145,20 @@ const Shutdown = ({
       minWidth: 100,
       width: 100,
     },
-    startDate: { editable: true, type: 'dateTime', minWidth: 100, widthT: 200 },
-    endDate: { editable: true, type: 'dateTime', minWidth: 100, widthT: 200 },
+    startDate: {
+      editable: true,
+      type: 'dateTime',
+      isFinancialYear: false,
+      minWidth: 100,
+      widthT: 200,
+    },
+    endDate: {
+      editable: true,
+      type: 'dateTime',
+      isFinancialYear: false,
+      minWidth: 100,
+      widthT: 200,
+    },
     purpose: { editable: true, type: 'text', minWidth: 200, widthT: 200 },
   }
 

@@ -13,13 +13,15 @@
     "title": "Particulars",
     "editable": false,
     "autoAdjust": false,
-    "widthT": 300
+    "widthT": 300,
+    "minWidth": 300
   },
   {
     "field": "UOM",
     "title": "UOM",
     "editable": false,
-    "widthT": 80
+    "widthT": 80,
+    "minWidth": 85
   },
   {
     "field": "apr",
@@ -33,6 +35,7 @@
     "title": "Remark",
     "widthT": 250,
     "autoAdjust": false,
-    "editable": true
+    "editable": true,
+    "minWidth": 150
   }
 ]

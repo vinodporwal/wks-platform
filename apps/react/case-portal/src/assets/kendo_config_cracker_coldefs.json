@@ -4,13 +4,15 @@
     "title": "Particulars",
     "editable": false,
     "widthT": 120,
-    "hidden": false
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "uom",
     "title": "UOM",
     "editable": false,
-    "width": 80
+    "width": 80,
+    "minWidth": 90
   },
   {
     "field": "apr",
@@ -101,7 +103,8 @@
     "title": "Remark",
     "editable": false,
     "width": 120,
-    "type": "string"
+    "type": "string",
+    "minWidth": 120
   },
   {
     "field": "normParameterFKID",

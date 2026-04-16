@@ -5,12 +5,16 @@ export const BusinessDemandElastomerColumns = [
     groupable: true,
     editable: false,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'normParameterId',
     title: 'Particulars',
     editable: false,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 
   {
@@ -132,12 +136,14 @@ export const BusinessDemandElastomerColumns = [
     title: 'Remark',
     editable: false,
     widthT: 250,
-    autoAdjust: false
+    autoAdjust: false,
   },
   {
     field: 'idFromApi',
     title: 'ID from API',
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 ]
 export const BusinessDemandElastomerJmdColumns = [
@@ -148,6 +154,8 @@ export const BusinessDemandElastomerJmdColumns = [
     groupable: true,
     editable: false,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'normParameterId',
@@ -155,6 +163,8 @@ export const BusinessDemandElastomerJmdColumns = [
     editable: false,
     width: 125,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 
   {
@@ -162,7 +172,7 @@ export const BusinessDemandElastomerJmdColumns = [
     title: 'Particulars',
     editable: false,
     widthT: 220,
-    autoAdjust: false
+    autoAdjust: false,
   },
   {
     field: 'april',
@@ -179,12 +189,14 @@ export const BusinessDemandElastomerJmdColumns = [
     title: 'Remark',
     editable: false,
     widthT: 250,
-    autoAdjust: false
+    autoAdjust: false,
   },
   {
     field: 'idFromApi',
     title: 'ID from API',
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 ]
 
@@ -194,7 +206,7 @@ export const SlowDownElastomerColumns = [
     title: 'Slowdown Desc',
     editable: true,
     widthT: 200,
-    autoAdjust: false
+    autoAdjust: false,
   },
 
   {
@@ -202,6 +214,8 @@ export const SlowDownElastomerColumns = [
     title: 'maintenanceId',
     editable: false,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 
   {
@@ -240,7 +254,7 @@ export const SlowDownElastomerColumns = [
     title: 'Remarks',
     editable: true,
     widthT: 200,
-    autoAdjust: false
+    autoAdjust: false,
   },
 ]
 export const SlowDown_Elastomer_JMD_Columns = [
@@ -249,7 +263,7 @@ export const SlowDown_Elastomer_JMD_Columns = [
     title: 'Slowdown Desc',
     editable: true,
     widthT: 260,
-    autoAdjust: false
+    autoAdjust: false,
   },
 
   {
@@ -257,6 +271,8 @@ export const SlowDown_Elastomer_JMD_Columns = [
     title: 'maintenanceId',
     editable: false,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 
   // {
@@ -293,7 +309,7 @@ export const SlowDown_Elastomer_JMD_Columns = [
     title: 'Remarks',
     editable: true,
     widthT: 250,
-    autoAdjust: false
+    autoAdjust: false,
   },
 ]
 export const SlowDownElastomerColumnsSBR = [
@@ -302,14 +318,14 @@ export const SlowDownElastomerColumnsSBR = [
     title: 'Slowdown Desc',
     editable: true,
     widthT: 230,
-    autoAdjust: false
+    autoAdjust: false,
   },
   {
     field: 'productName1',
     title: 'Particulars',
     widthT: 120,
     editable: true,
-    autoAdjust: false
+    autoAdjust: false,
   },
 
   {
@@ -317,6 +333,8 @@ export const SlowDownElastomerColumnsSBR = [
     title: 'maintenanceId',
     editable: false,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 
   {
@@ -355,7 +373,7 @@ export const SlowDownElastomerColumnsSBR = [
     title: 'Remarks',
     editable: true,
     widthT: 230,
-    autoAdjust: false
+    autoAdjust: false,
   },
 ]
 
@@ -367,12 +385,16 @@ export const NormalOpNormElastomerColumns = [
     groupable: true,
     editable: false,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
     title: 'Particulars',
     width: 100,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'productName',
@@ -514,11 +536,15 @@ export const NormalOpNormElastomerColumns = [
     field: 'idFromApi',
     title: 'idFromApi',
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 ]
 export const NormalOpNormElastomerJmdColumns = [
@@ -529,12 +555,16 @@ export const NormalOpNormElastomerJmdColumns = [
     groupable: true,
     editable: false,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
     title: 'Particulars',
     width: 100,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'productName',
@@ -676,11 +706,15 @@ export const NormalOpNormElastomerJmdColumns = [
     field: 'idFromApi',
     title: 'idFromApi',
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 ]
 export const ShutdownConsumptionElastomerColumns = [
@@ -689,6 +723,8 @@ export const ShutdownConsumptionElastomerColumns = [
     headerName: 'Type',
     width: 100,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
@@ -696,6 +732,7 @@ export const ShutdownConsumptionElastomerColumns = [
     minWidth: 150,
     editable: false,
     hidden: true,
+    isVisible: false,
     width: 100,
   },
   {
@@ -733,6 +770,8 @@ export const ShutdownConsumptionElastomerColumns = [
     field: 'idFromApi',
     headerName: 'idFromApi',
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 ]
 export const SlowdownNormsElastomerColumns = [
@@ -741,6 +780,8 @@ export const SlowdownNormsElastomerColumns = [
     headerName: 'Type',
     width: 100,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
@@ -748,6 +789,7 @@ export const SlowdownNormsElastomerColumns = [
     minWidth: 150,
     editable: false,
     hidden: true,
+    isVisible: false,
     width: 120,
   },
   {
@@ -785,6 +827,8 @@ export const SlowdownNormsElastomerColumns = [
     field: 'idFromApi',
     headerName: 'idFromApi',
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 ]
 export const SlowdownNormsElastomerJmdColumns = [
@@ -793,6 +837,8 @@ export const SlowdownNormsElastomerJmdColumns = [
     headerName: 'Type',
     width: 100,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
@@ -800,6 +846,7 @@ export const SlowdownNormsElastomerJmdColumns = [
     minWidth: 150,
     editable: false,
     hidden: true,
+    isVisible: false,
     width: 100,
   },
   {
@@ -837,6 +884,8 @@ export const SlowdownNormsElastomerJmdColumns = [
     field: 'idFromApi',
     headerName: 'idFromApi',
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 ]
 
@@ -847,10 +896,14 @@ export const ConsumptionAopElastomerColumns = [
     editable: false,
     width: 100,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'NormParametersId',
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 
   {
@@ -917,5 +970,7 @@ export const ConsumptionAopElastomerColumns = [
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 ]

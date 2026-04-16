@@ -157,8 +157,6 @@ const CompactTextField = styled(TextField)({
   },
 })
 
-const ADJUST_PADDING = 4
-
 const KendoDataTables = ({
   resetEditSignal,
   setEditResetKey,
@@ -466,33 +464,19 @@ const KendoDataTables = ({
 
   const fileInputRef = useRef(null)
 
-  const extractAllColumns = useCallback((cols) => {
-    const allCols = []
+  console.log(columns)
 
-    const traverse = (columns) => {
-      columns?.forEach((col) => {
-        if (!col || Object.keys(col).length === 0) return
-
-        if (col.children && Array.isArray(col.children)) {
-          traverse(col.children)
-        } else if (col.field && col.hidden !== true) {
-          allCols.push(col)
-        }
-      })
-    }
-
-    traverse(cols)
-    return allCols
-  }, [])
+  const numericHeaderClass = (isActive, col) =>
+    [isActive ? 'active-column' : '', 'k-number-right']
+      .filter(Boolean)
+      .join(' ')
 
   React.useEffect(() => {
     grid.current = document.querySelector('.k-grid')
     window.addEventListener('resize', handleResize)
-    columns.map((item) =>
-      item.minWidth !== undefined
-        ? (minGridWidth.current += item.minWidth)
-        : minGridWidth.current,
-    )
+    minGridWidth.current = columns
+      .filter((col) => col?.isVisible !== false)
+      .reduce((sum, col) => sum + (col?.minWidth || 100), 0)
     setGridCurrent(grid.current.offsetWidth)
     setApplyMinWidth(grid.current.offsetWidth < minGridWidth.current)
   }, [])
@@ -506,17 +490,38 @@ const KendoDataTables = ({
     }
   }
 
-  const setWidth = (minWidth) => {
-    if (minWidth === undefined) {
-      minWidth = 0
+  const setWidth = (minWidth = 0) => {
+    const visibleCols = columns.filter((col) => col?.isVisible !== false)
+
+    const totalMinWidth = visibleCols.reduce(
+      (sum, col) => sum + (col.minWidth || 0),
+      0,
+    )
+
+    // 🔥 Decide behavior based on available space
+    const hasExtraSpace = gridCurrent > totalMinWidth
+
+    let width
+
+    if (!hasExtraSpace) {
+      // ✅ Not enough space → respect minWidth → enable scroll
+      width = minWidth
+    } else {
+      // ✅ Extra space → distribute nicely (but controlled)
+      const extraPerCol = (gridCurrent - totalMinWidth) / visibleCols.length
+
+      // 🔥 limit expansion so it doesn't look ugly
+      const MAX_GROWTH = 80 // tweak if needed
+
+      width = minWidth + Math.min(extraPerCol, MAX_GROWTH)
     }
-    let width = applyMinWidth
-      ? minWidth
-      : minWidth + (gridCurrent - minGridWidth.current) / columns.length
+
+    // optional padding adjustment
     if (width >= COLUMN_MIN) {
       width -= ADJUST_PADDING
     }
-    return width
+
+    return Math.max(minWidth, width)
   }
 
   const handleEditChange = useCallback((e) => {
@@ -1004,7 +1009,6 @@ const KendoDataTables = ({
     setRemarkDialogOpen(false)
   }
 
-  console.log('columns', columns)
   const columnCount = useMemo(() => {
     return (
       columns?.filter(
@@ -1024,7 +1028,7 @@ const KendoDataTables = ({
     const newRow = {
       id: newRowId,
       isNew: true,
-      ...Object.fromEntries(columns?.map((col) => [col.field, ''])),
+      ...Object.fromEntries(columns?.map((col) => [col?.field, ''])),
     }
 
     setRows((prevRows) => [newRow, ...prevRows])
@@ -1704,16 +1708,6 @@ const KendoDataTables = ({
       </td>
     )
   }
-
-  // useEffect(() => {
-  //   console.log(selectedGrade)
-
-  //   if (permissions?.showG && grades?.length > 0 && !selectedGrade) {
-  //     const firstGrade = grades[0]
-  //     setSelectedGrade(firstGrade.gradeId)
-  //     handleGradeChange(firstGrade.gradeId, firstGrade?.displayName)
-  //   }
-  // }, [grades, permissions?.showG, selectedGrade])
 
   useEffect(() => {
     if (!permissions?.showG || !grades?.length) return
@@ -2459,14 +2453,14 @@ const KendoDataTables = ({
                   const isActive = isColumnActive(col?.field, filter, sort)
                   if (
                     IS_VCM_VERTICAL &&
-                    (col.field === 'maintStartDateTime' ||
-                      col.field === 'maintEndDateTime')
+                    (col?.field === 'maintStartDateTime' ||
+                      col?.field === 'maintEndDateTime')
                   ) {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
                         cells={{
                           edit: {
                             date: DateTimePickerEditor24HourFormat,
@@ -2482,13 +2476,12 @@ const KendoDataTables = ({
                         }}
                         format={'{0:dd-MM-yyyy HH:mm}'}
                         editor='date'
-                        hidden={col.hidden}
+                        hidden={col?.hidden}
                         filter='date'
                         columnMenu={ColumnMenuCheckboxFilterDate}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
+                        width={setWidth(col?.minWidth || 150)}
                         headerClassName={
-                          isDateFilterActive.includes(col.field)
+                          isDateFilterActive.includes(col?.field)
                             ? 'active-column'
                             : ''
                         }
@@ -2496,16 +2489,16 @@ const KendoDataTables = ({
                     )
                   }
 
-                  if (dateFields.includes(col.field)) {
+                  if (dateFields.includes(col?.field)) {
                     if (
                       screenType === 'ElastomerSlowdown' &&
                       lowerVertName === 'elastomer'
                     ) {
                       return (
                         <GridColumn
-                          key={col.field}
-                          field={col.field}
-                          title={col.title || col.headerName}
+                          key={col?.field}
+                          field={col?.field}
+                          title={col?.title || col?.headerName}
                           cells={{
                             edit: {
                               date: (props) => (
@@ -2533,19 +2526,18 @@ const KendoDataTables = ({
                               'periodTo',
                               'toDateReport',
                               'fromDateReport',
-                            ].includes(col.field)
+                            ].includes(col?.field)
                               ? '{0:dd-MM-yyyy}'
                               : '{0:dd-MM-yyyy hh:mm a}'
                           }
                           editor='date'
-                          hidden={col.hidden}
+                          hidden={col?.hidden}
                           // columnMenu={DateColumnMenu}
                           filter='date'
                           columnMenu={ColumnMenuCheckboxFilterDate}
-                          width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                          minWidth={setWidth(100, col.field)}
+                          width={setWidth(col?.minWidth || 150)}
                           headerClassName={
-                            isDateFilterActive.includes(col.field)
+                            isDateFilterActive.includes(col?.field)
                               ? 'active-column'
                               : ''
                           }
@@ -2554,9 +2546,9 @@ const KendoDataTables = ({
                     }
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
                         cells={{
                           edit: {
                             date: [
@@ -2566,7 +2558,7 @@ const KendoDataTables = ({
                               'periodFrom',
                               'toDateReport',
                               'fromDateReport',
-                            ].includes(col.field)
+                            ].includes(col?.field)
                               ? DateOnlyPicker
                               : DateTimePickerEditor,
                           },
@@ -2587,19 +2579,18 @@ const KendoDataTables = ({
                             'periodTo',
                             'toDateReport',
                             'fromDateReport',
-                          ].includes(col.field)
+                          ].includes(col?.field)
                             ? '{0:dd-MM-yyyy}'
                             : '{0:dd-MM-yyyy hh:mm a}'
                         }
                         editor='date'
-                        hidden={col.hidden}
+                        hidden={col?.hidden}
                         // columnMenu={DateColumnMenu}
                         filter='date'
                         columnMenu={ColumnMenuCheckboxFilterDate}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
+                        width={setWidth(col?.minWidth || 150)}
                         headerClassName={
-                          isDateFilterActive.includes(col.field)
+                          isDateFilterActive.includes(col?.field)
                             ? 'active-column'
                             : ''
                         }
@@ -2607,14 +2598,13 @@ const KendoDataTables = ({
                     )
                   }
 
-                  if (dateFields1.includes(col.field)) {
+                  if (dateFields1.includes(col?.field)) {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
                         cells={{
                           edit: {
                             date: [
@@ -2625,7 +2615,7 @@ const KendoDataTables = ({
                               'sdED',
                               'sdSD',
                               'targetDate',
-                            ].includes(col.field)
+                            ].includes(col?.field)
                               ? DateOnlyPicker
                               : DateOnlyPicker,
                           },
@@ -2648,12 +2638,12 @@ const KendoDataTables = ({
                             'sdED',
                             'sdSD',
                             'targetDate',
-                          ].includes(col.field)
+                          ].includes(col?.field)
                             ? '{0:dd-MM-yyyy}'
                             : '{0:dd-MM-yyyy}'
                         }
                         editor='date'
-                        hidden={col.hidden}
+                        hidden={col?.hidden}
                         filter='date'
                         // columnMenu={DateColumnMenu}
                         columnMenu={ColumnMenuCheckboxFilterDate}
@@ -2662,17 +2652,16 @@ const KendoDataTables = ({
                   }
                   if (
                     lowerVertName === 'vcm' &&
-                    monthFields.includes(col.field) &&
+                    monthFields.includes(col?.field) &&
                     permissions?.highlightShutdownConsumption
                   ) {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        hidden={col.hidden}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}
                         cells={{
@@ -2688,7 +2677,7 @@ const KendoDataTables = ({
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
-                        format={col.format}
+                        format={col?.format}
                       />
                     )
                   }
@@ -2697,10 +2686,9 @@ const KendoDataTables = ({
                       <GridColumn
                         key='symbol'
                         field='symbol'
-                        width={setWidth(col?.widthT || col?.width || 80, col.field)}
-                        minWidth={setWidth(80, col.field)}
-                        title={col.title}
-                        editable={col.editable || true}
+                        width={setWidth(col?.minWidth || 150)}
+                        title={col?.title}
+                        editable={col?.editable || true}
                         cells={{
                           data: (cellProps) => (
                             <BudgetConstrainsCellEditor {...cellProps} />
@@ -2717,10 +2705,9 @@ const KendoDataTables = ({
                       <GridColumn
                         key='limit'
                         field='limit'
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        title={col.title}
-                        editable={col.editable || true}
+                        width={setWidth(col?.minWidth || 150)}
+                        title={col?.title}
+                        editable={col?.editable || true}
                         cells={{
                           data: (cellProps) => (
                             <LimitCellEditor
@@ -2741,11 +2728,10 @@ const KendoDataTables = ({
                       <GridColumn
                         key='discriptionDrpdwn'
                         field='discriptionDrpdwn'
-                        title={col.title || col.headerName || 'Particulars'}
-                        editable={col.editable || true}
-                        hidden={col.hidden}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
+                        title={col?.title || col?.headerName || 'Particulars'}
+                        editable={col?.editable || true}
+                        hidden={col?.hidden}
+                        width={setWidth(col?.minWidth || 150)}
                         cells={{
                           data: (cellProps) => (
                             <ProductCell
@@ -2767,9 +2753,9 @@ const KendoDataTables = ({
                       <GridColumn
                         key='discription'
                         field='discription'
-                        title={col.title || col.headerName || 'Particulars'}
-                        editable={col.editable || true}
-                        hidden={col.hidden}
+                        title={col?.title || col?.headerName || 'Particulars'}
+                        editable={col?.editable || true}
+                        hidden={col?.hidden}
                         cells={{
                           data: (cellProps) => (
                             <ProductCell
@@ -2780,8 +2766,7 @@ const KendoDataTables = ({
                           headerCell: SimpleHeaderWithTooltip,
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
+                        width={setWidth(col?.minWidth || 150)}
                       />
                     )
                   }
@@ -2791,11 +2776,10 @@ const KendoDataTables = ({
                       <GridColumn
                         key='productName1'
                         field='productName1'
-                        title={col.title || col.headerName || 'Particulars'}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        editable={col.editable || true}
-                        hidden={col.hidden}
+                        title={col?.title || col?.headerName || 'Particulars'}
+                        width={setWidth(col?.minWidth || 150)}
+                        editable={col?.editable || true}
+                        hidden={col?.hidden}
                         cells={{
                           data: (cellProps) => (
                             <ProductCell
@@ -2819,11 +2803,10 @@ const KendoDataTables = ({
                       <GridColumn
                         key='month'
                         field='month'
-                        title={col.title || col.headerName || 'month'}
-                        editable={col.editable || true}
-                        hidden={col.hidden}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
+                        title={col?.title || col?.headerName || 'month'}
+                        editable={col?.editable || true}
+                        hidden={col?.hidden}
+                        width={setWidth(col?.minWidth || 150)}
                         cells={{
                           data: (cellProps) => (
                             <MonthCell {...cellProps} allMonths={allMonths} />
@@ -2840,12 +2823,11 @@ const KendoDataTables = ({
                       <GridColumn
                         key={col?.field}
                         field={col?.field}
-                        title={col.title || col.headerName || 'Description'}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
+                        title={col?.title || col?.headerName || 'Description'}
+                        width={setWidth(col?.minWidth || 150)}
                         editable={true}
                         columnMenu={ColumnMenuCheckboxFilter}
-                        hidden={col.hidden}
+                        hidden={col?.hidden}
                         headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: { text: TextCellEditor },
@@ -2865,15 +2847,14 @@ const KendoDataTables = ({
                     )
                   }
 
-                  if (col.type === 'descLimit') {
+                  if (col?.type === 'descLimit') {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 150, col.field)}
-                        minWidth={setWidth(150, col.field)}
-                        hidden={col.hidden}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}
                         cells={{
@@ -2890,18 +2871,12 @@ const KendoDataTables = ({
                       <GridColumn
                         key='UOM'
                         field='UOM'
-                        title={col.title || col.headerName || 'UOM'}
-                        // width={setWidth(110)}
-                        // width={setWidth(columnCount <= 10 ? 50 : 100)}
-                        width={setWidth(
-                          columnCount <= 6 ? 80 : columnCount <= 10 ? 80 : 100,
-                          col.field
-                        )}
-                        minWidth={setWidth(col?.widthT || col?.width || 80, col.field)}
+                        title={col?.title || col?.headerName || 'UOM'}
+                        width={setWidth(col?.minWidth || 150)}
                         editable={false}
                         columnMenu={ColumnMenuCheckboxFilter}
                         headerClassName={isActive ? 'active-column' : ''}
-                        hidden={col.hidden}
+                        hidden={col?.hidden}
                         cells={{
                           data: toolTipRenderer,
                           headerCell: SimpleHeaderWithTooltip,
@@ -2914,12 +2889,11 @@ const KendoDataTables = ({
                       <GridColumn
                         key='ReceipeName'
                         field='ReceipeName'
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
                         editable={false}
                         columnMenu={ColumnMenuCheckboxFilter}
-                        hidden={col.hidden}
+                        hidden={col?.hidden}
                         cells={{
                           data: toolTipRenderer,
                           headerCell: SimpleHeaderWithTooltip,
@@ -2927,15 +2901,14 @@ const KendoDataTables = ({
                       />
                     )
                   }
-                  if (col.type === 'Receipe') {
+                  if (col?.type === 'Receipe') {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        hidden={col.hidden}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         className={
                           col?.isDisabled
                             ? 'k-number-right-disabled'
@@ -2950,20 +2923,22 @@ const KendoDataTables = ({
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
-                        format={col.format}
+                        format={col?.format}
                       />
                     )
                   }
 
-                  if (col.field === 'sapMaterialCode' && col.useMethodColors) {
+                  if (
+                    col?.field === 'sapMaterialCode' &&
+                    col?.useMethodColors
+                  ) {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        hidden={col.hidden}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}
                         cells={{
@@ -2975,15 +2950,14 @@ const KendoDataTables = ({
                     )
                   }
                   // ...existing code...
-                  if (col.type === 'monthDropdownPEPP') {
+                  if (col?.type === 'monthDropdownPEPP') {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        hidden={col.hidden}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}
                         cells={{
@@ -3005,15 +2979,14 @@ const KendoDataTables = ({
                     )
                   }
 
-                  if (col.type === 'monthDropdown') {
+                  if (col?.type === 'monthDropdown') {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        hidden={col.hidden}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}
                         cells={{
@@ -3025,14 +2998,13 @@ const KendoDataTables = ({
                       />
                     )
                   }
-                  if (col.type === 'Categorydropdown') {
+                  if (col?.type === 'Categorydropdown') {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
                         editable={!!col?.editable}
                         cells={{
                           edit: { text: CategoryDropdownEditor },
@@ -3061,15 +3033,14 @@ const KendoDataTables = ({
                   const YearDropdownEditorWrapper = (props) => (
                     <YearDropdownEditor {...props} AOP_YEAR={AOP_YEAR} />
                   )
-                  if (col.type === 'yeardropdown') {
+                  if (col?.type === 'yeardropdown') {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        hidden={col.hidden}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         editable={!!col?.editable}
                         headerClassName={isActive ? 'active-column' : ''}
                         cells={{
@@ -3081,15 +3052,14 @@ const KendoDataTables = ({
                       />
                     )
                   }
-                  if (col.type === 'typesdDropdown') {
+                  if (col?.type === 'typesdDropdown') {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        hidden={col.hidden}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         editable={!!col?.editable}
                         headerClassName={isActive ? 'active-column' : ''}
                         cells={{
@@ -3118,15 +3088,14 @@ const KendoDataTables = ({
                       rowId={props.dataItem?.id}
                     />
                   )
-                  if (col.type === 'lineDropdown') {
+                  if (col?.type === 'lineDropdown') {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        editable={col.editable}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title}
+                        width={setWidth(col?.minWidth || 150)}
+                        editable={col?.editable}
                         cells={{
                           edit: { text: LineDropdownEditorWrapper },
                           data: (props) => (
@@ -3134,7 +3103,7 @@ const KendoDataTables = ({
                               {...props}
                               allLines={allLines}
                               customModifiedCells={customModifiedCells}
-                              highlightField={col.field}
+                              highlightField={col?.field}
                               highlight={!!permissions?.highlightLine}
                               rowId={props.dataItem?.id}
                             />
@@ -3150,12 +3119,11 @@ const KendoDataTables = ({
                       <GridColumn
                         key='DisplayName'
                         field={col?.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
                         editable={false}
                         columnMenu={ColumnMenuCheckboxFilter}
-                        hidden={col.hidden}
+                        hidden={col?.hidden}
                         cells={{
                           data: toolTipRenderer,
                           headerCell: SimpleHeaderWithTooltip,
@@ -3173,16 +3141,14 @@ const KendoDataTables = ({
 
                   if (
                     ['aopRemarks', 'remarks', 'remark', 'Remarks'].includes(
-                      col.field,
+                      col?.field,
                     )
                   ) {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        // editor={true}
-                        // editable={{ mode: 'popup' }}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
                         cells={{
                           data: (cellProps, allRedCell) => (
                             <RemarkCell
@@ -3194,24 +3160,22 @@ const KendoDataTables = ({
                           headerCell: SimpleHeaderWithTooltip,
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}
-                        hidden={col.hidden}
+                        hidden={col?.hidden}
                         headerClassName={isActive ? 'active-column' : ''}
-                        width={setWidth(col?.widthT || col?.width || 120, col.field)}
-                        minWidth={setWidth(120, col.field)}
+                        width={setWidth(col?.minWidth || 150)}
                       />
                     )
                   }
-                  if (col.field === 'durationInHrs') {
+                  if (col?.field === 'durationInHrs') {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
                         editable={true}
                         columnMenu={ColumnMenuCheckboxFilter}
-                        hidden={col.hidden}
+                        hidden={col?.hidden}
                         format={'{0:n2}'}
                         className={
                           col?.isDisabled
@@ -3237,17 +3201,16 @@ const KendoDataTables = ({
                     )
                   }
 
-                  if (col.field === 'rpfDownTime') {
+                  if (col?.field === 'rpfDownTime') {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
                         editable={true}
                         columnMenu={ColumnMenuCheckboxFilter}
-                        hidden={col.hidden}
+                        hidden={col?.hidden}
                         format={'{0:n2}'}
                         className='k-number-right'
                         cells={{
@@ -3261,15 +3224,14 @@ const KendoDataTables = ({
                     )
                   }
 
-                  if (col.hideFilter && col.hideSort) {
+                  if (col?.hideFilter && col?.hideSort) {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        hidden={col.hidden}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        hidden={col?.hidden}
+                        width={setWidth(col?.minWidth || 150)}
                         className={
                           col?.isDisabled
                             ? 'k-number-right-disabled'
@@ -3289,21 +3251,20 @@ const KendoDataTables = ({
                           ),
                           headerCell: SimpleHeaderWithTooltip,
                         }}
-                        format={col.format}
+                        format={col?.format}
                         sortable={false}
                       />
                     )
                   }
 
-                  if (col.type === 'propaneDropdown') {
+                  if (col?.type === 'propaneDropdown') {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        hidden={col.hidden}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}
                         cells={{
@@ -3315,17 +3276,16 @@ const KendoDataTables = ({
                       />
                     )
                   }
-                  if (col.type === 'dynamicDropdown') {
+                  if (col?.type === 'dynamicDropdown') {
                     const dropdownOptions =
                       permissions?.dynamicDropdownOptions || []
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        hidden={col.hidden}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}
                         cells={{
@@ -3345,15 +3305,14 @@ const KendoDataTables = ({
                     )
                   }
 
-                  if (col.type === 'percentChange') {
+                  if (col?.type === 'percentChange') {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        hidden={col.hidden}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         className={'k-number-right'}
                         editable={col?.editable ? true : false}
                         headerClassName={numericHeaderClass(isActive, col)}
@@ -3364,20 +3323,19 @@ const KendoDataTables = ({
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
-                        format={col.format}
+                        format={col?.format}
                       />
                     )
                   }
 
-                  if (col.type === 'negativeNumber') {
+                  if (col?.type === 'negativeNumber') {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        hidden={col.hidden}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         className={`
                   ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
                   ${col?.isBold ? 'bold-text' : ''}
@@ -3407,20 +3365,19 @@ const KendoDataTables = ({
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
-                        format={col.format}
+                        format={col?.format}
                       />
                     )
                   }
 
-                  if (col.type === 'numberWithUOMValidation') {
+                  if (col?.type === 'numberWithUOMValidation') {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        hidden={col.hidden}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         className={`
                   ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
                   ${col?.isBold ? 'bold-text' : ''}
@@ -3452,23 +3409,22 @@ const KendoDataTables = ({
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
-                        format={col.format}
+                        format={col?.format}
                       />
                     )
                   }
-                  if (col.field === 'rate') {
+                  if (col?.field === 'rate') {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
+                        key={col?.field}
+                        field={col?.field}
                         title={
-                          col.title || col.headerName || 'Rate Reduced (TPH)'
+                          col?.title || col?.headerName || 'Rate Reduced (TPH)'
                         }
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
+                        width={setWidth(col?.minWidth || 150)}
                         editable={true}
                         columnMenu={ColumnMenuCheckboxFilter}
-                        hidden={col.hidden}
+                        hidden={col?.hidden}
                         format={'{0:n2}'}
                         className={`
         ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
@@ -3492,15 +3448,14 @@ const KendoDataTables = ({
                     )
                   }
 
-                  if (col.crackerValidation) {
+                  if (col?.crackerValidation) {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        hidden={col.hidden}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         className={`
                   ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
                   ${col?.isBold ? 'bold-text' : ''}
@@ -3532,23 +3487,22 @@ const KendoDataTables = ({
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
-                        format={col.format}
+                        format={col?.format}
                       />
                     )
                   }
 
                   if (
-                    col.type === 'number' &&
+                    col?.type === 'number' &&
                     permissions?.showRedCellsForOroductionTarget
                   ) {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        hidden={col.hidden}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         className={`
         ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
         ${col?.isBold ? 'bold-text' : ''}
@@ -3602,20 +3556,19 @@ const KendoDataTables = ({
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
-                        format={col.format}
+                        format={col?.format}
                       />
                     )
                   }
 
-                  if (col.type === 'number') {
+                  if (col?.type === 'number') {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        hidden={col.hidden}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         className={`
         ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
         ${col?.isBold ? 'bold-text' : ''}
@@ -3645,12 +3598,12 @@ const KendoDataTables = ({
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
-                        format={col.format}
+                        format={col?.format}
                       />
                     )
                   }
 
-                  if (col.type === 'switch') {
+                  if (col?.type === 'switch') {
                     const handleCheckboxChange = (props, value) => {
                       const { dataItem, field } = props
                       const { materialName, id } = dataItem
@@ -3667,12 +3620,11 @@ const KendoDataTables = ({
 
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
+                        key={col?.field}
+                        field={col?.field}
                         title='.'
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        hidden={col.hidden}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         editable={true}
                         cells={{
                           data: (props) => {
@@ -3714,7 +3666,7 @@ const KendoDataTables = ({
                     )
                   }
 
-                  if (col.type === 'switch2') {
+                  if (col?.type === 'switch2') {
                     const handleCheckboxChange = (props, value) => {
                       const { dataItem, field } = props
                       const { materialName, id } = dataItem
@@ -3731,12 +3683,11 @@ const KendoDataTables = ({
 
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
+                        key={col?.field}
+                        field={col?.field}
                         title='.'
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        hidden={col.hidden}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         editable={true}
                         cells={{
                           data: (props) => {
@@ -3771,15 +3722,14 @@ const KendoDataTables = ({
                     )
                   }
 
-                  if (col.type === 'numberWidth') {
+                  if (col?.type === 'numberWidth') {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(100, col.field)}
-                        hidden={col.hidden}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         className={
                           col?.isDisabled
                             ? 'k-number-right-disabled'
@@ -3794,20 +3744,19 @@ const KendoDataTables = ({
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
-                        format={col.format}
+                        format={col?.format}
                       />
                     )
                   }
 
-                  if (col.field === 'ConstantValue') {
+                  if (col?.field === 'ConstantValue') {
                     return (
                       <GridColumn
-                        key={col.field}
-                        field={col.field}
-                        title={col.title || col.headerName}
-                        width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                        minWidth={setWidth(80, col.field)}
-                        hidden={col.hidden}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
                         editable={!!col?.editable}
                         headerClassName={isActive ? 'active-column' : ''}
                         cells={{
@@ -3822,15 +3771,11 @@ const KendoDataTables = ({
 
                   return (
                     <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      minWidth={setWidth(
-                        columnCount <= 6 ? 80 : columnCount <= 10 ? 100 : 120,
-                        col.field
-                      )}
-                      width={setWidth(col?.widthT || col?.width || 100, col.field)}
-                      hidden={col.hidden}
+                      key={col?.field}
+                      field={col?.field}
+                      title={col?.title || col?.headerName}
+                      width={setWidth(col?.minWidth || 150)}
+                      hidden={col?.hidden}
                       editable={col?.editable ? true : false}
                       headerClassName={isActive ? 'active-column' : ''}
                       cells={{
@@ -3848,7 +3793,7 @@ const KendoDataTables = ({
                     key='actions'
                     field='actions'
                     title='Action'
-                    width={100}
+                    width={80}
                     className='k-text-center'
                     filterable={false}
                     editable={false}

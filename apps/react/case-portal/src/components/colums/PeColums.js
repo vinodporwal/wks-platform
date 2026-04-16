@@ -1,25 +1,10 @@
 export const BusinessDemandPeColumns = [
   {
-    field: 'Particulars',
-    title: 'Type',
-    width: 100,
-    groupable: true,
-    editable: false,
-    hidden: true,
-  },
-  {
-    field: 'normParameterId',
-    title: 'Particulars',
-    editable: false,
-    width: 125,
-    hidden: true,
-  },
-
-  {
     field: 'displayName',
     title: 'Particulars',
     editable: false,
     widthT: 100,
+    minWidth: 100,
   },
   {
     field: 'april',
@@ -29,6 +14,7 @@ export const BusinessDemandPeColumns = [
     rightAlign: true,
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'may',
@@ -38,6 +24,7 @@ export const BusinessDemandPeColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'june',
@@ -47,6 +34,7 @@ export const BusinessDemandPeColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'july',
@@ -56,6 +44,7 @@ export const BusinessDemandPeColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'aug',
@@ -65,6 +54,7 @@ export const BusinessDemandPeColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'sep',
@@ -74,6 +64,7 @@ export const BusinessDemandPeColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'oct',
@@ -83,6 +74,7 @@ export const BusinessDemandPeColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'nov',
@@ -92,6 +84,7 @@ export const BusinessDemandPeColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'dec',
@@ -101,6 +94,7 @@ export const BusinessDemandPeColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'jan',
@@ -110,6 +104,7 @@ export const BusinessDemandPeColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'feb',
@@ -119,6 +114,7 @@ export const BusinessDemandPeColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'march',
@@ -128,17 +124,14 @@ export const BusinessDemandPeColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'remark',
     title: 'Remark',
     widthT: 80,
     editable: false,
-  },
-  {
-    field: 'idFromApi',
-    title: 'ID from API',
-    hidden: true,
+    minWidth: 100,
   },
 ]
 
@@ -148,7 +141,8 @@ export const SlowDownPeColumns = [
     title: 'Slowdown Desc',
     editable: true,
     widthT: 200,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 100,
   },
 
   {
@@ -156,6 +150,8 @@ export const SlowDownPeColumns = [
     title: 'maintenanceId',
     editable: false,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 
   {
@@ -163,7 +159,8 @@ export const SlowDownPeColumns = [
     title: 'Particulars',
     widthT: 150,
     editable: true,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 100,
   },
 
   // {
@@ -185,6 +182,7 @@ export const SlowDownPeColumns = [
     type: 'monthDropdownPEPP',
     editable: true,
     width: 120,
+    minWidth: 100,
   },
 
   {
@@ -192,6 +190,7 @@ export const SlowDownPeColumns = [
     title: 'Duration (hrs)',
     editable: true,
     widthT: 150,
+    minWidth: 100,
   },
 
   {
@@ -199,6 +198,7 @@ export const SlowDownPeColumns = [
     title: 'Reduced Rate (TPH)',
     editable: true,
     type: 'number',
+    minWidth: 100,
   },
 
   {
@@ -206,7 +206,8 @@ export const SlowDownPeColumns = [
     title: 'Remarks',
     editable: true,
     widthT: 250,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 100,
   },
 ]
 
@@ -218,17 +219,22 @@ export const NormalOpNormPeColumns = [
     groupable: true,
     editable: false,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
     title: 'Particulars',
     widthT: 100,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'productName',
     title: 'Particulars',
     widthT: 120,
+    minWidth: 100,
   },
 
   {
@@ -236,6 +242,7 @@ export const NormalOpNormPeColumns = [
     title: 'UOM / MT',
     widthT: 90,
     editable: false,
+    minWidth: 100,
   },
 
   {
@@ -246,6 +253,7 @@ export const NormalOpNormPeColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'may',
@@ -256,6 +264,7 @@ export const NormalOpNormPeColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'june',
@@ -266,6 +275,7 @@ export const NormalOpNormPeColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'july',
@@ -276,6 +286,7 @@ export const NormalOpNormPeColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
 
   {
@@ -287,6 +298,7 @@ export const NormalOpNormPeColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'september',
@@ -297,6 +309,7 @@ export const NormalOpNormPeColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'october',
@@ -307,6 +320,7 @@ export const NormalOpNormPeColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'november',
@@ -317,6 +331,7 @@ export const NormalOpNormPeColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'december',
@@ -326,6 +341,7 @@ export const NormalOpNormPeColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'january',
@@ -335,6 +351,7 @@ export const NormalOpNormPeColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'february',
@@ -344,6 +361,7 @@ export const NormalOpNormPeColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'march',
@@ -353,23 +371,29 @@ export const NormalOpNormPeColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'remarks',
     title: 'Remark',
     widthT: 80,
     editable: true,
+    minWidth: 100,
   },
 
   {
     field: 'idFromApi',
     title: 'idFromApi',
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 ]
 
@@ -379,6 +403,8 @@ export const ShutdownConsumptionPeColumns = [
     headerName: 'Type',
     width: 100,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
@@ -386,6 +412,7 @@ export const ShutdownConsumptionPeColumns = [
     minWidth: 150,
     editable: false,
     hidden: true,
+    isVisible: false,
     width: 100,
   },
   {
@@ -393,6 +420,7 @@ export const ShutdownConsumptionPeColumns = [
     headerName: 'Particulars',
     widthT: 120,
     editable: false,
+    minWidth: 100,
   },
   { field: 'UOM', headerName: 'UOM', widthT: 80, editable: false },
 
@@ -406,6 +434,7 @@ export const ShutdownConsumptionPeColumns = [
       field: monthField,
       width: 100,
       type: 'number',
+      minWidth: 100,
       format: '{0:#.###}',
       editable: false,
       isDisabled: true,
@@ -418,12 +447,15 @@ export const ShutdownConsumptionPeColumns = [
     field: 'remarks',
     headerName: 'Remark',
     editable: false,
+    minWidth: 100,
   },
 
   {
     field: 'idFromApi',
     headerName: 'idFromApi',
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 ]
 
@@ -433,6 +465,8 @@ export const ShutdownConsumptionPeColumnsPeLldpe = [
     headerName: 'Type',
     width: 100,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
@@ -440,6 +474,7 @@ export const ShutdownConsumptionPeColumnsPeLldpe = [
     minWidth: 150,
     editable: false,
     hidden: true,
+    isVisible: false,
     width: 100,
   },
   {
@@ -460,6 +495,7 @@ export const ShutdownConsumptionPeColumnsPeLldpe = [
       field: monthField,
       width: 100,
       type: 'number',
+      minWidth: 100,
       format: '{0:#.###}',
       editable: false,
       isDisabled: true,
@@ -471,6 +507,8 @@ export const ShutdownConsumptionPeColumnsPeLldpe = [
     field: 'idFromApi',
     headerName: 'idFromApi',
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 ]
 
@@ -480,6 +518,8 @@ export const SlowdownNormsPeColumns = [
     headerName: 'Type',
     width: 100,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
@@ -487,6 +527,7 @@ export const SlowdownNormsPeColumns = [
     minWidth: 150,
     editable: false,
     hidden: true,
+    isVisible: false,
     width: 100,
   },
   {
@@ -507,6 +548,7 @@ export const SlowdownNormsPeColumns = [
       field: monthField,
       width: 100,
       type: 'number',
+      minWidth: 100,
       format: '{0:#.###}',
       editable: false,
       monthNumber: monthIndex,
@@ -517,6 +559,8 @@ export const SlowdownNormsPeColumns = [
     field: 'idFromApi',
     headerName: 'idFromApi',
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 ]
 export const ConsumptionAopPeColumns = [
@@ -526,10 +570,14 @@ export const ConsumptionAopPeColumns = [
     editable: false,
     width: 100,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'NormParametersId',
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 
   {
@@ -537,64 +585,80 @@ export const ConsumptionAopPeColumns = [
     title: 'Particulars',
     editable: false,
     widthT: 120,
+    minWidth: 100,
   },
   {
     field: 'UOM',
     title: 'UOM / MT',
     editable: false,
     widthT: 90,
+    minWidth: 100,
   },
   {
     field: 'april',
     title: 4,
+    minWidth: 100,
   },
   {
     field: 'may',
     title: 5,
+    minWidth: 100,
   },
   {
     field: 'june',
     title: 6,
+    minWidth: 100,
   },
   {
     field: 'july',
     title: 7,
+    minWidth: 100,
   },
   {
     field: 'aug',
     title: 8,
+    minWidth: 100,
   },
   {
     field: 'sep',
     title: 9,
+    minWidth: 100,
   },
   {
     field: 'oct',
     title: 10,
+    minWidth: 100,
   },
   {
     field: 'nov',
     title: 11,
+    minWidth: 100,
   },
   {
     field: 'dec',
     title: 12,
+    minWidth: 100,
   },
   {
     field: 'jan',
     title: 1,
+    minWidth: 100,
   },
   {
     field: 'feb',
     title: 2,
+    minWidth: 100,
   },
   {
     field: 'march',
     title: 3,
+    minWidth: 100,
   },
   {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
 ]

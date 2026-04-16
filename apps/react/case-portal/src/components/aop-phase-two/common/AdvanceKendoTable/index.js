@@ -56,6 +56,14 @@ import dataGridStore from 'store/reducers/dataGridStore'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import Notification from 'components/Utilities/Notification'
 
+import AddIcon from '@mui/icons-material/Add'
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
+import DownloadIcon from '@mui/icons-material/Download'
+import UploadIcon from '@mui/icons-material/Upload'
+import CalculateIcon from '@mui/icons-material/Calculate'
+import SaveIcon from '@mui/icons-material/Save'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+
 // Helper function to get nested value from object
 const getNestedValue = (obj, path) => {
   if (!path || !obj) return undefined
@@ -374,7 +382,7 @@ const AdvanceKendoTable = ({
   const setWidth = useCallback(
     (minWidth) => {
       if (minWidth === undefined) {
-        minWidth = 120
+        minWidth = 50
       }
 
       if (applyMinWidth) {
@@ -384,8 +392,8 @@ const AdvanceKendoTable = ({
       const allColumns = extractAllColumns(columns)
       const totalMinWidth =
         allColumns.reduce((sum, col) => {
-          return sum + (col.minWidth || 120)
-        }, 0) + (permissions?.deleteButton ? 120 : 0)
+          return sum + (col.minWidth || 50)
+        }, 0) + (permissions?.deleteButton ? 80 : 0)
 
       // If total minWidth exceeds grid width, just use minWidth
       if (totalMinWidth >= gridCurrent) {
@@ -805,6 +813,7 @@ const AdvanceKendoTable = ({
       isSorted,
       tdProps,
       selectionChange,
+      showPlaceholder = true,
       ...restProps
     } = props
     const rawValue = dataItem[field]
@@ -850,7 +859,7 @@ const AdvanceKendoTable = ({
           setEdit?.({})
         }}
       >
-        {displayText || 'Add remark'}
+        {displayText || (showPlaceholder ? 'Add remark' : '')}
       </td>
     )
   }
@@ -1209,6 +1218,7 @@ const AdvanceKendoTable = ({
               data: (cellProps) => (
                 <RemarkCell
                   {...cellProps}
+                  showPlaceholder={col.showPlaceholder}
                   onRemarkClick={isEditable ? handleRemarkCellClick : () => {}}
                 />
               ),
@@ -1281,7 +1291,12 @@ const AdvanceKendoTable = ({
               edit: {
                 date:
                   col?.type == 'dateTime'
-                    ? DateTimePickerEditor
+                    ? (props) => (
+                        <DateTimePickerEditor
+                          {...props}
+                          isFinancialYear={col.isFinancialYear !== false}
+                        />
+                      )
                     : DateOnlyPicker,
               },
               data: (props) => (
@@ -1523,7 +1538,7 @@ const AdvanceKendoTable = ({
             title={col.title || col.headerName}
             hidden={col.hidden}
             editable={isEditable}
-            className={!isEditable ? 'k-left-disabled' : undefined}
+            className={!isEditable ? 'k-right-disabled' : undefined}
             headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
             cells={{
               edit: { text: TextCellEditorUpdated },
@@ -1975,8 +1990,8 @@ const AdvanceKendoTable = ({
             {permissions?.addButton && (
               <Button
                 variant='contained'
-                // className='custom-btn-additem'
-                className='btn-save'
+                className='btn-add'
+                startIcon={<AddIcon />}
                 onClick={handleAddRow}
                 disabled={isButtonDisabled || READ_ONLY}
               >
@@ -1989,7 +2004,7 @@ const AdvanceKendoTable = ({
                 onClick={saveModalOpen}
                 disabled={isButtonDisabled || READ_ONLY}
                 className='btn-save'
-                // className='custom-btn-save'
+                startIcon={<SaveIcon sx={{ fontSize: 16 }} />}
               >
                 Save
               </Button>
@@ -2000,8 +2015,8 @@ const AdvanceKendoTable = ({
                 variant='contained'
                 onClick={handleCalculateBtn}
                 disabled={isButtonDisabled || READ_ONLY}
-                className='btn-save'
-                // className='custom-btn-calculate'
+                className='btn-calculate'
+                startIcon={<CalculateIcon sx={{ fontSize: 16 }} />}
               >
                 Calculate
               </Button>
@@ -2012,8 +2027,8 @@ const AdvanceKendoTable = ({
                 variant='contained'
                 onClick={handleExport}
                 disabled={isButtonDisabled}
-                className='btn-save'
-                // className='custom-btn-export'
+                className='btn-export'
+                startIcon={<DownloadIcon fontSize='small' />}
               >
                 Export
               </Button>
@@ -2022,10 +2037,10 @@ const AdvanceKendoTable = ({
             {permissions?.downloadExcelBtnFromUI && (
               <Button
                 variant='contained'
-                className='btn-save'
+                className='btn-export'
+                startIcon={<DownloadIcon fontSize='small' />}
                 onClick={excelExport}
                 disabled={rows?.length === 0}
-                // className='custom-btn-export'
               >
                 Export
               </Button>
@@ -2037,8 +2052,8 @@ const AdvanceKendoTable = ({
                   variant='contained'
                   onClick={triggerFileUpload}
                   disabled={isButtonDisabled || READ_ONLY}
-                  className='btn-save'
-                  // className='custom-btn-import'
+                  className='btn-import'
+                  startIcon={<UploadIcon sx={{ fontSize: 16 }} />}
                 >
                   Import
                 </Button>

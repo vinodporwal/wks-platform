@@ -2,21 +2,24 @@
   {
     "field": "idFromApi",
     "title": "ID",
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "aopCaseId",
     "title": "Case ID",
     "width": 100,
     "editable": false,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "normParametersFKId",
     "title": "Particulars",
     "editable": false,
     "width": 100,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
 
   {
@@ -140,7 +143,8 @@
     "width": 100,
     "editable": false,
 
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "remarks",
@@ -151,6 +155,7 @@
   {
     "field": "isEditable",
     "title": "isEditable",
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   }
 ]

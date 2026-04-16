@@ -71,6 +71,25 @@ public class ShutDownPlanController {
 	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
 	}
+
+	@GetMapping(value = "/shutdown-export-excel")
+	public ResponseEntity<byte[]> shutdownExportExcel(
+			@RequestParam String plantId,
+			@RequestParam String maintenanceTypeName,
+			@RequestParam String year) {
+		try {
+			byte[] excelBytes = shutDownPlanService.shutdownExport(year, plantId, maintenanceTypeName, false, null);
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType
+					.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(
+					ContentDisposition.builder("attachment").filename("shutdown-details.xlsx").build());
+			headers.setContentLength(excelBytes.length);
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 	
 	@GetMapping(value = "/shutdown-export-non-product")
 	public ResponseEntity<byte[]> shutdownNonProductExport(
@@ -121,6 +140,23 @@ public class ShutDownPlanController {
 			@RequestParam("file") MultipartFile file
 	        ) {
 			return	shutDownPlanService.importShutdownExcel(year,UUID.fromString(plantId),  maintenanceTypeName, file); 
+	}
+
+	@PostMapping(value = "/shutdown-export-excel-import", consumes = "multipart/form-data")
+	public AOPMessageVM importShutdownExportExcel(
+			@RequestParam("plantId") String plantId,
+			@RequestParam("year") String year,
+			@RequestParam String maintenanceTypeName,
+			@RequestParam("file") MultipartFile file) {
+		try {
+			return shutDownPlanService.importShutdownExportExcel(year, UUID.fromString(plantId),
+					maintenanceTypeName, file);
+		} catch (Exception e) {
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(500);
+			aopMessageVM.setMessage("Failed to import shutdown export excel");
+			return aopMessageVM;
+		}
 	}
 	
 	@PostMapping(value = "/shutdown-import-non-product", consumes = "multipart/form-data")

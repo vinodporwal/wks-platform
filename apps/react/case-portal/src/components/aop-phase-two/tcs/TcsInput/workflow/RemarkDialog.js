@@ -19,6 +19,7 @@ import { TextArea } from '@progress/kendo-react-inputs'
 import { useSelector } from 'react-redux'
 import { TcsWorkflowApiService } from 'components/aop-phase-two/services/tcs/tcsWorkflowApiService'
 import { ROLES } from '../../utils/roleUtils'
+import { formatToIST } from 'components/aop-phase-two/common/commonUtilityFunctions'
 
 const RemarkDialog = ({
   open,
@@ -29,7 +30,7 @@ const RemarkDialog = ({
   onApprove,
   onReject,
   disabled = false,
-  maxLength = 1000,
+  maxLength = 500,
   role = '',
   historyData = [],
   keycloak,
@@ -106,8 +107,9 @@ const RemarkDialog = ({
   const getTitle = () => {
     switch (role) {
       case ROLES.PLANT_MANAGER:
-        // return 'Plant Manager Remark Submission'
-        return 'CTS Engineer Remark Submission'
+        return 'Plant Manager Remark Submission'
+      case ROLES.CTS_TECH_MANAGER:
+        return 'CTS Tech Manager Remark Submission'
       case ROLES.EPS_ENGINEER:
         return 'AOM Remark Submission'
       case ROLES.CTS_HEAD:
@@ -115,7 +117,7 @@ const RemarkDialog = ({
       case ROLES.EPS_HEAD:
         return 'EPS Head Remark Submission'
       case ROLES.CLUSTER_HEAD:
-        return 'Cluster Head Remark Submission'
+        return 'Site President Remark Submission'
       default:
         return title
     }
@@ -125,7 +127,8 @@ const RemarkDialog = ({
     setRemark(event.target.value)
   }
 
-  // Fetch previous level submission data for CTS/EPS Head and Cluster Head
+  // Fetch previous level submission data
+  // Workflow: AOM -> CTS Head -> EPS Head -> Cluster Head
   useEffect(() => {
     const fetchPreviousLevelData = async () => {
       if (!open || !keycloak || !SITE_ID || !VERTICAL_ID) {
@@ -144,8 +147,8 @@ const RemarkDialog = ({
       setLoadingPreviousData(true)
       try {
         let response
-        if (role === ROLES.CTS_HEAD || role === ROLES.EPS_HEAD) {
-          // CTS/EPS Head gets AOM approve/reject remark
+        if (role === ROLES.CTS_HEAD) {
+          // CTS Head gets AOM (EPS Engineer) approve/reject remark
           response =
             await TcsWorkflowApiService.getCtsHeadApproveRejectAuditTrail(
               keycloak,
@@ -153,8 +156,17 @@ const RemarkDialog = ({
               VERTICAL_ID,
               AOP_YEAR,
             )
+        } else if (role === ROLES.EPS_HEAD) {
+          // EPS Head gets CTS Head approve/reject remark
+          response =
+            await TcsWorkflowApiService.getEPSHeadApproveRejectAuditTrail(
+              keycloak,
+              SITE_ID,
+              VERTICAL_ID,
+              AOP_YEAR,
+            )
         } else if (role === ROLES.CLUSTER_HEAD) {
-          // Cluster Head gets CTS/EPS Head approve/reject remark
+          // Cluster Head gets EPS Head approve/reject remark
           response =
             await TcsWorkflowApiService.getClusterHeadApproveRejectAuditTrail(
               keycloak,
@@ -188,6 +200,21 @@ const RemarkDialog = ({
 
     fetchPreviousLevelData()
   }, [open, keycloak, SITE_ID, VERTICAL_ID, role])
+
+  const getRemarkHeaderLabel = (userRole) => {
+    if (userRole === ROLES.PLANT_MANAGER) {
+      return 'CTS Tech Manager Remark'
+    } else if (userRole === ROLES.CTS_TECH_MANAGER) {
+      return 'Plant Manager Remark'
+    } else if (userRole === ROLES.CTS_HEAD) {
+      return 'AOM Remark'
+    } else if (userRole === ROLES.EPS_HEAD) {
+      return 'CTS Head Remark'
+    } else if (userRole === ROLES.CLUSTER_HEAD) {
+      return 'EPS Head Remark'
+    }
+    return 'Remark'
+  }
 
   return (
     <>
@@ -250,9 +277,7 @@ const RemarkDialog = ({
                   fontWeight={600}
                   sx={{ mb: 1.5, color: '#1976d2' }}
                 >
-                  {role === ROLES.CTS_HEAD || role === ROLES.EPS_HEAD
-                    ? 'AOM Submission'
-                    : 'CTS/EPS Head Submission'}
+                  {getRemarkHeaderLabel(role)}
                 </Typography>
                 {loadingPreviousData ? (
                   <Box
@@ -289,7 +314,9 @@ const RemarkDialog = ({
                         variant='body2'
                         sx={{ color: 'text.secondary' }}
                       >
-                        {previousLevelData.submissionDateTime || '-'}
+                        {formatToIST(
+                          previousLevelData.submissionDateTime || '-',
+                        )}
                       </Typography>
                     </Box>
                     <Box

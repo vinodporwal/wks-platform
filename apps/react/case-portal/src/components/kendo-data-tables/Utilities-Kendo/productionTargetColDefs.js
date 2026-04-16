@@ -1,23 +1,46 @@
 export function getColDefsPercentageSummary(headerMap = {}, valueFormat) {
   return [
-    { field: 'idFromApi', title: 'ID', hidden: true },
-    { field: 'aopCaseId', title: 'Case ID', editable: false, hidden: true },
+    { field: 'idFromApi', title: 'ID', hidden: true, isVisible: false },
+    {
+      field: 'aopCaseId',
+      title: 'Case ID',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+      minWidth: 100,
+    },
     {
       field: 'materialFKId',
       title: 'Particulars',
       widthT: 100,
       editable: false,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'productName',
       title: 'Particulars',
       widthT: 120,
       editable: false,
+      minWidth: 100,
     },
     ...generateMonthColumnsFixedWidth(headerMap, false, valueFormat),
-    { field: 'avgTph', title: 'AVG', editable: false, hidden: true },
-    { field: 'isEditable', title: 'isEditable', hidden: true },
+    {
+      field: 'avgTph',
+      title: 'AVG',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+      minWidth: 100,
+    },
+    {
+      field: 'isEditable',
+      title: 'isEditable',
+      hidden: true,
+      isVisible: false,
+      minWidth: 100,
+    },
     //add here
   ]
 }
@@ -26,21 +49,36 @@ export function getColDefsPercentageSummaryElastomerJMD(
   valueFormat,
 ) {
   return [
-    { field: 'idFromApi', title: 'ID', hidden: true },
-    { field: 'aopCaseId', title: 'Case ID', editable: false, hidden: true },
+    {
+      field: 'idFromApi',
+      title: 'ID',
+      hidden: true,
+      isVisible: false,
+      minWidth: 100,
+    },
+    {
+      field: 'aopCaseId',
+      title: 'Case ID',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+      minWidth: 100,
+    },
     {
       field: 'materialFKId',
       title: 'Particulars',
       widthT: 100,
       editable: false,
       hidden: true,
+      isVisible: false,
     },
     {
       field: 'productName',
       title: 'Particulars',
       widthT: 200,
       editable: false,
-      autoAdjust: false
+      autoAdjust: false,
+      minWidth: 100,
     },
     {
       field: 'april',
@@ -51,31 +89,68 @@ export function getColDefsPercentageSummaryElastomerJMD(
       format: valueFormat,
       align: 'left',
       headerAlign: 'left',
+      minWidth: 100,
     },
-    { field: 'avgTph', title: 'AVG', editable: false, hidden: true },
-    { field: 'isEditable', title: 'isEditable', hidden: true },
+    {
+      field: 'avgTph',
+      title: 'AVG',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+      minWidth: 100,
+    },
+    {
+      field: 'isEditable',
+      title: 'isEditable',
+      hidden: true,
+      isVisible: false,
+      minWidth: 100,
+    },
   ]
 }
 export function getColDefsPercentageSummaryPEPP(headerMap = {}, valueFormat) {
   return [
-    { field: 'idFromApi', title: 'ID', hidden: true },
-    { field: 'aopCaseId', title: 'Case ID', editable: false, hidden: true },
+    { field: 'idFromApi', title: 'ID', hidden: true, isVisible: false },
+    {
+      field: 'aopCaseId',
+      title: 'Case ID',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+      minWidth: 100,
+    },
     {
       field: 'materialFKId',
       title: 'Particulars',
       widthT: 100,
       editable: false,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'productName',
       title: 'Particulars',
       widthT: 120,
       editable: false,
+      minWidth: 100,
     },
     ...generateMonthColumnsPercentageSummaryPPE(headerMap, false, valueFormat),
-    { field: 'avgTph', title: 'AVG', editable: false, hidden: true },
-    { field: 'isEditable', title: 'isEditable', hidden: true },
+    {
+      field: 'avgTph',
+      title: 'AVG',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+      minWidth: 100,
+    },
+    {
+      field: 'isEditable',
+      title: 'isEditable',
+      hidden: true,
+      isVisible: false,
+      minWidth: 100,
+    },
     //add here
   ]
 }
@@ -88,12 +163,15 @@ export function getColDefsDesignCapacity(headerMap = {}, valueFormat) {
       widthT: 100,
       editable: true,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'productName',
       title: 'Particulars',
       widthT: 120,
       editable: false,
+      minWidth: 100,
     },
     ...generateMonthColumns(headerMap, true, valueFormat),
     {
@@ -103,6 +181,7 @@ export function getColDefsDesignCapacity(headerMap = {}, valueFormat) {
       align: 'left',
       headerAlign: 'left',
       widthT: 100,
+      minWidth: 100,
     },
   ]
 }
@@ -115,12 +194,15 @@ export function getColDefsDesignCapacityPTA(headerMap = {}, valueFormat) {
       widthT: 100,
       editable: true,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'productName',
       title: 'Particulars',
       widthT: 120,
       editable: false,
+      minWidth: 100,
     },
     ...generateMonthColumnsPTA(headerMap, true, valueFormat),
     {
@@ -130,6 +212,7 @@ export function getColDefsDesignCapacityPTA(headerMap = {}, valueFormat) {
       align: 'left',
       headerAlign: 'left',
       widthT: 100,
+      minWidth: 100,
     },
   ]
 }
@@ -141,12 +224,15 @@ export function getColDefsDesignCapacityPTADMD(headerMap = {}, valueFormat) {
       widthT: 100,
       editable: true,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'productName',
       title: 'Particulars',
       widthT: 120,
       editable: false,
+      minWidth: 100,
     },
     ...generateMonthColumnsPTA(headerMap, true, valueFormat),
     // {
@@ -167,13 +253,16 @@ export function getColDefsDesignCapacityAROMATICS(headerMap = {}, valueFormat) {
       widthT: 100,
       editable: true,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'productName',
       title: 'Particulars',
       widthT: 200,
       editable: false,
-      autoAdjust: false
+      autoAdjust: false,
+      minWidth: 100,
     },
     {
       field: 'april',
@@ -184,6 +273,7 @@ export function getColDefsDesignCapacityAROMATICS(headerMap = {}, valueFormat) {
       headerAlign: 'left',
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'may',
@@ -194,6 +284,7 @@ export function getColDefsDesignCapacityAROMATICS(headerMap = {}, valueFormat) {
       headerAlign: 'left',
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'june',
@@ -204,6 +295,7 @@ export function getColDefsDesignCapacityAROMATICS(headerMap = {}, valueFormat) {
       headerAlign: 'left',
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'total',
@@ -214,6 +306,7 @@ export function getColDefsDesignCapacityAROMATICS(headerMap = {}, valueFormat) {
       headerAlign: 'left',
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'remarks',
@@ -221,7 +314,8 @@ export function getColDefsDesignCapacityAROMATICS(headerMap = {}, valueFormat) {
       editable: true,
       align: 'left',
       headerAlign: 'left',
-      autoAdjust: false
+      autoAdjust: false,
+      minWidth: 100,
     },
   ]
 }
@@ -236,13 +330,16 @@ export function getColDefsDesignCapacityELASTOMERJMD(
       widthT: 100,
       editable: true,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'productName',
       title: 'Particulars',
       widthT: 250,
       editable: false,
-      autoAdjust: false
+      autoAdjust: false,
+      minWidth: 100,
     },
     {
       field: 'april',
@@ -253,6 +350,7 @@ export function getColDefsDesignCapacityELASTOMERJMD(
       headerAlign: 'left',
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
   ]
 }
@@ -265,12 +363,15 @@ export function getColDefsDesignCapacityPEPP(headerMap = {}, valueFormat) {
       widthT: 100,
       editable: false,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'productName',
       title: 'Particulars',
       widthT: 250,
       editable: false,
+      minWidth: 100,
     },
     ...generateMonthColumnsForPEPP(headerMap, false, valueFormat, true),
   ]
@@ -284,12 +385,15 @@ export function getColDefsMaxAchievedCapacity(headerMap = {}, valueFormat) {
       widthT: 100,
       editable: true,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'productName',
       title: 'Particulars',
       widthT: 120,
       editable: false,
+      minWidth: 100,
     },
     ...generateMonthColumnsFixedWidth(headerMap, true, valueFormat),
   ]
@@ -303,12 +407,15 @@ export function getColDefsMaxAchievedCapacityPTA(headerMap = {}, valueFormat) {
       widthT: 100,
       editable: true,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'productName',
       title: 'Particulars',
       widthT: 120,
       editable: false,
+      minWidth: 100,
     },
     ...generateMonthColumnsFixedWidthPTA(headerMap, true, valueFormat),
   ]
@@ -322,12 +429,15 @@ export function getColDefsMaxAchievedCapacityPEPP(headerMap = {}, valueFormat) {
       widthT: 100,
       editable: true,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'productName',
       title: 'Particulars',
       widthT: 120,
       editable: false,
+      minWidth: 100,
     },
     ...generateMonthColumnsFixedWidthPEPP(headerMap, true, valueFormat),
   ]
@@ -344,13 +454,16 @@ export function getColDefsMaxAchievedCapacityAROMATICS(
       widthT: 100,
       editable: true,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'productName',
       title: 'Particulars',
       widthT: 200,
       editable: false,
-      autoAdjust: false
+      autoAdjust: false,
+      minWidth: 100,
     },
     {
       field: 'april',
@@ -361,6 +474,7 @@ export function getColDefsMaxAchievedCapacityAROMATICS(
       headerAlign: 'left',
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'may',
@@ -371,6 +485,7 @@ export function getColDefsMaxAchievedCapacityAROMATICS(
       headerAlign: 'left',
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'june',
@@ -381,6 +496,7 @@ export function getColDefsMaxAchievedCapacityAROMATICS(
       headerAlign: 'left',
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'total',
@@ -391,6 +507,7 @@ export function getColDefsMaxAchievedCapacityAROMATICS(
       headerAlign: 'left',
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'remarks',
@@ -398,7 +515,8 @@ export function getColDefsMaxAchievedCapacityAROMATICS(
       editable: true,
       align: 'left',
       headerAlign: 'left',
-      autoAdjust: false
+      autoAdjust: false,
+      minWidth: 100,
     },
   ]
 }
@@ -413,13 +531,16 @@ export function getColDefsMaxAchievedCapacityELASTOMERJMD(
       widthT: 100,
       editable: true,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'productName',
       title: 'Particulars',
       widthT: 250,
       editable: false,
-      autoAdjust: false
+      autoAdjust: false,
+      minWidth: 100,
     },
     {
       field: 'april',
@@ -430,30 +551,59 @@ export function getColDefsMaxAchievedCapacityELASTOMERJMD(
       headerAlign: 'left',
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
   ]
 }
 
 export function getColDefsNonEditable(headerMap = {}, valueFormat) {
   return [
-    { field: 'idFromApi', title: 'ID', hidden: true },
-    { field: 'aopCaseId', title: 'Case ID', hidden: true },
+    {
+      field: 'idFromApi',
+      title: 'ID',
+      hidden: true,
+      isVisible: false,
+      minWidth: 100,
+    },
+    {
+      field: 'aopCaseId',
+      title: 'Case ID',
+      hidden: true,
+      isVisible: false,
+      minWidth: 100,
+    },
     {
       field: 'normParametersFKId',
       title: 'Particulars',
       widthT: 100,
       editable: false,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'productName',
       title: 'Particulars',
       widthT: 120,
       editable: false,
+      minWidth: 100,
     },
     ...generateMonthColumns(headerMap, false, valueFormat),
-    { field: 'avgTph', title: 'AVG', editable: false, hidden: true },
-    { field: 'isEditable', title: 'isEditable', hidden: true },
+    {
+      field: 'avgTph',
+      title: 'AVG',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+      minWidth: 100,
+    },
+    {
+      field: 'isEditable',
+      title: 'isEditable',
+      hidden: true,
+      isVisible: false,
+      minWidth: 100,
+    },
   ]
 }
 
@@ -477,6 +627,7 @@ function generateMonthColumns(
       headerAlign: 'left',
       type: 'number',
       widthT: monthName === 'March' ? (isPEPP ? 200 : 110) : undefined,
+      minWidth: 100,
     }
   })
 }
@@ -503,6 +654,7 @@ function generateMonthColumnsPTA(
       headerAlign: 'left',
       type: 'number',
       widthT: monthName === 'March' ? (isPEPP ? 200 : 110) : undefined,
+      minWidth: 100,
     }
   })
 }
@@ -528,6 +680,7 @@ function generateMonthColumnsForPEPP(
       align: 'left',
       headerAlign: 'left',
       type: 'number',
+      minWidth: 100,
       // widthT: fullMonthName === 'March' ? (isPEPP ? 200 : 110) : undefined,
     }
   })
@@ -552,6 +705,7 @@ function generateMonthColumnsFixedWidth(
       headerAlign: 'left',
       type: 'number',
       widthT: monthName === 'March' ? 200 : undefined,
+      minWidth: 100,
     }
   })
 }
@@ -577,6 +731,7 @@ function generateMonthColumnsFixedWidthPTA(
       headerAlign: 'left',
       type: 'number',
       widthT: monthName === 'March' ? 200 : undefined,
+      minWidth: 100,
     }
   })
 }
@@ -601,6 +756,7 @@ function generateMonthColumnsFixedWidthPEPP(
       align: 'left',
       headerAlign: 'left',
       type: 'number',
+      minWidth: 100,
       //widthT: monthName === 'March' ? 200 : undefined,
     }
   })
@@ -624,6 +780,7 @@ function generateMonthColumnsPercentageSummaryPPE(
       align: 'left',
       headerAlign: 'left',
       type: 'number',
+      minWidth: 100,
       //widthT: monthName === 'March' ? 200 : undefined,
     }
   })

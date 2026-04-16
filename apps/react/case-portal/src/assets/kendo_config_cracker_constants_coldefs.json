@@ -5,20 +5,23 @@
     "editable": false,
     "widthT": 250,
     "autoAdjust": false,
-    "hidden": false
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "UOM",
     "title": "UOM",
     "editable": false,
-    "widthT": 80
+    "widthT": 80,
+    "minWidth": 90
   },
   {
     "field": "ConstantValue",
     "title": "Value",
     "editable": true,
     "type": "number",
-    "widthT": 100
+    "widthT": 100,
+    "minWidth": 150
   },
 
   {
@@ -27,12 +30,14 @@
     "editable": false,
     "widthT": 250,
     "autoAdjust": false,
-    "type": "string"
+    "type": "string",
+    "minWidth": 120
   },
   {
     "field": "normParameterFKID",
     "title": "normParameterFKID",
     "filterable": false,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   }
 ]

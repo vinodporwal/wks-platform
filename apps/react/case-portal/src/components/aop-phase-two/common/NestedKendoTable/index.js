@@ -41,6 +41,14 @@ import {
 import dataGridStore from 'store/reducers/dataGridStore'
 import Notification from 'components/Utilities/Notification'
 
+import AddIcon from '@mui/icons-material/Add'
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
+import DownloadIcon from '@mui/icons-material/Download'
+import UploadIcon from '@mui/icons-material/Upload'
+import CalculateIcon from '@mui/icons-material/Calculate'
+import SaveIcon from '@mui/icons-material/Save'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+
 // Helper function to extract flat row sequence from grouped data
 const extractFlatRowsFromGrouped = (data) => {
   const flatRows = []
@@ -1242,7 +1250,8 @@ const NestedKendoTable = ({
               <Button
                 variant='contained'
                 onClick={handleCalculateBtn}
-                className='btn-save'
+                className='btn-calculate'
+                startIcon={<CalculateIcon sx={{ fontSize: 16 }} />}
                 disabled={
                   !permissions.enableCalculate || isButtonDisabled || READ_ONLY
                 }
@@ -1257,7 +1266,7 @@ const NestedKendoTable = ({
                 onClick={saveModalOpen}
                 disabled={isButtonDisabled || READ_ONLY}
                 className='btn-save'
-                // className='custom-btn-save'
+                startIcon={<SaveIcon sx={{ fontSize: 16 }} />}
               >
                 Save
               </Button>
@@ -1268,8 +1277,8 @@ const NestedKendoTable = ({
                 variant='contained'
                 onClick={handleExport}
                 disabled={isButtonDisabled}
-                className='btn-save'
-                // className='custom-btn-export'
+                className='btn-export'
+                startIcon={<DownloadIcon fontSize='small' />}
               >
                 Export
               </Button>
@@ -1280,8 +1289,8 @@ const NestedKendoTable = ({
                 variant='contained'
                 onClick={excelExport}
                 disabled={rows?.length === 0}
-                className='btn-save'
-                // className='custom-btn-export'
+                className='btn-export'
+                startIcon={<DownloadIcon fontSize='small' />}
               >
                 Export
               </Button>
@@ -1293,8 +1302,8 @@ const NestedKendoTable = ({
                   variant='contained'
                   onClick={triggerFileUpload}
                   disabled={isButtonDisabled || READ_ONLY}
-                  className='btn-save'
-                  // className='custom-btn-import'
+                  className='btn-import'
+                  startIcon={<UploadIcon sx={{ fontSize: 16 }} />}
                 >
                   Import
                 </Button>

@@ -4,16 +4,14 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TcsApiService } from 'components/aop-phase-two/services/tcs/tcsApiService'
 import { useSession } from 'SessionStoreContext'
-import { convertFromKBPSD, convertToKBPSD } from './uomConversionUtils'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import { convertFromKBPSD } from './uomConversionUtils'
 import {
   generateCalendarYearHeaders,
-  generateHeaderNames,
   extractYear,
 } from 'components/aop-phase-two/common/utilities/generateHeaders'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-const UnitCapacityGrid = ({
+const UnitCapacityGridRowwise = ({
   capacityType,
   title,
   PLANT_ID,
@@ -38,66 +36,56 @@ const UnitCapacityGrid = ({
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-  const [apiMetadata, setApiMetadata] = useState({ headers: [], keys: [] })
 
   const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
 
   // Determine if this grid is the annual "design" capacity type
   const isDesign = capacityType === 'design'
 
-  // Custom itemChange handler to auto-convert between KBPSD and KTPD
+  // Custom itemChange handler - updates KBPSD and syncs KTPD conversion
   const handleCustomItemChange = useCallback(
     (event, setRowsFunc) => {
       const { dataItem, field, value } = event
 
-      // For design: only one nested field 'value.kbpsd' or 'value.ktpd'
-      // For others: 12 month nested fields
-      const nestedFields = isDesign
-        ? ['value']
-        : [
-            'apr',
-            'may',
-            'jun',
-            'jul',
-            'aug',
-            'sep',
-            'oct',
-            'nov',
-            'dec',
-            'jan',
-            'feb',
-            'mar',
-          ]
+      // For design: only 'value' field
+      // For others: 12 month fields (jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec)
+      const monthFields = [
+        'jan',
+        'feb',
+        'mar',
+        'apr',
+        'may',
+        'jun',
+        'jul',
+        'aug',
+        'sep',
+        'oct',
+        'nov',
+        'dec',
+      ]
+      const designFields = ['value']
+      const validFields = isDesign ? designFields : monthFields
 
-      const isNestedField = nestedFields.some((f) => field.startsWith(`${f}.`))
-
-      if (!isNestedField) {
+      if (!validFields.includes(field)) {
         return
       }
 
       setRowsFunc((prevRows) => {
         return prevRows.map((row) => {
-          if (row.id !== dataItem.id) return row
-
-          const updatedRow = { ...row }
-          const [fieldName, uomType] = field.split('.')
-
-          // Handle conversions based on which field was edited
-          if (uomType === 'kbpsd') {
-            updatedRow[fieldName] = {
-              ...updatedRow[fieldName],
-              kbpsd: value,
-              ktpd: convertFromKBPSD(value, 'KTPD'),
-            }
-          } else if (uomType === 'ktpd') {
-            updatedRow[fieldName] = {
-              ...updatedRow[fieldName],
-              kbpsd: convertToKBPSD(value, 'KTPD'),
-              ktpd: value,
-            }
+          // Update the edited KBPSD row
+          if (row.id === dataItem.id) {
+            return { ...row, [field]: value }
           }
 
-          return updatedRow
+          // If editing a KBPSD row, also update the corresponding KTPD row
+          if (
+            dataItem.isKBPSD &&
+            row.id === dataItem.id.replace('_kbpsd', '_ktpd')
+          ) {
+            return { ...row, [field]: convertFromKBPSD(value, 'KTPD') }
+          }
+
+          return row
         })
       })
     },
@@ -160,61 +148,85 @@ const UnitCapacityGrid = ({
 
         let transformedData = []
         if (response?.results && Array.isArray(response.results)) {
-          transformedData = response.results.map((item, index) => {
-            if (isDesign) {
-              // Design capacity: single annual value field
-              const kbpsdValue = item.jan || 0
-              return {
-                id: item.id || `row_${index}`,
+          if (isDesign) {
+            transformedData = response.results.flatMap((item, index) => {
+              const kbpsdRow = {
+                id: `${item.id || `row_${index}`}_kbpsd`,
                 particulates: item.particulates,
-                value: {
-                  kbpsd: kbpsdValue,
-                  ktpd: convertFromKBPSD(kbpsdValue, 'KTPD'),
-                },
-                remark: item.remark,
+                uom: 'KBPSD',
+                value: item.jan || 0,
+                remark: item.remark || '',
                 insertedDateTime: item.insertedDateTime,
                 inEdit: false,
+                isEditable: true,
+                isKBPSD: true,
               }
-            }
 
-            // Other capacity types: Backend data is in KBPSD, create nested structure for each month
-            const months = [
-              'jan',
-              'feb',
-              'mar',
-              'apr',
-              'may',
-              'jun',
-              'jul',
-              'aug',
-              'sep',
-              'oct',
-              'nov',
-              'dec',
-            ]
-            const monthData = {}
-
-            months.forEach((month) => {
-              const kbpsdValue = item[month] || 0
-              monthData[month] = {
-                kbpsd: kbpsdValue,
-                ktpd: convertFromKBPSD(kbpsdValue, 'KTPD'),
+              const ktpdRow = {
+                id: `${item.id || `row_${index}`}_ktpd`,
+                particulates: item.particulates,
+                uom: 'KTPD',
+                value: convertFromKBPSD(item.jan || 0, 'KTPD'),
+                remark: '',
+                insertedDateTime: item.insertedDateTime,
+                inEdit: false,
+                isKBPSD: false,
+                isEditable: false,
               }
+
+              return [kbpsdRow, ktpdRow]
             })
+          } else {
+            transformedData = response.results.flatMap((item, index) => {
+              const kbpsdRow = {
+                id: `${item.id || `row_${index}`}_kbpsd`,
+                particulates: item.particulates,
+                uom: 'KBPSD',
+                jan: item.jan || 0,
+                feb: item.feb || 0,
+                mar: item.mar || 0,
+                apr: item.apr || 0,
+                may: item.may || 0,
+                jun: item.jun || 0,
+                jul: item.jul || 0,
+                aug: item.aug || 0,
+                sep: item.sep || 0,
+                oct: item.oct || 0,
+                nov: item.nov || 0,
+                dec: item.dec || 0,
+                remark: item.remark || '',
+                insertedDateTime: item.insertedDateTime,
+                inEdit: false,
+                isEditable: true,
+                isKBPSD: true,
+              }
 
-            return {
-              id: item.id || `row_${index}`,
-              particulates: item.particulates,
-              ...monthData,
-              remark: item.remark,
-              insertedDateTime: item.insertedDateTime,
-              inEdit: false,
-            }
-          })
-        }
+              const ktpdRow = {
+                id: `${item.id || `row_${index}`}_ktpd`,
+                particulates: item.particulates,
+                uom: 'KTPD',
+                jan: convertFromKBPSD(item.jan || 0, 'KTPD'),
+                feb: convertFromKBPSD(item.feb || 0, 'KTPD'),
+                mar: convertFromKBPSD(item.mar || 0, 'KTPD'),
+                apr: convertFromKBPSD(item.apr || 0, 'KTPD'),
+                may: convertFromKBPSD(item.may || 0, 'KTPD'),
+                jun: convertFromKBPSD(item.jun || 0, 'KTPD'),
+                jul: convertFromKBPSD(item.jul || 0, 'KTPD'),
+                aug: convertFromKBPSD(item.aug || 0, 'KTPD'),
+                sep: convertFromKBPSD(item.sep || 0, 'KTPD'),
+                oct: convertFromKBPSD(item.oct || 0, 'KTPD'),
+                nov: convertFromKBPSD(item.nov || 0, 'KTPD'),
+                dec: convertFromKBPSD(item.dec || 0, 'KTPD'),
+                remark: '',
+                insertedDateTime: item.insertedDateTime,
+                inEdit: false,
+                isKBPSD: false,
+                isEditable: true,
+              }
 
-        if (response?.headers && response?.keys) {
-          setApiMetadata({ headers: response.headers, keys: response.keys })
+              return [kbpsdRow, ktpdRow]
+            })
+          }
         }
 
         // If data is empty and carry-forward not skipped, attempt carry-forward and refetch
@@ -265,186 +277,185 @@ const UnitCapacityGrid = ({
     }
   }, [PLANT_ID, apiYear, fetchUnitCapacityData])
 
-  // Column configuration for Unit Capacity
-  const columnConfig = useMemo(() => {
-    const config = {
-      id: {
-        editable: false,
-        type: 'text',
-        minWidth: 50,
-        widthT: 100,
-        hidden: true,
-      },
-      particulates: {
-        editable: false,
-        type: 'text',
-        minWidth: 150,
-        widthT: 150,
-      },
-    }
-
-    if (isDesign) {
-      // Design capacity: single annual value column
-      config['value.kbpsd'] = {
-        editable: true,
-        type: 'number1',
-        minWidth: 80,
-        widthT: 120,
-        format: valueFormat,
-        title: 'KBPSD',
-      }
-      config['value.ktpd'] = {
-        editable: true,
-        type: 'number1',
-        minWidth: 80,
-        widthT: 120,
-        format: valueFormat,
-        title: 'KTPD',
-      }
-    } else {
-      // Other capacity types: monthly KBPSD and KTPD sub-columns
-      const months = [
-        'jan',
-        'feb',
-        'mar',
-        'apr',
-        'may',
-        'jun',
-        'jul',
-        'aug',
-        'sep',
-        'oct',
-        'nov',
-        'dec',
-      ]
-      months.forEach((month) => {
-        config[`${month}.kbpsd`] = {
-          editable: true,
-          type: 'number1',
-          minWidth: 80,
-          widthT: 100,
-          format: valueFormat,
-          title: 'KBPSD',
-        }
-        config[`${month}.ktpd`] = {
-          editable: true,
-          type: 'number1',
-          minWidth: 80,
-          widthT: 100,
-          format: valueFormat,
-          title: 'KTPD',
-        }
-      })
-    }
-
-    config.remark = {
-      title: 'Remark',
-      editable: true,
-      type: 'text',
-      // minWidth: 200,
-      // widthT: 250,
-    }
-
-    return config
-  }, [isDesign, valueFormat])
-
+  // Column definitions - static configuration with KBPSD editable and KTPD read-only
   const columns = useMemo(() => {
-    const { headers, keys } = apiMetadata
-
-    if (!headers || !keys || headers.length === 0 || !headerMap) {
-      return []
-    }
-
-    // Map keys to their headers from backend
-    const columnMap = {}
-    headers.forEach((header, index) => {
-      columnMap[keys[index]] = header
-    })
-
-    // Build columns using columnConfig for type/formatting
-    const cols = Object.entries(columnConfig).map(([key, config]) => ({
-      field: key,
-      title: config.title || columnMap[key] || key,
-      ...config,
-    }))
-
-    const result = []
-    // Position 0: id
-    result.push(cols.find((col) => col.field === 'id'))
-    // Position 1: particulates
-    result.push(cols.find((col) => col.field === 'particulates'))
-
     if (isDesign) {
-      // Design capacity: "Capacity" ? "Value" ? [KBPSD, KTPD] (mirrors monthly structure)
-      const kbpsdCol = cols.find((col) => col.field === 'value.kbpsd')
-      const ktpdCol = cols.find((col) => col.field === 'value.ktpd')
-      result.push({
-        title: 'Capacity',
-        children: [kbpsdCol, ktpdCol].filter(Boolean),
-      })
+      return [
+        { field: 'id', title: 'ID', hidden: true },
+        {
+          field: 'particulates',
+          title: 'Particulars',
+          widthT: 150,
+          minWidth: 150,
+          type: 'text',
+          editable: false,
+          hidden: false,
+        },
+        {
+          field: 'uom',
+          title: 'UOM',
+          editable: false,
+          widthT: 100,
+          minWidth: 100,
+          type: 'text',
+        },
+        {
+          title: 'Capacity',
+          children: [
+            {
+              field: 'value',
+              title: 'Value',
+              editable: true,
+              widthT: 100,
+              minWidth: 100,
+              type: 'number1',
+              format: valueFormat,
+            },
+          ],
+        },
+        {
+          field: 'remark',
+          title: 'Remarks',
+          widthT: 250,
+          minWidth: 250,
+          type: 'text',
+          editable: true,
+        },
+      ]
     } else {
-      // Other types: monthly columns (Apr to Mar)
-      const months = [
-        { key: 'jan', headerKey: 1 },
-        { key: 'feb', headerKey: 2 },
-        { key: 'mar', headerKey: 3 },
-        { key: 'apr', headerKey: 4 },
-        { key: 'may', headerKey: 5 },
-        { key: 'jun', headerKey: 6 },
-        { key: 'jul', headerKey: 7 },
-        { key: 'aug', headerKey: 8 },
-        { key: 'sep', headerKey: 9 },
-        { key: 'oct', headerKey: 10 },
-        { key: 'nov', headerKey: 11 },
-        { key: 'dec', headerKey: 12 },
+      const monthColumns = [
+        {
+          field: 'jan',
+          title: headerMap[1],
+          editable: true,
+          widthT: 100,
+          type: 'number1',
+          format: valueFormat,
+        },
+        {
+          field: 'feb',
+          title: headerMap[2],
+          editable: true,
+          widthT: 100,
+          type: 'number1',
+          format: valueFormat,
+        },
+        {
+          field: 'mar',
+          title: headerMap[3],
+          editable: true,
+          widthT: 100,
+          type: 'number1',
+          format: valueFormat,
+        },
+        {
+          field: 'apr',
+          title: headerMap[4],
+          editable: true,
+          widthT: 100,
+          type: 'number1',
+          format: valueFormat,
+        },
+        {
+          field: 'may',
+          title: headerMap[5],
+          editable: true,
+          widthT: 100,
+          type: 'number1',
+          format: valueFormat,
+        },
+        {
+          field: 'jun',
+          title: headerMap[6],
+          editable: true,
+          widthT: 100,
+          type: 'number1',
+          format: valueFormat,
+        },
+        {
+          field: 'jul',
+          title: headerMap[7],
+          editable: true,
+          widthT: 100,
+          type: 'number1',
+          format: valueFormat,
+        },
+        {
+          field: 'aug',
+          title: headerMap[8],
+          editable: true,
+          widthT: 100,
+          type: 'number1',
+          format: valueFormat,
+        },
+        {
+          field: 'sep',
+          title: headerMap[9],
+          editable: true,
+          widthT: 100,
+          type: 'number1',
+          format: valueFormat,
+        },
+        {
+          field: 'oct',
+          title: headerMap[10],
+          editable: true,
+          widthT: 100,
+          type: 'number1',
+          format: valueFormat,
+        },
+        {
+          field: 'nov',
+          title: headerMap[11],
+          editable: true,
+          widthT: 100,
+          type: 'number1',
+          format: valueFormat,
+        },
+        {
+          field: 'dec',
+          title: headerMap[12],
+          editable: true,
+          widthT: 100,
+          type: 'number1',
+          format: valueFormat,
+        },
       ]
 
-      const monthlyColumns = months
-        .map((month) => {
-          const kbpsdCol = cols.find(
-            (col) => col.field === `${month.key}.kbpsd`,
-          )
-          const ktpdCol = cols.find((col) => col.field === `${month.key}.ktpd`)
-          return {
-            title: headerMap[month.headerKey] || month.key.toUpperCase(),
-            children: [kbpsdCol, ktpdCol].filter(Boolean),
-          }
-        })
-        .filter((col) => col.children.length > 0)
-
-      if (monthlyColumns.length > 0) {
-        result.push({
+      return [
+        { field: 'id', title: 'ID', hidden: true },
+        {
+          field: 'particulates',
+          title: 'Particulars',
+          widthT: 150,
+          minWidth: 150,
+          type: 'text',
+          editable: false,
+          hidden: false,
+        },
+        {
+          field: 'uom',
+          title: 'UOM',
+          editable: false,
+          widthT: 100,
+          minWidth: 100,
+          type: 'text',
+        },
+        {
           title: 'Capacity',
-          children: monthlyColumns,
-        })
-      }
+          children: monthColumns,
+        },
+        {
+          field: 'remark',
+          title: 'Remarks',
+          widthT: 250,
+          minWidth: 250,
+          type: 'text',
+          editable: true,
+        },
+      ]
     }
-
-    // Remark and other remaining columns (excluding id, particulates, insertedDateTime and value sub-cols)
-    const skipFields = isDesign
-      ? ['id', 'particulates', 'insertedDateTime', 'value.kbpsd', 'value.ktpd']
-      : ['id', 'particulates', 'insertedDateTime']
-    const remainingCols = cols.filter(
-      (col) =>
-        !skipFields.includes(col.field) &&
-        ![
-          'jan',
-          'feb',
-          'mar',
-          'apr',
-          'may',
-          'jun',
-          'jul',
-          'aug',
-          'sep',
-          'oct',
-          'nov',
-          'dec',
-        ].some((m) => col.field.startsWith(`${m}.`)),
-    )
-    result.push(...remainingCols)
-    return result
-  }, [isDesign, apiMetadata, columnConfig, headerMap])
+  }, [isDesign, valueFormat, headerMap])
 
   // Handle remark cell click
   const handleRemarkCellClick = (row) => {
@@ -473,32 +484,20 @@ const UnitCapacityGrid = ({
 
       // Custom validation: If any row data is updated, remarks must be filled and different from original
       const fieldsToCheck = isDesign
-        ? ['value.kbpsd', 'value.ktpd']
+        ? ['value']
         : [
-            'jan.kbpsd',
-            'jan.ktpd',
-            'feb.kbpsd',
-            'feb.ktpd',
-            'mar.kbpsd',
-            'mar.ktpd',
-            'apr.kbpsd',
-            'apr.ktpd',
-            'may.kbpsd',
-            'may.ktpd',
-            'jun.kbpsd',
-            'jun.ktpd',
-            'jul.kbpsd',
-            'jul.ktpd',
-            'aug.kbpsd',
-            'aug.ktpd',
-            'sep.kbpsd',
-            'sep.ktpd',
-            'oct.kbpsd',
-            'oct.ktpd',
-            'nov.kbpsd',
-            'nov.ktpd',
-            'dec.kbpsd',
-            'dec.ktpd',
+            'jan',
+            'feb',
+            'mar',
+            'apr',
+            'may',
+            'jun',
+            'jul',
+            'aug',
+            'sep',
+            'oct',
+            'nov',
+            'dec',
           ]
 
       const validationError = validateRowDataWithRemarks(
@@ -518,38 +517,43 @@ const UnitCapacityGrid = ({
         return
       }
 
-      // Build payload — backend expects flat fields
-      const dataInKBPSD = data.map((row) => {
-        if (isDesign) {
-          // Design: single annual value field storing in jan
+      // Build payload â€” backend expects flat fields
+      const dataInKBPSD = data
+        .filter((row) => row.isKBPSD) // Only save KBPSD rows, skip KTPD rows
+        .map((row) => {
+          // Strip _kbpsd or _ktpd suffix from ID
+          const cleanId = row.id.replace(/_kbpsd$/, '').replace(/_ktpd$/, '')
+
+          if (isDesign) {
+            // Design: single annual value field storing in jan
+            return {
+              id: row.isNew ? null : cleanId,
+              particulates: row.particulates,
+              jan: row.value,
+              remark: row.remark,
+              insertedDateTime: row.insertedDateTime,
+            }
+          }
+          // Other types: flat monthly fields
           return {
-            id: row.isNew ? null : row.id,
+            id: row.isNew ? null : cleanId,
             particulates: row.particulates,
-            jan: row.value?.kbpsd,
+            jan: row.jan,
+            feb: row.feb,
+            mar: row.mar,
+            apr: row.apr,
+            may: row.may,
+            jun: row.jun,
+            jul: row.jul,
+            aug: row.aug,
+            sep: row.sep,
+            oct: row.oct,
+            nov: row.nov,
+            dec: row.dec,
             remark: row.remark,
             insertedDateTime: row.insertedDateTime,
           }
-        }
-        // Other types: flat monthly KBPSD fields
-        return {
-          id: row.isNew ? null : row.id,
-          particulates: row.particulates,
-          jan: row.jan?.kbpsd,
-          feb: row.feb?.kbpsd,
-          mar: row.mar?.kbpsd,
-          apr: row.apr?.kbpsd,
-          may: row.may?.kbpsd,
-          jun: row.jun?.kbpsd,
-          jul: row.jul?.kbpsd,
-          aug: row.aug?.kbpsd,
-          sep: row.sep?.kbpsd,
-          oct: row.oct?.kbpsd,
-          nov: row.nov?.kbpsd,
-          dec: row.dec?.kbpsd,
-          remark: row.remark,
-          insertedDateTime: row.insertedDateTime,
-        }
-      })
+        })
 
       const response = await TcsApiService.saveUnitCapacityData(
         keycloak,
@@ -715,7 +719,12 @@ const UnitCapacityGrid = ({
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <Stack sx={{ mt: 2 }}>
         <AdvanceKendoTable
@@ -742,10 +751,11 @@ const UnitCapacityGrid = ({
           customItemChange={handleCustomItemChange}
           handleExcelUpload={handleExcelUpload}
           handleExport={handleExport}
+          groupBy={['particulates']}
         />
       </Stack>
     </Box>
   )
 }
 
-export default UnitCapacityGrid
+export default UnitCapacityGridRowwise

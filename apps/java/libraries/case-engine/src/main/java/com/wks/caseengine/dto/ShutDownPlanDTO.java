@@ -50,4 +50,5 @@ public class ShutDownPlanDTO {
     private Double rpfDownTime;
     private Double noOfRPF;
     private String lineId;
+    private String shutdownRate;
 }

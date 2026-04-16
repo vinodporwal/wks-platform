@@ -5,6 +5,7 @@
     "groupable": true,
     "editable": false,
     "hidden": true,
+    "isVisible": false,
     "widthT": 100
   },
   {
@@ -12,20 +13,23 @@
     "title": "Particulars",
     "editable": false,
     "widthT": 300,
-    "autoAdjust": false
+    "autoAdjust": false,
+    "minWidth": 300
   },
   {
     "field": "UOM",
     "title": "UOM",
     "editable": false,
-    "widthT": 80
+    "widthT": 80,
+    "minWidth": 90
   },
   {
     "field": "ConstantValue",
     "title": "Value",
     "editable": true,
     "type": "number",
-    "widthT": 100
+    "widthT": 100,
+    "minWidth": 100
   },
 
   {
@@ -33,6 +37,7 @@
     "title": "Remark",
     "widthT": 250,
     "autoAdjust": false,
-    "editable": true
+    "editable": true,
+    "minWidth": 200
   }
 ]
