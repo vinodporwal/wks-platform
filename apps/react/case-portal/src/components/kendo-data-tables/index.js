@@ -1968,7 +1968,18 @@ const KendoDataTables = ({
                   Save
                 </Button>
               )}
-
+              {(permissions?.deleteAllBtn || permissions?.deleteMultiple) && (
+                <Button
+                  variant='contained'
+                  className='btn-save'
+                  onClick={handleOpenDeleteMultipleDialog}
+                  disabled={isButtonDisabled || READ_ONLY || !showDeleteAll}
+                  loading={loading} // Use the loading prop to trigger loading state
+                  loadingposition='start' // Use loadingPosition to control where the spinner appears
+                >
+                  Delete
+                </Button>
+              )}
               {permissions?.showResetButton && (
                 <Button
                   variant='contained'
@@ -3762,18 +3773,6 @@ const KendoDataTables = ({
             loadingposition='start' // Use loadingPosition to control where the spinner appears
           >
             Next
-          </Button>
-        )}
-        {showDeleteAll && (
-          <Button
-            variant='contained'
-            className='btn-save'
-            onClick={handleOpenDeleteMultipleDialog}
-            disabled={isButtonDisabled || READ_ONLY}
-            loading={loading} // Use the loading prop to trigger loading state
-            loadingposition='start' // Use loadingPosition to control where the spinner appears
-          >
-            Delete
           </Button>
         )}
       </Box>
