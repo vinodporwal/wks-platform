@@ -193,6 +193,11 @@ export const DataService = {
   slowdownconsumptionExportAllGrade,
   saveSlowdownNormsExcelAllGrade,
   dropdownValuesPeC2,
+
+  getMaterialBalanceData,
+  saveMaterialBalanceData,
+  materialBalanceExport,
+  saveMaterialBalanceExcel,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -4470,6 +4475,105 @@ async function dropdownValuesPeC2(keycloak, PLANT_ID, AOP_YEAR) {
   }
   try {
     const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+export async function getMaterialBalanceData(keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/material-balance-data`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(e)
+    return Promise.reject(e)
+  }
+}
+export async function saveMaterialBalanceData(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  data,
+) {
+  const url = `${Config.CaseEngineUrl}/task/material-balance?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(e)
+    return Promise.reject(e)
+  }
+}
+export async function materialBalanceExport(
+  keycloak,
+  plantId,
+  year,
+  excelName
+) {
+  const url = `${Config.CaseEngineUrl}/task/material-balance-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = excelName ? `${excelName}.xlsx` : 'Material_balance.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Shutdown Excel:', e)
+    return Promise.reject(e)
+  }
+}
+async function saveMaterialBalanceExcel(
+  file,
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  let url = ''
+  url = `${Config.CaseEngineUrl}/task/material-balance-import?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)
