@@ -196,6 +196,11 @@ public class ShutDownPlanController {
 		        return ResponseEntity.ok("Plant with ID " + plantMaintenanceTransactionId + " deleted successfully");
 		    }
 		  
+		  	@DeleteMapping("/shutdown")
+		    public AOPMessageVM deleteMultipleShutdown(@RequestParam List<UUID> plantMaintenanceTransactionIds,@RequestParam UUID plantId) {	
+		  		return shutDownPlanService.deleteMultipleShutdown(plantMaintenanceTransactionIds,plantId);
+		    }
+		  
 		  @GetMapping("/getMonthlyShutdownHours")
 		  public List<MonthWiseDataDTO> getMonthlyShutdownHours(@RequestParam String auditYear,@RequestParam String plantId){
 			  return shutDownPlanService.getMonthlyShutdownHours(auditYear,UUID.fromString(plantId));
