@@ -55,8 +55,6 @@ const MaterialBalance = ({ permissions }) => {
 
   const fetchMatbalData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
-    setRows(mockMatbalData)
-    return;
     setLoading(true)
     try {
       // Using 'matbal' as the type for Material Balance constraints
@@ -66,14 +64,13 @@ const MaterialBalance = ({ permissions }) => {
         AOP_YEAR,
       )
       if (response?.code === 200) {
-        const formattedData = (response?.data || []).map((item, index) => ({
+        const formattedData = (response?.data?.data || []).map((item, index) => ({
           ...item,
-          idFromApi: item.id,
+          idFromApi: item?.id,
           id: index,
-          Particulars: item.NormTypeName || item.DisplayName,
-          UOM: item.UOM || 'MT',
-          remarks: item.Remarks || '',
-          originalRemark: item.Remarks || '',
+          Type: item?.Type,
+          Remarks: item?.Remarks || '',
+          originalRemark: item?.Remarks || '',
         }))
         setRows(formattedData)
       } else {
@@ -95,24 +92,24 @@ const MaterialBalance = ({ permissions }) => {
   const colDefs = useMemo(() => [
     { field: 'Particulars', title: 'Particulars', editable: false, widthT: 100 },
     { field: 'UOM', title: 'UOM', editable: false, widthT: 80 },
-    { field: 'april', title: 'Apr', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
-    { field: 'may', title: 'May', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
-    { field: 'june', title: 'Jun', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
-    { field: 'july', title: 'Jul', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
-    { field: 'august', title: 'Aug', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
-    { field: 'september', title: 'Sep', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
-    { field: 'october', title: 'Oct', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
-    { field: 'november', title: 'Nov', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
-    { field: 'december', title: 'Dec', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
-    { field: 'january', title: 'Jan', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
-    { field: 'february', title: 'Feb', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
-    { field: 'march', title: 'Mar', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
-    { field: 'remarks', title: 'Remark', editable: false, widthT: 100 },
+    { field: 'Apr', title: 'Apr', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
+    { field: 'May', title: 'May', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
+    { field: 'Jun', title: 'Jun', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
+    { field: 'Jul', title: 'Jul', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
+    { field: 'Aug', title: 'Aug', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
+    { field: 'Sep', title: 'Sep', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
+    { field: 'Oct', title: 'Oct', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
+    { field: 'Nov', title: 'Nov', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
+    { field: 'Dec', title: 'Dec', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
+    { field: 'Jan', title: 'Jan', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
+    { field: 'Feb', title: 'Feb', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
+    { field: 'Mar', title: 'Mar', editable: true, type: 'number', format: '{0:#.###}', width: 120 },
+    { field: 'Remarks', title: 'Remark', editable: false, widthT: 100 },
   ], [])
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
-    setCurrentRemark(row.remarks || '')
+    setCurrentRemark(row.Remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
@@ -120,8 +117,7 @@ const MaterialBalance = ({ permissions }) => {
   const saveChanges = useCallback(async () => {
     const modifiedData = Object.values(modifiedCells)
     if (modifiedData.length === 0) return
-
-    const requiredFields = ['remarks']
+    const requiredFields = ['Remarks']
     const validationMessage = validateFields(modifiedData, requiredFields)
     if (validationMessage) {
       setSnackbarData({ message: validationMessage, severity: 'error' })
@@ -132,27 +128,27 @@ const MaterialBalance = ({ permissions }) => {
     setLoading(true)
     try {
       const payload = modifiedData.map(row => ({
-        id: row.idFromApi || null,
-        plantId: PLANT_ID,
+        apr: row.Apr || row.ConstantValue || null,
+        may: row.May || null,
+        jun: row.Jun || null,
+        jul: row.Jul || null,
+        aug: row.Aug || null,
+        sep: row.Sep || null,
+        oct: row.Oct || null,
+        nov: row.Nov || null,
+        dec: row.Dec || null,
+        jan: row.Jan || null,
+        feb: row.Feb || null,
+        mar: row.Mar || null,
+        UOM: '',
         auditYear: AOP_YEAR,
-        normParameterFKId: row.normParameterFKId,
-        april: row.april || 0,
-        may: row.may || 0,
-        june: row.june || 0,
-        july: row.july || 0,
-        august: row.august || 0,
-        september: row.september || 0,
-        october: row.october || 0,
-        november: row.november || 0,
-        december: row.december || 0,
-        january: row.january || 0,
-        february: row.february || 0,
-        march: row.march || 0,
-        remarks: row.remarks,
+        normParameterFKId: row.normParameterFKId || row.NormParameterType_FK_Id,
+        remarks: row.Remarks,
+        id: row.idFromApi || null,
       }))
 
       const response = await DataService.saveMaterialBalanceData(keycloak, PLANT_ID, AOP_YEAR, payload)
-      if (response?.code === 200) {
+      if (response) {
         setSnackbarData({ message: 'Saved Successfully!', severity: 'success' })
         setSnackbarOpen(true)
         setModifiedCells({})

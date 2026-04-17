@@ -330,7 +330,7 @@ export const ShutDownPpDtaColumns = [
     type: 'descLimit',
   },
   {
-    field: 'lineId',
+    field: 'lineDisplayName',
     title: 'Line',
     type: 'lineDropdown',
     editable: true,

@@ -23,7 +23,7 @@ const LineDropdownEditor = (props) => {
   )
 
   const currentValueObj = useMemo(
-    () => allOptions.find((opt) => opt.value === dataItem[field]) || null,
+    () => allOptions.find((opt) => (opt.value === dataItem[field] || opt.label === dataItem[field])) || null,
     [allOptions, dataItem, field],
   )
 
@@ -33,12 +33,34 @@ const LineDropdownEditor = (props) => {
   )
 
   const handleChange = (e) => {
-    onChange({
-      dataItem,
-      field,
-      syntheticEvent: e.syntheticEvent,
-      value: e.value?.value ?? e.target?.value?.value ?? null,
-    })
+    const selectedItem = e.value || e.target?.value
+    const val = selectedItem?.value ?? null
+    const label = selectedItem?.label ?? null
+
+    if (typeof onChange === 'function' && field === 'lineDisplayName') {
+      onChange({
+        dataItem,
+        field: 'lineId',
+        value: val,
+        syntheticEvent: e.syntheticEvent,
+      })
+
+      onChange({
+        dataItem,
+        field: 'lineDisplayName',
+        value: label,
+        syntheticEvent: e.syntheticEvent,
+      })
+      return;
+    }
+    if (typeof onChange === 'function') {
+      onChange({
+        dataItem,
+        field,
+        syntheticEvent: e.syntheticEvent,
+        value: e.value?.value ?? e.target?.value?.value ?? null,
+      })
+    }
   }
 
   // Edit mode — wrap in <td> exactly like MonthDropdownPEPP
@@ -73,7 +95,7 @@ const LineDropdownEditor = (props) => {
   }
 
   // Display mode (read-only cell)
-  const lineObj = allLines.find((l) => l.id === dataItem[field])
+  const lineObj = allLines.find((l) => (l.id === dataItem[field] || l.displayName === dataItem[field]))
   const displayLabel = lineObj ? lineObj.displayName : ''
 
   return (
