@@ -253,20 +253,22 @@ def calculate_utility_consumption(
     }
 
 
-def calculate_stg_shp_demand(stg_gross_mwh: float) -> float:
+def calculate_stg_shp_demand(stg_gross_mwh: float, sp_steam_power: float = 0.0) -> float:
     """
     Calculate SHP steam demand for STG power generation.
     
-    Formula: SHP (MT) = GrossKWh * 0.0036 MT/KWh
+    Formula: SHP (MT) = GrossKWh * SHP_per_KWh
     
     Args:
         stg_gross_mwh: STG gross generation in MWh
+        sp_steam_power: Specific steam consumption (MT/MWh), if 0 uses fallback norm
     
     Returns:
         SHP steam required in MT
     """
     stg_gross_kwh = stg_gross_mwh * 1000
-    return stg_gross_kwh * NORM_STG_SHP_PER_KWH
+    norm_per_kwh = (sp_steam_power / 1000) if sp_steam_power > 0 else NORM_STG_SHP_PER_KWH
+    return stg_gross_kwh * norm_per_kwh
 
 
 def calculate_stg_extraction_requirements(lp_total: float, mp_total: float) -> dict:
@@ -918,7 +920,8 @@ def usd_iterate(
             additional_demand_mwh=previous_utility_aux_mwh,
             stg_max_mwh=stg_limit_mwh,
             stg_min_override_mwh=stg_min_override_mwh,
-            gt_reduction_mwh=gt_reduction_for_balance_mwh
+            gt_reduction_mwh=gt_reduction_for_balance_mwh,
+            stg_extraction_lookup_df=stg_extraction_lookup_df
         )
         
         if power_result.get("insufficientCapacity") or power_result.get("insufficientCapacityAfterImport"):
@@ -971,7 +974,15 @@ def usd_iterate(
                 stg_gross_mwh = gross
                 stg_aux_mwh = aux
                 stg_net_mwh = net
-                stg_shp_required = calculate_stg_shp_demand(stg_gross_mwh)
+                
+                # Fetch sp_steam_power for the dispatched load
+                stg_load_mw = asset.get("LoadMW", 0)
+                sp_steam_power_val = 0.0
+                if use_stg_load_based and stg_load_mw > 0:
+                    ext_data = get_stg_extraction_for_load(stg_load_mw, stg_extraction_lookup_df)
+                    sp_steam_power_val = ext_data.get("sp_steam_power", 0.0)
+                    
+                stg_shp_required = calculate_stg_shp_demand(stg_gross_mwh, sp_steam_power_val)
             elif "GT" in asset_upper or "POWER PLANT" in asset_upper:
                 gt_details.append({
                     "name": asset_name,
@@ -1173,7 +1184,10 @@ def usd_iterate(
         
         # Get excess steam (if demand < MIN supply)
         excess_steam_mt = hrsg_dispatch_result.get("excess_steam_mt", 0)
-        excess_power_from_steam_mwh = excess_steam_mt / STEAM_TO_POWER_MT_PER_MWH if excess_steam_mt > 0 else 0
+        conversion_factor = stg_extraction.get("sp_steam_power", STEAM_TO_POWER_MT_PER_MWH) if stg_extraction else STEAM_TO_POWER_MT_PER_MWH
+        if conversion_factor <= 0:
+            conversion_factor = STEAM_TO_POWER_MT_PER_MWH
+        excess_power_from_steam_mwh = excess_steam_mt / conversion_factor if excess_steam_mt > 0 else 0
         
         # Also calculate MIN load result for backward compatibility
         hrsg_min_load_result = calculate_hrsg_min_load_and_excess_steam(
