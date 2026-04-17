@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TcsApiService } from 'components/aop-phase-two/services/tcs/tcsApiService'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
-import { convertFromKBPSD } from './uomConversionUtils'
+import { convertFromKBPSD, convertToKBPSD } from './uomConversionUtils'
 import {
   generateCalendarYearHeaders,
   extractYear,
@@ -33,6 +33,7 @@ const UnitCapacityGridRowwise = ({
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [modifiedCells, setModifiedCells] = useState({})
+  const [customModifiedCells, setCustomModifiedCells] = useState({})
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
@@ -46,50 +47,61 @@ const UnitCapacityGridRowwise = ({
   const handleCustomItemChange = useCallback(
     (event, setRowsFunc) => {
       const { dataItem, field, value } = event
+      const validFields = isDesign
+        ? ['value']
+        : [
+            'jan',
+            'feb',
+            'mar',
+            'apr',
+            'may',
+            'jun',
+            'jul',
+            'aug',
+            'sep',
+            'oct',
+            'nov',
+            'dec',
+          ]
 
-      // For design: only 'value' field
-      // For others: 12 month fields (jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec)
-      const monthFields = [
-        'jan',
-        'feb',
-        'mar',
-        'apr',
-        'may',
-        'jun',
-        'jul',
-        'aug',
-        'sep',
-        'oct',
-        'nov',
-        'dec',
-      ]
-      const designFields = ['value']
-      const validFields = isDesign ? designFields : monthFields
+      if (!validFields.includes(field)) return
 
-      if (!validFields.includes(field)) {
-        return
-      }
+      const pairedRowId = dataItem.isKBPSD
+        ? dataItem.id.replace('_kbpsd', '_ktpd')
+        : dataItem.id.replace('_ktpd', '_kbpsd')
+      const convertedValue = dataItem.isKBPSD
+        ? convertFromKBPSD(value, 'KTPD')
+        : convertToKBPSD(value, 'KTPD')
 
-      setRowsFunc((prevRows) => {
-        return prevRows.map((row) => {
-          // Update the edited KBPSD row
-          if (row.id === dataItem.id) {
-            return { ...row, [field]: value }
+      setRowsFunc((prevRows) =>
+        prevRows.map((row) => {
+          if (row.id === dataItem.id || row.id === pairedRowId) {
+            return {
+              ...row,
+              [field]: row.id === dataItem.id ? value : convertedValue,
+              inEdit: true,
+            }
           }
-
-          // If editing a KBPSD row, also update the corresponding KTPD row
-          if (
-            dataItem.isKBPSD &&
-            row.id === dataItem.id.replace('_kbpsd', '_ktpd')
-          ) {
-            return { ...row, [field]: convertFromKBPSD(value, 'KTPD') }
-          }
-
           return row
-        })
-      })
+        }),
+      )
+
+      setModifiedCells((prev) => ({
+        ...prev,
+        [pairedRowId]: {
+          ...rows.find((r) => r.id === pairedRowId),
+          ...prev[pairedRowId],
+          [field]: convertedValue,
+          inEdit: true,
+        },
+      }))
+
+      setCustomModifiedCells((prev) => ({
+        ...prev,
+        [pairedRowId]: { ...prev[pairedRowId], [field]: convertedValue },
+      }))
     },
-    [isDesign],
+    [isDesign, rows],
   )
 
   // Carry forward data from previous year
@@ -167,11 +179,11 @@ const UnitCapacityGridRowwise = ({
                 particulates: item.particulates,
                 uom: 'KTPD',
                 value: convertFromKBPSD(item.jan || 0, 'KTPD'),
-                remark: '',
+                remark: item.remark || '',
                 insertedDateTime: item.insertedDateTime,
                 inEdit: false,
                 isKBPSD: false,
-                isEditable: false,
+                isEditable: true,
               }
 
               return [kbpsdRow, ktpdRow]
@@ -217,7 +229,7 @@ const UnitCapacityGridRowwise = ({
                 oct: convertFromKBPSD(item.oct || 0, 'KTPD'),
                 nov: convertFromKBPSD(item.nov || 0, 'KTPD'),
                 dec: convertFromKBPSD(item.dec || 0, 'KTPD'),
-                remark: '',
+                remark: item.remark || '',
                 insertedDateTime: item.insertedDateTime,
                 inEdit: false,
                 isKBPSD: false,
@@ -463,6 +475,51 @@ const UnitCapacityGridRowwise = ({
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
+
+  // Handle remark save - sync to paired row
+  const handleRemarkSave = useCallback(() => {
+    const currentRow = rows.find((r) => r.id === currentRowId)
+    if (!currentRow) return
+
+    const pairedRowId = currentRow.isKBPSD
+      ? currentRow.id.replace('_kbpsd', '_ktpd')
+      : currentRow.id.replace('_ktpd', '_kbpsd')
+
+    const pairedRow = rows.find((r) => r.id === pairedRowId)
+
+    // Update rows and modifiedCells together
+    setRows((prevRows) =>
+      prevRows.map((row) =>
+        row.id === currentRowId || row.id === pairedRowId
+          ? { ...row, remark: currentRemark, inEdit: true }
+          : row,
+      ),
+    )
+
+    setModifiedCells((prev) => ({
+      ...prev,
+      [currentRowId]: {
+        ...currentRow,
+        ...prev[currentRowId],
+        remark: currentRemark,
+        inEdit: true,
+      },
+      [pairedRowId]: {
+        ...pairedRow,
+        ...prev[pairedRowId],
+        remark: currentRemark,
+        inEdit: true,
+      },
+    }))
+
+    setCustomModifiedCells((prev) => ({
+      ...prev,
+      [currentRowId]: { ...prev[currentRowId], remark: currentRemark },
+      [pairedRowId]: { ...prev[pairedRowId], remark: currentRemark },
+    }))
+
+    setRemarkDialogOpen(false)
+  }, [currentRowId, currentRemark, rows])
 
   // Save changes for this capacity type
   const saveChanges = useCallback(async () => {
@@ -752,6 +809,9 @@ const UnitCapacityGridRowwise = ({
           handleExcelUpload={handleExcelUpload}
           handleExport={handleExport}
           groupBy={['particulates']}
+          externalCustomModifiedCells={customModifiedCells}
+          externalSetCustomModifiedCells={setCustomModifiedCells}
+          customHandleRemarkSave={handleRemarkSave}
         />
       </Stack>
     </Box>

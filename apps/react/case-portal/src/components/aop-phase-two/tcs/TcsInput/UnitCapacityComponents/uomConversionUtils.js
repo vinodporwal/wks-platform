@@ -29,7 +29,7 @@ const CONVERSION_FACTORS = {
  * Convert value from KBPSD (backend format) to selected UOM (display format)
  * @param {number} value - Value in KBPSD
  * @param {string} targetUOM - Target UOM (KBPSD, KTPD, TPD)
- * @returns {number|null} Converted value
+ * @returns {number|null} Converted value rounded to 5 decimal places
  */
 export const convertFromKBPSD = (value, targetUOM) => {
   if (value === null || value === undefined || value === '') return null
@@ -39,24 +39,31 @@ export const convertFromKBPSD = (value, targetUOM) => {
 
   const uom = targetUOM?.toUpperCase()
 
+  let result
   switch (uom) {
     case 'KBPSD':
-      return numValue
+      result = numValue
+      break
     case 'KTPD':
-      return numValue * CONVERSION_FACTORS.KBPSD_TO_KTPD
+      result = numValue * CONVERSION_FACTORS.KBPSD_TO_KTPD
+      break
     case 'TPD':
-      return numValue * CONVERSION_FACTORS.KBPSD_TO_TPD
+      result = numValue * CONVERSION_FACTORS.KBPSD_TO_TPD
+      break
     default:
       console.warn(`Unknown UOM: ${targetUOM}, returning original value`)
-      return numValue
+      result = numValue
   }
+
+  // Round to 5 decimal places
+  return Math.round(result * 100000) / 100000
 }
 
 /**
  * Convert value from selected UOM (display format) to KBPSD (backend format)
  * @param {number} value - Value in selected UOM
  * @param {string} sourceUOM - Source UOM (KBPSD, KTPD, TPD)
- * @returns {number|null} Converted value in KBPSD
+ * @returns {number|null} Converted value in KBPSD rounded to 5 decimal places
  */
 export const convertToKBPSD = (value, sourceUOM) => {
   if (value === null || value === undefined || value === '') return null
@@ -66,17 +73,24 @@ export const convertToKBPSD = (value, sourceUOM) => {
 
   const uom = sourceUOM?.toUpperCase()
 
+  let result
   switch (uom) {
     case 'KBPSD':
-      return numValue
+      result = numValue
+      break
     case 'KTPD':
-      return numValue * CONVERSION_FACTORS.KTPD_TO_KBPSD
+      result = numValue * CONVERSION_FACTORS.KTPD_TO_KBPSD
+      break
     case 'TPD':
-      return numValue * CONVERSION_FACTORS.TPD_TO_KBPSD
+      result = numValue * CONVERSION_FACTORS.TPD_TO_KBPSD
+      break
     default:
       console.warn(`Unknown UOM: ${sourceUOM}, returning original value`)
-      return numValue
+      result = numValue
   }
+
+  // Round to 5 decimal places
+  return Math.round(result * 100000) / 100000
 }
 
 /**

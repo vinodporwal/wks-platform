@@ -1109,7 +1109,7 @@ const NestedKendoTable = ({
             title={col.title || col.headerName}
             hidden={col.hidden}
             editable={isEditable}
-            className={!isEditable ? 'k-right-disabled' : undefined}
+            className={!isEditable ? 'k-left-disabled' : undefined}
             headerClassName={isActive ? 'active-column' : ''}
             cells={{
               data: toolTipRenderer,

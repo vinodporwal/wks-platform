@@ -205,6 +205,7 @@ const AdvanceKendoTable = ({
   customActionCell = null,
   externalCustomModifiedCells = null,
   externalSetCustomModifiedCells = null,
+  customHandleRemarkSave = null,
 }) => {
   const {
     plantObject,
@@ -664,6 +665,12 @@ const AdvanceKendoTable = ({
   }, [modifiedCells, customModifiedCells])
 
   const handleRemarkSave = () => {
+    // Use custom remark save handler if provided
+    if (customHandleRemarkSave) {
+      customHandleRemarkSave()
+      return
+    }
+
     setRows((prevRows) => {
       let updatedRow = null
       let keyToUpdate = ''
@@ -1538,7 +1545,7 @@ const AdvanceKendoTable = ({
             title={col.title || col.headerName}
             hidden={col.hidden}
             editable={isEditable}
-            className={!isEditable ? 'k-right-disabled' : undefined}
+            className={!isEditable ? 'k-left-disabled' : undefined}
             headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
             cells={{
               edit: { text: TextCellEditorUpdated },
