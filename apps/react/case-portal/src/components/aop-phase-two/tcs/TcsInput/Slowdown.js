@@ -38,7 +38,11 @@ const Slowdown = ({
   const [currentRowId, setCurrentRowId] = useState(null)
 
   // State to store API response metadata (headers and keys)
-  const [apiMetadata, setApiMetadata] = useState({ headers: [], keys: [] ,editableFields:[] })
+  const [apiMetadata, setApiMetadata] = useState({
+    headers: [],
+    keys: [],
+    editableFields: [],
+  })
   const [originalRows, setOriginalRows] = useState([])
 
   const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
@@ -93,7 +97,11 @@ const Slowdown = ({
 
         // Store headers and keys from API response
         if (response?.headers && response?.keys) {
-          setApiMetadata({ headers: response.headers, keys: response.keys, editableFields: response.editableFields })
+          setApiMetadata({
+            headers: response.headers,
+            keys: response.keys,
+            editableFields: response.editableFields,
+          })
         }
 
         // If data is empty and carry-forward not skipped, attempt carry-forward and refetch
@@ -157,7 +165,7 @@ const Slowdown = ({
         { value: 'KTPD', label: 'KTPD' },
       ],
     },
-      durationInDays: {
+    durationInDays: {
       editable: true,
       type: 'wholeNumber',
       minWidth: 100,
@@ -199,7 +207,10 @@ const Slowdown = ({
       field: key,
       title: columnMap[key] || key,
       ...config,
-      editable: editableFields && Array.isArray(editableFields) ? editableFields.includes(key) : config.editable,
+      editable:
+        editableFields && Array.isArray(editableFields)
+          ? editableFields.includes(key)
+          : config.editable,
     }))
   }, [apiMetadata])
 

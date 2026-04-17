@@ -108,7 +108,7 @@ const PCGOutlookNew = ({
         // Use dummy data directly for development/testing
         const transformedData = generateDummyData()
 
-         // If data is empty and carry-forward not skipped, attempt carry-forward and refetch
+        // If data is empty and carry-forward not skipped, attempt carry-forward and refetch
         if (transformedData.length === 0 && !skipCarryForward) {
           const carryForwardSuccess = await handleCarryForward()
           if (carryForwardSuccess) {
@@ -283,10 +283,26 @@ const PCGOutlookNew = ({
 
   // Configuration for auto-calculated totals: field -> { dtaField, sezField, totalField }
   const totalCalcConfig = {
-    gasifierAvailabilityDta: { dtaField: 'gasifierAvailabilityDta', sezField: 'gasifierAvailabilitySez', totalField: 'gasifierAvailabilityTotal' },
-    gasifierAvailabilitySez: { dtaField: 'gasifierAvailabilityDta', sezField: 'gasifierAvailabilitySez', totalField: 'gasifierAvailabilityTotal' },
-    synGasProductionDta: { dtaField: 'synGasProductionDta', sezField: 'synGasProductionSez', totalField: 'synGasProductionTotal' },
-    synGasProductionSez: { dtaField: 'synGasProductionDta', sezField: 'synGasProductionSez', totalField: 'synGasProductionTotal' },
+    gasifierAvailabilityDta: {
+      dtaField: 'gasifierAvailabilityDta',
+      sezField: 'gasifierAvailabilitySez',
+      totalField: 'gasifierAvailabilityTotal',
+    },
+    gasifierAvailabilitySez: {
+      dtaField: 'gasifierAvailabilityDta',
+      sezField: 'gasifierAvailabilitySez',
+      totalField: 'gasifierAvailabilityTotal',
+    },
+    synGasProductionDta: {
+      dtaField: 'synGasProductionDta',
+      sezField: 'synGasProductionSez',
+      totalField: 'synGasProductionTotal',
+    },
+    synGasProductionSez: {
+      dtaField: 'synGasProductionDta',
+      sezField: 'synGasProductionSez',
+      totalField: 'synGasProductionTotal',
+    },
   }
 
   // Helper to calculate total from DTA and SEZ
@@ -295,42 +311,52 @@ const PCGOutlookNew = ({
     if (!config) return null
     const dta = field === config.dtaField ? value : dataItem[config.dtaField]
     const sez = field === config.sezField ? value : dataItem[config.sezField]
-    return parseFloat(((parseFloat(dta) || 0) + (parseFloat(sez) || 0)).toFixed(2))
+    return parseFloat(
+      ((parseFloat(dta) || 0) + (parseFloat(sez) || 0)).toFixed(2),
+    )
   }
 
   // Custom item change handler to track inEdit flag and calculate totals
-  const customItemChange = useCallback((e, setRowsCallback) => {
-    const { dataItem, field, value } = e
-    const itemId = `${dataItem.id}`
-    const total = calculateTotal(field, value, dataItem)
+  const customItemChange = useCallback(
+    (e, setRowsCallback) => {
+      const { dataItem, field, value } = e
+      const itemId = `${dataItem.id}`
+      const total = calculateTotal(field, value, dataItem)
 
-    // Update rows with inEdit flag and calculated total
-    setRowsCallback((prev) =>
-      prev.map((row) => {
-        if (row.id === dataItem.id) {
-          const updated = { ...row, inEdit: true, [field]: value }
-          if (total !== null) updated[totalCalcConfig[field].totalField] = total
-          return updated
-        }
-        return row
-      }),
-    )
+      // Update rows with inEdit flag and calculated total
+      setRowsCallback((prev) =>
+        prev.map((row) => {
+          if (row.id === dataItem.id) {
+            const updated = { ...row, inEdit: true, [field]: value }
+            if (total !== null)
+              updated[totalCalcConfig[field].totalField] = total
+            return updated
+          }
+          return row
+        }),
+      )
 
-    // Update customModifiedCells
-    setCustomModifiedCells((prev) => {
-      const base = { ...(prev[itemId] || {}), [field]: value }
-      if (total !== null) base[totalCalcConfig[field].totalField] = total
-      return { ...prev, [itemId]: base }
-    })
-
-    // Update modifiedCells with calculated total
-    if (total !== null) {
-      setModifiedCells((prev) => {
-        const updated = { ...prev[itemId] || dataItem, [field]: value, [totalCalcConfig[field].totalField]: total }
-        return { ...prev, [itemId]: updated }
+      // Update customModifiedCells
+      setCustomModifiedCells((prev) => {
+        const base = { ...(prev[itemId] || {}), [field]: value }
+        if (total !== null) base[totalCalcConfig[field].totalField] = total
+        return { ...prev, [itemId]: base }
       })
-    }
-  }, [setModifiedCells, setCustomModifiedCells])
+
+      // Update modifiedCells with calculated total
+      if (total !== null) {
+        setModifiedCells((prev) => {
+          const updated = {
+            ...(prev[itemId] || dataItem),
+            [field]: value,
+            [totalCalcConfig[field].totalField]: total,
+          }
+          return { ...prev, [itemId]: updated }
+        })
+      }
+    },
+    [setModifiedCells, setCustomModifiedCells],
+  )
 
   // Save changes
   const saveChanges = useCallback(async () => {
