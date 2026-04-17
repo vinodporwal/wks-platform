@@ -122,6 +122,7 @@ const defs = {
     productionOptimizer: 'Production Optimizer',
 
     causticSodaLyeBasis: 'Caustic Soda Lye Norms',
+    materialBalance: 'Material Balance',
   },
   pages: {
     dashboard: {
@@ -330,6 +331,7 @@ const defs = {
         productionOptimizer: 'Production Optimizer',
 
         causticSodaLyeBasis: 'Caustic Soda Lye Norms',
+        materialBalance: 'Material Balance',
       },
     },
   },
