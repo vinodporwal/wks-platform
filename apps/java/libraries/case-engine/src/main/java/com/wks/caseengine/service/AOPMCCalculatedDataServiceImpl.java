@@ -139,7 +139,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	        }else if(vertical.getName().equalsIgnoreCase("CRACKER")) {
 	        	 procedureName=vertical.getName()+"_GetAOPMCValues";
 				 
-	        } else if(vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD")) {
+	        } else if((vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD")) ||  vertical.getName().equalsIgnoreCase("CHEMICAL") ) {
 	        	 procedureName=vertical.getName()+"_"+site.getName()+"_GetAOPMCValues";
 				 
 	        }else {
@@ -634,12 +634,12 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                 view = "vw" + vertical.getName() + "_" + site.getName() + "_AOPMCValuesMaxAchivedCapacity";
             }else if(vertical.getName().equalsIgnoreCase("CRACKER")) {
 	        	 procedureName=vertical.getName()+"_GetAOPMCValuesMaxAchivedCapacity";	 
-	        } else if(vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD")) {
+	        } else if((vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD")) || vertical.getName().equalsIgnoreCase("CHEMICAL")) {
 	        	 procedureName=vertical.getName()+"_"+site.getName()+"_GetAOPMCValuesMaxAchivedCapacity";	 
 	        }  else {
                 view = "vwAOPMCValuesMaxAchivedCapacity";
             }
-            if(vertical.getName().equalsIgnoreCase("CRACKER") || (vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD"))) {
+            if(vertical.getName().equalsIgnoreCase("CRACKER") || (vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD")) || vertical.getName().equalsIgnoreCase("CHEMICAL")) {
 	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
 	        }else {
 	        	 obj = getMaxAchievedCapacityData(year, plantId, view);
@@ -860,7 +860,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
         	 if(vertical.getName().equalsIgnoreCase("CRACKER")) {
         		 String procedureName=vertical.getName()+"_GetAOPMCValuesDesignCapacity";
  	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
- 	        }else if(vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD")) {
+ 	        }else if((vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD")) || vertical.getName().equalsIgnoreCase("CHEMICAL")) {
  	        	String procedureName=vertical.getName()+"_"+site.getName()+"_GetAOPMCValuesDesignCapacity";
 	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
 	        }else {
