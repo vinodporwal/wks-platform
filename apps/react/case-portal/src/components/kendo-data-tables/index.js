@@ -1104,7 +1104,7 @@ const KendoDataTables = ({
     const isEdited = !!(
       customModifiedCells?.[rowId] && checkField in customModifiedCells[rowId]
     )
-    const lineObj = props.allLines?.find((l) => (l.id === dataItem[field] || l.displayName === dataItem[field]))
+    const lineObj = props.allLines?.find((l) => l.id === dataItem[field])
     const displayLabel = lineObj ? lineObj.displayName : ''
     return (
       <td
