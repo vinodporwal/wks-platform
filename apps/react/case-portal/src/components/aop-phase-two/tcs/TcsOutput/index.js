@@ -101,7 +101,8 @@ const TcsOutput = () => {
   }, [keycloak])
 
   // Get current tab object (has id, displayName, displaySequence)
-  const currentTab = tabObj[tabIndex] || {}
+  const currentTab =
+    tabIndex !== null && tabObj[tabIndex] ? tabObj[tabIndex] : {}
 
   // Generate dynamic tooltip based on role and eligibility
   const submitTooltip = useMemo(() => {
@@ -175,8 +176,17 @@ const TcsOutput = () => {
   // Fetch all tabs and visible tab IDs from backend
   useEffect(() => {
     fetchTabsData()
-    checkSubmitEligibility()
   }, [AOP_YEAR, PLANT_ID, SITE_ID, VERTICAL_ID])
+
+  // Reset tabIndex to 0 when tabObj changes (after filtering)
+  useEffect(() => {
+    if (tabObj.length > 0) {
+      setTabIndex(0)
+      checkSubmitEligibility()
+    } else {
+      setTabIndex(null)
+    }
+  }, [tabObj])
 
   // Check if user can submit based on workflow variables
   const checkSubmitEligibility = async () => {
@@ -297,7 +307,7 @@ const TcsOutput = () => {
       // First API: Get list of all tabs
       const allTabsResponse = await TcsOutputApiService.getTcsAllTabs(keycloak)
       const allTabsList = allTabsResponse?.data?.configurationTypeList || []
-      setTabObj(allTabsList)
+      // setTabObj(allTabsList)
 
       // Second API: Get array of tab IDs to show
       const visibleTabsResponse = await TcsOutputApiService.getTcsVisibleTabs(
@@ -326,11 +336,8 @@ const TcsOutput = () => {
           .filter((tab) => visibleTabIdsLower.includes(tab.id.toLowerCase()))
           .sort((a, b) => a.displaySequence - b.displaySequence)
         setTabObj(filteredTabs)
-      } else if (
-        allTabsList &&
-        (!visibleTabIds || visibleTabIds.length === 0)
-      ) {
-        // If no visible tabs are returned, show all tabs
+      } else {
+        // If no visible tabs are returned, show empty
         console.warn('No visible tabs configured')
         setTabObj([])
       }
@@ -573,37 +580,40 @@ const TcsOutput = () => {
         </Box>
 
         {/* Submit button and History icon - Fixed on right */}
-        <SubmitSection
-          onSubmitClick={() => setRemarkDialogOpen(true)}
-          onViewHistory={handleViewHistory}
-          onReviewClick={handleReviewClick}
-          isEligible={isSubmitEligible}
-          isLoading={isSubmittingRemark}
-          submitTooltip={submitTooltip}
-          showReviewBtn={userRole === ROLES.EPS_ENGINEER}
-          reviewTooltip='Review and approve/reject plants'
-          onResetWorkflow={handleResetWorkflow}
-          showResetBtn={
-            keycloak?.realmAccess?.roles?.includes('reset_workflow') &&
-            timelineData?.length > 0
-          }
-        />
+        {tabObj.length !== 0 && (
+          <SubmitSection
+            onSubmitClick={() => setRemarkDialogOpen(true)}
+            onViewHistory={handleViewHistory}
+            onReviewClick={handleReviewClick}
+            isEligible={isSubmitEligible}
+            isLoading={isSubmittingRemark}
+            submitTooltip={submitTooltip}
+            showReviewBtn={userRole === ROLES.EPS_ENGINEER}
+            reviewTooltip='Review and approve/reject plants'
+            onResetWorkflow={handleResetWorkflow}
+            showResetBtn={
+              keycloak?.realmAccess?.roles?.includes('reset_workflow') &&
+              timelineData?.length > 0
+            }
+          />
+        )}
       </Box>
 
       {/* Tab Content */}
       <Box>
-        {renderTabComponent(currentTab.displayName, {
-          currentTab,
-          PLANT_ID,
-          AOP_YEAR,
-          SITE_ID,
-          VERTICAL_ID,
-          snackbarData,
-          setSnackbarData,
-          snackbarOpen,
-          setSnackbarOpen,
-          userRole,
-        })}
+        {currentTab?.displayName &&
+          renderTabComponent(currentTab.displayName, {
+            currentTab,
+            PLANT_ID,
+            AOP_YEAR,
+            SITE_ID,
+            VERTICAL_ID,
+            snackbarData,
+            setSnackbarData,
+            snackbarOpen,
+            setSnackbarOpen,
+            userRole,
+          })}
       </Box>
 
       <RemarkDialog

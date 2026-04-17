@@ -10,6 +10,7 @@ const CrudBlendWindow = ({
   AOP_YEAR,
   currentTab,
   SITE_ID,
+  VERTICAL_ID,
   snackbarData,
   setSnackbarData,
   snackbarOpen,
@@ -42,6 +43,7 @@ const CrudBlendWindow = ({
 
       const response = await TcsOutputApiService.getCrudBlendWindowData(
         keycloak,
+        VERTICAL_ID,
         apiYear,
         SITE_ID,
       )
@@ -98,6 +100,7 @@ const CrudBlendWindow = ({
           title={config.title}
           AOP_YEAR={AOP_YEAR}
           SITE_ID={SITE_ID}
+          VERTICAL_ID={VERTICAL_ID}
           tableData={allTablesData[config.key]}
           snackbarData={snackbarData}
           setSnackbarData={setSnackbarData}

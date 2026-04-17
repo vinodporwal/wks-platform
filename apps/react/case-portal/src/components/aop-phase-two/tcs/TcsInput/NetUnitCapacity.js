@@ -236,7 +236,7 @@ const NetUnitCapacity = ({
       { field: 'id', title: 'ID', hidden: true },
       {
         field: 'particulates',
-        title: 'Particulates',
+        title: 'Particulars',
         widthT: 150,
         minWidth: 150,
         type: 'text',

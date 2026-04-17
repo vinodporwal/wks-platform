@@ -16,6 +16,8 @@ import { extractYear } from 'components/aop-phase-two/common/utilities/generateH
 
 const Shutdown = ({
   PLANT_ID,
+  VERTICAL_ID,
+  SITE_ID,
   PLANT_NAME,
   AOP_YEAR,
   currentTab,
@@ -299,6 +301,8 @@ const Shutdown = ({
 
         const response = await TcsApiService.saveShutdownData(
           keycloak,
+          VERTICAL_ID,
+          SITE_ID,
           PLANT_ID,
           apiYear,
           formattedData,
@@ -519,6 +523,8 @@ const Shutdown = ({
     try {
       const response = await TcsApiService.importShutdownExcel(
         keycloak,
+        VERTICAL_ID,
+        SITE_ID,
         PLANT_ID,
         apiYear,
         file,

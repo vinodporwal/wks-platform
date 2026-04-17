@@ -14,6 +14,7 @@ import { Stack } from '../../../../../node_modules/@mui/material/index'
 const PCGOutlook = ({
   PLANT_ID,
   SITE_ID,
+  VERTICAL_ID,
   AOP_YEAR,
   currentTab,
   snackbarData,
@@ -42,6 +43,7 @@ const PCGOutlook = ({
 
       const response = await TcsOutputApiService.getPcgOutlookData(
         keycloak,
+        VERTICAL_ID,
         SITE_ID,
         AOP_YEAR,
       )
@@ -236,6 +238,7 @@ const PCGOutlook = ({
     try {
       await TcsOutputApiService.exportPcgOutlookExcel(
         keycloak,
+        VERTICAL_ID,
         SITE_ID,
         AOP_YEAR,
       )
