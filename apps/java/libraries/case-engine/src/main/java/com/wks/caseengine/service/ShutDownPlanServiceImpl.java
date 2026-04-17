@@ -172,6 +172,9 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 				}
 				dto.setDisplayOrder(result[8] != null ? ((Integer) result[8]) : null);
 				dto.setLineId(result[9] != null ? result[9].toString() : null);
+				if (dto.getLineId() != null && !dto.getLineId().isEmpty()) {
+					dto.setLineDisplayName(getLineDisplayNameByLineId(plantId, dto.getLineId()));
+				}
 				dto.setShutdownRate(result[10] != null ? result[10].toString() : null);
 				dtoList.add(dto);
 			}
@@ -640,6 +643,28 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	private String getLineDisplayNameByLineId(UUID plantId, String lineId) {
+		if (plantId == null || lineId == null || lineId.trim().isEmpty()) {
+			return null;
+		}
+		try {
+			String verticalName = plantsRepository.findVerticalNameByPlantId(plantId);
+			String view = "vwScrn" + verticalName + "GetLineDetails";
+			List<Object[]> rows = getLineDetailsData(view, plantId.toString(), lineId);
+			if (rows == null || rows.isEmpty()) {
+				return null;
+			}
+			Object[] row = rows.get(0);
+			if (row == null || row.length <= 2 || row[2] == null) {
+				return null;
+			}
+			return row[2].toString();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return null;
+		}
 	}
 	
 	public List<Object[]> getLineDetailsData(String viewName,String plantId,String id) {
