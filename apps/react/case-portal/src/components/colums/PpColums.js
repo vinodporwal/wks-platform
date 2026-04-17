@@ -6,6 +6,7 @@ export const BusinessDemandPpColumns = [
     groupable: true,
     editable: false,
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'normParameterId',
@@ -13,6 +14,7 @@ export const BusinessDemandPpColumns = [
     editable: false,
     width: 100,
     hidden: true,
+    minWidth: 100,
   },
 
   {
@@ -20,6 +22,7 @@ export const BusinessDemandPpColumns = [
     title: 'Particulars',
     editable: false,
     width: 120,
+    minWidth: 100,
   },
   {
     field: 'april',
@@ -29,6 +32,7 @@ export const BusinessDemandPpColumns = [
     rightAlign: true,
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'may',
@@ -38,6 +42,7 @@ export const BusinessDemandPpColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'june',
@@ -47,6 +52,7 @@ export const BusinessDemandPpColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'july',
@@ -56,6 +62,7 @@ export const BusinessDemandPpColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'aug',
@@ -65,6 +72,7 @@ export const BusinessDemandPpColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'sep',
@@ -74,6 +82,7 @@ export const BusinessDemandPpColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'oct',
@@ -83,6 +92,7 @@ export const BusinessDemandPpColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'nov',
@@ -92,6 +102,7 @@ export const BusinessDemandPpColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'dec',
@@ -101,6 +112,7 @@ export const BusinessDemandPpColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'jan',
@@ -110,6 +122,7 @@ export const BusinessDemandPpColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'feb',
@@ -119,6 +132,7 @@ export const BusinessDemandPpColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'march',
@@ -128,17 +142,20 @@ export const BusinessDemandPpColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'remark',
     title: 'Remark',
     widthT: 80,
     editable: false,
+    minWidth: 100,
   },
   {
     field: 'idFromApi',
     title: 'ID from API',
     hidden: true,
+    minWidth: 100,
   },
 ]
 
@@ -148,7 +165,8 @@ export const SlowDownPpColumns = [
     title: 'Slowdown Desc',
     editable: true,
     widthT: 200,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 100,
   },
 
   {
@@ -156,6 +174,7 @@ export const SlowDownPpColumns = [
     title: 'maintenanceId',
     editable: false,
     hidden: true,
+    minWidth: 100,
   },
 
   {
@@ -163,7 +182,8 @@ export const SlowDownPpColumns = [
     title: 'Particulars',
     editable: true,
     widthT: 140,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 100,
   },
 
   // {
@@ -185,6 +205,7 @@ export const SlowDownPpColumns = [
     type: 'monthDropdownPEPP',
     editable: true,
     width: 100,
+    minWidth: 100,
   },
 
   {
@@ -192,6 +213,7 @@ export const SlowDownPpColumns = [
     title: 'Duration (hrs)',
     editable: true,
     widthT: 150,
+    minWidth: 100,
   },
 
   {
@@ -200,6 +222,7 @@ export const SlowDownPpColumns = [
     editable: true,
     type: 'number',
     widthT: 150,
+    minWidth: 100,
   },
 
   {
@@ -207,7 +230,8 @@ export const SlowDownPpColumns = [
     title: 'Remarks',
     editable: true,
     widthT: 230,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 100,
   },
 ]
 export const SlowDownPpDtaColumns = [
@@ -216,7 +240,8 @@ export const SlowDownPpDtaColumns = [
     title: 'Slowdown Desc',
     editable: true,
     widthT: 150,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 100,
   },
 
   {
@@ -224,6 +249,7 @@ export const SlowDownPpDtaColumns = [
     title: 'maintenanceId',
     editable: false,
     hidden: true,
+    minWidth: 100,
   },
 
   {
@@ -231,7 +257,8 @@ export const SlowDownPpDtaColumns = [
     title: 'Particulars',
     editable: true,
     widthT: 150,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 100,
   },
   {
     field: 'lineId',
@@ -239,6 +266,7 @@ export const SlowDownPpDtaColumns = [
     type: 'lineDropdown',
     editable: true,
     width: 100,
+    minWidth: 100,
   },
 
   // {
@@ -260,6 +288,7 @@ export const SlowDownPpDtaColumns = [
     type: 'monthDropdownPEPP',
     editable: true,
     width: 100,
+    minWidth: 100,
   },
 
   {
@@ -267,6 +296,7 @@ export const SlowDownPpDtaColumns = [
     title: 'Duration (hrs)',
     editable: true,
     widthT: 140,
+    minWidth: 100,
   },
 
   {
@@ -275,6 +305,7 @@ export const SlowDownPpDtaColumns = [
     editable: true,
     type: 'number',
     widthT: 130,
+    minWidth: 100,
   },
 
   {
@@ -282,7 +313,8 @@ export const SlowDownPpDtaColumns = [
     title: 'Remarks',
     editable: true,
     widthT: 200,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 100,
   },
 ]
 
@@ -294,17 +326,20 @@ export const NormalOpNormPpColumns = [
     groupable: true,
     editable: false,
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
     title: 'Particulars',
     width: 100,
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'productName',
     title: 'Particulars',
     widthT: 120,
+    minWidth: 100,
   },
 
   {
@@ -312,6 +347,7 @@ export const NormalOpNormPpColumns = [
     title: 'UOM / MT',
     widthT: 90,
     editable: false,
+    minWidth: 100,
   },
 
   {
@@ -322,6 +358,7 @@ export const NormalOpNormPpColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'may',
@@ -332,6 +369,7 @@ export const NormalOpNormPpColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'june',
@@ -342,6 +380,7 @@ export const NormalOpNormPpColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'july',
@@ -352,6 +391,7 @@ export const NormalOpNormPpColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
 
   {
@@ -363,6 +403,7 @@ export const NormalOpNormPpColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'september',
@@ -373,6 +414,7 @@ export const NormalOpNormPpColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'october',
@@ -383,6 +425,7 @@ export const NormalOpNormPpColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'november',
@@ -393,6 +436,7 @@ export const NormalOpNormPpColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'december',
@@ -402,6 +446,7 @@ export const NormalOpNormPpColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'january',
@@ -411,6 +456,7 @@ export const NormalOpNormPpColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'february',
@@ -420,6 +466,7 @@ export const NormalOpNormPpColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'march',
@@ -429,23 +476,27 @@ export const NormalOpNormPpColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'remarks',
     title: 'Remark',
     widthT: 80,
     editable: true,
+    minWidth: 100,
   },
 
   {
     field: 'idFromApi',
     title: 'idFromApi',
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    minWidth: 100,
   },
 ]
 
@@ -455,6 +506,7 @@ export const ShutdownConsumptionPpColumns = [
     headerName: 'Type',
     width: 100,
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
@@ -469,8 +521,15 @@ export const ShutdownConsumptionPpColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
+    minWidth: 100,
   },
-  { field: 'UOM', headerName: 'UOM', widthT: 80, editable: false },
+  {
+    field: 'UOM',
+    headerName: 'UOM',
+    widthT: 80,
+    editable: false,
+    minWidth: 100,
+  },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
@@ -486,6 +545,7 @@ export const ShutdownConsumptionPpColumns = [
       editable: false,
       monthNumber: monthIndex,
       isDisabled: true,
+      minWidth: 100,
     }
   }),
   {
@@ -493,6 +553,7 @@ export const ShutdownConsumptionPpColumns = [
     headerName: 'Remark',
 
     editable: false,
+    minWidth: 100,
   },
 ]
 
@@ -502,6 +563,7 @@ export const SlowdownNormsPpColumns = [
     headerName: 'Type',
     width: 100,
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
@@ -516,8 +578,15 @@ export const SlowdownNormsPpColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
+    minWidth: 100,
   },
-  { field: 'UOM', headerName: 'UOM', widthT: 80, editable: false },
+  {
+    field: 'UOM',
+    headerName: 'UOM',
+    widthT: 80,
+    editable: false,
+    minWidth: 100,
+  },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
@@ -532,6 +601,7 @@ export const SlowdownNormsPpColumns = [
       format: '{0:#.###}',
       editable: false,
       monthNumber: monthIndex,
+      minWidth: 100,
     }
   }),
 
@@ -540,11 +610,13 @@ export const SlowdownNormsPpColumns = [
     headerName: 'Remark',
     width: 100,
     editable: false,
+    minWidth: 100,
   },
   {
     field: 'idFromApi',
     headerName: 'idFromApi',
     hidden: true,
+    minWidth: 100,
   },
 ]
 export const ConsumptionAopPpColumns = [
@@ -554,10 +626,12 @@ export const ConsumptionAopPpColumns = [
     editable: false,
     width: 100,
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'NormParametersId',
     hidden: true,
+    minWidth: 100,
   },
 
   {
@@ -565,64 +639,79 @@ export const ConsumptionAopPpColumns = [
     title: 'Particulars',
     editable: false,
     width: 120,
+    minWidth: 100,
   },
   {
     field: 'UOM',
     title: 'UOM / MT',
     editable: false,
     width: 90,
+    minWidth: 100,
   },
   {
     field: 'april',
     title: 4,
+    minWidth: 100,
   },
   {
     field: 'may',
     title: 5,
+    minWidth: 100,
   },
   {
     field: 'june',
     title: 6,
+    minWidth: 100,
   },
   {
     field: 'july',
     title: 7,
+    minWidth: 100,
   },
   {
     field: 'aug',
     title: 8,
+    minWidth: 100,
   },
   {
     field: 'sep',
     title: 9,
+    minWidth: 100,
   },
   {
     field: 'oct',
     title: 10,
+    minWidth: 100,
   },
   {
     field: 'nov',
     title: 11,
+    minWidth: 100,
   },
   {
     field: 'dec',
     title: 12,
+    minWidth: 100,
   },
   {
     field: 'jan',
     title: 1,
+    minWidth: 100,
   },
   {
     field: 'feb',
     title: 2,
+    minWidth: 100,
   },
   {
     field: 'march',
     title: 3,
+    minWidth: 100,
   },
   {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    minWidth: 100,
   },
 ]

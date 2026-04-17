@@ -152,6 +152,7 @@ export const SlowDownMegColumns = [
     type: 'descLimit',
     widthT: 230,
     autoAdjust: false,
+    minWidth: 100,
   },
 
   {
@@ -159,6 +160,7 @@ export const SlowDownMegColumns = [
     title: 'maintenanceId',
     editable: false,
     hidden: true,
+    minWidth: 100,
   },
 
   {
@@ -167,6 +169,7 @@ export const SlowDownMegColumns = [
     type: 'dateTime',
     editable: true,
     widthT: 120,
+    minWidth: 100,
   },
 
   {
@@ -175,6 +178,7 @@ export const SlowDownMegColumns = [
     type: 'dateTime',
     editable: true,
     widthT: 120,
+    minWidth: 100,
   },
 
   {
@@ -182,6 +186,7 @@ export const SlowDownMegColumns = [
     title: 'Duration (hrs)',
     editable: true,
     widthT: 100,
+    minWidth: 100,
   },
 
   {
@@ -190,6 +195,7 @@ export const SlowDownMegColumns = [
     editable: true,
     type: 'number',
     widthT: 100,
+    minWidth: 100,
   },
   {
     field: 'rateEO',
@@ -197,6 +203,7 @@ export const SlowDownMegColumns = [
     editable: true,
     type: 'number',
     widthT: 100,
+    minWidth: 100,
   },
 
   {
@@ -205,6 +212,7 @@ export const SlowDownMegColumns = [
     editable: true,
     widthT: 200,
     autoAdjust: false,
+    minWidth: 100,
   },
 ]
 
@@ -216,17 +224,20 @@ export const NormalOpNormMegColumns = [
     groupable: true,
     editable: false,
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
     title: 'Particulars',
     width: 100,
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'productName',
     title: 'Particulars',
     widthT: 120,
+    minWidth: 100,
   },
 
   {
@@ -234,6 +245,7 @@ export const NormalOpNormMegColumns = [
     title: 'UOM / MT',
     widthT: 80,
     editable: false,
+    minWidth: 100,
   },
 
   {
@@ -244,6 +256,7 @@ export const NormalOpNormMegColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'may',
@@ -254,6 +267,7 @@ export const NormalOpNormMegColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'june',
@@ -264,6 +278,7 @@ export const NormalOpNormMegColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'july',
@@ -274,6 +289,7 @@ export const NormalOpNormMegColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
 
   {
@@ -285,6 +301,7 @@ export const NormalOpNormMegColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'september',
@@ -295,6 +312,7 @@ export const NormalOpNormMegColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'october',
@@ -305,6 +323,7 @@ export const NormalOpNormMegColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'november',
@@ -315,6 +334,7 @@ export const NormalOpNormMegColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'december',
@@ -324,6 +344,7 @@ export const NormalOpNormMegColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'january',
@@ -333,6 +354,7 @@ export const NormalOpNormMegColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'february',
@@ -342,6 +364,7 @@ export const NormalOpNormMegColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'march',
@@ -351,23 +374,27 @@ export const NormalOpNormMegColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'remarks',
     title: 'Remark',
     widthT: 80,
     editable: true,
+    minWidth: 100,
   },
 
   {
     field: 'idFromApi',
     title: 'idFromApi',
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    minWidth: 100,
   },
 ]
 export const CrackerColums = [
@@ -378,22 +405,26 @@ export const CrackerColums = [
     groupable: true,
     editable: false,
     hidden: true,
+    minWidth: 100,
   },
   {
     widthT: 100,
 
     columnType: 'checkbox',
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
     title: 'Particulars',
     width: 100,
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'productName',
     title: 'Particulars',
     widthT: 120,
+    minWidth: 100,
   },
 
   {
@@ -401,6 +432,7 @@ export const CrackerColums = [
     title: 'UOM / MT',
     widthT: 90,
     editable: false,
+    minWidth: 100,
   },
 
   {
@@ -411,6 +443,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'may',
@@ -421,6 +454,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'june',
@@ -431,6 +465,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'july',
@@ -441,6 +476,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
 
   {
@@ -452,6 +488,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'september',
@@ -462,6 +499,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'october',
@@ -472,6 +510,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'november',
@@ -482,6 +521,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'december',
@@ -491,6 +531,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'january',
@@ -500,6 +541,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'february',
@@ -509,6 +551,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'march',
@@ -518,23 +561,27 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'remarks',
     title: 'Remark',
     widthT: 100,
     editable: true,
+    minWidth: 100,
   },
 
   {
     field: 'idFromApi',
     title: 'idFromApi',
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    minWidth: 100,
   },
 ]
 
@@ -544,6 +591,7 @@ export const ShutdownConsumptionMegColumns = [
     headerName: 'Type',
     width: 100,
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
@@ -558,8 +606,15 @@ export const ShutdownConsumptionMegColumns = [
     headerName: 'Particulars',
     widthT: 120,
     editable: false,
+    minWidth: 100,
   },
-  { field: 'UOM', headerName: 'UOM', widthT: 80, editable: false },
+  {
+    field: 'UOM',
+    headerName: 'UOM',
+    widthT: 80,
+    editable: false,
+    minWidth: 100,
+  },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
@@ -575,6 +630,7 @@ export const ShutdownConsumptionMegColumns = [
       editable: false,
       isDisabled: true,
       monthNumber: monthIndex,
+      minWidth: 100,
     }
   }),
 
@@ -583,11 +639,13 @@ export const ShutdownConsumptionMegColumns = [
     headerName: 'Remark',
     // widthT: 160,
     editable: false,
+    minWidth: 100,
   },
   {
     field: 'idFromApi',
     headerName: 'idFromApi',
     hidden: true,
+    minWidth: 100,
   },
 ]
 
@@ -597,6 +655,7 @@ export const SlowdownNormsMegColumns = [
     headerName: 'Type',
     width: 100,
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
@@ -611,8 +670,15 @@ export const SlowdownNormsMegColumns = [
     headerName: 'Particulars',
     widthT: 120,
     editable: false,
+    minWidth: 100,
   },
-  { field: 'UOM', headerName: 'UOM', widthT: 80, editable: false },
+  {
+    field: 'UOM',
+    headerName: 'UOM',
+    widthT: 80,
+    editable: false,
+    minWidth: 100,
+  },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
@@ -628,6 +694,7 @@ export const SlowdownNormsMegColumns = [
       editable: false,
       isDisabled: true,
       monthNumber: monthIndex,
+      minWidth: 100,
     }
   }),
 
@@ -636,11 +703,13 @@ export const SlowdownNormsMegColumns = [
     headerName: 'Remark',
     widthT: 100,
     editable: false,
+    minWidth: 100,
   },
   {
     field: 'idFromApi',
     headerName: 'idFromApi',
     hidden: true,
+    minWidth: 100,
   },
 ]
 

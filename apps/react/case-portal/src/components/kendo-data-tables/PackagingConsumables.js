@@ -236,6 +236,7 @@ const PackagingConsumables = (permissions) => {
       title: 'Particulars',
       widthT: 160,
       hidden: true,
+      isVisible: false,
     },
     {
       field: 'productName',
@@ -259,6 +260,7 @@ const PackagingConsumables = (permissions) => {
       field: 'idFromApi',
       title: 'idFromApi',
       hidden: true,
+      isVisible: false,
     },
   ]
 

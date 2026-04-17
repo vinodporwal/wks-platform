@@ -6,6 +6,7 @@ export const BusinessDemandPeColumns = [
     groupable: true,
     editable: false,
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'normParameterId',
@@ -13,6 +14,7 @@ export const BusinessDemandPeColumns = [
     editable: false,
     width: 125,
     hidden: true,
+    minWidth: 100,
   },
 
   {
@@ -20,6 +22,7 @@ export const BusinessDemandPeColumns = [
     title: 'Particulars',
     editable: false,
     width: 125,
+    minWidth: 100,
   },
   {
     field: 'april',

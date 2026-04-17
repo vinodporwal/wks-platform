@@ -400,6 +400,7 @@ export const NormalOpNormElastomerColumns = [
     field: 'productName',
     title: 'Particulars',
     width: 120,
+    minWidth: 100,
   },
 
   {
@@ -407,6 +408,7 @@ export const NormalOpNormElastomerColumns = [
     title: 'UOM / MT',
     width: 90,
     editable: false,
+    minWidth: 100,
   },
 
   {
@@ -417,6 +419,7 @@ export const NormalOpNormElastomerColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'may',
@@ -427,6 +430,7 @@ export const NormalOpNormElastomerColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'june',
@@ -437,6 +441,7 @@ export const NormalOpNormElastomerColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'july',
@@ -447,6 +452,7 @@ export const NormalOpNormElastomerColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
 
   {
@@ -458,6 +464,7 @@ export const NormalOpNormElastomerColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'september',
@@ -468,6 +475,7 @@ export const NormalOpNormElastomerColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'october',
@@ -478,6 +486,7 @@ export const NormalOpNormElastomerColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'november',
@@ -488,6 +497,7 @@ export const NormalOpNormElastomerColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'december',
@@ -497,6 +507,7 @@ export const NormalOpNormElastomerColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'january',
@@ -506,6 +517,7 @@ export const NormalOpNormElastomerColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'february',
@@ -515,6 +527,7 @@ export const NormalOpNormElastomerColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'march',
@@ -524,12 +537,14 @@ export const NormalOpNormElastomerColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'remarks',
     title: 'Remark',
     width: 100,
     editable: true,
+    minWidth: 100,
   },
 
   {
@@ -570,6 +585,7 @@ export const NormalOpNormElastomerJmdColumns = [
     field: 'productName',
     title: 'Particulars',
     width: 120,
+    minWidth: 100,
   },
 
   {
@@ -577,6 +593,7 @@ export const NormalOpNormElastomerJmdColumns = [
     title: 'UOM',
     width: 80,
     editable: false,
+    minWidth: 100,
   },
 
   {
@@ -587,6 +604,7 @@ export const NormalOpNormElastomerJmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'may',
@@ -597,6 +615,7 @@ export const NormalOpNormElastomerJmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'june',
@@ -607,6 +626,7 @@ export const NormalOpNormElastomerJmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'july',
@@ -617,6 +637,7 @@ export const NormalOpNormElastomerJmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
 
   {
@@ -628,6 +649,7 @@ export const NormalOpNormElastomerJmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'september',
@@ -638,6 +660,7 @@ export const NormalOpNormElastomerJmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'october',
@@ -648,6 +671,7 @@ export const NormalOpNormElastomerJmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'november',
@@ -658,6 +682,7 @@ export const NormalOpNormElastomerJmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'december',
@@ -667,6 +692,7 @@ export const NormalOpNormElastomerJmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'january',
@@ -676,6 +702,7 @@ export const NormalOpNormElastomerJmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'february',
@@ -685,6 +712,7 @@ export const NormalOpNormElastomerJmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'march',
@@ -694,12 +722,14 @@ export const NormalOpNormElastomerJmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'remarks',
     title: 'Remark',
     width: 100,
     editable: true,
+    minWidth: 100,
   },
 
   {
@@ -740,8 +770,15 @@ export const ShutdownConsumptionElastomerColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
+    minWidth: 100,
   },
-  { field: 'UOM', headerName: 'UOM', width: 80, editable: false },
+  {
+    field: 'UOM',
+    headerName: 'UOM',
+    width: 80,
+    editable: false,
+    minWidth: 100,
+  },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
@@ -757,6 +794,7 @@ export const ShutdownConsumptionElastomerColumns = [
       editable: false,
       isDisabled: true,
       monthNumber: monthIndex,
+      minWidth: 100,
     }
   }),
 
@@ -765,6 +803,7 @@ export const ShutdownConsumptionElastomerColumns = [
     headerName: 'Remark',
     width: 100,
     editable: false,
+    minWidth: 100,
   },
   {
     field: 'idFromApi',
@@ -797,8 +836,15 @@ export const SlowdownNormsElastomerColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
+    minWidth: 100,
   },
-  { field: 'UOM', headerName: 'UOM / MT', width: 90, editable: false },
+  {
+    field: 'UOM',
+    minWidth: 100,
+    headerName: 'UOM / MT',
+    width: 90,
+    editable: false,
+  },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
@@ -814,6 +860,7 @@ export const SlowdownNormsElastomerColumns = [
       editable: false,
       isDisabled: true,
       monthNumber: monthIndex,
+      minWidth: 100,
     }
   }),
 
@@ -822,6 +869,7 @@ export const SlowdownNormsElastomerColumns = [
     headerName: 'Remark',
     width: 100,
     editable: false,
+    minWidth: 100,
   },
   {
     field: 'idFromApi',
@@ -854,8 +902,15 @@ export const SlowdownNormsElastomerJmdColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
+    minWidth: 120,
   },
-  { field: 'UOM', headerName: 'UOM', width: 80, editable: false },
+  {
+    field: 'UOM',
+    headerName: 'UOM',
+    minWidth: 100,
+    width: 80,
+    editable: false,
+  },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
@@ -871,6 +926,7 @@ export const SlowdownNormsElastomerJmdColumns = [
       editable: false,
       isDisabled: true,
       monthNumber: monthIndex,
+      minWidth: 100,
     }
   }),
 
@@ -879,6 +935,7 @@ export const SlowdownNormsElastomerJmdColumns = [
     headerName: 'Remark',
     width: 100,
     editable: false,
+    minWidth: 100,
   },
   {
     field: 'idFromApi',
@@ -911,60 +968,74 @@ export const ConsumptionAopElastomerColumns = [
     title: 'Particulars',
     editable: false,
     width: 120,
+    minWidth: 100,
   },
   {
     field: 'UOM',
     title: 'UOM / MT',
     editable: false,
     width: 90,
+    minWidth: 100,
   },
   {
     field: 'april',
     title: 4,
+    minWidth: 100,
   },
   {
     field: 'may',
     title: 5,
+    minWidth: 100,
   },
   {
     field: 'june',
     title: 6,
+    minWidth: 100,
   },
   {
     field: 'july',
     title: 7,
+    minWidth: 100,
   },
   {
     field: 'aug',
     title: 8,
+    minWidth: 100,
   },
   {
     field: 'sep',
     title: 9,
+    minWidth: 100,
   },
   {
     field: 'oct',
     title: 10,
+    minWidth: 100,
   },
   {
     field: 'nov',
     title: 11,
+    minWidth: 100,
   },
   {
     field: 'dec',
     title: 12,
+    minWidth: 100,
   },
   {
     field: 'jan',
     title: 1,
+    minWidth: 100,
   },
   {
     field: 'feb',
     title: 2,
+    minWidth: 100,
   },
   {
     field: 'march',
     title: 3,
+    minWidth: 100,
   },
   {
     field: 'isEditable',

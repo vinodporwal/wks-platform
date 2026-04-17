@@ -1,21 +1,41 @@
 [
-  { "field": "idFromApi", "title": "ID", "hidden": true },
+  { "field": "idFromApi", "title": "ID", "hidden": true, "minWidth": 100 },
   {
     "field": "aopCaseId",
     "title": "Case ID",
 
     "editable": false,
-    "hidden": true
+    "hidden": true,
+    "minWidth": 100
   },
-  { "field": "aopType", "title": "Type", "width": 80, "hidden": true },
-  { "field": "aopYear", "title": "Year", "width": 80, "hidden": true },
-  { "field": "plantFkId", "title": "Plant ID", "width": 80, "hidden": true },
+  {
+    "field": "aopType",
+    "title": "Type",
+    "width": 80,
+    "hidden": true,
+    "minWidth": 100
+  },
+  {
+    "field": "aopYear",
+    "title": "Year",
+    "width": 80,
+    "hidden": true,
+    "minWidth": 100
+  },
+  {
+    "field": "plantFkId",
+    "title": "Plant ID",
+    "width": 80,
+    "hidden": true,
+    "minWidth": 100
+  },
   {
     "field": "normParametersFKId",
     "title": "Particulars/Grade",
     "editable": false,
     "width": 125,
-    "hidden": true
+    "hidden": true,
+    "minWidth": 100
   },
 
   {
@@ -23,14 +43,16 @@
     "title": "Particulars/Grade",
     "editable": false,
     "width": 125,
-    "hidden": true
+    "hidden": true,
+    "minWidth": 100
   },
 
   {
     "field": "displayName",
     "title": "Products",
     "editable": false,
-    "width": 125
+    "width": 125,
+    "minWidth": 120
   },
 
   {
@@ -41,7 +63,8 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "may",
@@ -51,7 +74,8 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "june",
@@ -61,7 +85,8 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "july",
@@ -71,7 +96,8 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "aug",
@@ -81,7 +107,8 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "sep",
@@ -91,7 +118,8 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "oct",
@@ -101,7 +129,8 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "nov",
@@ -111,7 +140,8 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "dec",
@@ -121,7 +151,8 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "jan",
@@ -131,7 +162,8 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "feb",
@@ -141,7 +173,8 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "march",
@@ -151,7 +184,8 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
 
   {
@@ -159,19 +193,22 @@
     "title": "Total",
     "type": "number",
     "editable": false,
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
 
   {
     "field": "isEditable",
     "title": "isEditable",
-    "hidden": true
+    "hidden": true,
+    "minWidth": 100
   },
 
   {
     "field": "aopStatus",
     "title": "aopStatus",
     "editable": false,
-    "hidden": true
+    "hidden": true,
+    "minWidth": 100
   }
 ]

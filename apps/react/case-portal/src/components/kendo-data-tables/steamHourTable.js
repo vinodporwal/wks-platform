@@ -397,6 +397,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
       editable: false,
       align: 'right',
       headerAlign: 'left',
+      minWidth: 100,
     }))
   }
 
@@ -405,6 +406,8 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    minWidth: 100,
+    isVisible: false,
   }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {

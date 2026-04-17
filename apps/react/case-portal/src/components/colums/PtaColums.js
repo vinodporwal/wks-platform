@@ -6,6 +6,7 @@ export const BusinessDemandPtaColumns = [
     groupable: true,
     editable: false,
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'normParameterId',
@@ -13,6 +14,7 @@ export const BusinessDemandPtaColumns = [
     editable: false,
     width: 100,
     hidden: true,
+    minWidth: 100,
   },
 
   {
@@ -20,6 +22,7 @@ export const BusinessDemandPtaColumns = [
     title: 'Particulars',
     editable: false,
     width: 125,
+    minWidth: 100,
   },
   {
     field: 'april',
@@ -29,6 +32,7 @@ export const BusinessDemandPtaColumns = [
     rightAlign: true,
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'may',
@@ -38,6 +42,7 @@ export const BusinessDemandPtaColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'june',
@@ -47,6 +52,7 @@ export const BusinessDemandPtaColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'july',
@@ -56,6 +62,7 @@ export const BusinessDemandPtaColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'aug',
@@ -65,6 +72,7 @@ export const BusinessDemandPtaColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'sep',
@@ -74,6 +82,7 @@ export const BusinessDemandPtaColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'oct',
@@ -83,6 +92,7 @@ export const BusinessDemandPtaColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'nov',
@@ -92,6 +102,7 @@ export const BusinessDemandPtaColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'dec',
@@ -101,6 +112,7 @@ export const BusinessDemandPtaColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'jan',
@@ -110,6 +122,7 @@ export const BusinessDemandPtaColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'feb',
@@ -119,6 +132,7 @@ export const BusinessDemandPtaColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'march',
@@ -128,17 +142,20 @@ export const BusinessDemandPtaColumns = [
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'remark',
     title: 'Remark',
     width: 100,
     editable: false,
+    minWidth: 100,
   },
   {
     field: 'idFromApi',
     title: 'ID from API',
     hidden: true,
+    minWidth: 100,
   },
 ]
 
@@ -148,7 +165,8 @@ export const SlowDownPtaColumns = [
     title: 'Slowdown Desc',
     editable: true,
     widthT: 150,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 100,
   },
 
   {
@@ -156,6 +174,7 @@ export const SlowDownPtaColumns = [
     title: 'maintenanceId',
     editable: false,
     hidden: true,
+    minWidth: 100,
   },
 
   // {
@@ -169,6 +188,7 @@ export const SlowDownPtaColumns = [
     title: 'SD- From',
     type: 'dateTime',
     editable: true,
+    minWidth: 100,
   },
 
   {
@@ -176,12 +196,14 @@ export const SlowDownPtaColumns = [
     title: 'SD- To',
     type: 'dateTime',
     editable: true,
+    minWidth: 100,
   },
 
   {
     field: 'durationInHrs',
     title: 'Duration (hrs)',
     editable: true,
+    minWidth: 100,
   },
 
   {
@@ -189,6 +211,7 @@ export const SlowDownPtaColumns = [
     title: 'Rate (TPH)',
     editable: true,
     type: 'number',
+    minWidth: 100,
   },
 
   {
@@ -196,7 +219,8 @@ export const SlowDownPtaColumns = [
     title: 'Remarks',
     editable: true,
     widthT: 150,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 100,
   },
 ]
 export const SlowDownPtadmdColumns = [
@@ -206,13 +230,15 @@ export const SlowDownPtadmdColumns = [
     editable: true,
     type: 'discriptionDrpdwn',
     widthT: 150,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 100,
   },
   {
     field: 'maintenanceId',
     title: 'maintenanceId',
     editable: false,
     hidden: true,
+    minWidth: 100,
   },
 
   {
@@ -221,6 +247,7 @@ export const SlowDownPtadmdColumns = [
     type: 'monthDropdownPEPP',
     editable: true,
     width: 100,
+    minWidth: 100,
   },
   {
     field: 'rpfDownTime',
@@ -228,6 +255,7 @@ export const SlowDownPtadmdColumns = [
     type: 'number',
     editable: true,
     width: 100,
+    minWidth: 100,
   },
   {
     field: 'noOfRPF',
@@ -235,12 +263,14 @@ export const SlowDownPtadmdColumns = [
     type: 'number',
     editable: true,
     width: 100,
+    minWidth: 100,
   },
 
   {
     field: 'durationInHrs',
     title: 'Duration (hrs)',
     editable: false,
+    minWidth: 100,
   },
 
   {
@@ -248,6 +278,7 @@ export const SlowDownPtadmdColumns = [
     title: 'Rate (TPH)',
     editable: true,
     type: 'number',
+    minWidth: 100,
   },
 
   {
@@ -256,7 +287,8 @@ export const SlowDownPtadmdColumns = [
     editable: true,
     width: 100,
     widthT: 150,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 100,
   },
 ]
 
@@ -268,17 +300,20 @@ export const NormalOpNormPtaColumns = [
     groupable: true,
     editable: false,
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
     title: 'Particulars',
     width: 100,
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'productName',
     title: 'Particulars',
     widthT: 120,
+    minWidth: 100,
   },
 
   {
@@ -286,6 +321,7 @@ export const NormalOpNormPtaColumns = [
     title: 'UOM / MT',
     widthT: 90,
     editable: false,
+    minWidth: 100,
   },
 
   {
@@ -296,6 +332,7 @@ export const NormalOpNormPtaColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'may',
@@ -306,6 +343,7 @@ export const NormalOpNormPtaColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'june',
@@ -316,6 +354,7 @@ export const NormalOpNormPtaColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'july',
@@ -326,6 +365,7 @@ export const NormalOpNormPtaColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
 
   {
@@ -337,6 +377,7 @@ export const NormalOpNormPtaColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'september',
@@ -347,6 +388,7 @@ export const NormalOpNormPtaColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'october',
@@ -357,6 +399,7 @@ export const NormalOpNormPtaColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'november',
@@ -367,6 +410,7 @@ export const NormalOpNormPtaColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'december',
@@ -376,6 +420,7 @@ export const NormalOpNormPtaColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'january',
@@ -385,6 +430,7 @@ export const NormalOpNormPtaColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'february',
@@ -394,6 +440,7 @@ export const NormalOpNormPtaColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'march',
@@ -403,6 +450,7 @@ export const NormalOpNormPtaColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'wtAverage',
@@ -412,23 +460,27 @@ export const NormalOpNormPtaColumns = [
     editable: false,
     width: 100,
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'remarks',
     title: 'Remark',
     width: 100,
     editable: true,
+    minWidth: 100,
   },
 
   {
     field: 'idFromApi',
     title: 'idFromApi',
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    minWidth: 100,
   },
 ]
 
@@ -438,6 +490,7 @@ export const ShutdownConsumptionPtaColumns = [
     headerName: 'Type',
     width: 100,
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
@@ -452,8 +505,15 @@ export const ShutdownConsumptionPtaColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
+    minWidth: 100,
   },
-  { field: 'UOM', headerName: 'UOM/MT', width: 90, editable: false },
+  {
+    field: 'UOM',
+    headerName: 'UOM/MT',
+    width: 90,
+    editable: false,
+    minWidth: 100,
+  },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
@@ -469,6 +529,7 @@ export const ShutdownConsumptionPtaColumns = [
       editable: false,
       isDisabled: true,
       monthNumber: monthIndex,
+      minWidth: 100,
     }
   }),
 
@@ -477,11 +538,13 @@ export const ShutdownConsumptionPtaColumns = [
     headerName: 'Remark',
     width: 100,
     editable: false,
+    minWidth: 100,
   },
   {
     field: 'idFromApi',
     headerName: 'idFromApi',
     hidden: true,
+    minWidth: 100,
   },
 ]
 export const ShutdownConsumptionPtadmdColumns = [
@@ -490,6 +553,7 @@ export const ShutdownConsumptionPtadmdColumns = [
     headerName: 'Type',
     width: 100,
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
@@ -504,8 +568,15 @@ export const ShutdownConsumptionPtadmdColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
+    minWidth: 100,
   },
-  { field: 'UOM', headerName: 'UOM', width: 80, editable: false },
+  {
+    field: 'UOM',
+    headerName: 'UOM',
+    width: 80,
+    editable: false,
+    minWidth: 100,
+  },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
@@ -521,6 +592,7 @@ export const ShutdownConsumptionPtadmdColumns = [
       editable: false,
       isDisabled: true,
       monthNumber: monthIndex,
+      minWidth: 100,
     }
   }),
 
@@ -529,11 +601,13 @@ export const ShutdownConsumptionPtadmdColumns = [
     headerName: 'Remark',
     width: 100,
     editable: false,
+    minWidth: 100,
   },
   {
     field: 'idFromApi',
     headerName: 'idFromApi',
     hidden: true,
+    minWidth: 100,
   },
 ]
 
@@ -543,6 +617,7 @@ export const SlowdownNormsPtaColumns = [
     headerName: 'Type',
     width: 100,
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'materialFkId',
@@ -557,8 +632,15 @@ export const SlowdownNormsPtaColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
+    minWidth: 100,
   },
-  { field: 'UOM', headerName: 'UOM', width: 80, editable: false },
+  {
+    field: 'UOM',
+    headerName: 'UOM',
+    width: 80,
+    editable: false,
+    minWidth: 100,
+  },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
@@ -574,6 +656,7 @@ export const SlowdownNormsPtaColumns = [
       editable: false,
       isDisabled: true,
       monthNumber: monthIndex,
+      minWidth: 100,
     }
   }),
 
@@ -582,11 +665,13 @@ export const SlowdownNormsPtaColumns = [
     headerName: 'Remark',
     width: 100,
     editable: false,
+    minWidth: 100,
   },
   {
     field: 'idFromApi',
     headerName: 'idFromApi',
     hidden: true,
+    minWidth: 100,
   },
 ]
 
@@ -597,10 +682,12 @@ export const ConsumptionAopPtaColumns = [
     editable: false,
     width: 100,
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'NormParametersId',
     hidden: true,
+    minWidth: 100,
   },
 
   {
@@ -608,64 +695,79 @@ export const ConsumptionAopPtaColumns = [
     title: 'Particulars',
     editable: false,
     width: 100,
+    minWidth: 100,
   },
   {
     field: 'UOM',
     title: 'UOM / MT',
     editable: false,
     width: 100,
+    minWidth: 100,
   },
   {
     field: 'april',
     title: 4,
+    minWidth: 100,
   },
   {
     field: 'may',
     title: 5,
+    minWidth: 100,
   },
   {
     field: 'june',
     title: 6,
+    minWidth: 100,
   },
   {
     field: 'july',
     title: 7,
+    minWidth: 100,
   },
   {
     field: 'aug',
     title: 8,
+    minWidth: 100,
   },
   {
     field: 'sep',
     title: 9,
+    minWidth: 100,
   },
   {
     field: 'oct',
     title: 10,
+    minWidth: 100,
   },
   {
     field: 'nov',
     title: 11,
+    minWidth: 100,
   },
   {
     field: 'dec',
     title: 12,
+    minWidth: 100,
   },
   {
     field: 'jan',
     title: 1,
+    minWidth: 100,
   },
   {
     field: 'feb',
     title: 2,
+    minWidth: 100,
   },
   {
     field: 'march',
     title: 3,
+    minWidth: 100,
   },
   {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    minWidth: 100,
   },
 ]

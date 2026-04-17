@@ -955,6 +955,8 @@ const ProductionNorms = ({ permissions }) => {
       title: 'ID',
       editable: false,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
 
     {
@@ -962,22 +964,26 @@ const ProductionNorms = ({ permissions }) => {
       title: 'Product',
       widthT: 200,
       editable: false,
-      autoAdjust: false
+      autoAdjust: false,
+      minWidth: 100,
     },
     {
       field: 'value',
       title: 'Values',
       editable: false,
       type: 'number',
-      widthT: 200,
+      widthT: 100,
       format: valueFormat,
-      autoAdjust: false
+      autoAdjust: false,
+      minWidth: 100,
     },
     {
       field: 'type',
       title: 'type',
       editable: false,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
   ]
 

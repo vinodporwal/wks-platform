@@ -135,6 +135,8 @@ export default function QualityPackagingNorms() {
       title: 'ID',
       editable: false,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'sno',
@@ -148,11 +150,15 @@ export default function QualityPackagingNorms() {
       field: 'normParameterTypeName ',
       title: 'Norm Parameter Type',
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'materialId',
       title: 'Material ID',
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
       editable: false,
     },
     {
@@ -417,18 +423,24 @@ export default function QualityPackagingNorms() {
       widthT: 50, // Changed from width
       editable: false,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'materialId',
       title: 'Material ID',
       widthT: 120, // Changed from width
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
       editable: false,
     },
     {
       field: 'normParameterTypeName ',
       title: 'Norm Parameter Type',
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'qualityType',
@@ -447,6 +459,8 @@ export default function QualityPackagingNorms() {
     {
       field: 'unit',
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'remark',
@@ -469,6 +483,8 @@ export default function QualityPackagingNorms() {
       title: 'Material ID',
       editable: false,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'sapMaterialCode',
@@ -534,6 +550,8 @@ export default function QualityPackagingNorms() {
       title: 'Material ID',
       editable: false,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'sapMaterialCode',
@@ -544,6 +562,8 @@ export default function QualityPackagingNorms() {
       field: 'normParameterTypeName ',
       title: 'Norm Parameter Type',
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'name',

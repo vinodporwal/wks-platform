@@ -422,7 +422,13 @@ export const ShutdownConsumptionPeColumns = [
     editable: false,
     minWidth: 100,
   },
-  { field: 'UOM', headerName: 'UOM', widthT: 80, editable: false },
+  {
+    field: 'UOM',
+    headerName: 'UOM',
+    widthT: 80,
+    editable: false,
+    minWidth: 100,
+  },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
@@ -483,7 +489,13 @@ export const ShutdownConsumptionPeColumnsPeLldpe = [
     widthT: 120,
     editable: false,
   },
-  { field: 'UOM', headerName: 'UOM', widthT: 80, editable: false },
+  {
+    field: 'UOM',
+    headerName: 'UOM',
+    widthT: 80,
+    editable: false,
+    minWidth: 100,
+  },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
@@ -535,8 +547,15 @@ export const SlowdownNormsPeColumns = [
     headerName: 'Particulars',
     widthT: 120,
     editable: false,
+    minWidth: 100,
   },
-  { field: 'UOM', headerName: 'UOM', widthT: 80, editable: false },
+  {
+    field: 'UOM',
+    headerName: 'UOM',
+    widthT: 80,
+    editable: false,
+    minWidth: 100,
+  },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12

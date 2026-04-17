@@ -46,6 +46,7 @@ const getEnhancedColDefs = ({ headerMap, valueFormat }) => {
     cols.push({
       field: 'averageTPH',
       title: 'Total',
+      minWidth: 100,
     })
   }
 

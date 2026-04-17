@@ -12,16 +12,19 @@ export const NormalOpNormChemicalColumns = [
     title: 'Particulars',
     width: 120,
     hidden: true,
+    minWidth: 120,
   },
   {
     field: 'sapCode',
     title: 'Sap Mat Code',
     width: 130,
+    minWidth: 100,
   },
   {
     field: 'productName',
     title: 'Particulars',
     widthT: 130,
+    minWidth: 100,
   },
 
   {
@@ -29,6 +32,7 @@ export const NormalOpNormChemicalColumns = [
     title: 'UOM / MT',
     widthT: 60,
     editable: false,
+    minWidth: 100,
   },
 
   {
@@ -39,6 +43,7 @@ export const NormalOpNormChemicalColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'may',
@@ -49,6 +54,7 @@ export const NormalOpNormChemicalColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'june',
@@ -59,6 +65,7 @@ export const NormalOpNormChemicalColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'july',
@@ -69,6 +76,7 @@ export const NormalOpNormChemicalColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
 
   {
@@ -80,6 +88,7 @@ export const NormalOpNormChemicalColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'september',
@@ -90,6 +99,7 @@ export const NormalOpNormChemicalColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'october',
@@ -100,6 +110,7 @@ export const NormalOpNormChemicalColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'november',
@@ -110,6 +121,7 @@ export const NormalOpNormChemicalColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'december',
@@ -119,6 +131,7 @@ export const NormalOpNormChemicalColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'january',
@@ -128,6 +141,7 @@ export const NormalOpNormChemicalColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'february',
@@ -137,6 +151,7 @@ export const NormalOpNormChemicalColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'march',
@@ -146,6 +161,7 @@ export const NormalOpNormChemicalColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'wtAverage',
@@ -155,22 +171,26 @@ export const NormalOpNormChemicalColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'negativeNumber',
+    minWidth: 100,
   },
   {
     field: 'remarks',
     title: 'Remark',
     widthT: 80,
     editable: true,
+    minWidth: 100,
   },
 
   {
     field: 'idFromApi',
     title: 'idFromApi',
     hidden: true,
+    minWidth: 100,
   },
   {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    minWidth: 100,
   },
 ]

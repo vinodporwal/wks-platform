@@ -560,8 +560,10 @@ const SiteAOPReport = ({ permissions }) => {
       title: 'ID',
       editable: false,
       hidden: true,
+      minWidth: 100,
+      isVisible: false,
     },
-    { field: 'plant', title: 'Plant', editable: false },
+    { field: 'plant', title: 'Plant', editable: false, minWidth: 100 },
     {
       title: 'FY 26 AOP',
       children: [
@@ -570,12 +572,14 @@ const SiteAOPReport = ({ permissions }) => {
           title: 'Rs/ MT',
           editable: true,
           type: 'number',
+          minWidth: 100,
         },
         {
           field: 'fy26AopRsCrs',
           title: 'Rs. Crs.',
           editable: true,
           type: 'number',
+          minWidth: 100,
         },
       ],
     },
@@ -587,12 +591,14 @@ const SiteAOPReport = ({ permissions }) => {
           title: 'Rs/ MT',
           editable: true,
           type: 'number',
+          minWidth: 100,
         },
         {
           field: 'fy26ActualRsCrs',
           title: 'Rs. Crs.',
           editable: true,
           type: 'number',
+          minWidth: 100,
         },
       ],
     },
@@ -604,16 +610,23 @@ const SiteAOPReport = ({ permissions }) => {
           title: 'Rs/ MT',
           editable: true,
           type: 'number',
+          minWidth: 100,
         },
         {
           field: 'fy27AopRsCrs',
           title: 'Rs. Crs.',
           editable: true,
           type: 'number',
+          minWidth: 100,
         },
       ],
     },
-    { field: 'rationalReasons', title: 'Rationale/ Reasons', editable: true },
+    {
+      field: 'rationalReasons',
+      title: 'Rationale/ Reasons',
+      editable: true,
+      minWidth: 100,
+    },
   ]
   const contributionRows = [
     {
@@ -681,6 +694,8 @@ const SiteAOPReport = ({ permissions }) => {
       title: 'ID',
       editable: false,
       hidden: true,
+      minWidth: 100,
+      isVisible: false,
     },
     {
       field: 'sno',
@@ -689,15 +704,30 @@ const SiteAOPReport = ({ permissions }) => {
       editable: false,
       align: 'right',
       format: '{0:0}',
+      minWidth: 100,
     },
-    { field: 'plant', title: 'Plant', widthT: 120, editable: true },
-    { field: 'tph', title: 'TPH', widthT: 120, editable: true, type: 'number' },
+    {
+      field: 'plant',
+      title: 'Plant',
+      widthT: 120,
+      editable: true,
+      minWidth: 100,
+    },
+    {
+      field: 'tph',
+      title: 'TPH',
+      widthT: 120,
+      editable: true,
+      type: 'number',
+      minWidth: 100,
+    },
     {
       field: 'fy26Aop',
       title: 'FY26 AOP',
       widthT: 150,
       editable: true,
       type: 'number',
+      minWidth: 100,
     },
     {
       field: 'fy26Actual',
@@ -705,6 +735,7 @@ const SiteAOPReport = ({ permissions }) => {
       widthT: 150,
       editable: true,
       type: 'number',
+      minWidth: 100,
     },
     {
       field: 'fy27Aop',
@@ -712,12 +743,14 @@ const SiteAOPReport = ({ permissions }) => {
       widthT: 150,
       editable: true,
       type: 'number',
+      minWidth: 100,
     },
     {
       field: 'rationalReasons',
       title: 'Rationale/ Reasons',
       widthT: 200,
       editable: true,
+      minWidth: 100,
     },
   ]
 
@@ -765,6 +798,8 @@ const SiteAOPReport = ({ permissions }) => {
       title: 'ID',
       editable: false,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
     {
       field: 'sno',
@@ -773,25 +808,35 @@ const SiteAOPReport = ({ permissions }) => {
       editable: false,
       align: 'right',
       format: '{0:0}',
+      minWidth: 100,
     },
-    { field: 'plant', title: 'Plant', widthT: 120, editable: true },
+    {
+      field: 'plant',
+      title: 'Plant',
+      widthT: 120,
+      editable: true,
+      minWidth: 100,
+    },
     {
       field: 'incidentDescription',
       title: 'Incident Description',
       widthT: 220,
       editable: true,
+      minWidth: 100,
     },
     {
       field: 'rootCause',
       title: 'Root Cause Analysis',
       widthT: 180,
       editable: true,
+      minWidth: 100,
     },
     {
       field: 'recommendation',
       title: 'Recommendation',
       widthT: 180,
       editable: true,
+      minWidth: 100,
     },
     {
       field: 'targetDate',
@@ -799,8 +844,15 @@ const SiteAOPReport = ({ permissions }) => {
       widthT: 120,
       editable: true,
       type: 'date',
+      minWidth: 100,
     },
-    { field: 'resp', title: 'Resp.', widthT: 200, editable: true },
+    {
+      field: 'resp',
+      title: 'Resp.',
+      widthT: 200,
+      editable: true,
+      minWidth: 100,
+    },
   ]
 
   const majorProcessIncidentsFy26Rows = [

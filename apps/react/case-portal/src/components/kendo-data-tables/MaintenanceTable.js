@@ -246,6 +246,7 @@ const MaintenanceTable = () => {
       editable: false,
       align: 'right',
       headerAlign: 'left',
+      minWidth: 85,
     }))
   }
 
@@ -254,6 +255,7 @@ const MaintenanceTable = () => {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    isVisible: false,
   }
 
   // Base function to generate column set
@@ -266,6 +268,7 @@ const MaintenanceTable = () => {
       widthT: nameWidthT,
       editable: false,
       isEditable: false,
+      minWidth: 200,
     },
     ...getMonthlyColumns(),
     isEditableField,
@@ -280,6 +283,7 @@ const MaintenanceTable = () => {
       widthT: nameWidthT,
       editable: false,
       isEditable: false,
+      minWidth: 200,
     },
     ...getMonthlyColumns(),
     isEditableField,
@@ -290,6 +294,7 @@ const MaintenanceTable = () => {
       type: 'number',
       format: '{0:n2}',
       editable: false,
+      minWidth: 85,
     },
   ]
 
@@ -301,6 +306,7 @@ const MaintenanceTable = () => {
       headerAlign: 'left',
       widthT: nameWidthT,
       editable: false,
+      minWidth: 200,
     },
     ...getMonthlyColumns(),
     isEditableField,
@@ -310,6 +316,7 @@ const MaintenanceTable = () => {
       type: 'number',
       format: '{0:00}',
       editable: false,
+      minWidth: 85,
     },
   ]
   const generateColumnsELASTOMERJMD = (nameWidthT) => [
@@ -320,6 +327,7 @@ const MaintenanceTable = () => {
       headerAlign: 'left',
       widthT: nameWidthT,
       editable: false,
+      minWidth: 200,
     },
     ...getMonthlyColumns(),
     isEditableField,
@@ -329,12 +337,13 @@ const MaintenanceTable = () => {
       type: 'number',
       format: '{0:n2}',
       editable: false,
+      minWidth: 85,
     },
   ]
 
   // Column sets
   const productionColumnsMEG = generateColumns(390)
-  const productionColumnsPE = generateColumnsPEPP(150)
+  const productionColumnsPE = generateColumnsPEPP(200)
   const productionColumnsPP = generateColumnsPEPP(220)
   const productionColumnsNonMEG = generateColumns(200)
   const productionColumnsELASTOMER = generateColumnsELASTOMER(200)
@@ -378,6 +387,7 @@ const MaintenanceTable = () => {
         type: 'number',
         format: '{0:n2}',
         editable: false,
+        minWidth: 85,
       },
     ]
   }

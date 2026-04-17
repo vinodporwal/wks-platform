@@ -449,6 +449,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    isVisible: false,
   }
 
   // let basecols

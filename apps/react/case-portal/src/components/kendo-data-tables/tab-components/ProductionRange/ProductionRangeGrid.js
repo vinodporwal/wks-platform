@@ -68,13 +68,15 @@ const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
       title: 'Particulars',
       editable: false,
       widthT: 250,
-      autoAdjust: false
+      autoAdjust: false,
+      minWidth: 100,
     },
     {
       field: 'uom',
       title: 'UOM',
       editable: false,
       widthT: 80,
+      minWidth: 100,
     },
     {
       field: 'apr',
@@ -82,6 +84,7 @@ const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
       editable: true,
       widthT: 100,
       type: 'number',
+      minWidth: 100,
     },
     {
       field: 'may',
@@ -89,6 +92,7 @@ const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
       editable: true,
       widthT: 100,
       type: 'number',
+      minWidth: 100,
     },
 
     {
@@ -98,12 +102,15 @@ const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
       widthT: 250,
       autoAdjust: false,
       type: 'string',
+      minWidth: 100,
     },
     {
       field: 'normParameterFKId',
       title: 'idFromApi',
       filterable: 'false',
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
   ]
 

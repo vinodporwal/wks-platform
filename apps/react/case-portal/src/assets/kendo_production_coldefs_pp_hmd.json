@@ -3,7 +3,8 @@
     "field": "idFromApi",
     "title": "ID",
     "hidden": true,
-    "isVisible": false
+    "isVisible": false,
+    "minWidth": 120
   },
   {
     "field": "aopCaseId",
@@ -11,7 +12,8 @@
     "width": 100,
     "editable": false,
     "hidden": true,
-    "isVisible": false
+    "isVisible": false,
+    "minWidth": 120
   },
   {
     "field": "normParametersFKId",
@@ -19,14 +21,16 @@
     "editable": false,
     "width": 100,
     "hidden": true,
-    "isVisible": false
+    "isVisible": false,
+    "minWidth": 120
   },
 
   {
     "field": "productName",
     "title": "Particulars",
     "editable": false,
-    "widthT": 120
+    "widthT": 120,
+    "minWidth": 120
   },
 
   {
@@ -36,7 +40,8 @@
     "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "may",
@@ -45,7 +50,8 @@
     "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "june",
@@ -54,7 +60,8 @@
     "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "july",
@@ -63,7 +70,8 @@
     "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "august",
@@ -72,7 +80,8 @@
     "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "september",
@@ -81,7 +90,8 @@
     "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "october",
@@ -90,7 +100,8 @@
     "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "november",
@@ -99,7 +110,8 @@
     "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "december",
@@ -108,7 +120,8 @@
     "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "january",
@@ -117,7 +130,8 @@
     "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "february",
@@ -126,7 +140,8 @@
     "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "march",
@@ -135,7 +150,8 @@
     "widthT": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "avgTph",
@@ -144,18 +160,21 @@
     "editable": false,
 
     "hidden": true,
-    "isVisible": false
+    "isVisible": false,
+    "minWidth": 100
   },
   {
     "field": "remarks",
     "title": "Remark",
     "editable": false,
-    "widthT": 90
+    "widthT": 90,
+    "minWidth": 100
   },
   {
     "field": "isEditable",
     "title": "isEditable",
     "hidden": true,
-    "isVisible": false
+    "isVisible": false,
+    "minWidth": 100
   }
 ]
