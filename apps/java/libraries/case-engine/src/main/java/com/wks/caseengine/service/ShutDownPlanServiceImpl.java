@@ -645,6 +645,171 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		return null;
 	}
 
+	public byte[] shutdownLineExportPP(String year, String plantId, String maintenanceTypeName, boolean isAfterSave,
+			List<ShutDownPlanDTO> dtoList) {
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+			if (!isAfterSave) {
+				dtoList = findMaintenanceDetailsByPlantIdAndType(UUID.fromString(plantId), maintenanceTypeName, year);
+			}
+			String pattern = "dd-MM-yyyy HH:mm";
+			SimpleDateFormat formatter = new SimpleDateFormat(pattern);
+			Workbook workbook = new XSSFWorkbook();
+			CellStyle dateTimeStyle = createDateTimeStyle(workbook, "dd-MM-yyyy HH:mm");
+			CellStyle decimalStyle = workbook.createCellStyle();
+	        decimalStyle.setDataFormat(workbook.createDataFormat().getFormat("0.00"));
+			Sheet sheet = workbook.createSheet("Sheet1");
+			int currentRow = 0;
+			List<List<Object>> rows = new ArrayList<>();
+			for (ShutDownPlanDTO dto : dtoList) {
+				List<Object> list = new ArrayList<>();
+
+				try {
+
+					Double durationObject = dto.getDurationInHrs();
+					double durationDouble = (durationObject != null) ? durationObject.doubleValue() : 0.0;
+					int hours = (int) durationDouble;
+					int minutes = (int) Math.round((durationDouble - hours) * 100);
+					String formattedDuration = String.format("%02d:%02d", hours, minutes);
+
+					list.add(dto.getDiscription());
+					String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+					String view="vwScrn"+verticalName+"GetLineDetails";
+					List<Object[]> obj=getLineDetailsData(view,plantId,dto.getLineId());
+					if (obj != null && !obj.isEmpty()) {
+					    Object[] firstRow = obj.get(0);
+					    if (firstRow != null && firstRow.length > 1) {
+					        Object element = firstRow[2];
+					        list.add(element != null ? element.toString() : ""); 
+					    }
+					}
+					Date startDate = dto.getMaintStartDateTime();
+					Date endDate = dto.getMaintEndDateTime();
+					if(vertical.getName().equalsIgnoreCase("PP")) {
+						if (dto.getMaintStartDateTime() != null) {
+			                int monthNumber = dto.getMaintStartDateTime().toInstant()
+			                        .atZone(ZoneId.systemDefault()).toLocalDate().getMonthValue();
+			                dto.setMonth(getMonthName(monthNumber));
+			            }
+						list.add(dto.getMonth());
+		            }else {
+		            	list.add(startDate != null ? formatter.format(startDate) : null);
+						list.add(endDate != null ? formatter.format(endDate) : null);
+		            }
+					if(vertical.getName().equalsIgnoreCase("PP")) {
+						list.add(dto.getDurationInHrs());
+					}else {
+						list.add(formattedDuration);
+					}
+					
+					list.add(dto.getRemark());
+					list.add(dto.getId());
+					// list.add(productString);
+
+					if (isAfterSave) {
+						list.add(dto.getSaveStatus());
+						list.add(dto.getErrDescription());
+					}
+
+				} catch (Exception e) {
+					list.clear();
+					list.add(dto.getDiscription());
+					// list.add(null);
+					list.add(null);
+					list.add(null);
+					list.add("00:00");
+					list.add(dto.getRemark());
+					list.add(dto.getId());
+					// list.add(dto.getProduct());
+
+					if (isAfterSave) {
+						list.add("Failed");
+						list.add("Processing Error: " + e.getMessage());
+					}
+				}
+
+				rows.add(list);
+			}
+			List<String> innerHeaders = new ArrayList<>();
+
+			innerHeaders.add("Shutdown Desc");
+			 innerHeaders.add("Line");
+			if(vertical.getName().equalsIgnoreCase("PP")) {
+				innerHeaders.add("Month");
+			}else {
+				innerHeaders.add("SD-From");
+				innerHeaders.add("SD-To");
+			}
+			
+			innerHeaders.add("Duration (hrs)");
+			innerHeaders.add("Shutdown Basis");
+			innerHeaders.add("Id");
+			// innerHeaders.add("Product");
+			if (isAfterSave) {
+				innerHeaders.add("Status");
+				innerHeaders.add("Error Description");
+			}
+			List<List<String>> headers = new ArrayList<>();
+			headers.add(innerHeaders);
+
+			for (List<String> headerRowData : headers) {
+				Row headerRow = sheet.createRow(currentRow++);
+				for (int col = 0; col < headerRowData.size(); col++) {
+					Cell cell = headerRow.createCell(col);
+					cell.setCellValue(headerRowData.get(col));
+					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+				}
+			}
+			for (List<Object> rowData : rows) {
+				Row row = sheet.createRow(currentRow++);
+				for (int col = 0; col < rowData.size(); col++) {
+					Cell cell = row.createCell(col);
+					Object value = rowData.get(col);
+
+					if (value instanceof Date) {
+						cell.setCellValue((Date) value);
+						cell.setCellStyle(dateTimeStyle);
+					} else if (value instanceof Number) {
+						if(vertical.getName().equalsIgnoreCase("PP")) {
+							if (col == 2) {
+		                        cell.setCellStyle(decimalStyle);
+		                    }
+						}
+						
+						cell.setCellValue(((Number) value).doubleValue());
+					} else if (value instanceof Boolean) {
+						cell.setCellValue((Boolean) value);
+					} else if (value != null) {
+						cell.setCellValue(value.toString());
+					} else {
+						cell.setCellValue("");
+					}
+				}
+			}
+			if(vertical.getName().equalsIgnoreCase("PP")) {
+				sheet.setColumnHidden(5, true);
+			}else {
+				sheet.setColumnHidden(6, true);	
+			}
+			
+			try {
+
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+				workbook.write(outputStream);
+				workbook.close();
+				return outputStream.toByteArray();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 	private String getLineDisplayNameByLineId(UUID plantId, String lineId) {
 		if (plantId == null || lineId == null || lineId.trim().isEmpty()) {
 			return null;
@@ -936,6 +1101,36 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 			List<ShutDownPlanDTO> failedList = saveShutdownPlantData(plantId, data);
 			if (failedList != null && failedList.size() > 0) {
 				byte[] fileByteArray = shutdownNonProductLineExport(year, plantId.toString(), maintenanceTypeName, true,
+						failedList);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				// aopMessageVM.setData();
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+
+			return aopMessageVM;
+			// return ResponseEntity.ok(data);
+		} catch (Exception e) {
+			e.printStackTrace();
+			// return ResponseEntity.internalServerError().build();
+		}
+		return null;
+	}
+
+	@Override
+	public AOPMessageVM importLineShutdownPP(String year, UUID plantId, String maintenanceTypeName,
+			MultipartFile file) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			 List<ShutDownPlanDTO>	data = readLineShutdownPP(file.getInputStream(), plantId, year);
+			
+			List<ShutDownPlanDTO> failedList = saveShutdownPlantData(plantId, data);
+			if (failedList != null && failedList.size() > 0) {
+				byte[] fileByteArray = shutdownLineExportPP(year, plantId.toString(), maintenanceTypeName, true,
 						failedList);
 				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 				aopMessageVM.setData(base64File);
@@ -1783,6 +1978,125 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	                }
 	                
 	                String idString = getStringCellValue(row.getCell(6), dto);
+	                dto.setId(idString);
+	                
+	                if (dto.getId() == null && !alreadyFailed) { // Only check DB if ID is missing (for new records) and no prior error
+	                    List<Object[]> obj = shutDownPlanRepository.findDiscriptionByPlantIdAndType("Shutdown",
+	                            plantFKId.toString(), year, dto.getDiscription());
+
+	                    if (obj.size() > 0) {
+	                        dto.setSaveStatus("Failed");
+	                        dto.setErrDescription("The Description '" + dto.getDiscription()
+	                                + "' already exists in the database. Please enter a unique description to avoid duplication.");
+	                        alreadyFailed = true;
+	                    }
+	                }
+	                
+	                if (!alreadyFailed) {
+	                    dto.setSaveStatus("Success");
+	                }
+
+
+	            } catch (Exception e) {
+	                e.printStackTrace();
+	                if (dto.getSaveStatus() == null) {
+	                    dto.setErrDescription(e.getMessage() != null ? e.getMessage()
+	                            : "An unexpected error occurred during processing.");
+	                    dto.setSaveStatus("Failed");
+	                }
+	            }
+
+	            // Always add the DTO to the list
+	            dtoList.add(dto);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return dtoList;
+	}
+
+	public List<ShutDownPlanDTO> readLineShutdownPP(InputStream inputStream, UUID plantFKId, String year) {
+	    List<ShutDownPlanDTO> dtoList = new ArrayList<>();
+	    List<String> des = new ArrayList<>();
+	
+	
+	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+	        Sheet sheet = workbook.getSheetAt(0);
+	        Iterator<Row> rowIterator = sheet.iterator();
+	        
+	        if (rowIterator.hasNext()) {
+	            rowIterator.next(); // Skip header row
+	        }
+
+	        while (rowIterator.hasNext()) {
+	            Row row = rowIterator.next();
+	            ShutDownPlanDTO dto = new ShutDownPlanDTO();
+	            boolean alreadyFailed = false;
+
+	            try {
+	                dto.setPlantId(plantFKId);
+	                dto.setAudityear(year);
+	                
+	                String desc = getStringCellValue(row.getCell(0), dto);
+	                dto.setDiscription(desc);
+	                
+	                String line = getStringCellValue(row.getCell(1), dto);
+	                String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
+					String view="vwScrn"+verticalName+"GetLineDetails";
+					List<Object[]> object=getLineId(view,plantFKId.toString(),line);
+					if (object != null && !object.isEmpty()) {
+					    Object[] firstRow = object.get(0);
+					    if (firstRow != null && firstRow.length > 1) {
+					        Object element = firstRow[0];
+					        dto.setLineId(element != null ? element.toString() : ""); 
+					    }
+					}
+	                if(dto.getLineId()==null) {
+	                	dto.setSaveStatus("Failed");
+                        dto.setErrDescription("Please add line.");
+	                }
+
+	                if (dto.getDiscription() != null) {
+	                    if (des.contains(dto.getDiscription().trim())) {
+	                        dto.setSaveStatus("Failed");
+	                        dto.setErrDescription("Description cannot be duplicate within the uploaded file.");
+	                        alreadyFailed = true;
+	                    }
+	                    des.add(dto.getDiscription().trim());
+	                } else {
+	                    dto.setSaveStatus("Failed");
+	                    dto.setErrDescription("Description is missing.");
+	                    alreadyFailed = true;
+	                }
+	                
+	                String month = getStringCellValue(row.getCell(2), dto);
+	                dto.setMonth(month); 
+	                
+	                if (!alreadyFailed) { 
+	                    if (dto.getMonth() == null || dto.getMonth().trim().isEmpty()) {
+	                        dto.setSaveStatus("Failed");
+	                        dto.setErrDescription("Please enter month");
+	                        alreadyFailed = true;
+	                    }
+	                }
+	                
+	                Double durationHrs = parseDurationHours(readAsString(row.getCell(3), new DataFormatter()));
+	                dto.setDurationInHrs(durationHrs);
+	                
+	                String remark = getStringCellValue(row.getCell(4), dto);
+	                dto.setRemark(remark); 
+	                
+	                if (!alreadyFailed) { 
+	                    if (dto.getRemark() == null || dto.getRemark().trim().isEmpty()) {
+	                        dto.setSaveStatus("Failed");
+	                        dto.setErrDescription("Please enter remark");
+	                        alreadyFailed = true;
+	                    }
+	                }
+	                
+	                String idString = getStringCellValue(row.getCell(5), dto);
 	                dto.setId(idString);
 	                
 	                if (dto.getId() == null && !alreadyFailed) { // Only check DB if ID is missing (for new records) and no prior error
