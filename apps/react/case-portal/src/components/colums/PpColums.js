@@ -226,7 +226,7 @@ export const SlowDownPpDtaColumns = [
     widthT: 130,
   },
   {
-    field: 'lineId',
+    field: 'lineDisplayName',
     title: 'Line',
     type: 'lineDropdown',
     editable: true,

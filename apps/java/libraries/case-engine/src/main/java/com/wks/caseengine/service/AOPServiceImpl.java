@@ -140,7 +140,7 @@ public class AOPServiceImpl implements AOPService {
 			}else if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc){
 				String view="vwScrn"+vertical.getName()+"AOP";
 				obj= findByAOPYearAndPlantFkId(year, UUID.fromString(plantId), type,view);
-			}else if(vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD")){
+			}else if(vertical.getName().equalsIgnoreCase("Chemical") || (vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD"))){
 				String procedureName=vertical.getName()+"_"+site.getName()+"_"+"GetMonthWiseProductionPlan";
 				obj = getDataElastomer(year,plant.getId(),procedureName);
 			}else {

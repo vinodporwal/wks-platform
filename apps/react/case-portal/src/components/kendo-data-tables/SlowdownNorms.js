@@ -112,6 +112,7 @@ const SlowdownNorms = () => {
   const IS_PTA = lowerVertName === 'pta'
   const IS_CHEMICAL = lowerVertName === 'chemical'
   const IS_EDC_PLANT = lowerVertName === 'vcm' && plantName === 'edc'
+  const IS_HMD_SITE = lowerVertName === 'vcm' && siteName === 'hmd'
   const IS_ELASTOMER_JMD_HIIR =
     lowerVertName === 'elastomer' &&
     SITE_NAME_LOWERCASE === 'jmd' &&
@@ -672,7 +673,8 @@ const SlowdownNorms = () => {
         IS_CHEMICAL ||
         IS_PE_PP ||
         IS_ELASTOMER_JMD_HIIR ||
-        IS_EDC_PLANT
+        IS_EDC_PLANT ||
+        IS_HMD_SITE
           ? false
           : true,
 

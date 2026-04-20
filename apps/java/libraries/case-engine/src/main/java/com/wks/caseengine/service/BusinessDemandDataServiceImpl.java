@@ -110,7 +110,7 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			String viewName = "vwScrn" + verticalName + "BusinessDemand";
 			List<Object[]> obj=null;
-			if(verticalName.equalsIgnoreCase("CRACKER") || verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("Elastomer") || pvc) {
+			if(verticalName.equalsIgnoreCase("CRACKER") || verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("Elastomer") || pvc || verticalName.equalsIgnoreCase("Chemical")) {
 				String procedureName=verticalName+"_GetBusinessDemand";
 				obj=findByYearAndPlantId(year,UUID.fromString(plantId),procedureName);
 				return getBusinessDemand(obj);

@@ -196,7 +196,14 @@ const ShutDown = ({ permissions }) => {
             : new Date(record.maintEndDateTime)
 
         // Validate date format: dd/mm/yyyy (by parsing and checking)
-        if (!IS_PTA && !IS_CHEMICAL && !IS_ELASTOMER_JMD_HIIR && !IS_PP_DTA && !IS_PP_SEZ && !IS_PP_HMD) {
+        if (
+          !IS_PTA &&
+          !IS_CHEMICAL &&
+          !IS_ELASTOMER_JMD_HIIR &&
+          !IS_PP_DTA &&
+          !IS_PP_SEZ &&
+          !IS_PP_HMD
+        ) {
           if (
             startLimit &&
             endLimit &&
@@ -332,7 +339,14 @@ const ShutDown = ({ permissions }) => {
       //5 START DATE END DATE MANDATORY
       const allRecords = [...rows]
       const timeErrorRows = new Set() // Add this line
-      if (!IS_PTA && !IS_CHEMICAL && !IS_ELASTOMER_JMD_HIIR && !IS_PP_DTA && !IS_PP_SEZ && !IS_PP_HMD) {
+      if (
+        !IS_PTA &&
+        !IS_CHEMICAL &&
+        !IS_ELASTOMER_JMD_HIIR &&
+        !IS_PP_DTA &&
+        !IS_PP_SEZ &&
+        !IS_PP_HMD
+      ) {
         for (const record of data) {
           // Date required validation (before checking time order)
           const dateRequiredRows = new Set()
@@ -1208,8 +1222,15 @@ const ShutDown = ({ permissions }) => {
           AOP_YEAR,
           EXCEL_EXPORT_TITLE,
         )
-      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      } else if (IS_PVC_DMD) {
         response = await DtaDataService.exportShutdownLineWise(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
+      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PP_HMD) {
+        response = await DtaDataService.exportShutdownMonthLineWise(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
@@ -1260,8 +1281,15 @@ const ShutDown = ({ permissions }) => {
           PLANT_ID,
           AOP_YEAR,
         )
-      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      } else if (IS_PVC_DMD) {
         response = await DtaDataService.ImportShutdownLineWise(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PP_HMD) {
+        response = await DtaDataService.ImportShutdownLineWisePP(
           rawFile,
           keycloak,
           PLANT_ID,
