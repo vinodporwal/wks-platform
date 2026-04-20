@@ -17,7 +17,9 @@ import SubmitSection from './workflow/SubmitSection'
 import { getUserRole, ROLES } from '../utils/roleUtils'
 import { TcsWorkflowApiService } from 'components/aop-phase-two/services/tcs/tcsWorkflowApiService'
 import AuditTrail from './workflow/AuditTrail'
+import PCGOutlookNew from './PCGOutlookNew'
 import AopTabs from '../../common/components/AopTabs'
+
 
 // Handler to render tab component based on displayName
 const renderTabComponent = (tabDisplayName, props) => {
@@ -33,7 +35,7 @@ const renderTabComponent = (tabDisplayName, props) => {
     case 'CPP Units SD Plan':
       return <CPPUnitsSdPlan {...props} />
     case 'PCG Outlook':
-      return <PCGOutlook {...props} />
+      return <PCGOutlookNew {...props} />
     case 'ROGC':
       return <ROGC {...props} />
     case 'Crude Blend Window':

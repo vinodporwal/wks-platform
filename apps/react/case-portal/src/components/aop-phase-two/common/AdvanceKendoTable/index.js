@@ -2215,6 +2215,7 @@ const AdvanceKendoTable = ({
         openDeleteDialogeBox={openDeleteDialogeBox}
         setOpenDeleteDialogeBox={setOpenDeleteDialogeBox}
         deleteTheRecord={deleteTheRecord}
+        confirmButtonText={'Delete'}
       />
       {/* Remark Dialog */}
       <RemarkDialog

@@ -1417,6 +1417,7 @@ const NestedKendoTable = ({
         openDeleteDialogeBox={openDeleteDialogeBox}
         setOpenDeleteDialogeBox={setOpenDeleteDialogeBox}
         deleteTheRecord={deleteTheRecord}
+        confirmButtonText={'Delete'}
       />
 
       <SaveConfirmationDialog
