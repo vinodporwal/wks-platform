@@ -152,6 +152,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
           normParameterFKId: row.NormParamId,
           remarks: row.Remarks || '',
           id: null,
+          UOM: '',
         }
 
         months.forEach((m) => {
@@ -436,8 +437,8 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
           saveWithRemark: false,
           saveBtn: true,
           allAction: true,
-          downloadExcelBtn: true,
-          uploadExcelBtn: true,
+          downloadExcelBtn: false,
+          uploadExcelBtn: false,
           showRefresh: false,
           showCalculate: false,
           showCalculateVisibility: true,

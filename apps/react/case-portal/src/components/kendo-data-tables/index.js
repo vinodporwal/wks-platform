@@ -3068,7 +3068,11 @@ const KendoDataTables = ({
                     />
                   )
                 }
-                if (col.field === 'Duration') {
+                if (
+                  col.field === 'Duration' &&
+                  lowerVertName === 'cracker' &&
+                  lowerSiteName === 'vmd'
+                ) {
                   return (
                     <GridColumn
                       key={col.field}
