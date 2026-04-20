@@ -4,7 +4,7 @@ import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import { setIsBlocked } from 'store/reducers/dataGridStore'
+import { setIsBlocked, setIsReleased } from 'store/reducers/dataGridStore'
 import { validateFields } from 'utils/validationUtils'
 import getEnhancedColDefs from '../data-tables/CommonHeader/kendoconsumptionHeader'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
@@ -45,6 +45,7 @@ const ConsumptionNorms = () => {
     verticalObject,
     year,
     screenTitle,
+    // setIsReleased,
   } = dataGridStore
 
   const PLANT_ID = plantObject?.id
@@ -92,6 +93,8 @@ const ConsumptionNorms = () => {
   const [grades, setGrades] = useState([])
   const [openReleaseDialogBox, setOpenReleaseDialogBox] = useState(false)
   const [isReleaseDisabled, setIsReleaseDisabled] = useState(true)
+
+  // const { setIsReleased } = dataGridStore
 
   const isPEPP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const isPET = lowerVertName === 'pet'
@@ -708,7 +711,7 @@ const ConsumptionNorms = () => {
       <div>
         {
           <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 0 }}>
               <Button
                 variant='contained'
                 onClick={handleRelease}
@@ -758,31 +761,71 @@ const ConsumptionNorms = () => {
         <Dialog
           open={openReleaseDialogBox}
           onClose={closeReleaseDialogBox}
-          aria-labelledby='alert-dialog-title'
-          aria-describedby='alert-dialog-description'
           disableScrollLock
-          slotProps={{
-            backdrop: { disableScrollLock: true },
+          PaperProps={{
+            sx: {
+              borderRadius: '20px',
+              p: 2,
+              width: 400,
+              backdropFilter: 'blur(8px)',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+              borderTop: '4px solid #22c55e', // ? green accent line
+            },
           }}
         >
-          <DialogTitle id='alert-dialog-title'>
-            {'Confirm AOP Release? '}
+          <DialogTitle
+            sx={{
+              fontWeight: 700,
+              fontSize: '1.2rem',
+              color: '#166534', // ? dark green title
+              pb: 0.5,
+            }}
+          >
+            Confirm Release
           </DialogTitle>
-          <DialogContent>
+
+          <DialogContent sx={{ pt: 1 }}>
             <DialogContentText
-              id='alert-dialog-description'
-              sx={{ color: 'text.primary' }}
+              sx={{
+                fontSize: '0.9rem',
+                color: '#4b5563',
+                lineHeight: 1.5,
+              }}
             >
-              {`Have you verified the final Production values, Norms and Table reports before releasing for team review?`}
+              Please confirm that <b style={{ color: '#16a34a' }}>Production</b>
+              , <b style={{ color: '#16a34a' }}>Norms</b>, and{' '}
+              <b style={{ color: '#16a34a' }}>Reports</b> are verified before
+              releasing for review.
             </DialogContentText>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={closeReleaseDialogBox}>Cancel</Button>
-            <Button onClick={submitConfirmation} autoFocus>
-              Submit
+
+          <DialogActions sx={{ px: 2, pb: 1.5, gap: 1 }}>
+            <Button
+              onClick={closeReleaseDialogBox}
+              variant='text'
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                color: '#6b7280',
+                '&:hover': { background: 'rgba(0,0,0,0.04)' },
+              }}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              onClick={submitConfirmation}
+              variant='contained'
+              className='btn-release'
+              sx={{
+                textTransform: 'none',
+                px: 2.5,
+              }}
+            >
+              Release
             </Button>
           </DialogActions>
-        </Dialog>
+        </Dialog>{' '}
       </div>
     </div>
   )
