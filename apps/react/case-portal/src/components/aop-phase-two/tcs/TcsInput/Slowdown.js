@@ -152,8 +152,8 @@ const Slowdown = ({
     throughputDuringSlowdown: {
       editable: true,
       type: 'wholeNumber',
-      minWidth: 100,
-      widthT: 100,
+      minWidth: 170,
+      widthT: 170,
     },
     throughputUOM: {
       editable: true,
@@ -317,6 +317,14 @@ const Slowdown = ({
           // If this is a new item, set id to null
           if (item.isNew) {
             formatted.id = null
+          }
+          
+          // Add non-editable fields with default values if not present
+          if (formatted.throughputDuringSlowdown == '') {
+            formatted.throughputDuringSlowdown = null
+          }
+          if (formatted.throughputUOM == '') {
+            formatted.throughputUOM = null
           }
 
           // Add timezone offset to date fields
@@ -633,24 +641,31 @@ const Slowdown = ({
     }
   }
 
-  const permissions = {
-    customHeight: { mainBox: '32vh', otherBox: '100%' },
-    textAlignment: 'center',
-    allAction: true,
-    addButton: true,
-    deleteButton: true,
-    showAction: true,
-    remarksEditable: true,
-    showCalculate: false,
-    showExport: true,
-    ExcelName: `Slowdown_${AOP_YEAR}`,
-    showImport: true,
-    saveBtnForRemark: true,
-    saveBtn: true,
-    showWorkFlowBtns: false,
-    showTitle: true,
-    filterable: false,
-  }
+  const permissions = useMemo(
+    () => ({
+      customHeight: { mainBox: '32vh', otherBox: '100%' },
+      textAlignment: 'center',
+      allAction: true,
+      addButton:
+        apiMetadata.editableFields &&
+        (apiMetadata.editableFields.includes('durationInDays') ||
+          apiMetadata.editableFields.includes('startDate') ||
+          apiMetadata.editableFields.includes('endDate')),
+      deleteButton: true,
+      showAction: true,
+      remarksEditable: true,
+      showCalculate: false,
+      showExport: true,
+      ExcelName: `Slowdown_${AOP_YEAR}`,
+      showImport: true,
+      saveBtnForRemark: true,
+      saveBtn: true,
+      showWorkFlowBtns: false,
+      showTitle: true,
+      filterable: false,
+    }),
+    [apiMetadata.editableFields, AOP_YEAR],
+  )
 
   return (
     <Box>
