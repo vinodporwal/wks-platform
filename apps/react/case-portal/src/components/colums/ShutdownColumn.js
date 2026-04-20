@@ -2,6 +2,7 @@ export const ExclusionDateColumns = [
   {
     field: 'id',
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'exclusionStartDate',
@@ -21,12 +22,13 @@ export const ExclusionDateColumns = [
     title: 'Reason',
     editable: true,
     widthT: 250,
-    autoAdjust: false
+    autoAdjust: false,
   },
 
   {
     field: 'originalRemark',
     hidden: true,
+    isVisible: false,
   },
 ]
 
@@ -36,14 +38,16 @@ export const ShutDownAllColumns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'descLimit',
-    widthT: 260,
-    autoAdjust: false
+    widthT: 350,
+    autoAdjust: false,
+    minWidth: 350,
   },
   {
     field: 'maintenanceId',
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'maintStartDateTime',
@@ -68,7 +72,7 @@ export const ShutDownAllColumns = [
     title: 'Shutdown Basis',
     editable: true,
     widthT: 250,
-    autoAdjust: false
+    autoAdjust: false,
   },
 ]
 export const ShutDown_Elastomer_JMD_IIR_Columns = [
@@ -78,13 +82,15 @@ export const ShutDown_Elastomer_JMD_IIR_Columns = [
     editable: true,
     type: 'descLimit',
     widthT: 260,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 350,
   },
   {
     field: 'maintenanceId',
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'maintStartDateTime',
@@ -109,7 +115,7 @@ export const ShutDown_Elastomer_JMD_IIR_Columns = [
     title: 'Remarks',
     editable: true,
     widthT: 250,
-    autoAdjust: false
+    autoAdjust: false,
   },
 ]
 export const ShutDown_Elastomer_JMD_HIIR_Columns = [
@@ -119,13 +125,15 @@ export const ShutDown_Elastomer_JMD_HIIR_Columns = [
     editable: true,
     type: 'descLimit',
     widthT: 260,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 350,
   },
   {
     field: 'maintenanceId',
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'monthly',
@@ -145,7 +153,7 @@ export const ShutDown_Elastomer_JMD_HIIR_Columns = [
     title: 'Remarks',
     editable: true,
     widthT: 250,
-    autoAdjust: false
+    autoAdjust: false,
   },
 ]
 export const SlowdownConfigColumns = [
@@ -154,7 +162,7 @@ export const SlowdownConfigColumns = [
     title: 'Slowdown Desc',
     editable: true,
     widthT: 230,
-    autoAdjust: false
+    autoAdjust: false,
   },
 
   {
@@ -187,7 +195,7 @@ export const SlowdownConfigColumns = [
     title: 'Remarks',
     editable: true,
     widthT: 200,
-    autoAdjust: false
+    autoAdjust: false,
   },
 ]
 
@@ -199,7 +207,8 @@ export const ShutDownPeColumns = [
     editable: true,
     type: 'descLimit',
     widthT: 250,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 350,
   },
   // {
   //   field: 'productName1',
@@ -212,6 +221,7 @@ export const ShutDownPeColumns = [
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'maintStartDateTime',
@@ -236,7 +246,7 @@ export const ShutDownPeColumns = [
     title: 'Shutdown Basis',
     editable: true,
     widthT: 250,
-    autoAdjust: false
+    autoAdjust: false,
   },
 ]
 export const ShutDownPeColumnsldpe12 = [
@@ -246,7 +256,8 @@ export const ShutDownPeColumnsldpe12 = [
     editable: true,
     type: 'descLimit',
     widthT: 260,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 350,
   },
 
   {
@@ -254,6 +265,7 @@ export const ShutDownPeColumnsldpe12 = [
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'maintStartDateTime',
@@ -278,7 +290,7 @@ export const ShutDownPeColumnsldpe12 = [
     title: 'Shutdown Basis',
     editable: true,
     widthT: 250,
-    autoAdjust: false
+    autoAdjust: false,
   },
 ]
 
@@ -290,7 +302,8 @@ export const ShutDownPpColumns = [
     editable: true,
     type: 'descLimit',
     widthT: 270,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 350,
   },
   // {
   //   field: 'productName1',
@@ -303,6 +316,7 @@ export const ShutDownPpColumns = [
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'maintStartDateTime',
@@ -327,7 +341,7 @@ export const ShutDownPpColumns = [
     title: 'Shutdown Basis',
     editable: true,
     widthT: 250,
-    autoAdjust: false
+    autoAdjust: false,
   },
 ]
 export const ShutDownPpDtaColumns = [
@@ -337,7 +351,8 @@ export const ShutDownPpDtaColumns = [
     editable: true,
     type: 'descLimit',
     widthT: 225,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 350,
   },
   {
     field: 'lineId',
@@ -357,6 +372,7 @@ export const ShutDownPpDtaColumns = [
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'maintStartDateTime',
@@ -381,7 +397,7 @@ export const ShutDownPpDtaColumns = [
     title: 'Shutdown Basis',
     editable: true,
     widthT: 200,
-    autoAdjust: false
+    autoAdjust: false,
   },
 ]
 
@@ -392,7 +408,8 @@ export const ShutDownPTAColumns = [
     editable: true,
     type: 'discriptionDrpdwn',
     widthT: 260,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 350,
   },
 
   {
@@ -400,6 +417,7 @@ export const ShutDownPTAColumns = [
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'maintStartDateTime',
@@ -424,7 +442,7 @@ export const ShutDownPTAColumns = [
     title: 'Shutdown Basis',
     editable: true,
     widthT: 250,
-    autoAdjust: false
+    autoAdjust: false,
   },
 ]
 
@@ -435,7 +453,8 @@ export const ShutDownPTADMDColumns = [
     editable: true,
     type: 'discriptionDrpdwn',
     widthT: 260,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 350,
   },
 
   {
@@ -443,6 +462,7 @@ export const ShutDownPTADMDColumns = [
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   // {
   //   field: 'maintStartDateTime',
@@ -472,7 +492,7 @@ export const ShutDownPTADMDColumns = [
     title: 'Shutdown Basis',
     editable: true,
     widthT: 250,
-    autoAdjust: false
+    autoAdjust: false,
   },
 ]
 export const ShutDownChemicalColumns = [
@@ -482,7 +502,8 @@ export const ShutDownChemicalColumns = [
     editable: true,
     type: 'descLimit',
     widthT: 260,
-    autoAdjust: false
+    autoAdjust: false,
+    minWidth: 350,
   },
 
   {
@@ -490,6 +511,7 @@ export const ShutDownChemicalColumns = [
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   // {
   //   field: 'maintStartDateTime',
@@ -519,6 +541,6 @@ export const ShutDownChemicalColumns = [
     title: 'Shutdown Basis',
     editable: true,
     widthT: 250,
-    autoAdjust: false
+    autoAdjust: false,
   },
 ]

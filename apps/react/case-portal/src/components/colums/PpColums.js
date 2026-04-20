@@ -7,6 +7,7 @@ export const BusinessDemandPpColumns = [
     editable: false,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     field: 'normParameterId',
@@ -15,6 +16,7 @@ export const BusinessDemandPpColumns = [
     width: 100,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 
   {
@@ -156,6 +158,7 @@ export const BusinessDemandPpColumns = [
     title: 'ID from API',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 ]
 
@@ -175,6 +178,7 @@ export const SlowDownPpColumns = [
     editable: false,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 
   {
@@ -250,6 +254,7 @@ export const SlowDownPpDtaColumns = [
     editable: false,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 
   {
@@ -327,6 +332,7 @@ export const NormalOpNormPpColumns = [
     editable: false,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     field: 'materialFkId',
@@ -334,6 +340,7 @@ export const NormalOpNormPpColumns = [
     width: 100,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     field: 'productName',
@@ -491,12 +498,14 @@ export const NormalOpNormPpColumns = [
     title: 'idFromApi',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 ]
 
@@ -507,6 +516,7 @@ export const ShutdownConsumptionPpColumns = [
     width: 100,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     field: 'materialFkId',
@@ -515,6 +525,7 @@ export const ShutdownConsumptionPpColumns = [
     editable: false,
     hidden: true,
     width: 100,
+    isVisible: false,
   },
   {
     field: 'productName',
@@ -564,6 +575,7 @@ export const SlowdownNormsPpColumns = [
     width: 100,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     field: 'materialFkId',
@@ -617,6 +629,7 @@ export const SlowdownNormsPpColumns = [
     headerName: 'idFromApi',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 ]
 export const ConsumptionAopPpColumns = [
@@ -627,11 +640,13 @@ export const ConsumptionAopPpColumns = [
     width: 100,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     field: 'NormParametersId',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 
   {
@@ -713,5 +728,6 @@ export const ConsumptionAopPpColumns = [
     title: 'isEditable',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 ]

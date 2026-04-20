@@ -337,6 +337,7 @@ const DecokingConfig = () => {
                     col.field.toLowerCase().includes('actual')
                   ),
                   hidden: hiddenKeys.includes(col.field) ? true : col.hidden,
+                  minWidth: 120,
                 }),
               )
               setRunLengthColumns(dynamicColumnDeckoking)

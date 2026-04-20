@@ -161,6 +161,7 @@ export const SlowDownMegColumns = [
     editable: false,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 
   {
@@ -225,6 +226,7 @@ export const NormalOpNormMegColumns = [
     editable: false,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     field: 'materialFkId',
@@ -232,6 +234,7 @@ export const NormalOpNormMegColumns = [
     width: 100,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     field: 'productName',
@@ -389,12 +392,14 @@ export const NormalOpNormMegColumns = [
     title: 'idFromApi',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 ]
 export const CrackerColums = [
@@ -406,6 +411,7 @@ export const CrackerColums = [
     editable: false,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     widthT: 100,
@@ -576,12 +582,14 @@ export const CrackerColums = [
     title: 'idFromApi',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 ]
 
@@ -592,6 +600,7 @@ export const ShutdownConsumptionMegColumns = [
     width: 100,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     field: 'materialFkId',
@@ -600,6 +609,7 @@ export const ShutdownConsumptionMegColumns = [
     editable: false,
     hidden: true,
     width: 100,
+    isVisible: false,
   },
   {
     field: 'productName',
@@ -646,6 +656,7 @@ export const ShutdownConsumptionMegColumns = [
     headerName: 'idFromApi',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 ]
 
@@ -656,6 +667,7 @@ export const SlowdownNormsMegColumns = [
     width: 100,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     field: 'materialFkId',
@@ -664,6 +676,7 @@ export const SlowdownNormsMegColumns = [
     editable: false,
     hidden: true,
     width: 100,
+    isVisible: false,
   },
   {
     field: 'productName',
@@ -710,6 +723,7 @@ export const SlowdownNormsMegColumns = [
     headerName: 'idFromApi',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 ]
 
@@ -721,11 +735,13 @@ export const ConsumptionAopMegColumns = [
     width: 100,
     hidden: true,
     minWidth: 150,
+    isVisible: false,
   },
   {
     field: 'NormParametersId',
     hidden: true,
     minWidth: 150,
+    isVisible: false,
   },
 
   {
@@ -807,5 +823,6 @@ export const ConsumptionAopMegColumns = [
     title: 'isEditable',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 ]

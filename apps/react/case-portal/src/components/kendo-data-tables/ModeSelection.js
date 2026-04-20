@@ -103,17 +103,30 @@ const ModeSelection = ({ permissions }) => {
       title: headerMap[headerIdx],
       editable: true,
       type: 'dynamicDropdown',
+      minWidth: 100,
     }
   })
 
   // Choose which columns to use:
   // To use dynamic year headers:
   const columns = [
-    { field: 'productName', title: 'Particulars', editable: false, widthT: 120 },
-    { field: 'uom', title: 'UOM', editable: false, widthT: 55 },
-    { field: 'normType', title: 'Norm Type', editable: false, hidden: true },
+    {
+      field: 'productName',
+      title: 'Particulars',
+      editable: false,
+      widthT: 120,
+      minWidth: 120,
+    },
+    { field: 'uom', title: 'UOM', editable: false, widthT: 55, minWidth: 100 },
+    {
+      field: 'normType',
+      title: 'Norm Type',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
     ...dynamicYearMonthColumns,
-    { field: 'remarks', title: 'Remarks', editable: true },
+    { field: 'remarks', title: 'Remarks', editable: true, minWidth: 100 },
   ]
 
   const fetchModes = useCallback(async () => {

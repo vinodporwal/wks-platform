@@ -4,17 +4,20 @@ export const CrackerColums = [
     title: 'SAP MAT Code',
     widthT: 120,
     editable: false,
+    minWidth: 100,
   },
   {
     field: 'materialDisplayName',
     title: 'Particulars',
     widthT: 120,
+    minWidth: 100,
   },
   {
     field: 'uom',
     title: 'UOM',
     widthT: 80,
     editable: false,
+    minWidth: 100,
   },
   {
     field: 'april',
@@ -24,6 +27,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'may',
@@ -34,6 +38,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'june',
@@ -44,6 +49,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'july',
@@ -54,6 +60,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
+    minWidth: 100,
   },
 
   {
@@ -65,6 +72,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'september',
@@ -75,6 +83,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'october',
@@ -85,6 +94,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'november',
@@ -95,6 +105,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'december',
@@ -104,6 +115,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'january',
@@ -113,6 +125,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'february',
@@ -122,6 +135,7 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'march',
@@ -131,8 +145,9 @@ export const CrackerColums = [
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
+    minWidth: 100,
   },
-  { field: 'remark', title: 'Remarks', editable: true },
+  { field: 'remark', title: 'Remarks', editable: true, minWidth: 100 },
 ]
 export const CrackerColumsForYearlyNorms = [
   {
@@ -140,10 +155,12 @@ export const CrackerColumsForYearlyNorms = [
     type: 'switch',
     widthT: 30,
     filter: false,
+    minWidth: 60,
   },
   {
     field: 'materialDisplayName',
     title: 'Particulars',
+    minWidth: 120,
   },
 
   {
@@ -151,6 +168,7 @@ export const CrackerColumsForYearlyNorms = [
     title: 'UOM',
     widthT: 80,
     editable: false,
+    minWidth: 100,
   },
 
   {
@@ -161,6 +179,7 @@ export const CrackerColumsForYearlyNorms = [
     align: 'right',
     format: '{0:0.0000}',
     type: 'number',
+    minWidth: 100,
   },
 ]
 
@@ -170,14 +189,22 @@ export const ShutdownConsumptionCrackerColumns = [
     headerName: 'SAP MAT Code',
     widthT: 130,
     editable: false,
+    minWidth: 120,
   },
   {
     field: 'productName',
     headerName: 'Particulars',
     widthT: 130,
     editable: false,
+    minWidth: 120,
   },
-  { field: 'UOM', headerName: 'UOM', widthT: 80, editable: false },
+  {
+    field: 'UOM',
+    headerName: 'UOM',
+    widthT: 80,
+    editable: false,
+    minWidth: 100,
+  },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
@@ -193,6 +220,7 @@ export const ShutdownConsumptionCrackerColumns = [
       editable: false,
       isDisabled: true,
       monthNumber: monthIndex,
+      minWidth: 100,
     }
   }),
 
@@ -201,5 +229,6 @@ export const ShutdownConsumptionCrackerColumns = [
     headerName: 'Remark',
 
     editable: true,
+    minWidth: 100,
   },
 ]
