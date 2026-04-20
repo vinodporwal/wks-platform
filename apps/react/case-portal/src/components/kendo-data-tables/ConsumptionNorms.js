@@ -1,4 +1,3 @@
-import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { useGridApiRef } from '@mui/x-data-grid'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
@@ -9,10 +8,20 @@ import { setIsBlocked } from 'store/reducers/dataGridStore'
 import { validateFields } from 'utils/validationUtils'
 import getEnhancedColDefs from '../data-tables/CommonHeader/kendoconsumptionHeader'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
-import { Box } from '@mui/material'
+import {
+  Backdrop,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from '@mui/material'
 import KendoDataTables from './index'
 import { ConsumptionNormsApiService } from 'services/consumption-norms-api-service'
 import { getRoleName } from 'services/role-service'
+import { DataService } from 'services/DataService'
 
 const ConsumptionNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -81,6 +90,8 @@ const ConsumptionNorms = () => {
   const dispatch = useDispatch()
   const [gradeId, setGradeId] = useState(null)
   const [grades, setGrades] = useState([])
+  const [openReleaseDialogBox, setOpenReleaseDialogBox] = useState(false)
+  const [isReleaseDisabled, setIsReleaseDisabled] = useState(true)
 
   const isPEPP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const isPET = lowerVertName === 'pet'
@@ -108,6 +119,30 @@ const ConsumptionNorms = () => {
     setRemarkDialogOpen(true)
   }
 
+  const getIsReleased = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    try {
+      const response = await DataService.getReleaseAOPStatus(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      // If response has data, disable the button (already released)
+      // If no data, enable the button (not yet released)
+      if (response?.data && Object.keys(response.data).length > 0) {
+        setIsReleaseDisabled(true)
+      } else {
+        setIsReleaseDisabled(false)
+      }
+    } catch (error) {
+      console.error('Error fetching release status:', error)
+    }
+  }
+  useEffect(() => {
+    getIsReleased()
+  }, [keycloak, AOP_YEAR, PLANT_ID])
   const saveEditedData = async (newRows) => {
     setLoading(true)
     try {
@@ -441,6 +476,44 @@ const ConsumptionNorms = () => {
     valueFormat,
   })
 
+  const handleRelease = () => {
+    setOpenReleaseDialogBox(true)
+  }
+
+  const closeReleaseDialogBox = () => {
+    setOpenReleaseDialogBox(false)
+  }
+
+  const submitConfirmation = async () => {
+    setOpenReleaseDialogBox(false)
+    setLoading(true)
+    try {
+      const response = await DataService.releaseAOPReport(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Released Successfully!',
+        severity: 'success',
+      })
+      setIsReleaseDisabled(true)
+      let isReleased = 1
+      dispatch(setIsReleased({ isReleased }))
+    } catch (error) {
+      console.error('Error releasing report:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Release Failed!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleUnitChange = (unit) => {
     setSelectedUnit(unit)
   }
@@ -634,16 +707,17 @@ const ConsumptionNorms = () => {
 
       <div>
         {
-          <Box
-            sx={{
-              width: '100%',
-              padding: '0px ',
-              margin: '0px',
-              backgroundColor: '#F2F3F8',
-              borderRadius: 0,
-              borderBottom: 'none',
-            }}
-          >
+          <Box>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+              <Button
+                variant='contained'
+                onClick={handleRelease}
+                disabled={isReleaseDisabled || READ_ONLY}
+                className='btn-release'
+              >
+                Release
+              </Button>
+            </Box>
             <KendoDataTables
               autoHeight={true}
               modifiedCells={modifiedCells}
@@ -681,6 +755,34 @@ const ConsumptionNorms = () => {
             />
           </Box>
         }
+        <Dialog
+          open={openReleaseDialogBox}
+          onClose={closeReleaseDialogBox}
+          aria-labelledby='alert-dialog-title'
+          aria-describedby='alert-dialog-description'
+          disableScrollLock
+          slotProps={{
+            backdrop: { disableScrollLock: true },
+          }}
+        >
+          <DialogTitle id='alert-dialog-title'>
+            {'Confirm AOP Release? '}
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText
+              id='alert-dialog-description'
+              sx={{ color: 'text.primary' }}
+            >
+              {`Have you verified the final Production values, Norms and Table reports before releasing for team review?`}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeReleaseDialogBox}>Cancel</Button>
+            <Button onClick={submitConfirmation} autoFocus>
+              Submit
+            </Button>
+          </DialogActions>
+        </Dialog>
       </div>
     </div>
   )

@@ -311,3 +311,25 @@ a.k-grid-header-menu.k-grid-column-menu {
 .custom-bold-row td {
   font-weight: bold !important;
 }
+
+/* Release Button Styles */
+.btn-release {
+  background-color: #cdbf9f !important;
+  color: white !important;
+  border-radius: 4px;
+  text-transform: none;
+  font-weight: 600;
+  font-size: 0.7rem;
+  padding: 4px 20px;
+  transition: all 0.3s ease;
+}
+
+.btn-release:hover {
+  background-color: #a38951 !important;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.btn-release:disabled {
+  background-color: #e0e0e0 !important;
+  color: rgba(0, 0, 0, 0.26) !important;
+}

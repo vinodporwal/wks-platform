@@ -378,7 +378,7 @@ export default function PlantContributionLastFourYears() {
                 permissions={{
                   textAlignment: 'center',
                   showCalculate: false,
-                  showFinalSubmit: idx === 0,
+                  showFinalSubmit: false,
                   showTitle: true,
                 }}
                 handleRelease={handleRelease}
