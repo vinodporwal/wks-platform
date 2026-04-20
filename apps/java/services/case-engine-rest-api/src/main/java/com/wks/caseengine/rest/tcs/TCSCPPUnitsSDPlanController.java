@@ -30,38 +30,50 @@ public class TCSCPPUnitsSDPlanController {
     @Autowired
     private TCSCPPUnitsSDPlanService tcsCppUnitsSDPlanService;
 
-    @GetMapping("/cpp-unit-sd-plan/{financialYear}/{siteId}")
-    public ResponseEntity<List<TCSCPPUnitsSDPlanDTO>> getTCSCPPUnitsSDPlan(@PathVariable String financialYear, @PathVariable String siteId) {
+    @GetMapping("/cpp-unit-sd-plan/{financialYear}/{verticalId}/{siteId}")
+    public ResponseEntity<List<TCSCPPUnitsSDPlanDTO>> getTCSCPPUnitsSDPlan(@PathVariable String financialYear, @PathVariable String verticalId, @PathVariable String siteId) {
 
         if(financialYear == null || financialYear.isEmpty() || financialYear.length() != 4) {
             throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
         }
 
-        List<TCSCPPUnitsSDPlanDTO> tcsCppUnitsSDPlanDTOs = tcsCppUnitsSDPlanService.getTCSCPPUnitsSDPlan(financialYear, UUID.fromString(siteId));
+        if(verticalId == null || verticalId.isEmpty()) { 
+            throw new RestInvalidArgumentException("Vertical ID cannot be null", null);
+        }
+
+        List<TCSCPPUnitsSDPlanDTO> tcsCppUnitsSDPlanDTOs = tcsCppUnitsSDPlanService.getTCSCPPUnitsSDPlan(financialYear, UUID.fromString(verticalId), UUID.fromString(siteId));
 
         System.out.println("tcsCppUnitsSDPlanDTOs: " + tcsCppUnitsSDPlanDTOs);
         return ResponseEntity.ok(tcsCppUnitsSDPlanDTOs);
     }
 
-    @PostMapping("/cpp-unit-sd-plan/carry-forward/{financialYear}/{siteId}")
-    public ResponseEntity<AOPMessageVM> carryForwardTCSCPPUnitsSDPlan(@PathVariable String financialYear, @PathVariable String siteId) {
+    @PostMapping("/cpp-unit-sd-plan/carry-forward/{financialYear}/{verticalId}/{siteId}")
+    public ResponseEntity<AOPMessageVM> carryForwardTCSCPPUnitsSDPlan(@PathVariable String financialYear, @PathVariable String verticalId, @PathVariable String siteId) {
 
         if(financialYear == null || financialYear.isEmpty() || financialYear.length() != 4) {
             throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
         }
 
-        AOPMessageVM response = tcsCppUnitsSDPlanService.carryForwardTCSCPPUnitsSDPlan(financialYear, UUID.fromString(siteId)); 
+        if(verticalId == null || verticalId.isEmpty()) { 
+            throw new RestInvalidArgumentException("Vertical ID cannot be null", null);
+        }
+
+        AOPMessageVM response = tcsCppUnitsSDPlanService.carryForwardTCSCPPUnitsSDPlan(financialYear, UUID.fromString(verticalId), UUID.fromString(siteId)); 
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/cpp-unit-sd-plan/{financialYear}/{siteId}")
-    public ResponseEntity<Void> saveTCSCPPUnitsSDPlan(@RequestBody List<TCSCPPUnitsSDPlanDTO> tcsCppUnitsSDPlanDTOs, @PathVariable String financialYear, @PathVariable String siteId) {
+    @PostMapping("/cpp-unit-sd-plan/{financialYear}/{verticalId}/{siteId}")
+    public ResponseEntity<Void> saveTCSCPPUnitsSDPlan(@RequestBody List<TCSCPPUnitsSDPlanDTO> tcsCppUnitsSDPlanDTOs, @PathVariable String financialYear, @PathVariable String verticalId, @PathVariable String siteId) {
 
         if(financialYear == null || financialYear.isEmpty() || financialYear.length() != 4) {
             throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
         }
 
-        tcsCppUnitsSDPlanService.saveTCSCPPUnitsSDPlan(tcsCppUnitsSDPlanDTOs, UUID.fromString(siteId), financialYear);
+        if(verticalId == null || verticalId.isEmpty()) { 
+            throw new RestInvalidArgumentException("Vertical ID cannot be null", null);
+        }
+
+        tcsCppUnitsSDPlanService.saveTCSCPPUnitsSDPlan(tcsCppUnitsSDPlanDTOs, UUID.fromString(verticalId), UUID.fromString(siteId), financialYear);
         return ResponseEntity.ok().build();
     }
 
@@ -76,16 +88,21 @@ public class TCSCPPUnitsSDPlanController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/cpp-unit-sd-plan/export/{financialYear}/{siteId}")
+    @GetMapping("/cpp-unit-sd-plan/export/{financialYear}/{verticalId}/{siteId}")
     public ResponseEntity<byte[]> exportTCSCPPUnitsSDPlan(
         @PathVariable String financialYear, 
+        @PathVariable String verticalId, 
         @PathVariable String siteId) {
         
         if(financialYear == null || financialYear.isEmpty() || financialYear.length() != 4) {
             throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
         }
 
-        byte[] excelBytes = tcsCppUnitsSDPlanService.exportTCSCPPUnitsSDPlan(financialYear, UUID.fromString(siteId));
+        if(verticalId == null || verticalId.isEmpty()) { 
+            throw new RestInvalidArgumentException("Vertical ID cannot be null", null);
+        }
+
+        byte[] excelBytes = tcsCppUnitsSDPlanService.exportTCSCPPUnitsSDPlan(financialYear, UUID.fromString(verticalId), UUID.fromString(siteId));
         
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
@@ -96,9 +113,10 @@ public class TCSCPPUnitsSDPlanController {
             .body(excelBytes);
     }
 
-    @PostMapping("/cpp-unit-sd-plan/import/{financialYear}/{siteId}")
+    @PostMapping("/cpp-unit-sd-plan/import/{financialYear}/{verticalId}/{siteId}")
     public ResponseEntity<AOPMessageVM> importExcel(
         @PathVariable String financialYear,
+        @PathVariable String verticalId,
         @PathVariable String siteId,
         @RequestParam("file") MultipartFile file) {
         
@@ -106,7 +124,11 @@ public class TCSCPPUnitsSDPlanController {
             throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
         }
 
-        AOPMessageVM response = tcsCppUnitsSDPlanService.importExcel(UUID.fromString(siteId), financialYear, file);
+        if(verticalId == null || verticalId.isEmpty()) { 
+            throw new RestInvalidArgumentException("Vertical ID cannot be null", null);
+        }
+
+        AOPMessageVM response = tcsCppUnitsSDPlanService.importExcel(UUID.fromString(verticalId), UUID.fromString(siteId), financialYear, file);
         return ResponseEntity.ok(response);
     }
 }

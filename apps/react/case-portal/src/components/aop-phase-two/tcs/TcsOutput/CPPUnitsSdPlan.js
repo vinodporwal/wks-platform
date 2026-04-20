@@ -19,6 +19,7 @@ const CPPUnitsSdPlan = ({
   AOP_YEAR,
   currentTab,
   SITE_ID,
+  VERTICAL_ID,
   snackbarData,
   setSnackbarData,
   snackbarOpen,
@@ -73,6 +74,7 @@ const CPPUnitsSdPlan = ({
 
       const response = await TcsOutputApiService.getCPPUnitsSdPlanData(
         keycloak,
+        VERTICAL_ID,
         apiYear,
         SITE_ID,
       )
@@ -185,6 +187,7 @@ const CPPUnitsSdPlan = ({
     try {
       await TcsOutputApiService.exportCPPUnitsSdPlanExcel(
         keycloak,
+        VERTICAL_ID,
         SITE_ID,
         apiYear,
       )

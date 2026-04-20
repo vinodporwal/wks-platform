@@ -107,6 +107,7 @@ public class TCSNetCapacityServiceImpl implements TCSNetCapacityService {
                     aopYear,
                     vertical.getName().toUpperCase(),
                     site.getId(),
+                plantId != null ? null : UUID.fromString(verticalId),
                     capacityType
             // uom
             );
@@ -168,6 +169,7 @@ public class TCSNetCapacityServiceImpl implements TCSNetCapacityService {
             String aopYear,
             String verticalName,
             UUID siteId,
+            UUID verticalId,
             String capacityType
     // String uom
     ) {
@@ -181,7 +183,7 @@ public class TCSNetCapacityServiceImpl implements TCSNetCapacityService {
                   procedureName = "CRUDE_DTA_GetPlantNetCapacity";
                 } else {
                     // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_OutPut";
-                    procedureName = "GetTcsUnitCapacity_OutPut";
+                    procedureName = "GetTcsNetUnitCapacity_OutPut";
                 }
             }
             
@@ -211,11 +213,16 @@ public class TCSNetCapacityServiceImpl implements TCSNetCapacityService {
             }
 
             else {
-                query.setParameter(1, siteId);
-                query.setParameter(2, aopYear);
-                query.setParameter(3, capacityType);
-                log.debug("Implementation: getData() - Parameters - siteId: {}, aopYear: {}, capacityType: {}", 
-                        siteId, aopYear, capacityType);
+                // query.setParameter(1, siteId);
+                // query.setParameter(2, aopYear);
+                // query.setParameter(3, capacityType);
+                // log.debug("Implementation: getData() - Parameters - siteId: {}, aopYear: {}, capacityType: {}", 
+                //         siteId, aopYear, capacityType);
+
+                query.setParameter("verticalId", verticalId);
+                query.setParameter("siteId", siteId);
+                query.setParameter("aopYear", aopYear);
+                query.setParameter("capacityType", capacityType);
             }
             
             @SuppressWarnings("unchecked")

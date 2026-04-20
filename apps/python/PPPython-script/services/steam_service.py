@@ -531,21 +531,21 @@ HRSG_ASSETS_DEFAULT = {
     "HRSG1": {
         "min_capacity_mt": 60.0,
         "max_capacity_mt": 136.0,
-        "efficiency": 1.03,
+        "efficiency": 1.00,
         "steam_type": "SHP",
         "linked_gt": "GT1",
     },
     "HRSG2": {
         "min_capacity_mt": 60.0,
         "max_capacity_mt": 136.0,
-        "efficiency": 1.03,
+        "efficiency": 1.00,
         "steam_type": "SHP",
         "linked_gt": "GT2",
     },
     "HRSG3": {
         "min_capacity_mt": 60.0,
         "max_capacity_mt": 136.0,
-        "efficiency": 1.03,
+        "efficiency": 1.00,
         "steam_type": "SHP",
         "linked_gt": "GT3",
     },
@@ -613,7 +613,7 @@ def load_hrsg_assets_from_db():
             hrsg_assets[hrsg_name] = {
                 "min_capacity_mt": float(row[1]) if row[1] else 60.0,
                 "max_capacity_mt": float(row[2]) if row[2] else 136.0,
-                "efficiency": float(row[3]) if row[3] else 1.03,
+                "efficiency": 1.00,
                 "steam_type": row[4] if row[4] else "SHP",
                 "linked_gt": linked_gt or hrsg_name.replace("HRSG", "GT"),
             }
@@ -880,7 +880,7 @@ def calculate_shp_generation_capacity(hrsg_availability: dict) -> dict:
             # 2. SUPPLEMENTARY FIRING capacity from HRSG
             min_capacity_per_hr = hrsg_data["min_capacity_mt"]  # 60 MT/hr
             max_capacity_per_hr = hrsg_data["max_capacity_mt"]  # 136 MT/hr
-            efficiency = hrsg_data["efficiency"]  # 103%
+            efficiency = hrsg_data["efficiency"]  # 100%
             
             # Monthly supplementary capacity = Hours × Capacity × Efficiency
             supp_min_month = min_capacity_per_hr * hours * efficiency
@@ -1376,7 +1376,7 @@ def calculate_hrsg_min_load_and_excess_steam(
         if hrsg_data["is_available"]:
             hours = hrsg_data["operational_hours"]
             min_capacity_per_hr = hrsg_data["min_capacity_mt"]  # 60 MT/hr
-            efficiency = hrsg_data["efficiency"]  # 1.03
+            efficiency = hrsg_data["efficiency"]  # 1.00
             
             # Free steam from GT exhaust
             free_steam_mt = hrsg_data.get("free_steam_mt", 0.0)

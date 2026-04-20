@@ -60,14 +60,7 @@ public class ProductionVolumeDataReportController {
 	@PostMapping(value = "/report/month-wise/consumption-summary")
 	public ResponseEntity<AOPMessageVM> updateReportForMonthWiseConsumptionSummaryData(@RequestParam String plantId,
 			@RequestParam String year,@RequestBody List<MonthWiseConsumptionSummaryDTO> dataList) {
-		String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
-		AOPMessageVM response =null;
-		if(verticalName.equalsIgnoreCase("MEG")) {
-			 response = productionVolumeDataReportService.updateReportForMonthWiseConsumptionSummaryDataDB2(plantId, year, dataList);
-		}else {
-			 response = productionVolumeDataReportService.updateReportForMonthWiseConsumptionSummaryData(plantId, year, dataList);
-		}
-		
+		 AOPMessageVM response = productionVolumeDataReportService.updateReportForMonthWiseConsumptionSummaryDataDB2(plantId, year, dataList);
 		return ResponseEntity.status(response.getCode()).body(response);
 	}
 
@@ -83,14 +76,8 @@ public class ProductionVolumeDataReportController {
 	public ResponseEntity<AOPMessageVM> updateReportForPlantProductionPlanData(@RequestParam String plantId,
 			@RequestParam String year,@RequestParam(required = false) String reportType,
 			@RequestBody List<AnnualProductionPlanReportDto> dataList) {
-		String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
-		AOPMessageVM response =null;
-		if(verticalName.equalsIgnoreCase("MEG")) {
-			 response =productionVolumeDataReportService.updateReportForPlantProductionPlanDataDB2(plantId, year, dataList,reportType);
-		}else {
-			 response = productionVolumeDataReportService.updateReportForPlantProductionPlanData(plantId, year, dataList,reportType);
-		}
-		
+	
+		 AOPMessageVM	 response =productionVolumeDataReportService.updateReportForPlantProductionPlanDataDB2(plantId, year, dataList,reportType);
 		return ResponseEntity.status(response.getCode()).body(response);
 	}
 	

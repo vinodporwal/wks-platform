@@ -253,6 +253,11 @@ public class SlowdownPlanController {
         return ResponseEntity.ok("Plant with ID " + plantMaintenanceTransactionId + " deleted successfully");
     }
 	
+	@DeleteMapping("/slowdown")
+    public AOPMessageVM deleteMultipleSlowdown(@RequestParam List<UUID> plantMaintenanceTransactionIds,@RequestParam UUID plantId) {
+	  	return shutDownPlanService.deleteMultipleSlowdown(plantMaintenanceTransactionIds,plantId);
+    }
+	
 	@PostMapping(value="/slowdown-configuration")
 	public AOPMessageVM saveSlowdownConfigurationData(@RequestParam String plantId,@RequestParam String year, @RequestBody List<Map<String, Object>> payload){
 		List<NormAttributeTransactionsDTO> dtoList = new ArrayList<>();

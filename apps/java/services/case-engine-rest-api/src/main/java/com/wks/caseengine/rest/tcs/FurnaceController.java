@@ -32,13 +32,13 @@ public class FurnaceController {
     @Autowired
     private FurnaceService furnaceService;
 
-    @GetMapping({"/furnace/{financialYear}/{siteId}/{plantId}" , "/furnace/{financialYear}/{siteId}"})
-    public MasterFurnaceDTO getFurnaceData(@PathVariable String financialYear, @PathVariable String siteId, @PathVariable(required = false) String plantId) {
+    @GetMapping({"/furnace/{financialYear}/{siteId}/{plantId}" , "/furnace-output/{financialYear}/{siteId}/{verticalId}"})
+    public MasterFurnaceDTO getFurnaceData(@PathVariable String financialYear, @PathVariable String siteId, @PathVariable(required = false) String verticalId, @PathVariable(required = false) String plantId) {
 
         if (plantId == null) { 
-            return furnaceService.getFurnaceData(financialYear, UUID.fromString(siteId), null);
+            return furnaceService.getFurnaceData(financialYear, UUID.fromString(siteId), UUID.fromString(verticalId), null);
         }
-        return furnaceService.getFurnaceData(financialYear, UUID.fromString(siteId), UUID.fromString(plantId));
+        return furnaceService.getFurnaceData(financialYear, UUID.fromString(siteId),null, UUID.fromString(plantId));
     }
 
     @PostMapping("/furnace/carry-forward/{financialYear}/{siteId}/{plantId}")
@@ -57,6 +57,7 @@ public class FurnaceController {
 
     @GetMapping("/furnace/export")
     public ResponseEntity<byte[]> exportFurnace(
+        @RequestParam String verticalId,
         @RequestParam String siteId,
         @RequestParam String financialYear,
         @RequestParam(required = false) String plantId) {
@@ -64,6 +65,7 @@ public class FurnaceController {
         String sheetName = "Furnace_" + financialYear.substring(0,4) + ".xlsx";
 
         byte[] excelData = furnaceService.exportFurnace(
+            UUID.fromString(verticalId),
             UUID.fromString(siteId),
             financialYear,
             plantId != null ? UUID.fromString(plantId) : null);

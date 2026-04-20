@@ -10,6 +10,7 @@ const CrudBlendWindow = ({
   AOP_YEAR,
   currentTab,
   SITE_ID,
+  VERTICAL_ID,
   snackbarData,
   setSnackbarData,
   snackbarOpen,
@@ -33,6 +34,7 @@ const CrudBlendWindow = ({
       const carryForwardResponse =
         await TcsApiService.carryForwardCrudBlendWindow(
           keycloak,
+          VERTICAL_ID,
           apiYear,
           SITE_ID,
           PLANT_ID,
@@ -56,11 +58,12 @@ const CrudBlendWindow = ({
   // Fetch all tables data once
   const fetchAllTablesData = useCallback(
     async (skipCarryForward = false) => {
-      if (!PLANT_ID || !AOP_YEAR || !SITE_ID) {
+      if (!PLANT_ID || !AOP_YEAR || !SITE_ID || !VERTICAL_ID) {
         console.warn('Missing required params:', {
           PLANT_ID,
           AOP_YEAR,
           SITE_ID,
+          VERTICAL_ID,
         })
         return
       }
@@ -74,6 +77,7 @@ const CrudBlendWindow = ({
 
         const response = await TcsApiService.getCrudBlendWindowData(
           keycloak,
+          VERTICAL_ID,
           PLANT_ID,
           apiYear,
           SITE_ID,
@@ -161,6 +165,7 @@ const CrudBlendWindow = ({
           PLANT_ID={PLANT_ID}
           AOP_YEAR={AOP_YEAR}
           SITE_ID={SITE_ID}
+          VERTICAL_ID={VERTICAL_ID}
           tableData={allTablesData[config.key]}
           snackbarData={snackbarData}
           setSnackbarData={setSnackbarData}

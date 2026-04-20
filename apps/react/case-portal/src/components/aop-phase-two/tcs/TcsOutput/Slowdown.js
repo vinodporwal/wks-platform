@@ -233,6 +233,7 @@ const Slowdown = ({
       <Stack sx={{ mt: 2 }}>
         <AdvanceKendoTable
           title='TCS Slowdown'
+          loading={loading}
           rows={rows}
           setRows={setRows}
           fetchData={fetchSlowdownData}
@@ -254,6 +255,7 @@ const Slowdown = ({
           permissions={permissions}
           readonly={true}
           handleExport={handleExport}
+          groupBy={['particulates']}
         />
       </Stack>
     </Box>

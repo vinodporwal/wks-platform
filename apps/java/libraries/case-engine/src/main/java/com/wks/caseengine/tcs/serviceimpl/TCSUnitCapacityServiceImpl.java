@@ -126,6 +126,7 @@ Verticals vertical = null;
                 aopYear,
                 vertical.getName().toUpperCase(),
                 site.getId(),
+                plantId != null ? null : UUID.fromString(verticalId),
                 capacityType
                // uom
             );  
@@ -195,6 +196,7 @@ Verticals vertical = null;
         String aopYear,
         String verticalName,
         UUID siteId,
+        UUID verticalId,
         String capacityType
     //    String uom
     ) {
@@ -220,7 +222,7 @@ Verticals vertical = null;
             }
             else {
               //  sql = "EXEC " + procedureName + " @aopYear = :aopYear, @capacityType = :capacityType";
-              sql = "EXEC " + procedureName + " ?, ?, ?";
+              sql = "EXEC " + procedureName + " @verticalId = :verticalId, @siteId = :siteId, @aopYear = :aopYear, @capacityType = :capacityType";
 
             }
 
@@ -234,9 +236,10 @@ Verticals vertical = null;
             query.setParameter("capacityType", capacityType);  }
 
             else {
-                query.setParameter(1, siteId);
-                query.setParameter(2, aopYear);      
-                query.setParameter(3, capacityType);
+               query.setParameter("verticalId", verticalId);
+               query.setParameter("siteId", siteId);
+               query.setParameter("aopYear", aopYear);
+               query.setParameter("capacityType", capacityType);
 
             }
          //   query.setParameter("uom", uom);
@@ -870,7 +873,7 @@ Verticals vertical = null;
                     dto.setParticulates(getStringCellValue(row.getCell(col++)));
 
                     if (isDesign) {
-                        // KBPSD column ? January value
+                        // KBPSD column → January value
                         dto.setJan(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
 
                         // Remark

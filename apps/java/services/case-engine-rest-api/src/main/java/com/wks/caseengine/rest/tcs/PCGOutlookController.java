@@ -27,14 +27,19 @@ public class PCGOutlookController {
     @Autowired
     private PCGOutlookService service;
 
-    @GetMapping("pcg-outlook/{siteId}/{financialYear}")
-    public List<PCGOutlookDTO> getPCGOutlook(@PathVariable String siteId, @PathVariable String financialYear) {
-        return service.getData(UUID.fromString(siteId), financialYear);
+    @GetMapping("pcg-outlook/{verticalId}/{siteId}/{financialYear}")
+    public List<PCGOutlookDTO> getPCGOutlook(@PathVariable String verticalId, @PathVariable String siteId, @PathVariable String financialYear) {
+
+        if(verticalId == null || verticalId.isEmpty()) {  
+            throw new RestInvalidArgumentException("Vertical ID cannot be null", null);
+        }
+        return service.getData(UUID.fromString(verticalId), UUID.fromString(siteId), financialYear);
     }
 
     @PostMapping("pcg-outlook/carry-forward")
     public AOPMessageVM carryForwardPCGOutlook(
         @RequestParam String financialYear,
+        @RequestParam String verticalId,
         @RequestParam String siteId) {
             if(financialYear == null || financialYear.isEmpty()) {
                 throw new RestInvalidArgumentException("Financial year cannot be null", null);
@@ -42,22 +47,40 @@ public class PCGOutlookController {
             if(siteId == null || siteId.isEmpty()) {
                 throw new RestInvalidArgumentException("Site ID cannot be null", null);
             }
-            return service.carryForwardPCGOutlook(financialYear, UUID.fromString(siteId));
+
+            if(verticalId == null || verticalId.isEmpty()) {
+                throw new RestInvalidArgumentException("Vertical ID cannot be null", null);
+            }
+            return service.carryForwardPCGOutlook(financialYear, UUID.fromString(verticalId), UUID.fromString(siteId));
     }
 
-    @PostMapping("pcg-outlook/{siteId}/{financialYear}")
-    public void savePCGOutlook(@PathVariable String siteId, @PathVariable String financialYear, @RequestBody List<PCGOutlookDTO> data) {
-        service.saveData(data, financialYear, UUID.fromString(siteId));
+    @PostMapping("pcg-outlook/{verticalId}/{siteId}/{financialYear}")
+    public void savePCGOutlook(@PathVariable String verticalId, @PathVariable String siteId, @PathVariable String financialYear, @RequestBody List<PCGOutlookDTO> data) {
+        if(verticalId == null || verticalId.isEmpty()) {
+            throw new RestInvalidArgumentException("Vertical ID cannot be null", null);
+        }
+        if(siteId == null || siteId.isEmpty()) {
+            throw new RestInvalidArgumentException("Site ID cannot be null", null);
+        }
+        if(financialYear == null || financialYear.isEmpty()) {
+            throw new RestInvalidArgumentException("Financial year cannot be null", null);
+        }
+        service.saveData(data, financialYear, UUID.fromString(verticalId), UUID.fromString(siteId));
     }
 
     @GetMapping("pcg-outlook/export")
     public ResponseEntity<byte[]> exportPCGOutlook(
+        @RequestParam String verticalId,
         @RequestParam String siteId,
         @RequestParam String financialYear) {
 
+        if(verticalId == null || verticalId.isEmpty()) { 
+            throw new RestInvalidArgumentException("Vertical ID cannot be null", null);
+        }
         String sheetName = "PCGOutlook_" + financialYear.substring(0,4) + ".xlsx";
 
         byte[] excelData = service.exportPCGOutlook(
+            UUID.fromString(verticalId),
             UUID.fromString(siteId),
             financialYear);
 
@@ -72,11 +95,16 @@ public class PCGOutlookController {
 
     @PostMapping("pcg-outlook/import")
     public AOPMessageVM importPCGOutlook(
+        @RequestParam String verticalId,
         @RequestParam String siteId,
         @RequestParam String financialYear,
         @RequestParam("file") MultipartFile file) {
 
+        if(verticalId == null || verticalId.isEmpty()) { 
+            throw new RestInvalidArgumentException("Vertical ID cannot be null", null);
+        }
         return service.importPCGOutlook(
+            UUID.fromString(verticalId),
             UUID.fromString(siteId),
             financialYear,
             file);

@@ -82,11 +82,18 @@ const TcsInput = () => {
 
   // Check workflow status on mount
   useEffect(() => {
-    if (PLANT_ID && AOP_YEAR && SITE_ID && VERTICAL_ID && PLANT_NAME) {
+    if (
+      PLANT_ID &&
+      AOP_YEAR &&
+      SITE_ID &&
+      VERTICAL_ID &&
+      PLANT_NAME &&
+      tabObj.length > 0
+    ) {
       checkSubmitEligibility()
+      checkWorkflowTriggered()
     }
-    checkWorkflowTriggered()
-  }, [PLANT_ID, AOP_YEAR, SITE_ID, VERTICAL_ID, PLANT_NAME])
+  }, [PLANT_ID, AOP_YEAR, SITE_ID, VERTICAL_ID, PLANT_NAME, tabObj])
 
   const checkSubmitEligibility = async (showMessage = true) => {
     try {
@@ -211,10 +218,12 @@ const TcsInput = () => {
   }
 
   // Get current tab object (has id, displayName, displaySequence)
-  const currentTab = tabObj[tabIndex] || {}
+  const currentTab =
+    tabIndex !== null && tabObj[tabIndex] ? tabObj[tabIndex] : {}
 
   const userRole = useMemo(() => {
     let allUsers = keycloak?.realmAccess?.roles
+    console.log('allUsers', allUsers)
     return getUserRole(allUsers)
   }, [keycloak?.realmAccess?.roles])
 
@@ -227,6 +236,15 @@ const TcsInput = () => {
     fetchTabsData()
   }, [PLANT_ID, SITE_ID, VERTICAL_ID])
 
+  // Reset tabIndex to 0 when tabObj changes (after filtering)
+  useEffect(() => {
+    if (tabObj.length > 0) {
+      setTabIndex(0)
+    } else {
+      setTabIndex(null)
+    }
+  }, [tabObj])
+
   const fetchTabsData = async () => {
     try {
       if (!PLANT_ID || !SITE_ID || !VERTICAL_ID) return
@@ -234,7 +252,6 @@ const TcsInput = () => {
       // First API: Get list of all tabs
       const allTabsResponse = await TcsApiService.getTcsAllTabs(keycloak)
       const allTabsList = allTabsResponse?.data?.configurationTypeList || []
-      setTabObj(allTabsList)
 
       // Second API: Get array of tab IDs to show
       const visibleTabsResponse = await TcsApiService.getTcsVisibleTabs(
@@ -263,11 +280,8 @@ const TcsInput = () => {
           .filter((tab) => visibleTabIdsLower.includes(tab.id.toLowerCase()))
           .sort((a, b) => a.displaySequence - b.displaySequence)
         setTabObj(filteredTabs)
-      } else if (
-        allTabsList &&
-        (!visibleTabIds || visibleTabIds.length === 0)
-      ) {
-        // If no visible tabs are returned, show all tabs
+      } else {
+        // If no visible tabs are returned, show empty
         console.warn('No visible tabs configured')
         setTabObj([])
       }
@@ -450,6 +464,8 @@ const TcsInput = () => {
     }
   }
 
+  console.log('userRole', userRole)
+
   return (
     <Box
       sx={{
@@ -473,6 +489,7 @@ const TcsInput = () => {
         </Box>
 
         {/* Submit button and History icon - Fixed on right */}
+        {tabObj.length !== 0 && (
         <SubmitSection
           onSubmitClick={() => setRemarkDialogOpen(true)}
           onViewHistory={handleViewHistory}
@@ -481,16 +498,19 @@ const TcsInput = () => {
           isWorkflowTriggered={isWorkflowTriggered}
           submitTooltip={submitTooltip}
         />
+        )}
       </Box>
 
       {/* Tab Content */}
       <Box>
-        {renderTabComponent(currentTab.displayName, {
+        {currentTab?.displayName &&
+          renderTabComponent(currentTab.displayName, {
           currentTab,
           PLANT_ID,
           PLANT_NAME,
           AOP_YEAR,
           SITE_ID,
+            VERTICAL_ID,
           snackbarData,
           setSnackbarData,
           snackbarOpen,

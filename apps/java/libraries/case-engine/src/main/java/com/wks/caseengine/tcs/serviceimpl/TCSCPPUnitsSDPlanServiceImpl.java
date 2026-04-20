@@ -55,10 +55,10 @@ public class TCSCPPUnitsSDPlanServiceImpl implements TCSCPPUnitsSDPlanService {
     private EntityManager entityManager;
 
     @Override
-    public List<TCSCPPUnitsSDPlanDTO> getTCSCPPUnitsSDPlan(String financialYear, UUID siteId) {
+    public List<TCSCPPUnitsSDPlanDTO> getTCSCPPUnitsSDPlan(String financialYear, UUID verticalId, UUID siteId) {
 
         //convert the projection to dto
-        List<TCSCPPUnitsSDPlanProjection> tcsCppUnitsSDPlanProjections = tcsCppUnitsSDPlanRepository.findByFinancialYearAndSiteId(financialYear, siteId);
+        List<TCSCPPUnitsSDPlanProjection> tcsCppUnitsSDPlanProjections = tcsCppUnitsSDPlanRepository.findByFinancialYearAndVerticalIdAndSiteId(financialYear, verticalId, siteId);
         System.out.println("successfully fetched the data");
         
         List<TCSCPPUnitsSDPlanDTO> tcsCppUnitsSDPlanDTOs = new ArrayList<>();
@@ -105,12 +105,13 @@ public class TCSCPPUnitsSDPlanServiceImpl implements TCSCPPUnitsSDPlanService {
 
     @Override
     @Transactional
-    public AOPMessageVM carryForwardTCSCPPUnitsSDPlan(String financialYear, UUID siteId) {
+    public AOPMessageVM carryForwardTCSCPPUnitsSDPlan(String financialYear, UUID verticalId, UUID siteId) {
         try {
            String procedureName = "TCS_CPPUnitsSD_Plan_CarryForward";
-           String sql = "EXEC " + procedureName + " @targetYear = :financialYear, @siteId = :siteId";
+           String sql = "EXEC " + procedureName + " @targetYear = :financialYear, @verticalId = :verticalId, @siteId = :siteId";
            Query query = entityManager.createNativeQuery(sql);
            query.setParameter("financialYear", financialYear);
+           query.setParameter("verticalId", verticalId);
            query.setParameter("siteId", siteId);
            query.executeUpdate();
            AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -129,7 +130,7 @@ public class TCSCPPUnitsSDPlanServiceImpl implements TCSCPPUnitsSDPlanService {
 
 
     @Override
-    public void saveTCSCPPUnitsSDPlan(List<TCSCPPUnitsSDPlanDTO> tcsCppUnitsSDPlanDTOs, UUID siteId, String financialYear) {
+    public void saveTCSCPPUnitsSDPlan(List<TCSCPPUnitsSDPlanDTO> tcsCppUnitsSDPlanDTOs, UUID verticalId, UUID siteId, String financialYear) {
        
         List<Object[]> updates = new ArrayList<>();
         List<Object[]> inserts = new ArrayList<>();
@@ -152,7 +153,7 @@ public class TCSCPPUnitsSDPlanServiceImpl implements TCSCPPUnitsSDPlanService {
              updates.add(new Object[] { dto.getMachine(), dto.getIbrDueDate(), dto.getGtMaintenance(), dto.getNoOfDays(), dto.getShutDownDate(), dto.getStartUpDate(), dto.getMajorJobs(), dto.getId() }); 
             } 
             else {
-                inserts.add(new Object[] { dto.getMachine(), dto.getIbrDueDate(), dto.getGtMaintenance(), dto.getNoOfDays(), dto.getShutDownDate(), dto.getStartUpDate(), dto.getMajorJobs(), siteId, financialYear });
+                inserts.add(new Object[] { dto.getMachine(), dto.getIbrDueDate(), dto.getGtMaintenance(), dto.getNoOfDays(), dto.getShutDownDate(), dto.getStartUpDate(), dto.getMajorJobs(), verticalId, siteId, financialYear });
             }
      
     }
@@ -165,7 +166,7 @@ public class TCSCPPUnitsSDPlanServiceImpl implements TCSCPPUnitsSDPlanService {
     }
 
     if(inserts.size() > 0) {  
-        String sql = "INSERT INTO TCS_CPPUnitsSD_Plan (Id, Machine, IBRDueDate, GTMaintenance, NoOfDays, ShutDownDate, StartUpDate, MajorJobs, Site_FK_Id, FinancialYear) VALUES (NEWID(), ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO TCS_CPPUnitsSD_Plan (Id, Machine, IBRDueDate, GTMaintenance, NoOfDays, ShutDownDate, StartUpDate, MajorJobs, Vertical_FK_Id, Site_FK_Id, FinancialYear) VALUES (NEWID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         jdbcTemplate.batchUpdate(sql, inserts);
     }
 
@@ -178,11 +179,11 @@ public void deleteTCSCPPUnitsSDPlan(UUID id) {
 }
 
     @Override
-    public byte[] exportTCSCPPUnitsSDPlan(String financialYear, UUID siteId) {
+    public byte[] exportTCSCPPUnitsSDPlan(String financialYear, UUID verticalId, UUID siteId) {
         
         try {
             // Get data
-            List<TCSCPPUnitsSDPlanDTO> dtoList = getTCSCPPUnitsSDPlan(financialYear, siteId);
+            List<TCSCPPUnitsSDPlanDTO> dtoList = getTCSCPPUnitsSDPlan(financialYear, verticalId, siteId);
             
             System.out.println("Data list: " + dtoList);
 
@@ -301,7 +302,7 @@ public void deleteTCSCPPUnitsSDPlan(UUID id) {
     }
 
     @Override
-    public AOPMessageVM importExcel(UUID siteId, String financialYear, MultipartFile file) {
+    public AOPMessageVM importExcel(UUID verticalId, UUID siteId, String financialYear, MultipartFile file) {
         
         try {
             List<TCSCPPUnitsSDPlanDTO> data = readTCSCPPUnitsSDPlan(file.getInputStream());
@@ -342,7 +343,7 @@ public void deleteTCSCPPUnitsSDPlan(UUID id) {
             // Try to save valid records
             if (!validRecords.isEmpty()) {
                 try {
-                    saveTCSCPPUnitsSDPlan(validRecords, siteId, financialYear);
+                    saveTCSCPPUnitsSDPlan(validRecords, verticalId, siteId, financialYear);
                 } catch (Exception e) {
                     // Mark all valid records as failed if save fails
                     System.out.println("Save failed: " + e.getMessage());

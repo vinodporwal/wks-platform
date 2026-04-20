@@ -24,6 +24,10 @@ import multiprocessing
 import threading
 
 from services.budget_service import calculate_budget_with_iteration
+from services.nmd_budget_comparison_service import (
+    write_full_year_comparison_file,
+    write_month_comparison_file,
+)
 from services.fixed_consumption_service import get_fixed_consumption_for_month, print_fixed_consumption
 from services.process_demand_service import (
     get_process_demand_for_month, 
@@ -477,6 +481,10 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
     max_workers = min(4, multiprocessing.cpu_count())
     print_lock  = threading.Lock()    # For console progress lines
     db_log_lock = threading.Lock()    # Serialise DB log saves to avoid prepared-stmt collisions
+    comparison_lock = threading.Lock()
+    completed_comparisons = []
+    comparison_folder = os.path.join(run_log_folder, "nmd_budget_comparisons")
+    bpc_csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "BPC.ods")
 
     # Thread-local storage so each worker thread has its own stdout buffer
     _tls = threading.local()
@@ -628,7 +636,44 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
             future_to_month = {executor.submit(_process_month, my): my for my in fy_months}
             month_results_list = []
             for future in concurrent.futures.as_completed(future_to_month):
-                month_results_list.append(future.result())
+                month_result = future.result()
+                month_results_list.append(month_result)
+
+                calculation_result = month_result.get("calculation_result")
+                if calculation_result:
+                    try:
+                        with comparison_lock:
+                            month_comparison_path = write_month_comparison_file(
+                                output_folder=comparison_folder,
+                                month=month_result["month"],
+                                year=month_result["year"],
+                                financial_year=financial_year,
+                                calculation_result=calculation_result,
+                                bpc_csv_path=bpc_csv_path,
+                            )
+                            month_result["comparison_file"] = month_comparison_path
+
+                            completed_comparisons.append((
+                                month_result["month"],
+                                month_result["year"],
+                                calculation_result,
+                            ))
+
+                            full_year_comparison_path = write_full_year_comparison_file(
+                                output_folder=comparison_folder,
+                                financial_year=financial_year,
+                                completed_months=completed_comparisons,
+                                bpc_csv_path=bpc_csv_path,
+                            )
+                            results["comparison_folder"] = comparison_folder
+                            results["full_year_comparison_file"] = full_year_comparison_path
+                    except Exception as comparison_error:
+                        month_result["comparison_error"] = str(comparison_error)
+                        with print_lock:
+                            _real_stdout.write(
+                                f"  [WARN] {month_result['month_name']} {month_result['year']}: comparison file generation failed - {comparison_error}\n"
+                            )
+                            _real_stdout.flush()
     finally:
         # Always restore real stdout
         sys.stdout = _real_stdout
@@ -680,6 +725,10 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
     print(f"Total Power Generated: {results['summary']['total_power_kwh']:,.0f} KWH")
     print(f"Total SHP Steam: {results['summary']['total_shp_mt']:,.2f} MT")
     print(f"Log folder: {run_log_folder}")
+    if results.get("comparison_folder"):
+        print(f"Comparison folder: {results['comparison_folder']}")
+    if results.get("full_year_comparison_file"):
+        print(f"Combined comparison file: {results['full_year_comparison_file']}")
     
     # Save summary
     summary_path = os.path.join(run_log_folder, "summary.txt")
@@ -692,6 +741,10 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
         f.write(f"Failed months: {results['summary']['failed']}/12\n")
         f.write(f"Total Power: {results['summary']['total_power_kwh']:,.0f} KWH\n")
         f.write(f"Total SHP: {results['summary']['total_shp_mt']:,.2f} MT\n\n")
+        if results.get("comparison_folder"):
+            f.write(f"Comparison folder: {results['comparison_folder']}\n")
+        if results.get("full_year_comparison_file"):
+            f.write(f"Combined comparison file: {results['full_year_comparison_file']}\n\n")
         
         f.write("MONTH-BY-MONTH QUICK RESULTS:\n")
         f.write("-" * 120 + "\n")
