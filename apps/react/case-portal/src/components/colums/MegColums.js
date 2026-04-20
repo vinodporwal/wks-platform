@@ -152,7 +152,7 @@ export const SlowDownMegColumns = [
     type: 'descLimit',
     widthT: 230,
     autoAdjust: false,
-    minWidth: 100,
+    minWidth: 200,
   },
 
   {

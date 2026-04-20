@@ -169,7 +169,7 @@ export const SlowDownPpColumns = [
     editable: true,
     widthT: 200,
     autoAdjust: false,
-    minWidth: 100,
+    minWidth: 200,
   },
 
   {

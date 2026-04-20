@@ -23,6 +23,8 @@ import exsternalSteamColumns from '../../../assets/kendo_config_exsternal_steam_
 import productionColumnsVmdYield from '../../../assets/kendo_config_vmd_yield_dynamic.json'
 
 const getConfigByType = (configType) => {
+  console.log('configType', configType)
+
   switch (configType) {
     case 'meg':
       return productionColumns

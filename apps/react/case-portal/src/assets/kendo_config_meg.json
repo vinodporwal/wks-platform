@@ -32,73 +32,73 @@
   {
     "field": "apr",
     "title": 4,
-
+    "minWidth": 100,
     "editable": true
   },
   {
     "field": "may",
     "title": 5,
-
+    "minWidth": 100,
     "editable": true
   },
   {
     "field": "jun",
     "title": 6,
-
+    "minWidth": 100,
     "editable": true
   },
   {
     "field": "jul",
     "title": 7,
-
+    "minWidth": 100,
     "editable": true
   },
   {
     "field": "aug",
     "title": 8,
-
+    "minWidth": 100,
     "editable": true
   },
   {
     "field": "sep",
     "title": 9,
-
+    "minWidth": 100,
     "editable": true
   },
   {
     "field": "oct",
     "title": 10,
-
+    "minWidth": 100,
     "editable": true
   },
   {
     "field": "nov",
     "title": 11,
-
+    "minWidth": 100,
     "editable": true
   },
   {
     "field": "dec",
     "title": 12,
-
+    "minWidth": 100,
     "editable": true
   },
   {
     "field": "jan",
     "title": 1,
-
+    "minWidth": 100,
     "editable": true
   },
   {
     "field": "feb",
     "title": 2,
-
+    "minWidth": 100,
     "editable": true
   },
   {
     "field": "mar",
     "title": 3,
-
+    "minWidth": 100,
     "editable": true
   },
   {
