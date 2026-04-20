@@ -106,6 +106,7 @@ if(plantId != null) {
                 aopYear,
                 vertical.getName().toUpperCase(),
                 site.getId(),
+                plantId != null ? null : UUID.fromString(verticalId),
                 site.getName().toUpperCase());
             List<TCSSlowdownDTO> resultsList = new ArrayList<>();
             //values mapping
@@ -131,6 +132,7 @@ if(plantId != null) {
                 aopYear,
                 vertical.getName().toUpperCase(),
                 site.getId(),
+                vertical.getId(),
                 site.getName().toUpperCase());
             map.put("headers", headers);
 
@@ -173,6 +175,7 @@ if(plantId != null) {
         String aopYear,
         String verticalName,
         UUID siteId,
+        UUID verticalId,
         String siteName) {
             
         try {            
@@ -196,7 +199,7 @@ if(plantId != null) {
             sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
             }
             else {
-                sql = "EXEC " + procedureName + " @siteId = :siteId, @aopYear = :aopYear";
+                sql = "EXEC " + procedureName + " @verticalId = :verticalId, @siteId = :siteId, @aopYear = :aopYear";
             }
 
             // Call the stored procedure
@@ -206,6 +209,7 @@ if(plantId != null) {
             query.setParameter("aopYear", aopYear);  
         }
         else {
+            query.setParameter("verticalId", verticalId);
             query.setParameter("siteId", siteId);
             query.setParameter("aopYear", aopYear);
         }
@@ -225,6 +229,7 @@ if(plantId != null) {
         String aopYear,
         String verticalName,
         UUID siteId1,
+        UUID verticalId,
         String siteName) {
 
            String siteId = siteId1.toString();
@@ -245,7 +250,7 @@ if(plantId != null) {
         callableSql = "{call " + procedureName + "(?, ?)}";
         }
         else {
-            callableSql = "{call " + procedureName + "(?, ?)}";
+            callableSql = "{call " + procedureName + "(?, ?, ?)}";
         }
 
         List<String> headers = new ArrayList<>();
@@ -260,8 +265,9 @@ if(plantId != null) {
             }
             else {
              //   stmt.setString(1, siteId.toString());
-                stmt.setString(1, siteId);
-                stmt.setString(2, aopYear);
+                stmt.setString(1, String.valueOf(verticalId));
+                stmt.setString(2, String.valueOf(siteId));
+                stmt.setString(3, aopYear);
             }
 
 			boolean hasResultSet = stmt.execute();
@@ -295,6 +301,8 @@ if(plantId != null) {
     public AOPMessageVM saveOrUpdate(
         String plantId,
         String year,
+        String verticalId,
+        String siteId,
         List<TCSSlowdownDTO> dtoList) {
 
         if (dtoList == null || dtoList.isEmpty()) {
@@ -348,6 +356,8 @@ if(plantId != null) {
                 }
                 entity.setPlantFkId(UUID.fromString(plantId));
                 entity.setAopYear(year);
+                entity.setVerticalFkId(UUID.fromString(verticalId));
+                entity.setSiteFkId(UUID.fromString(siteId));
                 entity.setTentativeDurationInDays(dto.getDurationInDays());
                 entity.setThroughputDuringSlowdown(dto.getThroughputDuringSlowdown());
                 entity.setThroughputUOM(dto.getThroughputUOM());
@@ -530,6 +540,8 @@ if(plantId != null) {
     public AOPMessageVM importExcel(
         String plantId,
         String year,
+        String verticalId,
+        String siteId,
         MultipartFile file) {
         
         try {
@@ -572,7 +584,7 @@ if(plantId != null) {
             // Try to save valid records
             if (!validRecords.isEmpty()) {
                 try {
-                    saveOrUpdate(plantId, year, validRecords);
+                    saveOrUpdate(plantId, year, verticalId, siteId, validRecords);
                 } catch (Exception e) {
                     // Mark all valid records as failed if save fails
                     System.out.println("Save failed: " + e.getMessage());
