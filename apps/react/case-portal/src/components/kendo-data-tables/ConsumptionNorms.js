@@ -769,6 +769,7 @@ const ConsumptionNorms = () => {
               width: 400,
               backdropFilter: 'blur(8px)',
               boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+              borderTop: '4px solid #22c55e', // ? green accent line
             },
           }}
         >
@@ -776,7 +777,7 @@ const ConsumptionNorms = () => {
             sx={{
               fontWeight: 700,
               fontSize: '1.2rem',
-              color: '#1f2d3d',
+              color: '#166534', // ? dark green title
               pb: 0.5,
             }}
           >
@@ -787,12 +788,14 @@ const ConsumptionNorms = () => {
             <DialogContentText
               sx={{
                 fontSize: '0.9rem',
-                color: '#5f6b7a',
+                color: '#4b5563',
                 lineHeight: 1.5,
               }}
             >
-              Please confirm that <b>Production</b>, <b>Norms</b>, and{' '}
-              <b>Reports</b> are verified before releasing for review.
+              Please confirm that <b style={{ color: '#16a34a' }}>Production</b>
+              , <b style={{ color: '#16a34a' }}>Norms</b>, and{' '}
+              <b style={{ color: '#16a34a' }}>Reports</b> are verified before
+              releasing for review.
             </DialogContentText>
           </DialogContent>
 
@@ -822,7 +825,7 @@ const ConsumptionNorms = () => {
               Release
             </Button>
           </DialogActions>
-        </Dialog>
+        </Dialog>{' '}
       </div>
     </div>
   )
