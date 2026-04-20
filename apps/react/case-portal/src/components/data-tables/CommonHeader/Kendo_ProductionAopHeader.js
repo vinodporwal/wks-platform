@@ -21,10 +21,11 @@ const monthFields = [
 
 const getEnhancedColDefs = ({ headerMap, valueFormat }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalChange, siteObject } = dataGridStore
+  const { verticalChange, siteObject, plantObject } = dataGridStore
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const lowerSiteName = siteObject?.name.toLowerCase()
+  const lowerPlantName = plantObject?.name.toLowerCase()
 
   let cols
 
@@ -35,6 +36,12 @@ const getEnhancedColDefs = ({ headerMap, valueFormat }) => {
   } else if (lowerVertName === 'pta' || lowerVertName === 'vcm') {
     cols = productionColDefsvcmpta
   } else if (lowerVertName === 'elastomer' && lowerSiteName === 'jmd') {
+    cols = productionColDefsElastomerJmd
+  } else if (
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'vmd' &&
+    lowerPlantName === 'acrylonitrile'
+  ) {
     cols = productionColDefsElastomerJmd
   } else {
     cols = productionColDefs

@@ -125,6 +125,7 @@ import SapBasedRefNorms from 'components/data-tables/Reports-kendo/SapBasedRefNo
 import SpecificConsumptionCalculation from 'components/kendo-data-tables/SpecificConsumptionCalculation'
 import ProductionOptimizer from 'components/kendo-data-tables/ProductionOptimizer'
 import CausticSodaLyeBasis from 'components/data-tables/Reports/CausticSodaLyeBasis'
+import MaterialBalance from 'components/kendo-data-tables/MaterialBalance'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -319,6 +320,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='aop-design-basis'>
                 <AopDesignBasis />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'material-balance',
+            element: (
+              <PrivateRoute routeId='material-balance'>
+                <MaterialBalance />
               </PrivateRoute>
             ),
           },
