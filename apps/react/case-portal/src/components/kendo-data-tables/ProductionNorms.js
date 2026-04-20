@@ -90,6 +90,10 @@ const ProductionNorms = ({ permissions }) => {
     lowerVertName === 'chemical' &&
     SITE_NAME_LOWERCASE === 'dmd' &&
     plantName === 'chlor alkali'
+  const IS_CHEMICAL_VMD_ACRYLONITRILE =
+    lowerVertName === 'chemical' &&
+    SITE_NAME_LOWERCASE === 'vmd' &&
+    plantName === 'acrylonitrile'
   const [loading, setLoading] = useState(false)
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -210,30 +214,31 @@ const ProductionNorms = ({ permissions }) => {
         ...row,
         total: row.total ?? findSum('1', row),
       }))
-
-      const result = validateTotalsWithIIR({
-        data: enrichedData,
-        rowsInKT,
-        rowsInMT,
-        selectedUnit,
-      })
-
-      if (!result.allMatch) {
-        const message = result.mismatches
-          .map((m) =>
-            m.error
-              ? `${m.displayName}: ${m.error}`
-              : `${m.displayName}: Expected ${m.iirValue.toFixed(2)} ${m.unit}, got ${m.calculatedTotal.toFixed(2)} ${m.unit}`,
-          )
-          .join('\n')
-
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: `Total validation failed:\n${message}`,
-          severity: 'error',
+      if (!IS_CHEMICAL_VMD_ACRYLONITRILE) {
+        const result = validateTotalsWithIIR({
+          data: enrichedData,
+          rowsInKT,
+          rowsInMT,
+          selectedUnit,
         })
-        setLoading(false)
-        return
+
+        if (!result.allMatch) {
+          const message = result.mismatches
+            .map((m) =>
+              m.error
+                ? `${m.displayName}: ${m.error}`
+                : `${m.displayName}: Expected ${m.iirValue.toFixed(2)} ${m.unit}, got ${m.calculatedTotal.toFixed(2)} ${m.unit}`,
+            )
+            .join('\n')
+
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: `Total validation failed:\n${message}`,
+            severity: 'error',
+          })
+          setLoading(false)
+          return
+        }
       }
       const requiredFields = ['remark']
 
@@ -527,7 +532,10 @@ const ProductionNorms = ({ permissions }) => {
           normParametersFKId: product.materialFKId,
           originalRemark: product.remark,
           remark: product.remark,
-          isEditable: IS_ELASTOMER_JMD_IIR ? true : false,
+          isEditable:
+            IS_ELASTOMER_JMD_IIR || IS_CHEMICAL_VMD_ACRYLONITRILE
+              ? true
+              : false,
           april: product?.april,
           may: product?.may,
           june: product?.june,
@@ -993,7 +1001,7 @@ const ProductionNorms = ({ permissions }) => {
 
   useEffect(() => {
     if (
-      IS_ELASTOMER_JMD_IIR &&
+      (IS_ELASTOMER_JMD_IIR || IS_CHEMICAL_VMD_ACRYLONITRILE) &&
       rows.length > 0 &&
       (rowsInKT.length > 0 || rowsInMT.length > 0)
     ) {
@@ -1027,7 +1035,14 @@ const ProductionNorms = ({ permissions }) => {
         })
       }
     }
-  }, [rows, rowsInKT, rowsInMT, selectedUnit, IS_ELASTOMER_JMD_IIR])
+  }, [
+    rows,
+    rowsInKT,
+    rowsInMT,
+    selectedUnit,
+    IS_ELASTOMER_JMD_IIR,
+    IS_CHEMICAL_VMD_ACRYLONITRILE,
+  ])
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
@@ -1114,7 +1129,10 @@ const ProductionNorms = ({ permissions }) => {
             calculationObject && Object.keys(calculationObject).length > 0
               ? permissions?.showCalculate ?? true
               : false,
-          saveBtn: IS_ELASTOMER_JMD_IIR ? true : permissions?.saveBtn ?? false,
+          saveBtn:
+            IS_ELASTOMER_JMD_IIR || IS_CHEMICAL_VMD_ACRYLONITRILE
+              ? true
+              : permissions?.saveBtn ?? false,
           units:
             lowerVertName === 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
           customHeight: permissions?.customHeight,
