@@ -37,6 +37,30 @@ const NetUnitCapacity = ({
 
   const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
 
+  // Helper function to calculate min, max, and sum from monthly values
+  const calculateAggregates = (row) => {
+    const monthValues = [
+      row.jan,
+      row.feb,
+      row.mar,
+      row.apr,
+      row.may,
+      row.jun,
+      row.jul,
+      row.aug,
+      row.sep,
+      row.oct,
+      row.nov,
+      row.dec,
+    ].map((v) => parseFloat(v) || 0)
+
+    const min = Math.min(...monthValues)
+    const max = Math.max(...monthValues)
+    const sum = monthValues.reduce((a, b) => a + b, 0)
+
+    return { min, max, sum }
+  }
+
   // Fetch Site Net Capacity data for this capacity type
   const fetchUnitCapacityData = useCallback(async () => {
     if (!SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
@@ -100,7 +124,16 @@ const NetUnitCapacity = ({
             isEditable: false,
           }
 
-          return [kbpsdRow, ktpdRow]
+          // return [kbpsdRow, ktpdRow]
+
+          // Calculate aggregates for both rows
+          const kbpsdAggregates = calculateAggregates(kbpsdRow)
+          const ktpdAggregates = calculateAggregates(ktpdRow)
+
+          return [
+            { ...kbpsdRow, ...kbpsdAggregates },
+            { ...ktpdRow, ...ktpdAggregates },
+          ]
         })
       }
 
@@ -262,6 +295,33 @@ const NetUnitCapacity = ({
       {
         title: 'Capacity',
         children: monthColumns,
+      },
+      {
+        field: 'min',
+        title: 'Min',
+        editable: false,
+        widthT: 100,
+        minWidth: 100,
+        type: 'number1',
+        format: valueFormat,
+      },
+      {
+        field: 'max',
+        title: 'Max',
+        editable: false,
+        widthT: 100,
+        minWidth: 100,
+        type: 'number1',
+        format: valueFormat,
+      },
+      {
+        field: 'sum',
+        title: 'Sum',
+        editable: false,
+        widthT: 100,
+        minWidth: 100,
+        type: 'number1',
+        format: valueFormat,
       },
     ]
   }, [headerMap, valueFormat])

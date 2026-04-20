@@ -89,6 +89,8 @@ export default function HeaderContent({ keycloak }) {
     '/user-form',
   ].includes(location.pathname)
 
+  const HIDE_PLANT_DROPDOWN = ['/tcs/tcs-output'].includes(location.pathname)
+
   if (['/dashboard'].includes(location.pathname))
     dispatch(openDrawer({ drawerOpen: false }))
 
@@ -615,7 +617,7 @@ export default function HeaderContent({ keycloak }) {
           )}
 
           {/* Plant */}
-          {!HIDE_DASHBOARD_DROPDOWN && (
+          {!HIDE_DASHBOARD_DROPDOWN && !HIDE_PLANT_DROPDOWN && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant='body2' className='custom-title-dropdown'>
                 Plant:

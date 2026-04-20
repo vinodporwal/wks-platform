@@ -390,24 +390,68 @@ if(plantId != null) {
                 }
 
                 // Validate required fields before saving
-                if (entity.getTentativeDurationInDays() == null || entity.getTentativeDurationInDays() <= 0) {
-                    throw new RestInvalidArgumentException("Tentative Duration (Days) must be greater than 0", null);
+                // For editable fields: always validate if field is editable for the user
+                // For non-editable fields: only validate if entity is new AND field was provided in payload
+                boolean isNewEntity = existingId == null;
+                
+                // Only validate durationInDays if it's editable for this role, or if new and value was provided
+                if (isFieldEditable(editableFields, "durationInDays")) {
+                    if (entity.getTentativeDurationInDays() == null || entity.getTentativeDurationInDays() <= 0) {
+                        throw new RestInvalidArgumentException("Tentative Duration (Days) must be greater than 0", null);
+                    }
+                } else if (isNewEntity && dto.getDurationInDays() != null) {
+                    // Non-editable field in new entity, but value was provided - validate it
+                    if (entity.getTentativeDurationInDays() == null || entity.getTentativeDurationInDays() <= 0) {
+                        throw new RestInvalidArgumentException("Tentative Duration (Days) must be greater than 0", null);
+                    }
                 }
 
-                if (entity.getThroughputDuringSlowdown() == null || entity.getThroughputDuringSlowdown() < 0) {
-                    throw new RestInvalidArgumentException("Throughput during Slowdown is required", null);
+                // Only validate throughputDuringSlowdown if it's editable for this role, or if new and value was provided
+                if (isFieldEditable(editableFields, "throughputDuringSlowdown")) {
+                    if (entity.getThroughputDuringSlowdown() == null || entity.getThroughputDuringSlowdown() < 0) {
+                        throw new RestInvalidArgumentException("Throughput during Slowdown is required", null);
+                    }
+                } else if (isNewEntity && dto.getThroughputDuringSlowdown() != null) {
+                    // Non-editable field in new entity, but value was provided - validate it
+                    if (entity.getThroughputDuringSlowdown() == null || entity.getThroughputDuringSlowdown() < 0) {
+                        throw new RestInvalidArgumentException("Throughput during Slowdown is required", null);
+                    }
                 }
 
-                if (entity.getThroughputUOM() == null || entity.getThroughputUOM().isBlank()) {
-                    throw new RestInvalidArgumentException("Throughput UoM is required", null);
+                // Only validate throughputUOM if it's editable for this role, or if new and value was provided
+                if (isFieldEditable(editableFields, "throughputUOM")) {
+                    if (entity.getThroughputUOM() == null || entity.getThroughputUOM().isBlank()) {
+                        throw new RestInvalidArgumentException("Throughput UoM is required", null);
+                    }
+                } else if (isNewEntity && dto.getThroughputUOM() != null && !dto.getThroughputUOM().isBlank()) {
+                    // Non-editable field in new entity, but value was provided - validate it
+                    if (entity.getThroughputUOM() == null || entity.getThroughputUOM().isBlank()) {
+                        throw new RestInvalidArgumentException("Throughput UoM is required", null);
+                    }
                 }
 
-                if (entity.getStartDate() == null) {
-                    throw new RestInvalidArgumentException("Start Date is required", null);
+                // Only validate startDate if it's editable for this role, or if new and value was provided
+                if (isFieldEditable(editableFields, "startDate")) {
+                    if (entity.getStartDate() == null) {
+                        throw new RestInvalidArgumentException("Start Date is required", null);
+                    }
+                } else if (isNewEntity && dto.getStartDate() != null) {
+                    // Non-editable field in new entity, but value was provided - validate it
+                    if (entity.getStartDate() == null) {
+                        throw new RestInvalidArgumentException("Start Date is required", null);
+                    }
                 }
 
-                if (entity.getPurpose() == null || entity.getPurpose().isBlank()) {
-                    throw new RestInvalidArgumentException("Purpose of Slowdown is required", null);
+                // Only validate purpose if it's editable for this role, or if new and value was provided
+                if (isFieldEditable(editableFields, "purpose")) {
+                    if (entity.getPurpose() == null || entity.getPurpose().isBlank()) {
+                        throw new RestInvalidArgumentException("Purpose of Slowdown is required", null);
+                    }
+                } else if (isNewEntity && dto.getPurpose() != null && !dto.getPurpose().isBlank()) {
+                    // Non-editable field in new entity, but value was provided - validate it
+                    if (entity.getPurpose() == null || entity.getPurpose().isBlank()) {
+                        throw new RestInvalidArgumentException("Purpose of Slowdown is required", null);
+                    }
                 }
 
                 tcsSlowdownRepository.save(entity);
