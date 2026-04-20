@@ -3,7 +3,8 @@
     "field": "particulars",
     "title": "Particulars",
     "editable": false,
-    "hidden": false
+    "hidden": true,
+    "isVisible": false
   },
 
   {
@@ -74,6 +75,7 @@
     "field": "NormParameterFKID",
     "title": "NormParameterFKID",
     "filterable": false,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   }
 ]

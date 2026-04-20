@@ -68,44 +68,53 @@ const ProductionRangeGridLimit = ({
 
   const NormConfigurationColumns = [
     {
-      field: 'displayName', // matches API
+      field: 'displayName',
       title: 'Particulars',
       editable: false,
-      widthT: 200,
+      widthT: 250,
+      autoAdjust: false,
+      minWidth: 100,
     },
     {
       field: 'uom',
       title: 'UOM',
       editable: false,
-      widthT: 55,
+      widthT: 80,
+      minWidth: 100,
     },
 
     {
       field: 'productionLimit',
       title: 'Limit',
       editable: false,
-      widthT: 120,
+      widthT: 100,
+      minWidth: 100,
     },
 
     {
       field: 'apr',
       title: 'Value',
       editable: true,
-      widthT: 120,
+      widthT: 100,
       type: 'number',
+      minWidth: 100,
     },
     {
       field: 'remarks',
       title: 'Remark',
       editable: false,
-      widthT: 135,
+      widthT: 250,
+      autoAdjust: false,
       type: 'string',
+      minWidth: 100,
     },
     {
       field: 'normParameterFKId',
       title: 'idFromApi',
       filterable: 'false',
       hidden: true,
+      minWidth: 100,
+      isVisible: false,
     },
   ]
 

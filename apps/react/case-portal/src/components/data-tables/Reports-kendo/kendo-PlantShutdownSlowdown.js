@@ -53,7 +53,7 @@ const PlantShutdownSlowdown = () => {
     {
       field: 'criticalActivity',
       title: 'Critical Routine Activity',
-      widthT: 200,
+      widthT: 100,
       type: 'text',
       editable: true,
     },

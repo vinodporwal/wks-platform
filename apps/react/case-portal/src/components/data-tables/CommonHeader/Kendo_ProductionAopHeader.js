@@ -21,10 +21,11 @@ const monthFields = [
 
 const getEnhancedColDefs = ({ headerMap, valueFormat }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalChange, siteObject } = dataGridStore
+  const { verticalChange, siteObject, plantObject } = dataGridStore
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const lowerSiteName = siteObject?.name.toLowerCase()
+  const lowerPlantName = plantObject?.name.toLowerCase()
 
   let cols
 
@@ -36,6 +37,12 @@ const getEnhancedColDefs = ({ headerMap, valueFormat }) => {
     cols = productionColDefsvcmpta
   } else if (lowerVertName === 'elastomer' && lowerSiteName === 'jmd') {
     cols = productionColDefsElastomerJmd
+  } else if (
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'vmd' &&
+    lowerPlantName === 'acrylonitrile'
+  ) {
+    cols = productionColDefsElastomerJmd
   } else {
     cols = productionColDefs
   }
@@ -46,6 +53,7 @@ const getEnhancedColDefs = ({ headerMap, valueFormat }) => {
     cols.push({
       field: 'averageTPH',
       title: 'Total',
+      minWidth: 100,
     })
   }
 

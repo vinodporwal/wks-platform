@@ -53,6 +53,7 @@ import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
 import DownloadIcon from '@mui/icons-material/Download'
 import UploadIcon from '@mui/icons-material/Upload'
 import CalculateIcon from '@mui/icons-material/Calculate'
+import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import SaveIcon from '@mui/icons-material/Save'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
@@ -776,6 +777,53 @@ const KendoDataTablesReports = ({
                 Add Item
               </Button>
             )}
+            {permissions?.showExport && (
+              <Button
+                variant='contained'
+                onClick={handleExport}
+                // disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
+
+                //ANY ONE CAN EXPORT
+                disabled={isButtonDisabled || READ_ONLY}
+                className='btn-export'
+                startIcon={<DownloadIcon fontSize='small' />}
+              >
+                Export
+              </Button>
+            )}
+
+            {permissions?.showImport && (
+              <Button
+                variant='contained'
+                onClick={handleExcelUpload}
+                startIcon={<UploadIcon sx={{ fontSize: 16 }} />}
+                disabled={isButtonDisabled || READ_ONLY}
+                className='btn-import'
+              >
+                Import
+              </Button>
+            )}
+            {permissions?.uploadExcelBtn && (
+              <>
+                <Button
+                  variant='contained'
+                  onClick={triggerFileUpload}
+                  startIcon={<UploadIcon sx={{ fontSize: 16 }} />}
+                  disabled={isButtonDisabled || READ_ONLY}
+                  className='btn-save'
+                >
+                  Import
+                </Button>
+
+                <input
+                  type='file'
+                  accept='.xlsx,.xls'
+                  onChange={onFileChange}
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                />
+              </>
+            )}
             {permissions?.saveBtn && (
               <Button
                 variant='contained'
@@ -808,65 +856,6 @@ const KendoDataTablesReports = ({
                 Calculate
               </Button>
             )}
-            {permissions?.showCalculate && (
-              <Button
-                variant='contained'
-                onClick={handleExport}
-                // disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
-                disabled={isButtonDisabled || READ_ONLY}
-                className='btn-export'
-                startIcon={<DownloadIcon fontSize='small' />}
-              >
-                Export
-              </Button>
-            )}
-
-            {permissions?.showExport && (
-              <Button
-                variant='contained'
-                onClick={handleExport}
-                // disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
-
-                //ANY ONE CAN EXPORT
-                disabled={isButtonDisabled || READ_ONLY}
-                className='btn-export'
-                startIcon={<DownloadIcon fontSize='small' />}
-              >
-                Export
-              </Button>
-            )}
-
-            {permissions?.showImport && (
-              <Button
-                variant='contained'
-                onClick={handleExport}
-                startIcon={<UploadIcon sx={{ fontSize: 16 }} />}
-                disabled={isButtonDisabled || READ_ONLY}
-                className='btn-import'
-              >
-                Import
-              </Button>
-            )}
-            {permissions?.uploadExcelBtn && (
-              <>
-                <Button
-                  variant='contained'
-                  onClick={triggerFileUpload}
-                  disabled={isButtonDisabled || READ_ONLY}
-                  className='btn-save'
-                >
-                  Import
-                </Button>
-
-                <input
-                  type='file'
-                  accept='.xlsx,.xls'
-                  onChange={onFileChange}
-                  ref={fileInputRef}
-                  style={{ display: 'none' }}
-                />
-              </>
-            )}
 
             {permissions?.showFinalSubmit && (
               <Button
@@ -874,6 +863,8 @@ const KendoDataTablesReports = ({
                 onClick={handleRelease}
                 disabled={isReleaseDisabled || READ_ONLY}
                 className='btn-save'
+                sx={{ color: '#bfa161ff' }}
+                startIcon={<TrendingUpIcon sx={{ fontSize: 16, color: '#bfa161ff' }} />}
               >
                 {/* Submit */}
                 Release

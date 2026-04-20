@@ -467,7 +467,7 @@ const KendoDataTablesReciepe = ({
             title={col.title || col.headerName}
             editable={col.editable || false}
             format={FORMATE_DECIMAL}
-            width='65px'
+            width='80px'
             cells={{
               edit: { text: NumericEditorWithLimit },
               data: toolTipRenderer,

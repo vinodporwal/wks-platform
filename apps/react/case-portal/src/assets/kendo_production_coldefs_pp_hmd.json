@@ -2,155 +2,179 @@
   {
     "field": "idFromApi",
     "title": "ID",
-    "hidden": true
+    "hidden": true,
+    "isVisible": false,
+    "minWidth": 120
   },
   {
     "field": "aopCaseId",
     "title": "Case ID",
-    "width": 120,
+    "width": 100,
     "editable": false,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false,
+    "minWidth": 120
   },
   {
     "field": "normParametersFKId",
     "title": "Particulars",
     "editable": false,
-    "width": 175,
-    "hidden": true
+    "width": 100,
+    "hidden": true,
+    "isVisible": false,
+    "minWidth": 120
   },
 
   {
     "field": "productName",
     "title": "Particulars",
     "editable": false,
-    "widthT": 100
+    "widthT": 120,
+    "minWidth": 120
   },
 
   {
     "field": "april",
     "title": "4",
     "editable": true,
-    "width": 120,
+    "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "may",
     "title": "5",
     "editable": false,
-    "width": 120,
+    "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "june",
     "title": "6",
     "editable": false,
-    "width": 120,
+    "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "july",
     "title": "7",
     "editable": false,
-    "width": 120,
+    "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "august",
     "title": "8",
     "editable": false,
-    "width": 120,
+    "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "september",
     "title": "9",
     "editable": false,
-    "width": 120,
+    "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "october",
     "title": "10",
     "editable": false,
-    "width": 120,
+    "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "november",
     "title": "11",
     "editable": false,
-    "width": 120,
+    "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "december",
     "title": "12",
     "editable": false,
-    "width": 120,
+    "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "january",
     "title": "1",
     "editable": false,
-    "width": 120,
+    "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "february",
     "title": "2",
     "editable": false,
-    "width": 120,
+    "width": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "march",
     "title": "3",
     "editable": false,
-    "widthT": 110,
+    "widthT": 100,
     "align": "left",
     "headerAlign": "left",
-    "type": "number"
+    "type": "number",
+    "minWidth": 100
   },
   {
     "field": "avgTph",
     "title": "AVG",
-    "width": 150,
+    "width": 100,
     "editable": false,
 
-    "hidden": true
+    "hidden": true,
+    "isVisible": false,
+    "minWidth": 100
   },
   {
     "field": "remarks",
     "title": "Remark",
     "editable": false,
-    "widthT": 90
+    "widthT": 90,
+    "minWidth": 100
   },
   {
     "field": "isEditable",
     "title": "isEditable",
-    "hidden": true
+    "hidden": true,
+    "isVisible": false,
+    "minWidth": 100
   }
 ]

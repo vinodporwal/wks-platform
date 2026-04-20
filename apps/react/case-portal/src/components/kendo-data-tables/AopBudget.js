@@ -211,8 +211,8 @@ export default function AopBudget() {
   ]
 
   const columns = [
-    { field: 'plantName', title: 'Plant', widthT: 70 },
-    { field: 'costName', title: 'Cost', widthT: 80 },
+    { field: 'plantName', title: 'Plant', widthT: 100 },
+    { field: 'costName', title: 'Cost', widthT: 100 },
     { field: 'budgetType', title: 'Budget Type', widthT: 80, hidden: true },
     {
       field: 'percentChange',

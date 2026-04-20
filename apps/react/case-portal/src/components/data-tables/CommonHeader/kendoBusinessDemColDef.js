@@ -54,6 +54,7 @@ const kendoBusinessDemColDef = ({ headerMap }) => {
       title: headerMap[col.title],
       align: 'right',
       format: FORMATE_DECIMAL,
+      minWidth: 100,
     }
   })
 

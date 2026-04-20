@@ -1144,6 +1144,7 @@ const SlowDown = ({ permissions }) => {
           field: item.field,
           title: item.title,
           widthT: item.field.toLowerCase() === 'uom' ? 90 : 150,
+          autoAdjust: false,
           editable:
             item.field === 'particulars' || item.field.toLowerCase() === 'uom'
               ? false

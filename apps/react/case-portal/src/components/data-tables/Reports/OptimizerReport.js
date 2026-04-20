@@ -83,6 +83,9 @@ const OptimizerReport = () => {
   }
 
   const enrichColumns = useCallback((backendCols = []) => {
+    const filteredCols = backendCols.filter((col) => col.field !== 'GRID_TYPE')
+    const applyFixedWidth = filteredCols.length < 7
+    const fixedWidth = applyFixedWidth ? 150 : 121
     return backendCols.map((col) => {
       const isTextCol = col.type === 'string'
       const isNumberCol = col.type === 'number'
@@ -95,6 +98,7 @@ const OptimizerReport = () => {
         ...(isNumberCol ? { format: '{0:0.0000}' } : {}),
         editable: false,
         isRightAlligned: isNumberCol ? 'numeric' : undefined,
+        ...(fixedWidth ? { widthT: fixedWidth } : {}),
       }
     })
   }, [])

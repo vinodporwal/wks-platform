@@ -125,7 +125,7 @@ const CrackerReportMannualEntry = (props) => {
       field: 'UOM',
       title: 'UOM',
       editable: false,
-      widthT: 60,
+      widthT: 80,
     },
     {
       field: 'apr',

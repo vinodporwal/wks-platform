@@ -3,94 +3,112 @@
     "field": "Particulars",
     "title": "Type",
     "editable": false,
-    "width": 200,
-    "hidden": true
+    "width": 100,
+    "hidden": true,
+    "minWidth": 100
   },
   {
     "field": "NormParametersId",
-    "hidden": true
+    "hidden": true,
+    "minWidth": 100
   },
 
   {
     "field": "productName",
     "title": "Particulars",
     "editable": false,
-    "widthT": 130
+    "widthT": 130,
+    "minWidth": 120
   },
   {
     "field": "UOM",
     "title": "UOM / MT",
     "editable": false,
-    "widthT": 60
+    "widthT": 80,
+    "minWidth": 100
   },
   {
     "field": "april",
     "title": "Apr",
-    "headerName": 4
+    "headerName": 4,
+    "minWidth": 100
   },
   {
     "field": "may",
     "title": "May",
-    "headerName": 5
+    "headerName": 5,
+    "minWidth": 100
   },
   {
     "field": "june",
     "title": "Jun",
-    "headerName": 6
+    "headerName": 6,
+    "minWidth": 100
   },
   {
     "field": "july",
     "title": "Jul",
-    "headerName": 7
+    "headerName": 7,
+    "minWidth": 100
   },
   {
     "field": "aug",
     "title": "Aug",
-    "headerName": 8
+    "headerName": 8,
+    "minWidth": 100
   },
   {
     "field": "sep",
     "title": "Sep",
-    "headerName": 9
+    "headerName": 9,
+    "minWidth": 100
   },
   {
     "field": "oct",
     "title": "Oct",
-    "headerName": 10
+    "headerName": 10,
+    "minWidth": 100
   },
   {
     "field": "nov",
     "title": "Nov",
-    "headerName": 11
+    "headerName": 11,
+    "minWidth": 100
   },
   {
     "field": "dec",
     "title": "Dec",
-    "headerName": 12
+    "headerName": 12,
+    "minWidth": 100
   },
   {
     "field": "jan",
     "title": "Jan",
-    "headerName": 1
+    "headerName": 1,
+    "minWidth": 100
   },
   {
     "field": "feb",
     "title": "Feb",
-    "headerName": 2
+    "headerName": 2,
+    "minWidth": 100
   },
   {
     "field": "march",
     "title": "Mar",
-    "headerName": 3
+    "headerName": 3,
+    "minWidth": 100
   },
   {
     "field": "isEditable",
     "title": "isEditable",
-    "hidden": true
+    "hidden": true,
+    "minWidth": 100
   },
 
   {
     "field": "avgOfAllMonths",
-    "title": "Avg. Norms"
+    "title": "Avg.Norms",
+    "minWidth": 100
   }
 ]

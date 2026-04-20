@@ -133,6 +133,7 @@ export default function PlantContribution() {
             ...item,
             id: index,
             actualId: item?.id,
+            widthT: 100,
             isEditable:
               !READ_ONLY &&
               key === 'OtherVariableCost' &&

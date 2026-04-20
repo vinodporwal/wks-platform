@@ -61,6 +61,8 @@ export default function ShutdownSlowdownPlan() {
       title: 'ID',
       editable: false,
       hidden: true,
+      minWidth: 100,
+      isVisible: false,
     },
     {
       field: 'sno',
@@ -69,32 +71,49 @@ export default function ShutdownSlowdownPlan() {
       editable: false,
       align: 'right',
       format: '{0:0}',
+      minWidth: 100,
     },
-    { field: 'plant', title: 'Plant', widthT: 120, editable: false },
+    {
+      field: 'plant',
+      title: 'Plant',
+      widthT: 120,
+      editable: false,
+      minWidth: 100,
+    },
     {
       field: 'noOfShutdownDays',
       title: 'No of S/D days',
       editable: true,
       type: 'number',
+      minWidth: 100,
     },
     {
       field: 'noOfSlowdownDays',
       title: 'No of slowdown days',
       editable: true,
       type: 'number',
+      minWidth: 100,
     },
     {
       field: 'monthPlan',
       title: 'Month',
       type: 'monthDropdownPEPP',
       editable: true,
+      minWidth: 100,
     },
     {
       field: 'shutdownSlowdownPlan',
       title: 'S/D Plan',
       editable: true,
+      minWidth: 100,
     },
-    { field: 'remarks', title: 'Remarks', widthT: 150, editable: true },
+    {
+      field: 'remarks',
+      title: 'Remarks',
+      widthT: 150,
+      editable: true,
+      minWidth: 100,
+    },
   ]
 
   const fetchData = useCallback(async () => {

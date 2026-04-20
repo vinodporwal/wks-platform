@@ -91,6 +91,7 @@ const NetProductionHoursAvg = () => {
           isEditable: false,
           originalRemark: item.remarks,
           allMonthsTotal,
+          minWidth: 100,
         }
       })
 
@@ -132,6 +133,7 @@ const NetProductionHoursAvg = () => {
       editable: false,
       align: 'right',
       headerAlign: 'left',
+      minWidth: 100,
     }))
   }
 
@@ -140,6 +142,8 @@ const NetProductionHoursAvg = () => {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    minWidth: 100,
+    isVisible: false,
   }
 
   // Base function to generate column set for PP
@@ -152,6 +156,7 @@ const NetProductionHoursAvg = () => {
       widthT: nameWidthT,
       editable: false,
       isEditable: false,
+      minWidth: 100,
     },
     ...getMonthlyColumns(),
     isEditableField,
@@ -161,6 +166,7 @@ const NetProductionHoursAvg = () => {
       type: 'number',
       format: '{0:n2}',
       editable: false,
+      minWidth: 100,
     },
   ]
 

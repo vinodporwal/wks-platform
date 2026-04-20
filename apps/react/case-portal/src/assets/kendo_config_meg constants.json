@@ -5,31 +5,39 @@
     "groupable": true,
     "editable": false,
     "hidden": true,
-    "widthT": 300
+    "isVisible": false,
+    "widthT": 100
   },
   {
     "field": "DisplayName",
     "title": "Particulars",
     "editable": false,
-    "widthT": 300
+    "widthT": 300,
+    "autoAdjust": false,
+    "minWidth": 300
   },
   {
     "field": "UOM",
     "title": "UOM",
     "editable": false,
-    "widthT": 60
+    "widthT": 80,
+    "minWidth": 90
   },
   {
     "field": "ConstantValue",
     "title": "Value",
     "editable": true,
     "type": "number",
-    "widthT": 120
+    "widthT": 100,
+    "minWidth": 100
   },
 
   {
     "field": "remarks",
     "title": "Remark",
-    "editable": true
+    "widthT": 250,
+    "autoAdjust": false,
+    "editable": true,
+    "minWidth": 200
   }
 ]

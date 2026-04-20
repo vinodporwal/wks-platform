@@ -124,6 +124,18 @@ main.MuiBox-root.css-vognfw {
   padding: 12px !important;
 }
 
+/* .k-grid {
+  width: max-content;
+} */
+
+.k-grid th.active-column {
+  background-color: #1baaf529; /* light cyan */
+  color: #00796b; /* teal text */
+  font-weight: bold;
+  border-bottom: 2px solid #790000;
+}
+
+
 .non-editable-cell {
   background-color: #f1f5f9;
 }
@@ -324,7 +336,7 @@ body {
   margin-top: 0px;
   padding: 2px 2px;
   font-family: sans-serif;
-  font-size: 9.5px;
+  font-size: 11px;
   line-height: 1.5;
   color: #0a1d38; /* slate-600 */
   background: #f8fafc; /* subtle gray */

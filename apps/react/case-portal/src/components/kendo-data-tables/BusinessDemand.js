@@ -130,17 +130,19 @@ const BusinessDemand = ({ permissions }) => {
       field: 'materialDisplayName',
       title: 'Particulars',
       editable: false,
-      widthT: 200,
+      widthT: 220,
+      autoAdjust: false
     },
     {
       field: 'april',
       title: 'Value',
       editable: false,
-      widthT: 200,
+      widthT: 220,
       align: 'left',
       headerAlign: 'left',
       type: 'number',
       format: '{0:n2}',
+      autoAdjust: false
     },
 
     {
@@ -177,7 +179,8 @@ const BusinessDemand = ({ permissions }) => {
           inEdit: false,
           Particulars: item.normParameterTypeDisplayName,
           expanded: false,
-          UOM: IS_VCM_VERTICAL ? '%' : item?.UOM,
+          UOM:
+            IS_VCM_VERTICAL || lowerVertName === 'chemical' ? '%' : item?.UOM,
         }))
 
       setRows(formattedData)
@@ -289,7 +292,8 @@ const BusinessDemand = ({ permissions }) => {
         // FOR PTA THIS CONDITION IS REMOVED
         // IS_PTA_VERTICAL ||
         IS_PET_VERTICAL ||
-        IS_ELASTOMER_VERTICAL
+        IS_ELASTOMER_VERTICAL ||
+        (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD)
       ) {
         const productionRows = (rows || []).filter(
           (row) => row.Particulars?.toLowerCase() === 'production',

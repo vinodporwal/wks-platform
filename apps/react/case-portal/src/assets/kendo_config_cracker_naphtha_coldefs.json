@@ -3,7 +3,7 @@
     "field": "id",
     "title": "Id",
     "editable": false,
-    "widthT": 180,
+    "widthT": 100,
     "minWidth": 150,
     "hidden": true
   },
@@ -11,7 +11,7 @@
     "field": "jmdNaphthaId",
     "title": "jmdNaphthaId",
     "editable": false,
-    "widthT": 180,
+    "widthT": 100,
     "minWidth": 150,
     "hidden": true
   },
@@ -19,7 +19,7 @@
     "field": "pmdNaphthaId",
     "title": "pmdNaphthaId",
     "editable": false,
-    "widthT": 180,
+    "widthT": 100,
     "minWidth": 150,
     "hidden": true
   },
@@ -27,7 +27,7 @@
     "field": "ioclNaphthaId",
     "title": "ioclNaphthaId",
     "editable": false,
-    "widthT": 180,
+    "widthT": 100,
     "minWidth": 150,
     "hidden": true
   },
@@ -35,7 +35,7 @@
     "field": "gailNaphthaId",
     "title": "gailNaphthaId",
     "editable": false,
-    "widthT": 180,
+    "widthT": 100,
     "minWidth": 150,
     "hidden": true
   },
@@ -43,7 +43,7 @@
     "field": "bpclNaphthaId",
     "title": "bpclNaphthaId",
     "editable": false,
-    "widthT": 180,
+    "widthT": 100,
     "minWidth": 150,
     "hidden": true
   },
@@ -51,7 +51,7 @@
     "field": "ongcNaphthaId",
     "title": "ongcNaphthaId",
     "editable": false,
-    "widthT": 180,
+    "widthT": 100,
     "minWidth": 150,
     "hidden": true
   },
@@ -59,7 +59,7 @@
     "field": "otherNaphthaId",
     "title": "otherNaphthaId",
     "editable": false,
-    "widthT": 180,
+    "widthT": 100,
     "minWidth": 150,
     "hidden": true
   },
@@ -67,7 +67,7 @@
     "field": "bcoiNaphthaId",
     "title": "bcoiNaphthaId",
     "editable": false,
-    "widthT": 180,
+    "widthT": 100,
     "minWidth": 150,
     "hidden": true
   },
@@ -75,7 +75,7 @@
     "field": "type",
     "title": "Type",
     "editable": false,
-    "widthT": 180,
+    "widthT": 100,
     "minWidth": 150,
     "hidden": true
   },
@@ -83,7 +83,7 @@
     "field": "limsTagName",
     "title": "LIMS Tag Name",
     "editable": false,
-    "widthT": 180,
+    "widthT": 100,
     "minWidth": 150,
     "hidden": false
   },

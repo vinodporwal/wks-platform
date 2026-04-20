@@ -16,7 +16,8 @@
     "field": "productName",
     "title": "Particulars",
     "editable": false,
-    "widthT": 300
+    "autoAdjust": false,
+    "widthT": 250
   },
   {
     "field": "apr",
@@ -32,6 +33,7 @@
     "title": "Remark",
     "editable": true,
     "renderCell": "renderRemarkCell",
-    "widthT": 300
+    "widthT": 250,
+    "autoAdjust": false
   }
 ]

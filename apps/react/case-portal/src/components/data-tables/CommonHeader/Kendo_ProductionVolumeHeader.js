@@ -45,6 +45,7 @@ const getEnhancedProductionColDefs = ({ headerMap, valueFormat }) => {
         type: 'number',
         format: valueFormat,
         widthT: col?.widthT,
+        minWidth: 100,
       }
     }
     if (isPPDTAorHMD && nonAprilMonths.includes(col.field)) {
@@ -52,6 +53,7 @@ const getEnhancedProductionColDefs = ({ headerMap, valueFormat }) => {
         ...updatedCol,
         editable: false, // ? not editable
         isDisabled: true, // ? grey style via k-number-right-disabled
+        minWidth: 100,
       }
     }
 

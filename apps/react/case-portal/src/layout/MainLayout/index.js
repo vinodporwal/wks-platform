@@ -69,11 +69,12 @@ const MainLayout = ({ keycloak, authenticated }) => {
           </Box>
         )}
 
-        {location.pathname.startsWith('/production-norms-plan') && (
+        {/* HIDE AS OF NOW - 16 APRIL 2026 */}
+        {/* {location.pathname.startsWith('/production-norms-plan') && (
           <Box>
             <UtilityDetails navigation={menu} />
           </Box>
-        )}
+        )} */}
 
         <Box sx={{ height: 4 }} />
 
