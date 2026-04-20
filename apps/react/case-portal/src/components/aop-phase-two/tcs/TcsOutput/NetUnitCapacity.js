@@ -61,7 +61,6 @@ const NetUnitCapacity = ({
     return { min, max, sum }
   }
 
-
   // Fetch Site Net Capacity data for this capacity type
   const fetchUnitCapacityData = useCallback(async () => {
     if (!SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
@@ -127,14 +126,14 @@ const NetUnitCapacity = ({
 
           // return [kbpsdRow, ktpdRow]
 
-            // Calculate aggregates for both rows
-            const kbpsdAggregates = calculateAggregates(kbpsdRow)
-            const ktpdAggregates = calculateAggregates(ktpdRow)
+          // Calculate aggregates for both rows
+          const kbpsdAggregates = calculateAggregates(kbpsdRow)
+          const ktpdAggregates = calculateAggregates(ktpdRow)
 
-            return [
-              { ...kbpsdRow, ...kbpsdAggregates },
-              { ...ktpdRow, ...ktpdAggregates },
-            ]
+          return [
+            { ...kbpsdRow, ...kbpsdAggregates },
+            { ...ktpdRow, ...ktpdAggregates },
+          ]
         })
       }
 
@@ -297,7 +296,7 @@ const NetUnitCapacity = ({
         title: 'Capacity',
         children: monthColumns,
       },
-           {
+      {
         field: 'min',
         title: 'Min',
         editable: false,

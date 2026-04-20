@@ -318,7 +318,7 @@ const Slowdown = ({
           if (item.isNew) {
             formatted.id = null
           }
-          
+
           // Add non-editable fields with default values if not present
           if (formatted.throughputDuringSlowdown == '') {
             formatted.throughputDuringSlowdown = null

@@ -89,9 +89,7 @@ export default function HeaderContent({ keycloak }) {
     '/user-form',
   ].includes(location.pathname)
 
-  const HIDE_PLANT_DROPDOWN=[
-    '/tcs/tcs-output'
-  ].includes(location.pathname)
+  const HIDE_PLANT_DROPDOWN = ['/tcs/tcs-output'].includes(location.pathname)
 
   if (['/dashboard'].includes(location.pathname))
     dispatch(openDrawer({ drawerOpen: false }))
