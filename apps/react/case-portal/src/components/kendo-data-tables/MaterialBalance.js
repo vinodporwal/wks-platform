@@ -196,6 +196,41 @@ const MaterialBalance = ({ permissions }) => {
     fetchMatbalData()
   }, [fetchMatbalData])
 
+  const [startYearSuffix, endYearSuffix] = useMemo(() => {
+    if (!AOP_YEAR) return ['', '']
+    const parts = String(AOP_YEAR).split('-')
+    const start = parts[0]?.slice(-2) || ''
+    const end = (parts[1]?.length === 2 ? parts[1] : parts[1]?.slice(-2)) || ''
+    return [start, end]
+  }, [AOP_YEAR])
+
+  // const startYearSuffix = '25'
+  // const endYearSuffix = '26'
+
+  const monthCols = useMemo(() => {
+    return Array.from({ length: 12 }, (_, i) => {
+      const monthIndex = (i + 4) % 12 || 12
+      const date = new Date(2000, monthIndex - 1)
+      const monthShort = date.toLocaleString('en-US', { month: 'short' })
+      const yearSuffix = monthIndex >= 4 ? startYearSuffix : endYearSuffix
+      const fieldName = `${monthShort}-${yearSuffix}`
+
+      return {
+        field: monthShort,
+        title: fieldName,
+        width: 120,
+        type: 'number',
+        format: '{0:#.###}',
+        editable: true,
+        monthNumber: monthIndex,
+        originalMonthShort: monthShort,
+        originalMonthLong: date
+          .toLocaleString('en-US', { month: 'long' })
+          .toLowerCase(),
+      }
+    })
+  }, [startYearSuffix, endYearSuffix])
+
   const colDefs = useMemo(
     () => [
       {
@@ -205,105 +240,10 @@ const MaterialBalance = ({ permissions }) => {
         widthT: 100,
       },
       { field: 'UOM', title: 'UOM', editable: false, widthT: 80 },
-      {
-        field: 'Apr',
-        title: 'Apr',
-        editable: true,
-        type: 'number',
-        format: '{0:#.###}',
-        width: 120,
-      },
-      {
-        field: 'May',
-        title: 'May',
-        editable: true,
-        type: 'number',
-        format: '{0:#.###}',
-        width: 120,
-      },
-      {
-        field: 'Jun',
-        title: 'Jun',
-        editable: true,
-        type: 'number',
-        format: '{0:#.###}',
-        width: 120,
-      },
-      {
-        field: 'Jul',
-        title: 'Jul',
-        editable: true,
-        type: 'number',
-        format: '{0:#.###}',
-        width: 120,
-      },
-      {
-        field: 'Aug',
-        title: 'Aug',
-        editable: true,
-        type: 'number',
-        format: '{0:#.###}',
-        width: 120,
-      },
-      {
-        field: 'Sep',
-        title: 'Sep',
-        editable: true,
-        type: 'number',
-        format: '{0:#.###}',
-        width: 120,
-      },
-      {
-        field: 'Oct',
-        title: 'Oct',
-        editable: true,
-        type: 'number',
-        format: '{0:#.###}',
-        width: 120,
-      },
-      {
-        field: 'Nov',
-        title: 'Nov',
-        editable: true,
-        type: 'number',
-        format: '{0:#.###}',
-        width: 120,
-      },
-      {
-        field: 'Dec',
-        title: 'Dec',
-        editable: true,
-        type: 'number',
-        format: '{0:#.###}',
-        width: 120,
-      },
-      {
-        field: 'Jan',
-        title: 'Jan',
-        editable: true,
-        type: 'number',
-        format: '{0:#.###}',
-        width: 120,
-      },
-      {
-        field: 'Feb',
-        title: 'Feb',
-        editable: true,
-        type: 'number',
-        format: '{0:#.###}',
-        width: 120,
-      },
-      {
-        field: 'Mar',
-        title: 'Mar',
-        editable: true,
-        type: 'number',
-        format: '{0:#.###}',
-        width: 120,
-      },
+      ...monthCols,
       { field: 'Remarks', title: 'Remark', editable: false, widthT: 100 },
     ],
-    [],
+    [monthCols],
   )
 
   const handleRemarkCellClick = (row) => {
