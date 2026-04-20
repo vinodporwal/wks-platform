@@ -330,7 +330,7 @@ export const ShutDownPpDtaColumns = [
     type: 'descLimit',
   },
   {
-    field: 'lineId',
+    field: 'lineDisplayName',
     title: 'Line',
     type: 'lineDropdown',
     editable: true,
@@ -412,7 +412,6 @@ export const ShutDownPVCDMDColumns = [
     title: 'SD - To',
     editable: true,
   },
-
   {
     field: 'durationInHrs',
     title: 'Duration (hrs)',

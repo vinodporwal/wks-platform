@@ -12,7 +12,7 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
-@Table(name = "PlantContributionSummaryBusinessDemandBasis")
+@Table(name = "NormsEntrySheet")
 @Data
 public class PlantContributionSummaryBusinessDemandBasisDB2 {
 
