@@ -104,6 +104,7 @@ const ShutdownNorms = () => {
     lowerVertName === 'aromatics' &&
     SITE_NAME_LOWERCASE === 'sez' &&
     PLANT_NAME_LOWERCASE === 'px4'
+  const IS_VCM_HMD = lowerVertName === 'vcm' && SITE_NAME_LOWERCASE === 'hmd'
 
   const IS_PVC_DMD =
     ['pvc'].includes(lowerVertName) && ['dmd'].includes(SITE_NAME_LOWERCASE)
@@ -839,7 +840,7 @@ const ShutdownNorms = () => {
               !IS_PTA_DMD ||
               IS_PVC_DMD ||
               IS_ELASTOMER_JMD
-            ? IS_PE_C2
+            ? IS_PE_C2 || IS_VCM_HMD
               ? true
               : false // ? only change
             : true,

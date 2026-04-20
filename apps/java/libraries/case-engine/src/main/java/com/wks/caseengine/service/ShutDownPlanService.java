@@ -20,9 +20,12 @@ public interface ShutDownPlanService {
 			List<ShutDownPlanDTO> mapForExcel);
 	byte[] shutdownNonProductLineExport(String year, String plantId,String maintenanceTypeName, boolean isAfterSave,
 			List<ShutDownPlanDTO> mapForExcel);
+	byte[] shutdownLineExportPP(String year, String plantId,String maintenanceTypeName, boolean isAfterSave,
+			List<ShutDownPlanDTO> mapForExcel);
 	public AOPMessageVM importShutdownExcel(String year,UUID plantId, String maintenanceTypeName,MultipartFile file);
 	public AOPMessageVM importShutdownExportExcel(String year,UUID plantId, String maintenanceTypeName,MultipartFile file);
 	public AOPMessageVM importLineShutdown(String year,UUID plantId, String maintenanceTypeName,MultipartFile file);
+	public AOPMessageVM importLineShutdownPP(String year,UUID plantId, String maintenanceTypeName,MultipartFile file);
 	public AOPMessageVM importNonProductShutdown(String year,UUID plantId, String maintenanceTypeName,MultipartFile file);
 	public List<ShutDownPlanDTO> saveShutdownPlantData(UUID plantId,List<ShutDownPlanDTO> shutDownPlanDTOList);
 	public List<ShutDownPlanDTO> saveShutdownPlantDataC2(UUID plantId,List<ShutDownPlanDTO> shutDownPlanDTOList);
@@ -31,11 +34,13 @@ public interface ShutDownPlanService {
 	public UUID findIdByPlantIdAndMaintenanceTypeName(UUID plantId,String maintenanceTypeName);
 	public PlantMaintenanceTransaction editShutDownPlanData(UUID plantMaintenanceTransactionId);
 	public void deletePlanData(UUID plantMaintenanceTransactionId,UUID plantId);
+	public AOPMessageVM deleteMultipleSlowdown(List<UUID> plantMaintenanceTransactionId,UUID plantId);
 	public List<ShutDownPlanDTO> editShutdownData(UUID plantMaintenanceTransactionId, List<ShutDownPlanDTO> shutDownPlanDTOList);
 	public List<MonthWiseDataDTO> getMonthlyShutdownHours(String auditYear,  UUID plantId);
 	public AOPMessageVM getDescriptionDropdown(String plantId);
 	public AOPMessageVM getShutdownDescription(String plantId);
 	
 	void deleteShutPlanData(UUID plantMaintenanceTransactionId, UUID plantId);
+	AOPMessageVM deleteMultipleShutdown(List<UUID> plantMaintenanceTransactionId, UUID plantId);
 	
 }

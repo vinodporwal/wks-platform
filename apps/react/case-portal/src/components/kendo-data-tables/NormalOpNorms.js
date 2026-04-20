@@ -97,6 +97,11 @@ const NormalOpNormsScreen = () => {
     SITE_NAME_NO_CASE === 'JMD' &&
     PLANT_NAME_NO_CASE === 'HIIR'
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
+  const IS_CHEMICAL_JMD_MTBEANDBUATNE1 =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'jmd' &&
+    (lowerPlantName === 'mtbe' || lowerPlantName === 'butene-1')
+
   const keycloak = useSession()
 
   const { isReleased } = dataGridStore
@@ -258,7 +263,7 @@ const NormalOpNormsScreen = () => {
     try {
       const promises = [fetchData(gradeId), getNormTransactions()]
 
-      if (lowerVertName === 'meg') {
+      if (lowerVertName === 'meg' || IS_CHEMICAL_JMD_MTBEANDBUATNE1) {
         promises.push(fetchDataIntermediateValues())
       }
       if (
@@ -913,7 +918,7 @@ const NormalOpNormsScreen = () => {
         />
       )}
 
-      {lowerVertName === 'meg' && (
+      {(lowerVertName === 'meg' || IS_CHEMICAL_JMD_MTBEANDBUATNE1) && (
         <Box sx={{ width: '100%', marginTop: 1 }}>
           <CustomAccordion defaultExpanded disableGutters>
             <CustomAccordionSummary

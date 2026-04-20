@@ -165,6 +165,9 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 				dto.setRpfDownTime(result[13] != null ? ((Number) result[13]).doubleValue() : null);
 				dto.setNoOfRPF(result[14] != null ? ((Number) result[14]).doubleValue() : null);
 				dto.setLineId(result[15] != null ? result[15].toString() : null);
+				if (dto.getLineId() != null && !dto.getLineId().isEmpty()) {
+					dto.setLineDisplayName(getLineDisplayNameByLineId(plantId, dto.getLineId()));
+				}
 				dtoList.add(dto);
 			}
 			// TODO Auto-generated method stub
@@ -224,6 +227,9 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 				dto.setRateEO(result[11] != null ? ((Number) result[11]).doubleValue() : null);
 				dto.setRateEOE(result[12] != null ? ((Number) result[12]).doubleValue() : null);
 				dto.setLineId(result[15] != null ? result[15].toString() : null);
+				if (dto.getLineId() != null && !dto.getLineId().isEmpty()) {
+					dto.setLineDisplayName(getLineDisplayNameByLineId(plantId, dto.getLineId()));
+				}
 				dtoList.add(dto);
 			}
 			// TODO Auto-generated method stub
@@ -779,6 +785,28 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	private String getLineDisplayNameByLineId(UUID plantId, String lineId) {
+		if (plantId == null || lineId == null || lineId.trim().isEmpty()) {
+			return null;
+		}
+		try {
+			String verticalName = plantsRepository.findVerticalNameByPlantId(plantId);
+			String view = "vwScrn" + verticalName + "GetLineDetails";
+			List<Object[]> rows = getLineDetailsData(view, plantId.toString(), lineId);
+			if (rows == null || rows.isEmpty()) {
+				return null;
+			}
+			Object[] row = rows.get(0);
+			if (row == null || row.length <= 2 || row[2] == null) {
+				return null;
+			}
+			return row[2].toString();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return null;
 		}
 	}
 
