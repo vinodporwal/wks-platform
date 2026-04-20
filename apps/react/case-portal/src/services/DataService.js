@@ -4481,8 +4481,8 @@ async function dropdownValuesPeC2(keycloak, PLANT_ID, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
-export async function getMaterialBalanceData(keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/material-balance-data`
+export async function getMaterialBalanceData(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/matbal?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -4502,7 +4502,7 @@ export async function saveMaterialBalanceData(
   AOP_YEAR,
   data,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/material-balance?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const url = `${Config.CaseEngineUrl}/task/production-norms?plantFKId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

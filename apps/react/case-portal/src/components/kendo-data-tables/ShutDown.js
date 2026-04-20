@@ -1246,7 +1246,7 @@ const ShutDown = ({ permissions }) => {
           PLANT_ID,
           AOP_YEAR,
         )
-      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      } else if (IS_PVC_DMD) {
         response = await DtaDataService.ImportShutdownLineWise(
           rawFile,
           keycloak,
