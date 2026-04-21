@@ -39,7 +39,7 @@ const PCGOutlookNew = ({
   const generateDummyData = useCallback(() => {
     // Extract year from AOP_YEAR (e.g., "2026-27" -> "26")
     const year = AOP_YEAR ? AOP_YEAR.split('-')[0].slice(-2) : '25'
-    
+
     const months = [
       { sNo: 1, month: `Jan'${year}` },
       { sNo: 2, month: `Feb'${year}` },
