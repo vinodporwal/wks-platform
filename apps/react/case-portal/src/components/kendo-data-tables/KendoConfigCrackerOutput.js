@@ -81,7 +81,9 @@ const CrackerConfig = () => {
     'Constant',
     'Yield',
     'SpyroMatbal',
-    'OtherSpyroOutput',
+    'Other Product',
+    'Output Feed',
+    'Output Product',
   ]
   const [tabs, setTabs] = useState(rawTabsStatic)
   const [availableTabs, setAvailableTabs] = useState([])
@@ -90,11 +92,14 @@ const CrackerConfig = () => {
 
   const [yieldRows, setYieldRows] = useState([])
   const [constantsRows, setConstantsRows] = useState([])
-  const [feedRows, setFeedRows] = useState([])
+  const [feedTotalRows, setTotalFeedRows] = useState([])
   const [compositionRows, setCompositionRows] = useState([])
   const [hydrogenationRows, setHydrogenationRows] = useState([])
   const [spyroMatbalRows, setSpyroMatbalRows] = useState([])
-  const [otherSpyroOutputRows, setOtherSpyroOutputRows] = useState([])
+  const [otherProductRows, setOtherProductRows] = useState([])
+  const [spyroOutputFeedRows, setSpyroOutputFeedRows] = useState([])
+  const [feedsRows, setFeedsRows] = useState([])
+  const [spyroOutputProductRows, setSpyroOutputProductRows] = useState([])
 
   const FORMATE_VALUE = ValueFormatterProduction()
 
@@ -276,27 +281,33 @@ const CrackerConfig = () => {
         case 'Total Products':
           return hydrogenationRows
         case 'Miscellaneous Parameters':
-          return feedRows
+          return feedTotalRows
         case 'Constant':
           return constantsRows
         case 'Yield':
           return yieldRows
         case 'SpyroMatbal':
           return spyroMatbalRows
-        case 'OtherSpyroOutput':
-          return otherSpyroOutputRows
+        case 'Other Product':
+          return otherProductRows
+        case 'Output Feed':
+          return spyroOutputFeedRows
+        case 'Output Product':
+          return spyroOutputProductRows
+        case 'Feeds':
+          return feedsRows
 
         default:
           return []
       }
     },
-    [feedRows, compositionRows, hydrogenationRows, constantsRows, yieldRows],
+    [feedTotalRows, compositionRows, hydrogenationRows, constantsRows, yieldRows, spyroMatbalRows, otherProductRows, spyroOutputFeedRows, spyroOutputProductRows, feedsRows],
   )
 
   const setRowsForTab = useCallback((tabId, data) => {
     switch (tabId) {
       case 'Miscellaneous Parameters':
-        setFeedRows(data)
+        setTotalFeedRows(data)
         break
       case 'Total Feed':
         setCompositionRows(data)
@@ -313,8 +324,17 @@ const CrackerConfig = () => {
       case 'SpyroMatbal':
         setSpyroMatbalRows(data)
         break
-      case 'OtherSpyroOutput':
-        setOtherSpyroOutputRows(data)
+      case 'Other Product':
+        setOtherProductRows(data)
+        break
+      case 'Output Feed':
+        setSpyroOutputFeedRows(data)
+        break
+      case 'Output Product':
+        setSpyroOutputProductRows(data)
+        break
+      case 'Feeds':
+        setFeedsRows(data)
         break
 
       default:
@@ -1028,7 +1048,9 @@ const CrackerConfig = () => {
             case 'Miscellaneous Parameters':
             case 'Constant':
             case 'SpyroMatbal':
-            case 'OtherSpyroOutput':
+            case 'Other Product':
+            case 'Output Feed':
+            case 'Output Product':
             case 'Yield':
               return (
                 <Box key={currentTabDisplay}>
@@ -1065,7 +1087,41 @@ const CrackerConfig = () => {
                   />
                 </Box>
               )
-
+            case 'Feeds':
+              return (
+                <Box key={currentTabDisplay}>
+                  <KendoDataTables
+                    rows={rows}
+                    setRows={setRowsForCurrent}
+                    fetchData={() =>
+                      fetchCrackerRows(currentTabDisplay, selectMode)
+                    }
+                    configType='cracker_composition'
+                    groupBy='ParticularsType'
+                    handleRemarkCellClick={handleRemarkCellClick}
+                    columns={productionColumns}
+                    remarkDialogOpen={remarkDialogOpen}
+                    setRemarkDialogOpen={setRemarkDialogOpen}
+                    currentRemark={currentRemark}
+                    setCurrentRemark={setCurrentRemark}
+                    currentRowId={currentRowId}
+                    permissions={adjustedPermissions}
+                    selectMode={selectMode}
+                    setSelectMode={setSelectMode}
+                    saveChanges={saveChanges}
+                    snackbarData={snackbarData}
+                    snackbarOpen={snackbarOpen}
+                    setSnackbarOpen={setSnackbarOpen}
+                    setSnackbarData={setSnackbarData}
+                    modifiedCells={modifiedCells}
+                    setModifiedCells={setModifiedCells}
+                    handleExcelUpload={handleExcelUpload}
+                    downloadExcelForConfiguration={
+                      downloadExcelForConfiguration
+                    }
+                  />
+                </Box>
+              )
             default:
               return null
           }

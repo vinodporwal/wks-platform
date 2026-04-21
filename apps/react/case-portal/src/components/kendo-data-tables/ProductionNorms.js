@@ -1035,7 +1035,7 @@ const ProductionNorms = ({ permissions }) => {
         setSnackbarData({
           message: `Total validation failed:\n${message}`,
           severity: 'error',
-          duration: 1000 * 10
+          duration: 1000 * 15
         })
       }
       validateTotalsWithIIRRef.current = false
