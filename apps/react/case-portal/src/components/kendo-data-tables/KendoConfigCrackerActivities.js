@@ -29,10 +29,11 @@ import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment'
 import { getRoleName } from 'services/role-service.js'
 import DecokingConfigNMD from './KendoConfigCrackerActivitiesNMD.js'
 import DownsteamShutdownDMD from './downsteamShutdownDMD.js'
+import FurnaceMaintenanceActivity from './FurnaceMaintenanceActivity.js'
+import SteamHourTable from './steamHourTable.js'
 
 const DecokingConfig = () => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const tabs = ['IBR Plan']
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -53,7 +54,9 @@ const DecokingConfig = () => {
   const AOP_YEAR = year?.selectedYear
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const PLANT_NAME = plantObject?.name?.toUpperCase()
   const SITE_NAME = siteObject?.name?.toUpperCase()
@@ -66,6 +69,8 @@ const DecokingConfig = () => {
   const SCREEN_NAME = screenTitle?.title
   const siteName = siteObject?.name?.toLowerCase()
   const IS_DMD = siteObject?.name?.toLowerCase() == 'dmd'
+  const IS_CRACKER_VMD = lowerVertName === 'cracker' && siteName === 'vmd'
+  const IS_CRACKER_HMD = lowerVertName === 'cracker' && siteName === 'hmd'
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -813,31 +818,20 @@ const DecokingConfig = () => {
   }, [modifiedCellsRunLength])
 
   function validatePostCrDays(newRows) {
-    console.log('?? validatePostCrDays called')
-    console.log('?? Rows:', newRows)
-
     for (let i = 0; i < newRows.length; i++) {
       const row = newRows[i]
       const rowLabel = row.DisplayName || `Row ${i + 1}`
 
-      console.log(`\n?? Validating ${rowLabel}`, row)
-
-      // Only apply rule when IsCR is true
       if (row.IsCR === true) {
         const post = row.Post_CR_Days
         const pre = row.Pre_CR_Days
 
-        console.log('IsCR = true')
-        console.log('Post_CR_Days:', post)
-        console.log('Pre_CR_Days:', pre)
-
-        // ? blank / empty / whitespace
+        // 1. Keep the empty check
         if (
           post === null ||
           post === undefined ||
           (typeof post === 'string' && post.trim() === '')
         ) {
-          console.error('? Post_CR_Days is blank')
           return {
             valid: false,
             message: `Error in ${rowLabel}: Post_CR_Days must be filled when IsCR is true`,
@@ -847,31 +841,25 @@ const DecokingConfig = () => {
         const postNum = Number(post)
         const preNum = Number(pre)
 
-        // ? non-numeric
+        // 2. Keep the numeric check
         if (isNaN(postNum) || isNaN(preNum)) {
-          console.error('? Non-numeric CR days')
           return {
             valid: false,
             message: `Error in ${rowLabel}: Pre_CR_Days and Post_CR_Days must be numeric`,
           }
         }
 
-        // ? Post >= Pre
-        if (postNum >= preNum) {
-          console.error('? Post_CR_Days >= Pre_CR_Days')
+        // 3. REVERSED LOGIC:
+        // Now errors if Post is LESS THAN Pre
+        if (postNum <= preNum) {
           return {
             valid: false,
-            message: `Error in ${rowLabel}: Post_CR_Days must be less than Pre_CR_Days`,
+            message: `Error in ${rowLabel}: Post_CR_Days must be greater than Pre_CR_Days`,
           }
         }
-
-        console.log('? CR validation passed')
-      } else {
-        console.log('?? IsCR is false ? skipping')
       }
     }
 
-    console.log('\n?? validatePostCrDays passed for all rows')
     return { valid: true }
   }
 
@@ -1507,7 +1495,9 @@ const DecokingConfig = () => {
   if (siteName === 'nmd') {
     return <DecokingConfigNMD pid={PLANT_ID} />
   }
-
+  if (siteName === 'hmd') {
+    return <SteamHourTable pid={PLANT_ID} />
+  }
   return (
     <Box>
       <Backdrop
@@ -1516,6 +1506,23 @@ const DecokingConfig = () => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
+      {IS_CRACKER_VMD && (
+        <CustomAccordion defaultExpanded disableGutters sx={{ mt: 1.5 }}>
+          <CustomAccordionSummary
+            aria-controls='meg-grid-content'
+            id='meg-grid-header'
+          >
+            <Typography component='span' className='grid-title'>
+              Furnace Maintenance Activity
+            </Typography>
+          </CustomAccordionSummary>
+          <CustomAccordionDetails>
+            <Box sx={{ width: '100%', margin: 0 }}>
+              <FurnaceMaintenanceActivity />
+            </Box>
+          </CustomAccordionDetails>
+        </CustomAccordion>
+      )}
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
         <Box
@@ -1594,7 +1601,7 @@ const DecokingConfig = () => {
             id='meg-grid-header'
           >
             <Typography component='span' className='grid-title'>
-              Downstream Shutdown
+              Downstream Plant Shutdown
             </Typography>
           </CustomAccordionSummary>
           <CustomAccordionDetails>
@@ -1645,6 +1652,23 @@ const DecokingConfig = () => {
           </Box>
         </CustomAccordionDetails>
       </CustomAccordion>
+      {/* {IS_CRACKER_HMD && (
+        <CustomAccordion defaultExpanded disableGutters>
+          <CustomAccordionSummary
+            aria-controls='meg-grid-content'
+            id='meg-grid-header'
+          >
+            <Typography component='span' className='grid-title'>
+              Steam Hour Details
+            </Typography>
+          </CustomAccordionSummary>
+          <CustomAccordionDetails>
+            <Box sx={{ width: '100%', margin: 0 }}>
+              <SteamHourTable />
+            </Box>
+          </CustomAccordionDetails>
+        </CustomAccordion>
+      )} */}
     </Box>
   )
 }

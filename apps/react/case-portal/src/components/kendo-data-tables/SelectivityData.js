@@ -35,6 +35,7 @@ const SelectivityData = (props) => {
   const VERTICAL_ID = verticalObject?.id
   const VERTICAL_NAME = verticalObject?.name
   const SCREEN_NAME = screenTitle?.title
+  const revisionName = props?.revision ? `_REV_${props?.revision}` : ''
 
   const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
   const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
@@ -50,8 +51,10 @@ const SelectivityData = (props) => {
   const SiteName = siteObject?.name
   const lowerSiteName = SiteName?.toLowerCase()
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const [loading, setLoading] = useState(false)
   const apiRef = useGridApiRef()
@@ -128,7 +131,10 @@ const SelectivityData = (props) => {
 
       if (props?.configType !== 'grades') {
         //TST VALIDATION SEPERATED
-        if (lowerVertName == 'meg') {
+        if (
+          lowerVertName == 'meg' ||
+          (lowerVertName == 'chemical' && lowerSiteName == 'dmd')
+        ) {
           const monthNameMap = {
             jan: 'January',
             feb: 'February',
@@ -501,7 +507,10 @@ const SelectivityData = (props) => {
   } else {
     FORMATE_VALUE = ValueFormatterProduction()
   }
-  if (props?.configType == 'PIO Impact' && lowerVertName == 'pta') {
+  if (
+    props?.configType == 'PIO Impact' &&
+    (lowerVertName == 'pta' || lowerVertName == 'chemical')
+  ) {
     FORMATE_VALUE = '{0:0.000}'
   }
   if (
@@ -512,6 +521,23 @@ const SelectivityData = (props) => {
     lowerVertName == 'vcm'
   ) {
     FORMATE_VALUE = '{0:0.000}'
+  }
+  if (
+    (props?.configType === 'Constant' ||
+      props?.configType === 'PIO Impact' ||
+      props?.configType === 'Configuration') &&
+    (lowerVertName === 'pta' && lowerSiteName === 'dmd')
+  ) {
+    FORMATE_VALUE = '{0:0.0000}'
+  }
+  if (
+    (props?.configType === 'Constant' ||
+      props?.configType == 'PIO Impact' ||
+      props?.configType == 'Configuration') &&
+    lowerVertName == 'aromatics' &&
+    lowerSiteName == 'sez'
+  ) {
+    FORMATE_VALUE = '{0:0.00000}'
   }
 
   const productionColumns = getEnhancedAOPColDefs({
@@ -550,7 +576,8 @@ const SelectivityData = (props) => {
       saveWithRemark: true,
       saveBtn: true,
       downloadExcelBtn: true,
-      uploadExcelBtn: true,
+      uploadExcelBtn:
+        lowerVertName === 'chemical' && lowerSiteName === 'dmd' ? false : true,
       showLoad: true,
       allAction: true,
 
@@ -598,7 +625,7 @@ const SelectivityData = (props) => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
-          EXCEL_EXPORT_TITLE,
+          `${EXCEL_EXPORT_TITLE}${revisionName}`,
         )
 
         //NEW BUILD 17 NOV
@@ -612,7 +639,7 @@ const SelectivityData = (props) => {
           props?.configType,
           PLANT_ID,
           AOP_YEAR,
-          EXCEL_EXPORT_TITLE,
+          `${EXCEL_EXPORT_TITLE}${revisionName}`,
         )
       } else if (props?.tabIndex != 1) {
         if (
@@ -628,7 +655,7 @@ const SelectivityData = (props) => {
             PLANT_ID,
             AOP_YEAR,
             [props?.configType],
-            EXCEL_EXPORT_TITLE,
+            `${EXCEL_EXPORT_TITLE}${revisionName}`,
           )
         } else {
           var report_t = []
@@ -659,7 +686,7 @@ const SelectivityData = (props) => {
             report_t,
             PLANT_ID,
             AOP_YEAR,
-            EXCEL_EXPORT_TITLE,
+            `${EXCEL_EXPORT_TITLE}${revisionName}`,
           )
         }
       } else {
@@ -667,7 +694,7 @@ const SelectivityData = (props) => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
-          `${EXCEL_EXPORT_TITLE}_Production Norms Basis - Constant`,
+          `${EXCEL_EXPORT_TITLE}${revisionName}_Production Norms Basis - Constant`,
         )
       }
 

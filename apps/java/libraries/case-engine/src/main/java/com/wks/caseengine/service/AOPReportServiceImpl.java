@@ -25,6 +25,10 @@ import com.wks.caseengine.dto.AOPReportDTO;
 import com.wks.caseengine.dto.FiveYearSummaryReportDTO;
 import com.wks.caseengine.dto.PlantContributionSummaryDTO;
 import com.wks.caseengine.dto.PlantContributionSummaryT17DTO;
+import com.wks.caseengine.db2.entity.PlantContributionSummaryBusinessDemandBasisDB2;
+import com.wks.caseengine.db2.entity.PlantContributionSummaryT22DB2;
+import com.wks.caseengine.db2.repository.PlantContributionSummaryBusinessDemandBasisDB2Repository;
+import com.wks.caseengine.db2.repository.PlantContributionSummaryT22DB2Repository;
 import com.wks.caseengine.entity.PlantContributionSummaryBusinessDemandBasis;
 import com.wks.caseengine.entity.PlantContributionSummaryT22;
 import com.wks.caseengine.entity.Plants;
@@ -37,7 +41,7 @@ import com.wks.caseengine.repository.PlantContributionSummaryT22Repository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
-
+import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
@@ -47,6 +51,9 @@ public class AOPReportServiceImpl implements AOPReportService {
 
 	@PersistenceContext
 	private EntityManager entityManager;
+	
+	@PersistenceContext(unitName="db2")
+	private EntityManager entityManagerDB2;
 
 	@Autowired
 	private DataSource dataSource;
@@ -65,6 +72,12 @@ public class AOPReportServiceImpl implements AOPReportService {
 	
 	@Autowired
 	private PlantContributionSummaryBusinessDemandBasisRepository plantContributionSummaryBusinessDemandBasisRepository;
+	
+	@Autowired
+	private PlantContributionSummaryBusinessDemandBasisDB2Repository plantContributionSummaryBusinessDemandBasisDB2Repository;
+	
+	@Autowired
+	private PlantContributionSummaryT22DB2Repository plantContributionSummaryT22DB2Repository;
 
 	@Override
 	public AOPMessageVM getAnnualAOPReport(String plantId, String year, String reportType, String AopYearFilter) {
@@ -484,6 +497,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 
 	
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getPlantContributionFiveYearSummaryReport(String reportType, String plantId, String year) {
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -586,6 +600,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getSpecificConsumptionNormsReport(String reportType, String plantId, String year) {
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -681,38 +696,46 @@ public class AOPReportServiceImpl implements AOPReportService {
 	}
 	
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getSpecificConsumptionNormsT17Report(String reportType, String plantId, String year) {
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			
-
-			List<Object[]> obj = getSpecificConsumptionNormsT17Data(plantId, year, reportType);
-			
+			 List<Object[]> obj = getSpecificConsumptionNormsT17DataDB2(plantId, year, reportType);
+						
 			List<PlantContributionSummaryT17DTO> plantProductionData = new ArrayList<>();
 
 			for (Object[] row : obj) {
 			    PlantContributionSummaryT17DTO dto = new PlantContributionSummaryT17DTO();
-
-			    dto.setSno(row[0] != null ? Integer.parseInt(row[0].toString()) : 0);
-			    dto.setId(row[1] != null ? row[1].toString() : "");
-			    dto.setMaterial(row[2] != null ? row[2].toString() : "");
-			    dto.setPrice(row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0);
-			    dto.setUom(row[4] != null ? row[4].toString() : "");
-			    dto.setDesign(row[5] != null ? Double.parseDouble(row[5].toString()) : 0.0);
-			    dto.setDesignRsMt(row[6] != null ? Double.parseDouble(row[6].toString()) : 0.0);
-			    dto.setBestAchivedActual(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
-			    dto.setBestAchivedActualRsMT(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
-			    dto.setGlobalBenchmark(row[9] != null ? row[9].toString() : "0");
-			    dto.setGlobalBenchmarkRsMT(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
-			    dto.setBudgetPrevYear(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
-			    dto.setBudgetPrevYearRsMT(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
-			    dto.setActualPrevYear(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0);
-			    dto.setActualPrevYearRsMT(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
-			    dto.setProposedBudget(row[15] != null ? Double.parseDouble(row[15].toString()) : 0.0);
-			    dto.setProposedBudgetRsMT(row[16] != null ? Double.parseDouble(row[16].toString()) : 0.0);
-			    dto.setPlantFkId(row[17] != null ? row[17].toString() : "");
-			    dto.setAopYear(row[18] != null ? row[18].toString() : "");
-			    dto.setRemarks(row[19] != null ? row[19].toString() : "");
+			    if(reportType.equalsIgnoreCase("MaterialBalanceProposedNorms")) {
+			    	dto.setSno(row[0] != null ? Integer.parseInt(row[0].toString()) : 0);
+			    	 dto.setMaterial(row[1] != null ? row[1].toString() : "");
+			    	 dto.setProposedBudget(row[2] != null ? Double.parseDouble(row[2].toString()) : 0.0);
+			    	 dto.setPlantFkId(row[3] != null ? row[3].toString() : "");
+					 dto.setAopYear(row[4] != null ? row[4].toString() : "");
+					 dto.setType(row[5] != null ? row[5].toString() : "");
+			    }else {
+			    	dto.setSno(row[0] != null ? Integer.parseInt(row[0].toString()) : 0);
+				    dto.setId(row[1] != null ? row[1].toString() : "");
+				    dto.setMaterial(row[2] != null ? row[2].toString() : "");
+				    dto.setPrice(row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0);
+				    dto.setUom(row[4] != null ? row[4].toString() : "");
+				    dto.setDesign(row[5] != null ? Double.parseDouble(row[5].toString()) : 0.0);
+				    dto.setDesignRsMt(row[6] != null ? Double.parseDouble(row[6].toString()) : 0.0);
+				    dto.setBestAchivedActual(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
+				    dto.setBestAchivedActualRsMT(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
+				    dto.setGlobalBenchmark(row[9] != null ? row[9].toString() : "0");
+				    dto.setGlobalBenchmarkRsMT(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
+				    dto.setBudgetPrevYear(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
+				    dto.setBudgetPrevYearRsMT(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
+				    dto.setActualPrevYear(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0);
+				    dto.setActualPrevYearRsMT(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
+				    dto.setProposedBudget(row[15] != null ? Double.parseDouble(row[15].toString()) : 0.0);
+				    dto.setProposedBudgetRsMT(row[16] != null ? Double.parseDouble(row[16].toString()) : 0.0);
+				    dto.setPlantFkId(row[17] != null ? row[17].toString() : "");
+				    dto.setAopYear(row[18] != null ? row[18].toString() : "");
+				    dto.setRemarks(row[19] != null ? row[19].toString() : "");
+			    }
 
 			    plantProductionData.add(dto);
 			}			
@@ -732,7 +755,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
-
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getPlantContributionData(String plantId, String aopYear, String reportType) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
@@ -746,7 +769,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
@@ -760,6 +783,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 		}
 	}
 	
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getSpecificConsumptionNormsData(String plantId, String aopYear, String reportType) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
@@ -771,7 +795,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
@@ -791,7 +815,12 @@ public class AOPReportServiceImpl implements AOPReportService {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			String storedProcedure = verticalName + "_" + site.getName() + "_GetSpecificConsumptionNormsReport";
+			String storedProcedure=null;
+			if(!verticalName.equalsIgnoreCase("MEG")) {
+				 storedProcedure = verticalName + "_" + site.getName() + "_GetSpecificConsumptionNormsReport";
+			}else {
+				storedProcedure = "GetSpecificConsumptionNormsReport";
+			}
 			
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
@@ -810,23 +839,55 @@ public class AOPReportServiceImpl implements AOPReportService {
 		}
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
+	public List<Object[]> getSpecificConsumptionNormsT17DataDB2(String plantId, String aopYear, String reportType) {
+		try {
+   			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			String storedProcedure=null;
+			if(!verticalName.equalsIgnoreCase("MEG")) {
+				 storedProcedure = verticalName + "_" + site.getName() + "_GetSpecificConsumptionNormsReport";
+			}else {
+				storedProcedure = "GetSpecificConsumptionNormsReport";
+			}
+			
+			String sql = "EXEC " + storedProcedure
+					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
+
+			Query query = entityManagerDB2.createNativeQuery(sql);
+
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+			query.setParameter("reportType", reportType);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM updatePlantContributionFiveYearSummaryReport(
 			List<PlantContributionSummaryDTO> plantContributionSummaryDTOs) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
-		List<PlantContributionSummaryT22> plantContributionSummaryT22s=new ArrayList<PlantContributionSummaryT22>();
+		List<PlantContributionSummaryT22DB2> plantContributionSummaryT22s=new ArrayList<PlantContributionSummaryT22DB2>();
 		try {
 			for(PlantContributionSummaryDTO plantContributionSummaryDTO:plantContributionSummaryDTOs) {
-				Optional<PlantContributionSummaryT22> plantContributionSummaryT22Opt = plantContributionSummaryT22Repository.findById(plantContributionSummaryDTO.getId());
+				Optional<PlantContributionSummaryT22DB2> plantContributionSummaryT22Opt = plantContributionSummaryT22DB2Repository.findById(plantContributionSummaryDTO.getId());
 				if(plantContributionSummaryT22Opt.isPresent()) {
-					PlantContributionSummaryT22 plantContributionSummaryT22=plantContributionSummaryT22Opt.get();
+					PlantContributionSummaryT22DB2 plantContributionSummaryT22=plantContributionSummaryT22Opt.get();
 					plantContributionSummaryT22.setActual4(plantContributionSummaryDTO.getActualFourYearsAgo());
 					plantContributionSummaryT22.setActual3(plantContributionSummaryDTO.getActualThreeYearsAgo());
 					plantContributionSummaryT22.setActual2(plantContributionSummaryDTO.getActualTwoYearsAgo());
 					plantContributionSummaryT22.setActual1(plantContributionSummaryDTO.getActualLastYear());
 					plantContributionSummaryT22.setBudgetCurrentYear(plantContributionSummaryDTO.getBudgetCurrent());
-					plantContributionSummaryT22s.add(plantContributionSummaryT22Repository.save(plantContributionSummaryT22));
+					plantContributionSummaryT22s.add(plantContributionSummaryT22DB2Repository.save(plantContributionSummaryT22));
 				}
 				
 			}
@@ -841,6 +902,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getGradewiseConsumptionNorms(String plantId,String year,String reportType) {
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
 	    try {
@@ -893,7 +955,361 @@ public class AOPReportServiceImpl implements AOPReportService {
 	        throw new RuntimeException("Failed to fetch data", ex);
 	    }
 	}
-	
+
+	@Override
+	public AOPMessageVM getC3Calculation(String plantId, String year) {
+	    AOPMessageVM aopMessageVM = new AOPMessageVM();
+	    try {
+	        List<Object[]> results = getC3CalculationData(plantId, year);
+	        List<String> columnNames = getC3CalculationColumns(plantId, year);
+
+	        List<Map<String, Object>> resultList = new ArrayList<>();
+	        for (Object[] row : results) {
+	            Map<String, Object> rowMap = new LinkedHashMap<>();
+	            for (int i = 0; i < columnNames.size(); i++) {
+	                rowMap.put(columnNames.get(i), row[i]);
+	            }
+	            resultList.add(rowMap);
+	        }
+
+	        Map<String, Object> data = new HashMap<>();
+	        data.put("data", resultList);
+	        data.put("columns", getC3CalculationColumnMetadata(plantId, year));
+
+	        aopMessageVM.setCode(200);
+	        aopMessageVM.setMessage("SP Executed successfully");
+	        aopMessageVM.setData(data);
+	        return aopMessageVM;
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid UUID format ", e);
+	    } catch (Exception ex) {
+	        throw new RuntimeException("Failed to fetch data", ex);
+	    }
+	}
+
+	@Override
+	public AOPMessageVM getC3Detail(String plantId, String year) {
+	    AOPMessageVM aopMessageVM = new AOPMessageVM();
+	    try {
+	        List<Object[]> results = getC3DetailData(plantId, year);
+	        List<String> columnNames = getC3DetailColumns(plantId, year);
+
+	        List<Map<String, Object>> resultList = new ArrayList<>();
+	        for (Object[] row : results) {
+	            Map<String, Object> rowMap = new LinkedHashMap<>();
+	            for (int i = 0; i < columnNames.size(); i++) {
+	                rowMap.put(columnNames.get(i), row[i]);
+	            }
+	            resultList.add(rowMap);
+	        }
+
+	        Map<String, Object> data = new HashMap<>();
+	        data.put("data", resultList);
+	        data.put("columns", getC3DetailColumnMetadata(plantId, year));
+
+	        aopMessageVM.setCode(200);
+	        aopMessageVM.setMessage("SP Executed successfully");
+	        aopMessageVM.setData(data);
+	        return aopMessageVM;
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid UUID format ", e);
+	    } catch (Exception ex) {
+	        throw new RuntimeException("Failed to fetch data", ex);
+	    }
+	}
+
+	@Override
+	public AOPMessageVM getLIMSDataset(String plantId, String year) {
+	    AOPMessageVM aopMessageVM = new AOPMessageVM();
+	    try {
+	        List<Object[]> results = getLIMSDatasetData(plantId, year);
+	        List<String> columnNames = getLIMSDatasetColumns(plantId, year);
+
+	        List<Map<String, Object>> resultList = new ArrayList<>();
+	        for (Object[] row : results) {
+	            Map<String, Object> rowMap = new LinkedHashMap<>();
+	            for (int i = 0; i < columnNames.size(); i++) {
+	                rowMap.put(columnNames.get(i), row[i]);
+	            }
+	            resultList.add(rowMap);
+	        }
+
+	        Map<String, Object> data = new HashMap<>();
+	        data.put("data", resultList);
+	        data.put("columns", getLIMSDatasetColumnMetadata(plantId, year));
+
+	        aopMessageVM.setCode(200);
+	        aopMessageVM.setMessage("SP Executed successfully");
+	        aopMessageVM.setData(data);
+	        return aopMessageVM;
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid UUID format ", e);
+	    } catch (Exception ex) {
+	        throw new RuntimeException("Failed to fetch data", ex);
+	    }
+	}
+
+	private List<Object[]> getLIMSDatasetData(String plantId, String year) {
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetLIMSDataSet";
+			String sql = "EXEC " + storedProcedure + " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", year);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	private List<String> getLIMSDatasetColumns(String plantId, String year) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<String> columnNames = new ArrayList<>();
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetLIMSDataSet";
+			String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, year);
+
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						columnNames.add(rsMetaData.getColumnLabel(i));
+					}
+				}
+			}
+			return columnNames;
+		});
+	}
+
+	private List<Map<String, Object>> getLIMSDatasetColumnMetadata(String plantId, String year) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<Map<String, Object>> columnMetadata = new ArrayList<>();
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetLIMSDataSet";
+			String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, year);
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						Map<String, Object> columnInfo = new HashMap<>();
+						String columnName = rsMetaData.getColumnLabel(i);
+						String columnType = rsMetaData.getColumnTypeName(i);
+
+						columnInfo.put("field", columnName);
+						columnInfo.put("title", formatTitle(columnName));
+						columnInfo.put("editable", false);
+						columnInfo.put("type", getFrontendType(columnType));
+						columnMetadata.add(columnInfo);
+					}
+				}
+			}
+			return columnMetadata;
+		});
+	}
+
+	private List<Object[]> getC3DetailData(String plantId, String year) {
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_C3Detail";
+			String sql = "EXEC " + storedProcedure + " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", year);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	private List<String> getC3DetailColumns(String plantId, String year) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<String> columnNames = new ArrayList<>();
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_C3Detail";
+			String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, year);
+
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						columnNames.add(rsMetaData.getColumnLabel(i));
+					}
+				}
+			}
+			return columnNames;
+		});
+	}
+
+	private List<Map<String, Object>> getC3DetailColumnMetadata(String plantId, String year) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<Map<String, Object>> columnMetadata = new ArrayList<>();
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_C3Detail";
+			String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, year);
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						Map<String, Object> columnInfo = new HashMap<>();
+						String columnName = rsMetaData.getColumnLabel(i);
+						String columnType = rsMetaData.getColumnTypeName(i);
+
+						columnInfo.put("field", columnName);
+						columnInfo.put("title", formatTitle(columnName));
+						columnInfo.put("editable", false);
+						columnInfo.put("type", getFrontendType(columnType));
+						columnMetadata.add(columnInfo);
+					}
+				}
+			}
+			return columnMetadata;
+		});
+	}
+
+	private List<Object[]> getC3CalculationData(String plantId, String year) {
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_C3Calculation";
+			String sql = "EXEC " + storedProcedure + " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", year);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	private List<String> getC3CalculationColumns(String plantId, String year) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<String> columnNames = new ArrayList<>();
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_C3Calculation";
+			String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, year);
+
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						columnNames.add(rsMetaData.getColumnLabel(i));
+					}
+				}
+			}
+			return columnNames;
+		});
+	}
+
+	private List<Map<String, Object>> getC3CalculationColumnMetadata(String plantId, String year) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<Map<String, Object>> columnMetadata = new ArrayList<>();
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_C3Calculation";
+			String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, year);
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						Map<String, Object> columnInfo = new HashMap<>();
+						String columnName = rsMetaData.getColumnLabel(i);
+						String columnType = rsMetaData.getColumnTypeName(i);
+
+						columnInfo.put("field", columnName);
+						columnInfo.put("title", formatTitle(columnName));
+						columnInfo.put("editable", false);
+						columnInfo.put("type", getFrontendType(columnType));
+						columnMetadata.add(columnInfo);
+					}
+				}
+			}
+			return columnMetadata;
+		});
+	}
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getGradewiseConsumptionNormsData(String plantId,String year) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
@@ -907,7 +1323,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @year = :year";
 
-			Query query = entityManager.createNativeQuery(sql);
+			Query query = entityManagerDB2.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("year", year);
@@ -920,9 +1336,9 @@ public class AOPReportServiceImpl implements AOPReportService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
-
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<String> getGradewiseConsumptionNormsDataColumns(String plantId,String year) {
-		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+		return entityManagerDB2.unwrap(Session.class).doReturningWork(connection -> {
 			List<String> columnNames = new ArrayList<>();
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
 					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
@@ -950,9 +1366,9 @@ public class AOPReportServiceImpl implements AOPReportService {
 			return columnNames;
 		});
 	}
-
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Map<String, Object>> getGradewiseConsumptionNormsColumnMetadata(String plantId,String year) {
-		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+		return entityManagerDB2.unwrap(Session.class).doReturningWork(connection -> {
 			List<Map<String, Object>> columnMetadata = new ArrayList<>();
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
 					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
@@ -1012,6 +1428,33 @@ public class AOPReportServiceImpl implements AOPReportService {
 			default:
 				return "string";
 		}
+	}
+
+	@Override
+	@Transactional(transactionManager = "db2TransactionManager")
+	public AOPMessageVM updateSpecificConsumptionNormsT17ReportDB2(
+			List<PlantContributionSummaryT17DTO> plantContributionSummaryT17DTOs, String plantId, String year) {
+		List<PlantContributionSummaryBusinessDemandBasisDB2> plantContributionSummaryBusinessDemandBasisList = new ArrayList<>();
+		try {
+			
+			for(PlantContributionSummaryT17DTO plantContributionSummaryT17DTO:plantContributionSummaryT17DTOs) {
+				if(plantContributionSummaryT17DTO.getId()!=null) {
+					Optional<PlantContributionSummaryBusinessDemandBasisDB2> plantContributionSummaryBusinessDemandBasisOpt=	plantContributionSummaryBusinessDemandBasisDB2Repository.findById(UUID.fromString(plantContributionSummaryT17DTO.getId()));
+					if(plantContributionSummaryBusinessDemandBasisOpt.isPresent()) {
+						PlantContributionSummaryBusinessDemandBasisDB2 plantContributionSummaryBusinessDemandBasis=plantContributionSummaryBusinessDemandBasisOpt.get();
+						plantContributionSummaryBusinessDemandBasis.setRemarks(plantContributionSummaryT17DTO.getRemarks());
+						plantContributionSummaryBusinessDemandBasisList.add(plantContributionSummaryBusinessDemandBasisDB2Repository.save(plantContributionSummaryBusinessDemandBasis));
+					}
+				}
+			}
+		}catch (Exception ex) {
+			throw new RuntimeException("Failed to update data", ex);
+		}
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setData(plantContributionSummaryBusinessDemandBasisList);
+		aopMessageVM.setMessage("Data updated successfully");
+		return aopMessageVM;
 	}
 
 	@Override

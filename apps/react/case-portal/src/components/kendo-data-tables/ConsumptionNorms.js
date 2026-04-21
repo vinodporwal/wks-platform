@@ -1,26 +1,36 @@
-import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { useGridApiRef } from '@mui/x-data-grid'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import { setIsBlocked } from 'store/reducers/dataGridStore'
+import { setIsBlocked, setIsReleased } from 'store/reducers/dataGridStore'
 import { validateFields } from 'utils/validationUtils'
 import getEnhancedColDefs from '../data-tables/CommonHeader/kendoconsumptionHeader'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
-import { Box } from '@mui/material'
+import {
+  Backdrop,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from '@mui/material'
 import KendoDataTables from './index'
 import { ConsumptionNormsApiService } from 'services/consumption-norms-api-service'
 import { getRoleName } from 'services/role-service'
+import { DataService } from 'services/DataService'
 
 const ConsumptionNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [calculationObject, setCalculationObject] = useState([])
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const [open1, setOpen1] = useState(false)
   const valueFormat = ValueFormatterConsumption()
+
   const defaultCustomHeight = { mainBox: '55vh', otherBox: '112%' }
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -35,6 +45,7 @@ const ConsumptionNorms = () => {
     verticalObject,
     year,
     screenTitle,
+    // setIsReleased,
   } = dataGridStore
 
   const PLANT_ID = plantObject?.id
@@ -54,7 +65,9 @@ const ConsumptionNorms = () => {
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
@@ -78,10 +91,25 @@ const ConsumptionNorms = () => {
   const dispatch = useDispatch()
   const [gradeId, setGradeId] = useState(null)
   const [grades, setGrades] = useState([])
+  const [openReleaseDialogBox, setOpenReleaseDialogBox] = useState(false)
+  const [isReleaseDisabled, setIsReleaseDisabled] = useState(true)
+
+  // const { setIsReleased } = dataGridStore
 
   const isPEPP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const isPET = lowerVertName === 'pet'
+  const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
+  const IS_ELASTOMER_HMD_SBR =
+    VERTICAL_NAME_NO_CASE === 'ELASTOMER' &&
+    SITE_NAME_NO_CASE === 'HMD' &&
+    PLANT_NAME_NO_CASE === 'SBR'
 
+  const IS_ELASTOMER_JMD_HIIR =
+    VERTICAL_NAME_NO_CASE === 'ELASTOMER' &&
+    SITE_NAME_NO_CASE === 'JMD' &&
+    PLANT_NAME_NO_CASE === 'HIIR'
+
+  const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
@@ -94,6 +122,30 @@ const ConsumptionNorms = () => {
     setRemarkDialogOpen(true)
   }
 
+  const getIsReleased = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    try {
+      const response = await DataService.getReleaseAOPStatus(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      // If response has data, disable the button (already released)
+      // If no data, enable the button (not yet released)
+      if (response?.data && Object.keys(response.data).length > 0) {
+        setIsReleaseDisabled(true)
+      } else {
+        setIsReleaseDisabled(false)
+      }
+    } catch (error) {
+      console.error('Error fetching release status:', error)
+    }
+  }
+  useEffect(() => {
+    getIsReleased()
+  }, [keycloak, AOP_YEAR, PLANT_ID])
   const saveEditedData = async (newRows) => {
     setLoading(true)
     try {
@@ -195,8 +247,11 @@ const ConsumptionNorms = () => {
 
       if (
         lowerVertName == 'pe' ||
+        IS_ELASTOMER_JMD_HIIR ||
         lowerVertName == 'pp' ||
-        lowerVertName == 'pet'
+        lowerVertName == 'pet' ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
       ) {
         try {
           setLoading(true)
@@ -302,7 +357,16 @@ const ConsumptionNorms = () => {
 
   const fetchData = async (gradeId) => {
     if (!PLANT_ID || !AOP_YEAR) return
-    if ((isPEPP || isPET) && !gradeId) return
+    if (
+      (isPEPP ||
+        isPET ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD) &&
+      !gradeId
+    )
+      return
     setLoading(true)
     try {
       var response
@@ -310,7 +374,11 @@ const ConsumptionNorms = () => {
       if (
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'pet'
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
       ) {
         response = await ConsumptionNormsApiService.getConsumptionNormsData(
           keycloak,
@@ -391,7 +459,11 @@ const ConsumptionNorms = () => {
     if (
       lowerVertName === 'pe' ||
       lowerVertName === 'pp' ||
-      lowerVertName === 'pet'
+      lowerVertName === 'pet' ||
+      IS_ELASTOMER_HMD_SBR ||
+      IS_ELASTOMER_JMD_HIIR ||
+      IS_PVC_VMD ||
+      IS_PVC_DMD
     ) {
       fetchGradeDropdowns()
     } else {
@@ -406,6 +478,44 @@ const ConsumptionNorms = () => {
     lowerPlantName,
     valueFormat,
   })
+
+  const handleRelease = () => {
+    setOpenReleaseDialogBox(true)
+  }
+
+  const closeReleaseDialogBox = () => {
+    setOpenReleaseDialogBox(false)
+  }
+
+  const submitConfirmation = async () => {
+    setOpenReleaseDialogBox(false)
+    setLoading(true)
+    try {
+      const response = await DataService.releaseAOPReport(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Released Successfully!',
+        severity: 'success',
+      })
+      setIsReleaseDisabled(true)
+      let isReleased = 1
+      dispatch(setIsReleased({ isReleased }))
+    } catch (error) {
+      console.error('Error releasing report:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Release Failed!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleUnitChange = (unit) => {
     setSelectedUnit(unit)
@@ -435,7 +545,11 @@ const ConsumptionNorms = () => {
         if (
           lowerVertName === 'pe' ||
           lowerVertName === 'pp' ||
-          lowerVertName === 'pet'
+          lowerVertName === 'pet' ||
+          IS_ELASTOMER_HMD_SBR ||
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD
         ) {
           fetchGradeDropdownsAfterCalc()
         } else {
@@ -472,7 +586,11 @@ const ConsumptionNorms = () => {
       if (
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'pet'
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
       ) {
         response =
           await ConsumptionNormsApiService.OverallConsumptionPEPPExport(
@@ -530,31 +648,48 @@ const ConsumptionNorms = () => {
       showG:
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'pet'
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
           ? true
           : false,
       marginBottom:
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'pet'
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
           ? true
           : false,
       dropdownLabel: 'Select Grade',
       downloadExcelBtnFromUI:
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'pet'
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
           ? false
           : true,
       downloadExcelBtn:
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'pet'
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
           ? true
           : false,
       ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
       isHeight: lowerVertName !== 'meg' && rows?.length > 10,
       showTitleNameBusiness: true,
+      showReleaseBtn: true,
       titleName: `${SCREEN_NAME}`,
     },
     isOldYear,
@@ -576,16 +711,17 @@ const ConsumptionNorms = () => {
 
       <div>
         {
-          <Box
-            sx={{
-              width: '100%',
-              padding: '0px ',
-              margin: '0px',
-              backgroundColor: '#F2F3F8',
-              borderRadius: 0,
-              borderBottom: 'none',
-            }}
-          >
+          <Box>
+            {/* <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 0 }}>
+              <Button
+                variant='contained'
+                onClick={handleRelease}
+                disabled={isReleaseDisabled || READ_ONLY}
+                className='btn-release'
+              >
+                Release
+              </Button>
+            </Box> */}
             <KendoDataTables
               autoHeight={true}
               modifiedCells={modifiedCells}
@@ -620,9 +756,78 @@ const ConsumptionNorms = () => {
               calculatebtnClicked={calculatebtnClicked}
               downloadExcelForConfiguration={downloadExcelForConfiguration}
               plantID={PLANT_ID}
+              isReleaseDisabled={isReleaseDisabled}
+              handleRelease={handleRelease}
             />
           </Box>
         }
+        <Dialog
+          open={openReleaseDialogBox}
+          onClose={closeReleaseDialogBox}
+          disableScrollLock
+          PaperProps={{
+            sx: {
+              borderRadius: '20px',
+              p: 2,
+              width: 400,
+              backdropFilter: 'blur(8px)',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              fontWeight: 700,
+              fontSize: '1.2rem',
+
+              pb: 0.5,
+            }}
+          >
+            Confirm Release
+          </DialogTitle>
+
+          <DialogContent sx={{ pt: 1 }}>
+            <DialogContentText
+              sx={{
+                fontSize: '0.9rem',
+                color: '#4b5563',
+                lineHeight: 1.5,
+              }}
+            >
+              Please confirm that <b style={{ color: '#16a34a' }}>Production</b>
+              , <b style={{ color: '#16a34a' }}>Norms</b>, and{' '}
+              <b style={{ color: '#16a34a' }}>Reports</b> are verified before
+              releasing for review.
+            </DialogContentText>
+          </DialogContent>
+
+          <DialogActions sx={{ px: 2, pb: 1.5, gap: 1 }}>
+            <Button
+              onClick={closeReleaseDialogBox}
+              variant='text'
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                color: '#6b7280',
+                '&:hover': { background: 'rgba(0,0,0,0.04)' },
+              }}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              onClick={submitConfirmation}
+              variant='contained'
+              className='btn-save'
+              sx={{
+                textTransform: 'none',
+                px: 2.5,
+              }}
+            >
+              Release
+            </Button>
+          </DialogActions>
+        </Dialog>{' '}
       </div>
     </div>
   )

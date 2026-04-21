@@ -53,7 +53,7 @@ const TurnaroundReport = () => {
 
   const [loading, setLoading] = useState(false)
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remarks || '')
@@ -69,7 +69,9 @@ const TurnaroundReport = () => {
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const columns = [
     {
@@ -84,22 +86,34 @@ const TurnaroundReport = () => {
       field: 'activity',
       title: 'Activities',
       widthT: 300,
-      editable: false,
+      editable: true,
     },
 
+    // {
+    //   title: 'Turnaround Period',
+    //   children: [
+    //     { field: 'fromDateReport', title: 'From', width: 120, editable: true },
+    //     { field: 'toDateReport', title: 'To', width: 120, editable: true },
+    //   ],
+    // },
     {
-      title: 'Turnaround Period',
-      children: [
-        { field: 'fromDateReport', title: 'From', width: 120, editable: false },
-        { field: 'toDateReport', title: 'To', width: 120, editable: false },
-      ],
+      field: 'fromDateReport',
+      title: 'Turnaround Period From',
+      width: 120,
+      editable: true,
+    },
+    {
+      field: 'toDateReport',
+      title: 'Turnaround Period To',
+      width: 120,
+      editable: true,
     },
 
     {
       field: 'durationInHrs',
       title: 'Duration, hrs',
       widthT: 100,
-      editable: false,
+      editable: true,
       align: 'right',
       headerAlign: 'right',
       type: 'number',
@@ -240,19 +254,34 @@ const TurnaroundReport = () => {
         setLoading(false)
         return
       }
+      const formatIfDate = (value) => {
+        if (!value) return ''
+        const parsed = moment.utc(
+          value,
+          ['MMM D, YYYY', 'MMM D, YYYY, h:mm:ss A'],
+          true,
+        )
+        return parsed.isValid()
+          ? new Date(parsed.add(1, 'day').format('YYYY-MM-DD'))
+          : value
+      }
 
       const rowsToUpdate = data.map((row) => ({
-        id: row.Id,
+        id: row.Id || null,
+        fromDate: formatIfDate(row.fromDateReport),
+        toDate: formatIfDate(row.toDateReport),
+        activity: row.activity,
+        sno: row.rowNumber,
+        durationInHrs: row.durationInHrs,
         remark: row.remarks,
       }))
-      const res = await DataService.saveTurnaroundReport(
+      const res = await DataService.saveTurnaroundReportWhole(
         keycloak,
         rowsToUpdate,
         PLANT_ID,
         AOP_YEAR,
+        'currentYear',
       )
-
-      // console.log(res)
 
       if (res?.code == 200) {
         setSnackbarOpen(true)
@@ -260,6 +289,7 @@ const TurnaroundReport = () => {
           message: 'Data Saved Successfully!',
           severity: 'success',
         })
+        fetchCurrentYear()
         setModifiedCells({})
       } else {
         setSnackbarOpen(true)
@@ -328,6 +358,7 @@ const TurnaroundReport = () => {
         rowsToUpdate,
         PLANT_ID,
         AOP_YEAR,
+        'previousYear',
       )
 
       // console.log(res)
@@ -396,7 +427,29 @@ const TurnaroundReport = () => {
       setLoading(false)
     }
   }
+  const deleteRowCurrentYearData = async (paramsForDelete) => {
+    try {
+      const { idFromApi, id } = paramsForDelete
+      const deleteId = id
 
+      if (!idFromApi) {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+      }
+
+      if (idFromApi) {
+        await DataService.deleteTurnArondReportItem(idFromApi, keycloak)
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Record Deleted successfully!',
+          severity: 'success',
+        })
+        fetchCurrentYear()
+      }
+    } catch (error) {
+      console.error('Error deleting Record!', error)
+    }
+  }
   const deleteRowData = async (paramsForDelete) => {
     try {
       const { idFromApi, id } = paramsForDelete
@@ -423,7 +476,7 @@ const TurnaroundReport = () => {
 
   return (
     <Box>
-      <KendoDataTablesReports
+      <KendoDataTables
         modifiedCells={modifiedCells}
         enableSaveAddBtn={enableSaveAddBtn}
         rows={rows}
@@ -447,9 +500,14 @@ const TurnaroundReport = () => {
           saveBtn: !isOldYear,
           showWorkFlowBtns: true,
           showTitle: true,
+          addButton: !isOldYear,
+          allAction: true,
+          deleteButton: true,
+          title: 'Turnaround Details (T-19A)',
         }}
         saveChanges={saveChanges}
         handleCalculate={handleCalculate}
+        deleteRowData={deleteRowCurrentYearData}
       />
 
       <Typography component='div' className='grid-title' sx={{ mt: 1 }}>

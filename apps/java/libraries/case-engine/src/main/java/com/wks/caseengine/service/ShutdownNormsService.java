@@ -19,6 +19,11 @@ public interface ShutdownNormsService {
 			boolean isAfterSave,
 			List<ShutdownNormsValueDTO> dtoList,
 			boolean allGrade);
+	public byte[] exportShutdownNormsAllGrades(
+			String year,
+			UUID plantFKId,
+			boolean isAfterSave,
+			List<ShutdownNormsValueDTO> dtoList);
 
 	public AOPMessageVM importExcel(String year, UUID fromString,String gradeId, MultipartFile file,boolean allGrade);
 	public AOPMessageVM saveShutDownNorms(String plantId,List<ShutdownNormsValueDTO> shutdownNormsValueDTOList);

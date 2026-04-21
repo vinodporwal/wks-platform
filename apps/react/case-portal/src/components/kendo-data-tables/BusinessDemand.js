@@ -19,6 +19,10 @@ import KendoDataTables from './index'
 import ProductionvolumeData from './ProductionVoluemData'
 import PropaneBusiness from 'components/kendo-data-tables/PropaneBusiness'
 import { getRoleName } from 'services/role-service'
+import ProductionTarget from './ProductionTarget'
+import ManualEntryForFeedStreams from './ManualEntryForFeedStreams'
+import ModeSelection from './ModeSelection'
+import { ProductionVolumeDataApiService } from 'services/production-volume-data-api-service'
 const BusinessDemand = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const keycloak = useSession()
@@ -45,17 +49,30 @@ const BusinessDemand = ({ permissions }) => {
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
+  const lowerSiteName = siteObject?.name.toLowerCase()
 
   const IS_ELASTOMER_VERTICAL = lowerVertName === 'elastomer'
   const IS_PE_PP_VERTICAL = lowerVertName === 'pp' || lowerVertName === 'pe'
   const IS_PTA_VERTICAL = lowerVertName === 'pta'
   const IS_PET_VERTICAL = lowerVertName === 'pet'
+  const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
+  const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const IS_VCM_VERTICAL = lowerVertName === 'vcm'
   const IS_CRACKER_VERTICAL = lowerVertName == 'cracker'
+  const IS_CARCKER_VMD = lowerVertName === 'cracker' && lowerSiteName === 'vmd'
+  const IS_CRACKER_DMD = lowerVertName === 'cracker' && lowerSiteName === 'dmd'
+  const IS_CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
+  const IS_ELASTOMER_JMD =
+    lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
+  const IS_CHEMICAL_JMD =
+    lowerVertName === 'chemical' && lowerSiteName === 'jmd'
+  const IS_CHEMICAL = lowerVertName === 'chemical'
   const PRODUCTION_TARGET_LABEL = IS_VCM_VERTICAL
     ? 'Production Target (This is a reference for entering the Business Demand value)'
     : 'Production Target (MT) (This is a reference for entering the Business Demand value)'
@@ -71,6 +88,9 @@ const BusinessDemand = ({ permissions }) => {
 
   const apiRef = useGridApiRef()
   const [rows, setRows] = useState()
+  const [rowRate, setRowRate] = useState()
+  const [selectedUnit, setSelectedUnit] = useState('TPH')
+  const [editResetKey, setEditResetKey] = useState(0)
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -85,7 +105,50 @@ const BusinessDemand = ({ permissions }) => {
     unsavedRows: {},
     rowsBeforeChange: {},
   })
+  const columnsProductionRate = [
+    {
+      field: 'idFromApi',
+      title: 'ID',
+      hidden: true,
+    },
+    {
+      field: 'aopCaseId',
+      title: 'Case ID',
+      width: 120,
+      editable: false,
+      hidden: true,
+    },
+    {
+      field: 'normParametersFKId',
+      title: 'Particulars',
+      editable: false,
+      widthT: 100,
+      hidden: true,
+    },
 
+    {
+      field: 'materialDisplayName',
+      title: 'Particulars',
+      editable: false,
+      widthT: 200,
+    },
+    {
+      field: 'april',
+      title: 'Value',
+      editable: false,
+      widthT: 200,
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+      format: '{0:n2}',
+    },
+
+    {
+      field: 'isEditable',
+      title: 'isEditable',
+      hidden: true,
+    },
+  ]
   const fetchData = async () => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
 
@@ -99,16 +162,24 @@ const BusinessDemand = ({ permissions }) => {
         AOP_YEAR,
       )
 
-      const formattedData = data.map((item, index) => ({
-        ...item,
-        idFromApi: item.id,
-        id: index,
-        originalRemark: item.remark,
-        inEdit: false,
-        Particulars: item.normParameterTypeDisplayName,
-        expanded: false,
-        UOM: IS_VCM_VERTICAL ? '%' : item?.UOM,
-      }))
+      const formattedData = data
+        .filter((item) => {
+          if (IS_CRACKER_DMD) {
+            return item.normParameterTypeName === 'Business Demand'
+          }
+          return true // all items when not IS_CRACKER_DMD
+        })
+        .map((item, index) => ({
+          ...item,
+          idFromApi: item.id,
+          id: index,
+          originalRemark: item.remark,
+          inEdit: false,
+          Particulars: item.normParameterTypeDisplayName,
+          expanded: false,
+          UOM:
+            IS_VCM_VERTICAL || lowerVertName === 'chemical' ? '%' : item?.UOM,
+        }))
 
       setRows(formattedData)
 
@@ -122,6 +193,57 @@ const BusinessDemand = ({ permissions }) => {
   useEffect(() => {
     fetchData()
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
+
+  const handleUnitChangeMain = (unit) => {
+    setSelectedUnit(unit)
+  }
+  const fetchProductionRateData = async () => {
+    if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
+
+    setModifiedCells({})
+
+    setLoading(true)
+    try {
+      var response =
+        await ProductionVolumeDataApiService.getAOPMCCalculatedElastomerJmd(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+
+      var formattedData = response?.data?.aopMCCalculatedDataDTOList.map(
+        (item, index) => {
+          const isTPH = selectedUnit == 'TPD'
+          return {
+            ...item,
+            idFromApi: item?.id || null,
+            normParametersFKId: item?.materialFKId.toLowerCase(),
+            remarks: item?.remarks?.trim() || null,
+            originalRemark: item?.remarks?.trim() || null,
+            isEditable: false,
+
+            id: index,
+
+            ...(isTPH && {
+              april: item.april
+                ? (item.april * 24).toFixed(2)
+                : item.april || null,
+            }),
+          }
+        },
+      )
+
+      setRowRate(formattedData)
+
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setLoading(false)
+    }
+  }
+  useEffect(() => {
+    fetchProductionRateData()
+  }, [selectedUnit, PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
 
   const handleRemarkCellClick = (dataItem) => {
     // if (!dataItem?.isEditable) return
@@ -168,7 +290,8 @@ const BusinessDemand = ({ permissions }) => {
         // FOR PTA THIS CONDITION IS REMOVED
         // IS_PTA_VERTICAL ||
         IS_PET_VERTICAL ||
-        IS_ELASTOMER_VERTICAL
+        IS_ELASTOMER_VERTICAL ||
+        (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD)
       ) {
         const productionRows = (rows || []).filter(
           (row) => row.Particulars?.toLowerCase() === 'production',
@@ -190,13 +313,13 @@ const BusinessDemand = ({ permissions }) => {
             'march',
           ]
 
-          const SCALE = 100
+          const SCALE = 10000
 
           const toPreciseInt = (num) => {
             if (num === null || num === undefined || num === '') return 0
             const n = Number(num)
             if (isNaN(n)) return 0
-            return Math.round(n * SCALE)
+            return Math.round(Number(n || 0) * SCALE)
           }
 
           const formatFromIntRobust = (intVal) => {
@@ -211,6 +334,7 @@ const BusinessDemand = ({ permissions }) => {
             return sign + `${integerPart}.${fracStr}`
           }
 
+          const TOLERANCE = 1 // allows 0.0001 difference
           const expected = 100 * SCALE
           const failures = []
 
@@ -220,7 +344,7 @@ const BusinessDemand = ({ permissions }) => {
               0,
             )
 
-            if (sumInt !== expected) {
+            if (Math.abs(sumInt - expected) > TOLERANCE) {
               failures.push({ month, sumInt })
             }
           }
@@ -359,7 +483,7 @@ const BusinessDemand = ({ permissions }) => {
   }
 
   const percentageTitle =
-    IS_PE_PP_VERTICAL || IS_PET_VERTICAL
+    IS_PE_PP_VERTICAL || IS_PET_VERTICAL || IS_PVC_VMD || IS_PVC_DMD
       ? `${SCREEN_NAME} (%)`
       : `${SCREEN_NAME}`
 
@@ -384,23 +508,55 @@ const BusinessDemand = ({ permissions }) => {
         // FOR PTA IT IS NOT REQUIRED
         // IS_PTA_VERTICAL ||
         IS_PET_VERTICAL ||
-        IS_ELASTOMER_VERTICAL
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_ELASTOMER_VERTICAL ||
+
+        (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD)
           ? true
           : false,
 
       downloadExcelBtn:
-        IS_CRACKER_VERTICAL || IS_PE_PP_VERTICAL || IS_PET_VERTICAL
+        IS_CRACKER_VERTICAL ||
+        IS_PE_PP_VERTICAL ||
+        IS_PET_VERTICAL ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
           ? true
           : false,
       uploadExcelBtn:
-        IS_CRACKER_VERTICAL || IS_PE_PP_VERTICAL || IS_PET_VERTICAL
+        IS_CRACKER_VERTICAL ||
+        IS_PE_PP_VERTICAL ||
+        IS_PET_VERTICAL ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
           ? true
           : false,
 
       downloadExcelBtnFromUI:
-        IS_CRACKER_VERTICAL || IS_PE_PP_VERTICAL || IS_PET_VERTICAL
+        IS_CRACKER_VERTICAL ||
+        IS_PE_PP_VERTICAL ||
+        IS_PET_VERTICAL ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_ELASTOMER_JMD
           ? false
           : true,
+    },
+    isOldYear,
+  )
+
+  const adjustedPermissionsProductionRate = getAdjustedPermissions(
+    {
+      showAction: permissions?.showAction ?? false,
+      allAction: permissions?.allAction ?? true,
+      showUnit: true,
+      units: ['TPH', 'TPD'],
+      showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
+      titleAndInformation: 'Operating capacity derived from Optimizer model.',
+
+      showTitleNameBusiness: true,
+      titleName: 'Average Hourly Production Rate',
     },
     isOldYear,
   )
@@ -527,7 +683,7 @@ const BusinessDemand = ({ permissions }) => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      {lowerVertName !== 'cracker' && (
+      {lowerVertName !== 'cracker' && !IS_ELASTOMER_JMD && (
         <>
           <CustomAccordion defaultExpanded disableGutters>
             <CustomAccordionSummary
@@ -541,6 +697,7 @@ const BusinessDemand = ({ permissions }) => {
             <CustomAccordionDetails>
               <Box sx={{ width: '100%', margin: 0 }}>
                 <ProductionvolumeData
+                  isBusinessDemand={true}
                   permissions={{
                     allAction: true,
                     showAction: false,
@@ -562,6 +719,55 @@ const BusinessDemand = ({ permissions }) => {
         </>
       )}
 
+      {IS_ELASTOMER_JMD && (
+        <KendoDataTables
+          setRows={setRowRate}
+          columns={columnsProductionRate}
+          rows={rowRate}
+          title='Average Hourly Production Rate'
+          fetchData={fetchProductionRateData}
+          handleUnitChange={handleUnitChangeMain}
+          selectedUnit={selectedUnit}
+          setSelectedUnit={setSelectedUnit}
+          permissions={adjustedPermissionsProductionRate}
+          setEditResetKey={setEditResetKey}
+          resetEditSignal={editResetKey}
+        />
+      )}
+      {/* {IS_ELASTOMER_JMD && (
+        <>
+          <CustomAccordion defaultExpanded disableGutters>
+            <CustomAccordionSummary
+              aria-controls='meg-grid-content'
+              id='meg-grid-header'
+            >
+              <Typography component='span' className='accordian-title'>
+                {PRODUCTION_TARGET_LABEL}
+              </Typography>
+            </CustomAccordionSummary>
+            <CustomAccordionDetails>
+              <Box sx={{ width: '100%', margin: 0 }}>
+                <ProductionTarget
+                  permissions={{
+                    allAction: true,
+                    showAction: false,
+                    addButton: false,
+                    deleteButton: false,
+                    editButton: false,
+                    showUnit: true,
+                    saveWithRemark: false,
+                    showCalculate: false,
+                    saveBtn: false,
+                    hideSummary: true,
+                    hideUploadExcel: true,
+                    hideDownloadExcel: true,
+                  }}
+                />
+              </Box>
+            </CustomAccordionDetails>
+          </CustomAccordion>
+        </>
+      )} */}
       <KendoDataTables
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
@@ -595,13 +801,17 @@ const BusinessDemand = ({ permissions }) => {
         totalRowConfiguration={totalRowConfiguration}
       />
 
-      {IS_CRACKER_VERTICAL && (
+      {IS_CRACKER_DMD && <ManualEntryForFeedStreams />}
+
+      {!IS_CARCKER_VMD && !IS_CRACKER_HMD && IS_CRACKER_VERTICAL && (
         <>
           <Box sx={{ width: '100%', margin: 0 }}>
             <PropaneBusiness permissions={adjustedPermissions} />
           </Box>
         </>
       )}
+
+      {IS_CRACKER_HMD && <ModeSelection permissions={adjustedPermissions} />}
     </div>
   )
 }

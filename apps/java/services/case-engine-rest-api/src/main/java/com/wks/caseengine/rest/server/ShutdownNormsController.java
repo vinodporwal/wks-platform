@@ -58,7 +58,7 @@ public class ShutdownNormsController {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			byte[] excelBytes=null;
-			if(vertical.getName().equalsIgnoreCase("VCM") && site.getName().equalsIgnoreCase("DMD")) {
+			if((vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical")) && site.getName().equalsIgnoreCase("DMD")) {
 				  excelBytes = shutdownNormsService.exportDMDShutdownConsumption(year,UUID.fromString(plantId),false,null,gradeId); 
 			}else {
 				  excelBytes = shutdownNormsService.exportShutdownConsumption(year,UUID.fromString(plantId),false,null,gradeId); 
@@ -121,7 +121,38 @@ public class ShutdownNormsController {
 			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-	
+
+	@GetMapping(value = "/shutdown-consumption-export-all-grades")
+	public ResponseEntity<byte[]> exportShutdownNormsAllGrades(
+			@RequestParam("plantId") String plantId,
+			@RequestParam("year") String year
+
+	) {
+		try {
+
+			byte[] excelBytes = shutdownNormsService.exportShutdownNormsAllGrades(
+					year,
+					UUID.fromString(plantId),
+					false,
+					null);
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(
+					MediaType.parseMediaType(
+							"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(
+					ContentDisposition.builder("attachment")
+							.filename("ShutdownNorms.xlsx")
+							.build());
+			headers.setContentLength(excelBytes.length);
+
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
 	@PostMapping(value = "/shutdown-consumption-import", consumes = "multipart/form-data")
 	public AOPMessageVM importExcel(
 	         @RequestParam("plantId") String plantId,

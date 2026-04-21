@@ -1,10 +1,18 @@
 package com.wks.caseengine.rest.server;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.service.CrackerReportService;
@@ -90,6 +98,47 @@ public class CrackerReportController {
 	public AOPMessageVM getFindingSteamValuesReport(@RequestParam String mode,@RequestParam String plantId,@RequestParam String year) {
 		return crackerReportService.getFindingSteamValuesReport(mode,plantId,year);
 	}
+	
+	@GetMapping(value="/production-norms-manual-entry")
+	public AOPMessageVM getCatChemNorms(@RequestParam String year,
+	                                    @RequestParam String plantFKId,
+	                                    @RequestParam String type) {
+		return crackerReportService.getCatChemNorms(plantFKId, year, type);
+	}
+	
+	@GetMapping(value = "/production-norms-manual-entry-export")
+	public ResponseEntity<byte[]> exportCatChemNorms(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,@RequestParam(required=false) String type
+	        ) {
+	    try {
+			
+	        byte[] excelBytes = crackerReportService.exportCatChemNorms(year,plantId,type,false,null); 
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("CatChemNorms.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+
+	@PostMapping(value = "/production-norms-manual-entry-import", consumes = "multipart/form-data")
+	public AOPMessageVM importCatChemNormsExcel(
+	         @RequestParam("plantId") String plantId,
+             @RequestParam("year") String year,
+             @RequestParam("type") String type,
+			 @RequestPart("file") MultipartFile file
+	        ) {
+		return crackerReportService.importCatChemNormsExcel(year, plantId, type, file);
+	}
+
 	
 	@GetMapping(value="/run-length-data-set")
 	public AOPMessageVM getRunLengthDataSet(@RequestParam String plantId,@RequestParam String year, @RequestParam String reportType) {

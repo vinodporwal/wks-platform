@@ -49,6 +49,16 @@ public class AOPMCCalculatedDataController {
 		return aOPMCCalculatedDataService.getAOPMCCalculatedData(plantId, year);
 	}
 	
+	@GetMapping(value = "/average-mc-values")
+	public AOPMessageVM getAverageMCValues(@RequestParam String plantId, @RequestParam String year) {
+		return aOPMCCalculatedDataService.getAverageMCValues(plantId, year);
+	}
+	
+	@GetMapping(value = "/production-target-avg")
+	public AOPMessageVM getProductionTargetAvg(@RequestParam String plantId, @RequestParam String year) {
+		return aOPMCCalculatedDataService.getProductionTargetAvg(plantId, year);
+	}
+	
 	@GetMapping(value = "/production-target-line")
 	public AOPMessageVM getProductionTarget(@RequestParam String plantId, @RequestParam String year,@RequestParam(required=false) String lineId) {
 		return aOPMCCalculatedDataService.getProductionTarget(plantId, year,lineId);
@@ -57,6 +67,11 @@ public class AOPMCCalculatedDataController {
 	@GetMapping(value = "/max-achieved-capacity")
 	public AOPMessageVM getMaxAchievedCapacity(@RequestParam String plantId, @RequestParam String year) {
 		return aOPMCCalculatedDataService.getMaxAchievedCapacity(plantId, year);
+	}
+
+	@GetMapping(value = "/max-cap-mc-values")
+	public AOPMessageVM getAOPMaxCapMCValues(@RequestParam String plantId, @RequestParam String year) {
+		return aOPMCCalculatedDataService.getAOPMaxCapMCValues(plantId, year);
 	}
 	
 	@GetMapping(value = "/max-achieved-capacity-line")
@@ -86,6 +101,36 @@ public class AOPMCCalculatedDataController {
 			
 	        byte[] excelBytes = aOPMCCalculatedDataService.exportProductionTarget(year, plantId, false, null);
 
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("Production_Target.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+	
+	@GetMapping(value = "/production-target-line-export")
+	public ResponseEntity<byte[]> exportLineWiseProductionTarget(
+			@RequestParam String plantId, @RequestParam String year,@RequestParam(required=false) String lineId) {
+	    try {
+	    	Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+	        Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+	        byte[] excelBytes=null;
+	        if(vertical.getName().equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("DTA")) {
+	        	excelBytes = aOPMCCalculatedDataService.exportLineWiseProductionTargetDTA(year, plantId, false, null,lineId);
+	        }else {
+	        	 excelBytes = aOPMCCalculatedDataService.exportLineWiseProductionTarget(year, plantId, false, null,lineId);
+	        }
+	        
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(
 	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
@@ -150,14 +195,19 @@ public class AOPMCCalculatedDataController {
         Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
         Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-        boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
-        if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc) {
+        boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+        boolean aromatics=vertical.getName().equalsIgnoreCase("Aromatics") && site.getName().equalsIgnoreCase("SEZ") && plant.getName().equalsIgnoreCase("PX4");
+        if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc || aromatics) {
         	return aOPMCCalculatedDataService.importExcelPE(year, plantId, file);
         }else {
         	return aOPMCCalculatedDataService.importExcel(year, plantId, file);
         }
-		
+	}
 
+	@PostMapping(value = "/production-target-line-import", consumes = "multipart/form-data")
+	public AOPMessageVM importLineWiseExcel(@RequestParam("plantId") String plantId,
+			@RequestParam("year") String year, @RequestParam("file") MultipartFile file) {
+		return aOPMCCalculatedDataService.importLineWiseExcel(year, plantId, file);
 	}
 
 }

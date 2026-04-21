@@ -1,6 +1,7 @@
 package com.wks.caseengine.rest.server;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +22,15 @@ import com.wks.caseengine.dto.TurnAroundPlanReportDTO;
 import com.wks.caseengine.dto.YearWiseContributionDataDTO;
 import com.wks.caseengine.entity.PlantProductionRequestDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.service.ProductionVolumeDataReportService;
 
 @RestController
 @RequestMapping("task")
 public class ProductionVolumeDataReportController {
+	
+	@Autowired
+	private PlantsRepository plantsRepository;
 
 	@Autowired
 	private ProductionVolumeDataReportService productionVolumeDataReportService;
@@ -55,7 +60,7 @@ public class ProductionVolumeDataReportController {
 	@PostMapping(value = "/report/month-wise/consumption-summary")
 	public ResponseEntity<AOPMessageVM> updateReportForMonthWiseConsumptionSummaryData(@RequestParam String plantId,
 			@RequestParam String year,@RequestBody List<MonthWiseConsumptionSummaryDTO> dataList) {
-		AOPMessageVM response = productionVolumeDataReportService.updateReportForMonthWiseConsumptionSummaryData(plantId, year, dataList);
+		 AOPMessageVM response = productionVolumeDataReportService.updateReportForMonthWiseConsumptionSummaryDataDB2(plantId, year, dataList);
 		return ResponseEntity.status(response.getCode()).body(response);
 	}
 
@@ -71,7 +76,8 @@ public class ProductionVolumeDataReportController {
 	public ResponseEntity<AOPMessageVM> updateReportForPlantProductionPlanData(@RequestParam String plantId,
 			@RequestParam String year,@RequestParam(required = false) String reportType,
 			@RequestBody List<AnnualProductionPlanReportDto> dataList) {
-		AOPMessageVM response = productionVolumeDataReportService.updateReportForPlantProductionPlanData(plantId, year, dataList,reportType);
+	
+		 AOPMessageVM	 response =productionVolumeDataReportService.updateReportForPlantProductionPlanDataDB2(plantId, year, dataList,reportType);
 		return ResponseEntity.status(response.getCode()).body(response);
 	}
 	

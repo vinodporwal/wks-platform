@@ -8,13 +8,23 @@ export const ProductionNormsApiService = {
   MonthwiseProductionExport,
   getQualityParameters,
   saveQualityParameters,
-
   getPriceDifferential,
   savePriceDifferential,
   saveOtherProductionNorms,
   monthlyOtherProduction,
   handleCalculateOtherProduction,
   getAOPDataLineWise,
+  getNaphthaLimsDataSet,
+  getIIRAnnualData,
+  GetOptimizerData,
+  GetOptimizerdropdown,
+  handleCalculateOptimizer,
+  GetOptimizerCombinedData,
+  GetCombinedOptimizerdropdown,
+
+  // NSR and Material Prices Tab
+  getNSRAndMaterialPrices,
+  saveNSRAndMaterialPrices,
 }
 async function updateProductNormData(turnAroundDetails, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/monthly-production` // Corrected endpoint
@@ -267,6 +277,176 @@ async function getAOPDataLineWise(keycloak, type, PLANT_ID, AOP_YEAR, LINE_ID) {
   try {
     const resp = await fetch(url, { method: 'GET', headers })
     return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getNaphthaLimsDataSet(
+  keycloak,
+
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url = `${Config.CaseEngineUrl}/task/lims-dataset?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getIIRAnnualData(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/production-configuration-elastomer?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function GetOptimizerData(keycloak, PLANT_ID, AOP_YEAR, lineId, type) {
+  const url = `${Config.CaseEngineUrl}/task/production-optimizer?plantId=${PLANT_ID}&aopYear=${AOP_YEAR}&lineFkId=${lineId}&type=${type}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function GetOptimizerdropdown(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  lineId,
+  type,
+) {
+  const url = `${Config.CaseEngineUrl}/task/production-optimizer-dropdown?plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function handleCalculateOptimizer(plantId, year, keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/calculate-production-optimizer?plantId=${plantId}&aopYear=${year}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const data = await resp.json() // Parse JSON response
+    return data
+  } catch (e) {
+    console.error('Error fetching calculation data:', e)
+    return Promise.reject(e)
+  }
+}
+async function GetOptimizerCombinedData(keycloak, PLANT_ID, AOP_YEAR, type) {
+  const url = `${Config.CaseEngineUrl}/task/combined-production-optimizer?plantId=${PLANT_ID}&aopYear=${AOP_YEAR}&type=${type}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function GetCombinedOptimizerdropdown(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  lineId,
+  type,
+) {
+  const url = `${Config.CaseEngineUrl}/task/combined-production-optimizer-dropdown?plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getNSRAndMaterialPrices(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/annual-config-prize?plantId=${PLANT_ID}&aopYear=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function saveNSRAndMaterialPrices(PLANT_ID, PAYLOAD, keycloak, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/annual-config-prize`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(PAYLOAD),
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const message = await resp.text()
+    return { message, code: 200 }
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)

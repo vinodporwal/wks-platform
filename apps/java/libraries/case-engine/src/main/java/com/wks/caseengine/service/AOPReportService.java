@@ -16,6 +16,10 @@ public interface AOPReportService {
 	public AOPMessageVM getSpecificConsumptionNormsReport( String reportType, String plantId, String year);
 	public AOPMessageVM getSpecificConsumptionNormsT17Report(String reportType, String plantId, String year);
 	public AOPMessageVM updateSpecificConsumptionNormsT17Report(List<PlantContributionSummaryT17DTO> plantContributionSummaryT17DTOs, String plantId, String year);
+	public AOPMessageVM updateSpecificConsumptionNormsT17ReportDB2(List<PlantContributionSummaryT17DTO> plantContributionSummaryT17DTOs, String plantId, String year);
 	public AOPMessageVM getGradewiseConsumptionNorms(String plantId, String year,String reportType);
+	public AOPMessageVM getC3Calculation(String plantId, String year);
+	public AOPMessageVM getC3Detail(String plantId, String year);
+	public AOPMessageVM getLIMSDataset(String plantId, String year);
 	public AOPMessageVM updatePlantContributionFiveYearSummaryReport( List<PlantContributionSummaryDTO> plantContributionSummaryDTO);
 }

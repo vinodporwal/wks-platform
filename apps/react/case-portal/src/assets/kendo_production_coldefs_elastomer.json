@@ -1,0 +1,50 @@
+[
+  {
+    "field": "idFromApi",
+    "title": "ID",
+    "hidden": true
+  },
+  {
+    "field": "aopCaseId",
+    "title": "Case ID",
+    "width": 120,
+    "editable": false,
+    "hidden": true
+  },
+  {
+    "field": "normParametersFKId",
+    "title": "Particulars",
+    "editable": false,
+    "widthT": 100,
+    "hidden": true
+  },
+
+  {
+    "field": "productName",
+    "title": "Particulars",
+    "editable": false,
+    "widthT": 200
+  },
+  {
+    "field": "april",
+    "title": "Value",
+    "editable": true,
+    "widthT": 200,
+    "align": "left",
+    "headerAlign": "left",
+    "type": "number",
+    "format": "{0:n2}"
+  },
+
+  {
+    "field": "remarks",
+    "title": "Remark",
+    "editable": false,
+    "width": 90
+  },
+  {
+    "field": "isEditable",
+    "title": "isEditable",
+    "hidden": true
+  }
+]

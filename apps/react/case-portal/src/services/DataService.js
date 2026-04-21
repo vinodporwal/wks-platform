@@ -42,6 +42,8 @@ export const DataService = {
   getSpyroInputData,
   deleteSlowdownData,
   deleteShutdownData,
+  deleteMultipleShutdown,
+  deleteMultipleSlowdown,
   deleteTurnAroundData,
   handleRefresh,
   getSlowdownNormsData,
@@ -167,6 +169,35 @@ export const DataService = {
   saveSpyroOutputYieldVMD,
   exportSpyroOutputExcelYieldVMD,
   importSpyroOutputExcelYieldVMD,
+
+  //Naphtha
+  getNaphthaData,
+  saveNaphthaData,
+  exportNaphthaExcel,
+  importNaphthaExcel,
+  getExsternalSteamData,
+  saveExternalStreamData,
+
+  //AOP APPROVAL FLOW RELEASE BUTTON
+  getReleaseAOPStatus,
+  releaseAOPReport,
+  loadNaphthaData,
+  getNaphthatabDate,
+  getShutdownData,
+  getShutdownSummary,
+  getFurnaceMaintenanceActivity,
+  saveFurnaceMaintenanceActivity,
+  deleteFurnaceMaintenanceActivity,
+  getFurnaceDropdownData,
+  getMaintenanceActivityData,
+  slowdownconsumptionExportAllGrade,
+  saveSlowdownNormsExcelAllGrade,
+  dropdownValuesPeC2,
+
+  getMaterialBalanceData,
+  saveMaterialBalanceData,
+  materialBalanceExport,
+  saveMaterialBalanceExcel,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -256,6 +287,52 @@ async function deleteSlowdownData(maintenanceId, keycloak, PLANT_ID) {
     return await resp.text() // Handle text response from the backend
   } catch (e) {
     console.error('Error deleting slowdown data:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function deleteMultipleSlowdown(ids, keycloak, PLANT_ID) {
+  const url = `${Config.CaseEngineUrl}/task/slowdown?plantMaintenanceTransactionIds=${ids.join(',')}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to delete data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    return await resp.text() // Handle text response from the backend
+  } catch (e) {
+    console.error('Error deleting multiple slowdown data:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function deleteMultipleShutdown(ids, keycloak, PLANT_ID) {
+  const url = `${Config.CaseEngineUrl}/task/shutdown?plantMaintenanceTransactionIds=${ids.join(',')}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to delete data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    return await resp.text() // Handle text response from the backend
+  } catch (e) {
+    console.error('Error deleting multiple shutdown data:', e)
     return Promise.reject(e)
   }
 }
@@ -920,8 +997,9 @@ async function saveTurnaroundReportWhole(
   dataList,
   PLANT_ID,
   AOP_YEAR,
+  type,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/report/turn-around?plantId=${PLANT_ID}&year=${AOP_YEAR}&reportType=previousYear`
+  const url = `${Config.CaseEngineUrl}/task/report/turn-around?plantId=${PLANT_ID}&year=${AOP_YEAR}&reportType=${type}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -3486,6 +3564,7 @@ export async function slowdownconsumptionExportVCM(
   plantId,
   year,
   gradeId,
+  excelName,
 ) {
   const url =
     `${Config.CaseEngineUrl}/task/export-slowdown-consumption?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}` +
@@ -3508,7 +3587,7 @@ export async function slowdownconsumptionExportVCM(
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = 'Slowdown_consumption.xlsx'
+    a.download = excelName ? `${excelName}.xlsx` : 'Slowdown_consumption.xlsx'
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -3844,9 +3923,10 @@ async function getSpyroOutputDataYieldVMD(
   AOP_YEAR,
 ) {
   const url =
-    `${Config.CaseEngineUrl}/task/spyro-output/yield-vmd` +
+    `${Config.CaseEngineUrl}/task/spyro-output/yield-dynamic` +
     `?year=${encodeURIComponent(AOP_YEAR)}` +
-    `&plantId=${encodeURIComponent(PLANT_ID)}`
+    `&plantId=${encodeURIComponent(PLANT_ID)}` +
+    `&mode=${encodeURIComponent(mode)}`
 
   const headers = {
     Accept: 'application/json',
@@ -3945,6 +4025,558 @@ async function importSpyroOutputExcelYieldVMD(
     return json(keycloak, resp) // assuming `json()` handles response properly
   } catch (e) {
     console.error('Error importing Optimizer Input Excel:', e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getNaphthaData(
+  keycloak,
+  type,
+  PLANT_ID,
+  AOP_YEAR,
+  startDate,
+  endDate,
+) {
+  const url =
+    `${Config.CaseEngineUrl}/task/naphtha` +
+    `?year=${encodeURIComponent(AOP_YEAR)}` +
+    `&plantId=${encodeURIComponent(PLANT_ID)}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Failed to fetch naphtha data', e)
+    return Promise.reject(e)
+  }
+}
+
+async function saveNaphthaData(payload, keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/naphtha?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function exportNaphthaExcel(keycloak, PLANT_ID, AOP_YEAR, EXCEL_NAME) {
+  const url = `${Config.CaseEngineUrl}/task/naphtha-export?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}`
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${EXCEL_NAME}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Naphtha Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function importNaphthaExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/naphtha-import?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error importing Naphtha Excel:', e)
+    return await Promise.reject(e)
+  }
+}
+async function getExsternalSteamData(
+  keycloak,
+  currentTabDisplay,
+  VERTICAL_ID,
+  SITE_ID,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url = `${Config.CaseEngineUrl}/task/external-stream-data?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}&siteId=${encodeURIComponent(SITE_ID)}&verticalId=${encodeURIComponent(VERTICAL_ID)}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Failed to fetch external stream data', e)
+    return Promise.reject(e)
+  }
+}
+async function saveExternalStreamData(
+  SpyroInputData,
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  SITE_ID,
+  VERTICAL_ID,
+) {
+  const url = `${Config.CaseEngineUrl}/task/external-stream-data?year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(SpyroInputData),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+// AOP APPROVAL FLOW RELEASE BUTTON FUNCTIONS
+
+async function getReleaseAOPStatus(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/release-aop?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(year)}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching release AOP status:', e)
+    return await Promise.reject(e)
+  }
+}
+
+async function releaseAOPReport(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/release-aop?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(year)}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error releasing AOP report:', e)
+    return await Promise.reject(e)
+  }
+}
+async function loadNaphthaData(
+  keycloak,
+  type,
+  PLANT_ID,
+  AOP_YEAR,
+  startDate,
+  endDate,
+) {
+  const url =
+    `${Config.CaseEngineUrl}/task/load-naphtha` +
+    `?year=${encodeURIComponent(AOP_YEAR)}` +
+    `&plantId=${encodeURIComponent(PLANT_ID)}` +
+    `&startDate=${encodeURIComponent(startDate)}` +
+    `&endDate=${encodeURIComponent(endDate)}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Failed to Load naphtha data', e)
+    return Promise.reject(e)
+  }
+}
+async function getNaphthatabDate(keycloak, type, PLANT_ID, AOP_YEAR) {
+  const url =
+    `${Config.CaseEngineUrl}/task/naphtha-date` +
+    `?year=${encodeURIComponent(AOP_YEAR)}` +
+    `&plantId=${encodeURIComponent(PLANT_ID)}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Failed to get naphtha date', e)
+    return Promise.reject(e)
+  }
+}
+export async function getShutdownData(
+  keycloak,
+  reportType,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url = `${Config.CaseEngineUrl}/task/shutdown-data?plantId=${PLANT_ID}&year=${AOP_YEAR}&reportType=${reportType}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(e)
+    return Promise.reject(e)
+  }
+}
+export async function getShutdownSummary(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/shutdown-summary?plantId=${PLANT_ID}&year=${AOP_YEAR}&reportType=${reportType}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(e)
+    return Promise.reject(e)
+  }
+}
+
+export async function getFurnaceMaintenanceActivity(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url = `${Config.CaseEngineUrl}/task/furnace-maintenance-activities?plantId=${PLANT_ID}&aopYear=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(e)
+    return Promise.reject(e)
+  }
+}
+
+export async function saveFurnaceMaintenanceActivity(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  data,
+) {
+  const url = `${Config.CaseEngineUrl}/task/furnace-maintenance-activity?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(e)
+    return Promise.reject(e)
+  }
+}
+
+export async function deleteFurnaceMaintenanceActivity(id, keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/furnace-maintenance-activity?id=${id}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'DELETE', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(e)
+    return Promise.reject(e)
+  }
+}
+
+export async function getFurnaceDropdownData(keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/furnace-dropdown-data`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(e)
+    return Promise.reject(e)
+  }
+}
+
+export async function getMaintenanceActivityData(keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/maintenance-activity-data`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(e)
+    return Promise.reject(e)
+  }
+}
+export async function slowdownconsumptionExportAllGrade(
+  keycloak,
+  plantId,
+  year,
+) {
+  const url = `${Config.CaseEngineUrl}/task/slowdown-consumption-export-all-grades?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = 'Slowdown_consumption.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Shutdown Excel:', e)
+    return Promise.reject(e)
+  }
+}
+async function saveSlowdownNormsExcelAllGrade(
+  file,
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  GRADE_ID,
+) {
+  let url = ''
+  url = `${Config.CaseEngineUrl}/task/slowdown-consumption-import?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+
+  if (GRADE_ID) {
+    url += `&gradeId=${GRADE_ID}`
+  }
+
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function dropdownValuesPeC2(keycloak, PLANT_ID, AOP_YEAR) {
+  // const url = `${Config.CaseEngineUrl}/task/description-drpdwn?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const url = `${Config.CaseEngineUrl}/task/shutdown-rate-dropdown?plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+export async function getMaterialBalanceData(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/matbal?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(e)
+    return Promise.reject(e)
+  }
+}
+export async function saveMaterialBalanceData(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  data,
+) {
+  const url = `${Config.CaseEngineUrl}/task/production-norms?plantFKId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(e)
+    return Promise.reject(e)
+  }
+}
+export async function materialBalanceExport(
+  keycloak,
+  plantId,
+  year,
+  excelName
+) {
+  const url = `${Config.CaseEngineUrl}/task/material-balance-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = excelName ? `${excelName}.xlsx` : 'Material_balance.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Shutdown Excel:', e)
+    return Promise.reject(e)
+  }
+}
+async function saveMaterialBalanceExcel(
+  file,
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  let url = ''
+  url = `${Config.CaseEngineUrl}/task/material-balance-import?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
     return await Promise.reject(e)
   }
 }

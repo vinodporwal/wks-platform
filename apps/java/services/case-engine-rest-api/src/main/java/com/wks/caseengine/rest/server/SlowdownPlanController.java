@@ -75,7 +75,7 @@ public class SlowdownPlanController {
 	    	Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 	        Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-	        boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+	        boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc) {
 				 excelBytes = slowdownPlanService.slowdownExportPE(year, plantId,maintenanceTypeName, false, null);
 			}else {
@@ -251,6 +251,11 @@ public class SlowdownPlanController {
     public ResponseEntity<String> deletePlant(@PathVariable UUID plantMaintenanceTransactionId,@PathVariable UUID plantId) {
 	  	shutDownPlanService.deletePlanData(plantMaintenanceTransactionId,plantId);
         return ResponseEntity.ok("Plant with ID " + plantMaintenanceTransactionId + " deleted successfully");
+    }
+	
+	@DeleteMapping("/slowdown")
+    public AOPMessageVM deleteMultipleSlowdown(@RequestParam List<UUID> plantMaintenanceTransactionIds,@RequestParam UUID plantId) {
+	  	return shutDownPlanService.deleteMultipleSlowdown(plantMaintenanceTransactionIds,plantId);
     }
 	
 	@PostMapping(value="/slowdown-configuration")

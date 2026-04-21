@@ -1,4 +1,7 @@
-import { SlowdownNormsElastomerColumns } from 'components/colums/ElastomerColums'
+import {
+  SlowdownNormsElastomerColumns,
+  SlowdownNormsElastomerJmdColumns,
+} from 'components/colums/ElastomerColums'
 import { SlowdownNormsMegColumns } from 'components/colums/MegColums'
 import { SlowdownNormsPeColumns } from 'components/colums/PeColums'
 import { SlowdownNormsPpColumns } from 'components/colums/PpColums'
@@ -16,12 +19,14 @@ const VERTICAL_COLDEFS_MAP = {
   [verticalEnums.MEG]: SlowdownNormsMegColumns,
   [verticalEnums.AROMATICS]: SlowdownNormsElastomerColumns,
   [verticalEnums.VCM]: SlowdownNormsElastomerColumns,
+  [verticalEnums.CHEMICAL]: SlowdownNormsPtaColumns,
 }
 
 const getSlowdownNormsColDef = ({ headerMap, slowdownMonths, valueFormat }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const vertName = dataGridStore.verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || verticalEnums.MEG
+  const lowerSiteName = dataGridStore.siteObject?.name?.toLowerCase()
 
   let safeShutdownMonths = Array.isArray(slowdownMonths) ? slowdownMonths : []
 
@@ -30,8 +35,12 @@ const getSlowdownNormsColDef = ({ headerMap, slowdownMonths, valueFormat }) => {
   if (colDefsCache.has(cacheKey)) {
     return colDefsCache.get(cacheKey)
   }
-
-  const cols = VERTICAL_COLDEFS_MAP[lowerVertName] || []
+  let cols = []
+  if (lowerVertName === 'elastomer' && lowerSiteName === 'jmd') {
+    cols = SlowdownNormsElastomerJmdColumns
+  } else {
+    cols = VERTICAL_COLDEFS_MAP[lowerVertName] || []
+  }
 
   const enhancedColDefs = cols.map((col) => {
     if (col.monthNumber) {

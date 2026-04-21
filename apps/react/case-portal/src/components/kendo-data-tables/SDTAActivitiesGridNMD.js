@@ -57,7 +57,7 @@ const SDTAActivitiesGridNMD = ({
         permissions={permissions}
         saveChanges={saveChanges}
         setRemarkDialogOpen={setRemarkDialogOpen}
-        titleName='SD / TA Activities'
+        titleName='IBR/SD/HSS Activities'
         rowRender={CustomRow}
         handleCalculate={handleCalculate}
       />

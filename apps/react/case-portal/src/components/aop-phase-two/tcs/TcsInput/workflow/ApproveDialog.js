@@ -422,7 +422,7 @@ const ApproveDialog = ({
                 </Typography>
                 {pmNotSubmittedPlants.length === 0 ? (
                   <Typography variant='caption' color='text.secondary'>
-                    All plants submitted ✓
+All plants submitted.
                   </Typography>
                 ) : (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
@@ -462,7 +462,7 @@ const ApproveDialog = ({
                 </Typography>
                 {ctsNotSubmittedPlants.length === 0 ? (
                   <Typography variant='caption' color='text.secondary'>
-                    All plants submitted ✓
+All plants submitted.
                   </Typography>
                 ) : (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>

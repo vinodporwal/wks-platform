@@ -133,13 +133,16 @@ public class AOPServiceImpl implements AOPService {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			if(vertical.getName().equalsIgnoreCase("AROMATICS")) {
 				String procedureName=vertical.getName()+"_"+site.getName()+"_"+"GetAOP";
 				obj = getData(year,plant.getId(),site.getId(),vertical.getId(),procedureName);
 			}else if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc){
 				String view="vwScrn"+vertical.getName()+"AOP";
 				obj= findByAOPYearAndPlantFkId(year, UUID.fromString(plantId), type,view);
+			}else if(vertical.getName().equalsIgnoreCase("Chemical") || (vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD"))){
+				String procedureName=vertical.getName()+"_"+site.getName()+"_"+"GetMonthWiseProductionPlan";
+				obj = getDataElastomer(year,plant.getId(),procedureName);
 			}else {
 				 obj = aopRepository.findByAOPYearAndPlantFkId(year, UUID.fromString(plantId), type);
 			}
@@ -167,7 +170,7 @@ public class AOPServiceImpl implements AOPService {
 			        aopDTO.setFeb(safeParseDouble(row[16]));
 			        aopDTO.setMarch(safeParseDouble(row[17]));
 			        aopDTO.setAvgTPH(safeParseDouble(row[18]));
-			        aopDTO.setRemark(row[19] != null ? row[19].toString() : null);
+			        aopDTO.setRemark(row[19] != null ? row[19].toString() : "");
 				aopDTO.setDisplayOrder(row[20] != null ? Integer.valueOf(row[20].toString()) : null);
 				aopDTO.setIsEditable(row[21] != null ? Boolean.valueOf(row[21].toString()) : null);
 				aopDTO.setIsVisible(row[22] != null ? Boolean.valueOf(row[22].toString()) : null);
@@ -314,6 +317,24 @@ public class AOPServiceImpl implements AOPService {
 		}
 	}
 	
+	public List<Object[]> getDataElastomer(String finYear, UUID plantId, String procedureName) {
+		try {
+
+			String sql = "EXEC " + procedureName
+					+ " @plantId = :plantId, @aopYear = :finYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("finYear", finYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
 	public List<Object[]> getLineData(String finYear, UUID plantId,UUID lineId, String procedureName) {
 		try {
 
@@ -395,7 +416,7 @@ public class AOPServiceImpl implements AOPService {
 					aOP.setAopStatus(aOPDTO.getAopStatus());
 					aOP.setAopType(aOPDTO.getAopType());
 				}
-				aOP.setAopRemarks(aOPDTO.getAopRemarks());
+				aOP.setAopRemarks(aOPDTO.getRemark());
 				aOP.setAopType(aOPDTO.getAopType());
 				aOP.setAopYear(aOPDTO.getAopYear());
 				aOP.setApril(aOPDTO.getApril());
@@ -615,6 +636,28 @@ public class AOPServiceImpl implements AOPService {
 			}
 
 			return aopYears;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Override
+	public AOPMessageVM getAOPYearStatus() {
+		try {
+			List<Object[]> results = aopRepository.getAOPYearStatus();
+			List<Map<String, Object>> aopYearStatus = new ArrayList<>();
+
+			for (Object[] row : results) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("AOPYear", row[0] != null ? row[0].toString() : null);
+				map.put("IsOldYear", row[1] != null ? Integer.parseInt(row[1].toString()) : 0);
+				aopYearStatus.add(map);
+			}
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(aopYearStatus);
+			aopMessageVM.setMessage("Data fetched successfully");
+			return aopMessageVM;
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}

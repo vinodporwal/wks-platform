@@ -56,12 +56,26 @@ const NavCollapse = ({ menu, level }) => {
       // Condition 2: PE vertical AND DMD site
       (lowerVertName === verticalEnums.PE && SITE_NAME === 'dmd')
 
-    const menuItems = shouldFilterSlowdown
-      ? menu.children.filter((item) => item.id !== 'slowdown-norms')
-      : menu.children
+    // New Condition: Cracker vertical AND VMD site
+    const shouldHideUtilitiesNorms =
+      lowerVertName === verticalEnums.CRACKER && SITE_NAME === 'vmd'
+
+    let menuItems = menu.children
+
+    // Filter slowdown-norms if needed
+    if (shouldFilterSlowdown) {
+      menuItems = menuItems.filter((item) => item.id !== 'slowdown-norms')
+    }
+
+    // Filter utility-norm-basis for Cracker/VMD
+    if (shouldHideUtilitiesNorms) {
+      menuItems = menuItems.filter(
+        (item) => item.id !== 'utilities-norms-basis',
+      )
+    }
 
     return menuItems.map(renderMenuItem)
-  }, [menu?.children, lowerVertName, plantName, level])
+  }, [menu?.children, lowerVertName, plantName, level, SITE_NAME])
 
   const Icon = menu.icon
   const menuIcon = menu.icon ? (

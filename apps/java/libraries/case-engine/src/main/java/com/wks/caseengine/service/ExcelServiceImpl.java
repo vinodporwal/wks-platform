@@ -145,7 +145,60 @@ public class ExcelServiceImpl implements ExcelService {
                                 // title = "Main Products - Production for the budget year";
                                 rows = excelDataService.getAOPData(plantId, year, type);
                             }
-                        } else if (sheetName.equalsIgnoreCase("MonthwiseRawData")) {
+                        }else if (sheetName.equalsIgnoreCase("ShutdownReport")) {
+                            if (tableId.equalsIgnoreCase("otherThanTurnarounds")) {
+                                // title = "Plant Production Summary (T-16)";
+                                 Map<String, Object> map = excelDataService.getShutdownDetails(plantId, year, dataInput, headers);
+
+                                rows = (List<List<Object>>) map.get("rows");
+                            }
+                            if (tableId.equalsIgnoreCase("DetailsofRoutineShutdowns")) {
+                                // title = "Main Products - Production for the budget year";
+                                Map<String, Object> map = excelDataService.getShutdownDetails(plantId, year, dataInput, headers);
+
+                                rows = (List<List<Object>>) map.get("rows");
+                            }
+                            if (tableId.equalsIgnoreCase("DetailsofRoutineShutdownsforPreviousFourYears")) {
+                                // title = "Main Products - Production for the budget year";
+                                Map<String, Object> map = excelDataService.getShutdownDetails(plantId, year, dataInput, headers);
+
+                                rows = (List<List<Object>>) map.get("rows");
+                            }
+                        }else if (sheetName.equalsIgnoreCase("ShutdownBreakupForLast4Years")) {
+                            if (tableId.equalsIgnoreCase("ShutdownBreakupForLast4Years")) {
+                                // title = "Plant Production Summary (T-16)";
+                                Map<String, Object> map = excelDataService.getShutdownSummaryLastFourYear(plantId, year,
+                                        headers);
+
+                                rows = (List<List<Object>>) map.get("rows");
+                                
+                            }
+                            
+                        }
+                        else if (sheetName.equalsIgnoreCase("NormsforDurationofPlantshutdownSlowdownactivities")) {
+                            if (tableId.equalsIgnoreCase("NormsforDurationofPlantshutdownSlowdownactivities")) {
+                                // title = "Plant Production Summary (T-16)";
+                                 Map<String, Object> map = excelDataService.getPlantShutdownSlowdownNormsDuration(plantId, year,
+                                        headers);
+
+                                rows = (List<List<Object>>) map.get("rows");
+                            }
+                            
+                        }
+
+                        else if (sheetName.equalsIgnoreCase("MonthwiseOperatingHours")) {
+                            if (tableId.equalsIgnoreCase("MonthwiseOperatingHours")) {
+                                // title = "Plant Production Summary (T-16)";
+                                Map<String, Object> map = excelDataService.getMonthwiseOperatingHours(plantId, year,
+                                        headers);
+
+                                rows = (List<List<Object>>) map.get("rows");
+                                
+                            }
+                            
+                        }
+                        
+                        else if (sheetName.equalsIgnoreCase("MonthwiseRawData")) {
                             if (tableId.equalsIgnoreCase("MonthwiseConsumptionT18")) {
                                 // title = "Monthwise Consumption (T-18)";
                                 rows = excelDataService.getReportForMonthWiseConsumptionForSelectivityData(plantId,

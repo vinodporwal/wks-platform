@@ -21,6 +21,11 @@ import Capex from './Capex'
 import ShutdownSlowdownPlan from './SlowdownPlan'
 import TechnicalAvailability from './TechnicalAvailability'
 import CrackerReportMannualEntry from './CrackerReportMannualEntry'
+import MajorSafetyInitiative from './MajorSafetyInitiative'
+import MajorProfitInitiative from './MajorProfitInitiative'
+import MajorReliabilityInitiative from './MajorReliabilityInitiative'
+import MajorPeopleInitiative from './MajorPeopleInitiative'
+import MCUCapacityUtilization from './MCUCapacityUtilization'
 const SiteAOPReport = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -121,17 +126,20 @@ const SiteAOPReport = ({ permissions }) => {
     'Shutdown / Slowdown plan',
     'Technical Availability',
     'Report Manual Entry',
+    'Major Safety Improvement',
+    'Major Profit and Operability Improvement',
+    'Major Reliability Improvement',
+    'Major People Initiative',
+    'MCU Capacity Utilization (%)',
     // 'Safety Performance & Targets',
     // 'Contribution (Rs/ MT & Rs Crs.)',
     // 'Major Process Incidents',
     // 'Major Process Incidents FY26',
     // 'Major Incidents FY26',
     // // Major Process Incidents FY26 columns and dummy data (tabIndex 9)
-    // 'Major Safety Improvement Initiative',
     // 'Production (TPH) basis',
     // 'Production',
     // 'Conversion & Variable Cost',
-    // 'MCU Capacity Utilization (%)',
   ]
   function getAopShortYears(aopYear) {
     if (!aopYear) return { prev: '', next: '' }
@@ -146,8 +154,10 @@ const SiteAOPReport = ({ permissions }) => {
   }
   const { prev, next } = getAopShortYears(AOP_YEAR)
   const valueFormat = ValueFormatterConsumption()
-  // const READ_ONLY = getRoleName(keycloak)
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const headerMap = generateHeaderNames(AOP_YEAR)
   const IS_PE_PP_VERTICAL = lowerVertName === 'pe' || lowerVertName === 'pp'
   const columns = getSiteAOPReportColumns({ AOP_YEAR, valueFormat, prev, next })
@@ -240,34 +250,6 @@ const SiteAOPReport = ({ permissions }) => {
   ]
 
   const [majorIncidents, setMajorIncidents] = useState(majorIncidentsRows)
-
-  const majorSafetyInitiativeRows = [
-    {
-      id: 1,
-      sno: 1,
-      plant: 'Plant A',
-      initiativeDescription: 'Install new fire suppression system',
-      category: 'Fire Safety',
-      outcome: 'Reduced risk',
-      recommendation: 'Annual maintenance',
-      targetDate: '2025-12-31',
-      resp: 'A. Kumar',
-    },
-    {
-      id: 2,
-      sno: 2,
-      plant: 'Plant B',
-      initiativeDescription: 'Safety training for staff',
-      category: 'Training',
-      outcome: 'Improved awareness',
-      recommendation: 'Repeat every 6 months',
-      targetDate: '2026-03-15',
-      resp: 'S. Mehta',
-    },
-  ]
-  const [majorSafetyInitiative, setMajorSafetyInitiative] = useState(
-    majorSafetyInitiativeRows,
-  )
 
   const productionRows = [
     {
@@ -774,84 +756,6 @@ const SiteAOPReport = ({ permissions }) => {
     useState(productionTphRows)
   // Shutdown/Slow Down Plan grid columns
 
-  const mcuCapacityUtilizationColumns = [
-    {
-      field: 'id',
-      title: 'ID',
-      editable: false,
-      hidden: true,
-    },
-    {
-      field: 'sno',
-      title: 'S.No',
-      widthT: 60,
-      editable: false,
-      align: 'right',
-      format: '{0:0}',
-    },
-    { field: 'plant', title: 'Plant', widthT: 120, editable: true },
-    {
-      field: 'fy26Aop',
-      title: 'FY26 AOP',
-      widthT: 120,
-      editable: true,
-      type: 'number',
-    },
-    {
-      field: 'fy26Actual',
-      title: 'FY26 Actual',
-      widthT: 120,
-      editable: true,
-      type: 'number',
-    },
-    {
-      field: 'fy27Aop',
-      title: 'FY27 AOP',
-      widthT: 120,
-      editable: true,
-      type: 'number',
-    },
-    {
-      field: 'rationalReasons',
-      title: 'Rationale/ Reasons',
-      widthT: 200,
-      editable: true,
-    },
-  ]
-
-  const mcuCapacityUtilizationRows = [
-    {
-      id: 1,
-      sno: 1,
-      plant: '',
-      fy26Aop: '',
-      fy26Actual: '',
-      fy27Aop: '',
-      rationalReasons: '',
-    },
-    {
-      id: 2,
-      sno: 2,
-      plant: '',
-      fy26Aop: '',
-      fy26Actual: '',
-      fy27Aop: '',
-      rationalReasons: '',
-    },
-    {
-      id: 3,
-      sno: 3,
-      plant: '',
-      fy26Aop: '',
-      fy26Actual: '',
-      fy27Aop: '',
-      rationalReasons: '',
-    },
-  ]
-
-  const [mcuCapacityUtilizationState, setMcuCapacityUtilizationState] =
-    useState(mcuCapacityUtilizationRows)
-
   // Major Process Incidents FY26 columns and dummy data (tabIndex 9)
   const majorProcessIncidentsFy26Columns = [
     {
@@ -1250,7 +1154,17 @@ const SiteAOPReport = ({ permissions }) => {
 
       {tabIndex === 6 && <CrackerReportMannualEntry tabIndex={5} />}
 
-      {tabIndex === 7 && (
+      {tabIndex === 7 && <MajorSafetyInitiative />}
+
+      {tabIndex === 8 && <MajorProfitInitiative />}
+
+      {tabIndex === 9 && <MajorReliabilityInitiative />}
+
+      {tabIndex === 10 && <MajorPeopleInitiative />}
+
+      {tabIndex === 11 && <MCUCapacityUtilization />}
+
+      {tabIndex === 12 && (
         <KendoDataTablesReports
           columns={columns.safetyPerformance}
           rows={Rowssafety}
@@ -1274,7 +1188,7 @@ const SiteAOPReport = ({ permissions }) => {
           permissions={adjustedPermissionsslowdown}
         />
       )}
-      {tabIndex === 8 && (
+      {tabIndex === 13 && (
         <KendoDataTables
           columns={contributionColumns}
           rows={contribution}
@@ -1288,7 +1202,7 @@ const SiteAOPReport = ({ permissions }) => {
         />
       )}
 
-      {tabIndex === 9 && (
+      {tabIndex === 14 && (
         <KendoDataTables
           columns={majorProcessIncidentsFy26Columns}
           rows={majorProcessIncidentsFy26State}
@@ -1302,7 +1216,7 @@ const SiteAOPReport = ({ permissions }) => {
         />
       )}
 
-      {tabIndex === 10 && (
+      {tabIndex === 15 && (
         <KendoDataTables
           columns={columns.majorIncidents}
           rows={majorIncidents}
@@ -1323,21 +1237,8 @@ const SiteAOPReport = ({ permissions }) => {
           currentRowId={currentRowId2}
         />
       )}
-      {tabIndex === 11 && (
-        <KendoDataTables
-          columns={columns.majorSafetyInitiative}
-          rows={majorSafetyInitiative}
-          setRows={setMajorSafetyInitiative}
-          title='B2.2. Major Safety Improvement Initiative FY27 (Max 5)'
-          permissions={adjustedPermission1}
-          snackbarOpen={snackbarOpen}
-          setSnackbarOpen={setSnackbarOpen}
-          snackbarData={snackbarData}
-          setSnackbarData={setSnackbarData}
-        />
-      )}
 
-      {tabIndex === 12 && (
+      {tabIndex === 16 && (
         <KendoDataTables
           columns={productionTphColumns}
           rows={productionTphState}
@@ -1351,7 +1252,7 @@ const SiteAOPReport = ({ permissions }) => {
         />
       )}
 
-      {tabIndex === 13 && (
+      {tabIndex === 17 && (
         <KendoDataTablesReports
           columns={columns.production}
           rows={production}
@@ -1365,7 +1266,7 @@ const SiteAOPReport = ({ permissions }) => {
         />
       )}
 
-      {tabIndex === 15 && (
+      {tabIndex === 18 && (
         <KendoDataTables
           columns={columns.conversionVariableCost}
           rows={conversionVariableCost}
@@ -1377,20 +1278,6 @@ const SiteAOPReport = ({ permissions }) => {
           snackbarData={snackbarData}
           setSnackbarData={setSnackbarData}
           groupBy={'plant'}
-        />
-      )}
-
-      {tabIndex === 16 && (
-        <KendoDataTables
-          columns={mcuCapacityUtilizationColumns}
-          rows={mcuCapacityUtilizationState}
-          setRows={setMcuCapacityUtilizationState}
-          title='MCU Capacity Utilization (%)'
-          permissions={adjustedPermission1}
-          snackbarOpen={snackbarOpen}
-          setSnackbarOpen={setSnackbarOpen}
-          snackbarData={snackbarData}
-          setSnackbarData={setSnackbarData}
         />
       )}
     </div>

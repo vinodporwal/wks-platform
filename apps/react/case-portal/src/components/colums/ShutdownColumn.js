@@ -63,7 +63,71 @@ export const ShutDownAllColumns = [
     editable: true,
   },
 ]
-
+export const ShutDown_Elastomer_JMD_IIR_Columns = [
+  {
+    field: 'discription',
+    title: 'Shutdown Desc',
+    editable: true,
+    type: 'descLimit',
+  },
+  {
+    field: 'maintenanceId',
+    title: 'Maintenance ID',
+    editable: false,
+    hidden: true,
+  },
+  {
+    field: 'maintStartDateTime',
+    title: 'SD - From',
+    editable: true,
+  },
+  {
+    field: 'maintEndDateTime',
+    title: 'SD - To',
+    editable: true,
+  },
+  {
+    field: 'durationInHrs',
+    title: 'Duration (hrs)',
+    editable: true,
+  },
+  {
+    field: 'remark',
+    title: 'Remarks',
+    editable: true,
+  },
+]
+export const ShutDown_Elastomer_JMD_HIIR_Columns = [
+  {
+    field: 'discription',
+    title: 'Shutdown Desc',
+    editable: true,
+    type: 'descLimit',
+  },
+  {
+    field: 'maintenanceId',
+    title: 'Maintenance ID',
+    editable: false,
+    hidden: true,
+  },
+  {
+    field: 'monthly',
+    title: 'Month',
+    type: 'monthDropdownPEPP',
+    editable: true,
+    width: 150,
+  },
+  {
+    field: 'durationInHrs',
+    title: 'Duration (hrs)',
+    editable: true,
+  },
+  {
+    field: 'remark',
+    title: 'Remarks',
+    editable: true,
+  },
+]
 export const SlowdownConfigColumns = [
   {
     field: 'description',
@@ -132,6 +196,47 @@ export const ShutDownPeColumns = [
   {
     field: 'durationInHrs',
     title: 'Duration (hrs)',
+    editable: true,
+  },
+  {
+    field: 'remark',
+    title: 'Shutdown Basis',
+    editable: true,
+  },
+]
+export const ShutDownPeC2Columns = [
+  {
+    field: 'discription',
+    title: 'Shutdown Desc',
+    editable: true,
+    type: 'descLimit',
+  },
+
+  {
+    field: 'maintenanceId',
+    title: 'Maintenance ID',
+    editable: false,
+    hidden: true,
+  },
+  {
+    field: 'maintStartDateTime',
+    title: 'SD - From',
+    editable: true,
+  },
+  {
+    field: 'maintEndDateTime',
+    title: 'SD - To',
+    editable: true,
+  },
+  {
+    field: 'durationInHrs',
+    title: 'Duration (hrs)',
+    editable: true,
+  },
+  {
+    field: 'shutdownRate',
+    title: 'Shutdown Type',
+    type: 'shutdownRateDropdown',
     editable: true,
   },
   {
@@ -218,6 +323,60 @@ export const ShutDownPpColumns = [
   },
 ]
 export const ShutDownPpDtaColumns = [
+  {
+    field: 'discription',
+    title: 'Shutdown Desc',
+    editable: true,
+    type: 'descLimit',
+  },
+  {
+    field: 'lineDisplayName',
+    title: 'Line',
+    type: 'lineDropdown',
+    editable: true,
+    width: 130,
+  },
+  // {
+  //   field: 'productName1',
+  //   title: 'Particulars',
+  //   editable: true,
+  //   widthT: 130,
+  // },
+  {
+    field: 'maintenanceId',
+    title: 'Maintenance ID',
+    editable: false,
+    hidden: true,
+  },
+  // {
+  //   field: 'maintStartDateTime',
+  //   title: 'SD - From',
+  //   editable: true,
+  // },
+  // {
+  //   field: 'maintEndDateTime',
+  //   title: 'SD - To',
+  //   editable: true,
+  // },
+  {
+    field: 'monthly',
+    title: 'Month',
+    type: 'monthDropdownPEPP',
+    editable: true,
+    width: 150,
+  },
+  {
+    field: 'durationInHrs',
+    title: 'Duration (hrs)',
+    editable: true,
+  },
+  {
+    field: 'remark',
+    title: 'Shutdown Basis',
+    editable: true,
+  },
+]
+export const ShutDownPVCDMDColumns = [
   {
     field: 'discription',
     title: 'Shutdown Desc',
@@ -332,6 +491,48 @@ export const ShutDownPTADMDColumns = [
     editable: true,
     width: 150,
   },
+  {
+    field: 'durationInHrs',
+    title: 'Duration (hrs)',
+    editable: true,
+  },
+  {
+    field: 'remark',
+    title: 'Shutdown Basis',
+    editable: true,
+  },
+]
+export const ShutDownChemicalColumns = [
+  {
+    field: 'discription',
+    title: 'Shutdown Desc',
+    editable: true,
+    type: 'descLimit',
+  },
+
+  {
+    field: 'maintenanceId',
+    title: 'Maintenance ID',
+    editable: false,
+    hidden: true,
+  },
+  {
+    field: 'maintStartDateTime',
+    title: 'SD - From',
+    editable: true,
+  },
+  {
+    field: 'maintEndDateTime',
+    title: 'SD - To',
+    editable: true,
+  },
+  // {
+  //   field: 'monthly',
+  //   title: 'Month',
+  //   type: 'monthDropdownPEPP',
+  //   editable: true,
+  //   width: 150,
+  // },
   {
     field: 'durationInHrs',
     title: 'Duration (hrs)',

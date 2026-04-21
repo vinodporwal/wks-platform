@@ -86,8 +86,8 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-		
-	        boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+		Boolean elastomer = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
+	        boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 		Boolean withGrade=false;
 		if(plant.getName().equalsIgnoreCase("SBR") && site.getName().equalsIgnoreCase("HMD") && vertical.getName().equalsIgnoreCase("ELASTOMER") || pvc) {
 			withGrade=true;
@@ -98,7 +98,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 				List<Object[]> obj=getOverallConsumptionData(plantId,year);
 				return getData(obj, plantId, year);
 			}
-			 if(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA")){
+			 if(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("Chemical")){
 				 String procedureName = vertical.getName()+"_"+site.getName()+"_"+"GetAOPConsumptionNorms";
 				 resultList= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
 			}else {
@@ -116,7 +116,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 				dto.setAopCaseId(row[3] != null ? row[3].toString() : null);
 				dto.setAopStatus(row[4] != null ? row[4].toString() : null);
 				dto.setAopRemarks(row[5] != null ? row[5].toString() : null);
-				if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc) {
+				if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc || elastomer) {
 					dto.setGradeId(gradeId);
 					dto.setMaterialFkId(row[7] != null ? row[7].toString() : null);
 					dto.setJan(row[8] != null ? Double.valueOf(row[8].toString()) : null);
@@ -157,9 +157,14 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 					dto.setUOM(row[22] != null ? row[22].toString() : null);
 					dto.setIsEditable(row[23] != null ? Boolean.valueOf(row[23].toString()) : null);
 					dto.setProductName(row[24] != null ? row[24].toString() : null);
-					if(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA")) {
+					if(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("Chemical")) {
 						dto.setWtAverage(row[25] != null ? Double.parseDouble(row[25].toString()) : null);
+						
 					}
+					if(vertical.getName().equalsIgnoreCase("Chemical")) {
+						dto.setSapCode(row[26] != null ? row[26].toString() : "");
+					}
+					
 				}
 				
 				aOPConsumptionNormDTOList.add(dto);
@@ -595,17 +600,18 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			Plants plant = plantsRepository.findById(plantFkId).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			Boolean withGrade=false;
+			Boolean elastomer = vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 			if(plant.getName().equalsIgnoreCase("SBR") && site.getName().equalsIgnoreCase("HMD") && vertical.getName().equalsIgnoreCase("ELASTOMER")) {
 				withGrade=true;
 			}
 			String sql=null;
 			String viewName = "vwScrn" + vertical.getName() + "AOPConsumptionNorms";
-			if(withGrade){
+			if(withGrade || elastomer){
 				viewName = "vwScrn" + vertical.getName() + "AOPConsumptionNormsGrade";
 			}
-			if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc) {
+			if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc || elastomer) {
 				 sql = "SELECT * FROM " + viewName + " WHERE Plant_FK_Id = :plantFkId AND AOPYear = :aopYear AND Grade_FK_Id = :gradeId";
 			}else {
 				 sql = "SELECT * FROM " + viewName + " WHERE Plant_FK_Id = :plantFkId AND AOPYear = :aopYear";
@@ -614,7 +620,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("plantFkId", plantFkId);
 			query.setParameter("aopYear", aopYear);
-			if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc) {
+			if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc || elastomer) {
 				query.setParameter("gradeId", gradeId);
 			}
 			return query.getResultList(); // Later you can map this to a

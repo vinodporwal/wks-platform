@@ -15,7 +15,7 @@ const ProductionAopView = ({
   handleExport,
 }) => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
   const [columns, setColumns] = useState([])
@@ -54,7 +54,9 @@ const ProductionAopView = ({
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const [calculationObject, setCalculationObject] = useState([])
   const formatValueToNoDecimals = (val) =>
     val && !isNaN(val) ? Math.round(val) : val

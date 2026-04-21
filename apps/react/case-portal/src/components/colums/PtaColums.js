@@ -198,7 +198,7 @@ export const SlowDownPtaColumns = [
 export const SlowDownPtadmdColumns = [
   {
     field: 'discriptionDrpdwn',
-    title: 'Shutdown Desc',
+    title: 'Slowdown Desc',
     editable: true,
     type: 'discriptionDrpdwn',
   },
