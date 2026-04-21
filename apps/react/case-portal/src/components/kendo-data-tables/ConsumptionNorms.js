@@ -716,7 +716,7 @@ const ConsumptionNorms = () => {
                 variant='contained'
                 onClick={handleRelease}
                 disabled={isReleaseDisabled || READ_ONLY}
-                className='btn-release'
+                className='btn-save'
               >
                 Release
               </Button>
@@ -769,7 +769,6 @@ const ConsumptionNorms = () => {
               width: 400,
               backdropFilter: 'blur(8px)',
               boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
-              borderTop: '4px solid #22c55e', // ? green accent line
             },
           }}
         >
@@ -777,7 +776,7 @@ const ConsumptionNorms = () => {
             sx={{
               fontWeight: 700,
               fontSize: '1.2rem',
-              color: '#166534', // ? dark green title
+
               pb: 0.5,
             }}
           >
@@ -816,7 +815,7 @@ const ConsumptionNorms = () => {
             <Button
               onClick={submitConfirmation}
               variant='contained'
-              className='btn-release'
+              className='btn-save'
               sx={{
                 textTransform: 'none',
                 px: 2.5,
