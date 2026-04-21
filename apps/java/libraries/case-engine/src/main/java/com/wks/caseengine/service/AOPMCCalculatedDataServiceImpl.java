@@ -645,7 +645,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
             }
             if(vertical.getName().equalsIgnoreCase("CRACKER") || (vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD"))) {
 	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
-	        }if(vertical.getName().equalsIgnoreCase("Chemical")) {
+	        }else if(vertical.getName().equalsIgnoreCase("Chemical")) {
 	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
 	        }else {
 	        	 obj = getMaxAchievedCapacityData(year, plantId, view);
