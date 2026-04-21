@@ -136,7 +136,7 @@ const KendoDataTables = ({
   permissions = {},
   errorRows = new Set(),
   setSnackbarOpen = () => {},
-  snackbarData = { message: '', severity: 'info' },
+  snackbarData = { message: '', severity: 'info', duration: 3000 },
   snackbarOpen = false,
   setRemarkDialogOpen = () => {},
   currentRemark = '',
@@ -3786,6 +3786,7 @@ const KendoDataTables = ({
         message={snackbarData?.message || ''}
         severity={snackbarData?.severity || 'info'}
         onClose={() => setSnackbarOpen(false)}
+        duration={snackbarData?.duration}
       />
 
       <Dialog
