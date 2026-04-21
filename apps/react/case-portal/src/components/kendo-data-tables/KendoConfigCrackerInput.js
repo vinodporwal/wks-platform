@@ -83,6 +83,7 @@ const CrackerConfig = () => {
     'Constant',
     'Naphtha',
     'External Streams',
+    'OptimizerPrices',
   ]
   const [tabs, setTabs] = useState(rawTabsStatic)
   const [availableTabs, setAvailableTabs] = useState([])
@@ -108,6 +109,7 @@ const CrackerConfig = () => {
     endDate: null,
   })
   const [exsternalSteamRows, setExsternalSteamRows] = useState([])
+  const [optimizerPricesRows, setOptimizerPricesRows] = useState([])
 
   const currentTabDisplay = useMemo(() => {
     const idLower = tabs[tabIndex]?.toLowerCase() || ''
@@ -333,6 +335,8 @@ const CrackerConfig = () => {
           return naphthaRows
         case 'External Streams':
           return exsternalSteamRows
+        case 'OptimizerPrices':
+          return optimizerPricesRows
         default:
           return []
       }
@@ -347,6 +351,7 @@ const CrackerConfig = () => {
       constantsRows,
       naphthaRows,
       exsternalSteamRows,
+      optimizerPricesRows,
     ],
   )
 
@@ -381,6 +386,9 @@ const CrackerConfig = () => {
         break
       case 'External Streams':
         setExsternalSteamRows(data)
+        break
+      case 'OptimizerPrices':
+        setOptimizerPricesRows(data)
         break
 
       default:
@@ -1037,6 +1045,7 @@ const CrackerConfig = () => {
             case 'Recovery':
             case 'Optimizing':
             case 'Furnace':
+            case 'OptimizerPrices':
             case 'Constant':
               return (
                 <Box key={currentTabDisplay}>

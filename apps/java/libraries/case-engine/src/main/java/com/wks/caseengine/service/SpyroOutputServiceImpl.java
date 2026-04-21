@@ -109,12 +109,17 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
         String verticalId = vertical.getId().toString();
         String procedureName=vertical.getName()+"_"+site.getName()+"_GetSpyroOutput";
 		try {
+			List<String> types=null;
+			if(type.equalsIgnoreCase("Feeds")) {
+				String storedProcedure=vertical.getName()+"_GetFeedsNorms";
+				 types= getTypes( plantId,  year,  siteId, storedProcedure);
+			}
 			List<Object[]> results = getData(plantId, year,siteId,verticalId,Mode,procedureName);
 
 			for (Object[] row : results) {
 				Map<String, Object> map = new HashMap<>(); // Create a new map for each row
 				
-				if(row[4].toString().contains(type)) {	
+				if(!type.equalsIgnoreCase("Feeds") && row[4].toString().contains(type)) {	
 					
 					map.put("normParameterFKID", row[2]);
 					map.put("particulars", row[3]);
@@ -135,7 +140,30 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 					map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 					map.put("isEditable", row[22]);
 					spyroOutputDataList.add(map); // Add the map to the list here
-				}
+				}else {
+					
+					if (type.equalsIgnoreCase("Feeds")) {
+						if (types.contains(row[4].toString())) {
+							map.put("normParameterFKID", row[2]);
+							map.put("particulars", row[3]);
+							map.put("normParameterDisplayName", row[4]);
+							map.put("uom", row[7]);
+							map.put("remarks", row[9]);
+							map.put("jan", (row[10] == null || row[10].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[10].toString()));
+							map.put("feb", (row[11] == null || row[11].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[11].toString()));
+							map.put("mar", (row[12] == null || row[12].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[12].toString()));
+							map.put("apr", (row[13] == null || row[13].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[13].toString()));
+							map.put("may", (row[14] == null || row[14].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[14].toString()));
+							map.put("jun", (row[15] == null || row[15].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[15].toString()));
+							map.put("jul", (row[16] == null || row[16].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[16].toString()));
+							map.put("aug", (row[17] == null || row[17].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[17].toString()));
+							map.put("sep", (row[18] == null || row[18].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[18].toString()));
+							map.put("oct", (row[19] == null || row[19].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[19].toString()));
+							map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
+							map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
+							map.put("isEditable", row[22]);
+							spyroOutputDataList.add(map);
+						}}}
 			}
 			aopMessageVM.setCode(200);
 			aopMessageVM.setMessage("Data fetched successfully");
@@ -148,6 +176,26 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 
+	}
+	
+	public List<String> getTypes(String plantId, String aopYear, String siteId,String procedureName) {
+		try {
+
+			String sql = "EXEC " + procedureName +
+					" @plantId = :plantId,@siteId = :siteId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+			query.setParameter("siteId", siteId);
+		
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
 	}
 	
 	public List<Object[]> getData(String plantId, String AopYear, String siteId,

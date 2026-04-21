@@ -136,7 +136,7 @@ const KendoDataTables = ({
   permissions = {},
   errorRows = new Set(),
   setSnackbarOpen = () => {},
-  snackbarData = { message: '', severity: 'info' },
+  snackbarData = { message: '', severity: 'info', duration: 3000 },
   snackbarOpen = false,
   setRemarkDialogOpen = () => {},
   currentRemark = '',
@@ -187,6 +187,8 @@ const KendoDataTables = ({
   endDate,
   mcuMaxCapValues = [],
   key = [],
+  isReleaseDisabled = true,
+  handleRelease = () => {},
 }) => {
   const _export = useRef(null)
   const _grid = React.useRef(undefined)
@@ -2045,6 +2047,16 @@ const KendoDataTables = ({
                   Export
                 </Button>
               )}
+              {permissions?.showReleaseBtn && (
+                <Button
+                  variant='contained'
+                  className='btn-save'
+                  disabled={isReleaseDisabled || READ_ONLY}
+                  onClick={handleRelease}
+                >
+                  Release
+                </Button>
+              )}
 
               {permissions?.showUnit && (
                 <TextField
@@ -3786,6 +3798,7 @@ const KendoDataTables = ({
         message={snackbarData?.message || ''}
         severity={snackbarData?.severity || 'info'}
         onClose={() => setSnackbarOpen(false)}
+        duration={snackbarData?.duration}
       />
 
       <Dialog
