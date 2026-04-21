@@ -187,6 +187,8 @@ const KendoDataTables = ({
   endDate,
   mcuMaxCapValues = [],
   key = [],
+  isReleaseDisabled = true,
+  handleRelease = () => {},
 }) => {
   const _export = useRef(null)
   const _grid = React.useRef(undefined)
@@ -2043,6 +2045,16 @@ const KendoDataTables = ({
                   disabled={rows?.length === 0}
                 >
                   Export
+                </Button>
+              )}
+              {permissions?.showReleaseBtn && (
+                <Button
+                  variant='contained'
+                  className='btn-save'
+                  disabled={isReleaseDisabled || READ_ONLY}
+                  onClick={handleRelease}
+                >
+                  Release
                 </Button>
               )}
 

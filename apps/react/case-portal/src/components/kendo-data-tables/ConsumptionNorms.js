@@ -689,6 +689,7 @@ const ConsumptionNorms = () => {
       ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
       isHeight: lowerVertName !== 'meg' && rows?.length > 10,
       showTitleNameBusiness: true,
+      showReleaseBtn: true,
       titleName: `${SCREEN_NAME}`,
     },
     isOldYear,
@@ -711,16 +712,16 @@ const ConsumptionNorms = () => {
       <div>
         {
           <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 0 }}>
+            {/* <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 0 }}>
               <Button
                 variant='contained'
                 onClick={handleRelease}
                 disabled={isReleaseDisabled || READ_ONLY}
-                className='btn-save'
+                className='btn-release'
               >
                 Release
               </Button>
-            </Box>
+            </Box> */}
             <KendoDataTables
               autoHeight={true}
               modifiedCells={modifiedCells}
@@ -755,6 +756,8 @@ const ConsumptionNorms = () => {
               calculatebtnClicked={calculatebtnClicked}
               downloadExcelForConfiguration={downloadExcelForConfiguration}
               plantID={PLANT_ID}
+              isReleaseDisabled={isReleaseDisabled}
+              handleRelease={handleRelease}
             />
           </Box>
         }
