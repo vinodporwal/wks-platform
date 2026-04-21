@@ -80,6 +80,8 @@ const CrackerConfig = () => {
     'Miscellaneous Parameters',
     'Constant',
     'Yield',
+    'SpyroMatbal',
+    'OtherSpyroOutput',
   ]
   const [tabs, setTabs] = useState(rawTabsStatic)
   const [availableTabs, setAvailableTabs] = useState([])
@@ -91,6 +93,8 @@ const CrackerConfig = () => {
   const [feedRows, setFeedRows] = useState([])
   const [compositionRows, setCompositionRows] = useState([])
   const [hydrogenationRows, setHydrogenationRows] = useState([])
+  const [spyroMatbalRows, setSpyroMatbalRows] = useState([])
+  const [otherSpyroOutputRows, setOtherSpyroOutputRows] = useState([])
 
   const FORMATE_VALUE = ValueFormatterProduction()
 
@@ -277,6 +281,10 @@ const CrackerConfig = () => {
           return constantsRows
         case 'Yield':
           return yieldRows
+        case 'SpyroMatbal':
+          return spyroMatbalRows
+        case 'OtherSpyroOutput':
+          return otherSpyroOutputRows
 
         default:
           return []
@@ -301,6 +309,12 @@ const CrackerConfig = () => {
         break
       case 'Yield':
         setYieldRows(data)
+        break
+      case 'SpyroMatbal':
+        setSpyroMatbalRows(data)
+        break
+      case 'OtherSpyroOutput':
+        setOtherSpyroOutputRows(data)
         break
 
       default:
@@ -1013,6 +1027,8 @@ const CrackerConfig = () => {
             case 'Total Products':
             case 'Miscellaneous Parameters':
             case 'Constant':
+            case 'SpyroMatbal':
+            case 'OtherSpyroOutput':
             case 'Yield':
               return (
                 <Box key={currentTabDisplay}>
