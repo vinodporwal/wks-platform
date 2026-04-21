@@ -99,6 +99,7 @@ const ProductionNorms = ({ permissions }) => {
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
+    duration: 3000,
   })
 
   const headerMap = generateHeaderNames(AOP_YEAR)
@@ -119,6 +120,7 @@ const ProductionNorms = ({ permissions }) => {
     unsavedRows: {},
     rowsBeforeChange: {},
   })
+  const validateTotalsWithIIRRef = React.useRef(true)
   const dispatch = useDispatch()
   const totalRowConfiguration = [
     { field: 'april', aggregate: 'sum' },
@@ -1001,7 +1003,8 @@ const ProductionNorms = ({ permissions }) => {
 
   useEffect(() => {
     if (
-      (IS_ELASTOMER_JMD_IIR || IS_CHEMICAL_VMD_ACRYLONITRILE) &&
+      (validateTotalsWithIIRRef.current &&
+        (IS_ELASTOMER_JMD_IIR || IS_CHEMICAL_VMD_ACRYLONITRILE)) &&
       rows.length > 0 &&
       (rowsInKT.length > 0 || rowsInMT.length > 0)
     ) {
@@ -1032,8 +1035,10 @@ const ProductionNorms = ({ permissions }) => {
         setSnackbarData({
           message: `Total validation failed:\n${message}`,
           severity: 'error',
+          duration: 1000 * 10
         })
       }
+      validateTotalsWithIIRRef.current = false
     }
   }, [
     rows,
