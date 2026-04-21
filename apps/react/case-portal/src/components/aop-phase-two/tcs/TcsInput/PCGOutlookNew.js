@@ -37,19 +37,22 @@ const PCGOutlookNew = ({
 
   // Generate dummy data for PCG Outlook
   const generateDummyData = useCallback(() => {
+    // Extract year from AOP_YEAR (e.g., "2026-27" -> "26")
+    const year = AOP_YEAR ? AOP_YEAR.split('-')[0].slice(-2) : '25'
+    
     const months = [
-      { sNo: 1, month: "Jan'25" },
-      { sNo: 2, month: "Feb'25" },
-      { sNo: 3, month: "Mar'25" },
-      { sNo: 4, month: "Apr'25" },
-      { sNo: 5, month: "May'25" },
-      { sNo: 6, month: "Jun'25" },
-      { sNo: 7, month: "Jul'25" },
-      { sNo: 8, month: "Aug'25" },
-      { sNo: 9, month: "Sep'25" },
-      { sNo: 10, month: "Oct'25" },
-      { sNo: 11, month: "Nov'25" },
-      { sNo: 12, month: "Dec'25" },
+      { sNo: 1, month: `Jan'${year}` },
+      { sNo: 2, month: `Feb'${year}` },
+      { sNo: 3, month: `Mar'${year}` },
+      { sNo: 4, month: `Apr'${year}` },
+      { sNo: 5, month: `May'${year}` },
+      { sNo: 6, month: `Jun'${year}` },
+      { sNo: 7, month: `Jul'${year}` },
+      { sNo: 8, month: `Aug'${year}` },
+      { sNo: 9, month: `Sep'${year}` },
+      { sNo: 10, month: `Oct'${year}` },
+      { sNo: 11, month: `Nov'${year}` },
+      { sNo: 12, month: `Dec'${year}` },
     ]
 
     return months.map((month, index) => ({
@@ -66,7 +69,7 @@ const PCGOutlookNew = ({
       remarks: '',
       inEdit: false,
     }))
-  }, [])
+  }, [AOP_YEAR])
 
   // Carry forward data from previous year
   const handleCarryForward = useCallback(async () => {
