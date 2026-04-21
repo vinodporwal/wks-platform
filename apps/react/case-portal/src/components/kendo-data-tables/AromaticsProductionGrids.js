@@ -113,6 +113,8 @@ const AromaticsProductionGrids = ({ permissions }) => {
   const dispatch = useDispatch()
   const [rowsDesignCapacity, setRowsDesignCapacity] = useState([])
   const [rowsMaxCapacity, setRowsMaxCapacity] = useState([])
+  const [configurationExecutionDetails, setConfigurationExecutionDetails] =
+      useState(null)
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remarks || '')
@@ -639,12 +641,79 @@ const AromaticsProductionGrids = ({ permissions }) => {
         setStartDate(formatDate(startDate))
         setEndDate(formatDate(endDate))
       } else {
+        setConfigurationExecutionDetails(configData.data)
         setStartDate(StartDate)
         setEndDate(EndDate)
       }
       setLoading(false)
     } catch (error) {
       console.error('Error fetching data:', error)
+      setLoading(false)
+    }
+  }
+
+  const handleCalculateDTA = async () => {
+    if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
+
+    try {
+      const startDateObj = configurationExecutionDetails.find(
+        (item) => item.Name === 'StartDate',
+      )
+      const endDateObj = configurationExecutionDetails.find(
+        (item) => item.Name === 'EndDate',
+      )
+      const payload = [
+        {
+          apr: startDate,
+          UOM: '',
+          auditYear: AOP_YEAR,
+          normParameterFKId: startDateObj?.NormParameter_FK_Id,
+          remarks: 'Initiated',
+          id: startDateObj?.Id || null,
+          plantId: PLANT_ID,
+        },
+        {
+          apr: endDate,
+          UOM: '',
+          auditYear: AOP_YEAR,
+          normParameterFKId: endDateObj?.NormParameter_FK_Id,
+          remarks: 'Initiated',
+          id: endDateObj?.Id || null,
+          plantId: PLANT_ID,
+        },
+      ]
+      setLoading(true)
+      const data =
+        await DataService.executeConfiguration(
+          payload,
+          keycloak,
+        )
+
+      if (data || data == 0) {
+        // dispatch(setIsBlocked(true))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refresh Failed!',
+          severity: 'error',
+        })
+      }
+
+      return data
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+      console.error('Error!', error)
+    } finally {
       setLoading(false)
     }
   }
@@ -729,6 +798,8 @@ const AromaticsProductionGrids = ({ permissions }) => {
   const handleCalculate = () => {
     if (VERTICAL_NAME == 'meg' || VERTICAL_NAME == 'elastomer') {
       handleCalculateMeg()
+    } else if (VERTICAL_NAME == 'aromatics' && SITE_NAME == 'dta') {
+      handleCalculateDTA()
     } else {
       // handleCalculatePe()
     }
@@ -934,6 +1005,11 @@ const AromaticsProductionGrids = ({ permissions }) => {
 
       downloadExcelBtnFromUI: permissions?.hideDownloadExcel ? false : true,
       ExcelName: `${VERTICAL_NAME}_Max Achievable Based On Current Unit Performance`,
+      showCalculate: VERTICAL_NAME === 'aromatics',
+      showCalculateVisibility:
+        VERTICAL_NAME === 'aromatics'
+          ? true
+          : false,
     },
     isOldYear,
   )
@@ -1195,6 +1271,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
           }
           resetEditSignal={editResetKey}
           setEditResetKey={setEditResetKey}
+          handleCalculate={handleCalculate}
         />
       )}
 
