@@ -7,6 +7,7 @@ import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatt
 import { InputApiService } from 'components/aop-phase-two/services/cpp/inputApiService'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const AssetAvailability = () => {
   const keycloak = useSession()
@@ -60,7 +61,7 @@ const AssetAvailability = () => {
     {
       title: headerMap[4],
       field: 'april',
-      widthT: 80,
+      widthT: 100,
       type: 'wholeNumber',
       editable: true,
       wholeNumberOnly: true,
@@ -69,7 +70,7 @@ const AssetAvailability = () => {
     {
       title: headerMap[5],
       field: 'may',
-      widthT: 80,
+      widthT: 100,
       type: 'wholeNumber',
       editable: true,
       wholeNumberOnly: true,
@@ -78,7 +79,7 @@ const AssetAvailability = () => {
     {
       title: headerMap[6],
       field: 'june',
-      widthT: 80,
+      widthT: 100,
       type: 'wholeNumber',
       editable: true,
       wholeNumberOnly: true,
@@ -87,7 +88,7 @@ const AssetAvailability = () => {
     {
       title: headerMap[7],
       field: 'july',
-      widthT: 80,
+      widthT: 100,
       type: 'wholeNumber',
       editable: true,
       wholeNumberOnly: true,
@@ -96,7 +97,7 @@ const AssetAvailability = () => {
     {
       title: headerMap[8],
       field: 'aug',
-      widthT: 80,
+      widthT: 100,
       type: 'wholeNumber',
       editable: true,
       wholeNumberOnly: true,
@@ -105,7 +106,7 @@ const AssetAvailability = () => {
     {
       title: headerMap[9],
       field: 'sep',
-      widthT: 80,
+      widthT: 100,
       type: 'wholeNumber',
       editable: true,
       wholeNumberOnly: true,
@@ -114,7 +115,7 @@ const AssetAvailability = () => {
     {
       title: headerMap[10],
       field: 'oct',
-      widthT: 80,
+      widthT: 100,
       type: 'wholeNumber',
       editable: true,
       wholeNumberOnly: true,
@@ -123,7 +124,7 @@ const AssetAvailability = () => {
     {
       title: headerMap[11],
       field: 'nov',
-      widthT: 80,
+      widthT: 100,
       type: 'wholeNumber',
       editable: true,
       wholeNumberOnly: true,
@@ -132,7 +133,7 @@ const AssetAvailability = () => {
     {
       title: headerMap[12],
       field: 'dec',
-      widthT: 80,
+      widthT: 100,
       type: 'wholeNumber',
       editable: true,
       wholeNumberOnly: true,
@@ -141,7 +142,7 @@ const AssetAvailability = () => {
     {
       title: headerMap[1],
       field: 'jan',
-      widthT: 80,
+      widthT: 100,
       type: 'wholeNumber',
       editable: true,
       wholeNumberOnly: true,
@@ -150,7 +151,7 @@ const AssetAvailability = () => {
     {
       title: headerMap[2],
       field: 'feb',
-      widthT: 80,
+      widthT: 100,
       type: 'wholeNumber',
       editable: true,
       wholeNumberOnly: true,
@@ -159,7 +160,7 @@ const AssetAvailability = () => {
     {
       title: headerMap[3],
       field: 'march',
-      widthT: 80,
+      widthT: 100,
       type: 'wholeNumber',
       editable: true,
       wholeNumberOnly: true,
@@ -422,12 +423,7 @@ const AssetAvailability = () => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       <AdvanceKendoTable
         columns={columns}
         rows={rows}
