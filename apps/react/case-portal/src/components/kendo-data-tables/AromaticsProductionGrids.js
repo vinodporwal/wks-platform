@@ -114,7 +114,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
   const [rowsDesignCapacity, setRowsDesignCapacity] = useState([])
   const [rowsMaxCapacity, setRowsMaxCapacity] = useState([])
   const [configurationExecutionDetails, setConfigurationExecutionDetails] =
-      useState(null)
+    useState(null)
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remarks || '')
@@ -683,11 +683,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
         },
       ]
       setLoading(true)
-      const data =
-        await DataService.executeConfiguration(
-          payload,
-          keycloak,
-        )
+      const data = await DataService.executeConfiguration(payload, keycloak)
 
       if (data || data == 0) {
         // dispatch(setIsBlocked(true))
@@ -1006,10 +1002,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
       downloadExcelBtnFromUI: permissions?.hideDownloadExcel ? false : true,
       ExcelName: `${VERTICAL_NAME}_Max Achievable Based On Current Unit Performance`,
       showCalculate: VERTICAL_NAME === 'aromatics',
-      showCalculateVisibility:
-        VERTICAL_NAME === 'aromatics'
-          ? true
-          : false,
+      showCalculateVisibility: VERTICAL_NAME === 'aromatics' ? true : false,
     },
     isOldYear,
   )

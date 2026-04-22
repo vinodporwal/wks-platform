@@ -1,177 +1,177 @@
 [
-  { "field": "idFromApi", "title": "ID", "hidden": true },
+  { field: 'idFromApi', title: 'ID', hidden: true },
   {
-    "field": "aopCaseId",
-    "title": "Case ID",
-    "hidden": true,
-    "editable": false
+    field: 'aopCaseId',
+    title: 'Case ID',
+    hidden: true,
+    editable: false,
   },
-  { "field": "aopType", "title": "Type", "width": 80, "hidden": true },
-  { "field": "aopYear", "title": "Year", "width": 80, "hidden": true },
-  { "field": "plantFkId", "title": "Plant ID", "width": 80, "hidden": true },
+  { field: 'aopType', title: 'Type', width: 80, hidden: true },
+  { field: 'aopYear', title: 'Year', width: 80, hidden: true },
+  { field: 'plantFkId', title: 'Plant ID', width: 80, hidden: true },
   {
-    "field": "Particulars",
-    "title": "Type",
-    "width": 100,
-    "groupable": true,
-    "headerClass": "bold-header",
-    "filterable": "false",
-    "editable": false,
-    "hidden": true
-  },
-  {
-    "field": "normParameterId",
-    "title": "Particulars",
-    "editable": false,
-    "width": 150,
-    "hidden": true
+    field: 'Particulars',
+    title: 'Type',
+    width: 100,
+    groupable: true,
+    headerClass: 'bold-header',
+    filterable: 'false',
+    editable: false,
+    hidden: true,
   },
   {
-    "field": "materialFKId",
-    "editable": false,
-    "hidden": true
+    field: 'normParameterId',
+    title: 'Particulars',
+    editable: false,
+    width: 150,
+    hidden: true,
   },
   {
-    "field": "normParameterDisplayName",
-    "editable": false,
-    "hidden": true
+    field: 'materialFKId',
+    editable: false,
+    hidden: true,
   },
   {
-    "field": "displayName",
-    "title": "Products",
-    "editable": false,
-    "width": 125
+    field: 'normParameterDisplayName',
+    editable: false,
+    hidden: true,
   },
   {
-    "field": "april",
-    "title": "4",
-    "align": "left",
-    "editable": true,
-    "type": "number",
-    "format": "{0:#.##}"
+    field: 'displayName',
+    title: 'Products',
+    editable: false,
+    width: 125,
   },
   {
-    "field": "may",
-    "title": "5",
-    "type": "number",
-    "editable": true,
+    field: 'april',
+    title: '4',
+    align: 'left',
+    editable: true,
+    type: 'number',
+    format: '{0:#.##}',
+  },
+  {
+    field: 'may',
+    title: '5',
+    type: 'number',
+    editable: true,
 
-    "align": "left",
-    "format": "{0:#.##}"
+    align: 'left',
+    format: '{0:#.##}',
   },
   {
-    "field": "june",
-    "title": "6",
-    "type": "number",
-    "editable": true,
+    field: 'june',
+    title: '6',
+    type: 'number',
+    editable: true,
 
-    "align": "left",
-    "format": "{0:#.##}"
+    align: 'left',
+    format: '{0:#.##}',
   },
   {
-    "field": "july",
-    "title": "7",
-    "type": "number",
-    "editable": true,
+    field: 'july',
+    title: '7',
+    type: 'number',
+    editable: true,
 
-    "align": "left",
-    "format": "{0:#.##}"
+    align: 'left',
+    format: '{0:#.##}',
   },
   {
-    "field": "aug",
-    "title": "8",
-    "type": "number",
-    "editable": true,
+    field: 'aug',
+    title: '8',
+    type: 'number',
+    editable: true,
 
-    "align": "left",
-    "format": "{0:#.##}"
+    align: 'left',
+    format: '{0:#.##}',
   },
   {
-    "field": "sep",
-    "title": "9",
-    "type": "number",
-    "editable": true,
+    field: 'sep',
+    title: '9',
+    type: 'number',
+    editable: true,
 
-    "align": "left",
-    "format": "{0:#.##}"
+    align: 'left',
+    format: '{0:#.##}',
   },
   {
-    "field": "oct",
-    "title": "10",
-    "type": "number",
-    "editable": true,
+    field: 'oct',
+    title: '10',
+    type: 'number',
+    editable: true,
 
-    "align": "left",
-    "format": "{0:#.##}"
+    align: 'left',
+    format: '{0:#.##}',
   },
   {
-    "field": "nov",
-    "title": "11",
-    "type": "number",
-    "editable": true,
+    field: 'nov',
+    title: '11',
+    type: 'number',
+    editable: true,
 
-    "align": "left",
-    "format": "{0:#.##}"
+    align: 'left',
+    format: '{0:#.##}',
   },
   {
-    "field": "dec",
-    "title": "12",
-    "type": "number",
-    "editable": true,
+    field: 'dec',
+    title: '12',
+    type: 'number',
+    editable: true,
 
-    "align": "left",
-    "format": "{0:#.##}"
+    align: 'left',
+    format: '{0:#.##}',
   },
   {
-    "field": "jan",
-    "title": "1",
-    "type": "number",
-    "editable": true,
+    field: 'jan',
+    title: '1',
+    type: 'number',
+    editable: true,
 
-    "align": "left",
-    "format": "{0:#.##}"
+    align: 'left',
+    format: '{0:#.##}',
   },
   {
-    "field": "feb",
-    "title": "2",
+    field: 'feb',
+    title: '2',
 
-    "editable": true,
+    editable: true,
 
-    "align": "left",
-    "type": "number",
-    "format": "{0:#.##}"
+    align: 'left',
+    type: 'number',
+    format: '{0:#.##}',
   },
   {
-    "field": "march",
-    "title": "3",
-    "type": "number",
-    "editable": true,
+    field: 'march',
+    title: '3',
+    type: 'number',
+    editable: true,
 
-    "align": "left",
-    "format": "{0:#.##}"
+    align: 'left',
+    format: '{0:#.##}',
   },
   {
-    "field": "averageTPH",
-    "title": "Total",
-    "type": "number",
-    "editable": false,
-    "format": "{0:#.##}"
+    field: 'averageTPH',
+    title: 'Total',
+    type: 'number',
+    editable: false,
+    format: '{0:#.##}',
   },
   {
-    "field": "remark",
-    "title": "Remark",
-    "editable": true
+    field: 'remark',
+    title: 'Remark',
+    editable: true,
   },
   {
-    "field": "isEditable",
-    "title": "isEditable",
-    "hidden": true
+    field: 'isEditable',
+    title: 'isEditable',
+    hidden: true,
   },
 
   {
-    "field": "aopStatus",
-    "title": "aopStatus",
-    "editable": false,
-    "hidden": true
-  }
+    field: 'aopStatus',
+    title: 'aopStatus',
+    editable: false,
+    hidden: true,
+  },
 ]

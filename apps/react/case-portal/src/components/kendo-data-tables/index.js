@@ -444,7 +444,7 @@ const KendoDataTables = ({
   }
 
   const handleOpenDeleteMultipleDialog = () => {
-   setDeleteMultipleConfirms(true)
+    setDeleteMultipleConfirms(true)
   }
 
   const excelExport = () => {
@@ -1106,7 +1106,9 @@ const KendoDataTables = ({
     const isEdited = !!(
       customModifiedCells?.[rowId] && checkField in customModifiedCells[rowId]
     )
-    const lineObj = props.allLines?.find((l) => (l.id === dataItem[field] || l.displayName === dataItem[field]))
+    const lineObj = props.allLines?.find(
+      (l) => l.id === dataItem[field] || l.displayName === dataItem[field],
+    )
     const displayLabel = lineObj ? lineObj.displayName : ''
     return (
       <td
@@ -2211,17 +2213,22 @@ const KendoDataTables = ({
                   field='selected'
                   width='50px'
                   headerSelectionValue={
-                    selectedRows?.length > 0 && selectedRows?.length === rows?.length
+                    selectedRows?.length > 0 &&
+                    selectedRows?.length === rows?.length
                   }
                   cells={{
                     data: (props) => (
                       <td style={{ textAlign: 'center' }}>
                         <Checkbox
-                          checked={selectedRows?.includes(props.dataItem?.idFromApi)}
+                          checked={selectedRows?.includes(
+                            props.dataItem?.idFromApi,
+                          )}
                           onChange={() => {
                             const id = props.dataItem?.idFromApi
                             if (selectedRows?.includes(id)) {
-                              setSelectedRows(selectedRows?.filter((r) => r !== id))
+                              setSelectedRows(
+                                selectedRows?.filter((r) => r !== id),
+                              )
                             } else {
                               setSelectedRows([...selectedRows, id])
                             }
@@ -3843,7 +3850,9 @@ const KendoDataTables = ({
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteMultipleConfirms(false)}>Cancel</Button>
+          <Button onClick={() => setDeleteMultipleConfirms(false)}>
+            Cancel
+          </Button>
           <Button onClick={handleDeleteMultiple} autoFocus disabled={READ_ONLY}>
             Delete
           </Button>
