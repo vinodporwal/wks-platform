@@ -903,7 +903,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 					NormAttributeTransactionsDTO dto = new NormAttributeTransactionsDTO();
 					dto.setNormParameterFKId(normParameterId);
 					dto.setDescription(key);
-					// DB column AttributeValue is NOT NULL — never leave null on import
+					// DB column AttributeValue is NOT NULL ï¿½ never leave null on import
 					String attr = value != null ? value.toString() : "";
 					dto.setAttributeValue(attr);
 					dtoList.add(dto);

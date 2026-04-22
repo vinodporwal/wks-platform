@@ -29,11 +29,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.exception.RestInvalidArgumentException;
+import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.FinancialYearMonthRepository;
 import com.wks.caseengine.tcs.dto.FurnaceDTO;
 import com.wks.caseengine.tcs.repository.FurnaceProjection;
 import com.wks.caseengine.tcs.repository.FurnaceRepository;
+import com.wks.caseengine.repository.PlantsRepository;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -50,6 +52,9 @@ public class FurnaceService {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private PlantsRepository plantsRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -165,7 +170,8 @@ public class FurnaceService {
             String remarks = dto.getRemarks();
 
             if (dto.getId() == null) {
-                continue; // Can't update without ID
+                addFurnace(dto, financialYear, siteId, plantId);
+                continue;
             }
 
             if ("FurnaceGCalPerHr".equalsIgnoreCase(type)) {
@@ -623,6 +629,146 @@ public class FurnaceService {
             // Return null for invalid numbers
         }
         return null;
+    }
+
+
+    @Transactional
+    public AOPMessageVM addFurnace(FurnaceDTO dto, String financialYear, UUID siteId, UUID plantId) {
+        try {
+            if (dto == null) {
+                throw new RestInvalidArgumentException("Furnace data is required", null);
+            }
+            if (financialYear == null || financialYear.length() < 4 || siteId == null || plantId == null) {
+                throw new RestInvalidArgumentException("Invalid request parameters", null);
+            }
+            int sourceAOPYear = Integer.parseInt(financialYear.substring(0, 4));
+
+            if (dto.getName() == null || dto.getName().trim().isEmpty()) {
+                throw new RestInvalidArgumentException("Furnace name is required", null);
+            }
+            Plants plant = plantsRepository.findById(plantId)
+                    .orElseThrow(() -> new RestInvalidArgumentException("Invalid Plant ID", null));
+
+            UUID verticalId = plant.getVerticalFKId();
+            if (plant.getSiteFkId() != null && !plant.getSiteFkId().equals(siteId)) {
+                throw new RestInvalidArgumentException("Plant does not belong to the requested site", null);
+            }
+            if (verticalId == null) {
+                throw new RestInvalidArgumentException("Unable to resolve vertical for the selected plant", null);
+            }
+
+            String checkSql = """
+                SELECT COUNT(*) FROM TCS_Furnace
+                WHERE Name = ?
+                AND SourceAOPYear = ?
+                AND Site_FK_Id = ?
+                AND Plant_FK_Id = ?
+            """;
+
+            Integer count = jdbcTemplate.queryForObject(
+                    checkSql,
+                    Integer.class,
+                    dto.getName().trim(),
+                    sourceAOPYear,
+                    siteId,
+                    plantId
+            );
+
+            if (count != null && count > 0) {
+                throw new RestInvalidArgumentException("Furnace already exists: " + dto.getName(), null);
+            }
+
+            // ✅ Insert
+            String insertSql = """
+                INSERT INTO TCS_Furnace
+                (Id, Name, Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, [Dec],
+                Remarks, SourceAOPYear, Site_FK_Id, Plant_FK_Id, Vertical_FK_ID, CreatedDate)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE())
+            """;
+
+            UUID id = UUID.randomUUID();
+
+            jdbcTemplate.update(insertSql,
+                    id,
+                    dto.getName().trim(),
+                    dto.getJan() != null ? dto.getJan() : 0.0,
+                    dto.getFeb() != null ? dto.getFeb() : 0.0,
+                    dto.getMar() != null ? dto.getMar() : 0.0,
+                    dto.getApr() != null ? dto.getApr() : 0.0,
+                    dto.getMay() != null ? dto.getMay() : 0.0,
+                    dto.getJun() != null ? dto.getJun() : 0.0,
+                    dto.getJul() != null ? dto.getJul() : 0.0,
+                    dto.getAug() != null ? dto.getAug() : 0.0,
+                    dto.getSep() != null ? dto.getSep() : 0.0,
+                    dto.getOct() != null ? dto.getOct() : 0.0,
+                    dto.getNov() != null ? dto.getNov() : 0.0,
+                    dto.getDec() != null ? dto.getDec() : 0.0,
+                    dto.getRemarks(),
+                    sourceAOPYear,
+                    siteId,
+                    plantId,
+                    verticalId
+            );
+
+            // ✅ Response (same pattern as your service)
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setMessage("Furnace added successfully");
+
+            return response;
+
+        } catch (RestInvalidArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            AOPMessageVM error = new AOPMessageVM();
+            error.setCode(500);
+            error.setMessage("Failed to add furnace: " + e.getMessage());
+            return error;
+        }
+    }
+
+
+    @Transactional
+    public AOPMessageVM deleteFurnace(UUID furnaceId) {
+
+        try {
+            // ✅ Check if record exists
+            String checkSql = "SELECT COUNT(*) FROM TCS_Furnace WHERE Id = ?";
+
+            Integer count = jdbcTemplate.queryForObject(
+                    checkSql,
+                    Integer.class,
+                    furnaceId
+            );
+
+            if (count == null || count == 0) {
+                throw new RestInvalidArgumentException("Furnace not found for ID: " + furnaceId, null);
+            }
+
+            // ✅ Delete record
+            String deleteSql = "DELETE FROM TCS_Furnace WHERE Id = ?";
+
+            jdbcTemplate.update(deleteSql, furnaceId);
+
+            // ✅ Response
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setMessage("Furnace deleted successfully");
+
+            return response;
+
+        } catch (RestInvalidArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            AOPMessageVM error = new AOPMessageVM();
+            error.setCode(500);
+            error.setMessage("Failed to delete furnace: " + e.getMessage());
+            return error;
+        }
     }
 }
 

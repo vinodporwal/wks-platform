@@ -30,4 +30,12 @@ public class FurnaceDTO {
     // For import status tracking
     private String saveStatus;
     private String errDescription;
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+    
+    
 }
