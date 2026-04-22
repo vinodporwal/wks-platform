@@ -32,8 +32,6 @@ import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.FinancialYearMonthRepository;
 import com.wks.caseengine.tcs.dto.FurnaceDTO;
-import com.wks.caseengine.tcs.dto.GCalPerHrDTO;
-import com.wks.caseengine.tcs.dto.MasterFurnaceDTO;
 import com.wks.caseengine.tcs.repository.FurnaceProjection;
 import com.wks.caseengine.tcs.repository.FurnaceRepository;
 
@@ -56,32 +54,29 @@ public class FurnaceService {
     @PersistenceContext
     private EntityManager entityManager;
 
-    public MasterFurnaceDTO getFurnaceData(
+    public List<FurnaceDTO> getFurnaceData(
             String financialYear,
             UUID siteId,
             UUID verticalId,
             UUID plantId
     ) {
+        int sourceAOPYear = Integer.parseInt(financialYear.substring(0, 4));
 
-      
-List<FurnaceProjection> projections = new ArrayList<>();
+        List<FurnaceProjection> projections;
+        if (plantId != null) {
+            projections = furnaceRepository.getFurnaceData(sourceAOPYear, siteId, plantId);
+        } else {
+            projections = furnaceRepository.getFurnaceOutputData(sourceAOPYear, verticalId, siteId);
+        }
 
-if(plantId != null) {
-    projections = furnaceRepository.getFurnaceData(financialYear, siteId, plantId);
-}
-else {
-    System.out.println("verticalId: " + verticalId);
-    System.out.println("siteId: " + siteId);
-    System.out.println("financialYear: " + financialYear);
-    projections = furnaceRepository.getFurnaceOutputData(financialYear, verticalId, siteId);
-}
-
-        List<FurnaceDTO> furnaceDTOs = projections.stream().map(p -> {
+        List<FurnaceDTO> furnaceDTOs = new ArrayList<>(projections.stream().map(p -> {
             FurnaceDTO dto = new FurnaceDTO();
-
-           
-            dto.setFurnace(p.getFurnace());
-
+            dto.setId(p.getId() != null ? p.getId().toString() : null);
+            dto.setType("Furnace");
+            dto.setName(p.getName());
+            dto.setJan(p.getJan());
+            dto.setFeb(p.getFeb());
+            dto.setMar(p.getMar());
             dto.setApr(p.getApr());
             dto.setMay(p.getMay());
             dto.setJun(p.getJun());
@@ -91,82 +86,36 @@ else {
             dto.setOct(p.getOct());
             dto.setNov(p.getNov());
             dto.setDec(p.getDec());
-            dto.setJan(p.getJan());
-            dto.setFeb(p.getFeb());
-            dto.setMar(p.getMar());
-
             dto.setRemarks(p.getRemarks());
-          //  dto.setGCalPerHr(p.getGCalPerHr());
-
             return dto;
-        }).toList();
+        }).toList());
 
-        // get GCalPerHr data from Furnace_GCalPerHr_Mapping table
-        int startYear = Integer.parseInt(financialYear.substring(0, 4));
-        int endYear = startYear + 1;
-
-        List<Object[]> financialYearMonths = fyRepo.findFinancialYearMonths(startYear, endYear);
-        Map<Integer, UUID> financialYearMonthIds = new HashMap<Integer, UUID>();
-        for (Object[] financialYearMonth : financialYearMonths) {
-            financialYearMonthIds.put(Integer.parseInt(financialYearMonth[0].toString()), UUID.fromString(financialYearMonth[1].toString()));
+        if (plantId != null) {
+            List<Object[]> gCalData = furnaceRepository.getGCalPerHrData(sourceAOPYear, siteId, plantId);
+            if (gCalData != null && !gCalData.isEmpty()) {
+                Object[] row = gCalData.get(0);
+                FurnaceDTO gCalDto = new FurnaceDTO();
+                gCalDto.setType("FurnaceGCalPerHr");
+                gCalDto.setId(row[0] != null ? row[0].toString() : null);
+                gCalDto.setJan(row[1] != null ? Double.parseDouble(row[1].toString()) : 0.0);
+                gCalDto.setFeb(row[2] != null ? Double.parseDouble(row[2].toString()) : 0.0);
+                gCalDto.setMar(row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0);
+                gCalDto.setApr(row[4] != null ? Double.parseDouble(row[4].toString()) : 0.0);
+                gCalDto.setMay(row[5] != null ? Double.parseDouble(row[5].toString()) : 0.0);
+                gCalDto.setJun(row[6] != null ? Double.parseDouble(row[6].toString()) : 0.0);
+                gCalDto.setJul(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
+                gCalDto.setAug(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
+                gCalDto.setSep(row[9] != null ? Double.parseDouble(row[9].toString()) : 0.0);
+                gCalDto.setOct(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
+                gCalDto.setNov(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
+                gCalDto.setDec(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
+                gCalDto.setName(row[13] != null ? row[13].toString() : null);
+                gCalDto.setRemarks(row[14] != null ? row[14].toString() : null);
+                furnaceDTOs.add(gCalDto);
+            }
         }
 
-        List<Object[]> furnaceGCalPerHrMapping = furnaceRepository.getFurnaceGCalPerHrMapping(financialYearMonthIds.values().stream().toList());
-
-        GCalPerHrDTO gCalPerHrDTO = new GCalPerHrDTO();
-        for (Object[]  GCalPerHrMapping : furnaceGCalPerHrMapping) {
-           
-              UUID financialYearMonthId = UUID.fromString(GCalPerHrMapping[1].toString());
-              Integer month = financialYearMonthIds.entrySet().stream().filter(entry -> entry.getValue().equals(financialYearMonthId)).findFirst().get().getKey();
-                 // convert integer month values to String eg 4: April
-                 switch (month) {
-                  case 4:
-                    gCalPerHrDTO.setApr(Double.parseDouble(GCalPerHrMapping[2].toString()));
-                    break;
-                  case 5:
-                    gCalPerHrDTO.setMay(Double.parseDouble(GCalPerHrMapping[2].toString()));
-                    break;
-                  case 6:
-                    gCalPerHrDTO.setJun(Double.parseDouble(GCalPerHrMapping[2].toString()));
-                    break;
-                     
-                   case 7:
-                    gCalPerHrDTO.setJul(Double.parseDouble(GCalPerHrMapping[2].toString()));
-                    break;
-                   case 8:
-                    gCalPerHrDTO.setAug(Double.parseDouble(GCalPerHrMapping[2].toString()));
-                    break;
-                   case 9:
-                    gCalPerHrDTO.setSep(Double.parseDouble(GCalPerHrMapping[2].toString()));
-                    break;
-                   case 10:
-                    gCalPerHrDTO.setOct(Double.parseDouble(GCalPerHrMapping[2].toString()));
-                    break;
-                   case 11:
-                    gCalPerHrDTO.setNov(Double.parseDouble(GCalPerHrMapping[2].toString()));
-                    break;
-                   case 12:
-                    gCalPerHrDTO.setDec(Double.parseDouble(GCalPerHrMapping[2].toString()));
-                    break;
-                   case 1:
-                    gCalPerHrDTO.setJan(Double.parseDouble(GCalPerHrMapping[2].toString()));
-                    break;
-                   case 2:
-                    gCalPerHrDTO.setFeb(Double.parseDouble(GCalPerHrMapping[2].toString()));
-                    break;
-                   case 3:
-                    gCalPerHrDTO.setMar(Double.parseDouble(GCalPerHrMapping[2].toString()));
-                    break;
-                   default:
-                       throw new RuntimeException("Invalid month: " + month);
-                   
-                 }
-        }
-        MasterFurnaceDTO masterFurnaceDTO = new MasterFurnaceDTO();
-        masterFurnaceDTO.setFurnaceData(furnaceDTOs);
-        masterFurnaceDTO.setGCalPerHrData(gCalPerHrDTO);
-        return masterFurnaceDTO;
-
+        return furnaceDTOs;
     }
 @Transactional
  public AOPMessageVM carryForwardFurnace(String financialYear, UUID siteId, UUID plantId) {
@@ -192,142 +141,60 @@ else {
  }
 
     public void updateFurnaceData(List<FurnaceDTO> furnaceDTOs, String financialYear, UUID siteId, UUID plantId) {
+        String furnaceUpdateSql = "UPDATE TCS_Furnace SET Name = ?, Jan = ?, Feb = ?, Mar = ?, Apr = ?, May = ?, Jun = ?, Jul = ?, Aug = ?, Sep = ?, Oct = ?, Nov = ?, [Dec] = ?, Remarks = ?, ModifiedDate = GETDATE() WHERE Id = ?";
+        String gCalUpdateSql = "UPDATE TCS_Furnace_GCalPerHr SET Name = ?, Jan = ?, Feb = ?, Mar = ?, Apr = ?, May = ?, Jun = ?, Jul = ?, Aug = ?, Sep = ?, Oct = ?, Nov = ?, [Dec] = ?, Remarks = ?, ModifiedDate = GETDATE() WHERE Id = ?";
 
-     
+        List<Object[]> furnaceBatchArgs = new ArrayList<>();
+        List<Object[]> gCalBatchArgs = new ArrayList<>();
 
-        int startYear = Integer.parseInt(financialYear.substring(0, 4));
-        int endYear = startYear + 1;
+        for (FurnaceDTO dto : furnaceDTOs) {
+            String type = dto.getType() != null ? dto.getType().trim() : "Furnace";
+            String name = dto.getName();
+            double jan = dto.getJan() != null ? dto.getJan() : 0.0;
+            double feb = dto.getFeb() != null ? dto.getFeb() : 0.0;
+            double mar = dto.getMar() != null ? dto.getMar() : 0.0;
+            double apr = dto.getApr() != null ? dto.getApr() : 0.0;
+            double may = dto.getMay() != null ? dto.getMay() : 0.0;
+            double jun = dto.getJun() != null ? dto.getJun() : 0.0;
+            double jul = dto.getJul() != null ? dto.getJul() : 0.0;
+            double aug = dto.getAug() != null ? dto.getAug() : 0.0;
+            double sep = dto.getSep() != null ? dto.getSep() : 0.0;
+            double oct = dto.getOct() != null ? dto.getOct() : 0.0;
+            double nov = dto.getNov() != null ? dto.getNov() : 0.0;
+            double dec = dto.getDec() != null ? dto.getDec() : 0.0;
+            String remarks = dto.getRemarks();
 
-        // Get the financial year month ids for the financial year
-        List<Object[]> financialYearMonths = fyRepo.findFinancialYearMonths(startYear, endYear);
-        Map<Integer, UUID> financialYearMonthIds = new HashMap<Integer, UUID>();
-        for (Object[] financialYearMonth : financialYearMonths) {
-            financialYearMonthIds.put(Integer.parseInt(financialYearMonth[0].toString()), UUID.fromString(financialYearMonth[1].toString()));
+            if (dto.getId() == null) {
+                continue; // Can't update without ID
+            }
+
+            if ("FurnaceGCalPerHr".equalsIgnoreCase(type)) {
+                gCalBatchArgs.add(new Object[] {
+                    name, jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec, remarks,
+                    UUID.fromString(dto.getId())
+                });
+            } else if ("Furnace".equalsIgnoreCase(type) || type.isEmpty()) {
+                furnaceBatchArgs.add(new Object[] {
+                    name, jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec, remarks,
+                    UUID.fromString(dto.getId())
+                });
+            } else {
+                throw new RestInvalidArgumentException("Unsupported furnace type: " + type, null);
+            }
         }
 
-        List<Object[]> updates = new ArrayList<Object[]>();
-        List<Object[]> inserts = new ArrayList<Object[]>();
-
-
-         for (FurnaceDTO furnaceDTO : furnaceDTOs) {  
-
-            
-
-            if(furnaceDTO.getApr() != null) {
-                UUID financialYearMonthId = financialYearMonthIds.get(4);
-                updates.add(new Object[] { furnaceDTO.getApr(), furnaceDTO.getRemarks(), furnaceDTO.getFurnace(), financialYearMonthId});
-               
-         }
-         else {
-            inserts.add(new Object[] { furnaceDTO.getFurnace(), 0.0, furnaceDTO.getRemarks(), financialYearMonthIds.get(4), siteId, plantId});
-         }
-
-         if(furnaceDTO.getMay() != null) {
-            UUID financialYearMonthId = financialYearMonthIds.get(5);
-            updates.add(new Object[] { furnaceDTO.getMay(), furnaceDTO.getRemarks(), furnaceDTO.getFurnace(), financialYearMonthId});
-         }
-         else {
-            inserts.add(new Object[] { furnaceDTO.getFurnace(), 0.0, furnaceDTO.getRemarks(), financialYearMonthIds.get(5), siteId, plantId});
-         }
-         
-         if(furnaceDTO.getJun() != null) {
-            UUID financialYearMonthId = financialYearMonthIds.get(6);
-            updates.add(new Object[] { furnaceDTO.getJun(), furnaceDTO.getRemarks(), furnaceDTO.getFurnace(), financialYearMonthId});
-         }
-         else {
-            inserts.add(new Object[] { furnaceDTO.getFurnace(), 0.0, furnaceDTO.getRemarks(), financialYearMonthIds.get(6), siteId, plantId});
-         }
-         
-         if(furnaceDTO.getJul() != null) {
-            UUID financialYearMonthId = financialYearMonthIds.get(7);
-            updates.add(new Object[] { furnaceDTO.getJul(), furnaceDTO.getRemarks(), furnaceDTO.getFurnace(), financialYearMonthId});
-         }
-         else {
-            inserts.add(new Object[] { furnaceDTO.getFurnace(), 0.0, furnaceDTO.getRemarks(), financialYearMonthIds.get(7), siteId, plantId});
-         }
-         
-         if(furnaceDTO.getAug() != null) {
-            UUID financialYearMonthId = financialYearMonthIds.get(8);
-            updates.add(new Object[] { furnaceDTO.getAug(), furnaceDTO.getRemarks(), furnaceDTO.getFurnace(), financialYearMonthId});
-         }
-         else {
-            inserts.add(new Object[] { furnaceDTO.getFurnace(), 0.0, furnaceDTO.getRemarks(), financialYearMonthIds.get(8), siteId, plantId});
-         }
-         
-         if(furnaceDTO.getSep() != null) {
-            UUID financialYearMonthId = financialYearMonthIds.get(9);
-            updates.add(new Object[] { furnaceDTO.getSep(), furnaceDTO.getRemarks(), furnaceDTO.getFurnace(), financialYearMonthId});
-         }
-         else {
-            inserts.add(new Object[] { furnaceDTO.getFurnace(), 0.0, furnaceDTO.getRemarks(), financialYearMonthIds.get(9), siteId, plantId});
-         }
-         
-         if(furnaceDTO.getOct() != null) {
-            UUID financialYearMonthId = financialYearMonthIds.get(10);
-            updates.add(new Object[] { furnaceDTO.getOct(), furnaceDTO.getRemarks(), furnaceDTO.getFurnace(), financialYearMonthId});
-         }
-         else {
-            inserts.add(new Object[] { furnaceDTO.getFurnace(), 0.0, furnaceDTO.getRemarks(), financialYearMonthIds.get(10), siteId, plantId});
-         }
-         
-         if(furnaceDTO.getNov() != null) {
-            UUID financialYearMonthId = financialYearMonthIds.get(11);
-            updates.add(new Object[] { furnaceDTO.getNov(), furnaceDTO.getRemarks(), furnaceDTO.getFurnace(), financialYearMonthId});
-         }
-         else {
-            inserts.add(new Object[] { furnaceDTO.getFurnace(), 0.0, furnaceDTO.getRemarks(), financialYearMonthIds.get(11), siteId, plantId});
-         }
-         
-         if(furnaceDTO.getDec() != null) {
-            UUID financialYearMonthId = financialYearMonthIds.get(12);
-            updates.add(new Object[] { furnaceDTO.getDec(), furnaceDTO.getRemarks(), furnaceDTO.getFurnace(), financialYearMonthId});
-         }
-         else {
-            inserts.add(new Object[] { furnaceDTO.getFurnace(), 0.0, furnaceDTO.getRemarks(), financialYearMonthIds.get(12), siteId, plantId});
-         }
-         
-         if(furnaceDTO.getJan() != null) {
-            UUID financialYearMonthId = financialYearMonthIds.get(1);
-            updates.add(new Object[] { furnaceDTO.getJan(), furnaceDTO.getRemarks(), furnaceDTO.getFurnace(), financialYearMonthId});
-         }
-         else {
-            inserts.add(new Object[] { furnaceDTO.getFurnace(), 0.0, furnaceDTO.getRemarks(), financialYearMonthIds.get(1), siteId, plantId});
-         }
-         
-         if(furnaceDTO.getFeb() != null) {
-            UUID financialYearMonthId = financialYearMonthIds.get(2);
-            updates.add(new Object[] { furnaceDTO.getFeb(), furnaceDTO.getRemarks(), furnaceDTO.getFurnace(), financialYearMonthId});
-         }
-         else {
-            inserts.add(new Object[] { furnaceDTO.getFurnace(), 0.0, furnaceDTO.getRemarks(), financialYearMonthIds.get(2), siteId, plantId});
-         }
-         
-         if(furnaceDTO.getMar() != null) {
-            UUID financialYearMonthId = financialYearMonthIds.get(3);
-            updates.add(new Object[] { furnaceDTO.getMar(), furnaceDTO.getRemarks(), furnaceDTO.getFurnace(), financialYearMonthId});
-         }
-         else {
-            inserts.add(new Object[] { furnaceDTO.getFurnace(), 0.0, furnaceDTO.getRemarks(), financialYearMonthIds.get(3), siteId, plantId});
-         }
-         
+        if (!furnaceBatchArgs.isEmpty()) {
+            jdbcTemplate.batchUpdate(furnaceUpdateSql, furnaceBatchArgs);
+        }
+        if (!gCalBatchArgs.isEmpty()) {
+            jdbcTemplate.batchUpdate(gCalUpdateSql, gCalBatchArgs);
+        }
     }
-
-    if(updates.size() > 0) { 
-        String updateQuery = "UPDATE Furnace SET Value = ? , Remarks = ? WHERE Furnace = ? AND FinancialYearMonthId = ?";
-        jdbcTemplate.batchUpdate(updateQuery, updates);
-    }
-
-    if(inserts.size() > 0) {
-        String insertQuery = "INSERT INTO Furnace (Id, Furnace, Value, Remarks, FinancialYearMonthId, Site_FK_Id, Plant_FK_Id) VALUES (NEWID(), ?, ?, ?, ?, ?, ?)";
-        jdbcTemplate.batchUpdate(insertQuery, inserts);
-    }
-}
 
     public byte[] exportFurnace( UUID verticalId, UUID siteId, String financialYear, UUID plantId) {
         try {
             // Get data
-            MasterFurnaceDTO masterData = getFurnaceData(financialYear, siteId, verticalId, plantId);
-            List<FurnaceDTO> dtoList = masterData.getFurnaceData();
+            List<FurnaceDTO> dtoList = getFurnaceData(financialYear, siteId, verticalId, plantId);
             
             System.out.println("Furnace Data list: " + dtoList);
 
@@ -372,7 +239,7 @@ else {
 
                 // Furnace
                 Cell furnaceCell = row.createCell(col++);
-                furnaceCell.setCellValue(dto.getFurnace() != null ? dto.getFurnace() : "");
+                furnaceCell.setCellValue(dto.getName() != null ? dto.getName() : "");
                 furnaceCell.setCellStyle(dataStyle);
 
                 // Month columns
@@ -425,7 +292,7 @@ else {
             Set<String> furnaces = new HashSet<>();
 
             data.forEach(dto -> {
-                String furnace = dto.getFurnace();
+                String furnace = dto.getName();
             
                 if (furnace == null || furnace.isBlank()) {
                    throw new RestInvalidArgumentException("Furnace value cannot be null or empty", null);
@@ -444,7 +311,7 @@ else {
             
             for (FurnaceDTO dto : data) {
                 if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) {
-                    System.out.println("Failed record: " + dto.getFurnace());
+                    System.out.println("Failed record: " + dto.getName());
                     failedRecords.add(dto);
                 } else {
                     validRecords.add(dto);
@@ -519,7 +386,7 @@ else {
                     int col = 0;
                     
                     // Furnace
-                    dto.setFurnace(getStringCellValue(row.getCell(col++)));
+                    dto.setName(getStringCellValue(row.getCell(col++)));
                     
                     // Month columns (Apr to Mar)
                     dto.setJan(getDoubleCellValue(row.getCell(col++)));
@@ -541,7 +408,7 @@ else {
 
                     // Validate required fields
                     if (dto.getSaveStatus() == null) {
-                        if (dto.getFurnace() == null || dto.getFurnace().isEmpty()) {
+                        if (dto.getName() == null || dto.getName().isEmpty()) {
                             dto.setSaveStatus("Failed");
                             dto.setErrDescription("Furnace is required");
                         }
@@ -626,7 +493,7 @@ else {
                 int col = 0;
 
                 Cell furnaceCell = row.createCell(col++);
-                furnaceCell.setCellValue(dto.getFurnace() != null ? dto.getFurnace() : "");
+                furnaceCell.setCellValue(dto.getName() != null ? dto.getName() : "");
                 furnaceCell.setCellStyle(dataStyle);
 
                 Double[] monthValues = {

@@ -19,7 +19,6 @@ import org.springframework.web.multipart.MultipartFile;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.tcs.dto.FurnaceDTO;
-import com.wks.caseengine.tcs.dto.MasterFurnaceDTO;
 import com.wks.caseengine.tcs.service.FurnaceService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,12 +32,16 @@ public class FurnaceController {
     private FurnaceService furnaceService;
 
     @GetMapping({"/furnace/{financialYear}/{siteId}/{plantId}" , "/furnace-output/{financialYear}/{siteId}/{verticalId}"})
-    public MasterFurnaceDTO getFurnaceData(@PathVariable String financialYear, @PathVariable String siteId, @PathVariable(required = false) String verticalId, @PathVariable(required = false) String plantId) {
+    public List<FurnaceDTO> getFurnaceData(
+            @PathVariable String financialYear,
+            @PathVariable String siteId,
+            @PathVariable(required = false) String verticalId,
+            @PathVariable(required = false) String plantId) {
 
-        if (plantId == null) { 
+        if (plantId == null) {
             return furnaceService.getFurnaceData(financialYear, UUID.fromString(siteId), UUID.fromString(verticalId), null);
         }
-        return furnaceService.getFurnaceData(financialYear, UUID.fromString(siteId),null, UUID.fromString(plantId));
+        return furnaceService.getFurnaceData(financialYear, UUID.fromString(siteId), null, UUID.fromString(plantId));
     }
 
     @PostMapping("/furnace/carry-forward/{financialYear}/{siteId}/{plantId}")
