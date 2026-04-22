@@ -1,14 +1,33 @@
 [
-  { field: 'idFromApi', title: 'ID', hidden: true },
+  {
+    field: 'idFromApi',
+    title: 'ID',
+    hidden: true
+  },
   {
     field: 'aopCaseId',
     title: 'Case ID',
     hidden: true,
-    editable: false,
+    editable: false
   },
-  { field: 'aopType', title: 'Type', width: 80, hidden: true },
-  { field: 'aopYear', title: 'Year', width: 80, hidden: true },
-  { field: 'plantFkId', title: 'Plant ID', width: 80, hidden: true },
+  {
+    field: 'aopType',
+    title: 'Type',
+    width: 80,
+    hidden: true
+  },
+  {
+    field: 'aopYear',
+    title: 'Year',
+    width: 80,
+    hidden: true
+  },
+  {
+    field: 'plantFkId',
+    title: 'Plant ID',
+    width: 80,
+    hidden: true
+  },
   {
     field: 'Particulars',
     title: 'Type',
@@ -17,30 +36,30 @@
     headerClass: 'bold-header',
     filterable: 'false',
     editable: false,
-    hidden: true,
+    hidden: true
   },
   {
     field: 'normParameterId',
     title: 'Particulars',
     editable: false,
     width: 150,
-    hidden: true,
+    hidden: true
   },
   {
     field: 'materialFKId',
     editable: false,
-    hidden: true,
+    hidden: true
   },
   {
     field: 'normParameterDisplayName',
     editable: false,
-    hidden: true,
+    hidden: true
   },
   {
     field: 'displayName',
     title: 'Products',
     editable: false,
-    width: 125,
+    width: 125
   },
   {
     field: 'april',
@@ -48,7 +67,7 @@
     align: 'left',
     editable: true,
     type: 'number',
-    format: '{0:#.##}',
+    format: '{0:#.##}'
   },
   {
     field: 'may',
@@ -57,7 +76,7 @@
     editable: true,
 
     align: 'left',
-    format: '{0:#.##}',
+    format: '{0:#.##}'
   },
   {
     field: 'june',
@@ -66,7 +85,7 @@
     editable: true,
 
     align: 'left',
-    format: '{0:#.##}',
+    format: '{0:#.##}'
   },
   {
     field: 'july',
@@ -75,7 +94,7 @@
     editable: true,
 
     align: 'left',
-    format: '{0:#.##}',
+    format: '{0:#.##}'
   },
   {
     field: 'aug',
@@ -84,7 +103,7 @@
     editable: true,
 
     align: 'left',
-    format: '{0:#.##}',
+    format: '{0:#.##}'
   },
   {
     field: 'sep',
@@ -93,7 +112,7 @@
     editable: true,
 
     align: 'left',
-    format: '{0:#.##}',
+    format: '{0:#.##}'
   },
   {
     field: 'oct',
@@ -102,7 +121,7 @@
     editable: true,
 
     align: 'left',
-    format: '{0:#.##}',
+    format: '{0:#.##}'
   },
   {
     field: 'nov',
@@ -111,7 +130,7 @@
     editable: true,
 
     align: 'left',
-    format: '{0:#.##}',
+    format: '{0:#.##}'
   },
   {
     field: 'dec',
@@ -120,7 +139,7 @@
     editable: true,
 
     align: 'left',
-    format: '{0:#.##}',
+    format: '{0:#.##}'
   },
   {
     field: 'jan',
@@ -129,7 +148,7 @@
     editable: true,
 
     align: 'left',
-    format: '{0:#.##}',
+    format: '{0:#.##}'
   },
   {
     field: 'feb',
@@ -139,7 +158,7 @@
 
     align: 'left',
     type: 'number',
-    format: '{0:#.##}',
+    format: '{0:#.##}'
   },
   {
     field: 'march',
@@ -148,30 +167,30 @@
     editable: true,
 
     align: 'left',
-    format: '{0:#.##}',
+    format: '{0:#.##}'
   },
   {
     field: 'averageTPH',
     title: 'Total',
     type: 'number',
     editable: false,
-    format: '{0:#.##}',
+    format: '{0:#.##}'
   },
   {
     field: 'remark',
     title: 'Remark',
-    editable: true,
+    editable: true
   },
   {
     field: 'isEditable',
     title: 'isEditable',
-    hidden: true,
+    hidden: true
   },
 
   {
     field: 'aopStatus',
     title: 'aopStatus',
     editable: false,
-    hidden: true,
+    hidden: true
   },
 ]
