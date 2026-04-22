@@ -511,7 +511,6 @@ const BusinessDemand = ({ permissions }) => {
         IS_PVC_VMD ||
         IS_PVC_DMD ||
         IS_ELASTOMER_VERTICAL ||
-
         (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD)
           ? true
           : false,

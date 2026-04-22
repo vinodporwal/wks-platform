@@ -80,10 +80,11 @@ const CrackerConfig = () => {
     'Miscellaneous Parameters',
     'Constant',
     'Yield',
-    'SpyroMatbal',
+    'Spyro Matbal',
     'Other Product',
-    'Output Feed',
-    'Output Product',
+    'Spyro output Feed',
+    'Spyro output Product',
+    'Other Spyro output',
   ]
   const [tabs, setTabs] = useState(rawTabsStatic)
   const [availableTabs, setAvailableTabs] = useState([])
@@ -100,6 +101,7 @@ const CrackerConfig = () => {
   const [spyroOutputFeedRows, setSpyroOutputFeedRows] = useState([])
   const [feedsRows, setFeedsRows] = useState([])
   const [spyroOutputProductRows, setSpyroOutputProductRows] = useState([])
+  const [otherSpyroOutputRows, setOtherSpyroOutputRows] = useState([])
 
   const FORMATE_VALUE = ValueFormatterProduction()
 
@@ -179,7 +181,7 @@ const CrackerConfig = () => {
     isOldYear,
   )
 
-  const fetchTabsMatrix = useCallback(async () => {
+  const fetchTabsMatrix = async () => {
     try {
       const resp = await DataService.getConfigurationTabsMatrix(
         keycloak,
@@ -208,9 +210,9 @@ const CrackerConfig = () => {
       console.error('Error fetching cracker tabs matrix:', err)
       setTabs(rawTabsStatic)
     }
-  }, [keycloak])
+  }
 
-  const fetchAvailableTabs = useCallback(async () => {
+  const fetchAvailableTabs = async () => {
     try {
       const resp = await DataService.getConfigurationAvailableTabs(keycloak)
       if (
@@ -235,7 +237,7 @@ const CrackerConfig = () => {
         })),
       )
     }
-  }, [keycloak])
+  }
 
   const fetchModes = useCallback(async () => {
     try {
@@ -266,8 +268,6 @@ const CrackerConfig = () => {
     setTabIndex(0)
   }, [
     keycloak,
-    fetchTabsMatrix,
-    fetchAvailableTabs,
     fetchModes,
     PLANT_ID,
     AOP_YEAR,
@@ -286,17 +286,18 @@ const CrackerConfig = () => {
           return constantsRows
         case 'Yield':
           return yieldRows
-        case 'SpyroMatbal':
+        case 'Spyro Matbal':
           return spyroMatbalRows
         case 'Other Product':
           return otherProductRows
-        case 'Output Feed':
+        case 'Spyro output Feed':
           return spyroOutputFeedRows
-        case 'Output Product':
+        case 'Spyro output Product':
           return spyroOutputProductRows
         case 'Feeds':
           return feedsRows
-
+        case 'Other Spyro output':
+          return otherSpyroOutputRows
         default:
           return []
       }
@@ -321,22 +322,24 @@ const CrackerConfig = () => {
       case 'Yield':
         setYieldRows(data)
         break
-      case 'SpyroMatbal':
+      case 'Spyro Matbal':
         setSpyroMatbalRows(data)
         break
       case 'Other Product':
         setOtherProductRows(data)
         break
-      case 'Output Feed':
+      case 'Spyro output Feed':
         setSpyroOutputFeedRows(data)
         break
-      case 'Output Product':
+      case 'Spyro output Product':
         setSpyroOutputProductRows(data)
         break
       case 'Feeds':
         setFeedsRows(data)
         break
-
+      case 'Other Spyro output':
+        setOtherSpyroOutputRows(data)
+        break
       default:
         console.warn('No state for tab:', tabId)
     }
@@ -364,7 +367,7 @@ const CrackerConfig = () => {
             id: item.NormParameterFKID || `row_${index}`,
             remarks: item.remarks ?? item.Remarks ?? '',
             originalRemark: item.remarks ?? item.Remarks ?? '',
-            ParticularsType: item.Type,
+            ParticularsType: item.Type || item.type,
 
             ...item,
           }))
@@ -1047,10 +1050,7 @@ const CrackerConfig = () => {
             case 'Total Products':
             case 'Miscellaneous Parameters':
             case 'Constant':
-            case 'SpyroMatbal':
             case 'Other Product':
-            case 'Output Feed':
-            case 'Output Product':
             case 'Yield':
               return (
                 <Box key={currentTabDisplay}>
@@ -1087,6 +1087,10 @@ const CrackerConfig = () => {
                   />
                 </Box>
               )
+            case 'Spyro Matbal':
+            case 'Other Spyro output':
+            case 'Spyro output Feed':
+            case 'Spyro output Product':
             case 'Feeds':
               return (
                 <Box key={currentTabDisplay}>
