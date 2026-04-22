@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wks.caseengine.cases.definition.service.CaseDefinitionService;
 import com.wks.caseengine.cases.instance.CaseComment;
 import com.wks.caseengine.cases.instance.CaseDocument;
 import com.wks.caseengine.cases.instance.CaseInstance;
@@ -42,6 +43,8 @@ import com.wks.caseengine.command.CommandExecutor;
 import com.wks.caseengine.pagination.PageResult;
 import com.wks.caseengine.cases.instance.command.findOverdueCaseInstanceCmd;
 import com.wks.caseengine.cases.instance.email.CaseEmailServiceImpl;
+import com.wks.caseengine.cases.instance.command.FindCaseInstanceByAssetNameCmd;
+import com.wks.caseengine.cases.instance.command.UpdateEventIdsCmd;
 
 @Component
 public class CaseInstanceServiceImpl implements CaseInstanceService {
@@ -55,6 +58,9 @@ public class CaseInstanceServiceImpl implements CaseInstanceService {
 	@Autowired
 	private CaseEmailServiceImpl emailservice;
 
+	@Autowired
+	private CaseDefinitionService caseDefinitionService;
+
 	@Value("${spring.data.mongodb.database.tenant}")
 	private String dbTenant;
 
@@ -64,8 +70,18 @@ public class CaseInstanceServiceImpl implements CaseInstanceService {
 	}
 
 	@Override
+	public PageResult<CaseInstance> findByAssetName(CaseInstanceFilter filters, String assetName, List<String> eventIds) {
+		return commandExecutor.execute(new FindCaseInstanceByAssetNameCmd(filters, assetName, eventIds));
+	}
+
+	@Override
 	public CaseInstance get(final String businessKey) {
 		return commandExecutor.execute(new GetCaseInstanceCmd(businessKey));
+	}
+
+	@Override
+	public void updateEventIds(final List<String> businessKeys, final List<String> eventIds, List<CaseInstance.EventUrlItem> eventTrendUrls, List<CaseInstance.EventUrlItem> eventReportUrls) {
+		commandExecutor.execute(new UpdateEventIdsCmd(businessKeys, eventIds, eventTrendUrls, eventReportUrls, caseDefinitionService));
 	}
 
 	@Override

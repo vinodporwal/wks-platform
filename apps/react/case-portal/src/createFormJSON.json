@@ -839,7 +839,7 @@
                                                 "disabled": true,
                                                 "tableView": true,
                                                 "redrawOn": "",
-                                                "defaultValue": "const urlParams \u003d new URLSearchParams(window.location.search);\r\nconst assetName \u003d urlParams.get(\u0027assetName\u0027)\r\n\r\n// Define the calculateValue function for the Form.io component\r\ncomponent.calculateValue \u003d function() {\r\n  return assetName || \u0027\u0027; // Show \u0027Loading...\u0027 until assetName is set\r\n};\r\n",
+                                                "calculateValue": "const urlParams = new URLSearchParams(window.location.search);\nconst assetName = urlParams.get('assetName');\nif (assetName) {\n  value = assetName;\n}",
                                                 "key": "textField1",
                                                 "type": "textfield",
                                                 "input": true,
