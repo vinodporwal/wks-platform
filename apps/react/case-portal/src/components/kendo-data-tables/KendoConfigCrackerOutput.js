@@ -301,7 +301,18 @@ const CrackerConfig = () => {
           return []
       }
     },
-    [feedTotalRows, compositionRows, hydrogenationRows, constantsRows, yieldRows, spyroMatbalRows, otherProductRows, spyroOutputFeedRows, spyroOutputProductRows, feedsRows],
+    [
+      feedTotalRows,
+      compositionRows,
+      hydrogenationRows,
+      constantsRows,
+      yieldRows,
+      spyroMatbalRows,
+      otherProductRows,
+      spyroOutputFeedRows,
+      spyroOutputProductRows,
+      feedsRows,
+    ],
   )
 
   const setRowsForTab = useCallback((tabId, data) => {

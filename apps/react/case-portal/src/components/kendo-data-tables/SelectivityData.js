@@ -526,7 +526,8 @@ const SelectivityData = (props) => {
     (props?.configType === 'Constant' ||
       props?.configType === 'PIO Impact' ||
       props?.configType === 'Configuration') &&
-    (lowerVertName === 'pta' && lowerSiteName === 'dmd')
+    lowerVertName === 'pta' &&
+    lowerSiteName === 'dmd'
   ) {
     FORMATE_VALUE = '{0:0.0000}'
   }
