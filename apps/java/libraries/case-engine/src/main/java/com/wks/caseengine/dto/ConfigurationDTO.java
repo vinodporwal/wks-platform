@@ -44,6 +44,7 @@ public class ConfigurationDTO {
     private String type;
     private String version;
     private String vertical;
+    private String normParamId;
    // private String normParameterDisplayName;
 
 }
