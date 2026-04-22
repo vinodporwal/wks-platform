@@ -1,4 +1,4 @@
-;[
+[
   { field: 'idFromApi', title: 'ID', hidden: true },
   {
     field: 'aopCaseId',
