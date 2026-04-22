@@ -1370,12 +1370,7 @@ const SlowDown = ({ permissions }) => {
     setLoading(true)
 
     try {
-
-      await DataService.deleteMultipleSlowdown(
-        deleteIds,
-        keycloak,
-        PLANT_ID,
-      )
+      await DataService.deleteMultipleSlowdown(deleteIds, keycloak, PLANT_ID)
 
       setSnackbarOpen(true)
       setSnackbarData({
@@ -1389,7 +1384,6 @@ const SlowDown = ({ permissions }) => {
         PLANT_ID,
         AOP_YEAR,
       )
-
     } catch (error) {
       console.error('Error deleting Records', error)
       setSnackbarOpen(true)

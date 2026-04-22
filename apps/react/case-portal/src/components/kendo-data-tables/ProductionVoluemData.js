@@ -148,7 +148,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
   const [rowsMaxCapacity, setRowsMaxCapacity] = useState([])
   const [mcuMaxCapValues, setMcuMaxCapValues] = useState(null)
   const [configurationExecutionDetails, setConfigurationExecutionDetails] =
-      useState(null)
+    useState(null)
 
   const textNoteWhileSaving = IS_PP_SEZ ? 'Update MCU for All Line' : ''
   const handleRemarkCellClick = (row) => {
@@ -1083,11 +1083,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         },
       ]
       setLoading(true)
-      const data =
-        await DataService.executeConfiguration(
-          payload,
-          keycloak,
-        )
+      const data = await DataService.executeConfiguration(payload, keycloak)
 
       if (data || data == 0) {
         // dispatch(setIsBlocked(true))
@@ -1269,7 +1265,8 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
               ? 'Design Capacity (MCU from MCU Portal)'
               : 'Design Capacity',
       showCalculate: VERTICAL_NAME === 'aromatics' && SITE_NAME === 'sez',
-      showCalculateVisibility: VERTICAL_NAME === 'aromatics' && SITE_NAME === 'sez',
+      showCalculateVisibility:
+        VERTICAL_NAME === 'aromatics' && SITE_NAME === 'sez',
     },
     isOldYear,
   )

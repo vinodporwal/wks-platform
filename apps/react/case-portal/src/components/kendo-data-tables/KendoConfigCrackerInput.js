@@ -405,7 +405,7 @@ const CrackerConfig = () => {
         let transformedData1 = []
         let transformedData12 = []
         var spyroVM1 = []
-        if (IS_CRACKER_HMD){
+        if (IS_CRACKER_HMD) {
           mode = currentTabDisplay
         }
         if (currentTabDisplay == 'Constant') {
@@ -751,7 +751,7 @@ const CrackerConfig = () => {
     try {
       let mode = selectMode || ''
       let response
-      if (IS_CRACKER_HMD){
+      if (IS_CRACKER_HMD) {
         mode = currentTabDisplay
       }
       if (currentTabDisplay == 'Naphtha') {
@@ -828,7 +828,7 @@ const CrackerConfig = () => {
     })
 
     let mode = selectMode
-    if (IS_CRACKER_HMD){
+    if (IS_CRACKER_HMD) {
       mode = currentTabDisplay
     }
     const EXCEL_NAME =

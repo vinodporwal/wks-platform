@@ -4524,7 +4524,7 @@ export async function materialBalanceExport(
   keycloak,
   plantId,
   year,
-  excelName
+  excelName,
 ) {
   const url = `${Config.CaseEngineUrl}/task/material-balance-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
   const headers = {
@@ -4554,12 +4554,7 @@ export async function materialBalanceExport(
     return Promise.reject(e)
   }
 }
-async function saveMaterialBalanceExcel(
-  file,
-  keycloak,
-  PLANT_ID,
-  AOP_YEAR,
-) {
+async function saveMaterialBalanceExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
   let url = ''
   url = `${Config.CaseEngineUrl}/task/material-balance-import?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const formData = new FormData()

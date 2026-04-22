@@ -266,12 +266,7 @@ const CrackerConfig = () => {
     fetchTabsMatrix()
     fetchAvailableTabs()
     setTabIndex(0)
-  }, [
-    keycloak,
-    fetchModes,
-    PLANT_ID,
-    AOP_YEAR,
-  ])
+  }, [keycloak, fetchModes, PLANT_ID, AOP_YEAR])
 
   const getRows = useCallback(
     (tabId) => {
@@ -302,7 +297,18 @@ const CrackerConfig = () => {
           return []
       }
     },
-    [feedTotalRows, compositionRows, hydrogenationRows, constantsRows, yieldRows, spyroMatbalRows, otherProductRows, spyroOutputFeedRows, spyroOutputProductRows, feedsRows],
+    [
+      feedTotalRows,
+      compositionRows,
+      hydrogenationRows,
+      constantsRows,
+      yieldRows,
+      spyroMatbalRows,
+      otherProductRows,
+      spyroOutputFeedRows,
+      spyroOutputProductRows,
+      feedsRows,
+    ],
   )
 
   const setRowsForTab = useCallback((tabId, data) => {

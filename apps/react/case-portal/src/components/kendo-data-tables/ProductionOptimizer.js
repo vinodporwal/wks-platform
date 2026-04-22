@@ -13,8 +13,18 @@ import { ProductionNormsApiService } from 'services/production-norms-api-service
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 const MONTH_FIELDS = [
-  'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
-  'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+  'Jan',
+  'Feb',
+  'Mar',
 ]
 
 const ProductionOptimizer = () => {
@@ -81,10 +91,19 @@ const ProductionOptimizer = () => {
   const valueFormat = ValueFormatterProduction()
 
   const monthKeyMap = {
-    Apr: 4, May: 5, Jun: 6, Jul: 7, Aug: 8, Sep: 9,
-    Oct: 10, Nov: 11, Dec: 12, Jan: 1, Feb: 2, Mar: 3,
+    Apr: 4,
+    May: 5,
+    Jun: 6,
+    Jul: 7,
+    Aug: 8,
+    Sep: 9,
+    Oct: 10,
+    Nov: 11,
+    Dec: 12,
+    Jan: 1,
+    Feb: 2,
+    Mar: 3,
   }
-
 
   const addTotalColumnAndRow = useCallback(
     (dynamicColumns, mappedRows) => {
@@ -281,7 +300,15 @@ const ProductionOptimizer = () => {
     } finally {
       setLoading(false)
     }
-  }, [PLANT_ID, AOP_YEAR, keycloak, tabIndex, lineDetails, selectedMode, addTotalColumnAndRow])
+  }, [
+    PLANT_ID,
+    AOP_YEAR,
+    keycloak,
+    tabIndex,
+    lineDetails,
+    selectedMode,
+    addTotalColumnAndRow,
+  ])
 
   const fetchDataCombined = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR || !selectedCombinedMode) return

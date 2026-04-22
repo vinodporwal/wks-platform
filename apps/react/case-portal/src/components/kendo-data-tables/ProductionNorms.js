@@ -1003,8 +1003,8 @@ const ProductionNorms = ({ permissions }) => {
 
   useEffect(() => {
     if (
-      (validateTotalsWithIIRRef.current &&
-        (IS_ELASTOMER_JMD_IIR || IS_CHEMICAL_VMD_ACRYLONITRILE)) &&
+      validateTotalsWithIIRRef.current &&
+      (IS_ELASTOMER_JMD_IIR || IS_CHEMICAL_VMD_ACRYLONITRILE) &&
       rows.length > 0 &&
       (rowsInKT.length > 0 || rowsInMT.length > 0)
     ) {
@@ -1035,7 +1035,7 @@ const ProductionNorms = ({ permissions }) => {
         setSnackbarData({
           message: `Total validation failed:\n${message}`,
           severity: 'error',
-          duration: 1000 * 15
+          duration: 1000 * 15,
         })
       }
       validateTotalsWithIIRRef.current = false
