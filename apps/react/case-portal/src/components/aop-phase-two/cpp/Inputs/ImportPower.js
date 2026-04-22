@@ -7,6 +7,7 @@ import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatt
 import { InputApiService } from 'components/aop-phase-two/services/cpp/inputApiService'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ImportPower = () => {
   const keycloak = useSession()
@@ -83,8 +84,8 @@ const ImportPower = () => {
     {
       field: 'uom',
       title: 'UOM',
-      width: 80,
-      minWidth: 80,
+      width: 100,
+      minWidth: 100,
       type: 'text',
       editable: false,
     },
@@ -93,7 +94,7 @@ const ImportPower = () => {
       title: headerMap[4],
       editable: true,
       widthT: 100,
-      minWidth: 80,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -104,7 +105,7 @@ const ImportPower = () => {
       title: headerMap[5],
       editable: true,
       widthT: 100,
-      minWidth: 80,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -115,7 +116,7 @@ const ImportPower = () => {
       title: headerMap[6],
       editable: true,
       widthT: 100,
-      minWidth: 80,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -126,7 +127,7 @@ const ImportPower = () => {
       title: headerMap[7],
       editable: true,
       widthT: 100,
-      minWidth: 80,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -137,7 +138,7 @@ const ImportPower = () => {
       title: headerMap[8],
       editable: true,
       widthT: 100,
-      minWidth: 80,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -148,7 +149,7 @@ const ImportPower = () => {
       title: headerMap[9],
       editable: true,
       widthT: 100,
-      minWidth: 80,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -159,7 +160,7 @@ const ImportPower = () => {
       title: headerMap[10],
       editable: true,
       widthT: 100,
-      minWidth: 80,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -170,7 +171,7 @@ const ImportPower = () => {
       title: headerMap[11],
       editable: true,
       widthT: 100,
-      minWidth: 80,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -181,7 +182,7 @@ const ImportPower = () => {
       title: headerMap[12],
       editable: true,
       widthT: 100,
-      minWidth: 80,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -192,7 +193,7 @@ const ImportPower = () => {
       title: headerMap[1],
       editable: true,
       widthT: 100,
-      minWidth: 80,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -203,7 +204,7 @@ const ImportPower = () => {
       title: headerMap[2],
       editable: true,
       widthT: 100,
-      minWidth: 80,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -214,7 +215,7 @@ const ImportPower = () => {
       title: headerMap[3],
       editable: true,
       widthT: 100,
-      minWidth: 80,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -645,12 +646,7 @@ const ImportPower = () => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       <AdvanceKendoTable
         columns={columns}
         rows={rows}

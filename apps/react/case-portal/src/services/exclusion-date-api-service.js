@@ -6,6 +6,8 @@ export const ExclusionDateApiDataService = {
   exportExclusionDate,
   importExclusionDate,
   deleteExclusionDate,
+  exportConfigurationLineWise,
+  importConfigurationLineWise,
 }
 async function getExclusionDate(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/exclusion-date?year=${AOP_YEAR}&plantId=${PLANT_ID}`
@@ -115,6 +117,60 @@ async function deleteExclusionDate(deleteId, keycloak) {
     return await resp.text()
   } catch (e) {
     console.error('Error deleting data:', e)
+    return Promise.reject(e)
+  }
+}
+async function exportConfigurationLineWise(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_EXPORT_TITLE,
+) {
+  const url = `${Config.CaseEngineUrl}/task/line-configuration-export?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${EXCEL_EXPORT_TITLE}_Configuration_Line_Wise.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Configuration_Line_Wise Excel:', e)
+    return Promise.reject(e)
+  }
+}
+async function importConfigurationLineWise(file, keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/line-configuration-import?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error importing Excel:', e)
     return Promise.reject(e)
   }
 }

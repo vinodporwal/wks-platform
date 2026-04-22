@@ -21,7 +21,7 @@ import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { getRoleName } from 'services/role-service'
 const MonthwiseProduction = () => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -71,7 +71,9 @@ const MonthwiseProduction = () => {
   }
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const VALUE_FORMATTOR_PRODUCTION = ValueFormatterProduction()
   const VALUE_FORMATTOR_CONSUMPTION = ValueFormatterConsumption()
@@ -88,7 +90,7 @@ const MonthwiseProduction = () => {
     {
       field: 'Month',
       title: 'Month',
-      width: 100,
+      widthT: 120,
       editable: false,
     },
 
@@ -210,7 +212,7 @@ const MonthwiseProduction = () => {
     {
       field: 'Remark',
       title: 'Remarks',
-      width: 200,
+      widthT: 200,
       editable: true,
     },
   ]
@@ -227,7 +229,7 @@ const MonthwiseProduction = () => {
     {
       field: 'Month',
       title: 'Month',
-      width: 100,
+      widthT: 160,
       editable: false,
     },
 
@@ -333,6 +335,7 @@ const MonthwiseProduction = () => {
     {
       field: 'Remark',
       title: 'Remarks',
+      widthT: 200,
 
       editable: true,
     },

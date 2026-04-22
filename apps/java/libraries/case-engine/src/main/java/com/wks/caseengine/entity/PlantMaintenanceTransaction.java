@@ -79,5 +79,8 @@ public class PlantMaintenanceTransaction {
     
     @Column(name = "Line_FK_Id")
     private UUID lineFKId;
+    
+    @Column(name="ShutdownRate")
+    private String shutdownRate;
 
 }

@@ -2,7 +2,12 @@ import { Input } from '@progress/kendo-react-inputs'
 import NotificationTST from 'components/Utilities/NotificationTST'
 import { useState, useEffect, useRef } from 'react'
 
-export const NoSpinnerNumericEditor = ({ dataItem, field, onChange }) => {
+export const NoSpinnerNumericEditor = ({
+  dataItem,
+  field,
+  onChange,
+  maxLength = 30,
+}) => {
   const initialValue = dataItem[field] ?? ''
   const [localValue, setLocalValue] = useState(initialValue)
   const isFirstRender = useRef(true)
@@ -47,6 +52,7 @@ export const NoSpinnerNumericEditor = ({ dataItem, field, onChange }) => {
       <Input
         value={localValue}
         onChange={handleChange}
+        maxLength={maxLength}
         style={{
           fontSize: '0.8rem',
           padding: '2px 2px',

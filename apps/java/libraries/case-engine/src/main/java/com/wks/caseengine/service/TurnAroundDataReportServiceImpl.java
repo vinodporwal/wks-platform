@@ -6,11 +6,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.TurnAroundPlanReportDTO;
+import com.wks.caseengine.db2.entity.TurnAroundPlanDB2;
+import com.wks.caseengine.db2.repository.TurnAroundPlanReportDB2Repository;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.TurnAroundPlan;
@@ -32,6 +34,9 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
 
     @PersistenceContext
     private EntityManager entityManager;
+    
+    @PersistenceContext(unitName="db2")
+    private EntityManager entityManagerDB2;
 
     @Autowired
     private PlantsRepository plantsRepository;
@@ -45,16 +50,20 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
     
     @Autowired
     private TurnAroundPlanReportRepository turnAroundPlanReportRepository;
+    
+    @Autowired
+    private TurnAroundPlanReportDB2Repository turnAroundPlanReportDB2Repository;
 
     @Override
+    @Transactional(transactionManager = "db2TransactionManager", readOnly = true)
     public AOPMessageVM getReportForTurnAroundPlanData(String plantId, String year, String reportType) {
         // TODO Auto-generated method stub
 
         try {
             AOPMessageVM aopMessageVM = new AOPMessageVM();
             List<Map<String, Object>> plantTurnAroundData = new ArrayList<>();
-
-            List<Object[]> obj = getPlantTurnAroundData(plantId, year, reportType);
+            List<Object[]>  obj = getPlantTurnAroundDataDB2(plantId, year, reportType);
+           
             if (reportType.equalsIgnoreCase("currentYear")) {
                 for (Object[] row : obj) {
                     Map<String, Object> map = new HashMap<>();
@@ -108,6 +117,33 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
         }
     }
 
+    @Transactional(transactionManager = "db2TransactionManager", readOnly = true)
+    public List<Object[]> getPlantTurnAroundDataDB2(String plantId, String aopYear, String reportType) {
+        try {
+            String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+            Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+            String storedProcedure = "TurnAroundPlanReport";
+            if (!"MEG".equalsIgnoreCase(verticalName)) {
+            	storedProcedure = verticalName +"_"+site.getName()+ "_TurnAroundPlanReport";
+            }
+            String sql = "EXEC " + storedProcedure
+                    + " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
+
+            Query query = entityManagerDB2.createNativeQuery(sql);
+
+            query.setParameter("plantId", plantId);
+            query.setParameter("aopYear", aopYear);
+            query.setParameter("reportType", reportType);
+
+            return query.getResultList();
+        } catch (IllegalArgumentException e) {
+            throw new RestInvalidArgumentException("Invalid UUID format ", e);
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to fetch data", ex);
+        }
+    }
+    
     public List<Object[]> getPlantTurnAroundData(String plantId, String aopYear, String reportType) {
         try {
             String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
@@ -134,6 +170,7 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
             throw new RuntimeException("Failed to fetch data", ex);
         }
     }
+
 
 	@Override
 	public AOPMessageVM updateReportForTurnAroundData(String plantId, String year,
@@ -185,12 +222,62 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager")
+	public AOPMessageVM updateReportForTurnAroundDataDB2(String plantId, String year,
+			String reportType,List<TurnAroundPlanReportDTO> dataList) {
+		try {
+		List<TurnAroundPlanDB2> turnAroundPlanList = new ArrayList<>();
+		for (TurnAroundPlanReportDTO dto : dataList) {
+			TurnAroundPlanDB2 turnAroundPlan=null;
+			if(dto.getId()!=null) {
+				turnAroundPlan = turnAroundPlanReportDB2Repository
+						.findById(UUID.fromString(dto.getId())).get();
+			}else {
+				 turnAroundPlan=new TurnAroundPlanDB2();
+				 turnAroundPlan.setPlantFkId(UUID.fromString(plantId));
+				 turnAroundPlan.setAopYear(year);
+				 turnAroundPlan.setReportType(reportType);
+			}
+			
+			if(dto.getActivity()!=null) {
+				turnAroundPlan.setActivity(dto.getActivity());
+			}
+			if(dto.getFromDate()!=null) {
+				turnAroundPlan.setFromDate(dto.getFromDate());
+			}
+			if(dto.getToDate()!=null) {
+				turnAroundPlan.setToDate(dto.getToDate());
+			}
+			if(dto.getDurationInHrs()!=null) {
+				turnAroundPlan.setDurationInHrs(dto.getDurationInHrs());
+			}
+			if(dto.getPeriodInMonths()!=null) {
+				turnAroundPlan.setPeriodInMonths(dto.getPeriodInMonths());
+			}
+			if(dto.getRemark()!=null) {
+				turnAroundPlan.setRemark(dto.getRemark());
+			}
+			
+			turnAroundPlanList.add(turnAroundPlanReportDB2Repository.save(turnAroundPlan));
+		}
+		AOPMessageVM response = new AOPMessageVM();
+		response.setCode(200);
+		response.setMessage("Remarks updated successfully.");
+		response.setData(turnAroundPlanList);
+		return response;
+		}catch (Exception ex) {
+            throw new RuntimeException("Failed to save data", ex);
+        }
+	}
+
+	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM deleteReportForTurnAroundData(String id) {
-		TurnAroundPlan turnAroundPlan=null;
-		Optional<TurnAroundPlan> turnAroundPlanOpt=turnAroundPlanReportRepository.findById(UUID.fromString(id));
+		TurnAroundPlanDB2 turnAroundPlan=null;
+		Optional<TurnAroundPlanDB2> turnAroundPlanOpt=turnAroundPlanReportDB2Repository.findById(UUID.fromString(id));
 		if(turnAroundPlanOpt.isPresent()) {
 			turnAroundPlan = turnAroundPlanOpt.get();
-			turnAroundPlanReportRepository.delete(turnAroundPlan);
+			turnAroundPlanReportDB2Repository.delete(turnAroundPlan);
 		}
 		AOPMessageVM response = new AOPMessageVM();
 		response.setCode(200);

@@ -155,8 +155,9 @@ const KendoDataTablesCrackerRunLength = ({
 
   const keycloak = useSession()
 
-  // const READ_ONLY = getRoleName(keycloak)
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const [loading1, setLoading1] = useState(false)
   const [open, setOpen] = useState(false)
@@ -1162,7 +1163,15 @@ const KendoDataTablesCrackerRunLength = ({
         )
 
         if (res?.code === 200 && res.data && Array.isArray(res.data.columns)) {
-          const HIDDEN_FIELDS = ['Plant_FK_Id', 'AOPYear', 'Demo', 'Date']
+          const HIDDEN_FIELDS = [
+            'plant_FK_Id',
+            'aopYear',
+            'Plant_FK_Id',
+            'AOPYear',
+            'Demo',
+            'Date',
+          ]
+
           const columnsFromApi = res.data.columns
             .filter((col) => col.field && col.field.trim() !== '')
             .map((col) => ({
@@ -1718,7 +1727,7 @@ const KendoDataTablesCrackerRunLength = ({
               .filter(
                 (col) =>
                   col.field &&
-                  !['Plant_FK_Id', 'AOPYear', 'Demo', 'Date'].includes(
+                  !['Plant_FK_Id', 'AOPYear', 'Demo', 'Date', 'aopYear', 'plant_FK_Id'].includes(
                     col.field,
                   ),
               )

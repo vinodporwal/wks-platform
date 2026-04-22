@@ -3,6 +3,8 @@ package com.wks.caseengine.service;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import com.wks.caseengine.dto.NormAttributeTransactionsDTO;
 import com.wks.caseengine.dto.ShutdownHistoryConfigDTO;
 import com.wks.caseengine.dto.SlowdownHistoryConfigDTO;
@@ -24,5 +26,9 @@ public interface ShutdownHistoryService {
 
 	public AOPMessageVM deleteSlowdownHistory(UUID id);	
 	public AOPMessageVM saveHistoryPTA( String plantId, String year,  List<NormAttributeTransactionsDTO> normAttributeTransactionsDTOList);
+
+	byte[] createShutdownHistoryPTAExcel(String plantId, String year);
+
+	AOPMessageVM importShutdownHistoryPTAExcel(String plantId, String year, MultipartFile file);
 
 }

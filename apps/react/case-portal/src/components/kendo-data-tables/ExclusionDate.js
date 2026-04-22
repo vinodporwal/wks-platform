@@ -35,7 +35,8 @@ const ExclusionDate = ({
   const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
   const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
   const VERTICAL_NAME_NO_CASE = verticalChange?.selectedVertical?.toUpperCase()
-  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+  const revisionName = revision ? `REV_${revision}` : ''
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${revisionName}`
   const AOP_YEAR = year?.selectedYear
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
@@ -54,7 +55,9 @@ const ExclusionDate = ({
   const [currentRowId, setCurrentRowId] = useState(null)
   const keycloak = useSession()
   const IS_OLD_YEAR = false
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const colDefs = ExclusionDateColumns
 
   const handleRemarkCellClick = (row) => {

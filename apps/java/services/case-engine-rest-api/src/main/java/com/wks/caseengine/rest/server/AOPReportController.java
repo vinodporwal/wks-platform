@@ -2,6 +2,7 @@ package com.wks.caseengine.rest.server;
 
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,11 +16,15 @@ import org.springframework.web.bind.annotation.RestController;
 import com.wks.caseengine.dto.PlantContributionSummaryDTO;
 import com.wks.caseengine.dto.PlantContributionSummaryT17DTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.service.AOPReportService;
 
 @RestController
 @RequestMapping("task")
 public class AOPReportController {
+	
+	@Autowired
+	private PlantsRepository plantsRepository;
 	
 	@Autowired
 	private AOPReportService aopReportService;
@@ -64,7 +69,7 @@ public class AOPReportController {
 	
 	@PostMapping(value="/specific-consumption-t17")
 	public AOPMessageVM updateSpecificConsumptionNormsT17Report(@RequestBody List<PlantContributionSummaryT17DTO> plantContributionSummaryT17DTOs,@RequestParam String plantId,@RequestParam String year) {
-		return aopReportService.updateSpecificConsumptionNormsT17Report(plantContributionSummaryT17DTOs,plantId,year);
+			return aopReportService.updateSpecificConsumptionNormsT17ReportDB2(plantContributionSummaryT17DTOs,plantId,year);
 	}
 	
 	@PostMapping(value="/report-plant-contribution-summary-yearly")
@@ -75,6 +80,21 @@ public class AOPReportController {
 	@GetMapping(value="/grade-wise-consumption-norms")
 	public AOPMessageVM getGradewiseConsumptionNorms(@RequestParam String plantId,@RequestParam String year,@RequestParam(required=false) String reportType) {
 		return aopReportService.getGradewiseConsumptionNorms(plantId,year,reportType);
+	}
+
+	@GetMapping(value="/c3-calculation")
+	public AOPMessageVM getC3Calculation(@RequestParam String plantId, @RequestParam String year) {
+		return aopReportService.getC3Calculation(plantId, year);
+	}
+
+	@GetMapping(value="/c3-detail")
+	public AOPMessageVM getC3Detail(@RequestParam String plantId, @RequestParam String year) {
+		return aopReportService.getC3Detail(plantId, year);
+	}
+
+	@GetMapping(value="/lims-dataset")
+	public AOPMessageVM getLIMSDataset(@RequestParam String plantId, @RequestParam String year) {
+		return aopReportService.getLIMSDataset(plantId, year);
 	}
 
 }

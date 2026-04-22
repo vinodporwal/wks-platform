@@ -1,0 +1,36 @@
+[
+  {
+    "field": "particulars",
+    "title": "Particulars",
+    "editable": false,
+    "widthT": 220,
+    "hidden": false
+  },
+  {
+    "field": "uom",
+    "title": "UOM",
+    "editable": false,
+    "widthT": 80
+  },
+  {
+    "field": "IIR",
+    "title": "IIR",
+    "editable": true,
+    "type": "number",
+    "widthT": 120
+  },
+  {
+    "field": "CIIR",
+    "title": "CIIR",
+    "editable": true,
+    "type": "number",
+    "widthT": 120
+  },
+  {
+    "field": "BIIR",
+    "title": "BIIR",
+    "editable": true,
+    "type": "number",
+    "widthT": 120
+  }
+]

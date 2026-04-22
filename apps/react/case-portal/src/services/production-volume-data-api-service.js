@@ -16,6 +16,11 @@ export const ProductionVolumeDataApiService = {
   getAOPMCCalculatedDataLineWise,
   getDesignCapacityDataLineWise,
   getMaxAchievedCapacityDataLineWise,
+  getProposedOperatingCapacityAvg,
+  getProductionVolExcelLineWise,
+  getMcuMaxCapvalues,
+  saveProductionVolDataLineExcel,
+  getAOPMCCalculatedElastomerJmd,
 }
 
 async function editAOPMCCalculatedData(
@@ -366,6 +371,114 @@ async function getMaxAchievedCapacityDataLineWise(
   LINE_ID,
 ) {
   const url = `${Config.CaseEngineUrl}/task/max-achieved-capacity-line?plantId=${PLANT_ID}&year=${AOP_YEAR}&lineId=${LINE_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getProposedOperatingCapacityAvg(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/production-target-avg?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getProductionVolExcelLineWise(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  lineId,
+  EXCEL_EXPORT_TITLE,
+  LineName,
+) {
+  const url = `${Config.CaseEngineUrl}/task/production-target-line-export?year=${AOP_YEAR}&plantId=${PLANT_ID}&lineId=${lineId}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Failed to edit data: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    //NAME CORRECTED FOR EXCEL FILE
+    a.download = `${EXCEL_EXPORT_TITLE}_Production_Target_${LineName}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error Editing data:', e)
+    return Promise.reject(e)
+  }
+}
+async function getMcuMaxCapvalues(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/max-cap-mc-values?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function saveProductionVolDataLineExcel(
+  file,
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url = `${Config.CaseEngineUrl}/task/production-target-line-import?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getAOPMCCalculatedElastomerJmd(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/average-mc-values?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

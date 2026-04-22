@@ -165,6 +165,9 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 				dto.setRpfDownTime(result[13] != null ? ((Number) result[13]).doubleValue() : null);
 				dto.setNoOfRPF(result[14] != null ? ((Number) result[14]).doubleValue() : null);
 				dto.setLineId(result[15] != null ? result[15].toString() : null);
+				if (dto.getLineId() != null && !dto.getLineId().isEmpty()) {
+					dto.setLineDisplayName(getLineDisplayNameByLineId(plantId, dto.getLineId()));
+				}
 				dtoList.add(dto);
 			}
 			// TODO Auto-generated method stub
@@ -224,6 +227,9 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 				dto.setRateEO(result[11] != null ? ((Number) result[11]).doubleValue() : null);
 				dto.setRateEOE(result[12] != null ? ((Number) result[12]).doubleValue() : null);
 				dto.setLineId(result[15] != null ? result[15].toString() : null);
+				if (dto.getLineId() != null && !dto.getLineId().isEmpty()) {
+					dto.setLineDisplayName(getLineDisplayNameByLineId(plantId, dto.getLineId()));
+				}
 				dtoList.add(dto);
 			}
 			// TODO Auto-generated method stub
@@ -531,7 +537,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	        Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new RuntimeException("Plant not found"));
 	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found"));
 	        Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-	        boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+	        boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 
 	        if (!isAfterSave) {
 	            String vName = vertical.getName();
@@ -779,6 +785,28 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	private String getLineDisplayNameByLineId(UUID plantId, String lineId) {
+		if (plantId == null || lineId == null || lineId.trim().isEmpty()) {
+			return null;
+		}
+		try {
+			String verticalName = plantsRepository.findVerticalNameByPlantId(plantId);
+			String view = "vwScrn" + verticalName + "GetLineDetails";
+			List<Object[]> rows = getLineDetailsData(view, plantId.toString(), lineId);
+			if (rows == null || rows.isEmpty()) {
+				return null;
+			}
+			Object[] row = rows.get(0);
+			if (row == null || row.length <= 2 || row[2] == null) {
+				return null;
+			}
+			return row[2].toString();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return null;
 		}
 	}
 
@@ -1094,7 +1122,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			 Plants plant = plantsRepository.findById(plantId).get();
 		        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		        Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-		        boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+		        boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 		       if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc) {
 		    	   data = readSlowdownDataPE(file.getInputStream(), plantId, year);
 		       }else {
@@ -2018,7 +2046,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 
 	               
 	                boolean isDuplicate = dto.getDiscription() != null && des.contains(dto.getDiscription());
-	                boolean isExcludedVertical = vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA");
+	                boolean isExcludedVertical = vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("PTA");
 	                boolean isExcludedSite = site.getName().equalsIgnoreCase("HMD");
 	                
 	                if (!alreadyFailed && isDuplicate && !isExcludedVertical && !isExcludedSite) {
@@ -2069,7 +2097,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                        if (ldtStart != null) {
 	                            ldtEnd = ldtStart.plusHours(192);
 	                            dto.setMaintEndDateTime(Date.from(ldtEnd.atZone(ZoneId.systemDefault()).toInstant()));
-	                            dto.setRate(27.0);
+	                            dto.setRate(27.0833);
 	                            isVcmFurnaceDecoking = true;
 	                        }
 	                    } else if (d.equalsIgnoreCase("Furnace Decoking H-1220")) {
@@ -2112,7 +2140,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                        dto.setErrDescription("End date/time cannot be before start date/time.");
 	                        alreadyFailed = true;
 	                    } else if (ldtStart != null && ldtStart.getMonth() != ldtEnd.getMonth()) {
-	                        if (!(vertical.getName().equalsIgnoreCase("VCM"))) {
+	                        if (!(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical"))) {
 	                            dto.setSaveStatus("Failed");
 	                            dto.setErrDescription("Start and end date/time must belong to the same month.");
 	                            alreadyFailed = true;
@@ -2212,7 +2240,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                
 	               
 	                boolean skipDbCheck = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("HMD");
-	                if (dto.getId() == null && dto.getDiscription() != null && !vertical.getName().equalsIgnoreCase("VCM") && !alreadyFailed && !skipDbCheck) {
+	                if (dto.getId() == null && dto.getDiscription() != null && !(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical")) && !alreadyFailed && !skipDbCheck) {
 	                    List<Object[]> obj = shutDownPlanRepository.findDiscriptionByPlantIdAndType("Slowdown", plantFKId.toString(), year, dto.getDiscription());
 	                    if (obj.size() > 0) {
 	                        dto.setSaveStatus("Failed");
@@ -2574,7 +2602,8 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	    String verticalName = plantsService.findVerticalNameByPlantId(plantId);
 	    Plants plant = plantsRepository.findById(plantId).orElseThrow();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-		boolean pvc = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+		boolean pvc = verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 		Boolean monthDropdown = false;
 		if(verticalName.equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD")) {
 			monthDropdown=true;
@@ -2732,7 +2761,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                }
 	                boolean fieldsChanged = 
 	                	    !java.util.Objects.equals(originalDesc, newDesc) ||
-	                	    (!monthDropdown && (!java.util.Objects.equals(originalStart, newStart) || 
+	                	    (!monthDropdown && !elastomer && (!java.util.Objects.equals(originalStart, newStart) || 
 	                	                        !java.util.Objects.equals(originalEnd, newEnd))) ||
 	                	    !java.util.Objects.equals(originalRate, newRate) ||
 	                	    !java.util.Objects.equals(originalRPFDownTime, newRPFDownTime) ||
@@ -2812,7 +2841,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	    String verticalName = plantsService.findVerticalNameByPlantId(plantId);
 	    Plants plant = plantsRepository.findById(plantId).orElseThrow();
 	    Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-	    boolean pvc = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+	    boolean pvc = verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 	    DateTimeFormatter COMPARISON_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"); 
 	    Boolean monthChange=false;
 	    int changedMonth=0;
@@ -3015,7 +3044,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	    String verticalName = plantsService.findVerticalNameByPlantId(plantId);
 	    Plants plant = plantsRepository.findById(plantId).orElseThrow();
 	    Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-	    boolean pvc = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+	    boolean pvc = verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 	    DateTimeFormatter COMPARISON_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"); 
 	    Boolean monthChange=false;
 	    int changedMonth=0;

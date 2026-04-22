@@ -5,9 +5,12 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import com.wks.caseengine.repository.MCUMaxCapacityRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.ScreenMappingRepository;
@@ -39,6 +42,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wks.caseengine.dto.AOPMCCalculatedDataDTO;
+import com.wks.caseengine.dto.AOPMaxCapMCValueDTO;
 
 import com.wks.caseengine.entity.AOPMCCalculatedData;
 import com.wks.caseengine.entity.AopCalculation;
@@ -117,7 +121,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	public AOPMCCalculatedDataServiceImpl(DataSource dataSource) {
 		this.dataSource = dataSource;
 	}
-
+	
 	@Override
 	public AOPMessageVM getAOPMCCalculatedData(String plantId, String year) {
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -135,17 +139,144 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	        }else if(vertical.getName().equalsIgnoreCase("CRACKER")) {
 	        	 procedureName=vertical.getName()+"_GetAOPMCValues";
 				 
-	        } else {
+	        } else if(vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD")) {
+	        	 procedureName=vertical.getName()+"_"+site.getName()+"_GetAOPMCValues";
+				 
+	        }else if(vertical.getName().equalsIgnoreCase("Chemical")){
+	        	procedureName=vertical.getName()+"_"+site.getName()+"_GetAOPMCValues";
+	        }else {
 	            view = "vwAOPMCValues";
 	        }
 	        List<Object[]> obj=null;
-	        if(vertical.getName().equalsIgnoreCase("CRACKER")) {
+	        if(vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("CRACKER") || (vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD"))) {
 	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
 	        }else {
 	        	  obj = getDataMCUValuesAllData(year, plantId, view);
 	        }
 	       
 	        List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList = new ArrayList<>();
+
+	        for (Object[] row : obj) {
+	            AOPMCCalculatedDataDTO dto = new AOPMCCalculatedDataDTO();
+	            dto.setId(row[0] != null ? row[0].toString() : "");
+	            dto.setSiteFKId(row[1] != null ? row[1].toString() : "");
+	            dto.setPlantFKId(row[2] != null ? row[2].toString() : "");
+	            dto.setMaterialFKId(row[3] != null ? row[3].toString() : "");
+	            dto.setApril(row[4] != null ? Double.parseDouble(row[4].toString()) : 0.0);
+	            dto.setMay(row[5] != null ? Double.parseDouble(row[5].toString()) : 0.0);
+	            dto.setJune(row[6] != null ? Double.parseDouble(row[6].toString()) : 0.0);
+	            dto.setJuly(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
+	            dto.setAugust(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
+	            dto.setSeptember(row[9] != null ? Double.parseDouble(row[9].toString()) : 0.0);
+	            dto.setOctober(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
+	            dto.setNovember(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
+	            dto.setDecember(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
+	            dto.setJanuary(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0);
+	            dto.setFebruary(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
+	            dto.setMarch(row[15] != null ? Double.parseDouble(row[15].toString()) : 0.0);
+
+	            dto.setFinancialYear(row[16] != null ? row[16].toString() : null);
+	            dto.setRemarks(row[17] != null ? row[17].toString() : " ");
+	            dto.setVerticalFKId(row[22] != null ? row[22].toString() : null);
+	            dto.setProductName(row[24] != null ? row[24].toString() : null);
+	            dto.setMaterialDisplayName(row[24] != null ? row[24].toString() : null);
+	            
+	            aOPMCCalculatedDataDTOList.add(dto);
+	        }
+
+	        Map<String, Object> map = new HashMap<>();
+	        List<AopCalculation> aopCalculation = aopCalculationRepository.findByPlantIdAndAopYearAndCalculationScreen(
+	                UUID.fromString(plantId), year, "production-volume-data");
+	        
+	        map.put("aopMCCalculatedDataDTOList", aOPMCCalculatedDataDTOList);
+	        map.put("aopCalculation", aopCalculation);
+	        
+	        aopMessageVM.setCode(200);
+	        aopMessageVM.setData(map);
+	        aopMessageVM.setMessage("Data fetched successfully");
+	        return aopMessageVM;
+
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	    } catch (Exception ex) {
+	        throw new RuntimeException("Failed to fetch data", ex);
+	    }
+	}
+
+	@Override
+	public AOPMessageVM getAverageMCValues(String plantId, String year) {
+	    AOPMessageVM aopMessageVM = new AOPMessageVM();
+	    try {
+	        
+	        Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+	        Sites site = siteRepository.findById(plant.getSiteFkId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+	        String procedureName=vertical.getName()+"_"+site.getName()+"_GetAverageMCValues";
+	       
+	        List<Object[]> 	obj= findByAOPYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
+	        List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList = new ArrayList<>();
+
+	        for (Object[] row : obj) {
+	            AOPMCCalculatedDataDTO dto = new AOPMCCalculatedDataDTO();
+	            dto.setId(row[0] != null ? row[0].toString() : "");
+	            dto.setSiteFKId(row[1] != null ? row[1].toString() : "");
+	            dto.setPlantFKId(row[2] != null ? row[2].toString() : "");
+	            dto.setMaterialFKId(row[3] != null ? row[3].toString() : "");
+	            dto.setApril(row[4] != null ? Double.parseDouble(row[4].toString()) : 0.0);
+	            dto.setMay(row[5] != null ? Double.parseDouble(row[5].toString()) : 0.0);
+	            dto.setJune(row[6] != null ? Double.parseDouble(row[6].toString()) : 0.0);
+	            dto.setJuly(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
+	            dto.setAugust(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
+	            dto.setSeptember(row[9] != null ? Double.parseDouble(row[9].toString()) : 0.0);
+	            dto.setOctober(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
+	            dto.setNovember(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
+	            dto.setDecember(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
+	            dto.setJanuary(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0);
+	            dto.setFebruary(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
+	            dto.setMarch(row[15] != null ? Double.parseDouble(row[15].toString()) : 0.0);
+
+	            dto.setFinancialYear(row[16] != null ? row[16].toString() : null);
+	            dto.setRemarks(row[17] != null ? row[17].toString() : " ");
+	            dto.setMaterialDisplayName(row[24] != null ? row[24].toString() : " ");
+	            
+	            aOPMCCalculatedDataDTOList.add(dto);
+	        }
+
+	        Map<String, Object> map = new HashMap<>();
+	        
+	        map.put("aopMCCalculatedDataDTOList", aOPMCCalculatedDataDTOList);
+	        
+	        aopMessageVM.setCode(200);
+	        aopMessageVM.setData(map);
+	        aopMessageVM.setMessage("Data fetched successfully");
+	        return aopMessageVM;
+
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	    } catch (Exception ex) {
+	        throw new RuntimeException("Failed to fetch data", ex);
+	    }
+	}
+	
+	@Override
+	public AOPMessageVM getProductionTargetAvg(String plantId, String year) {
+	    AOPMessageVM aopMessageVM = new AOPMessageVM();
+	    try {
+	        
+	        Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+	        Sites site = siteRepository.findById(plant.getSiteFkId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+	        String procedureName=vertical.getName()+"_"+site.getName()+"_GetAvgAOPMCValues";;
+	       
+	         List<Object[]> obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
+
+	         List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList = new ArrayList<>();
 
 	        for (Object[] row : obj) {
 	            AOPMCCalculatedDataDTO dto = new AOPMCCalculatedDataDTO();
@@ -276,6 +407,24 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 		}
 	}
 	
+	public List<Object[]> findByAOPYearAndPlantId(String aopYear, UUID plantId, String procedureName) {
+		try {
+
+			String sql = "EXEC " + procedureName
+					+ " @plantId = :plantId, @aopyear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
 	public List<Object[]> findByYearPlantIdAndLine(String aopYear, UUID plantId,UUID lineId, String procedureName) {
 		try {
 
@@ -307,13 +456,86 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	        Sites site = siteRepository.findById(plant.getSiteFkId())
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
 
-	        if (vertical.getName().equalsIgnoreCase("PTA")) {
+	        if (vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("Chemical")) {
 	            view = "vw" + vertical.getName() + "_" + site.getName() + "_AOPMCValues";
 	        } else {
 	            view = "vwAOPMCValues";
 	        }
 
 	        List<Object[]> obj = getDataMCUValuesAllData(year, plantId, view);
+	        List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList = new ArrayList<>();
+
+	        for (Object[] row : obj) {
+	            AOPMCCalculatedDataDTO dto = new AOPMCCalculatedDataDTO();
+	            dto.setId(row[0] != null ? row[0].toString() : "");
+	            dto.setSiteFKId(row[1] != null ? row[1].toString() : "");
+	            dto.setPlantFKId(row[2] != null ? row[2].toString() : "");
+	            dto.setMaterialFKId(row[3] != null ? row[3].toString() : "");
+	            double[] months = new double[12];
+	            for (int i = 0; i < 12; i++) {
+	                months[i] = (row[4 + i] != null) ? Double.parseDouble(row[4 + i].toString()) : 0.0;
+	            }
+	            double maxVal = 0.0;
+	            for (double val : months) {
+	                if (val > maxVal) maxVal = val;
+	            }
+	            dto.setApril(calculatePercentage(months[0], maxVal));
+	            dto.setMay(calculatePercentage(months[1], maxVal));
+	            dto.setJune(calculatePercentage(months[2], maxVal));
+	            dto.setJuly(calculatePercentage(months[3], maxVal));
+	            dto.setAugust(calculatePercentage(months[4], maxVal));
+	            dto.setSeptember(calculatePercentage(months[5], maxVal));
+	            dto.setOctober(calculatePercentage(months[6], maxVal));
+	            dto.setNovember(calculatePercentage(months[7], maxVal));
+	            dto.setDecember(calculatePercentage(months[8], maxVal));
+	            dto.setJanuary(calculatePercentage(months[9], maxVal));
+	            dto.setFebruary(calculatePercentage(months[10], maxVal));
+	            dto.setMarch(calculatePercentage(months[11], maxVal));
+
+	            dto.setFinancialYear(row[16] != null ? row[16].toString() : null);
+	            dto.setRemarks(row[17] != null ? row[17].toString() : " ");
+	            dto.setVerticalFKId(row[22] != null ? row[22].toString() : null);
+	            dto.setProductName(row[24] != null ? row[24].toString() : null);
+	            dto.setMaterialDisplayName(row[24] != null ? row[24].toString() : null);
+	            
+	            aOPMCCalculatedDataDTOList.add(dto);
+	        }
+
+	        Map<String, Object> map = new HashMap<>();
+	        List<AopCalculation> aopCalculation = aopCalculationRepository.findByPlantIdAndAopYearAndCalculationScreen(
+	                UUID.fromString(plantId), year, "production-volume-data");
+	        
+	        map.put("aopMCCalculatedDataDTOList", aOPMCCalculatedDataDTOList);
+	        map.put("aopCalculation", aopCalculation);
+	        
+	        aopMessageVM.setCode(200);
+	        aopMessageVM.setData(map);
+	        aopMessageVM.setMessage("Data fetched successfully");
+	        return aopMessageVM;
+
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	    } catch (Exception ex) {
+	        throw new RuntimeException("Failed to fetch data", ex);
+	    }
+	}
+
+	@Override
+	public AOPMessageVM getLineWiseSummaryOfProposedOperating(String plantId, String year,String lineId) {
+	    AOPMessageVM aopMessageVM = new AOPMessageVM();
+	    try {
+	        String view = "";
+	        Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+	        Sites site = siteRepository.findById(plant.getSiteFkId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+	        String procedureName=vertical.getName()+"_"+site.getName()+"_GetAOPMCValues";
+	        
+	         List<Object[]> obj= findByYearPlantIdAndLine(year, UUID.fromString(plantId),UUID.fromString(lineId) ,  procedureName);
+	        
 	        List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList = new ArrayList<>();
 
 	        for (Object[] row : obj) {
@@ -413,12 +635,17 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
             if (vertical.getName().equalsIgnoreCase("PTA")) {
                 view = "vw" + vertical.getName() + "_" + site.getName() + "_AOPMCValuesMaxAchivedCapacity";
             }else if(vertical.getName().equalsIgnoreCase("CRACKER")) {
-	        	 procedureName=vertical.getName()+"_GetAOPMCValuesMaxAchivedCapacity";
-				 
+	        	 procedureName=vertical.getName()+"_GetAOPMCValuesMaxAchivedCapacity";	 
+	        } else if(vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD")) {
+	        	 procedureName=vertical.getName()+"_"+site.getName()+"_GetAOPMCValuesMaxAchivedCapacity";	 
+	        }else if(vertical.getName().equalsIgnoreCase("Chemical")) {
+	        	 procedureName=vertical.getName()+"_"+site.getName()+"_GetAOPMCValuesMaxAchivedCapacity";	 
 	        }  else {
                 view = "vwAOPMCValuesMaxAchivedCapacity";
             }
-            if(vertical.getName().equalsIgnoreCase("CRACKER")) {
+            if(vertical.getName().equalsIgnoreCase("CRACKER") || (vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD"))) {
+	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
+	        }else if(vertical.getName().equalsIgnoreCase("Chemical")) {
 	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
 	        }else {
 	        	 obj = getMaxAchievedCapacityData(year, plantId, view);
@@ -445,6 +672,10 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                 dto.setMarch(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
 
                 dto.setRemarks(row[16] != null ? row[16].toString() : " ");
+                if(vertical.getName().equalsIgnoreCase("CRACKER")) {
+                	dto.setNormType(row[21] != null ? row[21].toString() : " ");
+                }
+                
                 aOPMCCalculatedDataDTOList.add(dto);
             }
 
@@ -523,6 +754,68 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
         }
     }
 
+    @Override
+    public AOPMessageVM getAOPMaxCapMCValues(String plantId, String year) {
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        try {
+        	 Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+ 	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+ 	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+ 	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+ 	        Sites site = siteRepository.findById(plant.getSiteFkId())
+ 	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+            String view="vw"+vertical.getName()+"_"+site.getName()+"_AOPMAXCAPMCValues";
+            List<Object[]> rows = getAOPMaxCapMCValuesData(plantId, year,view);
+            List<AOPMaxCapMCValueDTO> list = new ArrayList<>();
+            for (Object[] row : rows) {
+                AOPMaxCapMCValueDTO dto = new AOPMaxCapMCValueDTO();
+                dto.setId(row[0] != null ? row[0].toString() : null);
+                dto.setVerticalName(row[1] != null ? row[1].toString() : null);
+                dto.setSiteName(row[2] != null ? row[2].toString() : null);
+                dto.setPlantName(row[3] != null ? row[3].toString() : null);
+                dto.setProductName(row[4] != null ? row[4].toString() : null);
+                dto.setSiteFKId(row[5] != null ? row[5].toString() : null);
+                dto.setPlantFKId(row[6] != null ? row[6].toString() : null);
+                dto.setVerticalFKId(row[7] != null ? row[7].toString() : null);
+                dto.setMaterialFKId(row[8] != null ? row[8].toString() : null);
+                dto.setMonthName(row[9] != null ? row[9].toString() : null);
+                dto.setMonthValue(row[10] != null ? Double.parseDouble(row[10].toString()) : null);
+                dto.setFinancialYear(row[11] != null ? row[11].toString() : null);
+                dto.setRemarks(row[12] != null ? row[12].toString() : null);
+                dto.setCreatedOn(row[13] != null ? (Date) row[13] : null);
+                dto.setModifiedOn(row[14] != null ? (Date) row[14] : null);
+                dto.setMcuVersion(row[15] != null ? row[15].toString() : null);
+                dto.setUpdatedBy(row[16] != null ? row[16].toString() : null);
+                dto.setNormParameterDisplayOrder(row[17] != null ? ((Number) row[17]).intValue() : null);
+                dto.setIsValid(row[18] != null ? (row[18] instanceof Boolean ? (((Boolean) row[18]) ? 1 : 0) : ((Number) row[18]).intValue()) : null);
+                list.add(dto);
+            }
+            Map<String, Object> map = new HashMap<>();
+            map.put("aopMaxCapMCValueList", list);
+            aopMessageVM.setCode(200);
+            aopMessageVM.setData(map);
+            aopMessageVM.setMessage("Data fetched successfully");
+            return aopMessageVM;
+        } catch (IllegalArgumentException e) {
+            throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+        } catch (Exception ex) {
+        	ex.printStackTrace();
+            throw new RuntimeException("Failed to fetch data", ex);
+        }
+    }
+
+    private List<Object[]> getAOPMaxCapMCValuesData(String plantId, String year, String viewName) {
+        String sql = "SELECT Id, VerticalName, SiteName, PlantName, ProductName, Site_FK_Id, Plant_FK_Id, "
+                + "Vertical_FK_Id, Material_FK_Id, MonthName, MonthValue, FinancialYear, Remarks, "
+                + "CreatedOn, ModifiedOn, MCUVersion, UpdatedBy, NormParameterDisplayOrder, IsValid "
+                + "FROM " + viewName + " "
+                + "WHERE Plant_FK_Id = :plantId AND FinancialYear = :year";
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("plantId", plantId);
+        query.setParameter("year", year);
+        return query.getResultList();
+    }
+
     public List<Object[]> getMaxAchievedCapacityData(String year, String plantId, String viewName) {
         String sql = "SELECT TOP (1000) "
                    + "Id, Material_FK_Id, MaterialDisplayName, "
@@ -568,10 +861,18 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
  	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
  	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
  	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+ 	        Sites site = siteRepository.findById(plant.getSiteFkId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
         	 if(vertical.getName().equalsIgnoreCase("CRACKER")) {
         		 String procedureName=vertical.getName()+"_GetAOPMCValuesDesignCapacity";
  	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
- 	        }else {
+ 	        }else if(vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD")) {
+ 	        	String procedureName=vertical.getName()+"_"+site.getName()+"_GetAOPMCValuesDesignCapacity";
+	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
+	        }else if(vertical.getName().equalsIgnoreCase("Chemical")) {
+ 	        	String procedureName=vertical.getName()+"_"+site.getName()+"_GetAOPMCValuesDesignCapacity";
+	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
+	        }else {
  	        	 obj = aOPMCCalculatedDataRepository.getDesignCapacityData(year, plantId);
  	        }
             
@@ -596,6 +897,9 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                 dto.setMarch(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
                 
                 dto.setRemarks(row[16] != null ? row[16].toString() : " ");
+                if(vertical.getName().equalsIgnoreCase("CRACKER")) {
+                	dto.setNormType(row[21] != null ? row[21].toString() : " ");
+                }
                 aOPMCCalculatedDataDTOList.add(dto);
             }
 
@@ -1189,6 +1493,36 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 		}
 		return null;
 	}
+
+	@Override
+	public AOPMessageVM importLineWiseExcel(String year, String plantFKId, MultipartFile file) {
+		try {
+			List<AOPMCCalculatedDataDTO> data = readLineWiseData(file.getInputStream(), UUID.fromString(plantFKId), year);
+			List<AOPMCCalculatedDataDTO> failedRecords = editAOPMCCalculatedData(data, true, year, plantFKId);
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (failedRecords != null && failedRecords.size() > 0) {
+				Map<String, List<AOPMCCalculatedDataDTO>> mapForExcel = new HashMap<>();
+				for (AOPMCCalculatedDataDTO dto : failedRecords) {
+					String key = (dto.getTableId() != null && !dto.getTableId().trim().isEmpty())
+							? dto.getTableId()
+							: "ProposedOperatingCapacity";
+					mapForExcel.computeIfAbsent(key, k -> new ArrayList<>()).add(dto);
+				}
+				byte[] fileByteArray = exportLineWiseProductionTarget(year, plantFKId, true, mapForExcel, null);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+			return aopMessageVM;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 	
 	public static List<String> getAcademicYearMonths(String year) {
 		List<String> months = new ArrayList<>();
@@ -1329,6 +1663,73 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 			e.printStackTrace();
 		}
 
+		return prodList;
+	}
+
+	public List<AOPMCCalculatedDataDTO> readLineWiseData(InputStream inputStream, UUID plantFKId, String year) {
+		List<AOPMCCalculatedDataDTO> prodList = new ArrayList<>();
+		Plants plant = plantsRepository.findById(plantFKId)
+				.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+				.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+		Sites site = siteRepository.findById(plant.getSiteFkId())
+				.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			for (int s = 0; s < workbook.getNumberOfSheets(); s++) {
+				Sheet sheet = workbook.getSheetAt(s);
+				String sheetName = sheet.getSheetName();
+				String lineId=getLineIdForPlant(plantFKId.toString(),sheetName);
+				Iterator<Row> rowIterator = sheet.iterator();
+				if (rowIterator.hasNext()) {
+					rowIterator.next(); // Skip header
+				}
+				while (rowIterator.hasNext()) {
+					Row row = rowIterator.next();
+					Cell tableIdCell = row.getCell(16, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+					if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
+						continue;
+					}
+					String tableId = tableIdCell.getStringCellValue();
+					if (tableId == null || !tableId.toLowerCase().startsWith("proposedoperatingcapacity")) {
+						continue;
+					}
+
+					
+					AOPMCCalculatedDataDTO dto = new AOPMCCalculatedDataDTO();
+					try {
+						dto.setTableId(tableId);
+						dto.setProductName(getStringCellValue(row.getCell(0), dto));
+						dto.setApril(getNumericCellValue(row.getCell(1), dto));
+						dto.setMay(getNumericCellValue(row.getCell(1), dto));
+						dto.setJune(getNumericCellValue(row.getCell(1), dto));
+						dto.setJuly(getNumericCellValue(row.getCell(1), dto));
+						dto.setAugust(getNumericCellValue(row.getCell(1), dto));
+						dto.setSeptember(getNumericCellValue(row.getCell(1), dto));
+						dto.setOctober(getNumericCellValue(row.getCell(1), dto));
+						dto.setNovember(getNumericCellValue(row.getCell(1), dto));
+						dto.setDecember(getNumericCellValue(row.getCell(1), dto));
+						dto.setJanuary(getNumericCellValue(row.getCell(1), dto));
+						dto.setFebruary(getNumericCellValue(row.getCell(1), dto));
+						dto.setMarch(getNumericCellValue(row.getCell(1), dto));
+						dto.setRemarks(getStringCellValue(row.getCell(13), dto));
+						dto.setId(getStringCellValue(row.getCell(14), dto));
+						dto.setMaterialFKId(getStringCellValue(row.getCell(15), dto));
+						dto.setVerticalFKId(vertical.getId().toString());
+						dto.setSiteFKId(site.getId().toString());
+						dto.setPlantFKId(plant.getId().toString());
+						dto.setFinancialYear(year);
+						dto.setLineId(lineId);
+					} catch (Exception e) {
+						e.printStackTrace();
+						dto.setErrDescription(e.getMessage());
+						dto.setSaveStatus("Failed");
+					}
+					prodList.add(dto);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		return prodList;
 	}
 
@@ -1484,6 +1885,10 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	    try {
 	        Plants plant = plantsRepository.findById(UUID.fromString(plantId))
 	                .orElseThrow(() -> new RuntimeException("Plant not found"));
+	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+	        Sites site = siteRepository.findById(plant.getSiteFkId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
 	        
 	        Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
 	                .findByExcelIdAndVerticalFkIdAndSiteFkId("production_target", plant.getVerticalFKId(), plant.getSiteFkId());
@@ -1557,13 +1962,318 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	                    data.put(tableId, dataList);
 	                }
 	            }
-	            return excelUtilityService.generateFlexibleExcel(structure, data);
+	            if(vertical.getName().equalsIgnoreCase("PE")) {
+	            	return excelUtilityService.generateFlexibleExcelPP(structure, data);
+	            }else {
+	            	return excelUtilityService.generateFlexibleExcel(structure, data);
+	            }
+	            
 	        }
 	    } catch (Exception e) {
 	        e.printStackTrace();
 	    }
 	    return null;
 	}
+	
+	public byte[] exportLineWiseProductionTarget(String year, String plantId, boolean isAfterSave,
+	        Map<String, List<AOPMCCalculatedDataDTO>> mapForExcel,String lineId) {
+	    try {
+	        Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+	                .orElseThrow(() -> new RuntimeException("Plant not found"));
+	        
+	        Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
+	                .findByExcelIdAndVerticalFkIdAndSiteFkId("production_target", plant.getVerticalFKId(), plant.getSiteFkId());
+
+	        if (optExcelConfiguration.isPresent()) {
+	            String structureJson = optExcelConfiguration.get().getJsonValue();
+	            ObjectMapper mapper = new ObjectMapper();
+	            Map<String, Object> baseStructure = mapper.readValue(structureJson, Map.class);
+
+	            // Build one sheet per line (sheet name = line display name)
+	            List<Map<String, String>> allLines = getAllLinesForPlant(plantId);
+	            if (allLines == null || allLines.isEmpty()) {
+	            	return null;
+	            }
+
+	            Map<String, Object> combinedStructure = new LinkedHashMap<>();
+	            Map<String, List<List<Object>>> data = new HashMap<>();
+	            Set<String> usedSheetNames = new HashSet<>();
+
+	            // Base template has one sheet definition; clone it per line.
+	            String templateSheetName = baseStructure.keySet().iterator().next();
+	            Map<String, Object> templateSheetData = (Map<String, Object>) baseStructure.get(templateSheetName);
+
+	            for (Map<String, String> line : allLines) {
+	            	String currentLineId = line.get("id");
+	            	String currentLineName = line.get("displayName") != null ? line.get("displayName") : line.get("name");
+	            	if (currentLineId == null || currentLineId.trim().isEmpty()) {
+	            		continue;
+	            	}
+	            	if (currentLineName == null || currentLineName.trim().isEmpty()) {
+	            		currentLineName = "Line";
+	            	}
+
+	            	String sanitized = Utility.sanitizeSheetName(currentLineName);
+	            	String uniqueSheetName = sanitized;
+	            	int suffix = 2;
+	            	while (usedSheetNames.contains(uniqueSheetName)) {
+	            		uniqueSheetName = Utility.sanitizeSheetName(sanitized + "_" + suffix++);
+	            	}
+	            	usedSheetNames.add(uniqueSheetName);
+
+	            	Map<String, Object> clonedSheetData = mapper.convertValue(templateSheetData, Map.class);
+	            	List<Map<String, Object>> tables = (List<Map<String, Object>>) clonedSheetData.get(ExcelConstants.TABLES);
+
+	            	for (Map<String, Object> table : tables) {
+	            		String originalTableId = (String) table.get(ExcelConstants.TABLEID);
+	                    String newTableId = originalTableId + "_" + currentLineId;
+	                    table.put(ExcelConstants.TABLEID, newTableId);
+
+	                    String dataInput = (String) table.get(ExcelConstants.DATA_INPUT);
+	                    // Keep the template's original dataInput so Excel generator can apply grid-specific locking.
+	                    table.put("originalTemplateId", dataInput);
+	                    List<String> headers = (List<String>) table.get(ExcelConstants.HEADERS);
+	                    List<List<String>> headersOuterTitles = (List<List<String>>) table.get(ExcelConstants.HEADERSTITLES);
+	                    Integer startingIndexofMonths = (Integer) table.get(ExcelConstants.STARTING_INDEX_OF_MONTHS);
+	                    if (startingIndexofMonths != null) {
+	                    	if ("DesignCapacity".equalsIgnoreCase(dataInput) || "MaxAchievedCapacity".equalsIgnoreCase(dataInput)) {
+	                    	     headersOuterTitles.get(0).addAll(startingIndexofMonths, excelUtilityService.getMonths(year));
+	                        } else {
+	                            headersOuterTitles.get(0).addAll(startingIndexofMonths, excelUtilityService.getAcademicYearMonths(year));
+	                        }
+	                    }
+
+	                    List<List<Object>> dataList = new ArrayList<>();
+	                    if (isAfterSave) {
+	                    	List<AOPMCCalculatedDataDTO> failedForTable = null;
+	                    	if (mapForExcel != null) {
+	                    		failedForTable = mapForExcel.get(newTableId);
+	                    		if (failedForTable == null) {
+	                    			failedForTable = mapForExcel.get(originalTableId);
+	                    		}
+	                    	}
+	                    	if (failedForTable == null || failedForTable.isEmpty()) {
+	                    		table.put("hideTable", true);
+	                    		continue;
+	                    	}
+	                    	headers.add("saveStatus");
+	                    	headers.add("errDescription");
+	                    	headersOuterTitles.get(0).add("SaveStatus");
+	                    	headersOuterTitles.get(0).add("ErrDescription");
+	                    	populateRowsFromDTOs(failedForTable, headers, newTableId, dataList);
+	                    } else {
+	                    	List<AOPMCCalculatedDataDTO> sourceDTOs = new ArrayList<>();
+	                    	AOPMessageVM vm = null;
+
+	                    	if ("DesignCapacity".equalsIgnoreCase(dataInput)) {
+	                            vm = getLineWiseDesignCapacity(plantId, year, currentLineId);
+	                        } else if ("MaxAchievedCapacity".equalsIgnoreCase(dataInput)) {
+	                            vm = getLineWiseMaxAchievedCapacity(plantId, year, currentLineId);
+	                        } else if ("ProposedOperatingCapacity".equalsIgnoreCase(dataInput)) {
+	                            vm = getProductionTarget(plantId, year, currentLineId);
+	                        } else if ("SummaryProposedOperatingCapacity".equalsIgnoreCase(dataInput)) {
+	                            vm = getLineWiseSummaryOfProposedOperating(plantId, year, currentLineId);
+	                        }
+
+	                    	if (vm != null && vm.getData() != null) {
+	                    		Map<String, Object> dataMap = (Map<String, Object>) vm.getData();
+	                    		sourceDTOs = (List<AOPMCCalculatedDataDTO>) dataMap.get("aopMCCalculatedDataDTOList");
+	                    	}
+
+	                    	if (sourceDTOs == null || sourceDTOs.isEmpty()) {
+	                    		table.put("hideTable", true);
+	                    		continue;
+	                    	}
+	                    	populateRowsFromDTOs(sourceDTOs, headers, newTableId, dataList);
+	                    }
+
+	                    data.put(newTableId, dataList);
+	            	}
+
+	            	combinedStructure.put(uniqueSheetName, clonedSheetData);
+	            }
+
+	            return excelUtilityService.generateFlexibleExcel(combinedStructure, data);
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+
+	public byte[] exportLineWiseProductionTargetDTA(String year, String plantId, boolean isAfterSave,
+	        Map<String, List<AOPMCCalculatedDataDTO>> mapForExcel,String lineId) {
+	    try {
+	        Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+	                .orElseThrow(() -> new RuntimeException("Plant not found"));
+	        
+	        Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
+	                .findByExcelIdAndVerticalFkIdAndSiteFkId("production_target", plant.getVerticalFKId(), plant.getSiteFkId());
+
+	        if (optExcelConfiguration.isPresent()) {
+	            String structureJson = optExcelConfiguration.get().getJsonValue();
+	            ObjectMapper mapper = new ObjectMapper();
+	            Map<String, Object> baseStructure = mapper.readValue(structureJson, Map.class);
+
+	            // Build one sheet per line (sheet name = line display name)
+	            List<Map<String, String>> allLines = getAllLinesForPlant(plantId);
+	            if (allLines == null || allLines.isEmpty()) {
+	            	return null;
+	            }
+
+	            Map<String, Object> combinedStructure = new LinkedHashMap<>();
+	            Map<String, List<List<Object>>> data = new HashMap<>();
+	            Set<String> usedSheetNames = new HashSet<>();
+
+	            // Base template has one sheet definition; clone it per line.
+	            String templateSheetName = baseStructure.keySet().iterator().next();
+	            Map<String, Object> templateSheetData = (Map<String, Object>) baseStructure.get(templateSheetName);
+
+	            for (Map<String, String> line : allLines) {
+	            	String currentLineId = line.get("id");
+	            	String currentLineName = line.get("name") != null ? line.get("name") : line.get("name");
+	            	if (currentLineId == null || currentLineId.trim().isEmpty()) {
+	            		continue;
+	            	}
+	            	if (currentLineName == null || currentLineName.trim().isEmpty()) {
+	            		currentLineName = "Line";
+	            	}
+
+	            	String sanitized = Utility.sanitizeSheetName(currentLineName);
+	            	String uniqueSheetName = sanitized;
+	            	int suffix = 2;
+	            	while (usedSheetNames.contains(uniqueSheetName)) {
+	            		uniqueSheetName = Utility.sanitizeSheetName(sanitized + "_" + suffix++);
+	            	}
+	            	usedSheetNames.add(uniqueSheetName);
+
+	            	Map<String, Object> clonedSheetData = mapper.convertValue(templateSheetData, Map.class);
+	            	List<Map<String, Object>> tables = (List<Map<String, Object>>) clonedSheetData.get(ExcelConstants.TABLES);
+
+	            	for (Map<String, Object> table : tables) {
+	            		String originalTableId = (String) table.get(ExcelConstants.TABLEID);
+	                    String newTableId = originalTableId + "_" + currentLineId;
+	                    table.put(ExcelConstants.TABLEID, newTableId);
+
+	                    String dataInput = (String) table.get(ExcelConstants.DATA_INPUT);
+	                    List<String> headers = (List<String>) table.get(ExcelConstants.HEADERS);
+	                    List<List<String>> headersOuterTitles = (List<List<String>>) table.get(ExcelConstants.HEADERSTITLES);
+	                    Integer startingIndexofMonths = (Integer) table.get(ExcelConstants.STARTING_INDEX_OF_MONTHS);
+	                    if (startingIndexofMonths != null) {
+	                    	if ("DesignCapacity".equalsIgnoreCase(dataInput) || "MaxAchievedCapacity".equalsIgnoreCase(dataInput)) {
+	                    	     headersOuterTitles.get(0).addAll(startingIndexofMonths, excelUtilityService.getMonths(year));
+	                        } else {
+	                            headersOuterTitles.get(0).addAll(startingIndexofMonths, excelUtilityService.getAcademicYearMonths(year));
+	                        }
+	                    }
+
+	                    List<List<Object>> dataList = new ArrayList<>();
+	                    if (isAfterSave) {
+	                    	List<AOPMCCalculatedDataDTO> failedForTable = null;
+	                    	if (mapForExcel != null) {
+	                    		failedForTable = mapForExcel.get(newTableId);
+	                    		if (failedForTable == null) {
+	                    			failedForTable = mapForExcel.get(originalTableId);
+	                    		}
+	                    	}
+	                    	if (failedForTable == null || failedForTable.isEmpty()) {
+	                    		table.put("hideTable", true);
+	                    		continue;
+	                    	}
+	                    	headers.add("saveStatus");
+	                    	headers.add("errDescription");
+	                    	headersOuterTitles.get(0).add("SaveStatus");
+	                    	headersOuterTitles.get(0).add("ErrDescription");
+	                    	populateRowsFromDTOs(failedForTable, headers, newTableId, dataList);
+	                    } else {
+	                    	List<AOPMCCalculatedDataDTO> sourceDTOs = new ArrayList<>();
+	                    	AOPMessageVM vm = null;
+
+	                    	if ("DesignCapacity".equalsIgnoreCase(dataInput)) {
+	                            vm = getLineWiseDesignCapacity(plantId, year, currentLineId);
+	                        } else if ("MaxAchievedCapacity".equalsIgnoreCase(dataInput)) {
+	                            vm = getLineWiseMaxAchievedCapacity(plantId, year, currentLineId);
+	                        } else if ("ProposedOperatingCapacity".equalsIgnoreCase(dataInput)) {
+	                            vm = getProductionTarget(plantId, year, currentLineId);
+	                        } else if ("SummaryProposedOperatingCapacity".equalsIgnoreCase(dataInput)) {
+	                            vm = getLineWiseSummaryOfProposedOperating(plantId, year, currentLineId);
+	                        }
+
+	                    	if (vm != null && vm.getData() != null) {
+	                    		Map<String, Object> dataMap = (Map<String, Object>) vm.getData();
+	                    		sourceDTOs = (List<AOPMCCalculatedDataDTO>) dataMap.get("aopMCCalculatedDataDTOList");
+	                    	}
+
+	                    	if (sourceDTOs == null || sourceDTOs.isEmpty()) {
+	                    		table.put("hideTable", true);
+	                    		continue;
+	                    	}
+	                    	populateRowsFromDTOs(sourceDTOs, headers, newTableId, dataList);
+	                    }
+
+	                    data.put(newTableId, dataList);
+	            	}
+
+	            	combinedStructure.put(uniqueSheetName, clonedSheetData);
+	            }
+
+	            return excelUtilityService.generateFlexibleExcelDTA(combinedStructure, data);
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+
+	private List<Map<String, String>> getAllLinesForPlant(String plantId) {
+		try {
+			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+			String viewName = "vwScrn" + verticalName + "GetLineDetails";
+			String sql = "SELECT Id, Name, DisplayName FROM " + viewName + " WHERE PlantId = :plantId";
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			List<Object[]> rows = query.getResultList();
+			List<Map<String, String>> lines = new ArrayList<>();
+			for (Object[] row : rows) {
+				Map<String, String> line = new HashMap<>();
+				line.put("id", row[0] != null ? row[0].toString() : "");
+				line.put("name", row[1] != null ? row[1].toString() : "");
+				line.put("displayName", row[2] != null ? row[2].toString() : "");
+				lines.add(line);
+			}
+			return lines;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch line details", ex);
+		}
+	}
+	
+	private String getLineIdForPlant(String plantId, String name) {
+	    try {
+	       
+	        String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+	        String viewName = "vwScrn" + verticalName + "GetLineDetails";
+	        
+	        
+	        String sql = "SELECT Id FROM " + viewName + " WHERE PlantId = :plantId AND Name = :name";
+	        Query query = entityManager.createNativeQuery(sql);
+	        query.setParameter("plantId", plantId);
+	        query.setParameter("name", name);
+	        
+	       
+	        List<?> results = query.getResultList();
+	        
+	        if (!results.isEmpty()) {
+	            Object result = results.get(0);
+	            return result != null ? result.toString() : null;
+	        }
+	        
+	        return null; 
+	    } catch (Exception ex) {
+	        
+	        throw new RuntimeException("Failed to fetch Line ID for Plant: " + plantId + " and Name: " + name, ex);
+	    }
+	}
+
 
 	/**
 	 * Helper method to convert DTO objects into Excel row lists using reflection

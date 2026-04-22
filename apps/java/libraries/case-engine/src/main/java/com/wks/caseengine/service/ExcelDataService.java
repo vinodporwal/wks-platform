@@ -3,6 +3,8 @@ package com.wks.caseengine.service;
 import java.util.List;
 import java.util.Map;
 
+import com.wks.caseengine.message.vm.AOPMessageVM;
+
 public interface ExcelDataService {
 
     List<List<Object>> getDataForProductionVolumeReport(String plantId, String year, List<String> headers);
@@ -52,4 +54,14 @@ public interface ExcelDataService {
 
     List<List<Object>> getShutdownNormsData(String plantId, String year, String dataInput,
             List<String> headers);
+
+
+
+
+     Map<String, Object> getMonthwiseOperatingHours(String plantId, String year, List<String> headers);
+     Map<String, Object> getShutdownSummaryLastFourYear(String plantId, String year, List<String> headers);
+     Map<String, Object> getShutdownDetails(String plantId, String year, String dataInput, List<String> headers);
+
+     Map<String, Object> getPlantShutdownSlowdownNormsDuration(String plantId, String year, List<String> headers);
+
 }

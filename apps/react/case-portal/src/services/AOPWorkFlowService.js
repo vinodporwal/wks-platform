@@ -28,6 +28,9 @@ export const AOPWorkFlowService = {
   getAnnualProductionPlanReportData,
   saveAnnualProduction,
   deleteAnnualProduction,
+  getMonthwiseOperatingHours,
+  saveMonthwiseOperatingHours,
+  handleCalculateAll,
 }
 async function getExcel(keycloak, payload, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/export-excel?year=${AOP_YEAR}&plantId=${PLANT_ID}&type=Production`
@@ -571,6 +574,69 @@ async function deleteAnnualProduction(id, keycloak) {
     return await resp.json()
   } catch (e) {
     console.error('Error deleting slowdown data:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function getMonthwiseOperatingHours(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/monthwise-operating-hours?plantId=${plantId}&year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching monthwise operating hours:', e)
+    return await Promise.reject(e)
+  }
+}
+
+async function saveMonthwiseOperatingHours(
+  keycloak,
+  plantId,
+  year,
+  monthwiseOperatingHoursDTOs,
+) {
+  const url = `${Config.CaseEngineUrl}/task/monthwise-operating-hours?plantId=${plantId}&year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(monthwiseOperatingHoursDTOs),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error saving monthwise operating hours:', e)
+    return await Promise.reject(e)
+  }
+}
+
+async function handleCalculateAll(PLANT_ID, AOP_YEAR, keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/load-aop-approval-flow-report-data-plantwise?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const data = await resp.json() // Parse JSON response
+    return data
+  } catch (e) {
+    console.error('Error fetching calculation data:', e)
     return Promise.reject(e)
   }
 }

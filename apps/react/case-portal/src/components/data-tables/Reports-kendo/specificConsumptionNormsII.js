@@ -243,6 +243,7 @@ export default function SpecificConsumptionNormsII() {
                 category: key,
                 AOP_YEAR,
                 valueFormat,
+                lowerVertName,
               })
             const apiResp =
               await SpecificConsumptionService.getSpecificConsumptionII(

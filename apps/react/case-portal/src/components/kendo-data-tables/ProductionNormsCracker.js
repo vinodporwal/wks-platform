@@ -26,7 +26,7 @@ const ProductionNormsCracker = ({ permissions }) => {
     setCalculationObjectOtherProduction,
   ] = useState([])
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const apiRef = useGridApiRef()
   const apiRefC2C3R = useGridApiRef()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -61,7 +61,9 @@ const ProductionNormsCracker = ({ permissions }) => {
   const EXCEL_NAME = `${VERTICAL_NAME_UC}_${SITE_NAME_UC}_${PLANT_NAME_UC}_${AOP_YEAR}_Month_Wise_Production_Plan`
   const EXCEL_NAME_OTHER_PRODUCTION = `${VERTICAL_NAME_UC}_${SITE_NAME_UC}_${PLANT_NAME_UC}_${AOP_YEAR}_Other_Production_Plan`
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.wks.caseengine.dto.AOPDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.service.AOPApprovalFlowReportService;
 import com.wks.caseengine.service.AOPService;
 
 @RestController
@@ -26,6 +27,9 @@ public class AOPController {
 	
 	@Autowired
 	private AOPService aopService;
+
+	@Autowired
+	private AOPApprovalFlowReportService aopApprovalFlowReportService;
 	
 	@GetMapping(value="/monthly-production")
 	public AOPMessageVM getAOP(@RequestParam String plantId,@RequestParam String year,@RequestParam(required=false) String type){
@@ -73,11 +77,24 @@ public class AOPController {
     	}
 		return null;
 	}
+
+    @GetMapping(value = "/load-aop-approval-flow-report-data-plantwise")
+    public AOPMessageVM loadAOPApprovalFlowReportDataPlantwise(
+            @RequestParam String plantId,
+            @RequestParam String year) {
+        return aopApprovalFlowReportService.loadAOPApprovalFlowReportDataPlantwise(plantId, year);
+    }
     
     @GetMapping(value = "/aop-years")
     public ResponseEntity<List<Map<String, String>>> getYears() {
         List<Map<String, String>> data = aopService.getAOPYears();
         return ResponseEntity.ok(data);
+    }
+
+    @GetMapping(value = "/aop-year-status")
+    public AOPMessageVM getAOPYearStatus() {
+       return aopService.getAOPYearStatus();
+       
     }
 
   

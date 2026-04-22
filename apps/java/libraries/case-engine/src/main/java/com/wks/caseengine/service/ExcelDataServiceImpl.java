@@ -8,7 +8,11 @@ import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.AOPDTO;
 import com.wks.caseengine.dto.ModeWiseNormsDTO;
+import com.wks.caseengine.dto.MonthwiseOperatingHoursDTO;
+import com.wks.caseengine.dto.PlantShutdownSlowdownNormsDurationDTO;
+import com.wks.caseengine.dto.ShutdownDetailsDTO;
 import com.wks.caseengine.dto.ShutdownNormsValueDTO;
+import com.wks.caseengine.dto.ShutdownSummaryLastFourYearDTO;
 import com.wks.caseengine.dto.WorkflowYearDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
@@ -38,8 +42,24 @@ public class ExcelDataServiceImpl implements ExcelDataService {
     @Autowired
     private ShutdownNormsService shutdownNormsService;
 
+    @Autowired
+    private MonthwiseOperatingHoursService monthwiseOperatingHoursService;
+    
+    @Autowired
+    private ShutdownSummaryLastFourYearService shutdownSummaryLastFourYearService;
+
+    @Autowired
+    private ShutdownDetailsService shutdownDetailsService;
+
+    @Autowired
+    private PlantShutdownSlowdownNormsDurationService plantShutdownSlowdownNormsDurationService;
+
+
+    
     @Override
     public List<List<Object>> getDataForProductionVolumeReport(String plantId, String year, List<String> headers) {
+
+    
 
         AOPMessageVM aopMessageVM = productionVolumeDataReportService.getReportForProductionVolumnData(plantId, year);
 
@@ -739,6 +759,130 @@ public class ExcelDataServiceImpl implements ExcelDataService {
         }
 
         return dataList;
+    }
+
+
+     @Override
+    public Map<String, Object> getMonthwiseOperatingHours(String plantId, String year, List<String> headers) {
+        Map<String, Object> outMap = new HashMap<>();
+         AOPMessageVM aopMessageVM  = monthwiseOperatingHoursService.getMonthwiseOperatingHours(plantId, year);
+        // List<String> headers = (List<String>) map.get("headers");
+        Map<String, Object> map = (Map<String, Object>) aopMessageVM.getData();
+        List<MonthwiseOperatingHoursDTO> dtoList = (List<MonthwiseOperatingHoursDTO>) map.get("monthwiseOperatingHoursList");
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (MonthwiseOperatingHoursDTO dto : dtoList) {
+            List<Object> list = new ArrayList<>();
+             for (String fieldName : headers) {
+                try {
+                    Field field = dto.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true); // in case field is private
+                    Object value = field.get(dto); // Get the value as Object
+                    list.add(Objects.toString(value, null)); // Safely convert to String
+                } catch (Exception e) {
+                    // If field doesn't exist or is not accessible, add null
+                    list.add(null);
+                }
+
+            }
+            dataList.add(list);
+        }
+
+        map.put("rows", dataList);
+        return map;
+    }
+
+
+    @Override
+    public Map<String, Object> getShutdownSummaryLastFourYear(String plantId, String year, List<String> headers) {
+        Map<String, Object> outMap = new HashMap<>();
+         AOPMessageVM aopMessageVM  = shutdownSummaryLastFourYearService.getShutdownSummaryLastFourYear(plantId, year);
+        // List<String> headers = (List<String>) map.get("headers");
+        Map<String, Object> map = (Map<String, Object>) aopMessageVM.getData();
+        List<ShutdownSummaryLastFourYearDTO> dtoList = (List<ShutdownSummaryLastFourYearDTO>) map.get("shutdownSummaryLastFourYearList");
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (ShutdownSummaryLastFourYearDTO dto : dtoList) {
+            List<Object> list = new ArrayList<>();
+            for (String fieldName : headers) {
+                try {
+                    Field field = dto.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true); // in case field is private
+                    Object value = field.get(dto); // Get the value as Object
+                    list.add(Objects.toString(value, null)); // Safely convert to String
+                } catch (Exception e) {
+                    // If field doesn't exist or is not accessible, add null
+                    list.add(null);
+                }
+
+            }
+            dataList.add(list);
+        }
+
+        map.put("rows", dataList);
+        return map;
+    }
+
+
+
+    @Override
+    public Map<String, Object> getShutdownDetails(String plantId, String year, String dataInput, List<String> headers) {
+        Map<String, Object> outMap = new HashMap<>();
+         AOPMessageVM aopMessageVM  = shutdownDetailsService.getShutdownDetails(plantId, year, dataInput);
+        // List<String> headers = (List<String>) map.get("headers");
+        Map<String, Object> map = (Map<String, Object>) aopMessageVM.getData();
+        List<ShutdownDetailsDTO> dtoList = (List<ShutdownDetailsDTO>) map.get("shutdownDetailsList");
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (ShutdownDetailsDTO dto : dtoList) {
+            List<Object> list = new ArrayList<>();
+            for (String fieldName : headers) {
+                try {
+                    Field field = dto.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true); // in case field is private
+                    Object value = field.get(dto); // Get the value as Object
+                    list.add(Objects.toString(value, null)); // Safely convert to String
+                } catch (Exception e) {
+                    // If field doesn't exist or is not accessible, add null
+                    list.add(null);
+                }
+
+            }
+            dataList.add(list);
+        }
+
+        map.put("rows", dataList);
+        return map;
+    }
+
+    @Override
+    public Map<String, Object> getPlantShutdownSlowdownNormsDuration(String plantId, String year, List<String> headers) {
+        Map<String, Object> outMap = new HashMap<>();
+         AOPMessageVM aopMessageVM  = plantShutdownSlowdownNormsDurationService.getPlantShutdownSlowdownNormsDuration(plantId, year);
+        // List<String> headers = (List<String>) map.get("headers");
+        Map<String, Object> map = (Map<String, Object>) aopMessageVM.getData();
+        List<PlantShutdownSlowdownNormsDurationDTO> dtoList = (List<PlantShutdownSlowdownNormsDurationDTO>) map.get("plantShutdownSlowdownNormsDurationList");
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (PlantShutdownSlowdownNormsDurationDTO dto : dtoList) {
+            List<Object> list = new ArrayList<>();
+            for (String fieldName : headers) {
+                try {
+                    Field field = dto.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true); // in case field is private
+                    Object value = field.get(dto); // Get the value as Object
+                    list.add(Objects.toString(value, null)); // Safely convert to String
+                } catch (Exception e) {
+                    // If field doesn't exist or is not accessible, add null
+                    list.add(null);
+                }
+
+            }
+            dataList.add(list);
+        }
+
+        map.put("rows", dataList);
+        return map;
     }
 
 }

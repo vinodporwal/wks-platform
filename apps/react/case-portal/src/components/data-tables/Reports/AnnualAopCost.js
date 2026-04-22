@@ -21,6 +21,8 @@ import {
 import { Button } from '@mui/material'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
+import NormsHistorianBasisPe from './NormsHistorianBasisPe'
+import AnnualAOPCostDynamic from './AnnualAOPCostDynamic'
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -51,7 +53,6 @@ const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
 
 const AnnualAopCost = () => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const [rowsProduction, setRowsProduction] = useState([])
   const [rowsPrice, setRowsPrice] = useState([])
@@ -82,7 +83,10 @@ const AnnualAopCost = () => {
 
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
@@ -235,6 +239,10 @@ const AnnualAopCost = () => {
   }
 
   const fileName = `Annual AOP Cost ${new Date().toISOString().replace(/T/, ' ').replace(/:/g, '-').split('.')[0]}.xlsx`
+
+  if (lowerVertName == 'meg') {
+    return <AnnualAOPCostDynamic />
+  }
 
   return (
     <div>

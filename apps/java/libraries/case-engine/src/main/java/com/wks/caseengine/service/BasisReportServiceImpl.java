@@ -121,18 +121,20 @@ public class BasisReportServiceImpl implements BasisReportService {
 	   }  else 
 	
 	    if(type.equalsIgnoreCase("NormsHistorian")) {
-			 System.out.println("executing NormsHistorian " +  "period from : " + periodFrom + " period to : " + periodTo);
 	        storedProcedure = vertical.getName() + "_" + site.getName() + "_NormsBasisReport";
 	    }else if(type.equalsIgnoreCase("ProductionTarget")) {
-			 System.out.println("executing ProductionTarget " + "period from : " + periodFrom + " period to : " + periodTo);
 	        storedProcedure = vertical.getName() + "_" + site.getName() + "_ProductionBasisReport";
 	    }else if(type.equalsIgnoreCase("OverallConsumption")) {
-			 System.out.println("executing OverallConsumption " + "period from : " + periodFrom + " period to : " + periodTo);
 	        storedProcedure = vertical.getName() + "_" + site.getName() + "_ProductionBasisReport";
 	    }else if(type.equalsIgnoreCase("ProductionTargetBasis")) {
-			 System.out.println("executing ProductionTargetBasis " + "period from : " + periodFrom + " period to : " + periodTo);
 	        storedProcedure = vertical.getName() + "_" + site.getName() + "_ProductionTargetBasis";
-	    }
+	    }else if(type.equalsIgnoreCase("SapBasedRefNorms")) {
+	        storedProcedure = vertical.getName() + "_" + site.getName() + "_SAP_Based_Ref_Norms";
+		} else if (type.equalsIgnoreCase("AnnualAOPCost")) {
+			storedProcedure = vertical.getName() + "_Dataset_AnnualCostAOPReport";
+		} else if (type.equalsIgnoreCase("causticSodaLye")) {
+			storedProcedure = vertical.getName() + "_" + site.getName() + "_CausticSodaLyeBasisReport";
+		}
 	    
 	    try {
 	        // 1. Fetch ALL column metadata (List of Lists of Maps) - NEW

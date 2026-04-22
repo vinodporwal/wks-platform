@@ -32,6 +32,9 @@ export const NormalOperationNormsApiService = {
   getNormTransactionsForFinalNormsModeWise,
   shutdownNormsExport,
   shutdownNormsExportNonGrade,
+  shutdownNormsExportAllGarde,
+  getNormalOpsNormsExcelChemicalDmd,
+  saveNormalOpsNormsExcelChemicalDmd,
 }
 
 async function BestAchivedColorCodes(keycloak, plantId, year, mode) {
@@ -378,10 +381,15 @@ async function saveNormalOperationNormsData(
   gradeId,
   lowerVertName,
   AOP_YEAR,
+  lowerSiteName,
 ) {
   const year = AOP_YEAR
   const queryParams = new URLSearchParams({ year, plantId })
-  if (lowerVertName === 'pe' || lowerVertName === 'pp') {
+  if (
+    lowerVertName === 'pe' ||
+    lowerVertName === 'pp' ||
+    (lowerVertName === 'pvc' && lowerSiteName === 'vmd')
+  ) {
     queryParams.append('gradeId', gradeId)
   }
   const url = `${Config.CaseEngineUrl}/task/steady-state-norms?${queryParams.toString()}`
@@ -766,6 +774,7 @@ export async function shutdownNormsExportNonGrade(
   plantId,
   year,
   gradeId,
+  excelName,
 ) {
   const url =
     `${Config.CaseEngineUrl}/task/export-shutdown-consumption` +
@@ -790,7 +799,9 @@ export async function shutdownNormsExportNonGrade(
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = `Shutdown_Consumption_${year}.xlsx`
+    a.download = excelName
+      ? `${excelName}.xlsx`
+      : `Shutdown_Consumption_${year}.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -798,5 +809,113 @@ export async function shutdownNormsExportNonGrade(
   } catch (e) {
     console.error('Error exporting Shutdown_Consumption Excel:', e)
     return Promise.reject(e)
+  }
+}
+export async function shutdownNormsExportAllGarde(
+  keycloak,
+  plantId,
+  year,
+  PLANT_NAME,
+  SITE_NAME,
+  VERTICAL_NAME,
+  ALL_GRADE_FLAG,
+) {
+  const url =
+    `${Config.CaseEngineUrl}/task/shutdown-consumption-export-all-grades` +
+    `?year=${encodeURIComponent(year)}` +
+    `&plantId=${encodeURIComponent(plantId)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_Shutdown_Consumption.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Shutdown_Consumption Excel:', e)
+    return Promise.reject(e)
+  }
+}
+async function getNormalOpsNormsExcelChemicalDmd(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_EXPORT_TITLE,
+  SCREEN_NAME,
+) {
+  var url = `${Config.CaseEngineUrl}/task/steady-state-norms-export-chemical?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Failed to edit data: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error Editing data:', e)
+    return Promise.reject(e)
+  }
+}
+async function saveNormalOpsNormsExcelChemicalDmd(
+  file,
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  GRADE_ID,
+) {
+  let url = ''
+  url = `${Config.CaseEngineUrl}/task/steady-state-norms-import-chemical?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+
+  if (GRADE_ID) {
+    url += `&gradeId=${GRADE_ID}`
+  }
+
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }

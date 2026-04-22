@@ -39,7 +39,7 @@ public class SlowdownNormsController {
 	}
 	
 	@GetMapping(value = "/slowdown-consumption-export")
-	public ResponseEntity<byte[]> exportOverallConsumption(
+	public ResponseEntity<byte[]> exportSlowdownNorms(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year) {
 	    try {
@@ -59,7 +59,29 @@ public class SlowdownNormsController {
 	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
 	}
-	
+
+	@GetMapping(value = "/slowdown-consumption-export-all-grades")
+	public ResponseEntity<byte[]> exportSlowdownNormsAllGrades(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year) {
+	    try {
+			
+	        byte[] excelBytes = slowdownNormsService.exportSlowdownNormsAllGrades(year,UUID.fromString(plantId),false,null); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("slowdown-consumption.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+
 	@GetMapping(value = "/export-slowdown-consumption")
 	public ResponseEntity<byte[]> exportSlowdownConsumption(
 	         @RequestParam("plantId") String plantId,
@@ -92,11 +114,25 @@ public class SlowdownNormsController {
 	        ) {
 			return	slowdownNormsService.importSlowdownConsumption(year,UUID.fromString(plantId),gradeId, file); 
 	}
+	
+	@PostMapping(value = "/slowdown-consumption-import", consumes = "multipart/form-data")
+	public AOPMessageVM gradeWiseImportExcel(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,
+			@RequestParam("file") MultipartFile file
+	        ) {
+			return	slowdownNormsService.gradeWiseImportExcel(year,UUID.fromString(plantId), file); 
+	}
 
 	
 	@PostMapping(value="/slowdownNorms")
 	public List<SlowdownNormsValueDTO> saveSlowdownNormsData(@RequestBody List<SlowdownNormsValueDTO> slowdownNormsValueDTOList){
 		return	slowdownNormsService.saveSlowdownNormsData(slowdownNormsValueDTOList);
+	}
+	
+	@PostMapping(value="/slowdown-norms-hiir")
+	public List<SlowdownNormsValueDTO> saveSlowdownNorms(@RequestBody List<SlowdownNormsValueDTO> slowdownNormsValueDTOList){
+		return	slowdownNormsService.saveSlowdownNormsDataHIIR(slowdownNormsValueDTOList);
 	}
 	
 	@GetMapping(value="/getSlowdownNormsSPData")

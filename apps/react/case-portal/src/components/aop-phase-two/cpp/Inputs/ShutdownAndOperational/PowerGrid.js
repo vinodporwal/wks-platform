@@ -8,6 +8,7 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { InputApiService } from 'components/aop-phase-two/services/cpp/inputApiService'
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import NestedKendoTable from 'components/aop-phase-two/common/NestedKendoTable/index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const PowerGrid = ({ hoursRows = [] }) => {
   const keycloak = useSession()
@@ -54,8 +55,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
     {
       field: 'utilityDistributed.name',
       title: 'Utility Distributed',
-      widthT: 150,
-      minWidth: 150,
+      widthT: 180,
+      minWidth: 180,
       type: 'text',
       editable: false,
       locked: true,
@@ -63,8 +64,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
     {
       field: 'utilityDistributed.sapCode',
       title: 'Distributed SAP Code',
-      widthT: 150,
-      minWidth: 150,
+      widthT: 180,
+      minWidth: 180,
       type: 'text',
       editable: false,
       locked: true,
@@ -72,8 +73,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
     {
       field: 'utilityGenerated.name',
       title: 'Utility Generated',
-      widthT: 150,
-      minWidth: 150,
+      widthT: 180,
+      minWidth: 180,
       type: 'text',
       editable: false,
       locked: true,
@@ -81,8 +82,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
     {
       field: 'utilityGenerated.sapCode',
       title: 'Generated SAP Code',
-      widthT: 150,
-      minWidth: 150,
+      widthT: 180,
+      minWidth: 180,
       type: 'text',
       editable: false,
       locked: true,
@@ -93,8 +94,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'april.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -102,8 +103,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'april.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -116,8 +117,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'may.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -125,8 +126,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'may.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -139,8 +140,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'june.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -148,8 +149,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'june.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -162,8 +163,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'july.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -171,8 +172,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'july.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -185,8 +186,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'aug.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -194,8 +195,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'aug.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -208,8 +209,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'sep.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -217,8 +218,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'sep.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -231,8 +232,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'oct.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -240,8 +241,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'oct.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -254,8 +255,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'nov.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -263,8 +264,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'nov.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -277,8 +278,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'dec.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -286,8 +287,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'dec.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -300,8 +301,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'jan.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -309,8 +310,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'jan.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -323,8 +324,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'feb.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -332,8 +333,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'feb.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -346,8 +347,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'march.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -355,8 +356,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         {
           field: 'march.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -585,12 +586,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       <Stack>
         <NestedKendoTable
           columns={nestedColumns}

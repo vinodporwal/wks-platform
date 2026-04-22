@@ -1,9 +1,12 @@
 package com.wks.caseengine.service;
 
+import java.io.ByteArrayOutputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -14,11 +17,20 @@ import java.util.UUID;
 
 import org.hibernate.Session;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.BusinessDemandDataDTO;
 import com.wks.caseengine.dto.NormAttributeTransactionsDTO;
@@ -519,6 +531,9 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 			for(NormAttributeTransactionsDTO normAttributeTransactionsDTO:normAttributeTransactionsDTOList) {
 				String rawDesc = normAttributeTransactionsDTO.getDescription();
 				String attributeValue = normAttributeTransactionsDTO.getAttributeValue();
+				if (attributeValue == null) {
+					attributeValue = "";
+				}
 				Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
 				Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 				Sites site = siteRepository.findById(plant.getSiteFkId()).get();
@@ -562,6 +577,16 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 					aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
 					aopCalculationRepository.save(aopCalculation);
 				}
+				List<ScreenMapping> screenMappingList1 = screenMappingRepository.findByDependentScreen("shutdown-plan");
+				for (ScreenMapping screenMapping : screenMappingList1) {
+					AopCalculation aopCalculation = new AopCalculation();
+					aopCalculation.setAopYear(year);
+					aopCalculation.setIsChanged(true);
+					aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+					aopCalculation.setPlantId(UUID.fromString(plantId));
+					aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+					aopCalculationRepository.save(aopCalculation);
+				}
 
 			}
 		}catch (Exception ex) {
@@ -586,6 +611,306 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
+	}
+
+	@Override
+	public byte[] createShutdownHistoryPTAExcel(String plantId, String year) {
+		try {
+			List<String> columnNames = getShutdownHistoryPTADataColumns(plantId, year);
+			List<Object[]> results = getDataPTA(plantId, year, getShutdownHistoryPTAProcedureName(plantId));
+
+			try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+				List<Integer> exportIndices = new ArrayList<>();
+				List<String> exportColumnNames = new ArrayList<>();
+				for (int i = 0; i < columnNames.size(); i++) {
+					String name = columnNames.get(i);
+					if (name != null && "IsEditable".equalsIgnoreCase(name.trim())) {
+						continue;
+					}
+					exportIndices.add(i);
+					exportColumnNames.add(name);
+				}
+
+				Sheet sheet = workbook.createSheet("Shutdown History PTA");
+				CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+				Row headerRow = sheet.createRow(0);
+				for (int j = 0; j < exportColumnNames.size(); j++) {
+					Cell cell = headerRow.createCell(j);
+					cell.setCellValue(exportColumnNames.get(j));
+					cell.setCellStyle(headerStyle);
+				}
+				int rowIdx = 1;
+				for (Object[] row : results) {
+					Row excelRow = sheet.createRow(rowIdx++);
+					for (int j = 0; j < exportIndices.size(); j++) {
+						int srcIdx = exportIndices.get(j);
+						Cell cell = excelRow.createCell(j);
+						Object val = (row != null && srcIdx < row.length) ? row[srcIdx] : null;
+						setShutdownHistoryPTACellValue(cell, val);
+					}
+				}
+				for (int j = 0; j < exportColumnNames.size(); j++) {
+					sheet.autoSizeColumn(j);
+					if (isShutdownHistoryPTAExportHiddenColumn(exportColumnNames.get(j))) {
+						sheet.setColumnHidden(j, true);
+					}
+				}
+				workbook.write(baos);
+				return baos.toByteArray();
+			}
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to export shutdown history PTA", ex);
+		}
+	}
+
+	/** Columns still written (for import) but marked hidden in Excel. */
+	private boolean isShutdownHistoryPTAExportHiddenColumn(String columnName) {
+		if (columnName == null) {
+			return false;
+		}
+		String n = columnName.trim();
+		return "NormParameter_FK_Id".equalsIgnoreCase(n);
+	}
+
+	@Override
+	@Transactional
+	public AOPMessageVM importShutdownHistoryPTAExcel(String plantId, String year, MultipartFile file) {
+		AOPMessageVM vm = new AOPMessageVM();
+		try (XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream())) {
+			Sheet sheet = workbook.getSheetAt(0);
+			if (sheet == null) {
+				vm.setCode(400);
+				vm.setMessage("Workbook has no sheets");
+				return vm;
+			}
+			Row headerRow = sheet.getRow(0);
+			if (headerRow == null) {
+				vm.setCode(400);
+				vm.setMessage("Missing header row");
+				return vm;
+			}
+			DataFormatter fmt = new DataFormatter();
+			List<String> headers = new ArrayList<>();
+			int lastCell = headerRow.getLastCellNum();
+			for (int c = 0; c < lastCell; c++) {
+				Cell cell = headerRow.getCell(c);
+				headers.add(cell == null ? "" : fmt.formatCellValue(cell).trim());
+			}
+			while (!headers.isEmpty() && headers.get(headers.size() - 1).isEmpty()) {
+				headers.remove(headers.size() - 1);
+			}
+			if (headers.isEmpty()) {
+				vm.setCode(400);
+				vm.setMessage("No column headers found");
+				return vm;
+			}
+
+			List<Map<String, Object>> validPayload = new ArrayList<>();
+			List<String[]> failedRawRows = new ArrayList<>();
+			List<String> failedErrors = new ArrayList<>();
+
+			int lastRow = sheet.getLastRowNum();
+			for (int r = 1; r <= lastRow; r++) {
+				Row row = sheet.getRow(r);
+				if (row == null) {
+					continue;
+				}
+				if (isShutdownHistoryPTARowEmpty(row, headers.size(), fmt)) {
+					continue;
+				}
+
+				String[] rawValues = new String[headers.size()];
+				Map<String, Object> item = new LinkedHashMap<>();
+				String normIdStr = null;
+				String err = null;
+
+				for (int c = 0; c < headers.size(); c++) {
+					String header = headers.get(c);
+					Cell cell = row.getCell(c);
+					String cellStr = cell == null ? "" : fmt.formatCellValue(cell).trim();
+					rawValues[c] = cellStr;
+					if (header.isEmpty()) {
+						continue;
+					}
+					Object val = cellStr.isEmpty() ? null : cellStr;
+					if (isShutdownHistoryPTANormParameterHeader(header)) {
+						normIdStr = cellStr;
+						item.put("normParameterFKId", val);
+					} else {
+						item.put(header, val);
+					}
+				}
+
+				if (normIdStr == null || normIdStr.isEmpty()) {
+					err = "Missing NormParameter_FK_Id / normParameterFKId";
+				} else {
+					try {
+						UUID.fromString(normIdStr);
+					} catch (IllegalArgumentException e) {
+						err = "Invalid normParameterFKId UUID";
+					}
+				}
+
+				if (err != null) {
+					failedRawRows.add(rawValues);
+					failedErrors.add(err);
+				} else {
+					validPayload.add(item);
+				}
+			}
+
+			if (validPayload.isEmpty() && failedRawRows.isEmpty()) {
+				vm.setCode(400);
+				vm.setMessage("No data rows found in file");
+				vm.setData(null);
+				return vm;
+			}
+
+			if (!failedRawRows.isEmpty()) {
+				byte[] errBytes = buildShutdownHistoryPTAErrorExcel(headers, failedRawRows, failedErrors);
+				vm.setCode(400);
+				vm.setMessage("Validation failed for " + failedRawRows.size() + " row(s); no data was saved");
+				vm.setData(Base64.getEncoder().encodeToString(errBytes));
+				return vm;
+			}
+
+			List<NormAttributeTransactionsDTO> dtoList = convertPtaPayloadToNormAttributeDtos(validPayload);
+			try {
+				return saveHistoryPTA(plantId, year, dtoList);
+			} catch (DataIntegrityViolationException e) {
+				Throwable root = e.getRootCause() != null ? e.getRootCause() : e;
+				String detail = root.getMessage() != null ? root.getMessage() : e.getMessage();
+				String errMsg = detail != null ? detail : "data constraint violation";
+				List<String[]> saveFailedRows = new ArrayList<>();
+				for (Map<String, Object> item : validPayload) {
+					saveFailedRows.add(shutdownHistoryPTAPayloadRowToRawValues(item, headers));
+				}
+				List<String> saveErrors = new ArrayList<>(Collections.nCopies(saveFailedRows.size(), errMsg));
+				byte[] errBytes = buildShutdownHistoryPTAErrorExcel(headers, saveFailedRows, saveErrors);
+				vm.setCode(400);
+				vm.setMessage("Save failed while importing; no data was saved. Error file attached in data (Base64).");
+				vm.setData(Base64.getEncoder().encodeToString(errBytes));
+				return vm;
+			}
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to import shutdown history PTA", ex);
+		}
+	}
+
+	private void setShutdownHistoryPTACellValue(Cell cell, Object val) {
+		if (val == null) {
+			cell.setBlank();
+			return;
+		}
+		if (val instanceof Number) {
+			cell.setCellValue(((Number) val).doubleValue());
+		} else if (val instanceof Date) {
+			cell.setCellValue((Date) val);
+		} else if (val instanceof Boolean) {
+			cell.setCellValue((Boolean) val);
+		} else {
+			cell.setCellValue(val.toString());
+		}
+	}
+
+	
+	private String[] shutdownHistoryPTAPayloadRowToRawValues(Map<String, Object> item, List<String> headers) {
+		String[] vals = new String[headers.size()];
+		for (int c = 0; c < headers.size(); c++) {
+			String h = headers.get(c);
+			if (h == null || h.isEmpty()) {
+				vals[c] = "";
+				continue;
+			}
+			if (isShutdownHistoryPTANormParameterHeader(h)) {
+				Object v = item.get("normParameterFKId");
+				vals[c] = v != null ? v.toString() : "";
+			} else {
+				Object v = item.get(h);
+				vals[c] = v != null ? v.toString() : "";
+			}
+		}
+		return vals;
+	}
+
+	private boolean isShutdownHistoryPTANormParameterHeader(String header) {
+		if (header == null) {
+			return false;
+		}
+		String h = header.trim();
+		return "normParameterFKId".equalsIgnoreCase(h) || "NormParameter_FK_Id".equalsIgnoreCase(h)
+				|| "NormParameterFKId".equalsIgnoreCase(h);
+	}
+
+	private boolean isShutdownHistoryPTARowEmpty(Row row, int colCount, DataFormatter fmt) {
+		for (int c = 0; c < colCount; c++) {
+			Cell cell = row.getCell(c);
+			if (cell != null && !fmt.formatCellValue(cell).trim().isEmpty()) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private byte[] buildShutdownHistoryPTAErrorExcel(List<String> headers, List<String[]> failedRawRows,
+			List<String> failedErrors) {
+		try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+			Sheet sheet = workbook.createSheet("Errors");
+			CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+			Row headerRow = sheet.createRow(0);
+			for (int i = 0; i < headers.size(); i++) {
+				Cell cell = headerRow.createCell(i);
+				cell.setCellValue(headers.get(i));
+				cell.setCellStyle(headerStyle);
+			}
+			Cell errHeader = headerRow.createCell(headers.size());
+			errHeader.setCellValue("errDescription");
+			errHeader.setCellStyle(headerStyle);
+			for (int r = 0; r < failedRawRows.size(); r++) {
+				Row excelRow = sheet.createRow(r + 1);
+				String[] vals = failedRawRows.get(r);
+				for (int c = 0; c < headers.size(); c++) {
+					excelRow.createCell(c).setCellValue(vals[c] != null ? vals[c] : "");
+				}
+				excelRow.createCell(headers.size()).setCellValue(failedErrors.get(r));
+			}
+			for (int i = 0; i <= headers.size(); i++) {
+				sheet.autoSizeColumn(i);
+			}
+			workbook.write(baos);
+			return baos.toByteArray();
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to build error workbook", e);
+		}
+	}
+
+	/**
+	 * Same mapping as {@link com.wks.caseengine.rest.server.ShutdownHistoryController#saveHistoryPTA}.
+	 */
+	private List<NormAttributeTransactionsDTO> convertPtaPayloadToNormAttributeDtos(List<Map<String, Object>> payload) {
+		List<NormAttributeTransactionsDTO> dtoList = new ArrayList<>();
+		for (Map<String, Object> item : payload) {
+			UUID normParameterId = UUID.fromString(item.get("normParameterFKId").toString());
+			for (Map.Entry<String, Object> entry : item.entrySet()) {
+				String key = entry.getKey();
+				if (!"normParameterFKId".equals(key)) {
+					Object value = entry.getValue();
+					NormAttributeTransactionsDTO dto = new NormAttributeTransactionsDTO();
+					dto.setNormParameterFKId(normParameterId);
+					dto.setDescription(key);
+					// DB column AttributeValue is NOT NULL — never leave null on import
+					String attr = value != null ? value.toString() : "";
+					dto.setAttributeValue(attr);
+					dtoList.add(dto);
+				}
+			}
+		}
+		return dtoList;
 	}
 
 }

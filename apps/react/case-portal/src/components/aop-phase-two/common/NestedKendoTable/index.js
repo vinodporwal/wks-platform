@@ -1037,7 +1037,7 @@ const NestedKendoTable = ({
             columnMenu={ColumnMenuCheckboxFilter}
             filter='numeric'
             format={col.format}
-            width={setWidth(col?.minWidth || col?.widthT)}
+            width={setWidth(col?.minWidth || col?.widthT || col.width)}
           />
         )
       }
@@ -1088,7 +1088,7 @@ const NestedKendoTable = ({
             columnMenu={ColumnMenuCheckboxFilter}
             filter='numeric'
             format={col.format}
-            width={setWidth(col?.minWidth || col?.widthT)}
+            width={setWidth(col?.minWidth || col?.widthT) || col?.width}
           />
         )
       }
@@ -1408,6 +1408,7 @@ const NestedKendoTable = ({
         openDeleteDialogeBox={openDeleteDialogeBox}
         setOpenDeleteDialogeBox={setOpenDeleteDialogeBox}
         deleteTheRecord={deleteTheRecord}
+        confirmButtonText={'Delete'}
       />
 
       <SaveConfirmationDialog

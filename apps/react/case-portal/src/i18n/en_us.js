@@ -35,6 +35,7 @@ const defs = {
     spyroMenu: 'Optimizer Menu',
     decokingActivities: 'Net Production Hours (Furnace & SAD plan)',
     maintenanceDetails: 'Net Production Hours',
+    combinedProductionNorms: 'Combined Production Target',
     consumptionNorms: 'Overall AOP Consumption (Norm/Quantity)',
     productionNorms: 'Month wise Production plan',
     catalystSelectivity: 'Production & Norms Basis',
@@ -99,12 +100,13 @@ const defs = {
     siteBudgetSummary: 'Site Budget Summary',
     ethyleneBalance: 'Ethylene Balance',
     propyleneBalance: 'Propylene Balance',
+    specificConsumptionC3: 'Feed Availability',
 
     functionalReports: 'Reports',
     aopDesignBasis: 'AOP Basis',
     tcs: 'Term Crude Sheet',
     tcsinput: 'TCS Input',
-    tcsoutput: 'TCS Output',
+    tcsoutput: 'TCS Input Review',
     pimsoutput: 'PIMS Output',
     workflowdesign: 'Workflow Design',
 
@@ -115,6 +117,12 @@ const defs = {
     proposedNorms: 'Proposed AOP Consumption (Norm/Quantity)',
     qualitypackaging: 'Quality & Packaging Norms',
     qualityPackagingBasis: 'Quality & Packaging Basis',
+    // New Data Sets
+    sapBasedRefNorms: 'SAP Based Reference Norms',
+    productionOptimizer: 'Production Optimizer',
+
+    causticSodaLyeBasis: 'Caustic Soda Lye Norms',
+    materialBalance: 'Material Balance',
   },
   pages: {
     dashboard: {
@@ -318,6 +326,12 @@ const defs = {
         qualitypackaging: 'Quality & Packaging Norms',
         ethyleneBalance: 'Ethylene Balance',
         propyleneBalance: 'Propylene Balance',
+        sapBasedRefNorms: 'SAP Based Reference Norms',
+        specificConsumptionC3: 'Feed Availability',
+        productionOptimizer: 'Production Optimizer',
+
+        causticSodaLyeBasis: 'Caustic Soda Lye Norms',
+        materialBalance: 'Material Balance',
       },
     },
   },

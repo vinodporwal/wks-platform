@@ -203,6 +203,9 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
   const [main, setMain] = useState()
   const [item, setItem] = useState()
 
+  // Routes that should display StepperNav
+  const stepperNavRoutes = ['/production-norms-plan', '/tcs', '/utilityPlant']
+
   useEffect(() => {
     let title = item?.title
 
@@ -371,7 +374,9 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
           {...others}
           content={false}
         >
-          {location?.pathname.startsWith('/production-norms-plan') && (
+          {stepperNavRoutes.some((route) =>
+            location?.pathname.startsWith(route),
+          ) && (
             <Box>
               <StepperNav />
             </Box>

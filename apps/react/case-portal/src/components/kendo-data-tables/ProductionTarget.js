@@ -18,6 +18,9 @@ import {
   getColDefsMaxAchievedCapacity,
   getColDefsNonEditable,
   getColDefsPercentageSummary,
+  getColDefsDesignCapacityELASTOMERJMD,
+  getColDefsMaxAchievedCapacityELASTOMERJMD,
+  getColDefsPercentageSummaryElastomerJMD,
 } from './Utilities-Kendo/productionTargetColDefs'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
@@ -60,7 +63,7 @@ const ProductionTarget = ({ permissions }) => {
   const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
   const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
   const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
-
+  const IS_ELASTOMER_JMD = VERTICAL_NAME === 'elastomer' && SITE_NAME === 'jmd'
   const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
 
   const headerMap = generateHeaderNames(AOP_YEAR)
@@ -332,14 +335,26 @@ const ProductionTarget = ({ permissions }) => {
           return true
         }
 
-        for (const month of months) {
-          const value = row[month]
+        // For ELASTOMER JMD, only validate april
+        if (IS_ELASTOMER_JMD) {
+          const value = row['april']
           if (
             value === 0 ||
             value === null ||
             (typeof value === 'string' && !value.trim())
           ) {
             return true
+          }
+        } else {
+          for (const month of months) {
+            const value = row[month]
+            if (
+              value === 0 ||
+              value === null ||
+              (typeof value === 'string' && !value.trim())
+            ) {
+              return true
+            }
           }
         }
 
@@ -360,8 +375,9 @@ const ProductionTarget = ({ permissions }) => {
 
       if (invalidRows.length > 0) {
         setSnackbarData({
-          message:
-            'Please fill all fields in edited row and update the Remark!',
+          message: IS_ELASTOMER_JMD
+            ? 'Please fill value and update the Remark!'
+            : 'Please fill all fields in edited row and update the Remark!',
           severity: 'error',
         })
         setSnackbarOpen(true)
@@ -373,7 +389,7 @@ const ProductionTarget = ({ permissions }) => {
     } catch (error) {
       console.log('Facing issue at saving data', error)
     }
-  }, [modifiedCells, selectedUnit])
+  }, [modifiedCells, selectedUnit, IS_ELASTOMER_JMD])
 
   const fetchData = async (unit = selectedUnit) => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
@@ -543,18 +559,19 @@ const ProductionTarget = ({ permissions }) => {
     })
   }
 
-  const colDefs_percentage_summary = getColDefsPercentageSummary(
-    headerMap,
-    valueFormat,
-  )
+  const colDefs_percentage_summary = IS_ELASTOMER_JMD
+    ? getColDefsPercentageSummaryElastomerJMD(headerMap, valueFormat)
+    : getColDefsPercentageSummary(headerMap, valueFormat)
   const colDefs_design_capacity = IS_PE_PP
     ? getColDefsDesignCapacityPEPP(headerMap, valueFormat)
-    : getColDefsDesignCapacity(headerMap, valueFormat)
+    : IS_ELASTOMER_JMD
+      ? getColDefsDesignCapacityELASTOMERJMD(headerMap, valueFormat)
+      : getColDefsDesignCapacity(headerMap, valueFormat)
 
-  const colDefs_max_achieved_capacity = getColDefsMaxAchievedCapacity(
-    headerMap,
-    valueFormat,
-  )
+  const colDefs_max_achieved_capacity = IS_ELASTOMER_JMD
+    ? getColDefsMaxAchievedCapacityELASTOMERJMD(headerMap, valueFormat)
+    : getColDefsMaxAchievedCapacity(headerMap, valueFormat)
+
   const colDefs_non_editable = getColDefsNonEditable(headerMap, valueFormat)
 
   useEffect(() => {
@@ -616,7 +633,7 @@ const ProductionTarget = ({ permissions }) => {
           remarks: item?.remarks?.trim() || null,
           originalRemark: item?.remarks?.trim() || null,
           remark: item.remarks?.trim() || '',
-          isEditable: IS_PE_PP ? false : true,
+          isEditable: IS_PE_PP || IS_ELASTOMER_JMD ? false : true,
 
           april:
             isTPD && item.april
@@ -851,7 +868,8 @@ const ProductionTarget = ({ permissions }) => {
 
       showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
 
-      downloadExcelBtnFromUI: permissions?.hideDownloadExcel ? false : true,
+      downloadExcelBtnFromUI:
+        permissions?.hideDownloadExcel || IS_ELASTOMER_JMD ? false : true,
       ExcelName: `${VERTICAL_NAME}_Max Achieved Capacity`,
     },
     isOldYear,
@@ -867,11 +885,12 @@ const ProductionTarget = ({ permissions }) => {
       showUnit: permissions?.showUnit ?? true,
       saveWithRemark: permissions?.saveWithRemark ?? true,
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
-      saveBtn: IS_PE_PP ? false : true,
+      saveBtn: IS_PE_PP || IS_ELASTOMER_JMD ? false : true,
       units: ['TPH', 'TPD'],
 
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
-      downloadExcelBtnFromUI: permissions?.hideDownloadExcel ? false : true,
+      downloadExcelBtnFromUI:
+        permissions?.hideDownloadExcel || IS_ELASTOMER_JMD ? false : true,
       ExcelName: `${VERTICAL_NAME}_Design Capacity`,
 
       showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
@@ -906,8 +925,10 @@ const ProductionTarget = ({ permissions }) => {
         Object.keys(calculationObject || {}).length > 0
           ? true
           : false,
-      downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
-      uploadExcelBtn: permissions?.hideUploadExcel ? false : true,
+      downloadExcelBtn:
+        permissions?.hideDownloadExcel || IS_ELASTOMER_JMD ? false : true,
+      uploadExcelBtn:
+        permissions?.hideUploadExcel || IS_ELASTOMER_JMD ? false : true,
 
       showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
       titleAndInformation: 'Operating capacity derived from Optimizer model.',
@@ -936,7 +957,9 @@ const ProductionTarget = ({ permissions }) => {
   )
 
   var colDefs_current_operating_capacity = permissions?.hideSummary
-    ? colDefs_non_editable
+    ? IS_ELASTOMER_JMD
+      ? getColDefsMaxAchievedCapacityELASTOMERJMD(headerMap, valueFormat) // only Value column
+      : colDefs_non_editable
     : colDefs_editable
 
   var rows1 = permissions?.hideSummary ? rowsFormattedAndNonEditable : rows

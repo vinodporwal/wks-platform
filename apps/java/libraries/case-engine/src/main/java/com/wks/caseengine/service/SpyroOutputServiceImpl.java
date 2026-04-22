@@ -3,11 +3,15 @@ package com.wks.caseengine.service;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -58,6 +62,9 @@ import com.wks.caseengine.utility.Utility;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
+
+import org.hibernate.Session;
+
 
 @Service
 public class SpyroOutputServiceImpl implements SpyroOutputService{
@@ -185,6 +192,130 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
+	}
+
+	@Override
+	public AOPMessageVM getDynamicYield(String plantId, String year, String mode) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			List<Object[]> results = getDynamicYieldData(plantId, year, mode);
+			List<String> columnNames = getDynamicYieldColumns(plantId, year, mode);
+
+			List<Map<String, Object>> resultList = new ArrayList<>();
+			for (Object[] row : results) {
+				Map<String, Object> rowMap = new LinkedHashMap<>();
+				for (int i = 0; i < columnNames.size(); i++) {
+					rowMap.put(columnNames.get(i), row[i]);
+				}
+				resultList.add(rowMap);
+			}
+
+			Map<String, Object> data = new HashMap<>();
+			data.put("data", resultList);
+			data.put("columns", getDynamicYieldColumnMetadata(plantId, year, mode));
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("SP Executed successfully");
+			aopMessageVM.setData(data);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch yield data", ex);
+		}
+	}
+
+	private List<Object[]> getDynamicYieldData(String plantId, String year, String mode) {
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetYield";
+			String sql = "EXEC " + storedProcedure + " @plantId = :plantId, @aopYear = :aopYear, @mode = :mode";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", year);
+			query.setParameter("mode", mode);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch yield data", ex);
+		}
+	}
+
+	private List<String> getDynamicYieldColumns(String plantId, String year, String mode) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<String> columnNames = new ArrayList<>();
+
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetYield";
+			String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?, @mode = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, year);
+				ps.setString(3, mode);
+
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						columnNames.add(rsMetaData.getColumnLabel(i));
+					}
+				}
+			}
+			return columnNames;
+		});
+	}
+
+	private List<Map<String, Object>> getDynamicYieldColumnMetadata(String plantId, String year, String mode) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<Map<String, Object>> columnMetadata = new ArrayList<>();
+
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetYield";
+			String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?, @mode = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, year);
+				ps.setString(3, mode);
+
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						Map<String, Object> columnInfo = new HashMap<>();
+						String columnName = rsMetaData.getColumnLabel(i);
+						String columnType = rsMetaData.getColumnTypeName(i);
+
+						columnInfo.put("field", columnName);
+						columnInfo.put("title", columnName);
+						columnInfo.put("type", columnType);
+						columnInfo.put("editable", false);
+						columnMetadata.add(columnInfo);
+					}
+				}
+			}
+			return columnMetadata;
+		});
 	}
 
 	@Override

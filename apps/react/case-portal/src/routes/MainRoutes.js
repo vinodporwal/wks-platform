@@ -120,6 +120,13 @@ import SteadyStateConsumptionCoker from 'components/aop-phase-two/coker/steady-s
 import MonthwiseProductionPlanCoker from 'components/aop-phase-two/coker/monthwise-production-plan/index'
 import NetProductionHoursCoker from 'components/aop-phase-two/coker/net-production-hours/index'
 
+import OtherProduction from 'components/kendo-data-tables/other-production/index'
+import SapBasedRefNorms from 'components/data-tables/Reports-kendo/SapBasedRefNorms'
+import SpecificConsumptionCalculation from 'components/kendo-data-tables/SpecificConsumptionCalculation'
+import ProductionOptimizer from 'components/kendo-data-tables/ProductionOptimizer'
+import CausticSodaLyeBasis from 'components/data-tables/Reports/CausticSodaLyeBasis'
+import MaterialBalance from 'components/kendo-data-tables/MaterialBalance'
+
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
 
@@ -299,12 +306,28 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'production-optimizer',
+            element: (
+              <PrivateRoute routeId='production-optimizer'>
+                <ProductionOptimizer />
+              </PrivateRoute>
+            ),
+          },
 
           {
             path: 'aop-design-basis',
             element: (
               <PrivateRoute routeId='aop-design-basis'>
                 <AopDesignBasis />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'material-balance',
+            element: (
+              <PrivateRoute routeId='material-balance'>
+                <MaterialBalance />
               </PrivateRoute>
             ),
           },
@@ -361,6 +384,22 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='maintenance-details'>
                 <MaintenanceTable />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'combined-production-norms',
+            element: (
+              <PrivateRoute routeId='combined-production-norms'>
+                <OtherProduction />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'specific-consumption-c3',
+            element: (
+              <PrivateRoute routeId='specific-consumption-c3'>
+                <SpecificConsumptionCalculation />
               </PrivateRoute>
             ),
           },
@@ -759,6 +798,14 @@ export const MainRoutes = (
             ),
           },
           {
+            path: 'sap-based-ref-norms',
+            element: (
+              <PrivateRoute routeId='sap-based-ref-norms'>
+                <SapBasedRefNorms />
+              </PrivateRoute>
+            ),
+          },
+          {
             path: 'norms-historian-basis',
             element: (
               <PrivateRoute routeId='norms-historian-basis'>
@@ -858,6 +905,15 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='quality-packaging-basis'>
                 <QualityPackagingBasis />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'caustic-soda-lye-basis',
+            element: (
+              <PrivateRoute routeId='caustic-soda-lye-basis'>
+                <CausticSodaLyeBasis />
               </PrivateRoute>
             ),
           },
