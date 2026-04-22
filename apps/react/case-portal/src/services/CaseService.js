@@ -9,7 +9,9 @@ export const CaseService = {
   getCaseDefinitionsById,
   getCaseById,
   getCaseByBusinessKey,
+  getSingleCaseByBusinessKey,
   filterCase,
+  filterCaseByAssetName,
   createCase,
   createdSaveCase,
   patch,
@@ -22,7 +24,8 @@ export const CaseService = {
   saveCase,
   getCasesById,
   saveRecommendation,
-  saveAnalysis
+  saveAnalysis,
+  updateEventIds
 }
 
 async function getAllByStatus(keycloak, status, limit) {
@@ -174,6 +177,7 @@ async function filterCase(keycloak, caseDefId, status, cursor) {
     Authorization: `Bearer ${keycloak.token}`,
   }
 
+
   try {
     const resp = await fetch(url, { headers })
     const data = await json(keycloak, resp)
@@ -181,6 +185,76 @@ async function filterCase(keycloak, caseDefId, status, cursor) {
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)
+  }
+}
+
+async function filterCaseByAssetName(keycloak, caseDefId, status, cursor, assetName, eventIds) {
+  // let url = `${Config.CaseEngineUrl}/case/asset-name?`
+  // url = url + (assetName ? `assetName=${assetName}` : '')
+  // url = url + (status ? `status=${status}` : '')
+  // url = url + (caseDefId ? `&caseDefinitionId=${caseDefId}` : '')
+  // url = url + (eventIds ? `&eventIds=${eventIds}` : '')
+  // url = url + `&before=${cursor.before || ''}`
+  // url = url + `&after=${cursor.after || ''}`
+  // url = url + `&sort=${cursor.sort || 'DESC'}`
+  // url = url + `&limit=${cursor.limit || 10}`
+
+  console.log('filterCaseByAssetName eventIds: ', eventIds)
+  const params = new URLSearchParams()
+
+if (assetName) params.append('assetName', assetName)
+if (status) params.append('status', status)
+if (caseDefId) params.append('caseDefinitionId', caseDefId)
+if (eventIds) params.append('eventIds', eventIds)
+
+params.append('before', cursor.before || '')
+params.append('after', cursor.after || '')
+params.append('sort', cursor.sort || 'DESC')
+params.append('limit', cursor.limit || 10)
+
+const url = `${Config.CaseEngineUrl}/case/asset-name?${params.toString()}`
+
+  const headers = {
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { headers })
+    const data = await json(keycloak, resp)
+    return mapperToCase(data)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function updateEventIds(keycloak, businessKeys, eventIds, eventTrendUrls, eventReportUrls) {
+  const url = `${Config.CaseEngineUrl}/case/update-event-ids`
+
+  const headers = {
+    Authorization: `Bearer ${keycloak.token}`,
+    'Content-Type': 'application/json',
+  }
+
+  try {
+    const body = { businessKeys, eventIds, eventTrendUrls, eventReportUrls }
+
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    })
+
+   // return json(keycloak, resp)
+
+   if (resp.status === 204) {
+    return null
+  }
+
+  return await resp.json()
+  } catch (e) {
+    console.log(e)
+    return Promise.reject(e)
   }
 }
 
@@ -440,6 +514,7 @@ async function saveAnalysis(keycloak, body) {
 
 // Fetch a case (or cases) by businessKey. Returns the same mapped shape as filterCase (data, paging).
 async function getCaseByBusinessKey(keycloak, caseDefId = '', businessKey) {
+ 
   if (!businessKey) {
     return Promise.resolve({ data: [], paging: {} })
   }
@@ -459,12 +534,51 @@ async function getCaseByBusinessKey(keycloak, caseDefId = '', businessKey) {
     Authorization: `Bearer ${keycloak.token}`,
   }
 
+  
+
   try {
     const resp = await fetch(url, { headers })
     const data = await json(keycloak, resp)
+    console.log("getCaseByBusinessKey data before mapperToCase: ", data)
+    console.log("getCaseByBusinessKey data after mapperToCase: ", mapperToCase(data))
     return mapperToCase(data)
   } catch (e) {
     console.error('Error fetching case by businessKey:', e)
     return await Promise.reject(e)
+  }
+}
+
+async function getSingleCaseByBusinessKey(keycloak, caseDefId = '', businessKey) {
+ 
+
+  if (!businessKey) {
+    return Promise.resolve({ data: [], paging: {} })
+  }
+
+  let url = `${Config.CaseEngineUrl}/case/${encodeURIComponent(businessKey)}`
+
+  const headers = {
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { headers })
+    const data = await json(keycloak, resp)
+
+    console.log("API raw response:", data)
+
+  //   return mapperToCase(data)
+  // } catch (e) {
+  //   console.error('Error fetching case by businessKey:', e)
+  //   throw e
+  // }
+
+  return mapperToCase({
+    data: data ? [data] : [],
+    paging: {}
+  })
+} catch (e) {
+    console.error('Error fetching case by businessKey:', e)
+    throw e
   }
 }

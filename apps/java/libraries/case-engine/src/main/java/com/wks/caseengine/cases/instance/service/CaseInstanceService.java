@@ -11,6 +11,8 @@
  */
 package com.wks.caseengine.cases.instance.service;
 
+import java.util.List;
+
 import com.wks.caseengine.cases.instance.CaseComment;
 import com.wks.caseengine.cases.instance.CaseDocument;
 import com.wks.caseengine.cases.instance.CaseInstance;
@@ -21,7 +23,11 @@ public interface CaseInstanceService {
 
 	PageResult<CaseInstance> find(CaseInstanceFilter filters);
 
+	PageResult<CaseInstance> findByAssetName(CaseInstanceFilter filters, String assetName, List<String> eventIds);
+
 	CaseInstance get(final String businessKey);
+
+	void updateEventIds(final List<String> businessKeys, final List<String> eventIds, List<CaseInstance.EventUrlItem> eventTrendUrls, List<CaseInstance.EventUrlItem> eventReportUrls);
 
 	CaseInstance startWithValues(final CaseInstance caseInstance);
 

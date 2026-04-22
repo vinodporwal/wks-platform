@@ -147,6 +147,10 @@ console.log('*****  taskId:  ', taskId);
 
     // taskAssignedTo = taskId ? ProcessDefService.getTaskByTaskId(keycloak, taskId).assignee : null;
     // console.log('*****  taskAssignedTo:  ', taskAssignedTo);
+    const urlParams = new URLSearchParams(window.location.search)
+
+    const assetName = urlParams.get('assetName') || 'default'
+     console.log("#################3assetName : ", assetName)
     getCaseInfo(aCase)
     //   FileService.downloadForPrintPreview(aCase.documents[0], keycloak),
     // )

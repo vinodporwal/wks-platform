@@ -11,6 +11,9 @@
  */
 package com.wks.caseengine.rest.server;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -24,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.wks.caseengine.UpdateEventIdsRequest;
 import com.google.gson.GsonBuilder;
 import com.wks.caseengine.cases.definition.CaseDefinitionNotFoundException;
 import com.wks.caseengine.cases.instance.CaseComment;
@@ -69,6 +73,45 @@ public class CaseInstanceController {
 
 		return ResponseEntity.ok(data.toJson());
 	}
+
+	@GetMapping(value = "/asset-name")
+	public ResponseEntity<Object> findByAssetName(@RequestParam(required = false) String status,
+		    @RequestParam(required = true) String assetName,
+			@RequestParam(required = false) String caseDefinitionId,
+			@RequestParam(required = false, name = "before") String before,
+			@RequestParam(required = false, name = "after") String after,
+			@RequestParam(required = false, name = "sort") String sort,
+			@RequestParam(required = false, name = "limit") String limit,
+			@RequestParam(required = true) String eventIds
+		) {
+System.out.println("eventIds: " + eventIds);
+			List<String> eventIdsList = null;
+
+			if (eventIds != null && !eventIds.isEmpty()) {
+				eventIdsList = Arrays.asList(eventIds.split(",")); // "225,6,7" → List
+			}
+
+		Cursor cursor = Cursor.of(before, after);
+
+		CaseInstanceFilter filter = new CaseInstanceFilter(status, caseDefinitionId, cursor, sort, limit);
+
+		PageResult<CaseInstance> data = caseInstanceService.findByAssetName(filter, assetName, eventIdsList);
+		
+		return ResponseEntity.ok(data.toJson());
+	}
+
+	@PostMapping(value = "/update-event-ids")
+public ResponseEntity<Void> updateEventIds(@RequestBody UpdateEventIdsRequest request) {
+	System.out.println("businessKeys: " + request.getBusinessKeys());
+	System.out.println("eventIds: " + request.getEventIds());
+
+	System.out.println("caseInstanceController: Event Trend Urls: " + request.getEventTrendUrls());
+	System.out.println("caseInstanceController: Event Report Urls: " + request.getEventReportUrls());
+	
+    caseInstanceService.updateEventIds(request.getBusinessKeys(), request.getEventIds(), request.getEventTrendUrls(), request.getEventReportUrls());
+    return ResponseEntity.noContent().build();
+}
+
 
 	@GetMapping(value = "/{businessKey}")
 	public ResponseEntity<CaseInstance> get(@PathVariable final String businessKey) {

@@ -17,6 +17,7 @@ import Typography from '@mui/material/Typography'
 import { useSession } from 'SessionStoreContext'
 import MainCard from 'components/MainCard'
 import Config from 'consts/index'
+import { CaseDefService } from 'services/CaseDefService'
 
 import React, {
   Suspense,
@@ -78,6 +79,8 @@ export const CaseList = ({ status, caseDefId }) => {
   const [openNewCaseForm, setOpenNewCaseForm] = useState(false)
   const [view, setView] = React.useState('list')
   const [snackOpen, setSnackOpen] = useState(false)
+  const [linkSnackOpen, setLinkSnackOpen] = useState(false)
+  const [linkSnackMessage, setLinkSnackMessage] = useState('')
   const keycloak = useSession()
   const [caseDefs, setCaseDefs] = useState([])
   const [fetching, setFetching] = useState(false)
@@ -109,7 +112,9 @@ export const CaseList = ({ status, caseDefId }) => {
   const isCaseCreatePath = currentPath && currentPath === '/case/create';
   const isCaseViewPath = queryHasBusinessKey || (currentPath && (currentPath === '/case/view' || currentPath === '/case-list/view'));
 
-  const isLinkCaseUrl = searchParams.has('linkIds');
+  //let isLinkCaseUrl = searchParams.has('linkIds');
+  const [isLinkCaseUrl, setIsLinkCaseUrl] = useState(searchParams.has('linkIds'));
+  const [selectedRows, setSelectedRows] = useState([]);
   let createButtonRef = useRef(null);
   let caseBusinessKey = null;
   const [accepted, setAccepted] = useState(false);
@@ -128,6 +133,7 @@ export const CaseList = ({ status, caseDefId }) => {
 
 
   useEffect(() => {
+
     const token = keycloak.tokenParsed;
     
     console.log("*** token : ", token);
@@ -146,6 +152,7 @@ export const CaseList = ({ status, caseDefId }) => {
     console.log("*** isCaseEditor : ", isCaseEditor);
     console.log("*** isCaseViewer : ", isCaseViewer);
   }, [keycloak]);
+
   
   
   if(isCaseCreatePath && !isCaseDefValid)
@@ -407,7 +414,7 @@ export const CaseList = ({ status, caseDefId }) => {
         isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
       );
     }
-  }, [caseDefId, status, openNewCaseForm])
+  }, [caseDefId, status, openNewCaseForm, isLinkCaseUrl])
 
   useEffect(() => {
     CaseService.getCaseDefinitions(keycloak).then((resp) => {
@@ -524,7 +531,7 @@ export const CaseList = ({ status, caseDefId }) => {
             if (!row) {
               return ''
             }
-            console.log('caseStatusOptions: ', JSON.parse(localStorage.getItem('caseStatusOptions')));
+         //   console.log('caseStatusOptions: ', JSON.parse(localStorage.getItem('caseStatusOptions')));
             const caseStatusOptions = JSON.parse(
               localStorage.getItem('caseStatusOptions'),
             ) || [
@@ -731,8 +738,29 @@ export const CaseList = ({ status, caseDefId }) => {
 
     console.log("In CaseList handleCloseCaseForm........");
    
+    if (isLinkCaseUrl) {
+      const assetName = searchParams.get("assetName");
+      const linkIds = searchParams.get("linkIds");
+    
+      const newParams = new URLSearchParams();
+    
+      if (assetName) newParams.set("assetName", assetName);
+      if (linkIds) newParams.set("linkIds", linkIds);
+    
+      navigate(
+        {
+          pathname: location.pathname,
+          search: `?${newParams.toString()}`
+        },
+        { replace: true }
+      );
+    }
+ else {
     // Remove all URL parameters
     navigate(location.pathname, { replace: true });
+ }
+
+   
    
     setOpenCaseForm(false);
     fetchCases(
@@ -769,6 +797,91 @@ export const CaseList = ({ status, caseDefId }) => {
     setNewCaseDefId(caseDefId)
     setOpenNewCaseForm(true)
   }
+
+  const handleLinkCaseAction = () => {  
+
+const urlParams = new URLSearchParams(window.location.search);
+const eventIds = urlParams.get('linkIds');
+const eventIdsArray = eventIds.split(',')
+const businessKeys = selectedRows;
+console.log("eventIds: ", eventIds);
+console.log("businessKeys: ", businessKeys);
+console.log("typeof businessKeys: ", typeof businessKeys);
+console.log('single businessKey: ', businessKeys[0]);
+
+
+const encodedEventIds = encodeURIComponent(eventIds);
+CaseDefService.getFaultEvent(keycloak, encodedEventIds).then((data) => {  
+  console.log('falut event data : ', data)
+
+  const mappedData = data.map((item) => {  
+    return { 
+      assetDisplayName: encodeURIComponent(item.AssetDisplayName) || '',
+      eventName: encodeURIComponent(item.events.eventName) || '',
+      selectedEventId: encodeURIComponent(item.events.eventPkId) || '',
+      assetId: encodeURIComponent(item.assetId) || '',
+      assetName: encodeURIComponent(item.assetName) || '',
+      startTimeStamp:  item.startTime ?  new Date(item.startTime.replace(" ", "T") + "Z").toISOString() : null,
+      endTimeStamp:  item.endTime ?  new Date(item.endTime.replace(" ", "T") + "Z").toISOString() : null
+    }
+  })
+
+  console.log('mapped data : ', mappedData)
+
+  const eventrendUrlArray = mappedData.map((item) => ({
+  
+     urlId : item.selectedEventId,
+     url: `https://apm-exxonmobil-useast.connectedplant.honeywell.com/Forge/APM/ShellUI/#/trends?rootNode=${item.assetName}&assetDisplayName=${item.assetDisplayName}&period=Custom+Range&startTimeStamp=${item.startTimeStamp}&endTimeStamp=${item.endTimeStamp}&selectedEventId=${item.selectedEventId}&eventName=${item.eventName}&eventId=${item.selectedEventId}&assetId=${item.assetId}&hierarchyName=Planthierarchy&hierarchyLevel=null`
+    
+  }))
+
+  const eventReportUrlArray = mappedData.map((item) => ({
+    urlId : item.selectedEventId,
+    url: `https://apm-exxonmobil-useast.connectedplant.honeywell.com/ReportServer/Pages/ReportViewer.aspx?%2fDailyFaultReport_Test&rs:Command=Render&EventID=${item.selectedEventId}`
+  }))
+
+ 
+
+
+
+  
+  
+  CaseService.updateEventIds(keycloak, businessKeys, eventIdsArray, eventrendUrlArray, eventReportUrlArray).then((resp) => {
+      
+    // clean url parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.delete('linkIds');
+    urlParams.delete('assetName');
+    const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+    window.history.replaceState(null, '', newUrl);
+    setIsLinkCaseUrl(false);
+   
+    CaseService.getSingleCaseByBusinessKey(keycloak, caseDefId, businessKeys[0]).then((data) => {
+      console.log("In handleLinkCaseAction getCaseByBusinessKey data: ", data)
+      setACase(data.data[0]);
+      setLinkSnackMessage(`Successfully linked the case ${data.data[0]?.caseTitle} to the events: ${eventIds}`);
+    })
+   
+    
+    setLinkSnackOpen(true);
+   
+   
+    setOpenCaseForm(true);
+
+   // navigate(location.pathname);
+
+      
+ //  navigate(location.pathname);
+
+ 
+
+ })
+
+})
+
+
+     
+   }
 
   const handleChangeView = (event, nextView) => {
     if (nextView !== null) {
@@ -824,9 +937,23 @@ export const CaseList = ({ status, caseDefId }) => {
       limit: filter.limit,
       after: filter.cursors.after,
   }
+let request;
 
-  CaseService.filterCase(keycloak, caseDefId, status, next)
-      .then((resp) => {
+  if(isLinkCaseUrl) {  
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const mainAssetName = urlParams.get('assetName');
+    const eventIds = urlParams.get('linkIds');  //linkIds
+
+    request = CaseService.filterCaseByAssetName(keycloak, caseDefId, status, next, mainAssetName, eventIds)
+    
+  }
+
+  else {
+    request = CaseService.filterCase(keycloak, caseDefId, status, next)
+  }
+ 
+      request.then((resp) => {
         const { data, paging } = resp
         console.log("#### cases are being set 3 : ", data)
         setCases(data)
@@ -843,6 +970,7 @@ export const CaseList = ({ status, caseDefId }) => {
   }
 
   const handlerPriorPage = () => {
+    console.log("handlerPriorPage");
     setFetching(true)
 
     const prior = {
@@ -850,9 +978,18 @@ export const CaseList = ({ status, caseDefId }) => {
       limit: filter.limit,
       before: filter.cursors.before,
     }
-
-    CaseService.filterCase(keycloak, caseDefId, status, prior)
-      .then((resp) => {
+let request;
+if(isLinkCaseUrl) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const mainAssetName = urlParams.get('assetName');
+  const eventIds = urlParams.get('linkIds');  
+  request = CaseService.filterCaseByAssetName(keycloak, caseDefId, status, prior, mainAssetName, eventIds)
+}
+else {
+  request = CaseService.filterCase(keycloak, caseDefId, status, prior)
+}
+    
+      request.then((resp) => {
         const { data, paging } = resp
         console.log("#### cases are being set 4 : ", data)
         setCases(data)
@@ -937,14 +1074,29 @@ export const CaseList = ({ status, caseDefId }) => {
           onRowsPerPageChange={(e) => {
             setFetching(true)
 
-            CaseService.filterCase(keycloak, caseDefId, status, {
+            let request;
+
+          if (isLinkCaseUrl) {
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const mainAssetName = urlParams.get('assetName');
+            const eventIds = urlParams.get('linkIds');  
+            request = CaseService.filterCaseByAssetName(keycloak, caseDefId, status, {
+              limit: e.target.value,
+            }, mainAssetName, eventIds)
+          }
+          else {
+            request = CaseService.filterCase(keycloak, caseDefId, status, {
               limit: e.target.value,
             })
-              .then((resp) => {
-                const { data, paging } = resp
+          }
+              request.then((resp) => {
+                const { data, paging } = resp;
 
                 console.log('cases are being set 5 : ', data)
-                setCases(data)
+
+        
+                setCases(data);
                 setFilter({
                   ...filter,
                   limit: e.target.value,
@@ -988,7 +1140,15 @@ export const CaseList = ({ status, caseDefId }) => {
     <div style={{ height: 650, width: '100%' }}>
       {/* {caseDefId && accountStore.isManagerUser(keycloak) && ( */}
           {caseDefId && (
-     showLinkCaseButton ? null :     <Button
+     isLinkCaseUrl ?  <Button
+     id='basic-button'
+     onClick={handleLinkCaseAction}
+//ref={createButtonRef}
+     variant='contained'
+     disabled={ (isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator}
+   >
+    Link Case
+   </Button>  :     <Button
             id='basic-button'
             onClick={handleNewCaseAction}
 			ref={createButtonRef}
@@ -1062,6 +1222,12 @@ export const CaseList = ({ status, caseDefId }) => {
               
                 <Suspense fallback={<div>Loading...</div>}>
                   <DataGrid
+                  checkboxSelection={isLinkCaseUrl}
+                  rowSelectionModel={selectedRows}
+                  onRowSelectionModelChange={(newSelection) => {
+                    //   setSelectedRows(newSelection);
+                    setSelectedRows(newSelection.slice(0, 1));
+                           }}
                     sx={{
                       height: 500,
                       width: '99%',
@@ -1090,6 +1256,8 @@ export const CaseList = ({ status, caseDefId }) => {
                    slots={{ pagination: CustomPagination }}
                   />
                 </Suspense>
+
+
               
             </div>
           )}
@@ -1194,6 +1362,12 @@ export const CaseList = ({ status, caseDefId }) => {
           action={snackAction}
         />
       )}
+      <Snackbar
+        open={linkSnackOpen}
+        autoHideDuration={6000}
+        message={linkSnackMessage}
+        onClose={() => setLinkSnackOpen(false)}
+      />
     </div>
   )
 
@@ -1215,37 +1389,48 @@ export const CaseList = ({ status, caseDefId }) => {
       .then((resp) => {
         resp.stages.sort((a, b) => a.index - b.index).map((o) => o.name)
         setStages(resp.stages)
-        return CaseService.filterCase(keycloak, caseDefId, status, filter)
+      
+        if(isLinkCaseUrl) {
+          const urlParams = new URLSearchParams(window.location.search);
+           const mainAssetName = urlParams.get('assetName');
+         console.log("mainAssetName: ", mainAssetName);
+         const eventIds = urlParams.get('linkIds');  
+          return CaseService.filterCaseByAssetName(keycloak, caseDefId, status, filter, mainAssetName, eventIds)
+        }
+        else {
+          return CaseService.filterCase(keycloak, caseDefId, status, filter)
+        }
+       
       })
       .then((resp) => {
         let { data, paging } = resp
         console.log('resp', resp)
 
-        // for link-case
-        if(isLinkCaseUrl) {  
+        // below is the logic to filter cases with given eventIds
+        // if(isLinkCaseUrl) {  
   
-          const eventIds = searchParams.get('linkIds');
-          if(eventIds) {
-            const eventIdsArray = eventIds.split(',');
-            console.log('eventIdsArray: ', eventIdsArray);
-            data = data.filter((singleCase) => {
-              return singleCase.eventIds ?   singleCase.eventIds.some((eventId) => eventIdsArray.includes(eventId)) : false;
-            });
+        //   const eventIds = searchParams.get('linkIds');
+        //   if(eventIds) {
+        //     const eventIdsArray = eventIds.split(',');
+        //     console.log('eventIdsArray: ', eventIdsArray);
+        //     data = data.filter((singleCase) => {
+        //       return singleCase.eventIds ?   singleCase.eventIds.some((eventId) => eventIdsArray.includes(eventId)) : false;
+        //     });
 
-            if(data.length === 0) {  
-              setShowLinkCaseButton(true);
+        //     if(data.length === 0) {  
+        //       setShowLinkCaseButton(true);
 
-            }
+        //     }
            
              
-          }
-          else {
-            console.log('eventIds not found in the URL');
-          }
-        }
-        else { 
-          console.log('isLinkCaseUrl is false');
-        }
+        //   }
+        //   else {
+        //     console.log('eventIds not found in the URL');
+        //   }
+        // }
+        // else { 
+        //   console.log('isLinkCaseUrl is false');
+        // }
 
 
         const updatedCases = data.map((singleCase) => {
@@ -1273,11 +1458,48 @@ export const CaseList = ({ status, caseDefId }) => {
           };
         });
       
-      const uniqueUpdatedCases = updatedCases.filter((obj, index, self) =>
+       let uniqueUpdatedCases = updatedCases.filter((obj, index, self) =>
           index === self.findIndex((t) => t.businessKey === obj.businessKey)
         );
-        console.log("#### cases are being set: ", uniqueUpdatedCases)
-        setCases(uniqueUpdatedCases)
+
+        
+
+        console.log("#### cases are being set: ", uniqueUpdatedCases);
+
+        // if isLinkCaseUrl is true, then filter the cases for main asset name provided in url
+      //   if (isLinkCaseUrl) {
+      //     const urlParams = new URLSearchParams(window.location.search);
+      //     const mainAssetName = urlParams.get('assetName');
+      //   console.log("mainAssetName: ", mainAssetName);
+      //     const filteredCases = uniqueUpdatedCases.filter((caseItem) => {
+      //       try {
+      //         // find container attribute
+      //         const containerAttr = caseItem.attributes.find(
+      //           (attr) => attr.name === "container"
+      //         );
+        
+      //         if (!containerAttr) return false;
+        
+      //         // parse JSON string
+      //         const containerData = JSON.parse(containerAttr.value);
+        
+      //         // compare textField1 with mainAssetName
+      //         return containerData.textField1 === mainAssetName;
+        
+      //       } catch (error) {
+      //         console.error("Error parsing container JSON:", error);
+      //         return false;
+      //       }
+      //     });
+        
+      //  //   setCases(filteredCases);
+
+      //  uniqueUpdatedCases = filteredCases;
+
+      //   }
+       
+           setCases(uniqueUpdatedCases);
+
         setFilter({
           ...filter,
           cursors: paging.cursors,

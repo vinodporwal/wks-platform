@@ -13,6 +13,7 @@ package com.wks.caseengine.cases.instance.repository;
 
 import java.util.List;
 
+import com.wks.caseengine.cases.definition.service.CaseDefinitionService;
 import com.wks.caseengine.cases.instance.CaseComment;
 import com.wks.caseengine.cases.instance.CaseInstance;
 import com.wks.caseengine.cases.instance.CaseInstanceFilter;
@@ -41,5 +42,9 @@ public interface CaseInstanceRepository extends Repository<CaseInstance> {
     boolean existsByBusinessKey(String businessKey);
 
 	 List<CaseInstance> findCasesWithDueDateGreaterThanNow();
+
+	 PageResult<CaseInstance> findByAssetName(CaseInstanceFilter filters, String assetName, List<String> eventIds);
+
+	void updateEventIds(final List<String> businessKeys, final List<String> eventIds, List<CaseInstance.EventUrlItem> eventTrendUrls, List<CaseInstance.EventUrlItem> eventReportUrls, final CaseDefinitionService caseDefinitionService);
 
 }
