@@ -1,5 +1,4 @@
-import { DropDownList } from '@progress/kendo-react-dropdowns'
-import { Input } from '@progress/kendo-react-inputs'
+import { TextField, MenuItem, InputBase } from '@mui/material'
 import { useState, useEffect, useRef } from 'react'
 
 export const ConditionalCellEditor = ({
@@ -12,47 +11,28 @@ export const ConditionalCellEditor = ({
   const inputType = dataItem.inputType
   const options = dataItem.options || []
 
-  // For dropdown type
-  const getInitialSelection = () => {
-    if (!storedValue || !options.length) return null
-    const match = options.find((opt) => opt === storedValue)
-    return match ? { label: match, value: match } : null
-  }
-
   const [localValue, setLocalValue] = useState(
-    inputType === 'dropdown' ? getInitialSelection() : storedValue,
+    inputType === 'dropdown' ? (storedValue ?? '') : storedValue,
   )
   const isFirstRender = useRef(true)
   const focusRef = useRef(null)
 
+  // Autofocus when cell enters edit mode
   useEffect(() => {
-    if (focusRef.current) {
-      const el = focusRef.current.element || focusRef.current
-      if (el && typeof el.focus === 'function') el.focus()
-    }
+    const timer = setTimeout(() => {
+      if (focusRef.current) {
+        focusRef.current.focus()
+      }
+    }, 50)
+    return () => clearTimeout(timer)
   }, [])
 
+  // ---- DROPDOWN HANDLERS ----
   const handleDropdownChange = (e) => {
-    const selectedItem = e.target.value
-    setLocalValue(selectedItem)
+    setLocalValue(e.target.value)
   }
 
-  const handleNumericChange = (e) => {
-    const val = e.target.value
-    // Allow empty string, numbers, and decimal points
-    if (val === '' || /^-?\d*(\.\d*)?$/.test(val)) {
-      setLocalValue(val)
-    }
-  }
-
-  const handleNumericBlur = () => {
-    // Only send if the value actually changed
-    if (localValue !== storedValue) {
-      onChange({ dataItem, field, value: localValue })
-    }
-  }
-
-  // Debounced sync for dropdown only
+  // Debounced sync for dropdown
   useEffect(() => {
     if (inputType !== 'dropdown') return
 
@@ -62,61 +42,141 @@ export const ConditionalCellEditor = ({
     }
 
     const handler = setTimeout(() => {
-      let valueToSend = localValue
-
-      // For dropdown, extract the value
-      if (localValue && typeof localValue === 'object') {
-        valueToSend = localValue.value
-      }
-
-      // Only send if the value actually changed
-      if (valueToSend !== storedValue) {
-        onChange({ dataItem, field, value: valueToSend })
+      if (localValue !== storedValue) {
+        onChange({ dataItem, field, value: localValue })
       }
     }, 300)
 
     return () => clearTimeout(handler)
   }, [localValue, dataItem, field, onChange, storedValue, inputType])
 
-  // Render dropdown for dropdown type
-  if (inputType === 'dropdown' && options.length > 0) {
-    const dropdownOptions = options.map((opt) => ({ label: opt, value: opt }))
+  // ---- NUMERIC HANDLERS ----
+  const handleNumericChange = (e) => {
+    const val = e.target.value
+    if (val === '' || /^-?\d*(\.\d*)?$/.test(val)) {
+      setLocalValue(val)
+    }
+  }
 
+  const handleNumericBlur = () => {
+    if (localValue !== storedValue) {
+      onChange({ dataItem, field, value: localValue })
+    }
+  }
+
+  // ---- DROPDOWN BRANCH ----
+  if (inputType === 'dropdown' && options.length > 0) {
     return (
-      <td style={{ textAlign: 'start' }}>
-        <DropDownList
-          ref={focusRef}
+      <td>
+        <TextField
+          select
+          inputRef={focusRef}
           value={localValue}
           onChange={handleDropdownChange}
-          data={dropdownOptions}
-          textField='label'
-          valueField='value'
-          placeholder='Select...'
-          style={{
-            fontSize: '0.8rem',
-            fontWeight: 'normal',
-            height: '1.5rem',
-            width: '100%',
-            backgroundColor: '#f2f2f2',
+          size='small'
+          variant='outlined'
+          fullWidth
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              height: '30px',
+              backgroundColor: 'rgba(255, 255, 255, 0.85)',
+              borderRadius: '7px',
+              fontSize: '0.7rem',
+              fontWeight: 600,
+              color: '#1d3665',
+              '& fieldset': {
+                borderColor: 'rgba(0, 0, 0, 0.08)',
+              },
+              '&:hover fieldset': {
+                borderColor: '#0100cb',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#0100cb',
+                borderWidth: '1.2px',
+              },
+            },
+            '& .MuiSelect-select': {
+              display: 'flex',
+              alignItems: 'center',
+              padding: '2px 6px !important',
+            },
           }}
-        />
+          SelectProps={{
+            MenuProps: {
+              disableScrollLock: true,
+              PaperProps: {
+                sx: {
+                  borderRadius: '8px',
+                  mt: 0.5,
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                  '& .MuiMenuItem-root': {
+                    fontSize: '0.7rem',
+                    fontWeight: 500,
+                    minHeight: '26px',
+                    margin: '1px 4px',
+                    borderRadius: '5px',
+                    '&.Mui-selected': {
+                      bgcolor: 'rgba(1, 0, 203, 0.08)',
+                      color: '#0100cb',
+                      fontWeight: 700,
+                      '&:hover': {
+                        bgcolor: 'rgba(1, 0, 203, 0.12)',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          }}
+        >
+          <MenuItem value='' disabled sx={{ fontSize: '0.65rem' }}>
+            <em>Select...</em>
+          </MenuItem>
+
+          {options.map((opt) => (
+            <MenuItem key={opt} value={opt}>
+              {opt}
+            </MenuItem>
+          ))}
+        </TextField>
       </td>
     )
   }
 
-  // Render numeric input for other types - matching NoSpinnerNumericEditor style
+  // ---- NUMERIC BRANCH ----
   return (
     <td>
-      <Input
-        ref={focusRef}
+      <InputBase
+        inputRef={focusRef}
         value={localValue}
         onChange={handleNumericChange}
         onBlur={handleNumericBlur}
-        style={{
-          fontSize: '0.8rem',
-          padding: '2px 2px',
-          height: '22px',
-          lineHeight: '1rem',
+        autoComplete='off'
+        sx={{
+          width: '100%',
+          fontSize: '0.8125rem',
+          fontWeight: 600,
+          color: '#1d3665',
+          px: 1,
+          height: 28,
+          borderRadius: '6px',
+          backgroundColor: '#FFFFFF',
+          border: '1px solid #E0E4EC',
+          boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)',
+          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': {
+            borderColor: '#B0B8C4',
+            backgroundColor: '#F9FAFB',
+          },
+          '&.Mui-focused': {
+            borderColor: '#00F5E1',
+            boxShadow: '0 0 0 3px rgba(0, 245, 225, 0.12)',
+            backgroundColor: '#FFFFFF',
+          },
+          '& input': {
+            textAlign: 'right',
+            padding: '0 !important',
+          },
         }}
       />
     </td>

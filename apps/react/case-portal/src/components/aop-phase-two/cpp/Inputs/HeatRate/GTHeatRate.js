@@ -53,11 +53,11 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
     {
       field: 'gtLoad',
       title: 'GT Load',
-      widthT: 100,
+      widthT: 120,
       type: 'number1',
       format: customValueFormat(1),
       editable: true,
-      minWidth: 80,
+      minWidth: 120,
     },
     {
       field: 'oemHeatRate',
@@ -75,12 +75,12 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
     {
       field: 'previousYearHeatRate',
       title: 'PREVIOUS YEAR BUDGET HR',
-      widthT: 200,
+      widthT: 230,
       type: 'numberWithRadio',
       format: customValueFormat(1),
       editable: true,
       numericEditable: false,
-      minWidth: 200,
+      minWidth: 230,
       radioGroupField: 'selectedHeatRate',
       targetField: 'finalHeatRate',
       radioValue: 'PREVIOUS_YEAR',
@@ -111,11 +111,11 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
     {
       field: 'freeSteamFactor',
       title: 'Free Steam Factor',
-      widthT: 130,
+      widthT: 170,
       type: 'number1',
       format: customValueFormat(2),
       editable: true,
-      minWidth: 130,
+      minWidth: 170,
     },
     {
       field: 'remarks',
@@ -262,7 +262,7 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
 
   const dropdownConfig = {
     options: dropdownOptions,
-    label: 'Select Plant',
+    label: 'Plant',
     placeholder: 'Select Plant',
     valueKey: 'id',
     labelKey: 'name',
@@ -626,7 +626,6 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
-
       <AdvanceKendoTable
         columns={columns}
         rows={rows}

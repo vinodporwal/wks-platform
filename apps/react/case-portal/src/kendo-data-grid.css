@@ -235,6 +235,13 @@
   text-align: left !important;
 }
 
+.k-grid .k-grid-content td.k-left-disabled {
+  text-align: left !important;
+  background-color: #e3e3e3 !important;
+  border-right: 1px solid rgb(169, 169, 169) !important;
+  border-bottom: 1px solid rgb(169, 169, 169) !important;
+}
+
 /* ===============================
    ERROR ROWS
    =============================== */

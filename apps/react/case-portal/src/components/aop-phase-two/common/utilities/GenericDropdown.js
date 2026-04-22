@@ -1,5 +1,5 @@
 import React from 'react'
-import { TextField, MenuItem } from '@mui/material'
+import { TextField, MenuItem, Typography } from '@mui/material'
 
 /**
  * Generic Dropdown Component
@@ -8,7 +8,7 @@ import { TextField, MenuItem } from '@mui/material'
  * @param {Array} props.options - Array of options to display
  * @param {string} props.value - Currently selected value
  * @param {Function} props.onChange - Callback when selection changes
- * @param {string} props.label - Dropdown label
+ * @param {string} props.label - Dropdown label (shown as left prefix adornment)
  * @param {string} props.placeholder - Placeholder text (defaults to 'Select')
  * @param {string} props.valueKey - Key to use as the option value (defaults to 'id')
  * @param {string} props.labelKey - Key to use as the display label (defaults to 'displayName')
@@ -27,7 +27,7 @@ import { TextField, MenuItem } from '@mui/material'
  *   options={grades}
  *   value={selectedGrade}
  *   onChange={(value) => setSelectedGrade(value)}
- *   label="Select Grade"
+ *   label="Grade"
  *   valueKey="gradeId"
  *   labelKey="displayName"
  * />
@@ -38,7 +38,7 @@ import { TextField, MenuItem } from '@mui/material'
  *   options={items}
  *   value={selectedItem}
  *   onChange={(value) => handleChange(value)}
- *   label="Select Item"
+ *   label="Item"
  *   getOptionValue={(item) => item.customId}
  *   getOptionLabel={(item) => `${item.name} (${item.code})`}
  * />
@@ -51,36 +51,27 @@ const GenericDropdown = ({
   placeholder = 'Select',
   valueKey = 'id',
   labelKey = 'displayName',
-  className = 'dropdown-select',
+  className,
   variant = 'outlined',
   disabled = false,
   sx = {},
   required = false,
-  size = 'medium',
+  size = 'small',
   getOptionLabel,
   getOptionValue,
 }) => {
-  // Helper function to get value from option
   const getValueFromOption = (option) => {
-    if (getOptionValue) {
-      return getOptionValue(option)
-    }
+    if (getOptionValue) return getOptionValue(option)
     return option[valueKey]
   }
 
-  // Helper function to get label from option
   const getLabelFromOption = (option) => {
-    if (getOptionLabel) {
-      return getOptionLabel(option)
-    }
+    if (getOptionLabel) return getOptionLabel(option)
     return option[labelKey]
   }
 
   const handleChange = (e) => {
-    const selectedValue = e.target.value
-    if (onChange) {
-      onChange(selectedValue)
-    }
+    if (onChange) onChange(e.target.value)
   }
 
   return (
@@ -88,26 +79,89 @@ const GenericDropdown = ({
       select
       value={value || ''}
       onChange={handleChange}
-      label={label}
-      placeholder={placeholder}
-      className={className}
       variant={variant}
+      size={size}
       disabled={disabled}
       required={required}
-      size={size}
-      InputLabelProps={{
-        shrink: true,
-        sx: {
-          fontWeight: 'bold',
-        },
+      className={className}
+      InputProps={{
+        startAdornment: (
+          <Typography
+            variant='caption'
+            sx={{
+              mr: 0.5,
+              color: 'text.secondary',
+              fontWeight: 700,
+              fontSize: '0.6rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.4px',
+              lineHeight: 1,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {label}:
+          </Typography>
+        ),
       }}
       sx={{
-        minWidth: 100,
+        minWidth: 120,
+        '& .MuiOutlinedInput-root': {
+          height: '30px',
+          backgroundColor: 'rgba(255, 255, 255, 0.85)',
+          borderRadius: '7px',
+          fontSize: '0.7rem',
+          fontWeight: 600,
+          '& fieldset': {
+            borderColor: 'rgba(0, 0, 0, 0.08)',
+          },
+          '&:hover fieldset': {
+            borderColor: '#0100cb',
+          },
+          '&.Mui-focused fieldset': {
+            borderColor: '#0100cb',
+            borderWidth: '1.2px',
+          },
+        },
+        '& .MuiSelect-select': {
+          display: 'flex',
+          alignItems: 'center',
+          paddingTop: '2px !important',
+          paddingBottom: '2px !important',
+          paddingLeft: '6px !important',
+          paddingRight: '28px !important', // reserve space for dropdown arrow icon
+        },
         ...sx,
       }}
+      SelectProps={{
+        MenuProps: {
+          disableScrollLock: true,
+          PaperProps: {
+            sx: {
+              borderRadius: '8px',
+              mt: 0.5,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+              '& .MuiMenuItem-root': {
+                fontSize: '0.7rem',
+                fontWeight: 500,
+                minHeight: '26px',
+                margin: '1px 4px',
+                borderRadius: '5px',
+                '&.Mui-selected': {
+                  bgcolor: 'rgba(1, 0, 203, 0.08)',
+                  color: '#0100cb',
+                  fontWeight: 700,
+                  '&:hover': {
+                    bgcolor: 'rgba(1, 0, 203, 0.12)',
+                  },
+                },
+              },
+            },
+          },
+        },
+      }}
     >
-      <MenuItem value='' disabled>
-        {placeholder}
+      <MenuItem value='' disabled sx={{ fontSize: '0.65rem' }}>
+        <em>{placeholder}</em>
       </MenuItem>
 
       {Array.isArray(options) &&

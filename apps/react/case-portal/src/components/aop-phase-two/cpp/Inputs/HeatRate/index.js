@@ -35,7 +35,11 @@ const index = () => {
         />
       </Stack>
       <Stack sx={{ mb: 2 }}>
-        <STGHeatRate />
+        <STGHeatRate
+          startDate={startDate}
+          endDate={endDate}
+          dateLoading={loading}
+        />
       </Stack>
       <Stack>
         <HRSGHeatRate
