@@ -124,6 +124,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 					map.put("normParameterFKID", row[2]);
 					map.put("particulars", row[3]);
 					map.put("normParameterDisplayName", row[4]);
+					map.put("type", row[6]);
 					map.put("uom", row[7]);
 					map.put("remarks", row[9]);
 					map.put("jan", (row[10] == null || row[10].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[10].toString()));
@@ -147,6 +148,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 							map.put("normParameterFKID", row[2]);
 							map.put("particulars", row[3]);
 							map.put("normParameterDisplayName", row[4]);
+							map.put("type", row[6]);
 							map.put("uom", row[7]);
 							map.put("remarks", row[9]);
 							map.put("jan", (row[10] == null || row[10].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[10].toString()));
