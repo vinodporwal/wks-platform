@@ -186,11 +186,10 @@
     title: 'isEditable',
     hidden: true
   },
-
   {
     field: 'aopStatus',
     title: 'aopStatus',
     editable: false,
     hidden: true
-  },
+  }
 ]
