@@ -33,7 +33,13 @@ import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.FinancialYearMonthRepository;
 import com.wks.caseengine.tcs.dto.PCGOutlookDTO;
+import com.wks.caseengine.tcs.dto.PCGOutlookDataDTO;
+import com.wks.caseengine.entity.PCGOutlookDataEntity;
 import com.wks.caseengine.tcs.repository.PCGOutlookRepository;
+import com.wks.caseengine.tcs.repository.PCGOutlookDataRepository;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.Comparator;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -44,6 +50,9 @@ public class PCGOutlookService {
      
     @Autowired
     private PCGOutlookRepository repository;
+
+    @Autowired
+    private PCGOutlookDataRepository dataRepository;
 
     @Autowired
     private FinancialYearMonthRepository fyRepo;
@@ -60,16 +69,113 @@ public class PCGOutlookService {
         return projections;
     }
 
+    private static final List<String> MONTH_ORDER = Arrays.asList(
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    );
+
+    public List<PCGOutlookDataDTO> getPcgOutlookData(UUID verticalId, UUID siteId, String financialYear) {
+        List<PCGOutlookDataEntity> entities = dataRepository.getPcgOutlookData(verticalId, siteId, financialYear);
+
+        return entities.stream()
+            .sorted(Comparator.comparingInt(e -> {
+                int index = MONTH_ORDER.indexOf(e.getMonthName());
+                return index == -1 ? 99 : index;
+            }))
+            .map(entity -> {
+            PCGOutlookDataDTO dto = new PCGOutlookDataDTO();
+            
+            String formattedMonth = formatMonthWithYear(entity.getMonthName(), entity.getFinancialYear());
+            dto.setMonth(formattedMonth);
+            
+            dto.setGasifierAvailabilityTotal(entity.getGasifierAvailabilityTotal());
+            dto.setGasifierAvailabilityDta(entity.getGasifierAvailabilityDta());
+            dto.setGasifierAvailabilitySez(entity.getGasifierAvailabilitySez());
+            
+            dto.setSynGasProductionTotal(entity.getSynGasProductionTotal());
+            dto.setSynGasProductionDta(entity.getSynGasProductionDta());
+            dto.setSynGasProductionSez(entity.getSynGasProductionSez());
+            
+            dto.setCge(entity.getCgePercentage());
+            dto.setRemark(entity.getRemark());
+            dto.setIsCarryForward(entity.getIsCarryForward());
+            
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+    private String formatMonthWithYear(String monthName, String financialYear) {
+        if (financialYear == null || !financialYear.contains("-")) {
+            return monthName;
+        }
+
+        String[] parts = financialYear.split("-");
+        String startYear = parts[0]; // e.g., "2025"
+        String endYear = parts[1];   // e.g., "26"
+
+        String startYearShort = startYear.substring(startYear.length() - 2); // "25"
+
+        List<String> nextYearMonths = Arrays.asList("Jan", "Feb", "Mar");
+
+        if (nextYearMonths.contains(monthName)) {
+            return monthName + "-" + endYear;
+        } else {
+            return monthName + "-" + startYearShort;
+        }
+    }
+
     @Transactional
     public AOPMessageVM carryForwardPCGOutlook(String financialYear,UUID verticalId, UUID siteId) {
         try {
-            String procedureName = "TCS_PCGOutlook_CarryForward";
-            String sql = "EXEC " + procedureName + "  @FinancialYear = :financialYear, @verticalId = :verticalId, @Site_FK_Id = :siteId";
-            Query query = entityManager.createNativeQuery(sql);
-            query.setParameter("financialYear", financialYear);
-            query.setParameter("verticalId", verticalId);
-            query.setParameter("siteId", siteId);
-            query.executeUpdate();
+            String prevFinancialYear = getPreviousFinancialYear(financialYear);
+            if (prevFinancialYear == null) {
+                 throw new RestInvalidArgumentException("Invalid financial year format", null);
+            }
+
+            // Check if current year already has data to prevent overwriting
+            List<PCGOutlookDataEntity> currentEntities = dataRepository.getPcgOutlookData(verticalId, siteId, financialYear);
+            if (!currentEntities.isEmpty()) {
+                AOPMessageVM vm = new AOPMessageVM();
+                vm.setCode(400);
+                vm.setMessage("Data already exists for " + financialYear + ". Cannot carry forward.");
+                return vm;
+            }
+
+            // Fetch previous year data
+            List<PCGOutlookDataEntity> prevEntities = dataRepository.getPcgOutlookData(verticalId, siteId, prevFinancialYear);
+            if (prevEntities.isEmpty()) {
+                AOPMessageVM vm = new AOPMessageVM();
+                vm.setCode(404);
+                vm.setMessage("No data found in " + prevFinancialYear + " to carry forward.");
+                return vm;
+            }
+
+            // Copy data to the new financial year
+            List<PCGOutlookDataEntity> newEntities = new ArrayList<>();
+            for (PCGOutlookDataEntity prev : prevEntities) {
+                PCGOutlookDataEntity newEntity = new PCGOutlookDataEntity();
+                newEntity.setVerticalId(verticalId);
+                newEntity.setSiteId(siteId);
+                newEntity.setFinancialYear(financialYear);
+                newEntity.setMonthName(prev.getMonthName());
+                
+                newEntity.setGasifierAvailabilityTotal(prev.getGasifierAvailabilityTotal());
+                newEntity.setGasifierAvailabilityDta(prev.getGasifierAvailabilityDta());
+                newEntity.setGasifierAvailabilitySez(prev.getGasifierAvailabilitySez());
+                
+                newEntity.setSynGasProductionTotal(prev.getSynGasProductionTotal());
+                newEntity.setSynGasProductionDta(prev.getSynGasProductionDta());
+                newEntity.setSynGasProductionSez(prev.getSynGasProductionSez());
+                
+                newEntity.setCgePercentage(prev.getCgePercentage());
+                newEntity.setRemark(prev.getRemark());
+                newEntity.setIsCarryForward(true); // Flag as carry forwarded
+                
+                newEntities.add(newEntity);
+            }
+            
+            dataRepository.saveAll(newEntities);
+
             AOPMessageVM vm = new AOPMessageVM();
             vm.setCode(200);
             vm.setMessage("Data carried forward successfully");
@@ -80,6 +186,63 @@ public class PCGOutlookService {
         }
     }
 
+    private String getPreviousFinancialYear(String currentFy) {
+        if (currentFy == null || !currentFy.contains("-")) return null;
+        String[] parts = currentFy.split("-");
+        int startYear = Integer.parseInt(parts[0]);
+        int endYear = Integer.parseInt(parts[1]);
+        if (endYear < 100) { 
+            return (startYear - 1) + "-" + String.format("%02d", endYear - 1);
+        } else { 
+            return (startYear - 1) + "-" + (endYear - 1);
+        }
+    }
+
+
+    @Transactional
+    public void savePcgOutlookData(List<PCGOutlookDataDTO> data, String financialYear, UUID verticalId, UUID siteId) {
+        List<PCGOutlookDataEntity> existingEntities = dataRepository.getPcgOutlookData(verticalId, siteId, financialYear);
+
+        for (PCGOutlookDataDTO dto : data) {
+            String monthName = getThreeLetterMonth(dto.getMonth());
+            if (monthName == null) continue;
+
+            Optional<PCGOutlookDataEntity> existingOpt = existingEntities.stream()
+                .filter(e -> e.getMonthName().equalsIgnoreCase(monthName))
+                .findFirst();
+
+            PCGOutlookDataEntity entity = existingOpt.orElseGet(() -> {
+                PCGOutlookDataEntity newEntity = new PCGOutlookDataEntity();
+                newEntity.setVerticalId(verticalId);
+                newEntity.setSiteId(siteId);
+                newEntity.setFinancialYear(financialYear);
+                newEntity.setMonthName(monthName);
+                return newEntity;
+            });
+
+            entity.setGasifierAvailabilityTotal(dto.getGasifierAvailabilityTotal());
+            entity.setGasifierAvailabilityDta(dto.getGasifierAvailabilityDta());
+            entity.setGasifierAvailabilitySez(dto.getGasifierAvailabilitySez());
+
+            entity.setSynGasProductionTotal(dto.getSynGasProductionTotal());
+            entity.setSynGasProductionDta(dto.getSynGasProductionDta());
+            entity.setSynGasProductionSez(dto.getSynGasProductionSez());
+
+            entity.setCgePercentage(dto.getCge());
+            entity.setRemark(dto.getRemark());
+            entity.setIsCarryForward(dto.getIsCarryForward() != null ? dto.getIsCarryForward() : false);
+
+            dataRepository.save(entity);
+        }
+    }
+
+    private String getThreeLetterMonth(String formattedMonth) {
+        if (formattedMonth == null || formattedMonth.isEmpty()) return null;
+        if (formattedMonth.length() >= 3) {
+            return formattedMonth.substring(0, 3);
+        }
+        return formattedMonth;
+    }
 
     public void saveData(List<PCGOutlookDTO> data, String financialYear, UUID verticalId, UUID siteId) {
 
