@@ -308,6 +308,7 @@ const CrackerConfig = () => {
       spyroOutputFeedRows,
       spyroOutputProductRows,
       feedsRows,
+      otherSpyroOutputRows
     ],
   )
 
@@ -1001,11 +1002,7 @@ const CrackerConfig = () => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      {IS_CRACKER_HMD && (
-        <ModeSelection permissions={adjustedPermissionsReadyOnly} />
-      )}
-
-      <Box sx={{ overflowX: 'auto', width: '100%' }}>
+      <Box sx={{ overflowX: 'auto', width: '100%', mb: IS_CRACKER_HMD ? 1 : 0 }}>
         <Tabs
           sx={{
             borderBottom: '0px solid #ccc',
@@ -1043,6 +1040,10 @@ const CrackerConfig = () => {
           })}
         </Tabs>
       </Box>
+
+      {IS_CRACKER_HMD && (
+        <ModeSelection permissions={adjustedPermissionsReadyOnly} />
+      )}
 
       <Box>
         {(() => {

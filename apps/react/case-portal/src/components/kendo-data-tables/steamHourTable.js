@@ -214,6 +214,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
         'IsEditable',
         'NormParamId',
         'SectionName',
+        'NormParmId',
       ]
       const months = [
         'Jan',
