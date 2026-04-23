@@ -87,6 +87,25 @@ public interface FurnaceRepository extends JpaRepository<DummyEntity, UUID> {
         @Param("siteId") UUID siteId,
         @Param("plantId") UUID plantId
     );
+
+     @Query(
+        value = """
+            SELECT Id,
+                   Jan, Feb, Mar, Apr, May, Jun,
+                   Jul, Aug, Sep, Oct, Nov, [Dec],
+                   Name, Remarks
+            FROM TCS_Furnace_GCalPerHr
+            WHERE SourceAOPYear = :sourceAOPYear
+              AND Site_FK_Id    = :siteId
+              AND Vertical_FK_Id   = :verticalId
+        """,
+        nativeQuery = true
+    )
+    List<Object[]> getGCalPerHrDataByVerticalIdAndSiteId(
+        @Param("sourceAOPYear") int sourceAOPYear,
+        @Param("siteId") UUID siteId,
+        @Param("verticalId") UUID verticalId
+    );
 }
 
 
