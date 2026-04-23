@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class PCGOutlookDataDTO {
     
+    private String id;
     private String month; // The formatted string e.g., "Jan-26"
     
     // Gasifier Availability
