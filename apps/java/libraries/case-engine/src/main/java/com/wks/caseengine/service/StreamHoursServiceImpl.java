@@ -601,8 +601,7 @@ public class StreamHoursServiceImpl implements StreamHoursService {
                 callableStatement.setString(1, aopYear);
                 callableStatement.setString(2, plantId);
 
-                boolean hasResultSet = callableStatement.execute();
-                if (hasResultSet) {
+                if (moveToResultSet(callableStatement)) {
                     try (ResultSet resultSet = callableStatement.getResultSet()) {
                         ResultSetMetaData metaData = resultSet.getMetaData();
                         int columnCount = metaData.getColumnCount();
@@ -636,8 +635,7 @@ public class StreamHoursServiceImpl implements StreamHoursService {
                 callableStatement.setString(1, aopYear);
                 callableStatement.setString(2, plantId);
 
-                boolean hasResultSet = callableStatement.execute();
-                if (hasResultSet) {
+                if (moveToResultSet(callableStatement)) {
                     try (ResultSet resultSet = callableStatement.getResultSet()) {
                         ResultSetMetaData metaData = resultSet.getMetaData();
                         for (int i = 1; i <= metaData.getColumnCount(); i++) {
@@ -656,6 +654,14 @@ public class StreamHoursServiceImpl implements StreamHoursService {
             }
             return columnMetadata;
         });
+    }
+
+    private boolean moveToResultSet(CallableStatement callableStatement) throws java.sql.SQLException {
+        boolean hasResultSet = callableStatement.execute();
+        while (!hasResultSet && callableStatement.getUpdateCount() != -1) {
+            hasResultSet = callableStatement.getMoreResults();
+        }
+        return hasResultSet;
     }
 
     private static String formatStreamHoursTitle(String columnName) {
@@ -724,7 +730,7 @@ public class StreamHoursServiceImpl implements StreamHoursService {
 					continue;
 				}
 
-				String rawId = configurationDTO.getNormParameterFKId();
+				String rawId = configurationDTO.getNormParamId();
 
 				UUID normParameterFKId = (rawId != null && !rawId.isBlank()) 
 				    ? UUID.fromString(rawId) 

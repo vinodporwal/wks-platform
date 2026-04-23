@@ -147,6 +147,8 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
   const [rowsDesignCapacity, setRowsDesignCapacity] = useState([])
   const [rowsMaxCapacity, setRowsMaxCapacity] = useState([])
   const [mcuMaxCapValues, setMcuMaxCapValues] = useState(null)
+  const [configurationExecutionDetails, setConfigurationExecutionDetails] =
+    useState(null)
 
   const textNoteWhileSaving = IS_PP_SEZ ? 'Update MCU for All Line' : ''
   const handleRemarkCellClick = (row) => {
@@ -697,6 +699,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         setStartDate(formatDate(startDate))
         setEndDate(formatDate(endDate))
       } else {
+        setConfigurationExecutionDetails(configData.data)
         setStartDate(StartDate)
         setEndDate(EndDate)
       }
@@ -845,6 +848,8 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
   const handleCalculate = () => {
     if (VERTICAL_NAME == 'meg' || VERTICAL_NAME == 'elastomer') {
       handleCalculateMeg()
+    } else if (VERTICAL_NAME == 'aromatics' && SITE_NAME == 'sez') {
+      handleCalculateSez()
     } else {
       // handleCalculatePe()
     }
@@ -1047,6 +1052,68 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     }
   }
 
+  const handleCalculateSez = async () => {
+    if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
+
+    try {
+      const startDateObj = configurationExecutionDetails.find(
+        (item) => item.Name === 'StartDate',
+      )
+      const endDateObj = configurationExecutionDetails.find(
+        (item) => item.Name === 'EndDate',
+      )
+      const payload = [
+        {
+          apr: startDate,
+          UOM: '',
+          auditYear: AOP_YEAR,
+          normParameterFKId: startDateObj?.NormParameter_FK_Id,
+          remarks: 'Initiated',
+          id: startDateObj?.Id || null,
+          plantId: PLANT_ID,
+        },
+        {
+          apr: endDate,
+          UOM: '',
+          auditYear: AOP_YEAR,
+          normParameterFKId: endDateObj?.NormParameter_FK_Id,
+          remarks: 'Initiated',
+          id: endDateObj?.Id || null,
+          plantId: PLANT_ID,
+        },
+      ]
+      setLoading(true)
+      const data = await DataService.executeConfiguration(payload, keycloak)
+
+      if (data || data == 0) {
+        // dispatch(setIsBlocked(true))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refresh Failed!',
+          severity: 'error',
+        })
+      }
+
+      return data
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+      console.error('Error!', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -1197,6 +1264,9 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
             : VERTICAL_NAME === 'pp' && SITE_NAME === 'nmd'
               ? 'Design Capacity (MCU from MCU Portal)'
               : 'Design Capacity',
+      showCalculate: VERTICAL_NAME === 'aromatics' && SITE_NAME === 'sez',
+      showCalculateVisibility:
+        VERTICAL_NAME === 'aromatics' && SITE_NAME === 'sez',
     },
     isOldYear,
   )
@@ -1507,6 +1577,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
           groupBy={
             VERTICAL_NAME?.toLowerCase() === 'cracker' ? 'normType' : undefined
           }
+          handleCalculate={handleCalculate}
         />
       )}
 

@@ -693,8 +693,6 @@ const AromaticsProductionGrids = ({ permissions }) => {
           severity: 'success',
         })
         fetchData()
-        fetchMaxCapacityData()
-        fetchDesignCapacityData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -793,14 +791,10 @@ const AromaticsProductionGrids = ({ permissions }) => {
     setSelectedUnit(unit)
   }
 
-  const IS_AROMATICS_SEZ_OR_DTA =
-    (VERTICAL_NAME == 'aromatics' && SITE_NAME == 'dta') ||
-    (VERTICAL_NAME == 'aromatics' && SITE_NAME == 'sez')
-
   const handleCalculate = () => {
     if (VERTICAL_NAME == 'meg' || VERTICAL_NAME == 'elastomer') {
       handleCalculateMeg()
-    } else if (IS_AROMATICS_SEZ_OR_DTA) {
+    } else if (VERTICAL_NAME == 'aromatics' && SITE_NAME == 'dta') {
       handleCalculateDTA()
     } else {
       // handleCalculatePe()
@@ -1007,8 +1001,6 @@ const AromaticsProductionGrids = ({ permissions }) => {
 
       downloadExcelBtnFromUI: permissions?.hideDownloadExcel ? false : true,
       ExcelName: `${VERTICAL_NAME}_Max Achievable Based On Current Unit Performance`,
-      showCalculate: IS_AROMATICS_SEZ_OR_DTA,
-      showCalculateVisibility: IS_AROMATICS_SEZ_OR_DTA ? true : false,
     },
     isOldYear,
   )
@@ -1053,12 +1045,14 @@ const AromaticsProductionGrids = ({ permissions }) => {
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
       saveBtn: permissions?.saveBtn ?? true,
       units: ['TPH', 'TPD'],
-      showCalculate: permissions?.hideSummary ? false : VERTICAL_NAME === 'meg',
+      showCalculate: permissions?.hideSummary
+        ? false
+        : VERTICAL_NAME === 'meg' || VERTICAL_NAME === 'aromatics',
       showCalculateVisibility:
-        VERTICAL_NAME === 'meg' &&
+        (VERTICAL_NAME === 'meg' &&
         Object.keys(calculationObject || {}).length > 0
           ? true
-          : false,
+          : false) || VERTICAL_NAME === 'aromatics',
       downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
       uploadExcelBtn:
         VERTICAL_NAME === 'vcm'
@@ -1270,7 +1264,6 @@ const AromaticsProductionGrids = ({ permissions }) => {
           }
           resetEditSignal={editResetKey}
           setEditResetKey={setEditResetKey}
-          handleCalculate={handleCalculate}
         />
       )}
 

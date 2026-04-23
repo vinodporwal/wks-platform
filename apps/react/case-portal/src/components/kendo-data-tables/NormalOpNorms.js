@@ -101,6 +101,15 @@ const NormalOpNormsScreen = () => {
     lowerVertName === 'chemical' &&
     lowerSiteName === 'jmd' &&
     (lowerPlantName === 'mtbe' || lowerPlantName === 'butene-1')
+  const IS_CHEMICAL_VMD_BUTADIENE =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'vmd' &&
+    lowerPlantName === '1,3butadiene'
+
+  const IS_VCM_HMD_VCM =
+    lowerVertName === 'vcm' &&
+    lowerSiteName === 'hmd' &&
+    lowerPlantName === 'vcm'
 
   const keycloak = useSession()
 
@@ -263,7 +272,12 @@ const NormalOpNormsScreen = () => {
     try {
       const promises = [fetchData(gradeId), getNormTransactions()]
 
-      if (lowerVertName === 'meg' || IS_CHEMICAL_JMD_MTBEANDBUATNE1) {
+      if (
+        lowerVertName === 'meg' ||
+        IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
+        IS_CHEMICAL_VMD_BUTADIENE ||
+        IS_VCM_HMD_VCM
+      ) {
         promises.push(fetchDataIntermediateValues())
       }
       if (
@@ -918,7 +932,10 @@ const NormalOpNormsScreen = () => {
         />
       )}
 
-      {(lowerVertName === 'meg' || IS_CHEMICAL_JMD_MTBEANDBUATNE1) && (
+      {(lowerVertName === 'meg' ||
+        IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
+        IS_CHEMICAL_VMD_BUTADIENE ||
+        IS_VCM_HMD_VCM) && (
         <Box sx={{ width: '100%', marginTop: 1 }}>
           <CustomAccordion defaultExpanded disableGutters>
             <CustomAccordionSummary
