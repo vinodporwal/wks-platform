@@ -4,11 +4,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -31,15 +29,10 @@ import org.springframework.web.multipart.MultipartFile;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.message.vm.AOPMessageVM;
-import com.wks.caseengine.repository.FinancialYearMonthRepository;
 import com.wks.caseengine.tcs.dto.FurnaceDTO;
 import com.wks.caseengine.tcs.repository.FurnaceProjection;
 import com.wks.caseengine.tcs.repository.FurnaceRepository;
 import com.wks.caseengine.repository.PlantsRepository;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
 
 @Service
 public class FurnaceService {
@@ -48,16 +41,10 @@ public class FurnaceService {
     private FurnaceRepository furnaceRepository;
 
     @Autowired
-    private FinancialYearMonthRepository fyRepo;
-
-    @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
     private PlantsRepository plantsRepository;
-
-    @PersistenceContext
-    private EntityManager entityManager;
 
     public List<FurnaceDTO> getFurnaceData(
             String financialYear,
@@ -94,47 +81,75 @@ public class FurnaceService {
             dto.setRemarks(p.getRemarks());
             return dto;
         }).toList());
-
-        if (plantId != null) {
-            List<Object[]> gCalData = furnaceRepository.getGCalPerHrData(sourceAOPYear, siteId, plantId);
-            if (gCalData != null && !gCalData.isEmpty()) {
-                Object[] row = gCalData.get(0);
-                FurnaceDTO gCalDto = new FurnaceDTO();
-                gCalDto.setType("FurnaceGCalPerHr");
-                gCalDto.setId(row[0] != null ? row[0].toString() : null);
-                gCalDto.setJan(row[1] != null ? Double.parseDouble(row[1].toString()) : 0.0);
-                gCalDto.setFeb(row[2] != null ? Double.parseDouble(row[2].toString()) : 0.0);
-                gCalDto.setMar(row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0);
-                gCalDto.setApr(row[4] != null ? Double.parseDouble(row[4].toString()) : 0.0);
-                gCalDto.setMay(row[5] != null ? Double.parseDouble(row[5].toString()) : 0.0);
-                gCalDto.setJun(row[6] != null ? Double.parseDouble(row[6].toString()) : 0.0);
-                gCalDto.setJul(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
-                gCalDto.setAug(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
-                gCalDto.setSep(row[9] != null ? Double.parseDouble(row[9].toString()) : 0.0);
-                gCalDto.setOct(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
-                gCalDto.setNov(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
-                gCalDto.setDec(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
-                gCalDto.setName(row[13] != null ? row[13].toString() : null);
-                gCalDto.setRemarks(row[14] != null ? row[14].toString() : null);
-                furnaceDTOs.add(gCalDto);
-            }
+        List<Object[]> gCalData = null;
+       
+        gCalData = plantId != null ? furnaceRepository.getGCalPerHrData(sourceAOPYear, siteId, plantId) : furnaceRepository.getGCalPerHrDataByVerticalIdAndSiteId(sourceAOPYear, siteId, verticalId);
+        if (gCalData != null && !gCalData.isEmpty()) {
+            Object[] row = gCalData.get(0);
+            FurnaceDTO gCalDto = new FurnaceDTO();
+            gCalDto.setType("FurnaceGCalPerHr");
+            gCalDto.setId(row[0] != null ? row[0].toString() : null);
+            gCalDto.setJan(row[1] != null ? Double.parseDouble(row[1].toString()) : 0.0);
+            gCalDto.setFeb(row[2] != null ? Double.parseDouble(row[2].toString()) : 0.0);
+            gCalDto.setMar(row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0);
+            gCalDto.setApr(row[4] != null ? Double.parseDouble(row[4].toString()) : 0.0);
+            gCalDto.setMay(row[5] != null ? Double.parseDouble(row[5].toString()) : 0.0);
+            gCalDto.setJun(row[6] != null ? Double.parseDouble(row[6].toString()) : 0.0);
+            gCalDto.setJul(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
+            gCalDto.setAug(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
+            gCalDto.setSep(row[9] != null ? Double.parseDouble(row[9].toString()) : 0.0);
+            gCalDto.setOct(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
+            gCalDto.setNov(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
+            gCalDto.setDec(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
+            gCalDto.setName(row[13] != null ? row[13].toString() : null);
+            gCalDto.setRemarks(row[14] != null ? row[14].toString() : null);
+            furnaceDTOs.add(gCalDto);
         }
+        
 
         return furnaceDTOs;
     }
 @Transactional
  public AOPMessageVM carryForwardFurnace(String financialYear, UUID siteId, UUID plantId) {
     try {
-        String procedureName = "Furnace_CarryForward";
-        String sql = "EXEC " + procedureName + "  @FinancialYear = :financialYear, @Site_FK_Id = :siteId, @Plant_FK_Id = :plantId";
-        Query query = entityManager.createNativeQuery(sql);
-        query.setParameter("financialYear", financialYear);
-        query.setParameter("siteId", siteId);
-        query.setParameter("plantId", plantId);
-        query.executeUpdate();
+        if (financialYear == null || financialYear.length() < 4 || siteId == null || plantId == null) {
+            throw new RestInvalidArgumentException("Invalid request parameters", null);
+        }
+
+        int targetStartYear = Integer.parseInt(financialYear.substring(0, 4));
+        int sourceStartYear = targetStartYear - 1;
+
+        Plants plant = plantsRepository.findById(plantId)
+                .orElseThrow(() -> new RestInvalidArgumentException("Invalid Plant ID", null));
+
+        if (plant.getSiteFkId() != null && !plant.getSiteFkId().equals(siteId)) {
+            throw new RestInvalidArgumentException("Plant does not belong to the requested site", null);
+        }
+
+        UUID verticalId = plant.getVerticalFKId();
+        if (verticalId == null) {
+            throw new RestInvalidArgumentException("Unable to resolve vertical for the selected plant", null);
+        }
+
+        if (hasFurnaceDataForYear(targetStartYear, siteId, plantId)) {
+            AOPMessageVM alreadyExists = new AOPMessageVM();
+            alreadyExists.setCode(200);
+            alreadyExists.setMessage("Furnace data already exists for the requested financial year");
+            return alreadyExists;
+        }
+
+        Integer sourceYear = findLatestSourceYear(sourceStartYear, siteId, plantId);
+        if (sourceYear == null) {
+            throw new RestInvalidArgumentException("No source furnace data found to carry forward", null);
+        }
+
+        copyFurnaceDataForYear(sourceYear, targetStartYear, siteId, plantId, verticalId);
+        copyFurnaceGCalDataForYear(sourceYear, targetStartYear, siteId, plantId, verticalId);
+
         AOPMessageVM aopMessageVM = new AOPMessageVM();
         aopMessageVM.setCode(200);
         aopMessageVM.setMessage("Furnace data carried forward successfully");
+        // aopMessageVM.setData(getFurnaceData(financialYear, siteId, plantId));
         return aopMessageVM;
     } catch (Exception e) {
         AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -142,8 +157,83 @@ public class FurnaceService {
         aopMessageVM.setMessage("Failed to carry forward furnace data: " + e.getMessage());
         System.out.println("Failed to carry forward furnace data: " + e.getMessage());
         return aopMessageVM;
-    }
+        }
  }
+
+    private boolean hasFurnaceDataForYear(int sourceAopYear, UUID siteId, UUID plantId) {
+        String sql = """
+            SELECT COUNT(*)
+            FROM TCS_Furnace
+            WHERE Site_FK_Id = ?
+              AND Plant_FK_Id = ?
+              AND SourceAOPYear = ?
+        """;
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, siteId, plantId, sourceAopYear);
+        return count != null && count > 0;
+    }
+
+    private Integer findLatestSourceYear(int sourceStartYear, UUID siteId, UUID plantId) {
+        for (int year = sourceStartYear; year >= 2025; year--) {
+            if (hasFurnaceDataForYear(year, siteId, plantId)) {
+                return year;
+            }
+        }
+        return null;
+    }
+
+    private void copyFurnaceDataForYear(
+            int sourceAopYear,
+            int targetAopYear,
+            UUID siteId,
+            UUID plantId,
+            UUID verticalId) {
+        String sql = """
+            INSERT INTO TCS_Furnace
+            (Id, Name, Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, [Dec],
+                Remarks, SourceAOPYear, Site_FK_Id, Plant_FK_Id, Vertical_FK_ID, CreatedDate)
+            SELECT NEWID(), Name, Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, [Dec],
+                   Remarks, ?, ?, ?, ?, GETDATE()
+            FROM TCS_Furnace
+            WHERE Site_FK_Id = ?
+              AND Plant_FK_Id = ?
+              AND SourceAOPYear = ?
+        """;
+        jdbcTemplate.update(sql,
+                targetAopYear,
+                siteId,
+                plantId,
+                verticalId,
+                siteId,
+                plantId,
+                sourceAopYear);
+    }
+
+    private void copyFurnaceGCalDataForYear(
+            int sourceAopYear,
+            int targetAopYear,
+            UUID siteId,
+            UUID plantId,
+            UUID verticalId) {
+        String sql = """
+            INSERT INTO TCS_Furnace_GCalPerHr
+            (Id, Name, Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, [Dec],
+             Remarks, SourceAOPYear, Site_FK_Id, Plant_FK_Id, Vertical_FK_ID, CreatedDate)
+            SELECT NEWID(), Name, Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, [Dec],
+                   Remarks, ?, ?, ?, ?, GETDATE()
+            FROM TCS_Furnace_GCalPerHr
+            WHERE Site_FK_Id = ?
+              AND Plant_FK_Id = ?
+              AND SourceAOPYear = ?
+        """;
+        jdbcTemplate.update(sql,
+                targetAopYear,
+                siteId,
+                plantId,
+                verticalId,
+                siteId,
+                plantId,
+                sourceAopYear);
+    }
 
     public void updateFurnaceData(List<FurnaceDTO> furnaceDTOs, String financialYear, UUID siteId, UUID plantId) {
         String furnaceUpdateSql = "UPDATE TCS_Furnace SET Name = ?, Jan = ?, Feb = ?, Mar = ?, Apr = ?, May = ?, Jun = ?, Jul = ?, Aug = ?, Sep = ?, Oct = ?, Nov = ?, [Dec] = ?, Remarks = ?, ModifiedDate = GETDATE() WHERE Id = ?";
