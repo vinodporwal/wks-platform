@@ -114,7 +114,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
   const [rowsDesignCapacity, setRowsDesignCapacity] = useState([])
   const [rowsMaxCapacity, setRowsMaxCapacity] = useState([])
   const [configurationExecutionDetails, setConfigurationExecutionDetails] =
-      useState(null)
+    useState(null)
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remarks || '')
@@ -683,11 +683,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
         },
       ]
       setLoading(true)
-      const data =
-        await DataService.executeConfiguration(
-          payload,
-          keycloak,
-        )
+      const data = await DataService.executeConfiguration(payload, keycloak)
 
       if (data || data == 0) {
         // dispatch(setIsBlocked(true))
@@ -1049,7 +1045,9 @@ const AromaticsProductionGrids = ({ permissions }) => {
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
       saveBtn: permissions?.saveBtn ?? true,
       units: ['TPH', 'TPD'],
-      showCalculate: permissions?.hideSummary ? false : (VERTICAL_NAME === 'meg' || VERTICAL_NAME === 'aromatics'),
+      showCalculate: permissions?.hideSummary
+        ? false
+        : VERTICAL_NAME === 'meg' || VERTICAL_NAME === 'aromatics',
       showCalculateVisibility:
         (VERTICAL_NAME === 'meg' &&
         Object.keys(calculationObject || {}).length > 0
