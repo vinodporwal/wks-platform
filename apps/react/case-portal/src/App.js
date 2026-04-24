@@ -29,11 +29,12 @@ const App = () => {
 
   // Iframe SSO flow: receive token from APM via postMessage
   useIframeSso({
-    onSuccess: (token) => {
-      // Build a minimal keycloak-like object from the token for service calls
-      const payload = JSON.parse(atob(token.split('.')[1]))
+    onSuccess: (apmToken, data) => {
+      // Use the WKS token returned by the backend for all subsequent API calls
+      const wksToken = data.wksToken || apmToken
+      const payload = JSON.parse(atob(wksToken.split('.')[1]))
       const kcMock = {
-        token,
+        token: wksToken,
         tokenParsed: payload,
         idTokenParsed: payload,
         isTokenExpired: () => payload.exp * 1000 < Date.now(),
