@@ -68,7 +68,7 @@ const CrudBlendWindowGrid = ({
   // Refresh function for this grid
   const fetchGridData = useCallback(() => {
     if (onRefresh) {
-      onRefresh()
+      onRefresh(true)
     }
   }, [onRefresh])
 
@@ -270,7 +270,7 @@ const CrudBlendWindowGrid = ({
       setModifiedCells({})
       // Refresh all tables data from parent
       if (onRefresh) {
-        onRefresh()
+        onRefresh(true)
       }
     } catch (error) {
       console.error(`Error saving ${tableKey} data:`, error)
@@ -327,7 +327,7 @@ const CrudBlendWindowGrid = ({
             severity: 'success',
           })
           if (onRefresh) {
-            onRefresh()
+            onRefresh(true)
           }
         }
       } catch (error) {
@@ -465,7 +465,7 @@ const CrudBlendWindowGrid = ({
         })
         // Refresh data after import
         if (onRefresh) {
-          await onRefresh()
+          await onRefresh(true)
         }
       } else if (response?.code === 400 && response?.data) {
         // Handle error response with Excel file download
@@ -497,7 +497,7 @@ const CrudBlendWindowGrid = ({
           })
           // Refresh data after import
           if (onRefresh) {
-            await onRefresh()
+            await onRefresh(true)
           }
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)

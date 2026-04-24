@@ -347,7 +347,7 @@ const CPPUnitsSdPlan = ({
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
-      fetchData()
+      fetchData(true)
     } catch (error) {
       console.error('Error saving CPP Units SD Plan data:', error)
       setSnackbarOpen(true)
@@ -388,7 +388,7 @@ const CPPUnitsSdPlan = ({
             message: 'Record deleted successfully!',
             severity: 'success',
           })
-          fetchData()
+          fetchData(true)
         }
       } catch (error) {
         console.error('Error deleting record:', error)
@@ -454,7 +454,7 @@ const CPPUnitsSdPlan = ({
           severity: 'success',
         })
         // Refresh data after import
-        await fetchData()
+        await fetchData(true)
       } else if (response?.code === 400 && response?.data) {
         // Handle error response with Excel file download
         try {
@@ -484,7 +484,7 @@ const CPPUnitsSdPlan = ({
             severity: 'error',
           })
           // Refresh data after import
-          await fetchData()
+          await fetchData(true)
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
