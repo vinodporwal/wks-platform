@@ -36,7 +36,7 @@ export function useIframeSso({ onSuccess, onFailure }) {
       }
 
       if (type === 'LOGOUT') {
-        fetch(`${Config.CaseEngineUrl}/api/sso/logout`, {
+        fetch(`${Config.CaseEngineUrl}/sso/logout`, {
           method: 'POST',
           credentials: 'include',
         }).finally(() => {
@@ -61,7 +61,7 @@ export function useIframeSso({ onSuccess, onFailure }) {
 
   async function exchangeToken(token) {
     try {
-      const res = await fetch(`${Config.CaseEngineUrl}/api/sso/login`, {
+      const res = await fetch(`${Config.CaseEngineUrl}/sso/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include', // send/receive cookies
