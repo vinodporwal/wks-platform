@@ -35,6 +35,7 @@ export const TcsApiService = {
   getTcsRogcData,
   saveRogcData,
   carryForwardRogc,
+  deleteRogcData,
 
   // TCS CPP Units SD Plan Data APIs
   getCPPUnitsSdPlanData,
@@ -705,7 +706,17 @@ async function saveRogcData(keycloak, SITE_ID, PLANT_ID, AOP_YEAR, payload) {
       body,
     })
     if (!resp.ok) {
-      throw new Error(`HTTP error! Status: ${resp.status}`)
+      // Parse error body so callers can display backend errorMessage
+      let errBody = {}
+      try {
+        errBody = await resp.json()
+      } catch (_) {}
+      const err = new Error(
+        errBody?.errorMessage || `HTTP error! Status: ${resp.status}`,
+      )
+      err.errorMessage = errBody?.errorMessage || null
+      err.status = resp.status
+      throw err
     }
     const result = await json(keycloak, resp)
     return result || { success: true }
@@ -727,6 +738,25 @@ async function carryForwardRogc(keycloak, financialYear, siteId, plantId) {
       method: 'POST',
       headers,
     })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function deleteRogcData(keycloak, id) {
+  const url = `${Config.CaseEngineUrl}/task/furnace/${id}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'DELETE', headers })
     if (!resp.ok) {
       throw new Error(`HTTP error! Status: ${resp.status}`)
     }

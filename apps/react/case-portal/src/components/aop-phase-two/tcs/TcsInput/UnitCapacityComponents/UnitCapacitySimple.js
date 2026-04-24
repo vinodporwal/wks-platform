@@ -37,40 +37,91 @@ const UnitCapacitySimple = ({
   const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
   const isDesign = capacityType === 'design'
 
-  const fetchUnitCapacityData = useCallback(async () => {
-    setLoading(true)
+  const fetchUnitCapacityData = useCallback(
+    async (skipCarryForward = false) => {
+      setLoading(true)
+      try {
+        const response = await TcsApiService.getTcsUnitCapacityData(
+          keycloak,
+          PLANT_ID,
+          apiYear,
+          capacityType,
+          'KBPSD',
+        )
+
+        if (response?.results) {
+          let tempData = response?.results?.map((item) => {
+            return {
+              ...item,
+              value: item.jan || 0,
+            }
+          })
+
+          // If data is empty and carry-forward not skipped, attempt carry-forward and refetch
+          if (tempData.length === 0 && !skipCarryForward) {
+            const carryForwardSuccess = await handleCarryForward()
+            if (carryForwardSuccess) {
+              // Refetch data after successful carry-forward
+              await fetchUnitCapacityData(true)
+              return
+            }
+          }
+
+          setRows(tempData)
+          setOriginalRows(tempData)
+        } else {
+          setRows([])
+          setOriginalRows([])
+        }
+      } catch (err) {
+        console.error(
+          `Error fetching Unit Capacity data (${capacityType}):`,
+          err,
+        )
+        setSnackbarData({
+          message: `Failed to load Unit Capacity data. Please try again.`,
+          severity: 'error',
+        })
+        setSnackbarOpen(true)
+        setRows([])
+      } finally {
+        setLoading(false)
+      }
+    },
+    [
+      keycloak,
+      PLANT_ID,
+      apiYear,
+      capacityType,
+      setSnackbarData,
+      setSnackbarOpen,
+    ],
+  )
+
+  // Carry forward data from previous year
+  const handleCarryForward = useCallback(async () => {
     try {
-      const response = await TcsApiService.getTcsUnitCapacityData(
-        keycloak,
-        PLANT_ID,
-        apiYear,
-        capacityType,
-        'KBPSD',
+      console.log(
+        `No data found for ${capacityType}, attempting carry-forward...`,
       )
 
-      if (response?.results) {
-        let tempData = response?.results?.map((item) => {
-          return {
-            ...item,
-            value: item.jan || 0,
-          }
-        })
-        setRows(tempData)
-        setOriginalRows(tempData)
-      } else {
-        setRows([])
-        setOriginalRows([])
-      }
-    } catch (err) {
-      console.error(`Error fetching Unit Capacity data (${capacityType}):`, err)
-      setSnackbarData({
-        message: `Failed to load Unit Capacity data. Please try again.`,
-        severity: 'error',
-      })
-      setSnackbarOpen(true)
-      setRows([])
-    } finally {
-      setLoading(false)
+      const carryForwardResponse =
+        await TcsApiService.carryForwardTcsUnitCapacity(
+          keycloak,
+          PLANT_ID,
+          apiYear,
+          capacityType,
+        )
+
+      console.log('Carry-forward response:', carryForwardResponse)
+
+      return true
+    } catch (carryForwardErr) {
+      console.error(
+        `Error during carry-forward for ${capacityType}:`,
+        carryForwardErr,
+      )
+      return false
     }
   }, [
     keycloak,
@@ -369,6 +420,7 @@ const UnitCapacitySimple = ({
         severity: 'success',
       })
       setModifiedCells({})
+      await fetchUnitCapacityData(true)
     } catch (error) {
       console.error('Error saving Unit Capacity data:', error)
       setSnackbarOpen(true)
@@ -431,7 +483,7 @@ const UnitCapacitySimple = ({
           severity: 'success',
         })
         // Refresh data after import
-        await fetchUnitCapacityData()
+        await fetchUnitCapacityData(true)
       } else if (response?.code === 400 && response?.data) {
         // Handle error response with Excel file download
         try {
@@ -461,7 +513,7 @@ const UnitCapacitySimple = ({
             severity: 'error',
           })
           // Refresh data after import
-          await fetchUnitCapacityData()
+          await fetchUnitCapacityData(true)
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)

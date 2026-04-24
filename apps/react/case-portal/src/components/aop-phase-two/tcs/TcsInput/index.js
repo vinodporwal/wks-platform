@@ -18,6 +18,7 @@ import { getUserRole, ROLES } from '../utils/roleUtils'
 import { TcsWorkflowApiService } from 'components/aop-phase-two/services/tcs/tcsWorkflowApiService'
 import AuditTrail from './workflow/AuditTrail'
 import PCGOutlookNew from './PCGOutlookNew'
+import AopTabs from '../../common/components/AopTabs'
 
 // Handler to render tab component based on displayName
 const renderTabComponent = (tabDisplayName, props) => {
@@ -481,37 +482,11 @@ const TcsInput = () => {
       >
         {/* Tabs Section - Flex grow to fill available space */}
         <Box sx={{ flex: 1, overflowX: 'auto' }}>
-          <Tabs
-            sx={{
-              borderBottom: '0px solid #ccc',
-              '.MuiTabs-indicator': { display: 'none' },
-              margin: '0px 0px 0px 0px',
-              minHeight: '28px',
-            }}
-            textColor='primary'
-            indicatorColor='primary'
-            value={tabIndex}
-            onChange={(e, newIndex) => {
-              if (newIndex >= 0 && newIndex < tabObj.length) {
-                setTabIndex(newIndex)
-              }
-            }}
-          >
-            {tabObj &&
-              tabObj?.map((tab) => (
-                <Tab
-                  key={tab.id}
-                  sx={{
-                    border: '1px solid #ADD8E6',
-                    borderBottom: '1px solid #ADD8E6',
-                    fontSize: '0.75rem',
-                    padding: '9px',
-                    minHeight: '12px',
-                  }}
-                  label={tab.displayName || tab.name}
-                />
-              ))}
-          </Tabs>
+          <AopTabs
+            tabIndex={tabIndex}
+            setTabIndex={setTabIndex}
+            tabs={tabObj?.map((tab) => tab.displayName || tab.name) || []}
+          />
         </Box>
 
         {/* Submit button and History icon - Fixed on right */}
