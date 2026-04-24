@@ -919,7 +919,7 @@ const NestedKendoTable = ({
         title={props.title}
         style={{
           padding: '0px',
-          borderRight: '1px solid #878787',
+          // borderRight: '1px solid #878787',
           textAlign: 'center',
           width: restThProps['width'],
         }}
