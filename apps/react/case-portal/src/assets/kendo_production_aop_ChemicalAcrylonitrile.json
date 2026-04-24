@@ -1,14 +1,33 @@
 [
-  { "field": "idFromApi", "title": "ID", "hidden": true },
+  {
+    "field": "idFromApi",
+    "title": "ID",
+    "hidden": true
+  },
   {
     "field": "aopCaseId",
     "title": "Case ID",
     "hidden": true,
     "editable": false
   },
-  { "field": "aopType", "title": "Type", "width": 80, "hidden": true },
-  { "field": "aopYear", "title": "Year", "width": 80, "hidden": true },
-  { "field": "plantFkId", "title": "Plant ID", "width": 80, "hidden": true },
+  {
+    "field": "aopType",
+    "title": "Type",
+    "width": 80,
+    "hidden": true
+  },
+  {
+    "field": "aopYear",
+    "title": "Year",
+    "width": 80,
+    "hidden": true
+  },
+  {
+    "field": "plantFkId",
+    "title": "Plant ID",
+    "width": 80,
+    "hidden": true
+  },
   {
     "field": "Particulars",
     "title": "Type",
@@ -55,7 +74,6 @@
     "title": "5",
     "type": "number",
     "editable": true,
-
     "align": "left",
     "format": "{0:#.##}"
   },
@@ -64,7 +82,6 @@
     "title": "6",
     "type": "number",
     "editable": true,
-
     "align": "left",
     "format": "{0:#.##}"
   },
@@ -73,7 +90,6 @@
     "title": "7",
     "type": "number",
     "editable": true,
-
     "align": "left",
     "format": "{0:#.##}"
   },
@@ -82,7 +98,6 @@
     "title": "8",
     "type": "number",
     "editable": true,
-
     "align": "left",
     "format": "{0:#.##}"
   },
@@ -91,7 +106,6 @@
     "title": "9",
     "type": "number",
     "editable": true,
-
     "align": "left",
     "format": "{0:#.##}"
   },
@@ -100,7 +114,6 @@
     "title": "10",
     "type": "number",
     "editable": true,
-
     "align": "left",
     "format": "{0:#.##}"
   },
@@ -109,7 +122,6 @@
     "title": "11",
     "type": "number",
     "editable": true,
-
     "align": "left",
     "format": "{0:#.##}"
   },
@@ -118,7 +130,6 @@
     "title": "12",
     "type": "number",
     "editable": true,
-
     "align": "left",
     "format": "{0:#.##}"
   },
@@ -127,16 +138,13 @@
     "title": "1",
     "type": "number",
     "editable": true,
-
     "align": "left",
     "format": "{0:#.##}"
   },
   {
     "field": "feb",
     "title": "2",
-
     "editable": true,
-
     "align": "left",
     "type": "number",
     "format": "{0:#.##}"
@@ -146,7 +154,6 @@
     "title": "3",
     "type": "number",
     "editable": true,
-
     "align": "left",
     "format": "{0:#.##}"
   },
@@ -167,7 +174,6 @@
     "title": "isEditable",
     "hidden": true
   },
-
   {
     "field": "aopStatus",
     "title": "aopStatus",
