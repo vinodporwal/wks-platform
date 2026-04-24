@@ -124,7 +124,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 			for (Object[] row : results) {
 				Map<String, Object> map = new HashMap<>(); // Create a new map for each row
 				System.out.println(" row[3] " + row[3].toString() + " row[4] " + row[4].toString() + " type " + type);
-				if(!type.equalsIgnoreCase("Feeds") && row[4].toString().contains(type)) {	
+				if(!type.equalsIgnoreCase("Feeds") && row[4].toString().toLowerCase().contains(type.toLowerCase())) {	
 					
 					map.put("normParameterFKID", row[2]);
 					map.put("particulars", row[3]);
@@ -1936,7 +1936,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 							}
 						} else {
 							// AOPMessageVM vm = getSpyroOutputData(year, plantId, mode, dataInput);
-							AOPMessageVM vm = getSpyroOutputData(year, plantId, mode, "output");
+							AOPMessageVM vm = getSpyroOutputData(year, plantId, dataInput, "output");
 
 							spyroOutputDataList = (List<Map<String, Object>>) vm.getData();
 							System.out.println("sheetName " + sheetName + " " + spyroOutputDataList);

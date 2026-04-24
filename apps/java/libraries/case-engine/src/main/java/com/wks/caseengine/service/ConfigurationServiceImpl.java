@@ -1513,6 +1513,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			}
 
 			for (ConfigurationDTO configurationDTO : configurationDTOList) {
+				System.out.println("configurationDTO: " + configurationDTO);
 				if (configurationDTO.getSaveStatus() != null
 						&& configurationDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
 					failedList.add(configurationDTO);
@@ -1534,6 +1535,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
 				for (int i = 1; i <= 12; i++) {
 					Double attributeValue = getAttributeValue(configurationDTO, i);
+					System.out.println("attributeValue: " + attributeValue);
 					configurationDTO.setVertical(verticalName);
 					saveData(optionNormParameters.get(), i, year, attributeValue, configurationDTO,plantFKId);
 					if(configurationDTO.getSaveStatus()!=null && configurationDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
