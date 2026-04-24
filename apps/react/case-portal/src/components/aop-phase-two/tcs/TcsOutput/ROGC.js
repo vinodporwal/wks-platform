@@ -40,8 +40,6 @@ const ROGC = ({
       setLoading(true)
       let transformedData = []
 
-      // TODO: Replace with actual API call once backend is ready
-      // const response = getMockRogcResponse()
       const response = await TcsOutputApiService.getTcsRogcData(
         keycloak,
         SITE_ID,
@@ -50,11 +48,7 @@ const ROGC = ({
       )
       console.log('TCS ROGC Response:', response)
 
-      if (
-        response?.furnaceData?.length > 0 &&
-        response?.furnaceData &&
-        Array.isArray(response.furnaceData)
-      ) {
+      if (response?.length > 0 && Array.isArray(response)) {
         // Calculate days dynamically based on financial year
         const getDaysInMonth = (year, month) => {
           return new Date(year, month, 0).getDate()
@@ -67,7 +61,7 @@ const ROGC = ({
         // Add days row at the beginning
         const daysRow = {
           id: 'days_row',
-          furnace: 'Days',
+          name: 'Days',
           apr: getDaysInMonth(startYear, 4),
           may: getDaysInMonth(startYear, 5),
           jun: getDaysInMonth(startYear, 6),
@@ -77,17 +71,17 @@ const ROGC = ({
           oct: getDaysInMonth(startYear, 10),
           nov: getDaysInMonth(startYear, 11),
           dec: getDaysInMonth(startYear, 12),
-          jan: getDaysInMonth(endYear, 1),
-          feb: getDaysInMonth(endYear, 2),
-          mar: getDaysInMonth(endYear, 3),
-          remarks: '-',
+          jan: getDaysInMonth(startYear, 1),
+          feb: getDaysInMonth(startYear, 2),
+          mar: getDaysInMonth(startYear, 3),
+          remarks: 'No. of days in a month',
           isEditable: false,
           inEdit: false,
         }
         transformedData = [daysRow]
 
         // Add furnace data
-        const furnaceRows = response.furnaceData.map((item, index) => ({
+        const furnaceRows = response.map((item, index) => ({
           id: item.id || `row_${index}`,
           ...item,
           inEdit: false,
@@ -95,16 +89,16 @@ const ROGC = ({
         }))
         transformedData.push(...furnaceRows)
 
-        // Add average row
-        const averageRow = {
-          id: 'average_row',
-          furnace: 'Average of Duty_Furnace_Cracking',
-          ...response.gCalPerHrData,
-          remarks: '-',
-          isEditable: false,
-          inEdit: false,
-        }
-        transformedData.push(averageRow)
+        // // Add average row
+        // const averageRow = {
+        //   id: 'average_row',
+        //   furnace: 'Average of Duty_Furnace_Cracking',
+        //   ...response.gCalPerHrData,
+        //   remarks: '-',
+        //   isEditable: false,
+        //   inEdit: false,
+        // }
+        // transformedData.push(averageRow)
       }
 
       setRows(transformedData)
@@ -149,7 +143,7 @@ const ROGC = ({
     return [
       { field: 'id', title: 'ID', hidden: true },
       {
-        field: 'furnace',
+        field: 'name',
         title: 'Furnace',
         width: 150,
         minWidth: 150,

@@ -52,8 +52,8 @@ NORM_STG_POWER_PER_KWH = 0.0020   # 0.0020 KWh of power per 1 KWh generated (aux
 NORM_STG_SHP_PER_KWH = 0.0036     # 0.0036 MT of SHP steam per 1 KWh generated
 
 # Steam to Power Conversion (for excess steam handling)
-# 3.56 MT of SHP steam = 1 MWh of power from STG
-STEAM_TO_POWER_MT_PER_MWH = 3.56  # MT of SHP steam per MWh of power
+# 3.56 MT of SHP steam = 1 MWh of power from STG (Fallback only)
+STEAM_TO_POWER_MT_PER_MWH = 3.56  # Fallback only - dynamic sp_steam_power used when available
 
 
 # ============================================================

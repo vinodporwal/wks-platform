@@ -38,7 +38,11 @@ const Slowdown = ({
   const [currentRowId, setCurrentRowId] = useState(null)
 
   // State to store API response metadata (headers and keys)
-  const [apiMetadata, setApiMetadata] = useState({ headers: [], keys: [] })
+  const [apiMetadata, setApiMetadata] = useState({
+    headers: [],
+    keys: [],
+    editableFields: [],
+  })
   const [originalRows, setOriginalRows] = useState([])
 
   const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
@@ -55,11 +59,11 @@ const Slowdown = ({
 
       console.log('Carry-forward response:', carryForwardResponse)
 
-      setSnackbarData({
-        message: `Slowdown data carried forward from previous year successfully!`,
-        severity: 'success',
-      })
-      setSnackbarOpen(true)
+      // setSnackbarData({
+      //   message: `Slowdown data carried forward from previous year successfully!`,
+      //   severity: 'success',
+      // })
+      // setSnackbarOpen(true)
 
       return true
     } catch (carryForwardErr) {
@@ -93,7 +97,11 @@ const Slowdown = ({
 
         // Store headers and keys from API response
         if (response?.headers && response?.keys) {
-          setApiMetadata({ headers: response.headers, keys: response.keys })
+          setApiMetadata({
+            headers: response.headers,
+            keys: response.keys,
+            editableFields: response.editableFields,
+          })
         }
 
         // If data is empty and carry-forward not skipped, attempt carry-forward and refetch
@@ -141,17 +149,11 @@ const Slowdown = ({
   // Column configuration for Slowdown - dynamically generated from API response
   const columnConfig = {
     particulates: { editable: false, type: 'text', minWidth: 100, widthT: 100 },
-    durationInDays: {
-      editable: true,
-      type: 'wholeNumber',
-      minWidth: 100,
-      widthT: 100,
-    },
     throughputDuringSlowdown: {
       editable: true,
       type: 'wholeNumber',
-      minWidth: 100,
-      widthT: 100,
+      minWidth: 170,
+      widthT: 170,
     },
     throughputUOM: {
       editable: true,
@@ -162,6 +164,12 @@ const Slowdown = ({
         { value: 'KBPSD', label: 'KBPSD' },
         { value: 'KTPD', label: 'KTPD' },
       ],
+    },
+    durationInDays: {
+      editable: true,
+      type: 'wholeNumber',
+      minWidth: 100,
+      widthT: 100,
     },
     startDate: {
       editable: true,
@@ -181,7 +189,7 @@ const Slowdown = ({
   }
 
   const columns = useMemo(() => {
-    const { headers, keys } = apiMetadata
+    const { headers, keys, editableFields } = apiMetadata
 
     if (!headers || !keys || headers.length === 0) {
       return []
@@ -194,10 +202,15 @@ const Slowdown = ({
     })
 
     // Build columns using columnConfig for type/formatting
+    // Override editable property based on editableFields array from API
     return Object.entries(columnConfig).map(([key, config]) => ({
       field: key,
       title: columnMap[key] || key,
       ...config,
+      editable:
+        editableFields && Array.isArray(editableFields)
+          ? editableFields.includes(key)
+          : config.editable,
     }))
   }, [apiMetadata])
 
@@ -306,6 +319,14 @@ const Slowdown = ({
             formatted.id = null
           }
 
+          // Add non-editable fields with default values if not present
+          if (formatted.throughputDuringSlowdown == '') {
+            formatted.throughputDuringSlowdown = null
+          }
+          if (formatted.throughputUOM == '') {
+            formatted.throughputUOM = null
+          }
+
           // Add timezone offset to date fields
           if (formatted.startDate) {
             formatted.startDate = addTimeOffset(formatted.startDate)
@@ -333,7 +354,7 @@ const Slowdown = ({
           severity: 'success',
         })
         setModifiedCells({})
-        fetchSlowdownData()
+        fetchSlowdownData(true)
       } catch (error) {
         console.error('Error saving Slowdown data:', error)
         setSnackbarOpen(true)
@@ -493,7 +514,7 @@ const Slowdown = ({
             message: 'Record deleted successfully!',
             severity: 'success',
           })
-          fetchSlowdownData()
+          fetchSlowdownData(true)
         }
       } catch (error) {
         console.error('Error deleting record:', error)
@@ -562,7 +583,7 @@ const Slowdown = ({
           severity: 'success',
         })
         // Refresh data after import
-        await fetchSlowdownData()
+        await fetchSlowdownData(true)
       } else if (response?.code === 400 && response?.data) {
         // Handle error response with Excel file download
         try {
@@ -592,7 +613,7 @@ const Slowdown = ({
             severity: 'error',
           })
           // Refresh data after import
-          await fetchSlowdownData()
+          await fetchSlowdownData(true)
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
@@ -620,24 +641,31 @@ const Slowdown = ({
     }
   }
 
-  const permissions = {
-    customHeight: { mainBox: '32vh', otherBox: '100%' },
-    textAlignment: 'center',
-    allAction: true,
-    addButton: true,
-    deleteButton: true,
-    showAction: true,
-    remarksEditable: true,
-    showCalculate: false,
-    showExport: true,
-    ExcelName: `Slowdown_${AOP_YEAR}`,
-    showImport: true,
-    saveBtnForRemark: true,
-    saveBtn: true,
-    showWorkFlowBtns: false,
-    showTitle: true,
-    filterable: false,
-  }
+  const permissions = useMemo(
+    () => ({
+      customHeight: { mainBox: '32vh', otherBox: '100%' },
+      textAlignment: 'center',
+      allAction: true,
+      addButton:
+        apiMetadata.editableFields &&
+        (apiMetadata.editableFields.includes('durationInDays') ||
+          apiMetadata.editableFields.includes('startDate') ||
+          apiMetadata.editableFields.includes('endDate')),
+      deleteButton: true,
+      showAction: true,
+      remarksEditable: true,
+      showCalculate: false,
+      showExport: true,
+      ExcelName: `Slowdown_${AOP_YEAR}`,
+      showImport: true,
+      saveBtnForRemark: true,
+      saveBtn: true,
+      showWorkFlowBtns: false,
+      showTitle: true,
+      filterable: false,
+    }),
+    [apiMetadata.editableFields, AOP_YEAR],
+  )
 
   return (
     <Box>

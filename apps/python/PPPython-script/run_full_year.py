@@ -669,6 +669,8 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
                             results["full_year_comparison_file"] = full_year_comparison_path
                     except Exception as comparison_error:
                         month_result["comparison_error"] = str(comparison_error)
+                        import traceback
+                        traceback.print_exc()
                         with print_lock:
                             _real_stdout.write(
                                 f"  [WARN] {month_result['month_name']} {month_result['year']}: comparison file generation failed - {comparison_error}\n"

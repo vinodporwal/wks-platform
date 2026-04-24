@@ -55,6 +55,10 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+
 @Service
 public class TCSSlowdownServiceImpl implements TCSSlowdownService {
 
@@ -125,6 +129,11 @@ if(plantId != null) {
             }
             map.put("results", resultsList);
 
+            //editable fields list
+            List<String> userRoles = getLoggedUserRoles();
+            List<String> editableFields = getEditableFieldsByRolesAndScreen(userRoles, "tcs-slowdown");
+            map.put("editableFields", editableFields);
+
             // headers mapping
             System.out.println("headers mapping started");
             List<String> headers = getHeaders(
@@ -180,18 +189,14 @@ if(plantId != null) {
             
         try {            
             // Stored Procedure name
-            String procedureName = "GetTcsSlowdown";
-            if (!"MEG".equalsIgnoreCase(verticalName)) {
-                if(plantId != null) {
-             //   procedureName = verticalName + "_" + siteName + "_GetTcsSlowdown"; 
+            String procedureName = null;
+            if(plantId != null) {
+                //   procedureName = verticalName + "_" + siteName + "_GetTcsSlowdown"; 
                 procedureName =  "CRUDE_DTA_GetTcsSlowdown";
-             }
-
-                else {
-                    procedureName = "GetTcsSlowdown_OutPut";
-                }
             }
-
+            else {
+                procedureName = "GetTcsSlowdown_OutPut";
+            }
             // Prepare native SQL call with parameters
 
             String sql = "";
@@ -234,16 +239,15 @@ if(plantId != null) {
 
            String siteId = siteId1.toString();
 
-        String procedureName = "GetTcsSlowdown";
-        if (!"MEG".equalsIgnoreCase(verticalName)) {
-            if(plantId != null) {
+        String procedureName = null;
+
+        if(plantId != null) {
             // procedureName = verticalName + "_" + siteName + "_GetTcsSlowdown";
             procedureName =  "CRUDE_DTA_GetTcsSlowdown";
-            }
-            else {
-             //   procedureName = verticalName + "_" + siteName + "_GetTcsSlowdown_OutPut";
-                procedureName = "GetTcsSlowdown_OutPut";
-            }
+        }
+        else {
+            //   procedureName = verticalName + "_" + siteName + "_GetTcsSlowdown_OutPut";
+            procedureName = "GetTcsSlowdown_OutPut";
         }
         String callableSql = "";
         if(plantId != null) {
@@ -312,57 +316,138 @@ if(plantId != null) {
         AOPMessageVM vm = new AOPMessageVM();
 
         try {
+            // Get user roles and editable fields
+            List<String> userRoles = getLoggedUserRoles();
+            Set<String> editableFields = new HashSet<>(getEditableFieldsByRolesAndScreen(userRoles, "tcs-slowdown"));
+            
+            System.out.println("User roles: " + userRoles);
+            System.out.println("Editable fields: " + editableFields);
+
             List<TCSSlowdown> savedList = new ArrayList<>();
 
             for (TCSSlowdownDTO dto : dtoList) {
                 String existingId = null;
+                TCSSlowdown entity = null;
+                
                 if (dto.getId() != null && !dto.getId().isBlank()) {
                     try {
                         existingId = dto.getId();
+                        // Load existing entity for update
+                        entity = tcsSlowdownRepository.findById(UUID.fromString(existingId))
+                            .orElse(null);
                     } catch (IllegalArgumentException ex) {
                         throw new RestInvalidArgumentException("Invalid UUID format", ex);
                     }
                 }
 
-                if (dto.getDurationInDays() == null || dto.getDurationInDays() <= 0) {
-                    throw new RestInvalidArgumentException("Tentative Duration (Days) must be greater than 0", null);
-                }
-
-                if (dto.getThroughputDuringSlowdown() == null || dto.getThroughputDuringSlowdown() < 0) {
-                    throw new RestInvalidArgumentException("Throughput during Slowdown is required", null);
-                }
-
-                if (dto.getThroughputUOM() == null || dto.getThroughputUOM().isBlank()) {
-                    throw new RestInvalidArgumentException("Throughput UoM is required", null);
-                }
-
-                if (dto.getStartDate() == null) {
-                    throw new RestInvalidArgumentException("Start Date is required", null);
-                }
-
-                if (dto.getPurpose() == null || dto.getPurpose().isBlank()) {
-                    throw new RestInvalidArgumentException("Purpose of Slowdown is required", null);
-                }
-               
-                TCSSlowdown entity = new TCSSlowdown();
-                if (existingId == null || existingId.trim().isEmpty()) {
-                    // The entity is being created
+                // If entity doesn't exist, create a new one
+                if (entity == null) {
+                    entity = new TCSSlowdown();
                     entity.setInsertedDateTime(new Date());
+                    entity.setPlantFkId(UUID.fromString(plantId));
+                    entity.setAopYear(year);
+                    entity.setVerticalFkId(UUID.fromString(verticalId));
+                    entity.setSiteFkId(UUID.fromString(siteId));
                 } else {
-                    // The entity is being updated
-                    entity.setId(UUID.fromString(dto.getId()));
-                    entity.setInsertedDateTime(dto.getInsertedDateTime());
+                    // For existing entity, set updated timestamp
                     entity.setUpdatedDateTime(new Date());
                 }
-                entity.setPlantFkId(UUID.fromString(plantId));
-                entity.setAopYear(year);
-                entity.setVerticalFkId(UUID.fromString(verticalId));
-                entity.setSiteFkId(UUID.fromString(siteId));
-                entity.setTentativeDurationInDays(dto.getDurationInDays());
-                entity.setThroughputDuringSlowdown(dto.getThroughputDuringSlowdown());
-                entity.setThroughputUOM(dto.getThroughputUOM());
-                entity.setStartDate(dto.getStartDate());
-                entity.setPurpose(dto.getPurpose());
+
+                // Update only editable fields based on role permissions
+                if (isFieldEditable(editableFields, "durationInDays")) {
+                    if (dto.getDurationInDays() != null && dto.getDurationInDays() > 0) {
+                        entity.setTentativeDurationInDays(dto.getDurationInDays());
+                    }
+                }
+                
+                if (isFieldEditable(editableFields, "throughputDuringSlowdown")) {
+                    if (dto.getThroughputDuringSlowdown() != null && dto.getThroughputDuringSlowdown() >= 0) {
+                        entity.setThroughputDuringSlowdown(dto.getThroughputDuringSlowdown());
+                    }
+                }
+                
+                if (isFieldEditable(editableFields, "throughputUOM")) {
+                    if (dto.getThroughputUOM() != null && !dto.getThroughputUOM().isBlank()) {
+                        entity.setThroughputUOM(dto.getThroughputUOM());
+                    }
+                }
+                
+                if (isFieldEditable(editableFields, "startDate")) {
+                    if (dto.getStartDate() != null) {
+                        entity.setStartDate(dto.getStartDate());
+                    }
+                }
+                
+                if (isFieldEditable(editableFields, "purpose")) {
+                    if (dto.getPurpose() != null && !dto.getPurpose().isBlank()) {
+                        entity.setPurpose(dto.getPurpose());
+                    }
+                }
+
+                // Validate required fields before saving
+                // For editable fields: always validate if field is editable for the user
+                // For non-editable fields: only validate if entity is new AND field was provided in payload
+                boolean isNewEntity = existingId == null;
+                
+                // Only validate durationInDays if it's editable for this role, or if new and value was provided
+                if (isFieldEditable(editableFields, "durationInDays")) {
+                    if (entity.getTentativeDurationInDays() == null || entity.getTentativeDurationInDays() <= 0) {
+                        throw new RestInvalidArgumentException("Tentative Duration (Days) must be greater than 0", null);
+                    }
+                } else if (isNewEntity && dto.getDurationInDays() != null) {
+                    // Non-editable field in new entity, but value was provided - validate it
+                    if (entity.getTentativeDurationInDays() == null || entity.getTentativeDurationInDays() <= 0) {
+                        throw new RestInvalidArgumentException("Tentative Duration (Days) must be greater than 0", null);
+                    }
+                }
+
+                // Only validate throughputDuringSlowdown if it's editable for this role, or if new and value was provided
+                if (isFieldEditable(editableFields, "throughputDuringSlowdown")) {
+                    if (entity.getThroughputDuringSlowdown() == null || entity.getThroughputDuringSlowdown() < 0) {
+                        throw new RestInvalidArgumentException("Throughput during Slowdown is required", null);
+                    }
+                } else if (isNewEntity && dto.getThroughputDuringSlowdown() != null) {
+                    // Non-editable field in new entity, but value was provided - validate it
+                    if (entity.getThroughputDuringSlowdown() == null || entity.getThroughputDuringSlowdown() < 0) {
+                        throw new RestInvalidArgumentException("Throughput during Slowdown is required", null);
+                    }
+                }
+
+                // Only validate throughputUOM if it's editable for this role, or if new and value was provided
+                if (isFieldEditable(editableFields, "throughputUOM")) {
+                    if (entity.getThroughputUOM() == null || entity.getThroughputUOM().isBlank()) {
+                        throw new RestInvalidArgumentException("Throughput UoM is required", null);
+                    }
+                } else if (isNewEntity && dto.getThroughputUOM() != null && !dto.getThroughputUOM().isBlank()) {
+                    // Non-editable field in new entity, but value was provided - validate it
+                    if (entity.getThroughputUOM() == null || entity.getThroughputUOM().isBlank()) {
+                        throw new RestInvalidArgumentException("Throughput UoM is required", null);
+                    }
+                }
+
+                // Only validate startDate if it's editable for this role, or if new and value was provided
+                if (isFieldEditable(editableFields, "startDate")) {
+                    if (entity.getStartDate() == null) {
+                        throw new RestInvalidArgumentException("Start Date is required", null);
+                    }
+                } else if (isNewEntity && dto.getStartDate() != null) {
+                    // Non-editable field in new entity, but value was provided - validate it
+                    if (entity.getStartDate() == null) {
+                        throw new RestInvalidArgumentException("Start Date is required", null);
+                    }
+                }
+
+                // Only validate purpose if it's editable for this role, or if new and value was provided
+                if (isFieldEditable(editableFields, "purpose")) {
+                    if (entity.getPurpose() == null || entity.getPurpose().isBlank()) {
+                        throw new RestInvalidArgumentException("Purpose of Slowdown is required", null);
+                    }
+                } else if (isNewEntity && dto.getPurpose() != null && !dto.getPurpose().isBlank()) {
+                    // Non-editable field in new entity, but value was provided - validate it
+                    if (entity.getPurpose() == null || entity.getPurpose().isBlank()) {
+                        throw new RestInvalidArgumentException("Purpose of Slowdown is required", null);
+                    }
+                }
 
                 tcsSlowdownRepository.save(entity);
                 savedList.add(entity);
@@ -415,6 +500,26 @@ if(plantId != null) {
         String siteId,
         String verticalId) {
         
+        return exportTCSSlowdownWithRoles(plantId, year, siteId, verticalId);
+    }
+
+    /**
+     * Export TCS Slowdown data with role-based field editing permissions
+     * Non-editable fields will be displayed in 24% gray background
+     * Gets editable fields for the logged-in user's roles from JWT token
+     * 
+     * @param plantId The plant ID
+     * @param year The AOP year
+     * @param siteId The site ID
+     * @param verticalId The vertical ID
+     * @return Excel file as byte array with role-based field styling
+     */
+    public byte[] exportTCSSlowdownWithRoles(
+        String plantId,
+        String year,
+        String siteId,
+        String verticalId) {
+        
         try {
             // Get data
             Map<String, Object> dataMap = getAll(plantId, year, siteId, verticalId);
@@ -429,6 +534,14 @@ if(plantId != null) {
             CellStyle headerStyle = createHeaderStyle(workbook);
             CellStyle dataStyle = createDataStyle(workbook);
             CellStyle dateStyle = createDateStyle(workbook);
+            CellStyle readOnlyStyle = createReadOnlyStyle(workbook);
+            CellStyle readOnlyDateStyle = createReadOnlyDateStyle(workbook);
+
+            // Get editable fields for the logged-in user's roles (same as getAll method)
+            Set<String> editableFields = new HashSet<>();
+            List<String> userRoles = getLoggedUserRoles();
+            List<String> editableFieldsList = getEditableFieldsByRolesAndScreen(userRoles, "tcs-slowdown");
+            editableFields.addAll(editableFieldsList);
 
             int currentRow = 0;
 
@@ -436,14 +549,25 @@ if(plantId != null) {
             Row headerRow = sheet.createRow(currentRow++);
             String[] headers = {
                 "Particulars", 
-                "Duration In Days", 
                 "Throughput During Slowdown", 
-                "uom", 
+                "UOM", 
+                "Duration In Days",
                 "Start Date", 
                 "End Date", 
                 "Purpose", 
                 "Id"
             };
+            
+            // Map header names to field keys for permission checking
+            Map<Integer, String> columnFieldMap = new HashMap<>();
+            columnFieldMap.put(0, "particulates");
+            columnFieldMap.put(1, "throughputDuringSlowdown");
+            columnFieldMap.put(2, "throughputUOM");
+            columnFieldMap.put(3, "durationInDays");
+            columnFieldMap.put(4, "startDate");
+            columnFieldMap.put(5, "endDate");
+            columnFieldMap.put(6, "purpose");
+            columnFieldMap.put(7, "id");
             
             for (int col = 0; col < headers.length; col++) {
                 Cell cell = headerRow.createCell(col);
@@ -457,58 +581,65 @@ if(plantId != null) {
                 int col = 0;
 
                 // Particulars
-                Cell particularsCell = row.createCell(col++);
+                Cell particularsCell = row.createCell(col);
                 particularsCell.setCellValue(dto.getParticulates() != null ? dto.getParticulates() : "");
-                particularsCell.setCellStyle(dataStyle);
-
-                // Duration In Days
-                Cell durationCell = row.createCell(col++);
-                if (dto.getDurationInDays() != null) {
-                    durationCell.setCellValue(dto.getDurationInDays());
-                } else {
-                    durationCell.setCellValue("");
-                }
-                durationCell.setCellStyle(dataStyle);
+                particularsCell.setCellStyle(isFieldEditable(editableFields, columnFieldMap.get(col)) ? dataStyle : readOnlyStyle);
+                col++;
 
                 // Throughput During Slowdown
-                Cell throughputCell = row.createCell(col++);
+                Cell throughputCell = row.createCell(col);
                 if (dto.getThroughputDuringSlowdown() != null) {
                     throughputCell.setCellValue(dto.getThroughputDuringSlowdown());
                 } else {
                     throughputCell.setCellValue("");
                 }
-                throughputCell.setCellStyle(dataStyle);
+                throughputCell.setCellStyle(isFieldEditable(editableFields, columnFieldMap.get(col)) ? dataStyle : readOnlyStyle);
+                col++;
 
                 // uom
-                Cell uomCell = row.createCell(col++);
+                Cell uomCell = row.createCell(col);
                 uomCell.setCellValue(dto.getThroughputUOM() != null ? dto.getThroughputUOM() : "");
-                uomCell.setCellStyle(dataStyle);
+                uomCell.setCellStyle(isFieldEditable(editableFields, columnFieldMap.get(col)) ? dataStyle : readOnlyStyle);
+                col++;
+
+                // Duration In Days
+                Cell durationCell = row.createCell(col);
+                if (dto.getDurationInDays() != null) {
+                    durationCell.setCellValue(dto.getDurationInDays());
+                } else {
+                    durationCell.setCellValue("");
+                }
+                durationCell.setCellStyle(isFieldEditable(editableFields, columnFieldMap.get(col)) ? dataStyle : readOnlyStyle);
+                col++;
 
                 // Start Date
-                Cell startDateCell = row.createCell(col++);
+                Cell startDateCell = row.createCell(col);
                 if (dto.getStartDate() != null) {
                     startDateCell.setCellValue(dto.getStartDate());
                 } else {
                     startDateCell.setCellValue("");
                 }
-                startDateCell.setCellStyle(dateStyle);
+                startDateCell.setCellStyle(isFieldEditable(editableFields, columnFieldMap.get(col)) ? dateStyle : readOnlyDateStyle);
+                col++;
 
                 // End Date
-                Cell endDateCell = row.createCell(col++);
+                Cell endDateCell = row.createCell(col);
                 if (dto.getEndDate() != null) {
                     endDateCell.setCellValue(dto.getEndDate());
                 } else {
                     endDateCell.setCellValue("");
                 }
-                endDateCell.setCellStyle(dateStyle);
+                endDateCell.setCellStyle(isFieldEditable(editableFields, columnFieldMap.get(col)) ? dateStyle : readOnlyDateStyle);
+                col++;
 
                 // Purpose
-                Cell purposeCell = row.createCell(col++);
+                Cell purposeCell = row.createCell(col);
                 purposeCell.setCellValue(dto.getPurpose() != null ? dto.getPurpose() : "");
-                purposeCell.setCellStyle(dataStyle);
+                purposeCell.setCellStyle(isFieldEditable(editableFields, columnFieldMap.get(col)) ? dataStyle : readOnlyStyle);
+                col++;
 
                 // Id (hidden column)
-                Cell idCell = row.createCell(col++);
+                Cell idCell = row.createCell(col);
                 idCell.setCellValue(dto.getId() != null ? dto.getId() : "");
                 idCell.setCellStyle(dataStyle);
             }
@@ -534,6 +665,31 @@ if(plantId != null) {
             e.printStackTrace();
             throw new RuntimeException("Failed to export data", e);
         }
+    }
+
+    /**
+     * Check if a field is editable for the current user based on role permissions
+     * Matches field key from editableFields list (from database)
+     */
+    private boolean isFieldEditable(Set<String> editableFields, String fieldKey) {
+        // If editableFields is empty, all fields are editable (no role restrictions)
+        if (editableFields.isEmpty()) {
+            return true;
+        }
+        
+        if (fieldKey == null) {
+            return true;
+        }
+        
+        // Direct match (case-insensitive)
+        String fieldKeyLower = fieldKey.toLowerCase();
+        for (String editableField : editableFields) {
+            if (editableField != null && editableField.toLowerCase().equals(fieldKeyLower)) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     @Override
@@ -645,19 +801,19 @@ if(plantId != null) {
                 try {
                     int col = 0;
                     
-                    // Particulars
+                    // Col 0: Particulars
                     dto.setParticulates(getStringCellValue(row.getCell(col++)));
                     
-                    // Duration In Days
-                    dto.setDurationInDays(getIntegerCellValue(row.getCell(col++)));
-                    
-                    // Throughput During Slowdown
+                    // Col 1: Throughput During Slowdown
                     dto.setThroughputDuringSlowdown(getDoubleCellValue(row.getCell(col++)));
                     
-                    // uom
+                    // Col 2: Throughput UOM
                     dto.setThroughputUOM(getStringCellValue(row.getCell(col++)));
                     
-                    // Start Date
+                    // Col 3: Duration In Days
+                    dto.setDurationInDays(getIntegerCellValue(row.getCell(col++)));
+                    
+                    // Col 4: Start Date
                     Date startDate = getDateCellValue(row.getCell(col++), dateFormatter);
                     if (startDate != null) {
                         dto.setStartDate(startDate);
@@ -669,7 +825,7 @@ if(plantId != null) {
                         }
                     }
                     
-                    // End Date
+                    // Col 5: End Date
                     Date endDate = getDateCellValue(row.getCell(col++), dateFormatter);
                     if (endDate != null) {
                         dto.setEndDate(endDate);
@@ -681,16 +837,16 @@ if(plantId != null) {
                         }
                     }
                     
-                    // Purpose
+                    // Col 6: Purpose
                     dto.setPurpose(getStringCellValue(row.getCell(col++)));
                     
-                    // Id
+                    // Col 7: Id
                     String idStr = getStringCellValue(row.getCell(col++));
                     if (idStr != null && !idStr.isEmpty()) {
                         dto.setId(idStr);
                     }
 
-                    // Validate required fields
+                    // Validate required fields (only if no prior errors)
                     if (dto.getSaveStatus() == null) {
                         if (dto.getDurationInDays() == null || dto.getDurationInDays() <= 0) {
                             dto.setSaveStatus("Failed");
@@ -907,6 +1063,46 @@ if(plantId != null) {
         return style;
     }
 
+    /**
+     * Create a cell style for read-only (non-editable) fields with 24% gray background
+     */
+    private CellStyle createReadOnlyStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        
+        // Apply 25% gray background
+        style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        
+        return style;
+    }
+
+    /**
+     * Create a date cell style for read-only (non-editable) fields with 24% gray background
+     */
+    private CellStyle createReadOnlyDateStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        
+        // Apply 25% gray background
+        style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        
+        // Set date format to dd-MM-yyyy hh:mm AM/PM
+        org.apache.poi.ss.usermodel.CreationHelper creationHelper = workbook.getCreationHelper();
+        style.setDataFormat(creationHelper.createDataFormat().getFormat("dd-mm-yyyy hh:mm AM/PM"));
+        
+        return style;
+    }
+
     private String getStringCellValue(Cell cell) {
         if (cell == null) {
             return null;
@@ -1044,7 +1240,87 @@ if(plantId != null) {
         
         return null;
     }
+    
+    /**
+     * Retrieves the roles of the currently logged-in user from the JWT token.
+     * Extracts both realm-level and client-level roles from the security context.
+     * 
+     * @return A list of role names for the authenticated user, or an empty list if no authentication is found
+     */
+    public List<String> getLoggedUserRoles() {
+        List<String> userRoles = new ArrayList<>();
+        
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getCredentials() instanceof Jwt)) {
+            return userRoles;
+        }
+        
+        Jwt jwt = (Jwt) authentication.getCredentials();
+        
+        // 1. Get Realm-level roles (Most Common)
+        Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
+        if (realmAccess != null && realmAccess.containsKey("roles")) {
+            @SuppressWarnings("unchecked")
+            List<String> realmRoles = (List<String>) realmAccess.get("roles");
+            if (realmRoles != null) {
+                userRoles.addAll(realmRoles);
+            }
+        }
+        
+        // 2. Get Client-level roles (If your roles are scoped to a specific client/app)
+        Map<String, Object> resourceAccess = jwt.getClaimAsMap("resource_access");
+        if (resourceAccess != null && !resourceAccess.isEmpty()) {
+            for (Object value : resourceAccess.values()) {
+                if (value instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> clientAccess = (Map<String, Object>) value;
+                    if (clientAccess.containsKey("roles")) {
+                        @SuppressWarnings("unchecked")
+                        List<String> clientRoles = (List<String>) clientAccess.get("roles");
+                        if (clientRoles != null) {
+                            userRoles.addAll(clientRoles);
+                        }
+                    }
+                }
+            }
+        }
+        
+        return userRoles;
+    }
+    
+    /**
+     * Retrieves all editable field keys for the specified roles and screen.
+     * This method queries the Role_Field_Access table to determine which fields
+     * are editable for given roles on a specific screen.
+     * 
+     * @param roleNames List of role names (e.g., 'plant_manager', 'cts_admin', 'cts_head')
+     * @param screenName The screen name (e.g., 'tcs-slowdown')
+     * @return List of FieldKey values that are editable for the given roles and screen
+     * 
+     * Example usage:
+     * List<String> roles = Arrays.asList("plant_manager", "cts_admin", "cts_head");
+     * List<String> editableFields = getEditableFieldsByRolesAndScreen(roles, "tcs-slowdown");
+     */
+    public List<String> getEditableFieldsByRolesAndScreen(List<String> roleNames, String screenName) {
+        try {
+            if (roleNames == null || roleNames.isEmpty()) {
+                return new ArrayList<>();
+            }
+            
+            if (screenName == null || screenName.trim().isEmpty()) {
+                return new ArrayList<>();
+            }
+            
+            return tcsSlowdownRepository.getEditableFieldsByRolesAndScreen(roleNames, screenName);
+        } catch (Exception e) {
+            System.err.println("Error fetching editable fields: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
 }
+
+
+
 
 
 

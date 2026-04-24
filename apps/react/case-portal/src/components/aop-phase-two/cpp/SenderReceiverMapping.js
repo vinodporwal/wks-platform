@@ -4,6 +4,7 @@ import { useSession } from 'SessionStoreContext'
 import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
 import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
 import AdvanceKendoTable from '../common/AdvanceKendoTable/index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const SenderReceiverMapping = () => {
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
@@ -79,8 +80,8 @@ const SenderReceiverMapping = () => {
     {
       field: 'receiverUtilityId',
       title: 'Receiver Utility ID',
-      widthT: 150,
-      minWidth: 150,
+      widthT: 180,
+      minWidth: 180,
       type: 'text',
       editable: true,
       hidden: false,
@@ -96,8 +97,8 @@ const SenderReceiverMapping = () => {
     {
       field: 'receiverCostCenterId',
       title: 'Receiver Cost Center ID',
-      widthT: 180,
-      minWidth: 180,
+      widthT: 200,
+      minWidth: 200,
       type: 'text',
       editable: true,
     },
@@ -112,24 +113,24 @@ const SenderReceiverMapping = () => {
     {
       field: 'receiverPlantId',
       title: 'Receiver Plant ID',
-      widthT: 130,
-      minWidth: 130,
+      widthT: 200,
+      minWidth: 200,
       type: 'text',
       editable: true,
     },
     {
       field: 'senderCostCenter',
       title: 'Sender Cost Center',
-      widthT: 180,
-      minWidth: 180,
+      widthT: 200,
+      minWidth: 200,
       type: 'text',
       editable: true,
     },
     {
       field: 'senderCostCenterId',
       title: 'Sender Cost Center ID',
-      widthT: 180,
-      minWidth: 180,
+      widthT: 200,
+      minWidth: 200,
       type: 'text',
       editable: true,
     },
@@ -144,8 +145,8 @@ const SenderReceiverMapping = () => {
     {
       field: 'senderPlantId',
       title: 'Sender Plant ID',
-      widthT: 130,
-      minWidth: 130,
+      widthT: 200,
+      minWidth: 200,
       type: 'text',
       editable: true,
     },
@@ -160,16 +161,16 @@ const SenderReceiverMapping = () => {
     {
       field: 'utilityId',
       title: 'Utility ID',
-      widthT: 120,
-      minWidth: 120,
+      widthT: 150,
+      minWidth: 150,
       type: 'text',
       editable: true,
     },
     {
       field: 'remarks',
       title: 'Remarks',
-      widthT: 150,
-      minWidth: 150,
+      widthT: 200,
+      minWidth: 200,
       type: 'textarea',
       editable: true,
     },
@@ -352,12 +353,7 @@ const SenderReceiverMapping = () => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       <Stack sx={{ mt: 2 }}>
         <AdvanceKendoTable
           columns={columns}

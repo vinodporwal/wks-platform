@@ -175,17 +175,14 @@ public class TCSSiteNetCapacityServiceImpl implements TCSSiteNetCapacityService 
 
         try {
             // Stored Procedure name
-            String procedureName = "GetPlantNetCapacity";
-            if (!"MEG".equalsIgnoreCase(verticalName)) {
-                if (plantId != null) {
-                    // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity";
-                    procedureName = "DTA" + "_GetPlantNetCapacity";
-                } else {
-                    // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_OutPut";
-                    procedureName = "DTA_GetPlantNetCapacity";
-                }
-            }
-            
+            String procedureName = null;
+            if (plantId != null) {
+                // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity";
+                procedureName = "DTA" + "_GetPlantNetCapacity";
+            } else {
+                // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_OutPut";
+                procedureName = "DTA_GetPlantNetCapacity";
+            }   
             log.debug("Implementation: getData() - Executing stored procedure: {}", procedureName);
 
             // Prepare native SQL call with parameters
@@ -248,15 +245,13 @@ public class TCSSiteNetCapacityServiceImpl implements TCSSiteNetCapacityService 
         
         log.debug("Implementation: getHeaders() - Started with verticalName: {}", verticalName);
 
-        String procedureName = "GetPlantNetCapacity";
-        if (!"MEG".equalsIgnoreCase(verticalName)) {
-            if (plantId != null) {
-                // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity";
-                procedureName = "DTA" + "_GetPlantNetCapacity";
-            } else {
-                // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_OutPut";
-                procedureName = "DTA_GetPlantNetCapacity";
-            }
+        String procedureName = null;
+        if (plantId != null) {
+            // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity";
+            procedureName = "DTA" + "_GetPlantNetCapacity";
+        } else {
+            // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_OutPut";
+            procedureName = "DTA_GetPlantNetCapacity";
         }
         
         log.debug("Implementation: getHeaders() - Procedure name: {}", procedureName);

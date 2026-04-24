@@ -766,6 +766,12 @@ const AdvanceKendoTable = ({
     setOpenDeleteDialogeBox(false)
   }
   const ActionsCell = ({ dataItem }) => {
+    const isNonDeletable =
+      (!dataItem.isEditable && dataItem?.isEditable !== undefined) ||
+      dataItem?.hideDelete === true
+    if (isNonDeletable) {
+      return <td style={{ textAlign: 'center', verticalAlign: 'middle' }} />
+    }
     return (
       <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
         <SvgIcon
@@ -2213,6 +2219,7 @@ const AdvanceKendoTable = ({
         openDeleteDialogeBox={openDeleteDialogeBox}
         setOpenDeleteDialogeBox={setOpenDeleteDialogeBox}
         deleteTheRecord={deleteTheRecord}
+        confirmButtonText={'Delete'}
       />
       {/* Remark Dialog */}
       <RemarkDialog

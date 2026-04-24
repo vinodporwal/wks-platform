@@ -63,9 +63,17 @@ export default function StepperNav() {
 
   const buildSteps = useCallback(
     (menuArr) => {
+      const menuGroupIds = ['production-norms-plan', 'tcs', 'utilityPlant']
+      const currentPathname = location.pathname
+
+      // Find which menu group matches the current pathname
+      const matchedGroupId = menuGroupIds.find((id) =>
+        currentPathname.includes(id),
+      )
+
       const planGroup = menuArr
         .flatMap((m) => m.children || [])
-        .find((c) => c.id === 'production-norms-plan')
+        .find((c) => c.id === matchedGroupId)
 
       if (!planGroup?.children) return []
       const allItems = collectItems(planGroup.children)
@@ -74,7 +82,7 @@ export default function StepperNav() {
         return { label: item.title, url: item.url, key: slug }
       })
     },
-    [collectItems],
+    [collectItems, location.pathname],
   )
 
   useEffect(() => {

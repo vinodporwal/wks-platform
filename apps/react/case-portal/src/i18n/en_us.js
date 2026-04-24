@@ -106,7 +106,7 @@ const defs = {
     aopDesignBasis: 'AOP Basis',
     tcs: 'Term Crude Sheet',
     tcsinput: 'TCS Input',
-    tcsoutput: 'TCS Output',
+    tcsoutput: 'TCS Input Review',
     pimsoutput: 'PIMS Output',
     workflowdesign: 'Workflow Design',
 
