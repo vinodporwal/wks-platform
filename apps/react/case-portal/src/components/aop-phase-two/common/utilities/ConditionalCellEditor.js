@@ -12,7 +12,7 @@ export const ConditionalCellEditor = ({
   const options = dataItem.options || []
 
   const [localValue, setLocalValue] = useState(
-    inputType === 'dropdown' ? (storedValue ?? '') : storedValue,
+    inputType === 'dropdown' ? storedValue ?? '' : storedValue,
   )
   const isFirstRender = useRef(true)
   const focusRef = useRef(null)

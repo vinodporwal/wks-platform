@@ -415,14 +415,14 @@ const ApproveDialog = ({
                   variant='body2'
                   sx={{ mb: 0.75, fontWeight: 600, color: '#f57c00' }}
                 >
-                  Plant Manager — Pending Submissions
+                  Plant Manager ï¿½ Pending Submissions
                   {pmNotSubmittedPlants.length > 0
                     ? ` (${pmNotSubmittedPlants.length})`
                     : ''}
                 </Typography>
                 {pmNotSubmittedPlants.length === 0 ? (
                   <Typography variant='caption' color='text.secondary'>
-All plants submitted.
+                    All plants submitted.
                   </Typography>
                 ) : (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
@@ -455,14 +455,14 @@ All plants submitted.
                   variant='body2'
                   sx={{ mb: 0.75, fontWeight: 600, color: '#1565c0' }}
                 >
-                  CTS Tech Manager — Pending Submissions
+                  CTS Tech Manager ï¿½ Pending Submissions
                   {ctsNotSubmittedPlants.length > 0
                     ? ` (${ctsNotSubmittedPlants.length})`
                     : ''}
                 </Typography>
                 {ctsNotSubmittedPlants.length === 0 ? (
                   <Typography variant='caption' color='text.secondary'>
-All plants submitted.
+                    All plants submitted.
                   </Typography>
                 ) : (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>

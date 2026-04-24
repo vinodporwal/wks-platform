@@ -114,10 +114,7 @@ export const SelectCellEditor = ({
 
         {Array.isArray(options) &&
           options.map((option) => (
-            <MenuItem
-              key={option[valueField]}
-              value={option[valueField]}
-            >
+            <MenuItem key={option[valueField]} value={option[valueField]}>
               {option[textField]}
             </MenuItem>
           ))}
