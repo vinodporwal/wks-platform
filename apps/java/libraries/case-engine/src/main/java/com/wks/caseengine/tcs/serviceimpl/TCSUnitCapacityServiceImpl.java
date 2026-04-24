@@ -204,9 +204,9 @@ Verticals vertical = null;
             
         try {            
             // Stored Procedure name
-            String procedureName = "GetTcsUnitCapacity";
-            if (!"MEG".equalsIgnoreCase(verticalName)) {
-                if(plantId != null) {
+            String procedureName = null;
+         
+            if(plantId != null) {
              //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity"; 
                 procedureName = "CRUDE_ALL_GetTcsUnitCapacity";    // this sp is independant of verticle (no verticle Id used)
             }
@@ -214,7 +214,7 @@ Verticals vertical = null;
                // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_OutPut"; 
                 procedureName = "GetTcsUnitCapacity_OutPut";
             }
-            }
+           
 
             // Prepare native SQL call with parameters
             String sql = "";
@@ -369,16 +369,15 @@ Verticals vertical = null;
     //    String uom
     ) {
 
-        String procedureName = "GetTcsUnitCapacity";
-        if (!"MEG".equalsIgnoreCase(verticalName)) {
-            if(plantId != null) {
-         //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity";
-             procedureName = "CRUDE_ALL_GetTcsUnitCapacity";    
-            }
-            else  {
-             //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_OutPut";
-                procedureName = "GetTcsUnitCapacity_OutPut";
-            }
+        String procedureName = null;
+
+        if(plantId != null) {
+        //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity";
+            procedureName = "CRUDE_ALL_GetTcsUnitCapacity";    
+        }
+        else  {
+            //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_OutPut";
+            procedureName = "GetTcsUnitCapacity_OutPut";
         }
 
         String callableSql = "";
@@ -570,18 +569,17 @@ Verticals vertical = null;
         String capacityType) {
         try {            
             // Stored Procedure name
-            String procedureName = "GetTcsUnitCapacity_UOM";
-            if (!"MEG".equalsIgnoreCase(verticalName)) {
-                if(plantId != null) {
-             //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_UOM"; 
-             procedureName = "CRUDE_ALL_GetTcsUnitCapacity_UOM";   
-            }
-            else {
-             //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_UOM_OutPut";
-             procedureName = "CRUDE_ALL_GetTcsUnitCapacity_UOM_OutPut";
+            String procedureName = null;
 
-            }
-            }
+            if(plantId != null) {
+            //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_UOM"; 
+            procedureName = "CRUDE_ALL_GetTcsUnitCapacity_UOM";   
+        }
+        else {
+            //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_UOM_OutPut";
+            procedureName = "CRUDE_ALL_GetTcsUnitCapacity_UOM_OutPut";
+
+        }
 
             // Prepare native SQL call with parameters
             String sql = "";
