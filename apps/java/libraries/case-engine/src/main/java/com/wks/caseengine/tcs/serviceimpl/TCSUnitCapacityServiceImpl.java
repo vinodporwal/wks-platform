@@ -272,6 +272,55 @@ Verticals vertical = null;
 
         query.executeUpdate();
 
+        // Check if data exists for the given year, plantId, and capacityType after carry forward
+        String checkSql = "SELECT COUNT(*) FROM TCSUnitCapacity WHERE Plant_FK_ID = :plantId AND AOPYear = :aopYear AND CapacityType = :capacityType";
+        Query checkQuery = entityManager.createNativeQuery(checkSql);
+        checkQuery.setParameter("plantId", plantId);
+        checkQuery.setParameter("aopYear", aopYear);
+        checkQuery.setParameter("capacityType", capacityType);
+        
+        Number count = (Number) checkQuery.getSingleResult();
+        
+        if (count.intValue() == 0) {
+            // No data exists, add dummy data
+            Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+                    .orElseThrow(() -> new RuntimeException("Plant not found for ID: " + plantId));
+            
+            UUID siteFkId = plant.getSiteFkId();
+            UUID verticalFkId = plant.getVerticalFKId();
+            
+            String insertSql = "INSERT INTO TCSUnitCapacity " +
+                "(Id, CapacityType, UOM, Remark, AOPYear, Plant_FK_ID, InsertedDateTime, UpdatedDateTime, " +
+                "Summer, Winter, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, [Dec], Jan, Feb, Mar, SourceAOPYear, " +
+                "IsCarryForward, Vertical_FK_ID, Site_FK_ID) " +
+                "VALUES (:id, :capacityType, :uom, :remark, :aopYear, :plantId, getDate(), getDate(), " +
+                "0, 0, :apr, :may, :jun, :jul, :aug, :sep, :oct, :nov, :dec, :jan, :feb, :mar, '', 0, " +
+                ":verticalId, :siteId)";
+            
+            if ("design".equalsIgnoreCase(capacityType)) {
+                // Insert KBPSD
+                Query insertQuery1 = entityManager.createNativeQuery(insertSql);
+                setDummyParams(insertQuery1, capacityType, "KBPSD", "KBPSD DATA New Added", aopYear, plantId, verticalFkId, siteFkId, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                insertQuery1.executeUpdate();
+                
+                // Insert KTPD
+                Query insertQuery2 = entityManager.createNativeQuery(insertSql);
+                setDummyParams(insertQuery2, capacityType, "KTPD", "New Added", aopYear, plantId, verticalFkId, siteFkId, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                insertQuery2.executeUpdate();
+                
+            } else if ("maxAchieved".equalsIgnoreCase(capacityType)) {
+                // Insert KBPSD
+                Query insertQuery1 = entityManager.createNativeQuery(insertSql);
+                setDummyParams(insertQuery1, capacityType, "KBPSD", "KBPSD New Added", aopYear, plantId, verticalFkId, siteFkId, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                insertQuery1.executeUpdate();
+                
+                // Insert KTPD
+                Query insertQuery2 = entityManager.createNativeQuery(insertSql);
+                setDummyParams(insertQuery2, capacityType, "KTPD", "New Added", aopYear, plantId, verticalFkId, siteFkId, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                insertQuery2.executeUpdate();
+            }
+        }
+
         AOPMessageVM vm = new AOPMessageVM();
         vm.setCode(200);
         vm.setMessage("Data carried forward successfully");
@@ -285,6 +334,31 @@ Verticals vertical = null;
    
 
 }
+
+    private void setDummyParams(Query query, String capacityType, String uom, String remark, String aopYear, String plantId, UUID verticalId, UUID siteId, 
+            int apr, int may, int jun, int jul, int aug, int sep, int oct, int nov, int dec, int jan, int feb, int mar) {
+        query.setParameter("id", UUID.randomUUID().toString());
+        query.setParameter("capacityType", capacityType);
+        query.setParameter("uom", uom);
+        query.setParameter("remark", remark);
+        query.setParameter("aopYear", aopYear);
+        query.setParameter("plantId", plantId);
+        query.setParameter("verticalId", verticalId.toString());
+        query.setParameter("siteId", siteId.toString());
+        
+        query.setParameter("apr", apr);
+        query.setParameter("may", may);
+        query.setParameter("jun", jun);
+        query.setParameter("jul", jul);
+        query.setParameter("aug", aug);
+        query.setParameter("sep", sep);
+        query.setParameter("oct", oct);
+        query.setParameter("nov", nov);
+        query.setParameter("dec", dec);
+        query.setParameter("jan", jan);
+        query.setParameter("feb", feb);
+        query.setParameter("mar", mar);
+    }
 
     private List<String> getHeaders(
         String plantId,
