@@ -189,18 +189,14 @@ if(plantId != null) {
             
         try {            
             // Stored Procedure name
-            String procedureName = "GetTcsSlowdown";
-            if (!"MEG".equalsIgnoreCase(verticalName)) {
-                if(plantId != null) {
-             //   procedureName = verticalName + "_" + siteName + "_GetTcsSlowdown"; 
+            String procedureName = null;
+            if(plantId != null) {
+                //   procedureName = verticalName + "_" + siteName + "_GetTcsSlowdown"; 
                 procedureName =  "CRUDE_DTA_GetTcsSlowdown";
-             }
-
-                else {
-                    procedureName = "GetTcsSlowdown_OutPut";
-                }
             }
-
+            else {
+                procedureName = "GetTcsSlowdown_OutPut";
+            }
             // Prepare native SQL call with parameters
 
             String sql = "";
@@ -243,16 +239,15 @@ if(plantId != null) {
 
            String siteId = siteId1.toString();
 
-        String procedureName = "GetTcsSlowdown";
-        if (!"MEG".equalsIgnoreCase(verticalName)) {
-            if(plantId != null) {
+        String procedureName = null;
+
+        if(plantId != null) {
             // procedureName = verticalName + "_" + siteName + "_GetTcsSlowdown";
             procedureName =  "CRUDE_DTA_GetTcsSlowdown";
-            }
-            else {
-             //   procedureName = verticalName + "_" + siteName + "_GetTcsSlowdown_OutPut";
-                procedureName = "GetTcsSlowdown_OutPut";
-            }
+        }
+        else {
+            //   procedureName = verticalName + "_" + siteName + "_GetTcsSlowdown_OutPut";
+            procedureName = "GetTcsSlowdown_OutPut";
         }
         String callableSql = "";
         if(plantId != null) {
