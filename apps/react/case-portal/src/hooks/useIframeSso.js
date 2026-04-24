@@ -15,7 +15,7 @@ const APM_ORIGIN = process.env.REACT_APP_APM_ORIGIN || 'http://localhost:3000'
 export function useIframeSso({ onSuccess, onFailure }) {
   const isInIframe = window.self !== window.top
   const handledRef = useRef(false)
-
+  console.log("useIframeSso call :::::", useIframeSso);
   useEffect(() => {
     if (!isInIframe) return
 
