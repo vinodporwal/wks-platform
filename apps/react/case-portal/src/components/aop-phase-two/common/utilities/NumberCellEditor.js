@@ -1,4 +1,4 @@
-import { Input } from '@progress/kendo-react-inputs'
+import { InputBase } from '@mui/material'
 import NotificationTST from 'components/Utilities/NotificationTST'
 import { useState, useEffect, useRef } from 'react'
 
@@ -54,10 +54,10 @@ export const NumberCellEditor = ({
     }
   }
 
+  // Autofocus when cell enters edit mode
   useEffect(() => {
     if (inputRef.current) {
-      const el = inputRef.current.element || inputRef.current
-      if (el && typeof el.focus === 'function') el.focus()
+      inputRef.current.focus()
     }
   }, [])
 
@@ -77,17 +77,38 @@ export const NumberCellEditor = ({
 
   return (
     <td>
-      <Input
-        ref={inputRef}
+      <InputBase
+        inputRef={inputRef}
         value={localValue}
         onChange={handleChange}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        style={{
-          fontSize: '0.8rem',
-          padding: '2px 2px',
-          height: '22px',
-          lineHeight: '1rem',
+        autoComplete='off'
+        sx={{
+          width: '100%',
+          fontSize: '0.8125rem',
+          fontWeight: 600,
+          color: '#1d3665',
+          px: 1,
+          height: 28,
+          borderRadius: '6px',
+          backgroundColor: '#FFFFFF',
+          border: '1px solid #E0E4EC',
+          boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)',
+          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': {
+            borderColor: '#B0B8C4',
+            backgroundColor: '#F9FAFB',
+          },
+          '&.Mui-focused': {
+            borderColor: '#00F5E1',
+            boxShadow: '0 0 0 3px rgba(0, 245, 225, 0.12)',
+            backgroundColor: '#FFFFFF',
+          },
+          '& input': {
+            textAlign: 'right',
+            padding: '0 !important',
+          },
         }}
       />
       <NotificationTST

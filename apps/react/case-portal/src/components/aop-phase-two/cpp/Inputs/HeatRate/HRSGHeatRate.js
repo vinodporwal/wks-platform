@@ -92,12 +92,12 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
     {
       field: 'previousYearHeatRate',
       title: 'PREVIOUS YEAR BUDGET HR',
-      widthT: 200,
+      widthT: 230,
       type: 'numberWithRadio',
       format: customValueFormat(1),
       editable: true,
       numericEditable: false,
-      minWidth: 200,
+      minWidth: 230,
       radioGroupField: 'selectedHeatRate',
       targetField: 'finalHeatRate',
       radioValue: 'PREVIOUS_YEAR',
@@ -265,7 +265,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
 
   const dropdownConfig = {
     options: dropdownOptions,
-    label: 'Select Plant',
+    label: 'Plant',
     placeholder: 'Select Plant',
     valueKey: 'id',
     labelKey: 'name',

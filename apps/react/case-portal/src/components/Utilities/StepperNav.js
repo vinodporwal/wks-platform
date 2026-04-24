@@ -36,9 +36,21 @@ export default function StepperNav() {
   // -------------------------
   const buildSteps = useCallback(
     (menuArr) => {
+      // const planGroup = menuArr
+      //   .flatMap((m) => m.children || [])
+      //   .find((c) => c.id === 'production-norms-plan')
+      //********************************* */
+      const menuGroupIds = ['production-norms-plan', 'tcs', 'utilityPlant']
+      const currentPathname = location.pathname
+
+      // Find which menu group matches the current pathname
+      const matchedGroupId = menuGroupIds.find((id) =>
+        currentPathname.includes(id),
+      )
       const planGroup = menuArr
         .flatMap((m) => m.children || [])
-        .find((c) => c.id === 'production-norms-plan')
+        .find((c) => c.id === matchedGroupId)
+      //********************************* */
 
       if (!planGroup?.children) return []
 
@@ -51,7 +63,7 @@ export default function StepperNav() {
         icon: item.icon,
       }))
     },
-    [collectItems],
+    [collectItems, location.pathname],
   )
 
   // -------------------------
