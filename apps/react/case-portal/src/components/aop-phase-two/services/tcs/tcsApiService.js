@@ -710,7 +710,9 @@ async function saveRogcData(keycloak, SITE_ID, PLANT_ID, AOP_YEAR, payload) {
       let errBody = {}
       try {
         errBody = await resp.json()
-      } catch (_) {}
+      } catch (_) {
+        // intentionally ignore JSON parse errors; fall through to error handling
+      }
       const err = new Error(
         errBody?.errorMessage || `HTTP error! Status: ${resp.status}`,
       )
