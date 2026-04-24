@@ -824,7 +824,7 @@ const ConsumptionNorms = () => {
                 px: 2.5,
               }}
             >
-              Release
+              Confirm
             </Button>
           </DialogActions>
         </Dialog>{' '}
