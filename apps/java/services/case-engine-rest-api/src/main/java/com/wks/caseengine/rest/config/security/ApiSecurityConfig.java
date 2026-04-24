@@ -49,7 +49,7 @@ public class ApiSecurityConfig {
 				.authorizeRequests(authz -> authz
 						.filterSecurityInterceptorOncePerRequest(false)
 						// SSO endpoints are validated internally, no Bearer token required
-						.requestMatchers("/api/sso/**").permitAll()
+						.requestMatchers("/sso/**").permitAll()
 						.anyRequest().authenticated()
 						.accessDecisionManager(accessDecisionManager()))
 				.oauth2ResourceServer(oauth2 -> oauth2
