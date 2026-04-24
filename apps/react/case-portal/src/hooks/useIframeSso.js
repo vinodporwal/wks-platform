@@ -21,7 +21,9 @@ export function useIframeSso({ onSuccess, onFailure }) {
 
     function handleMessage(event) {
       // Strict origin check
-      if (event.origin !== APM_ORIGIN) return
+      console.log("event.origin:::::", event.origin)
+      console.log("env.APM_ORIGIN:::::", APM_ORIGIN)
+      if (!event.origin.startsWith(APM_ORIGIN)) return
       if (handledRef.current) return
 
       const { type, token } = event.data || {}
@@ -67,7 +69,7 @@ export function useIframeSso({ onSuccess, onFailure }) {
         credentials: 'include', // send/receive cookies
         body: JSON.stringify({ token }),
       })
-
+      console.log("SSO login by APM Response:::", res)
       if (!res.ok) {
         const text = await res.text()
         onFailure && onFailure(`SSO login failed: ${text}`)
@@ -75,6 +77,7 @@ export function useIframeSso({ onSuccess, onFailure }) {
       }
 
       const data = await res.json()
+      console.log("SSO login by APM Response JSON :::", data);
       onSuccess && onSuccess(token, data)
     } catch (err) {
       onFailure && onFailure(`SSO login error: ${err.message}`)
