@@ -990,7 +990,9 @@ const CrackerConfig = () => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      <Box sx={{ overflowX: 'auto', width: '100%', mb: IS_CRACKER_HMD ? 1 : 0 }}>
+      <Box
+        sx={{ overflowX: 'auto', width: '100%', mb: IS_CRACKER_HMD ? 1 : 0 }}
+      >
         <Tabs
           sx={{
             borderBottom: '0px solid #ccc',
