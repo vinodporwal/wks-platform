@@ -35,42 +35,6 @@ const PCGOutlookNew = ({
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
-  // Generate dummy data for PCG Outlook
-  const generateDummyData = useCallback(() => {
-    // Extract year from AOP_YEAR (e.g., "2026-27" -> "26")
-    const year = AOP_YEAR ? AOP_YEAR.split('-')[0].slice(-2) : '25'
-
-    const months = [
-      { sNo: 1, month: `Jan'${year}` },
-      { sNo: 2, month: `Feb'${year}` },
-      { sNo: 3, month: `Mar'${year}` },
-      { sNo: 4, month: `Apr'${year}` },
-      { sNo: 5, month: `May'${year}` },
-      { sNo: 6, month: `Jun'${year}` },
-      { sNo: 7, month: `Jul'${year}` },
-      { sNo: 8, month: `Aug'${year}` },
-      { sNo: 9, month: `Sep'${year}` },
-      { sNo: 10, month: `Oct'${year}` },
-      { sNo: 11, month: `Nov'${year}` },
-      { sNo: 12, month: `Dec'${year}` },
-    ]
-
-    return months.map((month, index) => ({
-      id: `row_${index}`,
-      sNo: month.sNo,
-      month: month.month,
-      gasifierAvailabilityTotal: 7.2,
-      gasifierAvailabilityDta: 2.9,
-      gasifierAvailabilitySez: 4.3,
-      synGasProductionTotal: 15.1,
-      synGasProductionDta: 6.0,
-      synGasProductionSez: 9.1,
-      cge: 71,
-      remarks: '',
-      inEdit: false,
-    }))
-  }, [AOP_YEAR])
-
   // Carry forward data from previous year
   const handleCarryForward = useCallback(async () => {
     try {
@@ -85,11 +49,11 @@ const PCGOutlookNew = ({
 
       console.log('Carry-forward response:', carryForwardResponse)
 
-      setSnackbarData({
-        message: `PCG Outlook data carried forward from previous year successfully!`,
-        severity: 'success',
-      })
-      setSnackbarOpen(true)
+      // setSnackbarData({
+      //   message: `PCG Outlook data carried forward from previous year successfully!`,
+      //   severity: 'success',
+      // })
+      // setSnackbarOpen(true)
 
       return true
     } catch (carryForwardErr) {
@@ -108,9 +72,23 @@ const PCGOutlookNew = ({
       try {
         setLoading(true)
 
-        // Use dummy data directly for development/testing
-        const transformedData = generateDummyData()
+        let transformedData = []
 
+        const response = await TcsApiService.getPcgOutlookData(
+          keycloak,
+          VERTICAL_ID,
+          SITE_ID,
+          AOP_YEAR,
+        )
+
+        if (response?.length > 0 && Array.isArray(response)) {
+          transformedData = response.map((item, index) => ({
+            id: item.id || `row_${index}`,
+            ...item,
+            remark: item.remark || '',
+            inEdit: false,
+          }))
+        }
         // If data is empty and carry-forward not skipped, attempt carry-forward and refetch
         if (transformedData.length === 0 && !skipCarryForward) {
           const carryForwardSuccess = await handleCarryForward()
@@ -136,15 +114,7 @@ const PCGOutlookNew = ({
         setLoading(false)
       }
     },
-    [
-      AOP_YEAR,
-      SITE_ID,
-      currentTab.id,
-      generateDummyData,
-      setSnackbarData,
-      setSnackbarOpen,
-      setModifiedCells,
-    ],
+    [AOP_YEAR, SITE_ID, currentTab.id, setSnackbarData, setSnackbarOpen],
   )
 
   // Fetch data on mount or when dependencies change
@@ -250,11 +220,11 @@ const PCGOutlookNew = ({
         format: valueFormat,
       },
       {
-        field: 'remarks',
+        field: 'remark',
         title: 'Remark',
         editable: true,
-        width: 250,
-        minWidth: 250,
+        // width: 250,
+        // minWidth: 250,
         type: 'textarea',
       },
     ]
@@ -266,7 +236,7 @@ const PCGOutlookNew = ({
     if (!row?.isEditable && row?.isEditable !== undefined) {
       return
     }
-    setCurrentRemark(row.remarks || '')
+    setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
@@ -380,7 +350,7 @@ const PCGOutlookNew = ({
         return
       }
 
-      // Custom validation: If any row data is updated, remarks must be filled and different from original
+      // Custom validation: If any row data is updated, remark must be filled and different from original
       const fieldsToCheck = [
         'gasifierAvailabilityTotal',
         'gasifierAvailabilityDta',
@@ -395,7 +365,7 @@ const PCGOutlookNew = ({
         originalRows,
         fieldsToCheck,
         'month',
-        'remarks',
+        'remark',
       )
 
       if (validationError) {
@@ -425,7 +395,7 @@ const PCGOutlookNew = ({
         severity: 'success',
       })
       setModifiedCells({})
-      fetchPcgOutlookData()
+      fetchPcgOutlookData(true)
     } catch (error) {
       console.error('Error saving PCG Outlook data:', error)
       setSnackbarOpen(true)
@@ -495,7 +465,7 @@ const PCGOutlookNew = ({
           severity: 'success',
         })
         // Refresh data after import
-        await fetchPcgOutlookData()
+        await fetchPcgOutlookData(true)
       } else if (response?.code === 400 && response?.data) {
         // Handle error response with Excel file download
         try {
@@ -525,7 +495,7 @@ const PCGOutlookNew = ({
             severity: 'error',
           })
           // Refresh data after import
-          await fetchPcgOutlookData()
+          await fetchPcgOutlookData(true)
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)

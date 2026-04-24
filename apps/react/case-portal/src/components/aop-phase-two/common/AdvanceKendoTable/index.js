@@ -766,6 +766,12 @@ const AdvanceKendoTable = ({
     setOpenDeleteDialogeBox(false)
   }
   const ActionsCell = ({ dataItem }) => {
+    const isNonDeletable =
+      (!dataItem.isEditable && dataItem?.isEditable !== undefined) ||
+      dataItem?.hideDelete === true
+    if (isNonDeletable) {
+      return <td style={{ textAlign: 'center', verticalAlign: 'middle' }} />
+    }
     return (
       <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
         <SvgIcon
