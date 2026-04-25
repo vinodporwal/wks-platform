@@ -102,10 +102,13 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 			if(type.equalsIgnoreCase("Composition")) {
 				String storedProcedure=vertical.getName()+"_GetCompositionNorms";
 				 types= getTypes( plantId,  year,  siteId, storedProcedure);
+			}else if(type.equalsIgnoreCase("OptimizerPrices")) {
+				String storedProcedure=vertical.getName()+"_GetOptimizerPrices";
+				 types= getTypes( plantId,  year,  siteId, storedProcedure);
 			}
 			for (Object[] row : results) {
 				Map<String, Object> map = new HashMap<>(); // Create a new map for each row
-				if (!type.equalsIgnoreCase("Composition") && row[4].toString().contains(type)) {
+				if (!type.equalsIgnoreCase("Composition") && !type.equalsIgnoreCase("OptimizerPrices") && row[4].toString().contains(type)) {
 
 					map.put("normParameterFKID", row[2]);
 					map.put("particulars", row[3]);
@@ -128,7 +131,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 					spyroInputDataList.add(map);
 				} else {
 					
-					if (type.equalsIgnoreCase("Composition")) {
+					if (type.equalsIgnoreCase("Composition") || type.equalsIgnoreCase("OptimizerPrices")) {
 						if (types.contains(row[4].toString())) {
 
 							map.put("normParameterFKID", row[2]);

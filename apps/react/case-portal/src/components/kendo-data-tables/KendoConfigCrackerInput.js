@@ -405,7 +405,7 @@ const CrackerConfig = () => {
         let transformedData1 = []
         let transformedData12 = []
         var spyroVM1 = []
-        if (IS_CRACKER_HMD){
+        if (IS_CRACKER_HMD) {
           mode = currentTabDisplay
         }
         if (currentTabDisplay == 'Constant') {
@@ -751,7 +751,7 @@ const CrackerConfig = () => {
     try {
       let mode = selectMode || ''
       let response
-      if (IS_CRACKER_HMD){
+      if (IS_CRACKER_HMD) {
         mode = currentTabDisplay
       }
       if (currentTabDisplay == 'Naphtha') {
@@ -828,7 +828,7 @@ const CrackerConfig = () => {
     })
 
     let mode = selectMode
-    if (IS_CRACKER_HMD){
+    if (IS_CRACKER_HMD) {
       mode = currentTabDisplay
     }
     const EXCEL_NAME =
@@ -990,11 +990,9 @@ const CrackerConfig = () => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      {IS_CRACKER_HMD && (
-        <ModeSelection permissions={adjustedPermissionsReadyOnly} />
-      )}
-
-      <Box sx={{ overflowX: 'auto', width: '100%' }}>
+      <Box
+        sx={{ overflowX: 'auto', width: '100%', mb: IS_CRACKER_HMD ? 1 : 0 }}
+      >
         <Tabs
           sx={{
             borderBottom: '0px solid #ccc',
@@ -1032,6 +1030,11 @@ const CrackerConfig = () => {
           })}
         </Tabs>
       </Box>
+
+      {IS_CRACKER_HMD && (
+        <ModeSelection permissions={adjustedPermissionsReadyOnly} />
+      )}
+
       <Box>
         {(() => {
           const rows = getRows(currentTabDisplay)

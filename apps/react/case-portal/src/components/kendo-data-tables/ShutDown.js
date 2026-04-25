@@ -1168,26 +1168,20 @@ const ShutDown = ({ permissions }) => {
     setLoading(true)
 
     try {
+      await DataService.deleteMultipleShutdown(deleteIds, keycloak, PLANT_ID)
 
-        await DataService.deleteMultipleShutdown(
-          deleteIds,
-          keycloak,
-          PLANT_ID,
-        )
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Records Deleted successfully!',
+        severity: 'success',
+      })
+      fetchData()
 
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Records Deleted successfully!',
-          severity: 'success',
-        })
-        fetchData()
-
-        await MaintenanceDetailsApiService.getMaintenanceData(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-      
+      await MaintenanceDetailsApiService.getMaintenanceData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
     } catch (error) {
       console.error('Error deleting Records', error)
       setSnackbarOpen(true)

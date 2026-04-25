@@ -51,4 +51,8 @@ public interface SpyroOutputService {
 
 	AOPMessageVM getDynamicYield(String plantId, String year, String mode);
 
+	byte[] exportSpyroOutputNewExcel(String year, String plantId, String mode, String type);
+
+	AOPMessageVM importSpyroOutputNewExcel(String year, String plantId, String mode, String type, MultipartFile file);
+
 }

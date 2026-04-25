@@ -1370,12 +1370,7 @@ const SlowDown = ({ permissions }) => {
     setLoading(true)
 
     try {
-
-      await DataService.deleteMultipleSlowdown(
-        deleteIds,
-        keycloak,
-        PLANT_ID,
-      )
+      await DataService.deleteMultipleSlowdown(deleteIds, keycloak, PLANT_ID)
 
       setSnackbarOpen(true)
       setSnackbarData({

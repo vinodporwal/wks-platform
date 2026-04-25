@@ -1727,9 +1727,14 @@ const KendoDataTablesCrackerRunLength = ({
               .filter(
                 (col) =>
                   col.field &&
-                  !['Plant_FK_Id', 'AOPYear', 'Demo', 'Date', 'aopYear', 'plant_FK_Id'].includes(
-                    col.field,
-                  ),
+                  ![
+                    'Plant_FK_Id',
+                    'AOPYear',
+                    'Demo',
+                    'Date',
+                    'aopYear',
+                    'plant_FK_Id',
+                  ].includes(col.field),
               )
               .map((col) => (
                 <div
