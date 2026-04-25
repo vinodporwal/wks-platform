@@ -149,8 +149,8 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
       const payload = newRows.map((row) => {
         const obj = {
           auditYear: AOP_YEAR,
-          normParameterFKId: row.NormParamId,
-          remarks: row.Remarks || '',
+          normParameterFKId: row.NormParmId,
+          remarks: row.Remarks || '0',
           id: null,
           UOM: '',
         }
