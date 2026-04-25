@@ -40,6 +40,7 @@ import Business from '@mui/icons-material/Business'
 import Domain from '@mui/icons-material/Domain'
 import Factory from '@mui/icons-material/Factory'
 import CorporateFare from '@mui/icons-material/CorporateFare'
+import { BusinessBlueIcon, CalenderIcon, PlantIcon, SiteIcon } from 'assets/images/icons/index'
 
 function parseAllowed(raw) {
   const map = {}
@@ -561,18 +562,18 @@ export default function HeaderContent({ keycloak }) {
     PaperProps: {
       style: {
         maxHeight: 240,
-        borderRadius: 8, // menu panel radius
+        borderRadius: '6px', // menu panel radius
         marginTop: 6,
-        background: '#f2f2f2',
-
+        background: '#FFFFFF',
+        gap: '4px',
         boxShadow: '0 8px 24px rgba(15,23,42,0.08)',
-        border: '1px solid rgba(15,23,42,0.06)',
+        border: '1px solid #DDDEE1',
         color: '#0f172a',
-        padding: '4px',
+        padding: '6px 12px 6px 4px',
       },
       sx: {
         // also add sx for runtime override (some MUI versions prefer sx)
-        borderRadius: 8,
+        borderRadius: '6px',
       },
     },
     disableScrollLock: true,
@@ -582,27 +583,28 @@ export default function HeaderContent({ keycloak }) {
     borderRadius: 6, //  smaller
     mx: 0.5,
     my: 0.25,
-    color: '#0f172a',
-    fontWeight: 600,
-    fontSize: '0.85rem',
+    color: '#303030',
+    fontWeight: 500,
+    fontSize: '14px !important',
+    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
     '&:hover': {
       background: 'rgba(59,130,246,0.06)',
     },
     '&.Mui-selected': {
       background: 'rgba(59,130,246,0.12)',
-      fontWeight: 700,
+      fontWeight: 600,
     },
   }
 
   const dropdownContainerStyle = {
     display: 'flex',
     alignItems: 'center',
-    background: '#e7eaee',
+    background: '#ffffff',
   }
 
   const selectStyle = {
     height: 34,
-    minWidth: 150,
+    minWidth: 160,
 
     '& .MuiOutlinedInput-root': {
       borderRadius: '6px !important', // ?? THIS is the real border
@@ -611,7 +613,7 @@ export default function HeaderContent({ keycloak }) {
     },
 
     '& .MuiOutlinedInput-notchedOutline': {
-      border: '1px solid rgba(15,23,42,0.06)',
+      border: '1px solid #DDDEE1',
       borderRadius: '6px !important', // ?? must repeat here
     },
 
@@ -711,23 +713,17 @@ export default function HeaderContent({ keycloak }) {
                           gap: 1,
                         }}
                       >
-                        <CalendarToday
-                          sx={{ fontSize: 16, color: '#97751d !important' }}
-                        />
+                        <Box component="img" src={CalenderIcon} className="w16-icon" />
 
                         <Box
                           component='span'
-                          sx={{
-                            color: '#6b7c93',
-                            fontWeight: 600,
-                            fontSize: '0.85rem',
-                          }}
+                          className="header-dropdown-label"
                         >
                           Year:
                         </Box>
                         <Box
                           component='strong'
-                          sx={{ fontWeight: 800, color: '#0f172a', ml: 0.5 }}
+                          className="header-dropdown-value"
                         >
                           {yearObj?.AOPDisplayYear}
                         </Box>
@@ -773,22 +769,16 @@ export default function HeaderContent({ keycloak }) {
                             gap: 1,
                           }}
                         >
-                          <Business
-                            sx={{ fontSize: 16, color: '#d539d3 !important' }}
-                          />
+                          <Box component="img" src={BusinessBlueIcon} className="w16-icon" />
                           <Box
                             component='span'
-                            sx={{
-                              color: '#6b7c93',
-                              fontWeight: 600,
-                              fontSize: '0.85rem',
-                            }}
+                            className="header-dropdown-label"
                           >
                             Vertical:
                           </Box>
                           <Box
                             component='strong'
-                            sx={{ fontWeight: 800, color: '#0f172a', ml: 0.5 }}
+                            className="header-dropdown-value"
                           >
                             {vert?.name}
                           </Box>
@@ -832,22 +822,16 @@ export default function HeaderContent({ keycloak }) {
                             gap: 1,
                           }}
                         >
-                          <CorporateFare
-                            sx={{ fontSize: 16, color: '#005bdb !important' }}
-                          />
+                          <Box component="img" src={SiteIcon} className="w16-icon" />
                           <Box
                             component='span'
-                            sx={{
-                              color: '#6b7c93',
-                              fontWeight: 600,
-                              fontSize: '0.85rem',
-                            }}
+                            className="header-dropdown-label"
                           >
                             Site:
                           </Box>
                           <Box
                             component='strong'
-                            sx={{ fontWeight: 800, color: '#0f172a', ml: 0.5 }}
+                            className="header-dropdown-value"
                           >
                             {site?.name}
                           </Box>
@@ -890,22 +874,16 @@ export default function HeaderContent({ keycloak }) {
                             gap: 1,
                           }}
                         >
-                          <Factory
-                            sx={{ fontSize: 16, color: '#638f11 !important' }}
-                          />
+                          <Box component="img" src={PlantIcon} className="w16-icon" />
                           <Box
                             component='span'
-                            sx={{
-                              color: '#6b7c93',
-                              fontWeight: 600,
-                              fontSize: '0.85rem',
-                            }}
+                            className="header-dropdown-label"
                           >
                             Plant:
                           </Box>
                           <Box
                             component='strong'
-                            sx={{ fontWeight: 800, color: '#0f172a', ml: 0.5 }}
+                            className="header-dropdown-value"
                           >
                             {plant?.name}
                           </Box>
