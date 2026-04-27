@@ -58,7 +58,7 @@ export const NoSpinnerNumericEditor = ({
           fontWeight: 600,
           color: '#1d3665', // Using your deep navy color for the text
           px: 1,
-          height: 28,
+          height: 40,
           borderRadius: '6px',
           backgroundColor: '#FFFFFF', // Solid white
           border: '1px solid #E0E4EC', // Very soft grey border

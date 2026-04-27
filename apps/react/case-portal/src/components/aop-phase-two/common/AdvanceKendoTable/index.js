@@ -1146,7 +1146,7 @@ const AdvanceKendoTable = ({
         title={props.title}
         style={{
           padding: '0px',
-          borderRight: '1px solid #878787',
+          // borderRight: '1px solid #878787',
           textAlign: 'start',
           width: { ...restThProps['width'] },
         }}
@@ -1950,84 +1950,96 @@ const AdvanceKendoTable = ({
 
   return (
     <div style={{ position: 'relative' }}>
-      {loading && <LoaderBackdrop open={!!loading} />}
+      <Box
+        sx={{
+          mt: 1,
+          mr: 1,
+          ml: 1,
+          border: '1px solid #dde1eb',
+          pt: 1,
+          borderRadius: 2,
+        }}
+      >
+        {loading && <LoaderBackdrop open={!!loading} />}
 
-      {(permissions?.allAction ?? true) && (
-        <Box
-          className='action-box2'
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%',
-            mb: 1,
-          }}
-        >
+        {(permissions?.allAction ?? true) && (
           <Box
+            className='action-box2'
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 1,
-              flexGrow: 1, // ? key to take up all left space
+              justifyContent: 'space-between',
+              width: '100%',
+              mb: 1,
             }}
           >
-            <Typography
-              component='div'
+            <Box
               sx={{
-                fontSize: '0.85rem',
-                fontWeight: 850,
-                color: '#2d3748',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 1.5,
-                mb: permissions?.marginBottom ? '12px' : '4px',
+                gap: 1,
+                flexGrow: 1, // ? key to take up all left space
               }}
             >
-              {/* TOGGLE ICON */}
-              <Box
+              <Typography
+                component='div'
                 sx={{
+                  fontSize: '0.85rem',
+                  fontWeight: 850,
+                  color: '#2d3748',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 32,
-                  height: 32,
-                  borderRadius: '10px',
-                  backgroundColor: '#eef2ff',
-                  color: '#1e293b',
-                  ml: 1,
-                  cursor: 'pointer',
+                  gap: 1.5,
+                  mb: permissions?.marginBottom ? '12px' : '4px',
                 }}
-                onClick={toggleGrid}
               >
-                <KeyboardArrowUpIcon
+                {/* TOGGLE ICON */}
+                <Box
                   sx={{
-                    fontSize: 20,
-                    transition: '0.2s',
-                    transform: gridExpanded ? 'rotate(0deg)' : 'rotate(180deg)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 32,
+                    height: 32,
+                    borderRadius: '10px',
+                    backgroundColor: '#eef2ff',
+                    color: '#1e293b',
+                    ml: 1,
+                    cursor: 'pointer',
                   }}
-                />
-              </Box>
+                  onClick={toggleGrid}
+                >
+                  <KeyboardArrowUpIcon
+                    sx={{
+                      fontSize: 20,
+                      transition: '0.2s',
+                      transform: gridExpanded
+                        ? 'rotate(0deg)'
+                        : 'rotate(180deg)',
+                    }}
+                  />
+                </Box>
 
-              {/* TITLE */}
-              {title || permissions?.titleName}
+                {/* TITLE */}
+                {title || permissions?.titleName}
 
-              {/* ITEMS BADGE */}
-              <Box
-                sx={{
-                  ml: 1,
-                  px: 1.5,
-                  py: 0.5,
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  borderRadius: '6px',
-                  backgroundColor: '#f3ece7',
-                  color: '#92400e',
-                }}
-              >
-                {rows?.length || 0} {rows?.length === 1 ? 'Item' : 'Items'}
-              </Box>
+                {/* ITEMS BADGE */}
+                <Box
+                  sx={{
+                    ml: 1,
+                    px: 1.5,
+                    py: 0.5,
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    borderRadius: '6px',
+                    backgroundColor: '#f3ece7',
+                    color: '#92400e',
+                  }}
+                >
+                  {rows?.length || 0} {rows?.length === 1 ? 'Item' : 'Items'}
+                </Box>
 
-              {/* EDITABLE BADGE
+                {/* EDITABLE BADGE
                              <Box
                                sx={{
                                  ml: 1,
@@ -2042,219 +2054,227 @@ const AdvanceKendoTable = ({
                              >
                                Editable
                              </Box> */}
-            </Typography>
-          </Box>
+              </Typography>
+            </Box>
 
-          {/* RIGHT: Buttons */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {permissions?.approveBtn && (
-              <Button
-                variant='contained'
-                className='btn-save'
-                onClick={approveModalOpen}
-                disabled={isButtonDisabled || READ_ONLY}
-              >
-                Approve
-              </Button>
-            )}
-
-            {permissions?.addButton && (
-              <Button
-                variant='contained'
-                className='btn-add'
-                startIcon={<AddIcon />}
-                onClick={handleAddRow}
-                disabled={isButtonDisabled || READ_ONLY}
-              >
-                Add Item
-              </Button>
-            )}
-            {permissions?.showExport && (
-              <Button
-                variant='contained'
-                onClick={handleExport}
-                disabled={isButtonDisabled}
-                className='btn-export'
-                startIcon={<DownloadIcon fontSize='small' />}
-              >
-                Export
-              </Button>
-            )}
-
-            {permissions?.downloadExcelBtnFromUI && (
-              <Button
-                variant='contained'
-                className='btn-export'
-                startIcon={<DownloadIcon fontSize='small' />}
-                onClick={excelExport}
-                disabled={rows?.length === 0}
-              >
-                Export
-              </Button>
-            )}
-
-            {permissions?.showImport && (
-              <>
+            {/* RIGHT: Buttons */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                marginRight: '1rem',
+              }}
+            >
+              {permissions?.approveBtn && (
                 <Button
                   variant='contained'
-                  onClick={triggerFileUpload}
+                  className='btn-save'
+                  onClick={approveModalOpen}
                   disabled={isButtonDisabled || READ_ONLY}
-                  className='btn-import'
-                  startIcon={<UploadIcon sx={{ fontSize: 16 }} />}
                 >
-                  Import
+                  Approve
                 </Button>
+              )}
 
-                <input
-                  type='file'
-                  accept='.xlsx,.xls'
-                  onChange={onFileChange}
-                  ref={fileInputRef}
-                  style={{ display: 'none' }}
+              {permissions?.addButton && (
+                <Button
+                  variant='contained'
+                  className='btn-add'
+                  startIcon={<AddIcon />}
+                  onClick={handleAddRow}
+                  disabled={isButtonDisabled || READ_ONLY}
+                >
+                  Add Item
+                </Button>
+              )}
+              {permissions?.showExport && (
+                <Button
+                  variant='contained'
+                  onClick={handleExport}
+                  disabled={isButtonDisabled}
+                  className='btn-export'
+                  startIcon={<DownloadIcon fontSize='small' />}
+                >
+                  Export
+                </Button>
+              )}
+
+              {permissions?.downloadExcelBtnFromUI && (
+                <Button
+                  variant='contained'
+                  className='btn-export'
+                  startIcon={<DownloadIcon fontSize='small' />}
+                  onClick={excelExport}
+                  disabled={rows?.length === 0}
+                >
+                  Export
+                </Button>
+              )}
+
+              {permissions?.showImport && (
+                <>
+                  <Button
+                    variant='contained'
+                    onClick={triggerFileUpload}
+                    disabled={isButtonDisabled || READ_ONLY}
+                    className='btn-import'
+                    startIcon={<UploadIcon sx={{ fontSize: 16 }} />}
+                  >
+                    Import
+                  </Button>
+
+                  <input
+                    type='file'
+                    accept='.xlsx,.xls'
+                    onChange={onFileChange}
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                  />
+                </>
+              )}
+              {permissions?.saveBtn && (
+                <Button
+                  variant='contained'
+                  onClick={saveModalOpen}
+                  disabled={
+                    isButtonDisabled ||
+                    READ_ONLY ||
+                    Object.keys(modifiedCells).length === 0
+                  }
+                  className='btn-save'
+                  startIcon={<SaveIcon sx={{ fontSize: 16 }} />}
+                >
+                  Save
+                </Button>
+              )}
+
+              {permissions?.showCalculate && (
+                <Button
+                  variant='contained'
+                  onClick={handleCalculateBtn}
+                  disabled={isButtonDisabled || READ_ONLY}
+                  className='btn-calculate'
+                  startIcon={<CalculateIcon sx={{ fontSize: 16 }} />}
+                >
+                  Calculate
+                </Button>
+              )}
+
+              {permissions?.showFinalSubmit && (
+                <Button
+                  variant='contained'
+                  disabled={isButtonDisabled || READ_ONLY}
+                  // className='custom-btn-submit'
+                  className='btn-save'
+                >
+                  Submit
+                </Button>
+              )}
+
+              {permissions?.showDropdown && (
+                <GenericDropdown
+                  options={dropdownConfig?.options}
+                  value={selectedDropdownValue || ''}
+                  onChange={(value) => setSelectedDropdownValue(value)}
+                  label={dropdownConfig?.label || 'Select'}
+                  placeholder={dropdownConfig?.placeholder || 'Select'}
+                  valueKey={dropdownConfig?.valueKey || 'id'}
+                  labelKey={dropdownConfig?.labelKey || 'name'}
                 />
-              </>
-            )}
-            {permissions?.saveBtn && (
-              <Button
-                variant='contained'
-                onClick={saveModalOpen}
-                disabled={
-                  isButtonDisabled ||
-                  READ_ONLY ||
-                  Object.keys(modifiedCells).length === 0
-                }
-                className='btn-save'
-                startIcon={<SaveIcon sx={{ fontSize: 16 }} />}
-              >
-                Save
-              </Button>
-            )}
-
-            {permissions?.showCalculate && (
-              <Button
-                variant='contained'
-                onClick={handleCalculateBtn}
-                disabled={isButtonDisabled || READ_ONLY}
-                className='btn-calculate'
-                startIcon={<CalculateIcon sx={{ fontSize: 16 }} />}
-              >
-                Calculate
-              </Button>
-            )}
-
-            {permissions?.showFinalSubmit && (
-              <Button
-                variant='contained'
-                disabled={isButtonDisabled || READ_ONLY}
-                // className='custom-btn-submit'
-                className='btn-save'
-              >
-                Submit
-              </Button>
-            )}
-
-            {permissions?.showDropdown && (
-              <GenericDropdown
-                options={dropdownConfig?.options}
-                value={selectedDropdownValue || ''}
-                onChange={(value) => setSelectedDropdownValue(value)}
-                label={dropdownConfig?.label || 'Select'}
-                placeholder={dropdownConfig?.placeholder || 'Select'}
-                valueKey={dropdownConfig?.valueKey || 'id'}
-                labelKey={dropdownConfig?.labelKey || 'name'}
-              />
-            )}
+              )}
+            </Box>
           </Box>
-        </Box>
-      )}
+        )}
 
-      <Collapse in={gridExpanded}>
-        <div className='kendo-data-grid' ref={gridContainerRef}>
-          <Tooltip openDelay={50} position='auto' anchorElement='target'>
-            <ExcelExport
-              data={rows}
-              ref={_export}
-              fileName={`${permissions?.ExcelName}.xlsx`}
-            >
-              <Grid
-                style={{
-                  flex: 1,
-                  overflow: 'auto',
-                  height: customHeight
-                    ? `${customHeight}vh`
-                    : rows?.length > 10
-                      ? `${calculatedVH}vh`
-                      : undefined,
-                }}
-                modifiedCells={modifiedCells}
+        <Collapse in={gridExpanded}>
+          <div className='kendo-data-grid' ref={gridContainerRef}>
+            <Tooltip openDelay={50} position='auto' anchorElement='target'>
+              <ExcelExport
                 data={rows}
-                rows={{ data: CustomRow }}
-                sortable={{
-                  mode: 'multiple',
-                }}
-                autoProcessData={true}
-                dataItemKey='id'
-                editField='inEdit'
-                editable={{ mode: 'incell' }}
-                onEditChange={handleEditChange}
-                edit={edit}
-                filter={filter}
-                onFilterChange={(e) => setFilter(e.filter)}
-                onItemChange={itemChange}
-                onKeyDown={(e) => onTabKeyPressed(e)}
-                resizable={true}
-                defaultSkip={0}
-                defaultGroup={initialGroup}
-                defaultTake={defaultTake}
-                contextMenu={true}
-                filterable={
-                  permissions.filterable &&
-                  columns.some((col) => dateFields.includes(col.field))
-                }
-                size='small'
-                pageable={getPaginationConfig()}
-                onRowClick={handleRowClick}
+                ref={_export}
+                fileName={`${permissions?.ExcelName}.xlsx`}
               >
-                {renderColumns(
-                  columns.filter((col) => !hiddenFields.includes(col.field)),
-                  filter,
-                  sort,
-                )}
+                <Grid
+                  style={{
+                    flex: 1,
+                    overflow: 'auto',
+                    height: customHeight
+                      ? `${customHeight}vh`
+                      : rows?.length > 10
+                        ? `${calculatedVH}vh`
+                        : undefined,
+                  }}
+                  modifiedCells={modifiedCells}
+                  data={rows}
+                  rows={{ data: CustomRow }}
+                  sortable={{
+                    mode: 'multiple',
+                  }}
+                  autoProcessData={true}
+                  dataItemKey='id'
+                  editField='inEdit'
+                  editable={{ mode: 'incell' }}
+                  onEditChange={handleEditChange}
+                  edit={edit}
+                  filter={filter}
+                  onFilterChange={(e) => setFilter(e.filter)}
+                  onItemChange={itemChange}
+                  onKeyDown={(e) => onTabKeyPressed(e)}
+                  resizable={true}
+                  defaultSkip={0}
+                  defaultGroup={initialGroup}
+                  defaultTake={defaultTake}
+                  contextMenu={true}
+                  filterable={
+                    permissions.filterable &&
+                    columns.some((col) => dateFields.includes(col.field))
+                  }
+                  size='small'
+                  pageable={getPaginationConfig()}
+                  onRowClick={handleRowClick}
+                >
+                  {renderColumns(
+                    columns.filter((col) => !hiddenFields.includes(col.field)),
+                    filter,
+                    sort,
+                  )}
 
-                {!READ_ONLY && permissions?.deleteButton && (
-                  <GridColumn
-                    key='actions'
-                    field='actions'
-                    title='Action'
-                    width={80}
-                    className='k-text-center'
-                    filterable={false}
-                    editable={false}
-                    cells={{
-                      data: ActionsCell,
-                    }}
-                  />
-                )}
+                  {!READ_ONLY && permissions?.deleteButton && (
+                    <GridColumn
+                      key='actions'
+                      field='actions'
+                      title='Action'
+                      width={80}
+                      className='k-text-center'
+                      filterable={false}
+                      editable={false}
+                      cells={{
+                        data: ActionsCell,
+                      }}
+                    />
+                  )}
 
-                {customActionCell && (
-                  <GridColumn
-                    key='customActions'
-                    field='customActions'
-                    title='Action'
-                    width={80}
-                    className='k-text-center'
-                    filterable={false}
-                    editable={false}
-                    cells={{
-                      data: customActionCell,
-                    }}
-                  />
-                )}
-              </Grid>
-            </ExcelExport>
-          </Tooltip>
-        </div>
-      </Collapse>
+                  {customActionCell && (
+                    <GridColumn
+                      key='customActions'
+                      field='customActions'
+                      title='Action'
+                      width={80}
+                      className='k-text-center'
+                      filterable={false}
+                      editable={false}
+                      cells={{
+                        data: customActionCell,
+                      }}
+                    />
+                  )}
+                </Grid>
+              </ExcelExport>
+            </Tooltip>
+          </div>
+        </Collapse>
+      </Box>
 
       {/* snackbar toaster */}
       <Notification
