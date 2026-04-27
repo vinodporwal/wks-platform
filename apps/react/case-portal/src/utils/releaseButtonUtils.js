@@ -8,7 +8,7 @@ const collectItems = (nodes) =>
   })
 
 export const shouldShowReleaseButton = (menuItems) => {
-  console.log('menuItems', menuItems)
+  // console.log('menuItems', menuItems)
 
   const planGroup = menuItems
     ?.flatMap((m) => m.children || [])
@@ -20,7 +20,7 @@ export const shouldShowReleaseButton = (menuItems) => {
   const lastItem = allItems[allItems.length - 1]
   const lastKey = lastItem?.url?.split('/').pop()
 
-  console.log('lastKey', lastKey)
+  // console.log('lastKey', lastKey)
 
   return lastKey !== 'quality-packaging-norms'
 }

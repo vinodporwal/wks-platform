@@ -170,7 +170,7 @@ const MaterialBalance = ({ permissions }) => {
         mar: row.Mar || null,
         UOM: '',
         auditYear: AOP_YEAR,
-        normParameterFKId: row.normParameterFKId || row.NormParameterType_FK_Id,
+        normParameterFKId: row.NormParameterId,
         remarks: row.Remarks,
         id: row.idFromApi || null,
       }))

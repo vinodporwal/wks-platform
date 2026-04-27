@@ -15,7 +15,7 @@ import { useSession } from 'SessionStoreContext'
 import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
 import KendoDataTables from './index'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { Grid, TextField } from '../../../node_modules/@mui/material/index'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/index'
@@ -26,6 +26,18 @@ import { t } from '../../../node_modules/i18next/index'
 import { format } from '../../../node_modules/date-fns/format'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { validateFields } from 'utils/validationUtils'
+import { DataService } from 'services/DataService'
+import { useMenuContext } from 'menu/menuProvider'
+import { shouldShowReleaseButton } from 'utils/releaseButtonUtils'
+import { setIsBlocked, setIsReleased } from 'store/reducers/dataGridStore'
+
+import {
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from '@mui/material'
 export default function QualityPackagingNorms() {
   const [rows, setRows] = useState([])
   const [priceDiffRows, setPriceDiffRows] = useState([])
@@ -90,6 +102,11 @@ export default function QualityPackagingNorms() {
   const [packagingRows, setPackagingRows] = useState([])
   const [rowsOtherCosts, setRowsOtherCosts] = useState([])
   const [calculationObject, setCalculationObject] = useState([])
+
+  const { items: menuItems } = useMenuContext()
+  const showReleaseButton = shouldShowReleaseButton(menuItems)
+
+  console.log('showReleaseButton', showReleaseButton)
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -277,10 +294,33 @@ export default function QualityPackagingNorms() {
     }
   }, [keycloak, PLANT_ID, AOP_YEAR])
 
+  const getIsReleased = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    try {
+      const response = await DataService.getReleaseAOPStatus(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      // If response has data, disable the button (already released)
+      // If no data, enable the button (not yet released)
+      if (response?.data && Object.keys(response.data).length > 0) {
+        setIsReleaseDisabled(true)
+      } else {
+        setIsReleaseDisabled(false)
+      }
+    } catch (error) {
+      console.error('Error fetching release status:', error)
+    }
+  }
+
   useEffect(() => {
     if (tabIndex === 0) {
       fetchQualityParameters()
       fetchPriceDifferential()
+      getIsReleased()
     }
     // Add other fetches for other tabs if needed
   }, [
@@ -1160,6 +1200,7 @@ export default function QualityPackagingNorms() {
       addButton: false,
       deleteButton: false,
       showTitle: true,
+      showReleaseBtn: !showReleaseButton ? true : false,
     },
     isOldYear,
   )
@@ -1259,6 +1300,48 @@ export default function QualityPackagingNorms() {
     },
     isOldYear,
   )
+  const [openReleaseDialogBox, setOpenReleaseDialogBox] = useState(false)
+
+  const [isReleaseDisabled, setIsReleaseDisabled] = useState(true)
+
+  const handleRelease = () => {
+    setOpenReleaseDialogBox(true)
+  }
+  const closeReleaseDialogBox = () => {
+    setOpenReleaseDialogBox(false)
+  }
+
+  const dispatch = useDispatch()
+
+  const submitConfirmation = async () => {
+    setOpenReleaseDialogBox(false)
+    setLoading(true)
+    try {
+      const response = await DataService.releaseAOPReport(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Released Successfully!',
+        severity: 'success',
+      })
+      setIsReleaseDisabled(true)
+      let isReleased = 1
+      dispatch(setIsReleased({ isReleased }))
+    } catch (error) {
+      console.error('Error releasing report:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Release Failed!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <Box>
@@ -1301,6 +1384,7 @@ export default function QualityPackagingNorms() {
       {tabIndex === 0 && (
         <Box>
           <KendoDataTables
+            key={`qualit4-${IS_RELEASED}`}
             columns={columns.filter((col) => !col.hidden)}
             rows={rows}
             setRows={setRows}
@@ -1322,8 +1406,79 @@ export default function QualityPackagingNorms() {
             }
             handleExcelUpload={handleExcelUpload('Quality_Parameters')}
             groupBy='Particulars'
+            isReleaseDisabled={isReleaseDisabled}
+            handleRelease={handleRelease}
           />
+          <Dialog
+            open={openReleaseDialogBox}
+            onClose={closeReleaseDialogBox}
+            disableScrollLock
+            PaperProps={{
+              sx: {
+                borderRadius: '20px',
+                p: 2,
+                width: 400,
+                backdropFilter: 'blur(8px)',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+              },
+            }}
+          >
+            <DialogTitle
+              sx={{
+                fontWeight: 700,
+                fontSize: '1.2rem',
+
+                pb: 0.5,
+              }}
+            >
+              Confirm Release
+            </DialogTitle>
+
+            <DialogContent sx={{ pt: 1 }}>
+              <DialogContentText
+                sx={{
+                  fontSize: '0.9rem',
+                  color: '#4b5563',
+                  lineHeight: 1.5,
+                }}
+              >
+                Please confirm that{' '}
+                <b style={{ color: '#16a34a' }}>Production</b>,{' '}
+                <b style={{ color: '#16a34a' }}>Norms</b>, and{' '}
+                <b style={{ color: '#16a34a' }}>Reports</b> are verified before
+                releasing for review.
+              </DialogContentText>
+            </DialogContent>
+
+            <DialogActions sx={{ px: 2, pb: 1.5, gap: 1 }}>
+              <Button
+                onClick={closeReleaseDialogBox}
+                variant='text'
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  color: '#6b7280',
+                  '&:hover': { background: 'rgba(0,0,0,0.04)' },
+                }}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                onClick={submitConfirmation}
+                variant='contained'
+                className='btn-save'
+                sx={{
+                  textTransform: 'none',
+                  px: 2.5,
+                }}
+              >
+                Confirm
+              </Button>
+            </DialogActions>
+          </Dialog>{' '}
           <KendoDataTables
+            key={`quality3-${IS_RELEASED}`}
             columns={priceDiffColumns}
             rows={priceDiffRows}
             setRows={setPriceDiffRows}
@@ -1351,6 +1506,7 @@ export default function QualityPackagingNorms() {
       {tabIndex === 1 && (
         <Box>
           <KendoDataTables
+            key={`quality1-${IS_RELEASED}`}
             columns={packagingColumns}
             rows={packagingRows}
             setRows={setPackagingRows}
@@ -1375,6 +1531,7 @@ export default function QualityPackagingNorms() {
             groupBy='Particulars'
           />
           <KendoDataTables
+            key={`quality2-${IS_RELEASED}`}
             columns={columnsOtherCosts}
             rows={rowsOtherCosts}
             setRows={setRowsOtherCosts}
