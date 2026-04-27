@@ -52,18 +52,28 @@ public class InjectorTenantHandlerInterceptor implements HandlerInterceptor {
 		BearerTokenHandlerInputResolver handler = new BearerTokenHandlerInputResolver();
 
 		Map<String, Object> params = handler.resolver(request, authentication);
-		if (params.isEmpty()) {
-			return;
-		}
 
-		String tenantId = (String) params.get("org");
+		String tenantId = params.isEmpty() ? null : (String) params.get("org");
+		String userId   = params.isEmpty() ? null : (String) params.get("sub");
+
+		// For APM iframe SSO users: JWT has no org claim, fall back to session
 		if (tenantId == null || tenantId.isBlank()) {
-			log.warn("Could't find tenantId by subdomain, it was expected to be filled but it is empty {}", tenantId);
+			jakarta.servlet.http.HttpSession session = request.getSession(false);
+			if (session != null) {
+				String sessionOrg    = (String) session.getAttribute("org");
+				String sessionUserId = (String) session.getAttribute("userId");
+				if (sessionOrg != null && !sessionOrg.isBlank()) {
+					log.debug("InjectorTenantHandlerInterceptor: using org from SSO session: {}", sessionOrg);
+					tenantId = sessionOrg;
+				}
+				if ((userId == null || userId.isBlank()) && sessionUserId != null) {
+					userId = sessionUserId;
+				}
+			}
 		}
 
-		String userId = (String) params.get("sub");
-		if (userId == null || userId.isBlank()) {
-			log.error("Could't find userId by subdomain, it was expected to be filled but it is empty {}", userId);
+		if (tenantId == null || tenantId.isBlank()) {
+			log.warn("Could not find tenantId — request may fail");
 		}
 
 		tenantHolder.setTenantId(tenantId);
