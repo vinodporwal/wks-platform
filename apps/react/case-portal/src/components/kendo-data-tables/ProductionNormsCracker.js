@@ -75,6 +75,7 @@ const ProductionNormsCracker = ({ permissions }) => {
     severity: 'info',
   })
   const CRACKER_DMD = lowerVertName === 'cracker' && lowerSiteName === 'dmd'
+  const CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [selectedUnit, setSelectedUnit] = useState('')
@@ -757,8 +758,8 @@ const ProductionNormsCracker = ({ permissions }) => {
       </Backdrop>
 
       {/* SHOW THIS GRID TO ALL SITES */}
-      {!CRACKER_DMD && (
-        <KendoDataTables
+ {!CRACKER_HMD && !CRACKER_DMD && (
+    <KendoDataTables
           modifiedCells={modifiedCellsC2C3R}
           setModifiedCells={setModifiedCellsC2C3R}
           columns={productionColumnsC2C3R}
