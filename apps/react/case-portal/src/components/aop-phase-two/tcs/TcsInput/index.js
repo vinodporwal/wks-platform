@@ -20,7 +20,6 @@ import AuditTrail from './workflow/AuditTrail'
 import PCGOutlookNew from './PCGOutlookNew'
 import AopTabs from '../../common/components/AopTabs'
 
-
 // Handler to render tab component based on displayName
 const renderTabComponent = (tabDisplayName, props) => {
   switch (tabDisplayName) {
@@ -492,14 +491,14 @@ const TcsInput = () => {
 
         {/* Submit button and History icon - Fixed on right */}
         {tabObj.length !== 0 && (
-        <SubmitSection
-          onSubmitClick={() => setRemarkDialogOpen(true)}
-          onViewHistory={handleViewHistory}
-          isEligible={isSubmitEligible}
-          isLoading={isSubmittingRemark}
-          isWorkflowTriggered={isWorkflowTriggered}
-          submitTooltip={submitTooltip}
-        />
+          <SubmitSection
+            onSubmitClick={() => setRemarkDialogOpen(true)}
+            onViewHistory={handleViewHistory}
+            isEligible={isSubmitEligible}
+            isLoading={isSubmittingRemark}
+            isWorkflowTriggered={isWorkflowTriggered}
+            submitTooltip={submitTooltip}
+          />
         )}
       </Box>
 
@@ -507,18 +506,18 @@ const TcsInput = () => {
       <Box>
         {currentTab?.displayName &&
           renderTabComponent(currentTab.displayName, {
-          currentTab,
-          PLANT_ID,
-          PLANT_NAME,
-          AOP_YEAR,
-          SITE_ID,
+            currentTab,
+            PLANT_ID,
+            PLANT_NAME,
+            AOP_YEAR,
+            SITE_ID,
             VERTICAL_ID,
-          snackbarData,
-          setSnackbarData,
-          snackbarOpen,
-          setSnackbarOpen,
-          isSubmitEligible,
-        })}
+            snackbarData,
+            setSnackbarData,
+            snackbarOpen,
+            setSnackbarOpen,
+            isSubmitEligible,
+          })}
       </Box>
 
       <RemarkDialog

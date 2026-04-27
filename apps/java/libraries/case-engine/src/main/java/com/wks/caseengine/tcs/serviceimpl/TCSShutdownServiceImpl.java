@@ -181,16 +181,14 @@ if(plantId != null) {
             
         try {            
             // Stored Procedure name
-            String procedureName = "GetTcsShutdown";
-            if (!"MEG".equalsIgnoreCase(verticalName)) {
-                if(plantId != null) {
-             //   procedureName = verticalName + "_" + siteName + "_GetTcsShutdown";  }
+            String procedureName = null;
+            if(plantId != null) {
+                //   procedureName = verticalName + "_" + siteName + "_GetTcsShutdown";  }
                 procedureName =  "CRUDE_DTA_GetTcsShutdown";
-                }
-                else {
-                 //   procedureName = verticalName + "_" + siteName + "_GetTcsShutdown_OutPut";
-                    procedureName = "GetTcsShutdown_OutPut";
-                }
+            }
+            else {
+                //   procedureName = verticalName + "_" + siteName + "_GetTcsShutdown_OutPut";
+                procedureName = "GetTcsShutdown_OutPut";
             }
 
             // Prepare native SQL call with parameters
@@ -232,18 +230,15 @@ if(plantId != null) {
         UUID siteId,
         String siteName) {
 
-        String procedureName = "GetTcsShutdown";
-
-        if (!"MEG".equalsIgnoreCase(verticalName)) {
-            if(plantId != null) {
-          //  procedureName = verticalName + "_" + siteName + "_GetTcsShutdown";
-          procedureName =  "CRUDE_DTA_GetTcsShutdown";
-            }
-            else {
-              //  procedureName = verticalName + "_" + siteName + "_GetTcsShutdown_OutPut";
-                procedureName = "GetTcsShutdown_OutPut";
-            }
-        }      
+        String procedureName =null;
+        if(plantId != null) {
+            //  procedureName = verticalName + "_" + siteName + "_GetTcsShutdown";
+            procedureName =  "CRUDE_DTA_GetTcsShutdown";
+        }
+        else {
+            //  procedureName = verticalName + "_" + siteName + "_GetTcsShutdown_OutPut";
+            procedureName = "GetTcsShutdown_OutPut";
+        }  
 
         String callableSql = "";
         if(plantId != null) {

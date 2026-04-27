@@ -45,8 +45,8 @@ const STGGrid = ({ hoursRows = [] }) => {
     {
       field: 'utilityDistributed.name',
       title: 'Utility Distributed',
-      width: 150,
-      minWidth: 150,
+      width: 180,
+      minWidth: 180,
       type: 'text',
       editable: false,
       locked: true,
@@ -54,8 +54,8 @@ const STGGrid = ({ hoursRows = [] }) => {
     {
       field: 'utilityDistributed.sapCode',
       title: 'Distributed SAP Code',
-      width: 150,
-      minWidth: 150,
+      width: 180,
+      minWidth: 180,
       type: 'text',
       editable: false,
       locked: true,
@@ -63,8 +63,8 @@ const STGGrid = ({ hoursRows = [] }) => {
     {
       field: 'utilityGenerated.name',
       title: 'Utility Generated',
-      width: 150,
-      minWidth: 150,
+      width: 180,
+      minWidth: 180,
       type: 'text',
       editable: false,
       locked: true,
@@ -72,8 +72,8 @@ const STGGrid = ({ hoursRows = [] }) => {
     {
       field: 'utilityGenerated.sapCode',
       title: 'Generated SAP Code',
-      width: 150,
-      minWidth: 150,
+      width: 180,
+      minWidth: 180,
       type: 'text',
       editable: false,
       locked: true,
@@ -81,8 +81,8 @@ const STGGrid = ({ hoursRows = [] }) => {
     {
       field: 'assetType',
       title: 'Asset Type',
-      width: 150,
-      minWidth: 150,
+      width: 180,
+      minWidth: 180,
       type: 'text',
       editable: false,
       locked: true,
@@ -94,8 +94,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'april.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -103,8 +103,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'april.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -117,8 +117,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'may.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -126,8 +126,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'may.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -140,8 +140,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'june.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -149,8 +149,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'june.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -163,8 +163,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'july.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -172,8 +172,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'july.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -186,8 +186,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'aug.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -195,8 +195,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'aug.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -209,8 +209,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'sep.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -218,8 +218,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'sep.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -232,8 +232,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'oct.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -241,8 +241,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'oct.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -255,8 +255,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'nov.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -264,8 +264,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'nov.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -278,8 +278,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'dec.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -287,8 +287,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'dec.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -301,8 +301,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'jan.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -310,8 +310,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'jan.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -324,8 +324,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'feb.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -333,8 +333,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'feb.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -347,8 +347,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'march.shutdownHrs',
           title: 'Shutdown Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: true,
           type: 'wholeNumber',
           format: valueFormat,
@@ -356,8 +356,8 @@ const STGGrid = ({ hoursRows = [] }) => {
         {
           field: 'march.netOperationHrs',
           title: 'Operational Hrs',
-          widthT: 120,
-          minWidth: 120,
+          widthT: 150,
+          minWidth: 150,
           editable: false,
           type: 'wholeNumber',
           format: valueFormat,
@@ -576,12 +576,6 @@ const STGGrid = ({ hoursRows = [] }) => {
 
   return (
     <Box>
-      {/* <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop> */}
       <LoaderBackdrop open={!!loading} />
       <Stack>
         <NestedKendoTable

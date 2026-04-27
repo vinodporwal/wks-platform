@@ -34,6 +34,9 @@ public interface HeatRateRepository extends JpaRepository<DummyEntity, Long> {
     // HRSG heat rate query
     @Query(value = "SELECT curr.Id, curr.AssetName as EquipType, curr.UtilityId as CPPUtility, curr.HRSGLoad, curr.FinalHeatRate as HeatRate, curr.Remarks, prev.FinalHeatRate as PreviousYearHeatRate, curr.FinalHeatRate, curr.OEMHeatRate, curr.SelectedHeatRate FROM CPP_HRSGHeatRate curr WITH(NOLOCK) LEFT JOIN CPP_HRSGHeatRate prev WITH(NOLOCK) ON curr.Asset_FK_Id = prev.Asset_FK_Id AND curr.HRSGLoad = prev.HRSGLoad AND prev.FinancialYear = :previousFinancialYear WHERE curr.Asset_FK_Id = :assetId AND curr.FinancialYear = :financialYear ORDER BY curr.HRSGLoad ASC", nativeQuery = true)
     List<com.wks.caseengine.cpp.dto.heatrate.HRSGHeatRateProjection> findHrsgHeatRateByAssetId(@Param("assetId") UUID assetId, @Param("financialYear") String financialYear, @Param("previousFinancialYear") String previousFinancialYear);
+
+    @Query(value = "SELECT curr.Id, curr.AssetName as EquipType, curr.UtilityId as CPPUtility, curr.STGLoad, curr.FinalHeatRate as HeatRate, curr.Remarks, prev.FinalHeatRate as PreviousYearHeatRate, curr.FinalHeatRate, curr.OEMHeatRate, curr.SelectedHeatRate FROM CPP_STGHeatRate curr WITH(NOLOCK) LEFT JOIN CPP_STGHeatRate prev WITH(NOLOCK) ON curr.STGLoad = prev.STGLoad AND prev.FinancialYear = :previousFinancialYear WHERE curr.FinancialYear = :financialYear ORDER BY curr.STGLoad ASC", nativeQuery = true)
+    List<com.wks.caseengine.cpp.dto.heatrate.STGHeatRateProjection> findStgHeatRateByFinancialYear(@Param("financialYear") String financialYear, @Param("previousFinancialYear") String previousFinancialYear);
 }
 
 

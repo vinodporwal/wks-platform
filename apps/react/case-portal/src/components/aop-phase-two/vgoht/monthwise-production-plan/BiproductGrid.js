@@ -164,15 +164,6 @@ const BiproductGrid = () => {
       format: valueFormat,
     },
     {
-      field: 'averageTPH',
-      title: 'Average TPH',
-      widthT: 120,
-      minWidth: 100,
-      type: 'number1',
-      editable: false,
-      format: valueFormat,
-    },
-    {
       field: 'aopRemarks',
       title: 'Remark',
       widthT: 150,

@@ -58,11 +58,11 @@ const FixedNorms = () => {
     {
       field: 'generatingPlantName',
       title: 'Generating Plant',
-      widthT: 150,
+      widthT: 180,
       type: 'text',
       editable: false,
       locked: true,
-      minWidth: 150,
+      minWidth: 180,
     },
     //Utility
     {
@@ -72,7 +72,7 @@ const FixedNorms = () => {
       type: 'text',
       editable: false,
       locked: true,
-      minWidth: 100,
+      minWidth: 120,
     },
     // Utility ID
     {
@@ -82,77 +82,77 @@ const FixedNorms = () => {
       type: 'text',
       editable: false,
       locked: true,
-      minWidth: 100,
+      minWidth: 120,
     },
     //UOM
     {
       field: 'uom',
       title: 'Generation UOM',
-      widthT: 130,
+      widthT: 150,
       type: 'text',
       editable: false,
-      minWidth: 130,
+      minWidth: 150,
     },
     // Account
     {
       field: 'accountName',
       title: 'Account',
-      widthT: 100,
+      widthT: 150,
       type: 'text',
       editable: false,
-      minWidth: 100,
+      minWidth: 150,
     },
     // Material
     {
       field: 'materialName',
       title: 'Material',
-      widthT: 100,
+      widthT: 130,
       type: 'text',
       editable: false,
-      minWidth: 100,
+      minWidth: 130,
     },
     // SAP Code
     {
       field: 'materialId',
       title: 'SAP Code',
-      widthT: 100,
+      widthT: 130,
       type: 'text',
       editable: false,
-      minWidth: 100,
+      minWidth: 130,
     },
     // Issuing Plant
     {
       field: 'issuingPlantName',
       title: 'Issuing Plant',
-      widthT: 120,
+      widthT: 150,
       type: 'text',
       editable: false,
-      minWidth: 120,
+      minWidth: 150,
     },
     {
       field: 'issuingUom',
       title: 'Issuing UOM',
-      widthT: 120,
+      widthT: 150,
       type: 'text',
       editable: false,
-      minWidth: 120,
+      minWidth: 150,
     },
     {
       field: 'actualNorm',
       title: 'Actual Norm',
-      widthT: 120,
+      widthT: 150,
       type: 'numberWithCheckbox',
       editable: true,
       isNumberEditable: false,
       format: valueFormat,
-      minWidth: 120,
+      minWidth: 150,
       alwaysEditable: true,
     },
     // Apr
     {
       field: 'aprNorms',
       title: headerMap[4],
-      widthT: 80,
+      widthT: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -161,7 +161,7 @@ const FixedNorms = () => {
     {
       field: 'mayNorms',
       title: headerMap[5],
-      widthT: 80,
+      widthT: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -170,7 +170,7 @@ const FixedNorms = () => {
     {
       field: 'junNorms',
       title: headerMap[6],
-      widthT: 80,
+      widthT: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -179,7 +179,7 @@ const FixedNorms = () => {
     {
       field: 'julNorms',
       title: headerMap[7],
-      widthT: 80,
+      widthT: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -188,7 +188,7 @@ const FixedNorms = () => {
     {
       field: 'augNorms',
       title: headerMap[8],
-      widthT: 80,
+      widthT: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -197,7 +197,7 @@ const FixedNorms = () => {
     {
       field: 'sepNorms',
       title: headerMap[9],
-      widthT: 80,
+      widthT: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -206,7 +206,7 @@ const FixedNorms = () => {
     {
       field: 'octNorms',
       title: headerMap[10],
-      widthT: 80,
+      widthT: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -215,7 +215,7 @@ const FixedNorms = () => {
     {
       field: 'novNorms',
       title: headerMap[11],
-      widthT: 80,
+      widthT: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -224,7 +224,7 @@ const FixedNorms = () => {
     {
       field: 'decNorms',
       title: headerMap[12],
-      widthT: 80,
+      widthT: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -233,7 +233,7 @@ const FixedNorms = () => {
     {
       field: 'janNorms',
       title: headerMap[1],
-      widthT: 80,
+      widthT: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -242,7 +242,7 @@ const FixedNorms = () => {
     {
       field: 'febNorms',
       title: headerMap[2],
-      widthT: 80,
+      widthT: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -251,7 +251,7 @@ const FixedNorms = () => {
     {
       field: 'marNorms',
       title: headerMap[3],
-      widthT: 80,
+      widthT: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,

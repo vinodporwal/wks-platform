@@ -4,9 +4,11 @@ import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
-import ValueFormatterPhaseTwo from '../../common/ValueFormatterPhaseTwo'
-import { SteadyStateConsumptionApiService } from '../../services/vgoht/steadyStateConsumptionApiService'
-import { steadyStateConsumptionResponse } from '../dummyData'
+import ValueFormatterPhaseTwo, {
+  customValueFormatterPhaseTwo,
+} from '../../common/ValueFormatterPhaseTwo'
+import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
+import { SteadyStateConsumptionApiService } from '../../services/fcc/steadyStateConsumptionApiService'
 
 const SteadyStateConsumptionFCC = () => {
   const keycloak = useSession()
@@ -29,14 +31,14 @@ const SteadyStateConsumptionFCC = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
-  const valueFormat = ValueFormatterPhaseTwo()
+  const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
 
   const columns = [
     {
       field: 'id',
       title: 'Id',
-      widthT: 250,
+      // widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
@@ -46,34 +48,35 @@ const SteadyStateConsumptionFCC = () => {
     {
       field: 'productName',
       title: 'Particulars',
-      widthT: 250,
+      // widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
       locked: true,
     },
     {
-      field: 'normParameterTypeDisplayName',
+      field: 'TypeDisplayName',
       title: 'Type',
-      widthT: 250,
+      // widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
       locked: true,
+      hidden: true,
     },
     {
       field: 'UOM',
       title: 'UOM',
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 100,
       type: 'text',
       editable: false,
     },
     {
       field: 'april',
       title: headerMap[4],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -81,8 +84,8 @@ const SteadyStateConsumptionFCC = () => {
     {
       field: 'may',
       title: headerMap[5],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -90,8 +93,8 @@ const SteadyStateConsumptionFCC = () => {
     {
       field: 'june',
       title: headerMap[6],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -99,8 +102,8 @@ const SteadyStateConsumptionFCC = () => {
     {
       field: 'july',
       title: headerMap[7],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -108,8 +111,8 @@ const SteadyStateConsumptionFCC = () => {
     {
       field: 'august',
       title: headerMap[8],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -117,8 +120,8 @@ const SteadyStateConsumptionFCC = () => {
     {
       field: 'september',
       title: headerMap[9],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -126,8 +129,8 @@ const SteadyStateConsumptionFCC = () => {
     {
       field: 'october',
       title: headerMap[10],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -135,8 +138,8 @@ const SteadyStateConsumptionFCC = () => {
     {
       field: 'november',
       title: headerMap[11],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -144,8 +147,8 @@ const SteadyStateConsumptionFCC = () => {
     {
       field: 'december',
       title: headerMap[12],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -153,8 +156,8 @@ const SteadyStateConsumptionFCC = () => {
     {
       field: 'january',
       title: headerMap[1],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -162,8 +165,8 @@ const SteadyStateConsumptionFCC = () => {
     {
       field: 'february',
       title: headerMap[2],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -171,8 +174,8 @@ const SteadyStateConsumptionFCC = () => {
     {
       field: 'march',
       title: headerMap[3],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -180,8 +183,8 @@ const SteadyStateConsumptionFCC = () => {
     {
       field: 'remarks',
       title: 'Remark',
-      widthT: 150,
-      minWidth: 120,
+      // widthT: 150,
+      minWidth: 220,
       type: 'textarea',
       editable: true,
     },
@@ -196,16 +199,15 @@ const SteadyStateConsumptionFCC = () => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      // const response =
-      //   await SteadyStateConsumptionApiService.getSteadyStateConsumption(
-      //     keycloak,
-      //     PLANT_ID,
-      //     AOP_YEAR,
-      //   )
+      const response1 =
+        await SteadyStateConsumptionApiService.getSteadyStateConsumption(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
-      const response = steadyStateConsumptionResponse
-      setRows(response.data.mcuNormsValueDTOList)
-      setOriginalRows(response.data.mcuNormsValueDTOList)
+      setRows(response1.data?.mcuNormsValueDTOList || [])
+      setOriginalRows(response1.data?.mcuNormsValueDTOList || [])
     } catch (error) {
       console.error('Error fetching steady state consumption data:', error)
       setSnackbarOpen(true)
@@ -232,21 +234,65 @@ const SteadyStateConsumptionFCC = () => {
       return
     }
 
+    const data = modifiedData.filter((row) => row.inEdit)
+    if (data.length === 0) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'No Records to Save!',
+        severity: 'info',
+      })
+      setLoading(false)
+      return
+    }
+
+    const fieldsToCheck = [
+      'april',
+      'may',
+      'june',
+      'july',
+      'august',
+      'september',
+      'october',
+      'november',
+      'december',
+      'january',
+      'february',
+      'march',
+    ]
+    const validationError = validateRowDataWithRemarks(
+      data,
+      originalRows,
+      fieldsToCheck,
+      'productName',
+    )
+
+    if (validationError) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: validationError,
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
+
     try {
       await SteadyStateConsumptionApiService.saveSteadyStateConsumption(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
-        modifiedData,
+        data,
       )
 
+      // If we reach here, save was successful
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Data saved successfully!',
         severity: 'success',
       })
       setModifiedCells({})
-      setOriginalRows(rows)
+      setOriginalRows([])
+      await fetchData()
     } catch (error) {
       console.error('Error saving steady state consumption data:', error)
       setSnackbarOpen(true)
@@ -268,20 +314,39 @@ const SteadyStateConsumptionFCC = () => {
     })
 
     try {
-      const calculatedData =
+      const response =
         await SteadyStateConsumptionApiService.calculateSteadyStateConsumption(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
         )
-      setRows(calculatedData)
-      setOriginalRows(calculatedData)
-      setSnackbarData({
-        message: 'Calculation completed successfully!',
-        severity: 'success',
-      })
+
+      if (response?.code === 422) {
+        setTimeout(() => {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: response.message || 'Validation error occurred.',
+            severity: 'error',
+            autoHide: false,
+          })
+        }, 500)
+      } else if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Calculation completed successfully!',
+          severity: 'success',
+        })
+        await fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Calculation failed. Please try again.',
+          severity: 'error',
+        })
+      }
     } catch (error) {
       console.error('Error calculating steady state consumption:', error)
+      setSnackbarOpen(true)
       setSnackbarData({
         message: 'Calculation failed. Please try again.',
         severity: 'error',
@@ -290,7 +355,6 @@ const SteadyStateConsumptionFCC = () => {
       setLoading(false)
     }
   }
-
   const handleExport = async () => {
     setSnackbarOpen(true)
     setSnackbarData({
@@ -343,12 +407,13 @@ const SteadyStateConsumptionFCC = () => {
           AOP_YEAR,
           file,
         )
-      setRows(importedData)
-      setOriginalRows(importedData)
+      setRows([])
+      setOriginalRows([])
       setSnackbarData({
         message: 'Data imported successfully!',
         severity: 'success',
       })
+      await fetchData()
     } catch (error) {
       console.error('Error importing steady state consumption data:', error)
       setSnackbarData({
@@ -361,7 +426,7 @@ const SteadyStateConsumptionFCC = () => {
   }
 
   const handleRemarkCellClick = (row) => {
-    setCurrentRemark(row.remark || '')
+    setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
@@ -410,7 +475,7 @@ const SteadyStateConsumptionFCC = () => {
         setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         handleExport={handleExport}
-        handleImport={handleImport}
+        handleExcelUpload={handleImport}
         handleCalculate={handleCalculate}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}

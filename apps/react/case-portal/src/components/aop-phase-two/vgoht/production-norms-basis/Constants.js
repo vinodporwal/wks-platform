@@ -7,6 +7,7 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { productionAndNormsBasisConstant } from '../dummyData'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 
 const Constants = ({ startDate, endDate }) => {
   const keycloak = useSession()
@@ -28,7 +29,7 @@ const Constants = ({ startDate, endDate }) => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-
+  const valueFormat = customValueFormatterPhaseTwo(5)
   const columns = [
     {
       field: 'productName',
@@ -56,7 +57,7 @@ const Constants = ({ startDate, endDate }) => {
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
-      format: '{0:0.00}',
+      format: valueFormat,
     },
     {
       field: 'remarks',

@@ -553,8 +553,12 @@ async function saveHeatRateData(keycloak, PLANT_ID, AOP_YEAR, payload) {
 }
 
 // ========================|| STG Heat Rate APIs ||=====================================//
-async function getSTGHeatRateData(keycloak, plantId) {
-  const url = `${Config.CaseEngineUrl}/task/stg-extraction-lookup`
+async function getSTGHeatRateData(keycloak, financialYear, startDate, endDate) {
+  let url = `${Config.CaseEngineUrl}/task/stg-heat-rate/${financialYear}`
+
+  if (startDate && endDate) {
+    url += `/${startDate}/${endDate}`
+  }
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -572,8 +576,8 @@ async function getSTGHeatRateData(keycloak, plantId) {
   }
 }
 
-async function saveSTGHeatRateData(keycloak, PLANT_ID, AOP_YEAR, payload) {
-  const url = `${Config.CaseEngineUrl}/task/stg-extraction-lookup/${AOP_YEAR}`
+async function saveSTGHeatRateData(keycloak, financialYear, payload) {
+  const url = `${Config.CaseEngineUrl}/task/stg-heat-rate/${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -988,8 +992,8 @@ async function exportHeatRateExcel(
 }
 
 // STG Heat Rate Excel Import
-async function saveSTGHeatRateExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/stg-extraction-lookup/import`
+async function saveSTGHeatRateExcel(file, keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/stg-heat-rate/import`
   const formData = new FormData()
   formData.append('file', file)
   const headers = {
@@ -1017,11 +1021,22 @@ async function saveSTGHeatRateExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
 }
 
 // STG Heat Rate Excel Export
-async function exportSTGHeatRateExcel(keycloak) {
+async function exportSTGHeatRateExcel(
+  keycloak,
+  financialYear,
+  startDate = null,
+  endDate = null,
+) {
+  let endpoint = `stg-heat-rate/export/${financialYear}`
+
+  if (startDate && endDate) {
+    endpoint = `stg-heat-rate/export/${financialYear}/${startDate}/${endDate}`
+  }
+
   return exportExcelData(keycloak, {
-    endpoint: `stg-extraction-lookup/export`,
+    endpoint,
     queryParams: {},
-    fileName: `STG_Extraction_Lookup.xlsx`,
+    fileName: `STG_Heat_Rate_${financialYear}.xlsx`,
     method: 'GET',
   })
 }

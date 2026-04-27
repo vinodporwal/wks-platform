@@ -12,7 +12,7 @@ import Slowdown from './Slowdown'
 import CPPUnitsSdPlan from './CPPUnitsSdPlan'
 import CrudBlendWindow from './CrudBlendWindow'
 import ROGC from './ROGC'
-import PCGOutlook from './PCGOutlook'
+import PCGOutlookNew from './PCGOutlookNew'
 import RemarkDialog from '../TcsInput/workflow/RemarkDialog'
 import ApproveDialog from '../TcsInput/workflow/ApproveDialog'
 import SubmitSection from '../TcsInput/workflow/SubmitSection'
@@ -34,7 +34,7 @@ const renderTabComponent = (tabDisplayName, props) => {
     case 'CPP Units SD Plan':
       return <CPPUnitsSdPlan {...props} />
     case 'PCG Outlook':
-      return <PCGOutlook {...props} />
+      return <PCGOutlookNew {...props} />
     case 'ROGC':
       return <ROGC {...props} />
     case 'Crude Blend Window':
