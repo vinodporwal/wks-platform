@@ -118,6 +118,12 @@ const App = () => {
     };
     console.log('menuItemsDefs', menuItemsDefs);
 
+    const isLinkCaseUrl = location.pathname.endsWith('/link');
+
+    if(isLinkCaseUrl) {
+      menu.items = menu.items.filter(item => item.id !== 'dashboard');
+    }
+
     // Hide the entire management menu group for users without management roles
     // if (!accountStore.isManagerUser(keycloak)) {
     //   menu.items = menu.items.filter(item => item.id !== 'management');

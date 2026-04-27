@@ -113,7 +113,10 @@ export const CaseList = ({ status, caseDefId }) => {
   const isCaseViewPath = queryHasBusinessKey || (currentPath && (currentPath === '/case/view' || currentPath === '/case-list/view'));
 
   //let isLinkCaseUrl = searchParams.has('linkIds');
-  const [isLinkCaseUrl, setIsLinkCaseUrl] = useState(searchParams.has('linkIds'));
+  //const [isLinkCaseUrl, setIsLinkCaseUrl] = useState(searchParams.has('linkIds'));
+  const [isLinkCaseUrl, setIsLinkCaseUrl] = useState(
+    location.pathname.endsWith('/link')
+  );
   const [selectedRows, setSelectedRows] = useState([]);
   let createButtonRef = useRef(null);
   let caseBusinessKey = null;
@@ -740,12 +743,12 @@ export const CaseList = ({ status, caseDefId }) => {
    
     if (isLinkCaseUrl) {
       const assetName = searchParams.get("assetName");
-      const linkIds = searchParams.get("linkIds");
+      const eventIds = searchParams.get("eventIds");
     
       const newParams = new URLSearchParams();
     
       if (assetName) newParams.set("assetName", assetName);
-      if (linkIds) newParams.set("linkIds", linkIds);
+      if (eventIds) newParams.set("eventIds", eventIds);
     
       navigate(
         {
@@ -943,7 +946,7 @@ let request;
 
     const urlParams = new URLSearchParams(window.location.search);
     const mainAssetName = urlParams.get('assetName');
-    const eventIds = urlParams.get('linkIds');  //linkIds
+    const eventIds = urlParams.get('eventIds');  
 
     request = CaseService.filterCaseByAssetName(keycloak, caseDefId, status, next, mainAssetName, eventIds)
     
@@ -982,7 +985,7 @@ let request;
 if(isLinkCaseUrl) {
   const urlParams = new URLSearchParams(window.location.search);
   const mainAssetName = urlParams.get('assetName');
-  const eventIds = urlParams.get('linkIds');  
+  const eventIds = urlParams.get('eventIds');  
   request = CaseService.filterCaseByAssetName(keycloak, caseDefId, status, prior, mainAssetName, eventIds)
 }
 else {
@@ -1080,7 +1083,7 @@ else {
 
             const urlParams = new URLSearchParams(window.location.search);
             const mainAssetName = urlParams.get('assetName');
-            const eventIds = urlParams.get('linkIds');  
+            const eventIds = urlParams.get('eventIds');  
             request = CaseService.filterCaseByAssetName(keycloak, caseDefId, status, {
               limit: e.target.value,
             }, mainAssetName, eventIds)
@@ -1139,16 +1142,18 @@ else {
   return (
     <div style={{ height: 650, width: '100%' }}>
       {/* {caseDefId && accountStore.isManagerUser(keycloak) && ( */}
-          {caseDefId && (
-     isLinkCaseUrl ?  <Button
-     id='basic-button'
-     onClick={handleLinkCaseAction}
-//ref={createButtonRef}
-     variant='contained'
-     disabled={ (isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator}
-   >
-    Link Case
-   </Button>  :     <Button
+      {isLinkCaseUrl && (
+        <Button
+          id='basic-button'
+          onClick={handleLinkCaseAction}
+          variant='contained'
+          disabled={ (isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator}
+        >
+          Link Case
+        </Button>  )  }
+        
+          {caseDefId && !isLinkCaseUrl && (
+        <Button
             id='basic-button'
             onClick={handleNewCaseAction}
 			ref={createButtonRef}
@@ -1385,24 +1390,33 @@ else {
     setFetching(true)
     console.log("Case List : fetchCases", keycloak, caseDefId, status, filter)
 
-    CaseService.getCaseDefinitionsById(keycloak, caseDefId)
+    let response;
+    if(isLinkCaseUrl) {  
+      const urlParams = new URLSearchParams(window.location.search);
+      const mainAssetName = urlParams.get('assetName');
+      const eventIds = urlParams.get('eventIds');
+      response = CaseService.filterCaseByAssetName(keycloak, caseDefId, status, filter, mainAssetName, eventIds)
+    }
+else 
+  response =  CaseService.getCaseDefinitionsById(keycloak, caseDefId)
       .then((resp) => {
         resp.stages.sort((a, b) => a.index - b.index).map((o) => o.name)
         setStages(resp.stages)
       
-        if(isLinkCaseUrl) {
-          const urlParams = new URLSearchParams(window.location.search);
-           const mainAssetName = urlParams.get('assetName');
-         console.log("mainAssetName: ", mainAssetName);
-         const eventIds = urlParams.get('linkIds');  
-          return CaseService.filterCaseByAssetName(keycloak, caseDefId, status, filter, mainAssetName, eventIds)
-        }
-        else {
+        // if(isLinkCaseUrl) {
+        //   const urlParams = new URLSearchParams(window.location.search);
+        //    const mainAssetName = urlParams.get('assetName');
+        //  console.log("mainAssetName: ", mainAssetName);
+        //  const eventIds = urlParams.get('linkIds');  
+        //   return CaseService.filterCaseByAssetName(keycloak, caseDefId, status, filter, mainAssetName, eventIds)
+        // }
+       // else {
           return CaseService.filterCase(keycloak, caseDefId, status, filter)
-        }
+      //  }
        
       })
-      .then((resp) => {
+
+      response.then((resp) => {
         let { data, paging } = resp
         console.log('resp', resp)
 

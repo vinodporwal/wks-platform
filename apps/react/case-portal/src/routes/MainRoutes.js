@@ -32,7 +32,10 @@ export const MainRoutes = (
         path: '/',
         element: <DashboardDefault />,
       },
-
+      {
+        path: 'link',
+        element: <CaseList />,
+      },
       {
         path: 'home',
         element: <DashboardDefault />,
