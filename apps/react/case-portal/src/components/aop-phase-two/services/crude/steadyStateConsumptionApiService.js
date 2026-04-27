@@ -79,14 +79,30 @@ async function saveSteadyStateConsumption(keycloak, plantId, year, data) {
  * @param {Object} keycloak - Keycloak session object
  * @param {Number} plantId - Plant ID
  * @param {Number} year - AOP Year
+ * @param {String} mode - Optional mode parameter
+ * @param {String} gradeId - Optional grade ID parameter
  * @returns {Promise<Blob>} Excel file blob
  */
-async function exportSteadyStateConsumption(keycloak, plantId, year) {
-  const baseUrl = `${Config.CaseEngineUrl}/task/steady-state-consumption/export`
+async function exportSteadyStateConsumption(
+  keycloak,
+  plantId,
+  year,
+  mode,
+  gradeId,
+) {
+  const baseUrl = `${Config.CaseEngineUrl}/task/steady-state-norms-export`
   const queryParams = new URLSearchParams({
     plantId,
     year,
   })
+
+  if (mode) {
+    queryParams.append('mode', mode)
+  }
+  if (gradeId) {
+    queryParams.append('gradeId', gradeId)
+  }
+
   const url = `${baseUrl}?${queryParams.toString()}`
   const headers = {
     Authorization: `Bearer ${keycloak.token}`,
@@ -109,14 +125,30 @@ async function exportSteadyStateConsumption(keycloak, plantId, year) {
  * @param {Number} plantId - Plant ID
  * @param {Number} year - AOP Year
  * @param {File} file - Excel file to import
+ * @param {String} mode - Optional mode parameter
+ * @param {String} gradeId - Optional grade ID parameter
  * @returns {Promise<Array>} Imported data
  */
-async function importSteadyStateConsumption(keycloak, plantId, year, file) {
-  const baseUrl = `${Config.CaseEngineUrl}/task/steady-state-consumption/import`
+async function importSteadyStateConsumption(
+  keycloak,
+  plantId,
+  year,
+  file,
+  mode,
+  gradeId,
+) {
+  const baseUrl = `${Config.CaseEngineUrl}/task/steady-state-norms-import`
   const formData = new FormData()
   formData.append('file', file)
   formData.append('plantId', plantId)
   formData.append('year', year)
+
+  if (mode) {
+    formData.append('mode', mode)
+  }
+  if (gradeId) {
+    formData.append('gradeId', gradeId)
+  }
 
   const headers = {
     Authorization: `Bearer ${keycloak.token}`,
@@ -142,7 +174,7 @@ async function importSteadyStateConsumption(keycloak, plantId, year, file) {
  * @returns {Promise<Array>} Calculated data
  */
 async function calculateSteadyStateConsumption(keycloak, plantId, year) {
-  const baseUrl = `${Config.CaseEngineUrl}/task/calculate-steady-state-norms`
+  const baseUrl = `${Config.CaseEngineUrl}/task/crude/calculate-steady-state-norms`
   const queryParams = new URLSearchParams({
     year,
     plantId,

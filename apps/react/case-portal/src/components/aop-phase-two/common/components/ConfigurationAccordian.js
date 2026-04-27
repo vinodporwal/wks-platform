@@ -263,10 +263,10 @@ const ConfigurationAccordian = ({
       setLoading(true)
 
       // Save summary first if required
-      if (isSummaryRequired) {
-        await saveSummary(summary)
-        setSummaryEdited(false)
-      }
+      // if (isSummaryRequired) {
+      await saveSummary(summary)
+      setSummaryEdited(false)
+      // }
 
       // Build payload
       const payload = buildConfigurationPayload(

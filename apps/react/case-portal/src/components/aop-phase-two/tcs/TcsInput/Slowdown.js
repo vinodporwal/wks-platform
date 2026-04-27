@@ -60,11 +60,11 @@ const Slowdown = ({
 
       console.log('Carry-forward response:', carryForwardResponse)
 
-      setSnackbarData({
-        message: `Slowdown data carried forward from previous year successfully!`,
-        severity: 'success',
-      })
-      setSnackbarOpen(true)
+      // setSnackbarData({
+      //   message: `Slowdown data carried forward from previous year successfully!`,
+      //   severity: 'success',
+      // })
+      // setSnackbarOpen(true)
 
       return true
     } catch (carryForwardErr) {
@@ -356,7 +356,7 @@ const Slowdown = ({
           severity: 'success',
         })
         setModifiedCells({})
-        fetchSlowdownData()
+        fetchSlowdownData(true)
       } catch (error) {
         console.error('Error saving Slowdown data:', error)
         setSnackbarOpen(true)
@@ -516,7 +516,7 @@ const Slowdown = ({
             message: 'Record deleted successfully!',
             severity: 'success',
           })
-          fetchSlowdownData()
+          fetchSlowdownData(true)
         }
       } catch (error) {
         console.error('Error deleting record:', error)
@@ -585,7 +585,7 @@ const Slowdown = ({
           severity: 'success',
         })
         // Refresh data after import
-        await fetchSlowdownData()
+        await fetchSlowdownData(true)
       } else if (response?.code === 400 && response?.data) {
         // Handle error response with Excel file download
         try {
@@ -615,7 +615,7 @@ const Slowdown = ({
             severity: 'error',
           })
           // Refresh data after import
-          await fetchSlowdownData()
+          await fetchSlowdownData(true)
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)

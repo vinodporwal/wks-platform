@@ -77,13 +77,13 @@ public class NormBasisServiceImpl implements NormBasisService {
 
                    //  if( !normBasisDTO.getType().equals("date"))  continue;
 
-                    if(normBasisDTO.getName().equals("Norms Preparation Time")) {  
+                    if(normBasisDTO.getDisplayName().equals("Norms Preparation Date")) {  
 
                         normsPreparationTime = normBasisDTO.getAttributeValue();
                         foundNormsPreparationTime = true;
                     }
 
-                    if (normBasisDTO.getName().equals("Norms Cycle Start")) {
+                    if (normBasisDTO.getDisplayName().equals("Norms Cycle Start")) {
    
                         // set the attribute value to 1st april of end year
                         normBasisDTO.setAttributeValue(normCycleStarts);  
@@ -97,7 +97,7 @@ public class NormBasisServiceImpl implements NormBasisService {
             for(NormBasisDTO normBasisDTO : normBasisDTOs) {  
 
              
-            if(normBasisDTO.getName().equals("Days remaining time from norms preparation time to AOP next cycle start")) {   
+            if(normBasisDTO.getDisplayName().equals("Days remaining time from norms preparation time to AOP next cycle start")) {   
    
                  // calculate the days betweeen normsPreparationTime and normCycleStarts
                 //  LocalDate normsPreparationTimeDate = LocalDate.parse(normsPreparationTime);
@@ -135,7 +135,7 @@ public class NormBasisServiceImpl implements NormBasisService {
     private NormBasisDTO fromProjection(NormBasisProjection projection) {
         return NormBasisDTO.builder()
             .id(UUID.fromString(projection.getId()))
-            .name(projection.getName())
+            .name(projection.getDisplayName())
             .displayName(projection.getDisplayName())
             .uom(projection.getUOM())
             .attributeValue(projection.getAttributeValue())

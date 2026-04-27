@@ -66,7 +66,7 @@ const FixedConsumption = () => {
     {
       field: 'costCenter',
       title: 'Cost Center',
-      widthT: 120,
+      widthT: 150,
       type: 'text',
       editable: false,
       hidden: false,
@@ -74,7 +74,7 @@ const FixedConsumption = () => {
     {
       field: 'costCenterId',
       title: 'Cost Center ID',
-      widthT: 120,
+      widthT: 170,
       type: 'text',
       editable: false,
       hidden: false,
@@ -82,32 +82,32 @@ const FixedConsumption = () => {
     {
       field: 'cppUtility',
       title: 'CPP Utilities',
-      widthT: 100,
+      widthT: 150,
       type: 'text',
       editable: false,
     },
     {
       field: 'cppUtilityId',
       title: 'CPP Utility IDs',
-      widthT: 120,
+      widthT: 150,
       type: 'text',
       editable: false,
     },
     {
       field: 'cppPlant',
       title: 'CPP Plant',
-      widthT: 110,
+      widthT: 150,
       type: 'text',
       editable: false,
     },
     {
       field: 'cppPlantId',
       title: 'CPP Plant ID',
-      widthT: 120,
+      widthT: 150,
       type: 'text',
       editable: false,
     },
-    { field: 'uom', title: 'UOM', widthT: 60, type: 'text', editable: false },
+    { field: 'uom', title: 'UOM', widthT: 100, type: 'text', editable: false },
     {
       field: 'april',
       title: headerMap[4], // will be 'Apr-25' if AOP_YEAR is 2025-26
