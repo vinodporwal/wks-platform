@@ -53,7 +53,14 @@ public class LIMSSpyroInputController {
 
         return limsSpyroInputService.getLIMSDate(plantId, year);
     }
-    
+
+    // ✅ NEW — Naphtha Quality GET endpoint
+    @GetMapping(value = "/naphtha-quality")
+    public AOPMessageVM getNaphthaQuality(
+            @RequestParam String plantId,
+            @RequestParam String year) {
+        return limsSpyroInputService.getNaphthaQuality(plantId, year);
+    }
     @PostMapping(value="/naphtha")
 	public AOPMessageVM saveLIMSSpyroInput(@RequestParam String year,@RequestParam String plantId, @RequestBody List<LIMSSpyroInputDTO> lIMSSpyroInputDTOs) {
 		return 	limsSpyroInputService.saveLIMSSpyroInput(year,plantId,lIMSSpyroInputDTOs);

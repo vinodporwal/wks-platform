@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.LIMSSpyroInputDTO;
+import com.wks.caseengine.dto.NaphthaQualityDTO;
 import com.wks.caseengine.entity.NormAttributeTransactions;
 import com.wks.caseengine.entity.NormParameters;
 import com.wks.caseengine.entity.Plants;
@@ -750,4 +751,65 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 	    return null;
 	}
 
+	// NEW METHODS FOR NAPHTHA QUALITY
+	@Override
+	public AOPMessageVM getNaphthaQuality(String plantId, String aopYear) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+			Verticals vertical = verticalsRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			// View name pattern: vw_Vertical_Site_LIMSConditions
+			String viewName = "vw_" + vertical.getName() + "_" + site.getName() + "_LIMSConditions";
+
+			String sql = "SELECT Section, Name, MAX, MIN, MONTHS, MAX_Id, MIN_Id, MONTHS_Id FROM " + viewName;
+
+			Query query = entityManager.createNativeQuery(sql);
+
+			@SuppressWarnings("unchecked")
+			List<Object[]> results = query.getResultList();
+
+			List<NaphthaQualityDTO> dtoList = new ArrayList<>();
+			for (Object[] row : results) {
+				NaphthaQualityDTO dto = new NaphthaQualityDTO();
+				dto.setSection(row[0] != null ? row[0].toString() : "");
+				dto.setName(row[1] != null ? row[1].toString() : "");
+				dto.setMax(row[2] != null ? toDouble(row[2]) : null);
+				dto.setMin(row[3] != null ? toDouble(row[3]) : null);
+				dto.setMonths(row[4] != null ? toDouble(row[4]) : null);
+				dto.setMaxId(row[5] != null ? row[5].toString() : "");
+				dto.setMinId(row[6] != null ? row[6].toString() : "");
+				dto.setMonthsId(row[7] != null ? row[7].toString() : "");
+				dtoList.add(dto);
+			}
+
+			java.util.Map<String, Object> map = new java.util.HashMap<>();
+			map.put("Data", dtoList);
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(map);
+			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private List<Object[]> executeNaphthaQuality(String procedureName, String plantId, String aopYear) {
+		String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+		Query query = entityManager.createNativeQuery(sql);
+		query.setParameter("plantId", plantId);
+		query.setParameter("aopYear", aopYear);
+		return (List<Object[]>) query.getResultList();
+	}
 }

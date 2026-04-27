@@ -16,5 +16,8 @@ public interface LIMSSpyroInputService {
     AOPMessageVM saveLIMSSpyroInput(String year, String plantFKId, List<LIMSSpyroInputDTO> lIMSSpyroInputDTOs);
     byte[] exportLIMSSpyroInput(String year, String plantFKId, boolean isAfterSave, List<LIMSSpyroInputDTO> dtoList);
     AOPMessageVM importLIMSSpyroInput(String year, UUID plantId, MultipartFile file);
+
+    // ✅ NEW — Naphtha Quality
+    AOPMessageVM getNaphthaQuality(String plantId, String aopYear);
 }
 
