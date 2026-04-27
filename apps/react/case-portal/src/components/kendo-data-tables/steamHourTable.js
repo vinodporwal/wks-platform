@@ -112,13 +112,13 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
         return
       }
       // --- MONTHLY SUM VALIDATION (move here) ---
-      // const validationMessage = validateFields(data, ['Remarks'])
-      // if (validationMessage) {
-      //   setSnackbarOpen(true)
-      //   setSnackbarData({ message: validationMessage, severity: 'error' })
-      //   setLoading(false)
-      //   return
-      // }
+      const validationMessage = validateFields(data, ['Remarks'])
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: validationMessage, severity: 'error' })
+        setLoading(false)
+        return
+      }
 
       await saveStreamHoursData(data)
     } catch (err) {
