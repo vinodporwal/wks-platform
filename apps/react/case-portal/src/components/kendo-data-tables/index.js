@@ -189,9 +189,17 @@ const KendoDataTables = ({
   key = [],
   isReleaseDisabled = true,
   handleRelease = () => {},
+  customItemChange = null,
 }) => {
   const _export = useRef(null)
   const _grid = React.useRef(undefined)
+
+  // Always-current rows ref — lets itemChange read the latest rows without
+  // adding rows to its useCallback deps (avoids recreating the handler on every edit).
+  const rowsRef = useRef(rows)
+  useEffect(() => {
+    rowsRef.current = rows
+  }, [rows])
 
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [openResetDialogeBox, setOpenResetDialogeBox] = useState(false)
@@ -868,11 +876,16 @@ const KendoDataTables = ({
           [itemId]: base,
         }
       })
+
+      if (customItemChange) {
+        customItemChange(e, { setModifiedCells, setCustomModifiedCells, rows: rowsRef.current })
+      }
     },
     [
       setRows,
       setModifiedCells,
       setCustomModifiedCells,
+      customItemChange,
       lowerVertName,
       lowerSiteName,
       plantName,
