@@ -12,6 +12,7 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import StartAndEndPicker from './Utilities-Kendo/StartAndEndPicker'
 import NaphthaLimsDataSet from './NaphthaLimsDataSet'
+import NaphthaHMDComponent from './NaphthaHMDComponent'
 import ModeSelection from './ModeSelection'
 
 const CrackerConfig = () => {
@@ -1085,6 +1086,14 @@ const CrackerConfig = () => {
                 </Box>
               )
             case 'Naphtha':
+              if (IS_CRACKER_HMD) {
+                return (
+                  <Box key={currentTabDisplay}>
+                    <NaphthaHMDComponent
+                    />
+                  </Box>
+                )
+              }
               return (
                 <Box key={currentTabDisplay}>
                   {/* Carbon Number Distribution Grid with Date Filter */}

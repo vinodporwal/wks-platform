@@ -25,6 +25,7 @@ export const ProductionNormsApiService = {
   // NSR and Material Prices Tab
   getNSRAndMaterialPrices,
   saveNSRAndMaterialPrices,
+  getNaphthaHMDData,
 }
 async function updateProductNormData(turnAroundDetails, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/monthly-production` // Corrected endpoint
@@ -450,5 +451,24 @@ async function saveNSRAndMaterialPrices(PLANT_ID, PAYLOAD, keycloak, AOP_YEAR) {
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)
+  }
+}
+async function getNaphthaHMDData(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/naphtha-quality?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+
+    return await resp.json()
+  } catch (e) {
+    console.error('getNaphthaHMDData error:', e)
+    return Promise.reject(e)
   }
 }
