@@ -42,7 +42,6 @@ const MaterialBalance = ({ permissions }) => {
     severity: 'info',
   })
 
-
   const fetchMatbalData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
