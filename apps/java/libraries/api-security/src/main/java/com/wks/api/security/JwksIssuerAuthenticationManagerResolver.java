@@ -56,6 +56,13 @@ public final class JwksIssuerAuthenticationManagerResolver
 
 	@Override
 	public AuthenticationManager resolve(HttpServletRequest request) {
+		// If a valid SSO session exists, return a no-op manager — auth is already
+		// handled by SsoSessionAuthFilter, no JWK validation needed
+		jakarta.servlet.http.HttpSession session = request.getSession(false);
+		if (session != null && session.getAttribute("userId") != null) {
+			log.debug("SSO session found, skipping JWK validation for user: {}", session.getAttribute("userId"));
+			return authentication -> authentication;
+		}
 		String origin = request.getHeader("Origin");
 		return new ResolvingAuthenticationManager(new RequestProps(origin, keycloakUrl, defaultRealm, cache));
 	}
@@ -132,26 +139,13 @@ public final class JwksIssuerAuthenticationManagerResolver
 				String token = authentication.getToken();
 				JWTClaimsSet claims = JWTParser.parse(token).getJWTClaimsSet();
 
-				// 1. Try org claim (WKS standalone tokens)
+				// Use org claim (WKS standalone tokens)
 				String org = (String) claims.getClaim("org");
 				if (org != null && !org.isBlank()) return org;
 
-				// 2. Try ext.tenant_id (APM tokens)
-				try {
-					@SuppressWarnings("unchecked")
-					java.util.Map<String, Object> ext = (java.util.Map<String, Object>) claims.getClaim("ext");
-					if (ext != null) {
-						String tenantId = (String) ext.get("tenant_id");
-						if (tenantId != null && !tenantId.isBlank()) {
-							log.debug("Using ext.tenant_id as realm: {}", tenantId);
-							return tenantId;
-						}
-					}
-				} catch (Exception ignored) {}
-
-				// 3. Fall back to configured default realm
+				// No org claim (e.g. APM tokens) — fall back to configured default realm
 				if (request.defaultRealm != null && !request.defaultRealm.isBlank()) {
-					log.debug("No org/tenant_id in token, using default realm: {}", request.defaultRealm);
+					log.debug("No org claim in token, using default realm: {}", request.defaultRealm);
 					return request.defaultRealm;
 				}
 
