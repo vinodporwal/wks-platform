@@ -22,7 +22,7 @@ import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/api/sso")
+@RequestMapping("/sso")
 @Slf4j
 public class SsoController {
 
@@ -62,11 +62,20 @@ public class SsoController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token claims");
         }
 
-        // Use org from token; fall back to default realm if APM token has no org claim
+        // Use org from token; check ext.tenant_id as fallback; then default realm
         String org = (String) claims.getClaim("org");
         if (org == null || org.isBlank()) {
+            try {
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> ext = (java.util.Map<String, Object>) claims.getClaim("ext");
+                if (ext != null) {
+                    org = (String) ext.get("tenant_id");
+                }
+            } catch (Exception ignored) {}
+        }
+        if (org == null || org.isBlank()) {
             org = defaultRealm;
-            log.info("SSO: no org claim in token, using default realm: {}", org);
+            log.info("SSO: no org/tenant_id in token, using default realm: {}", org);
         }
 
         HttpSession existingSession = request.getSession(false);
