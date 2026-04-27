@@ -47,7 +47,7 @@ import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.rest.entity.Site;
 import com.wks.caseengine.utility.ExcelConstants;
 import com.wks.caseengine.utility.Utility;
-
+import java.util.regex.Pattern;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
@@ -84,6 +84,9 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 	@Autowired
 	private ExcelConfigurationsRepository excelConfigurationsRepository;
 
+	private static final Pattern UUID_PATTERN = 
+		    Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
+	
 	@Override
 	public AOPMessageVM getSpyroInputData(String year, String plantId, String Mode, String type) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -226,8 +229,12 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 				if ("Failed".equalsIgnoreCase(spyroInputDTO.getSaveStatus())) {
 					continue;
 				}
-
-				UUID normParameterFKId = UUID.fromString(spyroInputDTO.getNormParameterFKID());
+				String rawId = spyroInputDTO.getNormParameterFKID();
+				if (rawId == null || rawId.isBlank() || !UUID_PATTERN.matcher(rawId).matches()) {
+				    continue;
+				}
+				
+				UUID normParameterFKId = UUID.fromString(rawId);
 				Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
 				if (!optionNormParameters.isPresent()) {
 					spyroInputDTO.setSaveStatus("Failed");
@@ -401,7 +408,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 				Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
 				Map<String, List<Map<String, Object>>> spyroInputDataListMap = new HashMap<>();
 				if (!isAfterSave) {
-					AOPMessageVM vm = getSpyroInputData(year, plantId, mode, "Composition");
+					AOPMessageVM vm = getSpyroInputData(year, plantId, "Composition", "Composition");
 					List<Map<String, Object>> spyroInputDataList = (List<Map<String, Object>>) vm.getData();
 					spyroInputDataListMap = Utility.groupByNormParameterTypeName(spyroInputDataList);
 				}
