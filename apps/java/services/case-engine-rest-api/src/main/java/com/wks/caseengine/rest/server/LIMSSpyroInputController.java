@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.wks.caseengine.dto.LIMSSpyroInputDTO;
+import com.wks.caseengine.dto.NaphthaQualityDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.service.LIMSSpyroInputService;
 
@@ -54,7 +55,7 @@ public class LIMSSpyroInputController {
         return limsSpyroInputService.getLIMSDate(plantId, year);
     }
 
-    // ✅ NEW — Naphtha Quality GET endpoint
+    
     @GetMapping(value = "/naphtha-quality")
     public AOPMessageVM getNaphthaQuality(
             @RequestParam String plantId,
@@ -65,6 +66,11 @@ public class LIMSSpyroInputController {
 	public AOPMessageVM saveLIMSSpyroInput(@RequestParam String year,@RequestParam String plantId, @RequestBody List<LIMSSpyroInputDTO> lIMSSpyroInputDTOs) {
 		return 	limsSpyroInputService.saveLIMSSpyroInput(year,plantId,lIMSSpyroInputDTOs);
 	}
+    
+    @PostMapping(value="/naphtha-quality")
+   	public AOPMessageVM saveNaphthaQuality(@RequestParam String year,@RequestParam String plantId, @RequestBody List<NaphthaQualityDTO> naphthaQualityDTOs) {
+   		return 	limsSpyroInputService.saveNaphthaQuality(year,plantId,naphthaQualityDTOs);
+   	}
     
     @GetMapping(value = "/naphtha-export")
 	public ResponseEntity<byte[]> exportLIMSSpyroInput(

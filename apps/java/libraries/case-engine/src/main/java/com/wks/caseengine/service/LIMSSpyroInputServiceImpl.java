@@ -491,6 +491,90 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 		return aopMessageVM;
 	}
 	
+	@Override
+	public AOPMessageVM saveNaphthaQuality(String year, String plantFKId, List<NaphthaQualityDTO> naphthaQualityDTOs) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			for(NaphthaQualityDTO naphthaQualityDTO:naphthaQualityDTOs) {
+				if(naphthaQualityDTO.getMaxId()!=null && !naphthaQualityDTO.getMaxId().isBlank() && naphthaQualityDTO.getMax()!=null) {
+					UUID maxId =UUID.fromString(naphthaQualityDTO.getMaxId());
+					Optional<NormAttributeTransactions> normAttributeTransactions=	normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(maxId,4,year);
+					if(normAttributeTransactions.isPresent()) {
+						NormAttributeTransactions normAttributeTransaction=normAttributeTransactions.get();
+						normAttributeTransaction.setAttributeValue(naphthaQualityDTO.getMax().toString());
+						normAttributeTransaction.setModifiedOn(new Date());
+						normAttributeTransaction.setUserName(Utility.getUserName());
+						normAttributeTransactionsRepository.save(normAttributeTransaction);
+					}else {
+						NormAttributeTransactions normAttributeTransaction = new NormAttributeTransactions();
+						normAttributeTransaction.setAopMonth(4);
+						normAttributeTransaction.setAttributeValue(naphthaQualityDTO.getMax().toString());
+						normAttributeTransaction.setAuditYear(year);
+						normAttributeTransaction.setCreatedOn(new Date());
+						normAttributeTransaction.setNormParameterFKId(maxId);
+						normAttributeTransaction.setUserName(Utility.getUserName());
+						normAttributeTransactionsRepository.save(normAttributeTransaction);
+					}
+				}
+				
+				if(naphthaQualityDTO.getMinId()!=null && !naphthaQualityDTO.getMinId().isBlank() && naphthaQualityDTO.getMin()!=null) {
+					UUID minId =UUID.fromString(naphthaQualityDTO.getMinId());
+					Optional<NormAttributeTransactions> normAttributeTransactions=	normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(minId,4,year);
+					if(normAttributeTransactions.isPresent()) {
+						NormAttributeTransactions normAttributeTransaction=normAttributeTransactions.get();
+						normAttributeTransaction.setAttributeValue(naphthaQualityDTO.getMin().toString());
+						normAttributeTransaction.setModifiedOn(new Date());
+						normAttributeTransaction.setUserName(Utility.getUserName());
+						normAttributeTransactionsRepository.save(normAttributeTransaction);
+					}else {
+						NormAttributeTransactions normAttributeTransaction = new NormAttributeTransactions();
+						normAttributeTransaction.setAopMonth(4);
+						normAttributeTransaction.setAttributeValue(naphthaQualityDTO.getMin().toString());
+						normAttributeTransaction.setAuditYear(year);
+						normAttributeTransaction.setCreatedOn(new Date());
+						normAttributeTransaction.setNormParameterFKId(minId);
+						normAttributeTransaction.setUserName(Utility.getUserName());
+						normAttributeTransactionsRepository.save(normAttributeTransaction);
+					}
+				}
+				
+				if(naphthaQualityDTO.getMonthsId()!=null && !naphthaQualityDTO.getMonthsId().isBlank() && naphthaQualityDTO.getMonths()!=null) {
+					UUID MonthsId =UUID.fromString(naphthaQualityDTO.getMonthsId());
+					Optional<NormAttributeTransactions> normAttributeTransactions=	normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(MonthsId,4,year);
+					if(normAttributeTransactions.isPresent()) {
+						NormAttributeTransactions normAttributeTransaction=normAttributeTransactions.get();
+						normAttributeTransaction.setAttributeValue(naphthaQualityDTO.getMonths().toString());
+						normAttributeTransaction.setModifiedOn(new Date());
+						normAttributeTransaction.setUserName(Utility.getUserName());
+						normAttributeTransactionsRepository.save(normAttributeTransaction);
+					}else {
+						NormAttributeTransactions normAttributeTransaction = new NormAttributeTransactions();
+						normAttributeTransaction.setAopMonth(4);
+						normAttributeTransaction.setAttributeValue(naphthaQualityDTO.getMonths().toString());
+						normAttributeTransaction.setAuditYear(year);
+						normAttributeTransaction.setCreatedOn(new Date());
+						normAttributeTransaction.setNormParameterFKId(MonthsId);
+						normAttributeTransaction.setUserName(Utility.getUserName());
+						normAttributeTransactionsRepository.save(normAttributeTransaction);
+					}
+				}
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data updated successfully");
+			aopMessageVM.setData(null);
+		} catch (IllegalArgumentException e) {
+			aopMessageVM.setCode(400);
+			aopMessageVM.setMessage("Invalid input: " + e.getMessage());
+			aopMessageVM.setData(null);
+		} catch (Exception e) {
+			e.printStackTrace();
+			aopMessageVM.setCode(500);
+			aopMessageVM.setMessage("Failed to save data: " + e.getMessage());
+			aopMessageVM.setData(null);
+		}
+		return aopMessageVM;
+	}
+	
 	public byte[] exportLIMSSpyroInput(String year, String plantId, boolean isAfterSave, List<LIMSSpyroInputDTO> dtoList) {
 	    try {
 	        if (!isAfterSave) {
