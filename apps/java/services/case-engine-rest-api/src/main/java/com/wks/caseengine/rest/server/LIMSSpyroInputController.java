@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.wks.caseengine.dto.CrackerHMDLoadLIMSSpyroInputDTO;
 import com.wks.caseengine.dto.LIMSSpyroInputDTO;
 import com.wks.caseengine.dto.NaphthaQualityDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -62,6 +63,13 @@ public class LIMSSpyroInputController {
             @RequestParam String year) {
         return limsSpyroInputService.getNaphthaQuality(plantId, year);
     }
+    
+    @GetMapping(value = "/hmd-load-lims-spyro-input")
+    public AOPMessageVM getCrackerHMDLIMSSpyroInput(
+            @RequestParam String plantId,
+            @RequestParam String year) {
+        return limsSpyroInputService.getCrackerHMDLIMSSpyroInput(plantId, year);
+    }
     @PostMapping(value="/naphtha")
 	public AOPMessageVM saveLIMSSpyroInput(@RequestParam String year,@RequestParam String plantId, @RequestBody List<LIMSSpyroInputDTO> lIMSSpyroInputDTOs) {
 		return 	limsSpyroInputService.saveLIMSSpyroInput(year,plantId,lIMSSpyroInputDTOs);
@@ -70,6 +78,11 @@ public class LIMSSpyroInputController {
     @PostMapping(value="/naphtha-quality")
    	public AOPMessageVM saveNaphthaQuality(@RequestParam String year,@RequestParam String plantId, @RequestBody List<NaphthaQualityDTO> naphthaQualityDTOs) {
    		return 	limsSpyroInputService.saveNaphthaQuality(year,plantId,naphthaQualityDTOs);
+   	}
+    
+    @PostMapping(value="/hmd-load-lims-spyro-input")
+   	public AOPMessageVM saveCrackerHMDLIMSSpyroInput(@RequestParam String year,@RequestParam String plantId, @RequestBody List<CrackerHMDLoadLIMSSpyroInputDTO> crackerHMDLoadLIMSSpyroInputDTOs) {
+   		return 	limsSpyroInputService.saveCrackerHMDLIMSSpyroInput(year,plantId,crackerHMDLoadLIMSSpyroInputDTOs);
    	}
     
     @GetMapping(value = "/naphtha-export")

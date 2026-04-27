@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.wks.caseengine.dto.CrackerHMDLoadLIMSSpyroInputDTO;
 import com.wks.caseengine.dto.LIMSSpyroInputDTO;
 import com.wks.caseengine.dto.NaphthaQualityDTO;
 import com.wks.caseengine.entity.NormAttributeTransactions;
@@ -522,6 +523,41 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 		}
 		return aopMessageVM;
 	}
+	
+	@Override
+	public AOPMessageVM saveCrackerHMDLIMSSpyroInput(String year, String plantFKId,
+			List<CrackerHMDLoadLIMSSpyroInputDTO> crackerHMDLoadLIMSSpyroInputDTOs) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			UUID.fromString(plantFKId); // Validate UUID format for a consistent API contract.
+			if (year == null || year.isBlank()) {
+				throw new IllegalArgumentException("Year is required");
+			}
+			if (crackerHMDLoadLIMSSpyroInputDTOs == null || crackerHMDLoadLIMSSpyroInputDTOs.isEmpty()) {
+				throw new IllegalArgumentException("LIMS pyro payload is empty");
+			}
+			for (CrackerHMDLoadLIMSSpyroInputDTO dto : crackerHMDLoadLIMSSpyroInputDTOs) {
+				upsertNaphthaQualityMetric(year, dto.getJmdId(), dto.getJmd());
+				upsertNaphthaQualityMetric(year, dto.getHpnId(), dto.getHpn());
+				upsertNaphthaQualityMetric(year, dto.getHeavyId(), dto.getHeavy());
+				upsertNaphthaQualityMetric(year, dto.getOthersId(), dto.getOthers());
+				upsertNaphthaQualityMetric(year, dto.getBlendId(), dto.getBlend());
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data updated successfully");
+			aopMessageVM.setData(null);
+		} catch (IllegalArgumentException e) {
+			aopMessageVM.setCode(400);
+			aopMessageVM.setMessage("Invalid input: " + e.getMessage());
+			aopMessageVM.setData(null);
+		} catch (Exception e) {
+			e.printStackTrace();
+			aopMessageVM.setCode(500);
+			aopMessageVM.setMessage("Failed to save data: " + e.getMessage());
+			aopMessageVM.setData(null);
+		}
+		return aopMessageVM;
+	}
 
 	private void upsertNaphthaQualityMetric(String year, String metricId, Double metricValue) {
 		if (metricId == null || metricId.isBlank() || metricValue == null) {
@@ -806,6 +842,56 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 	}
 
 	// NEW METHODS FOR NAPHTHA QUALITY
+	@Override
+	public AOPMessageVM getCrackerHMDLIMSSpyroInput(String plantId, String aopYear) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalsRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			
+			String procedureName = vertical.getName() + "_" + site.getName() + "_LoadLIMSSpyroInput";
+			List<Object[]> results = executeLIMSSpyroInput(procedureName, plantId, aopYear);
+
+			List<CrackerHMDLoadLIMSSpyroInputDTO> dtoList = new ArrayList<>();
+			for (Object[] row : results) {
+				CrackerHMDLoadLIMSSpyroInputDTO dto = new CrackerHMDLoadLIMSSpyroInputDTO();
+				dto.setName(row[0] != null ? row[0].toString() : "");
+				dto.setDisplayName(row[1] != null ? row[1].toString() : "");
+				dto.setUom(row[2] != null ? row[2].toString() : "");
+				dto.setJmd(row[3] != null ? toDouble(row[3]) : null);
+				dto.setHpn(row[4] != null ? toDouble(row[4]) : null);
+				dto.setHeavy(row[5] != null ? toDouble(row[5]) : null);
+				dto.setOthers(row[6] != null ? toDouble(row[6]) : null);
+				dto.setBlend(row[7] != null ? toDouble(row[7]) : null);
+				dto.setJmdId(row[8] != null ? row[8].toString() : "");
+				dto.setHpnId(row[9] != null ? row[9].toString() : "");
+				dto.setHeavyId(row[10] != null ? row[10].toString() : "");
+				dto.setOthersId(row[11] != null ? row[11].toString() : "");
+				dto.setBlendId(row[12] != null ? row[12].toString() : "");
+				dto.setPlantId(row[13] != null ? row[13].toString() : "");
+				dto.setAopYear(row[14] != null ? row[14].toString() : "");
+				dtoList.add(dto);
+			}
+
+			Map<String, Object> map = new java.util.HashMap<>();
+			map.put("Data", dtoList);
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(map);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
 	@Override
 	public AOPMessageVM getNaphthaQuality(String plantId, String aopYear) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
