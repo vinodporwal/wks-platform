@@ -114,6 +114,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
   const IS_CRACKER_VMD = VERTICAL_NAME === 'cracker' && SITE_NAME === 'vmd'
   const IS_AROMATICS_SEZ_PX4 =
     VERTICAL_NAME === 'aromatics' && SITE_NAME === 'sez' && PLANT_NAME === 'px4'
+  const IS_CRACKER_HMD = VERTICAL_NAME === 'cracker' && SITE_NAME === 'hmd'
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [rows, setRows] = useState()
   const [rowsPercentageSummary, setRowsPercentageSummary] = useState()
@@ -1605,7 +1606,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
       )}
 
       {/* CURRENT_OPERATING_CAPACITY */}
-      {!IS_CRACKER_VMD && (
+      {!IS_CRACKER_VMD && !IS_CRACKER_HMD && (
         <KendoDataTables
           modifiedCells={modifiedCells}
           setModifiedCells={setModifiedCells}
@@ -1649,7 +1650,8 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
       {!permissions?.hideSummary &&
         VERTICAL_NAME !== 'pta' &&
         !IS_CHEMICAL &&
-        !IS_CRACKER_VMD && (
+        !IS_CRACKER_VMD &&
+        !IS_CRACKER_HMD && (
           <>
             <KendoDataTables
               setRows={setRowsPercentageSummary}
