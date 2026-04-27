@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.tcs.dto.PCGOutlookDTO;
+import com.wks.caseengine.tcs.dto.PCGOutlookDataDTO;
 import com.wks.caseengine.tcs.service.PCGOutlookService;
 
 @RestController
@@ -28,12 +29,12 @@ public class PCGOutlookController {
     private PCGOutlookService service;
 
     @GetMapping("pcg-outlook/{verticalId}/{siteId}/{financialYear}")
-    public List<PCGOutlookDTO> getPCGOutlook(@PathVariable String verticalId, @PathVariable String siteId, @PathVariable String financialYear) {
+    public List<PCGOutlookDataDTO> getPCGOutlook(@PathVariable String verticalId, @PathVariable String siteId, @PathVariable String financialYear) {
 
         if(verticalId == null || verticalId.isEmpty()) {  
             throw new RestInvalidArgumentException("Vertical ID cannot be null", null);
         }
-        return service.getData(UUID.fromString(verticalId), UUID.fromString(siteId), financialYear);
+        return service.getPcgOutlookData(UUID.fromString(verticalId), UUID.fromString(siteId), financialYear);
     }
 
     @PostMapping("pcg-outlook/carry-forward")
@@ -55,7 +56,7 @@ public class PCGOutlookController {
     }
 
     @PostMapping("pcg-outlook/{verticalId}/{siteId}/{financialYear}")
-    public void savePCGOutlook(@PathVariable String verticalId, @PathVariable String siteId, @PathVariable String financialYear, @RequestBody List<PCGOutlookDTO> data) {
+    public void savePCGOutlook(@PathVariable String verticalId, @PathVariable String siteId, @PathVariable String financialYear, @RequestBody List<PCGOutlookDataDTO> data) {
         if(verticalId == null || verticalId.isEmpty()) {
             throw new RestInvalidArgumentException("Vertical ID cannot be null", null);
         }
@@ -65,7 +66,7 @@ public class PCGOutlookController {
         if(financialYear == null || financialYear.isEmpty()) {
             throw new RestInvalidArgumentException("Financial year cannot be null", null);
         }
-        service.saveData(data, financialYear, UUID.fromString(verticalId), UUID.fromString(siteId));
+        service.savePcgOutlookData(data, financialYear, UUID.fromString(verticalId), UUID.fromString(siteId));
     }
 
     @GetMapping("pcg-outlook/export")
