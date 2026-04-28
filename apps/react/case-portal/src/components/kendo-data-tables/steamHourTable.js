@@ -14,6 +14,84 @@ import { getRoleName } from 'services/role-service'
 import MaintenanceProcessTableNMD from './processTableNMD'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { ProductionRangeApiService } from 'services/production-range-api-service copy'
+// --- Month fields used throughout the component ----------------------------
+const STEAM_MONTHS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+]
+
+const DERIVED_METRICS = ['Total S/D Hours', 'Net Operating Hrs']
+
+const computeCalculatedRows = (currentRows) => {
+  if (!currentRows || currentRows.length === 0) return currentRows
+
+  // Group rows by section (Particulars = SectionName)
+  const sectionMap = {}
+  currentRows.forEach((row) => {
+    const key = row.Particulars || row.SectionName || ''
+    if (!sectionMap[key]) sectionMap[key] = []
+    sectionMap[key].push(row)
+  })
+
+  return currentRows.map((row) => {
+    const sectionKey = row.Particulars || row.SectionName || ''
+    const sectionRows = sectionMap[sectionKey] || []
+    const metricName = (row.Metric || '').trim()
+
+    // Helper: find a row by metric name (exact trim match or predicate) and return its month value
+    const getVal = (matcherOrString, month) => {
+      const found = sectionRows.find((r) =>
+        typeof matcherOrString === 'function'
+          ? matcherOrString((r.Metric || '').trim())
+          : (r.Metric || '').trim() === matcherOrString,
+      )
+      return parseFloat(found?.[month]) || 0
+    }
+
+    if (metricName === 'Total S/D Hours') {
+      const updated = { ...row }
+      STEAM_MONTHS.forEach((month) => {
+        const routine = getVal('Routine shutdown Duration', month)
+        const planned = getVal(
+          (m) => m.startsWith('Planned SD other than Turnaround'),
+          month,
+        )
+        const turnAround = getVal('Turn around duration', month)
+        updated[month] = routine + planned + turnAround
+      })
+      return updated
+    }
+
+    if (metricName === 'Net Operating Hrs') {
+      const updated = { ...row }
+      STEAM_MONTHS.forEach((month) => {
+        const totalAvail = getVal('Total available hours', month)
+        const routine = getVal('Routine shutdown Duration', month)
+        const planned = getVal(
+          (m) => m.startsWith('Planned SD other than Turnaround'),
+          month,
+        )
+        const turnAround = getVal('Turn around duration', month)
+        const totalSD = routine + planned + turnAround
+        updated[month] = totalAvail - totalSD
+      })
+      return updated
+    }
+
+    return row
+  })
+}
+
 const MaintenanceProcessTable = ({ viewOnly }) => {
   const keycloak = useSession()
 
@@ -65,6 +143,60 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
   const [columns, setColumns] = useState([])
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
+
+  // Wrapper around setRows that automatically recalculates derived rows
+  // (Total S/D Hours, Net Operating Hrs) after every mutation.
+  const setRowsWithCalculation = useCallback((updater) => {
+    setRows((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater
+      return computeCalculatedRows(next)
+    })
+  }, [])
+
+  const handleCustomItemChange = useCallback(
+    (
+      e,
+      {
+        setModifiedCells: setMod,
+        setCustomModifiedCells: setCustomMod,
+        rows: currentRows,
+      },
+    ) => {
+      const { dataItem, field, value } = e
+      const section = dataItem.Particulars || dataItem.SectionName || ''
+
+      // Apply the edit, then recompute ? filter to derived rows in the same section only
+      const afterEdit = currentRows.map((r) =>
+        r.id === dataItem.id ? { ...r, [field]: value } : r,
+      )
+      const derivedRows = computeCalculatedRows(afterEdit).filter(
+        (r) =>
+          (r.Particulars || r.SectionName) === section &&
+          DERIVED_METRICS.includes((r.Metric || '').trim()),
+      )
+
+      if (derivedRows.length === 0) return
+
+      // Build both state updates in one pass
+      const modUpdate = {}
+      const customUpdate = {}
+      derivedRows.forEach((row) => {
+        modUpdate[row.id] = { ...row, inEdit: true }
+        customUpdate[row.id] = { [field]: row[field] }
+      })
+
+      setMod((prev) => ({ ...prev, ...modUpdate }))
+      setCustomMod((prev) => {
+        const next = { ...prev }
+        derivedRows.forEach((row) => {
+          next[row.id] = { ...(prev[row.id] || {}), ...customUpdate[row.id] }
+        })
+        return next
+      })
+    },
+    [],
+  )
+
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -112,14 +244,19 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
         return
       }
       // --- MONTHLY SUM VALIDATION (move here) ---
-      const validationMessage = validateFields(data, ['Remarks'])
+      // 1. Filter the data to only include editable rows
+      // This check covers: row.isEditable === true OR row.isEditable === 1
+      const editableRows = data.filter((row) => row.isEditable == true)
+
+      // 2. Run the validation only on those filtered rows
+      const validationMessage = validateFields(editableRows, ['Remarks'])
+
       if (validationMessage) {
         setSnackbarOpen(true)
         setSnackbarData({ message: validationMessage, severity: 'error' })
         setLoading(false)
         return
       }
-
       await saveStreamHoursData(data)
     } catch (err) {
       console.error('Save Stream Hours Data Error:', err)
@@ -215,6 +352,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
         'NormParamId',
         'SectionName',
         'NormParmId',
+        'SectionOrder',
       ]
       const months = [
         'Jan',
@@ -255,7 +393,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
           ...newItem,
           idFromApi: item.Id,
           id: idx,
-          isEditable: item?.isEditable,
+          isEditable: item?.IsEditable,
           originalRemark: item?.Remarks?.trim(),
           Particulars: item.SectionName,
         }
@@ -263,7 +401,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
 
       const finalData = [...formatted]
 
-      setRows(finalData)
+      setRows(computeCalculatedRows(finalData))
     } catch (err) {
       console.error('Error fetching data:', err)
       setRows([])
@@ -465,7 +603,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
       <KendoDataTables
         columns={columns}
         rows={rows}
-        setRows={setRows}
+        setRows={setRowsWithCalculation}
         fetchData={fetchData}
         deleteId={deleteId}
         setDeleteId={setDeleteId}
@@ -489,6 +627,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
         handleExcelUpload={handleExcelUpload}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         groupBy='Particulars'
+        customItemChange={handleCustomItemChange}
       />
     </div>
   )

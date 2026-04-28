@@ -42,7 +42,6 @@ const MaterialBalance = ({ permissions }) => {
     severity: 'info',
   })
 
-
   const fetchMatbalData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
@@ -62,6 +61,7 @@ const MaterialBalance = ({ permissions }) => {
             Type: item?.Type,
             Remarks: item?.Remarks || '',
             originalRemark: item?.Remarks || '',
+            isEditable: item?.IsEditable,
           }),
         )
         setRows(formattedData)
