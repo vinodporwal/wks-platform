@@ -617,7 +617,7 @@ export default function AopDashboardCompact() {
                 primaryTypographyProps={menuItemStyle}
               />
             </MenuItem>
-            <Divider sx={{ my: '4px !important', border: 'unset !important' }} />
+            <Divider sx={{ my: '4px !important', border: `1px solid ${DashboardColors.divider} !important` }} />
 
             {ALL_STATUSES.map((status) => (
               <MenuItem key={status} onClick={() => toggleStatus(status)} sx={{ minHeight: '32px', padding: '6px 10px' }}>

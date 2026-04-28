@@ -44,7 +44,7 @@ const DrawerHeader = ({ open, handleDrawerToggle }) => {
           {open && (
             <Box>
               <Typography
-                sx={{ fontWeight: 700, fontSize: 17, color: '#04140f' }}
+                sx={{ fontWeight: 800, fontSize: 17, color: '#04140f' }}
               >
                 Reliance
               </Typography>

@@ -3,7 +3,7 @@ export const DashboardColors = {
   background: '#f6f8fa',
   card: '#ffffff',
   border: '#e2e8f0',
-  divider: '#e2e8f0',
+  divider: '#DDDEE1',
   text: {
     dark: '#1e293b',
     muted: '#64748b',

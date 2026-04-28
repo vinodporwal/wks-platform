@@ -1,7 +1,6 @@
 /* =========================================================
    MODERN OUTLINE BUTTON SYSTEM (MATCHING IMAGE)
    ========================================================= */
-.btn-load,
 .btn-save,
 .btn-export,
 .btn-add,
@@ -9,22 +8,43 @@
 .btn-calculate {
   appearance: none;
   background: transparent;
-  border-radius: 10px;
-  padding: 6px 14px;
-  font-family: Inter, system-ui, sans-serif;
-  font-size: 0.85rem; /* Slightly larger for better readability */
-  font-weight: 600;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-family: "Honeywell Sans Web", "Inter", sans-serif;
+  font-size: 14px; /* Slightly larger for better readability */
+  font-weight: 700;
   line-height: 1;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 8px; /* Balanced gap */
+  /* gap: 8px; */
   white-space: nowrap;
   transition: all 0.2s ease;
 
   /* Text Color from Image */
   color: #334155;
-  border: 1px solid rgba(37, 99, 235, 0.15); /* Subtle border */
+  /* border: 1px solid rgba(37, 99, 235, 0.15); */
+}
+
+.btn-load {
+  appearance: none;
+  background: transparent;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-family: "Honeywell Sans Web", "Inter", sans-serif;
+  font-size: 14px; /* Slightly larger for better readability */
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  /* gap: 8px; */
+  white-space: nowrap;
+  transition: all 0.2s ease;
+
+  /* Text Color from Image */
+  color: #4A4DDA;
+  border: 1px solid #4A4DDA;
 }
 
 /* Base Icon Styling */
@@ -34,7 +54,6 @@
 }
 
 /* Hover State - General */
-.btn-load:hover,
 .btn-save:hover,
 .btn-export:hover,
 .btn-add:hover,
@@ -44,7 +63,12 @@
   border-color: rgba(37, 99, 235, 0.4);
   transform: translateY(-1px);
 }
-
+.btn-load:hover {
+  background: #f8fafc; /* Very light gray flash */
+  border-color: #4A4DDA;
+  transform: translateY(-1px);
+}
+  
 /* ===============================
    SPECIFIC ICON COLORS (FROM IMAGE)
 ================================ */
@@ -76,7 +100,8 @@
 
 /* LOAD - Indigo Icon */
 .btn-load .MuiButton-startIcon svg {
-  color: #4f46e5;
+  color: #4A4DDA;
+  border-color: #4A4DDA;
 }
 
 /* ===============================

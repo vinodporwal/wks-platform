@@ -63,7 +63,7 @@ const MainLayout = ({ keycloak, authenticated }) => {
         />
 
         {/* Push content below header */}
-        <Box sx={{ pt: '55px' }} />
+        <Box sx={{ pt: '49px' }} />
 
         {/* {location.pathname.startsWith('/production-norms-plan') && (
           <Box>
@@ -86,11 +86,12 @@ const MainLayout = ({ keycloak, authenticated }) => {
           </Box>
         )} */}
 
-        <Box sx={{ height: 4 }} />
 
         <Box className='outlet-wrapper'>
           <Box className='outlet-border-box'>
-            <Breadcrumbs variant='dense' navigation={menu} divider={false} />
+            <Box className="breadcrumbs-box">
+              <Breadcrumbs variant='dense' navigation={menu} divider={false} />
+            </Box>
             <Outlet />
           </Box>
         </Box>

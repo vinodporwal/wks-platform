@@ -6,7 +6,7 @@ import { useMenuContext } from 'menu/menuProvider'
 import { verticalEnums } from 'enums/verticalEnums'
 import { drawerWidth, miniDrawerWidth } from 'config'
 
-const USE_FIXED = true
+const USE_FIXED = false
 
 export default function StepperNav() {
   const location = useLocation()
@@ -100,96 +100,103 @@ export default function StepperNav() {
   // Tabs UI
   // -------------------------
   const TabsElement = (
-    <Box
+    <Tabs
+      value={activeStep >= 0 ? activeStep : 0}
+      onChange={(e, newValue) => {
+        navigate(steps[newValue].url)
+      }}
+      variant='scrollable'
+      scrollButtons='auto' // ✅ FIXED
+      allowScrollButtonsMobile
       sx={{
-        backgroundColor: '#f7f8fa',
-        borderBottom: '1px solid #e2e8f0',
+        minHeight: 40,
+
+        // ✅ FORCE SINGLE LINE (NO WRAP BUG)
+        '& .MuiTabs-flexContainer': {
+          flexWrap: 'nowrap',
+        },
+
+        '& .MuiTabs-indicator': {
+          top: 0,
+          height: 4,
+          backgroundColor: '#AE4787',
+        },
+
+        '& .MuiTab-root': {
+          minHeight: 40,
+        },
+       '& .MuiTabs-scrollButtons.Mui-disabled': {
+          display: 'none',
+        },
       }}
     >
-      <Tabs
-        value={activeStep >= 0 ? activeStep : 0}
-        onChange={(e, newValue) => {
-          navigate(steps[newValue].url)
-        }}
-        variant='scrollable'
-        scrollButtons='auto' // ✅ FIXED
-        allowScrollButtonsMobile
-        sx={{
-          minHeight: 40,
+      {steps.map((step) => (
+        <Tooltip key={step.key} title={step.label} arrow>
+          <Tab
+            icon={
+              step.icon
+                ? React.isValidElement(step.icon)
+                  ? step.icon
+                  : React.createElement(step.icon, {
+                    fontSize: 'small',
+                  })
+                : null
+            }
+            iconPosition='start'
+            label={
+              <span
+                style={{
+                  display: 'inline-block',
+                  maxWidth: 120,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                  color: "#303030"
+                }}
+              >
+                {step.label}
+              </span>
+            }
+            sx={{
+              textTransform: 'none',
+              px: 1.5,
+              minHeight: 40,
+              gap: 0.5,
+              transition: 'all 0.2s ease',
 
-          // ✅ FORCE SINGLE LINE (NO WRAP BUG)
-          '& .MuiTabs-flexContainer': {
-            flexWrap: 'nowrap',
-          },
+              '&:hover': {
+                backgroundColor: '#eef2ff',
+              },
 
-          '& .MuiTabs-indicator': {
-            top: 0,
-            height: 2,
-            backgroundColor: '#2563eb',
-          },
-
-          '& .MuiTab-root': {
-            minHeight: 40,
-          },
-        }}
-      >
-        {steps.map((step) => (
-          <Tooltip key={step.key} title={step.label} arrow>
-            <Tab
-              icon={
-                step.icon
-                  ? React.isValidElement(step.icon)
-                    ? step.icon
-                    : React.createElement(step.icon, {
-                        fontSize: 'small',
-                      })
-                  : null
+              '&.Mui-selected': {
+                backgroundColor: '#F6F7F8',
+                color: "#303030"
+              },
+              '& .MuiTab-iconWrapper': {
+                width: 16,
+                height: 16
               }
-              iconPosition='start'
-              label={
-                <span
-                  style={{
-                    display: 'inline-block',
-                    maxWidth: 120,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {step.label}
-                </span>
-              }
-              sx={{
-                textTransform: 'none',
-                fontWeight: 500,
-                fontSize: '0.85rem',
-                color: '#475569',
-                px: 1.5,
-                minHeight: 40,
-                gap: 0.5,
-                transition: 'all 0.2s ease',
-
-                '&:hover': {
-                  backgroundColor: '#eef2ff',
-                },
-
-                '&.Mui-selected': {
-                  color: '#2563eb',
-                  fontWeight: 600,
-                },
-              }}
-            />
-          </Tooltip>
-        ))}
-      </Tabs>
-    </Box>
+            }}
+          />
+        </Tooltip>
+      ))}
+    </Tabs>
   )
 
   // -------------------------
   // Render
   // -------------------------
   return (
-    <>
+    <Box
+      sx={{
+        backgroundColor: '#FFFFFF',
+        borderBottom: '1px solid #e2e8f0',
+      }}
+    >
+      
       {USE_FIXED ? (
         <>
           <Box
@@ -222,6 +229,6 @@ export default function StepperNav() {
       ) : (
         TabsElement
       )}
-    </>
+    </Box>
   )
 }
