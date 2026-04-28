@@ -1139,7 +1139,9 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
       : VERTICAL_NAME === 'cracker'
         ? SITE_NAME === 'vmd'
           ? 'Max Achieved Capacity (Naphtha Quality - 75 %)'
-          : 'Max Achieved Capacity (Ethylene)'
+          : SITE_NAME === 'hmd' // Check specifically for hmd
+            ? 'Max Achieved Capacity'
+            : 'Max Achieved Capacity (Ethylene)'
         : 'Max Achieved Capacity'
   const adjustedPermissionsGrid1 = getAdjustedPermissions(
     {
@@ -1260,11 +1262,13 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
       titleName:
         VERTICAL_NAME === 'cracker' && SITE_NAME === 'vmd'
           ? 'Design Capacity (Naphtha Quality - 75 %)'
-          : VERTICAL_NAME === 'cracker'
-            ? 'Design Capacity (Ethylene)'
-            : VERTICAL_NAME === 'pp' && SITE_NAME === 'nmd'
-              ? 'Design Capacity (MCU from MCU Portal)'
-              : 'Design Capacity',
+          : VERTICAL_NAME === 'cracker' && SITE_NAME === 'hmd' // New condition
+            ? 'Design Capacity'
+            : VERTICAL_NAME === 'cracker'
+              ? 'Design Capacity (Ethylene)'
+              : VERTICAL_NAME === 'pp' && SITE_NAME === 'nmd'
+                ? 'Design Capacity (MCU from MCU Portal)'
+                : 'Design Capacity',
       showCalculate: VERTICAL_NAME === 'aromatics' && SITE_NAME === 'sez',
       showCalculateVisibility:
         VERTICAL_NAME === 'aromatics' && SITE_NAME === 'sez',

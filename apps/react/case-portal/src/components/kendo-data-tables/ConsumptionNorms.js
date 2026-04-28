@@ -22,6 +22,8 @@ import KendoDataTables from './index'
 import { ConsumptionNormsApiService } from 'services/consumption-norms-api-service'
 import { getRoleName } from 'services/role-service'
 import { DataService } from 'services/DataService'
+import { shouldShowReleaseButton } from 'utils/releaseButtonUtils'
+import { useMenuContext } from 'menu/menuProvider'
 
 const ConsumptionNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -93,6 +95,11 @@ const ConsumptionNorms = () => {
   const [grades, setGrades] = useState([])
   const [openReleaseDialogBox, setOpenReleaseDialogBox] = useState(false)
   const [isReleaseDisabled, setIsReleaseDisabled] = useState(true)
+
+  const { items: menuItems } = useMenuContext()
+  const showReleaseButton = shouldShowReleaseButton(menuItems)
+
+  console.log('showReleaseButton', showReleaseButton)
 
   // const { setIsReleased } = dataGridStore
 
@@ -689,7 +696,7 @@ const ConsumptionNorms = () => {
       ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
       isHeight: lowerVertName !== 'meg' && rows?.length > 10,
       showTitleNameBusiness: true,
-      showReleaseBtn: true,
+      showReleaseBtn: showReleaseButton ? true : false,
       titleName: `${SCREEN_NAME}`,
     },
     isOldYear,
