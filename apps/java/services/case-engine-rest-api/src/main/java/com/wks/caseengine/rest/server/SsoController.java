@@ -2,6 +2,7 @@ package com.wks.caseengine.rest.server;
 
 import java.text.ParseException;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -15,10 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
@@ -26,7 +25,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SsoController {
 
-    private static final Map<String, String> userSessionMap = new ConcurrentHashMap<>();
+    // Shared in-memory store: ssoSessionId -> session data
+    // Keyed by WKS_SSO_SESSION cookie value, read by SsoSessionAuthFilter
+    public static final Map<String, Map<String, String>> SSO_SESSION_STORE = new ConcurrentHashMap<>();
 
     @Value("${sso.allowed-origin:http://localhost:3000}")
     private String allowedOrigin;
@@ -62,49 +63,26 @@ public class SsoController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token claims");
         }
 
-        // Use org from token; check ext.tenant_id as fallback; then default realm
+        // Resolve org/tenant — fall back to default realm if APM token has no org claim
         String org = (String) claims.getClaim("org");
         if (org == null || org.isBlank()) {
-            try {
-                @SuppressWarnings("unchecked")
-                java.util.Map<String, Object> ext = (java.util.Map<String, Object>) claims.getClaim("ext");
-                if (ext != null) {
-                    org = (String) ext.get("tenant_id");
-                }
-            } catch (Exception ignored) {}
-        }
-        if (org == null || org.isBlank()) {
             org = defaultRealm;
-            log.info("SSO: no org/tenant_id in token, using default realm: {}", org);
+            log.info("SSO: no org claim in token, using default realm: {}", org);
         }
 
-        HttpSession existingSession = request.getSession(false);
-        if (existingSession != null) {
-            String existingUserId = (String) existingSession.getAttribute("userId");
-            if (userId.equals(existingUserId)) {
-                log.debug("SSO reusing existing session for user: {}", userId);
-                long tokenExp = claims.getExpirationTime().getTime();
-                int maxAge = (int) ((tokenExp - System.currentTimeMillis()) / 1000);
-                existingSession.setMaxInactiveInterval(maxAge);
-                return ResponseEntity.ok(Map.of("status", "reused", "userId", userId));
-            }
-            existingSession.invalidate();
-        }
+        // Generate a unique SSO session ID
+        String ssoSessionId = UUID.randomUUID().toString();
 
-        HttpSession session = request.getSession(true);
-        session.setAttribute("userId", userId);
-        session.setAttribute("org", org);
-        session.setAttribute("token", token);
+        // Store session data in shared map — read by SsoSessionAuthFilter and InjectorTenantHandlerInterceptor
+        Map<String, String> sessionData = new ConcurrentHashMap<>();
+        sessionData.put("userId", userId);
+        sessionData.put("org", org);
+        sessionData.put("token", token);
+        SSO_SESSION_STORE.put(ssoSessionId, sessionData);
 
-        long tokenExp = claims.getExpirationTime().getTime();
-        int maxAge = (int) ((tokenExp - System.currentTimeMillis()) / 1000);
-        session.setMaxInactiveInterval(maxAge);
-
-        userSessionMap.put(userId, session.getId());
-
-        // Use a distinct cookie name to avoid colliding with the standard JSESSIONID
-        // used by standalone WKS users on the same domain
-        String cookieValue = "WKS_SSO_SESSION=" + session.getId()
+        // Set WKS_SSO_SESSION cookie — separate from JSESSIONID to avoid
+        // colliding with standalone WKS users on the same domain
+        String cookieValue = "WKS_SSO_SESSION=" + ssoSessionId
                 + "; Path=/; HttpOnly; SameSite=None; Secure";
         response.setHeader("Set-Cookie", cookieValue);
 
@@ -114,19 +92,23 @@ public class SsoController {
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            String userId = (String) session.getAttribute("userId");
-            userSessionMap.remove(userId);
-            session.invalidate();
-            log.info("SSO session invalidated for user: {}", userId);
+        String ssoSessionId = getCookieValue(request, "WKS_SSO_SESSION");
+        if (ssoSessionId != null) {
+            SSO_SESSION_STORE.remove(ssoSessionId);
+            log.info("SSO session removed: {}", ssoSessionId);
         }
 
-        Cookie cookie = new Cookie("JSESSIONID", "");
-        cookie.setMaxAge(0);
-        cookie.setPath("/");
-        response.addCookie(cookie);
+        String clearCookie = "WKS_SSO_SESSION=; Path=/; HttpOnly; SameSite=None; Secure; Max-Age=0";
+        response.setHeader("Set-Cookie", clearCookie);
 
         return ResponseEntity.ok(Map.of("status", "logged_out"));
+    }
+
+    private String getCookieValue(HttpServletRequest request, String name) {
+        if (request.getCookies() == null) return null;
+        for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+            if (name.equals(cookie.getName())) return cookie.getValue();
+        }
+        return null;
     }
 }

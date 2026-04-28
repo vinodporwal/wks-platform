@@ -3,10 +3,13 @@ package com.wks.caseengine.rest.config.security;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Map;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import com.wks.caseengine.rest.server.SsoController;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -14,18 +17,8 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Reads the WKS_SSO_SESSION cookie (set by SsoController for APM iframe users),
- * looks up the corresponding session, and pre-authenticates the request.
- * Also strips the Authorization header so BearerTokenAuthenticationFilter
- * doesn't attempt to validate the APM token against Keycloak.
- *
- * Uses a separate cookie name (WKS_SSO_SESSION) to avoid colliding with the
- * standard JSESSIONID used by standalone WKS users on the same domain.
- */
 @Slf4j
 public class SsoSessionAuthFilter extends OncePerRequestFilter {
 
@@ -39,14 +32,12 @@ public class SsoSessionAuthFilter extends OncePerRequestFilter {
         String ssoSessionId = getCookieValue(request, SSO_COOKIE_NAME);
 
         if (ssoSessionId != null) {
-            // Look up the session by id — getSession(false) returns the current session
-            // if its id matches the cookie; we rely on the container to resolve it
-            HttpSession session = request.getSession(false);
-            if (session != null && ssoSessionId.equals(session.getId())) {
-                String userId = (String) session.getAttribute("userId");
-                String token  = (String) session.getAttribute("token");
+            Map<String, String> sessionData = SsoController.SSO_SESSION_STORE.get(ssoSessionId);
+            if (sessionData != null) {
+                String userId = sessionData.get("userId");
+                String token  = sessionData.get("token");
 
-                if (userId != null && !userId.isBlank() && token != null) {
+                if (userId != null && !userId.isBlank()) {
                     log.debug("SsoSessionAuthFilter: pre-authenticating SSO user: {}", userId);
 
                     UsernamePasswordAuthenticationToken auth =

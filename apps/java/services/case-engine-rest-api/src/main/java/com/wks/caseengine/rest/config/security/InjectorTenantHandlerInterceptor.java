@@ -56,14 +56,14 @@ public class InjectorTenantHandlerInterceptor implements HandlerInterceptor {
 		String tenantId = params.isEmpty() ? null : (String) params.get("org");
 		String userId   = params.isEmpty() ? null : (String) params.get("sub");
 
-		// For APM iframe SSO users: JWT has no org claim, fall back to SSO session
+		// For APM iframe SSO users: JWT has no org claim, fall back to SSO session store
 		if (tenantId == null || tenantId.isBlank()) {
 			String ssoSessionId = getCookieValue(request, "WKS_SSO_SESSION");
 			if (ssoSessionId != null) {
-				jakarta.servlet.http.HttpSession session = request.getSession(false);
-				if (session != null && ssoSessionId.equals(session.getId())) {
-					String sessionOrg    = (String) session.getAttribute("org");
-					String sessionUserId = (String) session.getAttribute("userId");
+				java.util.Map<String, String> sessionData = com.wks.caseengine.rest.server.SsoController.SSO_SESSION_STORE.get(ssoSessionId);
+				if (sessionData != null) {
+					String sessionOrg    = sessionData.get("org");
+					String sessionUserId = sessionData.get("userId");
 					if (sessionOrg != null && !sessionOrg.isBlank()) {
 						log.info("InjectorTenantHandlerInterceptor: using org from SSO session: {}", sessionOrg);
 						tenantId = sessionOrg;
