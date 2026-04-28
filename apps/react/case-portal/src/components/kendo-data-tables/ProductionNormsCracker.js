@@ -758,8 +758,8 @@ const ProductionNormsCracker = ({ permissions }) => {
       </Backdrop>
 
       {/* SHOW THIS GRID TO ALL SITES */}
- {!CRACKER_HMD && !CRACKER_DMD && (
-    <KendoDataTables
+      {!CRACKER_HMD && !CRACKER_DMD && (
+        <KendoDataTables
           modifiedCells={modifiedCellsC2C3R}
           setModifiedCells={setModifiedCellsC2C3R}
           columns={productionColumnsC2C3R}

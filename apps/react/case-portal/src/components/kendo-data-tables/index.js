@@ -3555,7 +3555,8 @@ const KendoDataTables = ({
                           // ON/OFF rows: show label text with highlight still handled by RedHighlightCell
                           if (props.dataItem?.UOM === 'ON/OFF') {
                             const val = props.dataItem[props.field]
-                            const label = val === 1 || val === '1' ? 'ON' : 'OFF'
+                            const label =
+                              val === 1 || val === '1' ? 'ON' : 'OFF'
                             return (
                               <RedHighlightCell
                                 {...props}

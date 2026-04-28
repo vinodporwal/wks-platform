@@ -53,6 +53,8 @@ export default function NaphthaHMDComponent() {
   const IS_OLD_YEAR = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
+  const lowerSiteName = siteObject?.name.toLowerCase()
+  const lowerPlantName = plantObject?.name.toLowerCase()
 
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [snackbarData, setSnackbarData] = useState({
@@ -455,7 +457,7 @@ export default function NaphthaHMDComponent() {
       titleName: 'LIMS Data Extraction Settings',
       adjustedPermissions: true,
       downloadExcelBtnFromUI: true,
-      ExcelName: `${lowerVertName}_LIMS Data Extraction Settings_${AOP_YEAR}`,
+      ExcelName: `${lowerVertName}_${lowerSiteName}_${lowerPlantName}_LIMS Data Extraction Settings`,
       //addButton: true,
       //deleteButton: true,
     },
@@ -469,7 +471,7 @@ export default function NaphthaHMDComponent() {
       titleName: 'LIMS Data',
       adjustedPermissions: true,
       downloadExcelBtnFromUI: true,
-      ExcelName: `${lowerVertName}_LIMS Data_${AOP_YEAR}`,
+      ExcelName: `${lowerVertName}_${lowerSiteName}_${lowerPlantName}_LIMS Data`,
       //addButton: true,
       //deleteButton: true,
     },

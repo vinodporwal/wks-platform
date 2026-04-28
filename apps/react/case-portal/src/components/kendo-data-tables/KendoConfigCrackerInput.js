@@ -1089,8 +1089,7 @@ const CrackerConfig = () => {
               if (IS_CRACKER_HMD) {
                 return (
                   <Box key={currentTabDisplay}>
-                    <NaphthaHMDComponent
-                    />
+                    <NaphthaHMDComponent />
                   </Box>
                 )
               }
