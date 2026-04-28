@@ -20,14 +20,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
+import com.wks.api.security.SsoSessionStore;
+
 @RestController
 @RequestMapping("/sso")
 @Slf4j
 public class SsoController {
-
-    // Shared in-memory store: ssoSessionId -> session data
-    // Keyed by WKS_SSO_SESSION cookie value, read by SsoSessionAuthFilter
-    public static final Map<String, Map<String, String>> SSO_SESSION_STORE = new ConcurrentHashMap<>();
 
     @Value("${sso.allowed-origin:http://localhost:3000}")
     private String allowedOrigin;
@@ -78,7 +76,7 @@ public class SsoController {
         sessionData.put("userId", userId);
         sessionData.put("org", org);
         sessionData.put("token", token);
-        SSO_SESSION_STORE.put(ssoSessionId, sessionData);
+        SsoSessionStore.STORE.put(ssoSessionId, sessionData);
 
         // Set WKS_SSO_SESSION cookie — separate from JSESSIONID to avoid
         // colliding with standalone WKS users on the same domain
@@ -94,7 +92,7 @@ public class SsoController {
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         String ssoSessionId = getCookieValue(request, "WKS_SSO_SESSION");
         if (ssoSessionId != null) {
-            SSO_SESSION_STORE.remove(ssoSessionId);
+            SsoSessionStore.STORE.remove(ssoSessionId);
             log.info("SSO session removed: {}", ssoSessionId);
         }
 

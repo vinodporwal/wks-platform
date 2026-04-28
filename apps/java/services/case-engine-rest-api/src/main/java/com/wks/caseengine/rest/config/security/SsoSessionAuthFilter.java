@@ -9,7 +9,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.wks.caseengine.rest.server.SsoController;
+import com.wks.api.security.SsoSessionStore;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -32,7 +32,7 @@ public class SsoSessionAuthFilter extends OncePerRequestFilter {
         String ssoSessionId = getCookieValue(request, SSO_COOKIE_NAME);
 
         if (ssoSessionId != null) {
-            Map<String, String> sessionData = SsoController.SSO_SESSION_STORE.get(ssoSessionId);
+            Map<String, String> sessionData = SsoSessionStore.STORE.get(ssoSessionId);
             if (sessionData != null) {
                 String userId = sessionData.get("userId");
                 String token  = sessionData.get("token");

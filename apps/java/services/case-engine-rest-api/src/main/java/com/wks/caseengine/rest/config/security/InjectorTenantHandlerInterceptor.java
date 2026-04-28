@@ -60,7 +60,7 @@ public class InjectorTenantHandlerInterceptor implements HandlerInterceptor {
 		if (tenantId == null || tenantId.isBlank()) {
 			String ssoSessionId = getCookieValue(request, "WKS_SSO_SESSION");
 			if (ssoSessionId != null) {
-				java.util.Map<String, String> sessionData = com.wks.caseengine.rest.server.SsoController.SSO_SESSION_STORE.get(ssoSessionId);
+				java.util.Map<String, String> sessionData = com.wks.api.security.SsoSessionStore.STORE.get(ssoSessionId);
 				if (sessionData != null) {
 					String sessionOrg    = sessionData.get("org");
 					String sessionUserId = sessionData.get("userId");

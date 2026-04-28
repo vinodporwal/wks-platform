@@ -56,12 +56,11 @@ public final class JwksIssuerAuthenticationManagerResolver
 
 	@Override
 	public AuthenticationManager resolve(HttpServletRequest request) {
-		// If a valid WKS SSO session exists (APM iframe users), return a no-op manager
 		jakarta.servlet.http.Cookie[] cookies = request.getCookies();
 		if (cookies != null) {
 			for (jakarta.servlet.http.Cookie cookie : cookies) {
 				if ("WKS_SSO_SESSION".equals(cookie.getName())) {
-					if (com.wks.caseengine.rest.server.SsoController.SSO_SESSION_STORE.containsKey(cookie.getValue())) {
+					if (SsoSessionStore.STORE.containsKey(cookie.getValue())) {
 						log.debug("SSO session found, skipping JWK validation");
 						return authentication -> authentication;
 					}
