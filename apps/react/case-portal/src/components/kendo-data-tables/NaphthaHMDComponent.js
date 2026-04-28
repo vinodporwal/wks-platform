@@ -11,6 +11,12 @@ import { useSelector } from 'react-redux'
 import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
 import { ProductionNormsApiService } from 'services/production-norms-api-service'
+import {
+  CustomAccordion,
+  CustomAccordionDetails,
+  CustomAccordionSummary,
+} from 'utils/CustomAccrodian.js'
+import { Typography } from '../../../node_modules/@mui/material/index.js'
 export default function NaphthaHMDComponent() {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -440,9 +446,10 @@ export default function NaphthaHMDComponent() {
     {
       allAction: true,
       saveBtn: true,
-      showTitleNameBusiness: true,
+      showTitleNameBusiness: false,
       titleName: 'LIMS Data Extraction Settings',
       adjustedPermissions: true,
+      downloadExcelBtnFromUI: true,
       ExcelName: `${lowerVertName}_LIMS Data Extraction Settings_${AOP_YEAR}`,
       //addButton: true,
       //deleteButton: true,
@@ -453,9 +460,10 @@ export default function NaphthaHMDComponent() {
     {
       allAction: true,
       saveBtn: true,
-      showTitleNameBusiness: true,
+      showTitleNameBusiness: false,
       titleName: 'LIMS Data',
       adjustedPermissions: true,
+      downloadExcelBtnFromUI: true,
       ExcelName: `${lowerVertName}_LIMS Data_${AOP_YEAR}`,
       //addButton: true,
       //deleteButton: true,
@@ -471,46 +479,74 @@ export default function NaphthaHMDComponent() {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
+      <CustomAccordion defaultExpanded disableGutters>
+        <CustomAccordionSummary
+          aria-controls='meg-grid-content'
+          id='meg-grid-header'
+        >
+          <Typography component='span' className='grid-title'>
+            LIMS Data Extraction Settings
+          </Typography>
+        </CustomAccordionSummary>
+        <CustomAccordionDetails>
+          <Box sx={{ width: '100%', margin: 0 }}>
+            <KendoDataTables
+              columns={naphthaColumns}
+              rows={rows}
+              setRows={setRows}
+              title='LIMS Data Extraction Settings'
+              modifiedCells={modifiedCells}
+              setModifiedCells={setModifiedCells}
+              remarkDialogOpen={remarkDialogOpen}
+              setRemarkDialogOpen={setRemarkDialogOpen}
+              currentRemark={currentRemark}
+              setCurrentRemark={setCurrentRemark}
+              currentRowId={currentRowId}
+              setCurrentRowId={setCurrentRowId}
+              enableSaveAddBtn={enableSaveAddBtn}
+              saveChanges={saveChanges}
+              //handleRemarkCellClick={handleRemarkCellClick}
+              //deleteRowData={deleteRowData}
+              permissions={adjustedPermissions}
+              groupBy='Particulars'
+            />
+          </Box>
+        </CustomAccordionDetails>
+      </CustomAccordion>
 
-      <KendoDataTables
-        columns={naphthaColumns}
-        rows={rows}
-        setRows={setRows}
-        title='LIMS Data Extraction Settings'
-        modifiedCells={modifiedCells}
-        setModifiedCells={setModifiedCells}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        setCurrentRowId={setCurrentRowId}
-        enableSaveAddBtn={enableSaveAddBtn}
-        saveChanges={saveChanges}
-        //handleRemarkCellClick={handleRemarkCellClick}
-        //deleteRowData={deleteRowData}
-        permissions={adjustedPermissions}
-        groupBy='Particulars'
-      />
+      <CustomAccordion defaultExpanded disableGutters>
+        <CustomAccordionSummary
+          aria-controls='meg-grid-content'
+          id='meg-grid-header'
+        >
+          <Typography component='span' className='grid-title'>
+            LIMS Data
+          </Typography>
+        </CustomAccordionSummary>
+        <CustomAccordionDetails>
+          <Box sx={{ width: '100%', margin: 0 }}>
+            <KendoDataTables
+              columns={limpsColumns}
+              rows={rows1}
+              setRows={setRows1}
+              title='LIMS Data'
+              modifiedCells={modifiedCells1}
+              setModifiedCells={setModifiedCells1}
+              remarkDialogOpen={remarkDialogOpen}
+              setRemarkDialogOpen={setRemarkDialogOpen}
+              currentRemark={currentRemark}
+              setCurrentRemark={setCurrentRemark}
+              currentRowId={currentRowId}
+              setCurrentRowId={setCurrentRowId}
+              enableSaveAddBtn={enableSaveAddBtn}
+              saveChanges={saveChangesLimsData}
+              //handleRemarkCellClick={handleRemarkCellClick}
+              permissions={adjustedPermissions1}
+            />
+          </Box>
+        </CustomAccordionDetails>
+      </CustomAccordion>
 
-      <KendoDataTables
-        columns={limpsColumns}
-        rows={rows1}
-        setRows={setRows1}
-        title='LIMS Data'
-        modifiedCells={modifiedCells1}
-        setModifiedCells={setModifiedCells1}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        setCurrentRowId={setCurrentRowId}
-        enableSaveAddBtn={enableSaveAddBtn}
-        saveChanges={saveChangesLimsData}
-        //handleRemarkCellClick={handleRemarkCellClick}
-        permissions={adjustedPermissions1}
-      />
       <Notification
         open={snackbarOpen}
         message={snackbarData.message}
