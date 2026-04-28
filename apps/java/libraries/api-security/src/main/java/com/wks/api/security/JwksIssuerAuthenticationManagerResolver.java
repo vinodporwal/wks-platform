@@ -56,12 +56,21 @@ public final class JwksIssuerAuthenticationManagerResolver
 
 	@Override
 	public AuthenticationManager resolve(HttpServletRequest request) {
-		// If a valid SSO session exists, return a no-op manager — auth is already
-		// handled by SsoSessionAuthFilter, no JWK validation needed
-		jakarta.servlet.http.HttpSession session = request.getSession(false);
-		if (session != null && session.getAttribute("userId") != null) {
-			log.debug("SSO session found, skipping JWK validation for user: {}", session.getAttribute("userId"));
-			return authentication -> authentication;
+		// If a valid WKS SSO session exists (APM iframe users), return a no-op manager
+		// — auth is already handled by SsoSessionAuthFilter, no JWK validation needed.
+		// Uses WKS_SSO_SESSION cookie to avoid colliding with standalone JSESSIONID.
+		jakarta.servlet.http.Cookie[] cookies = request.getCookies();
+		if (cookies != null) {
+			for (jakarta.servlet.http.Cookie cookie : cookies) {
+				if ("WKS_SSO_SESSION".equals(cookie.getName())) {
+					jakarta.servlet.http.HttpSession session = request.getSession(false);
+					if (session != null && cookie.getValue().equals(session.getId())
+							&& session.getAttribute("userId") != null) {
+						log.debug("SSO session found, skipping JWK validation");
+						return authentication -> authentication;
+					}
+				}
+			}
 		}
 		String origin = request.getHeader("Origin");
 		return new ResolvingAuthenticationManager(new RequestProps(origin, keycloakUrl, defaultRealm, cache));

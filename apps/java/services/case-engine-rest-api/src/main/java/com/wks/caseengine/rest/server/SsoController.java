@@ -102,7 +102,9 @@ public class SsoController {
 
         userSessionMap.put(userId, session.getId());
 
-        String cookieValue = "JSESSIONID=" + session.getId()
+        // Use a distinct cookie name to avoid colliding with the standard JSESSIONID
+        // used by standalone WKS users on the same domain
+        String cookieValue = "WKS_SSO_SESSION=" + session.getId()
                 + "; Path=/; HttpOnly; SameSite=None; Secure";
         response.setHeader("Set-Cookie", cookieValue);
 

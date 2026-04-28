@@ -56,18 +56,21 @@ public class InjectorTenantHandlerInterceptor implements HandlerInterceptor {
 		String tenantId = params.isEmpty() ? null : (String) params.get("org");
 		String userId   = params.isEmpty() ? null : (String) params.get("sub");
 
-		// For APM iframe SSO users: JWT has no org claim, fall back to session
+		// For APM iframe SSO users: JWT has no org claim, fall back to SSO session
 		if (tenantId == null || tenantId.isBlank()) {
-			jakarta.servlet.http.HttpSession session = request.getSession(false);
-			if (session != null) {
-				String sessionOrg    = (String) session.getAttribute("org");
-				String sessionUserId = (String) session.getAttribute("userId");
-				if (sessionOrg != null && !sessionOrg.isBlank()) {
-					log.debug("InjectorTenantHandlerInterceptor: using org from SSO session: {}", sessionOrg);
-					tenantId = sessionOrg;
-				}
-				if ((userId == null || userId.isBlank()) && sessionUserId != null) {
-					userId = sessionUserId;
+			String ssoSessionId = getCookieValue(request, "WKS_SSO_SESSION");
+			if (ssoSessionId != null) {
+				jakarta.servlet.http.HttpSession session = request.getSession(false);
+				if (session != null && ssoSessionId.equals(session.getId())) {
+					String sessionOrg    = (String) session.getAttribute("org");
+					String sessionUserId = (String) session.getAttribute("userId");
+					if (sessionOrg != null && !sessionOrg.isBlank()) {
+						log.info("InjectorTenantHandlerInterceptor: using org from SSO session: {}", sessionOrg);
+						tenantId = sessionOrg;
+					}
+					if ((userId == null || userId.isBlank()) && sessionUserId != null) {
+						userId = sessionUserId;
+					}
 				}
 			}
 		}
@@ -78,6 +81,14 @@ public class InjectorTenantHandlerInterceptor implements HandlerInterceptor {
 
 		tenantHolder.setTenantId(tenantId);
 		tenantHolder.setUserId(userId);
+	}
+
+	private String getCookieValue(HttpServletRequest request, String name) {
+		if (request.getCookies() == null) return null;
+		for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+			if (name.equals(cookie.getName())) return cookie.getValue();
+		}
+		return null;
 	}
 
 }
