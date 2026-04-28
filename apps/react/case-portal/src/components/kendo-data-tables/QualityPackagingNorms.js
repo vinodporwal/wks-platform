@@ -102,6 +102,10 @@ export default function QualityPackagingNorms() {
   const [packagingRows, setPackagingRows] = useState([])
   const [rowsOtherCosts, setRowsOtherCosts] = useState([])
   const [calculationObject, setCalculationObject] = useState([])
+  const IS_ELASTOMER_HMD_SBR =
+    lowerVertName === 'elastomer' &&
+    SITE_NAME.toLowerCase() === 'hmd' &&
+    PLANT_NAME.toLowerCase() === 'sbr'
 
   const { items: menuItems } = useMenuContext()
   const showReleaseButton = shouldShowReleaseButton(menuItems)
@@ -1264,7 +1268,11 @@ export default function QualityPackagingNorms() {
       ExcelName: `${lowerVertName}_Packagings_Consumables`,
       addButton: false,
       deleteButton: false,
-      showCalculate: lowerVertName === 'elastomer' ? false : true,
+      showCalculate: IS_ELASTOMER_HMD_SBR
+        ? true
+        : lowerVertName === 'elastomer' && !IS_ELASTOMER_HMD_SBR
+          ? false
+          : true,
       showCalculateVisibility:
         Object.keys(calculationObject || {}).length > 0 ? true : false,
     },
