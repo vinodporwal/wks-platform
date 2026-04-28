@@ -790,8 +790,8 @@ export const CaseList = ({ status, caseDefId }) => {
   const handleNewCaseAction = () => {
    if(isLinkCaseUrl) {
     const urlParams = new URLSearchParams(window.location.search);
-    const linkIdsValue = urlParams.get('linkIds');
-    urlParams.delete('linkIds');
+    const linkIdsValue = urlParams.get('eventIds');
+    urlParams.delete('eventIds');
     urlParams.set('eventIds', linkIdsValue);
     const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
     window.history.replaceState(null, '', newUrl);
@@ -804,7 +804,7 @@ export const CaseList = ({ status, caseDefId }) => {
   const handleLinkCaseAction = () => {  
 
 const urlParams = new URLSearchParams(window.location.search);
-const eventIds = urlParams.get('linkIds');
+const eventIds = urlParams.get('eventIds');
 const eventIdsArray = eventIds.split(',')
 const businessKeys = selectedRows;
 console.log("eventIds: ", eventIds);
@@ -853,7 +853,7 @@ CaseDefService.getFaultEvent(keycloak, encodedEventIds).then((data) => {
       
     // clean url parameters
     const urlParams = new URLSearchParams(window.location.search);
-    urlParams.delete('linkIds');
+    urlParams.delete('eventIds');
     urlParams.delete('assetName');
     const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
     window.history.replaceState(null, '', newUrl);
@@ -1205,9 +1205,9 @@ else {
                     onClick={() => {
                       // Change 'linkIds' to 'eventIds' in URL before opening form
                       const urlParams = new URLSearchParams(window.location.search);
-                      if (urlParams.has('linkIds')) {
-                        const linkIdsValue = urlParams.get('linkIds');
-                        urlParams.delete('linkIds');
+                      if (urlParams.has('eventIds')) {
+                        const linkIdsValue = urlParams.get('eventIds');
+                        urlParams.delete('eventIds');
                         urlParams.set('eventIds', linkIdsValue);
                         const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
                         window.history.replaceState(null, '', newUrl);
