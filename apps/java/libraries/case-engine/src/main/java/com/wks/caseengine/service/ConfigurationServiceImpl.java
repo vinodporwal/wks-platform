@@ -1513,6 +1513,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			}
 
 			for (ConfigurationDTO configurationDTO : configurationDTOList) {
+				System.out.println("configurationDTO: " + configurationDTO);
 				if (configurationDTO.getSaveStatus() != null
 						&& configurationDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
 					failedList.add(configurationDTO);
@@ -1534,6 +1535,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
 				for (int i = 1; i <= 12; i++) {
 					Double attributeValue = getAttributeValue(configurationDTO, i);
+					System.out.println("attributeValue: " + attributeValue);
 					configurationDTO.setVertical(verticalName);
 					saveData(optionNormParameters.get(), i, year, attributeValue, configurationDTO,plantFKId);
 					if(configurationDTO.getSaveStatus()!=null && configurationDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
@@ -1752,74 +1754,88 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		System.out.println("Returning null due to error or empty output.");
 		return null;
 	}
-
+	
 	void saveData(NormParameters normParameter, Integer i, String year, Double attributeValue,
-			ConfigurationDTO configurationDTO,String plantFKId) {
-		String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
-		Optional<NormAttributeTransactions> existingRecord=null;
-		String version=null;
-		if(verticalName.equalsIgnoreCase("AROMATICS")) {
-			 version=getVersion(year,UUID.fromString(plantFKId));
-			 existingRecord = normAttributeTransactionsRepository
-			.findByNormParameterFKIdAndAOPMonthAndAuditYearAndVersion(normParameter.getId(), i, year,version);
-		}else {
-			 existingRecord = normAttributeTransactionsRepository
-					.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
-		}
-
-		NormAttributeTransactions normAttributeTransactions;
-
-		if (existingRecord.isPresent()) {
-
-			normAttributeTransactions = existingRecord.get();
-			normAttributeTransactions.setModifiedOn(new Date());
-		} else {
-
-			normAttributeTransactions = new NormAttributeTransactions();
-			
-			normAttributeTransactions.setCreatedOn(new Date());
-			if(verticalName.equalsIgnoreCase("AROMATICS")) {
-				normAttributeTransactions.setAttributeValueVersion(version);
-			}else {
-				normAttributeTransactions.setAttributeValueVersion("V1");
-			}
-			
-			normAttributeTransactions.setUserName(Utility.getUserName());
-			normAttributeTransactions.setNormParameterFKId(normParameter.getId());
-			normAttributeTransactions.setAopMonth(i);
-			
-			normAttributeTransactions.setAuditYear(year);
-		}
-		
-
-		// Initial values
-		String entityRemarks = normAttributeTransactions.getRemarks();
-		String dtoRemarks = configurationDTO.getRemarks();
-
-		String existingValue = normAttributeTransactions.getAttributeValue();
-		String newValue = (attributeValue != null) ? attributeValue.toString() : null;
-
-		// Determine if either field changed meaningfully
-		boolean remarksChanged = !isBlank(dtoRemarks);
-		  
-
-		boolean attributeChanged = newValue != null 
-		    && !newValue.equalsIgnoreCase(existingValue);
-
-		if(newValue!=null && newValue.equalsIgnoreCase("0.0") && !existingRecord.isPresent()) {
-			return;
-		}
-		if (remarksChanged) {
-			// Update entity
-			normAttributeTransactions.setAttributeValue(newValue != null ? newValue : "0.0");
-			normAttributeTransactions.setRemarks(dtoRemarks);
-		    normAttributeTransactionsRepository.save(normAttributeTransactions);
-		} else if (!remarksChanged && attributeChanged) {
-		    configurationDTO.setSaveStatus("Failed");
-		    configurationDTO.setErrDescription("Please add/update remark or attribute value");
-		}
-		
+            ConfigurationDTO configurationDTO, String plantFKId) {
+  
+	  String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
+	  String version = "AROMATICS".equalsIgnoreCase(verticalName) 
+	                   ? getVersion(year, UUID.fromString(plantFKId)) 
+	                   : "V1";
+	  
+	  Optional<NormAttributeTransactions> existingRecord;
+	  if ("AROMATICS".equalsIgnoreCase(verticalName)) {
+	      existingRecord = normAttributeTransactionsRepository
+	          .findByNormParameterFKIdAndAOPMonthAndAuditYearAndVersion(normParameter.getId(), i, year, version);
+	  } else {
+	      existingRecord = normAttributeTransactionsRepository
+	          .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
+	  }
+	
+	  String newValue = (attributeValue != null) ? attributeValue.toString() : "0.0";
+	  String newRemark = (configurationDTO != null && configurationDTO.getRemarks() != null) 
+	                     ? configurationDTO.getRemarks().trim() 
+	                     : "";
+	  
+	  boolean isRemarkEmpty = newRemark.isEmpty();
+	
+	  if (existingRecord.isPresent()) {
+	      NormAttributeTransactions entity = existingRecord.get();
+	      String existingValue = entity.getAttributeValue() != null ? entity.getAttributeValue() : "0.0";
+	      String existingRemark = entity.getRemarks() != null ? entity.getRemarks().trim() : "";
+	
+	      boolean isValueChanged = !existingValue.equalsIgnoreCase(newValue);
+	      boolean isRemarkChanged = !(existingRemark.equalsIgnoreCase(newRemark));
+	
+	      if (isRemarkEmpty) {
+	          setError(configurationDTO, "Remark is mandatory to update an existing record.");
+	          return;
+	      }
+	
+	      if (isValueChanged && !isRemarkChanged) {
+	          setError(configurationDTO, "Value has changed; please provide a updated remark.");
+	          return;
+	      }
+	
+	      if (isValueChanged || isRemarkChanged) {
+	          entity.setAttributeValue(newValue);
+	          entity.setRemarks(newRemark);
+	          entity.setModifiedOn(new Date());
+	          normAttributeTransactionsRepository.save(entity);
+	      }
+	  } 
+	  else {
+	      if ("0.0".equals(newValue)) {
+	          return; 
+	      }
+	
+	      if (isRemarkEmpty) {
+	          setError(configurationDTO, "Remark is mandatory for new records.");
+	          return;
+	      }
+	
+	      NormAttributeTransactions newEntity = new NormAttributeTransactions();
+	      newEntity.setNormParameterFKId(normParameter.getId());
+	      newEntity.setAopMonth(i);
+	      newEntity.setAuditYear(year);
+	      newEntity.setAttributeValueVersion(version);
+	      newEntity.setUserName(Utility.getUserName());
+	      newEntity.setCreatedOn(new Date());
+	      newEntity.setModifiedOn(new Date());
+	      
+	      newEntity.setAttributeValue(newValue);
+	      newEntity.setRemarks(newRemark);
+	      
+	      normAttributeTransactionsRepository.save(newEntity);
+	  }
 	}
+
+		private void setError(ConfigurationDTO dto, String message) {
+		  if (dto != null) {
+		      dto.setSaveStatus("Failed");
+		      dto.setErrDescription(message);
+		  }
+		}	
 	
 			boolean isBlank(String s) {
 			    return s == null || s.isBlank(); // Java 11+; else use trim().isEmpty()

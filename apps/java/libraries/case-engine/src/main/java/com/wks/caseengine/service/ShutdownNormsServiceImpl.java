@@ -261,7 +261,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	                continue; 
 	            }
 
-	            Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId);
+	            Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId,null);
 	            int currentRowIndex = 0;
 
 	            // Headers
@@ -359,6 +359,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			List<ShutdownNormsValueDTO> dtoList,
 			boolean allGrade) {
 		try {
+			Plants plant = plantsRepository.findById(plantFKId).get();
 			AOPMessageVM gradesVM = getUniqueGrades(year, plantFKId.toString());
 			List<Map<String, String>> gradeInfoList = extractGradeInfo(gradesVM);
 			Workbook workbook = new XSSFWorkbook();
@@ -409,7 +410,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 
 					// If nothing to write, skip creation
 					if (!currentDtoList.isEmpty()) {
-						Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId);
+						Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId, plant.getName());
 
 						String sheetName = Utility.sanitizeSheetName("All Grade");
 						Sheet sheet = workbook.createSheet(sheetName);
@@ -502,7 +503,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 						sheet.setColumnHidden(17, true);
 					}
 				} else {
-					// no grade named "All Grade" found — do not aggregate everything accidentally.
+					// no grade named "All Grade" found ? do not aggregate everything accidentally.
 					// Optionally: you could fall back to aggregated behavior here if desired.
 				}
 
@@ -537,7 +538,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 						continue;
 					}
 
-					Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId);
+					Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId, plant.getName());
 
 					Sheet sheet = workbook.createSheet(sheetName);
 					int currentRow = 0;
@@ -1833,12 +1834,20 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	}
 
 	/** Active months for export = Shutdown + Slowdown. */
-	private Set<Integer> getActiveMonthsForExport(UUID plantFKId, String year, String gradeId) {
+	private Set<Integer> getActiveMonthsForExport(UUID plantFKId, String year, String gradeId, String plantName) {
 	    Set<Integer> activeMonths = new HashSet<>();
 	    List<Integer> shutdown = plantService.getShutdownMonths(plantFKId, "Shutdown", year, gradeId);
 	    if (shutdown != null) activeMonths.addAll(shutdown);
 	    List slowdown = slowdownNormsService.getSlowdownMonthsImport(plantFKId, "Slowdown", year);
-	    if (slowdown != null) activeMonths.addAll(slowdown);
+	    if (slowdown != null)   {
+			if(plantName != null && plantName.equalsIgnoreCase("SBR")) {  
+               return activeMonths;
+			}
+			else
+			activeMonths.addAll(slowdown); 
+
+
+		}
 	    return activeMonths;
 	}
 

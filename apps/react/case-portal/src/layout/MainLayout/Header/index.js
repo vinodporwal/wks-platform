@@ -1,11 +1,12 @@
 import MenuOpenIcon from '@mui/icons-material/MenuOpen'
 import MenuIcon from '@mui/icons-material/Menu'
 
-import { Toolbar, IconButton } from '@mui/material'
+import { Toolbar, IconButton, Typography } from '@mui/material'
 import { useMediaQuery } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import AppBarStyled from './AppBarStyled'
 import HeaderContent from './HeaderContent/index'
+import { DashboardColors } from 'themes/colors'
 
 const Header = ({ open, handleDrawerToggle, keycloak, isDashboard }) => {
   const theme = useTheme()
@@ -43,6 +44,14 @@ const Header = ({ open, handleDrawerToggle, keycloak, isDashboard }) => {
               }}
             />
           </IconButton>
+      )}
+
+      {!open && isDashboard && (
+        <Typography
+          sx={{ fontWeight: 800, fontSize: 14, color: DashboardColors.text.heading, fontFamily: "'Hiragino Sans', 'Honeywell Sans Web', 'Inter', sans-serif" }}
+        >
+          Reliance
+        </Typography>
       )}
       {/* {open && (<IconButton
           onClick={handleDrawerToggle}

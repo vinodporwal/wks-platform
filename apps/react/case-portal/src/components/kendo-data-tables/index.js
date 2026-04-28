@@ -1,6 +1,6 @@
 import HelpIcon from '@mui/icons-material/Help'
 import InfoIcon from '@mui/icons-material/Info'
-import { Tooltip as MuiTooltip } from '@mui/material'
+import { Tooltip as MuiTooltip, Divider } from '@mui/material'
 import '@progress/kendo-font-icons/dist/index.css'
 import { Grid, GridColumn } from '@progress/kendo-react-grid'
 import { Tooltip } from '@progress/kendo-react-tooltip'
@@ -21,10 +21,6 @@ import { styled } from '@mui/material/styles'
 
 import AddIcon from '@mui/icons-material/Add'
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
-import DownloadIcon from '@mui/icons-material/Download'
-import UploadIcon from '@mui/icons-material/Upload'
-import CalculateIcon from '@mui/icons-material/Calculate'
-import SaveIcon from '@mui/icons-material/Save'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import CategoryDropdownEditor from './Utilities-Kendo/CategoryDropdown'
 import LineDropdownEditor from './Utilities-Kendo/LineDropdownEditor'
@@ -92,6 +88,8 @@ import { keyframes } from '@mui/material/styles'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import Collapse from '@mui/material/Collapse'
+import { FileExportIcon, FileImportIcon, SaveIcon, CalculateIcon } from 'assets/images/icons'
+import { DashboardColors } from 'themes/colors'
 
 // Subtle pulse for the info icon on load
 const softPulse = keyframes`
@@ -230,6 +228,7 @@ const KendoDataTables = ({
   endDate,
   mcuMaxCapValues = [],
   key = [],
+  isEditable = false,
 }) => {
   const _export = useRef(null)
 
@@ -282,6 +281,8 @@ const KendoDataTables = ({
   const lowerSiteName = SiteName?.toLowerCase()
   const isPEPP = ['pe', 'pp'].includes(lowerVertName)
   const IS_VCM_VERTICAL = ['vcm'].includes(lowerVertName)
+
+  const menuItemStyle = { fontSize: 14, fontWeight: 500, color: '#303030', fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif", letterSpacing: "0px", verticalAlign: "middle" }
 
   const toggleGrid = () => {
     setGridExpanded((prev) => !prev)
@@ -1779,7 +1780,7 @@ const KendoDataTables = ({
   const CHECK_TYPES2 = ['raw material', 'by products']
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div className="k-table-box">
       {loading && (
         <div className='k-loading-mask'>
           <span className='k-loading-text'>Loading...</span>
@@ -1894,9 +1895,9 @@ const KendoDataTables = ({
                 <Typography
                   component='div'
                   sx={{
-                    fontSize: '0.85rem',
-                    fontWeight: 850,
-                    color: '#2d3748',
+                    fontSize: '16px',
+                    fontWeight: 700,
+                    color: '#252525',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 1.5,
@@ -1911,11 +1912,12 @@ const KendoDataTables = ({
                       justifyContent: 'center',
                       width: 32,
                       height: 32,
-                      borderRadius: '10px',
-                      backgroundColor: '#eef2ff',
+                      borderRadius: '6px',
+                      backgroundColor: '#ECEEFF',
                       color: '#1e293b',
                       ml: 1,
                       cursor: 'pointer',
+                      padding: '8px',
                     }}
                     onClick={toggleGrid}
                   >
@@ -1936,49 +1938,60 @@ const KendoDataTables = ({
                   {/* ITEMS BADGE */}
                   <Box
                     sx={{
-                      ml: 1,
-                      px: 1.5,
-                      py: 0.5,
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      borderRadius: '6px',
-                      backgroundColor: '#f3ece7',
-                      color: '#92400e',
+                      p: '4px 8px',
+                      borderRadius: '100px',
+                      backgroundColor: '#ECEEFF',
+                      border: '1px solid #41424D',
                     }}
                   >
-                    {rows?.length || 0} {rows?.length === 1 ? 'Item' : 'Items'}
+                    <Typography
+                      sx={{
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        color: '#41424D',
+                        fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
+                      }}
+                    >
+                      {rows?.length || 0} {rows?.length === 1 ? 'Row' : 'Rows'}
+                    </Typography>
                   </Box>
-
-                  {/* EDITABLE BADGE
-                  <Box
-                    sx={{
-                      ml: 1,
-                      px: 1.5,
-                      py: 0.5,
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      borderRadius: '6px',
-                      backgroundColor: '#dbeafe',
-                      color: '#1e40af',
-                    }}
-                  >
-                    Editable
-                  </Box> */}
+                  {isEditable && (
+                    <Box
+                      sx={{
+                        p: '4px 8px',
+                        borderRadius: '100px',
+                        backgroundColor: '#F3EEE7',
+                        border: '1px solid #934403',
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        color: '#934403',
+                        fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
+                      }}
+                    >
+                      Editable
+                    </Typography>
+                  </Box>
+                  )}
                 </Typography>
               ) : (
                 /* CASE 2: Permission FALSE → ONLY ICON */
                 <Box
                   sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 32,
-                    height: 32,
-                    borderRadius: '10px',
-                    backgroundColor: '#eef2ff',
-                    color: '#1e293b',
-                    ml: 1,
-                    cursor: 'pointer',
+                     display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 32,
+                      height: 32,
+                      borderRadius: '6px',
+                      backgroundColor: '#ECEEFF',
+                      color: '#1e293b',
+                      ml: 1,
+                      cursor: 'pointer',
+                      padding: '8px',
                   }}
                   onClick={toggleGrid}
                 >
@@ -2027,18 +2040,51 @@ const KendoDataTables = ({
                       selectedGradeObj?.name,
                     )
                   }}
-                  className='dropdown-select'
                   variant='outlined'
-                  label={permissions?.dropdownLabel || 'Select'}
+                  size='small'
                   sx={{
-                    display:
-                      permissions?.IS_PE_C2_HIDE !== false ? 'block' : 'none',
-                  }}
-                  InputLabelProps={{
-                    shrink: true,
-                    sx: {
-                      fontWeight: 'bold',
+                    display: permissions?.IS_PE_C2_HIDE !== false ? 'block' : 'none',
+                    minWidth: 140,
+                    '& .MuiOutlinedInput-root': {
+                      height: '30px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                      borderRadius: '7px',
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      '& fieldset': {
+                        borderColor: 'rgba(0, 0, 0, 0.08)',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#0100cb',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#0100cb',
+                        borderWidth: '1.2px',
+                      },
                     },
+                    '& .MuiSelect-select': {
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '2px 6px !important',
+                    },
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <Typography
+                        variant='caption'
+                        sx={{
+                          mr: 0.5,
+                          color: '#606060',
+                          fontWeight: 600,
+                          fontSize: '14px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.4px',
+                          lineHeight: 1,
+                        }}
+                      >
+                        {permissions?.dropdownLabel || 'Grade'}:
+                      </Typography>
+                    ),
                   }}
                   SelectProps={{
                     MenuProps: {
@@ -2046,12 +2092,12 @@ const KendoDataTables = ({
                     },
                   }}
                 >
-                  <MenuItem value='' disabled>
+                  <MenuItem value='' disabled style={menuItemStyle}>
                     {permissions?.dropdownLabel || 'Select'}
                   </MenuItem>
 
                   {grades?.map((unit) => (
-                    <MenuItem key={unit.gradeId} value={unit.gradeId}>
+                    <MenuItem key={unit.gradeId} value={unit.gradeId} style={menuItemStyle}>
                       {unit.displayName}
                     </MenuItem>
                   ))}
@@ -2067,14 +2113,50 @@ const KendoDataTables = ({
                   onChange={(e) => {
                     handleYearChange(e.target.value)
                   }}
-                  className='dropdown-select'
                   variant='outlined'
-                  label='Select'
-                  InputLabelProps={{
-                    shrink: true,
-                    sx: {
-                      fontWeight: 'bold',
+                  size='small'
+                  sx={{
+                    minWidth: 120,
+                    '& .MuiOutlinedInput-root': {
+                      height: '30px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                      borderRadius: '7px',
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      '& fieldset': {
+                        borderColor: 'rgba(0, 0, 0, 0.08)',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#0100cb',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#0100cb',
+                        borderWidth: '1.2px',
+                      },
                     },
+                    '& .MuiSelect-select': {
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '2px 6px !important',
+                    },
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <Typography
+                        variant='caption'
+                        sx={{
+                          mr: 0.5,
+                          color: '#606060',
+                          fontWeight: 600,
+                          fontSize: '14px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.4px',
+                          lineHeight: 1,
+                        }}
+                      >
+                        Year:
+                      </Typography>
+                    ),
                   }}
                   SelectProps={{
                     MenuProps: {
@@ -2082,12 +2164,12 @@ const KendoDataTables = ({
                     },
                   }}
                 >
-                  <MenuItem value='' disabled>
+                  <MenuItem value='' disabled style={menuItemStyle}>
                     Select
                   </MenuItem>
 
                   {permissions?.packagingYears?.map((year) => (
-                    <MenuItem key={year} value={year}>
+                    <MenuItem key={year} value={year} style={menuItemStyle}>
                       {year}
                     </MenuItem>
                   ))}
@@ -2104,6 +2186,178 @@ const KendoDataTables = ({
                 paddingBottom: 0.25,
               }}
             >
+              {permissions?.showUnit && (
+                <React.Fragment>
+                  <TextField
+                    select
+                    value={selectedUnit || permissions?.units?.[0]}
+                    onChange={(e) => {
+                      setEdit({})
+                      setEditResetKey((k) => k + 1)
+                      setSelectedUnit(e.target.value)
+                      handleUnitChange(e.target.value)
+                    }}
+                    variant='outlined'
+                    size='small'
+                    disabled={rows?.length === 0}
+                    InputProps={{
+                      startAdornment: (
+                        <Typography
+                          variant='caption'
+                          sx={{
+                            mr: 0.5,
+                            color: '#606060',
+                            fontWeight: 500,
+                            fontSize: '14px',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.4px',
+                            lineHeight: 1,
+                            fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif"
+                          }}
+                        >
+                          Unit:
+                        </Typography>
+                      ),
+                    }}
+                    sx={{
+                      minWidth: 120,
+                      '& .MuiOutlinedInput-root': {
+                        height: '30px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                        borderRadius: '7px',
+                        fontSize: '14px',
+                        fontWeight: 700,
+                        color: '#252525',
+                        fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                        '& fieldset': {
+                          border: 'none',
+                        },
+                        '&:hover fieldset': {
+                          border: 'none',
+                        },
+                        '&.Mui-focused fieldset': {
+                          border: 'none',
+                        },
+                      },
+                      '& .MuiSelect-select': {
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '2px 6px !important',
+                      },
+                    }}
+                    SelectProps={{
+                      MenuProps: {
+                        disableScrollLock: true,
+                        PaperProps: {
+                          sx: {
+                            borderRadius: '8px',
+                            mt: 0.5,
+                            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                            '& .MuiMenuItem-root': {
+                              fontSize: '14px',
+                              fontWeight: 700,
+                              minHeight: '26px',
+                              margin: '1px 4px',
+                              fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                              borderRadius: '7px',
+                              '&.Mui-selected': {
+                                bgcolor: 'rgba(1, 0, 203, 0.08)',
+                                color: '#0100cb',
+                                fontWeight: 700,
+                                '&:hover': {
+                                  bgcolor: 'rgba(1, 0, 203, 0.12)',
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    }}
+                    // disabled={rows?.length === 0}
+                  >
+                    <MenuItem value='' disabled sx={menuItemStyle}>
+                      <em>Select UOM</em>
+                    </MenuItem>
+
+                    {/* Render the correct unit options dynamically */}
+                    {permissions?.units?.map((unit) => (
+                      <MenuItem key={unit} value={unit} sx={menuItemStyle}>
+                        {unit}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                  <Divider sx={{ my: '4px !important', borderColor: `${DashboardColors.divider} !important`, width: 2, borderWidth: 1.5 }} orientation="vertical" flexItem={{ mx: 2}} />
+                </React.Fragment>
+              )}
+
+              {permissions?.showModes && (
+                <TextField
+                  select
+                  value={selectMode ?? ''}
+                  onChange={(e) => setSelectMode(e.target.value)}
+                  variant='outlined'
+                  size='small'
+                  sx={{
+                    minWidth: 140,
+                    '& .MuiOutlinedInput-root': {
+                      height: '30px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                      borderRadius: '7px',
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                      '& fieldset': {
+                        border: 'none',
+                      },
+                      '&:hover fieldset': {
+                        border: 'none',
+                      },
+                      '&.Mui-focused fieldset': {
+                        border: 'none',
+                      },
+                    },
+                    '& .MuiSelect-select': {
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '2px 6px !important',
+                    },
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <Typography
+                        variant='caption'
+                        sx={{
+                          mr: 0.5,
+                          color: '#606060',
+                          fontWeight: 500,
+                          fontSize: '14px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.4px',
+                          lineHeight: 1,
+                          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                        }}
+                      >
+                        Mode:
+                      </Typography>
+                    ),
+                  }}
+                  SelectProps={{
+                    MenuProps: {
+                      disableScrollLock: true,
+                    },
+                  }}
+                >
+                  <MenuItem value='' disabled sx={menuItemStyle}>
+                    Select Mode
+                  </MenuItem>
+
+                  {permissions.modes.map((m) => (
+                    <MenuItem key={m.name} value={m.name} sx={menuItemStyle}>
+                      {m.displayName}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
               {permissions?.addButton && (
                 <Button
                   variant='contained'
@@ -2120,7 +2374,13 @@ const KendoDataTables = ({
                 <Button
                   variant='contained'
                   className='btn-export'
-                  startIcon={<DownloadIcon fontSize='small' />}
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={FileExportIcon}
+                      className='w16-icon'
+                    />
+                  }
                   onClick={downloadExcelForConfiguration}
                   // disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
                   //ANY ONE CAN EXPORT
@@ -2134,7 +2394,13 @@ const KendoDataTables = ({
                 <Button
                   variant='contained'
                   className='btn-export'
-                  startIcon={<DownloadIcon fontSize='small' />}
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={FileExportIcon}
+                      className='w16-icon'
+                    />
+                  }
                   onClick={excelExport}
                   // disabled={READ_ONLY || rows?.length === 0}
                   disabled={rows?.length === 0}
@@ -2149,7 +2415,13 @@ const KendoDataTables = ({
                   <Button
                     variant='contained'
                     onClick={triggerFileUpload}
-                    startIcon={<UploadIcon sx={{ fontSize: 16 }} />}
+                    startIcon={
+                    <Box
+                      component='img'
+                      src={FileImportIcon}
+                      className='w16-icon'
+                    />
+                  }
                     disabled={
                       isButtonDisabled || READ_ONLY || rows?.length === 0
                     }
@@ -2172,7 +2444,13 @@ const KendoDataTables = ({
                 <Button
                   variant='contained'
                   className='btn-save'
-                  startIcon={<SaveIcon sx={{ fontSize: 16 }} />}
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={SaveIcon}
+                      className='w16-icon'
+                    />
+                  }
                   onClick={saveModalOpen}
                   disabled={
                     isButtonDisabled ||
@@ -2189,7 +2467,13 @@ const KendoDataTables = ({
                 <Button
                   variant='contained'
                   onClick={handleCalculateBtn}
-                  startIcon={<CalculateIcon sx={{ fontSize: 16 }} />}
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={CalculateIcon}
+                      className='w16-icon'
+                    />
+                  }
                   disabled={
                     READ_ONLY ||
                     (rows?.length === 0
@@ -2239,130 +2523,6 @@ const KendoDataTables = ({
                 >
                   Refresh
                 </Button>
-              )}
-
-              {permissions?.showUnit && (
-                <TextField
-                  select
-                  value={selectedUnit || permissions?.units?.[0]}
-                  onChange={(e) => {
-                    setEdit({})
-                    setEditResetKey((k) => k + 1)
-                    setSelectedUnit(e.target.value)
-                    handleUnitChange(e.target.value)
-                  }}
-                  variant='outlined'
-                  size='small'
-                  disabled={rows?.length === 0}
-                  InputProps={{
-                    startAdornment: (
-                      <Typography
-                        variant='caption'
-                        sx={{
-                          mr: 0.5,
-                          color: 'text.secondary',
-                          fontWeight: 700,
-                          fontSize: '0.6rem',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.4px',
-                          lineHeight: 1,
-                        }}
-                      >
-                        Unit:
-                      </Typography>
-                    ),
-                  }}
-                  sx={{
-                    minWidth: 120,
-                    '& .MuiOutlinedInput-root': {
-                      height: '30px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.85)',
-                      borderRadius: '7px',
-                      fontSize: '0.7rem',
-                      fontWeight: 600,
-                      '& fieldset': {
-                        borderColor: 'rgba(0, 0, 0, 0.08)',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: '#0100cb',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#0100cb',
-                        borderWidth: '1.2px',
-                      },
-                    },
-                    '& .MuiSelect-select': {
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '2px 6px !important',
-                    },
-                  }}
-                  SelectProps={{
-                    MenuProps: {
-                      disableScrollLock: true,
-                      PaperProps: {
-                        sx: {
-                          borderRadius: '8px',
-                          mt: 0.5,
-                          boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-                          '& .MuiMenuItem-root': {
-                            fontSize: '0.7rem',
-                            fontWeight: 500,
-                            minHeight: '26px',
-                            margin: '1px 4px',
-                            borderRadius: '5px',
-                            '&.Mui-selected': {
-                              bgcolor: 'rgba(1, 0, 203, 0.08)',
-                              color: '#0100cb',
-                              fontWeight: 700,
-                              '&:hover': {
-                                bgcolor: 'rgba(1, 0, 203, 0.12)',
-                              },
-                            },
-                          },
-                        },
-                      },
-                    },
-                  }}
-                  // disabled={rows?.length === 0}
-                >
-                  <MenuItem value='' disabled sx={{ fontSize: '0.65rem' }}>
-                    <em>Select UOM</em>
-                  </MenuItem>
-
-                  {/* Render the correct unit options dynamically */}
-                  {permissions?.units?.map((unit) => (
-                    <MenuItem key={unit} value={unit}>
-                      {unit}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-
-              {permissions?.showModes && (
-                <TextField
-                  select
-                  value={selectMode ?? ''}
-                  onChange={(e) => setSelectMode(e.target.value)}
-                  className='dropdown-select'
-                  variant='outlined'
-                  label='Select Mode'
-                  SelectProps={{
-                    MenuProps: {
-                      disableScrollLock: true,
-                    },
-                  }}
-                >
-                  <MenuItem value='' disabled>
-                    Select Mode
-                  </MenuItem>
-
-                  {permissions.modes.map((m) => (
-                    <MenuItem key={m.name} value={m.name}>
-                      {m.displayName}
-                    </MenuItem>
-                  ))}
-                </TextField>
               )}
             </Box>
           </Box>

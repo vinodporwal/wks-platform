@@ -9,6 +9,7 @@
 .kendo-data-grid,
 .kendo-data-grid * {
   font-family:
+    'Honeywell Sans Web',
     'Inter',
     'Open Sans',
     'Segoe UI',
@@ -62,8 +63,8 @@
 }
 
 .kendo-data-grid .k-grid-header th {
-  border-right: 1px solid #e2e8f0;
-  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid #dde1eb;
+  border-bottom: 1px solid #dde1eb;
 }
 
 /* ===============================
@@ -71,25 +72,33 @@
    =============================== */
 
 .k-grid .k-table-row {
-  border-color: inherit;
+  border-color: 1px solid #dde1eb !important;
+  color: #252525 !important;
   background: #f0f5f9;
+  font-family: 'Honeywell Sans Web' !important;
+  height: 40px !important;
+  font-weight: 700;
+  font-style: Bold;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  letter-spacing: 0px;
 }
 
 .kendo-data-grid .k-grid-header {
   background: #eff6ff !important; /* Solid light blue background */
-  border-bottom: 1px solid #cbd5e1 !important;
+  border-bottom: 1px solid #dde1eb !important;
 }
 
 .kendo-data-grid .k-grid-header .k-column-headers {
   background: transparent !important;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #dde1eb;
 }
 
 .k-column-title {
-  font-size: 13px;
+  font-size: 14px !important;
   font-weight: 700 !important;
-  color: #334155 !important; /* Dark slate color */
-  line-height: 1.5;
+  color: #252525 !important; /* Dark slate color */
+  line-height: 20px !important;
 }
 
 /* ===============================
@@ -105,13 +114,68 @@
    =============================== */
 
 .kendo-data-grid .k-grid-content .k-grid-table tr {
-  height: 32px;
-  background-color: #ffffff;
+  height: 44px !important;
 }
 
-/* Remove Kendo zebra rows */
-.kendo-data-grid .k-grid-content tr.k-alt {
-  background-color: #ffffff !important;
+/* Odd rows */
+.kendo-data-grid
+  .k-grid-content
+  .k-grid-table
+  tr:nth-child(odd)
+  td:not(.k-number-right-disabled):not(.disabled-cell):not(
+    .non-editable-cell
+  ):not(.k-right-disabled) {
+  background-color: #ffffff;
+  border-width: 0px 1px 1px 0px;
+  border-style: solid;
+  border-color: #dde1eb;
+  padding: 0.2rem 0.4rem;
+  height: 44px !important;
+  box-sizing: border-box !important;
+  line-height: 1.5rem;
+  font-weight: 500 !important;
+  font-size: 15px;
+  letter-spacing: 0px;
+  color: #252525 !important;
+}
+
+/* Even rows (overrides Kendo k-alt) */
+.kendo-data-grid
+  .k-grid-content
+  .k-grid-table
+  tr:nth-child(even)
+  td:not(.k-number-right-disabled):not(.disabled-cell):not(
+    .non-editable-cell
+  ):not(.k-right-disabled),
+.kendo-data-grid
+  .k-grid-content
+  tr.k-alt
+  td:not(.k-number-right-disabled):not(.disabled-cell):not(
+    .non-editable-cell
+  ):not(.k-right-disabled) {
+  background-color: #f7f9ff;
+  border-width: 0px 1px 1px 0px;
+  border-style: solid;
+  border-color: #dde1eb;
+  padding: 0.2rem 0.4rem;
+  height: 44px !important;
+  box-sizing: border-box !important;
+  line-height: 1.5rem;
+  font-weight: 500 !important;
+  font-size: 15px;
+  letter-spacing: 0px;
+  color: #252525 !important;
+}
+
+/* Row hover */
+.kendo-data-grid
+  .k-grid-content
+  .k-grid-table
+  tr:hover
+  td:not(.k-number-right-disabled):not(.disabled-cell):not(
+    .non-editable-cell
+  ):not(.k-right-disabled) {
+  background-color: #eef1fe !important;
 }
 
 /* ===============================
@@ -127,7 +191,7 @@
   background-color: #ffffff;
   border: 1px solid #e5e7eb; /* thin light-grey line */
   padding: 3px 6px;
-
+  box-sizing: border-box !important;
   font-size: 0.8rem;
   color: #000;
   cursor: pointer;
@@ -169,6 +233,15 @@
   background: transparent !important;
   border-bottom: 1px solid #cbd5e1 !important;
   font-size: 0.65rem !important;
+}
+
+/* Group row title text – same as grid header typography */
+.kendo-data-grid .k-grid-content .k-grid-table tr.k-grouping-row td .k-reset {
+  font-weight: 700 !important;
+  font-size: 15px !important;
+  line-height: 24px !important;
+  letter-spacing: 0px !important;
+  color: #252525 !important;
 }
 
 /* Remove left bar for group rows */
@@ -227,12 +300,38 @@
   text-align: right !important;
 }
 
+/* Prevent alternating row colors from overriding disabled cell background */
+.kendo-data-grid
+  .k-grid-content
+  .k-grid-table
+  tr:nth-child(odd)
+  td.k-number-right-disabled,
+.kendo-data-grid
+  .k-grid-content
+  .k-grid-table
+  tr:nth-child(even)
+  td.k-number-right-disabled,
+.kendo-data-grid .k-grid-content tr.k-alt td.k-number-right-disabled,
+.kendo-data-grid .k-grid-content .k-grid-table tr td.disabled-cell,
+.kendo-data-grid .k-grid-content .k-grid-table tr td.non-editable-cell,
+.kendo-data-grid .k-grid-content .k-grid-table tr td.k-right-disabled {
+  background-color: #e3e3e3 !important;
+  border-color: rgb(169, 169, 169) !important;
+}
+
 .disabled-cell,
 .non-editable-cell {
   background-color: #e3e3e3 !important;
   border-right: 1px solid rgb(169, 169, 169) !important;
   border-bottom: 1px solid rgb(169, 169, 169) !important;
   text-align: left !important;
+}
+
+.k-grid .k-grid-content td.k-left-disabled {
+  text-align: left !important;
+  background-color: #e3e3e3 !important;
+  border-right: 1px solid rgb(169, 169, 169) !important;
+  border-bottom: 1px solid rgb(169, 169, 169) !important;
 }
 
 /* ===============================
@@ -262,7 +361,14 @@
 
 .k-grid-sm .k-table-td,
 .k-grid-md .k-table-td {
-  font-size: 12px !important;
+  height: 44px !important;
+  box-sizing: border-box !important;
+  line-height: 1.5rem;
+  font-weight: 500 !important;
+  font-size: 15px;
+  line-height: 24px !important;
+  letter-spacing: 0px;
+  color: #252525 !important;
 }
 
 /* ===============================
