@@ -26,6 +26,9 @@ export const ProductionNormsApiService = {
   getNSRAndMaterialPrices,
   saveNSRAndMaterialPrices,
   getNaphthaHMDData,
+  saveNaphthaHMDData,
+  getLimsData,
+  saveLimsData,
 }
 async function updateProductNormData(turnAroundDetails, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/monthly-production` // Corrected endpoint
@@ -470,5 +473,66 @@ async function getNaphthaHMDData(keycloak, PLANT_ID, AOP_YEAR) {
   } catch (e) {
     console.error('getNaphthaHMDData error:', e)
     return Promise.reject(e)
+  }
+}
+async function saveNaphthaHMDData(keycloak, PLANT_ID, AOP_YEAR, PAYLOAD) {
+  const url = `${Config.CaseEngineUrl}/task/naphtha-quality?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(PAYLOAD),
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const message = await resp.text()
+    return { message, code: 200 }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getLimsData(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/hmd-load-lims-spyro-input?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function saveLimsData(keycloak, PLANT_ID, AOP_YEAR, PAYLOAD) {
+  const url = `${Config.CaseEngineUrl}/task/hmd-load-lims-spyro-input?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(PAYLOAD),
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const message = await resp.text()
+    return { message, code: 200 }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }

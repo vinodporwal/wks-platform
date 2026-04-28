@@ -11,7 +11,6 @@ import { useSelector } from 'react-redux'
 import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
 import { ProductionNormsApiService } from 'services/production-norms-api-service'
-import { Place } from '@mui/icons-material'
 export default function NaphthaHMDComponent() {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -35,12 +34,14 @@ export default function NaphthaHMDComponent() {
   const AOP_YEAR = year?.selectedYear
   const thisYear = AOP_YEAR
   const [rows, setRows] = useState([])
+  const [rows1, setRows1] = useState([])
   const [loading, setLoading] = useState(false)
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const [modifiedCells, setModifiedCells] = useState({})
+  const [modifiedCells1, setModifiedCells1] = useState({})
   const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
@@ -67,7 +68,7 @@ export default function NaphthaHMDComponent() {
     {
       field: 'section',
       title: 'Section',
-      widthT: 120,
+      widthT: 150,
       editable: false,
       hidden: true,
     },
@@ -75,26 +76,130 @@ export default function NaphthaHMDComponent() {
       field: 'name',
       title: 'Name',
       editable: false,
+      widthT: 200,
     },
     {
       field: 'max',
       title: 'Max',
       editable: true,
       type: 'number',
+      widthT: 120,
     },
     {
       field: 'min',
       title: 'Min',
       type: 'number',
       editable: true,
+      widthT: 120,
     },
     {
       field: 'months',
       title: 'Month',
       editable: true,
       type: 'number',
+      widthT: 120,
     },
-    
+    {
+      field: 'monthsId',
+      title: 'monthsId',
+      editable: false,
+      hidden: true,
+    },
+    {
+      field: 'minId',
+      title: 'minId',
+      editable: false,
+      hidden: true,
+    },
+    {
+      field: 'maxId',
+      title: 'maxId',
+      editable: false,
+      hidden: true,
+    },
+  ]
+  const limpsColumns = [
+    {
+      field: 'id',
+      title: 'ID',
+      hidden: true,
+      widthT: 50,
+      editable: false,
+    },
+    {
+      field: 'name',
+      title: 'Name',
+      editable: false,
+      widthT: 200,
+      hidden: true,
+    },
+    {
+      field: 'displayName',
+      title: 'DisplayName',
+      editable: false,
+      widthT: 200,
+    },
+    {
+      field: 'uom',
+      title: 'UOM',
+      editable: false,
+      width: 120,
+    },
+    {
+      field: 'jmd',
+      title: 'JMD',
+      editable: true,
+      width: 120,
+    },
+    {
+      field: 'hpn',
+      title: 'HPN',
+      editable: true,
+      width: 120,
+    },
+    {
+      field: 'heavy',
+      title: 'Heavy',
+      editable: true,
+      width: 120,
+    },
+    {
+      field: 'others',
+      title: 'Others',
+      editable: true,
+      width: 120,
+    },
+    {
+      field: 'blend',
+      title: 'Blend',
+      editable: true,
+      width: 120,
+    },
+    {
+      field: 'jmdId',
+      editable: true,
+      hidden: true,
+    },
+    {
+      field: 'hpnId',
+      editable: true,
+      hidden: true,
+    },
+    {
+      field: 'heavyId',
+      editable: true,
+      hidden: true,
+    },
+    {
+      field: 'othersId',
+      editable: true,
+      hidden: true,
+    },
+    {
+      field: 'blendId',
+      editable: true,
+      hidden: true,
+    },
   ]
 
   const fetchData = useCallback(async () => {
@@ -115,6 +220,9 @@ export default function NaphthaHMDComponent() {
           max: item.max,
           min: item.min,
           months: item.months,
+          maxId: item.maxId,
+          minId: item.minId,
+          monthsId: item.monthsId,
           Particulars: item.section,
         }))
         setRows(mapped)
@@ -133,6 +241,49 @@ export default function NaphthaHMDComponent() {
     fetchData()
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
 
+  const fetchLimsData = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    setLoading(true)
+    try {
+      const res = await ProductionNormsApiService.getLimsData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (res?.code === 200) {
+        const mapped = res?.data?.Data?.map((item, index) => ({
+          id: item.id || index,
+          name: item.name,
+          displayName: item.displayName,
+          uom: item.uom,
+          jmd: item.jmd,
+          hpn: item.hpn,
+          heavy: item.heavy,
+          others: item.others,
+          blend: item.blend,
+          jmdId: item.jmdId,
+          hpnId: item.hpnId,
+          heavyId: item.heavyId,
+          othersId: item.othersId,
+          blendId: item.blendId,
+        }))
+        setRows1(mapped)
+      } else {
+        setRows1([])
+      }
+    } catch (err) {
+      console.error('fetchLims Data error', err)
+      setRows1([])
+    } finally {
+      setLoading(false)
+    }
+  }, [keycloak, yearChanged, plantID])
+
+  useEffect(() => {
+    fetchLimsData()
+  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
+
   const saveChanges = React.useCallback(async () => {
     try {
       setLoading(true)
@@ -148,35 +299,33 @@ export default function NaphthaHMDComponent() {
 
       const requiredFields = ['remarks']
 
-      const validationMessage = validateFields(data, requiredFields)
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
-        setLoading(false)
-        return
-      }
+      //   const validationMessage = validateFields(data, requiredFields)
+      //   if (validationMessage) {
+      //     setSnackbarOpen(true)
+      //     setSnackbarData({
+      //       message: validationMessage,
+      //       severity: 'error',
+      //     })
+      //     setLoading(false)
+      //     return
+      //   }
 
       const payload = data.map((item) => ({
-        id: item.id || null,
-        plant: item.plant,
-        noOfShutdownDays: item.noOfShutdownDays,
-        noOfSlowdownDays: item.noOfSlowdownDays,
-        monthPlan: item.monthPlan,
-        shutdownSlowdownPlan: item.shutdownSlowdownPlan,
-        remarks: item.remarks || 'system generated',
-        siteId: SITE_ID,
-        aopYear: AOP_YEAR,
-        updatedBy: keycloak?.userName || 'system',
-        updatedDate: new Date().toISOString(),
+        //id: item.id || null,
+        section: item.section,
+        name: item.name,
+        max: item.max,
+        min: item.min,
+        months: item.months,
+        maxId: item.maxId,
+        minId: item.minId,
+        monthsId: item.monthsId,
       }))
 
       // 3. Save to API
       const response = await ProductionNormsApiService.saveNaphthaHMDData(
         keycloak,
-        SITE_ID,
+        PLANT_ID,
         AOP_YEAR,
         payload,
       )
@@ -207,44 +356,70 @@ export default function NaphthaHMDComponent() {
       setLoading(false)
     }
   }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
+  const saveChangesLimsData = React.useCallback(async () => {
+    try {
+      setLoading(true)
+      const data = Object.values(modifiedCells1)
+      if (data.length === 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        return
+      }
 
-  //   const deleteRowData = async (paramsForDelete) => {
-  //     setLoading(true)
+      const payload = data.map((item) => ({
+        id: item.id || null,
+        name: item.name,
+        displayName: item.displayName,
+        uom: item.uom,
+        jmd: item.jmd,
+        hpn: item.hpn,
+        heavy: item.heavy,
+        others: item.others,
+        blend: item.blend,
+        jmdId: item.jmdId,
+        hpnId: item.hpnId,
+        heavyId: item.heavyId,
+        othersId: item.othersId,
+        blendId: item.blendId,
+      }))
 
-  //     try {
-  //       const { idFromApi, id } = paramsForDelete
-  //       const deleteId = id
+      // 3. Save to API
+      const response = await ProductionNormsApiService.saveLimsData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        payload,
+      )
 
-  //       if (!idFromApi) {
-  //         setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
-  //       }
-
-  //       if (idFromApi) {
-  //         await ProductionNormsApiService.deleteNaphthaHMDData(idFromApi, keycloak)
-  //         setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
-  //         setSnackbarOpen(true)
-  //         setSnackbarData({
-  //           message: 'Record Deleted successfully!',
-  //           severity: 'success',
-  //         })
-  //         fetchData()
-  //       } else {
-  //         setLoading(false)
-  //       }
-  //     } catch (error) {
-  //       console.error('Error deleting Record!', error)
-  //     }
-  //   }
-
-  const handleExcelUpload = (type) => (rawFile) => {
-    uploadPeopleDetails(rawFile, type)
-  }
-
-  const handleRemarkCellClick = useCallback((row) => {
-    setCurrentRemark(row.remarks || '')
-    setCurrentRowId(row.id)
-    setRemarkDialogOpen(true)
-  }, [])
+      // 4. Handle API response
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Saved Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells1({})
+        fetchLimsData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Save failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [modifiedCells1, keycloak, PLANT_ID, AOP_YEAR, fetchLimsData])
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -266,9 +441,22 @@ export default function NaphthaHMDComponent() {
       allAction: true,
       saveBtn: true,
       showTitleNameBusiness: true,
-      titleName: 'Naphtha HMD Data',
+      titleName: 'LIMS Data Extraction Settings',
       adjustedPermissions: true,
-      ExcelName: `${lowerVertName}_Naphtha_HMD_Data_${AOP_YEAR}`,
+      ExcelName: `${lowerVertName}_LIMS Data Extraction Settings_${AOP_YEAR}`,
+      //addButton: true,
+      //deleteButton: true,
+    },
+    isOldYear,
+  )
+  const adjustedPermissions1 = getAdjustedPermissions(
+    {
+      allAction: true,
+      saveBtn: true,
+      showTitleNameBusiness: true,
+      titleName: 'LIMS Data',
+      adjustedPermissions: true,
+      ExcelName: `${lowerVertName}_LIMS Data_${AOP_YEAR}`,
       //addButton: true,
       //deleteButton: true,
     },
@@ -288,7 +476,7 @@ export default function NaphthaHMDComponent() {
         columns={naphthaColumns}
         rows={rows}
         setRows={setRows}
-        title='Naphtha HMD Data'
+        title='LIMS Data Extraction Settings'
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
         remarkDialogOpen={remarkDialogOpen}
@@ -299,10 +487,29 @@ export default function NaphthaHMDComponent() {
         setCurrentRowId={setCurrentRowId}
         enableSaveAddBtn={enableSaveAddBtn}
         saveChanges={saveChanges}
-        handleRemarkCellClick={handleRemarkCellClick}
+        //handleRemarkCellClick={handleRemarkCellClick}
         //deleteRowData={deleteRowData}
         permissions={adjustedPermissions}
         groupBy='Particulars'
+      />
+
+      <KendoDataTables
+        columns={limpsColumns}
+        rows={rows1}
+        setRows={setRows1}
+        title='LIMS Data'
+        modifiedCells={modifiedCells1}
+        setModifiedCells={setModifiedCells1}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        setCurrentRowId={setCurrentRowId}
+        enableSaveAddBtn={enableSaveAddBtn}
+        saveChanges={saveChangesLimsData}
+        //handleRemarkCellClick={handleRemarkCellClick}
+        permissions={adjustedPermissions1}
       />
       <Notification
         open={snackbarOpen}
