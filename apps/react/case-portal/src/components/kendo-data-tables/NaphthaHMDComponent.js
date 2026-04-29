@@ -62,7 +62,7 @@ export default function NaphthaHMDComponent() {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
-
+  const [calculationObject, setCalculationObject] = useState([])
   const unsavedChangesRef = useRef({ unsavedRows: {}, rowsBeforeChange: {} })
 
   const naphthaColumns = [
@@ -263,7 +263,7 @@ export default function NaphthaHMDComponent() {
         PLANT_ID,
         AOP_YEAR,
       )
-
+      setCalculationObject(res?.data?.aopCalculation)
       if (res?.code === 200) {
         const mapped = res?.data?.Data?.map((item, index) => ({
           id: item.id || index,
@@ -352,6 +352,7 @@ export default function NaphthaHMDComponent() {
         })
         setModifiedCells({})
         fetchData()
+        fetchLimsData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -368,7 +369,7 @@ export default function NaphthaHMDComponent() {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
+  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData, fetchLimsData])
   const saveChangesLimsData = React.useCallback(async () => {
     try {
       setLoading(true)
@@ -416,6 +417,7 @@ export default function NaphthaHMDComponent() {
         })
         setModifiedCells1({})
         fetchLimsData()
+        fetchData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -432,7 +434,43 @@ export default function NaphthaHMDComponent() {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells1, keycloak, PLANT_ID, AOP_YEAR, fetchLimsData])
+  }, [modifiedCells1, keycloak, PLANT_ID, AOP_YEAR, fetchLimsData, fetchData])
+
+  const handleCalculate = async () => {
+    try {
+      const data = await ProductionNormsApiService.calculateLIMSData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (data || data == 0) {
+        // dispatch(setIsBlocked(true))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        fetchLimsData()
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refresh Falied!',
+          severity: 'error',
+        })
+      }
+
+      return data
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+      console.error('Error!', error)
+    }
+  }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -472,8 +510,9 @@ export default function NaphthaHMDComponent() {
       adjustedPermissions: true,
       downloadExcelBtnFromUI: true,
       ExcelName: `${lowerVertName}_${lowerSiteName}_${lowerPlantName}_LIMS Data`,
-      //addButton: true,
-      //deleteButton: true,
+      showCalculate: true,
+      showCalculateVisibility:
+        Object.keys(calculationObject || {}).length > 0 ? true : false,
     },
     isOldYear,
   )
@@ -549,6 +588,7 @@ export default function NaphthaHMDComponent() {
               saveChanges={saveChangesLimsData}
               //handleRemarkCellClick={handleRemarkCellClick}
               permissions={adjustedPermissions1}
+              handleCalculate={handleCalculate}
             />
           </Box>
         </CustomAccordionDetails>
