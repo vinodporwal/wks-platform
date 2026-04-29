@@ -25,5 +25,7 @@ public interface LIMSSpyroInputService {
     
     AOPMessageVM getNaphthaQuality(String plantId, String aopYear);
     AOPMessageVM getCrackerHMDLIMSSpyroInput(String plantId, String aopYear);
+
+    AOPMessageVM calculateExpressionConsumptionNorms(String year, String plantId);
 }
 
