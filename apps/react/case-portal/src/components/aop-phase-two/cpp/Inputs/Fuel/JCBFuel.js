@@ -263,11 +263,11 @@ const JCBFuel = () => {
     saveBtn: true,
     allAction: true,
     showExport: true,
-    ExcelName: `NVC Fuel Availability - ${AOP_YEAR}`,
+    ExcelName: `Net Calorific Value - ${AOP_YEAR}`,
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'NVC Fuel Availability',
+    titleName: 'Net Calorific Value (NCV)',
   }
 
   const saveChanges = async () => {
