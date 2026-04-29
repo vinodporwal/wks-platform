@@ -30,6 +30,7 @@ export const ProductionNormsApiService = {
   getLimsData,
   saveLimsData,
   ProductionOptimizerExport,
+  calculateLIMSData,
 }
 async function updateProductNormData(turnAroundDetails, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/monthly-production` // Corrected endpoint
@@ -572,6 +573,21 @@ async function ProductionOptimizerExport(
     window.URL.revokeObjectURL(urlBlob)
   } catch (e) {
     console.error('Error exporting Optimizer Input Excel:', e)
+    return Promise.reject(e)
+  }
+}
+export async function calculateLIMSData(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/calculate-liims-inputs?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error fetching Lims data:', e)
     return Promise.reject(e)
   }
 }
