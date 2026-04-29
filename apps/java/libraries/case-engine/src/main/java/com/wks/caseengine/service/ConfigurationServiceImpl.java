@@ -1496,6 +1496,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	public List<ConfigurationDTO> saveConfigurationData(String year, String plantFKId,String version,
 			List<ConfigurationDTO> configurationDTOList,Boolean calculation) {
 		try {
+
+			
 			List<ConfigurationDTO> failedList = new ArrayList<>();
 			UUID plantId = UUID.fromString(plantFKId);
 			String verticalName = plantsRepository.findVerticalNameByPlantId(plantId);

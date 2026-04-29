@@ -1,12 +1,12 @@
 package com.wks.caseengine.service;
 
+import java.io.ByteArrayOutputStream;
 import java.sql.CallableStatement;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
-
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,16 +14,27 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.hibernate.Session;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.dto.ConfigurationDTO;
+import com.wks.caseengine.dto.ShutdownRateDropdownDTO;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
-import com.wks.caseengine.dto.ShutdownRateDTO;
-import com.wks.caseengine.dto.ShutdownRateDropdownDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
@@ -49,6 +60,9 @@ public class ShutdownRateServiceImpl implements ShutdownRateService {
 	
 	@Autowired
 	private SiteRepository siteRepository;
+
+	@Autowired
+	private ConfigurationService configurationService;
 
 	@Override
 	@Transactional
@@ -251,5 +265,193 @@ public class ShutdownRateServiceImpl implements ShutdownRateService {
 		}
 		
 		return dropdownList;
+	}
+
+	@Override
+	public byte[] exportShutdownRate(String plantId, String aopYear) {
+		try {
+			AOPMessageVM response = getShutdownRate(plantId, aopYear);
+			@SuppressWarnings("unchecked")
+			Map<String, Object> dataMap = (Map<String, Object>) response.getData();
+			@SuppressWarnings("unchecked")
+			List<Map<String, Object>> dataList = (List<Map<String, Object>>) dataMap.get("data");
+
+			Workbook workbook = new XSSFWorkbook();
+			Sheet sheet = workbook.createSheet("Shutdown Rate");
+
+			// Header style: bold font + distinct blue background
+			CellStyle headerStyle = workbook.createCellStyle();
+			Font headerFont = workbook.createFont();
+			headerFont.setBold(true);
+			headerStyle.setFont(headerFont);
+			headerStyle.setFillForegroundColor(IndexedColors.CORNFLOWER_BLUE.getIndex());
+			headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			headerStyle.setBorderBottom(BorderStyle.THIN);
+			headerStyle.setBorderTop(BorderStyle.THIN);
+			headerStyle.setBorderLeft(BorderStyle.THIN);
+			headerStyle.setBorderRight(BorderStyle.THIN);
+
+			// Data cell style
+			CellStyle dataStyle = workbook.createCellStyle();
+			dataStyle.setBorderBottom(BorderStyle.THIN);
+			dataStyle.setBorderTop(BorderStyle.THIN);
+			dataStyle.setBorderLeft(BorderStyle.THIN);
+			dataStyle.setBorderRight(BorderStyle.THIN);
+
+			// Header row: Particular, UOM, Major Shutdown, One Day Shutdown, Remarks, NormParameter_FK_Id (hidden)
+			String[] headers = { "Particular", "UOM", "Major Shutdown", "One Day Shutdown", "Remarks",
+					"NormParameter_FK_Id" };
+			Row headerRow = sheet.createRow(0);
+			for (int i = 0; i < headers.length; i++) {
+				Cell cell = headerRow.createCell(i);
+				cell.setCellValue(headers[i]);
+				cell.setCellStyle(headerStyle);
+			}
+
+			// Data rows
+			int rowIdx = 1;
+			for (Map<String, Object> dataRow : dataList) {
+				Row row = sheet.createRow(rowIdx++);
+				setExcelCellValue(row.createCell(0), dataRow.get("DisplayName"), dataStyle);
+				setExcelCellValue(row.createCell(1), dataRow.get("UOM"), dataStyle);
+				setExcelCellValue(row.createCell(2), dataRow.get("MajorShutdown"), dataStyle);
+				setExcelCellValue(row.createCell(3), dataRow.get("OneDayShutdown"), dataStyle);
+				setExcelCellValue(row.createCell(4), dataRow.get("remarks"), dataStyle);
+				setExcelCellValue(row.createCell(5), dataRow.get("NormParameter_FK_Id"), dataStyle);
+			}
+
+			// Hide the NormParameter_FK_Id column (internal use only)
+			sheet.setColumnHidden(5, true);
+
+			// Auto-size visible columns
+			for (int i = 0; i < 5; i++) {
+				sheet.autoSizeColumn(i);
+			}
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException("Failed to export Shutdown Rate Excel", e);
+		}
+	}
+
+	@Override
+	@Transactional
+	public AOPMessageVM importShutdownRate(String plantId, String aopYear, String version, MultipartFile file,
+			Boolean calculation) {
+		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+			throw new IllegalArgumentException("Invalid or empty Excel file.");
+		}
+
+		try {
+			List<ConfigurationDTO> configList = new ArrayList<>();
+
+			try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+				Sheet sheet = workbook.getSheetAt(0);
+				Iterator<Row> rowIterator = sheet.iterator();
+
+				if (rowIterator.hasNext()) {
+					rowIterator.next(); // Skip header row
+				}
+
+				while (rowIterator.hasNext()) {
+					Row row = rowIterator.next();
+					if (row.getPhysicalNumberOfCells() == 0) {
+						continue;
+					}
+
+					ConfigurationDTO dto = new ConfigurationDTO();
+					try {
+						// Col 0: Particular (DisplayName) — display only
+						// Col 1: UOM
+						dto.setUOM(readStringCell(row.getCell(1), dto));
+						// Col 2: Major Shutdown → stored as AopMonth = 1 (January slot)
+						Double majorShutdown = readNumericCell(row.getCell(2), dto);
+						dto.setApr(majorShutdown);
+						// Col 3: One Day Shutdown → stored as AopMonth = 2 (February slot)
+						Double oneDayShutdown = readNumericCell(row.getCell(3), dto);
+						dto.setMay(oneDayShutdown);
+						// Col 4: Remarks
+						dto.setRemarks(readStringCell(row.getCell(4), dto));
+						// Col 5: NormParameter_FK_Id (hidden)
+						dto.setNormParameterFKId(readStringCell(row.getCell(5), dto));
+						dto.setAuditYear(aopYear);
+					} catch (Exception e) {
+						e.printStackTrace();
+						dto.setErrDescription(e.getMessage());
+						dto.setSaveStatus("Failed");
+					}
+					configList.add(dto);
+				}
+			}
+
+			List<ConfigurationDTO> failedRecords = configurationService.saveConfigurationData(aopYear, plantId,
+					version, configList, calculation);
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (failedRecords != null && !failedRecords.isEmpty()) {
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+				aopMessageVM.setData(failedRecords);
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+			return aopMessageVM;
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException("Failed to import Shutdown Rate Excel", e);
+		}
+	}
+
+	private void setExcelCellValue(Cell cell, Object value, CellStyle style) {
+		cell.setCellStyle(style);
+		if (value == null) {
+			cell.setCellValue("");
+		} else if (value instanceof Number) {
+			cell.setCellValue(((Number) value).doubleValue());
+		} else if (value instanceof Boolean) {
+			cell.setCellValue((Boolean) value);
+		} else {
+			String strVal = value.toString();
+			try {
+				cell.setCellValue(Double.parseDouble(strVal));
+			} catch (NumberFormatException e) {
+				cell.setCellValue(strVal);
+			}
+		}
+	}
+
+	private static String readStringCell(Cell cell, ConfigurationDTO dto) {
+		try {
+			if (cell == null) return null;
+			org.apache.poi.ss.usermodel.DataFormatter formatter = new org.apache.poi.ss.usermodel.DataFormatter();
+			return formatter.formatCellValue(cell).trim();
+		} catch (Exception e) {
+			dto.setSaveStatus("Failed");
+			dto.setErrDescription("Please enter correct values");
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	private static Double readNumericCell(Cell cell, ConfigurationDTO dto) {
+		if (cell == null || cell.toString().equalsIgnoreCase("")) return null;
+		if (cell.getCellType() == CellType.NUMERIC) {
+			return cell.getNumericCellValue();
+		} else if (cell.getCellType() == CellType.STRING) {
+			try {
+				return Double.parseDouble(cell.getStringCellValue().trim());
+			} catch (NumberFormatException e) {
+				dto.setSaveStatus("Failed");
+				dto.setErrDescription("Please enter numeric values");
+			}
+		}
+		return null;
 	}
 }
