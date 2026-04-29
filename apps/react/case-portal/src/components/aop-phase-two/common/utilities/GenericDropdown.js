@@ -43,6 +43,16 @@ import { TextField, MenuItem, Typography } from '@mui/material'
  *   getOptionLabel={(item) => `${item.name} (${item.code})`}
  * />
  */
+
+const menuItemStyle = {
+  fontSize: 14,
+  fontWeight: 700,
+  color: '#303030',
+  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+  letterSpacing: '0px',
+  verticalAlign: 'middle',
+}
+
 const GenericDropdown = ({
   options = [],
   value = '',
@@ -90,13 +100,14 @@ const GenericDropdown = ({
             variant='caption'
             sx={{
               mr: 0.5,
-              color: 'text.secondary',
-              fontWeight: 700,
-              fontSize: '0.6rem',
+              color: '#606060',
+              fontWeight: 500,
+              fontSize: '14px',
               textTransform: 'uppercase',
               letterSpacing: '0.4px',
               lineHeight: 1,
               whiteSpace: 'nowrap',
+              fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
             }}
           >
             {label}:
@@ -104,31 +115,23 @@ const GenericDropdown = ({
         ),
       }}
       sx={{
-        minWidth: 120,
+        minWidth: 140,
         '& .MuiOutlinedInput-root': {
           height: '30px',
           backgroundColor: 'rgba(255, 255, 255, 0.85)',
           borderRadius: '7px',
-          fontSize: '0.7rem',
-          fontWeight: 600,
-          '& fieldset': {
-            borderColor: 'rgba(0, 0, 0, 0.08)',
-          },
-          '&:hover fieldset': {
-            borderColor: '#0100cb',
-          },
-          '&.Mui-focused fieldset': {
-            borderColor: '#0100cb',
-            borderWidth: '1.2px',
-          },
+          fontSize: '14px',
+          fontWeight: 700,
+          color: '#252525',
+          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+          '& fieldset': { border: 'none' },
+          '&:hover fieldset': { border: 'none' },
+          '&.Mui-focused fieldset': { border: 'none' },
         },
         '& .MuiSelect-select': {
           display: 'flex',
           alignItems: 'center',
-          paddingTop: '2px !important',
-          paddingBottom: '2px !important',
-          paddingLeft: '6px !important',
-          paddingRight: '28px !important', // reserve space for dropdown arrow icon
+          padding: '2px 6px !important',
         },
         ...sx,
       }}
@@ -141,11 +144,12 @@ const GenericDropdown = ({
               mt: 0.5,
               boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
               '& .MuiMenuItem-root': {
-                fontSize: '0.7rem',
-                fontWeight: 500,
+                fontSize: '14px',
+                fontWeight: 700,
                 minHeight: '26px',
                 margin: '1px 4px',
-                borderRadius: '5px',
+                fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                borderRadius: '7px',
                 '&.Mui-selected': {
                   bgcolor: 'rgba(1, 0, 203, 0.08)',
                   color: '#0100cb',
@@ -160,7 +164,7 @@ const GenericDropdown = ({
         },
       }}
     >
-      <MenuItem value='' disabled sx={{ fontSize: '0.65rem' }}>
+      <MenuItem value='' disabled sx={menuItemStyle}>
         <em>{placeholder}</em>
       </MenuItem>
 
@@ -169,6 +173,7 @@ const GenericDropdown = ({
           <MenuItem
             key={getValueFromOption(option)}
             value={getValueFromOption(option)}
+            sx={menuItemStyle}
           >
             {getLabelFromOption(option)}
           </MenuItem>

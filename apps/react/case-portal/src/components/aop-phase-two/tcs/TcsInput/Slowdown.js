@@ -646,6 +646,7 @@ const Slowdown = ({
           configType='tcs_slowdown'
           handleRemarkCellClick={handleRemarkCellClick}
           columns={columns}
+          title='Slowdown'
           remarkDialogOpen={remarkDialogOpen}
           setRemarkDialogOpen={setRemarkDialogOpen}
           currentRemark={currentRemark}

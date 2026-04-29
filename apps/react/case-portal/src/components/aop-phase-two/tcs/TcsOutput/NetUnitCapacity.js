@@ -300,7 +300,7 @@ const NetUnitCapacity = ({
           rows={rows}
           setRows={setRows}
           fetchData={() => fetchUnitCapacityData()}
-          title={title}
+          title={'Net Unit Capacity'}
           handleRemarkCellClick={handleRemarkCellClick}
           columns={columns}
           remarkDialogOpen={remarkDialogOpen}

@@ -173,7 +173,7 @@ const Inputs = () => {
   }
 
   return (
-    <Box sx={{ p: 2 }}>
+    <Box sx={{ p: 0 }}>
       <LoaderBackdrop open={!!loading} />
 
       {/* Tabs */}

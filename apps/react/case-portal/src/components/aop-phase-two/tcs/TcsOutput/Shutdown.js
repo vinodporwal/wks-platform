@@ -219,6 +219,7 @@ const Shutdown = ({
         <AdvanceKendoTable
           rows={rows}
           setRows={setRows}
+          title='Shutdown'
           fetchData={fetchShutdownData}
           configType='tcs_shutdown'
           handleRemarkCellClick={handleRemarkCellClick}

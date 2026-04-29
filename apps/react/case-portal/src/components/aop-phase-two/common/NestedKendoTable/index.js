@@ -19,6 +19,13 @@ import {
   CircularProgress,
   Typography,
 } from '@mui/material'
+import {
+  FileExportIcon,
+  FileImportIcon,
+  SaveIcon as SaveImageIcon,
+  CalculateIcon as CalculateImageIcon,
+} from 'assets/images/icons'
+import { DashboardColors } from 'themes/colors'
 import DeleteDialog from '../AdvanceKendoTable/components/DeleteDialog'
 import SaveConfirmationDialog from '../AdvanceKendoTable/components/SaveConfirmationDialog'
 import { ExcelExport } from '@progress/kendo-react-excel-export'
@@ -51,6 +58,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import Collapse from '@mui/material/Collapse'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 // Helper function to extract flat row sequence from grouped data
 const extractFlatRowsFromGrouped = (data) => {
@@ -176,6 +184,15 @@ const NestedKendoTable = ({
 
   const toggleGrid = () => {
     setGridExpanded((prev) => !prev)
+  }
+
+  const menuItemStyle = {
+    fontSize: 14,
+    fontWeight: 500,
+    color: '#303030',
+    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+    letterSpacing: '0px',
+    verticalAlign: 'middle',
   }
 
   // Process grouped data to get flat row sequence for tab navigation
@@ -1214,182 +1231,237 @@ const NestedKendoTable = ({
   }
 
   return (
-    <div style={{ position: 'relative' }}>
-      {loading && (
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={!!loading}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
-      )}
+    <div className='k-table-box' style={{ position: 'relative' }}>
+      {loading && <LoaderBackdrop open={!!loading} />}
 
       {(permissions?.allAction ?? true) && (
-        <Box
-          className='action-box2'
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%',
-          }}
-        >
+        <Box className='action-box' sx={{ mb: 1 }}>
           <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 1,
-              flexGrow: 1,
+              justifyContent: 'space-between',
+              width: '100%',
+              ...(permissions?.marginTop && { marginTop: '10px' }),
             }}
           >
-            <Typography
-              component='div'
+            {/* Left side - Title + toggle */}
+            <Box>
+              {permissions?.showTitleNameBusiness ? (
+                <Typography
+                  component='div'
+                  sx={{
+                    fontSize: '16px',
+                    fontWeight: 700,
+                    color: '#252525',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    mb: permissions?.marginBottom ? '12px' : '4px',
+                  }}
+                >
+                  {/* TOGGLE ICON */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 32,
+                      height: 32,
+                      borderRadius: '6px',
+                      backgroundColor: '#ECEEFF',
+                      color: '#1e293b',
+                      ml: 1,
+                      cursor: 'pointer',
+                      padding: '8px',
+                    }}
+                    onClick={toggleGrid}
+                  >
+                    <KeyboardArrowUpIcon
+                      sx={{
+                        fontSize: 20,
+                        transition: '0.2s',
+                        transform: gridExpanded
+                          ? 'rotate(0deg)'
+                          : 'rotate(180deg)',
+                      }}
+                    />
+                  </Box>
+
+                  {/* TITLE */}
+                  {title || permissions?.titleName}
+
+                  {/* ROWS BADGE */}
+                  <Box
+                    sx={{
+                      p: '4px 8px',
+                      borderRadius: '100px',
+                      backgroundColor: '#ECEEFF',
+                      border: '1px solid #41424D',
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        color: '#41424D',
+                        fontFamily: "'Honeywell Cond Web', 'Inter', sans-serif",
+                      }}
+                    >
+                      {rows?.length || 0} {rows?.length === 1 ? 'Row' : 'Rows'}
+                    </Typography>
+                  </Box>
+                </Typography>
+              ) : (
+                /* Only toggle icon when showTitleNameBusiness is false */
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 32,
+                    height: 32,
+                    borderRadius: '6px',
+                    backgroundColor: '#ECEEFF',
+                    color: '#1e293b',
+                    ml: 1,
+                    cursor: 'pointer',
+                    padding: '8px',
+                  }}
+                  onClick={toggleGrid}
+                >
+                  <KeyboardArrowUpIcon
+                    sx={{
+                      fontSize: 20,
+                      transition: '0.2s',
+                      transform: gridExpanded
+                        ? 'rotate(0deg)'
+                        : 'rotate(180deg)',
+                    }}
+                  />
+                </Box>
+              )}
+            </Box>
+
+            {/* Right side - Unit dropdown + action buttons */}
+            <Box
               sx={{
-                fontSize: '0.85rem',
-                fontWeight: 850,
-                color: '#2d3748',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 1.5,
-                mb: permissions?.marginBottom ? '12px' : '4px',
+                gap: 1,
+                paddingBottom: 0.25,
               }}
             >
-              {/* TOGGLE ICON */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 32,
-                  height: 32,
-                  borderRadius: '10px',
-                  backgroundColor: '#eef2ff',
-                  color: '#1e293b',
-                  ml: 1,
-                  cursor: 'pointer',
-                }}
-                onClick={toggleGrid}
-              >
-                <KeyboardArrowUpIcon
-                  sx={{
-                    fontSize: 20,
-                    transition: '0.2s',
-                    transform: gridExpanded ? 'rotate(0deg)' : 'rotate(180deg)',
-                  }}
-                />
-              </Box>
-
-              {/* TITLE */}
-              {title || permissions?.titleName}
-
-              {/* ITEMS BADGE */}
-              <Box
-                sx={{
-                  ml: 1,
-                  px: 1.5,
-                  py: 0.5,
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  borderRadius: '6px',
-                  backgroundColor: '#f3ece7',
-                  color: '#92400e',
-                }}
-              >
-                {rows?.length || 0} {rows?.length === 1 ? 'Item' : 'Items'}
-              </Box>
-
-              {/* EDITABLE BADGE
-                             <Box
-                               sx={{
-                                 ml: 1,
-                                 px: 1.5,
-                                 py: 0.5,
-                                 fontSize: '0.75rem',
-                                 fontWeight: 700,
-                                 borderRadius: '6px',
-                                 backgroundColor: '#dbeafe',
-                                 color: '#1e40af',
-                               }}
-                             >
-                               Editable
-                             </Box> */}
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {permissions?.showExport && (
-              <Button
-                variant='contained'
-                onClick={handleExport}
-                disabled={isButtonDisabled}
-                className='btn-export'
-                startIcon={<DownloadIcon fontSize='small' />}
-              >
-                Export
-              </Button>
-            )}
-
-            {permissions?.downloadExcelBtnFromUI && (
-              <Button
-                variant='contained'
-                onClick={excelExport}
-                disabled={rows?.length === 0}
-                className='btn-export'
-                startIcon={<DownloadIcon fontSize='small' />}
-              >
-                Export
-              </Button>
-            )}
-
-            {permissions?.showImport && (
-              <>
+              {permissions?.showExport && (
                 <Button
                   variant='contained'
-                  onClick={triggerFileUpload}
-                  disabled={isButtonDisabled || READ_ONLY}
-                  className='btn-import'
-                  startIcon={<UploadIcon sx={{ fontSize: 16 }} />}
+                  className='btn-export'
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={FileExportIcon}
+                      className='w16-icon'
+                    />
+                  }
+                  onClick={handleExport}
+                  disabled={isButtonDisabled || rows?.length === 0}
                 >
-                  Import
+                  Export
                 </Button>
+              )}
 
-                <input
-                  type='file'
-                  accept='.xlsx,.xls'
-                  onChange={onFileChange}
-                  ref={fileInputRef}
-                  style={{ display: 'none' }}
-                />
-              </>
-            )}
-            {permissions?.saveBtn && (
-              <Button
-                variant='contained'
-                onClick={saveModalOpen}
-                disabled={
-                  isButtonDisabled ||
-                  READ_ONLY ||
-                  Object.keys(modifiedCells).length === 0
-                }
-                className='btn-save'
-                startIcon={<SaveIcon sx={{ fontSize: 16 }} />}
-              >
-                Save
-              </Button>
-            )}
-            {permissions?.showCalculate && (
-              <Button
-                variant='contained'
-                onClick={handleCalculateBtn}
-                className='btn-calculate'
-                startIcon={<CalculateIcon sx={{ fontSize: 16 }} />}
-                disabled={
-                  !permissions.enableCalculate || isButtonDisabled || READ_ONLY
-                }
-              >
-                Calculate
-              </Button>
-            )}
+              {permissions?.downloadExcelBtnFromUI && (
+                <Button
+                  variant='contained'
+                  className='btn-export'
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={FileExportIcon}
+                      className='w16-icon'
+                    />
+                  }
+                  onClick={excelExport}
+                  disabled={rows?.length === 0}
+                >
+                  Export
+                </Button>
+              )}
+
+              {permissions?.showImport && (
+                <>
+                  <Button
+                    variant='contained'
+                    onClick={triggerFileUpload}
+                    startIcon={
+                      <Box
+                        component='img'
+                        src={FileImportIcon}
+                        className='w16-icon'
+                      />
+                    }
+                    disabled={
+                      isButtonDisabled || READ_ONLY || rows?.length === 0
+                    }
+                    className='btn-import'
+                  >
+                    Import
+                  </Button>
+
+                  <input
+                    type='file'
+                    accept='.xlsx,.xls'
+                    onChange={onFileChange}
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                  />
+                </>
+              )}
+
+              {permissions?.saveBtn && (
+                <Button
+                  variant='contained'
+                  className='btn-save'
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={SaveImageIcon}
+                      className='w16-icon'
+                    />
+                  }
+                  onClick={saveModalOpen}
+                  disabled={
+                    isButtonDisabled ||
+                    READ_ONLY ||
+                    Object.keys(modifiedCells).length === 0
+                  }
+                >
+                  Save
+                </Button>
+              )}
+
+              {permissions?.showCalculate && (
+                <Button
+                  variant='contained'
+                  onClick={handleCalculateBtn}
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={CalculateImageIcon}
+                      className='w16-icon'
+                    />
+                  }
+                  disabled={
+                    !permissions.enableCalculate ||
+                    isButtonDisabled ||
+                    READ_ONLY
+                  }
+                  className='btn-calculate'
+                >
+                  Calculate
+                </Button>
+              )}
+            </Box>
           </Box>
         </Box>
       )}

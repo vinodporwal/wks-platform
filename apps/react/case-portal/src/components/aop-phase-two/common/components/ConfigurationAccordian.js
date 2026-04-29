@@ -19,15 +19,12 @@ import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { styled } from '@mui/material/styles'
 import SettingsIcon from '@mui/icons-material/Settings'
-import SyncIcon from '@mui/icons-material/Sync'
-import HistoryIcon from '@mui/icons-material/History'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import InfoIcon from '@mui/icons-material/Info'
 
 const CompactAccordion = styled(CustomAccordion)({
   mb: 0,
-  borderRadius: '0px !important',
-  boxShadow: 'none',
-  borderBottom: '1px solid #bbc0c6',
+  padding: '10px',
   '&:before': { display: 'none' },
 })
 
@@ -391,29 +388,43 @@ const ConfigurationAccordian = ({
   const endDateDateFromConfig = new Date(endDateConfig?.AttributeValue)
 
   const accordian = useMemo(() => {
+    const expandCollapseIconStyle = {
+      minHeight: '36px !important',
+      px: 0.5,
+      bgcolor: '#ffffff',
+      flexDirection: 'row-reverse',
+      '& .MuiAccordionSummary-content': {
+        marginLeft: 1,
+        my: '4px !important',
+      },
+      '& .MuiAccordionSummary-expandIconWrapper': {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 32,
+        height: 32,
+        borderRadius: '6px',
+        backgroundColor: '#ECEEFF',
+        color: '#1e293b',
+        cursor: 'pointer',
+        padding: '8px',
+      },
+    }
     return (
       <Box sx={{ mb: 1 }}>
-        <CompactAccordion defaultExpanded disableGutters>
+        <CompactAccordion defaultExpanded disableGutters className='k-table-box'>
           <CustomAccordionSummary
-            expandIcon={
-              <ExpandMoreIcon sx={{ fontSize: '1.1rem', color: '#0100cb' }} />
-            }
-            sx={{
-              minHeight: '36px !important',
-              px: 0.5,
-              bgcolor: '#ffffff',
-              '& .MuiAccordionSummary-content': { my: '4px !important' },
-            }}
+            expandIcon={<ExpandMoreIcon sx={{ fontSize: '1rem' }} />}
+            sx={expandCollapseIconStyle}
           >
             <Stack direction='row' spacing={1} alignItems='center'>
               <SettingsIcon sx={{ color: '#0100cb', fontSize: '1rem' }} />
               <Typography
                 sx={{
                   fontWeight: 700,
-                  fontSize: '0.8rem',
-                  fontFamily:
-                    "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
-                  color: '#334155',
+                  fontSize: '16px',
+                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                  color: '#303030',
                 }}
               >
                 AOP Historical Period Basis
@@ -421,9 +432,9 @@ const ConfigurationAccordian = ({
             </Stack>
           </CustomAccordionSummary>
 
-          <CustomAccordionDetails sx={{ p: 0.5, pt: 0 }}>
+          <CustomAccordionDetails sx={{ p: 0.5, pt: 1 }}>
             <Stack direction='column' spacing={1.5}>
-              {/* ROW 1: Date pickers + Refresh + Last refreshed */}
+              {/* ROW 1: Date pickers + Load button */}
               <Stack
                 direction='row'
                 sx={{ columnGap: 1, rowGap: 0 }}
@@ -432,19 +443,6 @@ const ConfigurationAccordian = ({
               >
                 {/* START */}
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  <Typography
-                    variant='caption'
-                    sx={{
-                      fontSize: '0.65rem',
-                      fontWeight: 700,
-                      fontFamily:
-                        "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
-                      color: '#334155',
-                      letterSpacing: '0.3px',
-                    }}
-                  >
-                    START
-                  </Typography>
                   <DatePicker
                     id='start-date'
                     format='dd-MM-yyyy'
@@ -460,19 +458,6 @@ const ConfigurationAccordian = ({
 
                 {/* END */}
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  <Typography
-                    variant='caption'
-                    sx={{
-                      fontSize: '0.65rem',
-                      fontWeight: 700,
-                      fontFamily:
-                        "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
-                      color: '#334155',
-                      letterSpacing: '0.3px',
-                    }}
-                  >
-                    END
-                  </Typography>
                   <DatePicker
                     id='end-date'
                     format='dd-MM-yyyy'
@@ -486,13 +471,12 @@ const ConfigurationAccordian = ({
                   />
                 </Box>
 
-                {/* REFRESH BUTTON */}
+                {/* LOAD BUTTON */}
                 {!isOldYear && (
                   <Tooltip title='Refresh Data'>
                     <Button
-                      variant='contained'
+                      variant='outlined'
                       className='btn-load'
-                      startIcon={<SyncIcon />}
                       onClick={handleOpenDialog}
                       disabled={READ_ONLY}
                       sx={{
@@ -501,107 +485,100 @@ const ConfigurationAccordian = ({
                         mt: 'auto',
                       }}
                     >
-                      Refresh
+                      Load
                     </Button>
-                  </Tooltip>
-                )}
-
-                {/* LAST REFRESHED */}
-                {configurationExecutionDetails[0]?.ModifiedOn && (
-                  <Tooltip
-                    title={`Last Refreshed: ${formatDateForText(
-                      configurationExecutionDetails[0]?.ModifiedOn,
-                      true,
-                    )}`}
-                  >
-                    <Stack
-                      direction='row'
-                      spacing={0.5}
-                      alignItems='center'
-                      sx={{
-                        color: '#16a34a',
-                        whiteSpace: 'nowrap',
-                        mt: 'auto',
-                        height: 28,
-                      }}
-                    >
-                      <HistoryIcon sx={{ fontSize: '0.9rem' }} />
-                      <Typography
-                        sx={{
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          lineHeight: 1.2,
-                          fontFamily:
-                            "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
-                        }}
-                      >
-                        Last refreshed on{' '}
-                        <strong>
-                          {
-                            formatDateForText(
-                              configurationExecutionDetails[0]?.ModifiedOn,
-                            ).split(' ')[0]
-                          }
-                        </strong>
-                        {lastModifiedBy ? (
-                          <>
-                            {' by '}
-                            <strong>{lastModifiedBy}</strong>
-                          </>
-                        ) : null}
-                        {' | '}
-                        Period:{' '}
-                        <strong>
-                          {formatDateForText(startDateFromConfig, true)}
-                        </strong>
-                        {' - '}
-                        <strong>
-                          {formatDateForText(endDateDateFromConfig, true)}
-                        </strong>
-                      </Typography>
-                    </Stack>
                   </Tooltip>
                 )}
               </Stack>
 
-              {/* ROW 2: AOP DESIGN BASIS (only when required) */}
-              {isSummaryRequired && (
-                <Box sx={{ width: '100%' }}>
-                  <Typography
-                    variant='caption'
+              {/* LAST REFRESHED */}
+              {configurationExecutionDetails[0]?.ModifiedOn && (
+                <Tooltip
+                  title={`Last Refreshed: ${formatDateForText(
+                    configurationExecutionDetails[0]?.ModifiedOn,
+                    true,
+                  )}`}
+                >
+                  <Stack
+                    direction='row'
+                    spacing={0.5}
+                    alignItems='center'
                     sx={{
-                      fontSize: '0.65rem',
-                      fontWeight: 700,
-                      fontFamily:
-                        "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
-                      color: '#334155',
-                      letterSpacing: '0.3px',
+                      color: '#303030',
+                      backgroundColor: '#F6FAFC',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif !important",
+                      whiteSpace: 'nowrap',
+                      mt: '10px',
+                      height: 40,
+                      borderRadius: '6px',
+                      border: '1px solid #00688C',
+                      padding: '10px',
                     }}
                   >
-                    AOP DESIGN BASIS
-                  </Typography>
-                  <textarea
-                    disabled={READ_ONLY}
-                    value={summary}
-                    rows={2}
-                    onChange={(e) => {
-                      setSummary(e.target.value)
-                      setSummaryEdited(true)
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '6px 8px',
-                      borderRadius: '6px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.8rem',
-                      fontFamily:
-                        "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
-                      resize: 'none',
-                      backgroundColor: READ_ONLY ? '#f8fafc' : '#fff',
-                    }}
-                  />
-                </Box>
+                    <InfoIcon sx={{ fontSize: '0.9rem', color: '#00688C' }} />
+                    <Typography
+                      sx={{
+                        fontSize: '14px',
+                        fontWeight: 700,
+                        color: '#303030',
+                        lineHeight: 1.2,
+                        fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                      }}
+                    >
+                      Last refreshed on{' '}
+                      {
+                        formatDateForText(
+                          configurationExecutionDetails[0]?.ModifiedOn,
+                        ).split(' ')[0]
+                      }
+                      {' | '}
+                      Period:{' '}
+                      {formatDateForText(startDate, true)}
+                      {' - '}
+                      {formatDateForText(endDate, true)}
+                    </Typography>
+                  </Stack>
+                </Tooltip>
               )}
+
+              {/* ROW 2: AOP DESIGN BASIS */}
+              <Box sx={{ width: '100%' }}>
+                <Typography
+                  variant='caption'
+                  sx={{
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                    color: '#303030',
+                    letterSpacing: '0.3px',
+                  }}
+                >
+                  AOP DESIGN BASIS
+                </Typography>
+                <textarea
+                  disabled={READ_ONLY}
+                  value={summary}
+                  rows={2}
+                  onChange={(e) => {
+                    setSummary(e.target.value)
+                    setSummaryEdited(true)
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '6px 8px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                    color: '#303030',
+                    resize: 'none',
+                    backgroundColor: READ_ONLY ? '#f8fafc' : '#fff',
+                  }}
+                />
+              </Box>
             </Stack>
           </CustomAccordionDetails>
         </CompactAccordion>

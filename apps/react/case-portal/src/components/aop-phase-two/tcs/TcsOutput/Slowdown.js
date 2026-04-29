@@ -232,7 +232,7 @@ const Slowdown = ({
       <LoaderBackdrop open={!!loading} />
       <Stack sx={{ mt: 2 }}>
         <AdvanceKendoTable
-          title='TCS Slowdown'
+          title='Slowdown'
           rows={rows}
           setRows={setRows}
           fetchData={fetchSlowdownData}

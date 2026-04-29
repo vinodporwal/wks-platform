@@ -620,6 +620,7 @@ const Shutdown = ({
           configType='tcs_shutdown'
           handleRemarkCellClick={handleRemarkCellClick}
           columns={columns}
+          title='Shutdown'
           remarkDialogOpen={remarkDialogOpen}
           setRemarkDialogOpen={setRemarkDialogOpen}
           currentRemark={currentRemark}
