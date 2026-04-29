@@ -116,5 +116,10 @@ public class LIMSSpyroInputController {
 	        @RequestParam("file") MultipartFile file) {
 	    return limsSpyroInputService.importLIMSSpyroInput(year, UUID.fromString(plantId), file);
 	}
+
+    @GetMapping(value="/calculate-liims-inputs")
+	public AOPMessageVM getNormalOperationNormsDataFromSP(@RequestParam String year,@RequestParam String plantId){
+		return	 limsSpyroInputService.calculateExpressionConsumptionNorms(year,plantId);	
+	}
 }
 

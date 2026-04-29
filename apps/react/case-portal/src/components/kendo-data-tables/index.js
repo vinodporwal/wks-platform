@@ -878,7 +878,11 @@ const KendoDataTables = ({
       })
 
       if (customItemChange) {
-        customItemChange(e, { setModifiedCells, setCustomModifiedCells, rows: rowsRef.current })
+        customItemChange(e, {
+          setModifiedCells,
+          setCustomModifiedCells,
+          rows: rowsRef.current,
+        })
       }
     },
     [

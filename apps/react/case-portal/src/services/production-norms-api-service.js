@@ -29,6 +29,8 @@ export const ProductionNormsApiService = {
   saveNaphthaHMDData,
   getLimsData,
   saveLimsData,
+  ProductionOptimizerExport,
+  calculateLIMSData,
 }
 async function updateProductNormData(turnAroundDetails, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/monthly-production` // Corrected endpoint
@@ -534,5 +536,58 @@ async function saveLimsData(keycloak, PLANT_ID, AOP_YEAR, PAYLOAD) {
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)
+  }
+}
+async function ProductionOptimizerExport(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  type,
+  EXCEL_NAME,
+) {
+  const url = `${Config.CaseEngineUrl}/task/production-optimizer-export?plantId=${PLANT_ID}&aopYear=${AOP_YEAR}&type=${type}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${EXCEL_NAME}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Optimizer Input Excel:', e)
+    return Promise.reject(e)
+  }
+}
+export async function calculateLIMSData(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/calculate-liims-inputs?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error fetching Lims data:', e)
+    return Promise.reject(e)
   }
 }

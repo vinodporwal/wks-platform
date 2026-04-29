@@ -103,7 +103,7 @@ const ShutDown = ({ permissions }) => {
     lowerVertName === 'chemical'
   const IS_PTA = lowerVertName === 'pta'
   const IS_CHEMICAL = lowerVertName === 'chemical'
-  const IS_PP = lowerVertName === 'pp'  
+  const IS_PP = lowerVertName === 'pp'
   const IS_PTA_DMD = lowerVertName === 'pta' && lowerSiteName === 'dmd'
   const IS_PP_DTA = lowerVertName === 'pp' && lowerSiteName === 'dta'
   const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
@@ -228,22 +228,80 @@ const ShutDown = ({ permissions }) => {
       }
 
       if (IS_ELASTOMER_JMD_HIIR) {
+        // Helper: parse "HH.MM" string ? total minutes (numeric)
+        const parseDurationToMinutes = (val) => {
+          if (!val && val !== 0) return 0
+          const [hrsPart, minPart = '0'] = String(val).split('.')
+          const hrs = parseInt(hrsPart, 10) || 0
+          const mins =
+            parseInt(String(minPart).padEnd(2, '0').slice(0, 2), 10) || 0
+          return hrs * 60 + mins
+        }
+
+        // Helper: format total minutes back to "HH.MM" for display
+        const formatMinutesToDuration = (totalMins) => {
+          const hrs = Math.floor(totalMins / 60)
+          const mins = totalMins % 60
+          return `${hrs}.${mins.toString().padStart(2, '0')}`
+        }
+
+        // CHECK 1: Each individual modified record must not exceed month max
         for (const record of data) {
           const expectedDuration = calculateMonthDuration(
             record.monthly,
             AOP_YEAR,
           )
-
-          // Only block if greater (lower is allowed)
-          if (record.durationInHrs > expectedDuration) {
+          if (!expectedDuration) continue // no valid month — skip
+          const recordMins = parseDurationToMinutes(record.durationInHrs)
+          const expectedMins = parseDurationToMinutes(expectedDuration)
+          if (recordMins > expectedMins) {
             record.isError = true
-
             setSnackbarOpen(true)
             setSnackbarData({
               message: `Duration hrs for ${record.monthly} should not exceed ${expectedDuration}.`,
               severity: 'error',
             })
+            return
+          }
+        }
 
+        // CHECK 2: Sum of ALL rows for same month (modified + unmodified) must not exceed month max
+        const modifiedById = {}
+        for (const record of data) {
+          modifiedById[record.id] = record
+        }
+        const existingRowIds = new Set(rows.map((r) => r.id))
+        const mergedExisting = rows.map((row) => modifiedById[row.id] ?? row)
+        const newRows = data.filter((record) => !existingRowIds.has(record.id))
+        const allRowsMerged = [...mergedExisting, ...newRows]
+
+        // Group by month and sum total minutes
+        const monthTotals = {}
+        const monthDisplayName = {}
+        for (const row of allRowsMerged) {
+          const monthKey = (row.monthly || '').toLowerCase()
+          if (!monthKey) continue
+          monthTotals[monthKey] =
+            (monthTotals[monthKey] || 0) +
+            parseDurationToMinutes(row.durationInHrs)
+          if (!monthDisplayName[monthKey])
+            monthDisplayName[monthKey] = row.monthly
+        }
+
+        // Validate each month's total against its max
+        for (const [monthKey, totalMins] of Object.entries(monthTotals)) {
+          const displayMonth = monthDisplayName[monthKey] || monthKey
+          const expectedDuration = calculateMonthDuration(
+            displayMonth,
+            AOP_YEAR,
+          )
+          const expectedMins = parseDurationToMinutes(expectedDuration)
+          if (totalMins > expectedMins) {
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: `Total shutdown hours for ${displayMonth} (${formatMinutesToDuration(totalMins)} hrs) exceeds the month limit of ${expectedDuration} hrs. Please reduce the entries for ${displayMonth}.`,
+              severity: 'error',
+            })
             return
           }
         }

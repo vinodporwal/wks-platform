@@ -807,6 +807,25 @@ const SelectivityData = (props) => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
+
+        // Fetching data after partial data also so we get updated records
+        if (props?.configType === 'cracker_configuration') {
+          props?.fetchData(null)
+        }
+        if (props?.configType === 'cracker_constants') {
+          if (typeof props.fetchData === 'function') {
+            props.fetchData()
+          }
+        }
+
+        if (props?.configType === 'grades') {
+          fetchConfigData() // This was missing!
+        } else if (
+          props?.configType !== 'grades' &&
+          lowerVertName !== 'cracker'
+        ) {
+          props?.fetchData(gradeId)
+        }
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
