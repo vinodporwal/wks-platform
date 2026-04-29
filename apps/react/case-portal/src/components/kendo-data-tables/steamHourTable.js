@@ -14,7 +14,7 @@ import { getRoleName } from 'services/role-service'
 import MaintenanceProcessTableNMD from './processTableNMD'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { ProductionRangeApiService } from 'services/production-range-api-service copy'
-// ─── Month fields used throughout the component ────────────────────────────
+// --- Month fields used throughout the component ----------------------------
 const STEAM_MONTHS = [
   'Jan',
   'Feb',
@@ -165,7 +165,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
       const { dataItem, field, value } = e
       const section = dataItem.Particulars || dataItem.SectionName || ''
 
-      // Apply the edit, then recompute — filter to derived rows in the same section only
+      // Apply the edit, then recompute � filter to derived rows in the same section only
       const afterEdit = currentRows.map((r) =>
         r.id === dataItem.id ? { ...r, [field]: value } : r,
       )
@@ -244,14 +244,19 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
         return
       }
       // --- MONTHLY SUM VALIDATION (move here) ---
-      // const validationMessage = validateFields(data, ['Remarks'])
-      // if (validationMessage) {
-      //   setSnackbarOpen(true)
-      //   setSnackbarData({ message: validationMessage, severity: 'error' })
-      //   setLoading(false)
-      //   return
-      // }
+      // 1. Filter the data to only include editable rows
+      // This check covers: row.isEditable === true OR row.isEditable === 1
+      const editableRows = data.filter((row) => row.isEditable == true)
 
+      // 2. Run the validation only on those filtered rows
+      const validationMessage = validateFields(editableRows, ['Remarks'])
+
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: validationMessage, severity: 'error' })
+        setLoading(false)
+        return
+      }
       await saveStreamHoursData(data)
     } catch (err) {
       console.error('Save Stream Hours Data Error:', err)
@@ -347,6 +352,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
         'NormParamId',
         'SectionName',
         'NormParmId',
+        'SectionOrder',
       ]
       const months = [
         'Jan',

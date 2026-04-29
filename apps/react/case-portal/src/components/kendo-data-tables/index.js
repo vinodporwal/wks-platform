@@ -74,6 +74,7 @@ import { NoSpinnerNumericEditorCrackerValidation } from './Utilities-Kendo/numbe
 import DynamicDropdown from './Utilities-Kendo/DynamicDropdown'
 import ShutdownRateDropdown from './Utilities-Kendo/ShutdownRateDropdown'
 import MonthDropdownPEPP1 from './Utilities-Kendo/MonthDropdownPEPP1'
+import RowAwareDropdownEditor from './Utilities-Kendo/RowAwareDropdownEditor'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -878,7 +879,11 @@ const KendoDataTables = ({
       })
 
       if (customItemChange) {
-        customItemChange(e, { setModifiedCells, setCustomModifiedCells, rows: rowsRef.current })
+        customItemChange(e, {
+          setModifiedCells,
+          setCustomModifiedCells,
+          rows: rowsRef.current,
+        })
       }
     },
     [
@@ -3489,6 +3494,81 @@ const KendoDataTables = ({
                             )
                           }
 
+                          return showThreeColors ? (
+                            <RedHighlightCell2
+                              {...props}
+                              customModifiedCells={customModifiedCells}
+                              allRedCell={allRedCell}
+                              allRedCell2={allRedCell2}
+                              disableRedHighlight={disableRedHighlight}
+                            />
+                          ) : (
+                            <RedHighlightCell
+                              {...props}
+                              customModifiedCells={customModifiedCells}
+                              allRedCell={allRedCell}
+                              disableRedHighlight={disableRedHighlight}
+                            />
+                          )
+                        },
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                      filter='numeric'
+                      format={col.format}
+                    />
+                  )
+                }
+
+                // Dedicated block for ON/OFF dropdown rows (e.g. Business Demand UOM: 'ON/OFF')
+                // Enable via permissions.enableOnOffDropdown = true
+                if (col.type === 'number' && permissions?.enableOnOffDropdown) {
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title || col.headerName}
+                      width={col.widthT}
+                      hidden={col.hidden}
+                      className={`
+                        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+                        ${col?.isBold ? 'bold-text' : ''}
+                      `}
+                      editable={col?.editable ? true : false}
+                      headerClassName={isActive ? 'active-column' : ''}
+                      cells={{
+                        edit: {
+                          text: (props) => (
+                            <RowAwareDropdownEditor
+                              {...props}
+                              options={[
+                                { name: 'ON', value: 1 },
+                                { name: 'OFF', value: 0 },
+                              ]}
+                              condition={(dataItem) =>
+                                dataItem?.UOM === 'ON/OFF'
+                              }
+                            />
+                          ),
+                        },
+                        data: (props) => {
+                          // ON/OFF rows: show label text with highlight still handled by RedHighlightCell
+                          if (props.dataItem?.UOM === 'ON/OFF') {
+                            const val = props.dataItem[props.field]
+                            const label =
+                              val === 1 || val === '1' ? 'ON' : 'OFF'
+                            return (
+                              <RedHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                disableRedHighlight={disableRedHighlight}
+                              >
+                                {label}
+                              </RedHighlightCell>
+                            )
+                          }
+                          // Regular rows
                           return showThreeColors ? (
                             <RedHighlightCell2
                               {...props}

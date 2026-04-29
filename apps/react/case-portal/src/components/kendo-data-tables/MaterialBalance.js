@@ -61,6 +61,7 @@ const MaterialBalance = ({ permissions }) => {
             Type: item?.Type,
             Remarks: item?.Remarks || '',
             originalRemark: item?.Remarks || '',
+            isEditable: item?.IsEditable,
           }),
         )
         setRows(formattedData)

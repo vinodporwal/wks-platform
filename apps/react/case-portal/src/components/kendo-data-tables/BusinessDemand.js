@@ -541,6 +541,9 @@ const BusinessDemand = ({ permissions }) => {
         IS_ELASTOMER_JMD
           ? false
           : true,
+
+      // Enables ON/OFF dropdown for rows where UOM === 'ON/OFF'
+      enableOnOffDropdown: true,
     },
     isOldYear,
   )

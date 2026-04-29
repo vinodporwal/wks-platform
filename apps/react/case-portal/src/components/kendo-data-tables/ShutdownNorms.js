@@ -125,6 +125,10 @@ const ShutdownNorms = () => {
     ['elastomer'].includes(lowerVertName) &&
     ['jmd'].includes(SITE_NAME_LOWERCASE) &&
     ['iir'].includes(PLANT_NAME_LOWERCASE)
+  const IS_PE_DMD_HDPE =
+    PLANT_NAME?.toLowerCase() == 'hdpe' &&
+    SITE_NAME?.toLowerCase() == 'dmd' &&
+    VERTICAL_NAME?.toLowerCase() == 'pe'
 
   const textNote =
     (IS_PE_PP_VERTICAL || IS_PVC_DMD || IS_ELASTOMER_JMD_HIIR) && !IS_PE_C2
@@ -921,7 +925,7 @@ const ShutdownNorms = () => {
         IS_ELASTOMER_JMD_IIR
           ? true
           : false,
-      showTitleNameBusiness: true,
+      showTitleNameBusiness: IS_PE_DMD_HDPE ? false : true,
 
       titleName:
         IS_PET_VERTICAL || IS_PVC_VMD
@@ -932,6 +936,9 @@ const ShutdownNorms = () => {
             ? `Shutdown Consumption (Norms/Quantity)`
             : SCREEN_NAME,
       ExcelName: EXCEL_EXPORT_TITLE,
+      showTitleAndInformation: IS_PE_DMD_HDPE ? true : false,
+      titleAndInformation:
+        'The Shutdown Consumption Quantity to be entered here represents the additional material consumption incurred over and above the steady-state (standard) consumption during all slowdown and shutdown events occurring within the selected month.',
     },
     isOldYear,
   )

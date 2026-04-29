@@ -132,6 +132,15 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
       VERTICAL_NAME?.toLowerCase() == 'pe'
     )
       url = `${window.location.origin}/files/Digital AOP Automation for NMD PE_Revisedlogic_Rev6.pdf`
+    // PE DMD HDPE
+    if (
+      title == 'configuration' &&
+      PLANT_NAME?.toLowerCase() == 'hdpe' &&
+      SITE_NAME?.toLowerCase() == 'dmd' &&
+      VERTICAL_NAME?.toLowerCase() == 'pe'
+    )
+      url = `${window.location.origin}/files/Digital AOP Automation for DMD HDPE_Rev1.pdf`
+
     //PP NMD
     if (
       title == 'configuration' &&
@@ -294,7 +303,10 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
         (VERTICAL_NAME?.toLowerCase() === 'pe' &&
           SITE_NAME?.toLowerCase() === 'nmd') ||
         (VERTICAL_NAME?.toLowerCase() === 'pp' &&
-          SITE_NAME?.toLowerCase() === 'nmd'))
+          SITE_NAME?.toLowerCase() === 'nmd') ||
+        (VERTICAL_NAME?.toLowerCase() === 'pe' &&
+          SITE_NAME?.toLowerCase() === 'dmd' &&
+          PLANT_NAME?.toLowerCase() === 'hdpe'))
     ) {
       itemContent = (
         <Typography

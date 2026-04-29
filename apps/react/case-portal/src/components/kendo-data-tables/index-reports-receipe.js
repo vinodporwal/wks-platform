@@ -164,6 +164,7 @@ const KendoDataTablesReciepe = ({
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const [editedCells, setEditedCells] = useState({}) // ADD THIS LINE after other useState declarations
+
   const shouldShowExportImportButtons = () => {
     const dataGridStore = useSelector((state) => state.dataGridStore)
     const {
@@ -195,7 +196,11 @@ const KendoDataTablesReciepe = ({
     const plantName = plantObject?.name?.toLowerCase()
 
     // Check if conditions are met for showing export/import buttons
-    return lowerVertName === 'pe' || lowerVertName === 'pp'
+    return (
+      lowerVertName === 'pe' ||
+      lowerVertName === 'pp' ||
+      lowerVertName === 'elastomer'
+    )
   }
   const initialGroup = groupBy
     ? [
