@@ -73,8 +73,7 @@ const Navigation = () => {
         background: '#ffffff',
 
         borderRight: '1px solid #ffffff',
-        fontFamily:
-          "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
+        fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
         color: '#cbd5e1',
         fontSize: '0.75rem',
       }}

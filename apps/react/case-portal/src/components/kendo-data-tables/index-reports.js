@@ -452,7 +452,7 @@ const KendoDataTablesReports = ({
         title={props.title}
         style={{
           fontFamily:
-            "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
+            "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
         }}
       >
         <Tooltip

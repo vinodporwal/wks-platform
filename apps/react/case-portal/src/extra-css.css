@@ -142,3 +142,113 @@ button:disabled {
 button:disabled svg {
   color: #cbd5e1 !important;
 }
+
+/* =========================================================
+   DATE PILL WRAPPER — matches header dropdown pill style
+   Strips all Kendo internal borders/backgrounds so the
+   DatePicker blends into the outer pill container
+   ========================================================= */
+
+.date-pill-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 29px;
+  /* width: 212px; */
+  min-width: 160px;
+  padding: 6px 12px 6px 8px;
+  background: #ffffff;
+  border: 1px solid #DDDEE1;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 180ms ease;
+}
+
+.date-pill-wrapper:hover {
+  border-color: rgba(15, 23, 42, 0.2);
+}
+
+/* Strip Kendo datepicker root */
+.date-pill-wrapper .k-datepicker,
+.date-pill-wrapper .k-dateinput {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Strip Kendo input wrapper */
+.date-pill-wrapper .k-input,
+.date-pill-wrapper .k-input-md,
+.date-pill-wrapper .k-picker,
+.date-pill-wrapper .k-picker-md {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  height: 20px !important;
+  width: 99px !important;
+  color: #303030 !important;
+  font-family: "'Honeywell Sans Web', 'Inter', sans-serif" !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+/* Strip inner text input */
+.date-pill-wrapper .k-input-inner {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 0px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #303030 !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+  height: 20px !important;
+  width: 83px !important;
+}
+
+/* Hide default right-side Kendo calendar toggle button */
+.date-pill-wrapper .k-input-button {
+  display: none !important;
+}
+
+/* Strip calendar toggle button (if still visible) */
+.date-pill-wrapper .k-button,
+.date-pill-wrapper .k-button-flat {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  color: #6b7786 !important;
+  min-width: unset !important;
+}
+
+.date-pill-wrapper .k-button:hover,
+.date-pill-wrapper .k-input-button:hover {
+  background: transparent !important;
+  color: #303030 !important;
+}
+
+.date-pill-wrapper .k-button svg,
+.date-pill-wrapper .k-button .k-icon,
+.date-pill-wrapper .k-input-button .k-icon {
+  font-size: 16px !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* Disabled state */
+.date-pill-wrapper.disabled,
+.date-pill-wrapper[disabled] {
+  background: #f1f5f9 !important;
+  border-color: rgba(203, 213, 225, 0.8) !important;
+  cursor: not-allowed !important;
+}
+
+.date-pill-wrapper .k-input-inner:disabled,
+.date-pill-wrapper .k-state-disabled .k-input-inner {
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+}

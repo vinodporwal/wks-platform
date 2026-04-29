@@ -1586,10 +1586,7 @@ const KendoDataTables = ({
         {...restThProps}
         aria-sort={ariaSort}
         title={props.title}
-        style={{
-          fontFamily:
-            "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
-        }}
+        style={{ fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif" }}
       >
         <Tooltip
           position='top'
@@ -1807,7 +1804,87 @@ const KendoDataTables = ({
             }}
           >
             {/* Left side - Note */}
-            <Box>
+            <Box 
+            sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                paddingBottom: 0.25,
+              }}>
+              {/* CASE 1: Permission TRUE → Full Header UI */}
+              {permissions?.showTitleNameBusiness ? (
+                <Typography
+                  component='div'
+                  sx={{
+                    fontSize: '16px',
+                    fontWeight: 700,
+                    color: '#252525',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    mb: permissions?.marginBottom ? '12px' : '4px',
+                  }}
+                >
+                  {/* TOGGLE ICON */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 32,
+                      height: 32,
+                      borderRadius: '6px',
+                      backgroundColor: '#ECEEFF',
+                      color: '#1e293b',
+                      ml: 1,
+                      cursor: 'pointer',
+                      padding: '8px',
+                    }}
+                    onClick={toggleGrid}
+                  >
+                    <KeyboardArrowUpIcon
+                      sx={{
+                        fontSize: 20,
+                        transition: '0.2s',
+                        transform: gridExpanded
+                          ? 'rotate(0deg)'
+                          : 'rotate(180deg)',
+                      }}
+                    />
+                  </Box>
+
+                  {/* TITLE */}
+                  {permissions?.titleName}
+                </Typography>
+              ) : (
+                /* CASE 2: Permission FALSE → ONLY ICON */
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 32,
+                      height: 32,
+                      borderRadius: '6px',
+                      backgroundColor: '#ECEEFF',
+                      color: '#1e293b',
+                      ml: 1,
+                      cursor: 'pointer',
+                      padding: '8px',
+                    }}
+                    onClick={toggleGrid}
+                  >
+                    <KeyboardArrowUpIcon
+                      sx={{
+                        fontSize: 20,
+                        transition: '0.2s',
+                        transform: gridExpanded
+                          ? 'rotate(0deg)'
+                          : 'rotate(180deg)',
+                      }}
+                    />
+                  </Box>
+              )}
               {permissions?.showNote && (
                 <Typography component='div' className='text-note'>
                   {note}
@@ -1887,123 +1964,6 @@ const KendoDataTables = ({
                       <InfoOutlinedIcon sx={{ fontSize: '1rem' }} />
                     </IconButton>
                   </MuiTooltip>
-                </Box>
-              )}
-
-              {/* CASE 1: Permission TRUE → Full Header UI */}
-              {permissions?.showTitleNameBusiness ? (
-                <Typography
-                  component='div'
-                  sx={{
-                    fontSize: '16px',
-                    fontWeight: 700,
-                    color: '#252525',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1.5,
-                    mb: permissions?.marginBottom ? '12px' : '4px',
-                  }}
-                >
-                  {/* TOGGLE ICON */}
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 32,
-                      height: 32,
-                      borderRadius: '6px',
-                      backgroundColor: '#ECEEFF',
-                      color: '#1e293b',
-                      ml: 1,
-                      cursor: 'pointer',
-                      padding: '8px',
-                    }}
-                    onClick={toggleGrid}
-                  >
-                    <KeyboardArrowUpIcon
-                      sx={{
-                        fontSize: 20,
-                        transition: '0.2s',
-                        transform: gridExpanded
-                          ? 'rotate(0deg)'
-                          : 'rotate(180deg)',
-                      }}
-                    />
-                  </Box>
-
-                  {/* TITLE */}
-                  {permissions?.titleName}
-
-                  {/* ITEMS BADGE */}
-                  <Box
-                    sx={{
-                      p: '4px 8px',
-                      borderRadius: '100px',
-                      backgroundColor: '#ECEEFF',
-                      border: '1px solid #41424D',
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        color: '#41424D',
-                        fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
-                      }}
-                    >
-                      {rows?.length || 0} {rows?.length === 1 ? 'Row' : 'Rows'}
-                    </Typography>
-                  </Box>
-                  {isEditable && (
-                    <Box
-                      sx={{
-                        p: '4px 8px',
-                        borderRadius: '100px',
-                        backgroundColor: '#F3EEE7',
-                        border: '1px solid #934403',
-                      }}
-                    >
-                      <Typography
-                        sx={{
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        color: '#934403',
-                        fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
-                      }}
-                    >
-                      Editable
-                    </Typography>
-                  </Box>
-                  )}
-                </Typography>
-              ) : (
-                /* CASE 2: Permission FALSE → ONLY ICON */
-                <Box
-                  sx={{
-                     display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 32,
-                      height: 32,
-                      borderRadius: '6px',
-                      backgroundColor: '#ECEEFF',
-                      color: '#1e293b',
-                      ml: 1,
-                      cursor: 'pointer',
-                      padding: '8px',
-                  }}
-                  onClick={toggleGrid}
-                >
-                  <KeyboardArrowUpIcon
-                    sx={{
-                      fontSize: 20,
-                      transition: '0.2s',
-                      transform: gridExpanded
-                        ? 'rotate(0deg)'
-                        : 'rotate(180deg)',
-                    }}
-                  />
                 </Box>
               )}
 
@@ -2174,6 +2134,48 @@ const KendoDataTables = ({
                     </MenuItem>
                   ))}
                 </TextField>
+              )}
+              
+              {/* ITEMS BADGE */}
+              <Box
+                sx={{
+                  p: '4px 8px',
+                  borderRadius: '100px',
+                  backgroundColor: '#ECEEFF',
+                  border: '1px solid #41424D',
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: '#41424D',
+                    fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
+                  }}
+                >
+                  {rows?.length || 0} {rows?.length === 1 ? 'Row' : 'Rows'}
+                </Typography>
+              </Box>
+              {isEditable && (
+                <Box
+                  sx={{
+                    p: '4px 8px',
+                    borderRadius: '100px',
+                    backgroundColor: '#F3EEE7',
+                    border: '1px solid #934403',
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      color: '#934403',
+                      fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
+                    }}
+                  >
+                    Editable
+                  </Typography>
+                </Box>
               )}
             </Box>
 
@@ -3969,7 +3971,7 @@ const KendoDataTables = ({
         </div>
       </Collapse>
 
-      {/* {(permissions?.allActionOfBottomBtns ?? true) && ( */}
+      {gridExpanded && (permissions?.approveBtn ||permissions?.nextBtn || showDeleteAll) && (
       <Box
         sx={{
           marginTop: 2,
@@ -4031,7 +4033,7 @@ const KendoDataTables = ({
           </Button>
         )}
       </Box>
-      {/* )} */}
+      )}
       <Notification
         open={snackbarOpen}
         message={snackbarData?.message || ''}

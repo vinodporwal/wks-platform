@@ -26,9 +26,8 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
         WebkitOverflowScrolling: 'touch',
         p: 0.125,
         borderRadius: '0px',
-        // bgcolor: '#f8fafc',
-        // border: '1px solid rgba(0,0,0,0.05)',
-        // borderTop: '1px solid #bbc0c6',
+        borderBottom: '1px solid #E0E0E0',
+        marginBottom: '15px',
         scrollbarWidth: 'none',
         '&::-webkit-scrollbar': { display: 'none' },
       }}
@@ -40,18 +39,17 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
         sx={{
           minHeight: 20,
           width: 'max-content',
-          fontFamily:
-            "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif", // ? here
-
+          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+          marginBottom: '-2px',
           '& .MuiTabs-flexContainer': {
             gap: BOX_TABS ? '1px' : '1px',
           },
 
           '& .MuiTabs-indicator': {
             display: BOX_TABS ? 'none' : 'block',
-            height: '2px',
+            height: '3px',
             borderRadius: '2px',
-            backgroundColor: '#1258b3',
+            backgroundColor: '#AE4787',
           },
         }}
       >
@@ -67,14 +65,13 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
               sx={{
                 minHeight: 20,
                 px: '4px',
-                fontSize: '0.80rem',
-                fontWeight: 600,
+                fontSize: '16px',
+                fontWeight: isSelected ? 700 : 500,
                 textTransform: 'none',
-                fontFamily:
-                  "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
+                fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
                 borderRadius: 0,
 
-                color: isSelected ? '#0f172a' : '#475569',
+                color: isSelected ? '#303030 !important' : '#606060',
                 bgcolor: 'transparent',
                 border: 'none',
 
@@ -99,6 +96,7 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
                 '&:active': {
                   boxShadow: 'none !important',
                   bgcolor: 'transparent',
+                  color: '#303030 !important',
                 },
 
                 transition: 'all 160ms ease',

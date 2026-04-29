@@ -60,6 +60,7 @@ const MainLayout = ({ keycloak, authenticated }) => {
           handleDrawerToggle={handleDrawerToggle}
           keycloak={keycloak}
           isDashboard={isDashboard}
+          navigation={menu}
         />
 
         {/* Push content below header */}
@@ -89,9 +90,10 @@ const MainLayout = ({ keycloak, authenticated }) => {
 
         <Box className='outlet-wrapper'>
           <Box className='outlet-border-box'>
-            <Box className="breadcrumbs-box">
-              <Breadcrumbs variant='dense' navigation={menu} divider={false} />
-            </Box>
+            {!isDashboard && (
+              <Box className="breadcrumbs-box">
+                <Breadcrumbs variant='dense' navigation={menu} divider={false} />
+              </Box>)}
             <Outlet />
           </Box>
         </Box>

@@ -2,304 +2,37 @@ import { Box } from '@mui/material'
 import AopTabs from 'components/AopTabs'
 import Notification from 'components/Utilities/Notification'
 import { verticalEnums } from 'enums/verticalEnums'
-// import { usePermissions } from 'hooks/usePermissions'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
-import { PIOImpactApiService } from 'services/Pio-Impact-api-service'
 import { useSession } from 'SessionStoreContext'
-import SettingsIcon from '@mui/icons-material/Settings'
 import {
-  CustomAccordion,
-  CustomAccordionDetails,
-  CustomAccordionSummary,
-} from 'utils/CustomAccrodian'
-import {
-  Backdrop,
   Button,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Stack,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Typography,
 } from '../../../node_modules/@mui/material/index'
-import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
 import SelectivityData from './SelectivityData'
-import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/index'
 import RawMaterialNormsBasis from './tab-components/RawMaterialNormsBasis'
 import ProductionRange from './tab-components/ProductionRange'
 import PtaConfiguration from './tab-components/PtaConfiguration'
 import NSRAndMaterialPrices from './tab-components/NSRAndMaterialPrices/index'
 import CatChemNormsBasis from './tab-components/CatChemNormsBasis'
 import { getRoleName } from 'services/role-service'
-import { ButtonGroup } from '../../../node_modules/@progress/kendo-react-buttons/index'
-import QualityParameters from './QualityParameters'
 
 import { Zoom, IconButton } from '@mui/material'
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import PublishedWithChangesIcon from '@mui/icons-material/PublishedWithChanges'
-
 import CloseIcon from '@mui/icons-material/Close'
-
-import { Tooltip } from '@mui/material'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import SettingsInputComponentIcon from '@mui/icons-material/SettingsInputComponent'
-import SyncIcon from '@mui/icons-material/Sync'
-import HistoryIcon from '@mui/icons-material/History'
 import { styled } from '@mui/material/styles'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import ExclusionDate from './ExclusionDate'
 import LineConfiguration from './LineConfiguration'
-import { keyframes } from '@mui/material/styles'
-
-import InfoIcon from '@mui/icons-material/Info'
-
-const CompactAccordion = styled(CustomAccordion)({
-  mb: 0,
-  padding:'10px',
-  // borderRadius: '0px !important',
-  // boxShadow: 'none',
-  // borderBottom: '1px solid #bbc0c6',
-  '&:before': { display: 'none' },
-})
-
-const softPulse = keyframes`
-  0% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(1.15); opacity: 1; }
-  100% { transform: scale(1); opacity: 0.6; }
-`
-
-const ConfigurationAccordian = ({
-  startDate,
-  endDate,
-  summary,
-  READ_ONLY,
-  isOldYear,
-  configurationExecutionDetails,
-  setStartDate,
-  setEndDate,
-  setDateEdited,
-  setSummary,
-  setSummaryEdited,
-  handleOpenDialog,
-  formatDateForText,
-}) => {
-  const expandCollapseIconStyle = {
-    minHeight: '36px !important',
-    px: 0.5,
-    bgcolor: '#ffffff',
-    flexDirection: 'row-reverse',
-    '& .MuiAccordionSummary-content': {
-      marginLeft: 1,
-      my: '4px !important'
-    },
-    '& .MuiAccordionSummary-expandIconWrapper': {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: 32,
-      height: 32,
-      borderRadius: '6px',
-      backgroundColor: '#ECEEFF',
-      color: '#1e293b',
-      cursor: 'pointer',
-      padding: '8px',
-    },
-  }
-  return (
-    <Box sx={{ mb: 1 }}>
-      <CompactAccordion defaultExpanded disableGutters className='k-table-box'>
-        <CustomAccordionSummary
-          expandIcon={<ExpandMoreIcon sx={{ fontSize: '1rem' }} />}
-          sx={expandCollapseIconStyle}
-        >
-          <Stack direction='row' spacing={1} alignItems='center'>
-            <SettingsIcon sx={{ color: '#0100cb', fontSize: '1rem' }} />
-            <Typography
-              sx={{
-                fontWeight: 700,
-                fontSize: '16px',
-                fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                color: '#303030',
-              }}
-            >
-              AOP Historical Period Basis
-            </Typography>
-          </Stack>
-        </CustomAccordionSummary>
-
-        <CustomAccordionDetails sx={{ p: 0.5, pt: 1 }}>
-          <Stack direction='column' spacing={1.5}>
-            {/* ROW 1: All in ONE straight line */}
-            <Stack
-              direction='row'
-              sx={{
-                columnGap: 1,
-                rowGap: 0,
-              }}
-              alignItems='flex-start' // ✅ changed (important)
-              flexWrap='wrap'
-            >
-              {/* START */}
-              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-
-                <DatePicker
-                  format='dd-MM-yyyy'
-                  value={startDate}
-                  onChange={(e) => {
-                    setStartDate(e.value)
-                    setDateEdited(true)
-                  }}
-                  style={{
-                    width: '130px',
-                    height: '28px',
-                  }}
-                  disabled={READ_ONLY}
-                />
-              </Box>
-
-              {/* END */}
-              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-
-                <DatePicker
-                  format='dd-MM-yyyy'
-                  value={endDate}
-                  onChange={(e) => {
-                    setEndDate(e.value)
-                    setDateEdited(true)
-                  }}
-                  style={{
-                    width: '130px',
-                    height: '28px',
-                  }}
-                  disabled={READ_ONLY}
-                />
-              </Box>
-
-              {/* LOAD BUTTON */}
-              {!isOldYear && (
-                <Tooltip title='Refresh Data'>
-                  <Button
-                    variant='outlined'
-                    className='btn-load'
-                    // startIcon={<SyncIcon />}
-                    onClick={handleOpenDialog}
-                    disabled={READ_ONLY}
-                    sx={{
-                      height: 28,
-                      px: 1.5,
-                      mt: 'auto', // ✅ pushes button to bottom aligned with input
-                    }}
-                  >
-                    Load
-                  </Button>
-                </Tooltip>
-              )}
-
-            </Stack>
-            {/* LAST REFRESHED */}
-            {configurationExecutionDetails[0]?.ModifiedOn && (
-              <Tooltip
-                title={`Last Refreshed: ${formatDateForText(
-                  configurationExecutionDetails[0]?.ModifiedOn,
-                  true,
-                )}`}
-              >
-                <Stack
-                  direction='row'
-                  spacing={0.5}
-                  alignItems='center'
-                  sx={{
-                    color: '#303030',
-                    backgroundColor: '#F6FAFC',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif !important",
-                    whiteSpace: 'nowrap',
-                    mt: '10px', // ✅ pushes this line to bottom aligned with Refresh
-                    height: 40, // ✅ keeps same height
-                    borderRadius: '6px',
-                    border: "1px solid #00688C",
-                    padding: "10px",
-                  }}
-                >
-                  <InfoIcon sx={{ fontSize: '0.9rem', color:"#00688C" }} />
-
-                  <Typography
-                    sx={{
-                      fontSize: '14px',
-                      fontWeight: 700,
-                      color: "#303030",
-                      lineHeight: 1.2, // ✅ tighter so it sits perfectly center
-                      fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                    }}
-                  >
-                    Last refreshed on{' '}
-                      {
-                        formatDateForText(
-                          configurationExecutionDetails[0]?.ModifiedOn,
-                        ).split(' ')[0]
-                      }
-                    {' | '}
-                    Period:{' '}
-                    {formatDateForText(startDate, true)}
-                    {' - '}
-                    {formatDateForText(endDate, true)}
-                  </Typography>
-                </Stack>
-              </Tooltip>
-            )}
-
-            {/* ROW 2: AOP DESIGN BASIS */}
-            <Box sx={{ width: '100%' }}>
-              <Typography
-                variant='caption'
-                sx={{
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                  color: '#303030',
-                  letterSpacing: '0.3px',
-                }}
-              >
-                AOP DESIGN BASIS
-              </Typography>
-
-              <textarea
-                disabled={READ_ONLY}
-                value={summary}
-                rows={2}
-                onChange={(e) => {
-                  setSummary(e.target.value)
-                  setSummaryEdited(true)
-                }}
-                style={{
-                  width: '100%',
-                  padding: '6px 8px',
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
-                  fontSize: '12px',
-                  fontWeight: 500,
-                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                  color: '#303030',
-                  resize: 'none',
-                  backgroundColor: READ_ONLY ? '#f8fafc' : '#fff',
-                }}
-              />
-            </Box>
-          </Stack>
-        </CustomAccordionDetails>
-      </CompactAccordion>
-    </Box>
-  )
-}
+import ConfigurationAccordian from './common/ConfigurationAccordian'
 
 const ConfigurationTable = () => {
   const hasExecutedRef = useRef(false)

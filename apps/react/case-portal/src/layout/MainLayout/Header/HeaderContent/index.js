@@ -10,7 +10,7 @@ import {
   SvgIcon,
 } from '@mui/material'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import {
@@ -20,6 +20,7 @@ import {
   setOldYear,
   setPlantID,
   setPlantObject,
+  setScreenTitle,
   setSiteID,
   setSiteObject,
   setSitePlantChange,
@@ -55,7 +56,7 @@ function parseAllowed(raw) {
   return map
 }
 
-export default function HeaderContent({ keycloak }) {
+export default function HeaderContent({ keycloak, navigation }) {
   const [headerLoading, setHeaderLoading] = useState(false)
   const getSelectedVerticalStorage = localStorage.getItem('selectedVertical')
     ? JSON.parse(localStorage.getItem('selectedVertical'))
@@ -87,6 +88,63 @@ export default function HeaderContent({ keycloak }) {
   const verticalFromDashboard = useSelector(
     (state) => state.dataGridStore.verticalChangeFromDashboard,
   )
+
+
+  const [currentStep, setCurrentStep] = useState(null)
+  const [totalSteps, setTotalSteps] = useState(0)
+
+  useEffect(() => {
+    console.log("navigation ", navigation)
+    if (!navigation?.items) {
+      setCurrentStep(null)
+      setTotalSteps(0)
+      return
+    }
+
+    // collect item nodes across a group
+    const collectItems = (menu, out = []) => {
+      if (!menu?.children) return out
+      for (const c of menu.children) {
+        if (c.type === 'collapse') collectItems(c, out)
+        else if (c.type === 'item') out.push(c)
+      }
+      return out
+    }
+
+    let matchedIndex = -1
+
+    for (const g of navigation.items || []) {
+      if (g.type !== 'group') continue
+      // check branch contains path
+      const items = collectItems(g, [])
+
+      const allItems = collectItems(g, [])
+
+      // 2. Filter to only include the specific path prefix
+      const productionItems = allItems.filter((it) =>
+        it.url?.startsWith('/production-norms-plan/'),
+      )
+
+      matchedIndex = productionItems.findIndex((it) => it.url === location.pathname)
+      if (matchedIndex !== -1) {
+        // set current step (1-based)
+        setCurrentStep(matchedIndex + 1)
+        setTotalSteps(productionItems.length)
+
+        // dispatch title if changed
+        const matchedTitle = items[matchedIndex]?.title
+        if (matchedTitle && matchedTitle !== screenTitleName) {
+          dispatch(setScreenTitle({ title: matchedTitle }))
+        }
+        break
+      }
+    }
+
+    if (matchedIndex === -1) {
+      setCurrentStep(null)
+      setTotalSteps(0)
+    }
+  }, [navigation, location.pathname, screenTitleName, dispatch])
 
   const HIDE_VERTICAL_DROPDOWN =
     keycloak?.realmAccess?.roles?.includes('maintenance_users')
@@ -662,19 +720,41 @@ export default function HeaderContent({ keycloak }) {
           }}
         >
           {!HIDE_DASHBOARD_DROPDOWN && (
-            <Typography
-              variant='h6'
-              sx={{
-                fontWeight: 700,
-                fontSize: '1.05rem',
-                color: '#0f172a',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {screenTitleName}
-            </Typography>
+            <React.Fragment>
+              <Typography
+                variant='h6'
+                sx={{
+                  fontWeight: 700,
+                  fontSize: '18px',
+                  color: '#303030',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  fontFamily: "'Honeywell Sans Web',  'Inter', sans-serif",
+                }}
+              >
+                {screenTitleName}
+              </Typography>
+              <Box
+                sx={{
+                  p: '4px 8px',
+                  borderRadius: '100px',
+                  backgroundColor: '#ECEEFF',
+                  border: '1px solid #41424D',
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: '#41424D',
+                    fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
+                  }}
+                >
+                  {`${currentStep} Step`}
+                </Typography>
+              </Box>
+            </React.Fragment>
           )}
         </Box>
 

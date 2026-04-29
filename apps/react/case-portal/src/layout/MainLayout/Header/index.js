@@ -8,7 +8,7 @@ import AppBarStyled from './AppBarStyled'
 import HeaderContent from './HeaderContent/index'
 import { DashboardColors } from 'themes/colors'
 
-const Header = ({ open, handleDrawerToggle, keycloak, isDashboard }) => {
+const Header = ({ open, handleDrawerToggle, keycloak, isDashboard, navigation }) => {
   const theme = useTheme()
   const matchDownMD = useMediaQuery(theme.breakpoints.down('lg'))
 
@@ -65,7 +65,7 @@ const Header = ({ open, handleDrawerToggle, keycloak, isDashboard }) => {
           {open ? <MenuOpenIcon /> : <MenuIcon />}
         </IconButton>)} */}
 
-      <HeaderContent keycloak={keycloak} />
+      <HeaderContent keycloak={keycloak} navigation={navigation} />
     </Toolbar>
   )
 
