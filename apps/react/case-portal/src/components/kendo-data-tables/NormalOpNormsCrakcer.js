@@ -1238,7 +1238,7 @@ const NormalOpNormsScreenCracker = () => {
               </span>{' '}
               - Overridden&nbsp;&nbsp;
               {/* Only show the following if SITE_NAME is NOT 'vmd' */}
-              {lowerSiteName !== 'vmd' && (
+              {lowerSiteName !== 'vmd' && lowerSiteName !== 'hmd' && (
                 <>
                   <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span>{' '}
                   - Propane (1Z)&nbsp;&nbsp;
@@ -1372,7 +1372,7 @@ const NormalOpNormsScreenCracker = () => {
               />
 
               {/* expression below */}
-              {lowerSiteName !== 'vmd' && (
+              {lowerSiteName !== 'vmd' && lowerSiteName !== 'hmd' && (
                 <KendoDataTables
                   modifiedCells={modifiedCells}
                   setModifiedCells={setModifiedCells}
