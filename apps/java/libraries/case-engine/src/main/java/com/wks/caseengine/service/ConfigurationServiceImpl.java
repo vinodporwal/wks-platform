@@ -1903,7 +1903,7 @@ continue;
 			String storedProcedure = null;
 
 			if(iscatcam) { 
-             storedProcedure = vertical.getName() + "_" + site.getName() + "__ReceipeWiseCatChemDetail";
+             storedProcedure = vertical.getName() + "_" + site.getName() + "_ReceipeWiseCatChemDetail";
 			}
 			else 
 			 storedProcedure = vertical.getName() + "_" + site.getName() + "_ReceipeWiseGradeDetail";

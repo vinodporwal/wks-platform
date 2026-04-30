@@ -106,6 +106,7 @@ const ConfigurationTable = () => {
     setProductionRowsConstantsMannualEntry,
   ] = useState([])
   const [gradeData, setGradeData] = useState([])
+  const [gradeCatChemData, setGradeCatChemData] = useState([])
   const [continiousGradeData, setContiniousGradeData] = useState([])
   const [discontiniousGradeData, setDiscontiniousGradeData] = useState([])
 
@@ -483,6 +484,49 @@ const ConfigurationTable = () => {
       setLoading(false)
     }
   }
+  const fetchCatChemGradeData = async () => {
+    setLoading(true)
+    try {
+      var data = await DataService.getPeConfigCatChemData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      const formattedData = data?.map((item, index) => {
+        const converted = {}
+
+        Object.entries(item).forEach(([key, value]) => {
+          if (
+            key !== 'UOM' &&
+            typeof value === 'string' &&
+            value.trim() !== '' &&
+            !isNaN(value)
+          ) {
+            converted[key] = value.includes('.')
+              ? parseFloat(value)
+              : parseInt(value, 10)
+          } else {
+            converted[key] = value
+          }
+        })
+
+        return {
+          ...converted,
+          id: index,
+          TypeDisplayName: item?.TypeDisplayName
+            ? item?.TypeDisplayName
+            : 'Recipe',
+        }
+      })
+
+      setGradeCatChemData(formattedData)
+    } catch (error) {
+      console.error('Error fetching grade data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const getConfigurationTabsMatrix = async () => {
     setLoading(true)
@@ -613,6 +657,7 @@ const ConfigurationTable = () => {
         getConfigurationTabsMatrix()
         getConfigurationAvailableTabs()
         fetchGradeData()
+        fetchCatChemGradeData()
       }
     }, 500)
   }, [oldYear, yearChanged, keycloak, PLANT_ID])
@@ -1479,6 +1524,22 @@ const ConfigurationTable = () => {
                     fetchData={fetchGradeData}
                     setRows={setGradeData}
                     configType='grades'
+                    groupBy='TypeDisplayName'
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
+                  />
+                )
+              case getTheId('ReceipeCatChem'):
+                return (
+                  <SelectivityData
+                    revision={revision}
+                    rows={gradeCatChemData}
+                    loading={loading}
+                    fetchData={fetchCatChemGradeData}
+                    setRows={setGradeCatChemData}
+                    configType='gradesCatChem'
                     groupBy='TypeDisplayName'
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}

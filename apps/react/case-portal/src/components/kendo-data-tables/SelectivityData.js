@@ -129,7 +129,10 @@ const SelectivityData = (props) => {
         return
       }
 
-      if (props?.configType !== 'grades') {
+      if (
+        props?.configType !== 'grades' &&
+        props?.configType !== 'gradesCatChem'
+      ) {
         //TST VALIDATION SEPERATED
         if (
           lowerVertName == 'meg' ||
@@ -322,7 +325,10 @@ const SelectivityData = (props) => {
         saveSummary(props?.summary)
         props?.onSummaryEditChange(false)
 
-        if (props?.configType !== 'grades') {
+        if (
+          props?.configType !== 'grades' &&
+          props?.configType !== 'gradesCatChem'
+        ) {
           props?.fetchData(gradeId)
         }
       } else {
@@ -448,7 +454,10 @@ const SelectivityData = (props) => {
       getAllGrades()
     }
 
-    if (props?.configType !== 'grades') {
+    if (
+      props?.configType !== 'grades' &&
+      props?.configType !== 'gradesCatChem'
+    ) {
       // Fix: Check if it's PIO Impact and call without gradeId
       if (
         props?.configType === 'pioImpact' ||
@@ -477,7 +486,14 @@ const SelectivityData = (props) => {
   const fetchConfigData = async () => {
     setLoading(true)
     try {
-      var data = await DataService.getPeConfigData(keycloak, PLANT_ID, AOP_YEAR)
+      var data =
+        props?.configType === 'gradesCatChem'
+          ? await DataService.getPeConfigCatChemData(
+              keycloak,
+              PLANT_ID,
+              AOP_YEAR,
+            )
+          : await DataService.getPeConfigData(keycloak, PLANT_ID, AOP_YEAR)
 
       data = data.map((item, index) => ({
         ...item,
@@ -630,6 +646,13 @@ const SelectivityData = (props) => {
         )
 
         //NEW BUILD 17 NOV
+      } else if (props?.configType === 'gradesCatChem') {
+        await DataService.getRecipeCatChemExcel(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          `${EXCEL_EXPORT_TITLE}${revisionName}`,
+        )
       } else if (
         props?.configType === 'ShutdownNorms' ||
         props?.configType === 'Constant'
@@ -727,6 +750,13 @@ const SelectivityData = (props) => {
           PLANT_ID,
           AOP_YEAR,
         )
+      } else if (props?.configType === 'gradesCatChem') {
+        response = await DataService.saveRecipeCatChemExcel(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       } else if (
         //NEW BUILD 17 NOV
         props?.configType === 'ShutdownNorms' ||
@@ -774,10 +804,14 @@ const SelectivityData = (props) => {
           }
         }
 
-        if (props?.configType === 'grades') {
+        if (
+          props?.configType === 'grades' ||
+          props?.configType === 'gradesCatChem'
+        ) {
           fetchConfigData() // This was missing!
         } else if (
           props?.configType !== 'grades' &&
+          props?.configType !== 'gradesCatChem' &&
           lowerVertName !== 'cracker'
         ) {
           props?.fetchData(gradeId)
@@ -818,10 +852,14 @@ const SelectivityData = (props) => {
           }
         }
 
-        if (props?.configType === 'grades') {
+        if (
+          props?.configType === 'grades' ||
+          props?.configType === 'gradesCatChem'
+        ) {
           fetchConfigData() // This was missing!
         } else if (
           props?.configType !== 'grades' &&
+          props?.configType !== 'gradesCatChem' &&
           lowerVertName !== 'cracker'
         ) {
           props?.fetchData(gradeId)
@@ -901,7 +939,7 @@ const SelectivityData = (props) => {
     }
   }
 
-  if (props?.configType == 'grades') {
+  if (props?.configType == 'grades' || props?.configType == 'gradesCatChem') {
     return (
       <div>
         <Box>
