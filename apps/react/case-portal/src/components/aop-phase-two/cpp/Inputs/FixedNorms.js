@@ -3,7 +3,9 @@ import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import ValueFormatterPhaseTwo, {
+  customValueFormatterPhaseTwo,
+} from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import NestedKendoTable from 'components/aop-phase-two/common/NestedKendoTable/index'
 import { InputApiService } from 'components/aop-phase-two/services/cpp/inputApiService'
@@ -47,6 +49,7 @@ const FixedNorms = () => {
   const AOP_YEAR = year?.selectedYear
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
+  const customFormatFive = customValueFormatterPhaseTwo(5)
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -144,7 +147,7 @@ const FixedNorms = () => {
       type: 'numberWithCheckbox',
       editable: true,
       isNumberEditable: false,
-      format: valueFormat,
+      format: customFormatFive,
       minWidth: 150,
       alwaysEditable: true,
     },
