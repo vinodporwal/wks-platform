@@ -2974,23 +2974,103 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 				plantMaintenance.setPlantFkId(plantId);
 				plantMaintenance.setMaintenanceTypeFkId(maintenanceTypesId);
 				plantMaintenanceRepository.save(plantMaintenance);
-				plantMaintenanceId = findIdByPlantIdAndMaintenanceTypeName(plantId, "Shutdown");
-			}
+			plantMaintenanceId = findIdByPlantIdAndMaintenanceTypeName(plantId, "Shutdown");
+		}
+  // remark validation
+		if(site.getName().equalsIgnoreCase("JMD") && verticalName.equalsIgnoreCase("Elastomer")) {
+         
+			for (ShutDownPlanDTO dto : shutDownPlanDTOList) {  
 
-			for (ShutDownPlanDTO shutDownPlanDTO : shutDownPlanDTOList) {
-				if (shutDownPlanDTO.getSaveStatus() != null
-						&& shutDownPlanDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
-					failedList.add(shutDownPlanDTO);
+				String incomingRemark = dto.getRemark();
+
+				String existingRemark = shutDownPlanRepository.findRemarksById(UUID.fromString(dto.getId()));
+
+				if(incomingRemark != null && incomingRemark.trim().equals(existingRemark)) { 
+
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription("Please update remark");
+				//	failedList.add(dto);
 					continue;
 				}
-				year = shutDownPlanDTO.getAudityear();
+			}
+		}
+		// Validate: sum of durationInHrs per month must not exceed total hours in that month
+		if(site.getName().equalsIgnoreCase("JMD") && verticalName.equalsIgnoreCase("Elastomer")) {
+		Map<String, List<ShutDownPlanDTO>> dtosByMonth = new HashMap<>();
+		for (ShutDownPlanDTO dto : shutDownPlanDTOList) {
+			if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) continue;
+			if (dto.getMonth() == null || dto.getDurationInHrs() == null) continue;
+			String monthKey = dto.getMonth().toUpperCase();
+			dtosByMonth.computeIfAbsent(monthKey, k -> new ArrayList<>()).add(dto);
+		}
+		for (Map.Entry<String, List<ShutDownPlanDTO>> entry : dtosByMonth.entrySet()) {
+			String monthKey = entry.getKey();
+			List<ShutDownPlanDTO> monthDtos = entry.getValue();
+			// String monthYear = null;
+			// for (ShutDownPlanDTO dto : monthDtos) {
+			// 	if (dto.getAudityear() != null) { monthYear = dto.getAudityear(); break; }
+			// }
+			// if (monthYear == null) continue;
+			// YearMonth yearMonth = YearMonth.of(Integer.parseInt(monthYear), Month.valueOf(monthKey));
 
-				if (shutDownPlanDTO.getId() == null || shutDownPlanDTO.getId().isEmpty()) {
-					// Creating a new record
-					PlantMaintenanceTransaction plantMaintenanceTransaction = new PlantMaintenanceTransaction();
-					plantMaintenanceTransaction.setId(UUID.randomUUID());
-					plantMaintenanceTransaction.setPlantId(plantId);
-					if(verticalName.equalsIgnoreCase("PTA") || elastomer || monthDropdown) {
+
+
+    String auditYear = null;
+    for (ShutDownPlanDTO dto : monthDtos) {
+        if (dto.getAudityear() != null) {
+            auditYear = dto.getAudityear(); // e.g., "2026-27"
+            break;
+        }
+    }
+
+    if (auditYear == null) continue;
+
+    // Split financial year
+    String[] years = auditYear.split("-");
+    int startYear = Integer.parseInt(years[0]);     // 2026
+    int endYear = Integer.parseInt("20" + years[1]); // 2027
+
+    Month month = Month.valueOf(monthKey);
+
+    int actualYear;
+    if (month.getValue() >= Month.APRIL.getValue()) {
+        actualYear = startYear; // Apr–Dec → 2026
+    } else {
+        actualYear = endYear;   // Jan–Mar → 2027
+    }
+
+    YearMonth yearMonth = YearMonth.of(actualYear, month);
+
+			double totalHrsInMonth = yearMonth.lengthOfMonth() * 24.0;
+			double totalDurationInHrs = 0.0;
+			for (ShutDownPlanDTO dto : monthDtos) {
+				totalDurationInHrs += dto.getDurationInHrs();
+			}
+			if (totalDurationInHrs > totalHrsInMonth) {
+				for (ShutDownPlanDTO dto : monthDtos) {
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription("Total shutdown duration for " + monthKey + " (" + totalDurationInHrs
+							+ " hrs) exceeds total available hours in the month (" + (int) totalHrsInMonth + " hrs)");
+				//	failedList.add(dto);
+				}
+			}
+		}
+	}
+
+		for (ShutDownPlanDTO shutDownPlanDTO : shutDownPlanDTOList) {
+			if (shutDownPlanDTO.getSaveStatus() != null
+					&& shutDownPlanDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+				failedList.add(shutDownPlanDTO);
+				continue;
+			}
+			year = shutDownPlanDTO.getAudityear();
+
+			if (shutDownPlanDTO.getId() == null || shutDownPlanDTO.getId().isEmpty()) {
+				// Creating a new record
+				PlantMaintenanceTransaction plantMaintenanceTransaction = new PlantMaintenanceTransaction();
+				plantMaintenanceTransaction.setId(UUID.randomUUID());
+				plantMaintenanceTransaction.setPlantId(plantId);
+				if(verticalName.equalsIgnoreCase("PTA") || elastomer || monthDropdown) {
 		            	if(shutDownPlanDTO.getMonth()!=null) {
 		            		shutDownPlanDTO.setMaintStartDateTime(getStartOfMonthDate(shutDownPlanDTO.getMonth(), year));
 		            		shutDownPlanDTO.setMaintEndDateTime(getEndOfMonthDate(shutDownPlanDTO.getMonth(), year));

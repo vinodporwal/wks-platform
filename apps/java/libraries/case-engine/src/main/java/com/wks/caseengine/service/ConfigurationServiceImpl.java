@@ -1522,6 +1522,12 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					continue;
 				}
 
+		// skip the empty rows
+if(configurationDTO.getNormParameterFKId() == null || configurationDTO.getNormParameterFKId().isEmpty()) { 
+continue;
+
+}
+
 				UUID normParameterFKId = UUID.fromString(configurationDTO.getNormParameterFKId());
 
 				Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
@@ -1534,6 +1540,15 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				if (optionNormParameters.isPresent() && (!optionNormParameters.get().getIsEditable())) {
 					continue;
 				}
+             // apr value should not be greater than may value
+			 if(verticalName.equalsIgnoreCase("ELastomer")  && site.getName().equalsIgnoreCase("JMD")) {
+				if(configurationDTO.getApr() != null && configurationDTO.getMay() != null && configurationDTO.getApr() > configurationDTO.getMay()) {
+					configurationDTO.setSaveStatus("Failed");
+					configurationDTO.setErrDescription("Min value should not be greater than Max value");
+					failedList.add(configurationDTO);
+					continue;
+				}
+			}
 
 				for (int i = 1; i <= 12; i++) {
 					Double attributeValue = getAttributeValue(configurationDTO, i);
