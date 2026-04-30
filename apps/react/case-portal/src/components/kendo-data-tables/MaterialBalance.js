@@ -9,6 +9,7 @@ import { useSession } from 'SessionStoreContext'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import Notification from 'components/Utilities/Notification'
+import ModeSelection from './ModeSelection'
 
 const MaterialBalance = ({ permissions }) => {
   const keycloak = useSession()
@@ -25,6 +26,10 @@ const MaterialBalance = ({ permissions }) => {
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
+  const lowerVertName = verticalObject?.name?.toLowerCase()
+  const SITE_NAME = siteObject?.name?.toUpperCase()
+  const IS_CRACKER_HMD = lowerVertName === 'cracker' && SITE_NAME === 'HMD'
+
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [modifiedCells, setModifiedCells] = useState({})
@@ -36,127 +41,6 @@ const MaterialBalance = ({ permissions }) => {
     message: '',
     severity: 'info',
   })
-
-  // Static Data for Material Balance
-  const mockMatbalData = useMemo(
-    () => [
-      {
-        id: 1,
-        Type: 'Feed',
-        Particulars: 'Crude Oil',
-        UOM: 'MT',
-        april: 100,
-        may: 110,
-        june: 105,
-        july: 115,
-        august: 120,
-        september: 118,
-        october: 122,
-        november: 125,
-        december: 128,
-        january: 130,
-        february: 125,
-        march: 135,
-        remarks: 'Planned feed',
-      },
-      {
-        id: 2,
-        Type: 'Feed',
-        Particulars: 'Imported Condensate',
-        UOM: 'MT',
-        april: 50,
-        may: 55,
-        june: 52,
-        july: 58,
-        august: 60,
-        september: 59,
-        october: 61,
-        november: 62,
-        december: 64,
-        january: 65,
-        february: 62,
-        march: 68,
-        remarks: 'Spot purchase',
-      },
-      {
-        id: 3,
-        Type: 'Production',
-        Particulars: 'LPG',
-        UOM: 'MT',
-        april: 20,
-        may: 22,
-        june: 21,
-        july: 23,
-        august: 24,
-        september: 24,
-        october: 25,
-        november: 26,
-        december: 27,
-        january: 28,
-        february: 27,
-        march: 29,
-        remarks: 'High demand',
-      },
-      {
-        id: 4,
-        Type: 'Production',
-        Particulars: 'Naphtha',
-        UOM: 'MT',
-        april: 40,
-        may: 44,
-        june: 42,
-        july: 46,
-        august: 48,
-        september: 47,
-        october: 49,
-        november: 50,
-        december: 51,
-        january: 52,
-        february: 50,
-        march: 54,
-        remarks: 'Export quality',
-      },
-      {
-        id: 5,
-        Type: 'Fuel/Loss',
-        Particulars: 'Fuel Oil',
-        UOM: 'MT',
-        april: 5,
-        may: 5,
-        june: 5,
-        july: 5,
-        august: 5,
-        september: 5,
-        october: 5,
-        november: 5,
-        december: 5,
-        january: 5,
-        february: 5,
-        march: 5,
-        remarks: 'Internal consumption',
-      },
-      {
-        id: 6,
-        Type: 'Fuel/Loss',
-        Particulars: 'Losses',
-        UOM: 'MT',
-        april: 2,
-        may: 2,
-        june: 2,
-        july: 2,
-        august: 2,
-        september: 2,
-        october: 2,
-        november: 2,
-        december: 2,
-        january: 2,
-        february: 2,
-        march: 2,
-        remarks: 'Standard loss',
-      },
-    ],
-    [],
-  )
 
   const fetchMatbalData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -257,7 +141,11 @@ const MaterialBalance = ({ permissions }) => {
     const modifiedData = Object.values(modifiedCells)
     if (modifiedData.length === 0) return
     const requiredFields = ['Remarks']
-    const validationMessage = validateFields(modifiedData, requiredFields)
+    const validationData = modifiedData.map((row) => ({
+      ...row,
+      // originalRemark: '',
+    }))
+    const validationMessage = validateFields(validationData, requiredFields)
     if (validationMessage) {
       setSnackbarData({ message: validationMessage, severity: 'error' })
       setSnackbarOpen(true)
@@ -385,8 +273,16 @@ const MaterialBalance = ({ permissions }) => {
       showTitleNameBusiness: true,
       titleName: 'Material Balance',
       //LATER WE NEED TO ADD EXPORT IMPORT
-      uploadExcelBtn: false,
-      downloadExcelBtn: false,
+      uploadExcelBtn: true,
+      downloadExcelBtn: true,
+    },
+    isOldYear,
+  )
+
+  const adjustedPermissionsReadyOnly = getAdjustedPermissions(
+    {
+      hideRemarkForNonEditableRows: true,
+      NON_EDITABLE_GRID: true,
     },
     isOldYear,
   )
@@ -399,6 +295,10 @@ const MaterialBalance = ({ permissions }) => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
+
+      {IS_CRACKER_HMD && (
+        <ModeSelection permissions={adjustedPermissionsReadyOnly} />
+      )}
 
       <KendoDataTables
         rows={rows}

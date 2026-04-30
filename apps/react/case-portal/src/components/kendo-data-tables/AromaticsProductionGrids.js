@@ -1001,8 +1001,6 @@ const AromaticsProductionGrids = ({ permissions }) => {
 
       downloadExcelBtnFromUI: permissions?.hideDownloadExcel ? false : true,
       ExcelName: `${VERTICAL_NAME}_Max Achievable Based On Current Unit Performance`,
-      showCalculate: VERTICAL_NAME === 'aromatics',
-      showCalculateVisibility: VERTICAL_NAME === 'aromatics' ? true : false,
     },
     isOldYear,
   )
@@ -1047,12 +1045,14 @@ const AromaticsProductionGrids = ({ permissions }) => {
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
       saveBtn: permissions?.saveBtn ?? true,
       units: ['TPH', 'TPD'],
-      showCalculate: permissions?.hideSummary ? false : VERTICAL_NAME === 'meg',
+      showCalculate: permissions?.hideSummary
+        ? false
+        : VERTICAL_NAME === 'meg' || VERTICAL_NAME === 'aromatics',
       showCalculateVisibility:
-        VERTICAL_NAME === 'meg' &&
+        (VERTICAL_NAME === 'meg' &&
         Object.keys(calculationObject || {}).length > 0
           ? true
-          : false,
+          : false) || VERTICAL_NAME === 'aromatics',
       downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
       uploadExcelBtn:
         VERTICAL_NAME === 'vcm'
@@ -1264,7 +1264,6 @@ const AromaticsProductionGrids = ({ permissions }) => {
           }
           resetEditSignal={editResetKey}
           setEditResetKey={setEditResetKey}
-          handleCalculate={handleCalculate}
         />
       )}
 

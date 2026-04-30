@@ -74,7 +74,7 @@ const ROGC = ({
           jan: getDaysInMonth(startYear, 1),
           feb: getDaysInMonth(startYear, 2),
           mar: getDaysInMonth(startYear, 3),
-          remarks: '-',
+          remarks: 'No. of days in a month',
           isEditable: false,
           inEdit: false,
         }
