@@ -1891,14 +1891,22 @@ continue;
 
 	@Transactional
 	@Override
-	public List<Map<String, Object>> getNormAttributeTransactionReceipe(String year, String plantId) {
+	public List<Map<String, Object>> getNormAttributeTransactionReceipe(String year, String plantId, boolean iscatcam) {
 		try {
+
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow();
 
 			List<NormAttributeTransactionReceipeDTO> listDTO = new ArrayList<>();
-			String storedProcedure = vertical.getName() + "_" + site.getName() + "_ReceipeWiseGradeDetail";
+
+			String storedProcedure = null;
+
+			if(iscatcam) { 
+             storedProcedure = vertical.getName() + "_" + site.getName() + "__ReceipeWiseCatChemDetail";
+			}
+			else 
+			 storedProcedure = vertical.getName() + "_" + site.getName() + "_ReceipeWiseGradeDetail";
 
 			List<Object[]> results = getNormAttributeTransactionReceipeSP(storedProcedure, year,
 					plant.getId().toString(), site.getId().toString(), vertical.getId().toString());
@@ -3141,7 +3149,8 @@ continue;
 	public byte[] exportConfigData(String year,
 	                               UUID plantFKId,
 	                               boolean isAfterSave,
-	                               List<NormAttributeTransactionReceipeRequestDTO> dtoList) {
+	                               List<NormAttributeTransactionReceipeRequestDTO> dtoList,
+								boolean iscatcam) {
 	    try {
 	        
 	        if (isAfterSave) {
@@ -3158,7 +3167,7 @@ continue;
 	                dtoList = failedDtos;
 	            }
 	        }
-	        List<Map<String, Object>> data = getNormAttributeTransactionReceipe(year, plantFKId.toString());
+	        List<Map<String, Object>> data = getNormAttributeTransactionReceipe(year, plantFKId.toString(), iscatcam);
 	        List<NormParameters> normParametersList = normParametersService.getAllGrades(plantFKId.toString());
 	        List<String> innerHeaders = new ArrayList<>();
 	        boolean hasTypeDisplayName = data != null && data.stream()
@@ -3496,7 +3505,7 @@ continue;
 	}
 
 	@Override
-	public AOPMessageVM importRecipe(String year, UUID plantFKId, MultipartFile file) {
+	public AOPMessageVM importRecipe(String year, UUID plantFKId, MultipartFile file, boolean iscatcam) {
 		
 		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
 			throw new IllegalArgumentException("Invalid or empty Excel file.");
@@ -3512,7 +3521,7 @@ continue;
 			System.out.println("Ended Save configuration in importExcel");
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
-				byte[] fileByteArray = exportConfigData(year, plantFKId, true, failedRecords);
+				byte[] fileByteArray = exportConfigData(year, plantFKId, true, failedRecords, iscatcam);
 				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 				aopMessageVM.setData(base64File);
 				aopMessageVM.setCode(400);

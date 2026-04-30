@@ -27,7 +27,7 @@ public interface ConfigurationService {
 	public AOPMessageVM getProductionConstraints(String year, String plantFKId, String type);
 	public AOPMessageVM getConfigurationIntermediateValues(String year, UUID plantFKId);
     public List<ConfigurationDTO> saveConfigurationData( String year, String plantFKId,String version, List<ConfigurationDTO> configurationDTOList,Boolean calculation);
-    public   List<Map<String, Object>>  getNormAttributeTransactionReceipe(String year, String plantId);
+    public   List<Map<String, Object>>  getNormAttributeTransactionReceipe(String year, String plantId, boolean iscatcam);
     public List<NormAttributeTransactionReceipeRequestDTO> updateCalculatedConsumptionNorms( String year, String plantId,  List<NormAttributeTransactionReceipeRequestDTO> normAttributeTransactionReceipeDTOLists);
     public AOPMessageVM getConfigurationIntermediateValuesData(String year, String plantId);
     public byte[] createExcel(String year, UUID plantFKId, List<String> reportTypes,String version,boolean isAfterSave, List<ConfigurationDTO> list);
@@ -35,11 +35,11 @@ public interface ConfigurationService {
     public byte[] createConfigurationConstantsExcel(String year, UUID plantFKId);
     public byte[] createProductionConstraintsExcel(String year, UUID plantFKId, String type);
     public byte[] exportConfigurationConstantsNorms(String year, String plantId);
-    public byte[] exportConfigData(String year, UUID plantFKId, boolean isAfterSave, List<NormAttributeTransactionReceipeRequestDTO> dtoList);
+    public byte[] exportConfigData(String year, UUID plantFKId, boolean isAfterSave, List<NormAttributeTransactionReceipeRequestDTO> dtoList, boolean iscatcam);
     public byte[] exportLineConfigData(String year, UUID plantFKId, boolean isAfterSave, List<NormAttributeTransactionReceipeRequestDTO> dtoList);
     public AOPMessageVM importExcel(String year, UUID fromString,List<String> reportTypes,String version, MultipartFile file,Boolean calculation);
     public AOPMessageVM importShutdownRateExcel(String year, UUID fromString,String type,String version, MultipartFile file,Boolean calculation);
-    public AOPMessageVM importRecipe(String year, UUID fromString, MultipartFile file);
+    public AOPMessageVM importRecipe(String year, UUID fromString, MultipartFile file, boolean iscatcam);
     public AOPMessageVM importConfigurationConstantsExcel(String year, UUID plantId,String version, MultipartFile file,Boolean calculation);
 	public AOPMessageVM getConfigurationExecution( String year, String plantId);
 	public AOPMessageVM getConfigurationExecutionNorms( String year, String plantId);

@@ -70,8 +70,8 @@ public class ConfigurationController {
 	}
 	
 	@GetMapping(value="/getPeConfigData")
-	public  List<Map<String, Object>> getNormAttributeTransactionReceipeSp(@RequestParam String year,@RequestParam String plantId){
-		return	 configurationService.getNormAttributeTransactionReceipe(year,plantId);
+	public  List<Map<String, Object>> getNormAttributeTransactionReceipeSp(@RequestParam String year,@RequestParam String plantId, @RequestParam(required=false) boolean iscatcam){
+		return	 configurationService.getNormAttributeTransactionReceipe(year,plantId,iscatcam);
 		
 	}
 	
@@ -172,11 +172,12 @@ public class ConfigurationController {
 	@GetMapping(value = "/recipe-export")
 	public ResponseEntity<byte[]> exportConfigData(
 	         @RequestParam("plantId") String plantId,
-            @RequestParam("year") String year
+            @RequestParam("year") String year,
+			@RequestParam(required=false) boolean iscatcam
 	        ) {
 	    try {
 			
-	        byte[] excelBytes = configurationService.exportConfigData(year,UUID.fromString(plantId),false,null); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+	        byte[] excelBytes = configurationService.exportConfigData(year,UUID.fromString(plantId),false,null, iscatcam); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
 
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(
@@ -219,9 +220,10 @@ public class ConfigurationController {
 	public AOPMessageVM importRecipe(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year,
-			@RequestParam("file") MultipartFile file
+			@RequestParam("file") MultipartFile file,
+			@RequestParam(required=false) boolean iscatcam
 	        ) {
-			return	configurationService.importRecipe(year,UUID.fromString(plantId), file); 
+			return	configurationService.importRecipe(year,UUID.fromString(plantId), file, iscatcam); 
 	}
 
 	@PostMapping(value = "/configuration-export-excel")
