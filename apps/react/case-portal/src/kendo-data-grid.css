@@ -288,6 +288,9 @@
 .k-number-right td,
 .k-number-right-disabled td {
   text-align: right !important;
+  font-family: 'Honeywell Sans Web' !important;
+  font-size: '15px' !important;
+  font-weight: 500 !important;
 }
 
 .disabled-cell,
@@ -298,6 +301,9 @@
   border-right: 1px solid rgb(169, 169, 169) !important;
   border-bottom: 1px solid rgb(169, 169, 169) !important;
   text-align: right !important;
+  font-family: 'Honeywell Sans Web' !important;
+  font-size: '15px' !important;
+  font-weight: 500 !important;
 }
 
 /* Prevent alternating row colors from overriding disabled cell background */
@@ -365,7 +371,7 @@
   box-sizing: border-box !important;
   line-height: 1.5rem;
   font-weight: 500 !important;
-  font-size: 15px;
+  font-size: 15px !important;
   line-height: 24px !important;
   letter-spacing: 0px;
   color: #252525 !important;

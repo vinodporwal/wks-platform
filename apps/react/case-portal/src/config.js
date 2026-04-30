@@ -2,7 +2,7 @@ const config = {
   basename: '/',
   defaultPath: '/production-norms-plan/configuration',
   fontFamily:
-    "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
+    "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
   i18n: 'en',
   miniDrawer: false,
   container: true,
