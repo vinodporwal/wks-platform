@@ -1386,7 +1386,7 @@ const ConfigurationTable = () => {
           !IS_AROMATICS_HMD &&
           tabs?.length > 0 && (
             <Box
-              mt={1}
+              mb={1}
               sx={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -1401,15 +1401,16 @@ const ConfigurationTable = () => {
                 sx={{
                   px: 1,
                   fontWeight: 700,
-                  color: 'text.secondary',
-                  fontSize: '0.65rem',
+                  color: '#252525',
+                  fontSize: '14px',
                   textTransform: 'uppercase',
+                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif"
                 }}
               >
                 Revision
               </Typography>
 
-              <Box sx={{ display: 'flex', gap: '2px' }}>
+              <Box sx={{ display: 'flex', gap: '8px' }}>
                 {['1', '2', '3'].map((num) => {
                   const selected = revision === num
 
@@ -1421,12 +1422,13 @@ const ConfigurationTable = () => {
                       size='small'
                       sx={{
                         textTransform: 'none',
-                        fontSize: '0.72rem',
+                        fontSize: '14px',
                         minWidth: '45px',
                         height: '24px',
                         borderRadius: '6px',
                         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-
+                        fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                        fontWeight: 500,
                         // Active State
                         ...(selected && {
                           bgcolor: '#fff',
@@ -1438,7 +1440,7 @@ const ConfigurationTable = () => {
 
                         // Inactive State
                         ...(!selected && {
-                          color: 'text.secondary',
+                          color: '#606060',
                           fontWeight: 500,
                           '&:hover': {
                             bgcolor: 'rgba(1, 0, 203, 0.04)',

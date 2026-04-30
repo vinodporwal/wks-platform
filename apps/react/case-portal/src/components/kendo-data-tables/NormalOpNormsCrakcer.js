@@ -32,6 +32,7 @@ import CrackerConfiguration from './CrackerConfiguration'
 import CrackerReportMannualEntry from './CrackerReportMannualEntry'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AopTabs from 'components/AopTabs'
+import { TextField } from '../../../node_modules/@mui/material/index'
 // Constants
 const MONTHS = [
   'april',
@@ -421,7 +422,7 @@ const NormalOpNormsScreenCracker = () => {
       showCheckbox: false,
       marginBottom: false,
       showTitleNameBusiness: true,
-      dropdownLabel: 'Select Mode',
+      dropdownLabel: 'Mode',
       showCalculateVisibility: true,
       titleName: 'Best Achieved (Min CC)',
       isHeight: (rows?.length || 0) > 10,
@@ -1242,6 +1243,8 @@ const NormalOpNormsScreenCracker = () => {
     // 'Report Manual Entry',
   ]
 
+  const menuItemStyle = { fontSize: 14, fontWeight: 500, color: '#303030', fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif", letterSpacing: "0px", verticalAlign: "middle" }
+
   // UI render
   return (
     <div>
@@ -1267,23 +1270,74 @@ const NormalOpNormsScreenCracker = () => {
       {selectedTab === 3 && (
         <>
           {/* EXTERNAL DROPDOWN */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
-            <FormControl size='small' sx={{ minWidth: 120 }}>
-              <InputLabel id='mode-select-label'>Select Mode</InputLabel>
-              <Select
-                labelId='mode-select-label'
-                value={gradeId || ''}
-                label='Mode'
-                onChange={onModeSelect}
-                MenuProps={{ disableScrollLock: true }}
-              >
-                {grades.map((g) => (
-                  <MenuItem key={g.gradeId} value={g.gradeId}>
-                    {g.displayName}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2, mb: 2 }}>
+            <TextField
+              select
+              value={gradeId ?? ''}
+              onChange={onModeSelect}
+              variant='outlined'
+              size='small'
+              sx={{
+                minWidth: 140,
+                '& .MuiOutlinedInput-root': {
+                  height: '30px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                  borderRadius: '7px',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                  '& fieldset': {
+                    border: 'none',
+                  },
+                  '&:hover fieldset': {
+                    border: 'none',
+                  },
+                  '&.Mui-focused fieldset': {
+                    border: 'none',
+                  },
+                },
+                '& .MuiSelect-select': {
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '2px 6px !important',
+                },
+              }}
+              InputProps={{
+                startAdornment: (
+                  <Typography
+                    variant='caption'
+                    sx={{
+                      mr: 0.5,
+                      color: '#606060',
+                      fontWeight: 500,
+                      fontSize: '14px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.4px',
+                      lineHeight: 1,
+                      fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                    }}
+                  >
+                    Mode:
+                  </Typography>
+                ),
+              }}
+              SelectProps={{
+                MenuProps: {
+                  disableScrollLock: true,
+                },
+              }}
+              MenuProps={{ disableScrollLock: true }}
+            >
+              <MenuItem value='' disabled sx={menuItemStyle}>
+                Select Mode
+              </MenuItem>
+
+              {grades.map((m) => (
+                <MenuItem key={m.gradeId} value={m.gradeId} sx={menuItemStyle}>
+                  {m.displayName}
+                </MenuItem>
+              ))}
+            </TextField>
 
             <Typography component='div' className='grid-title'>
               <span style={{ color: 'orange', fontWeight: 'bold' }}>
@@ -1471,7 +1525,7 @@ const NormalOpNormsScreenCracker = () => {
         <>
           {/* Add color-coded legend for Final norms */}
           <Box
-            sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, mb: 0 }}
+            sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, mb: 1 }}
           >
             <Typography component='div' className='grid-title'>
               <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span> -

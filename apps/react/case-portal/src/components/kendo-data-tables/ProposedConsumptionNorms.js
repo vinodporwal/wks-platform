@@ -510,7 +510,7 @@ const ProposedConsumptionNorms = () => {
       customHeight: defaultCustomHeight,
       showG: true,
       marginBottom: true,
-      dropdownLabel: 'Select Grade',
+      dropdownLabel: 'Grade',
       uploadExcelBtn: true,
       showImport: false,
       showExport: true,

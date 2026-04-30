@@ -6,6 +6,7 @@ import MenuOpenIcon from '@mui/icons-material/MenuOpen'
 import MenuIcon from '@mui/icons-material/Menu'
 import HomeIcon from '@mui/icons-material/Home'
 import { useNavigate } from 'react-router-dom'
+import { DrawerCloseIcon, DrawerOpenIcon } from 'assets/images/icons/index'
 
 const DrawerHeader = ({ open, handleDrawerToggle }) => {
   const navigate = useNavigate()
@@ -44,11 +45,11 @@ const DrawerHeader = ({ open, handleDrawerToggle }) => {
           {open && (
             <Box>
               <Typography
-                sx={{ fontWeight: 800, fontSize: 17, color: '#04140f' }}
+                sx={{ fontWeight: 800, fontSize: 20, color: '#303030', fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif" }}
               >
                 Reliance
               </Typography>
-              <Typography sx={{ fontSize: 12, color: '#6a7b92' }}>
+              <Typography sx={{ fontSize: 13, color: '#606060', fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif" }}>
                 AOP Dashboard
               </Typography>
             </Box>
@@ -56,7 +57,7 @@ const DrawerHeader = ({ open, handleDrawerToggle }) => {
         </Box>
 
         {/* RIGHT COLLAPSE BUTTON */}
-        {open && (
+        {/* {open && ( */}
           <IconButton
             onClick={handleDrawerToggle}
             size='small'
@@ -66,9 +67,14 @@ const DrawerHeader = ({ open, handleDrawerToggle }) => {
               '&:hover': { color: '#6a7b92' },
             }}
           >
-            {open ? <MenuOpenIcon /> : <MenuIcon />}
+            <Box
+              component='img'
+              src={open ? DrawerCloseIcon : DrawerOpenIcon}
+              alt='Drawer Toggle'
+              sx={{ width: 20, height: 20, cursor: 'pointer' }}
+            />
           </IconButton>
-        )}
+        {/* )} */}
       </Box>
     </DrawerHeaderStyled>
   )

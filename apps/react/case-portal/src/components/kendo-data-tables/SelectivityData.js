@@ -581,7 +581,7 @@ const SelectivityData = (props) => {
 
       // showG: props?.configType === 'cracker_configuration' ? true : false,
       showG: false,
-      dropdownLabel: 'Select Mode',
+      dropdownLabel: 'Mode',
       // marginTop: props?.configType === 'cracker_configuration' ? true : false,
       marginTop: false,
       isHeight: lowerVertName !== 'meg' && props?.rows?.length > 10,

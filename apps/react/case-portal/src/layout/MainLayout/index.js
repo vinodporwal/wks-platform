@@ -36,6 +36,7 @@ const MainLayout = ({ keycloak, authenticated }) => {
         open={open}
         handleDrawerToggle={handleDrawerToggle}
         isDashboard={isDashboard}
+        keycloak={keycloak}
       />
 
       {/* RIGHT SIDE CONTENT */}
@@ -49,8 +50,8 @@ const MainLayout = ({ keycloak, authenticated }) => {
           overflow: 'hidden',
           backgroundColor: BG_COLOR_FULL,
 
-          border: '1px solid rgba(0,0,0,0.08)',
-          boxShadow: '0 4px 14px rgba(0,0,0,0.10)',
+          // border: '1px solid rgba(0,0,0,0.08)',
+          // boxShadow: '0 4px 14px rgba(0,0,0,0.10)',
           borderRadius: '6px',
         }}
       >
@@ -64,7 +65,7 @@ const MainLayout = ({ keycloak, authenticated }) => {
         />
 
         {/* Push content below header */}
-        <Box sx={{ pt: '49px' }} />
+        <Box sx={{ pt: '46px' }} />
 
         {/* {location.pathname.startsWith('/production-norms-plan') && (
           <Box>
@@ -90,10 +91,12 @@ const MainLayout = ({ keycloak, authenticated }) => {
 
         <Box className='outlet-wrapper'>
           <Box className='outlet-border-box'>
-            {!isDashboard && (
-              <Box className="breadcrumbs-box">
-                <Breadcrumbs variant='dense' navigation={menu} divider={false} />
-              </Box>)}
+            {stepperNavRoutes.some((route) =>
+              location?.pathname.startsWith(route),
+            ) && (
+                <Box className="breadcrumbs-box">
+                  <Breadcrumbs variant='dense' navigation={menu} divider={false} />
+                </Box>)}
             <Outlet />
           </Box>
         </Box>

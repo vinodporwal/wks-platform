@@ -17,10 +17,12 @@ const Header = ({ open, handleDrawerToggle, keycloak, isDashboard, navigation })
       sx={{
         minHeight: '38px !important',
         py: 0,
+        pl: '16px !important',
+        pr: '0px !important',
       }}
     >
       {/* Show icon ONLY when drawer is closed */}
-      {!open && (
+      {!open && isDashboard && (
           <IconButton
             disableRipple
             aria-label='open drawer'

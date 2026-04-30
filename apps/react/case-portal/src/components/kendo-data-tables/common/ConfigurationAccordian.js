@@ -33,6 +33,7 @@ const ConfigurationAccordian = ({
   setSummary,
   setSummaryEdited,
   handleOpenDialog,
+  summaryEnabled = true,
   formatDateForText,
 }) => {
   const [startShow, setStartShow] = useState(false)
@@ -196,7 +197,7 @@ const ConfigurationAccordian = ({
             )}
 
             {/* ROW 2: AOP DESIGN BASIS */}
-            <Box sx={{ width: '100%' }}>
+            {summaryEnabled && (<Box sx={{ width: '100%' }}>
               <Typography variant='caption' className='aop-design-basis-label'>
                 AOP DESIGN BASIS
               </Typography>
@@ -211,7 +212,7 @@ const ConfigurationAccordian = ({
                 }}
                 className='aop-design-basis-textarea'
               />
-            </Box>
+            </Box>)}
           </Stack>
         </CustomAccordionDetails>
       </CustomAccordion>

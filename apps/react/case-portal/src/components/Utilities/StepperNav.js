@@ -152,9 +152,10 @@ export default function StepperNav() {
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
                   fontSize: '12px',
-                  fontWeight: 700,
+                  fontWeight: 400,
                   fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                  color: "#303030"
+                  color: "#303030",
+                  textTransform: 'uppercase'
                 }}
               >
                 {step.label}

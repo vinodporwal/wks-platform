@@ -590,7 +590,7 @@ const ConsumptionNorms = () => {
         IS_PVC_DMD
           ? true
           : false,
-      dropdownLabel: 'Select Grade',
+      dropdownLabel: 'Grade',
       downloadExcelBtnFromUI:
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||

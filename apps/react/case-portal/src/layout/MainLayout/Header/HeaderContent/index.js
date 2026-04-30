@@ -706,7 +706,7 @@ export default function HeaderContent({ keycloak, navigation }) {
           pr: 2,
           py: 0.75,
           background: '#fff',
-          borderBottom: '1px solid rgba(15,23,42,0.04)',
+          // borderBottom: '1px solid rgba(15,23,42,0.04)',
         }}
       >
         {/* LEFT SIDE: Title */}
@@ -725,7 +725,7 @@ export default function HeaderContent({ keycloak, navigation }) {
                 variant='h6'
                 sx={{
                   fontWeight: 700,
-                  fontSize: '18px',
+                  fontSize: '16px',
                   color: '#303030',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
@@ -984,9 +984,9 @@ export default function HeaderContent({ keycloak, navigation }) {
         </Stack>
 
         {/* RIGHT: Profile */}
-        <Box sx={{ justifySelf: 'end' }}>
+        {HIDE_DASHBOARD_DROPDOWN && (<Box sx={{ justifySelf: 'end' }}>
           {!matchesXs ? <Profile keycloak={keycloak} /> : <MobileSection />}
-        </Box>
+        </Box>)}
       </Box>
     </>
   )

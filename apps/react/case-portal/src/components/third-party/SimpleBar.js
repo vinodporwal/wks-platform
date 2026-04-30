@@ -9,7 +9,7 @@ const RootStyle = styled(BrowserView)({
   flexGrow: 1,
   height: '100%',
   overflow: 'hidden',
-  borderRight: '1px solid rgb(226 226 226)', // Added right border with your color
+  // borderRight: '1px solid rgb(226 226 226)', // Added right border with your color
 })
 
 // scroll bar wrapper

@@ -393,7 +393,7 @@ const ProductionOptimizer = () => {
           marginBottom: true,
           showCalculate: true,
           showCalculateVisibility: true,
-          dropdownLabel: 'Select Type',
+          dropdownLabel: 'Type',
           showModes: dropdownOptions.length > 0,
           modes: dropdownOptions.map((opt) => ({
             name: opt.value,

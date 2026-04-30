@@ -249,7 +249,7 @@ const SpecificConsumptionCalculation = () => {
       allAction: true,
       adjustedPermissions: true,
       units: ['MT', 'KT'],
-      dropdownLabel: 'Select UOM',
+      dropdownLabel: 'UOM',
       showUnit: true,
       isTotalFooterActive: false,
       downloadExcelBtnFromUI: true,

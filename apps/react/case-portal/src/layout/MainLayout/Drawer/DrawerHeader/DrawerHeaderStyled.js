@@ -6,7 +6,7 @@ const DrawerHeaderStyled = styled(Box)(({ open }) => ({
   alignItems: 'center',
   padding: open ? '12px 14px' : '9px 0px',
   background: '#ffffff', // ?? DARK LIKE MENU
-  borderBottom: '1px solid rgba(255,255,255,0.08)',
+  // borderBottom: '1px solid #DDDEE1',
   flexShrink: 0,
 }))
 

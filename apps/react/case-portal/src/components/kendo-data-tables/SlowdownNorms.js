@@ -681,7 +681,7 @@ const SlowdownNorms = () => {
           : true,
 
       allAction: true,
-      dropdownLabel: 'Select Grade',
+      dropdownLabel: 'Grade',
       downloadExcelBtnFromUI:
         IS_PE_PP ||
         lowerVertName === 'vcm' ||

@@ -17,6 +17,10 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
     }
   }, [tabIndex])
 
+  if (tabs?.length === 0) {
+    return null
+  }
+
   return (
     <Box
       sx={{
@@ -42,7 +46,7 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
           fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
           marginBottom: '-2px',
           '& .MuiTabs-flexContainer': {
-            gap: BOX_TABS ? '1px' : '1px',
+            gap: BOX_TABS ? '1px' : '10px',
           },
 
           '& .MuiTabs-indicator': {
@@ -50,6 +54,7 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
             height: '3px',
             borderRadius: '2px',
             backgroundColor: '#AE4787',
+            marginLeft: '5px'
           },
         }}
       >

@@ -1823,6 +1823,7 @@ const KendoDataTables = ({
                     alignItems: 'center',
                     gap: 1.5,
                     mb: permissions?.marginBottom ? '12px' : '4px',
+                    fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
                   }}
                 >
                   {/* TOGGLE ICON */}
@@ -1914,11 +1915,13 @@ const KendoDataTables = ({
                   <Typography
                     component='div'
                     sx={{
-                      fontSize: '0.85rem',
-                      fontWeight: 800,
-                      color: '#1e293b', // Slate 800
+                      // fontSize: '0.85rem',
+                      color: '#252525', // Slate 800
                       letterSpacing: '0.2px',
                       position: 'relative',
+                      fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                      fontSize: '16px',
+                      fontWeight: 700,
                     }}
                   >
                     {permissions?.titleName}
@@ -1941,6 +1944,8 @@ const KendoDataTables = ({
                             borderRadius: '8px',
                             fontSize: '0.75rem',
                             boxShadow: '0 10px 15px -3px rgba(0,0,0,0.2)',
+                            fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                            fontWeight: 700,
                           },
                         },
                       },
@@ -1973,10 +1978,11 @@ const KendoDataTables = ({
                   className='grid-title-extra'
                   sx={{
                     fontSize: '0.60rem', // little smaller
-                    fontWeight: 800,
+                    fontWeight: 700,
                     color: '#336063', // very light grey
                     fontStyle: 'italic',
                     lineHeight: 1.4,
+                    fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
                   }}
                 >
                   *Enter Number of Continious / Discontinious GCOs per grade for
@@ -2009,17 +2015,18 @@ const KendoDataTables = ({
                       height: '30px',
                       backgroundColor: 'rgba(255, 255, 255, 0.85)',
                       borderRadius: '7px',
-                      fontSize: '0.7rem',
-                      fontWeight: 600,
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                      color: '#252525',
                       '& fieldset': {
-                        borderColor: 'rgba(0, 0, 0, 0.08)',
+                        border: 'none',
                       },
                       '&:hover fieldset': {
-                        borderColor: '#0100cb',
+                        border: 'none',
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#0100cb',
-                        borderWidth: '1.2px',
+                        border: 'none',
                       },
                     },
                     '& .MuiSelect-select': {
@@ -2035,11 +2042,12 @@ const KendoDataTables = ({
                         sx={{
                           mr: 0.5,
                           color: '#606060',
-                          fontWeight: 600,
+                          fontWeight: 500,
                           fontSize: '14px',
                           textTransform: 'uppercase',
                           letterSpacing: '0.4px',
                           lineHeight: 1,
+                          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
                         }}
                       >
                         {permissions?.dropdownLabel || 'Grade'}:
@@ -2053,7 +2061,7 @@ const KendoDataTables = ({
                   }}
                 >
                   <MenuItem value='' disabled style={menuItemStyle}>
-                    {permissions?.dropdownLabel || 'Select'}
+                    {'Select'}
                   </MenuItem>
 
                   {grades?.map((unit) => (
@@ -2278,7 +2286,7 @@ const KendoDataTables = ({
                     // disabled={rows?.length === 0}
                   >
                     <MenuItem value='' disabled sx={menuItemStyle}>
-                      <em>Select UOM</em>
+                      Select UOM
                     </MenuItem>
 
                     {/* Render the correct unit options dynamically */}
@@ -2364,7 +2372,7 @@ const KendoDataTables = ({
                 <Button
                   variant='contained'
                   className='btn-add'
-                  startIcon={<AddIcon />}
+                  startIcon={<AddIcon sx={{ color: '#4A4DDA !important'}}/>}
                   onClick={handleAddRow}
                   disabled={isButtonDisabled || READ_ONLY}
                 >
@@ -2415,8 +2423,8 @@ const KendoDataTables = ({
               {permissions?.uploadExcelBtn && (
                 <>
                   <Button
-                    variant='contained'
                     onClick={triggerFileUpload}
+                    variant='contained'
                     startIcon={
                     <Box
                       component='img'
@@ -2424,10 +2432,10 @@ const KendoDataTables = ({
                       className='w16-icon'
                     />
                   }
+                    className='btn-import'
                     disabled={
                       isButtonDisabled || READ_ONLY || rows?.length === 0
                     }
-                    className='btn-import'
                   >
                     Import
                   </Button>
@@ -2499,7 +2507,7 @@ const KendoDataTables = ({
                     READ_ONLY ||
                     (!summaryEdited && Object.keys(modifiedCells).length === 0)
                   }
-                  startIcon={<RestartAltIcon />}
+                  startIcon={<RestartAltIcon sx={{ color: '#4A4DDA'}}/>}
                 >
                   Reset
                 </Button>
