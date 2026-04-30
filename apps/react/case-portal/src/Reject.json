@@ -553,6 +553,7 @@
                   "label": "Main Asset",
                   "applyMaskOn": "change",
                   "customClass": "mb-3 disabled-field",
+				  "calculateValue": "const urlParams = new URLSearchParams(window.location.search);\nconst assetName = urlParams.get('assetName');\nif (assetName) {\n  value = assetName;\n}",
                   "disabled": true,
                   "tableView": true,
                   "key": "mainAsset",
@@ -582,7 +583,6 @@
                   "autofocus": false,
                   "dbIndex": false,
                   "customDefaultValue": "",
-                  "calculateValue": "",
                   "calculateServer": false,
                   "widget": {
                     "type": "input"
