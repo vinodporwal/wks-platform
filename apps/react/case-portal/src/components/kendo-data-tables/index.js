@@ -1586,10 +1586,7 @@ const KendoDataTables = ({
         {...restThProps}
         aria-sort={ariaSort}
         title={props.title}
-        style={{
-          fontFamily:
-            "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
-        }}
+        style={{ fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif" }}
       >
         <Tooltip
           position='top'
@@ -1902,6 +1899,7 @@ const KendoDataTables = ({
                     alignItems: 'center',
                     gap: 1.5,
                     mb: permissions?.marginBottom ? '12px' : '4px',
+                    fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
                   }}
                 >
                   {/* TOGGLE ICON */}
@@ -2049,17 +2047,18 @@ const KendoDataTables = ({
                       height: '30px',
                       backgroundColor: 'rgba(255, 255, 255, 0.85)',
                       borderRadius: '7px',
-                      fontSize: '0.7rem',
-                      fontWeight: 600,
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                      color: '#252525',
                       '& fieldset': {
-                        borderColor: 'rgba(0, 0, 0, 0.08)',
+                        border: 'none',
                       },
                       '&:hover fieldset': {
-                        borderColor: '#0100cb',
+                        border: 'none',
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#0100cb',
-                        borderWidth: '1.2px',
+                        border: 'none',
                       },
                     },
                     '& .MuiSelect-select': {
@@ -2075,11 +2074,12 @@ const KendoDataTables = ({
                         sx={{
                           mr: 0.5,
                           color: '#606060',
-                          fontWeight: 600,
+                          fontWeight: 500,
                           fontSize: '14px',
                           textTransform: 'uppercase',
                           letterSpacing: '0.4px',
                           lineHeight: 1,
+                          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
                         }}
                       >
                         {permissions?.dropdownLabel || 'Grade'}:
@@ -2093,7 +2093,7 @@ const KendoDataTables = ({
                   }}
                 >
                   <MenuItem value='' disabled style={menuItemStyle}>
-                    {permissions?.dropdownLabel || 'Select'}
+                    {'Select'}
                   </MenuItem>
 
                   {grades?.map((unit) => (
@@ -2276,7 +2276,7 @@ const KendoDataTables = ({
                     // disabled={rows?.length === 0}
                   >
                     <MenuItem value='' disabled sx={menuItemStyle}>
-                      <em>Select UOM</em>
+                      Select UOM
                     </MenuItem>
 
                     {/* Render the correct unit options dynamically */}
@@ -2362,7 +2362,7 @@ const KendoDataTables = ({
                 <Button
                   variant='contained'
                   className='btn-add'
-                  startIcon={<AddIcon />}
+                  startIcon={<AddIcon sx={{ color: '#4A4DDA !important'}}/>}
                   onClick={handleAddRow}
                   disabled={isButtonDisabled || READ_ONLY}
                 >
@@ -2413,8 +2413,8 @@ const KendoDataTables = ({
               {permissions?.uploadExcelBtn && (
                 <>
                   <Button
-                    variant='contained'
                     onClick={triggerFileUpload}
+                    variant='contained'
                     startIcon={
                     <Box
                       component='img'
@@ -2422,10 +2422,10 @@ const KendoDataTables = ({
                       className='w16-icon'
                     />
                   }
+                    className='btn-import'
                     disabled={
                       isButtonDisabled || READ_ONLY || rows?.length === 0
                     }
-                    className='btn-import'
                   >
                     Import
                   </Button>
@@ -2497,7 +2497,7 @@ const KendoDataTables = ({
                     READ_ONLY ||
                     (!summaryEdited && Object.keys(modifiedCells).length === 0)
                   }
-                  startIcon={<RestartAltIcon />}
+                  startIcon={<RestartAltIcon sx={{ color: '#4A4DDA'}}/>}
                 >
                   Reset
                 </Button>
@@ -3969,7 +3969,7 @@ const KendoDataTables = ({
         </div>
       </Collapse>
 
-      {/* {(permissions?.allActionOfBottomBtns ?? true) && ( */}
+      {gridExpanded && (permissions?.approveBtn ||permissions?.nextBtn || showDeleteAll) && (
       <Box
         sx={{
           marginTop: 2,
@@ -4031,7 +4031,7 @@ const KendoDataTables = ({
           </Button>
         )}
       </Box>
-      {/* )} */}
+      )}
       <Notification
         open={snackbarOpen}
         message={snackbarData?.message || ''}

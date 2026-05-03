@@ -11,7 +11,7 @@ import AppsIcon from '@mui/icons-material/Apps' // Example static group icon
 
 /* ===== COMPACT SIDEBAR GROUP STYLES ===== */
 const GROUP_BG = 'transparent' // Changed to transparent for a cleaner look
-const GROUP_TEXT = '#2a3748' // Updated color
+const GROUP_TEXT = '#606060' // Updated color
 
 const NavGroup = ({ item }) => {
   const { drawerOpen } = useSelector((state) => state.menu)
@@ -62,12 +62,12 @@ const NavGroup = ({ item }) => {
           >
             <Typography
               sx={{
-                fontSize: '0.68rem',
-                fontWeight: 700,
-                letterSpacing: '0.15em',
-                textTransform: 'uppercase',
+                fontSize: '16px',
+                fontWeight: 500,
+                letterSpacing: 0,
+                textTransform: 'capitalize',
                 color: GROUP_TEXT,
-                fontFamily: '"Public Sans", sans-serif',
+                fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
                 opacity: 0.8,
               }}
             >
@@ -82,7 +82,7 @@ const NavGroup = ({ item }) => {
                 display: 'flex',
                 justifyContent: 'center',
                 py: 1,
-                color: '#6a7b92',
+                color: '#F0F0F0',
               }}
             >
               <AppsIcon sx={{ fontSize: 18 }} />

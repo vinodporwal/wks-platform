@@ -13,6 +13,7 @@ const openedMixin = (theme) => ({
   overflowX: 'hidden',
   boxShadow: 'none',
   background: 'linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%)',
+  borderRight: '1px solid #DDDEE1 !important',
 })
 
 const closedMixin = (theme) => ({
@@ -22,7 +23,7 @@ const closedMixin = (theme) => ({
   }),
   overflowX: 'hidden',
   width: miniDrawerWidth,
-  borderRight: 'none',
+  borderRight: '1px solid #DDDEE1 !important',
   // boxShadow: theme.customShadows.z1,
   background: 'linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%)',
 })

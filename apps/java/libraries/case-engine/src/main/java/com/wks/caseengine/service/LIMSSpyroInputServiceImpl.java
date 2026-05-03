@@ -2,6 +2,9 @@ package com.wks.caseengine.service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
@@ -10,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
+import javax.sql.DataSource;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
@@ -24,17 +29,21 @@ import org.springframework.stereotype.Service;
 import com.wks.caseengine.dto.CrackerHMDLoadLIMSSpyroInputDTO;
 import com.wks.caseengine.dto.LIMSSpyroInputDTO;
 import com.wks.caseengine.dto.NaphthaQualityDTO;
+import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.NormAttributeTransactions;
 import com.wks.caseengine.entity.NormParameters;
 import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.service.AOPReportService;
+import com.wks.caseengine.repository.AopCalculationRepository;
 import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
 import com.wks.caseengine.repository.NormParametersRepository;
 import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.Utility;
@@ -66,6 +75,21 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 
     @Autowired
     private AOPReportService aopReportService;
+
+	@Autowired
+	private AopCalculationRepository aopCalculationRepository;
+
+	@Autowired
+	private ScreenMappingRepository screenMappingRepository;
+
+	@Autowired
+	private VerticalsRepository verticalRepository;
+
+	private DataSource dataSource;
+
+	public LIMSSpyroInputServiceImpl(DataSource dataSource) {
+		this.dataSource = dataSource;
+	}
     
     @Override
     public AOPMessageVM getLIMSSpyroInput(String plantId, String aopYear) {
@@ -508,6 +532,19 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 				upsertNaphthaQualityMetric(year, naphthaQualityDTO.getMinId(), naphthaQualityDTO.getMin());
 				upsertNaphthaQualityMetric(year, naphthaQualityDTO.getMonthsId(), naphthaQualityDTO.getMonths());
 			}
+		
+			List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("liims-extractions");
+			for (ScreenMapping screenMapping : screenMappingList) {
+				AopCalculation aopCalculation = new AopCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(UUID.fromString(plantFKId));
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
+
+
 			aopMessageVM.setCode(200);
 			aopMessageVM.setMessage("Data updated successfully");
 			aopMessageVM.setData(null);
@@ -879,7 +916,12 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 			}
 
 			Map<String, Object> map = new java.util.HashMap<>();
+
+			List<AopCalculation> aopCalculation = aopCalculationRepository
+					.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), aopYear, "liims-inputs");
+					
 			map.put("Data", dtoList);
+			map.put("aopCalculation", aopCalculation);
 			aopMessageVM.setCode(200);
 			aopMessageVM.setMessage("Data fetched successfully");
 			aopMessageVM.setData(map);
@@ -891,6 +933,75 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+
+	@Override
+	public AOPMessageVM calculateExpressionConsumptionNorms(String year, String plantId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_Calculate_LIMSSpyroInput";  
+			
+			Integer result=  executeDynamicUpdateProcedure(storedProcedure, plantId, site.getId().toString(),
+					vertical.getId().toString(), year);
+			aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId),year,"liims-inputs");
+			List<ScreenMapping> screenMappingList= screenMappingRepository.findByDependentScreen("liims-inputs");
+			for(ScreenMapping screenMapping:screenMappingList) {
+				AopCalculation aopCalculation=new AopCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(UUID.fromString(plantId));
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
+			aopMessageVM.setCode(200);
+	        aopMessageVM.setMessage("SP Executed successfully");
+	        aopMessageVM.setData(result);
+	        return aopMessageVM;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return aopMessageVM;
+	}
+
+	public int executeDynamicUpdateProcedure(String procedureName, String plantId, String siteId, String verticalId,
+		String finYear) {
+	try {
+		
+		String callSql = "{call " + procedureName + "(?, ?, ?, ?)}";
+
+		try (Connection connection = dataSource.getConnection();
+			 CallableStatement stmt = connection.prepareCall(callSql)) {
+
+			// Set parameters in the correct order
+			stmt.setString(1, plantId); // @finYear
+			stmt.setString(2, siteId.toString()); // @plantId
+			stmt.setString(3, verticalId.toString()); // @verticalId
+			stmt.setString(4, finYear); // @siteId
+
+			// Execute the stored procedure
+			int rowsAffected = stmt.executeUpdate();
+
+			// Optional: commit if auto-commit is off
+			if (!connection.getAutoCommit()) {
+				connection.commit();
+			}
+
+			return rowsAffected;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return 0;
+		}
+
+	} catch (IllegalArgumentException e) {
+		throw new RestInvalidArgumentException("Invalid UUID format ", e);
+	} catch (Exception ex) {
+		throw new RuntimeException("Failed to fetch data", ex);
+	}
+}
 
 	@Override
 	public AOPMessageVM getNaphthaQuality(String plantId, String aopYear) {

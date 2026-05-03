@@ -6,7 +6,7 @@ import { useMenuContext } from 'menu/menuProvider'
 import { verticalEnums } from 'enums/verticalEnums'
 import { drawerWidth, miniDrawerWidth } from 'config'
 
-const USE_FIXED = true
+const USE_FIXED = false
 
 export default function StepperNav() {
   const location = useLocation()
@@ -152,9 +152,10 @@ export default function StepperNav() {
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
                   fontSize: '12px',
-                  fontWeight: 700,
+                  fontWeight: 400,
                   fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                  color: "#303030"
+                  color: "#303030",
+                  textTransform: 'uppercase'
                 }}
               >
                 {step.label}

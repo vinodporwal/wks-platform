@@ -129,21 +129,21 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
         justifyContent: drawerOpen || isPopover ? 'initial' : 'center',
         backgroundColor: 'transparent',
         transition: 'all 0.3s ease',
-
+        fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
         '&:hover': {
           backgroundColor: 'rgba(87, 91, 238, 0.08)',
           '& .MuiTypography-root': {
-            color: '#575bee !important',
+            color: '#4A4DDA !important',
           },
           '& svg': {
-            color: '#575bee !important',
+            color: '#4A4DDA !important',
           },
         },
 
         // SELECTED STATE (?? IMPORTANT)
         '&.Mui-selected': {
-          background: '#575bee',
-          color: '#fff',
+          background: '#4A4DDA',
+          color: '#F0F0F0',
 
           '&:hover': {
             background: '#4f46e5',
@@ -177,11 +177,12 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
               <Typography
                 noWrap
                 sx={{
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  color: '#9ca3af',
+                  fontSize: '16px',
+                  fontWeight: 500,
+                  letterSpacing: 0,
+                  textTransform: 'capitalize',
+                  color: '#606060',
+                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif"
                 }}
               >
                 {menu.title}
@@ -197,7 +198,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
           <RemoveIcon
             sx={{
               fontSize: 13,
-              color: '#1d4ed8',
+              color: '#4046CA',
               flexShrink: 0,
               transition: 'all 200ms cubic-bezier(.4,0,.2,1)',
             }}
@@ -206,7 +207,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
           <AddIcon
             sx={{
               fontSize: 13,
-              color: '#1d4ed8',
+              color: '#4046CA',
               flexShrink: 0,
               transform: 'rotate(90deg)',
               transition: 'all 200ms cubic-bezier(.4,0,.2,1)',
@@ -219,13 +220,13 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
           <AppsIcon
             sx={{
               fontSize: 18,
-              color: selected === menu.id ? '#fff' : '#6a7b92',
+              color: selected === menu.id ? '#F0F0F0' : '#606060',
             }}
           />
           <IconChevronRight
             sx={{
               fontSize: 18,
-              color: selected === menu.id ? '#fff' : '#6a7b92',
+              color: selected === menu.id ? '#F0F0F0' : '#606060',
             }}
           />
         </Box>
@@ -299,14 +300,15 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
               gap: 1,
             }}
           >
-            <AppsIcon sx={{ fontSize: 16, color: '#4f46e5' }} />
+            <AppsIcon sx={{ fontSize: 16, color: '#4046CA' }} />
             <Typography
               sx={{
                 fontWeight: 700,
-                fontSize: '0.72rem',
-                color: '#4f46e5', // Brand color header
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
+                fontSize: '16px',
+                color: '#4046CA', // Brand color header
+                textTransform: 'capitalize',
+                letterSpacing: 0,
+                fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif"
               }}
             >
               {menu.title}

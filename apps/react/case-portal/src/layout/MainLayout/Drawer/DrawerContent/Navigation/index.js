@@ -72,21 +72,22 @@ const Navigation = () => {
         // ? Dark navy gradient background (like your screenshot)
         background: '#ffffff',
 
-        borderRight: '1px solid #ffffff',
+        // borderRight: '1px solid #ffffff',
         fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
         color: '#cbd5e1',
         fontSize: '0.75rem',
       }}
     >
       {/* Thin divider */}
-      <Divider sx={{ borderColor: '#1e293b', my: 0.25 }} />
+      <Divider sx={{ borderColor: '#DDDEE1', my: 0.25, borderWidth: '1px' }} />
 
       {/* Scrollable menu */}
       <Box
         sx={{
           flex: 1,
           px: 0,
-          pb: 8,
+          pb: '140px',
+          pt: 1,
           overflowY: 'auto',
           overflowX: 'hidden',
           '&::-webkit-scrollbar': {

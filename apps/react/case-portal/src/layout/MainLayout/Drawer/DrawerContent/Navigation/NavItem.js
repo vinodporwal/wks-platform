@@ -63,35 +63,35 @@ const NavItem = ({ item, level, onItemClick, isPopover }) => {
         borderRadius: '6px', // ? RESTORE PILL RADIUS
         backgroundColor: 'transparent', // default sidebar
 
-        color: '#6a7b92',
+        color: '#606060',
         transition: 'all 0.3s ease',
 
         '&:hover': {
           backgroundColor: 'rgba(87, 91, 238, 0.08)',
-          color: '#575bee',
+          color: '#4046CA',
           '& .MuiTypography-root': {
-            color: '#575bee !important',
+            color: '#4046CA !important',
           },
           '& .MuiListItemIcon-root': {
-            color: '#575bee !important',
+            color: '#4046CA !important',
           },
         },
 
         /* ? SELECTED STYLE */
         '&.Mui-selected': {
           backgroundColor: 'rgba(87, 91, 238, 0.1)', // Subtle selected background
-          color: '#575bee',
+          color: '#4046CA',
 
           '&:hover': {
             backgroundColor: 'rgba(87, 91, 238, 0.15)',
           },
 
           '& .MuiTypography-root': {
-            color: '#575bee !important',
+            color: '#4046CA !important',
           },
 
           '& .MuiListItemIcon-root': {
-            color: '#575bee !important',
+            color: '#4046CA !important',
           },
         },
 
@@ -113,7 +113,7 @@ const NavItem = ({ item, level, onItemClick, isPopover }) => {
         <ListItemIcon
           sx={{
             minWidth: drawerOpen || isPopover ? 30 : 0,
-            color: isSelected || isDashboard ? '#575bee' : '#6a7b92',
+            color: isSelected || isDashboard ? '#4046CA' : '#606060',
             justifyContent: 'center',
 
             '& svg': {
@@ -138,14 +138,15 @@ const NavItem = ({ item, level, onItemClick, isPopover }) => {
               sx={{
                 display: 'block',
                 visibility: 'visible',
-                fontSize: isPopover ? '0.78rem' : '0.82rem',
-                fontWeight: isSelected ? 600 : 500,
-                color: isSelected ? '#575bee' : '#475569',
+                fontSize: isPopover ? '14px' : '16px',
+                fontWeight: isSelected ? 700 : 500,
+                color: isSelected ? '#4046CA' : '#606060',
                 letterSpacing: isPopover ? '0.012em' : '0.01em',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 maxWidth: '180px',
+                fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
               }}
             >
               {item.title}

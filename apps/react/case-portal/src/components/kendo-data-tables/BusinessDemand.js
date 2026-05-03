@@ -2,6 +2,7 @@ import { Box } from '@mui/material'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import Typography from '@mui/material/Typography'
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import { useGridApiRef } from '@mui/x-data-grid'
 import kendoGetEnhancedColDefs from 'components/data-tables/CommonHeader/kendoBusinessDemColDef'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
@@ -69,6 +70,7 @@ const BusinessDemand = ({ permissions }) => {
   const IS_CARCKER_VMD = lowerVertName === 'cracker' && lowerSiteName === 'vmd'
   const IS_CRACKER_DMD = lowerVertName === 'cracker' && lowerSiteName === 'dmd'
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
+  const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
   const IS_CHEMICAL_JMD = lowerVertName === 'chemical' && lowerSiteName === 'jmd'
@@ -99,12 +101,17 @@ const BusinessDemand = ({ permissions }) => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [gridExpanded, setGridExpanded] = useState(true)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
   })
+
+  const toggleGrid = () => {
+    setGridExpanded((prev) => !prev)
+  }
   const columnsProductionRate = [
     {
       field: 'idFromApi',
@@ -694,37 +701,70 @@ const BusinessDemand = ({ permissions }) => {
 
       {lowerVertName !== 'cracker' && !IS_ELASTOMER_JMD && (
         <>
-          <CustomAccordion defaultExpanded disableGutters>
-            <CustomAccordionSummary
-              aria-controls='meg-grid-content'
-              id='meg-grid-header'
-            >
+          <Box sx={{
+            pb: IS_PP_SEZ ? 0 : 1,
+            background: 'transparent'
+          }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              }}>
+
+              {/* <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 32,
+                  height: 32,
+                  borderRadius: '6px',
+                  backgroundColor: '#ECEEFF',
+                  color: '#1e293b',
+                  cursor: 'pointer',
+                  padding: '8px',
+                }}
+                onClick={toggleGrid}
+              >
+                <KeyboardArrowUpIcon
+                  sx={{
+                    fontSize: 20,
+                    transition: '0.2s',
+                    transform: gridExpanded
+                      ? 'rotate(0deg)'
+                      : 'rotate(180deg)',
+                  }}
+                />
+              </Box> */}
               <Typography component='span' className='accordian-title'>
                 {PRODUCTION_TARGET_LABEL}
               </Typography>
-            </CustomAccordionSummary>
-            <CustomAccordionDetails>
-              <Box sx={{ width: '100%', margin: 0 }}>
-                <ProductionvolumeData
-                  isBusinessDemand={true}
-                  permissions={{
-                    allAction: true,
-                    showAction: false,
-                    addButton: false,
-                    deleteButton: false,
-                    editButton: false,
-                    showUnit: true,
-                    saveWithRemark: false,
-                    showCalculate: false,
-                    saveBtn: false,
-                    hideSummary: true,
-                    hideUploadExcel: true,
-                    hideDownloadExcel: true,
-                  }}
-                />
-              </Box>
-            </CustomAccordionDetails>
-          </CustomAccordion>
+            </Box>
+          </Box>
+          {gridExpanded && (<Box sx={{
+            transition: '0.3s',
+            overflow: 'hidden',
+            background: 'transparent',
+          }}>
+            <ProductionvolumeData
+              isBusinessDemand={true}
+              permissions={{
+                allAction: true,
+                showAction: false,
+                addButton: false,
+                deleteButton: false,
+                editButton: false,
+                showUnit: true,
+                saveWithRemark: false,
+                showCalculate: false,
+                saveBtn: false,
+                hideSummary: true,
+                hideUploadExcel: true,
+                hideDownloadExcel: true,
+              }}
+            />
+          </Box>)}
         </>
       )}
       {IS_ELASTOMER_JMD && (

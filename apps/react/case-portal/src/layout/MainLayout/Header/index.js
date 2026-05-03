@@ -8,7 +8,7 @@ import AppBarStyled from './AppBarStyled'
 import HeaderContent from './HeaderContent/index'
 import { DashboardColors } from 'themes/colors'
 
-const Header = ({ open, handleDrawerToggle, keycloak, isDashboard }) => {
+const Header = ({ open, handleDrawerToggle, keycloak, isDashboard, navigation }) => {
   const theme = useTheme()
   const matchDownMD = useMediaQuery(theme.breakpoints.down('lg'))
 
@@ -17,10 +17,12 @@ const Header = ({ open, handleDrawerToggle, keycloak, isDashboard }) => {
       sx={{
         minHeight: '38px !important',
         py: 0,
+        pl: '16px !important',
+        pr: '0px !important',
       }}
     >
       {/* Show icon ONLY when drawer is closed */}
-      {!open && (
+      {!open && isDashboard && (
           <IconButton
             disableRipple
             aria-label='open drawer'
@@ -65,7 +67,7 @@ const Header = ({ open, handleDrawerToggle, keycloak, isDashboard }) => {
           {open ? <MenuOpenIcon /> : <MenuIcon />}
         </IconButton>)} */}
 
-      <HeaderContent keycloak={keycloak} />
+      <HeaderContent keycloak={keycloak} navigation={navigation} />
     </Toolbar>
   )
 

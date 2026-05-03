@@ -9,6 +9,7 @@ public interface ProductionOptimizerService {
 	AOPMessageVM calculateProductionOptimizer(String plantId, String aopYear);
 	AOPMessageVM getCombinedProductionOptimizerDropdown(String plantId);
 	AOPMessageVM getProductionOptimizerDropdown(String plantId);
+	byte[] exportProductionOptimizer(String plantId, String aopYear, String type);
 
 }
 

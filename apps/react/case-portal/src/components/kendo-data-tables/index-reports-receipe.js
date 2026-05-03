@@ -18,6 +18,7 @@ import {
   Box,
   Button,
   CircularProgress,
+  Collapse,
   Dialog,
   DialogActions,
   DialogContent,
@@ -50,6 +51,9 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
+import AddIcon from '@mui/icons-material/Add'
+import { FileExportIcon, FileImportIcon, SaveIcon, CalculateIcon } from 'assets/images/icons'
 
 export const particulars = [
   'normParameterId',
@@ -135,6 +139,7 @@ const KendoDataTablesReciepe = ({
   handleExcelUpload,
   downloadExcelForConfiguration,
   summaryEdited,
+  isEditable = false,
 }) => {
   const NumericEditorWithLimit = useCallback(
     (props) => <NoSpinnerNumericEditor {...props} maxLength={10} />,
@@ -153,6 +158,7 @@ const KendoDataTablesReciepe = ({
   const [edit, setEdit] = useState({})
   const [sort, setSort] = useState([])
   const [issRowEdited, setIsRowEdited] = useState(false)
+  const [gridExpanded, setGridExpanded] = useState(true)
   const FORMATE_DECIMAL = ValueFormatterProduction()
 
   const keycloak = useSession()
@@ -223,6 +229,8 @@ const KendoDataTablesReciepe = ({
     const available = 100 - pageHeaderVH
     return Math.round(Math.min(needed, maxVH, available))
   }, [rows?.length])
+
+  const toggleGrid = () => setGridExpanded((prev) => !prev)
 
   const handleRowClick = (e) => {
     // console.log(e.dataItem)
@@ -549,156 +557,243 @@ const KendoDataTablesReciepe = ({
   }
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div className="k-table-box">
       {loading && <LoaderBackdrop open={!!loading} />}
 
       {(permissions?.allAction ?? true) && (
-        <Box
-          className='action-box2'
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%', // make sure container is full width
-            p: 1,
-          }}
-        >
+        <Box className='action-box'>
           <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 1,
-              flexGrow: 1, // ? key to take up all left space
+              justifyContent: 'space-between',
+              width: '100%',
+              ...(permissions?.marginTop && { marginTop: '10px' }),
             }}
           >
-            {permissions?.showTitle && (
-              <Typography
-                component='div'
-                className='grid-title'
-                style={{ whiteSpace: 'pre-line' }}
-              >
-                {title}
-              </Typography>
-            )}
-
-            {permissions?.showTitleNameBusiness && (
-              <Typography
-                component='div'
-                className='grid-title'
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                flexGrow: 1, // ? key to take up all left space
+                paddingBottom: 0.25,
+              }}
+            >
+              <Box
                 sx={{
-                  ...(permissions?.marginBottom && { marginBottom: '10px' }),
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 32,
+                  height: 32,
+                  borderRadius: '6px',
+                  backgroundColor: '#ECEEFF',
+                  color: '#1e293b',
+                  ml: 1,
+                  cursor: 'pointer',
+                  padding: '8px',
+                }}
+                onClick={toggleGrid}
+              >
+                <KeyboardArrowUpIcon
+                  sx={{
+                    fontSize: 20,
+                    transition: '0.2s',
+                    transform: gridExpanded
+                      ? 'rotate(0deg)'
+                      : 'rotate(180deg)',
+                  }}
+                />
+              </Box>
+              {permissions?.showTitle && (
+                <Typography
+                  component='div'
+                  className='grid-title'
+                  style={{ whiteSpace: 'pre-line' }}
+                >
+                  {title}
+                </Typography>
+              )}
+
+              {permissions?.showTitleNameBusiness && (
+                <Typography
+                  component='div'
+                  className='grid-title'
+                  sx={{
+                    ...(permissions?.marginBottom && { marginBottom: '10px' }),
+                  }}
+                >
+                  {permissions?.titleName}
+                </Typography>
+              )}
+              {/* ITEMS BADGE */}
+              <Box
+                sx={{
+                  p: '4px 8px',
+                  borderRadius: '100px',
+                  backgroundColor: '#ECEEFF',
+                  border: '1px solid #41424D',
                 }}
               >
-                {permissions?.titleName}
-              </Typography>
-            )}
-          </Box>
-
-          {/* RIGHT: Buttons */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {permissions?.addButton && (
-              <Button
-                variant='contained'
-                className='btn-save'
-                onClick={handleAddRow}
-                disabled={true}
-              >
-                Add Item
-              </Button>
-            )}
-
-            {/* Export Button */}
-            {permissions?.downloadExcelBtn &&
-              shouldShowExportImportButtons() && (
+                <Typography
+                  sx={{
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: '#41424D',
+                    fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
+                  }}
+                >
+                  {rows?.length || 0} {rows?.length === 1 ? 'Row' : 'Rows'}
+                </Typography>
+              </Box>
+              {isEditable && (
+                <Box
+                  sx={{
+                    p: '4px 8px',
+                    borderRadius: '100px',
+                    backgroundColor: '#F3EEE7',
+                    border: '1px solid #934403',
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      color: '#934403',
+                      fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
+                    }}
+                  >
+                    Editable
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+            {/* RIGHT: Buttons */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {permissions?.addButton && (
                 <Button
                   variant='contained'
-                  className='btn-save'
-                  onClick={downloadExcelForConfiguration}
-                  disabled={isButtonDisabled}
+                  className='btn-add'
+                  startIcon={<AddIcon sx={{ color: '#4A4DDA !important' }} />}
+                  onClick={handleAddRow}
+                  disabled={true}
                 >
-                  Export
+                  Add Item
                 </Button>
               )}
 
-            {/* Import Button */}
-            {permissions?.uploadExcelBtn && shouldShowExportImportButtons() && (
-              <div>
-                <input
-                  accept='.xlsx,.xls'
-                  style={{ display: 'none' }}
-                  id='excel-upload-input'
-                  type='file'
-                  onChange={(e) => {
-                    const file = e.target.files[0]
-                    if (file) {
-                      handleExcelUpload(file)
-                      e.target.value = ''
-                    }
-                  }}
-                />
-                <label htmlFor='excel-upload-input'>
+              {/* Export Button */}
+              {permissions?.downloadExcelBtn &&
+                shouldShowExportImportButtons() && (
                   <Button
                     variant='contained'
-                    component='span'
-                    className='btn-save'
-                    disabled={isButtonDisabled || READ_ONLY}
+                    className='btn-export'
+                    startIcon={
+                      <Box
+                        component='img'
+                        src={FileExportIcon}
+                        className='w16-icon'
+                      />
+                    }
+                    onClick={downloadExcelForConfiguration}
+                    disabled={isButtonDisabled}
                   >
-                    Import
+                    Export
                   </Button>
-                </label>
-              </div>
-            )}
+                )}
 
-            {permissions?.saveBtn && (
-              <Button
-                variant='contained'
-                className='btn-save'
-                onClick={saveModalOpen}
-                disabled={
-                  isButtonDisabled ||
-                  READ_ONLY ||
-                  (!summaryEdited && Object.keys(modifiedCells).length === 0)
-                }
-                // loading={loading}
-                // loadingposition='start'
-                {...(loading ? {} : {})}
-              >
-                Save
-              </Button>
-            )}
 
-            {permissions?.showCalculate && (
-              <Button
-                variant='contained'
-                onClick={handleCalculateBtn}
-                disabled={isButtonDisabled}
-                className='btn-save'
-              >
-                Calculate
-              </Button>
-            )}
-            {permissions?.showCalculate && (
-              <Button
-                variant='contained'
-                onClick={handleExport}
-                disabled={isButtonDisabled}
-                className='btn-save'
-              >
-                Export
-              </Button>
-            )}
-            {permissions?.showFinalSubmit && (
-              <Button
-                variant='contained'
-                // onClick={handleExport}
-                // disabled={isButtonDisabled}
-                className='btn-save'
-              >
-                Submit
-              </Button>
-            )}
+              {/* Import Button */}
+              {permissions?.uploadExcelBtn && shouldShowExportImportButtons() && (
+                <div>
+                  <input
+                    accept='.xlsx,.xls'
+                    style={{ display: 'none' }}
+                    id='excel-upload-input'
+                    type='file'
+                    onChange={(e) => {
+                      const file = e.target.files[0]
+                      if (file) {
+                        handleExcelUpload(file)
+                        e.target.value = ''
+                      }
+                    }}
+                  />
+                  <label htmlFor='excel-upload-input'>
+                    <Button
+                      variant='contained'
+                      startIcon={
+                        <Box
+                          component='img'
+                          src={FileImportIcon}
+                          className='w16-icon'
+                        />
+                      }
+                      className='btn-import'
+                      disabled={isButtonDisabled || READ_ONLY}
+                    >
+                      Import
+                    </Button>
+                  </label>
+                </div>
+              )}
 
-            {/* {permissions?.showWorkFlowBtns && (
+              {permissions?.saveBtn && (
+                <Button
+                  variant='contained'
+                  className='btn-save'
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={SaveIcon}
+                      className='w16-icon'
+                    />
+                  }
+                  onClick={saveModalOpen}
+                  disabled={
+                    isButtonDisabled ||
+                    READ_ONLY ||
+                    (!summaryEdited && Object.keys(modifiedCells).length === 0)
+                  }
+                  // loading={loading}
+                  // loadingposition='start'
+                  {...(loading ? {} : {})}
+                >
+                  Save
+                </Button>
+              )}
+
+              {permissions?.showCalculate && (
+                <Button
+                  variant='contained'
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={CalculateIcon}
+                      className='w16-icon'
+                    />
+                  }
+                  onClick={handleCalculateBtn}
+                  disabled={isButtonDisabled}
+                  className='btn-calculate'
+                >
+                  Calculate
+                </Button>
+              )}
+
+              {permissions?.showFinalSubmit && (
+                <Button
+                  variant='contained'
+                  // onClick={handleExport}
+                  // disabled={isButtonDisabled}
+                  className='btn-save'
+                >
+                  Submit
+                </Button>
+              )}
+
+              {/* {permissions?.showWorkFlowBtns && (
                     <Stack direction='row' spacing={1} alignItems='center'>
                       {taskId && (
                         <Button
@@ -714,81 +809,83 @@ const KendoDataTablesReciepe = ({
                       </Button>
                     </Stack>
                   )} */}
+            </Box>
           </Box>
         </Box>
       )}
+      <Collapse in={gridExpanded}>
+        <div className='kendo-data-grid'>
+          <Tooltip openDelay={50} position='auto' anchorElement='target'>
+            <Grid
+              style={{
+                flex: 1,
+                overflow: 'auto',
+                // height: 'auto',
+                // height: permissions?.isHeight ? '60vh' : '60vh',
+                // height: '60vh',
+                // height: `${gridHeight}px`,
 
-      <div className='kendo-data-grid'>
-        <Tooltip openDelay={50} position='auto' anchorElement='target'>
-          <Grid
-            style={{
-              flex: 1,
-              overflow: 'auto',
-              // height: 'auto',
-              // height: permissions?.isHeight ? '60vh' : '60vh',
-              // height: '60vh',
-              // height: `${gridHeight}px`,
+                height: rows?.length > 10 ? `${calculatedVH}vh` : undefined,
 
-              height: rows?.length > 10 ? `${calculatedVH}vh` : undefined,
+                // height: rows?.length > 10 ? '60vh' : `${calculatedVH}vh`,
+                // height: `${calculatedVH}vh`,
+              }}
+              modifiedCells={modifiedCells}
+              data={rows}
+              rows={{ data: CustomRow }}
+              sortable={{
+                mode: 'multiple',
+              }}
+              defaultGroup={initialGroup}
+              autoProcessData={true}
+              dataItemKey='id'
+              editField='inEdit'
+              editable={{ mode: 'incell' }}
+              onEditChange={handleEditChange}
+              edit={edit}
+              filter={filter}
+              onFilterChange={(e) => setFilter(e.filter)}
+              onItemChange={itemChange}
+              resizable={true}
+              defaultSkip={0}
+              defaultTake={100}
+              contextMenu={true}
+              filterable={columns.some((col) => dateFields.includes(col.field))}
+              size='small'
+              pageable={
+                rows?.length > 100
+                  ? {
+                      buttonCount: 4,
+                      pageSizes: [10, 50, 100],
+                    }
+                  : false
+              }
+              onRowClick={handleRowClick}
+            >
+              {renderColumns(
+                columns.filter((col) => !hiddenFields.includes(col.field)),
+                filter,
+                sort,
+              )}
 
-              // height: rows?.length > 10 ? '60vh' : `${calculatedVH}vh`,
-              // height: `${calculatedVH}vh`,
-            }}
-            modifiedCells={modifiedCells}
-            data={rows}
-            rows={{ data: CustomRow }}
-            sortable={{
-              mode: 'multiple',
-            }}
-            defaultGroup={initialGroup}
-            autoProcessData={true}
-            dataItemKey='id'
-            editField='inEdit'
-            editable={{ mode: 'incell' }}
-            onEditChange={handleEditChange}
-            edit={edit}
-            filter={filter}
-            onFilterChange={(e) => setFilter(e.filter)}
-            onItemChange={itemChange}
-            resizable={true}
-            defaultSkip={0}
-            defaultTake={100}
-            contextMenu={true}
-            filterable={columns.some((col) => dateFields.includes(col.field))}
-            size='small'
-            pageable={
-              rows?.length > 100
-                ? {
-                    buttonCount: 4,
-                    pageSizes: [10, 50, 100],
-                  }
-                : false
-            }
-            onRowClick={handleRowClick}
-          >
-            {renderColumns(
-              columns.filter((col) => !hiddenFields.includes(col.field)),
-              filter,
-              sort,
-            )}
-
-            {permissions?.deleteButton && (
-              <GridColumn
-                key='actions'
-                field='actions'
-                title='Action'
-                width={80}
-                className='k-text-center'
-                filterable={false}
-                editable={false}
-                cells={{
-                  data: ActionsCell,
-                }}
-              />
-            )}
-          </Grid>
-        </Tooltip>
-      </div>
+              {permissions?.deleteButton && (
+                <GridColumn
+                  key='actions'
+                  field='actions'
+                  title='Action'
+                  width={80}
+                  className='k-text-center'
+                  filterable={false}
+                  editable={false}
+                  cells={{
+                    data: ActionsCell,
+                  }}
+                />
+              )}
+            </Grid>
+          </Tooltip>
+        </div>
+      </Collapse>
 
       <Notification
         open={snackbarOpen}

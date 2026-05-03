@@ -42,6 +42,9 @@ public interface PlantsRepository extends JpaRepository<Plants, UUID> {
       List<PlantConsumpProjection> findPlantConsumptionByMaterial(@Param("plantId") UUID plantId, @Param("year") String year);
 	
 
+	@Query(value = "SELECT  DISTINCT MaintForMonth  FROM vwCRACKER_GetShutdownMonths WHERE PlantId = :plantId AND MaintenanceName = :maintenanceName AND AuditYear = :AuditYear", nativeQuery = true)
+	List getCRACKERShutdownMonths(@Param("plantId") UUID plantId, @Param("maintenanceName") String maintenanceName,
+			@Param("AuditYear") String AuditYear);
 
 	//   @Query(
   
@@ -59,6 +62,9 @@ public interface PlantsRepository extends JpaRepository<Plants, UUID> {
 				 "WHERE p.Id IN (SELECT DISTINCT PlantFKId FROM UserScreenMapping WHERE ScreenCode = :screenCode AND verticalfkid = :verticalId) " +
 				 "AND p.Site_FK_Id = :siteId", nativeQuery = true)
 	List<Plants> findUniqueNamesPlantsByVerticalAndSite(@Param("verticalId") UUID verticalId, @Param("siteId") UUID siteId, @Param("screenCode") String screenCode);
+
+
+
 	
 	@Query(value = "SELECT p.* FROM Plants p " +
 				 "WHERE p.Vertical_FK_Id = :verticalId " +
