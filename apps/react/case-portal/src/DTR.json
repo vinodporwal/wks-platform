@@ -554,7 +554,7 @@
                         "customClass": "mb-3 disabled-field",
                         "disabled": true,
                         "tableView": true,
-                        "calculateValue": "\r\n",
+                        "calculateValue": "const urlParams = new URLSearchParams(window.location.search);\nconst assetName = urlParams.get('assetName');\nif (assetName) {\n  value = assetName;\n}",
                         "key": "mainAsset",
                         "type": "textfield",
                         "input": true,
