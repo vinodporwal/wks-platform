@@ -70,6 +70,8 @@ const BusinessDemand = ({ permissions }) => {
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
+  const IS_ELASTOMER_HMD =
+    lowerVertName === 'elastomer' && lowerSiteName === 'hmd'
   const IS_CHEMICAL_JMD =
     lowerVertName === 'chemical' && lowerSiteName === 'jmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'
@@ -290,7 +292,7 @@ const BusinessDemand = ({ permissions }) => {
         // FOR PTA THIS CONDITION IS REMOVED
         // IS_PTA_VERTICAL ||
         IS_PET_VERTICAL ||
-        IS_ELASTOMER_VERTICAL ||
+        (IS_ELASTOMER_VERTICAL && !IS_ELASTOMER_HMD) ||
         (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD)
       ) {
         const productionRows = (rows || []).filter(
@@ -520,7 +522,8 @@ const BusinessDemand = ({ permissions }) => {
         IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_ELASTOMER_HMD
           ? true
           : false,
       uploadExcelBtn:
@@ -528,7 +531,8 @@ const BusinessDemand = ({ permissions }) => {
         IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_ELASTOMER_HMD
           ? true
           : false,
 
@@ -538,7 +542,8 @@ const BusinessDemand = ({ permissions }) => {
         IS_PET_VERTICAL ||
         IS_PVC_VMD ||
         IS_PVC_DMD ||
-        IS_ELASTOMER_JMD
+        IS_ELASTOMER_JMD ||
+        IS_ELASTOMER_HMD
           ? false
           : true,
 
