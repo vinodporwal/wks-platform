@@ -1012,6 +1012,11 @@ def usd_iterate(
         # Calculate STG load in MW from dispatch
         stg_load_mw = stg_gross_mwh / stg_op_hours if stg_op_hours > 0 else 0.0
         
+        stg_lp_ext_tph = 0.0
+        stg_mp_ext_tph = 0.0
+        stg_eq_svh_lp_tph = 0.0
+        stg_eq_svh_mp_tph = 0.0
+        
         if use_stg_load_based and stg_load_mw > 0:
             # Recalculate extraction based on actual STG load
             stg_extraction = calculate_stg_extraction_requirements_load_based(
@@ -1024,11 +1029,17 @@ def usd_iterate(
             
             # Also recalculate LP and MP balance with STG load-based extraction
             extraction_data = get_stg_extraction_for_load(stg_load_mw, stg_extraction_lookup_df)
+            stg_lp_ext_tph = extraction_data["lp_extraction_tph"]
+            stg_mp_ext_tph = extraction_data["mp_extraction_tph"]
+            stg_eq_svh_lp_tph = extraction_data["eq_svh_lp_tph"]
+            stg_eq_svh_mp_tph = extraction_data["eq_svh_mp_tph"]
+            
             lp_balance = calculate_lp_balance_stg_based(
                 lp_process=lp_process,
                 lp_fixed=lp_fixed,
                 bfw_ufu=bfw_ufu,
-                stg_lp_extraction_tph=extraction_data["lp_extraction_tph"],
+                stg_lp_extraction_tph=stg_lp_ext_tph,
+                stg_eq_svh_lp_tph=stg_eq_svh_lp_tph,
                 stg_operating_hours=stg_op_hours,
                 lp_ufu_mt=_prev_lp_u4u_mt if _prev_lp_u4u_mt > 0 else None,
             )
@@ -1037,7 +1048,8 @@ def usd_iterate(
                 mp_process=mp_process,
                 mp_fixed=mp_fixed,
                 mp_for_lp=mp_for_lp,
-                stg_mp_extraction_tph=extraction_data["mp_extraction_tph"],
+                stg_mp_extraction_tph=stg_mp_ext_tph,
+                stg_eq_svh_mp_tph=stg_eq_svh_mp_tph,
                 stg_operating_hours=stg_op_hours,
                 mp_ufu_mt=_prev_mp_u4u_mt if _prev_mp_u4u_mt > 0 else None,
             )
@@ -1115,6 +1127,11 @@ def usd_iterate(
             stg_shp_power=stg_shp_required,
             lp_ufu_mt=_prev_lp_u4u_mt if _prev_lp_u4u_mt > 0 else None,
             mp_ufu_mt=_prev_mp_u4u_mt if _prev_mp_u4u_mt > 0 else None,
+            stg_lp_extraction_tph=stg_lp_ext_tph,
+            stg_mp_extraction_tph=stg_mp_ext_tph,
+            stg_eq_svh_lp_tph=stg_eq_svh_lp_tph,
+            stg_eq_svh_mp_tph=stg_eq_svh_mp_tph,
+            stg_operating_hours=stg_op_hours,
         )
         
         shp_demand = steam_balance["summary"]["total_shp_demand"]
