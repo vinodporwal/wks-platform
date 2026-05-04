@@ -179,6 +179,8 @@ def save_model_quantities(month: int, year: int, utilities: dict, power_dispatch
     lp_from_prds = steam.get("lp_from_prds_mt", 0)
     lp_from_stg = steam.get("lp_from_stg_mt", 0)
     mp_from_stg = steam.get("mp_from_stg_mt", 0)
+    shp_for_stg_lp = steam.get("shp_for_stg_lp_mt", lp_from_stg * 0.48)
+    shp_for_stg_mp = steam.get("shp_for_stg_mp_mt", mp_from_stg * 0.69)
     
     # Define all mappings: (plant, utility, material, quantity, qty_generation)
     # quantity = calculated material consumption
@@ -301,8 +303,8 @@ def save_model_quantities(month: int, year: int, utilities: dict, power_dispatch
         # ========================================
         # UTILITY PLANT - STG EXTRACTION
         # ========================================
-        ("NMD - Utility Plant", "STG1_LP STEAM", "SHP Steam_Dis", lp_from_stg * 0.48, lp_from_stg),
-        ("NMD - Utility Plant", "STG1_MP STEAM", "SHP Steam_Dis", mp_from_stg * 0.69, mp_from_stg),
+        ("NMD - Utility Plant", "STG1_LP STEAM", "SHP Steam_Dis", shp_for_stg_lp, lp_from_stg),
+        ("NMD - Utility Plant", "STG1_MP STEAM", "SHP Steam_Dis", shp_for_stg_mp, mp_from_stg),
         
         # ========================================
         # UTILITY/POWER DISTRIBUTION
@@ -425,5 +427,19 @@ def save_budget_results(month: int, year: int, budget_result: dict) -> dict:
     power_dispatch["hrsg1_shp_mt"] = shp_balance.get("shp_from_hrsg1", 0)
     power_dispatch["hrsg2_shp_mt"] = shp_balance.get("shp_from_hrsg2", 0)
     power_dispatch["hrsg3_shp_mt"] = shp_balance.get("shp_from_hrsg3", 0)
+    
+    # Populate steam quantities for saving
+    hp_balance = final_steam.get("hp_balance", {})
+    mp_balance = final_steam.get("mp_balance", {})
+    lp_balance = final_steam.get("lp_balance", {})
+    utilities["steam"] = {
+        "hp_from_prds_mt": hp_balance.get("hp_from_prds", 0),
+        "mp_from_prds_mt": mp_balance.get("mp_from_prds", 0),
+        "lp_from_prds_mt": lp_balance.get("lp_from_prds", 0),
+        "lp_from_stg_mt": lp_balance.get("lp_from_stg", 0),
+        "mp_from_stg_mt": mp_balance.get("mp_from_stg", 0),
+        "shp_for_stg_lp_mt": lp_balance.get("shp_for_stg_lp", lp_balance.get("lp_from_stg", 0) * 0.48),
+        "shp_for_stg_mp_mt": mp_balance.get("shp_for_stg_mp", mp_balance.get("mp_from_stg", 0) * 0.69),
+    }
     
     return save_model_quantities(month, year, utilities, power_dispatch)

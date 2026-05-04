@@ -7,6 +7,7 @@ import { InputApiService } from 'components/aop-phase-two/services/cpp/inputApiS
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { customValueFormatterPhaseTwo as customValueFormat } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const keycloak = useSession()
 
@@ -56,8 +57,8 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
     {
       field: 'stgLoad',
       title: 'STG Load (MW)',
-      width: 120,
-      minWidth: 120,
+      width: 150,
+      minWidth: 150,
       type: 'number1',
       editable: false,
     },
@@ -77,8 +78,8 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
     {
       field: 'previousYearHeatRate',
       title: 'PREVIOUS YEAR BUDGET HR',
-      widthT: 200,
-      minWidth: 200,
+      widthT: 230,
+      minWidth: 230,
       type: 'numberWithRadio',
       format: customValueFormat(1),
       editable: true,
@@ -541,12 +542,7 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <AdvanceKendoTable
         columns={columns}

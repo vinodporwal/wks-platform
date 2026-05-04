@@ -127,10 +127,10 @@ NORM_AIR_PER_MT_SHP_HRSG = 9.7440           # ~468720 NM3 per ~48000 MT SHP (sca
 # Iteration Constants
 USD_ITERATION_LIMIT = 50
 USD_TOLERANCE = 0.001  # MWh tolerance for aux power convergence
-EXCESS_STEAM_ACTION_THRESHOLD_MT = 5.0
-EXCESS_STEAM_PRACTICAL_TOLERANCE_MT = 5.0
+EXCESS_STEAM_ACTION_THRESHOLD_MT = 1.0
+EXCESS_STEAM_PRACTICAL_TOLERANCE_MT = 0.1
 STALL_ITERATION_LIMIT = 3
-STALL_EXCESS_STEAM_DELTA_MT = 5.0
+STALL_EXCESS_STEAM_DELTA_MT = 1.1
 STALL_POWER_AUX_DELTA_MWH = 0.001
 STALL_STG_DELTA_MWH = 0.001
 
@@ -253,20 +253,22 @@ def calculate_utility_consumption(
     }
 
 
-def calculate_stg_shp_demand(stg_gross_mwh: float) -> float:
+def calculate_stg_shp_demand(stg_gross_mwh: float, sp_steam_power: float = 0.0) -> float:
     """
     Calculate SHP steam demand for STG power generation.
     
-    Formula: SHP (MT) = GrossKWh * 0.0036 MT/KWh
+    Formula: SHP (MT) = GrossKWh * SHP_per_KWh
     
     Args:
         stg_gross_mwh: STG gross generation in MWh
+        sp_steam_power: Specific steam consumption (MT/MWh), if 0 uses fallback norm
     
     Returns:
         SHP steam required in MT
     """
     stg_gross_kwh = stg_gross_mwh * 1000
-    return stg_gross_kwh * NORM_STG_SHP_PER_KWH
+    norm_per_kwh = (sp_steam_power / 1000) if sp_steam_power > 0 else NORM_STG_SHP_PER_KWH
+    return stg_gross_kwh * norm_per_kwh
 
 
 def calculate_stg_extraction_requirements(lp_total: float, mp_total: float) -> dict:
@@ -918,7 +920,8 @@ def usd_iterate(
             additional_demand_mwh=previous_utility_aux_mwh,
             stg_max_mwh=stg_limit_mwh,
             stg_min_override_mwh=stg_min_override_mwh,
-            gt_reduction_mwh=gt_reduction_for_balance_mwh
+            gt_reduction_mwh=gt_reduction_for_balance_mwh,
+            stg_extraction_lookup_df=stg_extraction_lookup_df
         )
         
         if power_result.get("insufficientCapacity") or power_result.get("insufficientCapacityAfterImport"):
@@ -971,7 +974,15 @@ def usd_iterate(
                 stg_gross_mwh = gross
                 stg_aux_mwh = aux
                 stg_net_mwh = net
-                stg_shp_required = calculate_stg_shp_demand(stg_gross_mwh)
+                
+                # Fetch sp_steam_power for the dispatched load
+                stg_load_mw = asset.get("LoadMW", 0)
+                sp_steam_power_val = 0.0
+                if use_stg_load_based and stg_load_mw > 0:
+                    ext_data = get_stg_extraction_for_load(stg_load_mw, stg_extraction_lookup_df)
+                    sp_steam_power_val = ext_data.get("sp_steam_power", 0.0)
+                    
+                stg_shp_required = calculate_stg_shp_demand(stg_gross_mwh, sp_steam_power_val)
             elif "GT" in asset_upper or "POWER PLANT" in asset_upper:
                 gt_details.append({
                     "name": asset_name,
@@ -1001,6 +1012,11 @@ def usd_iterate(
         # Calculate STG load in MW from dispatch
         stg_load_mw = stg_gross_mwh / stg_op_hours if stg_op_hours > 0 else 0.0
         
+        stg_lp_ext_tph = 0.0
+        stg_mp_ext_tph = 0.0
+        stg_eq_svh_lp_tph = 0.0
+        stg_eq_svh_mp_tph = 0.0
+        
         if use_stg_load_based and stg_load_mw > 0:
             # Recalculate extraction based on actual STG load
             stg_extraction = calculate_stg_extraction_requirements_load_based(
@@ -1013,11 +1029,17 @@ def usd_iterate(
             
             # Also recalculate LP and MP balance with STG load-based extraction
             extraction_data = get_stg_extraction_for_load(stg_load_mw, stg_extraction_lookup_df)
+            stg_lp_ext_tph = extraction_data["lp_extraction_tph"]
+            stg_mp_ext_tph = extraction_data["mp_extraction_tph"]
+            stg_eq_svh_lp_tph = extraction_data["eq_svh_lp_tph"]
+            stg_eq_svh_mp_tph = extraction_data["eq_svh_mp_tph"]
+            
             lp_balance = calculate_lp_balance_stg_based(
                 lp_process=lp_process,
                 lp_fixed=lp_fixed,
                 bfw_ufu=bfw_ufu,
-                stg_lp_extraction_tph=extraction_data["lp_extraction_tph"],
+                stg_lp_extraction_tph=stg_lp_ext_tph,
+                stg_eq_svh_lp_tph=stg_eq_svh_lp_tph,
                 stg_operating_hours=stg_op_hours,
                 lp_ufu_mt=_prev_lp_u4u_mt if _prev_lp_u4u_mt > 0 else None,
             )
@@ -1026,7 +1048,8 @@ def usd_iterate(
                 mp_process=mp_process,
                 mp_fixed=mp_fixed,
                 mp_for_lp=mp_for_lp,
-                stg_mp_extraction_tph=extraction_data["mp_extraction_tph"],
+                stg_mp_extraction_tph=stg_mp_ext_tph,
+                stg_eq_svh_mp_tph=stg_eq_svh_mp_tph,
                 stg_operating_hours=stg_op_hours,
                 mp_ufu_mt=_prev_mp_u4u_mt if _prev_mp_u4u_mt > 0 else None,
             )
@@ -1104,6 +1127,11 @@ def usd_iterate(
             stg_shp_power=stg_shp_required,
             lp_ufu_mt=_prev_lp_u4u_mt if _prev_lp_u4u_mt > 0 else None,
             mp_ufu_mt=_prev_mp_u4u_mt if _prev_mp_u4u_mt > 0 else None,
+            stg_lp_extraction_tph=stg_lp_ext_tph,
+            stg_mp_extraction_tph=stg_mp_ext_tph,
+            stg_eq_svh_lp_tph=stg_eq_svh_lp_tph,
+            stg_eq_svh_mp_tph=stg_eq_svh_mp_tph,
+            stg_operating_hours=stg_op_hours,
         )
         
         shp_demand = steam_balance["summary"]["total_shp_demand"]
@@ -1173,7 +1201,10 @@ def usd_iterate(
         
         # Get excess steam (if demand < MIN supply)
         excess_steam_mt = hrsg_dispatch_result.get("excess_steam_mt", 0)
-        excess_power_from_steam_mwh = excess_steam_mt / STEAM_TO_POWER_MT_PER_MWH if excess_steam_mt > 0 else 0
+        conversion_factor = stg_extraction.get("sp_steam_power", STEAM_TO_POWER_MT_PER_MWH) if stg_extraction else STEAM_TO_POWER_MT_PER_MWH
+        if conversion_factor <= 0:
+            conversion_factor = STEAM_TO_POWER_MT_PER_MWH
+        excess_power_from_steam_mwh = excess_steam_mt / conversion_factor if excess_steam_mt > 0 else 0
         
         # Also calculate MIN load result for backward compatibility
         hrsg_min_load_result = calculate_hrsg_min_load_and_excess_steam(
@@ -1283,7 +1314,7 @@ def usd_iterate(
                 h_name = hrsg_detail.get("name", "")
                 h_hours = hrsg_detail.get("hours", 0)
                 h_max_cap = hrsg_detail.get("max_capacity_per_hr", 136.0)
-                h_eff = hrsg_detail.get("efficiency", 1.03)
+                h_eff = hrsg_detail.get("efficiency", 1.00)
                 h_supp_max = hrsg_detail.get("supp_max_mt_month", 0)
                 print(f"  |   {h_name}: {h_hours:.0f} hrs x {h_max_cap} MT/hr x {h_eff} = {h_supp_max:,.2f} MT")
         print(f"  |   Total Supp Max = {total_supp_max:,.2f} MT")
@@ -1578,6 +1609,8 @@ def usd_iterate(
             actual_stg_increase = min(actual_stg_increase, gt_available_reduction)
             damped_stg_increase = actual_stg_increase * 0.5
             actual_stg_increase = min(actual_stg_increase, damped_stg_increase if damped_stg_increase > 0 else actual_stg_increase)
+            damped_stg_increase = actual_stg_increase * 0.5
+            actual_stg_increase = min(actual_stg_increase, damped_stg_increase if damped_stg_increase > 0 else actual_stg_increase)
             
             action_threshold_mwh = EXCESS_STEAM_ACTION_THRESHOLD_MT / STEAM_TO_POWER_MT_PER_MWH
             if actual_stg_increase > action_threshold_mwh:
@@ -1591,6 +1624,7 @@ def usd_iterate(
                 print(f"  STG Max Capacity:                   {stg_db_max_mwh:>12.2f} MWh")
                 print(f"  STG Available Increase:             {stg_available_increase:>12.2f} MWh")
                 print(f"  GT Available Reduction:             {gt_available_reduction:>12.2f} MWh")
+                print(f"  Damped STG Increase (50%):          {damped_stg_increase:>12.2f} MWh")
                 print(f"  Damped STG Increase (50%):          {damped_stg_increase:>12.2f} MWh")
                 print(f"  Actual STG Increase:                {actual_stg_increase:>12.2f} MWh")
                 print(f"  ─────────────────────────────────────────────")

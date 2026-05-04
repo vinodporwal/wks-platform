@@ -729,7 +729,12 @@ public class NormBasedUtilityBudgetServiceImpl implements NormBasedUtilityBudget
             List<Integer> amountColumns = new ArrayList<>();
             List<Integer> priceColumns = new ArrayList<>();
             for (String month : months) {
-                createMergedHeaderCell(sheet, topHeaderRow, 0, 0, col, col + 4, month, headerStyle);
+                // Write month name in each child column individually (no cell merging)
+                for (int c = 0; c < 5; c++) {
+                    Cell monthCell = topHeaderRow.createCell(col + c);
+                    monthCell.setCellValue(month);
+                    monthCell.setCellStyle(headerStyle);
+                }
                 amountColumns.add(col + 2);
                 priceColumns.add(col + 3);
                 financialYearMonthFkIdColumns.add(col + 4); // Track the financialYearMonthFkId column position
@@ -790,6 +795,20 @@ public class NormBasedUtilityBudgetServiceImpl implements NormBasedUtilityBudget
                 cell = subHeaderRow.createCell(col++);
                 cell.setCellValue("financialYearMonthFkId");
                 cell.setCellStyle(headerStyle);
+            }
+
+            // sheet.createRow() for subHeaderRow wiped all Row-1 cells that createMergedHeaderCell
+            // had previously styled for static and trailing columns. Re-apply headerStyle to them.
+            for (int c = 0; c < monthStartCol; c++) {
+                Cell staticCell = subHeaderRow.createCell(c);
+                staticCell.setCellValue("");
+                staticCell.setCellStyle(headerStyle);
+            }
+            int trailingStart = monthStartCol + (12 * 5); // 12 months x 5 child columns
+            for (int c = trailingStart; c < totalColumns; c++) {
+                Cell trailingCell = subHeaderRow.createCell(c);
+                trailingCell.setCellValue("");
+                trailingCell.setCellStyle(headerStyle);
             }
 
             // Data rows

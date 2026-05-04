@@ -21,6 +21,7 @@ import HeatRate from './HeatRate/index'
 import FixedNorms from './FixedNorms'
 import Fuel from './Fuel/index'
 import AopDesignBasis from './AopDesignBasis'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const Inputs = () => {
   const keycloak = useSession()
@@ -179,12 +180,7 @@ const Inputs = () => {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
