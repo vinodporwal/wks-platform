@@ -52,6 +52,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
   const [currentParams, setCurrentParams] = useState([])
   const [validationSnackbarOpen, setValidationSnackbarOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
   //const[eventTrendUrl, setEventTrendUrl] = useState('')
  
  // const[eventReportUrl, setEventReportUrl] = useState('')
@@ -596,6 +597,7 @@ const createApmUrlBasedOnSelectedEvent = () => {
       .finally(() => {
        
         setLoading(false)
+        setIsSubmitting(false);
      
       })
   }
@@ -707,8 +709,13 @@ const createApmUrlBasedOnSelectedEvent = () => {
               }}
               onCustomEvent={(event) => {
                 console.log('event event:', event)
-                if (event.component.key === 'saveAsDraft' || event.component.key === 'saveAsDraft1') {
-                  onSubmitForm()
+                if (
+                  (event.component.key === 'saveAsDraft' || event.component.key === 'saveAsDraft1') &&
+                  !isSubmitting
+                ) {
+                  setIsSubmitting(true);
+                  onSubmitForm();
+                   
                 } else if (event.component.key === 'RecommendationSubmit3') {
                   onSubmitRecommendation()
                 } else if (event.component.key === 'onSave') {

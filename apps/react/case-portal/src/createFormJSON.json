@@ -1,5 +1,5 @@
 {    "key": "case-management-system",
-    "title": "XOM Case Management System",
+    "title": "Spog Case Management System",
     "structure": {
         "components": [
             {
@@ -833,7 +833,7 @@
                                     {
                                         "components": [
                                             {
-                                                "label": "Main Asset Test",
+                                                "label": "Main Asset",
                                                 "applyMaskOn": "change",
                                                 "customClass": "mb-3 disabled-field",
                                                 "disabled": true,
