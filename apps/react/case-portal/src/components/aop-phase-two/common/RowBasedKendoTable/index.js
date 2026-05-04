@@ -8,12 +8,6 @@ import {
 const RowBasedKendoTable = (props) => {
   const { columns, rows, ...restProps } = props
 
-  const getDecimalPlacesFromFormat = (format) => {
-    if (!format) return 2
-    const match = format.match(/\{0:0\.(0+)\}/)
-    return match ? match[1].length : 2
-  }
-
   const enhancedColumns = useMemo(() => {
     return columns.map((col) => {
       if (col.type === 'row-based' || col.type === 'conditional') {
@@ -53,11 +47,11 @@ const RowBasedKendoTable = (props) => {
                 const hours = String(value.getHours()).padStart(2, '0')
                 const minutes = String(value.getMinutes()).padStart(2, '0')
                 displayValue = `${year}-${month}-${day} ${hours}:${minutes}`
-              }
-              if (!isNaN(value) && value !== null && value !== '') {
-                const decimals = dataItem.isEditable ? 2 : 2
-                // : getDecimalPlacesFromFormat(col.format)
-                displayValue = Number(value).toFixed(decimals)
+              } else {
+                // Format numbers with 3 decimal places
+                if (!isNaN(value) && value !== null && value !== '') {
+                  displayValue = Number(value).toFixed(3)
+                }
               }
 
               return (

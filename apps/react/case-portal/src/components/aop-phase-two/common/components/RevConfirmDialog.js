@@ -1,22 +1,18 @@
 import React from 'react'
 import {
-  Box,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Box,
   IconButton,
-  Typography,
   Zoom,
-} from '@mui/material'
-import { styled } from '@mui/material/styles'
+} from '../../../../../node_modules/@mui/material/index'
+import { styled } from '../../../../../node_modules/@mui/material/styles/index'
 import CloseIcon from '@mui/icons-material/Close'
-import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
-
-// --- STYLED COMPONENTS ---
+import PublishedWithChangesIcon from '@mui/icons-material/PublishedWithChanges'
 
 const StyledConfirmDialog = styled(Dialog)(() => ({
   '& .MuiPaper-root': {
@@ -29,58 +25,22 @@ const StyledConfirmDialog = styled(Dialog)(() => ({
   },
 }))
 
-const DateHighlight = styled(Box)(() => ({
-  display: 'inline-flex',
-  alignItems: 'center',
-  backgroundColor: 'rgba(1, 0, 203, 0.05)',
-  color: '#0100cb',
-  padding: '4px 12px',
-  borderRadius: '8px',
-  fontWeight: 700,
-  fontSize: '0.85rem',
-  margin: '0 4px',
-}))
-
-// --- COMPONENT ---
-
-const ConfigurationDialog = ({
-  open,
-  onClose,
-  onConfirm,
-  startDate,
-  endDate,
+const RevConfirmDialog = ({
+  openConfirmDialogRev,
+  handleCloseDialogRev,
+  handleConfirmLoadRev,
 }) => {
-  const formatDateForText = (date, time = false) => {
-    if (!date) return ''
-    const parsedDate = new Date(date)
-    if (isNaN(parsedDate)) return 'Invalid Date'
-    const day = String(parsedDate.getDate()).padStart(2, '0')
-    const month = String(parsedDate.getMonth() + 1).padStart(2, '0')
-    const year = parsedDate.getFullYear()
-    let formatted = `${day}-${month}-${year}`
-    if (time) {
-      let hours = parsedDate.getHours()
-      const minutes = String(parsedDate.getMinutes()).padStart(2, '0')
-      const ampm = hours >= 12 ? 'PM' : 'AM'
-      hours = hours % 12
-      hours = hours ? hours : 12
-      const formattedTime = `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`
-      formatted += ` ${formattedTime}`
-    }
-    return formatted
-  }
-
   return (
     <StyledConfirmDialog
-      open={open}
-      onClose={onClose}
+      open={openConfirmDialogRev}
+      onClose={handleCloseDialogRev}
       TransitionComponent={Zoom}
       transitionDuration={300}
       disableScrollLock
     >
-      {/* Close button */}
+      {/* Header close button */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: -1 }}>
-        <IconButton onClick={onClose} size='small'>
+        <IconButton onClick={handleCloseDialogRev} size='small'>
           <CloseIcon fontSize='small' />
         </IconButton>
       </Box>
@@ -99,12 +59,11 @@ const ConfigurationDialog = ({
             p: 0.5,
             borderRadius: '50%',
             bgcolor: 'rgba(1, 0, 203, 0.1)',
-            color: '#2563eb',
+            color: '#0100cb',
             mb: 0.5,
-            animation: 'pulse 2s infinite',
           }}
         >
-          <CloudDownloadIcon sx={{ fontSize: 32 }} />
+          <PublishedWithChangesIcon sx={{ fontSize: 32 }} />
         </Box>
 
         <DialogTitle
@@ -116,7 +75,7 @@ const ConfigurationDialog = ({
             pb: 0,
           }}
         >
-          Confirm Data Refresh
+          Confirm Revision Change
         </DialogTitle>
       </Box>
 
@@ -129,34 +88,8 @@ const ConfigurationDialog = ({
             lineHeight: 1.45,
           }}
         >
-          You are about to synchronize data for the selected period:
+          Are you sure you want to change the revision?
         </DialogContentText>
-
-        {/* Date range highlight */}
-        <Box
-          sx={{
-            mt: 2,
-            mb: 1,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: 0.75,
-          }}
-        >
-          <DateHighlight>
-            <CalendarMonthIcon sx={{ fontSize: '0.9rem', mr: 0.5 }} />
-            {formatDateForText(startDate)}
-          </DateHighlight>
-
-          <Typography variant='caption' fontWeight={900} color='text.disabled'>
-            TO
-          </Typography>
-
-          <DateHighlight>
-            <CalendarMonthIcon sx={{ fontSize: '0.9rem', mr: 0.5 }} />
-            {formatDateForText(endDate)}
-          </DateHighlight>
-        </Box>
       </DialogContent>
 
       {/* Actions */}
@@ -169,7 +102,7 @@ const ConfigurationDialog = ({
         }}
       >
         <Button
-          onClick={onClose}
+          onClick={handleCloseDialogRev}
           sx={{
             color: '#64748b',
             textTransform: 'none',
@@ -182,7 +115,7 @@ const ConfigurationDialog = ({
         </Button>
 
         <Button
-          onClick={onConfirm}
+          onClick={handleConfirmLoadRev}
           variant='contained'
           autoFocus
           sx={{
@@ -201,11 +134,11 @@ const ConfigurationDialog = ({
             },
           }}
         >
-          Yes, Refresh Data
+          Yes, Change
         </Button>
       </DialogActions>
     </StyledConfirmDialog>
   )
 }
 
-export default ConfigurationDialog
+export default RevConfirmDialog
