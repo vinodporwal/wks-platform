@@ -98,7 +98,7 @@ const getEnhancedAOPColDefs = ({
 }) => {
   var config = []
 
-  if (configType == 'grades') {
+  if (configType == 'grades' || configType == 'gradesCatChem') {
     config = [
       {
         field: 'ReceipeName',
