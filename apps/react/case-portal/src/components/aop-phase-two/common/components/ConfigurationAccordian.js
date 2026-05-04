@@ -21,6 +21,7 @@ import {
 } from '../../../../../node_modules/@mui/material/index'
 import dataGridStore from 'store/reducers/dataGridStore'
 import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ConfigurationAccordian = ({
   PLANT_ID,
@@ -534,12 +535,7 @@ const ConfigurationAccordian = ({
 
   return (
     <>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       {accordian}
 
       {/* Confirmation Dialog */}

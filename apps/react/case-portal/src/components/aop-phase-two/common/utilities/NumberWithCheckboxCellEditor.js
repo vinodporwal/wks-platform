@@ -126,22 +126,43 @@ export const NumberWithCheckboxDisplayCell = (props) => {
     field,
   )
 
-  // Apply formatting if provided
+  // Apply Kendo number format if provided (e.g. '{0:0.00000}')
+  const applyKendoNumberFormat = (val, fmt) => {
+    if (!fmt || val === null || val === undefined) return val
+    const match = fmt.match(/\{0:([^}]+)\}/)
+    if (!match) return val
+    const formatSpec = match[1]
+    const numVal = parseFloat(val)
+    if (isNaN(numVal)) return val
+    if (formatSpec.match(/^0+\.0+$/)) {
+      const decimalPlaces = formatSpec.split('.')[1].length
+      const factor = Math.pow(10, decimalPlaces)
+      const truncated = Math.trunc(numVal * factor) / factor
+      return truncated.toFixed(decimalPlaces)
+    }
+    return val
+  }
+
   let displayValue = value
   if (format && (typeof value === 'number' || typeof value === 'string')) {
     const numValue = typeof value === 'string' ? parseFloat(value) : value
     if (!isNaN(numValue)) {
-      displayValue = numValue
+      displayValue = applyKendoNumberFormat(numValue, format)
     }
   }
 
+  const rawTitle = value !== null && value !== undefined ? String(value) : ''
+  // Destructure title out of tdProps so our title always wins
+  const { title: _ignoredTitle, ...restTdProps } = props.tdProps || {}
+
   return (
     <td
-      {...props.tdProps}
+      {...restTdProps}
       {...(alwaysEditable ? { 'data-always-editable': 'true' } : {})}
       style={{
-        ...props.tdProps?.style,
+        ...restTdProps?.style,
       }}
+      title={rawTitle}
     >
       <Box
         sx={{
@@ -161,6 +182,7 @@ export const NumberWithCheckboxDisplayCell = (props) => {
           }}
         />
         <Box
+          title={rawTitle}
           sx={{
             flexGrow: 1,
             textAlign: 'right',

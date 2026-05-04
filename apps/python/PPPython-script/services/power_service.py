@@ -11,7 +11,7 @@ _VERBOSE_LOGGING = True  # Set to False to reduce log output
 # STG Power Generation Requirements (per 1 KWh generated)
 # To generate 1 KWh from STG, we need:
 NORM_STG_POWER_PER_KWH = 0.0020   # 0.0020 KWh of power (auxiliary consumption)
-NORM_STG_SHP_PER_KWH = 0.0035600  # 0.00356 MT of SHP steam
+NORM_STG_SHP_PER_KWH = 0.0035600  # Fallback only (= 3.56 MT/MWh ÷ 1000). Dynamic lookup used when stg_extraction_lookup_df is available.
 
 
 # -------------------------------------------------------------
@@ -113,7 +113,8 @@ def _dispatch_once(
     avail_df: pd.DataFrame,
     norms_map: dict,
     demand_units: float,
-    heat_df: pd.DataFrame = None
+    heat_df: pd.DataFrame = None,
+    stg_extraction_lookup_df=None,
 ):
     """
     Dispatch power assets based on priority and demand.
@@ -164,7 +165,16 @@ def _dispatch_once(
             heat_rate, free_steam = get_heat_rate_for_load(heat_df, load_mw)
         if is_stg and gross > 0:
             gross_kwh = gross * 1000
-            stg_shp_required = gross_kwh * NORM_STG_SHP_PER_KWH
+            # Use dynamic sp_steam_power from lookup table (interpolated for actual load)
+            # sp_steam_power is in MT/MWh → divide by 1000 to get MT/KWh
+            shp_norm_per_kwh = NORM_STG_SHP_PER_KWH  # fallback
+            if stg_extraction_lookup_df is not None and not stg_extraction_lookup_df.empty and load_mw > 0:
+                from database.power_asset_queries import get_stg_extraction_for_load
+                _ext = get_stg_extraction_for_load(load_mw, stg_extraction_lookup_df)
+                _sp = _ext.get('sp_steam_power', 0)
+                if _sp > 0:
+                    shp_norm_per_kwh = _sp / 1000  # MT/MWh → MT/KWh
+            stg_shp_required = gross_kwh * shp_norm_per_kwh
             stg_power_required = gross_kwh * NORM_STG_POWER_PER_KWH / 1000
         
         return {
@@ -346,7 +356,8 @@ def distribute_by_priority(
     stg_max_mwh: float = None,
     stg_min_override_mwh: float = None,
     gt_reduction_mwh: float = 0.0,
-    verbose: bool = None
+    verbose: bool = None,
+    stg_extraction_lookup_df=None,
 ):
     """
     Dispatch power generation to meet demand.
@@ -824,7 +835,8 @@ def distribute_by_priority(
             avail_df=avail,
             norms_map=norms_map,
             demand_units=gross_target,
-            heat_df=heat_df
+            heat_df=heat_df,
+            stg_extraction_lookup_df=stg_extraction_lookup_df
         )
 
         # Error is calculated against net_demand_for_dispatch (what assets need to generate NET)

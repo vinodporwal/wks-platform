@@ -196,6 +196,7 @@ const AdvanceKendoTable = ({
   customActionCell = null,
   externalCustomModifiedCells = null,
   externalSetCustomModifiedCells = null,
+  customHandleRemarkSave = null,
 }) => {
   const {
     plantObject,
@@ -655,6 +656,12 @@ const AdvanceKendoTable = ({
   }, [modifiedCells, customModifiedCells])
 
   const handleRemarkSave = () => {
+    // Use custom remark save handler if provided
+    if (customHandleRemarkSave) {
+      customHandleRemarkSave()
+      return
+    }
+
     setRows((prevRows) => {
       let updatedRow = null
       let keyToUpdate = ''
@@ -759,6 +766,12 @@ const AdvanceKendoTable = ({
     setOpenDeleteDialogeBox(false)
   }
   const ActionsCell = ({ dataItem }) => {
+    const isNonDeletable =
+      (!dataItem.isEditable && dataItem?.isEditable !== undefined) ||
+      dataItem?.hideDelete === true
+    if (isNonDeletable) {
+      return <td style={{ textAlign: 'center', verticalAlign: 'middle' }} />
+    }
     return (
       <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
         <SvgIcon
@@ -1282,7 +1295,12 @@ const AdvanceKendoTable = ({
               edit: {
                 date:
                   col?.type == 'dateTime'
-                    ? DateTimePickerEditor
+                    ? (props) => (
+                        <DateTimePickerEditor
+                          {...props}
+                          isFinancialYear={col.isFinancialYear !== false}
+                        />
+                      )
                     : DateOnlyPicker,
               },
               data: (props) => (
@@ -2201,6 +2219,7 @@ const AdvanceKendoTable = ({
         openDeleteDialogeBox={openDeleteDialogeBox}
         setOpenDeleteDialogeBox={setOpenDeleteDialogeBox}
         deleteTheRecord={deleteTheRecord}
+        confirmButtonText={'Delete'}
       />
       {/* Remark Dialog */}
       <RemarkDialog

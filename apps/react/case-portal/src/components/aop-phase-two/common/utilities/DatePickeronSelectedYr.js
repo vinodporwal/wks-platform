@@ -1,7 +1,12 @@
 import { DateTimePicker } from '@progress/kendo-react-dateinputs'
 import { useSelector } from 'react-redux'
 import { useRef, useEffect } from 'react'
-const DateTimePickerEditor = ({ dataItem, field, onChange }) => {
+const DateTimePickerEditor = ({
+  dataItem,
+  field,
+  onChange,
+  isFinancialYear = true,
+}) => {
   const pickerRef = useRef(null)
 
   useEffect(() => {
@@ -35,8 +40,13 @@ const DateTimePickerEditor = ({ dataItem, field, onChange }) => {
     let endYear = parseInt(end, 10)
     if (end.length === 2) endYear += 2000
 
-    fyMin = new Date(startYear, 3, 1, 0, 0, 0)
-    fyMax = new Date(endYear, 2, 31, 23, 59, 59)
+    if (isFinancialYear) {
+      fyMin = new Date(startYear, 3, 1, 0, 0, 0)
+      fyMax = new Date(endYear, 2, 31, 23, 59, 59)
+    } else {
+      fyMin = new Date(startYear, 0, 1, 0, 0, 0)
+      fyMax = new Date(startYear, 11, 31, 23, 59, 59)
+    }
   }
 
   const isStart = field === 'maintStartDateTime'
