@@ -154,11 +154,12 @@ export const ConditionalCellEditor = ({
         autoComplete='off'
         sx={{
           width: '100%',
-          fontSize: '0.8125rem',
+          fontSize: '15px',
           fontWeight: 600,
+          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif !important",
           color: '#1d3665',
           px: 1,
-          height: 28,
+          height: 40,
           borderRadius: '6px',
           backgroundColor: '#FFFFFF',
           border: '1px solid #E0E4EC',

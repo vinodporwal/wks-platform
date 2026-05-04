@@ -88,7 +88,12 @@ import { keyframes } from '@mui/material/styles'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import Collapse from '@mui/material/Collapse'
-import { FileExportIcon, FileImportIcon, SaveIcon, CalculateIcon } from 'assets/images/icons'
+import {
+  FileExportIcon,
+  FileImportIcon,
+  SaveIcon,
+  CalculateIcon,
+} from 'assets/images/icons'
 import { DashboardColors } from 'themes/colors'
 
 // Subtle pulse for the info icon on load
@@ -282,7 +287,14 @@ const KendoDataTables = ({
   const isPEPP = ['pe', 'pp'].includes(lowerVertName)
   const IS_VCM_VERTICAL = ['vcm'].includes(lowerVertName)
 
-  const menuItemStyle = { fontSize: 14, fontWeight: 500, color: '#303030', fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif", letterSpacing: "0px", verticalAlign: "middle" }
+  const menuItemStyle = {
+    fontSize: 14,
+    fontWeight: 500,
+    color: '#303030',
+    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+    letterSpacing: '0px',
+    verticalAlign: 'middle',
+  }
 
   const toggleGrid = () => {
     setGridExpanded((prev) => !prev)
@@ -1586,7 +1598,9 @@ const KendoDataTables = ({
         {...restThProps}
         aria-sort={ariaSort}
         title={props.title}
-        style={{ fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif" }}
+        style={{
+          fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
+        }}
       >
         <Tooltip
           position='top'
@@ -1777,7 +1791,7 @@ const KendoDataTables = ({
   const CHECK_TYPES2 = ['raw material', 'by products']
 
   return (
-    <div className="k-table-box">
+    <div className='k-table-box'>
       {loading && (
         <div className='k-loading-mask'>
           <span className='k-loading-text'>Loading...</span>
@@ -1804,13 +1818,14 @@ const KendoDataTables = ({
             }}
           >
             {/* Left side - Note */}
-            <Box 
-            sx={{
+            <Box
+              sx={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1,
                 paddingBottom: 0.25,
-              }}>
+              }}
+            >
               {/* CASE 1: Permission TRUE → Full Header UI */}
               {permissions?.showTitleNameBusiness ? (
                 <Typography
@@ -1823,7 +1838,8 @@ const KendoDataTables = ({
                     alignItems: 'center',
                     gap: 1.5,
                     mb: permissions?.marginBottom ? '12px' : '4px',
-                    fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                    fontFamily:
+                      '"Honeywell Sans Web", "Inter", sans-serif !important',
                   }}
                 >
                   {/* TOGGLE ICON */}
@@ -1859,32 +1875,32 @@ const KendoDataTables = ({
                 </Typography>
               ) : (
                 /* CASE 2: Permission FALSE → ONLY ICON */
-                  <Box
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 32,
+                    height: 32,
+                    borderRadius: '6px',
+                    backgroundColor: '#ECEEFF',
+                    color: '#1e293b',
+                    ml: 1,
+                    cursor: 'pointer',
+                    padding: '8px',
+                  }}
+                  onClick={toggleGrid}
+                >
+                  <KeyboardArrowUpIcon
                     sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 32,
-                      height: 32,
-                      borderRadius: '6px',
-                      backgroundColor: '#ECEEFF',
-                      color: '#1e293b',
-                      ml: 1,
-                      cursor: 'pointer',
-                      padding: '8px',
+                      fontSize: 20,
+                      transition: '0.2s',
+                      transform: gridExpanded
+                        ? 'rotate(0deg)'
+                        : 'rotate(180deg)',
                     }}
-                    onClick={toggleGrid}
-                  >
-                    <KeyboardArrowUpIcon
-                      sx={{
-                        fontSize: 20,
-                        transition: '0.2s',
-                        transform: gridExpanded
-                          ? 'rotate(0deg)'
-                          : 'rotate(180deg)',
-                      }}
-                    />
-                  </Box>
+                  />
+                </Box>
               )}
               {permissions?.showNote && (
                 <Typography component='div' className='text-note'>
@@ -1919,7 +1935,8 @@ const KendoDataTables = ({
                       color: '#252525', // Slate 800
                       letterSpacing: '0.2px',
                       position: 'relative',
-                      fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                      fontFamily:
+                        '"Honeywell Sans Web", "Inter", sans-serif !important',
                       fontSize: '16px',
                       fontWeight: 700,
                     }}
@@ -1944,7 +1961,8 @@ const KendoDataTables = ({
                             borderRadius: '8px',
                             fontSize: '0.75rem',
                             boxShadow: '0 10px 15px -3px rgba(0,0,0,0.2)',
-                            fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                            fontFamily:
+                              '"Honeywell Sans Web", "Inter", sans-serif !important',
                             fontWeight: 700,
                           },
                         },
@@ -1982,7 +2000,8 @@ const KendoDataTables = ({
                     color: '#336063', // very light grey
                     fontStyle: 'italic',
                     lineHeight: 1.4,
-                    fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                    fontFamily:
+                      '"Honeywell Sans Web", "Inter", sans-serif !important',
                   }}
                 >
                   *Enter Number of Continious / Discontinious GCOs per grade for
@@ -2009,7 +2028,8 @@ const KendoDataTables = ({
                   variant='outlined'
                   size='small'
                   sx={{
-                    display: permissions?.IS_PE_C2_HIDE !== false ? 'block' : 'none',
+                    display:
+                      permissions?.IS_PE_C2_HIDE !== false ? 'block' : 'none',
                     minWidth: 140,
                     '& .MuiOutlinedInput-root': {
                       height: '30px',
@@ -2047,7 +2067,8 @@ const KendoDataTables = ({
                           textTransform: 'uppercase',
                           letterSpacing: '0.4px',
                           lineHeight: 1,
-                          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                          fontFamily:
+                            "'Honeywell Sans Web', 'Inter', sans-serif",
                         }}
                       >
                         {permissions?.dropdownLabel || 'Grade'}:
@@ -2065,7 +2086,11 @@ const KendoDataTables = ({
                   </MenuItem>
 
                   {grades?.map((unit) => (
-                    <MenuItem key={unit.gradeId} value={unit.gradeId} style={menuItemStyle}>
+                    <MenuItem
+                      key={unit.gradeId}
+                      value={unit.gradeId}
+                      style={menuItemStyle}
+                    >
                       {unit.displayName}
                     </MenuItem>
                   ))}
@@ -2143,7 +2168,7 @@ const KendoDataTables = ({
                   ))}
                 </TextField>
               )}
-              
+
               {/* ITEMS BADGE */}
               <Box
                 sx={{
@@ -2222,7 +2247,8 @@ const KendoDataTables = ({
                             textTransform: 'uppercase',
                             letterSpacing: '0.4px',
                             lineHeight: 1,
-                            fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif"
+                            fontFamily:
+                              "'Honeywell Sans Web', 'Inter', sans-serif",
                           }}
                         >
                           Unit:
@@ -2268,7 +2294,8 @@ const KendoDataTables = ({
                               fontWeight: 700,
                               minHeight: '26px',
                               margin: '1px 4px',
-                              fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                              fontFamily:
+                                "'Honeywell Sans Web', 'Inter', sans-serif",
                               borderRadius: '7px',
                               '&.Mui-selected': {
                                 bgcolor: 'rgba(1, 0, 203, 0.08)',
@@ -2296,7 +2323,16 @@ const KendoDataTables = ({
                       </MenuItem>
                     ))}
                   </TextField>
-                  <Divider sx={{ my: '4px !important', borderColor: `${DashboardColors.divider} !important`, width: 2, borderWidth: 1.5 }} orientation="vertical" flexItem={{ mx: 2}} />
+                  <Divider
+                    sx={{
+                      my: '4px !important',
+                      borderColor: `${DashboardColors.divider} !important`,
+                      width: 2,
+                      borderWidth: 1.5,
+                    }}
+                    orientation='vertical'
+                    flexItem={{ mx: 2 }}
+                  />
                 </React.Fragment>
               )}
 
@@ -2344,7 +2380,8 @@ const KendoDataTables = ({
                           textTransform: 'uppercase',
                           letterSpacing: '0.4px',
                           lineHeight: 1,
-                          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                          fontFamily:
+                            "'Honeywell Sans Web', 'Inter', sans-serif",
                         }}
                       >
                         Mode:
@@ -2372,7 +2409,7 @@ const KendoDataTables = ({
                 <Button
                   variant='contained'
                   className='btn-add'
-                  startIcon={<AddIcon sx={{ color: '#4A4DDA !important'}}/>}
+                  startIcon={<AddIcon sx={{ color: '#4A4DDA !important' }} />}
                   onClick={handleAddRow}
                   disabled={isButtonDisabled || READ_ONLY}
                 >
@@ -2426,12 +2463,12 @@ const KendoDataTables = ({
                     onClick={triggerFileUpload}
                     variant='contained'
                     startIcon={
-                    <Box
-                      component='img'
-                      src={FileImportIcon}
-                      className='w16-icon'
-                    />
-                  }
+                      <Box
+                        component='img'
+                        src={FileImportIcon}
+                        className='w16-icon'
+                      />
+                    }
                     className='btn-import'
                     disabled={
                       isButtonDisabled || READ_ONLY || rows?.length === 0
@@ -2455,11 +2492,7 @@ const KendoDataTables = ({
                   variant='contained'
                   className='btn-save'
                   startIcon={
-                    <Box
-                      component='img'
-                      src={SaveIcon}
-                      className='w16-icon'
-                    />
+                    <Box component='img' src={SaveIcon} className='w16-icon' />
                   }
                   onClick={saveModalOpen}
                   disabled={
@@ -2507,7 +2540,7 @@ const KendoDataTables = ({
                     READ_ONLY ||
                     (!summaryEdited && Object.keys(modifiedCells).length === 0)
                   }
-                  startIcon={<RestartAltIcon sx={{ color: '#4A4DDA'}}/>}
+                  startIcon={<RestartAltIcon sx={{ color: '#4A4DDA' }} />}
                 >
                   Reset
                 </Button>
@@ -3979,15 +4012,16 @@ const KendoDataTables = ({
         </div>
       </Collapse>
 
-      {gridExpanded && (permissions?.approveBtn ||permissions?.nextBtn || showDeleteAll) && (
-      <Box
-        sx={{
-          marginTop: 2,
-          display: 'flex',
-          gap: 2,
-        }}
-      >
-        {/* {permissions?.showCreateCasebutton && (
+      {gridExpanded &&
+        (permissions?.approveBtn || permissions?.nextBtn || showDeleteAll) && (
+          <Box
+            sx={{
+              marginTop: 2,
+              display: 'flex',
+              gap: 2,
+            }}
+          >
+            {/* {permissions?.showCreateCasebutton && (
             <Button
               variant='contained'
               onClick={createCase}
@@ -3998,50 +4032,50 @@ const KendoDataTables = ({
             </Button>
           )} */}
 
-        {permissions?.approveBtn && (
-          <Button
-            variant='contained'
-            className='btn-save'
-            onClick={saveModalOpen}
-            disabled={isButtonDisabled || READ_ONLY}
-            // loading={loading}
-            // loadingposition='start'
-            {...(loading ? {} : {})}
-          >
-            Approve
-          </Button>
+            {permissions?.approveBtn && (
+              <Button
+                variant='contained'
+                className='btn-save'
+                onClick={saveModalOpen}
+                disabled={isButtonDisabled || READ_ONLY}
+                // loading={loading}
+                // loadingposition='start'
+                {...(loading ? {} : {})}
+              >
+                Approve
+              </Button>
+            )}
+            {permissions?.nextBtn && (
+              <Button
+                variant='contained'
+                className='btn-save'
+                onClick={() => {
+                  // Write any additional logic here before navigating.
+                  // console.log('Navigating to dashboard')
+                  // navigate('/user-form')
+                  handleAddPlantSite()
+                }}
+                disabled={isButtonDisabled || READ_ONLY}
+                loading={loading} // Use the loading prop to trigger loading state
+                loadingposition='start' // Use loadingPosition to control where the spinner appears
+              >
+                Next
+              </Button>
+            )}
+            {showDeleteAll && (
+              <Button
+                variant='contained'
+                className='btn-save'
+                onClick={handleDeleteSelected}
+                disabled={isButtonDisabled || READ_ONLY}
+                loading={loading} // Use the loading prop to trigger loading state
+                loadingposition='start' // Use loadingPosition to control where the spinner appears
+              >
+                Delete
+              </Button>
+            )}
+          </Box>
         )}
-        {permissions?.nextBtn && (
-          <Button
-            variant='contained'
-            className='btn-save'
-            onClick={() => {
-              // Write any additional logic here before navigating.
-              // console.log('Navigating to dashboard')
-              // navigate('/user-form')
-              handleAddPlantSite()
-            }}
-            disabled={isButtonDisabled || READ_ONLY}
-            loading={loading} // Use the loading prop to trigger loading state
-            loadingposition='start' // Use loadingPosition to control where the spinner appears
-          >
-            Next
-          </Button>
-        )}
-        {showDeleteAll && (
-          <Button
-            variant='contained'
-            className='btn-save'
-            onClick={handleDeleteSelected}
-            disabled={isButtonDisabled || READ_ONLY}
-            loading={loading} // Use the loading prop to trigger loading state
-            loadingposition='start' // Use loadingPosition to control where the spinner appears
-          >
-            Delete
-          </Button>
-        )}
-      </Box>
-      )}
       <Notification
         open={snackbarOpen}
         message={snackbarData?.message || ''}

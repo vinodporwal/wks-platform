@@ -74,9 +74,10 @@ export const NoSpinnerNumericEditor = ({ dataItem, field, onChange }) => {
           width: '100%',
           fontSize: '0.8125rem',
           fontWeight: 600,
+          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif !important",
           color: '#1d3665', // Using your deep navy color for the text
           px: 1,
-          height: 28,
+          height: 40,
           borderRadius: '6px',
           backgroundColor: '#FFFFFF', // Solid white
           border: '1px solid #E0E4EC', // Very soft grey border
