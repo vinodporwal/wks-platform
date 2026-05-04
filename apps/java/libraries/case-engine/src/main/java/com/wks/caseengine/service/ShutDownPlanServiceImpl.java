@@ -2979,14 +2979,39 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
   // remark validation
 		if(site.getName().equalsIgnoreCase("JMD") && verticalName.equalsIgnoreCase("Elastomer")) {
          
-			for (ShutDownPlanDTO dto : shutDownPlanDTOList) {  
+			for (ShutDownPlanDTO dto : shutDownPlanDTOList) { 
+				
+				List<Object[]> plantMaintenance = shutDownPlanRepository
+				.findPlantMaintenanceById(UUID.fromString(dto.getId()));
+		
+		if (plantMaintenance.isEmpty()) 
+			throw new RestInvalidArgumentException("Invalid plant maintenance id", null);
 
+			Object[] row = plantMaintenance.get(0);
+		
+			String description = (String) row[0];
+		//	Double durationInMins = row[1] != null ? (Double) row[1] : null;
+		 Double durationInMins = row[1] != null ? ((Number) row[1]).doubleValue() : null;
+			Integer maintForMonth = row[2] != null ? (Integer) row[2] : null;
+
+			Double durationInHrs = durationInMins / 60;
+			String monthName = Month.of(maintForMonth).name();
+	
+					
+	
 				String incomingRemark = dto.getRemark();
 
 				String existingRemark = shutDownPlanRepository.findRemarksById(UUID.fromString(dto.getId()));
+				
 
-				if(incomingRemark != null && incomingRemark.trim().equals(existingRemark)) { 
-
+				if (incomingRemark != null 
+					&& incomingRemark.trim().equals(existingRemark)
+					&& (
+						!description.equals(dto.getDiscription()) 
+						|| !Objects.equals(durationInHrs, dto.getDurationInHrs())
+						|| !monthName.equalsIgnoreCase(dto.getMonth())
+					)) {
+    
 					dto.setSaveStatus("Failed");
 					dto.setErrDescription("Please update remark");
 				//	failedList.add(dto);
@@ -3041,13 +3066,18 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 
     YearMonth yearMonth = YearMonth.of(actualYear, month);
 
+
+
 			double totalHrsInMonth = yearMonth.lengthOfMonth() * 24.0;
 			double totalDurationInHrs = 0.0;
 			for (ShutDownPlanDTO dto : monthDtos) {
 				totalDurationInHrs += dto.getDurationInHrs();
 			}
 			if (totalDurationInHrs > totalHrsInMonth) {
+		
+				
 				for (ShutDownPlanDTO dto : monthDtos) {
+				
 					dto.setSaveStatus("Failed");
 					dto.setErrDescription("Total shutdown duration for " + monthKey + " (" + totalDurationInHrs
 							+ " hrs) exceeds total available hours in the month (" + (int) totalHrsInMonth + " hrs)");
@@ -3060,6 +3090,8 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		for (ShutDownPlanDTO shutDownPlanDTO : shutDownPlanDTOList) {
 			if (shutDownPlanDTO.getSaveStatus() != null
 					&& shutDownPlanDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+
+			
 				failedList.add(shutDownPlanDTO);
 				continue;
 			}

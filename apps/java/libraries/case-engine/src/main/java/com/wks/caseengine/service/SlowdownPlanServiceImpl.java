@@ -2625,6 +2625,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	        }
 	        
 	        for (ShutDownPlanDTO shutDownPlanDTO : shutDownPlanDTOList) {
+
 	            if (shutDownPlanDTO.getSaveStatus() != null
 	                    && shutDownPlanDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
 	                failedList.add(shutDownPlanDTO);
@@ -2648,6 +2649,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	            } else {
 	                plantMaintenanceTransaction = slowdownPlanRepository
 	                        .findById(UUID.fromString(shutDownPlanDTO.getId())).orElse(null);
+							entityManager.detach(plantMaintenanceTransaction);
 
 	                if (plantMaintenanceTransaction == null) {
 	                    shutDownPlanDTO.setSaveStatus("Failed");

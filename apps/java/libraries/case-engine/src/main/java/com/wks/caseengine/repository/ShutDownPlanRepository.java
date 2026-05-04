@@ -34,6 +34,9 @@ public interface ShutDownPlanRepository extends JpaRepository<PlantMaintenanceTr
         @Query(value = "SELECT pm.Remarks FROM PlantMaintenanceTransaction pm WHERE pm.Id = :id", nativeQuery = true)
         String findRemarksById(@Param("id") UUID id);
 
+        @Query(value = "SELECT pm.Discription, pm.DurationInMins, pm.MaintForMonth FROM PlantMaintenanceTransaction pm WHERE pm.Id = :id", nativeQuery = true)
+        List<Object[]> findPlantMaintenanceById(@Param("id") UUID id);
+
         
 	@Query(value = "SELECT " +
             "pm.Discription " +
