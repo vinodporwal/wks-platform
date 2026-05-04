@@ -590,6 +590,20 @@ console.log('*****  taskId:  ', taskId);
         
         if(caseData && caseData.attributes) {
          
+
+        const  data1 =  caseData.attributes.reduce(
+            (obj, item) =>
+              Object.assign(obj, {
+                [item.name]: tryParseJSONObject(item.value)
+                  ? JSON.parse(item.value)
+                  : item.value,
+              }),
+            {},
+          )
+    
+          console.log("*** data1 : ", data1)
+        
+        
 		  setFormData({
             data: caseData.attributes.reduce(
               (obj, item) =>

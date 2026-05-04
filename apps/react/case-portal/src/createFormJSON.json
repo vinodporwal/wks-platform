@@ -833,7 +833,7 @@
                                     {
                                         "components": [
                                             {
-                                                "label": "Main Asset",
+                                                "label": "Main Asset Test",
                                                 "applyMaskOn": "change",
                                                 "customClass": "mb-3 disabled-field",
                                                 "disabled": true,
