@@ -3399,7 +3399,7 @@ const KendoDataTables = ({
                         col.title || col.headerName || 'Rate Reduced (TPH)'
                       }
                       width={col.widthT}
-                      editable={true}
+                      editable={col?.editable ?? true}
                       columnMenu={ColumnMenuCheckboxFilter}
                       hidden={col.hidden}
                       format={'{0:n2}'}

@@ -133,7 +133,7 @@ async function getProductionRangeLimitExcel(
   }
 }
 async function productionRangeImport(file, keycloak, PLANT_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/production-range-import?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const url = `${Config.CaseEngineUrl}/task/production-range-import?plantId=${PLANT_ID}&year=${AOP_YEAR}&isMinMax=true`
   const formData = new FormData()
   formData.append('file', file)
 

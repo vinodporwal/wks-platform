@@ -16,6 +16,7 @@ import {
 import {
   SlowDownDmdVcmColumns,
   SlowDownVcmColumns,
+  SlowDownVcmhmdColumns,
 } from 'components/colums/VcmColums'
 import { SlowDownAromaticsColumns } from 'components/colums/AromaticsColumns'
 import { SlowDownMegColumns } from 'components/colums/MegColums'
@@ -519,7 +520,8 @@ const SlowDown = ({ permissions }) => {
         !IS_PTA_DMD &&
         !IS_PVC_VMD &&
         !IS_PVC_DMD &&
-        !IS_ELASTOMER_JMD
+        !IS_ELASTOMER_JMD &&
+        !IS_ELASTOMER_HMD_SBR
       ) {
         for (const record of data) {
           const startDate =
@@ -681,7 +683,8 @@ const SlowDown = ({ permissions }) => {
         lowerVertName !== 'pet' &&
         !IS_PVC_VMD &&
         !IS_PVC_DMD &&
-        !IS_ELASTOMER_JMD
+        !IS_ELASTOMER_JMD &&
+        !IS_ELASTOMER_HMD_SBR
       ) {
         for (const record of data) {
           const startMissing = !record.maintStartDateTime
@@ -1344,9 +1347,11 @@ const SlowDown = ({ permissions }) => {
       case verticalEnums.PVC:
         return IS_PVC_VMD ? SlowDownPeColumns : SlowDownPpDtaColumns
       case verticalEnums.VCM:
-        return IS_VCM_DMD_VCM || IS_VCM_HMD_VCM
+        return IS_VCM_DMD_VCM
           ? SlowDownVcmColumns
-          : SlowDownDmdVcmColumns
+          : IS_VCM_HMD_VCM
+            ? SlowDownVcmhmdColumns
+            : SlowDownDmdVcmColumns
       case verticalEnums.PET:
         return SlowDownPeColumns
       case verticalEnums.CHEMICAL:
