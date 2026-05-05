@@ -909,9 +909,13 @@ def calculate_shp_generation_capacity(hrsg_availability: dict) -> dict:
             max_capacity_per_hr = hrsg_data["max_capacity_mt"]  # 136 MT/hr
             efficiency = hrsg_data["efficiency"]  # 100%
             
-            # Monthly supplementary capacity = Hours × Capacity × Efficiency
-            supp_min_month = min_capacity_per_hr * hours * efficiency
-            supp_max_month = max_capacity_per_hr * hours * efficiency
+            # TOTAL monthly capacity = Hours × Capacity × Efficiency
+            total_min_month = min_capacity_per_hr * hours * efficiency
+            total_max_month = max_capacity_per_hr * hours * efficiency
+            
+            # Monthly supplementary capacity is the difference after free steam
+            supp_min_month = max(0.0, total_min_month - free_steam_mt)
+            supp_max_month = max(0.0, total_max_month - free_steam_mt)
             
             total_supplementary_min += supp_min_month
             total_supplementary_max += supp_max_month
@@ -1409,12 +1413,15 @@ def calculate_hrsg_min_load_and_excess_steam(
             free_steam_mt = hrsg_data.get("free_steam_mt", 0.0)
             total_free_steam += free_steam_mt
             
-            # MIN supplementary firing = Hours × Min_Capacity × Efficiency
-            min_supp_firing = min_capacity_per_hr * hours * efficiency
+            # TOTAL MIN target = Hours × Min_Capacity × Efficiency
+            total_min_target = min_capacity_per_hr * hours * efficiency
+            
+            # MIN supplementary firing = remaining required after free steam
+            min_supp_firing = max(0.0, total_min_target - free_steam_mt)
             total_min_supp_firing += min_supp_firing
             
-            # Total MIN production is supplementary firing only
-            min_production = min_supp_firing
+            # Total MIN production includes free steam and supp firing
+            min_production = free_steam_mt + min_supp_firing
             total_min_shp_production += min_production
             
             # Get linked GT info for priority
@@ -1459,8 +1466,8 @@ def calculate_hrsg_min_load_and_excess_steam(
     
     net_shp_demand = max(0.0, shp_demand - total_free_steam)
 
-    # Calculate excess steam
-    excess_steam_mt = max(0.0, total_min_shp_production - net_shp_demand)
+    # Calculate excess steam (comparing total MIN production with total demand)
+    excess_steam_mt = max(0.0, total_min_shp_production - shp_demand)
     
     # Convert excess steam to power (3.56 MT = 1 MWh)
     excess_power_mwh = excess_steam_mt / STEAM_TO_POWER_MT_PER_MWH if excess_steam_mt > 0 else 0.0
@@ -1711,7 +1718,7 @@ def dispatch_hrsg_load(
             "max_supp_mt": round(hrsg["max_supp_mt"], 2),
             "dispatched_supp_mt": round(dispatched, 2),
             "total_shp_mt": round(hrsg["free_steam_mt"] + dispatched, 2),
-            "hourly_rate_mt_hr": round(dispatched / hrsg["hours"], 2) if hrsg["hours"] > 0 else 0,
+            "hourly_rate_mt_hr": round((hrsg["free_steam_mt"] + dispatched) / hrsg["hours"], 2) if hrsg["hours"] > 0 else 0,
         })
     
     dispatch_result["total_dispatched_supp_mt"] = round(total_dispatched_supp, 2)

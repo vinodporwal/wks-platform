@@ -583,11 +583,17 @@ def build_nmd_budget_comparison_text(
     NORM_NG_HRSG3 = ng.get('hrsg3_ng_norm', 2.8168)
     
     # Fetch utility norms from CPPNorms with fallback to hardcoded values
-    NORM_CW2_GT = _fetch_cpp_norm(month, year, 'NMD - Power Plant 2', 'POWERGEN', 'Cooling Water 2', 108.0)
+    NORM_CW2_GT1 = _fetch_cpp_norm(month, year, 'NMD - Power Plant 1', 'POWERGEN', 'Cooling Water 2', 108.0)
+    NORM_CW2_GT2 = _fetch_cpp_norm(month, year, 'NMD - Power Plant 2', 'POWERGEN', 'Cooling Water 2', 108.0)
+    NORM_CW2_GT3 = _fetch_cpp_norm(month, year, 'NMD - Power Plant 3', 'POWERGEN', 'Cooling Water 2', 108.0)
     NORM_CW2_STG = _fetch_cpp_norm(month, year, 'NMD - STG Power Plant', 'POWERGEN', 'Cooling Water 2', 2376.0)
-    NORM_AIR_GT = _fetch_cpp_norm(month, year, 'NMD - Power Plant 2', 'POWERGEN', 'COMPRESSED AIR', 30960.0)
+    NORM_AIR_GT1 = _fetch_cpp_norm(month, year, 'NMD - Power Plant 1', 'POWERGEN', 'COMPRESSED AIR', 30960.0)
+    NORM_AIR_GT2 = _fetch_cpp_norm(month, year, 'NMD - Power Plant 2', 'POWERGEN', 'COMPRESSED AIR', 30960.0)
+    NORM_AIR_GT3 = _fetch_cpp_norm(month, year, 'NMD - Power Plant 3', 'POWERGEN', 'COMPRESSED AIR', 30960.0)
     NORM_AIR_STG = _fetch_cpp_norm(month, year, 'NMD - STG Power Plant', 'POWERGEN', 'COMPRESSED AIR', 41040.0)
-    NORM_POWER_DIS_GT = _fetch_cpp_norm(month, year, 'NMD - Power Plant 2', 'POWERGEN', 'Power_Dis', 0.0140)
+    NORM_POWER_DIS_GT1 = _fetch_cpp_norm(month, year, 'NMD - Power Plant 1', 'POWERGEN', 'Power_Dis', 0.0140)
+    NORM_POWER_DIS_GT2 = _fetch_cpp_norm(month, year, 'NMD - Power Plant 2', 'POWERGEN', 'Power_Dis', 0.0140)
+    NORM_POWER_DIS_GT3 = _fetch_cpp_norm(month, year, 'NMD - Power Plant 3', 'POWERGEN', 'Power_Dis', 0.0140)
     NORM_POWER_DIS_STG = _fetch_cpp_norm(month, year, 'NMD - STG Power Plant', 'POWERGEN', 'Power_Dis', 0.0020)
     
     # STG specific norms
@@ -660,36 +666,36 @@ def build_nmd_budget_comparison_text(
     stg_ref_qty = book.infer_section_ref_qty(month_name, "NMD - STG Power Plant", "POWERGEN", use_abs_quantity=True)
 
     lines.append(_line("NMD - Power Plant 1", "POWERGEN", "NATURAL GAS", "MMBTU", values["gt1_kwh"], pp1_ref_qty, NORM_NG_GT1, ng.get("gt1_mmbtu", 0), book.get_quantity(month_name, generating_plant="NMD - Power Plant 1", utility="POWERGEN", material="NATURAL GAS"), ".4f"))
-    lines.append(_line("", "", "COMPRESSED AIR", "NM3", values["gt1_kwh"], pp1_ref_qty, NORM_AIR_GT, air.get("gt1_nm3", 0), book.get_quantity(month_name, generating_plant="NMD - Power Plant 1", utility="POWERGEN", material="COMPRESSED AIR"), ".0f"))
-    lines.append(_line("", "", "Cooling Water 2", "KM3", values["gt1_kwh"], pp1_ref_qty, NORM_CW2_GT, cw.get("cw2_gt1_km3", 0), book.get_quantity(month_name, generating_plant="NMD - Power Plant 1", utility="POWERGEN", material="Cooling Water 2"), ".2f"))
-    lines.append(_line("", "", "Power_Dis", "KWH", values["gt1_kwh"], pp1_ref_qty, NORM_POWER_DIS_GT, values["gt1_kwh"] * NORM_POWER_DIS_GT, book.get_quantity(month_name, generating_plant="NMD - Power Plant 1", utility="POWERGEN", material="Power_Dis"), ".4f"))
+    lines.append(_line("", "", "COMPRESSED AIR", "NM3", values["gt1_kwh"], pp1_ref_qty, NORM_AIR_GT1, air.get("gt1_nm3", 0), book.get_quantity(month_name, generating_plant="NMD - Power Plant 1", utility="POWERGEN", material="COMPRESSED AIR"), ".0f"))
+    lines.append(_line("", "", "Cooling Water 2", "KM3", values["gt1_kwh"], pp1_ref_qty, NORM_CW2_GT1, cw.get("cw2_gt1_km3", 0), book.get_quantity(month_name, generating_plant="NMD - Power Plant 1", utility="POWERGEN", material="Cooling Water 2"), ".2f"))
+    lines.append(_line("", "", "Power_Dis", "KWH", values["gt1_kwh"], pp1_ref_qty, NORM_POWER_DIS_GT1, values["gt1_kwh"] * NORM_POWER_DIS_GT1, book.get_quantity(month_name, generating_plant="NMD - Power Plant 1", utility="POWERGEN", material="Power_Dis"), ".4f"))
 
     lines.append("")
     # Calculate BPC reference quantities for PP2 utilities using BPC norms if available
     pp2_ng_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "NATURAL GAS", NORM_NG_GT2, pp2_ref_qty)
-    pp2_air_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "COMPRESSED AIR", NORM_AIR_GT, pp2_ref_qty)
-    pp2_cw_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Cooling Water 2", NORM_CW2_GT, pp2_ref_qty)
-    pp2_power_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Power_Dis", NORM_POWER_DIS_GT, pp2_ref_qty)
+    pp2_air_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "COMPRESSED AIR", NORM_AIR_GT2, pp2_ref_qty)
+    pp2_cw_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Cooling Water 2", NORM_CW2_GT2, pp2_ref_qty)
+    pp2_power_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Power_Dis", NORM_POWER_DIS_GT2, pp2_ref_qty)
     
     lines.append(_line("NMD - Power Plant 2", "POWERGEN", "NATURAL GAS", "MMBTU", values["gt2_kwh"], pp2_ref_qty, NORM_NG_GT2, ng.get("gt2_mmbtu", 0), pp2_ng_ref, ".4f"))
-    lines.append(_line("", "", "COMPRESSED AIR", "NM3", values["gt2_kwh"], pp2_ref_qty, NORM_AIR_GT, air.get("gt2_nm3", 0), pp2_air_ref, ".0f"))
-    lines.append(_line("", "", "Cooling Water 2", "KM3", values["gt2_kwh"], pp2_ref_qty, NORM_CW2_GT, cw.get("cw2_gt2_km3", 0), pp2_cw_ref, ".2f"))
-    lines.append(_line("", "", "Power_Dis", "KWH", values["gt2_kwh"], pp2_ref_qty, NORM_POWER_DIS_GT, values["gt2_kwh"] * NORM_POWER_DIS_GT, pp2_power_ref, ".4f"))
+    lines.append(_line("", "", "COMPRESSED AIR", "NM3", values["gt2_kwh"], pp2_ref_qty, NORM_AIR_GT2, air.get("gt2_nm3", 0), pp2_air_ref, ".0f"))
+    lines.append(_line("", "", "Cooling Water 2", "KM3", values["gt2_kwh"], pp2_ref_qty, NORM_CW2_GT2, cw.get("cw2_gt2_km3", 0), pp2_cw_ref, ".2f"))
+    lines.append(_line("", "", "Power_Dis", "KWH", values["gt2_kwh"], pp2_ref_qty, NORM_POWER_DIS_GT2, values["gt2_kwh"] * NORM_POWER_DIS_GT2, pp2_power_ref, ".4f"))
 
     # Calculate BPC reference quantities for PP3 utilities using BPC norms if available
     pp3_ng_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "NATURAL GAS", NORM_NG_GT3, pp3_ref_qty)
-    pp3_air_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "COMPRESSED AIR", NORM_AIR_GT, pp3_ref_qty)
-    pp3_cw_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Cooling Water 2", NORM_CW2_GT, pp3_ref_qty)
-    pp3_power_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Power_Dis", NORM_POWER_DIS_GT, pp3_ref_qty)
+    pp3_air_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "COMPRESSED AIR", NORM_AIR_GT3, pp3_ref_qty)
+    pp3_cw_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Cooling Water 2", NORM_CW2_GT3, pp3_ref_qty)
+    pp3_power_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Power_Dis", NORM_POWER_DIS_GT3, pp3_ref_qty)
     
     lines.append("")
     lines.append(_line("NMD - Power Plant 3", "POWERGEN", "NATURAL GAS", "MMBTU", values["gt3_kwh"], pp3_ref_qty, NORM_NG_GT3, ng.get("gt3_mmbtu", 0), pp3_ng_ref, ".4f"))
-    lines.append(_line("", "", "COMPRESSED AIR", "NM3", values["gt3_kwh"], pp3_ref_qty, NORM_AIR_GT, air.get("gt3_nm3", 0), pp3_air_ref, ".0f"))
-    lines.append(_line("", "", "Cooling Water 2", "KM3", values["gt3_kwh"], pp3_ref_qty, NORM_CW2_GT, cw.get("cw2_gt3_km3", 0), pp3_cw_ref, ".2f"))
-    lines.append(_line("", "", "Power_Dis", "KWH", values["gt3_kwh"], pp3_ref_qty, NORM_POWER_DIS_GT, values["gt3_kwh"] * NORM_POWER_DIS_GT, pp3_power_ref, ".4f"))
+    lines.append(_line("", "", "COMPRESSED AIR", "NM3", values["gt3_kwh"], pp3_ref_qty, NORM_AIR_GT3, air.get("gt3_nm3", 0), pp3_air_ref, ".0f"))
+    lines.append(_line("", "", "Cooling Water 2", "KM3", values["gt3_kwh"], pp3_ref_qty, NORM_CW2_GT3, cw.get("cw2_gt3_km3", 0), pp3_cw_ref, ".2f"))
+    lines.append(_line("", "", "Power_Dis", "KWH", values["gt3_kwh"], pp3_ref_qty, NORM_POWER_DIS_GT3, values["gt3_kwh"] * NORM_POWER_DIS_GT3, pp3_power_ref, ".4f"))
 
     stg_shp_calc = values["stg_shp_from_lookup"] if values["stg_shp_from_lookup"] > 0 else (values["stg_kwh"] * 0.0036)
-    stg_cond_calc = -(values["stg_condensate_from_lookup"] if values["stg_condensate_from_lookup"] > 0 else (values["stg_kwh"] * 0.0029))
+    stg_cond_calc = (values["stg_condensate_from_lookup"] if values["stg_condensate_from_lookup"] > 0 else (values["stg_kwh"] * 0.0029))
     
     # Calculate BPC reference quantities for STG utilities using BPC norms if available
     stg_condensate_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Ret steam condensate", NORM_STG_CONDENSATE, stg_ref_qty)

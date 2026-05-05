@@ -413,20 +413,19 @@ def save_budget_results(month: int, year: int, budget_result: dict) -> dict:
         gross_mwh = asset.get("GrossMWh", 0)
         gross_kwh = gross_mwh * 1000
         
-        if "GT1" in name or "POWER PLANT 3" in name:
+        if "GT1" in name or "POWER PLANT 1" in name:
             power_dispatch["gt1_gross_kwh"] = gross_kwh
         elif "GT2" in name or "POWER PLANT 2" in name:
             power_dispatch["gt2_gross_kwh"] = gross_kwh
-        elif "GT3" in name or "POWER PLANT 1" in name:
+        elif "GT3" in name or "POWER PLANT 3" in name:
             power_dispatch["gt3_gross_kwh"] = gross_kwh
         elif "STG" in name:
             power_dispatch["stg_gross_kwh"] = gross_kwh
     
-    # Extract HRSG SHP from steam balance
-    shp_balance = final_steam.get("shp_balance", {})
-    power_dispatch["hrsg1_shp_mt"] = shp_balance.get("shp_from_hrsg1", 0)
-    power_dispatch["hrsg2_shp_mt"] = shp_balance.get("shp_from_hrsg2", 0)
-    power_dispatch["hrsg3_shp_mt"] = shp_balance.get("shp_from_hrsg3", 0)
+    # Extract HRSG SHP from utilities (which contains the dispatched supplementary firing)
+    power_dispatch["hrsg1_shp_mt"] = utilities.get("shp_from_hrsg1", 0)
+    power_dispatch["hrsg2_shp_mt"] = utilities.get("shp_from_hrsg2", 0)
+    power_dispatch["hrsg3_shp_mt"] = utilities.get("shp_from_hrsg3", 0)
     
     # Populate steam quantities for saving
     hp_balance = final_steam.get("hp_balance", {})

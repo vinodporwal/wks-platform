@@ -1871,15 +1871,6 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
         for col in range(1, 6):
             ws.cell(row=row, column=col).border = THIN_BORDER
         row += 1
-
-        hrsg_dispatch = usd_result.get('hrsg_dispatch', {}) or {}
-        free_steam_offset = hrsg_dispatch.get('total_free_steam_mt', 0) or 0
-        ws[f'A{row}'] = "  Free Steam Offset"
-        ws[f'C{row}'] = round(-free_steam_offset, 2)
-        u4u_total -= free_steam_offset
-        for col in range(1, 6):
-            ws.cell(row=row, column=col).border = THIN_BORDER
-        row += 1
     
     elif steam_type == 'MP':
         # MP consumed by PRDS to generate LP (steam cascade)
@@ -1954,9 +1945,7 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
     
     # SHP uses 'shp_total_demand' key, others use '{type}_total'
     if steam_type == 'SHP':
-        hrsg_dispatch = usd_result.get('hrsg_dispatch', {}) or {}
-        free_steam_offset = hrsg_dispatch.get('total_free_steam_mt', 0) or 0
-        total_demand_actual = max(0, steam_result.get('shp_total_demand', 0) - free_steam_offset)
+        total_demand_actual = steam_result.get('shp_total_demand', 0)
     else:
         total_demand_actual = steam_result.get(f'{steam_type_lower}_total', 0)
     
@@ -1987,29 +1976,40 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
         hrsg_dispatch_list = hrsg_dispatch.get('hrsg_dispatch', [])
 
         # Build name → supplementary MT map from dispatch list
-        hrsg_shp_gen = {'HRSG-1': 0.0, 'HRSG-2': 0.0, 'HRSG-3': 0.0}
+        hrsg_shp_gen = {
+            'HRSG-1 (Supp Firing)': 0.0, 'GT-1 (Free Steam)': 0.0,
+            'HRSG-2 (Supp Firing)': 0.0, 'GT-2 (Free Steam)': 0.0,
+            'HRSG-3 (Supp Firing)': 0.0, 'GT-3 (Free Steam)': 0.0
+        }
         for hrsg_data in hrsg_dispatch_list:
             raw_name = hrsg_data.get('name', '')
             dispatched_supp_mt = hrsg_data.get('dispatched_supp_mt', 0) or 0
+            free_steam_mt = hrsg_data.get('free_steam_mt', 0) or 0
+            
             norm = (raw_name.upper()
                     .replace('NMD-', '').replace('NMD ', '')
                     .replace('_SHP STEAM', '').replace('SHP STEAM', '')
                     .strip())
             # Map to canonical labels
             if '1' in norm:
-                hrsg_shp_gen['HRSG-1'] = dispatched_supp_mt
+                hrsg_shp_gen['HRSG-1 (Supp Firing)'] = dispatched_supp_mt
+                hrsg_shp_gen['GT-1 (Free Steam)'] = free_steam_mt
             elif '2' in norm:
-                hrsg_shp_gen['HRSG-2'] = dispatched_supp_mt
+                hrsg_shp_gen['HRSG-2 (Supp Firing)'] = dispatched_supp_mt
+                hrsg_shp_gen['GT-2 (Free Steam)'] = free_steam_mt
             elif '3' in norm:
-                hrsg_shp_gen['HRSG-3'] = dispatched_supp_mt
+                hrsg_shp_gen['HRSG-3 (Supp Firing)'] = dispatched_supp_mt
+                hrsg_shp_gen['GT-3 (Free Steam)'] = free_steam_mt
         
+        # Add to excel
         for hrsg_label, shp_mt in hrsg_shp_gen.items():
-            ws[f'D{gen_row}'] = hrsg_label
-            ws[f'E{gen_row}'] = round(shp_mt, 2)
-            generation_total += shp_mt
-            for col in range(1, 6):
-                ws.cell(row=gen_row, column=col).border = THIN_BORDER
-            gen_row += 1
+            if shp_mt > 0 or 'Supp Firing' in hrsg_label: # Always show HRSG rows even if 0, but only show GT rows if >0
+                ws[f'D{gen_row}'] = hrsg_label
+                ws[f'E{gen_row}'] = round(shp_mt, 2)
+                generation_total += shp_mt
+                for col in range(1, 6):
+                    ws.cell(row=gen_row, column=col).border = THIN_BORDER
+                gen_row += 1
     
     elif steam_type == 'HP':
         # HP from PRDS (SHP → HP) — always show
