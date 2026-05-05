@@ -1,4 +1,4 @@
-import { Input } from '@progress/kendo-react-inputs'
+import { InputBase } from '../../../../node_modules/@mui/material/index'
 import { useState, useEffect, useRef } from 'react'
 
 export const PostCrDaysEditor = ({ dataItem, field, onChange }) => {
@@ -60,13 +60,14 @@ export const PostCrDaysEditor = ({ dataItem, field, onChange }) => {
 
   return (
     <td style={{ textAlign: 'end' }}>
-      <Input
+      <InputBase
         value={localValue}
         onChange={handleChange}
+        className='input-editor'
         style={{
-          fontSize: '0.8rem',
+          fontSize: '15px',
           padding: '2px 2px',
-          height: '22px',
+          height: '40px',
           lineHeight: '1rem',
         }}
       />

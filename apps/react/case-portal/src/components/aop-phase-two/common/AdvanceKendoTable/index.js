@@ -876,7 +876,9 @@ const AdvanceKendoTable = ({
           cursor: isRowEditable ? 'pointer' : 'not-allowed',
           color:
             isEdited && displayText ? 'orange' : rawValue ? 'inherit' : 'gray',
-          fontWeight: isEdited && displayText ? 'bold' : undefined,
+          fontWeight: isEdited && displayText ? 700 : 500,
+          fontFamily: 'Honeywell Sans Web, Inter, sans-serif',
+          fontSize: '15px',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
@@ -2000,6 +2002,7 @@ const AdvanceKendoTable = ({
                   sx={{
                     fontSize: '16px',
                     fontWeight: 700,
+                    fontFamily: 'Honeywell Sans Web, Inter, sans-serif',
                     color: '#252525',
                     display: 'flex',
                     alignItems: 'center',

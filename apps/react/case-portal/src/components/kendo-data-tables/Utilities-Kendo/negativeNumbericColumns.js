@@ -1,5 +1,5 @@
-import { Input } from '@progress/kendo-react-inputs'
 import { useState, useEffect, useRef } from 'react'
+import { InputBase } from '../../../../node_modules/@mui/material/index'
 
 export const NoSpinnerNumericEditorNegative = ({
   dataItem,
@@ -36,13 +36,14 @@ export const NoSpinnerNumericEditorNegative = ({
 
   return (
     <td style={{ textAlign: 'end' }}>
-      <Input
+      <InputBase
         value={localValue}
         onChange={handleChange}
+        className='input-editor'
         style={{
-          fontSize: '0.8rem',
+          fontSize: '15px',
           padding: '2px 2px',
-          height: '22px',
+          height: '40px',
           lineHeight: '1rem',
         }}
       />
