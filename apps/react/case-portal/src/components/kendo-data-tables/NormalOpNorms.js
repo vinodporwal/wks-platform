@@ -711,8 +711,8 @@ const NormalOpNormsScreen = () => {
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
         IS_PVC_DMD
-          ? 'Select Grade'
-          : 'Select Mode',
+          ? 'Grade'
+          : 'Mode',
       showCalculateVisibility:
         Object.keys(calculationObject || {}).length > 0 ? true : false,
       showTitleNameBusiness: true,

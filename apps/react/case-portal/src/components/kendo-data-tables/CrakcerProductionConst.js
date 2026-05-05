@@ -129,12 +129,14 @@ const CrakcerProductionConst = () => {
       editable: false,
       widthT: 150,
       hidden: false,
+      minWidth: 120,
     },
     {
       field: 'UOM',
       title: 'UOM',
       editable: false,
       widthT: 80,
+      minWidth: 60,
     },
     {
       field: 'ConstantValue',
@@ -143,6 +145,7 @@ const CrakcerProductionConst = () => {
       type: 'number',
       widthT: 120,
       format: FORMATE_VALUE,
+      minWidth: 100,
     },
 
     {

@@ -41,7 +41,12 @@ import Business from '@mui/icons-material/Business'
 import Domain from '@mui/icons-material/Domain'
 import Factory from '@mui/icons-material/Factory'
 import CorporateFare from '@mui/icons-material/CorporateFare'
-import { BusinessBlueIcon, CalenderIcon, PlantIcon, SiteIcon } from 'assets/images/icons/index'
+import {
+  BusinessBlueIcon,
+  CalenderIcon,
+  PlantIcon,
+  SiteIcon,
+} from 'assets/images/icons/index'
 
 function parseAllowed(raw) {
   const map = {}
@@ -89,19 +94,18 @@ export default function HeaderContent({ keycloak, navigation }) {
     (state) => state.dataGridStore.verticalChangeFromDashboard,
   )
 
-
   const [currentStep, setCurrentStep] = useState(null)
   const [totalSteps, setTotalSteps] = useState(0)
 
+  const PRODUCTION_NORMS_PLAN_PREFIX = '/production-norms-plan/'
+
   useEffect(() => {
-    console.log("navigation ", navigation)
     if (!navigation?.items) {
       setCurrentStep(null)
       setTotalSteps(0)
       return
     }
 
-    // collect item nodes across a group
     const collectItems = (menu, out = []) => {
       if (!menu?.children) return out
       for (const c of menu.children) {
@@ -111,38 +115,44 @@ export default function HeaderContent({ keycloak, navigation }) {
       return out
     }
 
-    let matchedIndex = -1
+    let matchedStepIndex = -1
+    let matchedTitle = ''
 
     for (const g of navigation.items || []) {
       if (g.type !== 'group') continue
-      // check branch contains path
-      const items = collectItems(g, [])
 
       const allItems = collectItems(g, [])
 
-      // 2. Filter to only include the specific path prefix
+      // Title should work for ALL routes
+      const titleIndex = allItems.findIndex(
+        (it) => it.url === location.pathname,
+      )
+      if (titleIndex !== -1) {
+        matchedTitle = allItems[titleIndex]?.title || ''
+      }
+
+      // Step should work ONLY for /production-norms-plan/
       const productionItems = allItems.filter((it) =>
-        it.url?.startsWith('/production-norms-plan/'),
+        it.url?.startsWith(PRODUCTION_NORMS_PLAN_PREFIX),
       )
 
-      matchedIndex = productionItems.findIndex((it) => it.url === location.pathname)
-      if (matchedIndex !== -1) {
-        // set current step (1-based)
-        setCurrentStep(matchedIndex + 1)
-        setTotalSteps(productionItems.length)
+      matchedStepIndex = productionItems.findIndex(
+        (it) => it.url === location.pathname,
+      )
 
-        // dispatch title if changed
-        const matchedTitle = items[matchedIndex]?.title
-        if (matchedTitle && matchedTitle !== screenTitleName) {
-          dispatch(setScreenTitle({ title: matchedTitle }))
-        }
-        break
+      if (matchedStepIndex !== -1) {
+        setCurrentStep(matchedStepIndex + 1)
+        setTotalSteps(productionItems.length)
+      } else {
+        setCurrentStep(null)
+        setTotalSteps(0)
       }
+
+      break
     }
 
-    if (matchedIndex === -1) {
-      setCurrentStep(null)
-      setTotalSteps(0)
+    if (matchedTitle && matchedTitle !== screenTitleName) {
+      dispatch(setScreenTitle({ title: matchedTitle }))
     }
   }, [navigation, location.pathname, screenTitleName, dispatch])
 
@@ -735,25 +745,28 @@ export default function HeaderContent({ keycloak, navigation }) {
               >
                 {screenTitleName}
               </Typography>
-              <Box
-                sx={{
-                  p: '4px 8px',
-                  borderRadius: '100px',
-                  backgroundColor: '#ECEEFF',
-                  border: '1px solid #41424D',
-                }}
-              >
-                <Typography
+
+              {!!currentStep && (
+                <Box
                   sx={{
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    color: '#41424D',
-                    fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
+                    p: '4px 8px',
+                    borderRadius: '100px',
+                    backgroundColor: '#ECEEFF',
+                    border: '1px solid #41424D',
                   }}
                 >
-                  {`${currentStep} Step`}
-                </Typography>
-              </Box>
+                  <Typography
+                    sx={{
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      color: '#41424D',
+                      fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
+                    }}
+                  >
+                    {`${currentStep} Step`}
+                  </Typography>
+                </Box>
+              )}
             </React.Fragment>
           )}
         </Box>
@@ -793,17 +806,18 @@ export default function HeaderContent({ keycloak, navigation }) {
                           gap: 1,
                         }}
                       >
-                        <Box component="img" src={CalenderIcon} className="w16-icon" />
-
                         <Box
-                          component='span'
-                          className="header-dropdown-label"
-                        >
+                          component='img'
+                          src={CalenderIcon}
+                          className='w16-icon'
+                        />
+
+                        <Box component='span' className='header-dropdown-label'>
                           Year:
                         </Box>
                         <Box
                           component='strong'
-                          className="header-dropdown-value"
+                          className='header-dropdown-value'
                         >
                           {yearObj?.AOPDisplayYear}
                         </Box>
@@ -849,16 +863,20 @@ export default function HeaderContent({ keycloak, navigation }) {
                             gap: 1,
                           }}
                         >
-                          <Box component="img" src={BusinessBlueIcon} className="w16-icon" />
+                          <Box
+                            component='img'
+                            src={BusinessBlueIcon}
+                            className='w16-icon'
+                          />
                           <Box
                             component='span'
-                            className="header-dropdown-label"
+                            className='header-dropdown-label'
                           >
                             Vertical:
                           </Box>
                           <Box
                             component='strong'
-                            className="header-dropdown-value"
+                            className='header-dropdown-value'
                           >
                             {vert?.name}
                           </Box>
@@ -902,16 +920,20 @@ export default function HeaderContent({ keycloak, navigation }) {
                             gap: 1,
                           }}
                         >
-                          <Box component="img" src={SiteIcon} className="w16-icon" />
+                          <Box
+                            component='img'
+                            src={SiteIcon}
+                            className='w16-icon'
+                          />
                           <Box
                             component='span'
-                            className="header-dropdown-label"
+                            className='header-dropdown-label'
                           >
                             Site:
                           </Box>
                           <Box
                             component='strong'
-                            className="header-dropdown-value"
+                            className='header-dropdown-value'
                           >
                             {site?.name}
                           </Box>
@@ -954,16 +976,20 @@ export default function HeaderContent({ keycloak, navigation }) {
                             gap: 1,
                           }}
                         >
-                          <Box component="img" src={PlantIcon} className="w16-icon" />
+                          <Box
+                            component='img'
+                            src={PlantIcon}
+                            className='w16-icon'
+                          />
                           <Box
                             component='span'
-                            className="header-dropdown-label"
+                            className='header-dropdown-label'
                           >
                             Plant:
                           </Box>
                           <Box
                             component='strong'
-                            className="header-dropdown-value"
+                            className='header-dropdown-value'
                           >
                             {plant?.name}
                           </Box>
@@ -984,9 +1010,11 @@ export default function HeaderContent({ keycloak, navigation }) {
         </Stack>
 
         {/* RIGHT: Profile */}
-        {HIDE_DASHBOARD_DROPDOWN && (<Box sx={{ justifySelf: 'end' }}>
-          {!matchesXs ? <Profile keycloak={keycloak} /> : <MobileSection />}
-        </Box>)}
+        {HIDE_DASHBOARD_DROPDOWN && (
+          <Box sx={{ justifySelf: 'end' }}>
+            {!matchesXs ? <Profile keycloak={keycloak} /> : <MobileSection />}
+          </Box>
+        )}
       </Box>
     </>
   )

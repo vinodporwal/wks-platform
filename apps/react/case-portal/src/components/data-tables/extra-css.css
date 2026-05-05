@@ -144,6 +144,12 @@
 /* ===============================
    ACTION CONTAINERS
 ================================ */
+.action-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
 
 .action-box2 {
   display: flex;

@@ -152,7 +152,7 @@ export const SlowDownMegColumns = [
     type: 'descLimit',
     widthT: 230,
     autoAdjust: false,
-    minWidth: 100,
+    minWidth: 200,
   },
 
   {
@@ -225,7 +225,7 @@ export const NormalOpNormMegColumns = [
     groupable: true,
     editable: false,
     hidden: true,
-    minWidth: 100,
+    minWidth: 120,
     isVisible: false,
   },
   {
@@ -240,12 +240,12 @@ export const NormalOpNormMegColumns = [
     field: 'productName',
     title: 'Particulars',
     widthT: 120,
-    minWidth: 100,
+    minWidth: 120,
   },
 
   {
     field: 'UOM',
-    title: 'UOM / MT',
+    title: 'UOM/MT',
     widthT: 80,
     editable: false,
     minWidth: 100,
@@ -415,7 +415,6 @@ export const CrackerColums = [
   },
   {
     widthT: 100,
-
     columnType: 'checkbox',
     minWidth: 100,
   },
@@ -430,7 +429,7 @@ export const CrackerColums = [
     field: 'productName',
     title: 'Particulars',
     widthT: 120,
-    minWidth: 100,
+    minWidth: 120,
   },
 
   {
@@ -599,16 +598,16 @@ export const ShutdownConsumptionMegColumns = [
     headerName: 'Type',
     width: 100,
     hidden: true,
-    minWidth: 100,
+    minWidth: 120,
     isVisible: false,
   },
   {
     field: 'materialFkId',
     headerName: 'Particulars',
-    minWidth: 100,
+    minWidth: 120,
     editable: false,
     hidden: true,
-    width: 100,
+    width: 120,
     isVisible: false,
   },
   {
@@ -616,7 +615,7 @@ export const ShutdownConsumptionMegColumns = [
     headerName: 'Particulars',
     widthT: 120,
     editable: false,
-    minWidth: 100,
+    minWidth: 120,
   },
   {
     field: 'UOM',
@@ -683,7 +682,7 @@ export const SlowdownNormsMegColumns = [
     headerName: 'Particulars',
     widthT: 120,
     editable: false,
-    minWidth: 100,
+    minWidth: 120,
   },
   {
     field: 'UOM',
@@ -753,7 +752,7 @@ export const ConsumptionAopMegColumns = [
   },
   {
     field: 'UOM',
-    title: 'UOM / MT',
+    title: 'UOM/MT',
     editable: false,
     widthT: 90,
     minWidth: 150,

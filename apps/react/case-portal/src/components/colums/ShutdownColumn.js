@@ -161,7 +161,7 @@ export const SlowdownConfigColumns = [
     field: 'description',
     title: 'Slowdown Desc',
     editable: true,
-    widthT: 230,
+    minWidth: 230,
     autoAdjust: false,
   },
 
@@ -169,32 +169,32 @@ export const SlowdownConfigColumns = [
     field: 'maintStartDateTime',
     title: 'SD - From',
     editable: true,
-    widthT: 140,
+    minWidth: 100,
   },
   {
     field: 'maintEndDateTime',
     title: 'SD - To',
     editable: true,
-    widthT: 140,
+    minWidth: 100,
   },
   {
     field: 'durationInHrs',
     title: 'Duration (Hrs)',
     editable: true,
-    widthT: 140,
+    minWidth: 100,
   },
 
   {
     field: 'rate',
     title: 'Rate',
     editable: true,
-    widthT: 120,
+    minWidth: 100,
   },
   {
     field: 'remarks',
     title: 'Remarks',
     editable: true,
-    widthT: 200,
+    minWidth: 200,
     autoAdjust: false,
   },
 ]

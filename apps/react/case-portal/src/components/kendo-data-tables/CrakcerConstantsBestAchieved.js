@@ -514,12 +514,13 @@ const CrakcerConstantsBestAchieved = () => {
       field: 'DisplayName',
       title: 'Particulars',
       widthT: '200px',
+      minWidth: 120,
     },
 
     {
       field: 'UOM',
       title: 'UOM',
-      widthT: '60px',
+      minWidth: 60,
       editable: false,
     },
 
@@ -529,7 +530,7 @@ const CrakcerConstantsBestAchieved = () => {
       editable: true,
       align: 'right',
       format: valueFormat,
-      widthT: '200px',
+      minWidth: 100,
       type: 'number',
     },
     {

@@ -166,7 +166,7 @@ export const SlowDownPtaColumns = [
     editable: true,
     widthT: 150,
     autoAdjust: false,
-    minWidth: 100,
+    minWidth: 200,
   },
 
   {
@@ -231,7 +231,7 @@ export const SlowDownPtadmdColumns = [
     type: 'discriptionDrpdwn',
     widthT: 150,
     autoAdjust: false,
-    minWidth: 100,
+    minWidth: 200,
   },
   {
     field: 'maintenanceId',
