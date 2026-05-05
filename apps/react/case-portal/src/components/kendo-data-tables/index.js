@@ -624,6 +624,22 @@ const KendoDataTables = ({
               updated.rate = ''
             }
           }
+          if (
+            screenType === 'slowdown' &&
+            lowerVertName === 'vcm' &&
+            lowerSiteName === 'hmd' &&
+            field === 'discription'
+          ) {
+            const desc = (value || '').trim()
+            if (
+              desc === 'Furnace decoking - (EBA-6401A)' ||
+              desc === 'Furnace decoking - (EBA-6401B)'
+            ) {
+              updated.rate = 32.5
+            } else if (desc === 'Furnace decoking - (EBA-6401C)') {
+              updated.rate = 22.75
+            }
+          }
 
           if (
             screenType === 'shutdown' &&

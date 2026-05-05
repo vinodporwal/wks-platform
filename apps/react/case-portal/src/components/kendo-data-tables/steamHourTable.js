@@ -165,7 +165,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
       const { dataItem, field, value } = e
       const section = dataItem.Particulars || dataItem.SectionName || ''
 
-      // Apply the edit, then recompute � filter to derived rows in the same section only
+      // Apply the edit, then recompute ? filter to derived rows in the same section only
       const afterEdit = currentRows.map((r) =>
         r.id === dataItem.id ? { ...r, [field]: value } : r,
       )

@@ -81,6 +81,8 @@ const ProductionNorms = ({ permissions }) => {
   const IS_CHEMICAL = lowerVertName === 'chemical'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && SITE_NAME_LOWERCASE === 'jmd'
+  const IS_ELASTOMER_HMD =
+    lowerVertName === 'elastomer' && SITE_NAME_LOWERCASE === 'hmd'
 
   const IS_ELASTOMER_JMD_IIR =
     lowerVertName === 'elastomer' &&
@@ -768,7 +770,8 @@ const ProductionNorms = ({ permissions }) => {
             !IS_AROMATIC_HMD &&
             !IS_AROMATIC_DTA_PLATFORMER) ||
           IS_ELASTOMER_JMD ||
-          IS_CHEMICAL_DMD_CHLOR_ALKALI
+          IS_CHEMICAL_DMD_CHLOR_ALKALI ||
+          IS_ELASTOMER_HMD
         ) {
           finalData = [...formattedData, totalsRow]
         } else {
