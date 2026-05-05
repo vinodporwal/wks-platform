@@ -65,6 +65,7 @@ import { DurationEditor } from './Utilities-Kendo/numericViewCells'
 import ProductCell from './Utilities-Kendo/ProductCell'
 import { RemarkCell } from './Utilities-Kendo/RemarkCell'
 import { TextCellEditor } from './Utilities-Kendo/TextCellEditor'
+import SwitchEditor from './Utilities-Kendo/SwitchEditor'
 import { NoSpinnerNumericEditorWithUOMValidation } from './Utilities-Kendo/numbericColumnsWithUOMValidation'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
@@ -812,6 +813,7 @@ const KendoDataTables = ({
             ...(prev[uniqueItemId] || {}),
             ...dataItem,
             [field]: value,
+            inEdit: true,
           }
 
           if (
@@ -2670,7 +2672,10 @@ const KendoDataTables = ({
                   )
                 }
 
-                if (['discription', 'Name'].includes(col?.field)) {
+                if (
+                  ['discription', 'Name'].includes(col?.field) &&
+                  col?.type !== 'dynamicDropdownshared'
+                ) {
                   return (
                     <GridColumn
                       key={col?.field}
@@ -3257,7 +3262,9 @@ const KendoDataTables = ({
 
                 if (col.type === 'dynamicDropdownshared') {
                   const dropdownOptions =
-                    permissions?.dynamicDropdownOptions?.[col.field] || []
+                    col.dropdownOptions ||
+                    permissions?.dynamicDropdownOptions?.[col.field] ||
+                    []
                   return (
                     <GridColumn
                       key={col.field}
@@ -3555,12 +3562,9 @@ const KendoDataTables = ({
                       cells={{
                         edit: {
                           text: (props) => (
-                            <RowAwareDropdownEditor
+                            <SwitchEditor
                               {...props}
-                              options={[
-                                { name: 'ON', value: 1 },
-                                { name: 'OFF', value: 0 },
-                              ]}
+                              onChange={(e) => itemChange(e)}
                               condition={(dataItem) =>
                                 dataItem?.UOM === 'ON/OFF'
                               }
@@ -3568,20 +3572,17 @@ const KendoDataTables = ({
                           ),
                         },
                         data: (props) => {
-                          // ON/OFF rows: show label text with highlight still handled by RedHighlightCell
+                          // ON/OFF rows: show switch with direct edit mode
                           if (props.dataItem?.UOM === 'ON/OFF') {
-                            const val = props.dataItem[props.field]
-                            const label =
-                              val === 1 || val === '1' ? 'ON' : 'OFF'
                             return (
-                              <RedHighlightCell
+                              <SwitchEditor
                                 {...props}
+                                directEditMode={true}
+                                onChange={(e) => itemChange(e)}
                                 customModifiedCells={customModifiedCells}
-                                allRedCell={allRedCell}
-                                disableRedHighlight={disableRedHighlight}
-                              >
-                                {label}
-                              </RedHighlightCell>
+                                rowId={props.dataItem.id}
+                                setRows={setRows}
+                              />
                             )
                           }
                           // Regular rows
@@ -3915,6 +3916,9 @@ const KendoDataTables = ({
         severity={snackbarData?.severity || 'info'}
         onClose={() => setSnackbarOpen(false)}
         duration={snackbarData?.duration}
+        autoHide={
+          snackbarData?.autoHide !== undefined ? snackbarData.autoHide : true
+        }
       />
 
       <Dialog

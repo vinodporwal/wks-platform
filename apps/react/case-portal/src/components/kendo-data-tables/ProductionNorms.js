@@ -193,7 +193,7 @@ const ProductionNorms = ({ permissions }) => {
         calculatedTotal: roundedTotal,
         iirValue: roundedIIR,
         match: isMatch,
-        difference: roundedTotal - roundedIIR,
+        difference: roundedIIR - roundedTotal,
         unit: selectedUnit,
       }
 
@@ -213,8 +213,16 @@ const ProductionNorms = ({ permissions }) => {
 
   const saveChanges = React.useCallback(async () => {
     try {
+      // Merge both rows and modifiedCells to capture all changes
+      console.log('rows', rows)
       const editedData = Object.values(modifiedCells)
-      const enrichedData = editedData.map((row) => ({
+      const allData = rows
+        .filter((item) => item.displayName !== 'Total')
+        ?.map((row) => {
+          const modifiedRow = modifiedCells[row.id]
+          return modifiedRow ? { ...row, ...modifiedRow } : row
+        })
+      const enrichedData = allData.map((row) => ({
         ...row,
         total: row.total ?? findSum('1', row),
       }))
@@ -227,11 +235,12 @@ const ProductionNorms = ({ permissions }) => {
         })
 
         if (!result.allMatch) {
+          console.log('result', result)
           const message = result.mismatches
             .map((m) =>
               m.error
                 ? `${m.displayName}: ${m.error}`
-                : `${m.displayName}: Expected ${m.iirValue.toFixed(2)} ${m.unit}, got ${m.calculatedTotal.toFixed(2)} ${m.unit}`,
+                : `${m.displayName}: Expected ${m.iirValue.toFixed(2)} ${m.unit}, got ${m.calculatedTotal.toFixed(2)} ${m.unit} (Diff : ${m.difference.toFixed(2)})`,
             )
             .join('\n')
 
@@ -239,6 +248,8 @@ const ProductionNorms = ({ permissions }) => {
           setSnackbarData({
             message: `Total validation failed:\n${message}`,
             severity: 'error',
+            duration: 1000 * 30,
+            autoHide: false,
           })
           setLoading(false)
           return
@@ -1030,7 +1041,7 @@ const ProductionNorms = ({ permissions }) => {
           .map((m) =>
             m.error
               ? `${m.displayName}: ${m.error}`
-              : `${m.displayName}: Expected ${m.iirValue.toFixed(2)} ${m.unit || 'MT'}, got ${m.calculatedTotal.toFixed(2)} ${m.unit || 'MT'}`,
+              : `${m.displayName}: Expected ${m.iirValue.toFixed(2)} ${m.unit || 'MT'}, got ${m.calculatedTotal.toFixed(2)} ${m.unit || 'MT'} (Diff: ${m.difference.toFixed(2)})`,
           )
           .join('\n')
 
@@ -1039,6 +1050,7 @@ const ProductionNorms = ({ permissions }) => {
           message: `Total validation failed:\n${message}`,
           severity: 'error',
           duration: 1000 * 15,
+          autoHide: false,
         })
       }
       validateTotalsWithIIRRef.current = false
