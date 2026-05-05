@@ -205,15 +205,16 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				list.add(dto.getJan());
 				list.add(dto.getFeb());
 				list.add(dto.getMar());
-				list.add(dto.getRemarks());
+			list.add(dto.getRemarks());
 
-				list.add(dto.getNormParameterFKId());
-				isEditable.add(dto.getIsEditable());
-				
-				if (isAfterSave) {
-					list.add(dto.getSaveStatus());
-					list.add(dto.getErrDescription());
-				}
+			list.add(dto.getNormParameterFKId());
+			list.add(dto.getId());
+			isEditable.add(dto.getIsEditable());
+			
+			if (isAfterSave) {
+				list.add(dto.getSaveStatus());
+				list.add(dto.getErrDescription());
+			}
 				rows.add(list);
 			}
 
@@ -233,9 +234,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			innerHeaders.addAll(monthsList);
 			innerHeaders.add("Remarks");
 
-			innerHeaders.add("NormParameterId");
+		innerHeaders.add("NormParameterId");
+		innerHeaders.add("Id");
 
-			if (isAfterSave) {
+		if (isAfterSave) {
 				innerHeaders.add("Status");
 				innerHeaders.add("Error Description");
 			}
@@ -281,11 +283,13 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				}
 			}
 
-			if ((verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc) && !isChemical) {
-				sheet.setColumnHidden(17, true);
-			} else {
-				sheet.setColumnHidden(16, true);
-			}
+		if ((verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc) && !isChemical) {
+			sheet.setColumnHidden(17, true);
+			sheet.setColumnHidden(18, true);
+		} else {
+			sheet.setColumnHidden(16, true);
+			sheet.setColumnHidden(17, true);
+		}
 
 			try {
 
@@ -2523,10 +2527,11 @@ continue;
 						dto.setJan(getNumericCellValue(row.getCell(13), dto));
 						dto.setFeb(getNumericCellValue(row.getCell(14), dto));
 						dto.setMar(getNumericCellValue(row.getCell(15), dto));
-						dto.setRemarks(getStringCellValue(row.getCell(16), dto));
-						dto.setNormParameterFKId(getStringCellValue(row.getCell(17), dto));
-					} else {
-						dto.setNormType(getStringCellValue(row.getCell(0), dto));
+					dto.setRemarks(getStringCellValue(row.getCell(16), dto));
+					dto.setNormParameterFKId(getStringCellValue(row.getCell(17), dto));
+					dto.setId(getStringCellValue(row.getCell(18), dto));
+				} else {
+					dto.setNormType(getStringCellValue(row.getCell(0), dto));
 						dto.setProductName(getStringCellValue(row.getCell(1), dto));
 						dto.setUOM(getStringCellValue(row.getCell(2), dto));
 						dto.setAuditYear(year);
@@ -2542,9 +2547,10 @@ continue;
 						dto.setJan(getNumericCellValue(row.getCell(12), dto));
 						dto.setFeb(getNumericCellValue(row.getCell(13), dto));
 						dto.setMar(getNumericCellValue(row.getCell(14), dto));
-						dto.setRemarks(getStringCellValue(row.getCell(15), dto));
-						dto.setNormParameterFKId(getStringCellValue(row.getCell(16), dto));
-						if (dto.getProductName().equalsIgnoreCase("TST")) {
+					dto.setRemarks(getStringCellValue(row.getCell(15), dto));
+					dto.setNormParameterFKId(getStringCellValue(row.getCell(16), dto));
+					dto.setId(getStringCellValue(row.getCell(17), dto));
+					if (dto.getProductName().equalsIgnoreCase("TST")) {
 						    
 						    List<String> invalidMonthNames = new ArrayList<>(); 
 
