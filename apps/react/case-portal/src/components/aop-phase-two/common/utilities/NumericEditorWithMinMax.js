@@ -1,4 +1,4 @@
-import { Input } from '@progress/kendo-react-inputs'
+import { InputBase } from '@mui/material'
 import { useState, useEffect, useRef } from 'react'
 
 export const NumericEditorWithMinMax = ({
@@ -49,10 +49,10 @@ export const NumericEditorWithMinMax = ({
     }
   }
 
+  // Autofocus when cell enters edit mode
   useEffect(() => {
     if (inputRef.current) {
-      const el = inputRef.current.element || inputRef.current
-      if (el && typeof el.focus === 'function') el.focus()
+      inputRef.current.focus()
     }
   }, [])
 
@@ -71,24 +71,44 @@ export const NumericEditorWithMinMax = ({
   }
 
   return (
-    <div
-      style={{ position: 'relative', display: 'inline-block', width: '100%' }}
-    >
-      <Input
-        ref={inputRef}
+    <td style={{ position: 'relative' }}>
+      <InputBase
+        inputRef={inputRef}
         value={localValue}
         onChange={handleChange}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        style={{
-          fontSize: '0.8rem',
-          padding: '2px 2px',
-          height: '22px',
-          lineHeight: '1rem',
-          borderColor: error ? '#d32f2f' : undefined,
-          borderWidth: error ? '2px' : undefined,
+        autoComplete='off'
+        sx={{
           width: '100%',
-          boxSizing: 'border-box',
+          fontSize: '0.8125rem',
+          fontWeight: 600,
+          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif !important",
+          color: '#1d3665',
+          px: 1,
+          height: 40,
+          borderRadius: '6px',
+          backgroundColor: error ? '#fff5f5' : '#FFFFFF',
+          border: `1px solid ${error ? '#d32f2f' : '#E0E4EC'}`,
+          boxShadow: error
+            ? '0 0 0 3px rgba(211, 47, 47, 0.10)'
+            : '0px 1px 2px rgba(0, 0, 0, 0.05)',
+          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': {
+            borderColor: error ? '#d32f2f' : '#B0B8C4',
+            backgroundColor: error ? '#fff5f5' : '#F9FAFB',
+          },
+          '&.Mui-focused': {
+            borderColor: error ? '#d32f2f' : '#00F5E1',
+            boxShadow: error
+              ? '0 0 0 3px rgba(211, 47, 47, 0.12)'
+              : '0 0 0 3px rgba(0, 245, 225, 0.12)',
+            backgroundColor: '#FFFFFF',
+          },
+          '& input': {
+            textAlign: 'right',
+            padding: '0 !important',
+          },
         }}
         title={error || ''}
       />
@@ -112,6 +132,6 @@ export const NumericEditorWithMinMax = ({
           {error}
         </div>
       )}
-    </div>
+    </td>
   )
 }

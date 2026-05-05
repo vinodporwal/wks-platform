@@ -118,13 +118,7 @@
 }
 
 /* Odd rows */
-.kendo-data-grid
-  .k-grid-content
-  .k-grid-table
-  tr:nth-child(odd)
-  td:not(.k-number-right-disabled):not(.disabled-cell):not(
-    .non-editable-cell
-  ):not(.k-right-disabled) {
+.kendo-data-grid .k-grid-content .k-grid-table tr:nth-child(odd) {
   background-color: #ffffff;
   border-width: 0px 1px 1px 0px;
   border-style: solid;
@@ -140,19 +134,8 @@
 }
 
 /* Even rows (overrides Kendo k-alt) */
-.kendo-data-grid
-  .k-grid-content
-  .k-grid-table
-  tr:nth-child(even)
-  td:not(.k-number-right-disabled):not(.disabled-cell):not(
-    .non-editable-cell
-  ):not(.k-right-disabled),
-.kendo-data-grid
-  .k-grid-content
-  tr.k-alt
-  td:not(.k-number-right-disabled):not(.disabled-cell):not(
-    .non-editable-cell
-  ):not(.k-right-disabled) {
+.kendo-data-grid .k-grid-content .k-grid-table tr:nth-child(even),
+.kendo-data-grid .k-grid-content tr.k-alt {
   background-color: #f7f9ff;
   border-width: 0px 1px 1px 0px;
   border-style: solid;
@@ -172,9 +155,7 @@
   .k-grid-content
   .k-grid-table
   tr:hover
-  td:not(.k-number-right-disabled):not(.disabled-cell):not(
-    .non-editable-cell
-  ):not(.k-right-disabled) {
+  td:not(.disabled-cell):not(.non-editable-cell) {
   background-color: #eef1fe !important;
 }
 

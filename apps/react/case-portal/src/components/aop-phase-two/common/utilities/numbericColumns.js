@@ -1,6 +1,7 @@
 import { Input } from '@progress/kendo-react-inputs'
 import NotificationTST from 'components/Utilities/NotificationTST'
 import { useState, useEffect, useRef } from 'react'
+import { InputBase } from '../../../../../node_modules/@mui/material/index'
 
 export const NoSpinnerNumericEditor = ({ dataItem, field, onChange }) => {
   // Handle nested field paths (e.g., "apr.shutdownHrs")
@@ -58,23 +59,43 @@ export const NoSpinnerNumericEditor = ({ dataItem, field, onChange }) => {
 
   useEffect(() => {
     if (inputRef.current) {
-      const el = inputRef.current.element || inputRef.current
-      if (el && typeof el.focus === 'function') el.focus()
+      inputRef.current.focus()
     }
   }, [])
 
   return (
     <td>
-      <Input
-        ref={inputRef}
+      <InputBase
+        inputRef={inputRef}
         value={localValue}
         onChange={handleChange}
         onBlur={handleBlur}
-        style={{
-          fontSize: '0.8rem',
-          padding: '2px 2px',
-          height: '22px',
-          lineHeight: '1rem',
+        sx={{
+          width: '100%',
+          fontSize: '0.8125rem',
+          fontWeight: 600,
+          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif !important",
+          color: '#1d3665', // Using your deep navy color for the text
+          px: 1,
+          height: 40,
+          borderRadius: '6px',
+          backgroundColor: '#FFFFFF', // Solid white
+          border: '1px solid #E0E4EC', // Very soft grey border
+          boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', // Tiny "lift" from the page
+          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': {
+            borderColor: '#B0B8C4',
+            backgroundColor: '#F9FAFB', // Extremely subtle shift on hover
+          },
+          '&.Mui-focused': {
+            borderColor: '#00F5E1', // Your signature Cyan
+            boxShadow: '0 0 0 3px rgba(0, 245, 225, 0.12)', // Modern "Halo" glow
+            backgroundColor: '#FFFFFF',
+          },
+          '& input': {
+            textAlign: 'right',
+            padding: '0 !important',
+          },
         }}
       />
       <NotificationTST
