@@ -2665,7 +2665,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		            		shutDownPlanDTO.setMaintEndDateTime(getEndOfMonthDate(shutDownPlanDTO.getMonth(), year));
 		            	}
 		            }
-	                if(plantMaintenanceTransaction.getMaintForMonth()!=(shutDownPlanDTO.getMaintStartDateTime().getMonth() + 1)) {
+	                if(plantMaintenanceTransaction.getMaintForMonth() !=null && plantMaintenanceTransaction.getMaintForMonth()!=(shutDownPlanDTO.getMaintStartDateTime().getMonth() + 1)) {
 	                	changedMonth=plantMaintenanceTransaction.getMaintForMonth();
 	                	monthChange=true;
 	                }

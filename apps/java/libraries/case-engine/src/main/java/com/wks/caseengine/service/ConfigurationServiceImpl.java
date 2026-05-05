@@ -1494,7 +1494,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	@Override
 	public List<ConfigurationDTO> saveConfigurationData(String year, String plantFKId,String version,
-			List<ConfigurationDTO> configurationDTOList,Boolean calculation) {
+			List<ConfigurationDTO> configurationDTOList,Boolean calculation, boolean isMinMax) {
 		try {
 
 			
@@ -1541,7 +1541,7 @@ continue;
 					continue;
 				}
              // apr value should not be greater than may value
-			 if(verticalName.equalsIgnoreCase("ELastomer")  && site.getName().equalsIgnoreCase("JMD")) {
+			 if(isMinMax) {
 				if(configurationDTO.getApr() != null && configurationDTO.getMay() != null && configurationDTO.getApr() > configurationDTO.getMay()) {
 					configurationDTO.setSaveStatus("Failed");
 					configurationDTO.setErrDescription("Min value should not be greater than Max value");
@@ -1551,6 +1551,9 @@ continue;
 			}
 
 				for (int i = 1; i <= 12; i++) {
+					if(isMinMax) { 
+						if(i !=4 || i!=5)  continue;
+					}
 					Double attributeValue = getAttributeValue(configurationDTO, i);
 					System.out.println("attributeValue: " + attributeValue);
 					configurationDTO.setVertical(verticalName);
@@ -2404,7 +2407,7 @@ continue;
 	}
 	
 	@Override
-	public AOPMessageVM importShutdownRateExcel(String year, UUID plantFKId,String type,String version, MultipartFile file,Boolean calculation) {
+	public AOPMessageVM importShutdownRateExcel(String year, UUID plantFKId,String type,String version, MultipartFile file,Boolean calculation, boolean isMinMax) {
 		// TODO Auto-generated method stub
 		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
 			throw new IllegalArgumentException("Invalid or empty Excel file.");
@@ -2416,7 +2419,7 @@ continue;
 			List<ConfigurationDTO> data = readShutdownRate(file.getInputStream(), plantFKId, year,type);
 			System.out.println("Ended Read configuration in importExcel");
 			System.out.println("Started Save configuration in importExcel");
-			List<ConfigurationDTO> failedRecords = saveConfigurationData(year, plantFKId.toString(),version, data,calculation);
+			List<ConfigurationDTO> failedRecords = saveConfigurationData(year, plantFKId.toString(),version, data,calculation,isMinMax);
 			System.out.println("Ended Save configuration in importExcel");
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
@@ -2441,7 +2444,7 @@ continue;
 	}
 
 	@Override
-	public AOPMessageVM importExcel(String year, UUID plantFKId,List<String> reportTypes,String version, MultipartFile file,Boolean calculation) {
+	public AOPMessageVM importExcel(String year, UUID plantFKId,List<String> reportTypes,String version, MultipartFile file,Boolean calculation, boolean isMinMax) {
 		// TODO Auto-generated method stub
 		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
 			throw new IllegalArgumentException("Invalid or empty Excel file.");
@@ -2453,7 +2456,7 @@ continue;
 			List<ConfigurationDTO> data = readConfigurations(file.getInputStream(), plantFKId, year);
 			System.out.println("Ended Read configuration in importExcel");
 			System.out.println("Started Save configuration in importExcel");
-			List<ConfigurationDTO> failedRecords = saveConfigurationData(year, plantFKId.toString(),version, data,calculation);
+			List<ConfigurationDTO> failedRecords = saveConfigurationData(year, plantFKId.toString(),version, data,calculation,isMinMax);
 			System.out.println("Ended Save configuration in importExcel");
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
@@ -3114,12 +3117,12 @@ continue;
 	}
 
 	@Override
-	public AOPMessageVM importConfigurationConstantsExcel(String year, UUID plantId,String version, MultipartFile file,Boolean calculation) {
+	public AOPMessageVM importConfigurationConstantsExcel(String year, UUID plantId,String version, MultipartFile file,Boolean calculation, boolean isMinMax) {
 		// TODO Auto-generated method stub
 		try {
 			List<ConfigurationDTO> data = readConfigurationConstants(file.getInputStream(), plantId, year);
 
-			List<ConfigurationDTO> failedRecords = saveConfigurationData(year, plantId.toString(),version, data,calculation);
+			List<ConfigurationDTO> failedRecords = saveConfigurationData(year, plantId.toString(),version, data,calculation,isMinMax);
 
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {

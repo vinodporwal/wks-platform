@@ -64,8 +64,8 @@ public class ConfigurationController {
 	}
 	
 	@PostMapping(value="/production-norms")
-	public List<ConfigurationDTO> saveConfigurationData(@RequestParam String year,@RequestParam String plantFKId,@RequestParam(required=false) String version, @RequestBody List<ConfigurationDTO> configurationDTOList,@RequestParam(required=false) Boolean calculation) {
-		configurationService.saveConfigurationData(year,plantFKId,version,configurationDTOList,calculation);
+	public List<ConfigurationDTO> saveConfigurationData(@RequestParam String year,@RequestParam String plantFKId,@RequestParam(required=false) String version, @RequestBody List<ConfigurationDTO> configurationDTOList,@RequestParam(required=false) Boolean calculation,@RequestParam(required=false) boolean isMinMax) {
+		configurationService.saveConfigurationData(year,plantFKId,version,configurationDTOList,calculation,isMinMax);
 		return configurationDTOList;
 	}
 	
@@ -278,9 +278,9 @@ public class ConfigurationController {
 	public AOPMessageVM importExcel(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year,@RequestParam(required=false) List<String> reportTypes,@RequestParam(required=false) String version,@RequestParam(required=false) Boolean calculation,
-			@RequestParam("file") MultipartFile file
+			@RequestParam("file") MultipartFile file,@RequestParam(required=false) boolean isMinMax
 	        ) {
-			return	configurationService.importExcel(year,UUID.fromString(plantId),reportTypes,version, file,calculation); 
+			return	configurationService.importExcel(year,UUID.fromString(plantId),reportTypes,version, file,calculation,isMinMax); 
 	}
 	
 	@PostMapping(value = "/shutdown-rate-import", consumes = "multipart/form-data")
@@ -290,9 +290,9 @@ public class ConfigurationController {
             @RequestParam("type") String type,
             @RequestParam(required=false) String version,
 			@RequestParam("file") MultipartFile file,
-			@RequestParam(required=false) Boolean calculation
+			@RequestParam(required=false) Boolean calculation,@RequestParam(required=false) boolean isMinMax
 	        ) {
-			return	configurationService.importShutdownRateExcel(year,UUID.fromString(plantId),type,version, file,calculation); 
+			return	configurationService.importShutdownRateExcel(year,UUID.fromString(plantId),type,version, file,calculation,isMinMax); 
 	}
 	
 	@PostMapping(value = "/configuration-constants-import-excel", consumes = "multipart/form-data")
@@ -301,10 +301,10 @@ public class ConfigurationController {
             @RequestParam("year") String year,
             @RequestParam(required=false) String version,
             @RequestParam(required=false) Boolean calculation,
-			@RequestParam("file") MultipartFile file
+			@RequestParam("file") MultipartFile file,@RequestParam(required=false) boolean isMinMax
 	        ) {
 		
-	        return configurationService.importConfigurationConstantsExcel(year,UUID.fromString(plantFKId),version, file,calculation); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+	        return configurationService.importConfigurationConstantsExcel(year,UUID.fromString(plantFKId),version, file,calculation,isMinMax); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
 	}
 
 	@PostMapping(value = "/line-configuration-import", consumes = "multipart/form-data")
