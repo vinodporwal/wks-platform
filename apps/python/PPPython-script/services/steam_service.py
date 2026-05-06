@@ -857,7 +857,7 @@ def get_hrsg_availability_from_dispatch(power_dispatch: list) -> dict:
 # ============================================================
 # CALCULATE SHP GENERATION CAPACITY FROM HRSG
 # ============================================================
-def calculate_shp_generation_capacity(hrsg_availability: dict) -> dict:
+def calculate_shp_generation_capacity(hrsg_availability: dict, hrsg_full_load: bool = False) -> dict:
     """
     Calculate total SHP generation capacity from available HRSGs.
     
@@ -914,8 +914,12 @@ def calculate_shp_generation_capacity(hrsg_availability: dict) -> dict:
             total_max_month = max_capacity_per_hr * hours * efficiency
             
             # Monthly supplementary capacity is the difference after free steam
-            supp_min_month = max(0.0, total_min_month - free_steam_mt)
-            supp_max_month = max(0.0, total_max_month - free_steam_mt)
+            if hrsg_full_load:
+                supp_min_month = total_min_month
+                supp_max_month = total_max_month
+            else:
+                supp_min_month = max(0.0, total_min_month - free_steam_mt)
+                supp_max_month = max(0.0, total_max_month - free_steam_mt)
             
             total_supplementary_min += supp_min_month
             total_supplementary_max += supp_max_month
@@ -1374,7 +1378,8 @@ if __name__ == "__main__":
 # ============================================================
 def calculate_hrsg_min_load_and_excess_steam(
     power_dispatch: list,
-    shp_demand: float
+    shp_demand: float,
+    hrsg_full_load: bool = False
 ) -> dict:
     """
     Calculate HRSG production at MIN load and determine excess steam.
@@ -1417,7 +1422,10 @@ def calculate_hrsg_min_load_and_excess_steam(
             total_min_target = min_capacity_per_hr * hours * efficiency
             
             # MIN supplementary firing = remaining required after free steam
-            min_supp_firing = max(0.0, total_min_target - free_steam_mt)
+            if hrsg_full_load:
+                min_supp_firing = total_min_target
+            else:
+                min_supp_firing = max(0.0, total_min_target - free_steam_mt)
             total_min_supp_firing += min_supp_firing
             
             # Total MIN production includes free steam and supp firing

@@ -557,6 +557,7 @@ def usd_iterate(
     export_available: bool = False,
     dm_process: float = 54779.0,       # DM Water process consumption (M3)
     dm_fixed: float = 0.0,             # DM Water fixed consumption (M3)
+    hrsg_full_load: bool = False,      # If true, load HRSG without subtracting free steam
 ) -> dict:
     """
     Execute USD iteration loop to balance power and steam.
@@ -1076,7 +1077,10 @@ def usd_iterate(
         # (Linked to GT dispatch - HRSG available when GT is running)
         # ---------------------------------------------------------
         hrsg_availability = get_hrsg_availability_from_dispatch(current_dispatch)
-        shp_capacity = calculate_shp_generation_capacity(hrsg_availability)
+        shp_capacity = calculate_shp_generation_capacity(
+            hrsg_availability=hrsg_availability,
+            hrsg_full_load=hrsg_full_load
+        )
         
         print("\n" + "="*90)
         print("HRSG AVAILABILITY & SHP CAPACITY")
@@ -1209,7 +1213,8 @@ def usd_iterate(
         # Also calculate MIN load result for backward compatibility
         hrsg_min_load_result = calculate_hrsg_min_load_and_excess_steam(
             power_dispatch=current_dispatch,
-            shp_demand=shp_demand
+            shp_demand=shp_demand,
+            hrsg_full_load=hrsg_full_load
         )
         final_hrsg_min_load = hrsg_min_load_result
         

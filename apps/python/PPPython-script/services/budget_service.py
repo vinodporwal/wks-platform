@@ -674,6 +674,7 @@ def calculate_budget_with_iteration(
     raw_water_fixed: float = 0.0,      # Raw Water fixed consumption (M3)
     oxygen_mt: float = 0.0,            # Oxygen consumed by process plants (MT)
     save_to_db: bool = False,          # Auto-save calculated values to NormsMonthDetail
+    hrsg_full_load: bool = False,      # If true, load HRSG without subtracting free steam
 ) -> dict:
     """
     Complete budget calculation with USD iteration following the flowchart.
@@ -729,6 +730,7 @@ def calculate_budget_with_iteration(
         export_available=export_available,
         dm_process=dm_process,
         dm_fixed=dm_fixed,
+        hrsg_full_load=hrsg_full_load
     )
     
     # Print summary if verbose
@@ -993,6 +995,7 @@ def calculate_budget_with_iteration(
         "final_lp_balance": usd_result.get("final_lp_balance"),  # STG load-based LP balance
         "final_mp_balance": usd_result.get("final_mp_balance"),  # STG load-based MP balance
         "utility_consumption": utilities,  # Now includes calculated utilities
+        "hrsg_full_load_mode": hrsg_full_load, # Store flag for reporting
         "adjustments": {
             "supplementary_firing_mt": usd_result.get("supplementary_firing_mt", 0),
         },
@@ -1028,6 +1031,12 @@ def calculate_budget_with_iteration(
         print_save_summary(save_result)
         result["save_result"] = save_result
     
+    # Set top-level message for easier status reporting
+    if result.get("errors"):
+        result["message"] = result["errors"][0]["message"]
+    else:
+        result["message"] = "Converged"
+
     return result
 
 

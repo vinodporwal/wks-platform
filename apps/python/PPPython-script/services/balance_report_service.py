@@ -1734,6 +1734,7 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
     final_steam = usd_result.get('final_steam_balance', {})
     stg_extraction = calculation_result.get('stg_extraction', {})
     utility_consumption = calculation_result.get('utility_consumption', {})
+    hrsg_full_load_mode = calculation_result.get('hrsg_full_load_mode', False)
     
     steam_type_lower = steam_type.lower()
     steam_balance = final_steam.get(f'{steam_type_lower}_balance', {})
@@ -1871,6 +1872,21 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
         for col in range(1, 6):
             ws.cell(row=row, column=col).border = THIN_BORDER
         row += 1
+        
+        if hrsg_full_load_mode:
+            # Free steam is considered negative demand
+            hrsg_dispatch = usd_result.get('hrsg_dispatch', {})
+            hrsg_dispatch_list = hrsg_dispatch.get('hrsg_dispatch', [])
+            
+            for h in hrsg_dispatch_list:
+                free_mt = h.get('free_steam_mt', 0)
+                if free_mt > 0:
+                    ws[f'A{row}'] = f"  {h.get('linked_gt', 'GT')} (Free Steam Offset)"
+                    ws[f'C{row}'] = -round(free_mt, 2)
+                    u4u_total -= free_mt
+                    for col in range(1, 6):
+                        ws.cell(row=row, column=col).border = THIN_BORDER
+                    row += 1
     
     elif steam_type == 'MP':
         # MP consumed by PRDS to generate LP (steam cascade)
@@ -1946,6 +1962,10 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
     # SHP uses 'shp_total_demand' key, others use '{type}_total'
     if steam_type == 'SHP':
         total_demand_actual = steam_result.get('shp_total_demand', 0)
+        if hrsg_full_load_mode:
+            hrsg_dispatch = usd_result.get('hrsg_dispatch', {})
+            total_free = sum(h.get('free_steam_mt', 0) for h in hrsg_dispatch.get('hrsg_dispatch', []))
+            total_demand_actual -= total_free
     else:
         total_demand_actual = steam_result.get(f'{steam_type_lower}_total', 0)
     
@@ -1993,13 +2013,16 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
             # Map to canonical labels
             if '1' in norm:
                 hrsg_shp_gen['HRSG-1 (Supp Firing)'] = dispatched_supp_mt
-                hrsg_shp_gen['GT-1 (Free Steam)'] = free_steam_mt
+                if not hrsg_full_load_mode:
+                    hrsg_shp_gen['GT-1 (Free Steam)'] = free_steam_mt
             elif '2' in norm:
                 hrsg_shp_gen['HRSG-2 (Supp Firing)'] = dispatched_supp_mt
-                hrsg_shp_gen['GT-2 (Free Steam)'] = free_steam_mt
+                if not hrsg_full_load_mode:
+                    hrsg_shp_gen['GT-2 (Free Steam)'] = free_steam_mt
             elif '3' in norm:
                 hrsg_shp_gen['HRSG-3 (Supp Firing)'] = dispatched_supp_mt
-                hrsg_shp_gen['GT-3 (Free Steam)'] = free_steam_mt
+                if not hrsg_full_load_mode:
+                    hrsg_shp_gen['GT-3 (Free Steam)'] = free_steam_mt
         
         # Add to excel
         for hrsg_label, shp_mt in hrsg_shp_gen.items():

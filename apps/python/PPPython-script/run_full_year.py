@@ -251,7 +251,7 @@ def save_month_log(output_text: str, month: int, year: int, log_folder: str) -> 
     return filepath
 
 
-def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_calculation_log_enabled=True, parent_execution_id=None):
+def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_calculation_log_enabled=True, parent_execution_id=None, hrsg_full_load=False):
     """
     Run the model for a single month.
     
@@ -267,6 +267,7 @@ def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_c
         save_to_db: Save norms to database
         save_calculation_log_enabled: Save execution log to ModelCalculationLogs table
         parent_execution_id: FK to parent execution log (for full year runs)
+        hrsg_full_load: If True, do not subtract free steam from HRSG min target
     
     Returns:
         Dict with calculation result and execution time
@@ -297,7 +298,8 @@ def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_c
             cw1_fixed=demands.get("cw1_fixed", 0.0),
             cw2_fixed=demands.get("cw2_fixed", 0.0),
             raw_water_fixed=demands.get("raw_water_fixed", 0.0),
-            save_to_db=save_to_db
+            save_to_db=save_to_db,
+            hrsg_full_load=hrsg_full_load
         )
         
         execution_time = time.time() - start_time
@@ -376,7 +378,8 @@ def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_c
 def run_full_financial_year(financial_year: int, cpp_plant_id: str = None, 
                             process_demands=None, save_to_db=True, save_logs=True,
                             use_db_process: bool = True, use_db_fixed: bool = True,
-                            save_calculation_logs: bool = True, is_single_month: bool = False):
+                            save_calculation_logs: bool = True, is_single_month: bool = False,
+                            hrsg_full_load: bool = False):
     """
     Run the budget model for all 12 months of a financial year.
     Both process and fixed demands are fetched dynamically from DB for each month.
@@ -391,6 +394,7 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
         use_db_fixed: If True, fetch fixed demands from DB
         save_calculation_logs: If True, save execution logs to ModelCalculationLogs
         is_single_month: If True, running single month mode (don't save logs)
+        hrsg_full_load: If True, do not subtract free steam from HRSG min target
     
     Returns:
         Dict with summary of all month results
@@ -512,11 +516,13 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
         result = run_single_month.__wrapped__(  # call the plain calculation part
             month, year, cpp_plant_id, month_demands, save_to_db,
             save_calculation_log_enabled=False,   # We'll do it below under the lock
-            parent_execution_id=parent_execution_id
+            parent_execution_id=parent_execution_id,
+            hrsg_full_load=hrsg_full_load
         ) if hasattr(run_single_month, '__wrapped__') else run_single_month(
             month, year, cpp_plant_id, month_demands, save_to_db,
             save_calculation_log_enabled=False,
-            parent_execution_id=parent_execution_id
+            parent_execution_id=parent_execution_id,
+            hrsg_full_load=hrsg_full_load
         )
         # Save calculation log serialised
         if save_calculation_logs and not is_single_month:
@@ -920,6 +926,12 @@ Examples:
     )
     
     parser.add_argument(
+        "--hrsg-full-load", 
+        action="store_true",
+        help="Load HRSG directly on min load, considering free steam as negative SHP demand"
+    )
+    
+    parser.add_argument(
         "--json", 
         action="store_true",
         help="Output results as JSON (for Java/API integration)"
@@ -993,7 +1005,8 @@ Examples:
                 save_to_db=not args.no_save,
                 save_logs=not args.no_logs,
                 save_calculation_logs=True,  # Always enabled, but skipped for single month
-                is_single_month=is_single_month
+                is_single_month=is_single_month,
+                hrsg_full_load=args.hrsg_full_load
             )
             
             if args.json:
