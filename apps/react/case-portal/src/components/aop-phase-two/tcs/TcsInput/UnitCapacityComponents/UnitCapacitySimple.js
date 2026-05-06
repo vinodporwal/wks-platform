@@ -5,13 +5,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TcsApiService } from 'components/aop-phase-two/services/tcs/tcsApiService'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
-import { convertFromKBPSD, convertToKBPSD } from './uomConversionUtils'
 import {
   generateCalendarYearHeaders,
   extractYear,
 } from 'components/aop-phase-two/common/utilities/generateHeaders'
 
-const UnitCapacityGridRowwise = ({
+const UnitCapacitySimple = ({
   capacityType,
   title,
   PLANT_ID,
@@ -25,131 +24,23 @@ const UnitCapacityGridRowwise = ({
 }) => {
   const keycloak = useSession()
   const valueFormat = ValueFormatterPhaseTwo()
-  // const headerMap = generateHeaderNames(AOP_YEAR)
   const headerMap = generateCalendarYearHeaders(AOP_YEAR)
 
-  // State management for this capacity type only
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [modifiedCells, setModifiedCells] = useState({})
-  const [customModifiedCells, setCustomModifiedCells] = useState({})
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
   const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
-
-  // Determine if this grid is the annual "design" capacity type
   const isDesign = capacityType === 'design'
 
-  // Custom itemChange handler - updates KBPSD and syncs KTPD conversion
-  const handleCustomItemChange = useCallback(
-    (event, setRowsFunc) => {
-      const { dataItem, field, value } = event
-      const validFields = isDesign
-        ? ['value']
-        : [
-            'jan',
-            'feb',
-            'mar',
-            'apr',
-            'may',
-            'jun',
-            'jul',
-            'aug',
-            'sep',
-            'oct',
-            'nov',
-            'dec',
-          ]
-
-      if (!validFields.includes(field)) return
-
-      const pairedRowId = dataItem.isKBPSD
-        ? dataItem.id.replace('_kbpsd', '_ktpd')
-        : dataItem.id.replace('_ktpd', '_kbpsd')
-      const convertedValue = dataItem.isKBPSD
-        ? convertFromKBPSD(value, 'KTPD')
-        : convertToKBPSD(value, 'KTPD')
-
-      setRowsFunc((prevRows) =>
-        prevRows.map((row) => {
-          if (row.id === dataItem.id || row.id === pairedRowId) {
-            return {
-              ...row,
-              [field]: row.id === dataItem.id ? value : convertedValue,
-              inEdit: true,
-            }
-          }
-          return row
-        }),
-      )
-
-      setModifiedCells((prev) => ({
-        ...prev,
-        [pairedRowId]: {
-          ...rows.find((r) => r.id === pairedRowId),
-          ...prev[pairedRowId],
-          [field]: convertedValue,
-          inEdit: true,
-        },
-      }))
-
-      setCustomModifiedCells((prev) => ({
-        ...prev,
-        [pairedRowId]: { ...prev[pairedRowId], [field]: convertedValue },
-      }))
-    },
-    [isDesign, rows],
-  )
-
-  // Carry forward data from previous year
-  const handleCarryForward = useCallback(async () => {
-    try {
-      console.log(
-        `No data found for ${capacityType}, attempting carry-forward...`,
-      )
-
-      const carryForwardResponse =
-        await TcsApiService.carryForwardTcsUnitCapacity(
-          keycloak,
-          PLANT_ID,
-          apiYear,
-          capacityType,
-        )
-
-      console.log('Carry-forward response:', carryForwardResponse)
-
-      setSnackbarData({
-        message: `Data carried forward from previous year successfully!`,
-        severity: 'success',
-      })
-      setSnackbarOpen(true)
-
-      return true
-    } catch (carryForwardErr) {
-      console.error(
-        `Error during carry-forward for ${capacityType}:`,
-        carryForwardErr,
-      )
-      return false
-    }
-  }, [
-    keycloak,
-    PLANT_ID,
-    apiYear,
-    capacityType,
-    setSnackbarData,
-    setSnackbarOpen,
-  ])
-
-  // Fetch Unit Capacity data for this capacity type
   const fetchUnitCapacityData = useCallback(
     async (skipCarryForward = false) => {
-      if (!PLANT_ID || !AOP_YEAR) return
+      setLoading(true)
       try {
-        setLoading(true)
         const response = await TcsApiService.getTcsUnitCapacityData(
           keycloak,
           PLANT_ID,
@@ -158,101 +49,30 @@ const UnitCapacityGridRowwise = ({
           'KBPSD',
         )
 
-        let transformedData = []
-        if (response?.results && Array.isArray(response.results)) {
-          if (isDesign) {
-            transformedData = response.results.flatMap((item, index) => {
-              const kbpsdRow = {
-                id: `${item.id || `row_${index}`}_kbpsd`,
-                particulates: item.particulates,
-                uom: 'KBPSD',
-                value: item.jan || 0,
-                remark: item.remark || '',
-                insertedDateTime: item.insertedDateTime,
-                inEdit: false,
-                isEditable: true,
-                isKBPSD: true,
-              }
+        if (response?.results) {
+          let tempData = response?.results?.map((item) => {
+            return {
+              ...item,
+              value: item.jan || 0,
+            }
+          })
 
-              const ktpdRow = {
-                id: `${item.id || `row_${index}`}_ktpd`,
-                particulates: item.particulates,
-                uom: 'KTPD',
-                value: convertFromKBPSD(item.jan || 0, 'KTPD'),
-                remark: item.remark || '',
-                insertedDateTime: item.insertedDateTime,
-                inEdit: false,
-                isKBPSD: false,
-                isEditable: true,
-              }
-
-              return [kbpsdRow, ktpdRow]
-            })
-          } else {
-            transformedData = response.results.flatMap((item, index) => {
-              const kbpsdRow = {
-                id: `${item.id || `row_${index}`}_kbpsd`,
-                particulates: item.particulates,
-                uom: 'KBPSD',
-                jan: item.jan || 0,
-                feb: item.feb || 0,
-                mar: item.mar || 0,
-                apr: item.apr || 0,
-                may: item.may || 0,
-                jun: item.jun || 0,
-                jul: item.jul || 0,
-                aug: item.aug || 0,
-                sep: item.sep || 0,
-                oct: item.oct || 0,
-                nov: item.nov || 0,
-                dec: item.dec || 0,
-                remark: item.remark || '',
-                insertedDateTime: item.insertedDateTime,
-                inEdit: false,
-                isEditable: true,
-                isKBPSD: true,
-              }
-
-              const ktpdRow = {
-                id: `${item.id || `row_${index}`}_ktpd`,
-                particulates: item.particulates,
-                uom: 'KTPD',
-                jan: convertFromKBPSD(item.jan || 0, 'KTPD'),
-                feb: convertFromKBPSD(item.feb || 0, 'KTPD'),
-                mar: convertFromKBPSD(item.mar || 0, 'KTPD'),
-                apr: convertFromKBPSD(item.apr || 0, 'KTPD'),
-                may: convertFromKBPSD(item.may || 0, 'KTPD'),
-                jun: convertFromKBPSD(item.jun || 0, 'KTPD'),
-                jul: convertFromKBPSD(item.jul || 0, 'KTPD'),
-                aug: convertFromKBPSD(item.aug || 0, 'KTPD'),
-                sep: convertFromKBPSD(item.sep || 0, 'KTPD'),
-                oct: convertFromKBPSD(item.oct || 0, 'KTPD'),
-                nov: convertFromKBPSD(item.nov || 0, 'KTPD'),
-                dec: convertFromKBPSD(item.dec || 0, 'KTPD'),
-                remark: item.remark || '',
-                insertedDateTime: item.insertedDateTime,
-                inEdit: false,
-                isKBPSD: false,
-                isEditable: true,
-              }
-
-              return [kbpsdRow, ktpdRow]
-            })
+          // If data is empty and carry-forward not skipped, attempt carry-forward and refetch
+          if (tempData.length === 0 && !skipCarryForward) {
+            const carryForwardSuccess = await handleCarryForward()
+            if (carryForwardSuccess) {
+              // Refetch data after successful carry-forward
+              await fetchUnitCapacityData(true)
+              return
+            }
           }
-        }
 
-        // If data is empty and carry-forward not skipped, attempt carry-forward and refetch
-        if (transformedData.length === 0 && !skipCarryForward) {
-          const carryForwardSuccess = await handleCarryForward()
-          if (carryForwardSuccess) {
-            // Refetch data after successful carry-forward
-            await fetchUnitCapacityData(true)
-            return
-          }
+          setRows(tempData)
+          setOriginalRows(tempData)
+        } else {
+          setRows([])
+          setOriginalRows([])
         }
-
-        setRows(transformedData)
-        setOriginalRows(transformedData)
       } catch (err) {
         console.error(
           `Error fetching Unit Capacity data (${capacityType}):`,
@@ -273,23 +93,52 @@ const UnitCapacityGridRowwise = ({
       PLANT_ID,
       apiYear,
       capacityType,
-      isDesign,
-      handleCarryForward,
       setSnackbarData,
       setSnackbarOpen,
     ],
   )
 
-  // Fetch capacity data when dropdown selection changes
+  // Carry forward data from previous year
+  const handleCarryForward = useCallback(async () => {
+    try {
+      console.log(
+        `No data found for ${capacityType}, attempting carry-forward...`,
+      )
+
+      const carryForwardResponse =
+        await TcsApiService.carryForwardTcsUnitCapacity(
+          keycloak,
+          PLANT_ID,
+          apiYear,
+          capacityType,
+        )
+
+      console.log('Carry-forward response:', carryForwardResponse)
+
+      return true
+    } catch (carryForwardErr) {
+      console.error(
+        `Error during carry-forward for ${capacityType}:`,
+        carryForwardErr,
+      )
+      return false
+    }
+  }, [
+    keycloak,
+    PLANT_ID,
+    apiYear,
+    capacityType,
+    setSnackbarData,
+    setSnackbarOpen,
+  ])
+
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
-      // Clear modified cells when UOM changes to reset edit state
       setModifiedCells({})
       fetchUnitCapacityData()
     }
   }, [PLANT_ID, apiYear, fetchUnitCapacityData])
 
-  // Column definitions - static configuration with KBPSD editable and KTPD read-only
   const columns = useMemo(() => {
     if (isDesign) {
       return [
@@ -301,7 +150,6 @@ const UnitCapacityGridRowwise = ({
           minWidth: 150,
           type: 'text',
           editable: false,
-          hidden: false,
         },
         {
           field: 'uom',
@@ -443,7 +291,6 @@ const UnitCapacityGridRowwise = ({
           minWidth: 150,
           type: 'text',
           editable: false,
-          hidden: false,
         },
         {
           field: 'uom',
@@ -467,61 +314,34 @@ const UnitCapacityGridRowwise = ({
         },
       ]
     }
-  }, [isDesign, valueFormat, headerMap])
+  }, [isDesign, headerMap, valueFormat])
 
-  // Handle remark cell click
-  const handleRemarkCellClick = (row) => {
-    setCurrentRemark(row.remark || '')
-    setCurrentRowId(row.id)
-    setRemarkDialogOpen(true)
-  }
+  const handleCustomItemChange = useCallback((event, setRowsFunc) => {
+    const { dataItem, field, value } = event
 
-  // Handle remark save - sync to paired row
-  const handleRemarkSave = useCallback(() => {
-    const currentRow = rows.find((r) => r.id === currentRowId)
-    if (!currentRow) return
-
-    const pairedRowId = currentRow.isKBPSD
-      ? currentRow.id.replace('_kbpsd', '_ktpd')
-      : currentRow.id.replace('_ktpd', '_kbpsd')
-
-    const pairedRow = rows.find((r) => r.id === pairedRowId)
-
-    // Update rows and modifiedCells together
-    setRows((prevRows) =>
-      prevRows.map((row) =>
-        row.id === currentRowId || row.id === pairedRowId
-          ? { ...row, remark: currentRemark, inEdit: true }
-          : row,
-      ),
+    setRowsFunc((prevRows) =>
+      prevRows.map((row) => {
+        if (row.id === dataItem.id) {
+          return {
+            ...row,
+            [field]: value,
+            inEdit: true,
+          }
+        }
+        return row
+      }),
     )
 
     setModifiedCells((prev) => ({
       ...prev,
-      [currentRowId]: {
-        ...currentRow,
-        ...prev[currentRowId],
-        remark: currentRemark,
-        inEdit: true,
-      },
-      [pairedRowId]: {
-        ...pairedRow,
-        ...prev[pairedRowId],
-        remark: currentRemark,
+      [dataItem.id]: {
+        ...dataItem,
+        [field]: value,
         inEdit: true,
       },
     }))
+  }, [])
 
-    setCustomModifiedCells((prev) => ({
-      ...prev,
-      [currentRowId]: { ...prev[currentRowId], remark: currentRemark },
-      [pairedRowId]: { ...prev[pairedRowId], remark: currentRemark },
-    }))
-
-    setRemarkDialogOpen(false)
-  }, [currentRowId, currentRemark, rows])
-
-  // Save changes for this capacity type
   const saveChanges = useCallback(async () => {
     try {
       if (Object.keys(modifiedCells).length === 0) {
@@ -574,43 +394,16 @@ const UnitCapacityGridRowwise = ({
         return
       }
 
-      // Build payload — backend expects flat fields
-      const dataInKBPSD = data
-        .filter((row) => row.isKBPSD) // Only save KBPSD rows, skip KTPD rows
-        .map((row) => {
-          // Strip _kbpsd or _ktpd suffix from ID
-          const cleanId = row.id.replace(/_kbpsd$/, '').replace(/_ktpd$/, '')
-
-          if (isDesign) {
-            // Design: single annual value field storing in jan
+      // Convert value to jan for design type before sending to API
+      const payloadData = isDesign
+        ? data.map((row) => {
+            const { value, ...rest } = row
             return {
-              id: row.isNew ? null : cleanId,
-              particulates: row.particulates,
-              jan: row.value,
-              remark: row.remark,
-              insertedDateTime: row.insertedDateTime,
+              ...rest,
+              jan: value,
             }
-          }
-          // Other types: flat monthly fields
-          return {
-            id: row.isNew ? null : cleanId,
-            particulates: row.particulates,
-            jan: row.jan,
-            feb: row.feb,
-            mar: row.mar,
-            apr: row.apr,
-            may: row.may,
-            jun: row.jun,
-            jul: row.jul,
-            aug: row.aug,
-            sep: row.sep,
-            oct: row.oct,
-            nov: row.nov,
-            dec: row.dec,
-            remark: row.remark,
-            insertedDateTime: row.insertedDateTime,
-          }
-        })
+          })
+        : data
 
       const response = await TcsApiService.saveUnitCapacityData(
         keycloak,
@@ -618,7 +411,7 @@ const UnitCapacityGridRowwise = ({
         apiYear,
         capacityType,
         'KBPSD',
-        dataInKBPSD,
+        payloadData,
       )
 
       setSnackbarOpen(true)
@@ -627,6 +420,7 @@ const UnitCapacityGridRowwise = ({
         severity: 'success',
       })
       setModifiedCells({})
+      await fetchUnitCapacityData(true)
     } catch (error) {
       console.error('Error saving Unit Capacity data:', error)
       setSnackbarOpen(true)
@@ -635,17 +429,7 @@ const UnitCapacityGridRowwise = ({
         severity: 'error',
       })
     }
-  }, [
-    isDesign,
-    modifiedCells,
-    originalRows,
-    keycloak,
-    PLANT_ID,
-    apiYear,
-    capacityType,
-    setSnackbarData,
-    setSnackbarOpen,
-  ])
+  }, [modifiedCells, keycloak, setSnackbarData, setSnackbarOpen])
 
   // Export handler
   const handleExport = async () => {
@@ -699,7 +483,7 @@ const UnitCapacityGridRowwise = ({
           severity: 'success',
         })
         // Refresh data after import
-        await fetchUnitCapacityData()
+        await fetchUnitCapacityData(true)
       } else if (response?.code === 400 && response?.data) {
         // Handle error response with Excel file download
         try {
@@ -729,7 +513,7 @@ const UnitCapacityGridRowwise = ({
             severity: 'error',
           })
           // Refresh data after import
-          await fetchUnitCapacityData()
+          await fetchUnitCapacityData(true)
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
@@ -757,6 +541,13 @@ const UnitCapacityGridRowwise = ({
     }
   }
 
+  // Handle remark cell click
+  const handleRemarkCellClick = (row) => {
+    setCurrentRemark(row.remark || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
+
   const permissions = {
     customHeight: { mainBox: '32vh', otherBox: '100%' },
     textAlignment: 'center',
@@ -775,7 +566,7 @@ const UnitCapacityGridRowwise = ({
   }
 
   return (
-    <Box>
+    <Box sx={{ width: '100%' }}>
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={loading}
@@ -787,9 +578,6 @@ const UnitCapacityGridRowwise = ({
         <AdvanceKendoTable
           rows={rows}
           setRows={setRows}
-          fetchData={() => fetchUnitCapacityData()}
-          title={title}
-          handleRemarkCellClick={handleRemarkCellClick}
           columns={columns}
           remarkDialogOpen={remarkDialogOpen}
           setRemarkDialogOpen={setRemarkDialogOpen}
@@ -797,25 +585,20 @@ const UnitCapacityGridRowwise = ({
           setCurrentRemark={setCurrentRemark}
           currentRowId={currentRowId}
           setCurrentRowId={() => {}}
+          customItemChange={handleCustomItemChange}
           saveChanges={saveChanges}
-          snackbarData={snackbarData}
-          snackbarOpen={snackbarOpen}
-          setSnackbarOpen={setSnackbarOpen}
-          setSnackbarData={setSnackbarData}
+          handleRemarkCellClick={handleRemarkCellClick}
+          title={title}
           modifiedCells={modifiedCells}
           setModifiedCells={setModifiedCells}
           permissions={permissions}
-          customItemChange={handleCustomItemChange}
           handleExcelUpload={handleExcelUpload}
           handleExport={handleExport}
           groupBy={['particulates']}
-          externalCustomModifiedCells={customModifiedCells}
-          externalSetCustomModifiedCells={setCustomModifiedCells}
-          customHandleRemarkSave={handleRemarkSave}
         />
       </Stack>
     </Box>
   )
 }
 
-export default UnitCapacityGridRowwise
+export default UnitCapacitySimple

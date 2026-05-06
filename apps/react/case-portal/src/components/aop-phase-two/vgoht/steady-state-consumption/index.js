@@ -4,11 +4,11 @@ import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
-import ValueFormatterPhaseTwo from '../../common/ValueFormatterPhaseTwo'
+import ValueFormatterPhaseTwo, {
+  customValueFormatterPhaseTwo,
+} from '../../common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
 import { SteadyStateConsumptionApiService } from '../../services/vgoht/steadyStateConsumptionApiService'
-import { steadyStateConsumptionResponse } from '../dummyData'
-import useConfigurationDates from '../../common/hooks/useConfigurationDates'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const SteadyStateConsumption = () => {
@@ -18,13 +18,6 @@ const SteadyStateConsumption = () => {
 
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
-
-  const {
-    startDate,
-    endDate,
-    loading: datesLoading,
-    error: datesError,
-  } = useConfigurationDates()
 
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
@@ -39,18 +32,7 @@ const SteadyStateConsumption = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
-  // Show error notification if configuration is not set up
-  useEffect(() => {
-    if (datesError) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: datesError,
-        severity: 'warning',
-      })
-    }
-  }, [datesError])
-
-  const valueFormat = ValueFormatterPhaseTwo()
+  const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
 
   const columns = [
@@ -81,6 +63,7 @@ const SteadyStateConsumption = () => {
       type: 'text',
       editable: false,
       locked: true,
+      hidden: true,
     },
     {
       field: 'UOM',
@@ -91,7 +74,7 @@ const SteadyStateConsumption = () => {
       editable: false,
     },
     {
-      field: 'apr',
+      field: 'april',
       title: headerMap[4],
       widthT: 100,
       minWidth: 80,
@@ -109,7 +92,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'jun',
+      field: 'june',
       title: headerMap[6],
       widthT: 100,
       minWidth: 80,
@@ -118,7 +101,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'jul',
+      field: 'july',
       title: headerMap[7],
       widthT: 100,
       minWidth: 80,
@@ -127,7 +110,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'aug',
+      field: 'august',
       title: headerMap[8],
       widthT: 100,
       minWidth: 80,
@@ -136,7 +119,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'sep',
+      field: 'september',
       title: headerMap[9],
       widthT: 100,
       minWidth: 80,
@@ -145,7 +128,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'oct',
+      field: 'october',
       title: headerMap[10],
       widthT: 100,
       minWidth: 80,
@@ -154,7 +137,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'nov',
+      field: 'november',
       title: headerMap[11],
       widthT: 100,
       minWidth: 80,
@@ -163,7 +146,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'dec',
+      field: 'december',
       title: headerMap[12],
       widthT: 100,
       minWidth: 80,
@@ -172,7 +155,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'jan',
+      field: 'january',
       title: headerMap[1],
       widthT: 100,
       minWidth: 80,
@@ -181,7 +164,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'feb',
+      field: 'february',
       title: headerMap[2],
       widthT: 100,
       minWidth: 80,
@@ -190,7 +173,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'mar',
+      field: 'march',
       title: headerMap[3],
       widthT: 100,
       minWidth: 80,
@@ -224,8 +207,8 @@ const SteadyStateConsumption = () => {
           AOP_YEAR,
         )
 
-      setRows(response1.data || [])
-      setOriginalRows(response1.data || [])
+      setRows(response1.data?.mcuNormsValueDTOList || [])
+      setOriginalRows(response1.data?.mcuNormsValueDTOList || [])
     } catch (error) {
       console.error('Error fetching steady state consumption data:', error)
       setSnackbarOpen(true)
@@ -264,18 +247,18 @@ const SteadyStateConsumption = () => {
     }
 
     const fieldsToCheck = [
-      'apr',
+      'april',
       'may',
-      'jun',
-      'jul',
-      'aug',
-      'sep',
-      'oct',
-      'nov',
-      'dec',
-      'jan',
-      'feb',
-      'mar',
+      'june',
+      'july',
+      'august',
+      'september',
+      'october',
+      'november',
+      'december',
+      'january',
+      'february',
+      'march',
     ]
     const validationError = validateRowDataWithRemarks(
       data,
@@ -294,25 +277,11 @@ const SteadyStateConsumption = () => {
       return
     }
 
-    // Validate that configuration dates are available
-    if (!startDate || !endDate) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message:
-          'Configuration dates not available. Please set up AOP Design Basis.',
-        severity: 'error',
-      })
-      setLoading(false)
-      return
-    }
-
     try {
       await SteadyStateConsumptionApiService.saveSteadyStateConsumption(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
-        startDate,
-        endDate,
         data,
       )
 
@@ -346,20 +315,39 @@ const SteadyStateConsumption = () => {
     })
 
     try {
-      const calculatedData =
+      const response =
         await SteadyStateConsumptionApiService.calculateSteadyStateConsumption(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
         )
-      setRows(calculatedData)
-      setOriginalRows(calculatedData)
-      setSnackbarData({
-        message: 'Calculation completed successfully!',
-        severity: 'success',
-      })
+
+      if (response?.code === 422) {
+        setTimeout(() => {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: response.message || 'Validation error occurred.',
+            severity: 'error',
+            autoHide: false,
+          })
+        }, 500)
+      } else if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Calculation completed successfully!',
+          severity: 'success',
+        })
+        await fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Calculation failed. Please try again.',
+          severity: 'error',
+        })
+      }
     } catch (error) {
       console.error('Error calculating steady state consumption:', error)
+      setSnackbarOpen(true)
       setSnackbarData({
         message: 'Calculation failed. Please try again.',
         severity: 'error',
@@ -368,7 +356,6 @@ const SteadyStateConsumption = () => {
       setLoading(false)
     }
   }
-
   const handleExport = async () => {
     setSnackbarOpen(true)
     setSnackbarData({
@@ -421,12 +408,13 @@ const SteadyStateConsumption = () => {
           AOP_YEAR,
           file,
         )
-      setRows(importedData)
-      setOriginalRows(importedData)
+      setRows([])
+      setOriginalRows([])
       setSnackbarData({
         message: 'Data imported successfully!',
         severity: 'success',
       })
+      await fetchData()
     } catch (error) {
       console.error('Error importing steady state consumption data:', error)
       setSnackbarData({
@@ -483,13 +471,13 @@ const SteadyStateConsumption = () => {
         setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         handleExport={handleExport}
-        handleImport={handleImport}
+        handleExcelUpload={handleImport}
         handleCalculate={handleCalculate}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['TypeDisplayName']}
+        groupBy={['normParameterTypeDisplayName']}
         customHeight={70}
         paginationConfig={{
           threshold: 100,

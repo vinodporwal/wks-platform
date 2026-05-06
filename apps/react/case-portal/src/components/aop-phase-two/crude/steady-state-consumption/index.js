@@ -4,10 +4,11 @@ import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
-import ValueFormatterPhaseTwo from '../../common/ValueFormatterPhaseTwo'
+import ValueFormatterPhaseTwo, {
+  customValueFormatterPhaseTwo,
+} from '../../common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
 import { SteadyStateConsumptionApiService } from '../../services/crude/steadyStateConsumptionApiService'
-import { steadyStateConsumptionResponse } from '../dummyData'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const SteadyStateConsumption = () => {
@@ -31,7 +32,7 @@ const SteadyStateConsumption = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
-  const valueFormat = ValueFormatterPhaseTwo()
+  const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
 
   const columns = [
@@ -62,6 +63,7 @@ const SteadyStateConsumption = () => {
       type: 'text',
       editable: false,
       locked: true,
+      hidden: true,
     },
     {
       field: 'UOM',
@@ -339,12 +341,18 @@ const SteadyStateConsumption = () => {
             autoHide: false,
           })
         }, 500)
-      } else {
-        await fetchData()
+      } else if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Calculation completed successfully!',
           severity: 'success',
+        })
+        await fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Calculation failed. Please try again.',
+          severity: 'error',
         })
       }
     } catch (error) {
@@ -411,12 +419,13 @@ const SteadyStateConsumption = () => {
           AOP_YEAR,
           file,
         )
-      setRows(importedData)
-      setOriginalRows(importedData)
+      setRows([])
+      setOriginalRows([])
       setSnackbarData({
         message: 'Data imported successfully!',
         severity: 'success',
       })
+      await fetchData()
     } catch (error) {
       console.error('Error importing steady state consumption data:', error)
       setSnackbarData({
@@ -473,7 +482,7 @@ const SteadyStateConsumption = () => {
         setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         handleExport={handleExport}
-        handleImport={handleImport}
+        handleExcelUpload={handleImport}
         handleCalculate={handleCalculate}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
