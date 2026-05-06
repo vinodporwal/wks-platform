@@ -1555,9 +1555,9 @@ continue;
 			}
 
 				for (int i = 1; i <= 12; i++) {
-					if(isMinMax) { 
-						if(i !=4 || i!=5)  continue;
-					}
+					// if(isMinMax) { 
+					// 	if(i !=4 && i!=5)  continue;
+					// }
 					Double attributeValue = getAttributeValue(configurationDTO, i);
 					System.out.println("attributeValue: " + attributeValue);
 					configurationDTO.setVertical(verticalName);

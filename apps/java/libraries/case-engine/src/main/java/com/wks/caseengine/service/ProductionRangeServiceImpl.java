@@ -438,7 +438,7 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
     @Override
 	public AOPMessageVM importProductionRange(String year,UUID plantId,MultipartFile file,boolean isMinMax) {
 		try {
-			List<ConfigurationDTO> data = readProductionRange(file.getInputStream(), plantId, year);
+			List<ConfigurationDTO> data = readProductionRange(file.getInputStream(), plantId, year, isMinMax);
 			List<ConfigurationDTO> failedList= configurationService.saveConfigurationData(year,plantId.toString(),"",data,null,isMinMax);
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<NormConfigurationDTO> normConfigurationDTOs = new ArrayList<NormConfigurationDTO>();
@@ -515,7 +515,7 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
 		return null;
 	}
 
-	public List<ConfigurationDTO> readProductionRange(InputStream inputStream, UUID plantFKId, String year) {
+	public List<ConfigurationDTO> readProductionRange(InputStream inputStream, UUID plantFKId, String year, boolean isMinMax) {
 	    List<ConfigurationDTO> configurationDTOs = new ArrayList<>();
 
 	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
@@ -547,6 +547,21 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
 	                dto.setRemarks(getStringCellValue(row.getCell(4), dto));
 	                dto.setNormParameterFKId(getStringCellValue(row.getCell(5), dto));
 	               dto.setUOM(getStringCellValue(row.getCell(1), dto));
+
+				   if(isMinMax) { 
+
+					dto.setJun(null);
+	                dto.setJul(null);
+	                dto.setAug(null);
+	                dto.setSep(null);
+	                dto.setOct(null);
+	                dto.setNov(null);
+	                dto.setDec(null);
+	                dto.setJan(null);
+	                dto.setFeb(null);
+	                dto.setMar(null);
+
+				   }
 	              } 
 	              catch (Exception e) {
 	                e.printStackTrace();
