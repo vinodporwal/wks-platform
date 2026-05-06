@@ -901,7 +901,9 @@ const NestedKendoTable = ({
           cursor: isRowEditable ? 'pointer' : 'not-allowed',
           color:
             isEdited && displayText ? 'orange' : rawValue ? 'inherit' : 'gray',
-          fontWeight: isEdited && displayText ? 'bold' : undefined,
+          fontWeight: isEdited && displayText ? 700 : 500,
+          fontFamily: 'Honeywell Sans Web, Inter, sans-serif',
+          fontSize: '15px',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
