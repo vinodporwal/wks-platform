@@ -193,9 +193,9 @@ class BPCReferenceBook:
                             "quantity": quantity_value,
                         })
                         
-                        if quantity is not None and quantity > 0:
+                        if quantity is not None and quantity != 0:
                             self.quantity_map[(month_name, plant, utility, material)] = quantity
-                        if norm is not None and norm > 0:
+                        if norm is not None and norm != 0:
                             self.norm_map[(month_name, utility, material)] = norm
                     except (ValueError, IndexError):
                         continue
@@ -279,7 +279,7 @@ class BPCReferenceBook:
                 norm = row["norm"]
                 if use_abs_quantity:
                     quantity = abs(quantity)
-                if quantity > 0 and norm > 0:
+                if norm != 0:
                     return quantity / norm
             return 0.0
 
@@ -340,11 +340,29 @@ class BPCReferenceBook:
         utility: str = None, 
         material: str = None, 
         cpp_norm: float = None, 
-        plant_ref_qty: float = None
+        plant_ref_qty: float = None,
+        generating_plant: str = None
     ) -> float:
         """Calculate BPC reference quantity using the displayed norm and inferred reference quantity."""
-        if cpp_norm is not None and cpp_norm > 0:
-            return cpp_norm * plant_ref_qty
+        # For LP Steam_Dis, always calculate instead of fetching from Excel as per user request
+        if material == "LP Steam_Dis":
+            if cpp_norm is not None and cpp_norm != 0:
+                return cpp_norm * plant_ref_qty
+            return 0.0
+
+        # For other materials, try to get actual quantity from BPC first
+        actual_qty = self.get_quantity(month_name, generating_plant=generating_plant, utility=utility, material=material)
+        if actual_qty != 0:
+            return actual_qty
+
+        # For NATURAL GAS, do not fallback to calculation as per user request
+        if material == "NATURAL GAS":
+            return 0.0
+
+        # Fallback to calculation if actual quantity is not found
+        if cpp_norm is not None and cpp_norm != 0:
+            if plant_ref_qty is not None:
+                return cpp_norm * plant_ref_qty
         
         return 0.0
 
@@ -671,11 +689,12 @@ def build_nmd_budget_comparison_text(
     lines.append(_line("", "", "Power_Dis", "KWH", values["gt1_kwh"], pp1_ref_qty, NORM_POWER_DIS_GT1, values["gt1_kwh"] * NORM_POWER_DIS_GT1, book.get_quantity(month_name, generating_plant="NMD - Power Plant 1", utility="POWERGEN", material="Power_Dis"), ".4f"))
 
     lines.append("")
-    # Calculate BPC reference quantities for PP2 utilities using BPC norms if available
-    pp2_ng_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "NATURAL GAS", NORM_NG_GT2, pp2_ref_qty)
-    pp2_air_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "COMPRESSED AIR", NORM_AIR_GT2, pp2_ref_qty)
-    pp2_cw_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Cooling Water 2", NORM_CW2_GT2, pp2_ref_qty)
-    pp2_power_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Power_Dis", NORM_POWER_DIS_GT2, pp2_ref_qty)
+    pp1_ng_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "NATURAL GAS", NORM_NG_GT1, pp1_ref_qty, generating_plant="NMD - Power Plant 1")
+    pp2_ng_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "NATURAL GAS", NORM_NG_GT2, pp2_ref_qty, generating_plant="NMD - Power Plant 2")
+    pp3_ng_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "NATURAL GAS", NORM_NG_GT3, pp3_ref_qty, generating_plant="NMD - Power Plant 3")
+    pp2_air_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "COMPRESSED AIR", NORM_AIR_GT2, pp2_ref_qty, generating_plant="NMD - Power Plant 2")
+    pp2_cw_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Cooling Water 2", NORM_CW2_GT2, pp2_ref_qty, generating_plant="NMD - Power Plant 2")
+    pp2_power_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Power_Dis", NORM_POWER_DIS_GT2, pp2_ref_qty, generating_plant="NMD - Power Plant 2")
     
     lines.append(_line("NMD - Power Plant 2", "POWERGEN", "NATURAL GAS", "MMBTU", values["gt2_kwh"], pp2_ref_qty, NORM_NG_GT2, ng.get("gt2_mmbtu", 0), pp2_ng_ref, ".4f"))
     lines.append(_line("", "", "COMPRESSED AIR", "NM3", values["gt2_kwh"], pp2_ref_qty, NORM_AIR_GT2, air.get("gt2_nm3", 0), pp2_air_ref, ".0f"))
@@ -683,10 +702,9 @@ def build_nmd_budget_comparison_text(
     lines.append(_line("", "", "Power_Dis", "KWH", values["gt2_kwh"], pp2_ref_qty, NORM_POWER_DIS_GT2, values["gt2_kwh"] * NORM_POWER_DIS_GT2, pp2_power_ref, ".4f"))
 
     # Calculate BPC reference quantities for PP3 utilities using BPC norms if available
-    pp3_ng_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "NATURAL GAS", NORM_NG_GT3, pp3_ref_qty)
-    pp3_air_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "COMPRESSED AIR", NORM_AIR_GT3, pp3_ref_qty)
-    pp3_cw_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Cooling Water 2", NORM_CW2_GT3, pp3_ref_qty)
-    pp3_power_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Power_Dis", NORM_POWER_DIS_GT3, pp3_ref_qty)
+    pp3_air_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "COMPRESSED AIR", NORM_AIR_GT3, pp3_ref_qty, generating_plant="NMD - Power Plant 3")
+    pp3_cw_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Cooling Water 2", NORM_CW2_GT3, pp3_ref_qty, generating_plant="NMD - Power Plant 3")
+    pp3_power_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Power_Dis", NORM_POWER_DIS_GT3, pp3_ref_qty, generating_plant="NMD - Power Plant 3")
     
     lines.append("")
     lines.append(_line("NMD - Power Plant 3", "POWERGEN", "NATURAL GAS", "MMBTU", values["gt3_kwh"], pp3_ref_qty, NORM_NG_GT3, ng.get("gt3_mmbtu", 0), pp3_ng_ref, ".4f"))
@@ -698,11 +716,11 @@ def build_nmd_budget_comparison_text(
     stg_cond_calc = (values["stg_condensate_from_lookup"] if values["stg_condensate_from_lookup"] > 0 else (values["stg_kwh"] * 0.0029))
     
     # Calculate BPC reference quantities for STG utilities using BPC norms if available
-    stg_condensate_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Ret steam condensate", NORM_STG_CONDENSATE, stg_ref_qty)
-    stg_air_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "COMPRESSED AIR", NORM_AIR_STG, stg_ref_qty)
-    stg_cw_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Cooling Water 2", NORM_CW2_STG, stg_ref_qty)
-    stg_power_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Power_Dis", NORM_POWER_DIS_STG, stg_ref_qty)
-    stg_shp_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "SHP Steam_Dis", NORM_STG_SHP, stg_ref_qty)
+    stg_condensate_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Ret steam condensate", NORM_STG_CONDENSATE, stg_ref_qty, generating_plant="NMD - STG Power Plant")
+    stg_air_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "COMPRESSED AIR", NORM_AIR_STG, stg_ref_qty, generating_plant="NMD - STG Power Plant")
+    stg_cw_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Cooling Water 2", NORM_CW2_STG, stg_ref_qty, generating_plant="NMD - STG Power Plant")
+    stg_power_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "Power_Dis", NORM_POWER_DIS_STG, stg_ref_qty, generating_plant="NMD - STG Power Plant")
+    stg_shp_ref = book.calculate_bpc_ref_qty(month_name, "POWERGEN", "SHP Steam_Dis", NORM_STG_SHP, stg_ref_qty, generating_plant="NMD - STG Power Plant")
     
     lines.append("")
     lines.append(_line("NMD - STG Power Plant", "POWERGEN", "Ret steam condensate", "M3", values["stg_kwh"], stg_ref_qty, NORM_STG_CONDENSATE, stg_cond_calc, stg_condensate_ref, ".4f"))
@@ -713,12 +731,12 @@ def build_nmd_budget_comparison_text(
 
     total_bfw = bfw.get("total_m3", 0)
     bfw_ref_qty = book.infer_section_ref_qty(month_name, "NMD - Utility Plant", "Boiler Feed Water", account_filter="Utilities")
-    bfw_cyclo_ref = book.calculate_bpc_ref_qty(month_name, "Boiler Feed Water", "CHEM CYCLO HEXY", NORM_CYCLOHEXY_BFW, bfw_ref_qty)
-    bfw_morph_ref = book.calculate_bpc_ref_qty(month_name, "Boiler Feed Water", "CHEM MORPHOLENE", NORM_MORPHOLENE_BFW, bfw_ref_qty)
-    bfw_watreat_ref = book.calculate_bpc_ref_qty(month_name, "Boiler Feed Water", "KEM WATREAT B 70M", NORM_WATREAT_BFW, bfw_ref_qty)
-    bfw_dm_ref = book.calculate_bpc_ref_qty(month_name, "Boiler Feed Water", "D M Water", NORM_BFW_DM, bfw_ref_qty)
-    bfw_lp_ref = book.calculate_bpc_ref_qty(month_name, "Boiler Feed Water", "LP Steam_Dis", NORM_LP_BFW, bfw_ref_qty)
-    bfw_power_ref = book.calculate_bpc_ref_qty(month_name, "Boiler Feed Water", "Power_Dis", NORM_POWER_BFW, bfw_ref_qty)
+    bfw_cyclo_ref = book.calculate_bpc_ref_qty(month_name, "Boiler Feed Water", "CHEM CYCLO HEXY", NORM_CYCLOHEXY_BFW, bfw_ref_qty, generating_plant="NMD - Utility Plant")
+    bfw_morph_ref = book.calculate_bpc_ref_qty(month_name, "Boiler Feed Water", "CHEM MORPHOLENE", NORM_MORPHOLENE_BFW, bfw_ref_qty, generating_plant="NMD - Utility Plant")
+    bfw_watreat_ref = book.calculate_bpc_ref_qty(month_name, "Boiler Feed Water", "KEM WATREAT B 70M", NORM_WATREAT_BFW, bfw_ref_qty, generating_plant="NMD - Utility Plant")
+    bfw_dm_ref = book.calculate_bpc_ref_qty(month_name, "Boiler Feed Water", "D M Water", NORM_BFW_DM, bfw_ref_qty, generating_plant="NMD - Utility Plant")
+    bfw_lp_ref = book.calculate_bpc_ref_qty(month_name, "Boiler Feed Water", "LP Steam_Dis", NORM_LP_BFW, bfw_ref_qty, generating_plant="NMD - Utility Plant")
+    bfw_power_ref = book.calculate_bpc_ref_qty(month_name, "Boiler Feed Water", "Power_Dis", NORM_POWER_BFW, bfw_ref_qty, generating_plant="NMD - Utility Plant")
     lines.append("")
     lines.append(_line("NMD - Utility Plant", "Boiler Feed Water", "CHEM CYCLO HEXY", "KG", total_bfw, bfw_ref_qty, NORM_CYCLOHEXY_BFW, total_bfw * NORM_CYCLOHEXY_BFW, bfw_cyclo_ref, ".7f"))
     lines.append(_line("", "", "CHEM MORPHOLENE", "MT", total_bfw, bfw_ref_qty, NORM_MORPHOLENE_BFW, total_bfw * NORM_MORPHOLENE_BFW, bfw_morph_ref, ".7f"))
@@ -730,8 +748,8 @@ def build_nmd_budget_comparison_text(
 
     total_air = air.get("total_nm3", 0)
     air_ref_qty = book.infer_section_ref_qty(month_name, "NMD - Utility Plant", "COMPRESSED AIR", account_filter="Utilities")
-    air_cw_ref = book.calculate_bpc_ref_qty(month_name, "COMPRESSED AIR", "Cooling Water 2", NORM_CW2_AIR, air_ref_qty)
-    air_power_ref = book.calculate_bpc_ref_qty(month_name, "COMPRESSED AIR", "Power_Dis", NORM_POWER_AIR, air_ref_qty)
+    air_cw_ref = book.calculate_bpc_ref_qty(month_name, "COMPRESSED AIR", "Cooling Water 2", NORM_CW2_AIR, air_ref_qty, generating_plant="NMD - Utility Plant")
+    air_power_ref = book.calculate_bpc_ref_qty(month_name, "COMPRESSED AIR", "Power_Dis", NORM_POWER_AIR, air_ref_qty, generating_plant="NMD - Utility Plant")
     lines.append("")
     lines.append(_line("NMD - Utility Plant", "COMPRESSED AIR", "Cooling Water 2", "KM3", total_air, air_ref_qty, NORM_CW2_AIR, total_air * NORM_CW2_AIR, air_cw_ref, ".4f"))
     lines.append(_line("", "", "Power_Dis", "KWH", total_air, air_ref_qty, NORM_POWER_AIR, total_air * NORM_POWER_AIR, air_power_ref, ".4f"))
@@ -807,10 +825,10 @@ def build_nmd_budget_comparison_text(
     hrsg3_shp = values["hrsg3_shp"]
 
     hrsg1_ref_qty = book.infer_section_ref_qty(month_name, "NMD - Utility Plant", "HRSG1_SHP STEAM", account_filter="Utilities")
-    hrsg1_ng_ref = book.calculate_bpc_ref_qty(month_name, "HRSG1_SHP STEAM", "NATURAL GAS", NORM_NG_HRSG1, hrsg1_ref_qty)
-    hrsg1_bfw_ref = book.calculate_bpc_ref_qty(month_name, "HRSG1_SHP STEAM", "Boiler Feed Water", NORM_BFW_HRSG, hrsg1_ref_qty)
-    hrsg1_air_ref = book.calculate_bpc_ref_qty(month_name, "HRSG1_SHP STEAM", "COMPRESSED AIR", NORM_AIR_HRSG, hrsg1_ref_qty)
-    hrsg1_lp_ref = book.calculate_bpc_ref_qty(month_name, "HRSG1_SHP STEAM", "LP Steam_Dis", NORM_LP_CREDIT_HRSG, hrsg1_ref_qty)
+    hrsg1_ng_ref = book.calculate_bpc_ref_qty(month_name, "HRSG1_SHP STEAM", "NATURAL GAS", NORM_NG_HRSG1, hrsg1_ref_qty, generating_plant="NMD - Utility Plant")
+    hrsg1_bfw_ref = book.calculate_bpc_ref_qty(month_name, "HRSG1_SHP STEAM", "Boiler Feed Water", NORM_BFW_HRSG, hrsg1_ref_qty, generating_plant="NMD - Utility Plant")
+    hrsg1_air_ref = book.calculate_bpc_ref_qty(month_name, "HRSG1_SHP STEAM", "COMPRESSED AIR", NORM_AIR_HRSG, hrsg1_ref_qty, generating_plant="NMD - Utility Plant")
+    hrsg1_lp_ref = book.calculate_bpc_ref_qty(month_name, "HRSG1_SHP STEAM", "LP Steam_Dis", NORM_LP_CREDIT_HRSG, hrsg1_ref_qty, generating_plant="NMD - Utility Plant")
     hrsg1_ng_calc = hrsg1_shp * NORM_NG_HRSG1
     hrsg1_air_calc = hrsg1_shp * NORM_AIR_HRSG
     hrsg1_bfw_calc = hrsg1_shp * NORM_BFW_HRSG
@@ -822,13 +840,13 @@ def build_nmd_budget_comparison_text(
     lines.append(_line("", "", "LP Steam_Dis", "MT", hrsg1_shp, hrsg1_ref_qty, NORM_LP_CREDIT_HRSG, hrsg1_lp_calc, hrsg1_lp_ref, ".4f"))
 
     hrsg2_ref_qty = book.infer_section_ref_qty(month_name, "NMD - Utility Plant", "HRSG2_SHP STEAM", account_filter="Utilities")
-    hrsg2_tsp_ref = book.calculate_bpc_ref_qty(month_name, "HRSG2_SHP STEAM", "CHEM TRISODIUM PHOSPHATE", NORM_TRISODIUM_PHOSPHATE_HRSG, hrsg2_ref_qty)
-    hrsg2_fo_ref = book.calculate_bpc_ref_qty(month_name, "HRSG2_SHP STEAM", "FURNACE OIL ( MEDIUM VISCOSITY GRADE )", NORM_FURNACE_OIL_HRSG, hrsg2_ref_qty)
-    hrsg2_ng_ref = book.calculate_bpc_ref_qty(month_name, "HRSG2_SHP STEAM", "NATURAL GAS", NORM_NG_HRSG2, hrsg2_ref_qty)
-    hrsg2_water_ref = book.calculate_bpc_ref_qty(month_name, "HRSG2_SHP STEAM", "Water", NORM_WATER_HRSG, hrsg2_ref_qty)
-    hrsg2_bfw_ref = book.calculate_bpc_ref_qty(month_name, "HRSG2_SHP STEAM", "Boiler Feed Water", NORM_BFW_HRSG, hrsg2_ref_qty)
-    hrsg2_air_ref = book.calculate_bpc_ref_qty(month_name, "HRSG2_SHP STEAM", "COMPRESSED AIR", NORM_AIR_HRSG, hrsg2_ref_qty)
-    hrsg2_lp_ref = book.calculate_bpc_ref_qty(month_name, "HRSG2_SHP STEAM", "LP Steam_Dis", NORM_LP_CREDIT_HRSG, hrsg2_ref_qty)
+    hrsg2_tsp_ref = book.calculate_bpc_ref_qty(month_name, "HRSG2_SHP STEAM", "CHEM TRISODIUM PHOSPHATE", NORM_TRISODIUM_PHOSPHATE_HRSG, hrsg2_ref_qty, generating_plant="NMD - Utility Plant")
+    hrsg2_fo_ref = book.calculate_bpc_ref_qty(month_name, "HRSG2_SHP STEAM", "FURNACE OIL ( MEDIUM VISCOSITY GRADE )", NORM_FURNACE_OIL_HRSG, hrsg2_ref_qty, generating_plant="NMD - Utility Plant")
+    hrsg2_ng_ref = book.calculate_bpc_ref_qty(month_name, "HRSG2_SHP STEAM", "NATURAL GAS", NORM_NG_HRSG2, hrsg2_ref_qty, generating_plant="NMD - Utility Plant")
+    hrsg2_water_ref = book.calculate_bpc_ref_qty(month_name, "HRSG2_SHP STEAM", "Water", NORM_WATER_HRSG, hrsg2_ref_qty, generating_plant="NMD - Utility Plant")
+    hrsg2_bfw_ref = book.calculate_bpc_ref_qty(month_name, "HRSG2_SHP STEAM", "Boiler Feed Water", NORM_BFW_HRSG, hrsg2_ref_qty, generating_plant="NMD - Utility Plant")
+    hrsg2_air_ref = book.calculate_bpc_ref_qty(month_name, "HRSG2_SHP STEAM", "COMPRESSED AIR", NORM_AIR_HRSG, hrsg2_ref_qty, generating_plant="NMD - Utility Plant")
+    hrsg2_lp_ref = book.calculate_bpc_ref_qty(month_name, "HRSG2_SHP STEAM", "LP Steam_Dis", NORM_LP_CREDIT_HRSG, hrsg2_ref_qty, generating_plant="NMD - Utility Plant")
     hrsg2_tsp_calc = hrsg2_shp * NORM_TRISODIUM_PHOSPHATE_HRSG
     hrsg2_fo_calc = hrsg2_shp * NORM_FURNACE_OIL_HRSG
     hrsg2_ng_calc = hrsg2_shp * NORM_NG_HRSG2
@@ -899,8 +917,8 @@ def build_nmd_budget_comparison_text(
     stg_mp = values["stg_mp"]
     stg_lp_ref_qty = book.infer_section_ref_qty(month_name, "NMD - Utility Plant", "STG1_LP STEAM", account_filter="Utilities")
     stg_mp_ref_qty = book.infer_section_ref_qty(month_name, "NMD - Utility Plant", "STG1_MP STEAM", account_filter="Utilities")
-    stg_lp_shp_ref = book.calculate_bpc_ref_qty(month_name, "STG1_LP STEAM", "SHP Steam_Dis", NORM_SHP_STG_LP, stg_lp_ref_qty)
-    stg_mp_shp_ref = book.calculate_bpc_ref_qty(month_name, "STG1_MP STEAM", "SHP Steam_Dis", NORM_SHP_STG_MP, stg_mp_ref_qty)
+    stg_lp_shp_ref = book.calculate_bpc_ref_qty(month_name, "STG1_LP STEAM", "SHP Steam_Dis", NORM_SHP_STG_LP, stg_lp_ref_qty, generating_plant="NMD - Utility Plant")
+    stg_mp_shp_ref = book.calculate_bpc_ref_qty(month_name, "STG1_MP STEAM", "SHP Steam_Dis", NORM_SHP_STG_MP, stg_mp_ref_qty, generating_plant="NMD - Utility Plant")
     lines.append("")
     lines.append(_line("NMD - Utility Plant", "STG1_LP STEAM", "SHP Steam_Dis", "MT", stg_lp, stg_lp_ref_qty, NORM_SHP_STG_LP, stg_lp * NORM_SHP_STG_LP, stg_lp_shp_ref, ".4f"))
     lines.append("")
@@ -963,14 +981,8 @@ def build_nmd_budget_comparison_text(
     lines.append("END OF NMD BUDGET FORMAT - COMPARISON COMPLETE")
     lines.append("=" * 220)
 
-    bpc_ng = (
-        book.get_quantity(month_name, generating_plant="NMD - Power Plant 1", utility="POWERGEN", material="NATURAL GAS")
-        + pp2_ng_ref
-        + pp3_ng_ref
-        + hrsg1_ng_ref
-        + hrsg2_ng_ref
-        + hrsg3_ng_ref
-    )
+    # Use direct sum of all NATURAL GAS entries found in Excel for this month
+    bpc_ng = sum(qty for (m, p, u, mat), qty in book.quantity_map.items() if m == month_name and mat == "NATURAL GAS")
     
     cpp_totals = {
         "power": total_demand_kwh,

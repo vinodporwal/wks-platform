@@ -595,6 +595,13 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
     steam_assets = []
     hrsg_names = ['HRSG1', 'HRSG2', 'HRSG3']
     
+    # Display names for HRSGs (shown in Excel Section V)
+    hrsg_display_names = {
+        'HRSG1': 'HRSG1 (Fired + Free Steam)',
+        'HRSG2': 'HRSG2 (Fired + Free Steam)',
+        'HRSG3': 'HRSG3 (Fired + Free Steam)',
+    }
+    
     # Create GT to HRSG mapping
     gt_hrsg_map = {
         'HRSG1': 'GT1',
@@ -606,6 +613,7 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
         # Get linked GT availability hours
         linked_gt = gt_hrsg_map.get(hrsg_name)
         gt_hours = 0
+        display_name = hrsg_display_names.get(hrsg_name, hrsg_name)
         
         # Find the linked GT's availability hours from generation_assets
         for gen_asset in generation_assets:
@@ -623,7 +631,7 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
             avg_load = hrsg_load_map.get(hrsg_name, 0)
             
             steam_assets.append({
-                'asset_name': hrsg_name,
+                'asset_name': display_name,
                 'availability_hr': gt_hours,  # Use linked GT hours
                 'min_capacity': min_cap,
                 'max_capacity': max_cap,
@@ -634,7 +642,7 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
             avg_load = hrsg_load_map.get(hrsg_name, 0)
             
             steam_assets.append({
-                'asset_name': hrsg_name,
+                'asset_name': display_name,
                 'availability_hr': gt_hours,  # Use linked GT hours even if HRSG data not available
                 'min_capacity': 60,
                 'max_capacity': 130,
