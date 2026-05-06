@@ -2980,7 +2980,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		if(site.getName().equalsIgnoreCase("JMD") && verticalName.equalsIgnoreCase("Elastomer")) {
          
 			for (ShutDownPlanDTO dto : shutDownPlanDTOList) { 
-				
+				if(dto.getId() == null || dto.getId().isEmpty()) continue;
 				List<Object[]> plantMaintenance = shutDownPlanRepository
 				.findPlantMaintenanceById(UUID.fromString(dto.getId()));
 		
@@ -3021,8 +3021,12 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		}
 		// Validate: sum of durationInHrs per month must not exceed total hours in that month
 		if(site.getName().equalsIgnoreCase("JMD") && verticalName.equalsIgnoreCase("Elastomer")) {
+
+		
+
 		Map<String, List<ShutDownPlanDTO>> dtosByMonth = new HashMap<>();
 		for (ShutDownPlanDTO dto : shutDownPlanDTOList) {
+			if(dto.getId() == null || dto.getId().isEmpty()) continue;
 			if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) continue;
 			if (dto.getMonth() == null || dto.getDurationInHrs() == null) continue;
 			String monthKey = dto.getMonth().toUpperCase();
