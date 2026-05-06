@@ -14,14 +14,8 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const MaterialBalance = ({ permissions }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const {
-    plantObject,
-    siteObject,
-    verticalObject,
-    year,
-    oldYear,
-    isReleased,
-  } = dataGridStore
+  const { plantObject, siteObject, verticalObject, year, oldYear, isReleased } =
+    dataGridStore
 
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
@@ -296,10 +290,7 @@ const MaterialBalance = ({ permissions }) => {
 
   return (
     <Box>
-<LoaderBackdrop open={!!loading} />
-
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {IS_CRACKER_HMD && (
         <ModeSelection permissions={adjustedPermissionsReadyOnly} />

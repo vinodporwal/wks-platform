@@ -40,7 +40,7 @@ import CatChemNormsBasis from './tab-components/CatChemNormsBasis'
 import ProductionRange from './tab-components/ProductionRange'
 import PtaConfiguration from './tab-components/PtaConfiguration'
 import NSRAndMaterialPrices from './tab-components/NSRAndMaterialPrices/index'
-import CatChemNormsBasis from './tab-components/CatChemNormsBasis'
+
 import { getRoleName } from 'services/role-service'
 
 import { Zoom, IconButton } from '@mui/material'

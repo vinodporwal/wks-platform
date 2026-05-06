@@ -128,7 +128,7 @@ const ModeSelection = ({ permissions }) => {
     ...dynamicYearMonthColumns,
     // Only include the remarks column if NON_EDITABLE_GRID is false/undefined
     ...(!permissions?.hideRemarkForNonEditableRows
-      ? [{ field: 'remarks', title: 'Remarks', editable: true minWidth: 100 }]
+      ? [{ field: 'remarks', title: 'Remarks', editable: true, minWidth: 100 }]
       : []),
   ]
 
