@@ -41,7 +41,7 @@ export const MockPlantContributionAPILastFourYears = {
             },
             {
               field: 'uom',
-              widthT: 80,
+              widthT: 60,
               title: verticalName === 'meg' ? 'UOM' : 'Unit',
               editable: false,
             },
@@ -156,7 +156,7 @@ export const MockPlantContributionAPILastFourYears = {
             },
             {
               field: 'uom',
-              widthT: 80,
+              widthT: 60,
               title: verticalName === 'meg' ? 'UOM' : 'Unit',
               editable: false,
             },
@@ -342,7 +342,7 @@ export const MockPlantContributionAPILastFourYears = {
             },
             {
               field: 'uom',
-              widthT: 80,
+              widthT: 60,
               title: verticalName === 'meg' ? 'UOM' : 'Unit',
               editable: false,
             },
@@ -533,7 +533,7 @@ export const MockPlantContributionAPILastFourYears = {
             },
             {
               field: 'uom',
-              widthT: 80,
+              widthT: 60,
               title: verticalName === 'meg' ? 'UOM' : 'Unit',
               editable: false,
             },
@@ -724,7 +724,7 @@ export const MockPlantContributionAPILastFourYears = {
             },
             {
               field: 'uom',
-              widthT: 80,
+              widthT: 60,
               title: verticalName === 'meg' ? 'UOM' : 'Unit',
               editable: false,
             },
@@ -918,7 +918,7 @@ export const MockPlantContributionAPILastFourYears = {
             },
             {
               field: 'uom',
-              widthT: 80,
+              widthT: 60,
               title: verticalName === 'meg' ? 'UOM' : 'Unit',
               editable: false,
             },

@@ -3,8 +3,7 @@
     "field": "productName",
     "title": "Particular",
     "editable": false,
-    "widthT": 300,
-    "autoAdjust": false
+    "widthT": 220
   },
 
   {
@@ -19,7 +18,7 @@
     "title": "Actual",
     "editable": true,
     "type": "number",
-    "widthT": 110
+    "widthT": 150
   },
 
   {
@@ -27,13 +26,12 @@
     "title": "Proposed",
     "editable": true,
     "type": "number",
-    "widthT": 110
+    "widthT": 150
   },
 
   {
     "field": "remarks",
     "title": "Remarks",
-    "widthT": 250,
-    "autoAdjust": false
+    "widthT": 150
   }
 ]

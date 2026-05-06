@@ -85,10 +85,9 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
       // Condition 2: PE vertical AND DMD site
       (lowerVertName === verticalEnums.PE && SITE_NAME === 'dmd')
 
-    // Filter combined-production-norms for PP vertical when site is NOT sez/hmd/dta
-    const shouldFilterCombinedProduction =
-      lowerVertName === verticalEnums.PP &&
-      !['sez', 'hmd', 'dta'].includes(SITE_NAME?.toLowerCase())
+    // New Condition: Cracker vertical AND VMD site
+    const shouldHideUtilitiesNorms =
+      lowerVertName === verticalEnums.CRACKER && SITE_NAME === 'vmd'
 
     let menuItems = menu.children
 
@@ -97,10 +96,10 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
       menuItems = menuItems.filter((item) => item.id !== 'slowdown-norms')
     }
 
-    // Filter combined-production-norms for PP vertical when NOT sez/hmd/dta
-    if (shouldFilterCombinedProduction) {
+    // Filter utility-norm-basis for Cracker/VMD
+    if (shouldHideUtilitiesNorms) {
       menuItems = menuItems.filter(
-        (item) => item.id !== 'combined-production-norms',
+        (item) => item.id !== 'utilities-norms-basis',
       )
     }
     return menuItems.map(renderMenuItem)
@@ -182,7 +181,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
                   letterSpacing: 0,
                   textTransform: 'capitalize',
                   color: '#606060',
-                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif"
+                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
                 }}
               >
                 {menu.title}
@@ -308,7 +307,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
                 color: '#4046CA', // Brand color header
                 textTransform: 'capitalize',
                 letterSpacing: 0,
-                fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif"
+                fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
               }}
             >
               {menu.title}

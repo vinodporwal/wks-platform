@@ -12,6 +12,8 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import AopTabs from 'components/AopTabs'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import ModeSelection from './ModeSelection'
+
 const CrackerConfig = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -49,6 +51,8 @@ const CrackerConfig = () => {
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
 
+  const IS_CRACKER_HMD = lowerVertName === 'cracker' && SITE_NAME === 'HMD'
+
   const [modifiedCells, setModifiedCells] = useState({})
 
   const [snackbarData, setSnackbarData] = useState({
@@ -78,6 +82,11 @@ const CrackerConfig = () => {
     'Miscellaneous Parameters',
     'Constant',
     'Yield',
+    'Spyro Matbal',
+    'Other Product',
+    'Spyro output Feed',
+    'Spyro output Product',
+    'Other Spyro output',
   ]
   const [tabs, setTabs] = useState(rawTabsStatic)
   const [availableTabs, setAvailableTabs] = useState([])
@@ -86,9 +95,15 @@ const CrackerConfig = () => {
 
   const [yieldRows, setYieldRows] = useState([])
   const [constantsRows, setConstantsRows] = useState([])
-  const [feedRows, setFeedRows] = useState([])
+  const [feedTotalRows, setTotalFeedRows] = useState([])
   const [compositionRows, setCompositionRows] = useState([])
   const [hydrogenationRows, setHydrogenationRows] = useState([])
+  const [spyroMatbalRows, setSpyroMatbalRows] = useState([])
+  const [otherProductRows, setOtherProductRows] = useState([])
+  const [spyroOutputFeedRows, setSpyroOutputFeedRows] = useState([])
+  const [feedsRows, setFeedsRows] = useState([])
+  const [spyroOutputProductRows, setSpyroOutputProductRows] = useState([])
+  const [otherSpyroOutputRows, setOtherSpyroOutputRows] = useState([])
 
   const FORMATE_VALUE = ValueFormatterProduction()
 
@@ -150,6 +165,7 @@ const CrackerConfig = () => {
       showUnit: false,
       showModes:
         lowerVertName === 'cracker' &&
+        !IS_CRACKER_HMD &&
         (SITE_NAME === 'VMD' || currentTabDisplay !== 'Yield'),
       saveWithRemark: true,
       saveBtn:
@@ -269,23 +285,46 @@ const CrackerConfig = () => {
         case 'Total Products':
           return hydrogenationRows
         case 'Miscellaneous Parameters':
-          return feedRows
+          return feedTotalRows
         case 'Constant':
           return constantsRows
         case 'Yield':
           return yieldRows
-
+        case 'Spyro Matbal':
+          return spyroMatbalRows
+        case 'Other Product':
+          return otherProductRows
+        case 'Spyro output Feed':
+          return spyroOutputFeedRows
+        case 'Spyro output Product':
+          return spyroOutputProductRows
+        case 'Feeds':
+          return feedsRows
+        case 'Other Spyro output':
+          return otherSpyroOutputRows
         default:
           return []
       }
     },
-    [feedRows, compositionRows, hydrogenationRows, constantsRows, yieldRows],
+    [
+      feedTotalRows,
+      compositionRows,
+      hydrogenationRows,
+      constantsRows,
+      yieldRows,
+      spyroMatbalRows,
+      otherProductRows,
+      spyroOutputFeedRows,
+      spyroOutputProductRows,
+      feedsRows,
+      otherSpyroOutputRows,
+    ],
   )
 
   const setRowsForTab = useCallback((tabId, data) => {
     switch (tabId) {
       case 'Miscellaneous Parameters':
-        setFeedRows(data)
+        setTotalFeedRows(data)
         break
       case 'Total Feed':
         setCompositionRows(data)
@@ -299,7 +338,24 @@ const CrackerConfig = () => {
       case 'Yield':
         setYieldRows(data)
         break
-
+      case 'Spyro Matbal':
+        setSpyroMatbalRows(data)
+        break
+      case 'Other Product':
+        setOtherProductRows(data)
+        break
+      case 'Spyro output Feed':
+        setSpyroOutputFeedRows(data)
+        break
+      case 'Spyro output Product':
+        setSpyroOutputProductRows(data)
+        break
+      case 'Feeds':
+        setFeedsRows(data)
+        break
+      case 'Other Spyro output':
+        setOtherSpyroOutputRows(data)
+        break
       default:
         console.warn('No state for tab:', tabId)
     }
@@ -311,7 +367,9 @@ const CrackerConfig = () => {
       if (!PLANT_ID || !AOP_YEAR) return
       try {
         setLoading(true)
-
+        if (IS_CRACKER_HMD) {
+          mode = currentTabDisplay
+        }
         const spyroVM = await DataService.getSpyroOutputData(
           keycloak,
           mode,
@@ -325,7 +383,7 @@ const CrackerConfig = () => {
             id: item.NormParameterFKID || `row_${index}`,
             remarks: item.remarks ?? item.Remarks ?? '',
             originalRemark: item.remarks ?? item.Remarks ?? '',
-            ParticularsType: item.Type,
+            ParticularsType: item.Type || item.type,
 
             ...item,
           }))
@@ -351,6 +409,9 @@ const CrackerConfig = () => {
       try {
         setLoading(true)
         var spyroVMYield1 = []
+        if (IS_CRACKER_HMD) {
+          mode = currentTabDisplay
+        }
         if (currentTabDisplay == 'Yield') {
           if (SITE_NAME == 'NMD') {
             spyroVMYield1 = await DataService.getSpyroOutputDataYield(
@@ -746,8 +807,10 @@ const CrackerConfig = () => {
     setLoading(true)
 
     try {
-      const mode = selectMode || '' // Optional
-
+      let mode = selectMode || '' // Optional
+      if (IS_CRACKER_HMD) {
+        mode = currentTabDisplay
+      }
       let response
 
       if (currentTabDisplay === 'Yield') {
@@ -860,8 +923,10 @@ const CrackerConfig = () => {
       severity: 'success',
     })
 
-    const mode = selectMode // Can be empty � that's fine
-
+    let mode = selectMode // Can be empty  that's fine
+    if (IS_CRACKER_HMD) {
+      mode = currentTabDisplay
+    }
     try {
       let response
       if (currentTabDisplay === 'Yield') {
@@ -935,6 +1000,13 @@ const CrackerConfig = () => {
     )
     return info?.displayName || tabId
   })
+  const adjustedPermissionsReadyOnly = getAdjustedPermissions(
+    {
+      hideRemarkForNonEditableRows: true,
+      NON_EDITABLE_GRID: true,
+    },
+    isOldYear,
+  )
 
   return (
     <Box>
@@ -950,6 +1022,9 @@ const CrackerConfig = () => {
           tabs={resolvedTabs}
         />
       </Box>
+      {IS_CRACKER_HMD && (
+        <ModeSelection permissions={adjustedPermissionsReadyOnly} />
+      )}
 
       <Box>
         {(() => {
@@ -963,6 +1038,7 @@ const CrackerConfig = () => {
             case 'Total Products':
             case 'Miscellaneous Parameters':
             case 'Constant':
+            case 'Other Product':
             case 'Yield':
               return (
                 <Box key={currentTabDisplay}>
@@ -999,7 +1075,45 @@ const CrackerConfig = () => {
                   />
                 </Box>
               )
-
+            case 'Spyro Matbal':
+            case 'Other Spyro output':
+            case 'Spyro output Feed':
+            case 'Spyro output Product':
+            case 'Feeds':
+              return (
+                <Box key={currentTabDisplay}>
+                  <KendoDataTables
+                    rows={rows}
+                    setRows={setRowsForCurrent}
+                    fetchData={() =>
+                      fetchCrackerRows(currentTabDisplay, selectMode)
+                    }
+                    configType='cracker_composition'
+                    groupBy='ParticularsType'
+                    handleRemarkCellClick={handleRemarkCellClick}
+                    columns={productionColumns}
+                    remarkDialogOpen={remarkDialogOpen}
+                    setRemarkDialogOpen={setRemarkDialogOpen}
+                    currentRemark={currentRemark}
+                    setCurrentRemark={setCurrentRemark}
+                    currentRowId={currentRowId}
+                    permissions={adjustedPermissions}
+                    selectMode={selectMode}
+                    setSelectMode={setSelectMode}
+                    saveChanges={saveChanges}
+                    snackbarData={snackbarData}
+                    snackbarOpen={snackbarOpen}
+                    setSnackbarOpen={setSnackbarOpen}
+                    setSnackbarData={setSnackbarData}
+                    modifiedCells={modifiedCells}
+                    setModifiedCells={setModifiedCells}
+                    handleExcelUpload={handleExcelUpload}
+                    downloadExcelForConfiguration={
+                      downloadExcelForConfiguration
+                    }
+                  />
+                </Box>
+              )
             default:
               return null
           }

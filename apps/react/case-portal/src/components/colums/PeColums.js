@@ -1,5 +1,23 @@
 export const BusinessDemandPeColumns = [
   {
+    field: 'Particulars',
+    title: 'Type',
+    width: 100,
+    groupable: true,
+    editable: false,
+    hidden: true,
+    isVisible: false,
+  },
+  {
+    field: 'normParameterId',
+    title: 'Particulars',
+    editable: false,
+    width: 125,
+    hidden: true,
+    isVisible: false,
+  },
+
+  {
     field: 'displayName',
     title: 'Particulars',
     editable: false,
@@ -132,6 +150,12 @@ export const BusinessDemandPeColumns = [
     widthT: 80,
     editable: false,
     minWidth: 100,
+  },
+  {
+    field: 'idFromApi',
+    title: 'ID from API',
+    hidden: true,
+    isVisible: false,
   },
 ]
 

@@ -126,7 +126,10 @@ const ModeSelection = ({ permissions }) => {
       isVisible: false,
     },
     ...dynamicYearMonthColumns,
-    { field: 'remarks', title: 'Remarks', editable: true, minWidth: 100 },
+    // Only include the remarks column if NON_EDITABLE_GRID is false/undefined
+    ...(!permissions?.hideRemarkForNonEditableRows
+      ? [{ field: 'remarks', title: 'Remarks', editable: true minWidth: 100 }]
+      : []),
   ]
 
   const fetchModes = useCallback(async () => {
@@ -170,7 +173,8 @@ const ModeSelection = ({ permissions }) => {
         inEdit: false,
         originalRemark: item.remarks || '', // Store original
         remarks: item.remarks || '', // Editable field
-        Particulars: 'Mode Selection',
+        Particulars: ' ',
+        isEditable: permissions?.NON_EDITABLE_GRID ? false : true,
       }))
       setRows(formattedData)
     } catch (error) {
@@ -181,7 +185,7 @@ const ModeSelection = ({ permissions }) => {
 
   useEffect(() => {
     fetchData()
-  }, [PLANT_ID, SITE_ID, VERTICAL_ID, AOP_YEAR, keycloak])
+  }, [PLANT_ID, SITE_ID, VERTICAL_ID, AOP_YEAR, keycloak, permissions])
 
   const savePropaneBusiness = async () => {
     setLoading(true)
@@ -307,6 +311,7 @@ const ModeSelection = ({ permissions }) => {
           uploadExcelBtn: false,
           titleName: 'Mode Selection',
           dynamicDropdownOptions: dynamicDropdownOptions,
+          NON_EDITABLE_GRID: true,
         },
         isOldYear,
       ),
@@ -336,7 +341,7 @@ const ModeSelection = ({ permissions }) => {
         setCurrentRowId={setCurrentRowId}
         handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissions}
-        groupBy='Particulars'
+        groupBy={permissions?.NON_EDITABLE_GRID ? undefined : 'Particulars'}
         // Add other props as needed
       />
     </div>

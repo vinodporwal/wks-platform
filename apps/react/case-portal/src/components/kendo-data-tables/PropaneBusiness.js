@@ -120,8 +120,8 @@ const PropaneBusiness = ({ permissions }) => {
   // Choose which columns to use:
   // To use dynamic year headers:
   const columns = [
-    { field: 'productName', title: 'Particulars', editable: false, widthT: 120 },
-    { field: 'uom', title: 'UOM', editable: false, widthT: 80 },
+    { field: 'productName', title: 'Particulars', editable: false },
+    { field: 'uom', title: 'UOM', editable: false, widthT: 55 },
     { field: 'normType', title: 'Norm Type', editable: false, hidden: true },
     ...dynamicYearMonthColumns,
     { field: 'remarks', title: 'Remarks', editable: true },

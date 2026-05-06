@@ -488,6 +488,7 @@ const TurnaroundReport = () => {
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
         setCurrentRowId={setCurrentRowId}
+        loading={loading}
         handleRemarkCellClick={handleRemarkCellClick}
         title='Turnaround Details (T-19A)'
         setModifiedCells={setModifiedCells}
@@ -526,6 +527,7 @@ const TurnaroundReport = () => {
         setCurrentRowId={setCurrentRowId2}
         saveChanges={saveChanges2}
         handleRemarkCellClick={handleRemarkCellClick2}
+        loading={loading}
         fetchData={fetchPreviousYear}
         setModifiedCells={setModifiedCells2}
         deleteRowData={deleteRowData}

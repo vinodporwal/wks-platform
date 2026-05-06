@@ -30,6 +30,8 @@ import { getRoleName } from 'services/role-service.js'
 import DecokingConfigNMD from './KendoConfigCrackerActivitiesNMD.js'
 import DownsteamShutdownDMD from './downsteamShutdownDMD.js'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop.js'
+import FurnaceMaintenanceActivity from './FurnaceMaintenanceActivity.js'
+import SteamHourTable from './steamHourTable.js'
 
 const DecokingConfig = () => {
   const keycloak = useSession()
@@ -68,6 +70,8 @@ const DecokingConfig = () => {
   const SCREEN_NAME = screenTitle?.title
   const siteName = siteObject?.name?.toLowerCase()
   const IS_DMD = siteObject?.name?.toLowerCase() == 'dmd'
+  const IS_CRACKER_VMD = lowerVertName === 'cracker' && siteName === 'vmd'
+  const IS_CRACKER_HMD = lowerVertName === 'cracker' && siteName === 'hmd'
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -816,9 +820,6 @@ const DecokingConfig = () => {
   }, [modifiedCellsRunLength])
 
   function validatePostCrDays(newRows) {
-    console.log('?? validatePostCrDays called')
-    console.log('?? Rows:', newRows)
-
     for (let i = 0; i < newRows.length; i++) {
       const row = newRows[i]
       const rowLabel = row.DisplayName || `Row ${i + 1}`
@@ -1496,13 +1497,34 @@ const DecokingConfig = () => {
   if (siteName === 'nmd') {
     return <DecokingConfigNMD pid={PLANT_ID} />
   }
-
+  if (siteName === 'hmd') {
+    return <SteamHourTable pid={PLANT_ID} />
+  }
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+         <LoaderBackdrop open={!!loading} />
+      {IS_CRACKER_VMD && (
+        <CustomAccordion defaultExpanded disableGutters sx={{ mt: 1.5 }}>
+          <CustomAccordionSummary
+            aria-controls='meg-grid-content'
+            id='meg-grid-header'
+          >
+            <Typography component='span' className='grid-title'>
+              Furnace Maintenance Activity
+            </Typography>
+          </CustomAccordionSummary>
+          <CustomAccordionDetails>
+            <Box sx={{ width: '100%', margin: 0 }}>
+              <FurnaceMaintenanceActivity />
+            </Box>
+          </CustomAccordionDetails>
+        </CustomAccordion>
+      )}
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
-        <Box sx={{ display: 'flex', gap: 1, mt: 1, alignItems: 'center' }}>
+        <Box
+          sx={{ display: 'flex', gap: 1, mb: 0, mt: 1, alignItems: 'center' }}
+        >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
               TA Start Date
@@ -1627,6 +1649,23 @@ const DecokingConfig = () => {
           </Box>
         </CustomAccordionDetails>
       </CustomAccordion>
+      {/* {IS_CRACKER_HMD && (
+        <CustomAccordion defaultExpanded disableGutters>
+          <CustomAccordionSummary
+            aria-controls='meg-grid-content'
+            id='meg-grid-header'
+          >
+            <Typography component='span' className='grid-title'>
+              Steam Hour Details
+            </Typography>
+          </CustomAccordionSummary>
+          <CustomAccordionDetails>
+            <Box sx={{ width: '100%', margin: 0 }}>
+              <SteamHourTable />
+            </Box>
+          </CustomAccordionDetails>
+        </CustomAccordion>
+      )} */}
     </Box>
   )
 }

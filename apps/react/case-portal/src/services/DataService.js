@@ -4502,7 +4502,7 @@ export async function saveMaterialBalanceData(
   AOP_YEAR,
   data,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/production-norms?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const url = `${Config.CaseEngineUrl}/task/production-norms?plantFKId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

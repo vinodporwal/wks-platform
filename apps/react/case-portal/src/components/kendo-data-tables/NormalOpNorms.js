@@ -98,6 +98,20 @@ const NormalOpNormsScreen = () => {
     SITE_NAME_NO_CASE === 'JMD' &&
     PLANT_NAME_NO_CASE === 'HIIR'
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
+  const IS_CHEMICAL_JMD_MTBEANDBUATNE1 =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'jmd' &&
+    (lowerPlantName === 'mtbe' || lowerPlantName === 'butene-1')
+  const IS_CHEMICAL_VMD_BUTADIENE =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'vmd' &&
+    lowerPlantName === '1,3butadiene'
+
+  const IS_VCM_HMD_VCM =
+    lowerVertName === 'vcm' &&
+    lowerSiteName === 'hmd' &&
+    lowerPlantName === 'vcm'
+
   const keycloak = useSession()
 
   const { isReleased } = dataGridStore
@@ -259,7 +273,12 @@ const NormalOpNormsScreen = () => {
     try {
       const promises = [fetchData(gradeId), getNormTransactions()]
 
-      if (lowerVertName === 'meg') {
+      if (
+        lowerVertName === 'meg' ||
+        IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
+        IS_CHEMICAL_VMD_BUTADIENE ||
+        IS_VCM_HMD_VCM
+      ) {
         promises.push(fetchDataIntermediateValues())
       }
       if (
@@ -304,30 +323,24 @@ const NormalOpNormsScreen = () => {
       groupable: true,
       editable: false,
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
 
     {
       field: 'NormParameterFKId',
       title: 'Particulars',
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
 
     {
       field: 'ProductName',
       title: 'Particulars',
       widthT: 130,
-      minWidth: 120,
     },
     {
       field: 'UOM',
       title: 'UOM',
-      widthT: 80,
+      widthT: 60,
       editable: false,
-      minWidth: 80,
     },
     {
       field: 'Apr',
@@ -337,7 +350,6 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       format: valueFormat,
       type: 'number',
-      minWidth: 100,
     },
 
     {
@@ -348,7 +360,6 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       format: valueFormat,
       type: 'number',
-      minWidth: 100,
     },
     {
       field: 'Jun',
@@ -358,7 +369,6 @@ const NormalOpNormsScreen = () => {
       width: 120,
       align: 'right',
       format: valueFormat,
-      minWidth: 100,
     },
     {
       field: 'Jul',
@@ -368,7 +378,6 @@ const NormalOpNormsScreen = () => {
       width: 120,
       align: 'right',
       format: valueFormat,
-      minWidth: 100,
     },
 
     {
@@ -379,7 +388,6 @@ const NormalOpNormsScreen = () => {
       type: 'number',
       align: 'right',
       format: valueFormat,
-      minWidth: 100,
     },
     {
       field: 'Sep',
@@ -389,7 +397,6 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       type: 'number',
       format: valueFormat,
-      minWidth: 100,
     },
     {
       field: 'Oct',
@@ -399,7 +406,6 @@ const NormalOpNormsScreen = () => {
       type: 'number',
       align: 'right',
       format: valueFormat,
-      minWidth: 100,
     },
     {
       field: 'Nov',
@@ -409,7 +415,6 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       type: 'number',
       format: valueFormat,
-      minWidth: 100,
     },
     {
       field: 'Dec',
@@ -419,7 +424,6 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       type: 'number',
       format: valueFormat,
-      minWidth: 100,
     },
     {
       field: 'Jan',
@@ -429,7 +433,6 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       type: 'number',
       format: valueFormat,
-      minWidth: 100,
     },
     {
       field: 'Feb',
@@ -439,7 +442,6 @@ const NormalOpNormsScreen = () => {
       type: 'number',
       align: 'right',
       format: valueFormat,
-      minWidth: 100,
     },
     {
       field: 'Mar',
@@ -449,21 +451,16 @@ const NormalOpNormsScreen = () => {
       type: 'number',
       align: 'right',
       format: valueFormat,
-      minWidth: 100,
     },
     {
       field: 'idFromApi',
       title: 'idFromApi',
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
     {
       field: 'isEditable',
       title: 'isEditable',
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
   ]
 
@@ -758,7 +755,15 @@ const NormalOpNormsScreen = () => {
     })
 
     try {
-      if (
+      if (lowerVertName === 'chemical' && lowerSiteName === 'dmd') {
+        await NormalOperationNormsApiService.getNormalOpsNormsExcelChemicalDmd(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+          SCREEN_NAME,
+        )
+      } else if (
         isPEPP ||
         isPET ||
         IS_ELASTOMER_HMD_SBR ||
@@ -804,14 +809,25 @@ const NormalOpNormsScreen = () => {
   const saveExcelFile = async (rawFile) => {
     setLoading(true)
     try {
-      const response =
-        await NormalOperationNormsApiService.saveNormalOpsNormsExcel(
+      let response
+      if (lowerVertName === 'chemical' && lowerSiteName === 'dmd') {
+        response =
+          await NormalOperationNormsApiService.saveNormalOpsNormsExcelChemicalDmd(
+            rawFile,
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            gradeId,
+          )
+      } else {
+        response = await NormalOperationNormsApiService.saveNormalOpsNormsExcel(
           rawFile,
           keycloak,
           PLANT_ID,
           AOP_YEAR,
           gradeId,
         )
+      }
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -913,7 +929,10 @@ const NormalOpNormsScreen = () => {
         />
       )}
 
-      {lowerVertName === 'meg' && (
+      {(lowerVertName === 'meg' ||
+        IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
+        IS_CHEMICAL_VMD_BUTADIENE ||
+        IS_VCM_HMD_VCM) && (
         <Box sx={{ width: '100%', marginTop: 1 }}>
           <CustomAccordion defaultExpanded disableGutters>
             <CustomAccordionSummary

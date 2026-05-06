@@ -12,15 +12,14 @@
 
     "flex": 2,
     "editable": false,
-    "widthT": 130,
-    "autoAdjust": false
+    "widthT": 220
   },
   {
     "field": "materialName",
     "headerName": "Particulars",
     "flex": 2,
     "editable": false,
-    "widthT": 120
+    "widthT": 220
   },
   {
     "field": "aopMonth",

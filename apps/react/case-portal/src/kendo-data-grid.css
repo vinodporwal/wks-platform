@@ -75,7 +75,7 @@
   border-color: 1px solid #dde1eb !important;
   color: #252525 !important;
   background: #f0f5f9;
-  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+  font-family: 'Honeywell Sans Web' !important;
   height: 40px !important;
   font-weight: 700;
   font-style: Bold;
@@ -265,7 +265,7 @@
 .k-number-right td,
 .k-number-right-disabled td {
   text-align: right !important;
-  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+  font-family: 'Honeywell Sans Web' !important;
   font-size: 15px !important;
   font-weight: 500 !important;
 }
@@ -278,7 +278,7 @@
   border-right: 1px solid rgb(169, 169, 169) !important;
   border-bottom: 1px solid rgb(169, 169, 169) !important;
   text-align: right !important;
-  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+  font-family: 'Honeywell Sans Web' !important;
   font-size: 15px !important;
   font-weight: 500 !important;
 }

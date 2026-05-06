@@ -202,7 +202,11 @@ const KendoDataTablesReciepe = ({
     const plantName = plantObject?.name?.toLowerCase()
 
     // Check if conditions are met for showing export/import buttons
-    return lowerVertName === 'pe' || lowerVertName === 'pp'
+    return (
+      lowerVertName === 'pe' ||
+      lowerVertName === 'pp' ||
+      lowerVertName === 'elastomer'
+    )
   }
   const initialGroup = groupBy
     ? [
@@ -475,7 +479,7 @@ const KendoDataTablesReciepe = ({
             title={col.title || col.headerName}
             editable={col.editable || false}
             format={FORMATE_DECIMAL}
-            width='80px'
+            width='65px'
             cells={{
               edit: { text: NumericEditorWithLimit },
               data: toolTipRenderer,
@@ -781,8 +785,17 @@ const KendoDataTablesReciepe = ({
                   Calculate
                 </Button>
               )}
-
-              {permissions?.showFinalSubmit && (
+            {permissions?.showCalculate && (
+              <Button
+                variant='contained'
+                onClick={handleExport}
+                disabled={isButtonDisabled}
+                className='btn-save'
+              >
+                Export
+              </Button>
+            )}
+            {permissions?.showFinalSubmit && (
                 <Button
                   variant='contained'
                   // onClick={handleExport}

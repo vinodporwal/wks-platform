@@ -88,7 +88,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: false,
-      widthT: 100,
+      widthT: 70,
       align: 'right',
     },
     {
@@ -96,7 +96,6 @@ const AnnualProductionPlan = () => {
       headerName: 'Assumptions & remarks',
       editable: true,
       flex: 1,
-      widthT: 300
     },
     {
       field: 'idFromApi',
@@ -109,7 +108,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: false,
-      widthT: 100,
+      widthT: 70,
       align: 'right',
     },
     {
@@ -117,7 +116,6 @@ const AnnualProductionPlan = () => {
       headerName: 'Max hourly rate achieved',
       editable: true,
       flex: 1,
-      widthT: 300
     },
     {
       field: 'id',
@@ -133,7 +131,7 @@ const AnnualProductionPlan = () => {
       type: 'number',
       format: '{0:#.##}',
     },
-    { field: 'uom', headerName: 'UOM', editable: true, widthT: 90 },
+    { field: 'uom', headerName: 'UOM', editable: true, widthT: 120 },
   ]
 
   const columnsOperatingHrs = [
@@ -141,7 +139,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: false,
-      widthT: 100,
+      widthT: 70,
       align: 'right',
     },
     {
@@ -149,7 +147,6 @@ const AnnualProductionPlan = () => {
       headerName: 'Calculation of Operating hours',
       editable: true,
       flex: 1,
-      widthT: 300
     },
     {
       field: 'id',
@@ -161,7 +158,7 @@ const AnnualProductionPlan = () => {
       editable: true,
       flex: 1,
       align: 'right',
-      widthT: 130,
+      widthT: 150,
       type: 'number',
       format: '{0:#.##}',
     },
@@ -180,7 +177,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: false,
-      widthT: 100,
+      widthT: 70,
       align: 'right',
     },
     {
@@ -188,7 +185,6 @@ const AnnualProductionPlan = () => {
       headerName: 'Throughput  limiting causes',
       editable: true,
       flex: 1,
-      widthT: 300
     },
     {
       field: 'id',
@@ -200,7 +196,7 @@ const AnnualProductionPlan = () => {
       editable: true,
       flex: 1,
       align: 'right',
-      widthT: 130,
+      widthT: 150,
       type: 'number',
       format: '{0:#.##}',
     },
@@ -210,7 +206,7 @@ const AnnualProductionPlan = () => {
       editable: true,
       flex: 1,
       align: 'right',
-      widthT: 130,
+      widthT: 150,
       type: 'number',
     },
     {
@@ -218,9 +214,8 @@ const AnnualProductionPlan = () => {
       headerName: 'Period from',
       editable: true,
       flex: 1,
-      widthT: 150
     },
-    { field: 'periodTo', headerName: 'Period to', editable: true, flex: 1, widthT: 150 },
+    { field: 'periodTo', headerName: 'Period to', editable: true, flex: 1 },
   ]
 
   const year4 = AOP_YEAR
@@ -242,7 +237,7 @@ const AnnualProductionPlan = () => {
       title: 'Item',
       editable: false,
       flex: 1,
-      widthT: 100,
+      widthT: 250,
     },
 
     {
@@ -760,6 +755,7 @@ const AnnualProductionPlan = () => {
         currentRowId={currentRowId}
         setCurrentRowId={setCurrentRowId}
         saveChanges={saveChanges}
+        loading={loading}
         fetchData={() => fetchData('assumptions')}
         deleteRowData={handleDeleteAssumptionRow}
         permissions={{

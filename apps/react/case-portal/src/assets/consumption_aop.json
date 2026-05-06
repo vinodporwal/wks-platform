@@ -14,7 +14,7 @@
   {
     "field": "UOM",
     "headerName": "UOM1 / MT",
-    "widthT": 90,
+    "widthT": 60,
     "editable": false
   },
   {

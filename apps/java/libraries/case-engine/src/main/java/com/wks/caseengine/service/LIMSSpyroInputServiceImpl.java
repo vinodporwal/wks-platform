@@ -2,6 +2,9 @@ package com.wks.caseengine.service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
@@ -10,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
+import javax.sql.DataSource;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
@@ -21,18 +26,24 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.wks.caseengine.dto.CrackerHMDLoadLIMSSpyroInputDTO;
 import com.wks.caseengine.dto.LIMSSpyroInputDTO;
+import com.wks.caseengine.dto.NaphthaQualityDTO;
+import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.NormAttributeTransactions;
 import com.wks.caseengine.entity.NormParameters;
 import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.service.AOPReportService;
+import com.wks.caseengine.repository.AopCalculationRepository;
 import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
 import com.wks.caseengine.repository.NormParametersRepository;
 import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.Utility;
@@ -64,6 +75,21 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 
     @Autowired
     private AOPReportService aopReportService;
+
+	@Autowired
+	private AopCalculationRepository aopCalculationRepository;
+
+	@Autowired
+	private ScreenMappingRepository screenMappingRepository;
+
+	@Autowired
+	private VerticalsRepository verticalRepository;
+
+	private DataSource dataSource;
+
+	public LIMSSpyroInputServiceImpl(DataSource dataSource) {
+		this.dataSource = dataSource;
+	}
     
     @Override
     public AOPMessageVM getLIMSSpyroInput(String plantId, String aopYear) {
@@ -490,6 +516,108 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 		return aopMessageVM;
 	}
 	
+	@Override
+	public AOPMessageVM saveNaphthaQuality(String year, String plantFKId, List<NaphthaQualityDTO> naphthaQualityDTOs) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			UUID.fromString(plantFKId); // Validate UUID format for a consistent API contract.
+			if (year == null || year.isBlank()) {
+				throw new IllegalArgumentException("Year is required");
+			}
+			if (naphthaQualityDTOs == null || naphthaQualityDTOs.isEmpty()) {
+				throw new IllegalArgumentException("Naphtha quality payload is empty");
+			}
+			for (NaphthaQualityDTO naphthaQualityDTO : naphthaQualityDTOs) {
+				upsertNaphthaQualityMetric(year, naphthaQualityDTO.getMaxId(), naphthaQualityDTO.getMax());
+				upsertNaphthaQualityMetric(year, naphthaQualityDTO.getMinId(), naphthaQualityDTO.getMin());
+				upsertNaphthaQualityMetric(year, naphthaQualityDTO.getMonthsId(), naphthaQualityDTO.getMonths());
+			}
+		
+			List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("liims-extractions");
+			for (ScreenMapping screenMapping : screenMappingList) {
+				AopCalculation aopCalculation = new AopCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(UUID.fromString(plantFKId));
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
+
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data updated successfully");
+			aopMessageVM.setData(null);
+		} catch (IllegalArgumentException e) {
+			aopMessageVM.setCode(400);
+			aopMessageVM.setMessage("Invalid input: " + e.getMessage());
+			aopMessageVM.setData(null);
+		} catch (Exception e) {
+			e.printStackTrace();
+			aopMessageVM.setCode(500);
+			aopMessageVM.setMessage("Failed to save data: " + e.getMessage());
+			aopMessageVM.setData(null);
+		}
+		return aopMessageVM;
+	}
+	
+	@Override
+	public AOPMessageVM saveCrackerHMDLIMSSpyroInput(String year, String plantFKId,
+			List<CrackerHMDLoadLIMSSpyroInputDTO> crackerHMDLoadLIMSSpyroInputDTOs) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			UUID.fromString(plantFKId); // Validate UUID format for a consistent API contract.
+			if (year == null || year.isBlank()) {
+				throw new IllegalArgumentException("Year is required");
+			}
+			if (crackerHMDLoadLIMSSpyroInputDTOs == null || crackerHMDLoadLIMSSpyroInputDTOs.isEmpty()) {
+				throw new IllegalArgumentException("LIMS pyro payload is empty");
+			}
+			for (CrackerHMDLoadLIMSSpyroInputDTO dto : crackerHMDLoadLIMSSpyroInputDTOs) {
+				upsertNaphthaQualityMetric(year, dto.getJmdId(), dto.getJmd());
+				upsertNaphthaQualityMetric(year, dto.getHpnId(), dto.getHpn());
+				upsertNaphthaQualityMetric(year, dto.getHeavyId(), dto.getHeavy());
+				upsertNaphthaQualityMetric(year, dto.getOthersId(), dto.getOthers());
+				upsertNaphthaQualityMetric(year, dto.getBlendId(), dto.getBlend());
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data updated successfully");
+			aopMessageVM.setData(null);
+		} catch (IllegalArgumentException e) {
+			aopMessageVM.setCode(400);
+			aopMessageVM.setMessage("Invalid input: " + e.getMessage());
+			aopMessageVM.setData(null);
+		} catch (Exception e) {
+			e.printStackTrace();
+			aopMessageVM.setCode(500);
+			aopMessageVM.setMessage("Failed to save data: " + e.getMessage());
+			aopMessageVM.setData(null);
+		}
+		return aopMessageVM;
+	}
+
+	private void upsertNaphthaQualityMetric(String year, String metricId, Double metricValue) {
+		if (metricId == null || metricId.isBlank() || metricValue == null) {
+			return;
+		}
+		UUID parsedMetricId = UUID.fromString(metricId);
+		Optional<NormAttributeTransactions> existingTxn =
+				normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(parsedMetricId, 4, year);
+
+		NormAttributeTransactions normAttributeTransaction = existingTxn.orElseGet(NormAttributeTransactions::new);
+		normAttributeTransaction.setAopMonth(4);
+		normAttributeTransaction.setAttributeValue(metricValue.toString());
+		normAttributeTransaction.setAuditYear(year);
+		normAttributeTransaction.setNormParameterFKId(parsedMetricId);
+		normAttributeTransaction.setUserName(Utility.getUserName());
+		if (existingTxn.isPresent()) {
+			normAttributeTransaction.setModifiedOn(new Date());
+		} else {
+			normAttributeTransaction.setCreatedOn(new Date());
+		}
+		normAttributeTransactionsRepository.save(normAttributeTransaction);
+	}
+	
 	public byte[] exportLIMSSpyroInput(String year, String plantId, boolean isAfterSave, List<LIMSSpyroInputDTO> dtoList) {
 	    try {
 	        if (!isAfterSave) {
@@ -750,4 +878,189 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 	    return null;
 	}
 
+	// NEW METHODS FOR NAPHTHA QUALITY
+	@Override
+	public AOPMessageVM getCrackerHMDLIMSSpyroInput(String plantId, String aopYear) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalsRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			
+			String procedureName = vertical.getName() + "_" + site.getName() + "_LoadLIMSSpyroInput";
+			List<Object[]> results = executeLIMSSpyroInput(procedureName, plantId, aopYear);
+
+			List<CrackerHMDLoadLIMSSpyroInputDTO> dtoList = new ArrayList<>();
+			for (Object[] row : results) {
+				CrackerHMDLoadLIMSSpyroInputDTO dto = new CrackerHMDLoadLIMSSpyroInputDTO();
+				dto.setName(row[0] != null ? row[0].toString() : "");
+				dto.setDisplayName(row[1] != null ? row[1].toString() : "");
+				dto.setUom(row[2] != null ? row[2].toString() : "");
+				dto.setJmd(row[3] != null ? toDouble(row[3]) : null);
+				dto.setHpn(row[4] != null ? toDouble(row[4]) : null);
+				dto.setHeavy(row[5] != null ? toDouble(row[5]) : null);
+				dto.setOthers(row[6] != null ? toDouble(row[6]) : null);
+				dto.setBlend(row[7] != null ? toDouble(row[7]) : null);
+				dto.setJmdId(row[8] != null ? row[8].toString() : "");
+				dto.setHpnId(row[9] != null ? row[9].toString() : "");
+				dto.setHeavyId(row[10] != null ? row[10].toString() : "");
+				dto.setOthersId(row[11] != null ? row[11].toString() : "");
+				dto.setBlendId(row[12] != null ? row[12].toString() : "");
+				dto.setPlantId(row[13] != null ? row[13].toString() : "");
+				dto.setAopYear(row[14] != null ? row[14].toString() : "");
+				dtoList.add(dto);
+			}
+
+			Map<String, Object> map = new java.util.HashMap<>();
+
+			List<AopCalculation> aopCalculation = aopCalculationRepository
+					.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), aopYear, "liims-inputs");
+					
+			map.put("Data", dtoList);
+			map.put("aopCalculation", aopCalculation);
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(map);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Override
+	public AOPMessageVM calculateExpressionConsumptionNorms(String year, String plantId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_Calculate_LIMSSpyroInput";  
+			
+			Integer result=  executeDynamicUpdateProcedure(storedProcedure, plantId, site.getId().toString(),
+					vertical.getId().toString(), year);
+			aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId),year,"liims-inputs");
+			List<ScreenMapping> screenMappingList= screenMappingRepository.findByDependentScreen("liims-inputs");
+			for(ScreenMapping screenMapping:screenMappingList) {
+				AopCalculation aopCalculation=new AopCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(UUID.fromString(plantId));
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
+			aopMessageVM.setCode(200);
+	        aopMessageVM.setMessage("SP Executed successfully");
+	        aopMessageVM.setData(result);
+	        return aopMessageVM;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return aopMessageVM;
+	}
+
+	public int executeDynamicUpdateProcedure(String procedureName, String plantId, String siteId, String verticalId,
+		String finYear) {
+	try {
+		
+		String callSql = "{call " + procedureName + "(?, ?, ?, ?)}";
+
+		try (Connection connection = dataSource.getConnection();
+			 CallableStatement stmt = connection.prepareCall(callSql)) {
+
+			// Set parameters in the correct order
+			stmt.setString(1, plantId); // @finYear
+			stmt.setString(2, siteId.toString()); // @plantId
+			stmt.setString(3, verticalId.toString()); // @verticalId
+			stmt.setString(4, finYear); // @siteId
+
+			// Execute the stored procedure
+			int rowsAffected = stmt.executeUpdate();
+
+			// Optional: commit if auto-commit is off
+			if (!connection.getAutoCommit()) {
+				connection.commit();
+			}
+
+			return rowsAffected;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return 0;
+		}
+
+	} catch (IllegalArgumentException e) {
+		throw new RestInvalidArgumentException("Invalid UUID format ", e);
+	} catch (Exception ex) {
+		throw new RuntimeException("Failed to fetch data", ex);
+	}
+}
+
+	@Override
+	public AOPMessageVM getNaphthaQuality(String plantId, String aopYear) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+			Verticals vertical = verticalsRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			// View name pattern: vw_Vertical_Site_LIMSConditions
+			String viewName = "vw_" + vertical.getName() + "_" + site.getName() + "_LIMSConditions";
+
+			String sql = "SELECT Section, Name, MAX, MIN, MONTHS, MAX_Id, MIN_Id, MONTHS_Id FROM " + viewName;
+
+			Query query = entityManager.createNativeQuery(sql);
+
+			@SuppressWarnings("unchecked")
+			List<Object[]> results = query.getResultList();
+
+			List<NaphthaQualityDTO> dtoList = new ArrayList<>();
+			for (Object[] row : results) {
+				NaphthaQualityDTO dto = new NaphthaQualityDTO();
+				dto.setSection(row[0] != null ? row[0].toString() : "");
+				dto.setName(row[1] != null ? row[1].toString() : "");
+				dto.setMax(row[2] != null ? toDouble(row[2]) : null);
+				dto.setMin(row[3] != null ? toDouble(row[3]) : null);
+				dto.setMonths(row[4] != null ? toDouble(row[4]) : null);
+				dto.setMaxId(row[5] != null ? row[5].toString() : "");
+				dto.setMinId(row[6] != null ? row[6].toString() : "");
+				dto.setMonthsId(row[7] != null ? row[7].toString() : "");
+				dtoList.add(dto);
+			}
+
+			java.util.Map<String, Object> map = new java.util.HashMap<>();
+			map.put("Data", dtoList);
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(map);
+			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private List<Object[]> executeNaphthaQuality(String procedureName, String plantId, String aopYear) {
+		String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+		Query query = entityManager.createNativeQuery(sql);
+		query.setParameter("plantId", plantId);
+		query.setParameter("aopYear", aopYear);
+		return (List<Object[]>) query.getResultList();
+	}
 }

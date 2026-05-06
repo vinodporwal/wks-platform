@@ -56,7 +56,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: FORMAT_VALUES_PRICE,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -234,7 +234,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: FORMAT_VALUES_PRICE,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -406,7 +406,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: FORMAT_VALUES_PRICE,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -578,7 +578,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: FORMAT_VALUES_PRICE,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -750,7 +750,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: FORMAT_VALUES_PRICE,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -921,7 +921,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: FORMAT_VALUES_PRICE,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -1092,7 +1092,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: FORMAT_VALUES_PRICE,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -1303,7 +1303,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: valueFormat,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -1481,7 +1481,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: valueFormat,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -1653,7 +1653,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: valueFormat,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -1825,7 +1825,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: valueFormat,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -1997,7 +1997,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: valueFormat,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -2168,7 +2168,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: valueFormat,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -2339,7 +2339,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: valueFormat,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',

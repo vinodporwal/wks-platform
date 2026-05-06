@@ -132,7 +132,10 @@ const SelectivityData = (props) => {
 
       if (props?.configType !== 'grades') {
         //TST VALIDATION SEPERATED
-        if (lowerVertName == 'meg') {
+        if (
+          lowerVertName == 'meg' ||
+          (lowerVertName == 'chemical' && lowerSiteName == 'dmd')
+        ) {
           const monthNameMap = {
             jan: 'January',
             feb: 'February',
@@ -521,7 +524,16 @@ const SelectivityData = (props) => {
     FORMATE_VALUE = '{0:0.000}'
   }
   if (
-    (props?.configType == 'Constant' ||
+    (props?.configType === 'Constant' ||
+      props?.configType === 'PIO Impact' ||
+      props?.configType === 'Configuration') &&
+    lowerVertName === 'pta' &&
+    lowerSiteName === 'dmd'
+  ) {
+    FORMATE_VALUE = '{0:0.0000}'
+  }
+  if (
+    (props?.configType === 'Constant' ||
       props?.configType == 'PIO Impact' ||
       props?.configType == 'Configuration') &&
     lowerVertName == 'aromatics' &&
@@ -566,7 +578,8 @@ const SelectivityData = (props) => {
       saveWithRemark: true,
       saveBtn: true,
       downloadExcelBtn: true,
-      uploadExcelBtn: true,
+      uploadExcelBtn:
+        lowerVertName === 'chemical' && lowerSiteName === 'dmd' ? false : true,
       showLoad: true,
       allAction: true,
 
@@ -581,7 +594,7 @@ const SelectivityData = (props) => {
 
       // showG: props?.configType === 'cracker_configuration' ? true : false,
       showG: false,
-      dropdownLabel: 'Mode',
+      dropdownLabel: 'Select Mode',
       // marginTop: props?.configType === 'cracker_configuration' ? true : false,
       marginTop: false,
       isHeight: lowerVertName !== 'meg' && props?.rows?.length > 10,
@@ -637,8 +650,7 @@ const SelectivityData = (props) => {
           lowerVertName == 'pta' ||
           lowerVertName == 'aromatics' ||
           lowerVertName == 'vcm' ||
-          lowerVertName == 'elastomer' ||
-          lowerVertName == 'chemical'
+          lowerVertName == 'elastomer'
         ) {
           await DataService.getConfigurationExcelType(
             keycloak,
@@ -796,6 +808,25 @@ const SelectivityData = (props) => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
+
+        // Fetching data after partial data also so we get updated records
+        if (props?.configType === 'cracker_configuration') {
+          props?.fetchData(null)
+        }
+        if (props?.configType === 'cracker_constants') {
+          if (typeof props.fetchData === 'function') {
+            props.fetchData()
+          }
+        }
+
+        if (props?.configType === 'grades') {
+          fetchConfigData() // This was missing!
+        } else if (
+          props?.configType !== 'grades' &&
+          lowerVertName !== 'cracker'
+        ) {
+          props?.fetchData(gradeId)
+        }
       } else {
         setSnackbarOpen(true)
         setSnackbarData({

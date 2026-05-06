@@ -70,10 +70,14 @@ const BusinessDemand = ({ permissions }) => {
   const IS_CARCKER_VMD = lowerVertName === 'cracker' && lowerSiteName === 'vmd'
   const IS_CRACKER_DMD = lowerVertName === 'cracker' && lowerSiteName === 'dmd'
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
-  const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
-  const IS_CHEMICAL_JMD = lowerVertName === 'chemical' && lowerSiteName === 'jmd'
+
+  const IS_ELASTOMER_HMD =
+    lowerVertName === 'elastomer' && lowerSiteName === 'hmd'
+
+  const IS_CHEMICAL_JMD =
+    lowerVertName === 'chemical' && lowerSiteName === 'jmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'
   const PRODUCTION_TARGET_LABEL = IS_VCM_VERTICAL
     ? 'Production Target (This is a reference for entering the Business Demand value)'
@@ -137,19 +141,17 @@ const BusinessDemand = ({ permissions }) => {
       field: 'materialDisplayName',
       title: 'Particulars',
       editable: false,
-      widthT: 220,
-      autoAdjust: false
+      widthT: 200,
     },
     {
       field: 'april',
       title: 'Value',
       editable: false,
-      widthT: 220,
+      widthT: 200,
       align: 'left',
       headerAlign: 'left',
       type: 'number',
       format: '{0:n2}',
-      autoAdjust: false
     },
 
     {
@@ -299,8 +301,8 @@ const BusinessDemand = ({ permissions }) => {
         // FOR PTA THIS CONDITION IS REMOVED
         // IS_PTA_VERTICAL ||
         IS_PET_VERTICAL ||
-        IS_ELASTOMER_VERTICAL ||
-        (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD)
+        (IS_ELASTOMER_VERTICAL && !IS_ELASTOMER_HMD) ||
+        (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD && !IS_ELASTOMER_HMD)
       ) {
         const productionRows = (rows || []).filter(
           (row) => row.Particulars?.toLowerCase() === 'production',

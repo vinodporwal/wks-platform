@@ -644,9 +644,7 @@ const WorkFlowMerge = () => {
       setSnackbarData({ message: err.message, severity: 'error' })
       setActionDisabled(false)
     } finally {
-      setSnackbarOpen(true)
-      setOpenRejectDialog(false)
-      setText('')
+      setSnackbarOpen(true) // ✅ THIS was the only missing piece
     }
   }
 
@@ -983,11 +981,9 @@ const WorkFlowMerge = () => {
             {tabIndex === 10 && lowerVertName === 'meg' && (
               <MonthwiseOperatingHours />
             )}
-
             {tabIndex === 11 && lowerVertName === 'meg' && (
               <PlantShutdownSlowdown />
             )}
-
             {(lowerVertName === 'pe' || lowerVertName === 'pp') && (
               <>{tabIndex === 8 && <SpecificConsumptionNormsII />}</>
             )}
@@ -1086,6 +1082,12 @@ const WorkFlowMerge = () => {
             {tabIndex === 10 && <MonthwiseOperatingHours />} {/* T-20 */}
             {tabIndex === 11 && <PlantContribution />} {/* T-21 */}
             {tabIndex === 12 && <PlantContributionLastFourYears />}
+            <Notification
+              open={snackbarOpen}
+              message={snackbarData.message}
+              severity={snackbarData.severity}
+              onClose={() => setSnackbarOpen(false)}
+            />
             {/* T-22 */}
           </>
         )}
@@ -1231,7 +1233,6 @@ const WorkFlowMerge = () => {
                 setText={setText}
               />
             )}
-
             {tabIndex === 1 && <PlantsProductionSummary />}
             {tabIndex === 2 && <MonthwiseProduction />}
             {tabIndex === 3 && <MonthwiseRawMaterial />}
@@ -1239,7 +1240,6 @@ const WorkFlowMerge = () => {
             {tabIndex === 5 && <AnnualProductionPlan />}
             {tabIndex === 6 && <PlantContribution />}
             {tabIndex === 7 && <PlantContributionLastFourYears />}
-
             <Notification
               open={snackbarOpen}
               message={snackbarData.message}

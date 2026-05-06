@@ -82,7 +82,7 @@ const SlowDown = ({ permissions }) => {
   const [rowModesModel, setRowModesModel] = useState({})
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [modifiedCells2, setModifiedCells2] = React.useState({})
-  const [colDefs2, setColDefs2] = React.useState([])
+  const [colDefs2, setColDefs2] = React.useState({})
   const [allProducts, setAllProducts] = useState([])
   const apiRef = useGridApiRef()
   const [open1, setOpen1] = useState(false)
@@ -106,6 +106,7 @@ const SlowDown = ({ permissions }) => {
   const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
+  const IS_AROMATICS = lowerVertName === 'aromatics'
   const IS_AROMATICS_SEZ_PX4 =
     lowerVertName === 'aromatics' &&
     lowerSiteName === 'sez' &&
@@ -115,7 +116,7 @@ const SlowDown = ({ permissions }) => {
     lowerVertName === 'pe' ||
     lowerVertName === 'pp' ||
     lowerVertName === 'pet' ||
-    (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD) ||
+    lowerVertName === 'elastomer' ||
     lowerVertName == 'vcm' ||
     lowerVertName == 'pta' ||
     lowerVertName == 'chemical' ||
@@ -759,7 +760,8 @@ const SlowDown = ({ permissions }) => {
         lowerVertName === 'pet' ||
         lowerVertName === 'vcm' ||
         IS_PVC_VMD ||
-        IS_CHEMICAL
+        IS_CHEMICAL ||
+        IS_AROMATICS
       ) {
         // Month span check
         //check timeframe Multiple month spilt into single
@@ -839,7 +841,10 @@ const SlowDown = ({ permissions }) => {
           !IS_PTA_HMD &&
           !IS_PVC_VMD &&
           !IS_CHEMICAL &&
-          !IS_PP_SEZ
+          !IS_PP_SEZ &&
+          !IS_PP_DTA &&
+          !IS_PE_PP &&
+          !IS_AROMATICS
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
@@ -1144,7 +1149,6 @@ const SlowDown = ({ permissions }) => {
           field: item.field,
           title: item.title,
           widthT: item.field.toLowerCase() === 'uom' ? 90 : 150,
-          autoAdjust: false,
           editable:
             item.field === 'particulars' || item.field.toLowerCase() === 'uom'
               ? false
@@ -1282,6 +1286,11 @@ const SlowDown = ({ permissions }) => {
       PLANT_NAME_LOWER === 'vcm' &&
       SITE_NAME_LOWER === 'dmd'
 
+    var IS_VCM_HMD_VCM =
+      lowerVertName === 'vcm' &&
+      PLANT_NAME_LOWER === 'vcm' &&
+      SITE_NAME_LOWER === 'hmd'
+
     var IS_ELASTOMER_HMD_SBR =
       lowerVertName === 'elastomer' &&
       PLANT_NAME_LOWER === 'sbr' &&
@@ -1312,7 +1321,9 @@ const SlowDown = ({ permissions }) => {
       case verticalEnums.PVC:
         return IS_PVC_VMD ? SlowDownPeColumns : SlowDownPpDtaColumns
       case verticalEnums.VCM:
-        return IS_VCM_DMD_VCM ? SlowDownVcmColumns : SlowDownDmdVcmColumns
+        return IS_VCM_DMD_VCM || IS_VCM_HMD_VCM
+          ? SlowDownVcmColumns
+          : SlowDownDmdVcmColumns
       case verticalEnums.PET:
         return SlowDownPeColumns
       case verticalEnums.CHEMICAL:
@@ -1356,6 +1367,37 @@ const SlowDown = ({ permissions }) => {
     }
   }
 
+  const handleDeleteSelected = async (deleteIds) => {
+    if (!deleteIds || deleteIds?.length === 0) return
+    setLoading(true)
+
+    try {
+      await DataService.deleteMultipleSlowdown(deleteIds, keycloak, PLANT_ID)
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Records Deleted successfully!',
+        severity: 'success',
+      })
+      fetchData()
+
+      await MaintenanceDetailsApiService.getMaintenanceData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+    } catch (error) {
+      console.error('Error deleting Records', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error deleting records!',
+        severity: 'error',
+      })
+      setLoading(false)
+    }
+  }
+
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)
     setSnackbarData({
@@ -1365,7 +1407,15 @@ const SlowDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+
+      if (IS_ELASTOMER_JMD) {
+        response = await DtaDataService.exportSlowdownElastomerJmd(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
+      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
         response = await DtaDataService.exportSlowdownLineWise(
           keycloak,
           PLANT_ID,
@@ -1423,7 +1473,14 @@ const SlowDown = ({ permissions }) => {
     try {
       let response
 
-      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      if (IS_ELASTOMER_JMD) {
+        response = await DtaDataService.ImportSlowdownElastomerJmd(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
         response = await DtaDataService.ImportSlowdownLineWise(
           rawFile,
           keycloak,
@@ -1551,7 +1608,7 @@ const SlowDown = ({ permissions }) => {
       saveBtn: permissions?.saveBtn ?? true,
       customHeight: permissions?.customHeight,
       allAction: true,
-      downloadExcelBtn: IS_ELASTOMER_JMD ? false : true,
+      downloadExcelBtn: true,
       showTitleNameBusiness: true,
       titleName: SCREEN_NAME,
       uploadExcelBtn: SHOW_EXCEL_UPLOAD_BUTTON,
@@ -1567,6 +1624,7 @@ const SlowDown = ({ permissions }) => {
         lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
       highlightLine:
         IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD ? true : false,
+      deleteMultiple: IS_PP_DTA ? true : false,
     },
     isOldYear,
   )
@@ -1580,11 +1638,42 @@ const SlowDown = ({ permissions }) => {
           !IS_ELASTOMER_JMD &&
           !IS_ELASTOMER_HMD_SBR)) && (
         <Box style={{ margin: 0, padding: 0 }}>
-          <AopTabs
-            tabIndex={selectedTab}
-            setTabIndex={(newValue) => handleTabChange(null, newValue)}
-            tabs={['Slowdown Details', 'Slowdown History Config']}
-          />
+          <Tabs
+            value={selectedTab}
+            onChange={handleTabChange}
+            sx={{
+              borderBottom: '0px solid #ccc',
+              '.MuiTabs-indicator': { display: 'none' },
+              margin: '0px 0px 0px 0px',
+              minHeight: '28px',
+            }}
+          >
+            <Tab
+              label='Slowdown Details'
+              sx={{
+                border: '1px solid #ADD8E6',
+                borderBottom: '1px solid #ADD8E6',
+                fontSize: '0.75rem',
+                padding: '9px',
+                minHeight: '12px',
+              }}
+            />
+
+            <Tab
+              label={
+                lowerVertName === 'meg'
+                  ? 'Slowdown Configuration'
+                  : 'Slowdown History Config'
+              }
+              sx={{
+                border: '1px solid #ADD8E6',
+                borderBottom: '1px solid #ADD8E6',
+                fontSize: '0.75rem',
+                padding: '9px',
+                minHeight: '12px',
+              }}
+            />
+          </Tabs>
         </Box>
       )}
 
@@ -1618,6 +1707,7 @@ const SlowDown = ({ permissions }) => {
           currentRowId={currentRowId}
           unsavedChangesRef={unsavedChangesRef}
           deleteRowData={deleteRowData}
+          handleDeleteSelected={handleDeleteSelected}
           permissions={adjustedPermissions}
           handleCancelClick={handleCancelClick}
           focusFirstField={focusFirstField}

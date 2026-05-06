@@ -11,6 +11,12 @@ import { useSelector } from 'react-redux'
 import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
 import { ProductionNormsApiService } from 'services/production-norms-api-service'
+import {
+  CustomAccordion,
+  CustomAccordionDetails,
+  CustomAccordionSummary,
+} from 'utils/CustomAccrodian.js'
+import { Typography } from '../../../node_modules/@mui/material/index.js'
 export default function NaphthaHMDComponent() {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -47,6 +53,8 @@ export default function NaphthaHMDComponent() {
   const IS_OLD_YEAR = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
+  const lowerSiteName = siteObject?.name.toLowerCase()
+  const lowerPlantName = plantObject?.name.toLowerCase()
 
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [snackbarData, setSnackbarData] = useState({
@@ -54,7 +62,7 @@ export default function NaphthaHMDComponent() {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
-
+  const [calculationObject, setCalculationObject] = useState([])
   const unsavedChangesRef = useRef({ unsavedRows: {}, rowsBeforeChange: {} })
 
   const naphthaColumns = [
@@ -150,30 +158,35 @@ export default function NaphthaHMDComponent() {
       title: 'JMD',
       editable: true,
       width: 120,
+      type: 'number',
     },
     {
       field: 'hpn',
       title: 'HPN',
       editable: true,
       width: 120,
+      type: 'number',
     },
     {
       field: 'heavy',
       title: 'Heavy',
       editable: true,
       width: 120,
+      type: 'number',
     },
     {
       field: 'others',
       title: 'Others',
       editable: true,
       width: 120,
+      type: 'number',
     },
     {
       field: 'blend',
       title: 'Blend',
       editable: true,
       width: 120,
+      type: 'number',
     },
     {
       field: 'jmdId',
@@ -250,7 +263,7 @@ export default function NaphthaHMDComponent() {
         PLANT_ID,
         AOP_YEAR,
       )
-
+      setCalculationObject(res?.data?.aopCalculation)
       if (res?.code === 200) {
         const mapped = res?.data?.Data?.map((item, index) => ({
           id: item.id || index,
@@ -339,6 +352,7 @@ export default function NaphthaHMDComponent() {
         })
         setModifiedCells({})
         fetchData()
+        fetchLimsData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -355,7 +369,7 @@ export default function NaphthaHMDComponent() {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
+  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData, fetchLimsData])
   const saveChangesLimsData = React.useCallback(async () => {
     try {
       setLoading(true)
@@ -403,6 +417,7 @@ export default function NaphthaHMDComponent() {
         })
         setModifiedCells1({})
         fetchLimsData()
+        fetchData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -419,7 +434,43 @@ export default function NaphthaHMDComponent() {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells1, keycloak, PLANT_ID, AOP_YEAR, fetchLimsData])
+  }, [modifiedCells1, keycloak, PLANT_ID, AOP_YEAR, fetchLimsData, fetchData])
+
+  const handleCalculate = async () => {
+    try {
+      const data = await ProductionNormsApiService.calculateLIMSData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (data || data == 0) {
+        // dispatch(setIsBlocked(true))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        fetchLimsData()
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refresh Falied!',
+          severity: 'error',
+        })
+      }
+
+      return data
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+      console.error('Error!', error)
+    }
+  }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -440,10 +491,11 @@ export default function NaphthaHMDComponent() {
     {
       allAction: true,
       saveBtn: true,
-      showTitleNameBusiness: true,
+      showTitleNameBusiness: false,
       titleName: 'LIMS Data Extraction Settings',
       adjustedPermissions: true,
-      ExcelName: `${lowerVertName}_LIMS Data Extraction Settings_${AOP_YEAR}`,
+      downloadExcelBtnFromUI: true,
+      ExcelName: `${lowerVertName}_${lowerSiteName}_${lowerPlantName}_LIMS Data Extraction Settings`,
       //addButton: true,
       //deleteButton: true,
     },
@@ -453,12 +505,14 @@ export default function NaphthaHMDComponent() {
     {
       allAction: true,
       saveBtn: true,
-      showTitleNameBusiness: true,
+      showTitleNameBusiness: false,
       titleName: 'LIMS Data',
       adjustedPermissions: true,
-      ExcelName: `${lowerVertName}_LIMS Data_${AOP_YEAR}`,
-      //addButton: true,
-      //deleteButton: true,
+      downloadExcelBtnFromUI: true,
+      ExcelName: `${lowerVertName}_${lowerSiteName}_${lowerPlantName}_LIMS Data`,
+      showCalculate: true,
+      showCalculateVisibility:
+        Object.keys(calculationObject || {}).length > 0 ? true : false,
     },
     isOldYear,
   )
@@ -471,46 +525,75 @@ export default function NaphthaHMDComponent() {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
+      <CustomAccordion defaultExpanded disableGutters>
+        <CustomAccordionSummary
+          aria-controls='meg-grid-content'
+          id='meg-grid-header'
+        >
+          <Typography component='span' className='grid-title'>
+            LIMS Data Extraction Settings
+          </Typography>
+        </CustomAccordionSummary>
+        <CustomAccordionDetails>
+          <Box sx={{ width: '100%', margin: 0 }}>
+            <KendoDataTables
+              columns={naphthaColumns}
+              rows={rows}
+              setRows={setRows}
+              title='LIMS Data Extraction Settings'
+              modifiedCells={modifiedCells}
+              setModifiedCells={setModifiedCells}
+              remarkDialogOpen={remarkDialogOpen}
+              setRemarkDialogOpen={setRemarkDialogOpen}
+              currentRemark={currentRemark}
+              setCurrentRemark={setCurrentRemark}
+              currentRowId={currentRowId}
+              setCurrentRowId={setCurrentRowId}
+              enableSaveAddBtn={enableSaveAddBtn}
+              saveChanges={saveChanges}
+              //handleRemarkCellClick={handleRemarkCellClick}
+              //deleteRowData={deleteRowData}
+              permissions={adjustedPermissions}
+              groupBy='Particulars'
+            />
+          </Box>
+        </CustomAccordionDetails>
+      </CustomAccordion>
 
-      <KendoDataTables
-        columns={naphthaColumns}
-        rows={rows}
-        setRows={setRows}
-        title='LIMS Data Extraction Settings'
-        modifiedCells={modifiedCells}
-        setModifiedCells={setModifiedCells}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        setCurrentRowId={setCurrentRowId}
-        enableSaveAddBtn={enableSaveAddBtn}
-        saveChanges={saveChanges}
-        //handleRemarkCellClick={handleRemarkCellClick}
-        //deleteRowData={deleteRowData}
-        permissions={adjustedPermissions}
-        groupBy='Particulars'
-      />
+      <CustomAccordion defaultExpanded disableGutters>
+        <CustomAccordionSummary
+          aria-controls='meg-grid-content'
+          id='meg-grid-header'
+        >
+          <Typography component='span' className='grid-title'>
+            LIMS Data
+          </Typography>
+        </CustomAccordionSummary>
+        <CustomAccordionDetails>
+          <Box sx={{ width: '100%', margin: 0 }}>
+            <KendoDataTables
+              columns={limpsColumns}
+              rows={rows1}
+              setRows={setRows1}
+              title='LIMS Data'
+              modifiedCells={modifiedCells1}
+              setModifiedCells={setModifiedCells1}
+              remarkDialogOpen={remarkDialogOpen}
+              setRemarkDialogOpen={setRemarkDialogOpen}
+              currentRemark={currentRemark}
+              setCurrentRemark={setCurrentRemark}
+              currentRowId={currentRowId}
+              setCurrentRowId={setCurrentRowId}
+              enableSaveAddBtn={enableSaveAddBtn}
+              saveChanges={saveChangesLimsData}
+              //handleRemarkCellClick={handleRemarkCellClick}
+              permissions={adjustedPermissions1}
+              handleCalculate={handleCalculate}
+            />
+          </Box>
+        </CustomAccordionDetails>
+      </CustomAccordion>
 
-      <KendoDataTables
-        columns={limpsColumns}
-        rows={rows1}
-        setRows={setRows1}
-        title='LIMS Data'
-        modifiedCells={modifiedCells1}
-        setModifiedCells={setModifiedCells1}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        setCurrentRowId={setCurrentRowId}
-        enableSaveAddBtn={enableSaveAddBtn}
-        saveChanges={saveChangesLimsData}
-        //handleRemarkCellClick={handleRemarkCellClick}
-        permissions={adjustedPermissions1}
-      />
       <Notification
         open={snackbarOpen}
         message={snackbarData.message}

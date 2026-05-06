@@ -13,6 +13,21 @@ import { ProductionNormsApiService } from 'services/production-norms-api-service
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
+const MONTH_FIELDS = [
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+  'Jan',
+  'Feb',
+  'Mar',
+]
+
 const ProductionOptimizer = () => {
   const [tabIndex, setTabIndex] = useState(0)
   const [tabs, setTabs] = useState([])
@@ -50,6 +65,15 @@ const ProductionOptimizer = () => {
   const lowerVertName = vertName?.toLowerCase()
   const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
   const headerMap = generateHeaderNames(AOP_YEAR)
+  const IS_PP_DTA =
+    verticalObject?.name?.toLowerCase() === 'pp' &&
+    siteObject?.name?.toLowerCase() === 'dta'
+  const IS_PP_SEZ =
+    verticalObject?.name?.toLowerCase() === 'pp' &&
+    siteObject?.name?.toLowerCase() === 'sez'
+  const IS_PP_HMD =
+    verticalObject?.name?.toLowerCase() === 'pp' &&
+    siteObject?.name?.toLowerCase() === 'hmd'
 
   const [rows, setRows] = useState([])
   const [columns, setColumns] = useState([])
@@ -76,6 +100,69 @@ const ProductionOptimizer = () => {
 
   const valueFormat = ValueFormatterProduction()
 
+  const monthKeyMap = {
+    Apr: 4,
+    May: 5,
+    Jun: 6,
+    Jul: 7,
+    Aug: 8,
+    Sep: 9,
+    Oct: 10,
+    Nov: 11,
+    Dec: 12,
+    Jan: 1,
+    Feb: 2,
+    Mar: 3,
+  }
+
+  const addTotalColumnAndRow = useCallback(
+    (dynamicColumns, mappedRows) => {
+      const totalColumn = {
+        field: 'Total',
+        title: 'Total',
+        editable: false,
+        align: 'right',
+        format: valueFormat,
+        type: 'number',
+        isEditable: false,
+      }
+      const updatedColumns = [...dynamicColumns, totalColumn]
+      const rowsWithRowTotal = mappedRows.map((row) => {
+        const rowTotal = MONTH_FIELDS.reduce((sum, month) => {
+          return sum + (parseFloat(row[month]) || 0)
+        }, 0)
+        return { ...row, Total: rowTotal }
+      })
+      const totalRow = {
+        id: 'total-row',
+        sno: 'Total',
+        isEditable: false,
+        isTotalRow: true,
+      }
+
+      updatedColumns.forEach((col) => {
+        const isNumericOrMonth =
+          col.type === 'number' ||
+          MONTH_FIELDS.includes(col.field) ||
+          col.field === 'Total'
+
+        if (isNumericOrMonth) {
+          totalRow[col.field] = rowsWithRowTotal.reduce(
+            (sum, row) => sum + (parseFloat(row[col.field]) || 0),
+            0,
+          )
+        } else if (col.field !== 'sno') {
+          totalRow[col.field] = 'Total'
+        }
+      })
+
+      return {
+        updatedColumns,
+        rowsWithTotal: [...rowsWithRowTotal, totalRow],
+      }
+    },
+    [valueFormat],
+  )
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remarks || '')
@@ -184,20 +271,7 @@ const ProductionOptimizer = () => {
         selectedMode,
       )
       if (res?.code === 200) {
-        const monthKeyMap = {
-          Apr: 4,
-          May: 5,
-          Jun: 6,
-          Jul: 7,
-          Aug: 8,
-          Sep: 9,
-          Oct: 10,
-          Nov: 11,
-          Dec: 12,
-          Jan: 1,
-          Feb: 2,
-          Mar: 3,
-        }
+        // Build dynamic columns from API response
         const dynamicColumns = res?.data?.columns?.map((col) => {
           const monthKey = monthKeyMap[col.field]
           const isMonth = !!monthKey
@@ -211,14 +285,20 @@ const ProductionOptimizer = () => {
             isEditable: false,
           }
         })
-        setColumns(dynamicColumns || [])
+
         const mapped = res?.data?.data?.map((item, index) => ({
           id: index + 1,
           sno: index + 1,
           ...item,
           isEditable: false,
         }))
-        setRows(mapped || [])
+        const { updatedColumns, rowsWithTotal } = addTotalColumnAndRow(
+          dynamicColumns || [],
+          mapped || [],
+        )
+
+        setColumns(updatedColumns)
+        setRows(rowsWithTotal)
       } else {
         setRows([])
         setColumns([])
@@ -230,7 +310,15 @@ const ProductionOptimizer = () => {
     } finally {
       setLoading(false)
     }
-  }, [PLANT_ID, AOP_YEAR, keycloak, tabIndex, lineDetails, selectedMode])
+  }, [
+    PLANT_ID,
+    AOP_YEAR,
+    keycloak,
+    tabIndex,
+    lineDetails,
+    selectedMode,
+    addTotalColumnAndRow,
+  ])
 
   const fetchDataCombined = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR || !selectedCombinedMode) return
@@ -244,20 +332,7 @@ const ProductionOptimizer = () => {
         selectedCombinedMode,
       )
       if (res?.code === 200) {
-        const monthKeyMap = {
-          Apr: 4,
-          May: 5,
-          Jun: 6,
-          Jul: 7,
-          Aug: 8,
-          Sep: 9,
-          Oct: 10,
-          Nov: 11,
-          Dec: 12,
-          Jan: 1,
-          Feb: 2,
-          Mar: 3,
-        }
+        // Build dynamic columns from API response
         const dynamicColumns = res?.data?.columns?.map((col) => {
           const monthKey = monthKeyMap[col.field]
           const isMonth = !!monthKey
@@ -270,14 +345,20 @@ const ProductionOptimizer = () => {
             type: col.type,
           }
         })
-        setColumns1(dynamicColumns || [])
+
         const mapped = res?.data?.data?.map((item, index) => ({
           id: index + 1,
           sno: index + 1,
           ...item,
           isEditable: false,
         }))
-        setRows1(mapped || [])
+        const { updatedColumns, rowsWithTotal } = addTotalColumnAndRow(
+          dynamicColumns || [],
+          mapped || [],
+        )
+
+        setColumns1(updatedColumns)
+        setRows1(rowsWithTotal)
       } else {
         setRows1([])
         setColumns1([])
@@ -289,7 +370,7 @@ const ProductionOptimizer = () => {
     } finally {
       setLoading(false)
     }
-  }, [PLANT_ID, AOP_YEAR, keycloak, selectedCombinedMode])
+  }, [PLANT_ID, AOP_YEAR, keycloak, selectedCombinedMode, addTotalColumnAndRow])
 
   useEffect(() => {
     if (selectedMode) {
@@ -356,6 +437,34 @@ const ProductionOptimizer = () => {
       console.error('Error!', error)
     }
   }
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      let response
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PP_HMD) {
+        response = await ProductionNormsApiService.ProductionOptimizerExport(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          selectedMode,
+          `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
+        )
+      }
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -385,7 +494,9 @@ const ProductionOptimizer = () => {
           saveWithRemark: false,
           saveBtn: false,
           allAction: true,
-          downloadExcelBtnFromUI: true,
+          downloadExcelBtnFromUI:
+            IS_PP_DTA || IS_PP_SEZ || IS_PP_HMD ? false : true,
+          downloadExcelBtn: IS_PP_DTA || IS_PP_SEZ || IS_PP_HMD ? true : false,
           titleName: 'Production Optimizer',
           ExcelName: `${EXCEL_EXPORT_TITLE}_Production Optimizer`,
           showRefresh: false,
@@ -393,7 +504,7 @@ const ProductionOptimizer = () => {
           marginBottom: true,
           showCalculate: true,
           showCalculateVisibility: true,
-          dropdownLabel: 'Type',
+          dropdownLabel: 'Select Type',
           showModes: dropdownOptions.length > 0,
           modes: dropdownOptions.map((opt) => ({
             name: opt.value,
@@ -462,6 +573,7 @@ const ProductionOptimizer = () => {
           selectMode={selectedMode}
           setSelectMode={(val) => setSelectedMode(val)}
           handleCalculate={handleCalculate}
+          downloadExcelForConfiguration={downloadExcelForConfiguration}
         />
         <KendoDataTables
           title='Combined Production Optimizer'

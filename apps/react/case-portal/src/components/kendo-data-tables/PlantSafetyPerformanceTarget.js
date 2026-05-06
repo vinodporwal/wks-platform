@@ -115,7 +115,7 @@ export default function PlantSafetyPerformanceTarget() {
         editable: true,
       },
 
-      { field: 'remarks', title: 'Remark', widthT: 200, editable: false },
+      { field: 'remarks', title: 'Remark', widthT: 60, editable: false },
     ],
     [plantID, yearChanged],
   )
@@ -137,25 +137,22 @@ export default function PlantSafetyPerformanceTarget() {
         field: 'outcome',
         title: 'Outcome',
         editable: true,
-        widthT: 120
       },
       {
         field: 'recommendation',
         title: 'Recommendation',
         editable: true,
-        widthT: 120
       },
       {
         field: 'targetDate',
         title: 'Target Date',
         editable: true,
-        widthT: 120
       },
       {
         field: 'responsible',
         title: 'Resp.',
         editable: true,
-        widthT: 220,
+        widthT: 120,
       },
     ],
     [plantID, yearChanged],
@@ -179,25 +176,22 @@ export default function PlantSafetyPerformanceTarget() {
         field: 'rootCauses',
         title: 'Root Causes',
         editable: true,
-        widthT: 120
       },
       {
         field: 'recommendation',
         title: 'Recommendation',
         editable: true,
-        widthT: 120
       },
       {
         field: 'targetDate',
         title: 'Target Date',
         editable: true,
-        widthT: 120
       },
       {
         field: 'responsible',
         title: 'Resp.',
         editable: true,
-        widthT: 220,
+        widthT: 120,
       },
     ],
     [plantID, yearChanged],

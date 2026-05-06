@@ -2,21 +2,41 @@ import { Box } from '@mui/material'
 import AopTabs from 'components/AopTabs'
 import Notification from 'components/Utilities/Notification'
 import { verticalEnums } from 'enums/verticalEnums'
+// import { usePermissions } from 'hooks/usePermissions'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
+import { PIOImpactApiService } from 'services/Pio-Impact-api-service'
 import { useSession } from 'SessionStoreContext'
 import {
+  CustomAccordion,
+  CustomAccordionDetails,
+  CustomAccordionSummary,
+} from 'utils/CustomAccrodian'
+import {
+  Backdrop,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '../../../node_modules/@mui/material/index'
+import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
 import SelectivityData from './SelectivityData'
+import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/index'
+import { getRoleName } from 'services/role-service'
+import { ButtonGroup } from '../../../node_modules/@progress/kendo-react-buttons/index'
+import QualityParameters from './QualityParameters'
+import ExclusionDate from './ExclusionDate'
+import LineConfiguration from './LineConfiguration'
 import RawMaterialNormsBasis from './tab-components/RawMaterialNormsBasis'
+import CatChemNormsBasis from './tab-components/CatChemNormsBasis'
 import ProductionRange from './tab-components/ProductionRange'
 import PtaConfiguration from './tab-components/PtaConfiguration'
 import NSRAndMaterialPrices from './tab-components/NSRAndMaterialPrices/index'
@@ -24,6 +44,8 @@ import CatChemNormsBasis from './tab-components/CatChemNormsBasis'
 import { getRoleName } from 'services/role-service'
 
 import { Zoom, IconButton } from '@mui/material'
+import ShutdownRateGrid from './tab-components/ShutdownRate/ShutdownRateGrid'
+import ShutdownRate from './tab-components/ShutdownRate'
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import PublishedWithChangesIcon from '@mui/icons-material/PublishedWithChanges'
@@ -73,6 +95,8 @@ const ConfigurationTable = () => {
   const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
   const IS_AROMATICS_HMD =
     lowerVertName === 'aromatics' && lowerSiteName === 'hmd'
+  const IS_CHEMICAL_DMD =
+    lowerVertName === 'chemical' && lowerSiteName === 'dmd'
   const [tabIndex, setTabIndex] = useState(0)
   const [loadBtnClicked, setLoadBtnClicked] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -219,7 +243,8 @@ const ConfigurationTable = () => {
 
       if (
         lowerVertName == verticalEnums.MEG ||
-        lowerVertName == verticalEnums.CRACKER
+        lowerVertName == verticalEnums.CRACKER ||
+        IS_CHEMICAL_DMD
       ) {
         data = data?.filter(
           (item) =>
@@ -589,7 +614,11 @@ const ConfigurationTable = () => {
     getAopSummary()
 
     setTimeout(() => {
-      if (lowerVertName != 'cracker' && lowerVertName != 'meg') {
+      if (
+        lowerVertName != 'cracker' &&
+        lowerVertName != 'meg' &&
+        !IS_CHEMICAL_DMD
+      ) {
         if (lowerVertName === 'aromatics') {
           getRevision()
         }
@@ -1176,14 +1205,19 @@ const ConfigurationTable = () => {
     )
   }, [openConfirmDialogRev])
 
-  if (lowerVertName == 'meg' && lowerVertName !== 'cracker') {
+  if (
+    (lowerVertName == 'meg' || IS_CHEMICAL_DMD) &&
+    lowerVertName !== 'cracker'
+  ) {
     // const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
-    const megTabs = [
-      'Configuration',
-      'Constants',
-      'Report Manual Entry',
-      'NSR & Material Prices',
-    ]
+    const megTabs = IS_CHEMICAL_DMD
+      ? ['Configuration', 'Constants']
+      : [
+          'Configuration',
+          'Constants',
+          'Report Manual Entry',
+          'NSR & Material Prices',
+        ]
     const auditYear = AOP_YEAR
     let displayYear = ''
     if (auditYear) {
@@ -1701,6 +1735,14 @@ const ConfigurationTable = () => {
                   />
                 )
 
+              case getTheId('ShutdownRate'):
+                return (
+                  <ShutdownRate
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
               default:
                 return null
             }

@@ -41,6 +41,7 @@ import com.wks.caseengine.dto.YieldDTO;
 import com.wks.caseengine.dto.YieldParticularDTO;
 import com.wks.caseengine.dto.YieldVMDDTO;
 import com.wks.caseengine.entity.AopCalculation;
+import com.wks.caseengine.entity.ExcelConfigurations;
 import com.wks.caseengine.entity.NormAttributeTransactions;
 import com.wks.caseengine.entity.NormParameters;
 import com.wks.caseengine.entity.Plants;
@@ -50,6 +51,7 @@ import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.AopCalculationRepository;
+import com.wks.caseengine.repository.ExcelConfigurationsRepository;
 import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
 import com.wks.caseengine.repository.NormParametersRepository;
 import com.wks.caseengine.repository.PlantsRepository;
@@ -96,6 +98,9 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	@Autowired
 	private ExcelUtilityService excelUtilityService;
 
+	@Autowired
+	private ExcelConfigurationsRepository excelConfigurationsRepository;
+
 
 	@Override
 	public AOPMessageVM getSpyroOutputData(String year, String plantId,String Mode,String type) {
@@ -109,16 +114,21 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
         String verticalId = vertical.getId().toString();
         String procedureName=vertical.getName()+"_"+site.getName()+"_GetSpyroOutput";
 		try {
+			List<String> types=null;
+			if(type.equalsIgnoreCase("Feeds")) {
+				String storedProcedure=vertical.getName()+"_GetFeedsNorms";
+				 types= getTypes( plantId,  year,  siteId, storedProcedure);
+			}
 			List<Object[]> results = getData(plantId, year,siteId,verticalId,Mode,procedureName);
 
 			for (Object[] row : results) {
 				Map<String, Object> map = new HashMap<>(); // Create a new map for each row
-				
-				if(row[4].toString().contains(type)) {	
+				if(!type.equalsIgnoreCase("Feeds") && row[4].toString().toLowerCase().contains(type.toLowerCase())) {	
 					
 					map.put("normParameterFKID", row[2]);
 					map.put("particulars", row[3]);
 					map.put("normParameterDisplayName", row[4]);
+					map.put("type", row[6]);
 					map.put("uom", row[7]);
 					map.put("remarks", row[9]);
 					map.put("jan", (row[10] == null || row[10].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[10].toString()));
@@ -135,7 +145,58 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 					map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 					map.put("isEditable", row[22]);
 					spyroOutputDataList.add(map); // Add the map to the list here
-				}
+				}else {
+					
+					if (type.equalsIgnoreCase("Feeds")) {
+						if (types.contains(row[4].toString())) {
+							map.put("normParameterFKID", row[2]);
+							map.put("particulars", row[3]);
+							map.put("normParameterDisplayName", row[4]);
+							map.put("type", row[6]);
+							map.put("uom", row[7]);
+							map.put("remarks", row[9]);
+							map.put("jan", (row[10] == null || row[10].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[10].toString()));
+							map.put("feb", (row[11] == null || row[11].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[11].toString()));
+							map.put("mar", (row[12] == null || row[12].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[12].toString()));
+							map.put("apr", (row[13] == null || row[13].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[13].toString()));
+							map.put("may", (row[14] == null || row[14].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[14].toString()));
+							map.put("jun", (row[15] == null || row[15].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[15].toString()));
+							map.put("jul", (row[16] == null || row[16].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[16].toString()));
+							map.put("aug", (row[17] == null || row[17].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[17].toString()));
+							map.put("sep", (row[18] == null || row[18].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[18].toString()));
+							map.put("oct", (row[19] == null || row[19].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[19].toString()));
+							map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
+							map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
+							map.put("isEditable", row[22]);
+							spyroOutputDataList.add(map);
+						}}
+					
+					
+					    else if (type.equalsIgnoreCase("output")) {   
+							map.put("normParameterFKID", row[2]);
+							map.put("particulars", row[3]);
+							map.put("normParameterDisplayName", row[4]);
+							map.put("type", row[6]);
+							map.put("uom", row[7]);
+							map.put("remarks", row[9]);
+							map.put("jan", (row[10] == null || row[10].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[10].toString()));
+							map.put("feb", (row[11] == null || row[11].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[11].toString()));
+							map.put("mar", (row[12] == null || row[12].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[12].toString()));
+							map.put("apr", (row[13] == null || row[13].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[13].toString()));
+							map.put("may", (row[14] == null || row[14].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[14].toString()));
+							map.put("jun", (row[15] == null || row[15].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[15].toString()));
+							map.put("jul", (row[16] == null || row[16].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[16].toString()));
+							map.put("aug", (row[17] == null || row[17].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[17].toString()));
+							map.put("sep", (row[18] == null || row[18].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[18].toString()));
+							map.put("oct", (row[19] == null || row[19].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[19].toString()));
+							map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
+							map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
+							map.put("isEditable", row[22]);
+							spyroOutputDataList.add(map);
+						}
+					}
+
+						
 			}
 			aopMessageVM.setCode(200);
 			aopMessageVM.setMessage("Data fetched successfully");
@@ -148,6 +209,26 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 
+	}
+	
+	public List<String> getTypes(String plantId, String aopYear, String siteId,String procedureName) {
+		try {
+
+			String sql = "EXEC " + procedureName +
+					" @plantId = :plantId,@siteId = :siteId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+			query.setParameter("siteId", siteId);
+		
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
 	}
 	
 	public List<Object[]> getData(String plantId, String AopYear, String siteId,
@@ -1778,7 +1859,16 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	public byte[] createExcel(String year, String plantId, String mode, boolean isAfterSave,
 			Map<String, List<SpyroOutputDTO>> mapForExcel) {
 		try {
-			String structureJson = getJson();
+
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
+					.findByExcelIdAndVerticalFkIdAndSiteFkId("spyroOutput", plant.getVerticalFKId(),plant.getSiteFkId());
+
+					if (!optExcelConfiguration.isPresent())  return null;
+					
+		//	String structureJson = getJson();
+			String structureJson = optExcelConfiguration.get().getJsonValue();
 			ObjectMapper mapper = new ObjectMapper();
 			Map<String, List<List<Object>>> data = new HashMap<>();
 			Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
@@ -1845,9 +1935,18 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 								continue;
 							}
 						} else {
-							AOPMessageVM vm = getSpyroOutputData(year, plantId, mode, dataInput);
+							AOPMessageVM vm = new AOPMessageVM();
+							if(site.getName().equalsIgnoreCase("HMD"))  {  
+								vm = getSpyroOutputData(year, plantId, dataInput, "output");
+							}
+							else {
+								vm = getSpyroOutputData(year, plantId, mode, dataInput);
+							}
+							
+						
+
 							spyroOutputDataList = (List<Map<String, Object>>) vm.getData();
-							System.out.println("sheetName " + sheetName + " " + spyroOutputDataList);
+							
 						}
 
 						if(spyroOutputDataList==null ||spyroOutputDataList.isEmpty()){
@@ -1858,7 +1957,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 						for (Map<String, Object> map : spyroOutputDataList) {
 							List<Object> list = new ArrayList<>();
 							for (String header : headers) {
-								System.out.println("header " + header);
+								
 								list.add(map.get(header));
 							}
 							list.add(tableId);
@@ -1868,11 +1967,11 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 
 					}
 
-					System.out.println("datalist " + dataList);
+				
 					data.put(tableId, dataList);
 				}
 			}
-			System.out.println("data in calling method " + data);
+			
 			return excelUtilityService.generateFlexibleExcel(structure, data);
 
 		} catch (Exception e) {
@@ -1891,10 +1990,9 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 
 		try {
 
-			System.out.println("started Read spyroOutput in importExcel");
+		
 			Map<String, List<SpyroOutputDTO>> map = readSpyroOutputExcel(file.getInputStream(), year);
-			System.out.println("Ended Read spyroOutput in importExcel");
-			System.out.println("Started Save spyroOutput in importExcel");
+			
 			Map<String, List<SpyroOutputDTO>> mapForExcel = new HashMap<>();
 			List<SpyroOutputDTO> failedRecords = new ArrayList<>();
 			for (String key : map.keySet()) {
@@ -1904,7 +2002,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 				mapForExcel.put(key, failedList);
 			}
 
-			System.out.println("Ended Save spyroOutput in importExcel");
+			
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
 				byte[] fileByteArray = createExcel(year, plantFKId, mode, true, mapForExcel);
@@ -2202,6 +2300,211 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 		if (str == null || str.isEmpty())
 			return str;
 		return str.substring(0, 1).toUpperCase() + str.substring(1);
+	}
+
+
+	@Override
+	public byte[] exportSpyroOutputNewExcel(String year, String plantId, String mode, String type) {
+		try {
+			AOPMessageVM vm = getSpyroOutputData(year, plantId, mode, type);
+			List<Map<String, Object>> dataList = (List<Map<String, Object>>) vm.getData();
+
+			Workbook workbook = new XSSFWorkbook();
+			Sheet sheet = workbook.createSheet("SpyroOutput");
+
+			// Header style: bold + blue background
+			CellStyle headerStyle = workbook.createCellStyle();
+			Font headerFont = workbook.createFont();
+			headerFont.setBold(true);
+			headerStyle.setFont(headerFont);
+			headerStyle.setFillForegroundColor(IndexedColors.CORNFLOWER_BLUE.getIndex());
+			headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			headerStyle.setBorderBottom(BorderStyle.THIN);
+			headerStyle.setBorderTop(BorderStyle.THIN);
+			headerStyle.setBorderLeft(BorderStyle.THIN);
+			headerStyle.setBorderRight(BorderStyle.THIN);
+
+			// Normal data style
+			CellStyle dataStyle = workbook.createCellStyle();
+			dataStyle.setBorderBottom(BorderStyle.THIN);
+			dataStyle.setBorderTop(BorderStyle.THIN);
+			dataStyle.setBorderLeft(BorderStyle.THIN);
+			dataStyle.setBorderRight(BorderStyle.THIN);
+
+			// Remark column style: wrap text
+			CellStyle remarkStyle = workbook.createCellStyle();
+			remarkStyle.cloneStyleFrom(dataStyle);
+			remarkStyle.setWrapText(true);
+
+			// Dynamic month headers (Apr-YY to Mar-YY)
+			List<String> monthHeaders = excelUtilityService.getAcademicYearMonths(year);
+
+			// Build full header list
+			List<String> headers = new ArrayList<>();
+			headers.add("Particulars");
+			headers.add("UOM");
+			headers.addAll(monthHeaders); // 12 month columns
+			headers.add("Remark");
+			headers.add("normParameterFKID"); // hidden column (index 15)
+
+			// Write header row
+			Row headerRow = sheet.createRow(0);
+			for (int col = 0; col < headers.size(); col++) {
+				Cell cell = headerRow.createCell(col);
+				cell.setCellValue(headers.get(col));
+				cell.setCellStyle(headerStyle);
+			}
+
+			// Month keys in financial-year order: Apr → Mar
+			String[] monthKeys = {"apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec", "jan", "feb", "mar"};
+
+			// Write data rows
+			int rowIdx = 1;
+			for (Map<String, Object> rowData : dataList) {
+				Row row = sheet.createRow(rowIdx++);
+				int col = 0;
+
+				// Particulars
+				Cell particularsCell = row.createCell(col++);
+				particularsCell.setCellValue(rowData.get("particulars") != null ? rowData.get("particulars").toString() : "");
+				particularsCell.setCellStyle(dataStyle);
+
+				// UOM
+				Cell uomCell = row.createCell(col++);
+				uomCell.setCellValue(rowData.get("uom") != null ? rowData.get("uom").toString() : "");
+				uomCell.setCellStyle(dataStyle);
+
+				// Month columns
+				for (String monthKey : monthKeys) {
+					Cell monthCell = row.createCell(col++);
+					Object val = rowData.get(monthKey);
+					if (val instanceof Number) {
+						monthCell.setCellValue(((Number) val).doubleValue());
+					} else if (val != null) {
+						try {
+							monthCell.setCellValue(Double.parseDouble(val.toString()));
+						} catch (NumberFormatException e) {
+							monthCell.setCellValue(val.toString());
+						}
+					} else {
+						monthCell.setCellValue(0.0);
+					}
+					monthCell.setCellStyle(dataStyle);
+				}
+
+				// Remark (wrap text, no overflow)
+				Cell remarkCell = row.createCell(col++);
+				remarkCell.setCellValue(rowData.get("remarks") != null ? rowData.get("remarks").toString() : "");
+				remarkCell.setCellStyle(remarkStyle);
+
+				// normParameterFKID (hidden column)
+				Cell hiddenCell = row.createCell(col++);
+				hiddenCell.setCellValue(rowData.get("normParameterFKID") != null ? rowData.get("normParameterFKID").toString() : "");
+				hiddenCell.setCellStyle(dataStyle);
+			}
+
+			// Hide the normParameterFKID column (index 15)
+			sheet.setColumnHidden(15, true);
+
+			// Auto-size visible columns
+			for (int i = 0; i < 15; i++) {
+				sheet.autoSizeColumn(i);
+			}
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+
+	@Override
+	public AOPMessageVM importSpyroOutputNewExcel(String year, String plantId, String mode, String type, MultipartFile file) {
+		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+			throw new IllegalArgumentException("Invalid or empty Excel file.");
+		}
+
+		try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+
+			// Skip header row
+			if (rowIterator.hasNext()) {
+				rowIterator.next();
+			}
+
+			List<SpyroOutputDTO> dtoList = new ArrayList<>();
+
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+
+				// Skip completely empty rows
+				if (isSpyroRowEmpty(row)) {
+					continue;
+				}
+
+				SpyroOutputDTO dto = new SpyroOutputDTO();
+				try {
+					dto.setParticulars(getStringCellValue(row.getCell(0), dto));
+					dto.setUom(getStringCellValue(row.getCell(1), dto));
+					// Month columns in order: Apr(2) May(3) Jun(4) Jul(5) Aug(6) Sep(7)
+					//                         Oct(8) Nov(9) Dec(10) Jan(11) Feb(12) Mar(13)
+					dto.setApr(getNumericCellValue(row.getCell(2), dto));
+					dto.setMay(getNumericCellValue(row.getCell(3), dto));
+					dto.setJun(getNumericCellValue(row.getCell(4), dto));
+					dto.setJul(getNumericCellValue(row.getCell(5), dto));
+					dto.setAug(getNumericCellValue(row.getCell(6), dto));
+					dto.setSep(getNumericCellValue(row.getCell(7), dto));
+					dto.setOct(getNumericCellValue(row.getCell(8), dto));
+					dto.setNov(getNumericCellValue(row.getCell(9), dto));
+					dto.setDec(getNumericCellValue(row.getCell(10), dto));
+					dto.setJan(getNumericCellValue(row.getCell(11), dto));
+					dto.setFeb(getNumericCellValue(row.getCell(12), dto));
+					dto.setMar(getNumericCellValue(row.getCell(13), dto));
+					dto.setRemarks(getStringCellValue(row.getCell(14), dto));
+					dto.setNormParameterFKID(getStringCellValue(row.getCell(15), dto));
+					dto.setAuditYear(year);
+				} catch (Exception e) {
+					dto.setErrDescription(e.getMessage());
+					dto.setSaveStatus("Failed");
+				}
+
+				// Skip rows where normParameterFKID is missing (cannot update without it)
+				if (dto.getNormParameterFKID() == null || dto.getNormParameterFKID().trim().isEmpty()) {
+					continue;
+				}
+
+				dtoList.add(dto);
+			}
+
+			return updateSpyroOutputData(year, plantId, dtoList);
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid argument", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to import SpyroOutput Excel", ex);
+		}
+	}
+
+	/**
+	 * Returns true when all cells in the relevant columns (0–15) are null or blank.
+	 */
+	private boolean isSpyroRowEmpty(Row row) {
+		if (row == null) return true;
+		for (int col = 0; col <= 15; col++) {
+			Cell cell = row.getCell(col, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+			if (cell == null) continue;
+			CellType ct = cell.getCellType();
+			if (ct == CellType.NUMERIC) return false;
+			if (ct == CellType.BOOLEAN) return false;
+			if (ct == CellType.STRING && !cell.getStringCellValue().trim().isEmpty()) return false;
+		}
+		return true;
 	}
 
 

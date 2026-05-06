@@ -266,7 +266,7 @@ export const SlowDownPpDtaColumns = [
     minWidth: 100,
   },
   {
-    field: 'lineId',
+    field: 'lineDisplayName',
     title: 'Line',
     type: 'lineDropdown',
     editable: true,
@@ -351,8 +351,8 @@ export const NormalOpNormPpColumns = [
 
   {
     field: 'UOM',
-    title: 'UOM / MT',
-    widthT: 90,
+    title: 'UOM/MT',
+    widthT: 60,
     editable: false,
     minWidth: 100,
   },

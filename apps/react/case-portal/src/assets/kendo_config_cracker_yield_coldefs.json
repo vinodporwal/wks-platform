@@ -3,8 +3,7 @@
     "field": "particulars",
     "title": "Particulars",
     "editable": false,
-    "hidden": true,
-    "isVisible": false
+    "hidden": false
   },
 
   {

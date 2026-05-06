@@ -94,6 +94,8 @@ const ShutdownNorms = () => {
     SITE_NAME_LOWERCASE === 'hmd' &&
     PLANT_NAME_LOWERCASE === 'sbr'
 
+  const IS_PE_C2 = lowerVertName === 'pe' && SITE_NAME_LOWERCASE === 'c2'
+
   const IS_ELASTOMER_JMD_HIIR =
     lowerVertName === 'elastomer' &&
     SITE_NAME_LOWERCASE === 'jmd' &&
@@ -103,6 +105,7 @@ const ShutdownNorms = () => {
     lowerVertName === 'aromatics' &&
     SITE_NAME_LOWERCASE === 'sez' &&
     PLANT_NAME_LOWERCASE === 'px4'
+  const IS_VCM_HMD = lowerVertName === 'vcm' && SITE_NAME_LOWERCASE === 'hmd'
 
   const IS_PVC_DMD =
     ['pvc'].includes(lowerVertName) && ['dmd'].includes(SITE_NAME_LOWERCASE)
@@ -119,9 +122,17 @@ const ShutdownNorms = () => {
   const IS_PTA_DMD =
     ['pta'].includes(lowerVertName) && ['dmd'].includes(SITE_NAME_LOWERCASE)
   const IS_CHEMICAL = ['chemical'].includes(lowerVertName)
+  const IS_ELASTOMER_JMD_IIR =
+    ['elastomer'].includes(lowerVertName) &&
+    ['jmd'].includes(SITE_NAME_LOWERCASE) &&
+    ['iir'].includes(PLANT_NAME_LOWERCASE)
+  const IS_PE_DMD_HDPE =
+    PLANT_NAME?.toLowerCase() == 'hdpe' &&
+    SITE_NAME?.toLowerCase() == 'dmd' &&
+    VERTICAL_NAME?.toLowerCase() == 'pe'
 
   const textNote =
-    IS_PE_PP_VERTICAL || IS_PVC_DMD || IS_ELASTOMER_JMD_HIIR
+    (IS_PE_PP_VERTICAL || IS_PVC_DMD || IS_ELASTOMER_JMD_HIIR) && !IS_PE_C2
       ? '*Adding shutdown consumption to all grades will replace any existing individual grade consumption entries.'
       : '*Quantities are per day basis'
   const textNoteWhileSaving =
@@ -417,6 +428,7 @@ const ShutdownNorms = () => {
         setLoading(false)
         return
       }
+
       let data = []
 
       if (lowerVertName != 'cracker') {
@@ -629,7 +641,13 @@ const ShutdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || lowerVertName === 'pta' || IS_CHEMICAL || IS_AROMATICS_SEZ_PX4) {
+      if (
+        lowerVertName === 'vcm' ||
+        lowerVertName === 'pta' ||
+        IS_CHEMICAL ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_ELASTOMER_JMD_IIR
+      ) {
         // Use shutdownNormsExportNonGrade for VCM
         response =
           await NormalOperationNormsApiService.shutdownNormsExportNonGrade(
@@ -685,7 +703,13 @@ const ShutdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || lowerVertName === 'pta' || IS_CHEMICAL || IS_AROMATICS_SEZ_PX4) {
+      if (
+        lowerVertName === 'vcm' ||
+        lowerVertName === 'pta' ||
+        IS_CHEMICAL ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_ELASTOMER_JMD_IIR
+      ) {
         // Use saveShutdownNormsExcelNonGrade for VCM
         response =
           await NormalOperationNormsApiService.saveShutdownNormsExcelNonGrade(
@@ -786,6 +810,7 @@ const ShutdownNorms = () => {
       showUnit: false,
       units: ['TPH', 'TPD'],
       saveWithRemark: false,
+      showCalulcationPromt: IS_PE_C2 ? true : false,
 
       showNote:
         lowerVertName === 'meg' ||
@@ -821,7 +846,9 @@ const ShutdownNorms = () => {
               !IS_PTA_DMD ||
               IS_PVC_DMD ||
               IS_ELASTOMER_JMD
-            ? false
+            ? IS_PE_C2 || IS_VCM_HMD
+              ? true
+              : false // ? only change
             : true,
 
       showCalculateVisibility:
@@ -839,6 +866,8 @@ const ShutdownNorms = () => {
         IS_PVC_DMD
           ? true
           : false,
+
+      IS_PE_C2_HIDE: IS_PE_C2 ? false : true,
       marginBottom:
         IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||
@@ -848,7 +877,7 @@ const ShutdownNorms = () => {
         IS_PVC_DMD
           ? true
           : false,
-      dropdownLabel: 'Grade',
+      dropdownLabel: 'Select Grade',
       allAction: true,
       downloadExcelBtnFromUI:
         !IS_PE_HMD ||
@@ -875,7 +904,8 @@ const ShutdownNorms = () => {
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta' ||
         IS_AROMATICS_SEZ_PX4 ||
-        IS_CHEMICAL
+        IS_CHEMICAL ||
+        IS_ELASTOMER_JMD_IIR
           ? true
           : false,
       uploadExcelBtn:
@@ -892,10 +922,11 @@ const ShutdownNorms = () => {
         IS_ELASTOMER_JMD_HIIR ||
         IS_AROMATICS_SEZ_PX4 ||
         IS_ELASTOMER_HMD_SBR ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_ELASTOMER_JMD_IIR
           ? true
           : false,
-      showTitleNameBusiness: true,
+      showTitleNameBusiness: IS_PE_DMD_HDPE ? false : true,
 
       titleName:
         IS_PET_VERTICAL || IS_PVC_VMD
@@ -906,6 +937,9 @@ const ShutdownNorms = () => {
             ? `Shutdown Consumption (Norms/Quantity)`
             : SCREEN_NAME,
       ExcelName: EXCEL_EXPORT_TITLE,
+      showTitleAndInformation: IS_PE_DMD_HDPE ? true : false,
+      titleAndInformation:
+        'The Shutdown Consumption Quantity to be entered here represents the additional material consumption incurred over and above the steady-state (standard) consumption during all slowdown and shutdown events occurring within the selected month.',
     },
     isOldYear,
   )

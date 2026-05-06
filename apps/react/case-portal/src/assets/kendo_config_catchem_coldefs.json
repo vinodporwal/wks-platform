@@ -3,8 +3,7 @@
     "field": "particulars",
     "title": "Particulars",
     "editable": false,
-    "widthT": 250,
-    "autoAdjust": false,
+    "widthT": 220,
     "hidden": false
   },
   {
@@ -18,14 +17,13 @@
     "title": "Value",
     "editable": true,
     "type": "number",
-    "widthT": 130
+    "widthT": 120
   },
   {
     "field": "remarks",
     "title": "Remark",
     "editable": false,
     "type": "string",
-    "widthT": 250,
-    "autoAdjust": false
+    "widthT": 250
   }
 ]
