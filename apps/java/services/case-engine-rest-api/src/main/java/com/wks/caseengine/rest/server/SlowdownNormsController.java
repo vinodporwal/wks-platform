@@ -114,7 +114,6 @@ public class SlowdownNormsController {
 	        ) {
 			return	slowdownNormsService.importSlowdownConsumption(year,UUID.fromString(plantId),gradeId, file); 
 	}
-	
 	@PostMapping(value = "/slowdown-consumption-import", consumes = "multipart/form-data")
 	public AOPMessageVM gradeWiseImportExcel(
 	         @RequestParam("plantId") String plantId,
@@ -207,4 +206,3 @@ public class SlowdownNormsController {
 		}
 
 }
-

@@ -196,45 +196,38 @@ const ProductionNormsBasisFCC = () => {
     return tab ? tab.displayName : null
   }
 
-  // Dynamic tab list from API (filtered to exclude 'Report Manual Entry' and 'Configuration')
-  const tablist = tabs
+  // Dynamic tab list from API (filtered to exclude 'Report Manual Entry')
+  const filteredTabs = tabs
     .map((tabId) => {
-      if (!tabId || !availableTabs.length) return ''
       const tabInfo = availableTabs.find(
         (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
       )
 
-      if (tabInfo) {
-        const originalName = tabInfo.displayName
-        if (originalName === 'Report Manual Entry' || originalName === 'Configuration') {
-          return null
-        }
-        return originalName
-      }
-      return tabId
-    })
-    .filter((tab) => tab !== null)
+      if (!tabInfo) return null
 
-  // Map tablist index back to the raw tabs array index for renderTab
-  const filteredTabIds = tabs.filter((tabId) => {
-    if (!tabId || !availableTabs.length) return false
-    const tabInfo = availableTabs.find(
-      (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
-    )
-    if (!tabInfo) return false
-    const name = tabInfo.displayName
-    return name !== 'Report Manual Entry' && name !== 'Configuration'
-  })
+      const name = tabInfo.displayName
+
+      if (name === 'Report Manual Entry' || name === 'Configuration') {
+        return null
+      }
+
+      return {
+        id: tabId,
+        name,
+      }
+    })
+    .filter(Boolean)
 
   const renderTab = () => {
-    if (!filteredTabIds.length || !availableTabs.length) {
+    if (!filteredTabs.length || !availableTabs.length) {
       return null
     }
 
-    const currentTabId = filteredTabIds[tabIndex]
+    const currentTabId = filteredTabs[tabIndex]?.id
     if (!currentTabId) return null
 
-    const currentTabName = getTabName(currentTabId)
+    const tabData = getTabName(currentTabId)
+    const currentTabName = typeof tabData === 'object' ? tabData.name : tabData
 
     switch (currentTabName) {
       case 'Configuration':
@@ -249,11 +242,13 @@ const ProductionNormsBasisFCC = () => {
         return <Constants startDate={startDate} endDate={endDate} />
       case 'PIMS Throughput':
         return <PIMSThroughput startDate={startDate} endDate={endDate} />
+
       default:
         return null
     }
   }
 
+  console.log('filteredTabs', filteredTabs)
   return (
     <div>
       <Stack sx={{ mt: 1, mb: 1 }}>
@@ -277,7 +272,7 @@ const ProductionNormsBasisFCC = () => {
           <TabSection
             tabIndex={tabIndex}
             setTabIndex={setTabIndex}
-            tabs={tablist}
+            tabs={filteredTabs}
           />
         </Stack>
       )}

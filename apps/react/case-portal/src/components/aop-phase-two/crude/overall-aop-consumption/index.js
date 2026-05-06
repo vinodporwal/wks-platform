@@ -93,7 +93,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'august',
+      field: 'aug',
       title: headerMap[8],
       widthT: 120,
       minWidth: 120,
@@ -102,7 +102,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'september',
+      field: 'sep',
       title: headerMap[9],
       widthT: 120,
       minWidth: 120,
@@ -111,7 +111,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'october',
+      field: 'oct',
       title: headerMap[10],
       widthT: 120,
       minWidth: 120,
@@ -120,7 +120,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'november',
+      field: 'nov',
       title: headerMap[11],
       widthT: 120,
       minWidth: 120,
@@ -129,7 +129,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'december',
+      field: 'dec',
       title: headerMap[12],
       widthT: 120,
       minWidth: 120,
@@ -138,7 +138,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'january',
+      field: 'jan',
       title: headerMap[1],
       widthT: 120,
       minWidth: 120,
@@ -147,7 +147,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'february',
+      field: 'feb',
       title: headerMap[2],
       widthT: 120,
       minWidth: 120,

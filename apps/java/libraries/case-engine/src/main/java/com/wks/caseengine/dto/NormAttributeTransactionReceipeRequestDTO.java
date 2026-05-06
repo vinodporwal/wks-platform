@@ -34,7 +34,6 @@ public class NormAttributeTransactionReceipeRequestDTO {
 			this.errDescription = errDescription;
 		}
 	    
-		
 	    
 
 	    

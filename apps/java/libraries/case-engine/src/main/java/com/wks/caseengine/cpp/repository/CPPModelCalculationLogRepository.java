@@ -31,19 +31,19 @@ public interface CPPModelCalculationLogRepository extends JpaRepository<CPPModel
      * Find all parent execution records (full year runs)
      * Parent records have parentExecutionFkId = NULL
      */
-    @Query(value = "SELECT * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE ParentExecution_FK_Id IS NULL ORDER BY ExecutionDateTime DESC", nativeQuery = true)
+    @Query(value = "SELECT * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE ParentExecution_FK_Id IS NULL AND Month IS NULL ORDER BY ExecutionDateTime DESC", nativeQuery = true)
     List<CPPModelCalculationLog> findAllParentExecutions();
 
     /**
      * Find parent executions by financial year
      */
-    @Query(value = "SELECT * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE ParentExecution_FK_Id IS NULL AND FinancialYear = :financialYear ORDER BY ExecutionDateTime DESC", nativeQuery = true)
+    @Query(value = "SELECT * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE ParentExecution_FK_Id IS NULL AND Month IS NULL AND FinancialYear = :financialYear ORDER BY ExecutionDateTime DESC", nativeQuery = true)
     List<CPPModelCalculationLog> findParentExecutionsByFinancialYear(@Param("financialYear") Integer financialYear);
 
     /**
      * Find parent executions by status
      */
-    @Query(value = "SELECT * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE ParentExecution_FK_Id IS NULL AND Status = :status ORDER BY ExecutionDateTime DESC", nativeQuery = true)
+    @Query(value = "SELECT * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE ParentExecution_FK_Id IS NULL AND Month IS NULL AND Status = :status ORDER BY ExecutionDateTime DESC", nativeQuery = true)
     List<CPPModelCalculationLog> findParentExecutionsByStatus(@Param("status") String status);
 
     /**
@@ -64,13 +64,13 @@ public interface CPPModelCalculationLogRepository extends JpaRepository<CPPModel
     /**
      * Find parent execution by ID (with null check for parentExecutionFkId)
      */
-    @Query(value = "SELECT * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE Id = :id AND ParentExecution_FK_Id IS NULL", nativeQuery = true)
+    @Query(value = "SELECT * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE Id = :id AND ParentExecution_FK_Id IS NULL AND Month IS NULL", nativeQuery = true)
     Optional<CPPModelCalculationLog> findParentExecutionById(@Param("id") UUID id);
 
     /**
      * Check if parent execution exists
      */
-    @Query(value = "SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE Id = :id AND ParentExecution_FK_Id IS NULL", nativeQuery = true)
+    @Query(value = "SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE Id = :id AND ParentExecution_FK_Id IS NULL AND Month IS NULL", nativeQuery = true)
     Integer existsParentExecutionById(@Param("id") UUID id);
 
     /**
@@ -82,13 +82,13 @@ public interface CPPModelCalculationLogRepository extends JpaRepository<CPPModel
     /**
      * Get latest parent execution
      */
-    @Query(value = "SELECT TOP 1 * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE ParentExecution_FK_Id IS NULL ORDER BY ExecutionDateTime DESC", nativeQuery = true)
+    @Query(value = "SELECT TOP 1 * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE ParentExecution_FK_Id IS NULL AND Month IS NULL ORDER BY ExecutionDateTime DESC", nativeQuery = true)
     Optional<CPPModelCalculationLog> findLatestParentExecution();
 
     /**
      * Find parent executions with filters (financial year, status)
      */
-    @Query(value = "SELECT * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE ParentExecution_FK_Id IS NULL " +
+    @Query(value = "SELECT * FROM CPPModelCalculationLogs WITH(NOLOCK) WHERE ParentExecution_FK_Id IS NULL AND Month IS NULL " +
            "AND (:financialYear IS NULL OR FinancialYear = :financialYear) " +
            "AND (:status IS NULL OR Status = :status) " +
            "ORDER BY ExecutionDateTime DESC", nativeQuery = true)

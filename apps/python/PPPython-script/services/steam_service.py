@@ -52,8 +52,8 @@ NORM_STG_POWER_PER_KWH = 0.0020   # 0.0020 KWh of power per 1 KWh generated (aux
 NORM_STG_SHP_PER_KWH = 0.0036     # 0.0036 MT of SHP steam per 1 KWh generated
 
 # Steam to Power Conversion (for excess steam handling)
-# 3.56 MT of SHP steam = 1 MWh of power from STG
-STEAM_TO_POWER_MT_PER_MWH = 3.56  # MT of SHP steam per MWh of power
+# 3.56 MT of SHP steam = 1 MWh of power from STG (Fallback only)
+STEAM_TO_POWER_MT_PER_MWH = 3.56  # Fallback only - dynamic sp_steam_power used when available
 
 
 # ============================================================
@@ -122,6 +122,7 @@ def calculate_lp_balance_stg_based(
     lp_fixed: float,
     bfw_ufu: float,
     stg_lp_extraction_tph: float,
+    stg_eq_svh_lp_tph: float,
     stg_operating_hours: float,
     lp_ufu_mt: float = None,
 ) -> dict:
@@ -170,8 +171,8 @@ def calculate_lp_balance_stg_based(
     lp_prds_ratio = lp_from_prds / lp_total if lp_total > 0 else 0
     
     # Step 4: Calculate what each supplier needs
-    # STG LP needs SHP
-    shp_for_stg_lp = lp_from_stg * NORM_SHP_PER_LP_STG
+    # STG LP needs SHP (based on lookup table eq_svh_lp_tph)
+    shp_for_stg_lp = stg_eq_svh_lp_tph * stg_operating_hours
     
     # PRDS LP needs MP and BFW
     mp_for_prds_lp = lp_from_prds * NORM_MP_PER_LP_PRDS
@@ -261,6 +262,7 @@ def calculate_mp_balance_stg_based(
     mp_fixed: float,
     mp_for_lp: float,
     stg_mp_extraction_tph: float,
+    stg_eq_svh_mp_tph: float,
     stg_operating_hours: float,
     mp_ufu_mt: float = None,
 ) -> dict:
@@ -303,8 +305,8 @@ def calculate_mp_balance_stg_based(
     mp_prds_ratio = mp_from_prds / mp_total if mp_total > 0 else 0
     
     # Step 3: Calculate what each supplier needs
-    # STG MP needs SHP
-    shp_for_stg_mp = mp_from_stg * NORM_SHP_PER_MP_STG
+    # STG MP needs SHP (based on lookup table eq_svh_mp_tph)
+    shp_for_stg_mp = stg_eq_svh_mp_tph * stg_operating_hours
     
     # PRDS MP needs SHP and BFW
     shp_for_prds_mp = mp_from_prds * NORM_SHP_PER_MP_PRDS
@@ -463,6 +465,11 @@ def calculate_steam_balance(
     stg_shp_power: float = 0.0,
     lp_ufu_mt: float = None,
     mp_ufu_mt: float = None,
+    stg_lp_extraction_tph: float = 0.0,
+    stg_mp_extraction_tph: float = 0.0,
+    stg_eq_svh_lp_tph: float = 0.0,
+    stg_eq_svh_mp_tph: float = 0.0,
+    stg_operating_hours: float = 0.0,
 ) -> dict:
     """
     Calculate complete steam balance for all headers.
@@ -481,10 +488,30 @@ def calculate_steam_balance(
         dict with complete steam balance for all headers
     """
     # Step 1: LP Balance
-    lp = calculate_lp_balance(lp_process, lp_fixed, bfw_ufu, lp_ufu_mt=lp_ufu_mt)
-    
-    # Step 2: MP Balance (uses mp_for_lp from LP balance + optional MP U4U)
-    mp = calculate_mp_balance(mp_process, mp_fixed, lp["mp_for_prds_lp"], mp_ufu_mt=mp_ufu_mt)
+    if stg_operating_hours > 0:
+        lp = calculate_lp_balance_stg_based(
+            lp_process=lp_process,
+            lp_fixed=lp_fixed,
+            bfw_ufu=bfw_ufu,
+            stg_lp_extraction_tph=stg_lp_extraction_tph,
+            stg_eq_svh_lp_tph=stg_eq_svh_lp_tph,
+            stg_operating_hours=stg_operating_hours,
+            lp_ufu_mt=lp_ufu_mt
+        )
+        
+        # Step 2: MP Balance
+        mp = calculate_mp_balance_stg_based(
+            mp_process=mp_process,
+            mp_fixed=mp_fixed,
+            mp_for_lp=lp["mp_for_prds_lp"],
+            stg_mp_extraction_tph=stg_mp_extraction_tph,
+            stg_eq_svh_mp_tph=stg_eq_svh_mp_tph,
+            stg_operating_hours=stg_operating_hours,
+            mp_ufu_mt=mp_ufu_mt
+        )
+    else:
+        lp = calculate_lp_balance(lp_process, lp_fixed, bfw_ufu, lp_ufu_mt=lp_ufu_mt)
+        mp = calculate_mp_balance(mp_process, mp_fixed, lp["mp_for_prds_lp"], mp_ufu_mt=mp_ufu_mt)
 
     # Step 3: HP Balance (HP demand comes from process + fixed only)
     hp = calculate_hp_balance(hp_process, hp_fixed)

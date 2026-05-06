@@ -396,7 +396,9 @@ def _build_generation_map(result: dict) -> dict:
     # Get STG SHP norm from lookup table (sp_steam_power is MT/MWh, convert to MT/KWh)
     # sp_steam_power = SteamForPower / LoadMW (e.g., 50.78 / 15 = 3.385 MT/MWh)
     # Norm for NMD = sp_steam_power / 1000 (to get MT/KWh)
-    sp_steam_power = stg_extraction.get('sp_steam_power', 3.56) if stg_extraction else 3.56
+    sp_steam_power = stg_extraction.get('sp_steam_power', 0) if stg_extraction else 0
+    if sp_steam_power <= 0:
+        print("    [WARNING] sp_steam_power not available in stg_extraction. STG SHP norm will be saved as 0 MT/KWh.")
     stg_shp_norm = sp_steam_power / 1000  # Convert MT/MWh to MT/KWh
     stg_condensate_norm = stg_extraction.get('stg_condensate_norm', 0.00293) if stg_extraction else 0.00293
     

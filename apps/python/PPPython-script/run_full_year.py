@@ -306,26 +306,25 @@ def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_c
         # Save calculation log to database
         if save_calculation_log_enabled:
             fy_month_id = get_financial_year_month_id(month, year)
-            if fy_month_id:
-                log_result = save_calculation_log(
-                    month=month,
-                    year=year,
-                    financial_year_month_id=fy_month_id,
-                    calculation_result=result,
-                    execution_time_seconds=execution_time,
-                    parent_execution_id=parent_execution_id,
-                    generate_excel=False  # Disable individual Excel - only annual report will be generated
-                )
-                result["calculation_log_saved"] = log_result.get("success", False)
-                result["calculation_log_id"] = log_result.get("log_id")
-                
-                if log_result.get("success"):
-                    print(f"\n[LOG] Calculation log saved: {log_result.get('log_id')}")
-                else:
-                    print(f"\n[LOG WARNING] Failed to save calculation log: {log_result.get('message')}")
+            if not fy_month_id:
+                print(f"\n[LOG WARNING] FinancialYearMonth not found for {month}/{year}, saving log without FinancialYearMonth_FK_Id")
+
+            log_result = save_calculation_log(
+                month=month,
+                year=year,
+                financial_year_month_id=fy_month_id,
+                calculation_result=result,
+                execution_time_seconds=execution_time,
+                parent_execution_id=parent_execution_id,
+                generate_excel=False  # Disable individual Excel - only annual report will be generated
+            )
+            result["calculation_log_saved"] = log_result.get("success", False)
+            result["calculation_log_id"] = log_result.get("log_id")
+            
+            if log_result.get("success"):
+                print(f"\n[LOG] Calculation log saved: {log_result.get('log_id')}")
             else:
-                print(f"\n[LOG WARNING] FinancialYearMonth not found for {month}/{year}, skipping log save")
-                result["calculation_log_saved"] = False
+                print(f"\n[LOG WARNING] Failed to save calculation log: {log_result.get('message')}")
         
         return result
         
@@ -356,18 +355,20 @@ def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_c
         # Try to save error log
         if save_calculation_log_enabled:
             fy_month_id = get_financial_year_month_id(month, year)
-            if fy_month_id:
-                log_result = save_calculation_log(
-                    month=month,
-                    year=year,
-                    financial_year_month_id=fy_month_id,
-                    calculation_result=error_result,
-                    execution_time_seconds=execution_time,
-                    parent_execution_id=parent_execution_id,
-                    generate_excel=False  # Disable individual Excel for errors too
-                )
-                error_result["calculation_log_saved"] = log_result.get("success", False)
-                error_result["calculation_log_id"] = log_result.get("log_id")
+            if not fy_month_id:
+                print(f"\n[LOG WARNING] FinancialYearMonth not found for {month}/{year}, saving error log without FinancialYearMonth_FK_Id")
+
+            log_result = save_calculation_log(
+                month=month,
+                year=year,
+                financial_year_month_id=fy_month_id,
+                calculation_result=error_result,
+                execution_time_seconds=execution_time,
+                parent_execution_id=parent_execution_id,
+                generate_excel=False  # Disable individual Excel for errors too
+            )
+            error_result["calculation_log_saved"] = log_result.get("success", False)
+            error_result["calculation_log_id"] = log_result.get("log_id")
         
         return error_result
 
@@ -521,22 +522,27 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
         if save_calculation_logs and not is_single_month:
             from services.calculation_log_service import get_financial_year_month_id, save_calculation_log
             fy_month_id = get_financial_year_month_id(month, year)
-            if fy_month_id:
-                with db_log_lock:
-                    log_result = save_calculation_log(
-                        month=month,
-                        year=year,
-                        financial_year_month_id=fy_month_id,
-                        calculation_result=result,
-                        execution_time_seconds=result.get("execution_time_seconds"),
-                        parent_execution_id=parent_execution_id,
-                        generate_excel=False
-                    )
-                result["calculation_log_saved"] = log_result.get("success", False)
-                if log_result.get("success"):
-                    print(f"[LOG] Calculation log saved: {log_result.get('log_id')}")
-                else:
-                    print(f"[LOG WARNING] Failed to save calculation log: {log_result.get('message')}")
+            result["financial_year_month_id"] = fy_month_id
+            if not fy_month_id:
+                print(f"[LOG WARNING] FinancialYearMonth not found for {month}/{year}, saving log without FinancialYearMonth_FK_Id")
+
+            with db_log_lock:
+                log_result = save_calculation_log(
+                    month=month,
+                    year=year,
+                    financial_year_month_id=fy_month_id,
+                    calculation_result=result,
+                    execution_time_seconds=result.get("execution_time_seconds"),
+                    parent_execution_id=parent_execution_id,
+                    generate_excel=False
+                )
+            result["calculation_log_saved"] = log_result.get("success", False)
+            result["calculation_log_id"] = log_result.get("log_id")
+            result["calculation_log_message"] = log_result.get("message")
+            if log_result.get("success"):
+                print(f"[LOG] Calculation log saved: {log_result.get('log_id')}")
+            else:
+                print(f"[LOG WARNING] Failed to save calculation log: {log_result.get('message')}")
         return result
 
     def _process_month(month_year_tuple):
@@ -572,6 +578,10 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
                 "iterations": iterations_used,
                 "converged": success,
                 "calculation_result": result,
+                "financial_year_month_id": result.get("financial_year_month_id"),
+                "calculation_log_saved": result.get("calculation_log_saved"),
+                "calculation_log_id": result.get("calculation_log_id"),
+                "calculation_log_message": result.get("calculation_log_message"),
             }
 
             final_dispatch = usd_result.get("final_dispatch", [])
@@ -669,6 +679,8 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
                             results["full_year_comparison_file"] = full_year_comparison_path
                     except Exception as comparison_error:
                         month_result["comparison_error"] = str(comparison_error)
+                        import traceback
+                        traceback.print_exc()
                         with print_lock:
                             _real_stdout.write(
                                 f"  [WARN] {month_result['month_name']} {month_result['year']}: comparison file generation failed - {comparison_error}\n"
@@ -712,6 +724,11 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
     print(f"\nAll months computed in {total_elapsed:.1f}s "
           f"({total_elapsed/60:.1f} min) using {max_workers} workers.\n")
 
+    failed_log_saves = [
+        month_data for month_data in results["months"].values()
+        if month_data.get("calculation_log_saved") is False
+    ]
+
     # Print final summary
     print("\n" + "=" * 80)
     print("FULL YEAR RUN COMPLETE - SUMMARY")
@@ -725,6 +742,15 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
     print(f"Total Power Generated: {results['summary']['total_power_kwh']:,.0f} KWH")
     print(f"Total SHP Steam: {results['summary']['total_shp_mt']:,.2f} MT")
     print(f"Log folder: {run_log_folder}")
+    print(f"Monthly calculation logs saved: {len(results['months']) - len(failed_log_saves)}/{len(results['months'])}")
+    if failed_log_saves:
+        print("Monthly calculation log save failures:")
+        for month_data in failed_log_saves:
+            print(
+                f"  - {month_data['month_name']} {month_data['year']}: "
+                f"FinancialYearMonthId={month_data.get('financial_year_month_id')} | "
+                f"Message={month_data.get('calculation_log_message')}"
+            )
     if results.get("comparison_folder"):
         print(f"Comparison folder: {results['comparison_folder']}")
     if results.get("full_year_comparison_file"):
@@ -739,8 +765,19 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
         f.write(f"Run timestamp: {run_timestamp}\n")
         f.write(f"Successful months: {results['summary']['successful']}/12\n")
         f.write(f"Failed months: {results['summary']['failed']}/12\n")
+        f.write(f"Monthly calculation logs saved: {len(results['months']) - len(failed_log_saves)}/{len(results['months'])}\n")
         f.write(f"Total Power: {results['summary']['total_power_kwh']:,.0f} KWH\n")
         f.write(f"Total SHP: {results['summary']['total_shp_mt']:,.2f} MT\n\n")
+        if failed_log_saves:
+            f.write("MONTHLY CALCULATION LOG SAVE FAILURES:\n")
+            f.write("-" * 120 + "\n")
+            for month_data in failed_log_saves:
+                f.write(
+                    f"{month_data['month_name']} {month_data['year']}: "
+                    f"FinancialYearMonthId={month_data.get('financial_year_month_id')} | "
+                    f"Message={month_data.get('calculation_log_message')}\n"
+                )
+            f.write("\n")
         if results.get("comparison_folder"):
             f.write(f"Comparison folder: {results['comparison_folder']}\n")
         if results.get("full_year_comparison_file"):
@@ -814,7 +851,7 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
     # Update parent execution log with summary and Excel
     if parent_execution_id:
         total_execution_time = sum(
-            results["months"][key].get("execution_time", 0) 
+            results["months"][key].get("calculation_result", {}).get("execution_time_seconds", 0)
             for key in results["months"]
         )
         

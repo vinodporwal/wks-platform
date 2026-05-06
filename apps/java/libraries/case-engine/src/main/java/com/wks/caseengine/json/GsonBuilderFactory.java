@@ -22,6 +22,8 @@ public class GsonBuilderFactory {
 		builder.registerTypeAdapter(CaseAction.class, new CaseActionDeserializer());
 		builder.registerTypeAdapter(CaseAction.class, new CaseActionSerializer<>());
 
+		
+
 		return builder;
 	}
 
