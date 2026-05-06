@@ -33,8 +33,6 @@ import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/ind
 import { getRoleName } from 'services/role-service'
 import { ButtonGroup } from '../../../node_modules/@progress/kendo-react-buttons/index'
 import QualityParameters from './QualityParameters'
-import ExclusionDate from './ExclusionDate'
-import LineConfiguration from './LineConfiguration'
 import RawMaterialNormsBasis from './tab-components/RawMaterialNormsBasis'
 import CatChemNormsBasis from './tab-components/CatChemNormsBasis'
 import ProductionRange from './tab-components/ProductionRange'
