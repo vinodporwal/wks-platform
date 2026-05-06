@@ -25,6 +25,7 @@ const CategoryDropdownEditor = (props) => {
             value: e.value ? e.value.id : null,
           })
         }}
+        className='dropdown-editor'
         style={{ width: '100%' }}
       />
     </td>

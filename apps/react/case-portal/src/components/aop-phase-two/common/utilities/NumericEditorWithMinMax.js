@@ -79,6 +79,7 @@ export const NumericEditorWithMinMax = ({
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         autoComplete='off'
+        className='input-editor'
         sx={{
           width: '100%',
           fontSize: '0.8125rem',

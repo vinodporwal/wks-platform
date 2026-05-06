@@ -18,6 +18,7 @@ const FullValueEditor = ({ dataItem, field, onChange }) => {
         step='any'
         value={dataItem[field] ?? ''}
         onChange={handleChange}
+        className='input-editor'
         style={{ width: '100%' }}
       />
     </td>
