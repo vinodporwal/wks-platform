@@ -14,5 +14,4 @@ public interface AnnualProductionPlanReportRepository  extends JpaRepository<Ann
 	@Query(value = "SELECT TOP (1) RowNo FROM AnnualProductionPlanReport where ReportType = 'assumptions' and AOPYear= :year and Plant_FK_Id = :plantId  ORDER BY RowNo DESC", nativeQuery = true)
 	Integer findLatestRowNo(@Param("year") String year,@Param("plantId") String plantId);
 
-
 }

@@ -35,10 +35,13 @@ MONTH_NAMES = {
 SECTION_FILL = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")  # Blue for section headers
 SUBSECTION_FILL = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")  # Light blue for subsection headers
 TOTAL_FILL = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid")  # Yellow for totals
+FAILURE_FILL = PatternFill(start_color="C00000", end_color="C00000", fill_type="solid")
+FAILURE_DETAIL_FILL = PatternFill(start_color="FCE4D6", end_color="FCE4D6", fill_type="solid")
 
 SECTION_FONT = Font(name="Calibri", size=14, bold=True, color="FFFFFF")  # White text for section headers
 BOLD_FONT = Font(name="Calibri", size=11, bold=True)
 NORMAL_FONT = Font(name="Calibri", size=11)
+FAILURE_FONT = Font(name="Calibri", size=12, bold=True, color="FFFFFF")
 
 THIN_BORDER = Border(
     left=Side(style='thin'),
@@ -1086,6 +1089,61 @@ def extract_utility_balance_data(month: int, year: int, calculation_result: dict
     }
 
 
+def get_failure_details(calculation_result: dict) -> Optional[Dict]:
+    balance_failure = calculation_result.get('balance_failure')
+    if balance_failure:
+        return {
+            'message': balance_failure.get('message', 'Balance failure detected'),
+            'suggestion': balance_failure.get('suggestion', 'Review asset capacities and balance drivers.')
+        }
+
+    for error in calculation_result.get('errors', []):
+        if error.get('stage') == 'BALANCE_CHECK':
+            return {
+                'message': error.get('message', 'Balance failure detected'),
+                'suggestion': error.get('suggestion', 'Review asset capacities and balance drivers.')
+            }
+
+    return None
+
+
+def write_failure_banner(ws, start_row: int, calculation_result: dict) -> int:
+    failure_details = get_failure_details(calculation_result)
+    if not failure_details:
+        return start_row
+
+    for col in range(1, 6):
+        ws.cell(row=start_row, column=col).fill = FAILURE_FILL
+    ws.merge_cells(f'A{start_row}:E{start_row}')
+    title_cell = ws[f'A{start_row}']
+    title_cell.value = 'MONTH FAILED - BALANCE CHECK FAILED'
+    title_cell.font = FAILURE_FONT
+    title_cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    start_row += 1
+
+    for col in range(1, 6):
+        ws.cell(row=start_row, column=col).fill = FAILURE_DETAIL_FILL
+        ws.cell(row=start_row, column=col).border = THIN_BORDER
+    ws.merge_cells(f'A{start_row}:E{start_row}')
+    message_cell = ws[f'A{start_row}']
+    message_cell.value = f"Reason: {failure_details['message']}"
+    message_cell.font = BOLD_FONT
+    message_cell.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+    start_row += 1
+
+    for col in range(1, 6):
+        ws.cell(row=start_row, column=col).fill = FAILURE_DETAIL_FILL
+        ws.cell(row=start_row, column=col).border = THIN_BORDER
+    ws.merge_cells(f'A{start_row}:E{start_row}')
+    suggestion_cell = ws[f'A{start_row}']
+    suggestion_cell.value = f"Suggestion: {failure_details['suggestion']}"
+    suggestion_cell.font = NORMAL_FONT
+    suggestion_cell.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+    start_row += 2
+
+    return start_row
+
+
 # ============================================================
 # EXCEL GENERATION FUNCTIONS
 # ============================================================
@@ -1142,11 +1200,6 @@ def create_annual_balance_report_excel(financial_year: int, monthly_results: dic
             print(f"  ⚠ Skipping {MONTH_NAMES[month]} {year} - No data available")
             continue
         
-        # Check if calculation was successful
-        if not month_data.get('success', False):
-            print(f"  ⚠ Skipping {MONTH_NAMES[month]} {year} - Calculation failed")
-            continue
-        
         # Get full calculation result
         calculation_result = month_data.get('calculation_result')
         if not calculation_result:
@@ -1182,6 +1235,8 @@ def create_annual_balance_report_excel(financial_year: int, monthly_results: dic
         title_cell.font = SECTION_FONT
         title_cell.alignment = Alignment(horizontal='center', vertical='center')
         current_row += 2
+
+        current_row = write_failure_banner(ws, current_row, calculation_result)
         
         # SECTION I: FUEL DEMAND
         current_row = write_fuel_demand_section(ws, current_row, month, year, calculation_result)
@@ -1289,6 +1344,8 @@ def create_balance_report_excel(month: int, year: int, calculation_result: dict,
     title_cell.font = SECTION_FONT
     title_cell.alignment = Alignment(horizontal='center', vertical='center')
     current_row += 2
+
+    current_row = write_failure_banner(ws, current_row, calculation_result)
     
     # SECTION I: FUEL DEMAND
     current_row = write_fuel_demand_section(ws, current_row, month, year, calculation_result)

@@ -199,7 +199,6 @@ Optional<NormAttributeTransactions> findByNormParameterFKIdAndAOPMonthAndAuditYe
 	
 	
 	
-	
 	@Query(value = "SELECT * FROM NormAttributeTransactions " +
             "WHERE AOPMonth = 4 " +
             "AND NormParameter_FK_Id = :normParameterFKId " +

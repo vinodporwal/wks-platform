@@ -17,6 +17,11 @@ class DecimalEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Decimal):
             return float(obj)
+        if hasattr(obj, "item"):
+            try:
+                return obj.item()
+            except Exception:
+                pass
         return super(DecimalEncoder, self).default(obj)
 def create_parent_execution_log(year: int) -> dict:
     """
