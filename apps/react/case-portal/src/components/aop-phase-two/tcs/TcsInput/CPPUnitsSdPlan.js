@@ -19,6 +19,7 @@ const CPPUnitsSdPlan = ({
   AOP_YEAR,
   currentTab,
   SITE_ID,
+  VERTICAL_ID,
   snackbarData,
   setSnackbarData,
   snackbarOpen,
@@ -65,17 +66,18 @@ const CPPUnitsSdPlan = ({
       const carryForwardResponse =
         await TcsApiService.carryForwardCppUnitsSdPlan(
           keycloak,
+          VERTICAL_ID,
           apiYear,
           SITE_ID,
         )
 
       console.log('Carry-forward response:', carryForwardResponse)
 
-      setSnackbarData({
-        message: 'Data carried forward from previous year successfully!',
-        severity: 'success',
-      })
-      setSnackbarOpen(true)
+      // setSnackbarData({
+      //   message: 'Data carried forward from previous year successfully!',
+      //   severity: 'success',
+      // })
+      // setSnackbarOpen(true)
 
       return true
     } catch (carryForwardErr) {
@@ -100,6 +102,7 @@ const CPPUnitsSdPlan = ({
 
         const response = await TcsApiService.getCPPUnitsSdPlanData(
           keycloak,
+          VERTICAL_ID,
           apiYear,
           SITE_ID,
         )
@@ -333,6 +336,7 @@ const CPPUnitsSdPlan = ({
 
       const response = await TcsApiService.saveCPPUnitsSdPlanData(
         keycloak,
+        VERTICAL_ID,
         apiYear,
         SITE_ID,
         formattedData,
@@ -344,7 +348,7 @@ const CPPUnitsSdPlan = ({
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
-      fetchData()
+      fetchData(true)
     } catch (error) {
       console.error('Error saving CPP Units SD Plan data:', error)
       setSnackbarOpen(true)
@@ -385,7 +389,7 @@ const CPPUnitsSdPlan = ({
             message: 'Record deleted successfully!',
             severity: 'success',
           })
-          fetchData()
+          fetchData(true)
         }
       } catch (error) {
         console.error('Error deleting record:', error)
@@ -410,7 +414,12 @@ const CPPUnitsSdPlan = ({
     })
 
     try {
-      await TcsApiService.exportCPPUnitsSdPlanExcel(keycloak, SITE_ID, apiYear)
+      await TcsApiService.exportCPPUnitsSdPlanExcel(
+        keycloak,
+        VERTICAL_ID,
+        SITE_ID,
+        apiYear,
+      )
 
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -433,6 +442,7 @@ const CPPUnitsSdPlan = ({
     try {
       const response = await TcsApiService.importCPPUnitsSdPlanExcel(
         keycloak,
+        VERTICAL_ID,
         SITE_ID,
         apiYear,
         file,
@@ -445,7 +455,7 @@ const CPPUnitsSdPlan = ({
           severity: 'success',
         })
         // Refresh data after import
-        await fetchData()
+        await fetchData(true)
       } else if (response?.code === 400 && response?.data) {
         // Handle error response with Excel file download
         try {
@@ -475,7 +485,7 @@ const CPPUnitsSdPlan = ({
             severity: 'error',
           })
           // Refresh data after import
-          await fetchData()
+          await fetchData(true)
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)

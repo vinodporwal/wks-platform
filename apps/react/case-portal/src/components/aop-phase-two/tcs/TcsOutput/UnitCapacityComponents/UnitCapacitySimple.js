@@ -4,18 +4,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TcsOutputApiService } from 'components/aop-phase-two/services/tcs/tcsOutputApiService'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
-import { convertFromKBPSD } from './uomConversionUtils'
 import {
-  extractYear,
   generateCalendarYearHeaders,
+  extractYear,
 } from 'components/aop-phase-two/common/utilities/generateHeaders'
 
-const UnitCapacityGridRowwise = ({
+const UnitCapacitySimple = ({
   capacityType,
   title,
+  PLANT_ID,
   SITE_ID,
   VERTICAL_ID,
-  PLANT_ID,
   AOP_YEAR,
   snackbarData,
   setSnackbarData,
@@ -25,23 +24,14 @@ const UnitCapacityGridRowwise = ({
 }) => {
   const keycloak = useSession()
   const valueFormat = ValueFormatterPhaseTwo()
-  // const headerMap = generateHeaderNames(AOP_YEAR)
   const headerMap = generateCalendarYearHeaders(AOP_YEAR)
 
-  // State management for this capacity type only
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState([])
-  const [originalRows, setOriginalRows] = useState([])
 
-  const [modifiedCells, setModifiedCells] = useState({})
-  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
-  const [currentRemark, setCurrentRemark] = useState('')
-  const [currentRowId, setCurrentRowId] = useState(null)
   const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
-
-  // Determine if this grid is the annual "design" capacity type
   const isDesign = capacityType === 'design'
-  // Fetch Unit Capacity data for this capacity type
+
   const fetchUnitCapacityData = useCallback(async () => {
     if (!SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
     try {
@@ -55,57 +45,17 @@ const UnitCapacityGridRowwise = ({
         capacityType,
       )
 
-      let transformedData = []
       if (response?.results && Array.isArray(response.results)) {
-        transformedData = response.results.flatMap((item, index) => {
-          const kbpsdRow = {
-            id: `${item.id || `row_${index}`}_kbpsd`,
-            particulates: item.particulates,
-            uom: 'KBPSD',
-            jan: item.jan || 0,
-            feb: item.feb || 0,
-            mar: item.mar || 0,
-            apr: item.apr || 0,
-            may: item.may || 0,
-            jun: item.jun || 0,
-            jul: item.jul || 0,
-            aug: item.aug || 0,
-            sep: item.sep || 0,
-            oct: item.oct || 0,
-            nov: item.nov || 0,
-            dec: item.dec || 0,
-            remark: item.remark || '',
-            insertedDateTime: item.insertedDateTime,
-            inEdit: false,
+        let tempData = response?.results?.map((item) => {
+          return {
+            ...item,
+            value: item.jan || 0,
           }
-
-          const ktpdRow = {
-            id: `${item.id || `row_${index}`}_ktpd`,
-            particulates: item.particulates,
-            uom: 'KTPD',
-            jan: convertFromKBPSD(item.jan || 0, 'KTPD'),
-            feb: convertFromKBPSD(item.feb || 0, 'KTPD'),
-            mar: convertFromKBPSD(item.mar || 0, 'KTPD'),
-            apr: convertFromKBPSD(item.apr || 0, 'KTPD'),
-            may: convertFromKBPSD(item.may || 0, 'KTPD'),
-            jun: convertFromKBPSD(item.jun || 0, 'KTPD'),
-            jul: convertFromKBPSD(item.jul || 0, 'KTPD'),
-            aug: convertFromKBPSD(item.aug || 0, 'KTPD'),
-            sep: convertFromKBPSD(item.sep || 0, 'KTPD'),
-            oct: convertFromKBPSD(item.oct || 0, 'KTPD'),
-            nov: convertFromKBPSD(item.nov || 0, 'KTPD'),
-            dec: convertFromKBPSD(item.dec || 0, 'KTPD'),
-            remark: item.remark || '',
-            insertedDateTime: item.insertedDateTime,
-            inEdit: false,
-          }
-
-          return [kbpsdRow, ktpdRow]
         })
+        setRows(tempData)
+      } else {
+        setRows([])
       }
-
-      setRows(transformedData)
-      setOriginalRows(transformedData)
     } catch (err) {
       console.error(`Error fetching Unit Capacity data (${capacityType}):`, err)
       setSnackbarData({
@@ -121,21 +71,18 @@ const UnitCapacityGridRowwise = ({
     keycloak,
     SITE_ID,
     VERTICAL_ID,
-    AOP_YEAR,
+    apiYear,
     capacityType,
-    isDesign,
     setSnackbarData,
     setSnackbarOpen,
   ])
 
-  // Fetch capacity data when dropdown selection changes
   useEffect(() => {
     if (SITE_ID && VERTICAL_ID && AOP_YEAR) {
       fetchUnitCapacityData()
     }
   }, [SITE_ID, VERTICAL_ID, AOP_YEAR, fetchUnitCapacityData])
 
-  // Column definitions - static configuration (flat values, no KTPD)
   const columns = useMemo(() => {
     if (isDesign) {
       return [
@@ -147,7 +94,6 @@ const UnitCapacityGridRowwise = ({
           minWidth: 150,
           type: 'text',
           editable: false,
-          hidden: false,
         },
         {
           field: 'uom',
@@ -161,7 +107,7 @@ const UnitCapacityGridRowwise = ({
           title: 'Capacity',
           children: [
             {
-              field: 'jan',
+              field: 'value',
               title: 'Value',
               editable: false,
               widthT: 100,
@@ -289,7 +235,6 @@ const UnitCapacityGridRowwise = ({
           minWidth: 150,
           type: 'text',
           editable: false,
-          hidden: false,
         },
         {
           field: 'uom',
@@ -313,7 +258,7 @@ const UnitCapacityGridRowwise = ({
         },
       ]
     }
-  }, [isDesign, valueFormat, headerMap])
+  }, [isDesign, headerMap, valueFormat])
 
   // Export handler
   const handleExport = async () => {
@@ -345,28 +290,25 @@ const UnitCapacityGridRowwise = ({
     }
   }
 
-  // Handle remark cell click
-  const handleRemarkCellClick = (row) => {
-    setCurrentRemark(row.remark || '')
-    setCurrentRowId(row.id)
-    setRemarkDialogOpen(true)
+  const permissions = {
+    customHeight: { mainBox: '32vh', otherBox: '100%' },
+    textAlignment: 'center',
+    allAction: true,
+    addButton: false,
+    remarksEditable: false,
+    showCalculate: false,
+    showExport: true,
+    ExcelName: `Unit_Capacity_${capacityType}_${AOP_YEAR}`,
+    showImport: false,
+    saveBtnForRemark: false,
+    saveBtn: false,
+    showWorkFlowBtns: false,
+    showTitle: true,
+    showDropdown: false,
   }
 
-  const permissions = useMemo(
-    () => ({
-      customHeight: { mainBox: '32vh', otherBox: '100%' },
-      textAlignment: 'center',
-      allAction: true,
-      showExport: true,
-      showTitle: true,
-      showDropdown: false,
-      approveBtn: false,
-    }),
-    [userRole],
-  )
-
   return (
-    <Box>
+    <Box sx={{ width: '100%' }}>
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={loading}
@@ -378,25 +320,10 @@ const UnitCapacityGridRowwise = ({
         <AdvanceKendoTable
           rows={rows}
           setRows={setRows}
-          fetchData={() => fetchUnitCapacityData()}
-          title={title}
-          handleRemarkCellClick={handleRemarkCellClick}
           columns={columns}
-          remarkDialogOpen={remarkDialogOpen}
-          setRemarkDialogOpen={setRemarkDialogOpen}
-          currentRemark={currentRemark}
-          setCurrentRemark={setCurrentRemark}
-          currentRowId={currentRowId}
-          setCurrentRowId={() => {}}
-          snackbarData={snackbarData}
-          snackbarOpen={snackbarOpen}
-          setSnackbarOpen={setSnackbarOpen}
-          setSnackbarData={setSnackbarData}
-          modifiedCells={modifiedCells}
-          setModifiedCells={setModifiedCells}
-          permissions={permissions}
-          readonly={true}
+          title={title}
           handleExport={handleExport}
+          permissions={permissions}
           groupBy={['particulates']}
         />
       </Stack>
@@ -404,4 +331,4 @@ const UnitCapacityGridRowwise = ({
   )
 }
 
-export default UnitCapacityGridRowwise
+export default UnitCapacitySimple

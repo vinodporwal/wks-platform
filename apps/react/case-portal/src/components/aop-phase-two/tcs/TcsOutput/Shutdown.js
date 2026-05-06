@@ -219,7 +219,6 @@ const Shutdown = ({
         <AdvanceKendoTable
           rows={rows}
           setRows={setRows}
-          title='Shutdown'
           fetchData={fetchShutdownData}
           configType='tcs_shutdown'
           handleRemarkCellClick={handleRemarkCellClick}
@@ -240,6 +239,7 @@ const Shutdown = ({
           readonly={true}
           onApproveClick={() => setOpenApproveDialogeBox(true)}
           handleExport={handleExport}
+          groupBy={['particulates']}
         />
       </Stack>
     </Box>

@@ -10,9 +10,8 @@ import {
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { Stack } from '../../../../../node_modules/@mui/material/index'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-const PCGOutlook = ({
+const PCGOutlookNew = ({
   PLANT_ID,
   SITE_ID,
   VERTICAL_ID,
@@ -31,6 +30,7 @@ const PCGOutlook = ({
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [modifiedCells, setModifiedCells] = useState({})
+  const [customModifiedCells, setCustomModifiedCells] = useState({})
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
@@ -49,11 +49,11 @@ const PCGOutlook = ({
 
       console.log('Carry-forward response:', carryForwardResponse)
 
-      setSnackbarData({
-        message: `PCG Outlook data carried forward from previous year successfully!`,
-        severity: 'success',
-      })
-      setSnackbarOpen(true)
+      // setSnackbarData({
+      //   message: `PCG Outlook data carried forward from previous year successfully!`,
+      //   severity: 'success',
+      // })
+      // setSnackbarOpen(true)
 
       return true
     } catch (carryForwardErr) {
@@ -71,6 +71,7 @@ const PCGOutlook = ({
       if (!SITE_ID || !AOP_YEAR) return
       try {
         setLoading(true)
+
         let transformedData = []
 
         const response = await TcsApiService.getPcgOutlookData(
@@ -79,17 +80,15 @@ const PCGOutlook = ({
           SITE_ID,
           AOP_YEAR,
         )
-        console.log('PCG Outlook Response:', response)
 
         if (response?.length > 0 && Array.isArray(response)) {
           transformedData = response.map((item, index) => ({
             id: item.id || `row_${index}`,
             ...item,
-            remarks: item.remarks || '',
+            remark: item.remark || '',
             inEdit: false,
           }))
         }
-
         // If data is empty and carry-forward not skipped, attempt carry-forward and refetch
         if (transformedData.length === 0 && !skipCarryForward) {
           const carryForwardSuccess = await handleCarryForward()
@@ -102,6 +101,7 @@ const PCGOutlook = ({
 
         setRows(transformedData)
         setOriginalRows(transformedData)
+        setModifiedCells({})
       } catch (err) {
         console.error('Error fetching PCG Outlook data:', err)
         setSnackbarData({
@@ -114,15 +114,7 @@ const PCGOutlook = ({
         setLoading(false)
       }
     },
-    [
-      keycloak,
-      AOP_YEAR,
-      SITE_ID,
-      currentTab.id,
-      handleCarryForward,
-      setSnackbarData,
-      setSnackbarOpen,
-    ],
+    [AOP_YEAR, SITE_ID, currentTab.id, setSnackbarData, setSnackbarOpen],
   )
 
   // Fetch data on mount or when dependencies change
@@ -140,132 +132,99 @@ const PCGOutlook = ({
     [AOP_YEAR],
   )
 
-  // Column configuration for PCG Outlook
+  // Column configuration for PCG Outlook with grouped headers
   const columns = useMemo(() => {
     return [
       { field: 'id', title: 'ID', hidden: true },
       {
-        field: 'product',
-        title: 'Product',
+        field: 'month',
+        title: 'Month',
         width: 150,
         minWidth: 150,
         type: 'text',
         editable: false,
       },
       {
-        field: 'jan',
-        title: headerMap[1],
+        title: 'Gasifier Availability',
+        children: [
+          {
+            field: 'gasifierAvailabilityTotal',
+            title: 'Total',
+            editable: false,
+            width: 100,
+            minWidth: 100,
+            type: 'number1',
+            format: valueFormat,
+          },
+          {
+            field: 'gasifierAvailabilityDta',
+            title: 'DTA',
+            editable: true,
+            width: 100,
+            minWidth: 100,
+            type: 'number1',
+            format: valueFormat,
+          },
+          {
+            field: 'gasifierAvailabilitySez',
+            title: 'SEZ',
+            editable: true,
+            width: 100,
+            minWidth: 100,
+            type: 'number1',
+            format: valueFormat,
+          },
+        ],
+      },
+      {
+        title: 'SynGas Production',
+        children: [
+          {
+            field: 'synGasProductionTotal',
+            title: 'Total',
+            editable: false,
+            width: 100,
+            minWidth: 100,
+            type: 'number1',
+            format: valueFormat,
+          },
+          {
+            field: 'synGasProductionDta',
+            title: 'DTA',
+            editable: true,
+            width: 100,
+            minWidth: 100,
+            type: 'number1',
+            format: valueFormat,
+          },
+          {
+            field: 'synGasProductionSez',
+            title: 'SEZ',
+            editable: true,
+            width: 100,
+            minWidth: 100,
+            type: 'number1',
+            format: valueFormat,
+          },
+        ],
+      },
+      {
+        field: 'cge',
+        title: 'CGE (%)',
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 100,
         type: 'number1',
+        minValue: 0,
+        maxValue: 100,
         format: valueFormat,
       },
       {
-        field: 'feb',
-        title: headerMap[2],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'mar',
-        title: headerMap[3],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'apr',
-        title: headerMap[4],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'may',
-        title: headerMap[5],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'jun',
-        title: headerMap[6],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'jul',
-        title: headerMap[7],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'aug',
-        title: headerMap[8],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'sep',
-        title: headerMap[9],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'oct',
-        title: headerMap[10],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'nov',
-        title: headerMap[11],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'dec',
-        title: headerMap[12],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'remarks',
+        field: 'remark',
         title: 'Remark',
         editable: true,
-        width: 250,
-        minWidth: 150,
+        // width: 250,
+        // minWidth: 250,
         type: 'textarea',
       },
     ]
@@ -277,7 +236,7 @@ const PCGOutlook = ({
     if (!row?.isEditable && row?.isEditable !== undefined) {
       return
     }
-    setCurrentRemark(row.remarks || '')
+    setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
@@ -291,8 +250,86 @@ const PCGOutlook = ({
           inEdit: false,
         })),
       )
+      setCustomModifiedCells({})
     }
   }, [modifiedCells])
+
+  // Configuration for auto-calculated totals: field -> { dtaField, sezField, totalField }
+  const totalCalcConfig = {
+    gasifierAvailabilityDta: {
+      dtaField: 'gasifierAvailabilityDta',
+      sezField: 'gasifierAvailabilitySez',
+      totalField: 'gasifierAvailabilityTotal',
+    },
+    gasifierAvailabilitySez: {
+      dtaField: 'gasifierAvailabilityDta',
+      sezField: 'gasifierAvailabilitySez',
+      totalField: 'gasifierAvailabilityTotal',
+    },
+    synGasProductionDta: {
+      dtaField: 'synGasProductionDta',
+      sezField: 'synGasProductionSez',
+      totalField: 'synGasProductionTotal',
+    },
+    synGasProductionSez: {
+      dtaField: 'synGasProductionDta',
+      sezField: 'synGasProductionSez',
+      totalField: 'synGasProductionTotal',
+    },
+  }
+
+  // Helper to calculate total from DTA and SEZ
+  const calculateTotal = (field, value, dataItem) => {
+    const config = totalCalcConfig[field]
+    if (!config) return null
+    const dta = field === config.dtaField ? value : dataItem[config.dtaField]
+    const sez = field === config.sezField ? value : dataItem[config.sezField]
+    return parseFloat(
+      ((parseFloat(dta) || 0) + (parseFloat(sez) || 0)).toFixed(2),
+    )
+  }
+
+  // Custom item change handler to track inEdit flag and calculate totals
+  const customItemChange = useCallback(
+    (e, setRowsCallback) => {
+      const { dataItem, field, value } = e
+      const itemId = `${dataItem.id}`
+      const total = calculateTotal(field, value, dataItem)
+
+      // Update rows with inEdit flag and calculated total
+      setRowsCallback((prev) =>
+        prev.map((row) => {
+          if (row.id === dataItem.id) {
+            const updated = { ...row, inEdit: true, [field]: value }
+            if (total !== null)
+              updated[totalCalcConfig[field].totalField] = total
+            return updated
+          }
+          return row
+        }),
+      )
+
+      // Update customModifiedCells
+      setCustomModifiedCells((prev) => {
+        const base = { ...(prev[itemId] || {}), [field]: value }
+        if (total !== null) base[totalCalcConfig[field].totalField] = total
+        return { ...prev, [itemId]: base }
+      })
+
+      // Update modifiedCells with calculated total
+      if (total !== null) {
+        setModifiedCells((prev) => {
+          const updated = {
+            ...(prev[itemId] || dataItem),
+            [field]: value,
+            [totalCalcConfig[field].totalField]: total,
+          }
+          return { ...prev, [itemId]: updated }
+        })
+      }
+    },
+    [setModifiedCells, setCustomModifiedCells],
+  )
 
   // Save changes
   const saveChanges = useCallback(async () => {
@@ -313,27 +350,22 @@ const PCGOutlook = ({
         return
       }
 
-      // Custom validation: If any row data is updated, remarks must be filled and different from original
+      // Custom validation: If any row data is updated, remark must be filled and different from original
       const fieldsToCheck = [
-        'apr',
-        'may',
-        'jun',
-        'jul',
-        'aug',
-        'sep',
-        'oct',
-        'nov',
-        'dec',
-        'jan',
-        'feb',
-        'mar',
+        'gasifierAvailabilityTotal',
+        'gasifierAvailabilityDta',
+        'gasifierAvailabilitySez',
+        'synGasProductionTotal',
+        'synGasProductionDta',
+        'synGasProductionSez',
+        'cge',
       ]
       const validationError = validateRowDataWithRemarks(
         data,
         originalRows,
         fieldsToCheck,
-        'product',
-        'remarks',
+        'month',
+        'remark',
       )
 
       if (validationError) {
@@ -363,7 +395,7 @@ const PCGOutlook = ({
         severity: 'success',
       })
       setModifiedCells({})
-      fetchPcgOutlookData()
+      fetchPcgOutlookData(true)
     } catch (error) {
       console.error('Error saving PCG Outlook data:', error)
       setSnackbarOpen(true)
@@ -433,7 +465,7 @@ const PCGOutlook = ({
           severity: 'success',
         })
         // Refresh data after import
-        await fetchPcgOutlookData()
+        await fetchPcgOutlookData(true)
       } else if (response?.code === 400 && response?.data) {
         // Handle error response with Excel file download
         try {
@@ -463,7 +495,7 @@ const PCGOutlook = ({
             severity: 'error',
           })
           // Refresh data after import
-          await fetchPcgOutlookData()
+          await fetchPcgOutlookData(true)
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
@@ -510,7 +542,12 @@ const PCGOutlook = ({
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <Stack sx={{ mt: 2 }}>
         <AdvanceKendoTable
@@ -518,6 +555,7 @@ const PCGOutlook = ({
           setRows={setRows}
           fetchData={fetchPcgOutlookData}
           configType='tcs_pcg_outlook'
+          title='PCG Outlook'
           handleRemarkCellClick={handleRemarkCellClick}
           columns={columns}
           remarkDialogOpen={remarkDialogOpen}
@@ -525,7 +563,7 @@ const PCGOutlook = ({
           currentRemark={currentRemark}
           setCurrentRemark={setCurrentRemark}
           currentRowId={currentRowId}
-          setCurrentRowId={() => {}}
+          setCurrentRowId={setCurrentRowId}
           saveChanges={saveChanges}
           handleExcelUpload={handleExcelUpload}
           handleExport={handleExport}
@@ -535,11 +573,14 @@ const PCGOutlook = ({
           setSnackbarData={setSnackbarData}
           modifiedCells={modifiedCells}
           setModifiedCells={setModifiedCells}
+          externalCustomModifiedCells={customModifiedCells}
+          externalSetCustomModifiedCells={setCustomModifiedCells}
           permissions={permissions}
+          customItemChange={customItemChange}
         />
       </Stack>
     </Box>
   )
 }
 
-export default PCGOutlook
+export default PCGOutlookNew

@@ -3,16 +3,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TcsOutputApiService } from 'components/aop-phase-two/services/tcs/tcsOutputApiService'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
-import {
-  generateCalendarYearHeaders,
-  generateHeaderNames,
-} from 'components/aop-phase-two/common/utilities/generateHeaders'
+import { generateCalendarYearHeaders } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
-import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { Stack } from '../../../../../node_modules/@mui/material/index'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-const PCGOutlook = ({
+const PCGOutlookNew = ({
   PLANT_ID,
   SITE_ID,
   VERTICAL_ID,
@@ -29,13 +24,12 @@ const PCGOutlook = ({
   // State management
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
-  const [originalRows, setOriginalRows] = useState([])
   const [modifiedCells, setModifiedCells] = useState({})
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
-  // Fetch PCG Outlook Data
+  // Fetch PCG Outlook Data (read-only)
   const fetchPcgOutlookData = useCallback(async () => {
     if (!SITE_ID || !AOP_YEAR) return
     try {
@@ -48,7 +42,7 @@ const PCGOutlook = ({
         SITE_ID,
         AOP_YEAR,
       )
-      console.log('PCG Outlook Response:', response)
+      console.log('PCG Outlook (Output) Response:', response)
 
       if (response?.length > 0 && Array.isArray(response)) {
         transformedData = response.map((item, index) => ({
@@ -61,9 +55,8 @@ const PCGOutlook = ({
       }
 
       setRows(transformedData)
-      setOriginalRows(transformedData)
     } catch (err) {
-      console.error('Error fetching PCG Outlook data:', err)
+      console.error('Error fetching PCG Outlook (Output) data:', err)
       setSnackbarData({
         message: `Failed to load PCG Outlook data. Please try again.`,
         severity: 'error',
@@ -77,6 +70,7 @@ const PCGOutlook = ({
     keycloak,
     AOP_YEAR,
     SITE_ID,
+    VERTICAL_ID,
     currentTab.id,
     setSnackbarData,
     setSnackbarOpen,
@@ -89,144 +83,117 @@ const PCGOutlook = ({
     }
   }, [SITE_ID, AOP_YEAR, fetchPcgOutlookData])
 
-  // Generate header names with month-year format
+  // Generate calendar-year header map
   const headerMap = useMemo(
-    () =>
-      // generateHeaderNames(AOP_YEAR)
-      generateCalendarYearHeaders(AOP_YEAR),
+    () => generateCalendarYearHeaders(AOP_YEAR),
     [AOP_YEAR],
   )
 
-  // Column configuration for PCG Outlook
+  // Column configuration — grouped headers (read-only: editable: false on all leaf columns)
   const columns = useMemo(() => {
     return [
       { field: 'id', title: 'ID', hidden: true },
       {
-        field: 'product',
-        title: 'Product',
+        field: 'month',
+        title: 'Month',
         width: 150,
         minWidth: 150,
         type: 'text',
         editable: false,
       },
       {
-        field: 'jan',
-        title: headerMap[1],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
+        title: 'Gasifier Availability',
+        children: [
+          {
+            field: 'gasifierAvailabilityTotal',
+            title: 'Total',
+            editable: false,
+            width: 100,
+            minWidth: 100,
+            type: 'number1',
+            format: valueFormat,
+          },
+          {
+            field: 'gasifierAvailabilityDta',
+            title: 'DTA',
+            editable: false,
+            width: 100,
+            minWidth: 100,
+            type: 'number1',
+            format: valueFormat,
+          },
+          {
+            field: 'gasifierAvailabilitySez',
+            title: 'SEZ',
+            editable: false,
+            width: 100,
+            minWidth: 100,
+            type: 'number1',
+            format: valueFormat,
+          },
+        ],
       },
       {
-        field: 'feb',
-        title: headerMap[2],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
+        title: 'SynGas Production',
+        children: [
+          {
+            field: 'synGasProductionTotal',
+            title: 'Total',
+            editable: false,
+            width: 100,
+            minWidth: 100,
+            type: 'number1',
+            format: valueFormat,
+          },
+          {
+            field: 'synGasProductionDta',
+            title: 'DTA',
+            editable: false,
+            width: 100,
+            minWidth: 100,
+            type: 'number1',
+            format: valueFormat,
+          },
+          {
+            field: 'synGasProductionSez',
+            title: 'SEZ',
+            editable: false,
+            width: 100,
+            minWidth: 100,
+            type: 'number1',
+            format: valueFormat,
+          },
+        ],
       },
       {
-        field: 'mar',
-        title: headerMap[3],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'apr',
-        title: headerMap[4],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'may',
-        title: headerMap[5],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'jun',
-        title: headerMap[6],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'jul',
-        title: headerMap[7],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'aug',
-        title: headerMap[8],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'sep',
-        title: headerMap[9],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'oct',
-        title: headerMap[10],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'nov',
-        title: headerMap[11],
-        editable: true,
-        width: 120,
-        minWidth: 120,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'dec',
-        title: headerMap[12],
-        editable: true,
-        width: 120,
-        minWidth: 120,
+        field: 'cge',
+        title: 'CGE (%)',
+        editable: false,
+        width: 100,
+        minWidth: 100,
         type: 'number1',
         format: valueFormat,
       },
       {
         field: 'remarks',
         title: 'Remark',
-        editable: true,
-        width: 250,
-        minWidth: 150,
+        editable: false,
+        // width: 250,
+        // minWidth: 250,
         type: 'textarea',
       },
     ]
-  }, [headerMap])
+  }, [headerMap, valueFormat])
+
+  // Handle remark cell click — no-op for read-only rows
+  const handleRemarkCellClick = (row) => {
+    if (!row?.isEditable && row?.isEditable !== undefined) {
+      return
+    }
+    setCurrentRemark(row.remarks || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
 
   // Export handler
   const handleExport = async () => {
@@ -249,7 +216,7 @@ const PCGOutlook = ({
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error exporting PCG Outlook data:', error)
+      console.error('Error exporting PCG Outlook (Output) data:', error)
       setSnackbarData({
         message: 'Excel download failed. Please try again.',
         severity: 'error',
@@ -257,41 +224,31 @@ const PCGOutlook = ({
     }
   }
 
-  // Handle remark cell click
-  const handleRemarkCellClick = (row) => {
-    // Prevent remark dialog from opening if row is not editable
-    if (!row?.isEditable && row?.isEditable !== undefined) {
-      return
-    }
-    setCurrentRemark(row.remarks || '')
-    setCurrentRowId(row.id)
-    setRemarkDialogOpen(true)
-  }
-
-  // Track when modifiedCells is cleared and reset inEdit flags
-  useEffect(() => {
-    if (Object.keys(modifiedCells).length === 0) {
-      setRows((prev) =>
-        prev.map((row) => ({
-          ...row,
-          inEdit: false,
-        })),
-      )
-    }
-  }, [modifiedCells])
-
   const permissions = {
     customHeight: { mainBox: '32vh', otherBox: '100%' },
     textAlignment: 'center',
     allAction: true,
+    addButton: false,
+    remarksEditable: false,
+    showCalculate: false,
     showExport: true,
+    ExcelName: `PCG_Outlook_Output_${AOP_YEAR}`,
+    showImport: false,
+    saveBtnForRemark: false,
+    saveBtn: false,
+    showWorkFlowBtns: false,
     showTitle: true,
     filterable: false,
   }
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <Stack sx={{ mt: 2 }}>
         <AdvanceKendoTable
@@ -299,6 +256,7 @@ const PCGOutlook = ({
           setRows={setRows}
           fetchData={fetchPcgOutlookData}
           configType='tcs_pcg_outlook'
+          title='PCG Outlook'
           handleRemarkCellClick={handleRemarkCellClick}
           columns={columns}
           remarkDialogOpen={remarkDialogOpen}
@@ -306,7 +264,7 @@ const PCGOutlook = ({
           currentRemark={currentRemark}
           setCurrentRemark={setCurrentRemark}
           currentRowId={currentRowId}
-          setCurrentRowId={() => {}}
+          setCurrentRowId={setCurrentRowId}
           snackbarData={snackbarData}
           snackbarOpen={snackbarOpen}
           setSnackbarOpen={setSnackbarOpen}
@@ -322,4 +280,4 @@ const PCGOutlook = ({
   )
 }
 
-export default PCGOutlook
+export default PCGOutlookNew
