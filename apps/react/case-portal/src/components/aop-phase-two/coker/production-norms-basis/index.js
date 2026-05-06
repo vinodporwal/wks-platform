@@ -196,38 +196,45 @@ const ProductionNormsBasisCoker = () => {
     return tab ? tab.displayName : null
   }
 
-  // Dynamic tab list from API (filtered to exclude 'Report Manual Entry')
-  const filteredTabs = tabs
+  // Dynamic tab list from API (filtered to exclude 'Report Manual Entry' and 'Configuration')
+  const tablist = tabs
     .map((tabId) => {
+      if (!tabId || !availableTabs.length) return ''
       const tabInfo = availableTabs.find(
         (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
       )
 
-      if (!tabInfo) return null
-
-      const name = tabInfo.displayName
-
-      if (name === 'Report Manual Entry' || name === 'Configuration') {
-        return null
+      if (tabInfo) {
+        const originalName = tabInfo.displayName
+        if (originalName === 'Report Manual Entry' || originalName === 'Configuration') {
+          return null
+        }
+        return originalName
       }
-
-      return {
-        id: tabId,
-        name,
-      }
+      return tabId
     })
-    .filter(Boolean)
+    .filter((tab) => tab !== null)
+
+  // Map tablist index back to the raw tabs array index for renderTab
+  const filteredTabIds = tabs.filter((tabId) => {
+    if (!tabId || !availableTabs.length) return false
+    const tabInfo = availableTabs.find(
+      (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
+    )
+    if (!tabInfo) return false
+    const name = tabInfo.displayName
+    return name !== 'Report Manual Entry' && name !== 'Configuration'
+  })
 
   const renderTab = () => {
-    if (!filteredTabs.length || !availableTabs.length) {
+    if (!filteredTabIds.length || !availableTabs.length) {
       return null
     }
 
-    const currentTabId = filteredTabs[tabIndex]?.id
+    const currentTabId = filteredTabIds[tabIndex]
     if (!currentTabId) return null
 
-    const tabData = getTabName(currentTabId)
-    const currentTabName = typeof tabData === 'object' ? tabData.name : tabData
+    const currentTabName = getTabName(currentTabId)
 
     switch (currentTabName) {
       case 'Configuration':
@@ -247,7 +254,6 @@ const ProductionNormsBasisCoker = () => {
     }
   }
 
-  console.log('filteredTabs', filteredTabs)
   return (
     <div>
       <Stack sx={{ mt: 1, mb: 1 }}>
@@ -271,7 +277,7 @@ const ProductionNormsBasisCoker = () => {
           <TabSection
             tabIndex={tabIndex}
             setTabIndex={setTabIndex}
-            tabs={filteredTabs}
+            tabs={tablist}
           />
         </Stack>
       )}
