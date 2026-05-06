@@ -436,10 +436,10 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
     }
     
     @Override
-	public AOPMessageVM importProductionRange(String year,UUID plantId,MultipartFile file) {
+	public AOPMessageVM importProductionRange(String year,UUID plantId,MultipartFile file,boolean isMinMax) {
 		try {
 			List<ConfigurationDTO> data = readProductionRange(file.getInputStream(), plantId, year);
-			List<ConfigurationDTO> failedList= configurationService.saveConfigurationData(year,plantId.toString(),"",data,null,false);
+			List<ConfigurationDTO> failedList= configurationService.saveConfigurationData(year,plantId.toString(),"",data,null,isMinMax);
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<NormConfigurationDTO> normConfigurationDTOs = new ArrayList<NormConfigurationDTO>();
 			for(ConfigurationDTO configurationDTO:failedList) {
@@ -581,17 +581,17 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
 	            	dto.setProductName(getStringCellValue(row.getCell(0), dto));
 	               
 	                dto.setApr(getNumericCellValue(row.getCell(3), dto));
-	                dto.setMay(getNumericCellValue(row.getCell(3), dto));
-	                dto.setJun(getNumericCellValue(row.getCell(3), dto));
-	                dto.setJul(getNumericCellValue(row.getCell(3), dto));
-	                dto.setAug(getNumericCellValue(row.getCell(3), dto));
-	                dto.setSep(getNumericCellValue(row.getCell(3), dto));
-	                dto.setOct(getNumericCellValue(row.getCell(3), dto));
-	                dto.setNov(getNumericCellValue(row.getCell(3), dto));
-	                dto.setDec(getNumericCellValue(row.getCell(3), dto));
-	                dto.setJan(getNumericCellValue(row.getCell(3), dto));
-	                dto.setFeb(getNumericCellValue(row.getCell(3), dto));
-	                dto.setMar(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setMay(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setJun(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setJul(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setAug(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setSep(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setOct(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setNov(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setDec(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setJan(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setFeb(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setMar(getNumericCellValue(row.getCell(3), dto));
 	                dto.setRemarks(getStringCellValue(row.getCell(4), dto));
 	                dto.setNormParameterFKId(getStringCellValue(row.getCell(5), dto));
 	               dto.setUOM(getStringCellValue(row.getCell(1), dto));

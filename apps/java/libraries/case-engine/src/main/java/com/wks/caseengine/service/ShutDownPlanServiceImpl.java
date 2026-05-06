@@ -3014,6 +3014,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
     
 					dto.setSaveStatus("Failed");
 					dto.setErrDescription("Please update remark");
+					dto.setOldDurationInHrs(durationInHrs);
 				//	failedList.add(dto);
 					continue;
 				}
@@ -3027,7 +3028,9 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		Map<String, List<ShutDownPlanDTO>> dtosByMonth = new HashMap<>();
 		for (ShutDownPlanDTO dto : shutDownPlanDTOList) {
 			if(dto.getId() == null || dto.getId().isEmpty()) continue;
-			if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) continue;
+			// if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) continue;
+			if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed") && !dto.getErrDescription().equalsIgnoreCase("Please update remark")) continue;
+
 			if (dto.getMonth() == null || dto.getDurationInHrs() == null) continue;
 			String monthKey = dto.getMonth().toUpperCase();
 			dtosByMonth.computeIfAbsent(monthKey, k -> new ArrayList<>()).add(dto);
@@ -3075,7 +3078,15 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 			double totalHrsInMonth = yearMonth.lengthOfMonth() * 24.0;
 			double totalDurationInHrs = 0.0;
 			for (ShutDownPlanDTO dto : monthDtos) {
-				totalDurationInHrs += dto.getDurationInHrs();
+      // if the save status is failed, then use the old duration in hrs
+				Double durationInHrs = dto.getDurationInHrs();
+
+				if(dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) {
+					durationInHrs = dto.getOldDurationInHrs();
+				}
+
+				
+				totalDurationInHrs += durationInHrs;
 			}
 			if (totalDurationInHrs > totalHrsInMonth) {
 		
@@ -3083,8 +3094,13 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 				for (ShutDownPlanDTO dto : monthDtos) {
 				
 					dto.setSaveStatus("Failed");
+					if(dto.getOldDurationInHrs() != null) {
+						dto.setErrDescription("Please update remark");
+					}
+					else {
 					dto.setErrDescription("Total shutdown duration for " + monthKey + " (" + totalDurationInHrs
 							+ " hrs) exceeds total available hours in the month (" + (int) totalHrsInMonth + " hrs)");
+					}
 				//	failedList.add(dto);
 				}
 			}
