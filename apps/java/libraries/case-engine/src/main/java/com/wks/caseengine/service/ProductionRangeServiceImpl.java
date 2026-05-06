@@ -439,7 +439,7 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
 	public AOPMessageVM importProductionRange(String year,UUID plantId,MultipartFile file) {
 		try {
 			List<ConfigurationDTO> data = readProductionRange(file.getInputStream(), plantId, year);
-			List<ConfigurationDTO> failedList= configurationService.saveConfigurationData(year,plantId.toString(),"",data,false);
+			List<ConfigurationDTO> failedList= configurationService.saveConfigurationData(year,plantId.toString(),"",data,null,false);
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<NormConfigurationDTO> normConfigurationDTOs = new ArrayList<NormConfigurationDTO>();
 			for(ConfigurationDTO configurationDTO:failedList) {
@@ -479,7 +479,7 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
 	public AOPMessageVM importProductionRangeLimit(String year,UUID plantId,MultipartFile file) {
 		try {
 			List<ConfigurationDTO> data = readProductionRangeLimit(file.getInputStream(), plantId, year);
-			List<ConfigurationDTO> failedList= configurationService.saveConfigurationData(year,plantId.toString(),"",data,false);
+			List<ConfigurationDTO> failedList= configurationService.saveConfigurationData(year,plantId.toString(),"",data,null,false);
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<NormConfigurationDTO> normConfigurationDTOs = new ArrayList<NormConfigurationDTO>();
 			for(ConfigurationDTO configurationDTO:failedList) {

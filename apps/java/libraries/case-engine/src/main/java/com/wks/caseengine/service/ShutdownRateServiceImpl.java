@@ -415,7 +415,7 @@ public class ShutdownRateServiceImpl implements ShutdownRateService {
 			}
 
 			List<ConfigurationDTO> saveFailedRecords = configurationService.saveConfigurationData(aopYear, plantId,
-					version, configListToSave, calculation);
+					version, configListToSave, calculation,false);
 
 			// Combine remark-validation failures with save failures
 			List<ConfigurationDTO> allFailed = new ArrayList<>();

@@ -1350,7 +1350,7 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 	        }
 
 	        List<ConfigurationDTO> failedRecords = configurationService.saveConfigurationData(year, plantId, null,
-	                configurationDTOs, null);
+	                configurationDTOs, null,false);
 
 	        AOPMessageVM aopMessageVM = new AOPMessageVM();
 	        if (failedRecords != null && !failedRecords.isEmpty()) {

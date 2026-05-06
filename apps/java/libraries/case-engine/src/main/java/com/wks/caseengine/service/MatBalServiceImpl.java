@@ -361,7 +361,7 @@ public class MatBalServiceImpl implements MatBalService {
 	public AOPMessageVM importMatBal(String year, UUID plantId, MultipartFile file) {
 		try {
 			List<ConfigurationDTO> data = readMatBal(file.getInputStream(), plantId, year);
-			List<ConfigurationDTO> result = configurationService.saveConfigurationData(year, plantId.toString(), null, data, false);
+			List<ConfigurationDTO> result = configurationService.saveConfigurationData(year, plantId.toString(), null, data, false,false);
 			
 			List<ConfigurationDTO> failedList = new ArrayList<>();
 			for(ConfigurationDTO dto : result) {
