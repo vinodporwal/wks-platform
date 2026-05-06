@@ -83,5 +83,9 @@ public class PlantServiceImpl implements PlantService {
 		return plantsRepository.findUniqueNamesPlantsByVerticalAndSite(verticalId, siteId, screenCode);
 	}
 
+	@Override
+	public List<Plants> getPlantListForWorkflow(UUID verticalId, UUID siteId) {
+		return plantsRepository.getPlantListForWorkflow(verticalId, siteId);
+	}
 }
 

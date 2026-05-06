@@ -41,8 +41,6 @@ import ProductionRange from './tab-components/ProductionRange'
 import PtaConfiguration from './tab-components/PtaConfiguration'
 import NSRAndMaterialPrices from './tab-components/NSRAndMaterialPrices/index'
 
-import { getRoleName } from 'services/role-service'
-
 import { Zoom, IconButton } from '@mui/material'
 import ShutdownRateGrid from './tab-components/ShutdownRate/ShutdownRateGrid'
 import ShutdownRate from './tab-components/ShutdownRate'
@@ -637,9 +635,8 @@ const ConfigurationTable = () => {
     if (hasModifiedOn) {
       const getDateValue = (name) =>
         new Date(
-          configurationExecutionDetails.find(
-            (item) => item.Name === name,
-          )?.AttributeValue,
+          configurationExecutionDetails.find((item) => item.Name === name)
+            ?.AttributeValue,
         )
       setStartDate(getDateValue('StartDate'))
       setEndDate(getDateValue('EndDate'))
@@ -1438,7 +1435,7 @@ const ConfigurationTable = () => {
                   color: '#252525',
                   fontSize: '14px',
                   textTransform: 'uppercase',
-                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif"
+                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
                 }}
               >
                 Revision
