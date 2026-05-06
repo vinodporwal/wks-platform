@@ -207,7 +207,7 @@ const ProductionNormsBasisCoker = () => {
 
       const name = tabInfo.displayName
 
-      if (name === 'Report Manual Entry' || name === 'Configuration') {
+      if (name === 'Configuration') {
         return null
       }
 
@@ -271,7 +271,7 @@ const ProductionNormsBasisCoker = () => {
           <TabSection
             tabIndex={tabIndex}
             setTabIndex={setTabIndex}
-            tabs={filteredTabs}
+            tabs={filteredTabs.map((tab) => tab.name)}
           />
         </Stack>
       )}
