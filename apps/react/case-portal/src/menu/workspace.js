@@ -133,7 +133,6 @@ const workspace = {
         },
       ],
     },
-
     // {
     //   id: 'manufacturing-division',
     //   title: i18n.t('menu.manufacturingDivision'),
