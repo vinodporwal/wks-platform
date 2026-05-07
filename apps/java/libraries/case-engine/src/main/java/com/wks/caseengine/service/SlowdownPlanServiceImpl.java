@@ -1126,7 +1126,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		       boolean ElastomerHmdSbr = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
 		       
 				if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc || ElastomerHmdSbr) {
-		    	   data = readSlowdownDataPE(file.getInputStream(), plantId, year);
+		    	   data = readSlowdownDataPE(file.getInputStream(), plantId, year, ElastomerHmdSbr);
 		       }else {
 		    	   data = readSlowdownData(file.getInputStream(), plantId, year);
 		       }
@@ -1749,7 +1749,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		return dtoList;
 	}
 
-	public List<ShutDownPlanDTO> readSlowdownDataPE(InputStream inputStream, UUID plantFKId, String year) {
+	public List<ShutDownPlanDTO> readSlowdownDataPE(InputStream inputStream, UUID plantFKId, String year, boolean ElastomerHmdSbr) {
 		List<ShutDownPlanDTO> dtoList = new ArrayList<>();
 		List<LocalDateTime[]> validTimeRanges = new ArrayList<>(); // Stores [ldtStart, ldtEnd] for valid rows
 
@@ -1858,6 +1858,11 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 					}
 				}
 
+				// reset the fields for import 
+				if(ElastomerHmdSbr) { 
+
+					
+				}
 				// Always add the DTO to the list
 				dtoList.add(dto);
 			}
