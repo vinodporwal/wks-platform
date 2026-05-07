@@ -73,6 +73,8 @@ const BusinessDemand = ({ permissions }) => {
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
 
+  const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
+
   const IS_ELASTOMER_HMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'hmd'
 
@@ -522,7 +524,6 @@ const BusinessDemand = ({ permissions }) => {
         IS_PVC_VMD ||
         IS_PVC_DMD ||
         IS_ELASTOMER_VERTICAL ||
-
         (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD)
           ? true
           : false,
@@ -703,17 +704,19 @@ const BusinessDemand = ({ permissions }) => {
 
       {lowerVertName !== 'cracker' && !IS_ELASTOMER_JMD && (
         <>
-          <Box sx={{
-            pb: IS_PP_SEZ ? 0 : 1,
-            background: 'transparent'
-          }}>
+          <Box
+            sx={{
+              pb: IS_PP_SEZ ? 0 : 1,
+              background: 'transparent',
+            }}
+          >
             <Box
               sx={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1,
-              }}>
-
+              }}
+            >
               {/* <Box
                 sx={{
                   display: 'flex',
@@ -744,29 +747,33 @@ const BusinessDemand = ({ permissions }) => {
               </Typography>
             </Box>
           </Box>
-          {gridExpanded && (<Box sx={{
-            transition: '0.3s',
-            overflow: 'hidden',
-            background: 'transparent',
-          }}>
-            <ProductionvolumeData
-              isBusinessDemand={true}
-              permissions={{
-                allAction: true,
-                showAction: false,
-                addButton: false,
-                deleteButton: false,
-                editButton: false,
-                showUnit: true,
-                saveWithRemark: false,
-                showCalculate: false,
-                saveBtn: false,
-                hideSummary: true,
-                hideUploadExcel: true,
-                hideDownloadExcel: true,
+          {gridExpanded && (
+            <Box
+              sx={{
+                transition: '0.3s',
+                overflow: 'hidden',
+                background: 'transparent',
               }}
-            />
-          </Box>)}
+            >
+              <ProductionvolumeData
+                isBusinessDemand={true}
+                permissions={{
+                  allAction: true,
+                  showAction: false,
+                  addButton: false,
+                  deleteButton: false,
+                  editButton: false,
+                  showUnit: true,
+                  saveWithRemark: false,
+                  showCalculate: false,
+                  saveBtn: false,
+                  hideSummary: true,
+                  hideUploadExcel: true,
+                  hideDownloadExcel: true,
+                }}
+              />
+            </Box>
+          )}
         </>
       )}
       {IS_ELASTOMER_JMD && (

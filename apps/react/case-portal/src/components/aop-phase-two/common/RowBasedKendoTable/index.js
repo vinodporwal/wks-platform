@@ -63,6 +63,7 @@ const RowBasedKendoTable = (props) => {
                 <td
                   {...cellProps.tdProps}
                   title={String(displayValue ?? '')}
+                  // className={`${isEdited ? 'edited-cell' : 'non-edited-cell '}`}
                   style={{
                     color: isEdited ? 'orange' : undefined,
                     fontWeight: isEdited ? 'bold' : undefined,

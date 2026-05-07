@@ -537,6 +537,20 @@
   border-right-width: 1px !important;
 }
 
+/* .edited-cell {
+  color: orange !important;
+  font-size: '15px' !important;
+  font-weight: 700 !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+} */
+
+.non-edited-cell {
+  color: #252525 !important;
+  font-size: '15px' !important;
+  font-weight: 500 !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+}
+
 /* ===============================
    INPUT EDITOR (Base)
    =============================== */
@@ -574,7 +588,7 @@
 
 .dropdown-editor {
   width: 100% !important;
-  border: none !important;
+  border: 1px solid black !important;
   height: 40px !important;
   font-size: 15px !important;
   font-weight: 500 !important;
@@ -584,14 +598,24 @@
   border-radius: 7px !important;
   padding: 2px 6px !important;
   box-sizing: border-box !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .dropdown-editor:hover {
   background-color: #f9fafb !important;
+  border-color: #b0b8c4 !important;
 }
 
-.dropdown-editor:focus {
+.dropdown-editor:focus,
+.dropdown-editor.k-focus {
   outline: none !important;
+  background-color: #ffffff !important;
+  border: 1px black !important;
+}
+
+/* When dropdown is open */
+.dropdown-editor.k-open {
+  border-color: black !important;
   background-color: #ffffff !important;
 }
 
@@ -609,12 +633,10 @@
   padding-top: 12px !important;
 }
 
-
 .center-cell {
   text-align: center !important;
   vertical-align: middle !important;
 }
-
 
 .report-select-grade {
   width: 180px !important;
@@ -626,9 +648,18 @@
    ========================================================= */
 
 @keyframes soft-pulse {
-  0% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(1.15); opacity: 1; }
-  100% { transform: scale(1); opacity: 0.6; }
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
 }
 
 .info-icon-pulse {
@@ -648,7 +679,7 @@
 .compact-dialog .MuiPaper-root {
   border-radius: 12px !important;
   width: 600px !important;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.15) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15) !important;
 }
 
 .compact-textfield .MuiOutlinedInput-root {
@@ -697,7 +728,6 @@
   padding: 2px 6px !important;
 }
 
-
 /* =========================================================
    REPORT SPECIFIC EXTERNALIZED STYLES (FROM index-reports.js)
    ========================================================= */
@@ -730,7 +760,6 @@
   width: 100% !important;
 }
 
-
 /* =========================================================
    DIALOG EXTERNALIZED STYLES (FROM index.js & index-reports.js)
    ========================================================= */
@@ -743,4 +772,3 @@
   background-color: #f8fafc !important;
   border-bottom: 1px solid #e2e8f0 !important;
 }
-

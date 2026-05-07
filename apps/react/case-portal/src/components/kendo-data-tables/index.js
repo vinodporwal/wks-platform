@@ -89,8 +89,6 @@ import {
 } from 'assets/images/icons'
 import { DashboardColors } from 'themes/colors'
 
-
-
 export const dateFields = [
   'maintStartDateTime',
   'maintEndDateTime',
@@ -274,8 +272,6 @@ const KendoDataTables = ({
   const lowerSiteName = SiteName?.toLowerCase()
   const isPEPP = ['pe', 'pp'].includes(lowerVertName)
   const IS_VCM_VERTICAL = ['vcm'].includes(lowerVertName)
-
-
 
   const toggleGrid = () => {
     setGridExpanded((prev) => !prev)
@@ -1431,6 +1427,7 @@ const KendoDataTables = ({
       <td
         {...tdProps}
         title={value}
+        //className={`${shouldHighlight ? 'edited-cell' : 'non-edited-cell '}`}
         style={{
           color: shouldHighlight ? 'orange' : undefined,
           fontWeight: shouldHighlight || isBoldFromCells ? 'bold' : undefined,
@@ -1561,6 +1558,7 @@ const KendoDataTables = ({
       <td
         {...props.tdProps}
         title={value}
+        //className={`${isRed ? 'edited-cell' : 'non-edited-cell '}`}
         style={{
           color: isRed ? 'orange' : undefined,
           fontWeight: isRed ? 'bold' : undefined,
@@ -1652,6 +1650,7 @@ const KendoDataTables = ({
       <td
         {...tdProps}
         title={display}
+        //className={`${highlight && isEdited ? 'edited-cell' : 'non-edited-cell '}`}
         style={{
           color: highlight && isEdited ? 'orange' : undefined,
           fontWeight: highlight && isEdited ? 'bold' : undefined,
@@ -1693,6 +1692,7 @@ const KendoDataTables = ({
       <td
         {...props.tdProps}
         title={display}
+        //className={`${isRed ? 'edited-cell' : 'non-edited-cell '}`}
         style={{
           color: isRed ? 'orange' : undefined,
         }}
@@ -1950,10 +1950,7 @@ const KendoDataTables = ({
                       },
                     }}
                   >
-                    <IconButton
-                      size='small'
-                      className='info-icon-pulse'
-                    >
+                    <IconButton size='small' className='info-icon-pulse'>
                       <InfoOutlinedIcon sx={{ fontSize: '1rem' }} />
                     </IconButton>
                   </MuiTooltip>
@@ -1999,7 +1996,8 @@ const KendoDataTables = ({
                   size='small'
                   className='custom-select-textfield'
                   sx={{
-                    display: permissions?.IS_PE_C2_HIDE !== false ? 'block' : 'none',
+                    display:
+                      permissions?.IS_PE_C2_HIDE !== false ? 'block' : 'none',
                     minWidth: 140,
                   }}
                   InputProps={{
@@ -2033,7 +2031,11 @@ const KendoDataTables = ({
                   </MenuItem>
 
                   {grades?.map((unit) => (
-                    <MenuItem key={unit.gradeId} value={unit.gradeId} className='menu-item-style'>
+                    <MenuItem
+                      key={unit.gradeId}
+                      value={unit.gradeId}
+                      className='menu-item-style'
+                    >
                       {unit.displayName}
                     </MenuItem>
                   ))}
@@ -2084,7 +2086,11 @@ const KendoDataTables = ({
                   </MenuItem>
 
                   {permissions?.packagingYears?.map((year) => (
-                    <MenuItem key={year} value={year} className='menu-item-style'>
+                    <MenuItem
+                      key={year}
+                      value={year}
+                      className='menu-item-style'
+                    >
                       {year}
                     </MenuItem>
                   ))}
@@ -2169,7 +2175,8 @@ const KendoDataTables = ({
                             textTransform: 'uppercase',
                             letterSpacing: '0.4px',
                             lineHeight: 1,
-                            fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif"
+                            fontFamily:
+                              "'Honeywell Sans Web', 'Inter', sans-serif",
                           }}
                         >
                           Unit:
@@ -2193,7 +2200,8 @@ const KendoDataTables = ({
                               fontWeight: 700,
                               minHeight: '26px',
                               margin: '1px 4px',
-                              fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                              fontFamily:
+                                "'Honeywell Sans Web', 'Inter', sans-serif",
                               borderRadius: '7px',
                               '&.Mui-selected': {
                                 bgcolor: 'rgba(1, 0, 203, 0.08)',
@@ -2216,12 +2224,25 @@ const KendoDataTables = ({
 
                     {/* Render the correct unit options dynamically */}
                     {permissions?.units?.map((unit) => (
-                      <MenuItem key={unit} value={unit} className='menu-item-style'>
+                      <MenuItem
+                        key={unit}
+                        value={unit}
+                        className='menu-item-style'
+                      >
                         {unit}
                       </MenuItem>
                     ))}
                   </TextField>
-                  <Divider sx={{ my: '4px !important', borderColor: `${DashboardColors.divider} !important`, width: 2, borderWidth: 1.5 }} orientation="vertical" flexItem={{ mx: 2}} />
+                  <Divider
+                    sx={{
+                      my: '4px !important',
+                      borderColor: `${DashboardColors.divider} !important`,
+                      width: 2,
+                      borderWidth: 1.5,
+                    }}
+                    orientation='vertical'
+                    flexItem={{ mx: 2 }}
+                  />
                 </React.Fragment>
               )}
 
@@ -2248,7 +2269,8 @@ const KendoDataTables = ({
                           textTransform: 'uppercase',
                           letterSpacing: '0.4px',
                           lineHeight: 1,
-                          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                          fontFamily:
+                            "'Honeywell Sans Web', 'Inter', sans-serif",
                         }}
                       >
                         Mode:
@@ -2266,7 +2288,11 @@ const KendoDataTables = ({
                   </MenuItem>
 
                   {permissions.modes.map((m) => (
-                    <MenuItem key={m.name} value={m.name} className='menu-item-style'>
+                    <MenuItem
+                      key={m.name}
+                      value={m.name}
+                      className='menu-item-style'
+                    >
                       {m.displayName}
                     </MenuItem>
                   ))}
@@ -2276,7 +2302,7 @@ const KendoDataTables = ({
                 <Button
                   variant='contained'
                   className='btn-add'
-                  startIcon={<AddIcon sx={{ color: '#4A4DDA !important'}}/>}
+                  startIcon={<AddIcon sx={{ color: '#4A4DDA !important' }} />}
                   onClick={handleAddRow}
                   disabled={isButtonDisabled || READ_ONLY}
                 >
@@ -3881,8 +3907,8 @@ const KendoDataTables = ({
 
       {gridExpanded &&
         (permissions?.approveBtn || permissions?.nextBtn || showDeleteAll) && (
-      <Box className='action-box'>
-        {/* {permissions?.showCreateCasebutton && (
+          <Box className='action-box'>
+            {/* {permissions?.showCreateCasebutton && (
             <Button
               variant='contained'
               onClick={createCase}

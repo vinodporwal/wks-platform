@@ -1004,6 +1004,7 @@ const AdvanceKendoTable = ({
       <td
         {...tdProps}
         title={value}
+        // className={`${shouldHighlight ? 'edited-cell' : 'non-edited-cell '}`}
         style={{
           color: shouldHighlight ? 'orange' : undefined,
           fontWeight: shouldHighlight ? 'bold' : undefined,
@@ -1168,6 +1169,7 @@ const AdvanceKendoTable = ({
       <td
         {...tdProps}
         title={displayValue}
+        //className={`${shouldHighlight ? 'edited-cell' : 'non-edited-cell '}`}
         style={{
           color: shouldHighlight ? 'orange' : undefined,
           fontWeight: shouldHighlight ? 'bold' : undefined,
@@ -1681,6 +1683,23 @@ const AdvanceKendoTable = ({
       if (col?.type === 'select') {
         // Change this to your multiselect field name
         let allOptions = col.options
+
+        // Wrapper for toolTipRenderer to handle select display mode
+        const selectToolTipRenderer = (props) => {
+          const value = props.dataItem[props.field]
+          const displayMode = col.displayMode || 'label' // 'label' or 'value'
+
+          // If displayMode is 'label', find and display the label instead of value
+          let displayChildren = props.children
+          if (displayMode === 'label' && allOptions) {
+            const option = allOptions.find((opt) => opt.value === value)
+            displayChildren = option ? option.label : value
+          }
+
+          // Call the original toolTipRenderer with modified children
+          return toolTipRenderer({ ...props, children: displayChildren })
+        }
+
         return (
           <GridColumn
             key={col.field}
@@ -1700,7 +1719,7 @@ const AdvanceKendoTable = ({
                   />
                 ),
               },
-              data: toolTipRenderer,
+              data: selectToolTipRenderer,
               headerCell: col.subtitle
                 ? createHeaderWithSubtitle(col.subtitle)
                 : SimpleHeaderWithTooltip,
@@ -1967,6 +1986,7 @@ const AdvanceKendoTable = ({
       <td
         {...props.tdProps}
         title={displayValue}
+        //className={`${shouldHighlight ? 'edited-cell' : 'non-edited-cell '}`}
         style={{
           color: shouldHighlight ? 'orange' : undefined,
           fontWeight: shouldHighlight ? 'bold' : undefined,
