@@ -2951,7 +2951,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		
 		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 		
-		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
+		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD");
 		boolean monthDropdown= (verticalName.equalsIgnoreCase("PP") && (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("SEZ") || site.getName().equalsIgnoreCase("DTA")));
 		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
 		List<String> items = List.of(
@@ -2994,7 +2994,11 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		 Double durationInMins = row[1] != null ? ((Number) row[1]).doubleValue() : null;
 			Integer maintForMonth = row[2] != null ? (Integer) row[2] : null;
 
-			Double durationInHrs = durationInMins / 60;
+		int totaldurationInMins = (Integer) row[1] != null ? ((Number) row[1]).intValue() : null;
+					int hours = totaldurationInMins / 60;
+					int minutes = totaldurationInMins % 60;
+					double durationInHrs = hours + (minutes / 100.0);
+			
 			String monthName = Month.of(maintForMonth).name();
 	
 					
@@ -3008,8 +3012,10 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					&& incomingRemark.trim().equals(existingRemark)
 					&& (
 						!description.equals(dto.getDiscription()) 
-						|| !Objects.equals(durationInHrs, dto.getDurationInHrs())
-						|| !monthName.equalsIgnoreCase(dto.getMonth())
+						// || !Objects.equals(durationInHrs, dto.getDurationInHrs())
+						|| !Objects.equals( Math.round(durationInHrs * 100.0) / 100.0,
+						Math.round(dto.getDurationInHrs() * 100.0) / 100.0)
+						|| ( !elastomer && !monthName.equalsIgnoreCase(dto.getMonth()))
 					)) {
     
 					dto.setSaveStatus("Failed");

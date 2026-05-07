@@ -142,6 +142,8 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 					int minutes = totalMinutes % 60;
 					double durationInHrs = hours + (minutes / 100.0);
 					dto.setDurationInHrs(durationInHrs);
+					
+				//	dto.setDurationInHrs(totalMinutes / 60.0);
 				}
 				dto.setProduct((String) result[6]);
 				// FOR ID : pmt.Id
@@ -1858,11 +1860,6 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 					}
 				}
 
-				// reset the fields for import 
-				if(ElastomerHmdSbr) { 
-
-					
-				}
 				// Always add the DTO to the list
 				dtoList.add(dto);
 			}
@@ -2611,6 +2608,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		boolean pvc = verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
+		boolean elastomerJMD =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD");
 		boolean elastomerAndHMDSBR = verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
 		Boolean monthDropdown = false;
 		if(verticalName.equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD")) {
@@ -2695,8 +2693,16 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	            if(plantMaintenanceTransaction.getNoOfRPF()!=null) {
 	            	originalNoOfRPF = plantMaintenanceTransaction.getNoOfRPF();
 	            }
-	            Double originalDurationInHrs = plantMaintenanceTransaction.getDurationInMins() != null ? 
-                        plantMaintenanceTransaction.getDurationInMins() / 60.0 : null;
+	            // Double originalDurationInHrs = plantMaintenanceTransaction.getDurationInMins() != null ? 
+                //         plantMaintenanceTransaction.getDurationInMins() / 60.0 : null;
+
+				int totalMinutes = plantMaintenanceTransaction.getDurationInMins();
+                
+					int hours = totalMinutes / 60;
+					int minutes = totalMinutes % 60;
+					double durationInHrs = hours + (minutes / 100.0);
+					double originalDurationInHrs = durationInHrs;
+				
 	            String originalRemark = plantMaintenanceTransaction.getRemarks();
 	            Double originalRateEO = plantMaintenanceTransaction.getRateEO()!=null? plantMaintenanceTransaction.getRateEO():null;
 	            Double originalRateEOE = plantMaintenanceTransaction.getRateEOE()!=null? plantMaintenanceTransaction.getRateEOE():null;
@@ -2771,7 +2777,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                }
 	                boolean fieldsChanged = 
 	                	    !java.util.Objects.equals(originalDesc, newDesc) ||
-	                	    (!monthDropdown && !elastomer && (!java.util.Objects.equals(originalStart, newStart) || 
+	                	    (!monthDropdown && !elastomer && !elastomerJMD && !elastomerAndHMDSBR && (!java.util.Objects.equals(originalStart, newStart) || 
 	                	                        !java.util.Objects.equals(originalEnd, newEnd))) ||
 	                	    !java.util.Objects.equals(originalRate, newRate) ||
 	                	    !java.util.Objects.equals(originalRPFDownTime, newRPFDownTime) ||
@@ -2785,7 +2791,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                    continue; 
 	                }
 	                
-	                if(verticalName.equalsIgnoreCase("ELASTOMER") && (!java.util.Objects.equals(originalDurationInHrs, newDurationInHrs))) {
+	                if(verticalName.equalsIgnoreCase("ELASTOMER") && (!java.util.Objects.equals(originalDurationInHrs, newDurationInHrs)) && !elastomerAndHMDSBR) {
 	                	if(java.util.Objects.equals(originalRemark, newRemark)) {
 	                		 shutDownPlanDTO.setSaveStatus("Failed");
 	 	                    shutDownPlanDTO.setErrDescription("Remark must be updated when duration is changed.");
