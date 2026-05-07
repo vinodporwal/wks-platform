@@ -99,7 +99,7 @@ const Profile = ({ keycloak }) => {
           />
           <Typography
             variant='subtitle1'
-            sx={{ color: 'white', fontWeight: 'normal' }}
+            sx={{ color: 'black', fontWeight: 'normal' }}
           >
             {keycloak.idTokenParsed.given_name}
           </Typography>

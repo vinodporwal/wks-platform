@@ -457,7 +457,7 @@ export default function HeaderContent({ keycloak }) {
           <Box sx={{ ml: 1 }}>
             <Typography
               variant='body2'
-              color='white'
+              color='black'
               className='custom-title-font'
             >
               {screenTitleName}
