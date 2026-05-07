@@ -3,7 +3,8 @@ legend {
 }
 
 header {
-  background-color: #0100cb !important ; /* Example: Light gray background */
+  background-color: #ffffff !important ; /* Example: Light gray background */
+  /* background-color: #0100cb !important ;  */
   /* background-color: #0f3cc9 !important ; Example: Light gray background */
 }
 /* .css-1ynvhpv-MuiButtonBase-root-MuiListItemButton-root:hover,
@@ -103,13 +104,13 @@ header {
   font-family: 'Roboto', sans-serif !important;
   /* font-weight: bold; */
   white-space: nowrap;
-  color: white;
+  color: black;
   font-size: 0.65rem;
 }
 .custom-title-dropdown-content {
   font-family: 'Roboto', sans-serif !important;
   white-space: nowrap;
-  color: white;
+  color: black;
 }
 
 .custom-title-dropdown-content .MuiSelect-select {
