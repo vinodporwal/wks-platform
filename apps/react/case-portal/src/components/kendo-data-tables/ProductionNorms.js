@@ -70,6 +70,10 @@ const ProductionNorms = ({ permissions }) => {
   const IS_VCM = verticalObject?.name?.toLowerCase() == 'vcm'
   const IS_AROMATIC_SEZ =
     lowerVertName === 'aromatics' && SITE_NAME_LOWERCASE === 'sez'
+  const IS_AROMATIC_SEZ_PX4 =
+    lowerVertName === 'aromatics' &&
+    SITE_NAME_LOWERCASE === 'sez' &&
+    plantName === 'px4'
   const IS_PVC_VMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'vmd'
   const IS_PVC_DMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'dmd'
   const IS_AROMATIC_DTA_PLATFORMER =
@@ -279,7 +283,7 @@ const ProductionNorms = ({ permissions }) => {
 
     try {
       let plantId = PLANT_ID
-      const isKiloTon = selectedUnit === 'KT'
+      const isKiloTon = selectedUnit?.includes('KT')
 
       const productNormData = newRow.map((row) => ({
         aopType: row.aopType || 'production',
@@ -572,28 +576,101 @@ const ProductionNorms = ({ permissions }) => {
 
       let formattedData = []
 
+      const fiscalYear = AOP_YEAR
+      const startYear = parseInt(fiscalYear.split('-')[0], 10)
+      const nextYear = startYear + 1
+
+      const isLeap = (year) => new Date(year, 1, 29).getDate() === 29
+
+      const daysInMonth = {
+        april: 30,
+        may: 31,
+        june: 30,
+        july: 31,
+        aug: 31,
+        sep: 30,
+        oct: 31,
+        nov: 30,
+        dec: 31,
+        jan: 31,
+        feb: isLeap(nextYear) ? 29 : 28,
+        march: 31,
+      }
+
       if (lowerVertName !== 'cracker') {
         formattedData = data.map((item, index) => {
-          const isKiloTon = selectedUnit == 'KT'
+          const isKiloTon = selectedUnit?.includes('KT')
           const transformedItem = {
             ...item,
             idFromApi: item.id,
-            uom: selectedUnit ? selectedUnit : 'MT',
+            uom: selectedUnit
+              ? selectedUnit
+              : IS_AROMATIC_SEZ_PX4
+                ? 'MT/Day'
+                : 'MT',
             normParametersFKId: item?.normParametersFKId?.toLowerCase(),
             id: index,
-            ...(isKiloTon && {
-              jan: item.jan ? item.jan / 1000 : item.jan,
-              feb: item.feb ? item.feb / 1000 : item.feb,
-              march: item.march ? item.march / 1000 : item.march,
-              april: item.april ? item.april / 1000 : item.april,
-              may: item.may ? item.may / 1000 : item.may,
-              june: item.june ? item.june / 1000 : item.june,
-              july: item.july ? item.july / 1000 : item.july,
-              aug: item.aug ? item.aug / 1000 : item.aug,
-              sep: item.sep ? item.sep / 1000 : item.sep,
-              oct: item.oct ? item.oct / 1000 : item.oct,
-              nov: item.nov ? item.nov / 1000 : item.nov,
-              dec: item.dec ? item.dec / 1000 : item.dec,
+            ...((isKiloTon || IS_AROMATIC_SEZ_PX4) && {
+              jan: item.jan
+                ? item.jan /
+                  (isKiloTon ? 1000 : 1) /
+                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.jan : 1)
+                : item.jan,
+              feb: item.feb
+                ? item.feb /
+                  (isKiloTon ? 1000 : 1) /
+                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.feb : 1)
+                : item.feb,
+              march: item.march
+                ? item.march /
+                  (isKiloTon ? 1000 : 1) /
+                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.march : 1)
+                : item.march,
+              april: item.april
+                ? item.april /
+                  (isKiloTon ? 1000 : 1) /
+                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.april : 1)
+                : item.april,
+              may: item.may
+                ? item.may /
+                  (isKiloTon ? 1000 : 1) /
+                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.may : 1)
+                : item.may,
+              june: item.june
+                ? item.june /
+                  (isKiloTon ? 1000 : 1) /
+                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.june : 1)
+                : item.june,
+              july: item.july
+                ? item.july /
+                  (isKiloTon ? 1000 : 1) /
+                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.july : 1)
+                : item.july,
+              aug: item.aug
+                ? item.aug /
+                  (isKiloTon ? 1000 : 1) /
+                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.aug : 1)
+                : item.aug,
+              sep: item.sep
+                ? item.sep /
+                  (isKiloTon ? 1000 : 1) /
+                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.sep : 1)
+                : item.sep,
+              oct: item.oct
+                ? item.oct /
+                  (isKiloTon ? 1000 : 1) /
+                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.oct : 1)
+                : item.oct,
+              nov: item.nov
+                ? item.nov /
+                  (isKiloTon ? 1000 : 1) /
+                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.nov : 1)
+                : item.nov,
+              dec: item.dec
+                ? item.dec /
+                  (isKiloTon ? 1000 : 1) /
+                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.dec : 1)
+                : item.dec,
             }),
           }
           const total = [
@@ -620,11 +697,6 @@ const ProductionNorms = ({ permissions }) => {
         })
       }
 
-      const fiscalYear = AOP_YEAR
-      const startYear = parseInt(fiscalYear.split('-')[0], 10)
-      const nextYear = startYear + 1
-
-      const isLeap = (year) => new Date(year, 1, 29).getDate() === 29
 
       if (lowerVertName === 'cracker') {
         formattedData = data.map((item, index) => {
@@ -1154,7 +1226,11 @@ const ProductionNorms = ({ permissions }) => {
               ? true
               : permissions?.saveBtn ?? false,
           units:
-            lowerVertName === 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
+            lowerVertName === 'cracker'
+              ? ['MT/Month', 'TPH']
+              : IS_AROMATIC_SEZ
+                ? ['MT/Day', 'KT/Day']
+                : ['MT', 'KT'],
           customHeight: permissions?.customHeight,
           downloadExcelBtnFromUI:
             lowerVertName === 'vcm' ||
