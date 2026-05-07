@@ -75,6 +75,10 @@ const BusinessDemand = ({ permissions }) => {
   const IS_CHEMICAL_JMD =
     lowerVertName === 'chemical' && lowerSiteName === 'jmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'
+  const IS_VCM_VMD_BENZEN =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'vmd' &&
+    plantObject?.name?.toLowerCase() === 'benzene'
   const PRODUCTION_TARGET_LABEL = IS_VCM_VERTICAL
     ? 'Production Target (This is a reference for entering the Business Demand value)'
     : 'Production Target (MT) (This is a reference for entering the Business Demand value)'
@@ -690,41 +694,43 @@ const BusinessDemand = ({ permissions }) => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      {lowerVertName !== 'cracker' && !IS_ELASTOMER_JMD && (
-        <>
-          <CustomAccordion defaultExpanded disableGutters>
-            <CustomAccordionSummary
-              aria-controls='meg-grid-content'
-              id='meg-grid-header'
-            >
-              <Typography component='span' className='accordian-title'>
-                {PRODUCTION_TARGET_LABEL}
-              </Typography>
-            </CustomAccordionSummary>
-            <CustomAccordionDetails>
-              <Box sx={{ width: '100%', margin: 0 }}>
-                <ProductionvolumeData
-                  isBusinessDemand={true}
-                  permissions={{
-                    allAction: true,
-                    showAction: false,
-                    addButton: false,
-                    deleteButton: false,
-                    editButton: false,
-                    showUnit: true,
-                    saveWithRemark: false,
-                    showCalculate: false,
-                    saveBtn: false,
-                    hideSummary: true,
-                    hideUploadExcel: true,
-                    hideDownloadExcel: true,
-                  }}
-                />
-              </Box>
-            </CustomAccordionDetails>
-          </CustomAccordion>
-        </>
-      )}
+      {lowerVertName !== 'cracker' &&
+        !IS_ELASTOMER_JMD &&
+        !IS_VCM_VMD_BENZEN && (
+          <>
+            <CustomAccordion defaultExpanded disableGutters>
+              <CustomAccordionSummary
+                aria-controls='meg-grid-content'
+                id='meg-grid-header'
+              >
+                <Typography component='span' className='accordian-title'>
+                  {PRODUCTION_TARGET_LABEL}
+                </Typography>
+              </CustomAccordionSummary>
+              <CustomAccordionDetails>
+                <Box sx={{ width: '100%', margin: 0 }}>
+                  <ProductionvolumeData
+                    isBusinessDemand={true}
+                    permissions={{
+                      allAction: true,
+                      showAction: false,
+                      addButton: false,
+                      deleteButton: false,
+                      editButton: false,
+                      showUnit: true,
+                      saveWithRemark: false,
+                      showCalculate: false,
+                      saveBtn: false,
+                      hideSummary: true,
+                      hideUploadExcel: true,
+                      hideDownloadExcel: true,
+                    }}
+                  />
+                </Box>
+              </CustomAccordionDetails>
+            </CustomAccordion>
+          </>
+        )}
 
       {IS_ELASTOMER_JMD && (
         <KendoDataTables
