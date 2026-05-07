@@ -483,9 +483,9 @@ export default function HeaderContent({ keycloak }) {
     if (!verticalFromDashboard?.v_id || !verticalFromDashboard?.sid) {
       return
     }
-    // setTimeout(() => {
-    //   dispatch(openDrawer({ drawerOpen: true }))
-    // }, 1500)
+    setTimeout(() => {
+      dispatch(openDrawer({ drawerOpen: true }))
+    }, 1500)
     navigate('/production-norms-plan/configuration', { replace: true })
   }, [verticalFromDashboard?.trigger])
 
@@ -568,15 +568,17 @@ export default function HeaderContent({ keycloak }) {
             <img src={Logo} alt='RIL Logo' style={{ height: 32 }} />
           </Box>
 
-          <Box sx={{ ml: 1 }}>
-            <Typography
-              variant='body2'
-              color='white'
-              className='custom-title-font'
-            >
-              {screenTitleName}
-            </Typography>
-          </Box>
+          {!HIDE_DASHBOARD_DROPDOWN && (
+            <Box sx={{ ml: 1 }}>
+              <Typography
+                variant='body2'
+                color='black'
+                className='custom-title-font'
+              >
+                {screenTitleName}
+              </Typography>
+            </Box>
+          )}
         </Box>
 
         {/* RIGHT SIDE: Dropdowns */}

@@ -30,7 +30,11 @@ const Header = ({ open, handleDrawerToggle, keycloak }) => {
         color='secondary'
         className='custom-toggle-btn'
       >
-        {!open ? <MenuOutlined /> : <CloseOutlined />}
+        {!open ? (
+          <MenuOutlined style={{ color: 'black' }} />
+        ) : (
+          <CloseOutlined style={{ color: 'black' }} />
+        )}
       </IconButton>
       <HeaderContent keycloak={keycloak} />
     </Toolbar>
