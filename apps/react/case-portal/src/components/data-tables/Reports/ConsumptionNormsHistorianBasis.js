@@ -17,13 +17,8 @@ import {
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
 
-import AddIcon from '@mui/icons-material/Add'
-import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
-import DownloadIcon from '@mui/icons-material/Download'
-import UploadIcon from '@mui/icons-material/Upload'
-import CalculateIcon from '@mui/icons-material/Calculate'
-import SaveIcon from '@mui/icons-material/Save'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import { FileExportIcon } from 'assets/images/icons/index'
 
 const ConsumptionNormsHistorianBasis = () => {
   const keycloak = useSession()
@@ -414,7 +409,7 @@ const ConsumptionNormsHistorianBasis = () => {
   if (lowerVertName === 'pe') activeTabs = PETabs
 
   return (
-    <div>
+    <div className='configuration-accordion-wrapper'>
       <LoaderBackdrop open={!!loading} />
 
       {/* Hidden ExcelExport instances for each grid */}
@@ -448,12 +443,18 @@ const ConsumptionNormsHistorianBasis = () => {
         })}
       </div>
 
-      <Box display='flex' justifyContent='flex-end' mb='2px'>
+      <Box display='flex' justifyContent='flex-end' sx={{ marginBottom: '8px', mt: '5px' }}>
         <Button
           variant='contained'
           onClick={exportAllGrids}
           className='btn-export'
-          startIcon={<DownloadIcon fontSize='small' />}
+          startIcon={
+            <Box
+              component='img'
+              src={FileExportIcon}
+              className='w16-icon'
+            />
+          }
         >
           Export
         </Button>
@@ -465,16 +466,18 @@ const ConsumptionNormsHistorianBasis = () => {
             const d = dataMap[name] || { rows: [], columns: [] }
             return (
               <div key={name}>
-                <CustomAccordion defaultExpanded disableGutters>
+                <CustomAccordion defaultExpanded disableGutters className='k-table-box'>
                   <CustomAccordionSummary
                     aria-controls={`${name}-content`}
                     id={`${name}-header`}
+                    expandIcon={<ExpandMoreIcon sx={{ fontSize: '1.2rem' }} />}
+                    className='aop-report-accordion-summary'
                   >
                     <Typography component='span' className='grid-title'>
                       {renderTitle(name)}
                     </Typography>
                   </CustomAccordionSummary>
-                  <CustomAccordionDetails>
+                  <CustomAccordionDetails sx={{ padding: '0px 0px 1px' }}>
                     <Box
                       sx={{
                         width: '100%',

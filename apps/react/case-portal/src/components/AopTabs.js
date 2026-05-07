@@ -40,6 +40,7 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
         value={tabIndex}
         onChange={(e, newIndex) => setTabIndex(newIndex)}
         variant='scrollable'
+        className="aop-tabs-tabs"
         sx={{
           minHeight: 20,
           width: 'max-content',
@@ -70,8 +71,8 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
               sx={{
                 minHeight: 20,
                 px: '4px',
-                fontSize: '16px',
-                fontWeight: isSelected ? 700 : 500,
+                fontSize: '14px',
+                fontWeight: isSelected ? 600 : 400,
                 textTransform: 'none',
                 fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
                 borderRadius: 0,

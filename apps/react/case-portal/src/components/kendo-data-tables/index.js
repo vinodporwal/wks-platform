@@ -1,5 +1,3 @@
-import HelpIcon from '@mui/icons-material/Help'
-import InfoIcon from '@mui/icons-material/Info'
 import { Tooltip as MuiTooltip, Divider } from '@mui/material'
 import '@progress/kendo-font-icons/dist/index.css'
 import { Grid, GridColumn } from '@progress/kendo-react-grid'
@@ -28,7 +26,6 @@ import LineDropdownEditor from './Utilities-Kendo/LineDropdownEditor'
 import {
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -81,12 +78,8 @@ import { getRoleName } from 'services/role-service'
 import { getColumnMenuDateFilter } from 'components/data-tables/Reports-kendo/ColumnMenuDateFilter'
 import DateTimePickerEditor24HourFormat from './Utilities-Kendo/DatePickeronSelectedYr24HourFomat'
 import { NoSpinnerNumericEditorCrackerValidation } from './Utilities-Kendo/numbericColumnsCrackerValidation'
-import ShutdownRateDropdown from './Utilities-Kendo/ShutdownRateDropdown'
-import MonthDropdownPEPP1 from './Utilities-Kendo/MonthDropdownPEPP1'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
-import { keyframes } from '@mui/material/styles'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import Collapse from '@mui/material/Collapse'
 import {
   FileExportIcon,
@@ -96,12 +89,7 @@ import {
 } from 'assets/images/icons'
 import { DashboardColors } from 'themes/colors'
 
-// Subtle pulse for the info icon on load
-const softPulse = keyframes`
-  0% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(1.15); opacity: 1; }
-  100% { transform: scale(1); opacity: 0.6; }
-`
+
 
 export const dateFields = [
   'maintStartDateTime',
@@ -287,14 +275,7 @@ const KendoDataTables = ({
   const isPEPP = ['pe', 'pp'].includes(lowerVertName)
   const IS_VCM_VERTICAL = ['vcm'].includes(lowerVertName)
 
-  const menuItemStyle = {
-    fontSize: 14,
-    fontWeight: 500,
-    color: '#303030',
-    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-    letterSpacing: '0px',
-    verticalAlign: 'middle',
-  }
+
 
   const toggleGrid = () => {
     setGridExpanded((prev) => !prev)
@@ -1971,18 +1952,7 @@ const KendoDataTables = ({
                   >
                     <IconButton
                       size='small'
-                      sx={{
-                        padding: '2px',
-                        color: '#94a3b8', // Slate 400 (Quiet until hovered)
-                        transition: 'all 0.2s ease-in-out',
-                        animation: `${softPulse} 3s ease-in-out infinite`,
-                        '&:hover': {
-                          backgroundColor: 'rgba(1, 0, 203, 0.08)',
-                          color: '#0100cb', // Turns brand blue on hover
-                          animation: 'none', // Stop pulse on interaction
-                          transform: 'rotate(10deg)',
-                        },
-                      }}
+                      className='info-icon-pulse'
                     >
                       <InfoOutlinedIcon sx={{ fontSize: '1rem' }} />
                     </IconButton>
@@ -2027,33 +1997,10 @@ const KendoDataTables = ({
                   }}
                   variant='outlined'
                   size='small'
+                  className='custom-select-textfield'
                   sx={{
-                    display:
-                      permissions?.IS_PE_C2_HIDE !== false ? 'block' : 'none',
+                    display: permissions?.IS_PE_C2_HIDE !== false ? 'block' : 'none',
                     minWidth: 140,
-                    '& .MuiOutlinedInput-root': {
-                      height: '30px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.85)',
-                      borderRadius: '7px',
-                      fontSize: '14px',
-                      fontWeight: 700,
-                      fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                      color: '#252525',
-                      '& fieldset': {
-                        border: 'none',
-                      },
-                      '&:hover fieldset': {
-                        border: 'none',
-                      },
-                      '&.Mui-focused fieldset': {
-                        border: 'none',
-                      },
-                    },
-                    '& .MuiSelect-select': {
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '2px 6px !important',
-                    },
                   }}
                   InputProps={{
                     startAdornment: (
@@ -2081,16 +2028,12 @@ const KendoDataTables = ({
                     },
                   }}
                 >
-                  <MenuItem value='' disabled style={menuItemStyle}>
+                  <MenuItem value='' disabled className='menu-item-style'>
                     {'Select'}
                   </MenuItem>
 
                   {grades?.map((unit) => (
-                    <MenuItem
-                      key={unit.gradeId}
-                      value={unit.gradeId}
-                      style={menuItemStyle}
-                    >
+                    <MenuItem key={unit.gradeId} value={unit.gradeId} className='menu-item-style'>
                       {unit.displayName}
                     </MenuItem>
                   ))}
@@ -2108,30 +2051,9 @@ const KendoDataTables = ({
                   }}
                   variant='outlined'
                   size='small'
+                  className='custom-select-textfield'
                   sx={{
                     minWidth: 120,
-                    '& .MuiOutlinedInput-root': {
-                      height: '30px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.85)',
-                      borderRadius: '7px',
-                      fontSize: '0.7rem',
-                      fontWeight: 600,
-                      '& fieldset': {
-                        borderColor: 'rgba(0, 0, 0, 0.08)',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: '#0100cb',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#0100cb',
-                        borderWidth: '1.2px',
-                      },
-                    },
-                    '& .MuiSelect-select': {
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '2px 6px !important',
-                    },
                   }}
                   InputProps={{
                     startAdornment: (
@@ -2157,12 +2079,12 @@ const KendoDataTables = ({
                     },
                   }}
                 >
-                  <MenuItem value='' disabled style={menuItemStyle}>
+                  <MenuItem value='' disabled className='menu-item-style'>
                     Select
                   </MenuItem>
 
                   {permissions?.packagingYears?.map((year) => (
-                    <MenuItem key={year} value={year} style={menuItemStyle}>
+                    <MenuItem key={year} value={year} className='menu-item-style'>
                       {year}
                     </MenuItem>
                   ))}
@@ -2247,39 +2169,16 @@ const KendoDataTables = ({
                             textTransform: 'uppercase',
                             letterSpacing: '0.4px',
                             lineHeight: 1,
-                            fontFamily:
-                              "'Honeywell Sans Web', 'Inter', sans-serif",
+                            fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif"
                           }}
                         >
                           Unit:
                         </Typography>
                       ),
                     }}
+                    className='custom-select-textfield'
                     sx={{
                       minWidth: 120,
-                      '& .MuiOutlinedInput-root': {
-                        height: '30px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.85)',
-                        borderRadius: '7px',
-                        fontSize: '14px',
-                        fontWeight: 700,
-                        color: '#252525',
-                        fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                        '& fieldset': {
-                          border: 'none',
-                        },
-                        '&:hover fieldset': {
-                          border: 'none',
-                        },
-                        '&.Mui-focused fieldset': {
-                          border: 'none',
-                        },
-                      },
-                      '& .MuiSelect-select': {
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '2px 6px !important',
-                      },
                     }}
                     SelectProps={{
                       MenuProps: {
@@ -2294,8 +2193,7 @@ const KendoDataTables = ({
                               fontWeight: 700,
                               minHeight: '26px',
                               margin: '1px 4px',
-                              fontFamily:
-                                "'Honeywell Sans Web', 'Inter', sans-serif",
+                              fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
                               borderRadius: '7px',
                               '&.Mui-selected': {
                                 bgcolor: 'rgba(1, 0, 203, 0.08)',
@@ -2312,27 +2210,18 @@ const KendoDataTables = ({
                     }}
                     // disabled={rows?.length === 0}
                   >
-                    <MenuItem value='' disabled sx={menuItemStyle}>
+                    <MenuItem value='' disabled className='menu-item-style'>
                       Select UOM
                     </MenuItem>
 
                     {/* Render the correct unit options dynamically */}
                     {permissions?.units?.map((unit) => (
-                      <MenuItem key={unit} value={unit} sx={menuItemStyle}>
+                      <MenuItem key={unit} value={unit} className='menu-item-style'>
                         {unit}
                       </MenuItem>
                     ))}
                   </TextField>
-                  <Divider
-                    sx={{
-                      my: '4px !important',
-                      borderColor: `${DashboardColors.divider} !important`,
-                      width: 2,
-                      borderWidth: 1.5,
-                    }}
-                    orientation='vertical'
-                    flexItem={{ mx: 2 }}
-                  />
+                  <Divider sx={{ my: '4px !important', borderColor: `${DashboardColors.divider} !important`, width: 2, borderWidth: 1.5 }} orientation="vertical" flexItem={{ mx: 2}} />
                 </React.Fragment>
               )}
 
@@ -2343,30 +2232,9 @@ const KendoDataTables = ({
                   onChange={(e) => setSelectMode(e.target.value)}
                   variant='outlined'
                   size='small'
+                  className='custom-select-textfield'
                   sx={{
                     minWidth: 140,
-                    '& .MuiOutlinedInput-root': {
-                      height: '30px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.85)',
-                      borderRadius: '7px',
-                      fontSize: '14px',
-                      fontWeight: 700,
-                      fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                      '& fieldset': {
-                        border: 'none',
-                      },
-                      '&:hover fieldset': {
-                        border: 'none',
-                      },
-                      '&.Mui-focused fieldset': {
-                        border: 'none',
-                      },
-                    },
-                    '& .MuiSelect-select': {
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '2px 6px !important',
-                    },
                   }}
                   InputProps={{
                     startAdornment: (
@@ -2380,8 +2248,7 @@ const KendoDataTables = ({
                           textTransform: 'uppercase',
                           letterSpacing: '0.4px',
                           lineHeight: 1,
-                          fontFamily:
-                            "'Honeywell Sans Web', 'Inter', sans-serif",
+                          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
                         }}
                       >
                         Mode:
@@ -2394,12 +2261,12 @@ const KendoDataTables = ({
                     },
                   }}
                 >
-                  <MenuItem value='' disabled sx={menuItemStyle}>
+                  <MenuItem value='' disabled className='menu-item-style'>
                     Select Mode
                   </MenuItem>
 
                   {permissions.modes.map((m) => (
-                    <MenuItem key={m.name} value={m.name} sx={menuItemStyle}>
+                    <MenuItem key={m.name} value={m.name} className='menu-item-style'>
                       {m.displayName}
                     </MenuItem>
                   ))}
@@ -2409,7 +2276,7 @@ const KendoDataTables = ({
                 <Button
                   variant='contained'
                   className='btn-add'
-                  startIcon={<AddIcon sx={{ color: '#4A4DDA !important' }} />}
+                  startIcon={<AddIcon sx={{ color: '#4A4DDA !important'}}/>}
                   onClick={handleAddRow}
                   disabled={isButtonDisabled || READ_ONLY}
                 >
@@ -4014,14 +3881,8 @@ const KendoDataTables = ({
 
       {gridExpanded &&
         (permissions?.approveBtn || permissions?.nextBtn || showDeleteAll) && (
-          <Box
-            sx={{
-              marginTop: 2,
-              display: 'flex',
-              gap: 2,
-            }}
-          >
-            {/* {permissions?.showCreateCasebutton && (
+      <Box className='action-box'>
+        {/* {permissions?.showCreateCasebutton && (
             <Button
               variant='contained'
               onClick={createCase}
@@ -4373,7 +4234,7 @@ const KendoDataTables = ({
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+        <DialogActions className='compact-dialog-actions'>
           <Button onClick={() => setRemarkDialogOpen(false)} className='btn-no'>
             Cancel
           </Button>

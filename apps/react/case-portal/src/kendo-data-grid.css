@@ -281,6 +281,7 @@
   font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
   font-size: 15px !important;
   font-weight: 500 !important;
+  color: #252525 !important;
 }
 
 /* Prevent alternating row colors from overriding disabled cell background */
@@ -593,3 +594,153 @@
   outline: none !important;
   background-color: #ffffff !important;
 }
+
+.compact-dialog-title-delete {
+  padding: 12px 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  background-color: #fef2f2 !important;
+  border-bottom: 1px solid #fee2e2 !important;
+}
+
+.compact-dialog-content {
+  padding: 12px 16px !important;
+  padding-top: 12px !important;
+}
+
+
+.center-cell {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+
+.report-select-grade {
+  width: 180px !important;
+  margin-bottom: 8px !important;
+}
+
+/* =========================================================
+   NEW EXTERNALIZED STYLES (FROM index.js)
+   ========================================================= */
+
+@keyframes soft-pulse {
+  0% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.6; }
+}
+
+.info-icon-pulse {
+  padding: 2px !important;
+  color: #94a3b8 !important;
+  transition: all 0.2s ease-in-out !important;
+  animation: soft-pulse 3s ease-in-out infinite !important;
+}
+
+.info-icon-pulse:hover {
+  background-color: rgba(1, 0, 203, 0.08) !important;
+  color: #0100cb !important;
+  animation: none !important;
+  transform: rotate(10deg) !important;
+}
+
+.compact-dialog .MuiPaper-root {
+  border-radius: 12px !important;
+  width: 600px !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15) !important;
+}
+
+.compact-textfield .MuiOutlinedInput-root {
+  font-size: 0.85rem !important;
+  background-color: #fff !important;
+}
+
+.compact-textfield .MuiOutlinedInput-root fieldset {
+  border-color: #e2e8f0 !important;
+}
+
+.compact-textfield .MuiOutlinedInput-root:hover fieldset {
+  border-color: #cbd5e1 !important;
+}
+
+.compact-textfield .MuiOutlinedInput-root.Mui-focused fieldset {
+  border-color: #0100cb !important;
+}
+
+.menu-item-style {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #303030 !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+  letter-spacing: 0px !important;
+  vertical-align: middle !important;
+}
+
+.custom-select-textfield .MuiOutlinedInput-root {
+  height: 30px !important;
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  border-radius: 7px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #252525 !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+}
+
+.custom-select-textfield .MuiOutlinedInput-root fieldset {
+  border: none !important;
+}
+
+.custom-select-textfield .MuiSelect-select {
+  display: flex !important;
+  align-items: center !important;
+  padding: 2px 6px !important;
+}
+
+
+/* =========================================================
+   REPORT SPECIFIC EXTERNALIZED STYLES (FROM index-reports.js)
+   ========================================================= */
+
+.remark-cell {
+  cursor: pointer !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.text-cell-editor-input {
+  width: 100% !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+}
+
+.report-remark-textfield {
+  width: 100% !important;
+  min-width: 600px !important;
+}
+
+/* =========================================================
+   CONTAINER STYLING (Safely re-added)
+   ========================================================= */
+
+.k-table-box {
+  position: relative !important;
+  width: 100% !important;
+}
+
+
+/* =========================================================
+   DIALOG EXTERNALIZED STYLES (FROM index.js & index-reports.js)
+   ========================================================= */
+
+.compact-dialog-title {
+  padding: 12px 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  background-color: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+

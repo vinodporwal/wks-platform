@@ -73,7 +73,7 @@ const KendoDataGrid = ({
         title={props.title}
         style={{
           fontFamily:
-            "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
+            "'Honeywell Sans Web', 'Inter', sans-serif",
         }}
       >
         <Tooltip

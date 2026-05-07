@@ -15,6 +15,7 @@ import {
   CustomAccordionDetails,
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
 const MONTH_GRID_NAME = 'Final Norms'
 // const MODE_GRADES = ['4F', '5F', '4F+D']
@@ -363,7 +364,7 @@ export default function MonthWiseRawData() {
   const renderTitle = (t) => t
 
   return (
-    <div>
+    <div className='configuration-accordion-wrapper'>
       <LoaderBackdrop open={!!loading} />
 
       <Box display='flex' flexDirection='column' gap={2}>
@@ -371,16 +372,18 @@ export default function MonthWiseRawData() {
           const d = dataMap[name] || { rows: [], columns: [] }
           return (
             <div key={name}>
-              <CustomAccordion defaultExpanded disableGutters>
+              <CustomAccordion defaultExpanded disableGutters className='k-table-box'>
                 <CustomAccordionSummary
                   aria-controls={`${name}-content`}
                   id={`${name}-header`}
+                  expandIcon={<ExpandMoreIcon sx={{ fontSize: '1.2rem' }} />}
+                  className='aop-report-accordion-summary'
                 >
                   <Typography component='span' className='grid-title'>
                     {renderTitle(name)}
                   </Typography>
                 </CustomAccordionSummary>
-                <CustomAccordionDetails>
+                <CustomAccordionDetails sx={{ padding: '0px 0px 1px' }}>
                   <Box sx={{ width: '100%', margin: 0 }}>
                     <KendoDataGrid
                       rows={d.rows}

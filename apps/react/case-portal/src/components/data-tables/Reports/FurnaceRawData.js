@@ -11,7 +11,6 @@ import {
   CustomAccordionDetails,
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
-import { Button } from '@mui/material'
 import {
   ExcelExport,
   ExcelExportColumn,
@@ -19,6 +18,7 @@ import {
 import { CrackerReportsApiDataService } from 'services/cracker-reports-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
 const CALL_DELAY_MS = 20
 
@@ -247,7 +247,7 @@ const FurnaceRawData = () => {
   const renderTitle = (t) => t
 
   return (
-    <div>
+    <div className='configuration-accordion-wrapper'>
       <LoaderBackdrop open={!!loading} />
 
       <div style={{ display: 'none' }}>
@@ -294,16 +294,18 @@ const FurnaceRawData = () => {
           const d = dataMap[name] || { rows: [], columns: [] }
           return (
             <div key={name}>
-              <CustomAccordion defaultExpanded disableGutters>
+              <CustomAccordion defaultExpanded disableGutters className='k-table-box'>
                 <CustomAccordionSummary
                   aria-controls={`${name}-content`}
                   id={`${name}-header`}
+                  expandIcon={<ExpandMoreIcon sx={{ fontSize: '1.2rem' }} />}
+                  className='aop-report-accordion-summary'
                 >
                   <Typography component='span' className='grid-title'>
                     {renderTitle(name)}
                   </Typography>
                 </CustomAccordionSummary>
-                <CustomAccordionDetails>
+                <CustomAccordionDetails sx={{ padding: '0px 0px 1px' }}>
                   <Box sx={{ width: '100%', margin: 0 }}>
                     <KendoDataGrid
                       rows={d.rows}

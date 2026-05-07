@@ -108,27 +108,7 @@ export default function StepperNav() {
       variant='scrollable'
       scrollButtons='auto' // ✅ FIXED
       allowScrollButtonsMobile
-      sx={{
-        minHeight: 40,
-
-        // ✅ FORCE SINGLE LINE (NO WRAP BUG)
-        '& .MuiTabs-flexContainer': {
-          flexWrap: 'nowrap',
-        },
-
-        '& .MuiTabs-indicator': {
-          top: 0,
-          height: 4,
-          backgroundColor: '#AE4787',
-        },
-
-        '& .MuiTab-root': {
-          minHeight: 40,
-        },
-       '& .MuiTabs-scrollButtons.Mui-disabled': {
-          display: 'none',
-        },
-      }}
+      className="stepper-nav-tabs"
     >
       {steps.map((step) => (
         <Tooltip key={step.key} title={step.label} arrow>
@@ -144,43 +124,11 @@ export default function StepperNav() {
             }
             iconPosition='start'
             label={
-              <span
-                style={{
-                  display: 'inline-block',
-                  maxWidth: 120,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  fontSize: '12px',
-                  fontWeight: 400,
-                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                  color: "#303030",
-                  textTransform: 'uppercase'
-                }}
-              >
+              <span className="stepper-nav-tab-label">
                 {step.label}
               </span>
             }
-            sx={{
-              textTransform: 'none',
-              px: 1.5,
-              minHeight: 40,
-              gap: 0.5,
-              transition: 'all 0.2s ease',
-
-              '&:hover': {
-                backgroundColor: '#eef2ff',
-              },
-
-              '&.Mui-selected': {
-                backgroundColor: '#F6F7F8',
-                color: "#303030"
-              },
-              '& .MuiTab-iconWrapper': {
-                width: 16,
-                height: 16
-              }
-            }}
+            className="stepper-nav-tab"
           />
         </Tooltip>
       ))}
@@ -191,12 +139,7 @@ export default function StepperNav() {
   // Render
   // -------------------------
   return (
-    <Box
-      sx={{
-        backgroundColor: '#FFFFFF',
-        borderBottom: '1px solid #e2e8f0',
-      }}
-    >
+    <Box className="stepper-nav-container">
       
       {USE_FIXED ? (
         <>

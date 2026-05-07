@@ -47,7 +47,7 @@ const ConfigurationAccordian = ({
         className='k-table-box configuration-accordion-root'
       >
         <CustomAccordionSummary
-          expandIcon={<ExpandMoreIcon sx={{ fontSize: '1rem' }} />}
+          expandIcon={<ExpandMoreIcon sx={{ fontSize: '1.2rem' }} />}
           className='configuration-accordion-summary'
         >
           <Stack direction='row' spacing={1} alignItems='center'>

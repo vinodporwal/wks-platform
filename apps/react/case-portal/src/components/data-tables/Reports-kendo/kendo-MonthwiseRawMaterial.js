@@ -653,13 +653,16 @@ const MonthwiseRawMaterial = () => {
 
       {Object.entries(normRows).map(([normName, rows]) => (
         <div key={normName}>
-          <Typography component='div' className='grid-title' sx={{ mt: 1 }}>
+          {/* <Typography component='div' className='grid-title' sx={{ mt: 1 }}>
             {normName}
-          </Typography>
+          </Typography> */}
           <KendoDataTablesReports
             rows={rows}
             setRows={setRows}
-            title='Monthwise Production Summary'
+            title={normName}
+            permissions={{
+              showTitle: true
+            }}
             columns={columnDefs}
             handleRemarkCellClick={handleRemarkCellClick}
           />
