@@ -125,6 +125,7 @@ const SlowdownNorms = () => {
     lowerVertName === 'elastomer' &&
     SITE_NAME_LOWERCASE === 'hmd' &&
     PLANT_NAME_LOWERCASE === 'sbr'
+  const ISVCM_HMD = lowerVertName === 'vcm' && siteName === 'hmd'
   const saveChanges = React.useCallback(async () => {
     try {
       var data = Object.values(modifiedCells)
@@ -529,6 +530,7 @@ const SlowdownNorms = () => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+          IS_ELASTOMER_JMD_HIIR ? 'Slowdown' : undefined,
         )
       }
       // else if (lowerVertName === 'pp' || lowerVertName === 'pe') {
@@ -567,6 +569,7 @@ const SlowdownNorms = () => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+          IS_ELASTOMER_JMD_HIIR ? 'Slowdown' : undefined
         )
       } else if (
         lowerVertName === 'vcm' ||
@@ -674,7 +677,7 @@ const SlowdownNorms = () => {
         IS_PE_PP ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_EDC_PLANT ||
-        IS_HMD_SITE
+        (IS_HMD_SITE && !ISVCM_HMD)
           ? false
           : true,
 

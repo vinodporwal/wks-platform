@@ -4407,8 +4407,12 @@ export async function slowdownconsumptionExportAllGrade(
   keycloak,
   plantId,
   year,
+  maintenanceName,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/slowdown-consumption-export-all-grades?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+  let url = `${Config.CaseEngineUrl}/task/slowdown-consumption-export-all-grades?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+  if (maintenanceName) {
+    url += `&maintenanceName=${encodeURIComponent(maintenanceName)}`
+  }
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -4442,12 +4446,15 @@ async function saveSlowdownNormsExcelAllGrade(
   PLANT_ID,
   AOP_YEAR,
   GRADE_ID,
+  maintenanceName,
 ) {
   let url = ''
   url = `${Config.CaseEngineUrl}/task/slowdown-consumption-import?plantId=${PLANT_ID}&year=${AOP_YEAR}`
-
   if (GRADE_ID) {
     url += `&gradeId=${GRADE_ID}`
+  }
+  if (maintenanceName) {
+    url += `&maintenanceName=${encodeURIComponent(maintenanceName)}`
   }
 
   const formData = new FormData()
