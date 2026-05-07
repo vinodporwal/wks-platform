@@ -1633,6 +1633,25 @@ const AdvanceKendoTable = ({
       if (col?.type === 'select') {
         // Change this to your multiselect field name
         let allOptions = col.options
+
+        // Custom renderer for select columns to show label or value
+        const selectRenderer = (props) => {
+          const value = props.dataItem[props.field]
+          const displayMode = col.displayMode || 'label' // 'label' or 'value'
+
+          let displayValue = value
+          if (displayMode === 'label' && allOptions) {
+            const option = allOptions.find((opt) => opt.value === value)
+            displayValue = option ? option.label : value
+          }
+
+          return (
+            <td {...props.tdProps} title={displayValue}>
+              {displayValue}
+            </td>
+          )
+        }
+
         return (
           <GridColumn
             key={col.field}
@@ -1652,7 +1671,7 @@ const AdvanceKendoTable = ({
                   />
                 ),
               },
-              data: toolTipRenderer,
+              data: selectRenderer,
               headerCell: col.subtitle
                 ? createHeaderWithSubtitle(col.subtitle)
                 : SimpleHeaderWithTooltip,
