@@ -877,7 +877,7 @@ const ShutdownNorms = () => {
         IS_PVC_DMD
           ? true
           : false,
-      dropdownLabel: 'Select Grade',
+      dropdownLabel: 'Grade',
       allAction: true,
       downloadExcelBtnFromUI:
         !IS_PE_HMD ||

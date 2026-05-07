@@ -1,4 +1,6 @@
-import { Tooltip as MuiTooltip, Divider } from '@mui/material'
+import HelpIcon from '@mui/icons-material/Help'
+import InfoIcon from '@mui/icons-material/Info'
+import { Divider, Tooltip as MuiTooltip } from '@mui/material'
 import '@progress/kendo-font-icons/dist/index.css'
 import { Grid, GridColumn } from '@progress/kendo-react-grid'
 import { Tooltip } from '@progress/kendo-react-tooltip'
@@ -26,6 +28,7 @@ import LineDropdownEditor from './Utilities-Kendo/LineDropdownEditor'
 import {
   Box,
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -53,7 +56,6 @@ import BudgetConstrainsCellEditor from './Utilities-Kendo/BudgetConstrainsCellEd
 import DateOnlyPicker from './Utilities-Kendo/DatePicker'
 import DateTimePickerEditor from './Utilities-Kendo/DatePickeronSelectedYr'
 import DatePickerNoLimit from './Utilities-Kendo/DatePickerNoLimit'
-import DynamicDropdown from './Utilities-Kendo/DynamicDropdown'
 
 import { descLimit } from './Utilities-Kendo/descLimit'
 import {
@@ -78,6 +80,9 @@ import { getRoleName } from 'services/role-service'
 import { getColumnMenuDateFilter } from 'components/data-tables/Reports-kendo/ColumnMenuDateFilter'
 import DateTimePickerEditor24HourFormat from './Utilities-Kendo/DatePickeronSelectedYr24HourFomat'
 import { NoSpinnerNumericEditorCrackerValidation } from './Utilities-Kendo/numbericColumnsCrackerValidation'
+import DynamicDropdown from './Utilities-Kendo/DynamicDropdown'
+import ShutdownRateDropdown from './Utilities-Kendo/ShutdownRateDropdown'
+import MonthDropdownPEPP1 from './Utilities-Kendo/MonthDropdownPEPP1'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import Collapse from '@mui/material/Collapse'
@@ -168,7 +173,7 @@ const KendoDataTables = ({
   permissions = {},
   errorRows = new Set(),
   setSnackbarOpen = () => {},
-  snackbarData = { message: '', severity: 'info' },
+  snackbarData = { message: '', severity: 'info', duration: 3000 },
   snackbarOpen = false,
   setRemarkDialogOpen = () => {},
   currentRemark = '',
@@ -177,7 +182,7 @@ const KendoDataTables = ({
   NormParameterIdCell = () => {},
   setModifiedCells = () => {},
   remarkDialogOpen = false,
-  handleDeleteSelected = () => {},
+  handleDeleteSelected = (selectedItems) => {},
   saveChanges = () => {},
   deleteRowData = () => {},
   handleAddPlantSite = () => {},
@@ -219,19 +224,27 @@ const KendoDataTables = ({
   endDate,
   mcuMaxCapValues = [],
   key = [],
+  isReleaseDisabled = true,
+  handleRelease = () => {},
+  customItemChange = null,
   isEditable = false,
 }) => {
   const _export = useRef(null)
 
   const _grid = React.useRef(undefined)
   const minGridWidth = useRef(0)
+  // Always-current rows ref — lets itemChange read the latest rows without
+  // adding rows to its useCallback deps (avoids recreating the handler on every edit).
+  const rowsRef = useRef(rows)
+  useEffect(() => {
+    rowsRef.current = rows
+  }, [rows])
   const grid = React.useRef(null)
   const gridRef = useRef(null)
   const [gridExpanded, setGridExpanded] = useState(true)
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [openResetDialogeBox, setOpenResetDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
-  const showDeleteAll = permissions?.deleteAllBtn && selectedUsers.length > 1
   const [selectedUnit, setSelectedUnit] = useState(permissions?.units?.[0])
   const [selectedGrade, setSelectedGrade] = useState()
   const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
@@ -247,6 +260,8 @@ const KendoDataTables = ({
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
   const ColumnMenuCheckboxFilterDate = getColumnMenuDateFilter(rows)
   const [customModifiedCells, setCustomModifiedCells] = useState({})
+  const [selectedRows, setSelectedRows] = useState([])
+  const [deleteMultipleConfirms, setDeleteMultipleConfirms] = useState(false)
   const [applyMinWidth, setApplyMinWidth] = useState(false)
   const [gridCurrent, setGridCurrent] = useState(0)
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -255,7 +270,9 @@ const KendoDataTables = ({
   const COLUMN_MIN = 4
 
   const keycloak = useSession()
-
+  const showDeleteAll =
+    (permissions?.deleteAllBtn && selectedUsers.length > 1) ||
+    (permissions?.deleteMultiple && selectedRows.length > 0)
   const { verticalChange, oldYear, year, plantObject, siteObject } =
     dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
@@ -452,9 +469,15 @@ const KendoDataTables = ({
     )
   }
 
-  const fileInputRef = useRef(null)
+  const handleEditChange = useCallback((e) => {
+    setEdit(e.edit)
+  }, [])
 
-  console.log(columns)
+  const fileInputRef = useRef(null)
+  const onSelectionChange = (event) => {
+    const newSelectedRows = event?.dataItems?.map((item) => item?.idFromApi)
+    setSelectedRows(newSelectedRows)
+  }
 
   const numericHeaderClass = (isActive, col) =>
     [isActive ? 'active-column' : '', 'k-number-right']
@@ -477,6 +500,15 @@ const KendoDataTables = ({
     } else if (grid.current.offsetWidth > minGridWidth.current) {
       setGridCurrent(grid.current.offsetWidth)
       setApplyMinWidth(false)
+    }
+  }
+  const onHeaderSelectionChange = (event) => {
+    const checked = event?.syntheticEvent?.target?.checked
+    if (checked) {
+      const allRowIds = rows.map((item) => item?.idFromApi)
+      setSelectedRows(allRowIds)
+    } else {
+      setSelectedRows([])
     }
   }
 
@@ -513,10 +545,20 @@ const KendoDataTables = ({
 
     return Math.max(minWidth, width)
   }
+  const handleDeleteMultiple = () => {
+    if (permissions?.deleteMultiple && selectedRows?.length > 0) {
+      handleDeleteSelected(selectedRows)
+      setSelectedRows([])
+      setDeleteMultipleConfirms(false)
+    } else {
+      handleDeleteSelected()
+      setDeleteMultipleConfirms(false)
+    }
+  }
 
-  const handleEditChange = useCallback((e) => {
-    setEdit(e.edit)
-  }, [])
+  const handleOpenDeleteMultipleDialog = () => {
+    setDeleteMultipleConfirms(true)
+  }
 
   const excelExport = () => {
     if (_export.current !== null) {
@@ -700,6 +742,16 @@ const KendoDataTables = ({
               updated.durationInHrs = '16.00'
             } else if (desc === 'Annual Turn Around') {
               updated.durationInHrs = '684.00'
+            } else if (
+              desc ===
+              'FSD (Catalyst full replacement/Partial Preheater cleaning)'
+            ) {
+              updated.durationInHrs = '168.00'
+            } else if (
+              desc ===
+              'FSD (Catalyst partial replacement/Partial Preheater cleaning)'
+            ) {
+              updated.durationInHrs = '158.00'
             }
           }
           if (lowerVertName === 'cracker' && lowerSiteName === 'vmd') {
@@ -929,11 +981,20 @@ const KendoDataTables = ({
           [itemId]: base,
         }
       })
+
+      if (customItemChange) {
+        customItemChange(e, {
+          setModifiedCells,
+          setCustomModifiedCells,
+          rows: rowsRef.current,
+        })
+      }
     },
     [
       setRows,
       setModifiedCells,
       setCustomModifiedCells,
+      customItemChange,
       lowerVertName,
       lowerSiteName,
       plantName,
@@ -1176,7 +1237,9 @@ const KendoDataTables = ({
     const isEdited = !!(
       customModifiedCells?.[rowId] && checkField in customModifiedCells[rowId]
     )
-    const lineObj = props.allLines?.find((l) => l.id === dataItem[field])
+    const lineObj = props.allLines?.find(
+      (l) => l.id === dataItem[field] || l.displayName === dataItem[field],
+    )
     const displayLabel = lineObj ? lineObj.displayName : ''
     return (
       <td
@@ -1198,6 +1261,7 @@ const KendoDataTables = ({
       </td>
     )
   }
+
   const ElastomerSDDaysDisplayCell = (props) => {
     const { dataItem, field, tdProps, sdDaysValues = [] } = props
     const value = dataItem[field]
@@ -1427,7 +1491,6 @@ const KendoDataTables = ({
       <td
         {...tdProps}
         title={value}
-        //className={`${shouldHighlight ? 'edited-cell' : 'non-edited-cell '}`}
         style={{
           color: shouldHighlight ? 'orange' : undefined,
           fontWeight: shouldHighlight || isBoldFromCells ? 'bold' : undefined,
@@ -1558,7 +1621,6 @@ const KendoDataTables = ({
       <td
         {...props.tdProps}
         title={value}
-        //className={`${isRed ? 'edited-cell' : 'non-edited-cell '}`}
         style={{
           color: isRed ? 'orange' : undefined,
           fontWeight: isRed ? 'bold' : undefined,
@@ -1650,7 +1712,6 @@ const KendoDataTables = ({
       <td
         {...tdProps}
         title={display}
-        //className={`${highlight && isEdited ? 'edited-cell' : 'non-edited-cell '}`}
         style={{
           color: highlight && isEdited ? 'orange' : undefined,
           fontWeight: highlight && isEdited ? 'bold' : undefined,
@@ -1692,7 +1753,6 @@ const KendoDataTables = ({
       <td
         {...props.tdProps}
         title={display}
-        //className={`${isRed ? 'edited-cell' : 'non-edited-cell '}`}
         style={{
           color: isRed ? 'orange' : undefined,
         }}
@@ -1701,6 +1761,16 @@ const KendoDataTables = ({
       </td>
     )
   }
+
+  // useEffect(() => {
+  //   console.log(selectedGrade)
+
+  //   if (permissions?.showG && grades?.length > 0 && !selectedGrade) {
+  //     const firstGrade = grades[0]
+  //     setSelectedGrade(firstGrade.gradeId)
+  //     handleGradeChange(firstGrade.gradeId, firstGrade?.displayName)
+  //   }
+  // }, [grades, permissions?.showG, selectedGrade])
 
   useEffect(() => {
     if (!permissions?.showG || !grades?.length) return
@@ -2219,7 +2289,7 @@ const KendoDataTables = ({
                     // disabled={rows?.length === 0}
                   >
                     <MenuItem value='' disabled className='menu-item-style'>
-                      Select UOM
+                      UOM
                     </MenuItem>
 
                     {/* Render the correct unit options dynamically */}
@@ -2284,7 +2354,7 @@ const KendoDataTables = ({
                   }}
                 >
                   <MenuItem value='' disabled className='menu-item-style'>
-                    Select Mode
+                    Mode
                   </MenuItem>
 
                   {permissions.modes.map((m) => (
@@ -2363,9 +2433,7 @@ const KendoDataTables = ({
                       />
                     }
                     className='btn-import'
-                    disabled={
-                      isButtonDisabled || READ_ONLY || rows?.length === 0
-                    }
+                    disabled={isButtonDisabled || READ_ONLY}
                   >
                     Import
                   </Button>
@@ -2423,6 +2491,17 @@ const KendoDataTables = ({
                 </Button>
               )}
 
+              {(permissions?.deleteAllBtn || permissions?.deleteMultiple) && (
+                <Button
+                  variant='contained'
+                  className='btn-calculate'
+                  onClick={handleOpenDeleteMultipleDialog}
+                  disabled={isButtonDisabled || READ_ONLY || !showDeleteAll}
+                >
+                  Delete
+                </Button>
+              )}
+
               {permissions?.showResetButton && (
                 <Button
                   variant='contained'
@@ -2458,6 +2537,17 @@ const KendoDataTables = ({
                   disabled={isButtonDisabled || READ_ONLY}
                 >
                   Refresh
+                </Button>
+              )}
+
+              {permissions?.showReleaseBtn && (
+                <Button
+                  variant='contained'
+                  className='btn-save'
+                  disabled={isReleaseDisabled || READ_ONLY}
+                  onClick={handleRelease}
+                >
+                  Release
                 </Button>
               )}
             </Box>
@@ -2504,6 +2594,8 @@ const KendoDataTables = ({
                 contextMenu={true}
                 grade={grades}
                 onRowClick={handleRowClick}
+                onHeaderSelectionChange={onHeaderSelectionChange}
+                onSelectionChange={onSelectionChange}
                 groupable={
                   permissions?.isTotalFooterActive
                     ? {
@@ -2538,6 +2630,59 @@ const KendoDataTables = ({
                       : false
                 }
               >
+                {permissions?.deleteMultiple && (
+                  <GridColumn
+                    field='selected'
+                    width='50px'
+                    headerSelectionValue={
+                      selectedRows?.length > 0 &&
+                      selectedRows?.length === rows?.length
+                    }
+                    cells={{
+                      data: (props) => (
+                        <td style={{ textAlign: 'center' }}>
+                          <Checkbox
+                            checked={selectedRows?.includes(
+                              props.dataItem?.idFromApi,
+                            )}
+                            onChange={() => {
+                              const id = props.dataItem?.idFromApi
+                              if (selectedRows?.includes(id)) {
+                                setSelectedRows(
+                                  selectedRows?.filter((r) => r !== id),
+                                )
+                              } else {
+                                setSelectedRows([...selectedRows, id])
+                              }
+                            }}
+                          />
+                        </td>
+                      ),
+                      headerCell: () => (
+                        <th
+                          className='k-header'
+                          style={{ textAlign: 'center' }}
+                        >
+                          <Checkbox
+                            checked={
+                              selectedRows?.length > 0 &&
+                              selectedRows?.length === rows?.length
+                            }
+                            onChange={(e) => {
+                              const checked =
+                                e?.value ?? e?.target?.checked ?? false
+                              if (checked) {
+                                setSelectedRows(rows.map((r) => r?.idFromApi))
+                              } else {
+                                setSelectedRows([])
+                              }
+                            }}
+                          />
+                        </th>
+                      ),
+                    }}
+                  />
+                )}
                 {groupBy && <ExcelExportColumn field={groupBy} title='Type' />}
 
                 {columns?.map((col) => {
@@ -2711,6 +2856,8 @@ const KendoDataTables = ({
                               'sdED',
                               'sdSD',
                               'targetDate',
+                              'StartDate',
+                              'EndDate',
                             ].includes(col?.field)
                               ? DateOnlyPicker
                               : DateOnlyPicker,
@@ -2734,6 +2881,8 @@ const KendoDataTables = ({
                             'sdED',
                             'sdSD',
                             'targetDate',
+                            'StartDate',
+                            'EndDate',
                           ].includes(col?.field)
                             ? '{0:dd-MM-yyyy}'
                             : '{0:dd-MM-yyyy}'
@@ -3045,6 +3194,48 @@ const KendoDataTables = ({
                       />
                     )
                   }
+
+                  //NEW
+
+                  if (
+                    col?.field === 'shutdownRate' &&
+                    col?.type === 'shutdownRateDropdown'
+                  ) {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.width}
+                        hidden={col.hidden}
+                        editable={col?.editable ? true : false}
+                        headerClassName={isActive ? 'active-column' : ''}
+                        cells={{
+                          edit: {
+                            text: (props) => (
+                              <MonthDropdownPEPP1
+                                {...props}
+                                options={allDescriptionDrpdwn}
+                              />
+                            ),
+                          },
+                          data: (props) =>
+                            permissions?.MonthDropdownPEPPHighlight ? (
+                              <SimpleHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                highlight={true}
+                              />
+                            ) : (
+                              MonthDropdownPEPPDisplayCell(props)
+                            ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
+
                   // ...existing code...
                   if (col?.type === 'monthDropdownPEPP') {
                     return (
@@ -3245,6 +3436,8 @@ const KendoDataTables = ({
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
+                        // editor={true}
+                        // editable={{ mode: 'popup' }}
                         cells={{
                           data: (cellProps, allRedCell) => (
                             <RemarkCell
@@ -3293,6 +3486,37 @@ const KendoDataTables = ({
                           headerCell: SimpleHeaderWithTooltip,
                         }}
                         headerClassName={isActive ? 'active-column' : ''}
+                      />
+                    )
+                  }
+
+                  if (
+                    col.field === 'Duration' &&
+                    lowerVertName === 'cracker' &&
+                    lowerSiteName === 'vmd'
+                  ) {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.widthT || col.width || 120}
+                        hidden={col.hidden}
+                        editable={false}
+                        headerClassName={isActive ? 'active-column' : ''}
+                        cells={{
+                          data: (props) => (
+                            <td
+                              {...props.tdProps}
+                              title={props.dataItem[props.field]}
+                              style={{ textAlign: 'right' }}
+                            >
+                              {props.dataItem[props.field]}
+                            </td>
+                          ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -3401,6 +3625,34 @@ const KendoDataTables = ({
                     )
                   }
 
+                  if (col.type === 'dynamicDropdownshared') {
+                    const dropdownOptions =
+                      permissions?.dynamicDropdownOptions?.[col.field] || []
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.width}
+                        hidden={col.hidden}
+                        editable={col?.editable ? true : false}
+                        headerClassName={isActive ? 'active-column' : ''}
+                        cells={{
+                          edit: {
+                            text: (props) => (
+                              <DynamicDropdown
+                                {...props}
+                                options={dropdownOptions}
+                              />
+                            ),
+                          },
+                          data: MonthDisplayCell,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
                   if (col?.type === 'percentChange') {
                     return (
                       <GridColumn
@@ -4074,6 +4326,62 @@ const KendoDataTables = ({
           </Button>
         </DialogActions>
       </CompactDialog>
+
+      <Dialog
+        open={deleteMultipleConfirms}
+        onClose={() => setDeleteMultipleConfirms(false)}
+        aria-labelledby='alert-dialog-title'
+        aria-describedby='alert-dialog-description'
+        disableScrollLock
+      >
+        <DialogTitle id='alert-dialog-title'>{'Delete ?'}</DialogTitle>
+        <DialogContent>
+          <DialogContentText
+            id='alert-dialog-description'
+            sx={{ color: 'text.primary' }}
+          >
+            {'Are you sure you want to delete?'}{' '}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteMultipleConfirms(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteMultiple} autoFocus disabled={READ_ONLY}>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={openCalculateDialogeBox}
+        onClose={closeCalculateDialogBox}
+        aria-labelledby='alert-dialog-title'
+        aria-describedby='alert-dialog-description'
+        disableScrollLock
+        slotProps={{
+          backdrop: { disableScrollLock: true },
+        }}
+      >
+        <DialogTitle id='alert-dialog-title'>{'Calculate ?'}</DialogTitle>
+
+        <DialogContent>
+          <DialogContentText
+            id='alert-dialog-description'
+            sx={{ color: 'text.primary' }}
+          >
+            Are you sure you want to calculate? This will override the existing
+            values.
+          </DialogContentText>
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={closeCalculateDialogBox}>Cancel</Button>
+          <Button onClick={handleCalculateConfirmation} autoFocus>
+            Calculate
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <CompactDialog
         open={openSaveDialogeBox}

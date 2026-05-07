@@ -323,24 +323,30 @@ const NormalOpNormsScreen = () => {
       groupable: true,
       editable: false,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
 
     {
       field: 'NormParameterFKId',
       title: 'Particulars',
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
 
     {
       field: 'ProductName',
       title: 'Particulars',
       widthT: 130,
+      minWidth: 125,
     },
     {
       field: 'UOM',
       title: 'UOM',
       widthT: 60,
       editable: false,
+      minWidth: 80,
     },
     {
       field: 'Apr',
@@ -350,6 +356,7 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       format: valueFormat,
       type: 'number',
+      minWidth: 100,
     },
 
     {
@@ -360,6 +367,7 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       format: valueFormat,
       type: 'number',
+      minWidth: 100,
     },
     {
       field: 'Jun',
@@ -369,6 +377,7 @@ const NormalOpNormsScreen = () => {
       width: 120,
       align: 'right',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'Jul',
@@ -378,6 +387,7 @@ const NormalOpNormsScreen = () => {
       width: 120,
       align: 'right',
       format: valueFormat,
+      minWidth: 100,
     },
 
     {
@@ -388,6 +398,7 @@ const NormalOpNormsScreen = () => {
       type: 'number',
       align: 'right',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'Sep',
@@ -397,6 +408,7 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'Oct',
@@ -406,6 +418,7 @@ const NormalOpNormsScreen = () => {
       type: 'number',
       align: 'right',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'Nov',
@@ -415,6 +428,7 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'Dec',
@@ -424,6 +438,7 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'Jan',
@@ -433,6 +448,7 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'Feb',
@@ -442,6 +458,7 @@ const NormalOpNormsScreen = () => {
       type: 'number',
       align: 'right',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'Mar',
@@ -451,16 +468,19 @@ const NormalOpNormsScreen = () => {
       type: 'number',
       align: 'right',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'idFromApi',
       title: 'idFromApi',
       hidden: true,
+      isVisible: false,
     },
     {
       field: 'isEditable',
       title: 'isEditable',
       hidden: true,
+      isVisible: false,
     },
   ]
 

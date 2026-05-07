@@ -1,3 +1,9 @@
+import {
+  FileExportIcon,
+  FileImportIcon,
+  SaveIcon,
+  CalculateIcon,
+} from 'assets/images/icons'
 import { Box } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { verticalEnums } from 'enums/verticalEnums'
@@ -24,7 +30,7 @@ import {
   TextField,
   Tooltip,
   Typography,
-  Stack
+  Stack,
 } from '@mui/material'
 import { Info, ExpandMore } from '@mui/icons-material'
 
@@ -110,6 +116,7 @@ const AopDesignBasis = () => {
     message: '',
     severity: 'info',
   })
+  const [dateEdited, setDateEdited] = useState()
   const [startDate, setStartDate] = useState()
   const [endDate, setEndDate] = useState()
   const [startDateObj, setStartDateObj] = useState([])
@@ -468,13 +475,20 @@ const AopDesignBasis = () => {
         <DialogContent>
           <DialogContentText
             id='alert-dialog-description'
-            sx={{ color: '#303030', fontSize: '14px', fontWeight: '500', fontFamily: '"Honeywell Sans Web", "Inter", sans-serif' }}
+            sx={{
+              color: '#303030',
+              fontSize: '14px',
+              fontWeight: '500',
+              fontFamily: '"Honeywell Sans Web", "Inter", sans-serif',
+            }}
           >
             {`Are you sure you want to load data for the period from ${formatDateForText(startDate)} to ${formatDateForText(endDate)}?`}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog} variant='outlined'>Cancel</Button>
+          <Button onClick={handleCloseDialog} variant='outlined'>
+            Cancel
+          </Button>
           <Button onClick={handleConfirmLoad} autoFocus variant='contained'>
             Load
           </Button>
@@ -485,7 +499,10 @@ const AopDesignBasis = () => {
 
   return (
     <React.Fragment>
-      <Box className='k-table-box configuration-accordion-wrapper' sx={{ padding: '16px 20px'}}>
+      <Box
+        className='k-table-box configuration-accordion-wrapper'
+        sx={{ padding: '16px 20px' }}
+      >
         <LoaderBackdrop open={!!loading} />
 
         {/* Header Section */}
@@ -502,19 +519,19 @@ const AopDesignBasis = () => {
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 2 }}>
-            {!isOldYear && (<Button
-              variant='outlined'
-              className='btn-load'
-              onClick={saveSummary}
-              disabled={READ_ONLY || !summaryEdited}
-              sx={{
-                height: 28,
-                px: 1.5,
-                mt: 'auto',
-              }}
-            >
-              Save
-            </Button>)}
+            {!isOldYear && (
+              <Button
+                variant='contained'
+                className='btn-save'
+                startIcon={
+                  <Box component='img' src={SaveIcon} className='w16-icon' />
+                }
+                onClick={saveSummary}
+                disabled={READ_ONLY || !summaryEdited}
+              >
+                Save
+              </Button>
+            )}
             {/* <Button
               variant='contained'
               onClick={() => {}} // TODO: Implement Mark as Complete logic
@@ -536,9 +553,9 @@ const AopDesignBasis = () => {
             </Button> */}
           </Box>
         </Box>
-
+        {/* NOT NEEDED */}
         {/* Info Alert Section */}
-        <Box
+        {/* <Box
           className='last-refreshed-container'
           sx={{
             display: 'flex',
@@ -566,10 +583,10 @@ const AopDesignBasis = () => {
           About AOP Design Basis. This is just the placeholder text, this will
           be replaced by actual useful information.
           </Typography>
-        </Box>
+        </Box> */}
 
         {/* {ConfigurationAccordian} */}
-        <Box sx={{ width: '100%',  my: 1 }}>
+        <Box sx={{ width: '100%', my: 1 }}>
           <Typography variant='caption' className='aop-design-basis-label'>
             AOP Historical Period Basis for Production Target
           </Typography>
@@ -726,7 +743,7 @@ const AopDesignBasis = () => {
                 setSummaryEdited(true)
               }}
               className='aop-design-basis-textarea'
-              style={{ minHeight: '30vh', marginTop: '4px' }}
+              style={{ minHeight: '10vh', marginTop: '4px' }}
             />
           </Box>
         </Stack>

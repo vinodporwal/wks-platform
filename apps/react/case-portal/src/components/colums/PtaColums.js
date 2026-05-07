@@ -6,7 +6,7 @@ export const BusinessDemandPtaColumns = [
     groupable: true,
     editable: false,
     hidden: true,
-    minWidth: 100,
+    minWidth: 120,
   },
   {
     field: 'normParameterId',
