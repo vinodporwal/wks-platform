@@ -1,0 +1,207 @@
+/* =========================================================
+   MODERN BUTTON SYSTEM (SAME CLASS NAMES)
+   ========================================================= */
+
+.btn-load,
+.btn-save,
+.btn-export,
+.btn-add,
+.btn-import,
+.btn-calculate {
+  appearance: none;
+  background: rgba(255, 255, 255, 0.02);
+  /* border-radius: 999px;  */
+  padding: 6px 14px;
+
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    'Open Sans',
+    Arial,
+    sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+
+  border: 1px solid transparent;
+
+  transition:
+    transform 120ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+/* Icons spacing */
+.btn-save .MuiButton-startIcon,
+.btn-export .MuiButton-startIcon,
+.btn-add .MuiButton-startIcon,
+.btn-import .MuiButton-startIcon,
+.btn-calculate .MuiButton-startIcon,
+.btn-load .MuiButton-startIcon {
+  margin: 0;
+}
+
+.btn-save .MuiButton-startIcon svg,
+.btn-export .MuiButton-startIcon svg,
+.btn-add .MuiButton-startIcon svg,
+.btn-import .MuiButton-startIcon svg,
+.btn-calculate .MuiButton-startIcon svg,
+.btn-load .MuiButton-startIcon svg {
+  font-size: 16px;
+  transition: transform 180ms ease;
+}
+
+/* ---------------------------------
+   COLORS (outline + soft hover fill)
+---------------------------------- */
+
+/* SAVE – blue */
+.btn-save {
+  color: #2563eb;
+  border-color: rgba(37, 99, 235, 0.55);
+  background: rgba(37, 99, 235, 0.06);
+}
+.btn-save:hover {
+  background: rgba(37, 99, 235, 0.12);
+  border-color: rgba(37, 99, 235, 0.75);
+}
+
+/* EXPORT – teal */
+.btn-export {
+  color: #0d9488;
+  border-color: rgba(13, 148, 136, 0.55);
+  background: rgba(13, 148, 136, 0.06);
+}
+.btn-export:hover {
+  background: rgba(13, 148, 136, 0.12);
+  border-color: rgba(13, 148, 136, 0.75);
+}
+
+/* ADD – green */
+.btn-add {
+  color: #16a34a;
+  border-color: rgba(22, 163, 74, 0.55);
+  background: rgba(22, 163, 74, 0.06);
+}
+.btn-add:hover {
+  background: rgba(22, 163, 74, 0.12);
+  border-color: rgba(22, 163, 74, 0.75);
+}
+
+/* IMPORT – amber */
+.btn-import {
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.6);
+  background: rgba(245, 158, 11, 0.07);
+}
+.btn-import:hover {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.8);
+}
+
+/* CALCULATE – violet */
+.btn-calculate {
+  color: #7c3aed;
+  border-color: rgba(124, 58, 237, 0.55);
+  background: rgba(124, 58, 237, 0.06);
+}
+.btn-calculate:hover {
+  background: rgba(124, 58, 237, 0.12);
+  border-color: rgba(124, 58, 237, 0.75);
+}
+
+/* LOAD – indigo */
+.btn-load {
+  color: #4f46e5;
+  border-color: rgba(79, 70, 229, 0.55);
+  background: rgba(79, 70, 229, 0.06);
+}
+.btn-load:hover {
+  background: rgba(79, 70, 229, 0.12);
+  border-color: rgba(79, 70, 229, 0.8);
+}
+
+/* ---------------------------------
+   INTERACTION
+---------------------------------- */
+
+.btn-load:hover,
+.btn-save:hover,
+.btn-export:hover,
+.btn-add:hover,
+.btn-import:hover,
+.btn-calculate:hover {
+  transform: translateY(-1px);
+}
+
+.btn-load:active,
+.btn-save:active,
+.btn-export:active,
+.btn-add:active,
+.btn-import:active,
+.btn-calculate:active {
+  transform: translateY(0px);
+}
+
+/* small icon motion */
+.btn-load:hover .MuiButton-startIcon svg,
+.btn-save:hover .MuiButton-startIcon svg,
+.btn-export:hover .MuiButton-startIcon svg,
+.btn-add:hover .MuiButton-startIcon svg,
+.btn-import:hover .MuiButton-startIcon svg,
+.btn-calculate:hover .MuiButton-startIcon svg {
+  transform: translateX(1px);
+}
+
+.btn-load:hover .MuiButton-startIcon svg {
+  transform: rotate(90deg);
+}
+
+/* ---------------------------------
+   FOCUS (clean, no heavy glow)
+---------------------------------- */
+.btn-load:focus-visible,
+.btn-save:focus-visible,
+.btn-export:focus-visible,
+.btn-add:focus-visible,
+.btn-import:focus-visible,
+.btn-calculate:focus-visible {
+  outline: none;
+  box-shadow: none; /* ✅ remove blur/glow */
+  border-color: rgba(99, 102, 241, 0.9);
+}
+
+/* ---------------------------------
+   DISABLED
+---------------------------------- */
+.btn-load:disabled,
+.btn-save:disabled,
+.btn-export:disabled,
+.btn-add:disabled,
+.btn-import:disabled,
+.btn-calculate:disabled {
+  color: #94a3b8 !important;
+  border-color: rgba(148, 163, 184, 0.55) !important;
+  background: rgba(148, 163, 184, 0.12) !important;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.btn-load:disabled svg,
+.btn-save:disabled svg,
+.btn-export:disabled svg,
+.btn-add:disabled svg,
+.btn-import:disabled svg,
+.btn-calculate:disabled svg {
+  opacity: 0.6;
+}

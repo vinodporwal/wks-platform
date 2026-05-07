@@ -22,35 +22,30 @@ const MainDrawer = ({ open }) => {
         flexShrink: 0,
         whiteSpace: 'nowrap',
         transition: theme.transitions.create('width', {
-          easing: theme.transitions.easing.easeOut, // Using easeOut for smoother deceleration
+          easing: theme.transitions.easing.easeOut,
           duration: theme.transitions.duration.standard,
         }),
         '& .MuiDrawer-paper': {
           width: open ? drawerWidth : 0,
           transition: theme.transitions.create('width', {
-            easing: theme.transitions.easing.easeOut, // Consistent easing for the paper
+            easing: theme.transitions.easing.easeOut,
             duration: theme.transitions.duration.standard,
           }),
           boxSizing: 'border-box',
           borderRight: `1px solid ${theme.palette.divider}`,
           backgroundImage: 'none',
           boxShadow: theme.shadows[6],
+
+          overflowY: 'auto', // ? ONLY scroll here
           overflowX: 'hidden',
         },
       }}
     >
       {open && (
-        <Box
-          sx={{
-            height: '100vh',
-            overflowY: 'auto',
-            overflowX: 'hidden',
-          }}
-          role='presentation'
-        >
+        <>
           {drawerHeader}
           {drawerContent}
-        </Box>
+        </>
       )}
     </Drawer>
   )
