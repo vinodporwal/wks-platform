@@ -1634,22 +1634,20 @@ const AdvanceKendoTable = ({
         // Change this to your multiselect field name
         let allOptions = col.options
 
-        // Custom renderer for select columns to show label or value
-        const selectRenderer = (props) => {
+        // Wrapper for toolTipRenderer to handle select display mode
+        const selectToolTipRenderer = (props) => {
           const value = props.dataItem[props.field]
           const displayMode = col.displayMode || 'label' // 'label' or 'value'
 
-          let displayValue = value
+          // If displayMode is 'label', find and display the label instead of value
+          let displayChildren = props.children
           if (displayMode === 'label' && allOptions) {
             const option = allOptions.find((opt) => opt.value === value)
-            displayValue = option ? option.label : value
+            displayChildren = option ? option.label : value
           }
 
-          return (
-            <td {...props.tdProps} title={displayValue}>
-              {displayValue}
-            </td>
-          )
+          // Call the original toolTipRenderer with modified children
+          return toolTipRenderer({ ...props, children: displayChildren })
         }
 
         return (
@@ -1671,7 +1669,7 @@ const AdvanceKendoTable = ({
                   />
                 ),
               },
-              data: selectRenderer,
+              data: selectToolTipRenderer,
               headerCell: col.subtitle
                 ? createHeaderWithSubtitle(col.subtitle)
                 : SimpleHeaderWithTooltip,

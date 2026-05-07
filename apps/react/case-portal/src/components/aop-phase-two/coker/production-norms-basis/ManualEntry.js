@@ -101,6 +101,7 @@ const ManualEntry = () => {
       minWidth: 120,
       type: 'select',
       options: selectOptions,
+      displayMode: 'label',
       editable: true,
       format: valueFormat,
     })),
@@ -120,31 +121,8 @@ const ManualEntry = () => {
         keycloak,
         AOP_YEAR,
         PLANT_ID,
-        'manual-entry', // type parameter
+        'Manual Entry', // type parameter
       )
-
-      const dummyManualEntryObject = [
-        {
-          id: 1,
-          productName: 'Pigging (P)/Non-Pigging (NP)',
-          TypeDisplayName: 'Production Norm',
-          normParameterTypeDisplayName: 'Pigging Type',
-          remarks: '',
-          inEdit: false,
-          apr: 'P-4',
-          may: 'P-5',
-          jun: 'NP',
-          jul: 'P-5',
-          aug: 'P-5',
-          sep: 'P-5',
-          oct: 'NP',
-          nov: 'NP',
-          dec: 'NP',
-          jan: 'NP',
-          feb: 'NP',
-          mar: 'NP',
-        },
-      ]
 
       // Extract data from response - API returns { data: [...], code: 200, message: '...' }
       const manualEntryData =
@@ -297,7 +275,7 @@ const ManualEntry = () => {
     showImport: false,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Manual Entry',
+    titleName: 'Pigging/Non-Pigging',
     showDropdown: false,
     remarksEditable: true,
   }
@@ -326,7 +304,7 @@ const ManualEntry = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['normParameterTypeDisplayName']}
+        // groupBy={['normParameterTypeDisplayName']}
         customHeight={70}
         paginationConfig={{
           threshold: 100,
