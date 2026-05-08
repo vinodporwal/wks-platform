@@ -651,7 +651,7 @@ const SelectivityData = (props) => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
-          `${EXCEL_EXPORT_TITLE}${revisionName}`,
+          `${EXCEL_EXPORT_TITLE}${revisionName}_Production & Norms Basis Recipe Cat Chem`,
         )
       } else if (
         props?.configType === 'ShutdownNorms' ||

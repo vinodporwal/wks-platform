@@ -283,7 +283,7 @@ const ProductionNorms = ({ permissions }) => {
 
     try {
       let plantId = PLANT_ID
-      const isKiloTon = selectedUnit?.includes('KT')
+      const isKiloTon = selectedUnit === 'KT'
 
       const productNormData = newRow.map((row) => ({
         aopType: row.aopType || 'production',
@@ -599,77 +599,76 @@ const ProductionNorms = ({ permissions }) => {
 
       if (lowerVertName !== 'cracker') {
         formattedData = data.map((item, index) => {
-          const isKiloTon = selectedUnit?.includes('KT')
+          const isKiloTon = selectedUnit === 'KT'
+          const isKiloTonPerDay = selectedUnit === 'KT/Day'
           const transformedItem = {
             ...item,
             idFromApi: item.id,
             uom: selectedUnit
               ? selectedUnit
-              : IS_AROMATIC_SEZ_PX4
-                ? 'MT/Day'
-                : 'MT',
+              : 'MT',
             normParametersFKId: item?.normParametersFKId?.toLowerCase(),
             id: index,
-            ...((isKiloTon || IS_AROMATIC_SEZ_PX4) && {
+            ...((isKiloTon || isKiloTonPerDay) && {
               jan: item.jan
                 ? item.jan /
                   (isKiloTon ? 1000 : 1) /
-                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.jan : 1)
+                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.jan : 1)
                 : item.jan,
               feb: item.feb
                 ? item.feb /
                   (isKiloTon ? 1000 : 1) /
-                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.feb : 1)
+                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.feb : 1)
                 : item.feb,
               march: item.march
                 ? item.march /
                   (isKiloTon ? 1000 : 1) /
-                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.march : 1)
+                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.march : 1)
                 : item.march,
               april: item.april
                 ? item.april /
                   (isKiloTon ? 1000 : 1) /
-                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.april : 1)
+                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.april : 1)
                 : item.april,
               may: item.may
                 ? item.may /
                   (isKiloTon ? 1000 : 1) /
-                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.may : 1)
+                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.may : 1)
                 : item.may,
               june: item.june
                 ? item.june /
                   (isKiloTon ? 1000 : 1) /
-                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.june : 1)
+                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.june : 1)
                 : item.june,
               july: item.july
                 ? item.july /
                   (isKiloTon ? 1000 : 1) /
-                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.july : 1)
+                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.july : 1)
                 : item.july,
               aug: item.aug
                 ? item.aug /
                   (isKiloTon ? 1000 : 1) /
-                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.aug : 1)
+                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.aug : 1)
                 : item.aug,
               sep: item.sep
                 ? item.sep /
                   (isKiloTon ? 1000 : 1) /
-                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.sep : 1)
+                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.sep : 1)
                 : item.sep,
               oct: item.oct
                 ? item.oct /
                   (isKiloTon ? 1000 : 1) /
-                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.oct : 1)
+                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.oct : 1)
                 : item.oct,
               nov: item.nov
                 ? item.nov /
                   (isKiloTon ? 1000 : 1) /
-                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.nov : 1)
+                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.nov : 1)
                 : item.nov,
               dec: item.dec
                 ? item.dec /
                   (isKiloTon ? 1000 : 1) /
-                  (IS_AROMATIC_SEZ_PX4 ? daysInMonth.dec : 1)
+                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.dec : 1)
                 : item.dec,
             }),
           }
@@ -1229,7 +1228,7 @@ const ProductionNorms = ({ permissions }) => {
             lowerVertName === 'cracker'
               ? ['MT/Month', 'TPH']
               : IS_AROMATIC_SEZ
-                ? ['MT/Day', 'KT/Day']
+                ? ['MT', 'KT', 'KT/Day']
                 : ['MT', 'KT'],
           customHeight: permissions?.customHeight,
           downloadExcelBtnFromUI:
