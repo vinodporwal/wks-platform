@@ -2025,7 +2025,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 	    Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 	    final long EIGHT_DAYS_IN_MINUTES = 8 * 24 * 60;
-
+ boolean vcmHMD = vertical.getName().equalsIgnoreCase("VCM") && site.getName().equalsIgnoreCase("HMD");
 	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 	        Sheet sheet = workbook.getSheetAt(0);
 	        Iterator<Row> rowIterator = sheet.iterator();
@@ -2068,11 +2068,14 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                LocalDateTime fyEnd = bounds[1];
 	                
 	                String mantStartStr = getCellAsString(row.getCell(1), dto, evaluator);
+					
 	                
 	                if (mantStartStr != null) {
 	                    try {
 	                        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm", Locale.US);
 	                        ldtStart = LocalDateTime.parse(mantStartStr, fmt).withSecond(0).withNano(0);
+
+		
 	                        Date startDate = Date.from(ldtStart.atZone(ZoneId.systemDefault()).toInstant());
 	                        dto.setMaintStartDateTime(startDate);
 	                        
@@ -2651,7 +2654,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		            		shutDownPlanDTO.setMaintStartDateTime(getStartOfMonthDate(shutDownPlanDTO.getMonth(), year));
 		            		shutDownPlanDTO.setMaintEndDateTime(getEndOfMonthDate(shutDownPlanDTO.getMonth(), year));
 		            	}
-
+     // for import api when new row is added chekc if default rate values are correct
 						if(vcmHMD) { 
                     double updatedRate = shutDownPlanDTO.getRate();
 					String desc = shutDownPlanDTO.getDiscription();
@@ -2714,6 +2717,10 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	            if(plantMaintenanceTransaction.getNoOfRPF()!=null) {
 	            	originalNoOfRPF = plantMaintenanceTransaction.getNoOfRPF();
 	            }
+       // for vcm hmd skip rate update by setting the value to original rate
+				if(vcmHMD) { 
+					shutDownPlanDTO.setRate(originalRate);
+				}
 	            // Double originalDurationInHrs = plantMaintenanceTransaction.getDurationInMins() != null ? 
                 //         plantMaintenanceTransaction.getDurationInMins() / 60.0 : null;
 
@@ -2800,7 +2807,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                	    !java.util.Objects.equals(originalDesc, newDesc) ||
 	                	    (!monthDropdown && !elastomer && !elastomerJMD && !elastomerAndHMDSBR && (!java.util.Objects.equals(originalStart, newStart) || 
 	                	                        !java.util.Objects.equals(originalEnd, newEnd))) ||
-	                	    !java.util.Objects.equals(originalRate, newRate) ||
+	                	   !java.util.Objects.equals(originalRate, newRate)  ||
 	                	    !java.util.Objects.equals(originalRPFDownTime, newRPFDownTime) ||
 	                	    !java.util.Objects.equals(originalNoOfRPF, newNoOfRPF) || 
 	                	    !java.util.Objects.equals(originalLineId, newLineId);

@@ -214,4 +214,9 @@ public class MaintenanceCalculatedDataController {
 	public AOPMessageVM getMacroData(@RequestParam Double value, @RequestParam String year,@RequestParam String plantId){
 		return maintenanceCalculatedDataService.getMacroData(value,year,plantId);		
 	}
+
+	@PostMapping(value="/cat-chem-calculation")
+	public AOPMessageVM catChemCalculation(@RequestParam String plantId, @RequestParam String aopYear){
+		return maintenanceCalculatedDataService.catChemCalculation(UUID.fromString(plantId), aopYear);
+	}
 }

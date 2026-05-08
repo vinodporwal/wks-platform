@@ -2105,6 +2105,36 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	    }
 	}
 
+	@Override
+	@Transactional
+	public AOPMessageVM catChemCalculation(UUID plantId, String aopYear) {
+		AOPMessageVM response = new AOPMessageVM();
+		try {
+			// String sql = "EXEC [dbo].[CatChemCalculation] @PlantId = :plantId, @AopYear = :aopYear";
+			// Query query = entityManager.createNativeQuery(sql);
+			// query.setParameter("plantId", plantId);
+			// query.setParameter("aopYear", aopYear);
+			// query.executeUpdate();
+			// response.setCode(200);
+			// response.setMessage("CatChemCalculation executed successfully");
+
+			String sql = "EXEC [dbo].[CatChemCalculation] @PlantId = :plantId, @AopYear = :aopYear";
+
+Query query = entityManager.createNativeQuery(sql);
+query.setParameter("plantId", plantId);
+query.setParameter("aopYear", aopYear);
+
+boolean hasResultSet = query.unwrap(org.hibernate.query.NativeQuery.class)
+                            .getHibernateFlushMode() != null;
+
+							response.setCode(200);
+			response.setMessage("CatChemCalculation executed successfully");
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to execute CatChemCalculation", ex);
+		}
+		return response;
+	}
+
 	String getJson() {
 	    return """
 	        {
