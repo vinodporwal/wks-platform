@@ -242,13 +242,17 @@ export default function AopBudget() {
       minWidth: 100,
     },
     // { field: 'symbol', title: '+VE/-VE', width: 120 },
-    ...monthFields.map(({ field, index, editable, type, format, width }) => ({
-      field,
-      title: headerMap[index],
-      editable,
-      type,
-      format,
-    })),
+    ...monthFields.map(
+      ({ field, index, editable, type, format, width, minWidth }) => ({
+        field,
+        title: headerMap[index],
+        editable,
+        type,
+        format,
+        width,
+        minWidth,
+      }),
+    ),
     {
       field: 'allMonthsTotal',
       title: 'Total',

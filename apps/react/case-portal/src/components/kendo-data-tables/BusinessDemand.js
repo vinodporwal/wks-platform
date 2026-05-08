@@ -123,6 +123,7 @@ const BusinessDemand = ({ permissions }) => {
       field: 'idFromApi',
       title: 'ID',
       hidden: true,
+      isVisible: false,
     },
     {
       field: 'aopCaseId',
@@ -130,6 +131,7 @@ const BusinessDemand = ({ permissions }) => {
       width: 120,
       editable: false,
       hidden: true,
+      isVisible: false,
     },
     {
       field: 'normParametersFKId',
@@ -137,6 +139,7 @@ const BusinessDemand = ({ permissions }) => {
       editable: false,
       widthT: 100,
       hidden: true,
+      isVisible: false,
     },
 
     {
@@ -144,6 +147,7 @@ const BusinessDemand = ({ permissions }) => {
       title: 'Particulars',
       editable: false,
       widthT: 200,
+      minWidth: 200,
     },
     {
       field: 'april',
@@ -154,12 +158,14 @@ const BusinessDemand = ({ permissions }) => {
       headerAlign: 'left',
       type: 'number',
       format: '{0:n2}',
+      minWidth: 200,
     },
 
     {
       field: 'isEditable',
       title: 'isEditable',
       hidden: true,
+      isVisible: false,
     },
   ]
   const fetchData = async () => {

@@ -148,6 +148,7 @@ const SlowDown = ({ permissions }) => {
   })
 
   const [selectedTab, setSelectedTab] = useState(0)
+  const [tabIndex, setTabIndex] = useState(0)
 
   const handleTabChange = (event, newValue) => {
     setModifiedCells2({})
@@ -1148,7 +1149,9 @@ const SlowDown = ({ permissions }) => {
         const dynamicColDefs = data1.data.map((item) => ({
           field: item.field,
           title: item.title,
-          widthT: item.field.toLowerCase() === 'uom' ? 90 : 150,
+          isVisible: removedCols.includes(item.field) ? false : true,
+
+          minWidth: item.field.toLowerCase() === 'uom' ? 90 : 100,
           editable:
             item.field === 'particulars' || item.field.toLowerCase() === 'uom'
               ? false
@@ -1158,6 +1161,7 @@ const SlowDown = ({ permissions }) => {
             item.field.toLowerCase() !== 'uom' && {
               format: FORMATE_DECIMAL,
               type: 'number',
+              minWidth: 100,
             }),
         }))
 
@@ -1386,7 +1390,6 @@ const SlowDown = ({ permissions }) => {
         PLANT_ID,
         AOP_YEAR,
       )
-
     } catch (error) {
       console.error('Error deleting Records', error)
       setSnackbarOpen(true)
@@ -1638,42 +1641,35 @@ const SlowDown = ({ permissions }) => {
           !IS_ELASTOMER_JMD &&
           !IS_ELASTOMER_HMD_SBR)) && (
         <Box style={{ margin: 0, padding: 0 }}>
-          <Tabs
-            value={selectedTab}
-            onChange={handleTabChange}
-            sx={{
-              borderBottom: '0px solid #ccc',
-              '.MuiTabs-indicator': { display: 'none' },
-              margin: '0px 0px 0px 0px',
-              minHeight: '28px',
-            }}
+          <AopTabs
+            tabIndex={selectedTab}
+            setTabIndex={(index) => handleTabChange(null, index)}
+            tabs={[
+              'Slowdown Details',
+              lowerVertName === 'meg'
+                ? 'Slowdown Configuration'
+                : 'Slowdown History Config',
+            ]}
           >
-            <Tab
-              label='Slowdown Details'
-              sx={{
-                border: '1px solid #ADD8E6',
-                borderBottom: '1px solid #ADD8E6',
-                fontSize: '0.75rem',
-                padding: '9px',
-                minHeight: '12px',
-              }}
-            />
-
-            <Tab
-              label={
-                lowerVertName === 'meg'
-                  ? 'Slowdown Configuration'
-                  : 'Slowdown History Config'
-              }
-              sx={{
-                border: '1px solid #ADD8E6',
-                borderBottom: '1px solid #ADD8E6',
-                fontSize: '0.75rem',
-                padding: '9px',
-                minHeight: '12px',
-              }}
-            />
-          </Tabs>
+            {[
+              'Slowdown Details',
+              lowerVertName === 'meg'
+                ? 'Slowdown Configuration'
+                : 'Slowdown History Config',
+            ].map((label, idx) => (
+              <Tab
+                key={idx}
+                label={label}
+                sx={{
+                  border: '1px solid #ADD8E6',
+                  borderBottom: '1px solid #ADD8E6',
+                  fontSize: '0.75rem',
+                  padding: '9px',
+                  minHeight: '12px',
+                }}
+              />
+            ))}
+          </AopTabs>
         </Box>
       )}
 

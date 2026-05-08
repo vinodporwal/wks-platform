@@ -7,6 +7,7 @@ export const BusinessDemandPtaColumns = [
     editable: false,
     hidden: true,
     minWidth: 120,
+    isVisible: false,
   },
   {
     field: 'normParameterId',
@@ -15,6 +16,7 @@ export const BusinessDemandPtaColumns = [
     width: 100,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 
   {
@@ -156,6 +158,7 @@ export const BusinessDemandPtaColumns = [
     title: 'ID from API',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 ]
 
@@ -175,6 +178,7 @@ export const SlowDownPtaColumns = [
     editable: false,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 
   // {
@@ -239,6 +243,7 @@ export const SlowDownPtadmdColumns = [
     editable: false,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 
   {
@@ -301,6 +306,7 @@ export const NormalOpNormPtaColumns = [
     editable: false,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     field: 'materialFkId',
@@ -308,6 +314,7 @@ export const NormalOpNormPtaColumns = [
     width: 100,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     field: 'productName',
@@ -475,12 +482,14 @@ export const NormalOpNormPtaColumns = [
     title: 'idFromApi',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 ]
 
@@ -491,6 +500,7 @@ export const ShutdownConsumptionPtaColumns = [
     width: 100,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     field: 'materialFkId',
@@ -499,6 +509,7 @@ export const ShutdownConsumptionPtaColumns = [
     editable: false,
     hidden: true,
     width: 100,
+    isVisible: false,
   },
   {
     field: 'productName',
@@ -545,6 +556,7 @@ export const ShutdownConsumptionPtaColumns = [
     headerName: 'idFromApi',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 ]
 export const ShutdownConsumptionPtadmdColumns = [
@@ -554,6 +566,7 @@ export const ShutdownConsumptionPtadmdColumns = [
     width: 100,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     field: 'materialFkId',
@@ -562,6 +575,7 @@ export const ShutdownConsumptionPtadmdColumns = [
     editable: false,
     hidden: true,
     width: 100,
+    isVisible: false,
   },
   {
     field: 'productName',
@@ -608,6 +622,7 @@ export const ShutdownConsumptionPtadmdColumns = [
     headerName: 'idFromApi',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 ]
 
@@ -618,6 +633,7 @@ export const SlowdownNormsPtaColumns = [
     width: 100,
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
   {
     field: 'materialFkId',
@@ -625,6 +641,7 @@ export const SlowdownNormsPtaColumns = [
     minWidth: 150,
     editable: false,
     hidden: true,
+    isVisible: false,
     width: 100,
   },
   {
@@ -671,6 +688,7 @@ export const SlowdownNormsPtaColumns = [
     field: 'idFromApi',
     headerName: 'idFromApi',
     hidden: true,
+    isVisible: false,
     minWidth: 100,
   },
 ]
@@ -682,12 +700,14 @@ export const ConsumptionAopPtaColumns = [
     editable: false,
     width: 100,
     hidden: true,
+    isVisible: false,
     minWidth: 100,
   },
   {
     field: 'NormParametersId',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 
   {
@@ -769,5 +789,6 @@ export const ConsumptionAopPtaColumns = [
     title: 'isEditable',
     hidden: true,
     minWidth: 100,
+    isVisible: false,
   },
 ]

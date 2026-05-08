@@ -491,6 +491,7 @@ export default function QualityPackagingNorms() {
       title: 'Quality Type',
       editable: false,
       widthT: 200,
+      minWidth: 150,
     },
     {
       field: 'percentage',
@@ -499,6 +500,7 @@ export default function QualityPackagingNorms() {
       type: 'numberWithUOMValidation',
       format: valueFormat,
       widthT: 200,
+      minWidth: 120,
     },
     {
       field: 'unit',
@@ -510,6 +512,7 @@ export default function QualityPackagingNorms() {
       field: 'remark',
       title: 'Remark',
       editable: true,
+      minWidth: 100,
     },
   ]
 
@@ -534,17 +537,20 @@ export default function QualityPackagingNorms() {
       field: 'sapMaterialCode',
       title: 'SAP Material Code',
       editable: false,
+      minWidth: 100,
     },
     {
       field: 'name',
       title: 'Name of Item',
       editable: false,
+      minWidth: 100,
     },
     {
       field: 'unit',
       title: 'Unit',
       widthT: 70,
       editable: false,
+      minWidth: 70,
     },
     {
       field: 'packagingPrice',
@@ -552,6 +558,7 @@ export default function QualityPackagingNorms() {
       editable: true,
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'budget',
@@ -559,6 +566,7 @@ export default function QualityPackagingNorms() {
       editable: false,
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'actual',
@@ -566,6 +574,7 @@ export default function QualityPackagingNorms() {
       editable: true,
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'proposedNorm',
@@ -573,11 +582,13 @@ export default function QualityPackagingNorms() {
       editable: true,
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'remark',
       title: 'Remark',
       editable: true,
+      minWidth: 100,
     },
   ]
 
@@ -588,6 +599,7 @@ export default function QualityPackagingNorms() {
       widthT: 70,
       type: 'number',
       format: '{0:n0}',
+      minWidth: 70,
     },
     {
       field: 'materialId',
@@ -601,6 +613,7 @@ export default function QualityPackagingNorms() {
       field: 'sapMaterialCode',
       title: 'SAP Material Code',
       editable: false,
+      minWidth: 100,
     },
     {
       field: 'normParameterTypeName ',
@@ -613,11 +626,13 @@ export default function QualityPackagingNorms() {
       field: 'name',
       title: 'Name of Item',
       editable: false,
+      minWidth: 100,
     },
     {
       field: 'unit',
       title: 'Unit',
       widthT: 80,
+      minWidth: 100,
     },
     {
       field: 'budget',
@@ -625,6 +640,7 @@ export default function QualityPackagingNorms() {
       editable: true,
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'actual',
@@ -632,6 +648,7 @@ export default function QualityPackagingNorms() {
       editable: true,
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'proposedNorm',
@@ -639,11 +656,13 @@ export default function QualityPackagingNorms() {
       editable: true,
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'remark',
       title: 'Remark',
       editable: true,
+      minWidth: 100,
     },
   ]
   const saveChanges = React.useCallback(async () => {

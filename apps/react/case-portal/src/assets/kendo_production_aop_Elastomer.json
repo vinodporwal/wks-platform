@@ -1,18 +1,26 @@
 [
-  { "field": "idFromApi", "title": "ID", "hidden": true, "minWidth": 100 },
+  {
+    "field": "idFromApi",
+    "title": "ID",
+    "hidden": true,
+    "minWidth": 100,
+    "isVisible": false
+  },
   {
     "field": "aopCaseId",
     "title": "Case ID",
     "hidden": true,
     "editable": false,
-    "minWidth": 100
+    "minWidth": 100,
+    "isVisible": false
   },
   {
     "field": "aopType",
     "title": "Type",
     "width": 80,
     "hidden": true,
-    "minWidth": 100
+    "minWidth": 100,
+    "isVisible": false
   },
   {
     "field": "aopYear",
@@ -78,7 +86,8 @@
     "align": "left",
     "editable": true,
     "type": "number",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "may",
@@ -87,7 +96,8 @@
     "editable": true,
 
     "align": "left",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "june",
@@ -96,7 +106,8 @@
     "editable": true,
 
     "align": "left",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "july",
@@ -105,7 +116,8 @@
     "editable": true,
 
     "align": "left",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "aug",
@@ -114,7 +126,8 @@
     "editable": true,
 
     "align": "left",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "sep",
@@ -123,7 +136,8 @@
     "editable": true,
 
     "align": "left",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "oct",
@@ -132,7 +146,8 @@
     "editable": true,
 
     "align": "left",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "nov",
@@ -141,7 +156,8 @@
     "editable": true,
 
     "align": "left",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "dec",
@@ -150,7 +166,8 @@
     "editable": true,
 
     "align": "left",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "jan",
@@ -159,7 +176,8 @@
     "editable": true,
 
     "align": "left",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "feb",
@@ -169,7 +187,8 @@
 
     "align": "left",
     "type": "number",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "march",
@@ -178,14 +197,16 @@
     "editable": true,
 
     "align": "left",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "averageTPH",
     "title": "Total",
     "type": "number",
     "editable": false,
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 100
   },
   {
     "field": "remark",
@@ -196,7 +217,8 @@
     "field": "isEditable",
     "title": "isEditable",
     "hidden": true,
-    "isVisible": false
+    "isVisible": false,
+    "minWidth": 100
   },
 
   {
@@ -204,6 +226,7 @@
     "title": "aopStatus",
     "editable": false,
     "hidden": true,
-    "isVisible": false
+    "isVisible": false,
+    "minWidth": 100
   }
 ]

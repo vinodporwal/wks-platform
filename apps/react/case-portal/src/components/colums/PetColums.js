@@ -8,6 +8,8 @@ export const BusinessDemandPetColumns = [
     filterable: 'false',
     editable: false,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'normParameterId',
@@ -15,18 +17,22 @@ export const BusinessDemandPetColumns = [
     editable: false,
     width: 100,
     hidden: true,
+    isVisible: false,
+    minWidth: 100,
   },
   {
     field: 'displayName',
     title: 'Particulars',
     editable: false,
     widthT: 120,
+    minWidth: 100,
   },
   {
     field: 'UOM',
     title: 'UOM',
     editable: false,
     widthT: 80,
+    minWidth: 80,
   },
   {
     field: 'april',
@@ -36,6 +42,7 @@ export const BusinessDemandPetColumns = [
     align: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'may',
@@ -45,6 +52,7 @@ export const BusinessDemandPetColumns = [
     align: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'june',
@@ -54,6 +62,7 @@ export const BusinessDemandPetColumns = [
     align: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'july',
@@ -63,6 +72,7 @@ export const BusinessDemandPetColumns = [
     align: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'aug',
@@ -72,6 +82,7 @@ export const BusinessDemandPetColumns = [
     align: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'sep',
@@ -81,6 +92,7 @@ export const BusinessDemandPetColumns = [
     align: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
 
   {
@@ -91,6 +103,7 @@ export const BusinessDemandPetColumns = [
     align: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'nov',
@@ -100,6 +113,7 @@ export const BusinessDemandPetColumns = [
     align: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'dec',
@@ -109,6 +123,7 @@ export const BusinessDemandPetColumns = [
     align: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'jan',
@@ -118,6 +133,7 @@ export const BusinessDemandPetColumns = [
     align: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'feb',
@@ -127,6 +143,7 @@ export const BusinessDemandPetColumns = [
     align: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'march',
@@ -136,6 +153,7 @@ export const BusinessDemandPetColumns = [
     align: 'left',
     headerAlign: 'left',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'remark',
@@ -143,11 +161,13 @@ export const BusinessDemandPetColumns = [
     editable: false,
     widthT: 100,
     type: 'string',
+    minWidth: 100,
   },
   {
     field: 'idFromApi',
     title: 'idFromApi',
     filterable: 'false',
     hidden: true,
+    isVisible: false,
   },
 ]

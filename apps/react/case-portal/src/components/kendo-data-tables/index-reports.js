@@ -589,7 +589,7 @@ const KendoDataTablesReports = ({
             field={col.field}
             title={col.title || col.headerName}
             // width={col.fixedWidth || undefined}
-            width={setWidth(col.fixedWidth || 200)}
+            width={setWidth(col?.fixedWidth || 200)}
             cells={{
               data: (cellProps) => (
                 <RemarkCell

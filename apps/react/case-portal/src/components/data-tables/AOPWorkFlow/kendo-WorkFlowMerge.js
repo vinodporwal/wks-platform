@@ -842,10 +842,43 @@ const WorkFlowMerge = () => {
           ))}
         </Stepper>
 
-        <Typography component='div' className='info-note' sx={{ mb: 1 }}>
-          <span className='info-note__asterisk'>*</span>
-          Prices -MIIS BPC (Last Budget Year), Actual Values -MIIS Contribution
-          (YTD).
+        <Typography
+          component='div'
+          // className='info-note'
+          sx={{
+            mb: 1.5,
+            px: 1.5,
+            py: 1,
+            fontSize: '14px',
+            fontWeight: 500,
+            letterSpacing: '0.2px',
+            lineHeight: 1.7,
+            borderRadius: '10px',
+            background:
+              'linear-gradient(90deg, rgba(25,118,210,0.08) 0%, rgba(25,118,210,0.02) 100%)',
+            borderLeft: '4px solid #1976d2',
+            color: '#1f2937',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          }}
+        >
+          <span
+            className='info-note__asterisk'
+            style={{
+              color: '#d32f2f',
+              fontSize: '18px',
+              fontWeight: 700,
+            }}
+          >
+            *
+          </span>
+
+          <span>
+            Prices - <strong>MIIS BPC</strong> (Last Budget Year), Actual Values
+            -<strong> MIIS Contribution</strong> (YTD).
+          </span>
         </Typography>
 
         <Stack

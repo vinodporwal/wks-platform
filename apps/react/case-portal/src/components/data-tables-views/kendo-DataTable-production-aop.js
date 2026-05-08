@@ -15,7 +15,7 @@ const ProductionAopView = ({
   handleExport,
 }) => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
   const [columns, setColumns] = useState([])
@@ -99,7 +99,7 @@ const ProductionAopView = ({
   }
 
   const handleRemarkCellClick = (row) => {
-    if(READ_ONLY) return
+    if (READ_ONLY) return
     // do not delete commented code
     // try {
     //   const cases = await DataService.getCaseId(keycloak)
@@ -114,26 +114,26 @@ const ProductionAopView = ({
   }
   const fetchData = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
-  setLoading(true)
-  try {
-    const response = await AOPWorkFlowService.getWorkflowDataProduction(
+    setLoading(true)
+    try {
+      const response = await AOPWorkFlowService.getWorkflowDataProduction(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
       )
 
       setCalculationObject(response?.data?.aopCalculation)
-    // Correct path is response.data.data
-    const apiData = response?.data?.data
-    
-    if (!apiData?.results || !Array.isArray(apiData.results)) {
-      console.error('No results found')
-      setRows([])
-      setColumns([])
-      return
-    }
-    
-    let formattedRows = apiData.results.map((row, id) => {
+      // Correct path is response.data.data
+      const apiData = response?.data?.data
+
+      if (!apiData?.results || !Array.isArray(apiData.results)) {
+        console.error('No results found')
+        setRows([])
+        setColumns([])
+        return
+      }
+
+      let formattedRows = apiData.results.map((row, id) => {
         const newRow = { id }
         Object.entries(row).forEach(([key, val]) => {
           if (['syAop', 'fyActual', 'fyAop'].includes(key)) {
@@ -145,21 +145,21 @@ const ProductionAopView = ({
         return newRow
       })
 
-    formattedRows = formattedRows.map((item) => ({
+      formattedRows = formattedRows.map((item) => ({
         ...item,
-      path: [item.particulates],
+        path: [item.particulates],
       }))
 
       setRows(formattedRows)
 
-    // Use apiData.results for numeric keys calculation
-    const numericKeys = getNumericKeysInAllRows(apiData.results)
+      // Use apiData.results for numeric keys calculation
+      const numericKeys = getNumericKeysInAllRows(apiData.results)
 
       const generateColumns = ({ headers, keys }) => {
-      // Match keys to headers length to avoid mismatch
-      const validKeys = keys.slice(0, headers.length)
+        // Match keys to headers length to avoid mismatch
+        const validKeys = keys.slice(0, headers.length)
         const cols = headers.map((header, idx) => {
-        const key = validKeys[idx]
+          const key = validKeys[idx]
           const isRemark = key === 'remark'
           return {
             field: key,
@@ -185,12 +185,12 @@ const ProductionAopView = ({
         return cols
       }
 
-    setColumns(generateColumns(apiData))
+      setColumns(generateColumns(apiData))
     } catch (error) {
       console.error('Error fetching data:', error)
       setRows([])
-    setColumns([])
-  } finally {
+      setColumns([])
+    } finally {
       setLoading(false)
     }
   }
@@ -272,8 +272,9 @@ const ProductionAopView = ({
           allAction: !isOldYear,
           showCalculate: !isOldYear,
           showTitle: true,
+          showExport: true,
           showCalculateVisibility:
-        Object.keys(calculationObject || {}).length > 0 ? true : false,
+            Object.keys(calculationObject || {}).length > 0 ? true : false,
         }}
       />
       {/* </Box> */}

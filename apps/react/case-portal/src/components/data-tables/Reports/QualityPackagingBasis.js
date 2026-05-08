@@ -423,7 +423,7 @@ const QualityPackagingBasis = () => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading || !!isExporting} />
+      <LoaderBackdrop open={!!loading} />
 
       {/* Hidden ExcelExport instances for each grid */}
       <div style={{ display: 'none' }}>
