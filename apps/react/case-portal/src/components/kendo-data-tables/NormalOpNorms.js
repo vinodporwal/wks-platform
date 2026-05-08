@@ -104,7 +104,7 @@ const NormalOpNormsScreen = () => {
   const IS_CHEMICAL_VMD_BUTADIENE =
     lowerVertName === 'chemical' &&
     lowerSiteName === 'vmd' &&
-    lowerPlantName === '1,3butadiene'
+    lowerPlantName === 'butadiene'
 
   const IS_VCM_HMD_VCM =
     lowerVertName === 'vcm' &&
