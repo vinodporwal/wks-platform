@@ -845,20 +845,38 @@ const KendoDataTablesReports = ({
                     )
                   }}
                   variant='outlined'
-                  label={permissions?.dropdownLabel || 'Select Grade'}
-                  InputLabelProps={{
-                    shrink: true,
-                    sx: { fontWeight: 'bold' },
+                  size='small'
+                  className='custom-select-textfield'
+                  InputProps={{
+                    startAdornment: (
+                      <Typography
+                        variant='caption'
+                        sx={{
+                          mr: 0.5,
+                          color: '#606060',
+                          fontWeight: 500,
+                          fontSize: '14px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.4px',
+                          lineHeight: 1,
+                          fontFamily:
+                            "'Honeywell Sans Web', 'Inter', sans-serif",
+                        }}
+                      >
+                        {permissions?.dropdownLabel || 'Grade'}:
+                      </Typography>
+                    ),
                   }}
                   SelectProps={{
-                    MenuProps: { disableScrollLock: true },
+                    MenuProps: {
+                      disableScrollLock: true,
+                    },
                   }}
-                  sx={{ width: 180, mb: 1 }}
-                  className='custom-select-textfield report-select-grade'
                 >
                   <MenuItem value='' disabled className='menu-item-style'>
-                    {permissions?.dropdownLabel || 'Select Grade'}
+                    {permissions?.dropdownLabel || 'Select'}
                   </MenuItem>
+
                   {grades?.map((unit) => (
                     <MenuItem
                       key={unit.gradeId}

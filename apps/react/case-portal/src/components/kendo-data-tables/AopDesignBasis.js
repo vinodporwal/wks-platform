@@ -725,7 +725,8 @@ const AopDesignBasis = () => {
               AOP Design Basis
             </Typography>
 
-            <textarea
+            <TextArea
+              className='vertical-resize-textarea'
               disabled={READ_ONLY}
               value={summary}
               rows={2}
@@ -733,8 +734,6 @@ const AopDesignBasis = () => {
                 setSummary(e.target.value)
                 setSummaryEdited(true)
               }}
-              className='aop-design-basis-textarea'
-              style={{ minHeight: '10vh', marginTop: '4px' }}
             />
           </Box>
         </Stack>

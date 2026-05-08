@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
 import { Box, Button, Stack, Tooltip, Typography } from '@mui/material'
 import { DatePicker } from '@progress/kendo-react-dateinputs'
+import { TextArea } from '@progress/kendo-react-inputs'
 import {
   CustomAccordion,
   CustomAccordionDetails,
@@ -549,25 +550,14 @@ const ConfigurationAccordian = ({
                 >
                   AOP DESIGN BASIS
                 </Typography>
-                <textarea
+                <TextArea
+                  className='vertical-resize-textarea'
                   disabled={READ_ONLY}
                   value={summary}
                   rows={2}
                   onChange={(e) => {
                     setSummary(e.target.value)
                     setSummaryEdited(true)
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '6px 8px',
-                    borderRadius: '6px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                    color: '#303030',
-                    resize: 'none',
-                    backgroundColor: READ_ONLY ? '#f8fafc' : '#fff',
                   }}
                 />
               </Box>

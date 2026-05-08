@@ -325,7 +325,7 @@ const KendoDataTables = ({
     const isShutdown = shutdownMonths.includes(monthNumber)
     const isSlowdown = slowdownMonths.includes(monthNumber)
     let color = ''
-    if (isShutdown || isSlowdown) color = 'rgb(240, 235, 235)'
+    if (isShutdown || isSlowdown) color = '#E3E3E3'
 
     return (
       <td
@@ -1446,7 +1446,8 @@ const KendoDataTables = ({
         title={value}
         className={`${tdProps?.className || ''} ${highlight && isEdited ? 'edited-cell' : ''}`.trim()}
         style={{
-          fontWeight: !(highlight && isEdited) && isBoldFromCells ? 'bold' : undefined,
+          fontWeight:
+            !(highlight && isEdited) && isBoldFromCells ? 'bold' : undefined,
         }}
       >
         {children}
@@ -1601,7 +1602,10 @@ const KendoDataTables = ({
         title={value}
         className={`${tdProps?.className || ''} ${highlightColor ? 'edited-cell' : ''}`.trim()}
         style={{
-          color: highlightColor && highlightColor !== 'orange' ? highlightColor : undefined,
+          color:
+            highlightColor && highlightColor !== 'orange'
+              ? highlightColor
+              : undefined,
           fontWeight: !highlightColor && isBoldFromCells ? 'bold' : undefined,
           // backgroundColor: highlightColorFullCell ? 'lightGrey' : undefined,
         }}

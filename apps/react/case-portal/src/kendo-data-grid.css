@@ -779,3 +779,28 @@
   background-color: #f8fafc !important;
   border-bottom: 1px solid #e2e8f0 !important;
 }
+
+/* =========================================================
+   VERTICAL RESIZE TEXTAREA
+   ========================================================= */
+
+.vertical-resize-textarea {
+  width: 100%;
+}
+
+.vertical-resize-textarea textarea {
+  width: 100%;
+  resize: vertical !important;
+  min-height: 100px;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+  color: #303030;
+  background-color: #fff;
+  box-sizing: border-box;
+}
+
+.vertical-resize-textarea textarea:disabled {
+  background-color: #f8fafc;
+}

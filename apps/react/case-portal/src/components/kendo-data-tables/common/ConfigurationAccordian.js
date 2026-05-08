@@ -19,6 +19,7 @@ import {
 } from 'utils/CustomAccrodian'
 
 import './ConfigurationAccordian.css'
+import { TextArea } from '../../../../node_modules/@progress/kendo-react-inputs/index'
 
 const ConfigurationAccordian = ({
   startDate,
@@ -197,7 +198,8 @@ const ConfigurationAccordian = ({
                   AOP DESIGN BASIS
                 </Typography>
 
-                <textarea
+                <TextArea
+                  className='vertical-resize-textarea'
                   disabled={READ_ONLY}
                   value={summary}
                   rows={2}
@@ -205,7 +207,6 @@ const ConfigurationAccordian = ({
                     setSummary(e.target.value)
                     setSummaryEdited(true)
                   }}
-                  className='aop-design-basis-textarea'
                 />
               </Box>
             )}
