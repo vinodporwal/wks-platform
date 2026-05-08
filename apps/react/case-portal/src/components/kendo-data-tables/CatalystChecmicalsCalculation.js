@@ -13,11 +13,6 @@ import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_Con
 import Notification from 'components/Utilities/Notification'
 import { NormalOperationNormsApiService } from 'services/normal-operation-norms-api-service'
 
-const STATIC_CONSTANTS = [
-  { id: 1, TypeDisplayName: 'Packaging Constant', displayName: 'Bag Weight', uom: 'Kg', apr: 0.05, remarks: 'Remark' },
-  { id: 2, TypeDisplayName: 'Packaging Constant', displayName: 'Pallet Weight', uom: 'Kg', apr: 25, remarks: '' },
-  { id: 3, TypeDisplayName: 'Constant', displayName: 'Steam factor', uom: 'MT/MT', apr: 2.5, remarks: '' },
-]
 
 const STATIC_CONSUMPTION = [
   { id: 101, displayName: 'CHEM ISOPROPYL ALCOHOL', uom: 'MT', emulsifierBatch: 0.5, catalystBatch: 0.2, bufferBatch: 0.1, shortStopBatch: 0.05, coatingBatch: 0.02, norms: 0.87, gradeId: 'grade1' },
@@ -75,7 +70,7 @@ const CatalystChecmicalsCalculation = () => {
 
   // Grid 1: Constant Columns
   const constantColumns = getEnhancedAOPColDefs({
-    configType: 'CatChem',
+    configType: 'Constant',
     FORMATE_VALUE,
   })
 
@@ -129,19 +124,42 @@ const CatalystChecmicalsCalculation = () => {
     try {
       // Fetch Constants
       try {
-        const constRes = await RawMaterialNormsBasisApiService.getData(keycloak, PLANT_ID, AOP_YEAR, 'catchem')
-        if (constRes?.data?.catChemNormList?.length > 0) {
-          setConstantRows(constRes.data.catChemNormList.map((row, index) => ({
-            ...row,
-            id: row.id || index,
-            particulars: row.displayName,
-            value: parseFloat(row.apr) || 0,
-          })))
+        const constRes = await DataService.getCatalystSelectivityData(keycloak, '', PLANT_ID, AOP_YEAR)
+        if (constRes?.data?.length > 0) {
+          const groups = new Map()
+          constRes?.data?.forEach((item) => {
+            const ConfigTypeName = item.ConfigTypeName
+            const TypeName = item.TypeDisplayName
+            if (!groups.has(ConfigTypeName)) {
+              groups.set(ConfigTypeName, new Map())
+            }
+            const normGroup = groups.get(ConfigTypeName)
+            if (!normGroup.has(TypeName)) {
+              normGroup.set(TypeName, [])
+            }
+            normGroup.get(TypeName).push(item)
+          })
+          groups.forEach((normGroup, ConfigTypeName) => {
+            let rowsForThisCategory = []
+            normGroup.forEach((items, TypeName) => {
+              items.forEach((item) => {
+                rowsForThisCategory.push({
+                  ...item,
+                  idFromApi: item.id,
+                  originalRemark: item.remarks,
+                  id: groupId++,
+                })
+              })
+            })
+            if (ConfigTypeName == 'Constant') {
+              setConstantRows(rowsForThisCategory)
+            }
+          })
         } else {
-          setConstantRows(STATIC_CONSTANTS.map(row => ({ ...row, particulars: row.displayName, value: row.apr })))
+          setConstantRows([])
         }
       } catch (e) {
-        setConstantRows(STATIC_CONSTANTS.map(row => ({ ...row, particulars: row.displayName, value: row.apr })))
+        setConstantRows([])
       }
 
       // Fetch Recipe Grades (for Grid 2 Header)
@@ -175,7 +193,6 @@ const CatalystChecmicalsCalculation = () => {
         const converted = {}
 
         Object.entries(item).forEach(([key, value]) => {
-          console.log(key, value)
             if (
               key !== 'UOM' &&
               typeof value === 'string' &&
@@ -261,21 +278,53 @@ const CatalystChecmicalsCalculation = () => {
     }
     setLoading(true)
     try {
-      const payload = data.map(row => ({
-        normParameterFKId: row.normParameterFKId,
-        apr: row.value,
-        remarks: row.remarks,
+      const payload = data.map((row) => ({
+        apr: row.apr || row.ConstantValue || null,
+        may: row.may || null,
+        jun: row.jun || null,
+        jul: row.jul || null,
+        aug: row.aug || null,
+        sep: row.sep || null,
+        oct: row.oct || null,
+        nov: row.nov || null,
+        dec: row.dec || null,
+        jan: row.jan || null,
+        feb: row.feb || null,
+        mar: row.mar || null,
+        UOM: '',
         auditYear: AOP_YEAR,
-        uom: row.uom,
+        normParameterFKId: row.normParameterFKId || row.NormParameter_FK_Id,
+        remarks: row.remarks,
+        id: row.idFromApi || null,
       }))
-      await RawMaterialNormsBasisApiService.postData(keycloak, payload, PLANT_ID, AOP_YEAR)
-      setSnackbarData({ message: 'Constants Saved!', severity: 'success' })
-      setSnackbarOpen(true)
-      fetchData()
+
+      const response = await DataService.saveCatalystData(
+        PLANT_ID,
+        payload,
+        keycloak,
+        AOP_YEAR,
+        false,
+      )
+
+      if (response) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Saved Successfully!',
+          severity: 'success',
+        })
+        setModifiedCellsConfiguration({})
+        setLoading(false)
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Save Failed!',
+          severity: 'error',
+        })
+      }
     } catch (e) {
       console.error(e)
-      // Simulate success for static data mode
-      setSnackbarData({ message: 'Constants Saved!', severity: 'success' })
+      setSnackbarData({ message: 'Data Save Failed!', severity: 'error' })
       setSnackbarOpen(true)
     } finally {
       setLoading(false)
@@ -331,7 +380,13 @@ const CatalystChecmicalsCalculation = () => {
       setSnackbarData({ message: 'Excel Export Started!', severity: 'success' })
       setSnackbarOpen(true)
       if (type === 'constant') {
-        await DataService.getRecipeCatChemExcel(keycloak, PLANT_ID, AOP_YEAR, title, 'Manual')
+        await DataService.getShutdownRateExcel(
+          keycloak,
+          'Constant',
+          PLANT_ID,
+          AOP_YEAR,
+          `${EXCEL_EXPORT_TITLE}_${title}`,
+        )
       } else if (type === 'recipe') {
         await DataService.getRecipeCatChemExcel(keycloak, PLANT_ID, AOP_YEAR, `${EXCEL_EXPORT_TITLE}_${title}`)
       }
@@ -346,14 +401,64 @@ const CatalystChecmicalsCalculation = () => {
   const handleExcelUpload = async (file, type) => {
     setLoading(true)
     try {
+      let response
       if (type === 'constant') {
-        await DataService.saveRecipeCatChemExcel(file, keycloak, PLANT_ID, AOP_YEAR, 'Manual')
+        response = await DataService.saveShutdownRateExcel(
+          file,
+          keycloak,
+          'Constant',
+          PLANT_ID,
+          AOP_YEAR,
+        )
       } else if (type === 'recipe') {
-        await DataService.saveRecipeCatChemExcel(file, keycloak, PLANT_ID, AOP_YEAR)
+        response = await DataService.saveRecipeCatChemExcel(file, keycloak, PLANT_ID, AOP_YEAR)
       }
-      setSnackbarData({ message: 'Import Successful!', severity: 'success' })
-      setSnackbarOpen(true)
-      fetchData()
+      if (response?.code == 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Upload Successfully!',
+          severity: 'success',
+        })
+        setModifiedConstantCells({})
+        setModifiedRecipeCells({})
+        setLoading(false)
+
+        fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = new Array(byteCharacters.length)
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i)
+        }
+        const byteArray = new Uint8Array(byteNumbers)
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `Error File ${type}.xlsx`)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Saved Falied!',
+          severity: 'error',
+        })
+      }
+
+      return response
     } catch (e) {
       setSnackbarData({ message: 'Import Failed!', severity: 'error' })
       setSnackbarOpen(true)

@@ -373,9 +373,9 @@ export const MainRoutes = (
             ],
           },
           {
-            path: 'catalyst-chemicals-calculation',
+            path: 'cat-chem-calculation',
             element: (
-              <PrivateRoute routeId='catalyst-chemicals-calculation'>
+              <PrivateRoute routeId='cat-chem-calculation'>
                 <CatalystChecmicalsCalculation />
               </PrivateRoute>
             ),
