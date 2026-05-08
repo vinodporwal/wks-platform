@@ -2610,6 +2610,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 		boolean elastomerJMD =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD");
 		boolean elastomerAndHMDSBR = verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
+		boolean vcmHMD = verticalName.equalsIgnoreCase("VCM") && site.getName().equalsIgnoreCase("HMD");
 		Boolean monthDropdown = false;
 		if(verticalName.equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD")) {
 			monthDropdown=true;
@@ -2650,6 +2651,26 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		            		shutDownPlanDTO.setMaintStartDateTime(getStartOfMonthDate(shutDownPlanDTO.getMonth(), year));
 		            		shutDownPlanDTO.setMaintEndDateTime(getEndOfMonthDate(shutDownPlanDTO.getMonth(), year));
 		            	}
+
+						if(vcmHMD) { 
+                    double updatedRate = shutDownPlanDTO.getRate();
+					String desc = shutDownPlanDTO.getDiscription();
+						
+								 if((desc.equalsIgnoreCase("Furnace decoking - (EBA-6401A)") ||
+								desc.equalsIgnoreCase("Furnace decoking - (EBA-6401B)") ) && updatedRate!=32.5)
+							   {
+								
+								  shutDownPlanDTO.setSaveStatus("Failed");
+								  shutDownPlanDTO.setErrDescription("Rate for Furnace decoking must be 32.5");
+								  failedList.add(shutDownPlanDTO);
+								  continue;
+							  } else if (desc.equalsIgnoreCase("Furnace decoking - (EBA-6401C)") && updatedRate!=22.75) {
+								shutDownPlanDTO.setSaveStatus("Failed");
+								shutDownPlanDTO.setErrDescription("Rate for Furnace decoking must be 22.75");
+								failedList.add(shutDownPlanDTO);
+								continue;
+							  }
+						}
 		            }
 	                
 	            } else {

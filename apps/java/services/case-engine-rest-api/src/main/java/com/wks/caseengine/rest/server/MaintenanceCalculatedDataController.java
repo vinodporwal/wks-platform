@@ -59,6 +59,11 @@ public class MaintenanceCalculatedDataController {
 	public AOPMessageVM getMaintenanceDataForCracker(@RequestParam String plantId, @RequestParam String year){
 		return maintenanceCalculatedDataService.getMaintenanceDataForCracker(plantId,year);		
 	}
+
+	@GetMapping(value="/maintenance-cat-chem")
+	public AOPMessageVM getMaintenanceCatChem(@RequestParam String plantId, @RequestParam String year, @RequestParam String gradeId){
+		return maintenanceCalculatedDataService.getMaintenanceCatChem(plantId, year, gradeId);		
+	}
 	
 	@GetMapping(value="/maintenance-nmd")
 	public AOPMessageVM getMaintenanceDataNMDForCracker(@RequestParam String plantId, @RequestParam String year){
