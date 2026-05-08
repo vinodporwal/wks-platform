@@ -325,10 +325,10 @@ export const NormalOpNormPtaColumns = [
 
   {
     field: 'UOM',
-    title: 'UOM / MT',
+    title: 'UOM/MT',
     widthT: 90,
     editable: false,
-    minWidth: 100,
+    minWidth: 80,
   },
 
   {
@@ -516,14 +516,14 @@ export const ShutdownConsumptionPtaColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
-    minWidth: 100,
+    minWidth: 120,
   },
   {
     field: 'UOM',
     headerName: 'UOM/MT',
     width: 90,
     editable: false,
-    minWidth: 100,
+    minWidth: 80,
   },
 
   ...Array.from({ length: 12 }, (_, i) => {

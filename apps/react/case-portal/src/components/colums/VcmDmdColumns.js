@@ -6,23 +6,25 @@ export const NormalOpNormVcmDmdColumns = [
     groupable: true,
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'materialFkId',
     title: 'Particulars',
     width: 100,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'productName',
     title: 'Particulars',
-    widthT: 130,
+    minWidth: 130,
   },
 
   {
     field: 'UOM',
     title: 'UOM / MT',
-    widthT: 85,
+    minWidth: 85,
     editable: false,
   },
 
@@ -34,6 +36,7 @@ export const NormalOpNormVcmDmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'may',
@@ -44,6 +47,7 @@ export const NormalOpNormVcmDmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'june',
@@ -54,6 +58,7 @@ export const NormalOpNormVcmDmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'july',
@@ -64,6 +69,7 @@ export const NormalOpNormVcmDmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
 
   {
@@ -75,6 +81,7 @@ export const NormalOpNormVcmDmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'september',
@@ -85,6 +92,7 @@ export const NormalOpNormVcmDmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'october',
@@ -95,6 +103,7 @@ export const NormalOpNormVcmDmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'november',
@@ -105,6 +114,7 @@ export const NormalOpNormVcmDmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'december',
@@ -114,6 +124,7 @@ export const NormalOpNormVcmDmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'january',
@@ -123,6 +134,7 @@ export const NormalOpNormVcmDmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'february',
@@ -132,6 +144,7 @@ export const NormalOpNormVcmDmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'march',
@@ -141,6 +154,7 @@ export const NormalOpNormVcmDmdColumns = [
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'wtAverage',
@@ -150,22 +164,26 @@ export const NormalOpNormVcmDmdColumns = [
     editable: false,
     width: 100,
     type: 'number',
+    minWidth: 100,
   },
   {
     field: 'remarks',
     title: 'Remark',
     widthT: 80,
     editable: true,
+    minWidth: 100,
   },
 
   {
     field: 'idFromApi',
     title: 'idFromApi',
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    isVisible: false,
   },
 ]

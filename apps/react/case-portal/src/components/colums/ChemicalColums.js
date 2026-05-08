@@ -6,12 +6,14 @@ export const NormalOpNormChemicalColumns = [
     groupable: true,
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'materialFkId',
     title: 'Particulars',
     width: 120,
     hidden: true,
+    isVisible: false,
     minWidth: 120,
   },
   {
@@ -185,12 +187,14 @@ export const NormalOpNormChemicalColumns = [
     field: 'idFromApi',
     title: 'idFromApi',
     hidden: true,
+    isVisible: false,
     minWidth: 100,
   },
   {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    isVisible: false,
     minWidth: 100,
   },
 ]

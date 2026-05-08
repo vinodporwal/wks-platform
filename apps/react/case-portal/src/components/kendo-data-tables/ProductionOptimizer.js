@@ -283,6 +283,7 @@ const ProductionOptimizer = () => {
             format: col.type === 'number' ? valueFormat : '{0:#.###}',
             type: col.type,
             isEditable: false,
+            minWidth: 100,
           }
         })
 
@@ -343,6 +344,7 @@ const ProductionOptimizer = () => {
             align: col.type === 'number' ? 'right' : 'left',
             format: col.type === 'number' ? valueFormat : '{0:#.###}',
             type: col.type,
+            minWidth: 100,
           }
         })
 

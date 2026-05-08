@@ -1861,6 +1861,12 @@ const KendoDataTables = ({
         </Typography>
       )}
 
+      {permissions?.showNote && (
+        <Typography component='div' className='text-note'>
+          {note}
+        </Typography>
+      )}
+
       {(permissions?.allAction ?? false) && (
         <Box className='action-box'>
           <Box
@@ -1956,11 +1962,6 @@ const KendoDataTables = ({
                     }}
                   />
                 </Box>
-              )}
-              {permissions?.showNote && (
-                <Typography component='div' className='text-note'>
-                  {note}
-                </Typography>
               )}
 
               {permissions?.showReportTitle && (

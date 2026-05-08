@@ -129,11 +129,11 @@ export const ShutdownConsumptionVcmColumns = [
   {
     field: 'productName',
     headerName: 'Particulars',
-    width: 180,
+    minWidth: 180,
     editable: false,
   },
   // { field: 'UOM/MT', headerName: 'UOM', width: 150, editable: false },
-  { field: 'UOM', headerName: 'UOM/MT', width: 150, editable: false },
+  { field: 'UOM', headerName: 'UOM/MT', minWidth: 80, editable: false },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
