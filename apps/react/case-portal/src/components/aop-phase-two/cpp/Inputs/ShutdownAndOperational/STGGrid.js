@@ -54,8 +54,8 @@ const STGGrid = ({ hoursRows = [] }) => {
     {
       field: 'utilityDistributed.sapCode',
       title: 'Distributed SAP Code',
-      width: 180,
-      minWidth: 180,
+      width: 200,
+      minWidth: 200,
       type: 'text',
       editable: false,
       locked: true,
@@ -72,8 +72,8 @@ const STGGrid = ({ hoursRows = [] }) => {
     {
       field: 'utilityGenerated.sapCode',
       title: 'Generated SAP Code',
-      width: 180,
-      minWidth: 180,
+      width: 220,
+      minWidth: 220,
       type: 'text',
       editable: false,
       locked: true,

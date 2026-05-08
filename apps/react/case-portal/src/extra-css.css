@@ -1,95 +1,254 @@
-.btn-save {
-  background-color: #0100cb;
-  color: #ffffff;
-  border-radius: 4px;
-  padding: 4px 20px;
-  text-transform: none;
-  font-size: 0.7rem;
-  font-weight: 500;
-  min-width: 80px;
-  border: none;
+/* =========================================================
+   MODERN OUTLINE BUTTON SYSTEM (MATCHING IMAGE)
+   ========================================================= */
+.btn-save,
+.btn-export,
+.btn-add,
+.btn-import,
+.btn-calculate {
+  appearance: none;
+  background: transparent;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-family: "Honeywell Sans Web", "Inter", sans-serif;
+  font-size: 14px; /* Slightly larger for better readability */
+  font-weight: 700;
+  line-height: 1;
   cursor: pointer;
-  margin-bottom: 2px;
+  display: inline-flex;
+  align-items: center;
+  /* gap: 8px; */
+  white-space: nowrap;
+  transition: all 0.2s ease;
+
+  /* Text Color from Image */
+  color: #334155;
+  /* border: 1px solid rgba(37, 99, 235, 0.15); */
 }
+
 .btn-load {
-  background-color: #0100cb;
-  color: #ffffff;
-  border-radius: 4px;
-  padding: 4px 20px;
-  text-transform: none;
-  font-size: 0.7rem;
-  font-weight: 500;
-  min-width: 80px;
-  border: none;
+  appearance: none;
+  background: transparent;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-family: "Honeywell Sans Web", "Inter", sans-serif;
+  font-size: 14px; /* Slightly larger for better readability */
+  font-weight: 700;
+  line-height: 1;
   cursor: pointer;
-  margin-bottom: 0px;
+  display: inline-flex;
+  align-items: center;
+  /* gap: 8px; */
+  white-space: nowrap;
+  transition: all 0.2s ease;
+
+  /* Text Color from Image */
+  color: #4A4DDA;
+  border: 1px solid #4A4DDA;
 }
 
-.btn-save:hover {
-  background-color: #143b6f;
-  box-shadow: none;
+/* Base Icon Styling */
+.MuiButton-startIcon svg {
+  font-size: 18px !important;
+  transition: transform 0.2s ease;
 }
 
-.btn-save:disabled {
-  background-color: #8d8dec;
+/* Hover State - General */
+.btn-save:hover,
+.btn-export:hover,
+.btn-add:hover,
+.btn-import:hover,
+.btn-calculate:hover {
+  background: #f8fafc; /* Very light gray flash */
+  border-color: rgba(37, 99, 235, 0.4);
+  transform: translateY(-1px);
+}
+.btn-load:hover {
+  background: #f8fafc; /* Very light gray flash */
+  border-color: #4A4DDA;
+  transform: translateY(-1px);
+}
+  
+/* ===============================
+   SPECIFIC ICON COLORS (FROM IMAGE)
+================================ */
+
+/* SAVE - Purple/Blue Icon */
+.btn-save .MuiButton-startIcon svg {
+  color: #6366f1;
+}
+
+/* EXPORT - Royal Blue Icon */
+.btn-export .MuiButton-startIcon svg {
+  color: #4f46e5;
+}
+
+/* ADD - Green Icon */
+.btn-add .MuiButton-startIcon svg {
+  color: #16a34a;
+}
+
+/* IMPORT - Amber Icon */
+.btn-import .MuiButton-startIcon svg {
+  color: #f59e0b;
+}
+
+/* CALCULATE - Violet Icon */
+.btn-calculate .MuiButton-startIcon svg {
+  color: #7c3aed;
+}
+
+/* LOAD - Indigo Icon */
+.btn-load .MuiButton-startIcon svg {
+  color: #4A4DDA;
+  border-color: #4A4DDA;
+}
+
+/* ===============================
+   YES / NO & UTILITY
+================================ */
+.btn-yes {
   color: #ffffff;
-  opacity: 0.7;
+  background: #16a34a;
+  border: 1px solid #16a34a;
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.btn-no {
+  color: #64748b;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+/* Disabled State */
+button:disabled {
+  color: #94a3b8 !important;
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
   cursor: not-allowed;
 }
-/* Float the button to the right */
-.btn-approve {
-  background-color: #0100cb;
-  color: #ffffff;
-  border-radius: 5px;
-  padding: 6px 22px;
-  text-transform: none;
-  font-size: 0.875rem;
-  font-weight: 500;
-  min-width: 100px;
-  border: none;
+
+button:disabled svg {
+  color: #cbd5e1 !important;
+}
+
+/* =========================================================
+   DATE PILL WRAPPER — matches header dropdown pill style
+   Strips all Kendo internal borders/backgrounds so the
+   DatePicker blends into the outer pill container
+   ========================================================= */
+
+.date-pill-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 29px;
+  /* width: 212px; */
+  min-width: 160px;
+  padding: 6px 12px 6px 8px;
+  background: #ffffff;
+  border: 1px solid #DDDEE1;
+  border-radius: 6px;
   cursor: pointer;
-  float: right; /* Align button to the right */
+  transition: border-color 180ms ease;
 }
 
-.btn-approve:hover {
-  background-color: #143b6f;
-  box-shadow: none;
+.date-pill-wrapper:hover {
+  border-color: rgba(15, 23, 42, 0.2);
 }
 
-.btn-approve:disabled {
-  background-color: #8d8dec;
-  color: #ffffff;
-  opacity: 0.7;
-  cursor: not-allowed;
+/* Strip Kendo datepicker root */
+.date-pill-wrapper .k-datepicker,
+.date-pill-wrapper .k-dateinput {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
-.action-box {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 0px;
-  margin-bottom: 0px;
-}
-.action-box2 {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-top: 0px;
-  margin-bottom: 0px;
-  padding: 0px;
-}
-
-.action-inner {
-  display: flex;
-  align-items: center;
-  gap: 1px;
+/* Strip Kendo input wrapper */
+.date-pill-wrapper .k-input,
+.date-pill-wrapper .k-input-md,
+.date-pill-wrapper .k-picker,
+.date-pill-wrapper .k-picker-md {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  height: 20px !important;
+  width: 99px !important;
+  color: #303030 !important;
+  font-family: "'Honeywell Sans Web', 'Inter', sans-serif" !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
 }
 
-.unit-chip {
-  border-radius: 4px;
-  padding: 8px 24px;
-  text-transform: none;
-  font-size: 0.875rem;
-  font-weight: 500;
-  height: 40px;
+/* Strip inner text input */
+.date-pill-wrapper .k-input-inner {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 0px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #303030 !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+  height: 20px !important;
+  width: 83px !important;
+}
+
+/* Hide default right-side Kendo calendar toggle button */
+.date-pill-wrapper .k-input-button {
+  display: none !important;
+}
+
+/* Strip calendar toggle button (if still visible) */
+.date-pill-wrapper .k-button,
+.date-pill-wrapper .k-button-flat {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  color: #6b7786 !important;
+  min-width: unset !important;
+}
+
+.date-pill-wrapper .k-button:hover,
+.date-pill-wrapper .k-input-button:hover {
+  background: transparent !important;
+  color: #303030 !important;
+}
+
+.date-pill-wrapper .k-button svg,
+.date-pill-wrapper .k-button .k-icon,
+.date-pill-wrapper .k-input-button .k-icon {
+  font-size: 16px !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* Disabled state */
+.date-pill-wrapper.disabled,
+.date-pill-wrapper[disabled] {
+  background: #f1f5f9 !important;
+  border-color: rgba(203, 213, 225, 0.8) !important;
+  cursor: not-allowed !important;
+}
+
+.date-pill-wrapper .k-input-inner:disabled,
+.date-pill-wrapper .k-state-disabled .k-input-inner {
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
 }

@@ -17,6 +17,7 @@ import {
 } from 'utils/CustomAccrodian'
 import ConsumptionNormsHistorianBasis from './ConsumptionNormsHistorianBasis'
 import { DataSetaApiService } from 'services/data-set-api-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const REPORT_TYPE_FOR_ALL = 'CausticSodaLye'
 
 const CausticSodaLyeBasis = () => {
@@ -501,12 +502,7 @@ const CausticSodaLyeBasis = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading || !!isExporting}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading || !!isExporting} />
 
       {/* Hidden ExcelExport instances for each grid (unchanged) */}
       <div style={{ display: 'none' }}>

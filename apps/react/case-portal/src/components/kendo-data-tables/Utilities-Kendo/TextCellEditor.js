@@ -1,4 +1,4 @@
-import { Input } from '@progress/kendo-react-inputs'
+import { InputBase } from '@mui/material'
 
 export const TextCellEditor = (props) => {
   const rawValue = props.dataItem[props.field] ?? ''
@@ -14,16 +14,10 @@ export const TextCellEditor = (props) => {
 
   return (
     <td>
-      <Input
+      <InputBase
         value={rawValue}
         onChange={handleChange}
-        style={{
-          fontSize: '0.8rem',
-          padding: '2px 2px',
-          height: '22px',
-          lineHeight: '1rem',
-          width: '100%',
-        }}
+        className='input-editor'
       />
     </td>
   )

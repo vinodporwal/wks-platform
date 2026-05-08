@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -62,13 +65,15 @@ public class TCSSlowdownController {
     public AOPMessageVM saveOrUpdate(
         @RequestParam String plantId,
         @RequestParam String year,
+        @RequestParam String verticalId,
+        @RequestParam String siteId,
         @RequestBody List<TCSSlowdownDTO> payload) {
 
         if(year == null || year.isEmpty() || year.length() != 4) {
             throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
         }
         
-        return tcsSlowdownService.saveOrUpdate(plantId, year, payload);
+        return tcsSlowdownService.saveOrUpdate(plantId, year, verticalId, siteId, payload);
     }
 
     @DeleteMapping("/tcs-slowdown") 
@@ -115,6 +120,8 @@ public class TCSSlowdownController {
     public AOPMessageVM importTCSSlowdown(
         @RequestParam String plantId,
         @RequestParam String year,
+        @RequestParam String verticalId,
+        @RequestParam String siteId,
         @RequestParam("file") MultipartFile file) {
 
         if(year == null || year.isEmpty() || year.length() != 4) {
@@ -124,6 +131,8 @@ public class TCSSlowdownController {
         return tcsSlowdownService.importExcel(
             plantId,
             year,
+            verticalId,
+            siteId,
             file);
     }
 

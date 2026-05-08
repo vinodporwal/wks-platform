@@ -103,6 +103,7 @@ const PropaneBusiness = ({ permissions }) => {
       editable: true,
       type: 'propaneDropdown',
       editor: PropaneDropdown,
+      minWidth: 100,
     }
   })
 
@@ -120,11 +121,23 @@ const PropaneBusiness = ({ permissions }) => {
   // Choose which columns to use:
   // To use dynamic year headers:
   const columns = [
-    { field: 'productName', title: 'Particulars', editable: false },
-    { field: 'uom', title: 'UOM', editable: false, widthT: 55 },
-    { field: 'normType', title: 'Norm Type', editable: false, hidden: true },
+    {
+      field: 'productName',
+      title: 'Particulars',
+      editable: false,
+      minWidth: 120,
+    },
+    { field: 'uom', title: 'UOM', editable: false, widthT: 55, minWidth: 70 },
+    {
+      field: 'normType',
+      title: 'Norm Type',
+      editable: false,
+      hidden: true,
+      minWidth: 120,
+      isVisible: false,
+    },
     ...dynamicYearMonthColumns,
-    { field: 'remarks', title: 'Remarks', editable: true },
+    { field: 'remarks', title: 'Remarks', editable: true, minWidth: 100 },
   ]
   // Fetch data
   const fetchData = async () => {

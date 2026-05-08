@@ -3,6 +3,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
 import { useSession } from 'SessionStoreContext'
@@ -261,7 +262,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
             ? false
             : col.type === 'number' || col.field === 'Remarks',
         hidden: hiddenKeys.includes(col.field) ? true : col.hidden,
-        widthT: 120,
+        minWidth: 120,
         crackerValidation: col.type === 'number' ? true : false,
       }))
 
@@ -448,6 +449,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    isVisible: false,
   }
 
   // let basecols
@@ -511,12 +513,8 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
 
   return (
     <div>
-      <Backdrop
-        open={loading}
-        sx={{ color: '#fff', zIndex: (t) => t.zIndex.drawer + 1 }}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
+
       <KendoDataTables
         columns={columns}
         rows={rows}

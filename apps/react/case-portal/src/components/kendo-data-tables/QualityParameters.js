@@ -12,6 +12,7 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { validateFields } from 'utils/validationUtils'
 import KendoDataTables from './index'
 import getEnhancedColDefsPriceDifferential from 'components/data-tables/CommonHeader/Kendo_PriceDifferentialHeader'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const QualityParameters = ({ permissions }) => {
   const [calculationObject, setCalculationObject] = useState([])
@@ -432,12 +433,7 @@ const QualityParameters = ({ permissions }) => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       {
         <KendoDataTables
           modifiedCells={modifiedCellsQualityParameter}

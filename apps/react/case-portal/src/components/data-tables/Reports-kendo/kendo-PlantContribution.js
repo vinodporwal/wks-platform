@@ -9,9 +9,11 @@ import { MockReportService } from './mockPlantContributionAPI'
 import { useSelector } from 'react-redux'
 import { getRoleName } from 'services/role-service'
 import { AOPWorkFlowService } from 'services/AOPWorkFlowService'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 export default function PlantContribution() {
   const keycloak = useSession()
+  // const READ_ONLY = getRoleName(keycloak)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -131,6 +133,7 @@ export default function PlantContribution() {
             ...item,
             id: index,
             actualId: item?.id,
+            widthT: 100,
             isEditable:
               !READ_ONLY &&
               key === 'OtherVariableCost' &&
@@ -261,10 +264,7 @@ export default function PlantContribution() {
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      ></Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {/* Main Categories Except 'OtherVariableCost' and 'ProductionCostCalculations' */}
       {categories()

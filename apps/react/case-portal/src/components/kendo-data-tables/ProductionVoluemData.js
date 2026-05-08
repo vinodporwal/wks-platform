@@ -32,6 +32,7 @@ import AromaticsProductionGrids from './AromaticsProductionGrids'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import AopTabs from 'components/AopTabs'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
   // State for tabs and line details
@@ -1528,12 +1529,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
       {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) && (

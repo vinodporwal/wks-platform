@@ -126,6 +126,7 @@ Verticals vertical = null;
                 aopYear,
                 vertical.getName().toUpperCase(),
                 site.getId(),
+                plantId != null ? null : UUID.fromString(verticalId),
                 capacityType
                // uom
             );  
@@ -148,21 +149,22 @@ Verticals vertical = null;
                 TCSUnitCapacityDTO dto = new TCSUnitCapacityDTO();
                 dto.setId(row[0] != null ? row[0].toString() : null);
                 dto.setParticulates(row[1] != null ? row[1].toString() : null);
-                dto.setJan(row[2] != null ? Double.parseDouble(row[2].toString()) : null);
-                dto.setFeb(row[3] != null ? Double.parseDouble(row[3].toString()) : null);
-                dto.setMar(row[4] != null ? Double.parseDouble(row[4].toString()) : null);
-                dto.setApr(row[5] != null ? Double.parseDouble(row[5].toString()) : null);
-                dto.setMay(row[6] != null ? Double.parseDouble(row[6].toString()) : null);
-                dto.setJun(row[7] != null ? Double.parseDouble(row[7].toString()) : null);
-                dto.setJul(row[8] != null ? Double.parseDouble(row[8].toString()) : null);
-                dto.setAug(row[9] != null ? Double.parseDouble(row[9].toString()) : null);
-                dto.setSep(row[10] != null ? Double.parseDouble(row[10].toString()) : null);
-                dto.setOct(row[11] != null ? Double.parseDouble(row[11].toString()) : null);
-                dto.setNov(row[12] != null ? Double.parseDouble(row[12].toString()) : null);
-                dto.setDec(row[13] != null ? Double.parseDouble(row[13].toString()) : null);
-             //   dto.setUom(row[2] != null ? row[2].toString() : null);
-                dto.setRemark(row[14] != null ? row[14].toString() : null);
-                dto.setInsertedDateTime(row[15] != null ? dateFormatter.parse(row[15].toString()) : null);
+                dto.setUom(row[2] != null ? row[2].toString() : null);
+                dto.setJan(row[3] != null ? Double.parseDouble(row[3].toString()) : null);
+                dto.setFeb(row[4] != null ? Double.parseDouble(row[4].toString()) : null);
+                dto.setMar(row[5] != null ? Double.parseDouble(row[5].toString()) : null);
+                dto.setApr(row[6] != null ? Double.parseDouble(row[6].toString()) : null);
+                dto.setMay(row[7] != null ? Double.parseDouble(row[7].toString()) : null);
+                dto.setJun(row[8] != null ? Double.parseDouble(row[8].toString()) : null);
+                dto.setJul(row[9] != null ? Double.parseDouble(row[9].toString()) : null);
+                dto.setAug(row[10] != null ? Double.parseDouble(row[10].toString()) : null);
+                dto.setSep(row[11] != null ? Double.parseDouble(row[11].toString()) : null);
+                dto.setOct(row[12] != null ? Double.parseDouble(row[12].toString()) : null);
+                dto.setNov(row[13] != null ? Double.parseDouble(row[13].toString()) : null);
+                dto.setDec(row[14] != null ? Double.parseDouble(row[14].toString()) : null);
+
+                dto.setRemark(row[15] != null ? row[15].toString() : null);
+                dto.setInsertedDateTime(row[16] != null ? dateFormatter.parse(row[16].toString()) : null);
                 resultsList.add(dto);
             }
             map.put("results", resultsList);
@@ -195,15 +197,16 @@ Verticals vertical = null;
         String aopYear,
         String verticalName,
         UUID siteId,
+        UUID verticalId,
         String capacityType
     //    String uom
     ) {
             
         try {            
             // Stored Procedure name
-            String procedureName = "GetTcsUnitCapacity";
-            if (!"MEG".equalsIgnoreCase(verticalName)) {
-                if(plantId != null) {
+            String procedureName = null;
+         
+            if(plantId != null) {
              //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity"; 
                 procedureName = "CRUDE_ALL_GetTcsUnitCapacity";    // this sp is independant of verticle (no verticle Id used)
             }
@@ -211,7 +214,7 @@ Verticals vertical = null;
                // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_OutPut"; 
                 procedureName = "GetTcsUnitCapacity_OutPut";
             }
-            }
+           
 
             // Prepare native SQL call with parameters
             String sql = "";
@@ -220,7 +223,7 @@ Verticals vertical = null;
             }
             else {
               //  sql = "EXEC " + procedureName + " @aopYear = :aopYear, @capacityType = :capacityType";
-              sql = "EXEC " + procedureName + " ?, ?, ?";
+              sql = "EXEC " + procedureName + " @verticalId = :verticalId, @siteId = :siteId, @aopYear = :aopYear, @capacityType = :capacityType";
 
             }
 
@@ -234,9 +237,10 @@ Verticals vertical = null;
             query.setParameter("capacityType", capacityType);  }
 
             else {
-                query.setParameter(1, siteId);
-                query.setParameter(2, aopYear);      
-                query.setParameter(3, capacityType);
+               query.setParameter("verticalId", verticalId);
+               query.setParameter("siteId", siteId);
+               query.setParameter("aopYear", aopYear);
+               query.setParameter("capacityType", capacityType);
 
             }
          //   query.setParameter("uom", uom);
@@ -268,6 +272,55 @@ Verticals vertical = null;
 
         query.executeUpdate();
 
+        // Check if data exists for the given year, plantId, and capacityType after carry forward
+        String checkSql = "SELECT COUNT(*) FROM TCSUnitCapacity WHERE Plant_FK_ID = :plantId AND AOPYear = :aopYear AND CapacityType = :capacityType";
+        Query checkQuery = entityManager.createNativeQuery(checkSql);
+        checkQuery.setParameter("plantId", plantId);
+        checkQuery.setParameter("aopYear", aopYear);
+        checkQuery.setParameter("capacityType", capacityType);
+        
+        Number count = (Number) checkQuery.getSingleResult();
+        
+        if (count.intValue() == 0) {
+            // No data exists, add dummy data
+            Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+                    .orElseThrow(() -> new RuntimeException("Plant not found for ID: " + plantId));
+            
+            UUID siteFkId = plant.getSiteFkId();
+            UUID verticalFkId = plant.getVerticalFKId();
+            
+            String insertSql = "INSERT INTO TCSUnitCapacity " +
+                "(Id, CapacityType, UOM, Remark, AOPYear, Plant_FK_ID, InsertedDateTime, UpdatedDateTime, " +
+                "Summer, Winter, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, [Dec], Jan, Feb, Mar, SourceAOPYear, " +
+                "IsCarryForward, Vertical_FK_ID, Site_FK_ID) " +
+                "VALUES (:id, :capacityType, :uom, :remark, :aopYear, :plantId, getDate(), getDate(), " +
+                "0, 0, :apr, :may, :jun, :jul, :aug, :sep, :oct, :nov, :dec, :jan, :feb, :mar, '', 0, " +
+                ":verticalId, :siteId)";
+            
+            if ("design".equalsIgnoreCase(capacityType)) {
+                // Insert KBPSD
+                Query insertQuery1 = entityManager.createNativeQuery(insertSql);
+                setDummyParams(insertQuery1, capacityType, "KBPSD", "KBPSD DATA New Added", aopYear, plantId, verticalFkId, siteFkId, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                insertQuery1.executeUpdate();
+                
+                // Insert KTPD
+                Query insertQuery2 = entityManager.createNativeQuery(insertSql);
+                setDummyParams(insertQuery2, capacityType, "KTPD", "New Added", aopYear, plantId, verticalFkId, siteFkId, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                insertQuery2.executeUpdate();
+                
+            } else if ("maxAchieved".equalsIgnoreCase(capacityType)) {
+                // Insert KBPSD
+                Query insertQuery1 = entityManager.createNativeQuery(insertSql);
+                setDummyParams(insertQuery1, capacityType, "KBPSD", "KBPSD New Added", aopYear, plantId, verticalFkId, siteFkId, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                insertQuery1.executeUpdate();
+                
+                // Insert KTPD
+                Query insertQuery2 = entityManager.createNativeQuery(insertSql);
+                setDummyParams(insertQuery2, capacityType, "KTPD", "New Added", aopYear, plantId, verticalFkId, siteFkId, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                insertQuery2.executeUpdate();
+            }
+        }
+
         AOPMessageVM vm = new AOPMessageVM();
         vm.setCode(200);
         vm.setMessage("Data carried forward successfully");
@@ -282,6 +335,31 @@ Verticals vertical = null;
 
 }
 
+    private void setDummyParams(Query query, String capacityType, String uom, String remark, String aopYear, String plantId, UUID verticalId, UUID siteId, 
+            int apr, int may, int jun, int jul, int aug, int sep, int oct, int nov, int dec, int jan, int feb, int mar) {
+        query.setParameter("id", UUID.randomUUID().toString());
+        query.setParameter("capacityType", capacityType);
+        query.setParameter("uom", uom);
+        query.setParameter("remark", remark);
+        query.setParameter("aopYear", aopYear);
+        query.setParameter("plantId", plantId);
+        query.setParameter("verticalId", verticalId.toString());
+        query.setParameter("siteId", siteId.toString());
+        
+        query.setParameter("apr", apr);
+        query.setParameter("may", may);
+        query.setParameter("jun", jun);
+        query.setParameter("jul", jul);
+        query.setParameter("aug", aug);
+        query.setParameter("sep", sep);
+        query.setParameter("oct", oct);
+        query.setParameter("nov", nov);
+        query.setParameter("dec", dec);
+        query.setParameter("jan", jan);
+        query.setParameter("feb", feb);
+        query.setParameter("mar", mar);
+    }
+
     private List<String> getHeaders(
         String plantId,
         String aopYear,
@@ -291,16 +369,15 @@ Verticals vertical = null;
     //    String uom
     ) {
 
-        String procedureName = "GetTcsUnitCapacity";
-        if (!"MEG".equalsIgnoreCase(verticalName)) {
-            if(plantId != null) {
-         //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity";
-             procedureName = "CRUDE_ALL_GetTcsUnitCapacity";    
-            }
-            else  {
-             //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_OutPut";
-                procedureName = "GetTcsUnitCapacity_OutPut";
-            }
+        String procedureName = null;
+
+        if(plantId != null) {
+        //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity";
+            procedureName = "CRUDE_ALL_GetTcsUnitCapacity";    
+        }
+        else  {
+            //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_OutPut";
+            procedureName = "GetTcsUnitCapacity_OutPut";
         }
 
         String callableSql = "";
@@ -492,18 +569,17 @@ Verticals vertical = null;
         String capacityType) {
         try {            
             // Stored Procedure name
-            String procedureName = "GetTcsUnitCapacity_UOM";
-            if (!"MEG".equalsIgnoreCase(verticalName)) {
-                if(plantId != null) {
-             //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_UOM"; 
-             procedureName = "CRUDE_ALL_GetTcsUnitCapacity_UOM";   
-            }
-            else {
-             //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_UOM_OutPut";
-             procedureName = "CRUDE_ALL_GetTcsUnitCapacity_UOM_OutPut";
+            String procedureName = null;
 
-            }
-            }
+            if(plantId != null) {
+            //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_UOM"; 
+            procedureName = "CRUDE_ALL_GetTcsUnitCapacity_UOM";   
+        }
+        else {
+            //   procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_UOM_OutPut";
+            procedureName = "CRUDE_ALL_GetTcsUnitCapacity_UOM_OutPut";
+
+        }
 
             // Prepare native SQL call with parameters
             String sql = "";
@@ -548,150 +624,181 @@ Verticals vertical = null;
         String verticalId) {
         
         try {
-            // Get data
             Map<String, Object> dataMap = getAll(plantId, year, capacityType, siteId, verticalId);
             List<TCSUnitCapacityDTO> dtoList = (List<TCSUnitCapacityDTO>) dataMap.get("results");
 
             Workbook workbook = new XSSFWorkbook();
             Sheet sheet = workbook.createSheet("TCS Unit Capacity");
 
-            //  Parse financial year (e.g., "2025-26")
-            // String startYearSuffix = year.substring(2, 4); // "25"
-            // String endYearSuffix = year.substring(5, 7);   // "26"
-
-            // Create cell styles
             CellStyle headerStyle = createHeaderStyle(workbook);
             CellStyle subHeaderStyle = createSubHeaderStyle(workbook);
             CellStyle dataStyle = createDataStyle(workbook);
 
-            // Create header rows
             int currentRow = 0;
-            
-            // Row 0: Main headers (Particulars, Capacity merged across all months)
-            Row mainHeaderRow = sheet.createRow(currentRow++);
-            Cell particularsCell = mainHeaderRow.createCell(0);
-            particularsCell.setCellValue("Particulars");
-            particularsCell.setCellStyle(headerStyle);
-            
-            Cell capacityCell = mainHeaderRow.createCell(1);
-            capacityCell.setCellValue("Capacity");
-            capacityCell.setCellStyle(headerStyle);
-            
-            // Merge Capacity across all month columns (24 columns: 12 months x 2 sub-columns)
-            sheet.addMergedRegion(new CellRangeAddress(0, 0, 1, 24));
+            boolean isDesign = "design".equalsIgnoreCase(capacityType);
 
-            Cell remarkCell = mainHeaderRow.createCell(25);
-            remarkCell.setCellValue("Remark");
-            remarkCell.setCellStyle(headerStyle);
+            if (isDesign) {
+                // Row 0: Main headers - Particulars | UOM | Capacity | Remark | Id
+                Row mainHeaderRow = sheet.createRow(currentRow++);
+                Cell particularsCell = mainHeaderRow.createCell(0);
+                particularsCell.setCellValue("Particulars");
+                particularsCell.setCellStyle(headerStyle);
 
-            Cell idCell = mainHeaderRow.createCell(26);
-            idCell.setCellValue("Id");
-            idCell.setCellStyle(headerStyle);
+                Cell uomCell = mainHeaderRow.createCell(1);
+                uomCell.setCellValue("UOM");
+                uomCell.setCellStyle(headerStyle);
 
-            // Row 1: Month headers
-            Row monthHeaderRow = sheet.createRow(currentRow++);
-            monthHeaderRow.createCell(0).setCellStyle(headerStyle); // Empty under Particulars
-            
-            // String[] months = {
-            //     "Apr-" + startYearSuffix, "May-" + startYearSuffix, "Jun-" + startYearSuffix,
-            //     "Jul-" + startYearSuffix, "Aug-" + startYearSuffix, "Sep-" + startYearSuffix,
-            //     "Oct-" + startYearSuffix, "Nov-" + startYearSuffix, "Dec-" + startYearSuffix,
-            //     "Jan-" + endYearSuffix, "Feb-" + endYearSuffix, "Mar-" + endYearSuffix
-            // };
+                Cell capacityCell = mainHeaderRow.createCell(2);
+                capacityCell.setCellValue("Capacity");
+                capacityCell.setCellStyle(headerStyle);
 
-            String[] months = {
-                "Jan-" + year,"Feb-" + year,"Mar-" + year,"Apr-" + year,"May-" + year,"Jun-" + year,"Jul-" + year,"Aug-" + year,"Sep-" + year,"Oct-" + year,"Nov-" + year,"Dec-" + year
-            };
-            
-            
-            int colIndex = 1;
-            for (String month : months) {
-                Cell monthCell = monthHeaderRow.createCell(colIndex);
-                monthCell.setCellValue(month);
-                monthCell.setCellStyle(headerStyle);
-                sheet.addMergedRegion(new CellRangeAddress(1, 1, colIndex, colIndex + 1));
-                colIndex += 2;
-            }
-            
-            monthHeaderRow.createCell(25).setCellStyle(headerStyle); // Empty under Remark
-            monthHeaderRow.createCell(26).setCellStyle(headerStyle); // Empty under Id
+                Cell remarkCell = mainHeaderRow.createCell(3);
+                remarkCell.setCellValue("Remark");
+                remarkCell.setCellStyle(headerStyle);
 
-            // Row 2: Sub-headers (KBPSD, KTPD for each month)
-            Row subHeaderRow = sheet.createRow(currentRow++);
-            subHeaderRow.createCell(0).setCellStyle(subHeaderStyle); // Empty under Particulars
-            
-            colIndex = 1;
-            for (int i = 0; i < 12; i++) {
-                Cell kbpsdCell = subHeaderRow.createCell(colIndex++);
-                kbpsdCell.setCellValue("KBPSD");
-                kbpsdCell.setCellStyle(subHeaderStyle);
-                
-                Cell ktpdCell = subHeaderRow.createCell(colIndex++);
-                ktpdCell.setCellValue("KTPD");
-                ktpdCell.setCellStyle(subHeaderStyle);
-            }
-            
-            subHeaderRow.createCell(25).setCellStyle(subHeaderStyle); // Empty under Remark
-            subHeaderRow.createCell(26).setCellStyle(subHeaderStyle); // Empty under Id
+                Cell idCell = mainHeaderRow.createCell(4);
+                idCell.setCellValue("Id");
+                idCell.setCellStyle(headerStyle);
 
-            // Data rows
-            for (TCSUnitCapacityDTO dto : dtoList) {
-                Row row = sheet.createRow(currentRow++);
-                int col = 0;
+                // Row 1: Sub-headers - empty | empty | Value | empty | empty
+                Row subHeaderRow = sheet.createRow(currentRow++);
+                subHeaderRow.createCell(0).setCellStyle(subHeaderStyle);
+                subHeaderRow.createCell(1).setCellStyle(subHeaderStyle);
+                Cell valueCell = subHeaderRow.createCell(2);
+                valueCell.setCellValue("Value");
+                valueCell.setCellStyle(subHeaderStyle);
+                subHeaderRow.createCell(3).setCellStyle(subHeaderStyle);
+                subHeaderRow.createCell(4).setCellStyle(subHeaderStyle);
 
-                // Particulars
-                Cell particularsDataCell = row.createCell(col++);
-                particularsDataCell.setCellValue(dto.getParticulates() != null ? dto.getParticulates() : "");
-                particularsDataCell.setCellStyle(dataStyle);
+                // Data rows
+                for (TCSUnitCapacityDTO dto : dtoList) {
+                    Row row = sheet.createRow(currentRow++);
+                    int col = 0;
 
-                // Month data (KBPSD and KTPD for each month)
-                Double[] monthValues = {
-                    dto.getJan(), dto.getFeb(), dto.getMar(), dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
-                    dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(), dto.getDec()
+                    Cell particularsDataCell = row.createCell(col++);
+                    particularsDataCell.setCellValue(dto.getParticulates() != null ? dto.getParticulates() : "");
+                    particularsDataCell.setCellStyle(dataStyle);
+
+                    Cell uomDataCell = row.createCell(col++);
+                    uomDataCell.setCellValue(dto.getUom() != null ? dto.getUom() : "");
+                    uomDataCell.setCellStyle(dataStyle);
+
+                    // Capacity Value column (January value)
+                    Cell capacityDataCell = row.createCell(col++);
+                    if (dto.getJan() != null) {
+                        capacityDataCell.setCellValue(dto.getJan());
+                    } else {
+                        capacityDataCell.setCellValue("");
+                    }
+                    capacityDataCell.setCellStyle(dataStyle);
+
+                    Cell remarkDataCell = row.createCell(col++);
+                    remarkDataCell.setCellValue(dto.getRemark() != null ? dto.getRemark() : "");
+                    remarkDataCell.setCellStyle(dataStyle);
+
+                    Cell idDataCell = row.createCell(col++);
+                    idDataCell.setCellValue(dto.getId() != null ? dto.getId() : "");
+                    idDataCell.setCellStyle(dataStyle);
+                }
+
+                for (int i = 0; i < 5; i++) {
+                    if (i == 3) {
+                        sheet.setColumnWidth(i, 8000);
+                    } else {
+                        sheet.autoSizeColumn(i);
+                    }
+                }
+                sheet.setColumnHidden(4, true);
+
+            } else {
+                // Row 0: Main headers (Particulars, UOM, Capacity merged across all months)
+                Row mainHeaderRow = sheet.createRow(currentRow++);
+                Cell particularsCell = mainHeaderRow.createCell(0);
+                particularsCell.setCellValue("Particulars");
+                particularsCell.setCellStyle(headerStyle);
+
+                Cell uomCell = mainHeaderRow.createCell(1);
+                uomCell.setCellValue("UOM");
+                uomCell.setCellStyle(headerStyle);
+
+                Cell capacityCell = mainHeaderRow.createCell(2);
+                capacityCell.setCellValue("Capacity");
+                capacityCell.setCellStyle(headerStyle);
+                sheet.addMergedRegion(new CellRangeAddress(0, 0, 2, 13));
+
+                Cell remarkCell = mainHeaderRow.createCell(14);
+                remarkCell.setCellValue("Remark");
+                remarkCell.setCellStyle(headerStyle);
+
+                Cell idCell = mainHeaderRow.createCell(15);
+                idCell.setCellValue("Id");
+                idCell.setCellStyle(headerStyle);
+
+                // Row 1: Month headers (Jan-Dec with year)
+                Row monthHeaderRow = sheet.createRow(currentRow++);
+                monthHeaderRow.createCell(0).setCellStyle(headerStyle);
+                monthHeaderRow.createCell(1).setCellStyle(headerStyle);
+
+                String[] months = {
+                        "Jan-" + year, "Feb-" + year, "Mar-" + year, "Apr-" + year, "May-" + year, "Jun-" + year,
+                        "Jul-" + year, "Aug-" + year, "Sep-" + year, "Oct-" + year, "Nov-" + year, "Dec-" + year
                 };
 
-                for (Double kbpsd : monthValues) {
-                    // KBPSD column
-                    Cell kbpsdCell = row.createCell(col++);
-                    if (kbpsd != null) {
-                        kbpsdCell.setCellValue(kbpsd);
-                    } else {
-                        kbpsdCell.setCellValue("");
-                    }
-                    kbpsdCell.setCellStyle(dataStyle);
-
-                    // KTPD column (KBPSD * 0.136)
-                    Cell ktpdCell = row.createCell(col++);
-                    if (kbpsd != null) {
-                        ktpdCell.setCellValue(kbpsd * 0.136);
-                    } else {
-                        ktpdCell.setCellValue("");
-                    }
-                    ktpdCell.setCellStyle(dataStyle);
+                for (int i = 0; i < 12; i++) {
+                    Cell monthCell = monthHeaderRow.createCell(i + 2);
+                    monthCell.setCellValue(months[i]);
+                    monthCell.setCellStyle(headerStyle);
                 }
 
-                // Remark
-                Cell remarkDataCell = row.createCell(col++);
-                remarkDataCell.setCellValue(dto.getRemark() != null ? dto.getRemark() : "");
-                remarkDataCell.setCellStyle(dataStyle);
+                monthHeaderRow.createCell(14).setCellStyle(headerStyle);
+                monthHeaderRow.createCell(15).setCellStyle(headerStyle);
 
-                // Id (hidden column)
-                Cell idDataCell = row.createCell(col++);
-                idDataCell.setCellValue(dto.getId() != null ? dto.getId() : "");
-                idDataCell.setCellStyle(dataStyle);
-            }
+                // Data rows
+                for (TCSUnitCapacityDTO dto : dtoList) {
+                    Row row = sheet.createRow(currentRow++);
+                    int col = 0;
 
-            // Auto-size columns
-            for (int i = 0; i < 27; i++) {
-                if (i == 25) {
-                    sheet.setColumnWidth(i, 8000); // Fixed width for Remark
-                } else {
-                    sheet.autoSizeColumn(i);
+                    Cell particularsDataCell = row.createCell(col++);
+                    particularsDataCell.setCellValue(dto.getParticulates() != null ? dto.getParticulates() : "");
+                    particularsDataCell.setCellStyle(dataStyle);
+
+                    Cell uomDataCell = row.createCell(col++);
+                    uomDataCell.setCellValue(dto.getUom() != null ? dto.getUom() : "");
+                    uomDataCell.setCellStyle(dataStyle);
+
+                    Double[] monthValues = {
+                            dto.getJan(), dto.getFeb(), dto.getMar(), dto.getApr(), dto.getMay(), dto.getJun(),
+                            dto.getJul(), dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(), dto.getDec()
+                    };
+
+                    for (Double value : monthValues) {
+                        Cell valueCell = row.createCell(col++);
+                        if (value != null) {
+                            valueCell.setCellValue(value);
+                        } else {
+                            valueCell.setCellValue("");
+                        }
+                        valueCell.setCellStyle(dataStyle);
+                    }
+
+                    Cell remarkDataCell = row.createCell(col++);
+                    remarkDataCell.setCellValue(dto.getRemark() != null ? dto.getRemark() : "");
+                    remarkDataCell.setCellStyle(dataStyle);
+
+                    Cell idDataCell = row.createCell(col++);
+                    idDataCell.setCellValue(dto.getId() != null ? dto.getId() : "");
+                    idDataCell.setCellStyle(dataStyle);
                 }
-            }
 
-            // Hide Id column (column index 26)
-            sheet.setColumnHidden(26, true);
+                for (int i = 0; i < 16; i++) {
+                    if (i == 14) {
+                        sheet.setColumnWidth(i, 8000);
+                    } else {
+                        sheet.autoSizeColumn(i);
+                    }
+                }
+                sheet.setColumnHidden(15, true);
+            }
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             workbook.write(outputStream);
@@ -712,7 +819,7 @@ Verticals vertical = null;
         MultipartFile file) {
         
         try {
-            List<TCSUnitCapacityDTO> data = readTCSUnitCapacity(file.getInputStream());
+            List<TCSUnitCapacityDTO> data = readTCSUnitCapacity(file.getInputStream(), capacityType);
 
              // check if the data has duplicate Id 
              Set<String> ids = new HashSet<>();
@@ -762,7 +869,7 @@ Verticals vertical = null;
             AOPMessageVM aopMessageVM = new AOPMessageVM();
             if (!failedRecords.isEmpty()) {
                 // For failed records, we need to export them with status columns
-                byte[] fileByteArray = exportWithStatus(failedRecords, year);
+                byte[] fileByteArray = exportWithStatus(failedRecords, year, capacityType);
                 String base64File = Base64.getEncoder().encodeToString(fileByteArray);
                 aopMessageVM.setData(base64File);
                 aopMessageVM.setCode(400);
@@ -782,23 +889,23 @@ Verticals vertical = null;
         }
     }
 
-    private List<TCSUnitCapacityDTO> readTCSUnitCapacity(InputStream inputStream) {
+    private List<TCSUnitCapacityDTO> readTCSUnitCapacity(InputStream inputStream, String capacityType) {
         List<TCSUnitCapacityDTO> dataList = new ArrayList<>();
+        boolean isDesign = "design".equalsIgnoreCase(capacityType);
 
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(0);
             Iterator<Row> rowIterator = sheet.iterator();
 
-            // Skip header rows (first 3 rows)
-            for (int i = 0; i < 3 && rowIterator.hasNext(); i++) {
+            // Skip header rows (first 2 rows for design, first 2 rows for monthly)
+            for (int i = 0; i < 2 && rowIterator.hasNext(); i++) {
                 rowIterator.next();
             }
 
             while (rowIterator.hasNext()) {
                 Row row = rowIterator.next();
 
-                 // Check if row is empty (skip empty rows)
-                 if (isRowEmpty(row)) {
+                if (isRowEmpty(row)) {
                     continue;
                 }
 
@@ -806,34 +913,57 @@ Verticals vertical = null;
                 
                 try {
                     int col = 0;
-                    
+
                     // Particulars
                     dto.setParticulates(getStringCellValue(row.getCell(col++)));
-                    
-                    // Month data (read only KBPSD columns, skip KTPD as it's calculated)
-                    dto.setJan(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
-                    dto.setFeb(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
-                    dto.setMar(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
-                    dto.setApr(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
-                    dto.setMay(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
-                    dto.setJun(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
-                    dto.setJul(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
-                    dto.setAug(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
-                    dto.setSep(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
-                    dto.setOct(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
-                    dto.setNov(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
-                    dto.setDec(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
-                    
-                    // Remark
-                    dto.setRemark(getStringCellValue(row.getCell(col++)));
-                    
-                    // Id
-                    String idStr = getStringCellValue(row.getCell(col++));
-                    if (idStr != null && !idStr.isEmpty()) {
-                        dto.setId(idStr);
+
+                    if (isDesign) {
+                        // UOM
+                        dto.setUom(getStringCellValue(row.getCell(col++)));
+
+                        // Capacity Value column (January value)
+                        dto.setJan(getDoubleCellValue(row.getCell(col++)));
+
+                        // Remark
+                        dto.setRemark(getStringCellValue(row.getCell(col++)));
+
+                        // Id
+                        String idStr = getStringCellValue(row.getCell(col++));
+                        if (idStr != null && !idStr.isEmpty()) {
+                            dto.setId(idStr);
+                        } else {
+                            dto.setSaveStatus("Failed");
+                            dto.setErrDescription("ID is missing");
+                        }
                     } else {
-                        dto.setSaveStatus("Failed");
-                        dto.setErrDescription("ID is missing");
+                        // UOM
+                        dto.setUom(getStringCellValue(row.getCell(col++)));
+
+                        // Month data (12 months: Jan to Dec)
+                        dto.setJan(getDoubleCellValue(row.getCell(col++)));
+                        dto.setFeb(getDoubleCellValue(row.getCell(col++)));
+                        dto.setMar(getDoubleCellValue(row.getCell(col++)));
+                        dto.setApr(getDoubleCellValue(row.getCell(col++)));
+                        dto.setMay(getDoubleCellValue(row.getCell(col++)));
+                        dto.setJun(getDoubleCellValue(row.getCell(col++)));
+                        dto.setJul(getDoubleCellValue(row.getCell(col++)));
+                        dto.setAug(getDoubleCellValue(row.getCell(col++)));
+                        dto.setSep(getDoubleCellValue(row.getCell(col++)));
+                        dto.setOct(getDoubleCellValue(row.getCell(col++)));
+                        dto.setNov(getDoubleCellValue(row.getCell(col++)));
+                        dto.setDec(getDoubleCellValue(row.getCell(col++)));
+
+                        // Remark
+                        dto.setRemark(getStringCellValue(row.getCell(col++)));
+
+                        // Id
+                        String idStr = getStringCellValue(row.getCell(col++));
+                        if (idStr != null && !idStr.isEmpty()) {
+                            dto.setId(idStr);
+                        } else {
+                            dto.setSaveStatus("Failed");
+                            dto.setErrDescription("ID is missing");
+                        }
                     }
 
                 } catch (Exception e) {
@@ -856,9 +986,9 @@ Verticals vertical = null;
         if (row == null) {
             return true;
         }
-        
-        // Check first 5 columns (excluding Id column)
-        for (int i = 0; i < 5; i++) {
+
+        // Check first 14 columns (Particulars through Id for both design and monthly)
+        for (int i = 0; i < 14; i++) {
             Cell cell = row.getCell(i);
             if (cell != null && cell.getCellType() != CellType.BLANK) {
                 String value = getStringCellValue(cell);
@@ -871,149 +1001,206 @@ Verticals vertical = null;
         return true;
     }
 
-    private byte[] exportWithStatus(List<TCSUnitCapacityDTO> dtoList, String year) {
+    private byte[] exportWithStatus(List<TCSUnitCapacityDTO> dtoList, String year, String capacityType) {
         try {
             Workbook workbook = new XSSFWorkbook();
             Sheet sheet = workbook.createSheet("TCS Unit Capacity");
-
-            // Parse financial year
-            String startYearSuffix = year.substring(2, 4);
-            String endYearSuffix = year.substring(5, 7);
 
             CellStyle headerStyle = createHeaderStyle(workbook);
             CellStyle subHeaderStyle = createSubHeaderStyle(workbook);
             CellStyle dataStyle = createDataStyle(workbook);
 
             int currentRow = 0;
-            
-            // Row 0: Main headers
-            Row mainHeaderRow = sheet.createRow(currentRow++);
-            Cell particularsCell = mainHeaderRow.createCell(0);
-            particularsCell.setCellValue("Particulars");
-            particularsCell.setCellStyle(headerStyle);
-            
-            Cell capacityCell = mainHeaderRow.createCell(1);
-            capacityCell.setCellValue("Capacity");
-            capacityCell.setCellStyle(headerStyle);
-            sheet.addMergedRegion(new CellRangeAddress(0, 0, 1, 24));
+            boolean isDesign = "design".equalsIgnoreCase(capacityType);
 
-            Cell remarkCell = mainHeaderRow.createCell(25);
-            remarkCell.setCellValue("Remark");
-            remarkCell.setCellStyle(headerStyle);
+            if (isDesign) {
+                // Row 0: Main headers - Particulars | UOM | Capacity | Remark | Id | Status |
+                // Error Description
+                Row mainHeaderRow = sheet.createRow(currentRow++);
+                Cell particularsCell = mainHeaderRow.createCell(0);
+                particularsCell.setCellValue("Particulars");
+                particularsCell.setCellStyle(headerStyle);
 
-            Cell idCell = mainHeaderRow.createCell(26);
-            idCell.setCellValue("Id");
-            idCell.setCellStyle(headerStyle);
+                Cell uomCell = mainHeaderRow.createCell(1);
+                uomCell.setCellValue("UOM");
+                uomCell.setCellStyle(headerStyle);
 
-            Cell statusCell = mainHeaderRow.createCell(27);
-            statusCell.setCellValue("Status");
-            statusCell.setCellStyle(headerStyle);
+                Cell capacityCell = mainHeaderRow.createCell(2);
+                capacityCell.setCellValue("Capacity");
+                capacityCell.setCellStyle(headerStyle);
 
-            Cell errorCell = mainHeaderRow.createCell(28);
-            errorCell.setCellValue("Error Description");
-            errorCell.setCellStyle(headerStyle);
+                Cell remarkCell = mainHeaderRow.createCell(3);
+                remarkCell.setCellValue("Remark");
+                remarkCell.setCellStyle(headerStyle);
 
-            // Row 1: Month headers
-            Row monthHeaderRow = sheet.createRow(currentRow++);
-            monthHeaderRow.createCell(0).setCellStyle(headerStyle);
-            
-            String[] months = {
-                "Jan-" + year, "Feb-" + year, "Mar-" + year, "Apr-" + year, "May-" + year, "Jun-" + year, "Jul-" + year, "Aug-" + year, "Sep-" + year, "Oct-" + year, "Nov-" + year, "Dec-" + year
-            };
-            
-            int colIndex = 1;
-            for (String month : months) {
-                Cell monthCell = monthHeaderRow.createCell(colIndex);
-                monthCell.setCellValue(month);
-                monthCell.setCellStyle(headerStyle);
-                sheet.addMergedRegion(new CellRangeAddress(1, 1, colIndex, colIndex + 1));
-                colIndex += 2;
-            }
-            
-            monthHeaderRow.createCell(25).setCellStyle(headerStyle);
-            monthHeaderRow.createCell(26).setCellStyle(headerStyle);
-            monthHeaderRow.createCell(27).setCellStyle(headerStyle);
-            monthHeaderRow.createCell(28).setCellStyle(headerStyle);
+                Cell idCell = mainHeaderRow.createCell(4);
+                idCell.setCellValue("Id");
+                idCell.setCellStyle(headerStyle);
 
-            // Row 2: Sub-headers
-            Row subHeaderRow = sheet.createRow(currentRow++);
-            subHeaderRow.createCell(0).setCellStyle(subHeaderStyle);
-            
-            colIndex = 1;
-            for (int i = 0; i < 12; i++) {
-                Cell kbpsdCell = subHeaderRow.createCell(colIndex++);
-                kbpsdCell.setCellValue("KBPSD");
-                kbpsdCell.setCellStyle(subHeaderStyle);
-                
-                Cell ktpdCell = subHeaderRow.createCell(colIndex++);
-                ktpdCell.setCellValue("KTPD");
-                ktpdCell.setCellStyle(subHeaderStyle);
-            }
-            
-            subHeaderRow.createCell(25).setCellStyle(subHeaderStyle);
-            subHeaderRow.createCell(26).setCellStyle(subHeaderStyle);
-            subHeaderRow.createCell(27).setCellStyle(subHeaderStyle);
-            subHeaderRow.createCell(28).setCellStyle(subHeaderStyle);
+                Cell statusCell = mainHeaderRow.createCell(5);
+                statusCell.setCellValue("Status");
+                statusCell.setCellStyle(headerStyle);
 
-            // Data rows
-            for (TCSUnitCapacityDTO dto : dtoList) {
-                Row row = sheet.createRow(currentRow++);
-                int col = 0;
+                Cell errorCell = mainHeaderRow.createCell(6);
+                errorCell.setCellValue("Error Description");
+                errorCell.setCellStyle(headerStyle);
 
-                Cell particularsDataCell = row.createCell(col++);
-                particularsDataCell.setCellValue(dto.getParticulates() != null ? dto.getParticulates() : "");
-                particularsDataCell.setCellStyle(dataStyle);
+                // Row 1: Sub-headers - empty | empty | Value | empty | empty | empty | empty
+                Row subHeaderRow = sheet.createRow(currentRow++);
+                subHeaderRow.createCell(0).setCellStyle(subHeaderStyle);
+                subHeaderRow.createCell(1).setCellStyle(subHeaderStyle);
+                Cell valueCell = subHeaderRow.createCell(2);
+                valueCell.setCellValue("Value");
+                valueCell.setCellStyle(subHeaderStyle);
+                for (int i = 3; i <= 6; i++)
+                    subHeaderRow.createCell(i).setCellStyle(subHeaderStyle);
 
-                Double[] monthValues = {
-                    dto.getJan(), dto.getFeb(), dto.getMar(), dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
-                    dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(), dto.getDec()
+                // Data rows
+                for (TCSUnitCapacityDTO dto : dtoList) {
+                    Row row = sheet.createRow(currentRow++);
+                    int col = 0;
+
+                    Cell particularsDataCell = row.createCell(col++);
+                    particularsDataCell.setCellValue(dto.getParticulates() != null ? dto.getParticulates() : "");
+                    particularsDataCell.setCellStyle(dataStyle);
+
+                    Cell uomDataCell = row.createCell(col++);
+                    uomDataCell.setCellValue(dto.getUom() != null ? dto.getUom() : "");
+                    uomDataCell.setCellStyle(dataStyle);
+
+                    // Capacity Value column (January value)
+                    Cell capacityDataCell = row.createCell(col++);
+                    if (dto.getJan() != null) {
+                        capacityDataCell.setCellValue(dto.getJan());
+                    } else {
+                        capacityDataCell.setCellValue("");
+                    }
+                    capacityDataCell.setCellStyle(dataStyle);
+
+                    Cell remarkDataCell = row.createCell(col++);
+                    remarkDataCell.setCellValue(dto.getRemark() != null ? dto.getRemark() : "");
+                    remarkDataCell.setCellStyle(dataStyle);
+
+                    Cell idDataCell = row.createCell(col++);
+                    idDataCell.setCellValue(dto.getId() != null ? dto.getId() : "");
+                    idDataCell.setCellStyle(dataStyle);
+
+                    Cell statusDataCell = row.createCell(col++);
+                    statusDataCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+                    statusDataCell.setCellStyle(dataStyle);
+
+                    Cell errorDataCell = row.createCell(col++);
+                    errorDataCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+                    errorDataCell.setCellStyle(dataStyle);
+                }
+
+                for (int i = 0; i < 7; i++) {
+                    if (i == 3 || i == 6) {
+                        sheet.setColumnWidth(i, 8000);
+                    } else {
+                        sheet.autoSizeColumn(i);
+                    }
+                }
+                sheet.setColumnHidden(4, true);
+
+            } else {
+                // Row 0: Main headers (Particulars, Capacity merged across all months)
+                Row mainHeaderRow = sheet.createRow(currentRow++);
+                Cell particularsCell = mainHeaderRow.createCell(0);
+                particularsCell.setCellValue("Particulars");
+                particularsCell.setCellStyle(headerStyle);
+
+                Cell capacityCell = mainHeaderRow.createCell(1);
+                capacityCell.setCellValue("Capacity");
+                capacityCell.setCellStyle(headerStyle);
+                sheet.addMergedRegion(new CellRangeAddress(0, 0, 1, 12));
+
+                Cell remarkCell = mainHeaderRow.createCell(13);
+                remarkCell.setCellValue("Remark");
+                remarkCell.setCellStyle(headerStyle);
+
+                Cell idCell = mainHeaderRow.createCell(14);
+                idCell.setCellValue("Id");
+                idCell.setCellStyle(headerStyle);
+
+                Cell statusCell = mainHeaderRow.createCell(15);
+                statusCell.setCellValue("Status");
+                statusCell.setCellStyle(headerStyle);
+
+                Cell errorCell = mainHeaderRow.createCell(16);
+                errorCell.setCellValue("Error Description");
+                errorCell.setCellStyle(headerStyle);
+
+                // Row 1: Month headers (Jan-Dec with year)
+                Row monthHeaderRow = sheet.createRow(currentRow++);
+                monthHeaderRow.createCell(0).setCellStyle(headerStyle);
+
+                String[] months = {
+                    "Jan-" + year, "Feb-" + year, "Mar-" + year, "Apr-" + year, "May-" + year, "Jun-" + year,
+                    "Jul-" + year, "Aug-" + year, "Sep-" + year, "Oct-" + year, "Nov-" + year, "Dec-" + year
                 };
 
-                for (Double kbpsd : monthValues) {
-                    Cell kbpsdCell = row.createCell(col++);
-                    if (kbpsd != null) {
-                        kbpsdCell.setCellValue(kbpsd);
-                    } else {
-                        kbpsdCell.setCellValue("");
-                    }
-                    kbpsdCell.setCellStyle(dataStyle);
-
-                    Cell ktpdCell = row.createCell(col++);
-                    if (kbpsd != null) {
-                        ktpdCell.setCellValue(kbpsd * 0.136);
-                    } else {
-                        ktpdCell.setCellValue("");
-                    }
-                    ktpdCell.setCellStyle(dataStyle);
+                for (int i = 0; i < 12; i++) {
+                    Cell monthCell = monthHeaderRow.createCell(i + 1);
+                    monthCell.setCellValue(months[i]);
+                    monthCell.setCellStyle(headerStyle);
                 }
 
-                Cell remarkDataCell = row.createCell(col++);
-                remarkDataCell.setCellValue(dto.getRemark() != null ? dto.getRemark() : "");
-                remarkDataCell.setCellStyle(dataStyle);
+                monthHeaderRow.createCell(13).setCellStyle(headerStyle);
+                monthHeaderRow.createCell(14).setCellStyle(headerStyle);
+                monthHeaderRow.createCell(15).setCellStyle(headerStyle);
+                monthHeaderRow.createCell(16).setCellStyle(headerStyle);
 
-                Cell idDataCell = row.createCell(col++);
-                idDataCell.setCellValue(dto.getId() != null ? dto.getId() : "");
-                idDataCell.setCellStyle(dataStyle);
+                // Data rows
+                for (TCSUnitCapacityDTO dto : dtoList) {
+                    Row row = sheet.createRow(currentRow++);
+                    int col = 0;
 
-                Cell statusDataCell = row.createCell(col++);
-                statusDataCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
-                statusDataCell.setCellStyle(dataStyle);
+                    Cell particularsDataCell = row.createCell(col++);
+                    particularsDataCell.setCellValue(dto.getParticulates() != null ? dto.getParticulates() : "");
+                    particularsDataCell.setCellStyle(dataStyle);
 
-                Cell errorDataCell = row.createCell(col++);
-                errorDataCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
-                errorDataCell.setCellStyle(dataStyle);
-            }
+                    Double[] monthValues = {
+                        dto.getJan(), dto.getFeb(), dto.getMar(), dto.getApr(), dto.getMay(), dto.getJun(),
+                        dto.getJul(), dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(), dto.getDec()
+                    };
 
-            // Auto-size columns
-            for (int i = 0; i < 29; i++) {
-                if (i == 25 || i == 28) {
-                    sheet.setColumnWidth(i, 8000);
-                } else {
-                    sheet.autoSizeColumn(i);
+                    for (Double value : monthValues) {
+                        Cell valueCell = row.createCell(col++);
+                        if (value != null) {
+                            valueCell.setCellValue(value);
+                        } else {
+                            valueCell.setCellValue("");
+                        }
+                        valueCell.setCellStyle(dataStyle);
+                    }
+
+                    Cell remarkDataCell = row.createCell(col++);
+                    remarkDataCell.setCellValue(dto.getRemark() != null ? dto.getRemark() : "");
+                    remarkDataCell.setCellStyle(dataStyle);
+
+                    Cell idDataCell = row.createCell(col++);
+                    idDataCell.setCellValue(dto.getId() != null ? dto.getId() : "");
+                    idDataCell.setCellStyle(dataStyle);
+
+                    Cell statusDataCell = row.createCell(col++);
+                    statusDataCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+                    statusDataCell.setCellStyle(dataStyle);
+
+                    Cell errorDataCell = row.createCell(col++);
+                    errorDataCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+                    errorDataCell.setCellStyle(dataStyle);
                 }
-            }
 
-            sheet.setColumnHidden(26, true);
+                for (int i = 0; i < 17; i++) {
+                    if (i == 13 || i == 16) {
+                        sheet.setColumnWidth(i, 8000);
+                    } else {
+                        sheet.autoSizeColumn(i);
+                    }
+                }
+                sheet.setColumnHidden(14, true);
+            }
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             workbook.write(outputStream);
@@ -1055,7 +1242,7 @@ Verticals vertical = null;
         style.setBorderLeft(BorderStyle.THIN);
         style.setBorderRight(BorderStyle.THIN);
 
-        style.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
+        style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
         style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         
         org.apache.poi.ss.usermodel.Font font = workbook.createFont();

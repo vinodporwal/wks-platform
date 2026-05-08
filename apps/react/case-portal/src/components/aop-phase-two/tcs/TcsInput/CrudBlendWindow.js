@@ -4,11 +4,13 @@ import { TcsApiService } from 'components/aop-phase-two/services/tcs/tcsApiServi
 import { useSession } from 'SessionStoreContext'
 import CrudBlendWindowGrid from './CrudBlendWindowComponents/CrudBlendWindowGrid'
 import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const CrudBlendWindow = ({
   PLANT_ID,
   AOP_YEAR,
   currentTab,
   SITE_ID,
+  VERTICAL_ID,
   snackbarData,
   setSnackbarData,
   snackbarOpen,
@@ -32,6 +34,7 @@ const CrudBlendWindow = ({
       const carryForwardResponse =
         await TcsApiService.carryForwardCrudBlendWindow(
           keycloak,
+          VERTICAL_ID,
           apiYear,
           SITE_ID,
           PLANT_ID,
@@ -39,11 +42,11 @@ const CrudBlendWindow = ({
 
       console.log('Carry-forward response:', carryForwardResponse)
 
-      setSnackbarData({
-        message: 'Data carried forward from previous year successfully!',
-        severity: 'success',
-      })
-      setSnackbarOpen(true)
+      // setSnackbarData({
+      //   message: 'Data carried forward from previous year successfully!',
+      //   severity: 'success',
+      // })
+      // setSnackbarOpen(true)
 
       return true
     } catch (carryForwardErr) {
@@ -55,11 +58,12 @@ const CrudBlendWindow = ({
   // Fetch all tables data once
   const fetchAllTablesData = useCallback(
     async (skipCarryForward = false) => {
-      if (!PLANT_ID || !AOP_YEAR || !SITE_ID) {
+      if (!PLANT_ID || !AOP_YEAR || !SITE_ID || !VERTICAL_ID) {
         console.warn('Missing required params:', {
           PLANT_ID,
           AOP_YEAR,
           SITE_ID,
+          VERTICAL_ID,
         })
         return
       }
@@ -73,6 +77,7 @@ const CrudBlendWindow = ({
 
         const response = await TcsApiService.getCrudBlendWindowData(
           keycloak,
+          VERTICAL_ID,
           PLANT_ID,
           apiYear,
           SITE_ID,
@@ -150,12 +155,7 @@ const CrudBlendWindow = ({
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {gridConfigs.map((config) => (
         <CrudBlendWindowGrid
@@ -165,6 +165,7 @@ const CrudBlendWindow = ({
           PLANT_ID={PLANT_ID}
           AOP_YEAR={AOP_YEAR}
           SITE_ID={SITE_ID}
+          VERTICAL_ID={VERTICAL_ID}
           tableData={allTablesData[config.key]}
           snackbarData={snackbarData}
           setSnackbarData={setSnackbarData}

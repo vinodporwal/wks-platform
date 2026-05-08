@@ -3,6 +3,7 @@ import { Box, Button, Typography, Tooltip as MuiTooltip } from '@mui/material'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { DataGrid } from '@mui/x-data-grid'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
@@ -245,12 +246,7 @@ const NormsHistorianBasisAromatics1 = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <Box display='flex' flexDirection='column' gap={2}>
         {gridList.map(({ name, rows, columns }) => {

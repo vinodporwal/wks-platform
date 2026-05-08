@@ -52,6 +52,7 @@ const MonthDropdownPEPP1 = (props) => {
         dataItemKey='value'
         value={selectedMonth}
         onChange={handleChange}
+        className='dropdown-editor'
         style={{
           width: '100%',
           border: 'none',

@@ -9,6 +9,7 @@ import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
 import { validateFields } from 'utils/validationUtils'
 import KendoDataTables from './index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const DownsteamShutdownDMD = ({ viewOnly }) => {
   const keycloak = useSession()
 
@@ -482,12 +483,7 @@ const DownsteamShutdownDMD = ({ viewOnly }) => {
 
   return (
     <div>
-      <Backdrop
-        open={loading}
-        sx={{ color: '#fff', zIndex: (t) => t.zIndex.drawer + 1 }}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       <KendoDataTables
         columns={columns}
         rows={rows}

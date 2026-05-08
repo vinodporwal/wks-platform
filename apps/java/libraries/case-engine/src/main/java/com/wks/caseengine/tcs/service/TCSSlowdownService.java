@@ -15,13 +15,13 @@ public interface TCSSlowdownService {
 
     public AOPMessageVM carryForwardTCSSlowdown(String plantId, String year);
 
-    AOPMessageVM saveOrUpdate(String plantId, String year, List<TCSSlowdownDTO> dtoList);
+    AOPMessageVM saveOrUpdate(String plantId, String year, String verticalId, String siteId, List<TCSSlowdownDTO> dtoList);
 
     public AOPMessageVM delete(UUID id);
     
     public byte[] exportTCSSlowdown(String plantId, String year, String siteId, String verticalId);
     
-    public AOPMessageVM importExcel(String plantId, String year, MultipartFile file);
+    public AOPMessageVM importExcel(String plantId, String year, String verticalId, String siteId, MultipartFile file);
 }
 
     
