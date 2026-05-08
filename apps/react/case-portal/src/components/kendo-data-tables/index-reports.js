@@ -8,7 +8,7 @@ import {
 import '@progress/kendo-theme-default/dist/all.css'
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports/ColumnMenu1'
 import Notification from 'components/Utilities/Notification'
-import { useCallback, useState, useEffect, useRef } from 'react'
+import React, { useCallback, useState, useEffect, useRef } from 'react'
 import {
   Box,
   Button,
@@ -45,7 +45,12 @@ import AddIcon from '@mui/icons-material/Add'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import { FileExportIcon, FileImportIcon, SaveIcon, CalculateIcon } from 'assets/images/icons'
+import {
+  FileExportIcon,
+  FileImportIcon,
+  SaveIcon,
+  CalculateIcon,
+} from 'assets/images/icons'
 
 export const particulars = [
   'normParameterId',
@@ -130,6 +135,8 @@ const KendoDataTablesReports = ({
   handleRelease = () => {},
   isReleaseDisabled = true,
 }) => {
+  const grid = React.useRef(null)
+  const minGridWidth = useRef(0)
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
@@ -142,6 +149,9 @@ const KendoDataTablesReports = ({
   const [gridExpanded, setGridExpanded] = useState(true)
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const [selectedGrade, setSelectedGrade] = useState()
+  const [applyMinWidth, setApplyMinWidth] = useState(false)
+  const [gridCurrent, setGridCurrent] = useState(0)
+
   const keycloak = useSession()
   const { verticalChange, plantObject, oldYear } = dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
@@ -149,6 +159,62 @@ const KendoDataTablesReports = ({
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+
+  const ADJUST_PADDING = 4
+  const COLUMN_MIN = 4
+
+  React.useEffect(() => {
+    grid.current = document.querySelector('.k-grid')
+    window.addEventListener('resize', handleResize)
+    minGridWidth.current = columns
+      .filter((col) => col?.isVisible !== false)
+      .reduce((sum, col) => sum + (col?.minWidth || 100), 0)
+    setGridCurrent(grid.current.offsetWidth)
+    setApplyMinWidth(grid.current.offsetWidth < minGridWidth.current)
+  }, [])
+
+  const handleResize = () => {
+    if (grid.current.offsetWidth < minGridWidth.current && !applyMinWidth) {
+      setApplyMinWidth(true)
+    } else if (grid.current.offsetWidth > minGridWidth.current) {
+      setGridCurrent(grid.current.offsetWidth)
+      setApplyMinWidth(false)
+    }
+  }
+
+  const setWidth = (minWidth = 0) => {
+    const visibleCols = columns.filter((col) => col?.isVisible !== false)
+
+    const totalMinWidth = visibleCols.reduce(
+      (sum, col) => sum + (col.minWidth || 0),
+      0,
+    )
+
+    // 🔥 Decide behavior based on available space
+    const hasExtraSpace = gridCurrent > totalMinWidth
+
+    let width
+
+    if (!hasExtraSpace) {
+      // ✅ Not enough space → respect minWidth → enable scroll
+      width = minWidth
+    } else {
+      // ✅ Extra space → distribute nicely (but controlled)
+      const extraPerCol = (gridCurrent - totalMinWidth) / visibleCols.length
+
+      // 🔥 limit expansion so it doesn't look ugly
+      const MAX_GROWTH = 80 // tweak if needed
+
+      width = minWidth + Math.min(extraPerCol, MAX_GROWTH)
+    }
+
+    // optional padding adjustment
+    if (width >= COLUMN_MIN) {
+      width -= ADJUST_PADDING
+    }
+
+    return Math.max(minWidth, width)
+  }
 
   const TextCellEditor = (props) => (
     <td>
@@ -275,7 +341,7 @@ const KendoDataTablesReports = ({
 
     setRemarkDialogOpen(false)
   }
-  
+
   const toggleGrid = () => {
     setGridExpanded(!gridExpanded)
   }
@@ -442,8 +508,7 @@ const KendoDataTablesReports = ({
         aria-sort={ariaSort}
         title={props.title}
         style={{
-          fontFamily:
-            "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
+          fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
         }}
       >
         <Tooltip
@@ -527,7 +592,7 @@ const KendoDataTablesReports = ({
             className={!isEditable ? 'non-editable-cell' : ''}
             columnMenu={ColumnMenuCheckboxFilter}
             headerClassName={isActive ? 'active-column' : ''}
-            width={col?.widthT || col?.fixedWidth}
+            width={setWidth(col?.widthT || col?.fixedWidth)}
           />
         )
       }
@@ -586,7 +651,7 @@ const KendoDataTablesReports = ({
             columnMenu={ColumnMenuCheckboxFilter}
             filter='numeric'
             format={col.format}
-            width={col?.widthT || col?.fixedWidth || 130}
+            width={setWidth(col?.widthT || col?.fixedWidth || 130)}
           />
         )
       }
@@ -597,7 +662,7 @@ const KendoDataTablesReports = ({
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
-            width={col?.fixedWidth || col?.width || 130}
+            width={setWidth(col?.fixedWidth || col?.width || 130)}
             hidden={col.hidden}
             className={'k-number-right-disabled'}
             editable={col?.editable ? true : false}
@@ -651,7 +716,7 @@ const KendoDataTablesReports = ({
           className={!isEditable ? 'non-editable-cell' : ''}
           columnMenu={ColumnMenuCheckboxFilter}
           headerClassName={isActive ? 'active-column' : ''}
-          width={col?.widthT || col?.fixedWidth}
+          width={setWidth(col?.widthT || col?.fixedWidth)}
         />
       )
     })
@@ -673,7 +738,8 @@ const KendoDataTablesReports = ({
       <td
         {...props.tdProps}
         title={value}
-        className={isRed ? 'orange-text' : ''}
+        //className={isRed ? 'orange-text' : ''}
+        className={`${props.tdProps?.className || ''} ${isRed ? 'edited-cell' : ''}`.trim()}
       >
         {props.children}
       </td>
@@ -681,7 +747,7 @@ const KendoDataTablesReports = ({
   }
 
   return (
-    <div className="k-table-box">
+    <div className='k-table-box'>
       <LoaderBackdrop open={!!loading} />
 
       {(permissions?.allAction ?? true) && (
@@ -695,7 +761,6 @@ const KendoDataTablesReports = ({
               ...(permissions?.marginTop && { marginTop: '10px' }),
             }}
           >
-
             <Box
               sx={{
                 display: 'flex',
@@ -724,9 +789,7 @@ const KendoDataTablesReports = ({
                   sx={{
                     fontSize: 20,
                     transition: '0.2s',
-                    transform: gridExpanded
-                      ? 'rotate(0deg)'
-                      : 'rotate(180deg)',
+                    transform: gridExpanded ? 'rotate(0deg)' : 'rotate(180deg)',
                   }}
                 />
               </Box>
@@ -764,14 +827,18 @@ const KendoDataTablesReports = ({
                   SelectProps={{
                     MenuProps: { disableScrollLock: true },
                   }}
-                  sx={{ width: 180, mb: 1 }} 
+                  sx={{ width: 180, mb: 1 }}
                   className='custom-select-textfield report-select-grade'
                 >
                   <MenuItem value='' disabled className='menu-item-style'>
                     {permissions?.dropdownLabel || 'Select Grade'}
                   </MenuItem>
                   {grades?.map((unit) => (
-                    <MenuItem key={unit.gradeId} value={unit.gradeId} className='menu-item-style'>
+                    <MenuItem
+                      key={unit.gradeId}
+                      value={unit.gradeId}
+                      className='menu-item-style'
+                    >
                       {unit.displayName}
                     </MenuItem>
                   ))}
@@ -880,11 +947,7 @@ const KendoDataTablesReports = ({
                   onClick={saveModalOpen}
                   disabled={isButtonDisabled || READ_ONLY}
                   startIcon={
-                    <Box
-                      component='img'
-                      src={SaveIcon}
-                      className='w16-icon'
-                    />
+                    <Box component='img' src={SaveIcon} className='w16-icon' />
                   }
                   {...(loading ? {} : {})}
                 >
@@ -909,7 +972,8 @@ const KendoDataTablesReports = ({
                     READ_ONLY ||
                     (rows?.length === 0
                       ? false
-                      : isButtonDisabled || !permissions?.showCalculateVisibility)
+                      : isButtonDisabled ||
+                        !permissions?.showCalculateVisibility)
                   }
                 >
                   Calculate
@@ -923,7 +987,9 @@ const KendoDataTablesReports = ({
                   disabled={isReleaseDisabled || READ_ONLY}
                   className='btn-save'
                   sx={{ color: '#bfa161ff' }}
-                  startIcon={<TrendingUpIcon sx={{ fontSize: 16, color: '#bfa161ff' }} />}
+                  startIcon={
+                    <TrendingUpIcon sx={{ fontSize: 16, color: '#bfa161ff' }} />
+                  }
                 >
                   {/* Submit */}
                   Release
@@ -964,7 +1030,9 @@ const KendoDataTablesReports = ({
                 mode: 'multiple',
               }}
               autoProcessData={true}
-              {...(initialGroup.length > 0 ? { defaultGroup: initialGroup } : {})}
+              {...(initialGroup.length > 0
+                ? { defaultGroup: initialGroup }
+                : {})}
               dataItemKey='id'
               editField='inEdit'
               editable={{ mode: 'incell' }}

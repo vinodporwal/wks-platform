@@ -33,11 +33,18 @@ export const RemarkCell = ({
     id,
     role,
     'data-testid': dataTestId,
+    customModifiedCells,
   } = tdProps || {}
+
+  // Check if this remark field was edited
+  const isEdited = Object.prototype.hasOwnProperty.call(
+    customModifiedCells?.[dataItem?.id] || {},
+    field,
+  )
 
   return (
     <td
-      className={className}
+      className={`${className} ${isRed || isEdited ? 'edited-cell' : 'non-edited-cell '}`}
       colSpan={colSpan}
       rowSpan={rowSpan}
       headers={headers}

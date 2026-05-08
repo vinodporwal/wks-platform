@@ -537,17 +537,23 @@
   border-right-width: 1px !important;
 }
 
-/* .edited-cell {
-  color: orange !important;
-  font-size: '15px' !important;
-  font-weight: 700 !important;
-  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
-} */
+/* ===============================
+   EDITED CELL HIGHLIGHT
+   =============================== */
 
-.non-edited-cell {
-  color: #252525 !important;
-  font-size: '15px' !important;
-  font-weight: 500 !important;
+.k-grid td.edited-cell,
+.k-grid-sm .k-table-td.edited-cell,
+.k-grid-md .k-table-td.edited-cell,
+.kendo-data-grid .k-grid-content .k-grid-table td.edited-cell,
+.kendo-data-grid .k-grid-content .k-grid-table tr:nth-child(odd) td.edited-cell,
+.kendo-data-grid
+  .k-grid-content
+  .k-grid-table
+  tr:nth-child(even)
+  td.edited-cell {
+  color: orange !important;
+  font-size: 15px !important;
+  font-weight: bold !important;
   font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
 }
 
@@ -589,7 +595,7 @@
 .dropdown-editor {
   width: 100% !important;
   border: 1px solid black !important;
-  height: 40px !important;
+  height: 36px !important;
   font-size: 15px !important;
   font-weight: 500 !important;
   font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;

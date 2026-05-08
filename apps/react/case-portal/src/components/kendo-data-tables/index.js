@@ -1054,6 +1054,15 @@ const KendoDataTables = ({
             [updatedRow.id]: updatedRow,
           }))
         }
+
+        // Mark the remark field as edited in customModifiedCells so RemarkCell highlights orange
+        setCustomModifiedCells((prev) => ({
+          ...prev,
+          [updatedRow.id]: {
+            ...(prev[updatedRow.id] || {}),
+            [keyToUpdate]: currentRemark,
+          },
+        }))
       }
 
       return updatedRows
@@ -1246,10 +1255,7 @@ const KendoDataTables = ({
     return (
       <td
         {...tdProps}
-        style={{
-          color: highlight && isEdited ? 'orange' : undefined,
-          fontWeight: highlight && isEdited ? 'bold' : undefined,
-        }}
+        className={`${tdProps?.className || ''} ${highlight && isEdited ? 'edited-cell' : ''}`.trim()}
         title={displayLabel}
       >
         {displayLabel || ''}
@@ -1438,10 +1444,9 @@ const KendoDataTables = ({
       <td
         {...tdProps}
         title={value}
+        className={`${tdProps?.className || ''} ${highlight && isEdited ? 'edited-cell' : ''}`.trim()}
         style={{
-          color: highlight && isEdited ? 'orange' : undefined,
-          fontWeight:
-            (highlight && isEdited) || isBoldFromCells ? 'bold' : undefined,
+          fontWeight: !(highlight && isEdited) && isBoldFromCells ? 'bold' : undefined,
         }}
       >
         {children}
@@ -1493,9 +1498,9 @@ const KendoDataTables = ({
       <td
         {...tdProps}
         title={value}
+        className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
-          color: shouldHighlight ? 'orange' : undefined,
-          fontWeight: shouldHighlight || isBoldFromCells ? 'bold' : undefined,
+          fontWeight: !shouldHighlight && isBoldFromCells ? 'bold' : undefined,
         }}
       >
         {children}
@@ -1594,9 +1599,10 @@ const KendoDataTables = ({
       <td
         {...tdProps}
         title={value}
+        className={`${tdProps?.className || ''} ${highlightColor ? 'edited-cell' : ''}`.trim()}
         style={{
-          color: highlightColor,
-          fontWeight: highlightColor || isBoldFromCells ? 'bold' : undefined,
+          color: highlightColor && highlightColor !== 'orange' ? highlightColor : undefined,
+          fontWeight: !highlightColor && isBoldFromCells ? 'bold' : undefined,
           // backgroundColor: highlightColorFullCell ? 'lightGrey' : undefined,
         }}
       >
@@ -1623,10 +1629,7 @@ const KendoDataTables = ({
       <td
         {...props.tdProps}
         title={value}
-        style={{
-          color: isRed ? 'orange' : undefined,
-          fontWeight: isRed ? 'bold' : undefined,
-        }}
+        className={`${props.tdProps?.className || ''} ${isRed ? 'edited-cell' : ''}`.trim()}
       >
         {props.children}
       </td>
@@ -1714,10 +1717,7 @@ const KendoDataTables = ({
       <td
         {...tdProps}
         title={display}
-        style={{
-          color: highlight && isEdited ? 'orange' : undefined,
-          fontWeight: highlight && isEdited ? 'bold' : undefined,
-        }}
+        className={`${tdProps?.className || ''} ${highlight && isEdited ? 'edited-cell' : ''}`.trim()}
       >
         {display}
       </td>
@@ -1755,9 +1755,7 @@ const KendoDataTables = ({
       <td
         {...props.tdProps}
         title={display}
-        style={{
-          color: isRed ? 'orange' : undefined,
-        }}
+        className={`${props.tdProps?.className || ''} ${isRed ? 'edited-cell' : ''}`.trim()}
       >
         {display}
       </td>
@@ -3446,6 +3444,7 @@ const KendoDataTables = ({
                               {...cellProps}
                               allRedCell={allRedCell}
                               onRemarkClick={handleRemarkCellClick}
+                              customModifiedCells={customModifiedCells}
                             />
                           ),
                           headerCell: SimpleHeaderWithTooltip,

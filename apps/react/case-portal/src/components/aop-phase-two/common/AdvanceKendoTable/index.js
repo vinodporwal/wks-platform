@@ -1004,11 +1004,7 @@ const AdvanceKendoTable = ({
       <td
         {...tdProps}
         title={value}
-        // className={`${shouldHighlight ? 'edited-cell' : 'non-edited-cell '}`}
-        style={{
-          color: shouldHighlight ? 'orange' : undefined,
-          fontWeight: shouldHighlight ? 'bold' : undefined,
-        }}
+        className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
       >
         {formattedValue}
       </td>
@@ -1113,9 +1109,9 @@ const AdvanceKendoTable = ({
       <td
         {...tdProps}
         title={value}
+        className={`${tdProps?.className || ''} ${highlightColor ? 'edited-cell' : ''}`.trim()}
         style={{
-          color: highlightColor,
-          fontWeight: highlightColor ? 'bold' : undefined,
+          color: highlightColor && highlightColor !== 'orange' ? highlightColor : undefined,
           // backgroundColor: highlightColorFullCell ? 'lightGrey' : undefined,
         }}
       >
@@ -1169,10 +1165,8 @@ const AdvanceKendoTable = ({
       <td
         {...tdProps}
         title={displayValue}
-        //className={`${shouldHighlight ? 'edited-cell' : 'non-edited-cell '}`}
+        className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
-          color: shouldHighlight ? 'orange' : undefined,
-          fontWeight: shouldHighlight ? 'bold' : undefined,
           textAlign: 'center',
         }}
       >
@@ -1986,10 +1980,8 @@ const AdvanceKendoTable = ({
       <td
         {...props.tdProps}
         title={displayValue}
-        //className={`${shouldHighlight ? 'edited-cell' : 'non-edited-cell '}`}
+        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
-          color: shouldHighlight ? 'orange' : undefined,
-          fontWeight: shouldHighlight ? 'bold' : undefined,
           textAlign: typeof value === 'boolean' ? 'center' : undefined,
         }}
       >
