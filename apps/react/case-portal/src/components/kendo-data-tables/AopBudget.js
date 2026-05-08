@@ -104,6 +104,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'may',
@@ -112,6 +113,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'jun',
@@ -120,6 +122,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'jul',
@@ -128,6 +131,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'aug',
@@ -136,6 +140,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'sep',
@@ -144,6 +149,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'oct',
@@ -152,6 +158,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'nov',
@@ -160,6 +167,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'dec',
@@ -168,6 +176,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'jan',
@@ -176,6 +185,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'feb',
@@ -184,6 +194,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'mar',
@@ -192,6 +203,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
   ]
 
@@ -211,15 +223,23 @@ export default function AopBudget() {
   ]
 
   const columns = [
-    { field: 'plantName', title: 'Plant', widthT: 100 },
-    { field: 'costName', title: 'Cost', widthT: 100 },
-    { field: 'budgetType', title: 'Budget Type', widthT: 80, hidden: true },
+    { field: 'plantName', title: 'Plant', widthT: 100, minWidth: 100 },
+    { field: 'costName', title: 'Cost', widthT: 100, minWidth: 100 },
+    {
+      field: 'budgetType',
+      title: 'Budget Type',
+      widthT: 80,
+      hidden: true,
+      minWidth: 100,
+      isVisibe: false,
+    },
     {
       field: 'percentChange',
       title: '% Change (+/-)',
       widthT: 105,
       editable: true,
       type: 'percentChange',
+      minWidth: 100,
     },
     // { field: 'symbol', title: '+VE/-VE', width: 120 },
     ...monthFields.map(({ field, index, editable, type, format, width }) => ({
@@ -236,8 +256,15 @@ export default function AopBudget() {
 
       type: 'number',
       format: FORMATE_DECIMAL,
+      minWidth: 100,
     },
-    { field: 'remark', title: 'Remark', editable: true, widthT: 100 },
+    {
+      field: 'remark',
+      title: 'Remark',
+      editable: true,
+      widthT: 100,
+      minWidth: 100,
+    },
   ]
 
   const formatPercentChange = (value) => {

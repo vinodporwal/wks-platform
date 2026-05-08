@@ -262,7 +262,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
             ? false
             : col.type === 'number' || col.field === 'Remarks',
         hidden: hiddenKeys.includes(col.field) ? true : col.hidden,
-        widthT: 120,
+        minWidth: 120,
         crackerValidation: col.type === 'number' ? true : false,
       }))
 

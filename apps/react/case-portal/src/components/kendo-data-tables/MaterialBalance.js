@@ -101,6 +101,7 @@ const MaterialBalance = ({ permissions }) => {
       const fieldName = `${monthShort}-${yearSuffix}`
 
       return {
+        minWidth: 100,
         field: monthShort,
         title: fieldName,
         width: 120,
@@ -123,10 +124,17 @@ const MaterialBalance = ({ permissions }) => {
         title: 'Particulars',
         editable: false,
         widthT: 100,
+        minWidth: 120,
       },
-      { field: 'UOM', title: 'UOM', editable: false, widthT: 80 },
+      { field: 'UOM', title: 'UOM', editable: false, widthT: 80, minWidth: 80 },
       ...monthCols,
-      { field: 'Remarks', title: 'Remark', editable: false, widthT: 100 },
+      {
+        field: 'Remarks',
+        title: 'Remark',
+        editable: false,
+        widthT: 100,
+        minWidth: 100,
+      },
     ],
     [monthCols],
   )

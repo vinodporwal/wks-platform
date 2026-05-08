@@ -219,7 +219,7 @@ const getEnhancedAOPColDefs = ({
           widthT: 100,
           fixedWidth: 100,
           width: 100,
-          minWidth: 100,
+          minWidth: 70,
         }
       }
 
@@ -234,7 +234,7 @@ const getEnhancedAOPColDefs = ({
           align: 'right',
           type: 'number',
           format: FORMATE_VALUE,
-          minWidth: 100,
+          minWidth: 70,
         }
       }
 

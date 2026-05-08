@@ -294,6 +294,8 @@ const KendoDataTables = ({
     setGridExpanded((prev) => !prev)
   }
 
+  console.log('columns', columns)
+
   // ...inside columns?.map((col) => { ... })...
   const fieldToMonthNumber = {
     january: 1,
@@ -3604,7 +3606,7 @@ const KendoDataTables = ({
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
-                        width={setWidth(col?.minWidth || 150)}
+                        width={setWidth(col?.minWidth || 100)}
                         hidden={col?.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}

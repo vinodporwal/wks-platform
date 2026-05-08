@@ -4,8 +4,8 @@
     "title": "Particulars",
     "editable": false,
     "widthT": 120,
-    "hidden": true,
-    "isVisible": false
+    "hidden": false,
+    "isVisible": true
   },
   {
     "field": "uom",

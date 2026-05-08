@@ -4,7 +4,7 @@
     "title": "SAP MAT Code",
     "editable": false,
     "width": 100,
-    "minWidth": 100
+    "minWidth": 120
   },
   {
     "field": "Particulars",
@@ -12,12 +12,14 @@
     "editable": false,
     "width": 200,
     "hidden": true,
-    "minWidth": 120
+    "minWidth": 120,
+    "isVisible": false
   },
   {
     "field": "NormParametersId",
     "hidden": true,
-    "minWidth": 100
+    "minWidth": 100,
+    "isVisible": false
   },
 
   {
@@ -110,6 +112,7 @@
     "field": "isEditable",
     "title": "isEditable",
     "hidden": true,
-    "minWidth": 100
+    "minWidth": 100,
+    "isVisible": false
   }
 ]

@@ -3,9 +3,10 @@
     "field": "particulars",
     "title": "Particulars",
     "editable": false,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
 
   {
@@ -14,9 +15,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
   {
     "field": "fiveFPropane",
@@ -24,9 +26,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
   {
     "field": "fiveFEthane",
@@ -34,9 +37,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
 
   {
@@ -45,9 +49,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
   {
     "field": "fiveFDSPropane",
@@ -55,9 +60,9 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140
   },
   {
     "field": "fiveFDSEthane",
@@ -65,9 +70,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
 
   {
@@ -76,9 +82,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
   {
     "field": "fourFPropane",
@@ -86,9 +93,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
   {
     "field": "fourFEthane",
@@ -96,9 +104,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
 
   {
@@ -107,9 +116,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
   {
     "field": "sevenFPropane",
@@ -117,9 +127,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
   {
     "field": "sevenFEthane",
@@ -127,9 +138,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
 
   {
@@ -138,9 +150,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
   {
     "field": "sixFSFDPropane",
@@ -148,9 +161,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
   {
     "field": "sixFSFDEthane",
@@ -158,9 +172,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
 
   {
@@ -169,9 +184,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
   {
     "field": "sixFBFDPropane",
@@ -179,9 +195,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
   {
     "field": "sixFBFDEthane",
@@ -189,9 +206,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
 
   {
@@ -200,9 +218,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
   {
     "field": "threeFPropane",
@@ -210,9 +229,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
   {
     "field": "threeFEthane",
@@ -220,9 +240,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
 
   {
@@ -231,9 +252,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
   {
     "field": "fourF2SPropane",
@@ -241,9 +263,10 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
   {
     "field": "fourF2SEthane",
@@ -251,14 +274,17 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 100,
-    "fixedWidth": 100,
-    "width": 100
+    "widthT": 140,
+    "fixedWidth": 140,
+    "width": 140,
+    "minWidth": 140
   },
 
   {
     "field": "NormParameterFKID",
     "title": "NormParameterFKID",
-    "hidden": true
+    "hidden": true,
+    "minWidth": 140,
+    "isVisible": false
   }
 ]
