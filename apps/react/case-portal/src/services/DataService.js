@@ -2859,7 +2859,7 @@ async function getShutdownRateExcel(
   const url = `${Config.CaseEngineUrl}/task/shutdown-rate-export?year=${AOP_YEAR}&plantId=${PLANT_ID}&type=${type}`
 
   const EXCEL_NAME = type
-    ? `${EXCEL_EXPORT_TITLE}_Production & Norms Basis ${type}.xlsx`
+    ? `${EXCEL_EXPORT_TITLE}.xlsx`
     : `${EXCEL_EXPORT_TITLE}_Production & Norms Basis.xlsx`
 
   const headers = {
