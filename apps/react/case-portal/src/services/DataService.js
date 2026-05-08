@@ -4627,7 +4627,7 @@ async function getRecipeCatChemExcel(
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = `${EXCEL_EXPORT_TITLE}_Production & Norms Basis Recipe Cat Chem.xlsx`
+    a.download = `${EXCEL_EXPORT_TITLE}.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()

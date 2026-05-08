@@ -19,11 +19,6 @@ const STATIC_CONSTANTS = [
   { id: 3, TypeDisplayName: 'Constant', displayName: 'Steam factor', uom: 'MT/MT', apr: 2.5, remarks: '' },
 ]
 
-const STATIC_RECIPES = [
-  { id: 0, TypeDisplayName: 'Manual Entry Norms', particulars: 'Short Stop', uom: 'Kg/Batch', grade1: 10, grade2: 12, grade3: 15, grade4: 10, grade5: 11, grade6: 13, grade7: 14 },
-  { id: 1, TypeDisplayName: 'Recipe', particulars: 'Activator', uom: 'Kg/Batch', grade1: 5, grade2: 5.5, grade3: 6, grade4: 5, grade5: 5.2, grade6: 5.8, grade7: 6.1 },
-]
-
 const STATIC_CONSUMPTION = [
   { id: 101, displayName: 'CHEM ISOPROPYL ALCOHOL', uom: 'MT', emulsifierBatch: 0.5, catalystBatch: 0.2, bufferBatch: 0.1, shortStopBatch: 0.05, coatingBatch: 0.02, norms: 0.87, gradeId: 'grade1' },
   { id: 102, displayName: 'CHEM ULTRANOX 626', uom: 'Kg', emulsifierBatch: 2, catalystBatch: 1, bufferBatch: 0.5, shortStopBatch: 0.2, coatingBatch: 0.1, norms: 3.8, gradeId: 'grade1' },
@@ -56,6 +51,10 @@ const CatalystChecmicalsCalculation = () => {
   const IS_OLD_YEAR = oldYear?.oldYear
   const keycloak = useSession()
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, isReleased)
+  const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
+  const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
 
   const [constantRows, setConstantRows] = useState([])
   const [recipeRows, setRecipeRows] = useState([])
@@ -87,8 +86,8 @@ const CatalystChecmicalsCalculation = () => {
       { field: 'uom', title: 'UOM', widthT: 80, editable: false },
     ]
 
-    const dynamicCols = (recipeGrades.length > 0 ? recipeGrades : STATIC_GRADES.slice(0, 3)).map(grade => ({
-      field: grade.name || grade.displayName,
+    const dynamicCols = (recipeGrades.length > 0 ? recipeGrades : STATIC_GRADES).map(grade => ({
+      field: grade?.id?.toUpperCase() || grade.name || grade.displayName,
       title: grade.displayName || grade.name,
       widthT: 100,
       type: 'number',
@@ -96,7 +95,7 @@ const CatalystChecmicalsCalculation = () => {
       editable: true,
     }))
 
-    return [...baseCols, ...dynamicCols, { field: 'remarks', title: 'Remark', widthT: 150, editable: false }]
+    return [...baseCols, ...dynamicCols]
   }, [recipeGrades])
 
   const filteredConsumptionRows = useMemo(() => {
@@ -162,33 +161,58 @@ const CatalystChecmicalsCalculation = () => {
           setAllGrades(consumptionGradesRes.data)
           if (!selectedGrade) setSelectedGrade(consumptionGradesRes.data[0].id)
         } else {
-          setAllGrades(STATIC_GRADES)
+          setAllGrades([])
         }
       } catch (e) {
-        setAllGrades(STATIC_GRADES)
+        setAllGrades([])
       }
 
       // Fetch Recipe Data
       try {
         const recipeRes = await DataService.getPeConfigCatChemData(keycloak, PLANT_ID, AOP_YEAR)
         if (recipeRes?.length > 0) {
-          setRecipeRows(recipeRes.map((item, index) => ({
-            ...item,
-            id: index,
-            particulars: item.TypeDisplayName || 'Particulars',
-          })))
+          const formattedData = recipeRes?.map((item, index) => {
+        const converted = {}
+
+        Object.entries(item).forEach(([key, value]) => {
+          console.log(key, value)
+            if (
+              key !== 'UOM' &&
+              typeof value === 'string' &&
+              value.trim() !== '' &&
+              !isNaN(value)
+            ) {
+              converted[key] = value.includes('.')
+                ? parseFloat(value)
+                : parseInt(value, 10)
+          } else {
+            converted[key] = value
+          }
+        })
+
+        return {
+          ...converted,
+          id: index,
+            TypeDisplayName: item?.TypeDisplayName
+              ? item?.TypeDisplayName
+              : 'Recipe',
+            particulars:item.ReceipeName,
+          uom: item.UOM,
+        }
+      })
+        setRecipeRows(formattedData)
         } else {
-          setRecipeRows(STATIC_RECIPES)
+          setRecipeRows([])
         }
       } catch (e) {
-        setRecipeRows(STATIC_RECIPES)
+        setRecipeRows([])
       }
 
       // Fetch Consumption
       try {
-        const consumptionRes = await NormalOperationNormsApiService.getNormalOperationNormsData(keycloak, PLANT_ID, AOP_YEAR, 'Manual')
-        if (consumptionRes?.data?.normConfigurationList?.length > 0) {
-          setConsumptionRows(consumptionRes.data.normConfigurationList.map((row, index) => {
+        const consumptionRes = await NormalOperationNormsApiService.getNormalOperationNormsData(keycloak, selectedGrade, false, PLANT_ID, AOP_YEAR)
+        if (consumptionRes?.data?.mcuNormsValueDTOList?.length > 0) {
+          setConsumptionRows(consumptionRes.data.mcuNormsValueDTOList.map((row, index) => {
             const insulator = parseFloat(row.insulatorBatch || row.emulsifierBatch) || 0
             const catalyst = parseFloat(row.catalystBatch) || 0
             const buffer = parseFloat(row.bufferBatch) || 0
@@ -304,12 +328,14 @@ const CatalystChecmicalsCalculation = () => {
 
   const downloadExcel = async (type, title) => {
     try {
+      setSnackbarData({ message: 'Excel Export Started!', severity: 'success' })
+      setSnackbarOpen(true)
       if (type === 'constant') {
         await DataService.getRecipeCatChemExcel(keycloak, PLANT_ID, AOP_YEAR, title, 'Manual')
       } else if (type === 'recipe') {
-        await DataService.getRecipeCatChemExcel(keycloak, AOP_YEAR, PLANT_ID, title)
+        await DataService.getRecipeCatChemExcel(keycloak, PLANT_ID, AOP_YEAR, `${EXCEL_EXPORT_TITLE}_${title}`)
       }
-      setSnackbarData({ message: 'Excel Export Started!', severity: 'success' })
+      setSnackbarData({ message: 'Excel Export Successful!', severity: 'success' })
       setSnackbarOpen(true)
     } catch (e) {
       setSnackbarData({ message: 'Export Failed!', severity: 'error' })
@@ -417,7 +443,7 @@ const CatalystChecmicalsCalculation = () => {
         />
 
       {/* Grid 2: Recipe */}
-        <KendoDataTablesReciepe
+        <KendoDataTables
           title="Recipe"
           columns={recipeColumns}
           rows={recipeRows}
