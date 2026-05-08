@@ -450,13 +450,8 @@ const CrakcerConstantsBestAchieved = () => {
                 </Box>
 
                 {configurationExecutionDetails[0]?.ModifiedOn && (
-                  <Typography
-                    className={
-                      READ_ONLY ? 'summary-title-disabled' : 'summary-title'
-                    }
-                    sx={{ whiteSpace: 'normal' }} // <-- added alignSelf
-                  >
-                    {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}
+                  <Typography className='last-refreshed-text'>
+                    {`Last loaded data on ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} by ${configurationExecutionDetails[0]?.User ?? ''} for period ${formatDateForText(startDate, false)} to ${formatDateForText(endDate, false)}`}
                   </Typography>
                 )}
               </Box>

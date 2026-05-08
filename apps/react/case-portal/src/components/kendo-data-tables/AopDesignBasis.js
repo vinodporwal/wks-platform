@@ -713,16 +713,7 @@ const AopDesignBasis = () => {
                 <Info sx={{ fontSize: '0.9rem', color: '#00688C' }} />
 
                 <Typography className='last-refreshed-text'>
-                  Last loaded data on{' '}
-                  {
-                    formatDateForText(
-                      configurationExecutionDetails[0]?.ModifiedOn,
-                    ).split(' ')[0]
-                  }
-                  {' for period '}
-                  {formatDateForText(startDate, true)}
-                  {' - '}
-                  {formatDateForText(endDate, true)}
+                  {`Last loaded data on ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} by ${configurationExecutionDetails[0]?.User ?? ''} for period ${formatDateForText(startDate, false)} to ${formatDateForText(endDate, false)}`}
                 </Typography>
               </Stack>
             </Tooltip>

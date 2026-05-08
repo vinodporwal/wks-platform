@@ -731,7 +731,8 @@
 .custom-select-textfield .MuiSelect-select {
   display: flex !important;
   align-items: center !important;
-  padding: 2px 6px !important;
+  padding: 2px 28px 2px 0px !important; /* right padding for arrow icon */
+  gap: 4px !important;
 }
 
 /* =========================================================

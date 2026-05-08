@@ -181,38 +181,34 @@ const ConfigurationAccordian = ({
                   <InfoIcon sx={{ fontSize: '0.9rem', color: '#00688C' }} />
 
                   <Typography className='last-refreshed-text'>
-                    Last loaded data on{' '}
-                    {
-                      formatDateForText(
-                        configurationExecutionDetails[0]?.ModifiedOn,
-                      ).split(' ')[0]
-                    }
-                    {' for period '}
-                    {formatDateForText(startDate, true)}
-                    {' - '}
-                    {formatDateForText(endDate, true)}
+                    {`Last loaded data on ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} by ${configurationExecutionDetails[0]?.User ?? ''} for period ${formatDateForText(startDate, false)} to ${formatDateForText(endDate, false)}`}
                   </Typography>
                 </Stack>
               </Tooltip>
             )}
 
             {/* ROW 2: AOP DESIGN BASIS */}
-            {summaryEnabled && (<Box sx={{ width: '100%' }}>
-              <Typography variant='caption' className='aop-design-basis-label'>
-                AOP DESIGN BASIS
-              </Typography>
+            {summaryEnabled && (
+              <Box sx={{ width: '100%' }}>
+                <Typography
+                  variant='caption'
+                  className='aop-design-basis-label'
+                >
+                  AOP DESIGN BASIS
+                </Typography>
 
-              <textarea
-                disabled={READ_ONLY}
-                value={summary}
-                rows={2}
-                onChange={(e) => {
-                  setSummary(e.target.value)
-                  setSummaryEdited(true)
-                }}
-                className='aop-design-basis-textarea'
-              />
-            </Box>)}
+                <textarea
+                  disabled={READ_ONLY}
+                  value={summary}
+                  rows={2}
+                  onChange={(e) => {
+                    setSummary(e.target.value)
+                    setSummaryEdited(true)
+                  }}
+                  className='aop-design-basis-textarea'
+                />
+              </Box>
+            )}
           </Stack>
         </CustomAccordionDetails>
       </CustomAccordion>

@@ -410,9 +410,18 @@ const ConfigurationAccordian = ({
         padding: '8px',
       },
     }
+
+    console.log(
+      'configurationExecutionDetails[0]',
+      configurationExecutionDetails[0],
+    )
     return (
       <Box sx={{ mb: 1 }}>
-        <CompactAccordion defaultExpanded disableGutters className='k-table-box'>
+        <CompactAccordion
+          defaultExpanded
+          disableGutters
+          className='k-table-box'
+        >
           <CustomAccordionSummary
             expandIcon={<ExpandMoreIcon sx={{ fontSize: '1rem' }} />}
             sx={expandCollapseIconStyle}
@@ -508,7 +517,8 @@ const ConfigurationAccordian = ({
                       backgroundColor: '#F6FAFC',
                       fontSize: '12px',
                       fontWeight: 600,
-                      fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif !important",
+                      fontFamily:
+                        "'Honeywell Sans Web', 'Inter', sans-serif !important",
                       whiteSpace: 'nowrap',
                       mt: '10px',
                       height: 40,
@@ -518,26 +528,8 @@ const ConfigurationAccordian = ({
                     }}
                   >
                     <InfoIcon sx={{ fontSize: '0.9rem', color: '#00688C' }} />
-                    <Typography
-                      sx={{
-                        fontSize: '14px',
-                        fontWeight: 700,
-                        color: '#303030',
-                        lineHeight: 1.2,
-                        fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                      }}
-                    >
-                      Last refreshed on{' '}
-                      {
-                        formatDateForText(
-                          configurationExecutionDetails[0]?.ModifiedOn,
-                        ).split(' ')[0]
-                      }
-                      {' | '}
-                      Period:{' '}
-                      {formatDateForText(startDate, true)}
-                      {' - '}
-                      {formatDateForText(endDate, true)}
+                    <Typography className='last-refreshed-text'>
+                      {`Last loaded data on ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} by ${configurationExecutionDetails[0]?.User ?? ''} for period ${formatDateForText(startDate, false)} to ${formatDateForText(endDate, false)}`}
                     </Typography>
                   </Stack>
                 </Tooltip>
