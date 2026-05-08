@@ -94,6 +94,10 @@ const ProductionNorms = ({ permissions }) => {
     lowerVertName === 'chemical' &&
     SITE_NAME_LOWERCASE === 'vmd' &&
     plantName === 'acrylonitrile'
+
+  const IS_CHEMICAL_NMD =
+    lowerVertName === 'chemical' && SITE_NAME_LOWERCASE === 'nmd'
+
   const [loading, setLoading] = useState(false)
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -216,7 +220,7 @@ const ProductionNorms = ({ permissions }) => {
         ...row,
         total: row.total ?? findSum('1', row),
       }))
-      if (!IS_CHEMICAL_VMD_ACRYLONITRILE) {
+      if (!IS_CHEMICAL_VMD_ACRYLONITRILE && !IS_CHEMICAL_NMD) {
         const result = validateTotalsWithIIR({
           data: enrichedData,
           rowsInKT,
@@ -535,7 +539,9 @@ const ProductionNorms = ({ permissions }) => {
           originalRemark: product.remark,
           remark: product.remark,
           isEditable:
-            IS_ELASTOMER_JMD_IIR || IS_CHEMICAL_VMD_ACRYLONITRILE
+            IS_ELASTOMER_JMD_IIR ||
+            IS_CHEMICAL_VMD_ACRYLONITRILE ||
+            IS_CHEMICAL_NMD
               ? true
               : false,
           april: product?.april,
@@ -1004,7 +1010,9 @@ const ProductionNorms = ({ permissions }) => {
   useEffect(() => {
     if (
       validateTotalsWithIIRRef.current &&
-      (IS_ELASTOMER_JMD_IIR || IS_CHEMICAL_VMD_ACRYLONITRILE) &&
+      (IS_ELASTOMER_JMD_IIR ||
+        IS_CHEMICAL_VMD_ACRYLONITRILE ||
+        IS_CHEMICAL_NMD) &&
       rows.length > 0 &&
       (rowsInKT.length > 0 || rowsInMT.length > 0)
     ) {
@@ -1047,6 +1055,7 @@ const ProductionNorms = ({ permissions }) => {
     selectedUnit,
     IS_ELASTOMER_JMD_IIR,
     IS_CHEMICAL_VMD_ACRYLONITRILE,
+    IS_CHEMICAL_NMD,
   ])
 
   useEffect(() => {
@@ -1135,7 +1144,9 @@ const ProductionNorms = ({ permissions }) => {
               ? permissions?.showCalculate ?? true
               : false,
           saveBtn:
-            IS_ELASTOMER_JMD_IIR || IS_CHEMICAL_VMD_ACRYLONITRILE
+            IS_ELASTOMER_JMD_IIR ||
+            IS_CHEMICAL_VMD_ACRYLONITRILE ||
+            IS_CHEMICAL_NMD
               ? true
               : permissions?.saveBtn ?? false,
           units:
