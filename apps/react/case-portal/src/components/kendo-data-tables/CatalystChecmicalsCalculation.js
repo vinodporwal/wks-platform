@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { Box, Backdrop, CircularProgress, MenuItem, Select, FormControl, InputLabel } from '@mui/material'
+import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { useGridApiRef } from '@mui/x-data-grid'
 import KendoDataTables from './index'
-import KendoDataTablesReciepe from './index-reports-receipe'
 import { DataService } from 'services/DataService'
 import { getRoleName } from 'services/role-service'
-import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-basis-api-service'
 import { validateFields } from 'utils/validationUtils'
 import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_ConfigHeader'
 import Notification from 'components/Utilities/Notification'
@@ -54,10 +52,11 @@ const CatalystChecmicalsCalculation = () => {
   const [constantRows, setConstantRows] = useState([])
   const [recipeRows, setRecipeRows] = useState([])
   const [consumptionRows, setConsumptionRows] = useState([])
+  const [consumptionColumns, setConsumptionColumns] = useState([])
   const [recipeGrades, setRecipeGrades] = useState([])
   const [allGrades, setAllGrades] = useState([]) // Used for Grid 3 dropdown
   const [selectedGrade, setSelectedGrade] = useState('')
-
+  const [gradeId, setGradeId] = useState(null)
   const [modifiedConstantCells, setModifiedConstantCells] = useState({})
   const [modifiedRecipeCells, setModifiedRecipeCells] = useState({})
   const [modifiedConsumptionCells, setModifiedConsumptionCells] = useState({})
@@ -99,17 +98,17 @@ const CatalystChecmicalsCalculation = () => {
   }, [consumptionRows, selectedGrade])
 
   // Grid 3: Cat-chem Consumption Columns
-  const consumptionColumns = [
-    { field: 'displayName', title: 'Material', widthT: 200, editable: false },
-    { field: 'uom', title: 'UOM', widthT: 80, editable: false },
-    { field: 'emulsifierBatch', title: 'Emulsifier Batch Consumption', widthT: 150, editable: false, type: 'number', format: FORMATE_VALUE },
-    { field: 'catalystBatch', title: 'Catalyst batch Consumption', widthT: 150, editable: false, type: 'number', format: FORMATE_VALUE },
-    { field: 'bufferBatch', title: 'Buffer batch Consumption', widthT: 150, editable: false, type: 'number', format: FORMATE_VALUE },
-    { field: 'shortStopBatch', title: 'Short stop batch Consumption', widthT: 150, editable: false, type: 'number', format: FORMATE_VALUE },
-    { field: 'coatingBatch', title: 'Coating batch Consumption', widthT: 150, editable: false, type: 'number', format: FORMATE_VALUE },
-    { field: 'apr', title: 'Total Consumption', widthT: 150, editable: false, type: 'number', format: FORMATE_VALUE },
-    { field: 'norms', title: 'Norms (Kg/MT)', widthT: 120, editable: false, type: 'number', format: FORMATE_VALUE },
-  ]
+  // const consumptionColumns = [
+  //   { field: 'displayName', title: 'Material', widthT: 200, editable: false },
+  //   { field: 'uom', title: 'UOM', widthT: 80, editable: false },
+  //   { field: 'emulsifierBatch', title: 'Emulsifier Batch Consumption', widthT: 150, editable: false, type: 'number', format: FORMATE_VALUE },
+  //   { field: 'catalystBatch', title: 'Catalyst batch Consumption', widthT: 150, editable: false, type: 'number', format: FORMATE_VALUE },
+  //   { field: 'bufferBatch', title: 'Buffer batch Consumption', widthT: 150, editable: false, type: 'number', format: FORMATE_VALUE },
+  //   { field: 'shortStopBatch', title: 'Short stop batch Consumption', widthT: 150, editable: false, type: 'number', format: FORMATE_VALUE },
+  //   { field: 'coatingBatch', title: 'Coating batch Consumption', widthT: 150, editable: false, type: 'number', format: FORMATE_VALUE },
+  //   { field: 'apr', title: 'Total Consumption', widthT: 150, editable: false, type: 'number', format: FORMATE_VALUE },
+  //   { field: 'norms', title: 'Norms (Kg/MT)', widthT: 120, editable: false, type: 'number', format: FORMATE_VALUE },
+  // ]
 
   const handleRemarkClick = (row, type) => {
     if (READ_ONLY) return
@@ -225,11 +224,29 @@ const CatalystChecmicalsCalculation = () => {
         setRecipeRows([])
       }
 
-      // Fetch Consumption
+    } catch (error) {
+      console.error('Error fetching Catalyst data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getCatChemCalculationData = async() => {
+    // Fetch Consumption
       try {
-        const consumptionRes = await NormalOperationNormsApiService.getNormalOperationNormsData(keycloak, selectedGrade, false, PLANT_ID, AOP_YEAR)
-        if (consumptionRes?.data?.mcuNormsValueDTOList?.length > 0) {
-          setConsumptionRows(consumptionRes.data.mcuNormsValueDTOList.map((row, index) => {
+        const consumptionRes = await DataService.getCatChemCalculationData(keycloak, PLANT_ID, AOP_YEAR, selectedGrade)
+        if (consumptionRes?.code === 200) {
+          setConsumptionColumns(consumptionRes?.data?.columns?.map((col) => {
+            if (col.type === "number") {
+              return {
+                ...col,
+                format: FORMATE_VALUE
+              }
+            }
+            return col
+          }))
+
+          setConsumptionRows(consumptionRes?.data?.data?.map((row, index) => {
             const insulator = parseFloat(row.insulatorBatch || row.emulsifierBatch) || 0
             const catalyst = parseFloat(row.catalystBatch) || 0
             const buffer = parseFloat(row.bufferBatch) || 0
@@ -250,22 +267,20 @@ const CatalystChecmicalsCalculation = () => {
             }
           }))
         } else {
-          setConsumptionRows(STATIC_CONSUMPTION.map(row => ({ ...row, apr: row.emulsifierBatch + row.catalystBatch + row.bufferBatch + row.shortStopBatch + row.coatingBatch })))
+          setConsumptionRows([])
         }
       } catch (e) {
-        setConsumptionRows(STATIC_CONSUMPTION.map(row => ({ ...row, apr: row.emulsifierBatch + row.catalystBatch + row.bufferBatch + row.shortStopBatch + row.coatingBatch })))
+        setConsumptionRows([])
       }
-
-    } catch (error) {
-      console.error('Error fetching Catalyst data:', error)
-    } finally {
-      setLoading(false)
-    }
   }
 
   useEffect(() => {
     fetchData()
   }, [PLANT_ID, AOP_YEAR])
+
+  useEffect(() => {
+    getCatChemCalculationData()
+  }, [PLANT_ID, AOP_YEAR, selectedGrade])
 
   const saveConstantChanges = async () => {
     const data = Object.values(modifiedConstantCells).filter(r => r.inEdit)
@@ -361,7 +376,7 @@ const CatalystChecmicalsCalculation = () => {
   const handleCalculate = async () => {
     setLoading(true)
     try {
-      await RawMaterialNormsBasisApiService.handleCalculateNormsConfiguration(PLANT_ID, AOP_YEAR, keycloak)
+      await DataService.postCatChemCalculate(PLANT_ID, AOP_YEAR, keycloak)
       setSnackbarData({ message: 'Calculation Successful!', severity: 'success' })
       setSnackbarOpen(true)
       fetchData()
