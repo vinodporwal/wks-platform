@@ -1010,11 +1010,9 @@ export default function HeaderContent({ keycloak, navigation }) {
         </Stack>
 
         {/* RIGHT: Profile */}
-        {HIDE_DASHBOARD_DROPDOWN && (
-          <Box sx={{ justifySelf: 'end' }}>
-            {!matchesXs ? <Profile keycloak={keycloak} /> : <MobileSection />}
-          </Box>
-        )}
+        <Box sx={{ justifySelf: 'end' }}>
+          {!matchesXs ? <Profile keycloak={keycloak} /> : <MobileSection />}
+        </Box>
       </Box>
     </>
   )
