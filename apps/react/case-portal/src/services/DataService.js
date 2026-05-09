@@ -201,6 +201,9 @@ export const DataService = {
   getPeConfigCatChemData,
   getRecipeCatChemExcel,
   saveRecipeCatChemExcel,
+
+  getCatChemCalculationData,
+  postCatChemCalculate,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -4650,6 +4653,39 @@ async function saveRecipeCatChemExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
       method: 'POST',
       headers,
       body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error importing recipe Cat Chem data:', e)
+    return Promise.reject(e)
+  }
+}
+async function getCatChemCalculationData(keycloak, PLANT_ID, AOP_YEAR, gradeId) {
+  const url = `${Config.CaseEngineUrl}/task/cat-chem-calculation?year=${AOP_YEAR}&plantId=${PLANT_ID}&gradeId=${gradeId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function postCatChemCalculate(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/cat-chem-calculation?plantId=${PLANT_ID}&aopYear=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: {},
     })
     return json(keycloak, resp)
   } catch (e) {
