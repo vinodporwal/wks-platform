@@ -349,6 +349,10 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 			UUID plantUUID = UUID.fromString(plantId);
 			Optional<Plants> plantOpt = plantsRepository.findById(plantUUID);
 
+			Plants plant = plantOpt.get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
 			if (!plantOpt.isPresent()) {
 				throw new RuntimeException("Plant not found for ID: " + plantId);
 			}
@@ -362,7 +366,9 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 							List<String> columnNames = new ArrayList<>();
 							List<String> columnTypes = new ArrayList<>();
 
-							String dataSql = "EXEC Sp_GetCatChemConsumption @plantId = ?, @aopYear = ?, @Grade_Fk_Id = ?";
+							String procedureName = vertical.getName() + "_" + site.getName() + "_GetCatChemConsumption";
+
+							String dataSql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?, @Grade_Fk_Id = ?";
 							try (PreparedStatement ps = connection.prepareStatement(dataSql)) {
 								ps.setString(1, plantId);
 								ps.setString(2, year);
@@ -2095,8 +2101,13 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 			// query.executeUpdate();
 			// response.setCode(200);
 			// response.setMessage("CatChemCalculation executed successfully");
+			Plants plant = plantsRepository.findById(plantId).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 
-			String sql = "EXEC [dbo].[CatChemCalculation] @PlantId = :plantId, @AopYear = :aopYear";
+  String procedureName = vertical.getName() + "_" + site.getName() + "_CatChemCalculation";
+
+	String sql = "EXEC " + procedureName + " @PlantId = :plantId, @AopYear = :aopYear";
 
 Query query = entityManager.createNativeQuery(sql);
 query.setParameter("plantId", plantId);
@@ -2105,13 +2116,17 @@ query.setParameter("aopYear", aopYear);
 boolean hasResultSet = query.unwrap(org.hibernate.query.NativeQuery.class)
                             .getHibernateFlushMode() != null;
 
-							response.setCode(200);
-			response.setMessage("CatChemCalculation executed successfully");
+response.setCode(200);
+response.setMessage("CatChemCalculation executed successfully");
+
+			
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to execute CatChemCalculation", ex);
 		}
 		return response;
 	}
+
+
 
 	String getJson() {
 	    return """
