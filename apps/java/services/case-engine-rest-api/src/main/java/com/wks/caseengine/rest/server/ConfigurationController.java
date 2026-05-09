@@ -82,8 +82,9 @@ public class ConfigurationController {
 	
 	@GetMapping(value="/configuration-constants")
 	public AOPMessageVM getConfigurationConstants(@RequestParam String year,
-												  @RequestParam String plantFKId) {
-		return configurationService.getConfigurationConstants(year,plantFKId);
+												  @RequestParam String plantFKId,
+												@RequestParam(required = false) boolean iscatcam) {
+		return configurationService.getConfigurationConstants(year,plantFKId,iscatcam);
 	}
 
 	@GetMapping(value="/production-constraints")

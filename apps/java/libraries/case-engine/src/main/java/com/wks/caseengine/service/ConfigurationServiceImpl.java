@@ -1302,15 +1302,17 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		return null;
 	}
 
-		public AOPMessageVM getConfigurationConstants(String year, String plantFKId) {
+		public AOPMessageVM getConfigurationConstants(String year, String plantFKId, boolean iscatcam) {
 		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<Map<String, Object>> configurationConstantsList = new ArrayList<>();
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
 			String procedureName = null;
-			if(verticalName.equalsIgnoreCase("PVC")) { 
+			if(iscatcam) { 
 
-				procedureName = "PVC_GetCatChem_Constant";
+				procedureName =  vertical.getName() + "_GetCatChem_Constant";
 			}
 			else { procedureName = verticalName + "_GetConfiguration_Constant";
 	     	}

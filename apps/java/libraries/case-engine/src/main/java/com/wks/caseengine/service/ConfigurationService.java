@@ -23,7 +23,7 @@ public interface ConfigurationService {
 	public List<ConfigurationDTO> getMonthlyProductionData(String year, UUID plantFKId);
 	AOPMessageVM calculateSteadyNorms(String year, String plantId,String periodTo,String periodFrom);
 	AOPMessageVM carryForward(String year, String plantId);
-	public AOPMessageVM getConfigurationConstants(String year,String plantFKId);
+	public AOPMessageVM getConfigurationConstants(String year,String plantFKId, boolean iscatcam);
 	public AOPMessageVM getProductionConstraints(String year, String plantFKId, String type);
 	public AOPMessageVM getConfigurationIntermediateValues(String year, UUID plantFKId);
     public List<ConfigurationDTO> saveConfigurationData( String year, String plantFKId,String version, List<ConfigurationDTO> configurationDTOList,Boolean calculation, boolean isMinMax);

@@ -358,76 +358,55 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 						@Override
 						public Map<String, Object> execute(Connection connection) throws SQLException {
 							Map<String, Object> resultMap = new HashMap<>();
-							List<Map<String, Object>> dataList = new ArrayList<>();
-							List<Map<String, Object>> columnsList = new ArrayList<>();
-							List<Map<String, Object>> aopCalcList = new ArrayList<>();
+							List<Object[]> rows = new ArrayList<>();
+							List<String> columnNames = new ArrayList<>();
+							List<String> columnTypes = new ArrayList<>();
 
-							// 1. Fetch data via Sp_GetCatChemConsumption
 							String dataSql = "EXEC Sp_GetCatChemConsumption @plantId = ?, @aopYear = ?, @Grade_Fk_Id = ?";
 							try (PreparedStatement ps = connection.prepareStatement(dataSql)) {
 								ps.setString(1, plantId);
 								ps.setString(2, year);
 								ps.setString(3, gradeId);
 								try (ResultSet rs = ps.executeQuery()) {
-									ResultSetMetaData rsmd = rs.getMetaData();
-									int colCount = rsmd.getColumnCount();
+									ResultSetMetaData metaData = rs.getMetaData();
+									int colCount = metaData.getColumnCount();
+									for (int i = 1; i <= colCount; i++) {
+										columnNames.add(metaData.getColumnLabel(i));
+										columnTypes.add(metaData.getColumnTypeName(i));
+									}
 									while (rs.next()) {
-										Map<String, Object> row = new LinkedHashMap<>();
+										Object[] row = new Object[colCount];
 										for (int i = 1; i <= colCount; i++) {
-											String colName = rsmd.getColumnLabel(i);
 											Object value = rs.getObject(i);
-											int sqlType = rsmd.getColumnType(i);
-											if (value == null) {
-												row.put(colName, isNumericType(sqlType) ? 0 : "");
-											} else {
-												row.put(colName, value);
-											}
+											int sqlType = metaData.getColumnType(i);
+											row[i - 1] = (value == null) ? (isNumericType(sqlType) ? 0 : "") : value;
 										}
-										dataList.add(row);
+										rows.add(row);
 									}
 								}
 							}
 
-							// 2. Fetch column metadata via CatChemConsumption_Columns
-							String colSql = "EXEC CatChemConsumption_Columns";
-							try (PreparedStatement ps = connection.prepareStatement(colSql);
-									ResultSet rs = ps.executeQuery()) {
-								while (rs.next()) {
-									Map<String, Object> col = new LinkedHashMap<>();
-									String key = rs.getString("Key");
-									col.put("field", key);
-									col.put("title", key);
-									col.put("type", getFrontendType(rs.getString("type")));
-									col.put("isVisible", rs.getString("IsVisible"));
-									columnsList.add(col);
+							List<Map<String, Object>> dataList = new ArrayList<>();
+							for (Object[] row : rows) {
+								Map<String, Object> rowMap = new LinkedHashMap<>();
+								for (int i = 0; i < columnNames.size(); i++) {
+									rowMap.put(columnNames.get(i), row[i]);
 								}
+								dataList.add(rowMap);
 							}
 
-							// 3. Fetch aopCalculation via sp_aopCalculation
-							// String aopSql = "EXEC sp_aopCalculation @plantId = ?, @aopYear = ?";
-							// try (PreparedStatement ps = connection.prepareStatement(aopSql)) {
-							// 	ps.setString(1, plantId);
-							// 	ps.setString(2, year);
-							// 	try (ResultSet rs = ps.executeQuery()) {
-							// 		ResultSetMetaData rsmd = rs.getMetaData();
-							// 		int colCount = rsmd.getColumnCount();
-							// 		while (rs.next()) {
-							// 			Map<String, Object> calcRow = new LinkedHashMap<>();
-							// 			for (int i = 1; i <= colCount; i++) {
-							// 				calcRow.put(rsmd.getColumnLabel(i), rs.getObject(i));
-							// 			}
-							// 			aopCalcList.add(calcRow);
-							// 		}
-							// 	}
-							// }
-							// catch(Exception ex){
-							// 	throw new RuntimeException("Failed to fetch aopCalculation", ex);
-							// }
+							List<Map<String, Object>> columnsList = new ArrayList<>();
+							for (int i = 0; i < columnNames.size(); i++) {
+								Map<String, Object> col = new LinkedHashMap<>();
+								col.put("field", columnNames.get(i));
+								col.put("title", columnNames.get(i));
+								col.put("type", getFrontendType(columnTypes.get(i)));
+								col.put("isVisible", "true");
+								columnsList.add(col);
+							}
 
 							resultMap.put("data", dataList);
 							resultMap.put("columns", columnsList);
-						//	resultMap.put("aopCalculation", aopCalcList);
-						
 							return resultMap;
 						}
 					});
@@ -435,7 +414,6 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 			Map<String, Object> finalData = new HashMap<>();
 			finalData.put("data", results.get("data"));
 			finalData.put("columns", results.get("columns"));
-			finalData.put("aopCalculation", results.get("aopCalculation"));
 
 			aopMessageVM.setData(finalData);
 			aopMessageVM.setCode(200);
