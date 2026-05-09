@@ -1307,11 +1307,17 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<Map<String, Object>> configurationConstantsList = new ArrayList<>();
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
-			String procedureName = verticalName + "_GetConfiguration_Constant";
+			String procedureName = null;
+			if(verticalName.equalsIgnoreCase("PVC")) { 
+
+				procedureName = "PVC_GetCatChem_Constant";
+			}
+			else { procedureName = verticalName + "_GetConfiguration_Constant";
+	     	}
 			List<Object[]> obj = new ArrayList<>();
 			if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")
 					|| verticalName.equalsIgnoreCase("CRACKER") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical")
-					|| verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("AROMATICS")) {
+					|| verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("PVC")) {
 				obj = findConstantsByYearAndPlantFkId(year, plantFKId, procedureName);
 			}
 			for (Object[] row : obj) {
