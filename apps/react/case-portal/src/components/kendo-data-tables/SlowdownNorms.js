@@ -125,7 +125,7 @@ const SlowdownNorms = () => {
     lowerVertName === 'elastomer' &&
     SITE_NAME_LOWERCASE === 'hmd' &&
     PLANT_NAME_LOWERCASE === 'sbr'
-  const ISVCM_HMD = lowerVertName === 'vcm' && siteName === 'hmd'
+  const IS_VCM_HMD = lowerVertName === 'vcm' && siteName === 'hmd'
   const saveChanges = React.useCallback(async () => {
     try {
       var data = Object.values(modifiedCells)
@@ -677,7 +677,7 @@ const SlowdownNorms = () => {
         IS_PE_PP ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_EDC_PLANT ||
-        (IS_HMD_SITE && !ISVCM_HMD)
+        (IS_HMD_SITE && !IS_VCM_HMD)
           ? false
           : true,
 
