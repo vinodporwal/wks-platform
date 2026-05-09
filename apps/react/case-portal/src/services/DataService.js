@@ -822,8 +822,9 @@ async function getCatalystSelectivityDataConstants(
   keycloak,
   PLANT_ID,
   AOP_YEAR,
+  iscatchem,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/configuration-constants?year=${AOP_YEAR}&plantFKId=${PLANT_ID}`
+  const url = `${Config.CaseEngineUrl}/task/configuration-constants?year=${AOP_YEAR}&plantFKId=${PLANT_ID}&isCatChem=${iscatchem}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -4660,7 +4661,12 @@ async function saveRecipeCatChemExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
     return Promise.reject(e)
   }
 }
-async function getCatChemCalculationData(keycloak, PLANT_ID, AOP_YEAR, gradeId) {
+async function getCatChemCalculationData(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  gradeId,
+) {
   const url = `${Config.CaseEngineUrl}/task/cat-chem-calculation?year=${AOP_YEAR}&plantId=${PLANT_ID}&gradeId=${gradeId}`
   const headers = {
     Accept: 'application/json',

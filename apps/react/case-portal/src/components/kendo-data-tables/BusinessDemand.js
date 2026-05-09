@@ -75,7 +75,7 @@ const BusinessDemand = ({ permissions }) => {
   const IS_CHEMICAL_JMD =
     lowerVertName === 'chemical' && lowerSiteName === 'jmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'
-  const IS_VCM_VMD_BENZEN =
+  const IS_CHEMICAL_VMD_BENZEN =
     lowerVertName === 'chemical' &&
     lowerSiteName === 'vmd' &&
     plantObject?.name?.toLowerCase() === 'benzene'
@@ -696,7 +696,7 @@ const BusinessDemand = ({ permissions }) => {
 
       {lowerVertName !== 'cracker' &&
         !IS_ELASTOMER_JMD &&
-        !IS_VCM_VMD_BENZEN && (
+        !IS_CHEMICAL_VMD_BENZEN && (
           <>
             <CustomAccordion defaultExpanded disableGutters>
               <CustomAccordionSummary

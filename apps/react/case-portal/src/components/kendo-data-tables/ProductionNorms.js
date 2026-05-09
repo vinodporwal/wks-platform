@@ -76,6 +76,7 @@ const ProductionNorms = ({ permissions }) => {
     plantName === 'px4'
   const IS_PVC_VMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'vmd'
   const IS_PVC_DMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'dmd'
+  const IS_PVC_HMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'hmd'
   const IS_AROMATIC_DTA_PLATFORMER =
     lowerVertName === 'aromatics' &&
     SITE_NAME_LOWERCASE === 'dta' &&
@@ -512,7 +513,14 @@ const ProductionNorms = ({ permissions }) => {
       const selectedLine = lineDetails[tabIndex]
       const lineId = selectedLine?.id
       let response = ''
-      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      if (
+        IS_PP_DTA ||
+        IS_PP_SEZ ||
+        IS_PVC_DMD ||
+        IS_PP_HMD ||
+        IS_PVC_HMD ||
+        IS_PVC_VMD
+      ) {
         response = await ProductionNormsApiService.getAOPDataLineWise(
           keycloak,
           'Production',
@@ -992,7 +1000,12 @@ const ProductionNorms = ({ permissions }) => {
       }
     }
     if (
-      (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) &&
+      (IS_PP_DTA ||
+        IS_PP_SEZ ||
+        IS_PVC_DMD ||
+        IS_PP_HMD ||
+        IS_PVC_HMD ||
+        IS_PVC_VMD) &&
       lineDetails?.length === 0
     ) {
       return
@@ -1029,7 +1042,14 @@ const ProductionNorms = ({ permissions }) => {
   }
 
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+    if (
+      IS_PP_DTA ||
+      IS_PP_SEZ ||
+      IS_PVC_DMD ||
+      IS_PP_HMD ||
+      IS_PVC_HMD ||
+      IS_PVC_VMD
+    ) {
       fetchLineDetails()
     } else {
       setLineDetails([])
@@ -1315,7 +1335,12 @@ const ProductionNorms = ({ permissions }) => {
   return (
     <div>
       {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
-      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) && (
+      {(IS_PP_DTA ||
+        IS_PP_SEZ ||
+        IS_PVC_DMD ||
+        IS_PP_HMD ||
+        IS_PVC_HMD ||
+        IS_PVC_VMD) && (
         <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>

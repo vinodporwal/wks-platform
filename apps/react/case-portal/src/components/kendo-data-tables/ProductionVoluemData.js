@@ -109,6 +109,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
   const IS_PP_DTA = VERTICAL_NAME === 'pp' && SITE_NAME === 'dta'
   const IS_PP_SEZ = VERTICAL_NAME === 'pp' && SITE_NAME === 'sez'
   const IS_PVC_DMD = VERTICAL_NAME === 'pvc' && SITE_NAME === 'dmd'
+  const IS_PVC_HMD = VERTICAL_NAME === 'pvc' && SITE_NAME === 'hmd'
   const IS_PP_HMD = VERTICAL_NAME === 'pp' && SITE_NAME === 'hmd'
   const IS_PTA_HMD = VERTICAL_NAME === 'pta' && SITE_NAME === 'hmd'
   const IS_CRACKER_VMD = VERTICAL_NAME === 'cracker' && SITE_NAME === 'vmd'
@@ -535,7 +536,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         )
         responsesForAllLines = await Promise.all(promises)
         response = responsesForAllLines[tabIndex]
-      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD || IS_PVC_VMD) {
         response =
           await ProductionVolumeDataApiService.getAOPMCCalculatedDataLineWise(
             keycloak,
@@ -809,15 +810,15 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
   }
 
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD || IS_PVC_VMD) {
       fetchLineDetails()
     }
-  }, [PLANT_ID, keycloak, yearChanged, IS_PP_DTA, IS_PP_SEZ, IS_PVC_DMD])
+  }, [PLANT_ID, keycloak, yearChanged, IS_PP_DTA, IS_PP_SEZ, IS_PVC_DMD, IS_PVC_HMD, IS_PVC_VMD])
 
   // Call fetchData when lineDetails is updated and has at least one item
   useEffect(() => {
     if (
-      (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) &&
+      (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD || IS_PVC_HMD || IS_PVC_VMD) &&
       lineDetails.length > 0 &&
       lineDetails[tabIndex]
     ) {
@@ -825,7 +826,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
       fetchDesignCapacityData()
       fetchMaxCapacityData()
     }
-  }, [lineDetails, tabIndex, IS_PP_DTA, IS_PP_SEZ, IS_PVC_DMD])
+  }, [lineDetails, tabIndex, IS_PP_DTA, IS_PP_SEZ, IS_PVC_DMD , IS_PVC_HMD, IS_PVC_VMD])
 
   const colDefs_editable = getEnhancedProductionColDefs({
     headerMap,
@@ -864,7 +865,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     const lineId = selectedLine?.id
     try {
       let response = ''
-      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD || IS_PVC_VMD) {
         response =
           await ProductionVolumeDataApiService.getDesignCapacityDataLineWise(
             keycloak,
@@ -953,7 +954,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     const lineId = selectedLine?.id
     try {
       let response = ''
-      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD || IS_PVC_VMD) {
         response =
           await ProductionVolumeDataApiService.getMaxAchievedCapacityDataLineWise(
             keycloak,
@@ -1171,7 +1172,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' ? true : false,
 
       downloadExcelBtnFromUI:
-        IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PVC_DMD || IS_AROMATICS_SEZ_PX4
+        IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PVC_DMD || IS_AROMATICS_SEZ_PX4 || IS_PVC_HMD || IS_PVC_VMD
           ? false
           : true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Max Achieved Capacity`,
@@ -1296,11 +1297,11 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
           ? true
           : false,
       downloadExcelBtn:
-        IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PVC_DMD || IS_AROMATICS_SEZ_PX4
+        IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PVC_DMD || IS_AROMATICS_SEZ_PX4 || IS_PVC_HMD || IS_PVC_VMD
           ? false
           : true,
       uploadExcelBtn:
-        IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PVC_DMD || IS_AROMATICS_SEZ_PX4
+        IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PVC_DMD || IS_AROMATICS_SEZ_PX4 || IS_PVC_HMD || IS_PVC_VMD
           ? false
           : true,
 
@@ -1370,7 +1371,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     })
 
     try {
-      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD || IS_PVC_VMD ) {
         const selectedLine = lineDetails[tabIndex]
         const lineId = selectedLine?.id
         const LineName = lineDetails[tabIndex]?.displayName
@@ -1433,7 +1434,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     setLoading(true)
     try {
       let response
-      if (IS_PP_SEZ || IS_PP_DTA || IS_PP_HMD || IS_PVC_DMD) {
+      if (IS_PP_SEZ || IS_PP_DTA || IS_PP_HMD || IS_PVC_DMD || IS_PVC_HMD || IS_PVC_VMD) {
         response =
           await ProductionVolumeDataApiService.saveProductionVolDataLineExcel(
             rawFile,
@@ -1536,7 +1537,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
       </Backdrop>
 
       {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
-      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) && (
+      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD || IS_PVC_VMD) && (
         <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>
