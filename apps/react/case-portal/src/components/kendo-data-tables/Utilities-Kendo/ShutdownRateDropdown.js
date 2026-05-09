@@ -40,7 +40,6 @@ const ShutdownRateDropdown = (props) => {
         dataItemKey='value'
         value={selectedValue}
         onChange={handleChange}
-        className='dropdown-editor'
         style={{ width: '100%', border: 'none', height: '100%' }}
         popupSettings={{
           appendTo: document.body,

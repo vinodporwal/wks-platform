@@ -111,7 +111,6 @@ if(plantId != null) {
                 aopYear,
                 vertical.getName().toUpperCase(),
                 site.getId(),
-                plantId != null ? null : UUID.fromString(verticalId),
                 site.getName().toUpperCase());
             List<TCSShutdownDTO> resultsList = new ArrayList<>();
             //values mapping
@@ -176,19 +175,20 @@ if(plantId != null) {
         String aopYear,
         String verticalName,
         UUID siteId,
-        UUID verticalId,
         String siteName) {
             
         try {            
             // Stored Procedure name
-            String procedureName = null;
-            if(plantId != null) {
-                //   procedureName = verticalName + "_" + siteName + "_GetTcsShutdown";  }
+            String procedureName = "GetTcsShutdown";
+            if (!"MEG".equalsIgnoreCase(verticalName)) {
+                if(plantId != null) {
+             //   procedureName = verticalName + "_" + siteName + "_GetTcsShutdown";  }
                 procedureName =  "CRUDE_DTA_GetTcsShutdown";
-            }
-            else {
-                //   procedureName = verticalName + "_" + siteName + "_GetTcsShutdown_OutPut";
-                procedureName = "GetTcsShutdown_OutPut";
+                }
+                else {
+                 //   procedureName = verticalName + "_" + siteName + "_GetTcsShutdown_OutPut";
+                    procedureName = "GetTcsShutdown_OutPut";
+                }
             }
 
             // Prepare native SQL call with parameters
@@ -198,8 +198,7 @@ if(plantId != null) {
         
         } 
         else {
-            sql = "EXEC " + procedureName + " @verticalId = :verticalId, @siteId = :siteId, @aopYear = :aopYear";
-         
+            sql = "EXEC " + procedureName + " @siteId = :siteId, @aopYear = :aopYear";
         }
 
             // Call the stored procedure
@@ -210,7 +209,6 @@ if(plantId != null) {
             query.setParameter("aopYear", aopYear);  }
 
             else {
-                query.setParameter("verticalId", verticalId);
                 query.setParameter("siteId", siteId);
                 query.setParameter("aopYear", aopYear);
             }
@@ -230,15 +228,18 @@ if(plantId != null) {
         UUID siteId,
         String siteName) {
 
-        String procedureName =null;
-        if(plantId != null) {
-            //  procedureName = verticalName + "_" + siteName + "_GetTcsShutdown";
-            procedureName =  "CRUDE_DTA_GetTcsShutdown";
-        }
-        else {
-            //  procedureName = verticalName + "_" + siteName + "_GetTcsShutdown_OutPut";
-            procedureName = "GetTcsShutdown_OutPut";
-        }  
+        String procedureName = "GetTcsShutdown";
+
+        if (!"MEG".equalsIgnoreCase(verticalName)) {
+            if(plantId != null) {
+          //  procedureName = verticalName + "_" + siteName + "_GetTcsShutdown";
+          procedureName =  "CRUDE_DTA_GetTcsShutdown";
+            }
+            else {
+              //  procedureName = verticalName + "_" + siteName + "_GetTcsShutdown_OutPut";
+                procedureName = "GetTcsShutdown_OutPut";
+            }
+        }      
 
         String callableSql = "";
         if(plantId != null) {
@@ -293,8 +294,6 @@ if(plantId != null) {
     public AOPMessageVM saveOrUpdate(
         String plantId,
         String year,
-        String verticalId,
-        String siteId,
         List<TCSShutdownDTO> dtoList) {
 
         if (dtoList == null || dtoList.isEmpty()) {
@@ -344,8 +343,6 @@ if(plantId != null) {
                 entity.setPurpose(dto.getPurpose());
                 entity.setAopYear(year);
                 entity.setPlantFkId(UUID.fromString(plantId));
-                entity.setVerticalFkId(UUID.fromString(verticalId));
-                entity.setSiteFkId(UUID.fromString(siteId));
       System.out.println("entity to save: " + entity);
                 tcsShutdownRepository.save(entity);
                 savedList.add(entity);
@@ -497,8 +494,6 @@ if(plantId != null) {
     public AOPMessageVM importExcel(
         String plantId,
         String year,
-        String verticalId,
-        String siteId,
         MultipartFile file) {
         
         try {
@@ -545,7 +540,7 @@ if(plantId != null) {
             System.out.println("all records : " + data);
             if (!validRecords.isEmpty()) {
                 try {
-                    saveOrUpdate(plantId, year, verticalId, siteId, validRecords);
+                    saveOrUpdate(plantId, year, validRecords);
                 } catch (Exception e) {
                     // Mark all valid records as failed if save fails
                     System.out.println("Save failed: " + e.getMessage());

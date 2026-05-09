@@ -1,4 +1,4 @@
-import { InputBase } from '../../../../node_modules/@mui/material/index'
+import { Input } from '@progress/kendo-react-inputs'
 import NotificationTST from 'components/Utilities/NotificationTST'
 import { useState, useEffect, useRef } from 'react'
 
@@ -130,7 +130,7 @@ export const NoSpinnerNumericEditorCrackerValidation = ({
 
       setLocalValue(val)
     } else {
-      // console.log('❌ BLOCKED BY REGEX')
+      // console.log('? BLOCKED BY REGEX')
     }
   }
 
@@ -151,14 +151,13 @@ export const NoSpinnerNumericEditorCrackerValidation = ({
 
   return (
     <>
-      <InputBase
+      <Input
         value={localValue}
         onChange={handleChange}
-        className='input-editor'
         style={{
-          fontSize: '15px',
+          fontSize: '0.8rem',
           padding: '2px 2px',
-          height: '40px',
+          height: '22px',
           lineHeight: '1rem',
         }}
       />

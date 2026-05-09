@@ -3,12 +3,8 @@ package com.wks.caseengine.tcs.repository;
 import java.util.UUID;
 
 public interface FurnaceProjection {
-
-    UUID getId();
-    String getName();   // was getFurnace() — matches renamed TCS_Furnace.Name column
-    Double getJan();
-    Double getFeb();
-    Double getMar();
+   
+    String getFurnace();
     Double getApr();
     Double getMay();
     Double getJun();
@@ -18,5 +14,13 @@ public interface FurnaceProjection {
     Double getOct();
     Double getNov();
     Double getDec();
+    Double getJan();
+    Double getFeb();
+    Double getMar();
+
     String getRemarks();
+   // Double getGCalPerHr();
 }
+
+
+

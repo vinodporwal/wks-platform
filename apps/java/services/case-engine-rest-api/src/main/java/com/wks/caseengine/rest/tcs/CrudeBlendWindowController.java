@@ -30,24 +30,24 @@ public class CrudeBlendWindowController {
     @Autowired
     private CrudeBlendWindowService crudeBlendWindowService;
      
-    @GetMapping({"/crude-blend-window/{plantId}/{siteId}/{financialYear}/{verticalId}" , "/crude-blend-window/{siteId}/{financialYear}/{verticalId}"})
-    public ResponseEntity<List<CrudeBlendScreenDTO>> getCrudeBlendWindowByCppAndFY(@PathVariable(required = false) String plantId, @PathVariable String siteId, @PathVariable String financialYear, @PathVariable String verticalId) {
+    @GetMapping({"/crude-blend-window/{plantId}/{siteId}/{financialYear}" , "/crude-blend-window/{siteId}/{financialYear}"})
+    public ResponseEntity<List<CrudeBlendScreenDTO>> getCrudeBlendWindowByCppAndFY(@PathVariable(required = false) String plantId, @PathVariable String siteId, @PathVariable String financialYear) {
 
 
         if (plantId == null) {
-            return ResponseEntity.ok(crudeBlendWindowService.getCrudeBlendWindowData(null, siteId, verticalId, financialYear));
+            return ResponseEntity.ok(crudeBlendWindowService.getCrudeBlendWindowData(null, siteId, financialYear));
         }
 
         if(financialYear == null || financialYear.length() != 4) {
             throw new IllegalArgumentException("Financial year must be 4 digits");
         }
 
-        List<CrudeBlendScreenDTO> crudeBlendScreenDTO = crudeBlendWindowService.getCrudeBlendWindowData(plantId, siteId, verticalId, financialYear);
+        List<CrudeBlendScreenDTO> crudeBlendScreenDTO = crudeBlendWindowService.getCrudeBlendWindowData(plantId, siteId, financialYear);
         return ResponseEntity.ok(crudeBlendScreenDTO);
     }
 
-    @PostMapping("/crude-blend-window/carry-forward/{financialYear}/{verticalId}/{siteId}/{plantId}")
-    public AOPMessageVM carryForwardCrudeBlendWindow(@PathVariable String financialYear, @PathVariable String verticalId, @PathVariable String siteId, @PathVariable String plantId) {
+    @PostMapping("/crude-blend-window/carry-forward/{financialYear}/{siteId}/{plantId}")
+    public AOPMessageVM carryForwardCrudeBlendWindow(@PathVariable String financialYear, @PathVariable String siteId, @PathVariable String plantId) {
 
 
         if(financialYear == null || financialYear.length() != 4) {
@@ -57,7 +57,7 @@ public class CrudeBlendWindowController {
         if(plantId == null || financialYear == null || siteId == null) {
             throw new RestInvalidArgumentException("Invalid request parameters", null);
         }
-        return crudeBlendWindowService.carryForwardCrudeBlendWindow(financialYear, UUID.fromString(verticalId), UUID.fromString(siteId), UUID.fromString(plantId));
+        return crudeBlendWindowService.carryForwardCrudeBlendWindow(financialYear, UUID.fromString(siteId), UUID.fromString(plantId));
     }
 
     @DeleteMapping("/crude-blend-window/delete/{id}/{table}")
@@ -71,18 +71,14 @@ public class CrudeBlendWindowController {
     }
 
 
-    @PostMapping("/crude-blend-window/{plantId}/{verticalId}/{siteId}/{financialYear}/{table}")
-    public void updateCrudeBlendWindow(@RequestBody CrudeBlendWindowPostRequestDTO<?> payload, @PathVariable String plantId, @PathVariable String verticalId, @PathVariable String siteId, @PathVariable String financialYear, @PathVariable String table) {
+    @PostMapping("/crude-blend-window/{plantId}/{siteId}/{financialYear}/{table}")
+    public void updateCrudeBlendWindow(@RequestBody CrudeBlendWindowPostRequestDTO<?> payload, @PathVariable String plantId, @PathVariable String siteId, @PathVariable String financialYear, @PathVariable String table) {
 
         if(financialYear == null || financialYear.length() != 4) {
             throw new IllegalArgumentException("Financial year must be 4 digits");
         }
 
-        if(verticalId == null || verticalId.isEmpty()) {
-            throw new IllegalArgumentException("Vertical ID is required");
-        }
-
-       crudeBlendWindowService.updateCrudeBlendWindowData(payload, plantId, verticalId, siteId, financialYear, table);
+       crudeBlendWindowService.updateCrudeBlendWindowData(payload, plantId, siteId, financialYear, table);
         
     }
 
@@ -91,7 +87,6 @@ public class CrudeBlendWindowController {
         @RequestParam(required = false) String plantId,
         @RequestParam String siteId,
         @RequestParam String financialYear,
-        @RequestParam String verticalId,
         @RequestParam String table) {
 
         // Default to CrudeBlendWindow if table is not specified
@@ -114,7 +109,6 @@ public class CrudeBlendWindowController {
             plantId,
             siteId,
             financialYear,
-            verticalId,
             table);
 
         HttpHeaders headers = new HttpHeaders();
@@ -132,7 +126,6 @@ public class CrudeBlendWindowController {
     @PostMapping("/crude-blend-window/import")
     public AOPMessageVM importCrudeBlendWindow(
         @RequestParam String plantId,
-        @RequestParam String verticalId,
         @RequestParam String siteId,
         @RequestParam String financialYear,
         @RequestParam String table,
@@ -146,9 +139,6 @@ public class CrudeBlendWindowController {
         if(plantId == null || plantId.isEmpty()) {
             throw new IllegalArgumentException("Plant ID is required");
         }
-        if(verticalId == null || verticalId.isEmpty()) {
-            throw new IllegalArgumentException("Vertical ID is required");
-        }
         if(siteId == null || siteId.isEmpty()) {
             throw new IllegalArgumentException("Site ID is required");
         }
@@ -158,7 +148,6 @@ public class CrudeBlendWindowController {
 
         return crudeBlendWindowService.importExcel(
             plantId,
-            verticalId,
             siteId,
             financialYear,
             table,

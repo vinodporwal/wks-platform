@@ -1,4 +1,4 @@
-import { InputBase } from '@mui/material'
+import { Input } from '@progress/kendo-react-inputs'
 import NotificationTST from 'components/Utilities/NotificationTST'
 import { useState, useEffect, useRef } from 'react'
 
@@ -54,10 +54,10 @@ export const NumberCellEditor = ({
     }
   }
 
-  // Autofocus when cell enters edit mode
   useEffect(() => {
     if (inputRef.current) {
-      inputRef.current.focus()
+      const el = inputRef.current.element || inputRef.current
+      if (el && typeof el.focus === 'function') el.focus()
     }
   }, [])
 
@@ -77,14 +77,18 @@ export const NumberCellEditor = ({
 
   return (
     <td>
-      <InputBase
-        inputRef={inputRef}
+      <Input
+        ref={inputRef}
         value={localValue}
         onChange={handleChange}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        autoComplete='off'
-        className='input-editor'
+        style={{
+          fontSize: '0.8rem',
+          padding: '2px 2px',
+          height: '22px',
+          lineHeight: '1rem',
+        }}
       />
       <NotificationTST
         open={snackbarOpen}

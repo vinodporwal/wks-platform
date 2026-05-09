@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
-import { Box, Button, Stack, Tooltip, Typography } from '@mui/material'
+import { Box, Button, Typography } from '@mui/material'
 import { DatePicker } from '@progress/kendo-react-dateinputs'
 import { TextArea } from '@progress/kendo-react-inputs'
 import {
@@ -15,19 +15,13 @@ import {
 } from '../../crude/production-norms-basis/utils/utility'
 import ConfigurationDialog from './ConfigurationDialog'
 import { HistoricPeriodBasisApiService } from 'components/aop-phase-two/services/common/historicPeriodBasisApiService'
+import {
+  Backdrop,
+  CircularProgress,
+} from '../../../../../node_modules/@mui/material/index'
 import dataGridStore from 'store/reducers/dataGridStore'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import { styled } from '@mui/material/styles'
-import SettingsIcon from '@mui/icons-material/Settings'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import InfoIcon from '@mui/icons-material/Info'
-
-const CompactAccordion = styled(CustomAccordion)({
-  mb: 0,
-  padding: '10px',
-  '&:before': { display: 'none' },
-})
 
 const ConfigurationAccordian = ({
   PLANT_ID,
@@ -389,181 +383,145 @@ const ConfigurationAccordian = ({
   const endDateDateFromConfig = new Date(endDateConfig?.AttributeValue)
 
   const accordian = useMemo(() => {
-    const expandCollapseIconStyle = {
-      minHeight: '36px !important',
-      px: 0.5,
-      bgcolor: '#ffffff',
-      flexDirection: 'row-reverse',
-      '& .MuiAccordionSummary-content': {
-        marginLeft: 1,
-        my: '4px !important',
-      },
-      '& .MuiAccordionSummary-expandIconWrapper': {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 32,
-        height: 32,
-        borderRadius: '6px',
-        backgroundColor: '#ECEEFF',
-        color: '#1e293b',
-        cursor: 'pointer',
-        padding: '8px',
-      },
-    }
-
-    console.log(
-      'configurationExecutionDetails[0]',
-      configurationExecutionDetails[0],
-    )
     return (
-      <Box sx={{ mb: 1 }}>
-        <CompactAccordion
-          defaultExpanded
-          disableGutters
-          className='k-table-box'
-        >
+      <Box sx={{ mb: '0px' }}>
+        <CustomAccordion defaultExpanded disableGutters>
           <CustomAccordionSummary
-            expandIcon={<ExpandMoreIcon sx={{ fontSize: '1rem' }} />}
-            sx={expandCollapseIconStyle}
+            aria-controls='meg-grid-content'
+            id='meg-grid-header'
           >
-            <Stack direction='row' spacing={1} alignItems='center'>
-              <SettingsIcon sx={{ color: '#0100cb', fontSize: '1rem' }} />
-              <Typography
+            <Typography className='accordian-title'>
+              AOP Historical Period Basis
+            </Typography>
+          </CustomAccordionSummary>
+          <CustomAccordionDetails>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-end',
+                mt: 0,
+              }}
+            >
+              <Box
                 sx={{
-                  fontWeight: 700,
-                  fontSize: '16px',
-                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                  color: '#303030',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  marginTop: '5px',
                 }}
               >
-                AOP Historical Period Basis
-              </Typography>
-            </Stack>
-          </CustomAccordionSummary>
-
-          <CustomAccordionDetails sx={{ p: 0.5, pt: 1 }}>
-            <Stack direction='column' spacing={1.5}>
-              {/* ROW 1: Date pickers + Load button */}
-              <Stack
-                direction='row'
-                sx={{ columnGap: 1, rowGap: 0 }}
-                alignItems='flex-start'
-                flexWrap='wrap'
-              >
-                {/* START */}
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  <DatePicker
-                    id='start-date'
-                    format='dd-MM-yyyy'
-                    value={startDate}
-                    onChange={(e) => {
-                      setStartDate(e.value)
-                      setDateEdited(true)
-                    }}
-                    style={{ width: '130px', height: '28px' }}
-                    disabled={READ_ONLY}
-                  />
-                </Box>
-
-                {/* END */}
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  <DatePicker
-                    id='end-date'
-                    format='dd-MM-yyyy'
-                    value={endDate}
-                    onChange={(e) => {
-                      setEndDate(e.value)
-                      setDateEdited(true)
-                    }}
-                    style={{ width: '130px', height: '28px' }}
-                    disabled={READ_ONLY}
-                  />
-                </Box>
-
-                {/* LOAD BUTTON */}
-                {!isOldYear && (
-                  <Tooltip title='Refresh Data'>
-                    <Button
-                      variant='outlined'
-                      className='btn-load'
-                      onClick={handleOpenDialog}
-                      disabled={READ_ONLY}
-                      sx={{
-                        height: 28,
-                        px: 1.5,
-                        mt: 'auto',
-                      }}
+                {true && (
+                  <Box
+                    sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}
+                  >
+                    {/* Start Date */}
+                    <Box
+                      sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}
                     >
-                      Load
-                    </Button>
-                  </Tooltip>
-                )}
-              </Stack>
+                      <Typography
+                        className='button-title'
+                        sx={{ whiteSpace: 'nowrap' }}
+                      >
+                        Start Date
+                      </Typography>
+                      <DatePicker
+                        id='start-date'
+                        format='dd-MM-yyyy'
+                        value={startDate}
+                        onChange={(e) => {
+                          setStartDate(e.value)
+                          setDateEdited(true)
+                        }}
+                        style={{ height: '80px' }}
+                        size='medium'
+                        disabled={READ_ONLY}
+                      />
+                    </Box>
 
-              {/* LAST REFRESHED */}
-              {configurationExecutionDetails[0]?.ModifiedOn && (
-                <Tooltip
-                  title={`Last Refreshed: ${formatDateForText(
-                    configurationExecutionDetails[0]?.ModifiedOn,
-                    true,
-                  )}`}
-                >
-                  <Stack
-                    direction='row'
-                    spacing={0.5}
-                    alignItems='center'
+                    {/* End Date */}
+                    <Box
+                      sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}
+                    >
+                      <Typography
+                        className='button-title'
+                        sx={{ whiteSpace: 'nowrap' }}
+                      >
+                        End Date
+                      </Typography>
+                      <DatePicker
+                        id='end-date'
+                        format='dd-MM-yyyy'
+                        value={endDate}
+                        onChange={(e) => {
+                          setEndDate(e.value)
+                          setDateEdited(true)
+                        }}
+                        style={{ height: '80px' }}
+                        size='medium'
+                        disabled={READ_ONLY}
+                      />
+                    </Box>
+
+                    {/* Load Button */}
+                    {!isOldYear && (
+                      <Button
+                        variant='contained'
+                        onClick={handleOpenDialog}
+                        className='btn-save'
+                        sx={{ alignSelf: 'flex-end' }}
+                        disabled={READ_ONLY}
+                      >
+                        Load
+                      </Button>
+                    )}
+                  </Box>
+                )}
+
+                {configurationExecutionDetails[0]?.ModifiedOn && (
+                  <Typography
+                    className={
+                      READ_ONLY ? 'summary-title-disabled' : 'summary-title'
+                    }
                     sx={{
-                      color: '#303030',
-                      backgroundColor: '#F6FAFC',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      fontFamily:
-                        "'Honeywell Sans Web', 'Inter', sans-serif !important",
-                      whiteSpace: 'nowrap',
-                      mt: '10px',
-                      height: 40,
-                      borderRadius: '6px',
-                      border: '1px solid #00688C',
-                      padding: '10px',
+                      whiteSpace: 'normal',
+                      alignSelf: 'flex-end',
                     }}
                   >
-                    <InfoIcon sx={{ fontSize: '0.9rem', color: '#00688C' }} />
-                    <Typography className='last-refreshed-text'>
-                      {`Last loaded data on ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} by ${configurationExecutionDetails[0]?.User ?? ''} for period ${formatDateForText(startDate, false)} to ${formatDateForText(endDate, false)}`}
-                    </Typography>
-                  </Stack>
-                </Tooltip>
-              )}
-
-              {/* ROW 2: AOP DESIGN BASIS */}
-              <Box sx={{ width: '100%' }}>
-                <Typography
-                  variant='caption'
-                  sx={{
-                    fontSize: '14px',
-                    fontWeight: 700,
-                    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                    color: '#303030',
-                    letterSpacing: '0.3px',
-                  }}
-                >
-                  AOP DESIGN BASIS
-                </Typography>
-                <TextArea
-                  className='vertical-resize-textarea'
-                  disabled={READ_ONLY}
-                  value={summary}
-                  rows={2}
-                  onChange={(e) => {
-                    setSummary(e.target.value)
-                    setSummaryEdited(true)
-                  }}
-                />
+                    {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)}${lastModifiedBy ? ` by ${lastModifiedBy}` : ''} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}
+                  </Typography>
+                )}
               </Box>
-            </Stack>
+            </Box>
+
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                gap: 0,
+                mt: 1,
+              }}
+            >
+              <Typography
+                className='button-title'
+                sx={{ whiteSpace: 'nowrap' }}
+              >
+                AOP Design Basis
+              </Typography>
+
+              <TextArea
+                disabled={READ_ONLY}
+                value={summary}
+                rows={3}
+                onChange={(e) => {
+                  setSummary(e.target.value)
+                  setSummaryEdited(true)
+                }}
+              />
+            </Box>
           </CustomAccordionDetails>
-        </CompactAccordion>
+        </CustomAccordion>
       </Box>
     )
   }, [

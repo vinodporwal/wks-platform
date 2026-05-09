@@ -13,8 +13,8 @@ import com.wks.caseengine.entity.DummyEntity;
 @org.springframework.stereotype.Repository
 public interface TCSCPPUnitsSDPlanRepository extends JpaRepository<DummyEntity, Long> {
 
-    @Query(value = "SELECT Id, Machine, IBRDueDate, GTMaintenance, NoOfDays, ShutDownDate, StartUpDate, MajorJobs FROM TCS_CPPUnitsSD_Plan WHERE FinancialYear = :financialYear and Vertical_FK_Id = :verticalId and Site_FK_Id = :siteId", nativeQuery = true)
-    List<TCSCPPUnitsSDPlanProjection> findByFinancialYearAndVerticalIdAndSiteId(@Param("financialYear") String financialYear, @Param("verticalId") UUID verticalId, @Param("siteId") UUID siteId);
+    @Query(value = "SELECT Id, Machine, IBRDueDate, GTMaintenance, NoOfDays, ShutDownDate, StartUpDate, MajorJobs FROM TCS_CPPUnitsSD_Plan WHERE FinancialYear = :financialYear and Site_FK_Id = :siteId", nativeQuery = true)
+    List<TCSCPPUnitsSDPlanProjection> findByFinancialYearAndSiteId(@Param("financialYear") String financialYear, @Param("siteId") UUID siteId);
 
 //     @Query("""
 //     SELECT t

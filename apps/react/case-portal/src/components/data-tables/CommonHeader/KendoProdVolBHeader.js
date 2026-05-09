@@ -38,7 +38,6 @@ export default function getKendoProductionColumns({
       format: isTextCol ? undefined : valueFormat || '{0:0.000}',
       editable: false,
       align: isTextCol ? 'left' : 'right',
-      widthT: colDef?.widthT,
     }
   })
 }

@@ -11,7 +11,7 @@
     "title": "UOM",
     "editable": false,
     "isDisabled": true,
-    "fixedWidth": 50
+    "fixedWidth": 70
   },
   {
     "title": "April",
@@ -22,7 +22,7 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearBudgetApril",
@@ -30,14 +30,14 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearProposedApril",
         "title": "Proposed",
         "isDisabled": true,
         "type": "numberNonGrey",
-        "fixedWidth": 70,
+        "fixedWidth": 100,
         "editable": true
       }
     ]
@@ -51,7 +51,7 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearBudgetMay",
@@ -59,14 +59,14 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearProposedMay",
         "title": "Proposed",
         "editable": true,
         "type": "numberNonGrey",
-        "fixedWidth": 70
+        "fixedWidth": 100
       }
     ]
   },
@@ -79,7 +79,7 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearBudgetJune",
@@ -87,14 +87,14 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearProposedJune",
         "title": "Proposed",
         "editable": true,
         "type": "numberNonGrey",
-        "fixedWidth": 70
+        "fixedWidth": 100
       }
     ]
   },
@@ -107,7 +107,7 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearBudgetJuly",
@@ -115,14 +115,14 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearProposedJuly",
         "title": "Proposed",
         "editable": true,
         "type": "numberNonGrey",
-        "fixedWidth": 70
+        "fixedWidth": 100
       }
     ]
   },
@@ -135,7 +135,7 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearBudgetAugust",
@@ -143,14 +143,14 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearProposedAugust",
         "title": "Proposed",
         "editable": true,
         "type": "numberNonGrey",
-        "fixedWidth": 70
+        "fixedWidth": 100
       }
     ]
   },
@@ -163,7 +163,7 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearBudgetSeptember",
@@ -171,14 +171,14 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearProposedSeptember",
         "title": "Proposed",
         "editable": true,
         "type": "numberNonGrey",
-        "fixedWidth": 70
+        "fixedWidth": 100
       }
     ]
   },
@@ -191,7 +191,7 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearBudgetOctober",
@@ -199,14 +199,14 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearProposedOctober",
         "title": "Proposed",
         "editable": true,
         "type": "numberNonGrey",
-        "fixedWidth": 70
+        "fixedWidth": 100
       }
     ]
   },
@@ -219,7 +219,7 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearBudgetNovember",
@@ -227,14 +227,14 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearProposedNovember",
         "title": "Proposed",
         "editable": true,
         "type": "numberNonGrey",
-        "fixedWidth": 70
+        "fixedWidth": 100
       }
     ]
   },
@@ -247,7 +247,7 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearBudgetDecember",
@@ -255,14 +255,14 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearProposedDecember",
         "title": "Proposed",
         "editable": true,
         "type": "numberNonGrey",
-        "fixedWidth": 70
+        "fixedWidth": 100
       }
     ]
   },
@@ -275,7 +275,7 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearBudgetJanuary",
@@ -283,14 +283,14 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearProposedJanuary",
         "title": "Proposed",
         "editable": true,
         "type": "numberNonGrey",
-        "fixedWidth": 70
+        "fixedWidth": 100
       }
     ]
   },
@@ -303,7 +303,7 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearBudgetFebruary",
@@ -311,14 +311,14 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearProposedFebruary",
         "title": "Proposed",
         "editable": true,
         "type": "numberNonGrey",
-        "fixedWidth": 70
+        "fixedWidth": 100
       }
     ]
   },
@@ -331,7 +331,7 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearBudgetMarch",
@@ -339,14 +339,14 @@
         "editable": false,
         "isDisabled": true,
         "type": "number",
-        "fixedWidth": 70
+        "fixedWidth": 100
       },
       {
         "field": "currYearProposedMarch",
         "title": "Proposed",
         "editable": true,
         "type": "numberNonGrey",
-        "fixedWidth": 70
+        "fixedWidth": 100
       }
     ]
   },

@@ -4,7 +4,6 @@ export const SlowDownVcmColumns = [
     title: 'Slowdown Desc',
     editable: true,
     type: 'discriptionDrpdwn',
-    minWidth: 200,
   },
 
   {
@@ -12,8 +11,6 @@ export const SlowDownVcmColumns = [
     title: 'maintenanceId',
     editable: false,
     hidden: true,
-    minWidth: 200,
-    isVisible: false,
   },
 
   {
@@ -21,7 +18,6 @@ export const SlowDownVcmColumns = [
     title: 'SD- From',
     type: 'dateTime',
     editable: true,
-    minWidth: 100,
   },
 
   {
@@ -29,14 +25,12 @@ export const SlowDownVcmColumns = [
     title: 'SD- To',
     type: 'dateTime',
     editable: true,
-    minWidth: 100,
   },
 
   {
     field: 'durationInHrs',
     title: 'Duration (hrs)',
     editable: true,
-    minWidth: 100,
   },
 
   {
@@ -44,14 +38,12 @@ export const SlowDownVcmColumns = [
     title: 'Rate (TPH)',
     editable: true,
     type: 'number',
-    minWidth: 100,
   },
 
   {
     field: 'remark',
     title: 'Remarks',
     editable: true,
-    minWidth: 100,
   },
 ]
 
@@ -60,7 +52,6 @@ export const SlowDownDmdVcmColumns = [
     field: 'discription',
     title: 'Slowdown Desc',
     editable: true,
-    minWidth: 200,
   },
 
   {
@@ -68,7 +59,6 @@ export const SlowDownDmdVcmColumns = [
     title: 'maintenanceId',
     editable: false,
     hidden: true,
-    isVisible: false,
   },
 
   {
@@ -76,7 +66,6 @@ export const SlowDownDmdVcmColumns = [
     title: 'SD- From',
     type: 'dateTime',
     editable: true,
-    minWidth: 100,
   },
 
   {
@@ -84,14 +73,12 @@ export const SlowDownDmdVcmColumns = [
     title: 'SD- To',
     type: 'dateTime',
     editable: true,
-    minWidth: 100,
   },
 
   {
     field: 'durationInHrs',
     title: 'Duration (hrs)',
     editable: true,
-    minWidth: 100,
   },
 
   {
@@ -99,14 +86,12 @@ export const SlowDownDmdVcmColumns = [
     title: 'Rate (TPH)',
     editable: true,
     type: 'number',
-    minWidth: 100,
   },
 
   {
     field: 'remark',
     title: 'Remarks',
     editable: true,
-    minWidth: 100,
   },
 ]
 export const ShutdownConsumptionVcmColumns = [
@@ -115,8 +100,6 @@ export const ShutdownConsumptionVcmColumns = [
     headerName: 'Type',
     width: 120,
     hidden: true,
-    isVisible: false,
-    minWidth: 100,
   },
   {
     field: 'materialFkId',
@@ -124,16 +107,16 @@ export const ShutdownConsumptionVcmColumns = [
     minWidth: 150,
     editable: false,
     hidden: true,
-    isVisible: false,
+    width: 120,
   },
   {
     field: 'productName',
     headerName: 'Particulars',
-    minWidth: 180,
+    width: 180,
     editable: false,
   },
   // { field: 'UOM/MT', headerName: 'UOM', width: 150, editable: false },
-  { field: 'UOM', headerName: 'UOM/MT', minWidth: 80, editable: false },
+  { field: 'UOM', headerName: 'UOM/MT', width: 150, editable: false },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
@@ -149,7 +132,6 @@ export const ShutdownConsumptionVcmColumns = [
       editable: false,
       isDisabled: true,
       monthNumber: monthIndex,
-      minWidth: 100,
     }
   }),
 
@@ -158,13 +140,10 @@ export const ShutdownConsumptionVcmColumns = [
     headerName: 'Remark',
     width: 120,
     editable: false,
-    minWidth: 100,
   },
   {
     field: 'idFromApi',
     headerName: 'idFromApi',
     hidden: true,
-    isVisible: false,
-    minWidth: 100,
   },
 ]

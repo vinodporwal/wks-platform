@@ -8,7 +8,6 @@ import { useSelector } from 'react-redux'
 import { validateFields } from 'utils/validationUtils'
 import getSiteAOPReportColumns from 'components/colums/SiteReportColums'
 import { formatDate } from 'utils/dateUtils'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 export default function MajorPeopleInitiative() {
   const keycloak = useSession()
@@ -185,7 +184,12 @@ export default function MajorPeopleInitiative() {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <KendoDataTables
         columns={columns}

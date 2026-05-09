@@ -14,7 +14,6 @@ import {
   ExcelExportColumn,
 } from '@progress/kendo-react-excel-export'
 import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { CrackerReportsApiDataService } from 'services/cracker-reports-api-service'
@@ -305,7 +304,12 @@ const RawDataSet = () => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       {/* Hidden ExcelExport for steam grids only */}
       <div style={{ display: 'none' }}>
@@ -337,7 +341,7 @@ const RawDataSet = () => {
         <Button
           variant='contained'
           onClick={handleExportClick}
-          className='btn-export'
+          className='btn-save'
         >
           Export
         </Button>

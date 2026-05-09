@@ -39,7 +39,6 @@ const MonthDropdownEditor = (props) => {
       dataItemKey='value'
       value={selectedMonth}
       onChange={handleChange}
-      className='dropdown-editor'
       style={{ width: '100%' }} // <--- use full cell width
     />
   )

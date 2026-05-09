@@ -3,6 +3,8 @@ import { Box } from '@mui/material'
 import MuiAccordion from '@mui/material/Accordion'
 import MuiAccordionDetails from '@mui/material/AccordionDetails'
 import MuiAccordionSummary from '@mui/material/AccordionSummary'
+import Backdrop from '@mui/material/Backdrop'
+import CircularProgress from '@mui/material/CircularProgress'
 import { styled } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
@@ -19,10 +21,8 @@ import {
 import { Button } from '@mui/material'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import { FileExportIcon } from 'assets/images/icons'
+import NormsHistorianBasisPe from './NormsHistorianBasisPe'
 import AnnualAOPCostDynamic from './AnnualAOPCostDynamic'
-
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -53,7 +53,6 @@ const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
 
 const AnnualAopCost = () => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const [rowsProduction, setRowsProduction] = useState([])
   const [rowsPrice, setRowsPrice] = useState([])
@@ -246,8 +245,13 @@ const AnnualAopCost = () => {
   }
 
   return (
-    <div className='configuration-accordion-wrapper'>
-      <LoaderBackdrop open={!!loading} />
+    <div>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <div style={{ display: 'none' }}>
         {[rowsProduction, rowsPrice, rowsNorm, rowsQuantity, rowsNormCost].map(
@@ -279,20 +283,12 @@ const AnnualAopCost = () => {
       </div>
 
       {!isOldYear && (
-        <Box display='flex' justifyContent='flex-end' sx={{ marginBottom: '8px', mt: '5px' }}>
+        <Box display='flex' justifyContent='flex-end' mb='2px'>
           <Button
             variant='contained'
             onClick={exportAllGrids}
-            className='btn-export'
-            //ANY ONE CAN EXPORT
+            className='btn-save'
             // disabled={READ_ONLY}
-            startIcon={
-              <Box
-                component='img'
-                src={FileExportIcon}
-                className='w16-icon'
-              />
-            }
           >
             Export
           </Button>
@@ -338,15 +334,14 @@ const AnnualAopCost = () => {
         ].map(
           (section, i) =>
             section.visible && (
-              <CustomAccordion key={i} defaultExpanded disableGutters className='k-table-box'>
-                <CustomAccordionSummary
-                  expandIcon={<ExpandMoreIcon sx={{ fontSize: '1.2rem' }} />}
-                  className='aop-report-accordion-summary'>
+              <CustomAccordion key={i} defaultExpanded disableGutters>
+                <CustomAccordionSummary>
                   <Typography component='span' className='grid-title'>
                     {section.label}
                   </Typography>
                 </CustomAccordionSummary>
-                <CustomAccordionDetails sx={{ padding: '0px 0px 1px' }}>
+                <CustomAccordionDetails>
+                  <Box sx={{ width: '100%', margin: 0 }}>
                     <KendoDataGrid
                       rows={section.rows}
                       columns={section.cols}
@@ -357,6 +352,7 @@ const AnnualAopCost = () => {
                         isHeight: section?.rows?.length > 15,
                       }}
                     />
+                  </Box>
                 </CustomAccordionDetails>
               </CustomAccordion>
             ),

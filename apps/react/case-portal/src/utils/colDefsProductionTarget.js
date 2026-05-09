@@ -10,15 +10,11 @@ export const createColDefs = ({
       field: 'idFromApi',
       title: 'ID',
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
     includeIds && {
       field: 'aopCaseId',
       title: 'Case ID',
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
     {
       field: 'materialFKId',
@@ -26,15 +22,12 @@ export const createColDefs = ({
       widthT: 100,
       editable,
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
     {
       field: 'productName',
       title: 'Particulars',
       widthT: 100,
       editable,
-      minWidth: 100,
     },
     // Months dynamically
     ...[4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3].map((month) => ({
@@ -45,7 +38,6 @@ export const createColDefs = ({
       align: 'left',
       headerAlign: 'left',
       type: 'number',
-      minWidth: 100,
     })),
     includeRemarks && {
       field: 'remarks',
@@ -54,22 +46,17 @@ export const createColDefs = ({
       align: 'left',
       headerAlign: 'left',
       widthT: 150,
-      minWidth: 100,
     },
     includeIds && {
       field: 'avgTph',
       title: 'AVG',
       editable: false,
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
     includeIds && {
       field: 'isEditable',
       title: 'isEditable',
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
   ].filter(Boolean) // remove falsy items
 

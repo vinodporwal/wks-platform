@@ -10,7 +10,6 @@ import { LineConfigurationApiDataService } from 'services/line-configuration-api
 import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
 import KendoDataTables from './index'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const LineConfiguration = ({
   permissions,
@@ -433,7 +432,13 @@ const LineConfiguration = ({
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
+
       <KendoDataTables
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}

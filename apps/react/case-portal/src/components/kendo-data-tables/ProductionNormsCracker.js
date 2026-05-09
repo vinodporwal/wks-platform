@@ -15,7 +15,6 @@ import getEnhancedColDefs from '../data-tables/CommonHeader/Kendo_ProductionAopH
 import KendoDataTables from './index'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const ProductionNormsCracker = ({ permissions }) => {
   const [editResetKey, setEditResetKey] = useState(0)
 
@@ -751,11 +750,16 @@ const ProductionNormsCracker = ({ permissions }) => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       {/* SHOW THIS GRID TO ALL SITES */}
-      {!CRACKER_HMD && !CRACKER_DMD && (
-        <KendoDataTables
+ {!CRACKER_HMD && !CRACKER_DMD && (
+    <KendoDataTables
           modifiedCells={modifiedCellsC2C3R}
           setModifiedCells={setModifiedCellsC2C3R}
           columns={productionColumnsC2C3R}

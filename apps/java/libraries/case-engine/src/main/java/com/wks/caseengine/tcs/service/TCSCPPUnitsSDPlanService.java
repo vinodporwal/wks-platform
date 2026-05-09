@@ -10,17 +10,17 @@ import com.wks.caseengine.tcs.dto.TCSCPPUnitsSDPlanDTO;
 
 public interface TCSCPPUnitsSDPlanService {
 
-    List<TCSCPPUnitsSDPlanDTO> getTCSCPPUnitsSDPlan(String financialYear, UUID verticalId, UUID siteId);
+    List<TCSCPPUnitsSDPlanDTO> getTCSCPPUnitsSDPlan(String financialYear, UUID siteId);
 
-    AOPMessageVM carryForwardTCSCPPUnitsSDPlan(String financialYear, UUID verticalId, UUID siteId);
+    AOPMessageVM carryForwardTCSCPPUnitsSDPlan(String financialYear, UUID siteId);
 
-    void saveTCSCPPUnitsSDPlan(List<TCSCPPUnitsSDPlanDTO> tcsCppUnitsSDPlanDTOs, UUID verticalId, UUID siteId, String financialYear);
+    void saveTCSCPPUnitsSDPlan(List<TCSCPPUnitsSDPlanDTO> tcsCppUnitsSDPlanDTOs, UUID siteId, String financialYear);
 
     void deleteTCSCPPUnitsSDPlan(UUID id);
     
-    byte[] exportTCSCPPUnitsSDPlan(String financialYear, UUID verticalId, UUID siteId);
+    byte[] exportTCSCPPUnitsSDPlan(String financialYear, UUID siteId);
     
-    AOPMessageVM importExcel(UUID verticalId, UUID siteId, String financialYear, MultipartFile file);
+    AOPMessageVM importExcel(UUID siteId, String financialYear, MultipartFile file);
     
 }
 

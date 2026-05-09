@@ -2,7 +2,6 @@ import { Box, Button, Typography } from '@mui/material'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { DataGrid } from '@mui/x-data-grid'
-import DownloadIcon from '@mui/icons-material/Download'
 import {
   ExcelExport,
   ExcelExportColumn,
@@ -18,7 +17,6 @@ import {
 } from 'utils/CustomAccrodian'
 import ConsumptionNormsHistorianBasis from './ConsumptionNormsHistorianBasis'
 import { DataSetaApiService } from 'services/data-set-api-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const REPORT_TYPE_FOR_ALL = 'NormsHistorian'
 
 const QualityPackagingBasis = () => {
@@ -423,7 +421,12 @@ const QualityPackagingBasis = () => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       {/* Hidden ExcelExport instances for each grid */}
       <div style={{ display: 'none' }}>
@@ -492,7 +495,6 @@ const QualityPackagingBasis = () => {
           <Button
             variant='contained'
             onClick={exportAllGrids}
-            startIcon={<DownloadIcon sx={{ fontSize: 16 }} />}
             className='btn-save'
           >
             Export

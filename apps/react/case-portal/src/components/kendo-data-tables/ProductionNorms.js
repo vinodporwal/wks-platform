@@ -17,7 +17,6 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import AopTabs from 'components/AopTabs'
 import { Box } from '@mui/material'
 import { DataService } from 'services/DataService'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const ProductionNorms = ({ permissions }) => {
   // State for tabs
   const [tabIndex, setTabIndex] = useState(0)
@@ -95,6 +94,10 @@ const ProductionNorms = ({ permissions }) => {
     lowerVertName === 'chemical' &&
     SITE_NAME_LOWERCASE === 'vmd' &&
     plantName === 'acrylonitrile'
+
+  const IS_CHEMICAL_NMD =
+    lowerVertName === 'chemical' && SITE_NAME_LOWERCASE === 'nmd'
+
   const [loading, setLoading] = useState(false)
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -217,7 +220,7 @@ const ProductionNorms = ({ permissions }) => {
         ...row,
         total: row.total ?? findSum('1', row),
       }))
-      if (!IS_CHEMICAL_VMD_ACRYLONITRILE) {
+      if (!IS_CHEMICAL_VMD_ACRYLONITRILE && !IS_CHEMICAL_NMD) {
         const result = validateTotalsWithIIR({
           data: enrichedData,
           rowsInKT,
@@ -536,7 +539,9 @@ const ProductionNorms = ({ permissions }) => {
           originalRemark: product.remark,
           remark: product.remark,
           isEditable:
-            IS_ELASTOMER_JMD_IIR || IS_CHEMICAL_VMD_ACRYLONITRILE
+            IS_ELASTOMER_JMD_IIR ||
+            IS_CHEMICAL_VMD_ACRYLONITRILE ||
+            IS_CHEMICAL_NMD
               ? true
               : false,
           april: product?.april,
@@ -965,8 +970,6 @@ const ProductionNorms = ({ permissions }) => {
       title: 'ID',
       editable: false,
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
 
     {
@@ -974,26 +977,20 @@ const ProductionNorms = ({ permissions }) => {
       title: 'Product',
       widthT: 200,
       editable: false,
-      autoAdjust: false,
-      minWidth: 100,
     },
     {
       field: 'value',
       title: 'Values',
       editable: false,
       type: 'number',
-      widthT: 100,
+      widthT: 200,
       format: valueFormat,
-      autoAdjust: false,
-      minWidth: 100,
     },
     {
       field: 'type',
       title: 'type',
       editable: false,
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
   ]
 
@@ -1013,7 +1010,9 @@ const ProductionNorms = ({ permissions }) => {
   useEffect(() => {
     if (
       validateTotalsWithIIRRef.current &&
-      (IS_ELASTOMER_JMD_IIR || IS_CHEMICAL_VMD_ACRYLONITRILE) &&
+      (IS_ELASTOMER_JMD_IIR ||
+        IS_CHEMICAL_VMD_ACRYLONITRILE ||
+        IS_CHEMICAL_NMD) &&
       rows.length > 0 &&
       (rowsInKT.length > 0 || rowsInMT.length > 0)
     ) {
@@ -1056,6 +1055,7 @@ const ProductionNorms = ({ permissions }) => {
     selectedUnit,
     IS_ELASTOMER_JMD_IIR,
     IS_CHEMICAL_VMD_ACRYLONITRILE,
+    IS_CHEMICAL_NMD,
   ])
 
   useEffect(() => {
@@ -1144,7 +1144,9 @@ const ProductionNorms = ({ permissions }) => {
               ? permissions?.showCalculate ?? true
               : false,
           saveBtn:
-            IS_ELASTOMER_JMD_IIR || IS_CHEMICAL_VMD_ACRYLONITRILE
+            IS_ELASTOMER_JMD_IIR ||
+            IS_CHEMICAL_VMD_ACRYLONITRILE ||
+            IS_CHEMICAL_NMD
               ? true
               : permissions?.saveBtn ?? false,
           units:
@@ -1239,7 +1241,12 @@ const ProductionNorms = ({ permissions }) => {
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>
       )}
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
       {IS_ELASTOMER_JMD && (
         <KendoDataTables
           columns={columnIIR}

@@ -55,12 +55,6 @@ public class TCSSlowdown {
 
 	@Column(name = "UpdatedDateTime")
 	private Date updatedDateTime;
-
-    @Column(name = "Vertical_FK_ID")
-    private UUID verticalFkId;
-
-    @Column(name = "Site_FK_ID")
-    private UUID siteFkId;
 }
 
 

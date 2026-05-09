@@ -20,11 +20,8 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/index'
 import { AOPMaintenanceApiService } from 'services/aop-maintenance-api-service'
 import { getRoleName } from 'services/role-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 export default function AopBudget() {
   const keycloak = useSession()
-
-  // const READ_ONLY = getRoleName(keycloak)
 
   const [row, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -104,7 +101,6 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
-      minWidth: 100,
     },
     {
       field: 'may',
@@ -113,7 +109,6 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
-      minWidth: 100,
     },
     {
       field: 'jun',
@@ -122,7 +117,6 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
-      minWidth: 100,
     },
     {
       field: 'jul',
@@ -131,7 +125,6 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
-      minWidth: 100,
     },
     {
       field: 'aug',
@@ -140,7 +133,6 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
-      minWidth: 100,
     },
     {
       field: 'sep',
@@ -149,7 +141,6 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
-      minWidth: 100,
     },
     {
       field: 'oct',
@@ -158,7 +149,6 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
-      minWidth: 100,
     },
     {
       field: 'nov',
@@ -167,7 +157,6 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
-      minWidth: 100,
     },
     {
       field: 'dec',
@@ -176,7 +165,6 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
-      minWidth: 100,
     },
     {
       field: 'jan',
@@ -185,7 +173,6 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
-      minWidth: 100,
     },
     {
       field: 'feb',
@@ -194,7 +181,6 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
-      minWidth: 100,
     },
     {
       field: 'mar',
@@ -203,7 +189,6 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
-      minWidth: 100,
     },
   ]
 
@@ -223,36 +208,24 @@ export default function AopBudget() {
   ]
 
   const columns = [
-    { field: 'plantName', title: 'Plant', widthT: 100, minWidth: 100 },
-    { field: 'costName', title: 'Cost', widthT: 100, minWidth: 100 },
-    {
-      field: 'budgetType',
-      title: 'Budget Type',
-      widthT: 80,
-      hidden: true,
-      minWidth: 100,
-      isVisibe: false,
-    },
+    { field: 'plantName', title: 'Plant', widthT: 70 },
+    { field: 'costName', title: 'Cost', widthT: 80 },
+    { field: 'budgetType', title: 'Budget Type', widthT: 80, hidden: true },
     {
       field: 'percentChange',
       title: '% Change (+/-)',
       widthT: 105,
       editable: true,
       type: 'percentChange',
-      minWidth: 100,
     },
     // { field: 'symbol', title: '+VE/-VE', width: 120 },
-    ...monthFields.map(
-      ({ field, index, editable, type, format, width, minWidth }) => ({
-        field,
-        title: headerMap[index],
-        editable,
-        type,
-        format,
-        width,
-        minWidth,
-      }),
-    ),
+    ...monthFields.map(({ field, index, editable, type, format, width }) => ({
+      field,
+      title: headerMap[index],
+      editable,
+      type,
+      format,
+    })),
     {
       field: 'allMonthsTotal',
       title: 'Total',
@@ -260,15 +233,8 @@ export default function AopBudget() {
 
       type: 'number',
       format: FORMATE_DECIMAL,
-      minWidth: 100,
     },
-    {
-      field: 'remark',
-      title: 'Remark',
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-    },
+    { field: 'remark', title: 'Remark', editable: true, widthT: 100 },
   ]
 
   const formatPercentChange = (value) => {
@@ -719,7 +685,12 @@ export default function AopBudget() {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       {PLANT_NAME?.toLowerCase() === 'eoeg' && (
         <Typography component='div' className='grid-title'>

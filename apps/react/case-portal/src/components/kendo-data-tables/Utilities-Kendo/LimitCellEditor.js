@@ -35,7 +35,6 @@ const LimitCellEditor = (props) => {
         dataItemKey='value'
         value={currentValueObj}
         onChange={handleChange}
-        className='dropdown-editor'
         style={{ width: '100%' }}
         disabled={dataItem?.uom != '%' || READ_ONLY}
       />

@@ -3,7 +3,6 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import Typography from '@mui/material/Typography'
 import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import Notification from 'components/Utilities/Notification'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
@@ -14,7 +13,6 @@ import {
   CustomAccordionDetails,
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
 const CALL_DELAY_MS = 20
 const MONTH_GRID_NAME = 'Month wise Quantity, Tonnes / Month'
@@ -77,9 +75,6 @@ const BestAchievedReport = () => {
   }
 
   const enrichColumns = useCallback((backendCols = []) => {
-    const filteredCols = backendCols.filter((col) => col.field !== 'GRID_TYPE')
-    const applyFixedWidth = filteredCols.length < 7
-    const fixedWidth = applyFixedWidth ? 150 : 121
     return backendCols.map((col) => {
       const isTextCol = col.type === 'string'
       const isNumberCol = col.type === 'number'
@@ -92,7 +87,6 @@ const BestAchievedReport = () => {
         ...(isNumberCol ? { format: '{0:0.0000}' } : {}),
         editable: false,
         isRightAlligned: isNumberCol ? 'numeric' : undefined,
-        ...(fixedWidth ? { widthT: fixedWidth } : {}),
       }
     })
   }, [])
@@ -222,26 +216,29 @@ const BestAchievedReport = () => {
   const renderTitle = (t) => t
 
   return (
-    <div className='configuration-accordion-wrapper'>
-      <LoaderBackdrop open={!!loading} />
+    <div>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <Box display='flex' flexDirection='column' gap={2}>
         {gridNames.map((name) => {
           const d = dataMap[name] || { rows: [], columns: [] }
           return (
             <div key={name}>
-              <CustomAccordion defaultExpanded disableGutters className='k-table-box'>
+              <CustomAccordion defaultExpanded disableGutters>
                 <CustomAccordionSummary
                   aria-controls={`${name}-content`}
                   id={`${name}-header`}
-                  expandIcon={<ExpandMoreIcon sx={{ fontSize: '1.2rem' }} />}
-                  className='aop-report-accordion-summary'
                 >
                   <Typography component='span' className='grid-title'>
                     {renderTitle(name)}
                   </Typography>
                 </CustomAccordionSummary>
-                <CustomAccordionDetails sx={{ padding: '0px 0px 1px' }}>
+                <CustomAccordionDetails>
                   <Box sx={{ width: '100%', margin: 0 }}>
                     <KendoDataGrid
                       rows={d.rows}

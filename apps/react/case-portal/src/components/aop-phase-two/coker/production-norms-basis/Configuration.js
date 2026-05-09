@@ -7,7 +7,6 @@ import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const Configuration = () => {
   const keycloak = useSession()
@@ -44,8 +43,8 @@ const Configuration = () => {
     {
       field: 'UOM',
       title: 'UOM',
-      widthT: 120,
-      minWidth: 120,
+      widthT: 80,
+      minWidth: 60,
       type: 'text',
       editable: false,
     },
@@ -53,8 +52,8 @@ const Configuration = () => {
       field: 'apr',
       title: headerMap[4],
       editable: true,
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -64,8 +63,8 @@ const Configuration = () => {
       field: 'may',
       title: headerMap[5],
       editable: true,
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -75,8 +74,8 @@ const Configuration = () => {
       field: 'jun',
       title: headerMap[6],
       editable: true,
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -86,8 +85,8 @@ const Configuration = () => {
       field: 'jul',
       title: headerMap[7],
       editable: true,
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -97,8 +96,8 @@ const Configuration = () => {
       field: 'aug',
       title: headerMap[8],
       editable: true,
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -108,8 +107,8 @@ const Configuration = () => {
       field: 'sep',
       title: headerMap[9],
       editable: true,
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -119,8 +118,8 @@ const Configuration = () => {
       field: 'oct',
       title: headerMap[10],
       editable: true,
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -130,8 +129,8 @@ const Configuration = () => {
       field: 'nov',
       title: headerMap[11],
       editable: true,
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -141,8 +140,8 @@ const Configuration = () => {
       field: 'dec',
       title: headerMap[12],
       editable: true,
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -152,8 +151,8 @@ const Configuration = () => {
       field: 'jan',
       title: headerMap[1],
       editable: true,
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -163,8 +162,8 @@ const Configuration = () => {
       field: 'feb',
       title: headerMap[2],
       editable: true,
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -174,8 +173,8 @@ const Configuration = () => {
       field: 'mar',
       title: headerMap[3],
       editable: true,
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -454,7 +453,12 @@ const Configuration = () => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
       <AdvanceKendoTable
         columns={columns}
         rows={rows}

@@ -210,7 +210,7 @@
 .custom-data-grid textarea,
 .custom-data-grid .MuiDataGrid-editInputCell,
 .custom-data-grid .MuiDataGrid-editCell {
-  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+  font-family: 'Roboto', sans-serif !important;
 }
 
 .custom-data-grid .MuiDataGrid-root,
@@ -218,7 +218,7 @@
 .custom-data-grid .MuiDataGrid-columnHeaders,
 .custom-data-grid .MuiDataGrid-columnHeader,
 .custom-data-grid .MuiDataGrid-columnHeaderTitleContainer {
-  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+  font-family: 'Roboto', sans-serif !important;
 }
 
 .custom-data-grid .MuiDataGrid-row.Mui-selected {

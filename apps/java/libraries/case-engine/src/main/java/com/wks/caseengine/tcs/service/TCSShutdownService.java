@@ -15,7 +15,7 @@ public interface TCSShutdownService {
 
     public AOPMessageVM carryForwardTCSShutdown(String plantId, String year);
     
-    AOPMessageVM saveOrUpdate(String plantId, String year, String verticalId, String siteId, List<TCSShutdownDTO> dtoList);
+    AOPMessageVM saveOrUpdate(String plantId, String year, List<TCSShutdownDTO> dtoList);
 
     public AOPMessageVM delete(UUID id);
 
@@ -28,8 +28,6 @@ public interface TCSShutdownService {
     public AOPMessageVM importExcel(
         String plantId,
         String year,
-        String verticalId,
-        String siteId,
         MultipartFile file);
 }
 

@@ -10,7 +10,6 @@ import { getRoleName } from 'services/role-service'
 import { ReportDataService } from 'services/ReportDataService'
 import KendoDataTables from 'components/kendo-data-tables/index'
 import { validateFields } from 'utils/validationUtils'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ShutdownSummaryReport = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -386,7 +385,12 @@ const ShutdownSummaryReport = ({ permissions }) => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <KendoDataTables
         modifiedCells={modifiedCells}

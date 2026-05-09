@@ -1,7 +1,6 @@
 import { Input } from '@progress/kendo-react-inputs'
 import NotificationTST from 'components/Utilities/NotificationTST'
 import { useState, useEffect, useRef } from 'react'
-import { InputBase } from '../../../../../node_modules/@mui/material/index'
 
 export const NoSpinnerNumericEditor = ({ dataItem, field, onChange }) => {
   // Handle nested field paths (e.g., "apr.shutdownHrs")
@@ -59,18 +58,24 @@ export const NoSpinnerNumericEditor = ({ dataItem, field, onChange }) => {
 
   useEffect(() => {
     if (inputRef.current) {
-      inputRef.current.focus()
+      const el = inputRef.current.element || inputRef.current
+      if (el && typeof el.focus === 'function') el.focus()
     }
   }, [])
 
   return (
     <td>
-      <InputBase
-        inputRef={inputRef}
+      <Input
+        ref={inputRef}
         value={localValue}
         onChange={handleChange}
         onBlur={handleBlur}
-        className='input-editor'
+        style={{
+          fontSize: '0.8rem',
+          padding: '2px 2px',
+          height: '22px',
+          lineHeight: '1rem',
+        }}
       />
       <NotificationTST
         open={snackbarOpen}

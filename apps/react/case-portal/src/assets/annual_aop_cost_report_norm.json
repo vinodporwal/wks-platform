@@ -8,7 +8,7 @@
   {
     "field": "particulars",
     "headerName": "Particulars",
-    "minWidth": 130,
+    "widthT": 130,
     "editable": false
   },
 

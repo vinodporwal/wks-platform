@@ -37,7 +37,6 @@ const ProductDropDownEditor = ({
       dataItemKey='value'
       value={currentValueObj}
       onChange={handleChange}
-      className='dropdown-editor'
       style={{ width: '100%' }}
     />
   )

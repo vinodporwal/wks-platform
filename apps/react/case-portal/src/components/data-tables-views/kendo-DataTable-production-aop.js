@@ -272,7 +272,6 @@ const ProductionAopView = ({
           allAction: !isOldYear,
           showCalculate: !isOldYear,
           showTitle: true,
-          showExport: true,
           showCalculateVisibility:
             Object.keys(calculationObject || {}).length > 0 ? true : false,
         }}

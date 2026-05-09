@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef } from 'react'
-import { InputBase, Box } from '@mui/material'
+import { Input } from '@progress/kendo-react-inputs'
 import NotificationTST from 'components/Utilities/NotificationTST'
+import { useState, useEffect, useRef } from 'react'
 
 export const NoSpinnerNumericEditor = ({
   dataItem,
   field,
   onChange,
-  maxLength,
+  maxLength = 30,
 }) => {
   const initialValue = dataItem[field] ?? ''
   const [localValue, setLocalValue] = useState(initialValue)
@@ -24,7 +24,7 @@ export const NoSpinnerNumericEditor = ({
       if (dataItem?.productName?.trim().toLowerCase() === 'tst') {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Please enter a value between 100 and 370!',
+          message: 'Please enter a value between 100 and 370 !',
           severity: 'warning',
         })
       }
@@ -37,22 +37,28 @@ export const NoSpinnerNumericEditor = ({
       isFirstRender.current = false
       return
     }
+
     const handler = setTimeout(() => {
       if (localValue !== initialValue) {
         onChange({ dataItem, field, value: localValue })
       }
     }, 300)
+
     return () => clearTimeout(handler)
   }, [localValue, dataItem, field, onChange, initialValue])
 
   return (
     <>
-      <InputBase
+      <Input
         value={localValue}
         onChange={handleChange}
-        autoComplete='off'
         maxLength={maxLength}
-        className='input-editor'
+        style={{
+          fontSize: '0.8rem',
+          padding: '2px 2px',
+          height: '22px',
+          lineHeight: '1rem',
+        }}
       />
       <NotificationTST
         open={snackbarOpen}

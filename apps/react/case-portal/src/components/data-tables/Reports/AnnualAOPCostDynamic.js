@@ -16,7 +16,6 @@ import {
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
 import ConsumptionNormsHistorianBasis from './ConsumptionNormsHistorianBasis'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const REPORT_TYPE_FOR_ALL = 'AnnualAOPCost'
 
 const AnnualAOPCostDynamic = () => {
@@ -421,7 +420,12 @@ const AnnualAOPCostDynamic = () => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       {/* Hidden ExcelExport instances for each grid */}
       <div style={{ display: 'none' }}>

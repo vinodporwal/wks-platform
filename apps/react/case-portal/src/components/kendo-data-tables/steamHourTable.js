@@ -375,8 +375,6 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
         hidden: hiddenFields.includes(col.field) ? true : col.hidden,
         type: months.includes(col.field) ? 'number' : undefined,
         format: months.includes(col.field) ? FORMATE_DECIMAL : undefined,
-        isVisible: hiddenFields.includes(col.field) ? false : true,
-        minWidth: 100,
       }))
 
       setColumns(dynamicColumns)
@@ -538,7 +536,6 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
       editable: false,
       align: 'right',
       headerAlign: 'left',
-      minWidth: 100,
     }))
   }
 
@@ -547,8 +544,6 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
-    minWidth: 100,
-    isVisible: false,
   }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {

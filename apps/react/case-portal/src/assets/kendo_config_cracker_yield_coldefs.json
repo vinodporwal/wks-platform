@@ -3,8 +3,7 @@
     "field": "particulars",
     "title": "Particulars",
     "editable": false,
-    "hidden": false,
-    "minWidth": 140
+    "hidden": false
   },
 
   {
@@ -12,79 +11,69 @@
     "title": "5F-C2C3",
     "editable": true,
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 140
+    "format": "{0:#.##}"
   },
   {
     "field": "fiveFPropane",
     "title": "5F-Propane",
     "editable": true,
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 140
+    "format": "{0:#.##}"
   },
   {
     "field": "fiveFEthane",
     "title": "5F-Ethane",
     "editable": true,
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 140
+    "format": "{0:#.##}"
   },
   {
     "field": "fourFC2C3",
     "title": "4F-C2C3",
     "editable": true,
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 140
+    "format": "{0:#.##}"
   },
   {
     "field": "fourFPropane",
     "title": "4F-Propane",
     "editable": true,
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 140
+    "format": "{0:#.##}"
   },
   {
     "field": "fourFEthane",
     "title": "4F-Ethane",
     "editable": true,
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 140
+    "format": "{0:#.##}"
   },
   {
     "field": "fourFDC2C3",
     "title": "4FD-C2C3",
     "editable": true,
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 140
+    "format": "{0:#.##}"
   },
   {
     "field": "fourFDPropane",
     "title": "4FD-Propane",
     "editable": true,
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 140
+    "format": "{0:#.##}"
   },
   {
     "field": "fourFDEthane",
     "title": "4FD-Ethane",
     "editable": true,
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 140
+    "format": "{0:#.##}"
   },
 
   {
     "field": "NormParameterFKID",
     "title": "NormParameterFKID",
     "filterable": false,
-    "hidden": true,
-    "isVisible": false
+    "hidden": true
   }
 ]

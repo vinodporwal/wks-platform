@@ -57,7 +57,6 @@ const DatePickerNoLimit = ({ dataItem, field, onChange, min, max }) => {
             })
           }
         }}
-        className='input-editor'
       />
     </td>
   )

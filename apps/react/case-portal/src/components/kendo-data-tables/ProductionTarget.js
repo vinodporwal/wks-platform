@@ -23,7 +23,6 @@ import {
   getColDefsPercentageSummaryElastomerJMD,
 } from './Utilities-Kendo/productionTargetColDefs'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ProductionTarget = ({ permissions }) => {
   const [editResetKey, setEditResetKey] = useState(0)
@@ -347,6 +346,7 @@ const ProductionTarget = ({ permissions }) => {
             return true
           }
         } else {
+          // For all other verticals, validate all 12 months
           for (const month of months) {
             const value = row[month]
             if (
@@ -390,7 +390,7 @@ const ProductionTarget = ({ permissions }) => {
     } catch (error) {
       console.log('Facing issue at saving data', error)
     }
-  }, [modifiedCells, selectedUnit, IS_ELASTOMER_JMD])
+  }, [modifiedCells, selectedUnit, IS_ELASTOMER_JMD]) // ? add IS_ELASTOMER_JMD to deps
 
   const fetchData = async (unit = selectedUnit) => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
@@ -1095,7 +1095,12 @@ const ProductionTarget = ({ permissions }) => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       {/* DESIGN_CAPACITY */}
       {conditionForFirst && (

@@ -10,12 +10,10 @@ import {
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { Stack } from '../../../../../node_modules/@mui/material/index'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const PCGOutlook = ({
   PLANT_ID,
   SITE_ID,
-  VERTICAL_ID,
   AOP_YEAR,
   currentTab,
   snackbarData,
@@ -44,7 +42,6 @@ const PCGOutlook = ({
 
       const response = await TcsOutputApiService.getPcgOutlookData(
         keycloak,
-        VERTICAL_ID,
         SITE_ID,
         AOP_YEAR,
       )
@@ -113,8 +110,8 @@ const PCGOutlook = ({
         field: 'jan',
         title: headerMap[1],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -122,8 +119,8 @@ const PCGOutlook = ({
         field: 'feb',
         title: headerMap[2],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -131,8 +128,8 @@ const PCGOutlook = ({
         field: 'mar',
         title: headerMap[3],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -140,8 +137,8 @@ const PCGOutlook = ({
         field: 'apr',
         title: headerMap[4],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -149,8 +146,8 @@ const PCGOutlook = ({
         field: 'may',
         title: headerMap[5],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -158,8 +155,8 @@ const PCGOutlook = ({
         field: 'jun',
         title: headerMap[6],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -167,8 +164,8 @@ const PCGOutlook = ({
         field: 'jul',
         title: headerMap[7],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -176,8 +173,8 @@ const PCGOutlook = ({
         field: 'aug',
         title: headerMap[8],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -185,8 +182,8 @@ const PCGOutlook = ({
         field: 'sep',
         title: headerMap[9],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -194,8 +191,8 @@ const PCGOutlook = ({
         field: 'oct',
         title: headerMap[10],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -203,8 +200,8 @@ const PCGOutlook = ({
         field: 'nov',
         title: headerMap[11],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -212,8 +209,8 @@ const PCGOutlook = ({
         field: 'dec',
         title: headerMap[12],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -239,7 +236,6 @@ const PCGOutlook = ({
     try {
       await TcsOutputApiService.exportPcgOutlookExcel(
         keycloak,
-        VERTICAL_ID,
         SITE_ID,
         AOP_YEAR,
       )
@@ -291,7 +287,12 @@ const PCGOutlook = ({
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <Stack sx={{ mt: 2 }}>
         <AdvanceKendoTable

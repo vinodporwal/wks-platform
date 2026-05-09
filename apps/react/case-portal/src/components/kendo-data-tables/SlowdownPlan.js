@@ -10,7 +10,6 @@ import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 export default function ShutdownSlowdownPlan() {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -61,8 +60,6 @@ export default function ShutdownSlowdownPlan() {
       title: 'ID',
       editable: false,
       hidden: true,
-      minWidth: 100,
-      isVisible: false,
     },
     {
       field: 'sno',
@@ -71,49 +68,32 @@ export default function ShutdownSlowdownPlan() {
       editable: false,
       align: 'right',
       format: '{0:0}',
-      minWidth: 100,
     },
-    {
-      field: 'plant',
-      title: 'Plant',
-      widthT: 120,
-      editable: false,
-      minWidth: 100,
-    },
+    { field: 'plant', title: 'Plant', widthT: 120, editable: false },
     {
       field: 'noOfShutdownDays',
       title: 'No of S/D days',
       editable: true,
       type: 'number',
-      minWidth: 100,
     },
     {
       field: 'noOfSlowdownDays',
       title: 'No of slowdown days',
       editable: true,
       type: 'number',
-      minWidth: 100,
     },
     {
       field: 'monthPlan',
       title: 'Month',
       type: 'monthDropdownPEPP',
       editable: true,
-      minWidth: 100,
     },
     {
       field: 'shutdownSlowdownPlan',
       title: 'S/D Plan',
       editable: true,
-      minWidth: 100,
     },
-    {
-      field: 'remarks',
-      title: 'Remarks',
-      widthT: 150,
-      editable: true,
-      minWidth: 100,
-    },
+    { field: 'remarks', title: 'Remarks', widthT: 150, editable: true },
   ]
 
   const fetchData = useCallback(async () => {
@@ -304,7 +284,12 @@ export default function ShutdownSlowdownPlan() {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <KendoDataTables
         columns={shutdownSlowdownColumns}

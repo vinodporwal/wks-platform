@@ -10,7 +10,6 @@ import { useSession } from 'SessionStoreContext'
 import { ReportDataService } from 'services/ReportDataService'
 import KendoDataTables from 'components/kendo-data-tables/index'
 import { validateFields } from 'utils/validationUtils'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const MonthwiseOperatingHours = () => {
   const keycloak = useSession()
@@ -213,7 +212,12 @@ const MonthwiseOperatingHours = () => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <KendoDataTables
         rows={rows}

@@ -21,7 +21,6 @@ import {
 import KendoDataTables from './index'
 import { ConsumptionNormsApiService } from 'services/consumption-norms-api-service'
 import { getRoleName } from 'services/role-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { DataService } from 'services/DataService'
 import { shouldShowReleaseButton } from 'utils/releaseButtonUtils'
 import { useMenuContext } from 'menu/menuProvider'
@@ -673,7 +672,7 @@ const ConsumptionNorms = () => {
         IS_PVC_DMD
           ? true
           : false,
-      dropdownLabel: 'Grade',
+      dropdownLabel: 'Select Grade',
       downloadExcelBtnFromUI:
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
@@ -710,11 +709,26 @@ const ConsumptionNorms = () => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <div>
         {
           <Box>
+            {/* <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 0 }}>
+              <Button
+                variant='contained'
+                onClick={handleRelease}
+                disabled={isReleaseDisabled || READ_ONLY}
+                className='btn-release'
+              >
+                Release
+              </Button>
+            </Box> */}
             <KendoDataTables
               autoHeight={true}
               modifiedCells={modifiedCells}

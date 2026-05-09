@@ -7,36 +7,30 @@ export const TcsWorkflowApiService = {
   getWorkflowVariables,
   checkWorkflowStatus,
   triggerWorkflow,
+  getPlantwiseHistory,
   getPlantDataForApproveReject,
   getAuditTrail,
 
   // ============ Plant Manager APIs ============
-  savePlantManagerRemark,
-
-  // ============ CTS Tech Manager APIs ============
-  saveCTSTechManagerRemark,
-
-  // ============ Combined Plant Submission (Both Roles Approved) ============
-  submitPlantToAOM,
+  saveRemark,
+  getPlantManagerSubmissionHistory,
 
   // ============ EPS Engineer APIs ============
   epsEngineerSingleApproveReject,
   epsEngineerMultipleApproveReject,
   epsEngineerSubmission,
+  getEpsEngineerSubmissionHistory,
 
-  // ============ CTS Head APIs ============
+  // ============ CTS/EPS Head APIs ============
   ctsHeadApproveReject,
   ctsHeadSubmission,
+  getCtsHeadSubmissionHistory,
   getCtsHeadApproveRejectAuditTrail,
-
-  // ============ EPS Head APIs ============
-  epsHeadApproveReject,
-  epsHeadSubmission,
-  getEPSHeadApproveRejectAuditTrail,
 
   // ============ Cluster Head APIs ============
   clusterHeadApproveReject,
   clusterHeadSubmission,
+  getClusterHeadSubmissionHistory,
   getClusterHeadApproveRejectAuditTrail,
 
   // ============ Reset Workflow API ============
@@ -109,13 +103,40 @@ async function triggerWorkflow(keycloak, verticalId, siteId, aopYear) {
   }
 }
 
+async function getPlantwiseHistory(
+  keycloak,
+  plantId,
+  siteId,
+  verticalId,
+  financialYear,
+) {
+  const url = `${Config.CaseEngineUrl}/task/plant-submission-audit-trail-by-tab/${plantId}/${siteId}/${verticalId}/${financialYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const data = await json(keycloak, resp)
+
+    return data
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
 async function getPlantDataForApproveReject(
   keycloak,
   siteId,
   verticalId,
   year,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/aom-approve-reject-audit-trail/${siteId}/${verticalId}/${year}`
+  const url = `${Config.CaseEngineUrl}/task/ebs-approve-reject-audit-trail/${siteId}/${verticalId}/${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -139,19 +160,17 @@ async function getPlantDataForApproveReject(
 // ============ PLANT MANAGER APIs ============
 // ========================================================================
 
-async function savePlantManagerRemark(payload) {
-  const {
-    keycloak,
-    plantId,
-    plantName,
-    siteId,
-    verticalId,
-    userRole,
-    userName,
-    remark,
-    aopYear,
-  } = payload
-
+async function saveRemark(
+  keycloak,
+  plantId,
+  plantName,
+  siteId,
+  verticalId,
+  userRole,
+  userName,
+  remark,
+  aopYear,
+) {
   const url = `${Config.CaseEngineUrl}/task/complete-plant-submission-task/${plantName}/${siteId}/${aopYear}`
   const headers = {
     Accept: 'application/json',
@@ -185,98 +204,26 @@ async function savePlantManagerRemark(payload) {
   }
 }
 
-// ========================================================================
-// ============ CTS TECH MANAGER APIs ============
-// ========================================================================
-
-async function saveCTSTechManagerRemark(payload) {
-  const {
-    keycloak,
-    plantId,
-    plantName,
-    siteId,
-    verticalId,
-    userRole,
-    userName,
-    remark,
-    aopYear,
-  } = payload
-
-  const url = `${Config.CaseEngineUrl}/task/complete-cts-tech-task/${plantName}/${siteId}/${aopYear}`
+async function getPlantManagerSubmissionHistory(
+  keycloak,
+  plantId,
+  siteId,
+  verticalId,
+  financialYear,
+) {
+  const url = `${Config.CaseEngineUrl}/task/plant-submission-audit-trail/${plantId}/${siteId}/${verticalId}/${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
-  const body = JSON.stringify({
-    plantId,
-    plantName,
-    siteId,
-    verticalId,
-    submittedBy: getRoleLabel(userRole),
-    userName,
-    submissionRemark: remark,
-  })
   try {
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers,
-      body,
-    })
+    const resp = await fetch(url, { method: 'GET', headers })
     if (!resp.ok) {
       throw new Error(`HTTP error! Status: ${resp.status}`)
     }
-    // Backend returns plain text, not JSON
-    const result = await resp.text()
-    return { success: true, message: result }
-  } catch (e) {
-    console.log(e)
-    return await Promise.reject(e)
-  }
-}
-
-// ========================================================================
-// ============ COMBINED PLANT SUBMISSION (Both Roles Approved) ============
-// ========================================================================
-
-async function submitPlantToAOM(payload) {
-  const {
-    keycloak,
-    plantId,
-    plantName,
-    siteId,
-    verticalId,
-    userRole,
-    userName,
-    aopYear,
-  } = payload
-
-  const url = `${Config.CaseEngineUrl}/task/complete-plant-to-aom/${plantName}/${siteId}/${aopYear}`
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  const body = JSON.stringify({
-    plantId,
-    plantName,
-    siteId,
-    verticalId,
-    submittedBy: getRoleLabel(userRole),
-    userName,
-  })
-  try {
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers,
-      body,
-    })
-    if (!resp.ok) {
-      throw new Error(`HTTP error! Status: ${resp.status}`)
-    }
-    // Backend returns plain text, not JSON
-    const result = await resp.text()
-    return { success: true, message: result }
+    const data = await json(keycloak, resp)
+    return data
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)
@@ -299,7 +246,7 @@ async function epsEngineerSingleApproveReject(
   userName,
   plantName,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/aom-approve-reject/${plantName}/${siteId}/${approvalStatus}/${year}`
+  const url = `${Config.CaseEngineUrl}/task/ebs-approve-reject/${plantName}/${siteId}/${approvalStatus}/${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -339,7 +286,7 @@ async function epsEngineerMultipleApproveReject(
   year,
   plantSubmissionList,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/bulk-aom-approve-reject/${siteId}/${approvalStatus}/${year}`
+  const url = `${Config.CaseEngineUrl}/task/bulk-ebs-approve-reject/${siteId}/${approvalStatus}/${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -374,7 +321,7 @@ async function epsEngineerSubmission(
   userRole,
   userName,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/aom-submission/${siteId}/${financialYear}`
+  const url = `${Config.CaseEngineUrl}/task/ebs-submission/${siteId}/${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -405,29 +352,55 @@ async function epsEngineerSubmission(
   }
 }
 
+async function getEpsEngineerSubmissionHistory(
+  keycloak,
+  siteId,
+  verticalId,
+  financialYear,
+) {
+  const url = `${Config.CaseEngineUrl}/task/ebs-submission-audit-trail/${siteId}/${verticalId}/${financialYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const data = await json(keycloak, resp)
+
+    return data
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
 // ========================================================================
-// ============ CTS HEAD APIs ============
+// ============ CTS/EPS HEAD APIs ============
 // ========================================================================
 
-async function ctsHeadApproveReject(payload, approvalStatus) {
-  const {
-    keycloak,
-    SITE_ID,
-    AOP_YEAR,
-    remark,
-    userRole,
-    userName,
-    VERTICAL_ID,
-  } = payload
-  const url = `${Config.CaseEngineUrl}/task/cts-approve-reject/${SITE_ID}/${approvalStatus}/${AOP_YEAR}`
+async function ctsHeadApproveReject(
+  keycloak,
+  siteId,
+  approvalStatus,
+  financialYear,
+  remark,
+  userRole,
+  userName,
+  verticalId,
+) {
+  const url = `${Config.CaseEngineUrl}/task/cts-approve-reject/${siteId}/${approvalStatus}/${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
   const body = JSON.stringify({
-    siteId: SITE_ID,
-    verticalId: VERTICAL_ID,
+    siteId,
+    verticalId,
     submissionRemark: remark,
     submittedBy: getRoleLabel(userRole),
     userName,
@@ -450,25 +423,24 @@ async function ctsHeadApproveReject(payload, approvalStatus) {
   }
 }
 
-async function ctsHeadSubmission(payload) {
-  const {
-    keycloak,
-    SITE_ID,
-    AOP_YEAR,
-    remark,
-    userRole,
-    userName,
-    VERTICAL_ID,
-  } = payload
-  const url = `${Config.CaseEngineUrl}/task/cts-submission/${SITE_ID}/${AOP_YEAR}`
+async function ctsHeadSubmission(
+  keycloak,
+  siteId,
+  financialYear,
+  remark,
+  userRole,
+  userName,
+  verticalId,
+) {
+  const url = `${Config.CaseEngineUrl}/task/cts-submission/${siteId}/${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
   const body = JSON.stringify({
-    siteId: SITE_ID,
-    verticalId: VERTICAL_ID,
+    siteId,
+    verticalId,
     submissionRemark: remark,
     submittedBy: getRoleLabel(userRole),
     userName,
@@ -485,6 +457,32 @@ async function ctsHeadSubmission(payload) {
     // Backend returns plain text, not JSON
     const result = await resp.text()
     return { success: true, message: result }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getCtsHeadSubmissionHistory(
+  keycloak,
+  siteId,
+  verticalId,
+  financialYear,
+) {
+  const url = `${Config.CaseEngineUrl}/task/cts-submission-audit-trail/${siteId}/${verticalId}/${financialYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const data = await json(keycloak, resp)
+
+    return data
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)
@@ -518,28 +516,28 @@ async function getCtsHeadApproveRejectAuditTrail(
 }
 
 // ========================================================================
-// ============ EPS HEAD APIs ============
+// ============ CLUSTER HEAD APIs ============
 // ========================================================================
 
-async function epsHeadApproveReject(payload, approvalStatus) {
-  const {
-    keycloak,
-    SITE_ID,
-    AOP_YEAR,
-    remark,
-    userRole,
-    userName,
-    VERTICAL_ID,
-  } = payload
-  const url = `${Config.CaseEngineUrl}/task/eps-approve-reject/${SITE_ID}/${approvalStatus}/${AOP_YEAR}`
+async function clusterHeadApproveReject(
+  keycloak,
+  siteId,
+  approvalStatus,
+  financialYear,
+  remark,
+  userRole,
+  userName,
+  verticalId,
+) {
+  const url = `${Config.CaseEngineUrl}/task/cluster-head-approve-reject/${siteId}/${approvalStatus}/${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
   const body = JSON.stringify({
-    siteId: SITE_ID,
-    verticalId: VERTICAL_ID,
+    siteId,
+    verticalId,
     submissionRemark: remark,
     submittedBy: getRoleLabel(userRole),
     userName,
@@ -562,25 +560,24 @@ async function epsHeadApproveReject(payload, approvalStatus) {
   }
 }
 
-async function epsHeadSubmission(payload) {
-  const {
-    keycloak,
-    SITE_ID,
-    AOP_YEAR,
-    remark,
-    userRole,
-    userName,
-    VERTICAL_ID,
-  } = payload
-  const url = `${Config.CaseEngineUrl}/task/eps-submission/${SITE_ID}/${AOP_YEAR}`
+async function clusterHeadSubmission(
+  keycloak,
+  siteId,
+  financialYear,
+  remark,
+  userRole,
+  userName,
+  verticalId,
+) {
+  const url = `${Config.CaseEngineUrl}/task/cluster-head-submission/${siteId}/${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
   const body = JSON.stringify({
-    siteId: SITE_ID,
-    verticalId: VERTICAL_ID,
+    siteId,
+    verticalId,
     submissionRemark: remark,
     submittedBy: getRoleLabel(userRole),
     userName,
@@ -602,14 +599,13 @@ async function epsHeadSubmission(payload) {
     return await Promise.reject(e)
   }
 }
-
-async function getEPSHeadApproveRejectAuditTrail(
+async function getClusterHeadSubmissionHistory(
   keycloak,
   siteId,
   verticalId,
   financialYear,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/eps-approve-reject-audit-trail/${siteId}/${verticalId}/${financialYear}`
+  const url = `${Config.CaseEngineUrl}/task/cluster-head-submission-audit-trail/${siteId}/${verticalId}/${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -623,92 +619,6 @@ async function getEPSHeadApproveRejectAuditTrail(
     const data = await json(keycloak, resp)
 
     return data
-  } catch (e) {
-    console.log(e)
-    return await Promise.reject(e)
-  }
-}
-
-// ========================================================================
-// ============ CLUSTER HEAD APIs ============
-// ========================================================================
-
-async function clusterHeadApproveReject(payload, approvalStatus) {
-  const {
-    keycloak,
-    SITE_ID,
-    AOP_YEAR,
-    remark,
-    userRole,
-    userName,
-    VERTICAL_ID,
-  } = payload
-  const url = `${Config.CaseEngineUrl}/task/cluster-head-approve-reject/${SITE_ID}/${approvalStatus}/${AOP_YEAR}`
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  const body = JSON.stringify({
-    siteId: SITE_ID,
-    verticalId: VERTICAL_ID,
-    submissionRemark: remark,
-    submittedBy: getRoleLabel(userRole),
-    userName,
-  })
-  try {
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers,
-      body,
-    })
-    if (!resp.ok) {
-      throw new Error(`HTTP error! Status: ${resp.status}`)
-    }
-    // Backend returns plain text, not JSON
-    const result = await resp.text()
-    return { success: true, message: result }
-  } catch (e) {
-    console.log(e)
-    return await Promise.reject(e)
-  }
-}
-
-async function clusterHeadSubmission(payload) {
-  const {
-    keycloak,
-    SITE_ID,
-    AOP_YEAR,
-    remark,
-    userRole,
-    userName,
-    VERTICAL_ID,
-  } = payload
-  const url = `${Config.CaseEngineUrl}/task/cluster-head-submission/${SITE_ID}/${AOP_YEAR}`
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  const body = JSON.stringify({
-    siteId: SITE_ID,
-    verticalId: VERTICAL_ID,
-    submissionRemark: remark,
-    submittedBy: getRoleLabel(userRole),
-    userName,
-  })
-  try {
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers,
-      body,
-    })
-    if (!resp.ok) {
-      throw new Error(`HTTP error! Status: ${resp.status}`)
-    }
-    // Backend returns plain text, not JSON
-    const result = await resp.text()
-    return { success: true, message: result }
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)

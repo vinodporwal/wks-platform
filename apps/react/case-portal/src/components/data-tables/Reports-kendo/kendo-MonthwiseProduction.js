@@ -19,10 +19,9 @@ import NumericInputOnly from 'utils/NumericInputOnly'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { getRoleName } from 'services/role-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const MonthwiseProduction = () => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -505,7 +504,12 @@ const MonthwiseProduction = () => {
   }
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
       <KendoDataTablesReports
         rows={rows}
         setRows={setRows}

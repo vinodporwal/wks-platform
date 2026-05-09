@@ -14,7 +14,6 @@ import KendoDataTables from 'components/kendo-data-tables/index'
 import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
 import moment from '../../../../node_modules/moment/moment'
 import { useSelector } from 'react-redux'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const AnnualProductionPlan = () => {
   const keycloak = useSession()
@@ -739,7 +738,13 @@ const AnnualProductionPlan = () => {
 
   return (
     <Box sx={{ height: 'auto', width: '100%' }}>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
+
       {/* <Typography component='div' className='grid-title' sx={{ mt: 1 }}>
         Assumptions & remarks{' '}
       </Typography> */}

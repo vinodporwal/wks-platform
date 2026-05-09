@@ -1,5 +1,5 @@
 import { Box } from '@mui/material'
-import UnitCapacitySimple from './UnitCapacityComponents/UnitCapacitySimple'
+import UnitCapacityGrid from './UnitCapacityComponents/UnitCapacityGrid'
 
 const UnitCapacity = ({
   PLANT_ID,
@@ -14,14 +14,14 @@ const UnitCapacity = ({
 }) => {
   const capacityTypes = [
     { key: 'design', title: 'Design Capacity' },
-    { key: 'maxAchieved', title: 'Max Achieved Capacity (From MCU Portal)' },
-    // { key: 'currentOperating', title: 'Current Operating Capacity' },
+    { key: 'maxAchieved', title: 'Max Achieved Capacity' },
+    { key: 'currentOperating', title: 'Current Operating Capacity' },
   ]
 
   return (
     <Box>
       {capacityTypes.map((type) => (
-        <UnitCapacitySimple
+        <UnitCapacityGrid
           key={type.key}
           capacityType={type.key}
           title={type.title}

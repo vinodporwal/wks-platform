@@ -11,7 +11,7 @@ export const BusinessDemandPpColumns = [
     field: 'normParameterId',
     title: 'Particulars',
     editable: false,
-    width: 100,
+    width: 125,
     hidden: true,
   },
 
@@ -25,7 +25,7 @@ export const BusinessDemandPpColumns = [
     field: 'april',
     title: 4,
     editable: true,
-    width: 100,
+    width: 120,
     rightAlign: true,
     headerAlign: 'left',
     type: 'number',
@@ -34,7 +34,7 @@ export const BusinessDemandPpColumns = [
     field: 'may',
     title: 5,
     editable: true,
-    width: 100,
+    width: 120,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -43,7 +43,7 @@ export const BusinessDemandPpColumns = [
     field: 'june',
     title: 6,
     editable: true,
-    width: 100,
+    width: 120,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -52,7 +52,7 @@ export const BusinessDemandPpColumns = [
     field: 'july',
     title: 7,
     editable: true,
-    width: 100,
+    width: 120,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -61,7 +61,7 @@ export const BusinessDemandPpColumns = [
     field: 'aug',
     title: 8,
     editable: true,
-    width: 100,
+    width: 120,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -70,7 +70,7 @@ export const BusinessDemandPpColumns = [
     field: 'sep',
     title: 9,
     editable: true,
-    width: 100,
+    width: 120,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -79,7 +79,7 @@ export const BusinessDemandPpColumns = [
     field: 'oct',
     title: 10,
     editable: true,
-    width: 100,
+    width: 120,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -88,7 +88,7 @@ export const BusinessDemandPpColumns = [
     field: 'nov',
     title: 11,
     editable: true,
-    width: 100,
+    width: 120,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -97,7 +97,7 @@ export const BusinessDemandPpColumns = [
     field: 'dec',
     title: 12,
     editable: true,
-    width: 100,
+    width: 120,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -106,7 +106,7 @@ export const BusinessDemandPpColumns = [
     field: 'jan',
     title: 1,
     editable: true,
-    width: 100,
+    width: 120,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -115,7 +115,7 @@ export const BusinessDemandPpColumns = [
     field: 'feb',
     title: 2,
     editable: true,
-    width: 100,
+    width: 120,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -124,7 +124,7 @@ export const BusinessDemandPpColumns = [
     field: 'march',
     title: 3,
     editable: true,
-    width: 100,
+    width: 120,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -132,7 +132,7 @@ export const BusinessDemandPpColumns = [
   {
     field: 'remark',
     title: 'Remark',
-    width: 100,
+    width: 180,
     editable: false,
   },
   {
@@ -200,7 +200,7 @@ export const NormalOpNormPpColumns = [
   {
     field: 'Particulars',
     title: 'Type',
-    width: 100,
+    width: 110,
     groupable: true,
     editable: false,
     hidden: true,
@@ -208,7 +208,7 @@ export const NormalOpNormPpColumns = [
   {
     field: 'materialFkId',
     title: 'Particulars',
-    width: 100,
+    width: 120,
     hidden: true,
   },
   {
@@ -220,7 +220,7 @@ export const NormalOpNormPpColumns = [
   {
     field: 'UOM',
     title: 'UOM / MT',
-    widthT: 90,
+    widthT: 80,
     editable: false,
   },
 
@@ -228,7 +228,7 @@ export const NormalOpNormPpColumns = [
     field: 'april',
     title: 4,
     editable: true,
-    width: 100,
+    width: 120,
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
@@ -238,7 +238,7 @@ export const NormalOpNormPpColumns = [
     title: 5,
     editable: true,
 
-    width: 100,
+    width: 120,
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
@@ -248,7 +248,7 @@ export const NormalOpNormPpColumns = [
     title: 6,
     editable: true,
 
-    width: 100,
+    width: 120,
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
@@ -258,7 +258,7 @@ export const NormalOpNormPpColumns = [
     title: 7,
     editable: true,
 
-    width: 100,
+    width: 120,
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
@@ -269,7 +269,7 @@ export const NormalOpNormPpColumns = [
     title: 8,
     editable: true,
 
-    width: 100,
+    width: 120,
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
@@ -279,7 +279,7 @@ export const NormalOpNormPpColumns = [
     title: 9,
     editable: true,
 
-    width: 100,
+    width: 120,
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
@@ -289,7 +289,7 @@ export const NormalOpNormPpColumns = [
     title: 10,
     editable: true,
 
-    width: 100,
+    width: 120,
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
@@ -299,7 +299,7 @@ export const NormalOpNormPpColumns = [
     title: 11,
     editable: true,
 
-    width: 100,
+    width: 120,
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
@@ -308,7 +308,7 @@ export const NormalOpNormPpColumns = [
     field: 'december',
     title: 12,
     editable: true,
-    width: 100,
+    width: 120,
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
@@ -317,7 +317,7 @@ export const NormalOpNormPpColumns = [
     field: 'january',
     title: 1,
     editable: true,
-    width: 100,
+    width: 120,
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
@@ -326,7 +326,7 @@ export const NormalOpNormPpColumns = [
     field: 'february',
     title: 2,
     editable: true,
-    width: 100,
+    width: 120,
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
@@ -335,7 +335,7 @@ export const NormalOpNormPpColumns = [
     field: 'march',
     title: 3,
     editable: true,
-    width: 100,
+    width: 120,
     align: 'right',
     format: '{0:#.###}',
     type: 'number',
@@ -343,7 +343,7 @@ export const NormalOpNormPpColumns = [
   {
     field: 'remarks',
     title: 'Remark',
-    width: 100,
+    width: 125,
     editable: true,
   },
 
@@ -363,7 +363,7 @@ export const ShutdownConsumptionPpColumns = [
   {
     field: 'Particulars',
     headerName: 'Type',
-    width: 100,
+    width: 120,
     hidden: true,
   },
   {
@@ -372,15 +372,15 @@ export const ShutdownConsumptionPpColumns = [
     minWidth: 150,
     editable: false,
     hidden: true,
-    width: 100,
+    width: 120,
   },
   {
     field: 'productName',
     headerName: 'Particulars',
-    width: 120,
+    width: 180,
     editable: false,
   },
-  { field: 'UOM', headerName: 'UOM', width: 80, editable: false },
+  { field: 'UOM', headerName: 'UOM', width: 150, editable: false },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
@@ -390,7 +390,7 @@ export const ShutdownConsumptionPpColumns = [
 
     return {
       field: monthField,
-      width: 100,
+      width: 120,
       type: 'number',
       format: '{0:#.###}',
       editable: false,
@@ -402,7 +402,7 @@ export const ShutdownConsumptionPpColumns = [
   {
     field: 'remarks',
     headerName: 'Remark',
-    width: 100,
+    width: 120,
     editable: false,
   },
   {
@@ -416,7 +416,7 @@ export const SlowdownNormsPpColumns = [
   {
     field: 'Particulars',
     headerName: 'Type',
-    width: 100,
+    width: 120,
     hidden: true,
   },
   {
@@ -425,15 +425,15 @@ export const SlowdownNormsPpColumns = [
     minWidth: 150,
     editable: false,
     hidden: true,
-    width: 100,
+    width: 120,
   },
   {
     field: 'productName',
     headerName: 'Particulars',
-    width: 120,
+    width: 180,
     editable: false,
   },
-  { field: 'UOM', headerName: 'UOM', width: 80, editable: false },
+  { field: 'UOM', headerName: 'UOM', width: 150, editable: false },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
@@ -443,7 +443,7 @@ export const SlowdownNormsPpColumns = [
 
     return {
       field: monthField,
-      width: 100,
+      width: 120,
       type: 'number',
       format: '{0:#.###}',
       editable: false,
@@ -455,7 +455,7 @@ export const SlowdownNormsPpColumns = [
   {
     field: 'remarks',
     headerName: 'Remark',
-    width: 100,
+    width: 120,
     editable: false,
   },
   {
@@ -469,7 +469,7 @@ export const ConsumptionAopPpColumns = [
     field: 'Particulars',
     title: 'Type',
     editable: false,
-    width: 100,
+    width: 200,
     hidden: true,
   },
   {
@@ -481,13 +481,13 @@ export const ConsumptionAopPpColumns = [
     field: 'productName',
     title: 'Particulars',
     editable: false,
-    width: 120,
+    width: 200,
   },
   {
     field: 'UOM',
     title: 'UOM / MT',
     editable: false,
-    width: 90,
+    width: 150,
   },
   {
     field: 'april',

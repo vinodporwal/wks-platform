@@ -18,14 +18,6 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import '../../kendo-data-grid.css'
 
-import AddIcon from '@mui/icons-material/Add'
-import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
-import DownloadIcon from '@mui/icons-material/Download'
-import UploadIcon from '@mui/icons-material/Upload'
-import CalculateIcon from '@mui/icons-material/Calculate'
-import SaveIcon from '@mui/icons-material/Save'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
-
 //import { ibrGridThreePopUP, singleRowColumn } from './columnDefs'
 
 import Notification from 'components/Utilities/Notification'
@@ -53,7 +45,6 @@ import moment from '../../../node_modules/moment/moment'
 import { ExcelExport } from '../../../node_modules/@progress/kendo-react-excel-export/index'
 import { useSelector } from 'react-redux'
 import { getRoleName } from 'services/role-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
@@ -1438,11 +1429,9 @@ const KendoDataTablesCrackerRunLength = ({
               {permissions?.downloadExcelBtn && (
                 <Button
                   variant='contained'
-                  className='btn-export'
+                  className='btn-save'
                   onClick={downloadExcelForConfiguration}
-                  // disabled={isButtonDisabled || READ_ONLY}
-                  disabled={isButtonDisabled}
-                  startIcon={<DownloadIcon fontSize='small' />}
+                  disabled={isButtonDisabled || READ_ONLY}
                 >
                   Export
                 </Button>
@@ -1453,10 +1442,9 @@ const KendoDataTablesCrackerRunLength = ({
                   <span>
                     <Button
                       variant='contained'
-                      className='btn-import'
+                      className='btn-save'
                       onClick={triggerFileUpload}
                       disabled={isButtonDisabled || READ_ONLY}
-                      startIcon={<UploadIcon sx={{ fontSize: 16 }} />}
                     >
                       Import
                     </Button>
@@ -1476,7 +1464,6 @@ const KendoDataTablesCrackerRunLength = ({
                   variant='contained'
                   className='btn-save'
                   onClick={saveModalOpen}
-                  startIcon={<SaveIcon sx={{ fontSize: 16 }} />}
                   disabled={
                     isButtonDisabled ||
                     Object.keys(modifiedCells).length === 0 ||
@@ -1491,7 +1478,6 @@ const KendoDataTablesCrackerRunLength = ({
                 <Button
                   variant='contained'
                   onClick={handleCalculateBtn}
-                  startIcon={<CalculateIcon sx={{ fontSize: 16 }} />}
                   disabled={
                     READ_ONLY ||
                     (rows?.length === 0
@@ -1499,7 +1485,7 @@ const KendoDataTablesCrackerRunLength = ({
                       : isButtonDisabled ||
                         !permissions?.showCalculateVisibility)
                   }
-                  className='btn-calculate'
+                  className='btn-save'
                 >
                   Calculate
                 </Button>
@@ -1508,9 +1494,8 @@ const KendoDataTablesCrackerRunLength = ({
                 <Button
                   variant='contained'
                   onClick={handleOpen}
-                  className='btn-calculate'
+                  className='btn-save'
                   disabled={READ_ONLY}
-                  startIcon={<CalculateIcon sx={{ fontSize: 16 }} />}
                 >
                   Calculate For Next Year
                 </Button>
@@ -1794,7 +1779,7 @@ const KendoDataTablesCrackerRunLength = ({
                     (value) => value === null || value === '',
                   )
                 }
-                className='btn-calculate'
+                className='btn-save'
               >
                 Calculate
               </button>
@@ -1826,7 +1811,7 @@ const KendoDataTablesCrackerRunLength = ({
             }}
           >
             <button
-              className='btn-export'
+              className='btn-save'
               onClick={excelExport}
               disabled={rowsPopUp?.length === 0}
             >
@@ -1844,7 +1829,12 @@ const KendoDataTablesCrackerRunLength = ({
 
           <div style={{ marginTop: '12px' }}>{renderGridDayWise()}</div>
 
-          <LoaderBackdrop open={!!loading1} />
+          <Backdrop
+            sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+            open={!!loading1}
+          >
+            <CircularProgress color='inherit' />
+          </Backdrop>
         </DialogContent>
 
         <DialogActions style={{ padding: '4px 8px' }}>

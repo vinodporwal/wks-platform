@@ -3,41 +3,33 @@
     "field": "DisplayName",
     "title": "Particulars",
     "editable": false,
-    "widthT": 250,
-    "autoAdjust": false,
-    "hidden": false,
-    "minWidth": 120
+    "widthT": 220,
+    "hidden": false
   },
   {
     "field": "UOM",
     "title": "UOM",
     "editable": false,
-    "widthT": 80,
-    "minWidth": 90
+    "widthT": 80
   },
   {
     "field": "ConstantValue",
     "title": "Value",
     "editable": true,
     "type": "number",
-    "widthT": 100,
-    "minWidth": 150
+    "widthT": 120
   },
 
   {
     "field": "remarks",
     "title": "Remark",
     "editable": false,
-    "widthT": 250,
-    "autoAdjust": false,
-    "type": "string",
-    "minWidth": 400
+    "type": "string"
   },
   {
     "field": "normParameterFKID",
     "title": "normParameterFKID",
     "filterable": false,
-    "hidden": true,
-    "isVisible": false
+    "hidden": true
   }
 ]

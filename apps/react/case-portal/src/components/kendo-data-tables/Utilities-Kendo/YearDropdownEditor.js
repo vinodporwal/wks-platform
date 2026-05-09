@@ -31,7 +31,6 @@ const YearDropdownEditor = (props) => {
           value: e.target.value?.value || e.target.value,
         })
       }
-      className='dropdown-editor'
       style={{ width: '100%' }}
     />
   )

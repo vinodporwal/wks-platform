@@ -4,8 +4,6 @@ export const SlowDownAromaticsColumns = [
     title: 'Slowdown Desc',
     editable: true,
     type: 'descLimit',
-    widthT: 200,
-    autoAdjust: false
   },
 
   {
@@ -20,7 +18,6 @@ export const SlowDownAromaticsColumns = [
     title: 'SD- From',
     type: 'dateTime',
     editable: true,
-    widthT: 140,
   },
 
   {
@@ -28,14 +25,12 @@ export const SlowDownAromaticsColumns = [
     title: 'SD- To',
     type: 'dateTime',
     editable: true,
-    widthT: 140,
   },
 
   {
     field: 'durationInHrs',
     title: 'Duration (hrs)',
     editable: true,
-    widthT: 140,
   },
 
   {
@@ -43,14 +38,12 @@ export const SlowDownAromaticsColumns = [
     title: 'Rate (TPH)',
     editable: true,
     type: 'number',
-    widthT: 120,
   },
 
   {
     field: 'remark',
     title: 'Remarks',
     editable: true,
-    widthT: 230,
-    autoAdjust: false
+    widthT: 120,
   },
 ]

@@ -3,15 +3,13 @@
     "field": "id",
     "title": "Id",
     "editable": true,
-    "hidden": true,
-    "isVisible": false
+    "hidden": true
   },
   {
     "field": "monthName",
     "title": "Month",
     "editable": false,
-    "widthT": 100,
-    "minWidth": 150
+    "widthT": 100
   },
 
   {
@@ -172,7 +170,7 @@
     "editable": true,
     "type": "number",
     "format": "{0:#.##}",
-    "isVisible": false,
+    "hidden": true,
     "hideFilter": true,
     "hideSort": true,
     "widthT": 120
@@ -181,7 +179,6 @@
   {
     "field": "remarks",
     "title": "Remarks",
-    "widthT": 120,
-    "minWidth": 150
+    "widthT": 120
   }
 ]

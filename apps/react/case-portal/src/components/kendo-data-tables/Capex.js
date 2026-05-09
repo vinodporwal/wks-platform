@@ -10,7 +10,6 @@ import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 export default function Capex() {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -91,7 +90,7 @@ export default function Capex() {
     },
     { field: 'targetPlan', title: 'Target', editable: true },
     { field: 'statusPlan', title: 'Status', editable: true },
-    { field: 'remarks', title: 'Remarks', widthT: 100, editable: true },
+    { field: 'remarks', title: 'Remarks', widthT: 150, editable: true },
   ]
 
   const fetchData = useCallback(async () => {
@@ -284,7 +283,12 @@ export default function Capex() {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <KendoDataTables
         columns={capexPlanColumns}

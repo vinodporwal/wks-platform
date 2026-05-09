@@ -5,7 +5,6 @@ import { useSession } from 'SessionStoreContext'
 import { Backdrop, Toolbar } from '../../../node_modules/@mui/material/index'
 import { renderChildren } from '../../../node_modules/@progress/kendo-react-layout/index'
 import { BusinessDemandDataApiService } from 'services/business-demand-data-api-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 export default function EthyleneBalance() {
   const keycloak = useSession()
@@ -97,7 +96,14 @@ export default function EthyleneBalance() {
         }}
       />
 
-      {loading && <LoaderBackdrop open={!!loading} />}
+      {loading && (
+        <Backdrop
+          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          open={!!loading}
+        >
+          <CircularProgress color='inherit' />
+        </Backdrop>
+      )}
     </Box>
   )
 }

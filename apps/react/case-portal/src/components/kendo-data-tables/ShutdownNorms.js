@@ -14,7 +14,6 @@ import KendoDataTables from './index'
 import { ShutdownNormsApiService } from 'services/shutdown-norms-api-service'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { getRoleName } from 'services/role-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ShutdownNorms = () => {
   const [gradeId, setGradeId] = useState(null)
@@ -877,7 +876,7 @@ const ShutdownNorms = () => {
         IS_PVC_DMD
           ? true
           : false,
-      dropdownLabel: 'Grade',
+      dropdownLabel: 'Select Grade',
       allAction: true,
       downloadExcelBtnFromUI:
         !IS_PE_HMD ||
@@ -951,7 +950,12 @@ const ShutdownNorms = () => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
       <KendoDataTables
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}

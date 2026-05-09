@@ -4,7 +4,6 @@ import productionColDefsPE from '../../../assets/kendo_production_aop_pe.json'
 import productionColDefsCracker from '../../../assets/kendo_production_aop_cracker.json'
 import productionColDefsvcmpta from '../../../assets/kendo_production_aop_vcmpta.json'
 import productionColDefsElastomerJmd from '../../../assets/kendo_production_aop_Elastomer.json'
-
 const monthFields = [
   'april',
   'may',
@@ -54,7 +53,6 @@ const getEnhancedColDefs = ({ headerMap, valueFormat }) => {
     cols.push({
       field: 'averageTPH',
       title: 'Total',
-      minWidth: 100,
     })
   }
 

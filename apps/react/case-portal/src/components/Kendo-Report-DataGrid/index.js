@@ -71,10 +71,7 @@ const KendoDataGrid = ({
         {...restThProps}
         aria-sort={ariaSort}
         title={props.title}
-        style={{
-          fontFamily:
-            "'Honeywell Sans Web', 'Inter', sans-serif",
-        }}
+        style={{ padding: '0px', borderRight: '1px solid #878787' }}
       >
         <Tooltip
           position='top'

@@ -1,4 +1,4 @@
-import { InputBase } from '../../../../node_modules/@mui/material/index'
+import { Input } from '@progress/kendo-react-inputs'
 
 export const descLimit = (props) => {
   const rawValue = props.dataItem[props.field] ?? ''
@@ -22,16 +22,15 @@ export const descLimit = (props) => {
 
   return (
     <td style={{ textAlign: 'end' }}>
-      <InputBase
+      <Input
         value={rawValue}
         onChange={handleChange}
         maxLength={250}
         disabled={isDisabled}
-        className='input-editor'
         style={{
-          fontSize: '15px',
+          fontSize: '0.8rem',
           padding: '2px 2px',
-          height: '40px',
+          height: '22px',
           lineHeight: '1rem',
         }}
       />

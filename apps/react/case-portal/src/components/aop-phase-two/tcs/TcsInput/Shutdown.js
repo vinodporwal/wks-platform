@@ -13,12 +13,9 @@ import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { Stack } from '../../../../../node_modules/@mui/material/index'
 import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const Shutdown = ({
   PLANT_ID,
-  VERTICAL_ID,
-  SITE_ID,
   PLANT_NAME,
   AOP_YEAR,
   currentTab,
@@ -55,11 +52,11 @@ const Shutdown = ({
 
       console.log('Carry-forward response:', carryForwardResponse)
 
-      // setSnackbarData({
-      //   message: `Shutdown data carried forward from previous year successfully!`,
-      //   severity: 'success',
-      // })
-      // setSnackbarOpen(true)
+      setSnackbarData({
+        message: `Shutdown data carried forward from previous year successfully!`,
+        severity: 'success',
+      })
+      setSnackbarOpen(true)
 
       return true
     } catch (carryForwardErr) {
@@ -147,20 +144,8 @@ const Shutdown = ({
       minWidth: 100,
       width: 100,
     },
-    startDate: {
-      editable: true,
-      type: 'dateTime',
-      isFinancialYear: false,
-      minWidth: 100,
-      widthT: 200,
-    },
-    endDate: {
-      editable: true,
-      type: 'dateTime',
-      isFinancialYear: false,
-      minWidth: 100,
-      widthT: 200,
-    },
+    startDate: { editable: true, type: 'dateTime', minWidth: 100, widthT: 200 },
+    endDate: { editable: true, type: 'dateTime', minWidth: 100, widthT: 200 },
     purpose: { editable: true, type: 'text', minWidth: 200, widthT: 200 },
   }
 
@@ -302,8 +287,6 @@ const Shutdown = ({
 
         const response = await TcsApiService.saveShutdownData(
           keycloak,
-          VERTICAL_ID,
-          SITE_ID,
           PLANT_ID,
           apiYear,
           formattedData,
@@ -316,7 +299,7 @@ const Shutdown = ({
           severity: 'success',
         })
         setModifiedCells({})
-        fetchShutdownData(true)
+        fetchShutdownData()
       } catch (error) {
         console.error('Error saving Shutdown data:', error)
         setSnackbarOpen(true)
@@ -469,7 +452,7 @@ const Shutdown = ({
             message: 'Record deleted successfully!',
             severity: 'success',
           })
-          fetchShutdownData(true)
+          fetchShutdownData()
         }
       } catch (error) {
         console.error('Error deleting record:', error)
@@ -524,8 +507,6 @@ const Shutdown = ({
     try {
       const response = await TcsApiService.importShutdownExcel(
         keycloak,
-        VERTICAL_ID,
-        SITE_ID,
         PLANT_ID,
         apiYear,
         file,
@@ -538,7 +519,7 @@ const Shutdown = ({
           severity: 'success',
         })
         // Refresh data after import
-        await fetchShutdownData(true)
+        await fetchShutdownData()
       } else if (response?.code === 400 && response?.data) {
         // Handle error response with Excel file download
         try {
@@ -568,7 +549,7 @@ const Shutdown = ({
             severity: 'error',
           })
           // Refresh data after import
-          await fetchShutdownData(true)
+          await fetchShutdownData()
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
@@ -616,7 +597,12 @@ const Shutdown = ({
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <Stack sx={{ mt: 2 }}>
         <AdvanceKendoTable

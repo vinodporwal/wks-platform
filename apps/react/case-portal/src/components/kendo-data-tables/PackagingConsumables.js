@@ -10,7 +10,6 @@ import KendoDataTables from './index'
 import { PackagingConsumablesApiService } from 'services/packaging-consumables-api-service'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { getRoleName } from 'services/role-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const PackagingConsumables = (permissions) => {
   const [gradeId, setGradeId] = useState(null)
@@ -236,7 +235,6 @@ const PackagingConsumables = (permissions) => {
       title: 'Particulars',
       widthT: 160,
       hidden: true,
-      isVisible: false,
     },
     {
       field: 'productName',
@@ -246,7 +244,7 @@ const PackagingConsumables = (permissions) => {
     {
       field: 'UOM',
       title: 'UOM',
-      widthT: 80,
+      widthT: 60,
       editable: false,
     },
     ...monthColumns,
@@ -260,7 +258,6 @@ const PackagingConsumables = (permissions) => {
       field: 'idFromApi',
       title: 'idFromApi',
       hidden: true,
-      isVisible: false,
     },
   ]
 
@@ -431,7 +428,12 @@ const PackagingConsumables = (permissions) => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
       <KendoDataTables
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}

@@ -5,8 +5,7 @@
     "editable": false,
     "widthT": 130,
     "fixedWidth": 130,
-    "width": 130,
-    "minWidth": 140
+    "width": 130
   },
   {
     "field": "fiveNE",
@@ -14,10 +13,9 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 140,
-    "fixedWidth": 140,
-    "width": 140,
-    "minWidth": 140
+    "widthT": 100,
+    "fixedWidth": 100,
+    "width": 100
   },
   {
     "field": "fiveNS",
@@ -25,10 +23,9 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 140,
-    "fixedWidth": 140,
-    "width": 140,
-    "minWidth": 140
+    "widthT": 100,
+    "fixedWidth": 100,
+    "width": 100
   },
   {
     "field": "fourNE",
@@ -36,10 +33,9 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 140,
-    "fixedWidth": 140,
-    "width": 140,
-    "minWidth": 140
+    "widthT": 100,
+    "fixedWidth": 100,
+    "width": 100
   },
   {
     "field": "fourNS",
@@ -47,10 +43,9 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 140,
-    "fixedWidth": 140,
-    "width": 140,
-    "minWidth": 140
+    "widthT": 100,
+    "fixedWidth": 100,
+    "width": 100
   },
   {
     "field": "threeNE",
@@ -58,16 +53,13 @@
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
-    "widthT": 140,
-    "fixedWidth": 140,
-    "width": 140,
-    "minWidth": 140
+    "widthT": 100,
+    "fixedWidth": 100,
+    "width": 100
   },
   {
     "field": "NormParameterFKID",
     "title": "NormParameterFKID",
-    "hidden": true,
-    "minWidth": 140,
-    "isVisible": false
+    "hidden": true
   }
 ]

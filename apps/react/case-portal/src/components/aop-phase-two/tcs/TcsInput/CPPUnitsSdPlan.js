@@ -12,14 +12,12 @@ import { TcsApiService } from 'components/aop-phase-two/services/tcs/tcsApiServi
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const CPPUnitsSdPlan = ({
   PLANT_ID,
   AOP_YEAR,
   currentTab,
   SITE_ID,
-  VERTICAL_ID,
   snackbarData,
   setSnackbarData,
   snackbarOpen,
@@ -66,18 +64,17 @@ const CPPUnitsSdPlan = ({
       const carryForwardResponse =
         await TcsApiService.carryForwardCppUnitsSdPlan(
           keycloak,
-          VERTICAL_ID,
           apiYear,
           SITE_ID,
         )
 
       console.log('Carry-forward response:', carryForwardResponse)
 
-      // setSnackbarData({
-      //   message: 'Data carried forward from previous year successfully!',
-      //   severity: 'success',
-      // })
-      // setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Data carried forward from previous year successfully!',
+        severity: 'success',
+      })
+      setSnackbarOpen(true)
 
       return true
     } catch (carryForwardErr) {
@@ -102,7 +99,6 @@ const CPPUnitsSdPlan = ({
 
         const response = await TcsApiService.getCPPUnitsSdPlanData(
           keycloak,
-          VERTICAL_ID,
           apiYear,
           SITE_ID,
         )
@@ -174,9 +170,8 @@ const CPPUnitsSdPlan = ({
     ibrDueDate: {
       editable: true,
       type: 'dateTime',
-      minWidth: 120,
+      minWidth: 100,
       widthT: 120,
-      isFinancialYear: false,
     },
     gtMaintenance: {
       type: 'multi-select',
@@ -187,13 +182,13 @@ const CPPUnitsSdPlan = ({
         { value: 'RLA', label: 'RLA' },
       ],
       editable: true,
-      minWidth: 150,
+      minWidth: 100,
       widthT: 150,
     },
     noOfDays: {
       editable: true,
       type: 'wholeNumber',
-      minWidth: 100,
+      minWidth: 80,
       widthT: 100,
     },
     shutDownDate: {
@@ -201,14 +196,12 @@ const CPPUnitsSdPlan = ({
       type: 'dateTime',
       minWidth: 100,
       widthT: 120,
-      isFinancialYear: false,
     },
     startUpDate: {
       editable: true,
       type: 'dateTime',
       minWidth: 100,
       widthT: 120,
-      isFinancialYear: false,
     },
     majorJobs: { editable: true, type: 'textarea', minWidth: 200, widthT: 300 },
   }
@@ -336,7 +329,6 @@ const CPPUnitsSdPlan = ({
 
       const response = await TcsApiService.saveCPPUnitsSdPlanData(
         keycloak,
-        VERTICAL_ID,
         apiYear,
         SITE_ID,
         formattedData,
@@ -348,7 +340,7 @@ const CPPUnitsSdPlan = ({
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
-      fetchData(true)
+      fetchData()
     } catch (error) {
       console.error('Error saving CPP Units SD Plan data:', error)
       setSnackbarOpen(true)
@@ -389,7 +381,7 @@ const CPPUnitsSdPlan = ({
             message: 'Record deleted successfully!',
             severity: 'success',
           })
-          fetchData(true)
+          fetchData()
         }
       } catch (error) {
         console.error('Error deleting record:', error)
@@ -414,12 +406,7 @@ const CPPUnitsSdPlan = ({
     })
 
     try {
-      await TcsApiService.exportCPPUnitsSdPlanExcel(
-        keycloak,
-        VERTICAL_ID,
-        SITE_ID,
-        apiYear,
-      )
+      await TcsApiService.exportCPPUnitsSdPlanExcel(keycloak, SITE_ID, apiYear)
 
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -442,7 +429,6 @@ const CPPUnitsSdPlan = ({
     try {
       const response = await TcsApiService.importCPPUnitsSdPlanExcel(
         keycloak,
-        VERTICAL_ID,
         SITE_ID,
         apiYear,
         file,
@@ -455,7 +441,7 @@ const CPPUnitsSdPlan = ({
           severity: 'success',
         })
         // Refresh data after import
-        await fetchData(true)
+        await fetchData()
       } else if (response?.code === 400 && response?.data) {
         // Handle error response with Excel file download
         try {
@@ -485,7 +471,7 @@ const CPPUnitsSdPlan = ({
             severity: 'error',
           })
           // Refresh data after import
-          await fetchData(true)
+          await fetchData()
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
@@ -529,7 +515,12 @@ const CPPUnitsSdPlan = ({
 
   return (
     <Box sx={{ mt: 2 }}>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <Stack spacing={2}>
         <AdvanceKendoTable

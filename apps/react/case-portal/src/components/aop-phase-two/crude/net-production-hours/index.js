@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { Box } from '@mui/material'
+import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import ValueFormatterPhaseTwo from '../../common/ValueFormatterPhaseTwo'
 import { NetProductionHoursApiService } from '../../services/vgoht/netProductionHoursApiService'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const NetProductionHours = () => {
   const keycloak = useSession()
@@ -42,8 +41,8 @@ const NetProductionHours = () => {
     {
       field: 'apr',
       title: headerMap[4],
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -51,8 +50,8 @@ const NetProductionHours = () => {
     {
       field: 'may',
       title: headerMap[5],
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -60,8 +59,8 @@ const NetProductionHours = () => {
     {
       field: 'jun',
       title: headerMap[6],
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -69,8 +68,8 @@ const NetProductionHours = () => {
     {
       field: 'jul',
       title: headerMap[7],
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -78,8 +77,8 @@ const NetProductionHours = () => {
     {
       field: 'aug',
       title: headerMap[8],
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -87,8 +86,8 @@ const NetProductionHours = () => {
     {
       field: 'sep',
       title: headerMap[9],
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -96,8 +95,8 @@ const NetProductionHours = () => {
     {
       field: 'oct',
       title: headerMap[10],
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -105,8 +104,8 @@ const NetProductionHours = () => {
     {
       field: 'nov',
       title: headerMap[11],
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -114,8 +113,8 @@ const NetProductionHours = () => {
     {
       field: 'dec',
       title: headerMap[12],
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -123,8 +122,8 @@ const NetProductionHours = () => {
     {
       field: 'jan',
       title: headerMap[1],
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -132,8 +131,8 @@ const NetProductionHours = () => {
     {
       field: 'feb',
       title: headerMap[2],
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -141,8 +140,8 @@ const NetProductionHours = () => {
     {
       field: 'mar',
       title: headerMap[3],
-      widthT: 120,
-      minWidth: 120,
+      widthT: 100,
+      minWidth: 80,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -355,7 +354,12 @@ const NetProductionHours = () => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <AdvanceKendoTable
         columns={columns}

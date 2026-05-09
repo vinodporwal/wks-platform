@@ -9,7 +9,6 @@ import { validateFields } from 'utils/validationUtils'
 import { ProductionNormsApiService } from 'services/production-norms-api-service'
 import KendoDataTables from 'components/kendo-data-tables/index'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const NSRAndMaterialPrices = () => {
   const [rows, setRows] = useState([])
@@ -65,45 +64,38 @@ const NSRAndMaterialPrices = () => {
       title: 'id',
       filterable: false,
       hidden: true,
-      minWidth: 100,
-      isVisible: false,
     },
     {
       field: 'plantName',
       title: 'Plant Name',
       editable: false,
-      widthT: 100,
+      widthT: 150,
       hidden: false,
-      minWidth: 100,
     },
     {
       field: 'plantCode',
       title: 'Plant Code',
       editable: false,
-      widthT: 100,
-      minWidth: 100,
+      widthT: 120,
     },
     {
       field: 'materialCode',
       title: 'Material Code',
       editable: false,
-      widthT: 100,
-      minWidth: 100,
+      widthT: 150,
     },
     {
       field: 'materialDescription',
       title: 'Mat Desc',
       editable: false,
-      widthT: 100,
-      minWidth: 100,
+      widthT: 200,
     },
 
     {
       field: 'UOM',
       title: 'UOM',
       editable: false,
-      widthT: 80,
-      minWidth: 100,
+      widthT: 100,
     },
 
     {
@@ -111,9 +103,8 @@ const NSRAndMaterialPrices = () => {
       title: 'Price',
       editable: true,
       type: 'number',
-      widthT: 100,
+      widthT: 120,
       format: FORMATE_VALUE,
-      minWidth: 100,
     },
   ]
 
@@ -269,7 +260,12 @@ const NSRAndMaterialPrices = () => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <KendoDataTables
         modifiedCells={modifiedCells}

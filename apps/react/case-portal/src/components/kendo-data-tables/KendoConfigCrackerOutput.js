@@ -10,13 +10,11 @@ import { useSession } from 'SessionStoreContext'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
-import AopTabs from 'components/AopTabs'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import ModeSelection from './ModeSelection'
 
 const CrackerConfig = () => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -183,7 +181,7 @@ const CrackerConfig = () => {
     isOldYear,
   )
 
-  const fetchTabsMatrix = useCallback(async () => {
+  const fetchTabsMatrix = async () => {
     try {
       const resp = await DataService.getConfigurationTabsMatrix(
         keycloak,
@@ -212,9 +210,9 @@ const CrackerConfig = () => {
       console.error('Error fetching cracker tabs matrix:', err)
       setTabs(rawTabsStatic)
     }
-  }, [keycloak])
+  }
 
-  const fetchAvailableTabs = useCallback(async () => {
+  const fetchAvailableTabs = async () => {
     try {
       const resp = await DataService.getConfigurationAvailableTabs(keycloak)
       if (
@@ -239,7 +237,7 @@ const CrackerConfig = () => {
         })),
       )
     }
-  }, [keycloak])
+  }
 
   const fetchModes = useCallback(async () => {
     try {
@@ -268,14 +266,7 @@ const CrackerConfig = () => {
     fetchTabsMatrix()
     fetchAvailableTabs()
     setTabIndex(0)
-  }, [
-    keycloak,
-    fetchTabsMatrix,
-    fetchAvailableTabs,
-    fetchModes,
-    PLANT_ID,
-    AOP_YEAR,
-  ])
+  }, [keycloak, fetchModes, PLANT_ID, AOP_YEAR])
 
   const getRows = useCallback(
     (tabId) => {
@@ -994,12 +985,6 @@ const CrackerConfig = () => {
     }
   }
 
-  const resolvedTabs = tabs.map((tabId) => {
-    const info = availableTabs.find(
-      (t) => t.id.toLowerCase() === tabId.toLowerCase(),
-    )
-    return info?.displayName || tabId
-  })
   const adjustedPermissionsReadyOnly = getAdjustedPermissions(
     {
       hideRemarkForNonEditableRows: true,
@@ -1010,18 +995,54 @@ const CrackerConfig = () => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
-      <Box sx={{ overflowX: 'auto', width: '100%' }}>
-        <AopTabs
-          tabIndex={tabIndex}
-          setTabIndex={(newIndex) => {
-            if (newIndex >= 0 && newIndex < resolvedTabs.length) {
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
+
+      <Box
+        sx={{ overflowX: 'auto', width: '100%', mb: IS_CRACKER_HMD ? 1 : 0 }}
+      >
+        <Tabs
+          sx={{
+            borderBottom: '0px solid #ccc',
+            '.MuiTabs-indicator': { display: 'none' },
+            margin: '0px 0px 0px 0px',
+            minHeight: '28px',
+          }}
+          textColor='primary'
+          indicatorColor='primary'
+          value={tabIndex}
+          onChange={(e, newIndex) => {
+            if (newIndex >= 0 && newIndex < tabs.length) {
               setTabIndex(newIndex)
             }
           }}
-          tabs={resolvedTabs}
-        />
+        >
+          {tabs.map((tabId) => {
+            const info = availableTabs.find(
+              (t) => t.id.toLowerCase() === tabId.toLowerCase(),
+            )
+            const label = info?.displayName || tabId
+            return (
+              <Tab
+                key={tabId}
+                sx={{
+                  border: '1px solid #ADD8E6',
+                  borderBottom: '1px solid #ADD8E6',
+                  fontSize: '0.75rem',
+                  padding: '9px',
+                  minHeight: '12px',
+                }}
+                label={label}
+              />
+            )
+          })}
+        </Tabs>
       </Box>
+
       {IS_CRACKER_HMD && (
         <ModeSelection permissions={adjustedPermissionsReadyOnly} />
       )}

@@ -26,8 +26,6 @@ import MajorProfitInitiative from './MajorProfitInitiative'
 import MajorReliabilityInitiative from './MajorReliabilityInitiative'
 import MajorPeopleInitiative from './MajorPeopleInitiative'
 import MCUCapacityUtilization from './MCUCapacityUtilization'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import AopTabs from 'components/AopTabs'
 const SiteAOPReport = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -1015,13 +1013,41 @@ const SiteAOPReport = ({ permissions }) => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
       {defaultTabs?.length > 1 && (
-        <AopTabs
-          tabIndex={tabIndex}
-          setTabIndex={setTabIndex}
-          tabs={defaultTabs}
-        />
+        <Tabs
+          value={tabIndex}
+          onChange={(e, newIndex) => setTabIndex(newIndex)}
+          variant='scrollable'
+          scrollButtons='auto'
+          sx={{
+            borderBottom: '0px solid #ccc',
+            '.MuiTabs-indicator': { display: 'none' },
+            margin: '0px 0px 10px 0px',
+            minHeight: '28px',
+          }}
+          textColor='primary'
+          indicatorColor='primary'
+        >
+          {defaultTabs.map((label, idx) => (
+            <Tab
+              key={idx}
+              label={label}
+              sx={{
+                border: '1px solid #ADD8E6',
+                borderBottom: '1px solid #ADD8E6',
+                fontSize: '0.75rem',
+                padding: '9px',
+                minHeight: '12px',
+              }}
+            />
+          ))}
+        </Tabs>
       )}
       {tabIndex === 0 && (
         <KendoDataTables

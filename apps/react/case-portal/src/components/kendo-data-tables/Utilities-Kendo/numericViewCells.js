@@ -1,4 +1,4 @@
-import { InputBase } from '@mui/material'
+import { Input } from '@progress/kendo-react-inputs'
 import { monthMap } from '../index'
 
 export const DurationEditor = (props) => {
@@ -20,9 +20,14 @@ export const DurationEditor = (props) => {
   }
 
   return (
-    <InputBase
+    <Input
       value={raw}
-      className='input-editor'
+      style={{
+        fontSize: '0.8rem',
+        padding: '2px 2px',
+        height: '22px',
+        lineHeight: '1rem',
+      }}
       onChange={handleChange}
       placeholder='HH:MM'
     />

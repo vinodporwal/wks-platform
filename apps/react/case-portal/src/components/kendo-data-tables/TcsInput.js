@@ -10,7 +10,6 @@ import { validateFields } from 'utils/validationUtils'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import AdvanceKendoTable from './AdvanceKendoTable/index'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const TcsInput = () => {
   const keycloak = useSession()
@@ -1526,7 +1525,12 @@ const TcsInput = () => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       {/* Tabs */}
       <Box sx={{ overflowX: 'auto', width: '100%' }}>

@@ -38,7 +38,7 @@ const AddRowDialog = ({
       setCustomType('')
       setErrors({})
     }
-  }, [open])
+  }, [open, columns])
 
   const handleFieldChange = (field, value) => {
     setFormData((prev) => ({

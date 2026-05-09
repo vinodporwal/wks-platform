@@ -15,7 +15,6 @@ import { DataService } from 'services/DataService'
 import { getRoleName } from 'services/role-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import KendoDataTables from './index'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ElastomerSlowdown = ({ permissions }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -491,7 +490,12 @@ const ElastomerSlowdown = ({ permissions }) => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <KendoDataTables
         modifiedCells={modifiedCells}

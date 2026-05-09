@@ -1,52 +1,21 @@
 [
-  {
-    "field": "idFromApi",
-    "title": "ID",
-    "hidden": true,
-    "minWidth": 100,
-    "isVisible": false
-  },
+  { "field": "idFromApi", "title": "ID", "hidden": true },
   {
     "field": "aopCaseId",
     "title": "Case ID",
 
     "editable": false,
-    "hidden": true,
-    "minWidth": 100,
-    "isVisible": false
+    "hidden": true
   },
-  {
-    "field": "aopType",
-    "title": "Type",
-    "width": 80,
-    "hidden": true,
-    "minWidth": 100,
-    "isVisible": false
-  },
-  {
-    "field": "aopYear",
-    "title": "Year",
-    "width": 80,
-    "hidden": true,
-    "minWidth": 100,
-    "isVisible": false
-  },
-  {
-    "field": "plantFkId",
-    "title": "Plant ID",
-    "width": 80,
-    "hidden": true,
-    "minWidth": 100,
-    "isVisible": false
-  },
+  { "field": "aopType", "title": "Type", "width": 80, "hidden": true },
+  { "field": "aopYear", "title": "Year", "width": 80, "hidden": true },
+  { "field": "plantFkId", "title": "Plant ID", "width": 80, "hidden": true },
   {
     "field": "normParametersFKId",
     "title": "Particulars/Grade",
     "editable": false,
     "width": 125,
-    "hidden": true,
-    "minWidth": 100,
-    "isVisible": false
+    "hidden": true
   },
 
   {
@@ -54,17 +23,14 @@
     "title": "Particulars/Grade",
     "editable": false,
     "width": 125,
-    "hidden": true,
-    "minWidth": 100,
-    "isVisible": false
+    "hidden": true
   },
 
   {
     "field": "displayName",
     "title": "Products",
     "editable": false,
-    "width": 125,
-    "minWidth": 120
+    "width": 125
   },
 
   {
@@ -75,8 +41,7 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "may",
@@ -86,8 +51,7 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "june",
@@ -97,8 +61,7 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "july",
@@ -108,8 +71,7 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "aug",
@@ -119,8 +81,7 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "sep",
@@ -130,8 +91,7 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "oct",
@@ -141,8 +101,7 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "nov",
@@ -152,8 +111,7 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "dec",
@@ -163,8 +121,7 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "jan",
@@ -174,8 +131,7 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "feb",
@@ -185,8 +141,7 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "march",
@@ -196,8 +151,7 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
 
   {
@@ -205,24 +159,19 @@
     "title": "Total",
     "type": "number",
     "editable": false,
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
 
   {
     "field": "isEditable",
     "title": "isEditable",
-    "hidden": true,
-    "minWidth": 100,
-    "isVisible": false
+    "hidden": true
   },
 
   {
     "field": "aopStatus",
     "title": "aopStatus",
     "editable": false,
-    "hidden": true,
-    "minWidth": 100,
-    "isVisible": false
+    "hidden": true
   }
 ]

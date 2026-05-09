@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Box } from '@mui/material'
+import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/vgoht/productionNormsApiService'
@@ -8,7 +8,6 @@ import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatt
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { configurationAndReportManualEntryResponse } from '../dummyData'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ReportManualEntry = () => {
   const keycloak = useSession()
@@ -445,7 +444,12 @@ const ReportManualEntry = () => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
       <AdvanceKendoTable
         columns={columns}
         rows={rows}

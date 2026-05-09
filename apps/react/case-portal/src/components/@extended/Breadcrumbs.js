@@ -132,7 +132,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
       VERTICAL_NAME?.toLowerCase() == 'pe'
     )
       url = `${window.location.origin}/files/Digital AOP Automation for NMD PE_Revisedlogic_Rev6.pdf`
-    //PP NMD
+    // PE DMD HDPE
     if (
       title == 'configuration' &&
       PLANT_NAME?.toLowerCase() == 'hdpe' &&
@@ -193,17 +193,6 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
       console.error('Error fetching file:', e)
       return Promise.reject(e)
     }
-  }
-
-  const infoIconSx = {
-    fontSize: 14,
-    color: '#023985ff', // slate-500 (subtle)
-  }
-
-  const infoButtonSx = {
-    p: '1px',
-    width: 0,
-    height: 0,
   }
 
   async function handleOpenPdfTempSSRS(title) {
@@ -273,6 +262,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
     location.pathname = '/dashboard/analytics'
   }
 
+  let mainContent
   let itemContent
   let breadcrumbContent = <Typography />
   let itemTitle = ''
@@ -339,10 +329,16 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
             <IconButton
               size='small'
               disableRipple
-              sx={infoButtonSx}
+              sx={{
+                backgroundColor: 'transparent',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                },
+                padding: '6px',
+              }}
               onClick={() => handleOpenPdfTemp(item?.id)}
             >
-              <InfoIcon sx={infoIconSx} />
+              <InfoIcon fontSize='small' sx={{ color: '#0100cb' }} />
             </IconButton>
           </Tooltip>
         </Typography>
@@ -362,11 +358,18 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
           {/* {title1} */}
           <Tooltip title={`Report`}>
             <IconButton
-              size='small'
-              sx={infoButtonSx}
+              size='medium'
+              sx={{
+                ml: 1,
+                backgroundColor: 'transparent',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                },
+                padding: '6px',
+              }}
               onClick={() => handleOpenPdfTempSSRS(item?.id)}
             >
-              <InfoIcon sx={infoIconSx} /> {/* ?? was fontSize="medium" */}
+              <InfoIcon fontSize='medium' sx={{ color: '#0100cb' }} />
             </IconButton>
           </Tooltip>
         </Typography>
@@ -385,20 +388,23 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
       location?.pathname !== '/dashboard'
     ) {
       breadcrumbContent = (
-        <Box
+        <MainCard
           border={false}
           sx={{ bgcolor: 'transparent' }}
           {...others}
           content={false}
         >
           {location?.pathname.startsWith('/production-norms-plan') && (
-            <Box>{/* <StepperNav /> */}</Box>
+            <Box>
+              <StepperNav />
+            </Box>
           )}
           <Grid
             container
             direction='column'
             justifyContent='flex-start'
             alignItems='flex-start'
+            spacing={1}
             // sx={{ marginTop: '-18px' }}
           >
             {/* <Grid item sx={{ ml: 1.5, display: none }}> */}
@@ -434,65 +440,39 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
 
             <Grid
               container
-              sx={{
-                m: 0,
-                // p: 0.5,
-                width: '100%',
-                transition: 'none',
-                '&:hover': {
-                  boxShadow: 'none',
-                  transform: 'none',
-                },
-              }}
+              sx={{ mt: 1, ml: 1 }}
               justifyContent='space-between'
               alignItems='center'
             >
               <Grid item>
                 {loading ? (
-                  <Stack direction='row' spacing={1} alignItems='center'>
-                    <Skeleton variant='circular' width={16} height={16} />
-                    <Skeleton
-                      variant='text'
-                      width={180}
-                      height={20}
-                      animation='wave'
-                    />
-                  </Stack>
+                  <Skeleton
+                    variant='text'
+                    width={100}
+                    height={30}
+                    animation='wave'
+                    sx={{ mt: 0.5 }}
+                  />
                 ) : (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {/* Hierarchy Path */}
-                    <Typography
-                      component='div'
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        fontWeight: 700,
-                        fontSize: '0.72rem',
-                        color: '#64748b', // Slate 500 for secondary text
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.4px',
-                        fontFamily:
-                          "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
-                      }}
-                    >
-                      {VERTICAL_NAME}
-                      <Box component='span' sx={{ mx: 0.7 }}>
-                        |
-                      </Box>
-                      {SITE_NAME}
-                      <Box component='span' sx={{ mx: 0.7 }}>
-                        |
-                      </Box>
-                      <Box component='span' sx={{ mx: 0.7 }}>
-                        {PLANT_NAME}
-                      </Box>
-                    </Typography>
-
-                    {/* Status/Item Pill */}
-                    {itemContent && <Box>{itemContent}</Box>}
-                  </Box>
+                  <Typography
+                    component='div'
+                    sx={{
+                      textDecoration: 'none',
+                      fontWeight: 800,
+                      color: 'black',
+                      fontSize: '0.7rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    {VERTICAL_NAME} / {SITE_NAME} / {PLANT_NAME}{' '}
+                    {/* {getRoleName(verticalId, item?.id)} */}
+                    {/* {keycloak?.realmAccess?.roles[0]} */}
+                    {itemContent}
+                  </Typography>
                 )}
               </Grid>
+
               {/* <Stack spacing={0.5} sx={{ alignItems: 'center' }}>
                 <Grid item>
                   <Chip
@@ -520,7 +500,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
             severity={notification.severity}
             onClose={() => setNotification({ ...notification, open: false })}
           />
-        </Box>
+        </MainCard>
       )
     }
   }

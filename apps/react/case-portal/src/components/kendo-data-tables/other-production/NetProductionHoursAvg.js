@@ -7,7 +7,6 @@ import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-s
 import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
 import KendoDataTables from '../index'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const NetProductionHoursAvg = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -91,7 +90,6 @@ const NetProductionHoursAvg = () => {
           isEditable: false,
           originalRemark: item.remarks,
           allMonthsTotal,
-          minWidth: 100,
         }
       })
 
@@ -133,7 +131,6 @@ const NetProductionHoursAvg = () => {
       editable: false,
       align: 'right',
       headerAlign: 'left',
-      minWidth: 100,
     }))
   }
 
@@ -142,8 +139,6 @@ const NetProductionHoursAvg = () => {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
-    minWidth: 100,
-    isVisible: false,
   }
 
   // Base function to generate column set for PP
@@ -156,7 +151,6 @@ const NetProductionHoursAvg = () => {
       widthT: nameWidthT,
       editable: false,
       isEditable: false,
-      minWidth: 100,
     },
     ...getMonthlyColumns(),
     isEditableField,
@@ -166,7 +160,6 @@ const NetProductionHoursAvg = () => {
       type: 'number',
       format: '{0:n2}',
       editable: false,
-      minWidth: 100,
     },
   ]
 
@@ -214,7 +207,12 @@ const NetProductionHoursAvg = () => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        open={loading}
+        sx={{ color: '#fff', zIndex: (t) => t.zIndex.drawer + 1 }}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <KendoDataTables
         columns={basecols}

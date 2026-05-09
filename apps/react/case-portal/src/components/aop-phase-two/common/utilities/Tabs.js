@@ -1,10 +1,10 @@
+import { Tab, Tabs } from '@mui/material'
 import PropTypes from 'prop-types'
-import AopTabs from '../components/AopTabs'
 
 const TabSection = ({ tabIndex, setTabIndex, tabs }) => {
   return (
     <>
-      {/* <Tabs
+      <Tabs
         value={tabIndex}
         onChange={(e, newIndex) => setTabIndex(newIndex)}
         sx={{
@@ -16,26 +16,24 @@ const TabSection = ({ tabIndex, setTabIndex, tabs }) => {
         textColor='primary'
         indicatorColor='primary'
       >
-        {tabs.map((tab) => (
-          <Tab
-            key={tab}
-            label={tab}
-            sx={{
-              border: '1px solid #ADD8E6',
-              borderBottom: '1px solid #ADD8E6',
-              fontSize: '0.75rem',
-              padding: '9px',
-              minHeight: '12px',
-            }}
-          />
-        ))}
-      </Tabs> */}
+        {tabs.map((tab) => {
+          const isObject = typeof tab === 'object' && tab !== null
 
-      <AopTabs
-        tabIndex={tabIndex}
-        setTabIndex={setTabIndex}
-        tabs={tabs || []}
-      />
+          return (
+            <Tab
+              key={isObject ? tab.id : tab}
+              label={isObject ? tab.name : tab}
+              sx={{
+                border: '1px solid #ADD8E6',
+                borderBottom: '1px solid #ADD8E6',
+                fontSize: '0.75rem',
+                padding: '9px',
+                minHeight: '12px',
+              }}
+            />
+          )
+        })}
+      </Tabs>
     </>
   )
 }

@@ -9,7 +9,6 @@ import { DataService } from 'services/DataService'
 import { getRoleName } from 'services/role-service'
 import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-basis-api-service'
 import { validateFields } from 'utils/validationUtils'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const IBINlossesGrid = ({
   summary,
@@ -377,7 +376,13 @@ const IBINlossesGrid = ({
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
+
       <KendoDataTables
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}

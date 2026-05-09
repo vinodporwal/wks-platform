@@ -265,7 +265,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
 
   const dropdownConfig = {
     options: dropdownOptions,
-    label: 'Plant',
+    label: 'Select Plant',
     placeholder: 'Select Plant',
     valueKey: 'id',
     labelKey: 'name',

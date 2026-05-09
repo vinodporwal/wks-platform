@@ -129,10 +129,7 @@ public interface TCSAuditTrailRepository extends JpaRepository<DummyEntity, Long
                    ROW_NUMBER() OVER (
                        PARTITION BY PlantName
                        ORDER BY SubmissionDate DESC
-                   ) AS rn,
-                    COUNT(*) OVER (
-               PARTITION BY PlantName
-           ) AS cnt
+                   ) AS rn
             FROM TCS_Submission_History
             WHERE Site_Id = :siteId
               AND Vertical_Id = :verticalId
@@ -143,7 +140,6 @@ public interface TCSAuditTrailRepository extends JpaRepository<DummyEntity, Long
               
         ) t
         WHERE rn = 1
-        AND cnt = 2
     """, nativeQuery = true)
     List<PlantSubmissionAuditTrailProjection> getLatestPendingPlantWiseSubmissionAuditTrail(
             @Param("siteId") UUID siteId,
@@ -180,7 +176,7 @@ PlantSubmissionAuditTrailProjection getLatestPlantSubmissionAuditTrail(
 
 
         @Query(value = """
-            SELECT TOP 2 
+            SELECT TOP 1 
                 Id, Plant_Id, PlantName, Site_Id, Vertical_Id,
                    SubmittedBy, SubmissionDate, SubmissionRemark,
                    VerifiedDate, VerifiedBy, VerifiedRemark,
@@ -194,7 +190,7 @@ PlantSubmissionAuditTrailProjection getLatestPlantSubmissionAuditTrail(
               AND PlantStatus = :plantStatus
             ORDER BY SubmissionDate DESC
             """, nativeQuery = true)
-      List<PlantSubmissionAuditTrailProjection> getLatestPendingPlantSubmissionAuditTrail(
+        PlantSubmissionAuditTrailProjection getLatestPendingPlantSubmissionAuditTrail(
                 @Param("plantId") UUID plantId,
                 @Param("siteId") UUID siteId,
                 @Param("verticalId") UUID verticalId,
@@ -218,7 +214,7 @@ PlantSubmissionAuditTrailProjection getLatestPlantSubmissionAuditTrail(
               AND VerifiedDate IS NULL
             ORDER BY SubmissionDate DESC
             """, nativeQuery = true)
-        PlantSubmissionAuditTrailProjection getLatestAOMSubmissionAuditTrail(
+        PlantSubmissionAuditTrailProjection getLatestEbsSubmissionAuditTrail(
                 @Param("siteId") UUID siteId,
                 @Param("verticalId") UUID verticalId,
                 @Param("businessKey") String businessKey,

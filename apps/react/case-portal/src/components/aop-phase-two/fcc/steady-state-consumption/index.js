@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Box } from '@mui/material'
+import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
@@ -9,7 +9,6 @@ import ValueFormatterPhaseTwo, {
 } from '../../common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
 import { SteadyStateConsumptionApiService } from '../../services/fcc/steadyStateConsumptionApiService'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const SteadyStateConsumptionFCC = () => {
   const keycloak = useSession()
@@ -452,7 +451,12 @@ const SteadyStateConsumptionFCC = () => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <AdvanceKendoTable
         columns={columns}

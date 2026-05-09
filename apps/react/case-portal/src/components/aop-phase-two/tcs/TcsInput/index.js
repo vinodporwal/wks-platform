@@ -14,11 +14,9 @@ import PCGOutlook from './PCGOutlook'
 import NetUnitCapacity from './NetUnitCapacity'
 import RemarkDialog from './workflow/RemarkDialog'
 import SubmitSection from './workflow/SubmitSection'
-import { getUserRole, ROLES } from '../utils/roleUtils'
+import { getUserRole } from '../utils/roleUtils'
 import { TcsWorkflowApiService } from 'components/aop-phase-two/services/tcs/tcsWorkflowApiService'
 import AuditTrail from './workflow/AuditTrail'
-import PCGOutlookNew from './PCGOutlookNew'
-import AopTabs from '../../common/components/AopTabs'
 
 // Handler to render tab component based on displayName
 const renderTabComponent = (tabDisplayName, props) => {
@@ -34,7 +32,7 @@ const renderTabComponent = (tabDisplayName, props) => {
     case 'CPP Units SD Plan':
       return <CPPUnitsSdPlan {...props} />
     case 'PCG Outlook':
-      return <PCGOutlookNew {...props} />
+      return <PCGOutlook {...props} />
     case 'ROGC':
       return <ROGC {...props} />
     case 'Crude Blend Window':
@@ -83,18 +81,11 @@ const TcsInput = () => {
 
   // Check workflow status on mount
   useEffect(() => {
-    if (
-      PLANT_ID &&
-      AOP_YEAR &&
-      SITE_ID &&
-      VERTICAL_ID &&
-      PLANT_NAME &&
-      tabObj.length > 0
-    ) {
+    if (PLANT_ID && AOP_YEAR && SITE_ID && VERTICAL_ID && PLANT_NAME) {
       checkSubmitEligibility()
-      checkWorkflowTriggered()
     }
-  }, [PLANT_ID, AOP_YEAR, SITE_ID, VERTICAL_ID, PLANT_NAME, tabObj])
+    checkWorkflowTriggered()
+  }, [PLANT_ID, AOP_YEAR, SITE_ID, VERTICAL_ID, PLANT_NAME])
 
   const checkSubmitEligibility = async (showMessage = true) => {
     try {
@@ -115,69 +106,52 @@ const TcsInput = () => {
       if (variables.length == 0) {
         setIsSubmitEligible(true)
       } else {
-        // Find submissionStatus variable (for PLANT_MANAGER)
+        // Find submissionStatus variable
         const submissionStatusVar = variables?.find(
           (v) => v.name === 'submissionStatus',
         )
 
-        // Find ctsTechSubmissionStatus variable (for CTS_TECH_MANAGER)
-        const ctsTechSubmissionStatusVar = variables?.find(
-          (v) => v.name === 'ctsTechSubmissionStatus',
-        )
+        if (submissionStatusVar && submissionStatusVar.value) {
+          try {
+            // Parse the JSON value
+            const submissionStatus = JSON.parse(submissionStatusVar.value)
 
-        // Check based on user role
-        if (userRole === ROLES.PLANT_MANAGER) {
-          if (submissionStatusVar && submissionStatusVar.value) {
-            try {
-              const submissionStatus = JSON.parse(submissionStatusVar.value)
-              const isPlantSubmitted = submissionStatus[PLANT_NAME] === true
+            // Check if current plant has already been submitted
+            const isPlantSubmitted = submissionStatus[PLANT_NAME] === true
 
-              if (isPlantSubmitted) {
-                setIsSubmitEligible(false)
-                return
-              } else {
-                setIsSubmitEligible(true)
-                return
-              }
-            } catch (parseError) {
-              console.error('Error parsing submissionStatus:', parseError)
+            if (isPlantSubmitted) {
+              // Plant already submitted - disable submit button
+              setIsSubmitEligible(false)
+              // Only show message if showMessage is true (on page load, not after submission)
+              // if (showMessage) {
+              //   setSnackbarData({
+              //     message: `${PLANT_NAME} has already been submitted`,
+              //     severity: 'info',
+              //   })
+              //   setSnackbarOpen(true)
+              // }
+              return
+            } else {
+              // Plant not yet submitted - enable submit button
+              setIsSubmitEligible(true)
+              return
             }
-          } else {
-            // No submission status yet - enable submit
-            setIsSubmitEligible(true)
-            return
-          }
-        } else if (userRole === ROLES.CTS_TECH_MANAGER) {
-          if (ctsTechSubmissionStatusVar && ctsTechSubmissionStatusVar.value) {
-            try {
-              const ctsTechSubmissionStatus = JSON.parse(
-                ctsTechSubmissionStatusVar.value,
-              )
-              const isCtsTechSubmitted =
-                ctsTechSubmissionStatus[PLANT_NAME] === true
-
-              if (isCtsTechSubmitted) {
-                setIsSubmitEligible(false)
-                return
-              } else {
-                setIsSubmitEligible(true)
-                return
-              }
-            } catch (parseError) {
-              console.error(
-                'Error parsing ctsTechSubmissionStatus:',
-                parseError,
-              )
-            }
-          } else {
-            // No submission status yet - enable submit
-            setIsSubmitEligible(true)
-            return
+          } catch (parseError) {
+            console.error('Error parsing submissionStatus:', parseError)
           }
         }
 
-        // Fallback for all other roles - eligible by default
-        setIsSubmitEligible(false)
+        // Fallback to original eligibility check
+        const eligible = response?.isEligible !== false
+        setIsSubmitEligible(eligible)
+
+        if (!eligible) {
+          setSnackbarData({
+            message: response?.message || 'Submit is not eligible at this time',
+            severity: 'warning',
+          })
+          setSnackbarOpen(true)
+        }
       }
     } catch (err) {
       console.error('Error checking submit eligibility:', err)
@@ -219,12 +193,10 @@ const TcsInput = () => {
   }
 
   // Get current tab object (has id, displayName, displaySequence)
-  const currentTab =
-    tabIndex !== null && tabObj[tabIndex] ? tabObj[tabIndex] : {}
+  const currentTab = tabObj[tabIndex] || {}
 
   const userRole = useMemo(() => {
     let allUsers = keycloak?.realmAccess?.roles
-    console.log('allUsers', allUsers)
     return getUserRole(allUsers)
   }, [keycloak?.realmAccess?.roles])
 
@@ -237,15 +209,6 @@ const TcsInput = () => {
     fetchTabsData()
   }, [PLANT_ID, SITE_ID, VERTICAL_ID])
 
-  // Reset tabIndex to 0 when tabObj changes (after filtering)
-  useEffect(() => {
-    if (tabObj.length > 0) {
-      setTabIndex(0)
-    } else {
-      setTabIndex(null)
-    }
-  }, [tabObj])
-
   const fetchTabsData = async () => {
     try {
       if (!PLANT_ID || !SITE_ID || !VERTICAL_ID) return
@@ -253,6 +216,7 @@ const TcsInput = () => {
       // First API: Get list of all tabs
       const allTabsResponse = await TcsApiService.getTcsAllTabs(keycloak)
       const allTabsList = allTabsResponse?.data?.configurationTypeList || []
+      setTabObj(allTabsList)
 
       // Second API: Get array of tab IDs to show
       const visibleTabsResponse = await TcsApiService.getTcsVisibleTabs(
@@ -281,8 +245,11 @@ const TcsInput = () => {
           .filter((tab) => visibleTabIdsLower.includes(tab.id.toLowerCase()))
           .sort((a, b) => a.displaySequence - b.displaySequence)
         setTabObj(filteredTabs)
-      } else {
-        // If no visible tabs are returned, show empty
+      } else if (
+        allTabsList &&
+        (!visibleTabIds || visibleTabIds.length === 0)
+      ) {
+        // If no visible tabs are returned, show all tabs
         console.warn('No visible tabs configured')
         setTabObj([])
       }
@@ -362,79 +329,25 @@ const TcsInput = () => {
         workflowWasTriggered = triggerResult
       }
 
-      const payload = {
+      // Complete plant submission task with remark
+      // if (workflowWasTriggered) {
+      await TcsWorkflowApiService.saveRemark(
         keycloak,
-        plantId: PLANT_ID,
-        plantName: PLANT_NAME,
-        siteId: SITE_ID,
-        verticalId: VERTICAL_ID,
+        PLANT_ID,
+        PLANT_NAME,
+        SITE_ID,
+        VERTICAL_ID,
         userRole,
         userName,
         remark,
-        aopYear: AOP_YEAR,
-      }
-
-      // Step 1: Save the current role's remark
-      if (userRole == ROLES.PLANT_MANAGER) {
-        await TcsWorkflowApiService.savePlantManagerRemark(payload)
-      } else if (userRole == ROLES.CTS_TECH_MANAGER) {
-        await TcsWorkflowApiService.saveCTSTechManagerRemark(payload)
-      }
-
-      // Step 2: Check if the other role has already submitted (using existing timelineData)
-      // Note: Current role is NOW submitting (will be true after API call above)
-      // So we only need to check if the OTHER role has already submitted
-      const submissionStatusVar = timelineData?.find(
-        (v) => v.name === 'submissionStatus',
-      )
-      const ctsTechSubmissionStatusVar = timelineData?.find(
-        (v) => v.name === 'ctsTechSubmissionStatus',
+        AOP_YEAR,
       )
 
-      let otherRoleAlreadyApproved = false
-
-      if (userRole === ROLES.PLANT_MANAGER) {
-        // Current role is PLANT_MANAGER (now submitting = true)
-        // Check if CTS_TECH_MANAGER already submitted
-        if (ctsTechSubmissionStatusVar) {
-          try {
-            const ctsTechSubmissionStatus = JSON.parse(
-              ctsTechSubmissionStatusVar.value,
-            )
-            otherRoleAlreadyApproved =
-              ctsTechSubmissionStatus[PLANT_NAME] === true
-          } catch (parseError) {
-            console.error('Error parsing ctsTechSubmissionStatus:', parseError)
-          }
-        }
-      } else if (userRole === ROLES.CTS_TECH_MANAGER) {
-        // Current role is CTS_TECH_MANAGER (now submitting = true)
-        // Check if PLANT_MANAGER already submitted
-        if (submissionStatusVar) {
-          try {
-            const submissionStatus = JSON.parse(submissionStatusVar.value)
-            otherRoleAlreadyApproved = submissionStatus[PLANT_NAME] === true
-          } catch (parseError) {
-            console.error('Error parsing submissionStatus:', parseError)
-          }
-        }
-      }
-
-      // // Step 3: If other role already approved, submit plant to AOM
-      // // (Current role just approved in Step 1, so both are now approved)
-      if (otherRoleAlreadyApproved) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: `${PLANT_NAME} TCS data submitted to AOM successfully (both roles approved)`,
-          severity: 'success',
-        })
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: `${PLANT_NAME} TCS data submission completed successfully. Waiting for ${userRole === ROLES.PLANT_MANAGER ? 'CTS Tech Manager' : 'Plant Manager'} approval.`,
-          severity: 'success',
-        })
-      }
+      setSnackbarData({
+        message: `${PLANT_NAME} TCS data submission completed successfully`,
+        severity: 'success',
+      })
+      setSnackbarOpen(true)
 
       // Refresh submit eligibility after submission (without showing "already submitted" message)
       await checkSubmitEligibility(false)
@@ -465,8 +378,6 @@ const TcsInput = () => {
     }
   }
 
-  console.log('userRole', userRole)
-
   return (
     <Box
       sx={{
@@ -482,42 +393,64 @@ const TcsInput = () => {
       >
         {/* Tabs Section - Flex grow to fill available space */}
         <Box sx={{ flex: 1, overflowX: 'auto' }}>
-          <AopTabs
-            tabIndex={tabIndex}
-            setTabIndex={setTabIndex}
-            tabs={tabObj?.map((tab) => tab.displayName || tab.name) || []}
-          />
+          <Tabs
+            sx={{
+              borderBottom: '0px solid #ccc',
+              '.MuiTabs-indicator': { display: 'none' },
+              margin: '0px 0px 0px 0px',
+              minHeight: '28px',
+            }}
+            textColor='primary'
+            indicatorColor='primary'
+            value={tabIndex}
+            onChange={(e, newIndex) => {
+              if (newIndex >= 0 && newIndex < tabObj.length) {
+                setTabIndex(newIndex)
+              }
+            }}
+          >
+            {tabObj &&
+              tabObj?.map((tab) => (
+                <Tab
+                  key={tab.id}
+                  sx={{
+                    border: '1px solid #ADD8E6',
+                    borderBottom: '1px solid #ADD8E6',
+                    fontSize: '0.75rem',
+                    padding: '9px',
+                    minHeight: '12px',
+                  }}
+                  label={tab.displayName || tab.name}
+                />
+              ))}
+          </Tabs>
         </Box>
 
         {/* Submit button and History icon - Fixed on right */}
-        {tabObj.length !== 0 && (
-          <SubmitSection
-            onSubmitClick={() => setRemarkDialogOpen(true)}
-            onViewHistory={handleViewHistory}
-            isEligible={isSubmitEligible}
-            isLoading={isSubmittingRemark}
-            isWorkflowTriggered={isWorkflowTriggered}
-            submitTooltip={submitTooltip}
-          />
-        )}
+        <SubmitSection
+          onSubmitClick={() => setRemarkDialogOpen(true)}
+          onViewHistory={handleViewHistory}
+          isEligible={isSubmitEligible}
+          isLoading={isSubmittingRemark}
+          isWorkflowTriggered={isWorkflowTriggered}
+          submitTooltip={submitTooltip}
+        />
       </Box>
 
       {/* Tab Content */}
       <Box>
-        {currentTab?.displayName &&
-          renderTabComponent(currentTab.displayName, {
-            currentTab,
-            PLANT_ID,
-            PLANT_NAME,
-            AOP_YEAR,
-            SITE_ID,
-            VERTICAL_ID,
-            snackbarData,
-            setSnackbarData,
-            snackbarOpen,
-            setSnackbarOpen,
-            isSubmitEligible,
-          })}
+        {renderTabComponent(currentTab.displayName, {
+          currentTab,
+          PLANT_ID,
+          PLANT_NAME,
+          AOP_YEAR,
+          SITE_ID,
+          snackbarData,
+          setSnackbarData,
+          snackbarOpen,
+          setSnackbarOpen,
+          isSubmitEligible,
+        })}
       </Box>
 
       <RemarkDialog
@@ -526,7 +459,7 @@ const TcsInput = () => {
         title='TCS Input Submission'
         placeholder='Enter your remarks here...'
         onSubmit={handleRemarkSubmit}
-        maxLength={500}
+        maxLength={1000}
         role={userRole}
         keycloak={keycloak}
         snackbarData={snackbarData}

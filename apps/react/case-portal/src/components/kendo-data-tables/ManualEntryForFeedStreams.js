@@ -9,7 +9,6 @@ import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-bas
 import { validateFields } from 'utils/validationUtils'
 import KendoDataTables from './index'
 import { BusinessDemandDataApiService } from 'services/business-demand-data-api-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ManualEntryForFeedStreams = () => {
   const [rows, setRows] = useState([])
@@ -64,7 +63,6 @@ const ManualEntryForFeedStreams = () => {
     FORMATE_VALUE,
   })
 
-  // TODO: Replace with actual API call when backend is ready
   const fetchData = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     setModifiedCells({})
@@ -327,7 +325,12 @@ const ManualEntryForFeedStreams = () => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <KendoDataTables
         modifiedCells={modifiedCells}

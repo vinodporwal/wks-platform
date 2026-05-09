@@ -13,12 +13,9 @@ import {
 } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { Stack } from '../../../../../node_modules/@mui/material/index'
 import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const Slowdown = ({
   PLANT_ID,
-  VERTICAL_ID,
-  SITE_ID,
   PLANT_NAME,
   AOP_YEAR,
   currentTab,
@@ -39,11 +36,7 @@ const Slowdown = ({
   const [currentRowId, setCurrentRowId] = useState(null)
 
   // State to store API response metadata (headers and keys)
-  const [apiMetadata, setApiMetadata] = useState({
-    headers: [],
-    keys: [],
-    editableFields: [],
-  })
+  const [apiMetadata, setApiMetadata] = useState({ headers: [], keys: [] })
   const [originalRows, setOriginalRows] = useState([])
 
   const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
@@ -60,11 +53,11 @@ const Slowdown = ({
 
       console.log('Carry-forward response:', carryForwardResponse)
 
-      // setSnackbarData({
-      //   message: `Slowdown data carried forward from previous year successfully!`,
-      //   severity: 'success',
-      // })
-      // setSnackbarOpen(true)
+      setSnackbarData({
+        message: `Slowdown data carried forward from previous year successfully!`,
+        severity: 'success',
+      })
+      setSnackbarOpen(true)
 
       return true
     } catch (carryForwardErr) {
@@ -98,11 +91,7 @@ const Slowdown = ({
 
         // Store headers and keys from API response
         if (response?.headers && response?.keys) {
-          setApiMetadata({
-            headers: response.headers,
-            keys: response.keys,
-            editableFields: response.editableFields,
-          })
+          setApiMetadata({ headers: response.headers, keys: response.keys })
         }
 
         // If data is empty and carry-forward not skipped, attempt carry-forward and refetch
@@ -149,13 +138,18 @@ const Slowdown = ({
 
   // Column configuration for Slowdown - dynamically generated from API response
   const columnConfig = {
-    particulates: { editable: false, type: 'text', minWidth: 140, widthT: 140 },
-    
+    particulates: { editable: false, type: 'text', minWidth: 100, widthT: 100 },
+    durationInDays: {
+      editable: true,
+      type: 'wholeNumber',
+      minWidth: 100,
+      widthT: 100,
+    },
     throughputDuringSlowdown: {
       editable: true,
       type: 'wholeNumber',
-      minWidth: 230,
-      widthT: 230,
+      minWidth: 100,
+      widthT: 100,
     },
     throughputUOM: {
       editable: true,
@@ -167,31 +161,13 @@ const Slowdown = ({
         { value: 'KTPD', label: 'KTPD' },
       ],
     },
-    durationInDays: {
-      editable: true,
-      type: 'wholeNumber',
-      minWidth: 100,
-      widthT: 100,
-    },
-    startDate: {
-      editable: true,
-      type: 'dateTime',
-      isFinancialYear: false,
-      minWidth: 150,
-      widthT: 150,
-    },
-    endDate: {
-      editable: true,
-      type: 'dateTime',
-      isFinancialYear: false,
-      minWidth: 150,
-      widthT: 150,
-    },
+    startDate: { editable: true, type: 'dateTime', minWidth: 150, widthT: 150 },
+    endDate: { editable: true, type: 'dateTime', minWidth: 150, widthT: 150 },
     purpose: { editable: true, type: 'text', minWidth: 200, widthT: 200 },
   }
 
   const columns = useMemo(() => {
-    const { headers, keys, editableFields } = apiMetadata
+    const { headers, keys } = apiMetadata
 
     if (!headers || !keys || headers.length === 0) {
       return []
@@ -204,15 +180,10 @@ const Slowdown = ({
     })
 
     // Build columns using columnConfig for type/formatting
-    // Override editable property based on editableFields array from API
     return Object.entries(columnConfig).map(([key, config]) => ({
       field: key,
       title: columnMap[key] || key,
       ...config,
-      editable:
-        editableFields && Array.isArray(editableFields)
-          ? editableFields.includes(key)
-          : config.editable,
     }))
   }, [apiMetadata])
 
@@ -321,14 +292,6 @@ const Slowdown = ({
             formatted.id = null
           }
 
-          // Add non-editable fields with default values if not present
-          if (formatted.throughputDuringSlowdown == '') {
-            formatted.throughputDuringSlowdown = null
-          }
-          if (formatted.throughputUOM == '') {
-            formatted.throughputUOM = null
-          }
-
           // Add timezone offset to date fields
           if (formatted.startDate) {
             formatted.startDate = addTimeOffset(formatted.startDate)
@@ -342,8 +305,6 @@ const Slowdown = ({
 
         const response = await TcsApiService.saveSlowdownData(
           keycloak,
-          VERTICAL_ID,
-          SITE_ID,
           PLANT_ID,
           apiYear,
           formattedData,
@@ -356,7 +317,7 @@ const Slowdown = ({
           severity: 'success',
         })
         setModifiedCells({})
-        fetchSlowdownData(true)
+        fetchSlowdownData()
       } catch (error) {
         console.error('Error saving Slowdown data:', error)
         setSnackbarOpen(true)
@@ -516,7 +477,7 @@ const Slowdown = ({
             message: 'Record deleted successfully!',
             severity: 'success',
           })
-          fetchSlowdownData(true)
+          fetchSlowdownData()
         }
       } catch (error) {
         console.error('Error deleting record:', error)
@@ -571,8 +532,6 @@ const Slowdown = ({
     try {
       const response = await TcsApiService.importSlowdownExcel(
         keycloak,
-        VERTICAL_ID,
-        SITE_ID,
         PLANT_ID,
         apiYear,
         file,
@@ -585,7 +544,7 @@ const Slowdown = ({
           severity: 'success',
         })
         // Refresh data after import
-        await fetchSlowdownData(true)
+        await fetchSlowdownData()
       } else if (response?.code === 400 && response?.data) {
         // Handle error response with Excel file download
         try {
@@ -615,7 +574,7 @@ const Slowdown = ({
             severity: 'error',
           })
           // Refresh data after import
-          await fetchSlowdownData(true)
+          await fetchSlowdownData()
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
@@ -643,35 +602,33 @@ const Slowdown = ({
     }
   }
 
-  const permissions = useMemo(
-    () => ({
-      customHeight: { mainBox: '32vh', otherBox: '100%' },
-      textAlignment: 'center',
-      allAction: true,
-      addButton:
-        apiMetadata.editableFields &&
-        (apiMetadata.editableFields.includes('durationInDays') ||
-          apiMetadata.editableFields.includes('startDate') ||
-          apiMetadata.editableFields.includes('endDate')),
-      deleteButton: true,
-      showAction: true,
-      remarksEditable: true,
-      showCalculate: false,
-      showExport: true,
-      ExcelName: `Slowdown_${AOP_YEAR}`,
-      showImport: true,
-      saveBtnForRemark: true,
-      saveBtn: true,
-      showWorkFlowBtns: false,
-      showTitle: true,
-      filterable: false,
-    }),
-    [apiMetadata.editableFields, AOP_YEAR],
-  )
+  const permissions = {
+    customHeight: { mainBox: '32vh', otherBox: '100%' },
+    textAlignment: 'center',
+    allAction: true,
+    addButton: true,
+    deleteButton: true,
+    showAction: true,
+    remarksEditable: true,
+    showCalculate: false,
+    showExport: true,
+    ExcelName: `Slowdown_${AOP_YEAR}`,
+    showImport: true,
+    saveBtnForRemark: true,
+    saveBtn: true,
+    showWorkFlowBtns: false,
+    showTitle: true,
+    filterable: false,
+  }
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <Stack sx={{ mt: 2 }}>
         <AdvanceKendoTable

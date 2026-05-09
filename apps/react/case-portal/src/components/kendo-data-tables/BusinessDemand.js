@@ -2,7 +2,6 @@ import { Box } from '@mui/material'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import Typography from '@mui/material/Typography'
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import { useGridApiRef } from '@mui/x-data-grid'
 import kendoGetEnhancedColDefs from 'components/data-tables/CommonHeader/kendoBusinessDemColDef'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
@@ -24,7 +23,6 @@ import ProductionTarget from './ProductionTarget'
 import ManualEntryForFeedStreams from './ManualEntryForFeedStreams'
 import ModeSelection from './ModeSelection'
 import { ProductionVolumeDataApiService } from 'services/production-volume-data-api-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const BusinessDemand = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const keycloak = useSession()
@@ -73,8 +71,6 @@ const BusinessDemand = ({ permissions }) => {
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
 
-  const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
-
   const IS_ELASTOMER_HMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'hmd'
 
@@ -107,23 +103,17 @@ const BusinessDemand = ({ permissions }) => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
-  const [gridExpanded, setGridExpanded] = useState(true)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
   })
-
-  const toggleGrid = () => {
-    setGridExpanded((prev) => !prev)
-  }
   const columnsProductionRate = [
     {
       field: 'idFromApi',
       title: 'ID',
       hidden: true,
-      isVisible: false,
     },
     {
       field: 'aopCaseId',
@@ -131,7 +121,6 @@ const BusinessDemand = ({ permissions }) => {
       width: 120,
       editable: false,
       hidden: true,
-      isVisible: false,
     },
     {
       field: 'normParametersFKId',
@@ -139,7 +128,6 @@ const BusinessDemand = ({ permissions }) => {
       editable: false,
       widthT: 100,
       hidden: true,
-      isVisible: false,
     },
 
     {
@@ -147,7 +135,6 @@ const BusinessDemand = ({ permissions }) => {
       title: 'Particulars',
       editable: false,
       widthT: 200,
-      minWidth: 200,
     },
     {
       field: 'april',
@@ -158,14 +145,12 @@ const BusinessDemand = ({ permissions }) => {
       headerAlign: 'left',
       type: 'number',
       format: '{0:n2}',
-      minWidth: 200,
     },
 
     {
       field: 'isEditable',
       title: 'isEditable',
       hidden: true,
-      isVisible: false,
     },
   ]
   const fetchData = async () => {
@@ -530,6 +515,7 @@ const BusinessDemand = ({ permissions }) => {
         IS_PVC_VMD ||
         IS_PVC_DMD ||
         IS_ELASTOMER_VERTICAL ||
+
         (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD)
           ? true
           : false,
@@ -694,94 +680,49 @@ const BusinessDemand = ({ permissions }) => {
 
   return (
     <div>
-      {/* <Backdrop
-        sx={{
-          color: '#fff',
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-          backdropFilter: 'blur(8px)',
-          background: 'rgba(0, 0, 0, 0.5)',
-        }}
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={!!loading}
       >
         <CircularProgress color='inherit' />
-      </Backdrop> */}
-
-      <LoaderBackdrop open={!!loading} />
+      </Backdrop>
 
       {lowerVertName !== 'cracker' && !IS_ELASTOMER_JMD && (
         <>
-          <Box
-            sx={{
-              pb: IS_PP_SEZ ? 0 : 1,
-              background: 'transparent',
-            }}
-          >
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-              }}
+          <CustomAccordion defaultExpanded disableGutters>
+            <CustomAccordionSummary
+              aria-controls='meg-grid-content'
+              id='meg-grid-header'
             >
-              {/* <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 32,
-                  height: 32,
-                  borderRadius: '6px',
-                  backgroundColor: '#ECEEFF',
-                  color: '#1e293b',
-                  cursor: 'pointer',
-                  padding: '8px',
-                }}
-                onClick={toggleGrid}
-              >
-                <KeyboardArrowUpIcon
-                  sx={{
-                    fontSize: 20,
-                    transition: '0.2s',
-                    transform: gridExpanded
-                      ? 'rotate(0deg)'
-                      : 'rotate(180deg)',
-                  }}
-                />
-              </Box> */}
               <Typography component='span' className='accordian-title'>
                 {PRODUCTION_TARGET_LABEL}
               </Typography>
-            </Box>
-          </Box>
-          {gridExpanded && (
-            <Box
-              sx={{
-                transition: '0.3s',
-                overflow: 'hidden',
-                background: 'transparent',
-              }}
-            >
-              <ProductionvolumeData
-                isBusinessDemand={true}
-                permissions={{
-                  allAction: true,
-                  showAction: false,
-                  addButton: false,
-                  deleteButton: false,
-                  editButton: false,
-                  showUnit: true,
-                  saveWithRemark: false,
-                  showCalculate: false,
-                  saveBtn: false,
-                  hideSummary: true,
-                  hideUploadExcel: true,
-                  hideDownloadExcel: true,
-                }}
-              />
-            </Box>
-          )}
+            </CustomAccordionSummary>
+            <CustomAccordionDetails>
+              <Box sx={{ width: '100%', margin: 0 }}>
+                <ProductionvolumeData
+                  isBusinessDemand={true}
+                  permissions={{
+                    allAction: true,
+                    showAction: false,
+                    addButton: false,
+                    deleteButton: false,
+                    editButton: false,
+                    showUnit: true,
+                    saveWithRemark: false,
+                    showCalculate: false,
+                    saveBtn: false,
+                    hideSummary: true,
+                    hideUploadExcel: true,
+                    hideDownloadExcel: true,
+                  }}
+                />
+              </Box>
+            </CustomAccordionDetails>
+          </CustomAccordion>
         </>
       )}
+
       {IS_ELASTOMER_JMD && (
         <KendoDataTables
           setRows={setRowRate}

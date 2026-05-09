@@ -4,129 +4,112 @@
     "title": "Type",
     "widthT": 200,
     "editable": false,
-    "hidden": true,
-    "isVisible": false
+    "hidden": true
   },
   {
     "field": "NormParameter_FK_Id",
-    "hidden": true,
-    "isVisible": false
+    "hidden": true
   },
   {
     "field": "DisplayName",
     "title": "Particulars",
-    "widthT": 120,
-    "editable": false,
-    "minWidth": 120
+    "widthT": 140,
+    "editable": false
   },
   {
     "field": "UOM",
     "title": "UOM",
     "editable": false,
-    "widthT": 80,
-    "minWidth": 80
+    "widthT": 60
   },
   {
     "field": "Apr",
     "title": 4,
     "editable": true,
     "format": "{0:#.##}",
-    "type": "number",
-    "minWidth": 100
+    "type": "number"
   },
   {
     "field": "May",
     "title": 5,
     "editable": true,
     "format": "{0:#.##}",
-    "type": "number",
-    "minWidth": 100
+    "type": "number"
   },
   {
     "field": "Jun",
     "title": 6,
     "editable": true,
     "format": "{0:#.##}",
-    "type": "number",
-    "minWidth": 100
+    "type": "number"
   },
   {
     "field": "Jul",
     "title": 7,
     "editable": true,
     "format": "{0:#.##}",
-    "type": "number",
-    "minWidth": 100
+    "type": "number"
   },
   {
     "field": "Aug",
     "title": 8,
     "editable": true,
     "format": "{0:#.##}",
-    "type": "number",
-    "minWidth": 100
+    "type": "number"
   },
   {
     "field": "Sep",
     "title": 9,
     "editable": true,
     "format": "{0:#.##}",
-    "type": "number",
-    "minWidth": 100
+    "type": "number"
   },
   {
     "field": "Oct",
     "title": 10,
     "editable": true,
     "format": "{0:#.##}",
-    "type": "number",
-    "minWidth": 100
+    "type": "number"
   },
   {
     "field": "Nov",
     "title": 11,
     "editable": true,
     "format": "{0:#.##}",
-    "type": "number",
-    "minWidth": 100
+    "type": "number"
   },
   {
     "field": "Dec",
     "title": 12,
     "editable": true,
     "format": "{0:#.##}",
-    "type": "number",
-    "minWidth": 100
+    "type": "number"
   },
   {
     "field": "Jan",
     "title": 1,
     "editable": true,
     "format": "{0:#.##}",
-    "type": "number",
-    "minWidth": 100
+    "type": "number"
   },
   {
     "field": "Feb",
     "title": 2,
     "editable": true,
     "format": "{0:#.##}",
-    "type": "number",
-    "minWidth": 100
+    "type": "number"
   },
   {
     "field": "Mar",
     "title": 3,
     "editable": true,
     "format": "{0:#.##}",
-    "type": "number",
-    "minWidth": 100
+    "type": "number"
   },
 
   {
     "field": "isEditable",
     "title": "isEditable",
-    "hidden": true,
-    "isVisible": false
+    "hidden": true
   }
 ]

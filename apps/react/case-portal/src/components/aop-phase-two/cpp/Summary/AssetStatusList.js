@@ -60,8 +60,8 @@ const AssetStatusList = ({ executionId, month, financialYear }) => {
     {
       field: 'operatingHours',
       title: 'Operating Hours',
-      widthT: 170,
-      minWidth: 170,
+      widthT: 150,
+      minWidth: 150,
       type: 'text',
       editable: false,
     },

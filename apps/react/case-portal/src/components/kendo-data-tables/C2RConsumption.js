@@ -10,7 +10,6 @@ import { setIsBlocked } from 'store/reducers/dataGridStore'
 import { validateFields } from 'utils/validationUtils'
 import getEnhancedColDefs from '../data-tables/CommonHeader/Kendo_ProductionAopHeader'
 import KendoDataTables from './index'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const C2RConsumption = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -716,7 +715,13 @@ const C2RConsumption = ({ permissions }) => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
+
       <KendoDataTables
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}

@@ -8,7 +8,6 @@ import ValueFormatterPhaseTwo, {
   customValueFormatterPhaseTwo,
 } from '../../common/ValueFormatterPhaseTwo'
 import { OverallAopConsumptionApiService } from 'components/aop-phase-two/services/crude/overallAopConsumptionApiService'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const OverallAopConsumption = () => {
   const keycloak = useSession()
@@ -33,7 +32,7 @@ const OverallAopConsumption = () => {
     {
       field: 'productName',
       title: 'Particulars',
-      widthT: 250,
+      // widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
@@ -42,7 +41,7 @@ const OverallAopConsumption = () => {
     {
       field: 'normParameterTypeDisplayName',
       title: 'Type',
-      widthT: 250,
+      // widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
@@ -52,15 +51,15 @@ const OverallAopConsumption = () => {
     {
       field: 'UOM',
       title: 'UOM',
-      widthT: 120,
-      minWidth: 120,
+      // widthT: 100,
+      minWidth: 100,
       type: 'text',
       editable: false,
     },
     {
       field: 'april',
       title: headerMap[4],
-      widthT: 120,
+      // widthT: 100,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -69,7 +68,7 @@ const OverallAopConsumption = () => {
     {
       field: 'may',
       title: headerMap[5],
-      widthT: 120,
+      // widthT: 100,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -78,7 +77,7 @@ const OverallAopConsumption = () => {
     {
       field: 'june',
       title: headerMap[6],
-      widthT: 120,
+      // widthT: 100,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -87,7 +86,7 @@ const OverallAopConsumption = () => {
     {
       field: 'july',
       title: headerMap[7],
-      widthT: 120,
+      // widthT: 100,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -96,7 +95,7 @@ const OverallAopConsumption = () => {
     {
       field: 'aug',
       title: headerMap[8],
-      widthT: 120,
+      // widthT: 100,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -105,7 +104,7 @@ const OverallAopConsumption = () => {
     {
       field: 'sep',
       title: headerMap[9],
-      widthT: 120,
+      // widthT: 100,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -114,7 +113,7 @@ const OverallAopConsumption = () => {
     {
       field: 'oct',
       title: headerMap[10],
-      widthT: 120,
+      // widthT: 100,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -123,7 +122,7 @@ const OverallAopConsumption = () => {
     {
       field: 'nov',
       title: headerMap[11],
-      widthT: 120,
+      // widthT: 100,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -132,7 +131,7 @@ const OverallAopConsumption = () => {
     {
       field: 'dec',
       title: headerMap[12],
-      widthT: 120,
+      // widthT: 100,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -141,7 +140,7 @@ const OverallAopConsumption = () => {
     {
       field: 'jan',
       title: headerMap[1],
-      widthT: 120,
+      // widthT: 100,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -150,7 +149,7 @@ const OverallAopConsumption = () => {
     {
       field: 'feb',
       title: headerMap[2],
-      widthT: 120,
+      // widthT: 100,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -287,7 +286,12 @@ const OverallAopConsumption = () => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <AdvanceKendoTable
         columns={columns}

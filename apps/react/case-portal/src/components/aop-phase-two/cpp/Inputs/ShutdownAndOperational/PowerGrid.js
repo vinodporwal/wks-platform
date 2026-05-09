@@ -64,8 +64,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
     {
       field: 'utilityDistributed.sapCode',
       title: 'Distributed SAP Code',
-      widthT: 200,
-      minWidth: 200,
+      widthT: 180,
+      minWidth: 180,
       type: 'text',
       editable: false,
       locked: true,
@@ -82,8 +82,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
     {
       field: 'utilityGenerated.sapCode',
       title: 'Generated SAP Code',
-      widthT: 200,
-      minWidth: 200,
+      widthT: 180,
+      minWidth: 180,
       type: 'text',
       editable: false,
       locked: true,

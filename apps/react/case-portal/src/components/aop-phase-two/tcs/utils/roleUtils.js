@@ -1,11 +1,10 @@
 // Role definitions and utilities for TCS workflow
 
 export const ROLES = {
-  CTS_HEAD: 'cts_head1',
+  // CTS_HEAD: 'cts_head',
   EPS_HEAD: 'eps_head',
   EPS_ENGINEER: 'eps_engineer',
   PLANT_MANAGER: 'plant_manager',
-  CTS_TECH_MANAGER: 'cts_tech_manager',
   CLUSTER_HEAD: 'cluster_head',
 }
 
@@ -23,10 +22,8 @@ export const getUserRole = (keycloakRoles = []) => {
   const rolePriority = [
     ROLES.CLUSTER_HEAD,
     ROLES.EPS_HEAD,
-    ROLES.CTS_HEAD,
     ROLES.EPS_ENGINEER,
     ROLES.PLANT_MANAGER,
-    ROLES.CTS_TECH_MANAGER,
   ]
 
   for (const role of rolePriority) {
@@ -46,17 +43,13 @@ export const getUserRole = (keycloakRoles = []) => {
 export const getRoleLabel = (role) => {
   switch (role) {
     case ROLES.PLANT_MANAGER:
-      return 'Plant Manager'
-    case ROLES.CTS_TECH_MANAGER:
-      return 'CTS Tech Manager'
+      return 'CTS Engineer'
     case ROLES.EPS_ENGINEER:
       return 'AOM'
     case ROLES.EPS_HEAD:
       return 'EPS Head'
-    case ROLES.CTS_HEAD:
-      return 'CTS Head'
     case ROLES.CLUSTER_HEAD:
-      return 'Site President'
+      return 'R&M Cluster Head'
     default:
       return 'Unknown Role'
   }

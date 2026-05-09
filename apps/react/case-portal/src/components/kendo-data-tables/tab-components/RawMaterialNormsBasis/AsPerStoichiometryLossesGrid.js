@@ -8,7 +8,6 @@ import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_Con
 import { DataService } from 'services/DataService'
 import { getRoleName } from 'services/role-service'
 import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-basis-api-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const AsPerStoichiometryLossesGrid = ({
   summary,
@@ -359,7 +358,12 @@ const AsPerStoichiometryLossesGrid = ({
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <KendoDataTables
         modifiedCells={modifiedCells}

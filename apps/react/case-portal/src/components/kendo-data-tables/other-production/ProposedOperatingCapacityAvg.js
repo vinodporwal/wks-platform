@@ -15,7 +15,6 @@ import { DataService } from 'services/DataService'
 import { getColDefsNonEditable } from '../Utilities-Kendo/productionTargetColDefs'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ProposedOperatingCapacityAvg = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = useState({})
@@ -301,7 +300,12 @@ const ProposedOperatingCapacityAvg = ({ permissions }) => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <KendoDataTables
         modifiedCells={modifiedCells}

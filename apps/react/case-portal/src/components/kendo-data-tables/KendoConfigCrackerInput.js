@@ -10,8 +10,6 @@ import KendoDataTables from './index'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
-import AopTabs from 'components/AopTabs'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import StartAndEndPicker from './Utilities-Kendo/StartAndEndPicker'
 import NaphthaLimsDataSet from './NaphthaLimsDataSet'
 import NaphthaHMDComponent from './NaphthaHMDComponent'
@@ -19,7 +17,7 @@ import ModeSelection from './ModeSelection'
 
 const CrackerConfig = () => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -903,6 +901,7 @@ const CrackerConfig = () => {
       setSnackbarOpen(false)
     }
   }
+
   const handleLoadNaphthaData = async (startDate, endDate) => {
     try {
       setLoading(true)
@@ -982,30 +981,61 @@ const CrackerConfig = () => {
       }
     }
   }, [currentTabDisplay, PLANT_ID, AOP_YEAR, keycloak])
-  
-  const resolvedTabs = tabs.map((tabId) => {
-    const info = availableTabs.find(
-      (t) => t.id.toLowerCase() === tabId.toLowerCase(),
-    )
-    return info?.displayName || tabId
-  })
+
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
-      <Box sx={{ overflowX: 'auto', width: '100%' }}>
-        <AopTabs
-          tabIndex={tabIndex}
-          setTabIndex={(newIndex) => {
-            if (newIndex >= 0 && newIndex < resolvedTabs.length) {
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
+
+      <Box
+        sx={{ overflowX: 'auto', width: '100%', mb: IS_CRACKER_HMD ? 1 : 0 }}
+      >
+        <Tabs
+          sx={{
+            borderBottom: '0px solid #ccc',
+            '.MuiTabs-indicator': { display: 'none' },
+            margin: '0px 0px 0px 0px',
+            minHeight: '28px',
+          }}
+          textColor='primary'
+          indicatorColor='primary'
+          value={tabIndex}
+          onChange={(e, newIndex) => {
+            if (newIndex >= 0 && newIndex < tabs.length) {
               setTabIndex(newIndex)
             }
           }}
-          tabs={resolvedTabs}
-        />
+        >
+          {tabs.map((tabId) => {
+            const info = availableTabs.find(
+              (t) => t.id.toLowerCase() === tabId.toLowerCase(),
+            )
+            const label = info?.displayName || tabId
+            return (
+              <Tab
+                key={tabId}
+                sx={{
+                  border: '1px solid #ADD8E6',
+                  borderBottom: '1px solid #ADD8E6',
+                  fontSize: '0.75rem',
+                  padding: '9px',
+                  minHeight: '12px',
+                }}
+                label={label}
+              />
+            )
+          })}
+        </Tabs>
       </Box>
+
       {IS_CRACKER_HMD && (
         <ModeSelection permissions={adjustedPermissionsReadyOnly} />
       )}
+
       <Box>
         {(() => {
           const rows = getRows(currentTabDisplay)

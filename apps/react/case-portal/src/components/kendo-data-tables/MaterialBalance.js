@@ -10,7 +10,7 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import Notification from 'components/Utilities/Notification'
 import ModeSelection from './ModeSelection'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+
 const MaterialBalance = ({ permissions }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -101,7 +101,6 @@ const MaterialBalance = ({ permissions }) => {
       const fieldName = `${monthShort}-${yearSuffix}`
 
       return {
-        minWidth: 100,
         field: monthShort,
         title: fieldName,
         width: 120,
@@ -124,17 +123,10 @@ const MaterialBalance = ({ permissions }) => {
         title: 'Particulars',
         editable: false,
         widthT: 100,
-        minWidth: 120,
       },
-      { field: 'UOM', title: 'UOM', editable: false, widthT: 80, minWidth: 80 },
+      { field: 'UOM', title: 'UOM', editable: false, widthT: 80 },
       ...monthCols,
-      {
-        field: 'Remarks',
-        title: 'Remark',
-        editable: false,
-        widthT: 100,
-        minWidth: 100,
-      },
+      { field: 'Remarks', title: 'Remark', editable: false, widthT: 100 },
     ],
     [monthCols],
   )
@@ -298,7 +290,12 @@ const MaterialBalance = ({ permissions }) => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       {IS_CRACKER_HMD && (
         <ModeSelection permissions={adjustedPermissionsReadyOnly} />

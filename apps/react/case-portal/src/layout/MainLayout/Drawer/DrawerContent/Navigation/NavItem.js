@@ -4,198 +4,199 @@ import ListItemButton from '@mui/material/ListItemButton'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
 import Typography from '@mui/material/Typography'
+import { useTheme } from '@mui/material/styles'
 import PropTypes from 'prop-types'
 import { useDispatch, useSelector } from 'react-redux'
 import { useEffect } from 'react'
 import { activeItem } from 'store/reducers/menu'
+// import useSafeNavigate from ''
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
 import Button from '@mui/material/Button'
 import { useSafeNavigate } from './useSafeNavigate'
+// import { Tooltip } from '../../../../../../node_modules/@mui/material/index'
+// import { setIsBlocked } from 'store/reducers/dataGridStore'
 import { useLocation } from 'react-router-dom'
-import { Tooltip } from '@mui/material'
-
-const NavItem = ({ item, level, onItemClick, isPopover }) => {
-  
-  const isDashboard = item.id === 'dashboard'
-
+const NavItem = ({ item, level }) => {
+  const theme = useTheme()
   const dispatch = useDispatch()
-  const { drawerOpen, openItem } = useSelector((state) => state.menu)
+  const menu = useSelector((state) => state.menu)
+  const { drawerOpen, openItem } = menu
   const { safeNavigate, confirmLeave, setDialogOpen, dialogOpen, itemHandler } =
     useSafeNavigate()
   const location = useLocation()
 
-  const isSelected = openItem.includes(item.id)
-  const Icon = item.icon
+  // const [openDialog, setOpenDialog] = useState(false)
 
-  const handleClick = () => {
-    if (onItemClick) onItemClick()
+  const handleClick = (id) => {
+    // console.log(item)
     if (item.requiresConfirmation) {
       setDialogOpen(true)
     } else {
-      dispatch(activeItem({ openItem: [item.id] }))
-      itemHandler(item.id)
+      dispatch(activeItem({ openItem: [id] }))
+      itemHandler(id)
       safeNavigate(item.url)
     }
   }
 
+  const stayOnPage = () => {
+    // dispatch(setIsBlocked(false))
+    setDialogOpen(false)
+    // dispatch(activeItem({ openItem: [item.id] }))
+    // safeNavigate(item.url)
+
+    // console.log(item)
+  }
+
+  // const cancelNavigation = () => {
+  //   setDialogOpen(false)
+  // }
+
+  const Icon = item.icon
+  const itemIcon = Icon ? <Icon fontSize='small' /> : null
+
+  const isSelected = openItem.findIndex((id) => id === item.id) > -1
+
   useEffect(() => {
-    if (location.pathname.includes(item.id)) {
+    const currentIndex = location.pathname
+      .toString()
+      .split('/')
+      .findIndex((id) => id === item.id)
+
+    if (currentIndex > -1) {
+      dispatch(activeItem({ openItem: [item.id] }))
+    }
+  }, [])
+
+  useEffect(() => {
+    // runs on every URL change
+
+    if (location.pathname.split('/').includes(item.id)) {
       dispatch(activeItem({ openItem: [item.id] }))
     }
   }, [location.pathname, item.id, dispatch])
 
-  const itemContent = (
-    <ListItemButton
-      disabled={item.disabled}
-      onClick={handleClick}
-      selected={isSelected}
-      sx={{
-        minHeight: 30,
-        px: 1,
-        py: 0.8,
-        mx: '4px',
-        mb: 0.5,
-        justifyContent: drawerOpen || isPopover ? 'flex-start' : 'center',
-
-        borderRadius: '6px', // ? RESTORE PILL RADIUS
-        backgroundColor: 'transparent', // default sidebar
-
-        color: '#606060',
-        transition: 'all 0.3s ease',
-
-        '&:hover': {
-          backgroundColor: 'rgba(87, 91, 238, 0.08)',
-          color: '#4046CA',
-          '& .MuiTypography-root': {
-            color: '#4046CA !important',
-          },
-          '& .MuiListItemIcon-root': {
-            color: '#4046CA !important',
-          },
-        },
-
-        /* ? SELECTED STYLE */
-        '&.Mui-selected': {
-          backgroundColor: 'rgba(87, 91, 238, 0.1)', // Subtle selected background
-          color: '#4046CA',
-
-          '&:hover': {
-            backgroundColor: 'rgba(87, 91, 238, 0.15)',
-          },
-
-          '& .MuiTypography-root': {
-            color: '#4046CA !important',
-          },
-
-          '& .MuiListItemIcon-root': {
-            color: '#4046CA !important',
-          },
-        },
-
-        /* ? SELECTED LEFT BORDER INDICATOR - HIDDEN IN POPOVER */
-        '&.Mui-selected::before': {
-          content: '""',
-          position: 'absolute',
-          left: -4,
-          top: '10%',
-          bottom: '10%',
-          width: '3px',
-          borderRadius: '0 4px 4px 0',
-          backgroundColor: isPopover ? 'transparent' : '#575bee',
-        },
-      }}
-    >
-      {/* ICON */}
-      {Icon && (
-        <ListItemIcon
-          sx={{
-            minWidth: drawerOpen || isPopover ? 30 : 0,
-            color: isSelected || isDashboard ? '#4046CA' : '#606060',
-            justifyContent: 'center',
-
-            '& svg': {
-              width: 18,
-              height: 18,
-            },
-          }}
-        >
-          <Icon size={18} strokeWidth={1.7} />
-        </ListItemIcon>
-      )}
-
-      {/* TEXT - HIDDEN IN MINI MODE FOR ALL LEVELS */}
-      {(drawerOpen || isPopover) && (
-        <ListItemText
-          sx={{
-            my: 0,
-            overflow: 'hidden',
-          }}
-          primary={
-            <Typography
-              sx={{
-                display: 'block',
-                visibility: 'visible',
-                fontSize: isPopover ? '14px' : '16px',
-                fontWeight: isSelected ? 700 : 500,
-                color: isSelected ? '#4046CA' : '#606060',
-                letterSpacing: isPopover ? '0.012em' : '0.01em',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                maxWidth: '180px',
-                fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-              }}
-            >
-              {item.title}
-            </Typography>
-          }
-        />
-      )}
-
-      {/* CHIP */}
-      {drawerOpen && item.chip && (
-        <Chip
-          size='small'
-          label={item.chip.label}
-          avatar={item.chip.avatar ? <Avatar>{item.chip.avatar}</Avatar> : null}
-          sx={{
-            ml: 0.5,
-            height: 16,
-            fontSize: '0.55rem',
-            fontWeight: 700,
-            bgcolor: '#575bee',
-            color: '#ffffff',
-            borderRadius: '1px',
-          }}
-        />
-      )}
-    </ListItemButton>
-  )
+  const textColor = 'text.primary'
 
   return (
     <>
-      {drawerOpen || isPopover ? (
-        itemContent
-      ) : (
-        <Tooltip title={item.title} placement='right' arrow>
-          {itemContent}
-        </Tooltip>
-      )}
+      <ListItemButton
+        disabled={item.disabled}
+        // onClick={() => {
+        //   itemHandler(item.id)
+        //   handleClick()
+        // }}
+        onClick={() => handleClick(item.id)}
+        selected={isSelected}
+        sx={{
+          zIndex: 1201,
+          pl: drawerOpen ? `${level * 8}px` : 1.5,
+          // pl: 2.5,
+          py: !drawerOpen && level === 1 ? 1 : 1,
+          ...(drawerOpen && {
+            '&:hover': {
+              bgcolor: '#0100cb',
+              color: 'white',
+            },
+            '&.Mui-selected': {
+              bgcolor: '#0100cb',
+              borderRight: `2px solid ${theme.palette.primary.main}`,
+              color: 'white',
+              borderRadius: 0,
+              '&:hover': {
+                bgcolor: '#0100cb',
+                color: 'white',
+              },
+            },
+          }),
+          ...(!drawerOpen && {
+            '&:hover': {
+              bgcolor: '#0100cb',
+            },
+            '&.Mui-selected': {
+              bgcolor: '#0100cb',
+              '&:hover': {
+                bgcolor: '#0100cb',
+              },
+            },
+          }),
+        }}
+      >
+        {itemIcon && (
+          <ListItemIcon
+            sx={{
+              minWidth: 20,
+              '& svg': {
+                fontSize: '18px',
+                width: '18px',
+                height: '18px',
+              },
 
-      {/* CONFIRMATION DIALOG */}
+              color: isSelected ? 'white' : textColor,
+              ...(!drawerOpen && {
+                borderRadius: 1.5,
+                width: 36,
+                height: 36,
+                alignItems: 'center',
+                justifyContent: 'center',
+                '&:hover': {
+                  bgcolor: 'secondary.lighter',
+                },
+              }),
+              ...(!drawerOpen &&
+                isSelected && {
+                  bgcolor: '#0100cb',
+                  '&:hover': {
+                    bgcolor: '#0100cb',
+                  },
+                }),
+            }}
+          >
+            {itemIcon}
+          </ListItemIcon>
+        )}
+        {(drawerOpen || (!drawerOpen && level !== 1)) && (
+          <ListItemText
+            primary={
+              // <Tooltip title={item.title} arrow>
+              <Typography
+                variant='h6'
+                className={`sub-side-menu ${isSelected ? 'active' : ''}`}
+              >
+                {item.title}
+              </Typography>
+              // </Tooltip>
+            }
+          />
+        )}
+        {(drawerOpen || (!drawerOpen && level !== 1)) && item.chip && (
+          <Chip
+            color={item.chip.color}
+            variant={item.chip.variant}
+            size={item.chip.size}
+            label={item.chip.label}
+            avatar={item.chip.avatar && <Avatar>{item.chip.avatar}</Avatar>}
+          />
+        )}
+      </ListItemButton>
+
+      {/* Confirmation Dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
         <DialogTitle>Unsaved Changes</DialogTitle>
         <DialogContent>
           You have unsaved changes. Are you sure you want to leave this page?
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)} color='inherit'>
+          <Button onClick={stayOnPage} color='error'>
             Stay
           </Button>
-          <Button onClick={() => confirmLeave(item.id)} autoFocus>
+          <Button
+            onClick={() => confirmLeave(item.id)}
+            color='primary'
+            autoFocus
+          >
             Leave
           </Button>
         </DialogActions>
@@ -207,8 +208,6 @@ const NavItem = ({ item, level, onItemClick, isPopover }) => {
 NavItem.propTypes = {
   item: PropTypes.object,
   level: PropTypes.number,
-  onItemClick: PropTypes.func,
-  isPopover: PropTypes.bool,
 }
 
 export default NavItem

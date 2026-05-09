@@ -39,14 +39,12 @@ public interface CrudeBlendWindowRepository extends JpaRepository<DummyEntity, L
                  Remarks, Type
           FROM CrudeBlendWindow
           WHERE 
-            Vertical_FK_Id = :verticalId  
-            AND Site_FK_Id = :siteId
+             Site_FK_Id = :siteId
             AND FinancialYear = :financialYear
           """,
       nativeQuery = true
   )
-       List<CrudeBlendProjection> findCrudeBlendBySiteIdAndVerticalId(@Param("verticalId") UUID verticalId, @Param("siteId") UUID siteId, @Param("financialYear") String financialYear);
-
+       List<CrudeBlendProjection> findCrudeBlendBySiteId(@Param("siteId") UUID siteId, @Param("financialYear") String financialYear);
 
      // fetch crude specific constraints data
      @Query(
@@ -62,20 +60,19 @@ public interface CrudeBlendWindowRepository extends JpaRepository<DummyEntity, L
      List<CrudeSpecificConstraintsProjection> findCrudeSpecificConstraintsByPlant_FK_IdAndSite_FK_Id(@Param("plantId") UUID plantId, @Param("siteId") UUID siteId, @Param("financialYear") String financialYear);
 
 
-    
+     // tcs output  for crude specific constraints
 
-   @Query(
-    value = """
-        SELECT Id, Crude, MaxBlendLimit, Reasons
-        FROM CrudeSpecificConstraints
-        WHERE 
-          Vertical_FK_Id = :verticalId
-          AND Site_FK_Id = :siteId
-          AND FinancialYear = :financialYear
-        """,
-    nativeQuery = true
-)
- List<CrudeSpecificConstraintsProjection> findCrudeSpecificConstraintsByVertical_FK_IdAndSite_FK_Id(@Param("verticalId") UUID verticalId, @Param("siteId") UUID siteId, @Param("financialYear") String financialYear);
+     @Query(
+      value = """
+          SELECT Id, Crude, MaxBlendLimit, Reasons
+          FROM CrudeSpecificConstraints
+          WHERE 
+            Site_FK_Id = :siteId
+            AND FinancialYear = :financialYear
+          """,
+      nativeQuery = true
+  )
+   List<CrudeSpecificConstraintsProjection> findCrudeSpecificConstraintsBySite_FK_Id(@Param("siteId") UUID siteId, @Param("financialYear") String financialYear);
 
 
 
@@ -97,13 +94,12 @@ public interface CrudeBlendWindowRepository extends JpaRepository<DummyEntity, L
           SELECT Id, kbpsd, value_345, Remarks
           FROM VGOVRDrop
           WHERE 
-            Vertical_FK_Id = :verticalId
-            AND Site_FK_Id = :siteId
+            Site_FK_Id = :siteId
             AND FinancialYear = :financialYear
           """,
       nativeQuery = true
   )
-   List<VGOVRDropProjection> findVGOVRDropByVertical_FK_IdAndSite_FK_Id(@Param("verticalId") UUID verticalId, @Param("siteId") UUID siteId, @Param("financialYear") String financialYear);
+   List<VGOVRDropProjection> findVGOVRDropBySite_FK_Id(@Param("siteId") UUID siteId, @Param("financialYear") String financialYear);
 
 
 }

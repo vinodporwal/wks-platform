@@ -19,7 +19,6 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import ValueFormatterProductionProductionNormBasis from 'utils/ValueFormatterProduction_ProductionNormBasis'
 import { useDispatch, useSelector } from 'react-redux'
 import { getRoleName } from 'services/role-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const categories = () => {
   return [
     {
@@ -354,7 +353,10 @@ export default function PlantContributionLastFourYears() {
 
   return (
     <Box sx={{ width: '100%' }}>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      ></Backdrop>
 
       {/* Main Categories Except 'OtherVariableCost' */}
       {categories()

@@ -210,8 +210,8 @@ async function getTcsSlowdownData(keycloak, siteId, verticalId, year) {
 }
 
 // ===================== || TCS Crude Blend Window Data APIs || ===================== //
-async function getCrudBlendWindowData(keycloak, verticalId, year, siteId) {
-  const url = `${Config.CaseEngineUrl}/task/crude-blend-window/${siteId}/${year}/${verticalId}`
+async function getCrudBlendWindowData(keycloak, year, siteId) {
+  const url = `${Config.CaseEngineUrl}/task/crude-blend-window/${siteId}/${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -230,13 +230,8 @@ async function getCrudBlendWindowData(keycloak, verticalId, year, siteId) {
 }
 
 // ===================== || TCS CPP Units SD Plan Data APIs || ===================== //
-async function getCPPUnitsSdPlanData(
-  keycloak,
-  verticalId,
-  financialYear,
-  siteId,
-) {
-  const url = `${Config.CaseEngineUrl}/task/cpp-unit-sd-plan/${financialYear}/${verticalId}/${siteId}`
+async function getCPPUnitsSdPlanData(keycloak, financialYear, siteId) {
+  const url = `${Config.CaseEngineUrl}/task/cpp-unit-sd-plan/${financialYear}/${siteId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -255,8 +250,8 @@ async function getCPPUnitsSdPlanData(
 }
 
 // ===================== || TCS ROGC Data APIs || ===================== //
-async function getTcsRogcData(keycloak, siteId, verticalId, year) {
-  const url = `${Config.CaseEngineUrl}/task/furnace-output/${year}/${siteId}/${verticalId}`
+async function getTcsRogcData(keycloak, siteId, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/furnace/${year}/${siteId}/${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -275,8 +270,8 @@ async function getTcsRogcData(keycloak, siteId, verticalId, year) {
 }
 
 // ===================== || TCS PCG Outlook Data APIs || ===================== //
-async function getPcgOutlookData(keycloak, verticalId, siteId, financialYear) {
-  const url = `${Config.CaseEngineUrl}/task/pcg-outlook/${verticalId}/${siteId}/${financialYear}`
+async function getPcgOutlookData(keycloak, siteId, financialYear) {
+  const url = `${Config.CaseEngineUrl}/task/pcg-outlook/${siteId}/${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -375,21 +370,21 @@ async function exportSlowdownExcel(keycloak, SITE_ID, VERTICAL_ID, AOP_YEAR) {
 }
 
 // TCS ROGC Excel Export
-async function exportRogcExcel(keycloak, VERTICAL_ID, SITE_ID, AOP_YEAR) {
+async function exportRogcExcel(keycloak, SITE_ID, AOP_YEAR) {
   return exportExcelData(
     keycloak,
     'furnace/export',
-    { financialYear: AOP_YEAR, siteId: SITE_ID, verticalId: VERTICAL_ID },
+    { financialYear: AOP_YEAR, siteId: SITE_ID },
     `TCS_ROGC_${AOP_YEAR}.xlsx`,
   )
 }
 
 // TCS PCG Outlook Excel Export
-async function exportPcgOutlookExcel(keycloak, VERTICAL_ID, SITE_ID, AOP_YEAR) {
+async function exportPcgOutlookExcel(keycloak, SITE_ID, AOP_YEAR) {
   return exportExcelData(
     keycloak,
     'pcg-outlook/export',
-    { siteId: SITE_ID, financialYear: AOP_YEAR, verticalId: VERTICAL_ID },
+    { siteId: SITE_ID, financialYear: AOP_YEAR },
     `TCS_PCG_Outlook_${AOP_YEAR}.xlsx`,
   )
 }
@@ -397,7 +392,6 @@ async function exportPcgOutlookExcel(keycloak, VERTICAL_ID, SITE_ID, AOP_YEAR) {
 // TCS Crud Blend Window Excel Export
 async function exportCrudBlendWindowExcel(
   keycloak,
-  VERTICAL_ID,
   SITE_ID,
   AOP_YEAR,
   tableKey,
@@ -408,7 +402,6 @@ async function exportCrudBlendWindowExcel(
     {
       siteId: SITE_ID,
       financialYear: AOP_YEAR,
-      verticalId: VERTICAL_ID,
       table: tableKey,
     },
     `TCS_Crud_Blend_Window_${tableKey}_${AOP_YEAR}.xlsx`,
@@ -416,15 +409,10 @@ async function exportCrudBlendWindowExcel(
 }
 
 // TCS CPP Units SD Plan Excel Export
-async function exportCPPUnitsSdPlanExcel(
-  keycloak,
-  VERTICAL_ID,
-  SITE_ID,
-  AOP_YEAR,
-) {
+async function exportCPPUnitsSdPlanExcel(keycloak, SITE_ID, AOP_YEAR) {
   return exportExcelData(
     keycloak,
-    `cpp-unit-sd-plan/export/${AOP_YEAR}/${VERTICAL_ID}/${SITE_ID}`,
+    `cpp-unit-sd-plan/export/${AOP_YEAR}/${SITE_ID}`,
     {},
     `TCS_CPP_Units_SD_Plan_${AOP_YEAR}.xlsx`,
   )

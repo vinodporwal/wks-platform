@@ -9,7 +9,6 @@ import ValueFormatterPhaseTwo, {
 } from '../../common/ValueFormatterPhaseTwo'
 import { OverallAopConsumptionApiService } from '../../services/vgoht/overallAopConsumptionApiService'
 import { overAllAOpResponse } from '../dummyData'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const OverallAopConsumption = () => {
   const keycloak = useSession()
@@ -287,7 +286,12 @@ const OverallAopConsumption = () => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <AdvanceKendoTable
         columns={columns}

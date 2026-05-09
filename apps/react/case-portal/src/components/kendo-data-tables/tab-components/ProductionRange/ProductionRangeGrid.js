@@ -10,7 +10,6 @@ import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-bas
 import { validateFields } from 'utils/validationUtils'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { ProductionRangeApiService } from 'services/production-range-api-service copy'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
   const [rows, setRows] = useState([])
   const [NormsRows, setNormsRows] = useState([])
@@ -67,50 +66,41 @@ const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
       field: 'displayName', // matches API
       title: 'Particulars',
       editable: false,
-      widthT: 250,
-      autoAdjust: false,
-      minWidth: 100,
+      widthT: 200,
     },
     {
       field: 'uom',
       title: 'UOM',
       editable: false,
-      widthT: 80,
-      minWidth: 100,
+      widthT: 55,
     },
     {
       field: 'apr',
       title: 'Min',
       editable: true,
-      widthT: 100,
+      widthT: 120,
       type: 'number',
-      minWidth: 100,
     },
     {
       field: 'may',
       title: 'Max',
       editable: true,
-      widthT: 100,
+      widthT: 120,
       type: 'number',
-      minWidth: 100,
     },
 
     {
       field: 'remarks',
       title: 'Remark',
       editable: false,
-      widthT: 250,
-      autoAdjust: false,
+      widthT: 135,
       type: 'string',
-      minWidth: 100,
     },
     {
       field: 'normParameterFKId',
       title: 'idFromApi',
       filterable: 'false',
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
   ]
 
@@ -467,7 +457,12 @@ const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
       <Box>
         <KendoDataTables
           modifiedCells={modifiedCells}

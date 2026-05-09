@@ -11,7 +11,6 @@ const CrudBlendWindowGrid = ({
   title,
   AOP_YEAR,
   SITE_ID,
-  VERTICAL_ID,
   tableData,
   snackbarData,
   setSnackbarData,
@@ -129,7 +128,6 @@ const CrudBlendWindowGrid = ({
     try {
       await TcsOutputApiService.exportCrudBlendWindowExcel(
         keycloak,
-        VERTICAL_ID,
         SITE_ID,
         apiYear,
         tableKey,

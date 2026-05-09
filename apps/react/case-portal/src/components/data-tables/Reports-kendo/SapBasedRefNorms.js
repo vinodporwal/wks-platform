@@ -1,13 +1,11 @@
 import { Box, Button, Typography } from '@mui/material'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
-import DownloadIcon from '@mui/icons-material/Download'
 import { DataGrid } from '@mui/x-data-grid'
 import {
   ExcelExport,
   ExcelExportColumn,
 } from '@progress/kendo-react-excel-export'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
@@ -414,7 +412,12 @@ const SapBasedRefNorms = () => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       {/* Hidden ExcelExport instances for each grid */}
       <div style={{ display: 'none' }}>
@@ -451,7 +454,6 @@ const SapBasedRefNorms = () => {
         <Button
           variant='contained'
           onClick={exportAllGrids}
-          startIcon={<DownloadIcon sx={{ fontSize: 16 }} />}
           className='btn-save'
         >
           Export

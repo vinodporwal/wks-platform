@@ -9,12 +9,10 @@ import {
 } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { Stack } from '../../../../../node_modules/@mui/material/index'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ROGC = ({
   PLANT_ID,
   SITE_ID,
-  VERTICAL_ID,
   AOP_YEAR,
   currentTab,
   snackbarData,
@@ -41,15 +39,21 @@ const ROGC = ({
       setLoading(true)
       let transformedData = []
 
+      // TODO: Replace with actual API call once backend is ready
+      // const response = getMockRogcResponse()
       const response = await TcsOutputApiService.getTcsRogcData(
         keycloak,
         SITE_ID,
-        VERTICAL_ID,
+        PLANT_ID,
         AOP_YEAR,
       )
       console.log('TCS ROGC Response:', response)
 
-      if (response?.length > 0 && Array.isArray(response)) {
+      if (
+        response?.furnaceData?.length > 0 &&
+        response?.furnaceData &&
+        Array.isArray(response.furnaceData)
+      ) {
         // Calculate days dynamically based on financial year
         const getDaysInMonth = (year, month) => {
           return new Date(year, month, 0).getDate()
@@ -62,7 +66,7 @@ const ROGC = ({
         // Add days row at the beginning
         const daysRow = {
           id: 'days_row',
-          name: 'Days',
+          furnace: 'Days',
           apr: getDaysInMonth(startYear, 4),
           may: getDaysInMonth(startYear, 5),
           jun: getDaysInMonth(startYear, 6),
@@ -72,17 +76,17 @@ const ROGC = ({
           oct: getDaysInMonth(startYear, 10),
           nov: getDaysInMonth(startYear, 11),
           dec: getDaysInMonth(startYear, 12),
-          jan: getDaysInMonth(startYear, 1),
-          feb: getDaysInMonth(startYear, 2),
-          mar: getDaysInMonth(startYear, 3),
-          remarks: 'No. of days in a month',
+          jan: getDaysInMonth(endYear, 1),
+          feb: getDaysInMonth(endYear, 2),
+          mar: getDaysInMonth(endYear, 3),
+          remarks: '-',
           isEditable: false,
           inEdit: false,
         }
         transformedData = [daysRow]
 
         // Add furnace data
-        const furnaceRows = response.map((item, index) => ({
+        const furnaceRows = response.furnaceData.map((item, index) => ({
           id: item.id || `row_${index}`,
           ...item,
           inEdit: false,
@@ -90,16 +94,16 @@ const ROGC = ({
         }))
         transformedData.push(...furnaceRows)
 
-        // // Add average row
-        // const averageRow = {
-        //   id: 'average_row',
-        //   furnace: 'Average of Duty_Furnace_Cracking',
-        //   ...response.gCalPerHrData,
-        //   remarks: '-',
-        //   isEditable: false,
-        //   inEdit: false,
-        // }
-        // transformedData.push(averageRow)
+        // Add average row
+        const averageRow = {
+          id: 'average_row',
+          furnace: 'Average of Duty_Furnace_Cracking',
+          ...response.gCalPerHrData,
+          remarks: '-',
+          isEditable: false,
+          inEdit: false,
+        }
+        transformedData.push(averageRow)
       }
 
       setRows(transformedData)
@@ -144,7 +148,7 @@ const ROGC = ({
     return [
       { field: 'id', title: 'ID', hidden: true },
       {
-        field: 'name',
+        field: 'furnace',
         title: 'Furnace',
         width: 150,
         minWidth: 150,
@@ -155,8 +159,8 @@ const ROGC = ({
         field: 'jan',
         title: headerMap[1],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -164,8 +168,8 @@ const ROGC = ({
         field: 'feb',
         title: headerMap[2],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -173,8 +177,8 @@ const ROGC = ({
         field: 'mar',
         title: headerMap[3],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -182,8 +186,8 @@ const ROGC = ({
         field: 'apr',
         title: headerMap[4],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -191,8 +195,8 @@ const ROGC = ({
         field: 'may',
         title: headerMap[5],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -200,8 +204,8 @@ const ROGC = ({
         field: 'jun',
         title: headerMap[6],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -209,8 +213,8 @@ const ROGC = ({
         field: 'jul',
         title: headerMap[7],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -218,8 +222,8 @@ const ROGC = ({
         field: 'aug',
         title: headerMap[8],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -227,8 +231,8 @@ const ROGC = ({
         field: 'sep',
         title: headerMap[9],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -236,8 +240,8 @@ const ROGC = ({
         field: 'oct',
         title: headerMap[10],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -245,8 +249,8 @@ const ROGC = ({
         field: 'nov',
         title: headerMap[11],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -254,8 +258,8 @@ const ROGC = ({
         field: 'dec',
         title: headerMap[12],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -280,12 +284,7 @@ const ROGC = ({
     })
 
     try {
-      await TcsOutputApiService.exportRogcExcel(
-        keycloak,
-        VERTICAL_ID,
-        SITE_ID,
-        AOP_YEAR,
-      )
+      await TcsOutputApiService.exportRogcExcel(keycloak, SITE_ID, AOP_YEAR)
 
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -334,7 +333,12 @@ const ROGC = ({
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
       <Stack sx={{ mt: 2 }}>
         <AdvanceKendoTable
           rows={rows}

@@ -13,14 +13,6 @@ import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 
-import AddIcon from '@mui/icons-material/Add'
-import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
-import DownloadIcon from '@mui/icons-material/Download'
-import UploadIcon from '@mui/icons-material/Upload'
-import CalculateIcon from '@mui/icons-material/Calculate'
-import SaveIcon from '@mui/icons-material/Save'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
-
 import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
 
 import {
@@ -29,7 +21,6 @@ import {
 } from '../../../../node_modules/@progress/kendo-react-excel-export/index'
 import { Button } from '../../../../node_modules/@mui/material/index'
 import getKendoNormsHistorianBasisPe from '../CommonHeader/KendoNormsHistorianBasisPe'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
@@ -225,7 +216,12 @@ const ProductionVolumeDataBasisPe = () => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       {/* Export hidden ExcelExport instances */}
       <div style={{ display: 'none' }}>
@@ -301,8 +297,7 @@ const ProductionVolumeDataBasisPe = () => {
           <Button
             variant='contained'
             onClick={exportAllGrids}
-            className='btn-export'
-            startIcon={<DownloadIcon fontSize='small' />}
+            className='btn-save'
           >
             Export
           </Button>

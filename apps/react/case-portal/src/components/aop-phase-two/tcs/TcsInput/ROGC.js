@@ -10,12 +10,10 @@ import {
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { Stack } from '../../../../../node_modules/@mui/material/index'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ROGC = ({
   PLANT_ID,
   SITE_ID,
-  VERTICAL_ID,
   AOP_YEAR,
   currentTab,
   snackbarData,
@@ -49,11 +47,11 @@ const ROGC = ({
 
       console.log('Carry-forward response:', carryForwardResponse)
 
-      // setSnackbarData({
-      //   message: 'Data carried forward from previous year successfully!',
-      //   severity: 'success',
-      // })
-      // setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Data carried forward from previous year successfully!',
+        severity: 'success',
+      })
+      setSnackbarOpen(true)
 
       return true
     } catch (carryForwardErr) {
@@ -70,6 +68,8 @@ const ROGC = ({
         setLoading(true)
         let transformedData = []
 
+        // TODO: Replace with actual API call once backend is ready
+        // const response = getMockRogcResponse()
         const response = await TcsApiService.getTcsRogcData(
           keycloak,
           SITE_ID,
@@ -78,7 +78,11 @@ const ROGC = ({
         )
         console.log('TCS ROGC Response:', response)
 
-        if (response?.length > 0 && Array.isArray(response)) {
+        if (
+          response?.furnaceData?.length > 0 &&
+          response?.furnaceData &&
+          Array.isArray(response.furnaceData)
+        ) {
           // Calculate days dynamically based on financial year
           const getDaysInMonth = (year, month) => {
             return new Date(year, month, 0).getDate()
@@ -91,7 +95,7 @@ const ROGC = ({
           // Add days row at the beginning
           const daysRow = {
             id: 'days_row',
-            name: 'Days',
+            furnace: 'Days',
             apr: getDaysInMonth(startYear, 4),
             may: getDaysInMonth(startYear, 5),
             jun: getDaysInMonth(startYear, 6),
@@ -101,24 +105,33 @@ const ROGC = ({
             oct: getDaysInMonth(startYear, 10),
             nov: getDaysInMonth(startYear, 11),
             dec: getDaysInMonth(startYear, 12),
-            jan: getDaysInMonth(startYear, 1),
-            feb: getDaysInMonth(startYear, 2),
-            mar: getDaysInMonth(startYear, 3),
-            remarks: 'No. of days in a month',
+            jan: getDaysInMonth(endYear, 1),
+            feb: getDaysInMonth(endYear, 2),
+            mar: getDaysInMonth(endYear, 3),
+            remarks: '-',
             isEditable: false,
             inEdit: false,
           }
           transformedData = [daysRow]
 
           // Add furnace data
-          const furnaceRows = response.map((item, index) => ({
+          const furnaceRows = response.furnaceData.map((item, index) => ({
             id: item.id || `row_${index}`,
             ...item,
             inEdit: false,
-            // Hide delete button for FurnaceGCalPerHr rows without blocking editing
-            ...(item.type === 'FurnaceGCalPerHr' ? { hideDelete: true } : {}),
           }))
           transformedData.push(...furnaceRows)
+
+          // Add average row
+          const averageRow = {
+            id: 'average_row',
+            furnace: 'Average of Duty_Furnace_Cracking',
+            ...response.gCalPerHrData,
+            remarks: '-',
+            isEditable: false,
+            inEdit: false,
+          }
+          transformedData.push(averageRow)
         } else {
           // If no data and carry forward not skipped, attempt carry forward
           if (!skipCarryForward) {
@@ -177,19 +190,19 @@ const ROGC = ({
     return [
       { field: 'id', title: 'ID', hidden: true },
       {
-        field: 'name',
+        field: 'furnace',
         title: 'Furnace',
         width: 150,
         minWidth: 150,
         type: 'text',
-        editable: true,
+        editable: false,
       },
       {
         field: 'jan',
         title: headerMap[1],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -197,8 +210,8 @@ const ROGC = ({
         field: 'feb',
         title: headerMap[2],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -206,8 +219,8 @@ const ROGC = ({
         field: 'mar',
         title: headerMap[3],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -215,8 +228,8 @@ const ROGC = ({
         field: 'apr',
         title: headerMap[4],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -224,8 +237,8 @@ const ROGC = ({
         field: 'may',
         title: headerMap[5],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -233,8 +246,8 @@ const ROGC = ({
         field: 'jun',
         title: headerMap[6],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -242,8 +255,8 @@ const ROGC = ({
         field: 'jul',
         title: headerMap[7],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -251,8 +264,8 @@ const ROGC = ({
         field: 'aug',
         title: headerMap[8],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -260,8 +273,8 @@ const ROGC = ({
         field: 'sep',
         title: headerMap[9],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -269,8 +282,8 @@ const ROGC = ({
         field: 'oct',
         title: headerMap[10],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -278,8 +291,8 @@ const ROGC = ({
         field: 'nov',
         title: headerMap[11],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -287,8 +300,8 @@ const ROGC = ({
         field: 'dec',
         title: headerMap[12],
         editable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 80,
         type: 'number1',
         format: valueFormat,
       },
@@ -347,9 +360,6 @@ const ROGC = ({
 
       // Custom validation: If any row data is updated, remarks must be filled and different from original
       const fieldsToCheck = [
-        'jan',
-        'feb',
-        'mar',
         'apr',
         'may',
         'jun',
@@ -359,12 +369,15 @@ const ROGC = ({
         'oct',
         'nov',
         'dec',
+        'jan',
+        'feb',
+        'mar',
       ]
       const validationError = validateRowDataWithRemarks(
         data,
         originalRows,
         fieldsToCheck,
-        'name',
+        'furnace',
         'remarks',
       )
 
@@ -377,42 +390,12 @@ const ROGC = ({
         return
       }
 
-      const MONTH_FIELDS = [
-        'jan',
-        'feb',
-        'mar',
-        'apr',
-        'may',
-        'jun',
-        'jul',
-        'aug',
-        'sep',
-        'oct',
-        'nov',
-        'dec',
-      ]
-
-      // Nullify id for newly added rows; parse all month values as numbers
-      const dataToSave = data.map((row) => {
-        const monthNumbers = Object.fromEntries(
-          MONTH_FIELDS.map((m) => {
-            const parsed = parseFloat(row[m])
-            return [m, isNaN(parsed) ? null : parsed]
-          }),
-        )
-        return {
-          ...row,
-          ...monthNumbers,
-          ...(row.isNew ? { id: null } : {}),
-        }
-      })
-
       const response = await TcsApiService.saveRogcData(
         keycloak,
         SITE_ID,
         PLANT_ID,
         AOP_YEAR,
-        dataToSave,
+        data,
       )
       console.log('Save ROGC response:', response)
 
@@ -422,12 +405,12 @@ const ROGC = ({
         severity: 'success',
       })
       setModifiedCells({})
-      fetchRogcData(true)
+      fetchRogcData()
     } catch (error) {
       console.error('Error saving ROGC data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
-        message: error?.errorMessage || 'Error saving ROGC data!',
+        message: 'Error saving ROGC data!',
         severity: 'error',
       })
     }
@@ -442,57 +425,6 @@ const ROGC = ({
     fetchRogcData,
   ])
 
-  // Delete row data
-  const deleteRowData = useCallback(
-    async (paramsForDelete) => {
-      setLoading(true)
-
-      try {
-        const { id } = paramsForDelete
-        const deleteId = id
-
-        // Check if this is a newly added row (not saved to backend yet)
-        const isNewRow = paramsForDelete.isNew
-
-        if (isNewRow) {
-          // Just remove from local state
-          setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Row removed successfully!',
-            severity: 'success',
-          })
-        } else {
-          // Call API to delete from backend
-          await TcsApiService.deleteRogcData(keycloak, id)
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Record deleted successfully!',
-            severity: 'success',
-          })
-          fetchRogcData(true)
-        }
-      } catch (error) {
-        console.error('Error deleting record:', error)
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Error deleting record!',
-          severity: 'error',
-        })
-      } finally {
-        setLoading(false)
-      }
-    },
-    [
-      keycloak,
-      PLANT_ID,
-      AOP_YEAR,
-      fetchRogcData,
-      setSnackbarData,
-      setSnackbarOpen,
-    ],
-  )
-
   // Export handler
   const handleExport = async () => {
     setSnackbarOpen(true)
@@ -502,13 +434,7 @@ const ROGC = ({
     })
 
     try {
-      await TcsApiService.exportRogcExcel(
-        keycloak,
-        VERTICAL_ID,
-        SITE_ID,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      await TcsApiService.exportRogcExcel(keycloak, SITE_ID, PLANT_ID, AOP_YEAR)
 
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -544,7 +470,7 @@ const ROGC = ({
           severity: 'success',
         })
         // Refresh data after import
-        await fetchRogcData(true)
+        await fetchRogcData()
       } else if (response?.code === 400 && response?.data) {
         // Handle error response with Excel file download
         try {
@@ -574,7 +500,7 @@ const ROGC = ({
             severity: 'error',
           })
           // Refresh data after import
-          await fetchRogcData(true)
+          await fetchRogcData()
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
@@ -602,45 +528,11 @@ const ROGC = ({
     }
   }
 
-  // Custom add row handler: always insert new row at index 1, after the days_row (index 0)
-  const customAddRow = useCallback(() => {
-    const newRowId = `new_row_${Date.now()}`
-    const monthFields = [
-      'jan',
-      'feb',
-      'mar',
-      'apr',
-      'may',
-      'jun',
-      'jul',
-      'aug',
-      'sep',
-      'oct',
-      'nov',
-      'dec',
-    ]
-    const newRow = {
-      id: newRowId,
-      isNew: true,
-      isEditable: true,
-      name: '',
-      ...Object.fromEntries(monthFields.map((field) => [field, ''])),
-      remarks: '',
-    }
-    setRows((prevRows) => {
-      const updated = [...prevRows]
-      // Insert at index 1 so days_row stays at 0
-      updated.splice(1, 0, newRow)
-      return updated
-    })
-  }, [setRows])
-
   const permissions = {
     customHeight: { mainBox: '32vh', otherBox: '100%' },
     textAlignment: 'center',
     allAction: true,
-    addButton: true,
-    deleteButton: true,
+    addButton: false,
     remarksEditable: true,
     showCalculate: false,
     showExport: true,
@@ -655,14 +547,18 @@ const ROGC = ({
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
       <Stack sx={{ mt: 2 }}>
         <AdvanceKendoTable
           rows={rows}
           setRows={setRows}
           fetchData={fetchRogcData}
           configType='tcs_rogc'
-          title='ROGC'
           handleRemarkCellClick={handleRemarkCellClick}
           columns={columns}
           remarkDialogOpen={remarkDialogOpen}
@@ -681,8 +577,6 @@ const ROGC = ({
           modifiedCells={modifiedCells}
           setModifiedCells={setModifiedCells}
           permissions={permissions}
-          deleteRowData={deleteRowData}
-          customAddRow={customAddRow}
         />
       </Stack>
     </Box>

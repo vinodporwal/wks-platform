@@ -282,10 +282,7 @@ const ASDataGrid1 = ({
           value={value}
           onChange={handleChange}
           label={label}
-          sx={{
-            textTransform: 'capitalize',
-            fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
-          }}
+          sx={{ textTransform: 'capitalize', fontFamily: 'inter-regular' }}
         >
           <MenuItem value=''>All</MenuItem>
           {filterOptions?.map((item) => (
@@ -718,7 +715,7 @@ const ASDataGrid1 = ({
           variant='h6'
           className='grid-result-count'
           fontSize='0.9rem'
-          fontFamily='"Roboto", Helvetica, Arial, sans-serif'
+          fontFamily='inter-regular'
         >
           {totalRows} Results
         </Typography>
@@ -804,7 +801,7 @@ const ASDataGrid1 = ({
           '& .MuiDataGrid-cell': {
             borderLeft: 'none',
             borderRight: 'none',
-            fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
+            fontFamily: 'inter-regular',
           },
           '& .MuiDataGrid-toolbarContainer': {
             display: 'flex',
@@ -821,7 +818,7 @@ const ASDataGrid1 = ({
           },
           '& .MuiDataGrid-columnHeaderTitle': {
             textTransform: 'uppercase !important',
-            fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
+            fontFamily: 'inter-regular',
             color: 'var(--ternary-color) !important',
           },
           '& .MuiDataGrid-filterForm .MuiInputBase-input': {

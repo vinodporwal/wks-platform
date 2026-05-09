@@ -2,22 +2,16 @@ package com.wks.caseengine.tcs.dto;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.UUID;
+
 import lombok.AllArgsConstructor;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class GCalPerHrDTO {
-
-    private String id;  // TCS_Furnace_GCalPerHr primary key — returned for use in updates
-    private String type; // "FurnaceGCalPerHr"
-
-    private String name;
-    private String remarks;
-
-    private Double jan;
-    private Double feb;
-    private Double mar;
+ 
     private Double apr;
     private Double may;
     private Double jun;
@@ -27,4 +21,9 @@ public class GCalPerHrDTO {
     private Double oct;
     private Double nov;
     private Double dec;
+    private Double jan;
+    private Double feb;
+    private Double mar;
 }
+
+

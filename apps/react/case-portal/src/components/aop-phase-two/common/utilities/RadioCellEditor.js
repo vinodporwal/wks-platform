@@ -91,12 +91,9 @@ export const InlineRadioCellEditor = (props) => {
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
               style={{
-                fontSize: '15px',
+                fontSize: '0.8rem',
                 padding: '2px 2px',
-                height: '40px',
-                fontWeight: 600,
-                fontFamily:
-                  "'Honeywell Sans Web', 'Inter', sans-serif !important",
+                height: '22px',
                 lineHeight: '1rem',
                 textAlign: 'right',
                 width: '100%',
@@ -105,9 +102,9 @@ export const InlineRadioCellEditor = (props) => {
           ) : (
             <Box
               sx={{
-                fontSize: '15px',
+                fontSize: '0.8rem',
                 padding: '2px 8px 2px 2px',
-                height: '40px',
+                height: '22px',
                 lineHeight: '1.4rem',
                 textAlign: 'right',
                 width: '100%',

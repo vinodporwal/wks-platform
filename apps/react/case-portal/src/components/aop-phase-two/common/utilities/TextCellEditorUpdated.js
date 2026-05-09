@@ -49,20 +49,10 @@ export const TextCellEditorUpdated = ({ dataItem, field, onChange }) => {
         onChange={handleChange}
         onBlur={handleBlur}
         style={{
-          fontSize: '0.8125rem',
-          fontWeight: 600,
-          color: '#1d3665',
-          padding: '0 8px',
-          height: '40px',
-          lineHeight: '40px',
-          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif !important",
-          width: '100%',
-          borderRadius: '6px',
-          backgroundColor: '#FFFFFF',
-          border: '1px solid #E0E4EC',
-          boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)',
-          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-          textAlign: 'left',
+          fontSize: '0.8rem',
+          padding: '2px 2px',
+          height: '22px',
+          lineHeight: '1rem',
         }}
       />
     </td>

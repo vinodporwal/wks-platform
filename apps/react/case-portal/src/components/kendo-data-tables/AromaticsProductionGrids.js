@@ -23,7 +23,6 @@ import {
 } from './Utilities-Kendo/productionTargetColDefs'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const AromaticsProductionGrids = ({ permissions }) => {
   const [editResetKey, setEditResetKey] = useState(0)
 
@@ -43,7 +42,6 @@ const AromaticsProductionGrids = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
 
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const [calculationObject, setCalculationObject] = useState([])
 
@@ -1227,7 +1225,12 @@ const AromaticsProductionGrids = ({ permissions }) => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       {/* MAX_ACHIEVED_CAPACITY */}
       {conditionForFirst && (

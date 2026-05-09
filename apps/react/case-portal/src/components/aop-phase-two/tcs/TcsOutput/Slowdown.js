@@ -6,7 +6,6 @@ import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { Stack } from '../../../../../node_modules/@mui/material/index'
 import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const Slowdown = ({
   SITE_ID,
@@ -115,18 +114,18 @@ const Slowdown = ({
 
   // Column configuration for Slowdown - dynamically generated from API response
   const columnConfig = {
-    particulates: { editable: false, type: 'text', minWidth: 140, widthT: 140 },
+    particulates: { editable: false, type: 'text', minWidth: 100, widthT: 100 },
     durationInDays: {
       editable: true,
       type: 'wholeNumber',
-      minWidth: 150,
-      widthT: 150,
+      minWidth: 100,
+      widthT: 100,
     },
     throughputDuringSlowdown: {
       editable: true,
       type: 'wholeNumber',
-      minWidth: 230,
-      widthT: 230,
+      minWidth: 100,
+      widthT: 100,
     },
     throughputUOM: {
       editable: true,
@@ -229,7 +228,12 @@ const Slowdown = ({
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
       <Stack sx={{ mt: 2 }}>
         <AdvanceKendoTable
           title='TCS Slowdown'
@@ -255,7 +259,6 @@ const Slowdown = ({
           permissions={permissions}
           readonly={true}
           handleExport={handleExport}
-          groupBy={['particulates']}
         />
       </Stack>
     </Box>

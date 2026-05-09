@@ -25,6 +25,7 @@ import {
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
 import HistoryIcon from '@mui/icons-material/History'
+import HistoryDialog from './HistoryDialog'
 import { TcsWorkflowApiService } from 'components/aop-phase-two/services/tcs/tcsWorkflowApiService'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -37,7 +38,6 @@ const ApproveDialog = ({
   userRole,
   userName,
   timelineData,
-  maxLength = 500,
 }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -249,17 +249,12 @@ const ApproveDialog = ({
     }
   }
 
-  const handleBulkAction = async (isApprove) => {
+  const handleBulkApprove = async () => {
     if (selectedPlants.length === 0 || !bulkRemark.trim()) {
       return
     }
 
-    const setLoadingState = isApprove
-      ? setBulkApproveLoading
-      : setBulkRejectLoading
-    const actionLabel = isApprove ? 'approve' : 'reject'
-
-    setLoadingState(true)
+    setBulkApproveLoading(true)
     setError(null)
 
     try {
@@ -281,12 +276,12 @@ const ApproveDialog = ({
       await TcsWorkflowApiService.epsEngineerMultipleApproveReject(
         keycloak,
         SITE_ID,
-        isApprove,
+        true, // approvalStatus = true for approve
         AOP_YEAR,
         plantSubmissionList,
       )
 
-      // Refresh entries after bulk action
+      // Refresh entries after bulk approval
       const response = await TcsWorkflowApiService.getPlantDataForApproveReject(
         keycloak,
         SITE_ID,
@@ -300,18 +295,71 @@ const ApproveDialog = ({
       setBulkRemark('')
       setError(null)
 
-      // Close dialog after successful bulk action
+      // Close dialog after successful bulk approval
       onClose()
     } catch (err) {
-      console.error(`Error in bulk ${actionLabel}:`, err)
-      setError(`Failed to ${actionLabel} plants. Please try again.`)
+      console.error('Error in bulk approve:', err)
+      setError('Failed to approve plants. Please try again.')
     } finally {
-      setLoadingState(false)
+      setBulkApproveLoading(false)
     }
   }
 
-  const handleBulkApprove = () => handleBulkAction(true)
-  const handleBulkReject = () => handleBulkAction(false)
+  const handleBulkReject = async () => {
+    if (selectedPlants.length === 0 || !bulkRemark.trim()) {
+      return
+    }
+
+    setBulkRejectLoading(true)
+    setError(null)
+
+    try {
+      // Build array of PlantSubmissionAuditTrailDTO objects
+      const plantSubmissionList = selectedPlants.map((plantId) => {
+        const plant = uniquePlants.find((p) => p.plantId === plantId)
+        return {
+          plantId,
+          plantName: plant?.plantName || '',
+          siteId: SITE_ID,
+          verticalId: VERTICAL_ID,
+          submissionRemark: bulkRemark,
+          submittedBy: getRoleLabel(userRole),
+          userName,
+        }
+      })
+
+      // Call bulk API with all plants at once
+      await TcsWorkflowApiService.epsEngineerMultipleApproveReject(
+        keycloak,
+        SITE_ID,
+        false, // approvalStatus = false for reject
+        AOP_YEAR,
+        plantSubmissionList,
+      )
+
+      // Refresh entries after bulk rejection
+      const response = await TcsWorkflowApiService.getPlantDataForApproveReject(
+        keycloak,
+        SITE_ID,
+        VERTICAL_ID,
+        AOP_YEAR,
+      )
+      setEntries(response || [])
+
+      // Reset bulk action states
+      setSelectedPlants([])
+      setBulkRemark('')
+      setError(null)
+
+      // Close dialog after successful bulk rejection
+      onClose()
+    } catch (err) {
+      console.error('Error in bulk reject:', err)
+      setError('Failed to reject plants. Please try again.')
+    } finally {
+      setBulkRejectLoading(false)
+    }
+  }
 
   const handleCancel = () => {
     setRemarks({})
@@ -335,35 +383,30 @@ const ApproveDialog = ({
 
   console.log('entries', entries)
 
-  // Helper to parse not-submitted plants from a named variable in timelineData
-  const getNotSubmittedPlants = (variableName) => {
-    if (!timelineData || !Array.isArray(timelineData)) return []
-    const entry = timelineData.find(
-      (item) => item.name === variableName && item.type === 'Json',
-    )
-    if (!entry || !entry.value) return []
-    try {
-      const statusMap = JSON.parse(entry.value)
-      return Object.entries(statusMap)
-        .filter(([, submitted]) => !submitted)
-        .map(([plant]) => plant)
-    } catch (err) {
-      console.error(`Error parsing ${variableName}:`, err)
+  // Parse submissionStatus from timelineData to get not-submitted plants
+  const notSubmittedPlants = useMemo(() => {
+    if (!timelineData || !Array.isArray(timelineData)) {
       return []
     }
-  }
 
-  // Plant Manager: not-submitted plants from submissionStatus
-  const pmNotSubmittedPlants = useMemo(
-    () => getNotSubmittedPlants('submissionStatus'),
-    [timelineData],
-  )
+    const submissionStatusEntry = timelineData.find(
+      (item) => item.name === 'submissionStatus' && item.type === 'Json',
+    )
 
-  // CTS Tech Manager: not-submitted plants from ctsTechSubmissionStatus
-  const ctsNotSubmittedPlants = useMemo(
-    () => getNotSubmittedPlants('ctsTechSubmissionStatus'),
-    [timelineData],
-  )
+    if (!submissionStatusEntry || !submissionStatusEntry.value) {
+      return []
+    }
+
+    try {
+      const submissionStatus = JSON.parse(submissionStatusEntry.value)
+      return Object.entries(submissionStatus)
+        .filter(([plant, isSubmitted]) => !isSubmitted)
+        .map(([plant]) => plant)
+    } catch (err) {
+      console.error('Error parsing submissionStatus:', err)
+      return []
+    }
+  }, [timelineData])
 
   return (
     <>
@@ -393,98 +436,47 @@ const ApproveDialog = ({
         <Divider />
 
         <DialogContent sx={{ p: 0 }}>
-          {/* Pending Submissions Split by Role */}
-          {(pmNotSubmittedPlants.length > 0 ||
-            ctsNotSubmittedPlants.length > 0) && (
+          {/* Not Submitted Plants Alert - Show at top when dialog opens */}
+          {notSubmittedPlants.length > 0 && (
             <Box
               sx={{
                 p: 2,
                 m: 2,
                 bgcolor: '#fafafa',
                 border: '1px solid #e0e0e0',
-                borderRadius: 1,
                 boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1.5,
               }}
             >
-              {/* Plant Manager pending */}
-              <Box>
-                <Typography
-                  variant='body2'
-                  sx={{ mb: 0.75, fontWeight: 600, color: '#f57c00' }}
-                >
-                  Plant Manager — Pending Submissions
-                  {pmNotSubmittedPlants.length > 0
-                    ? ` (${pmNotSubmittedPlants.length})`
-                    : ''}
-                </Typography>
-                {pmNotSubmittedPlants.length === 0 ? (
-                  <Typography variant='caption' color='text.secondary'>
-All plants submitted.
-                  </Typography>
-                ) : (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
-                    {pmNotSubmittedPlants.map((plant) => (
-                      <Box
-                        key={plant}
-                        sx={{
-                          px: 1,
-                          py: 0.25,
-                          bgcolor: '#fff3e0',
-                          color: '#e65100',
-                          borderRadius: 0.5,
-                          fontSize: '0.75rem',
-                          border: '1px solid #ffcc80',
-                          fontWeight: 500,
-                        }}
-                      >
-                        {plant}
-                      </Box>
-                    ))}
+              <Typography
+                variant='body2'
+                color='text.secondary'
+                sx={{ mb: 1, fontWeight: 500 }}
+              >
+                Pending Submissions ({notSubmittedPlants.length})
+              </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 0.75,
+                }}
+              >
+                {notSubmittedPlants.map((plant) => (
+                  <Box
+                    key={plant}
+                    sx={{
+                      px: 1,
+                      py: 0.25,
+                      bgcolor: '#f5f5f5',
+                      color: 'text.secondary',
+                      borderRadius: 0.5,
+                      fontSize: '0.75rem',
+                      border: '1px solid #e0e0e0',
+                    }}
+                  >
+                    {plant}
                   </Box>
-                )}
-              </Box>
-
-              <Divider />
-
-              {/* CTS Tech Manager pending */}
-              <Box>
-                <Typography
-                  variant='body2'
-                  sx={{ mb: 0.75, fontWeight: 600, color: '#1565c0' }}
-                >
-                  CTS Tech Manager — Pending Submissions
-                  {ctsNotSubmittedPlants.length > 0
-                    ? ` (${ctsNotSubmittedPlants.length})`
-                    : ''}
-                </Typography>
-                {ctsNotSubmittedPlants.length === 0 ? (
-                  <Typography variant='caption' color='text.secondary'>
-All plants submitted.
-                  </Typography>
-                ) : (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
-                    {ctsNotSubmittedPlants.map((plant) => (
-                      <Box
-                        key={plant}
-                        sx={{
-                          px: 1,
-                          py: 0.25,
-                          bgcolor: '#e3f2fd',
-                          color: '#0d47a1',
-                          borderRadius: 0.5,
-                          fontSize: '0.75rem',
-                          border: '1px solid #90caf9',
-                          fontWeight: 500,
-                        }}
-                      >
-                        {plant}
-                      </Box>
-                    ))}
-                  </Box>
-                )}
+                ))}
               </Box>
             </Box>
           )}
@@ -510,7 +502,6 @@ All plants submitted.
                 onChange={(e) => setBulkRemark(e.target.value)}
                 placeholder='Enter remark for all selected plants...'
                 variant='outlined'
-                inputProps={{ maxLength }}
                 sx={{
                   bgcolor: 'white',
                   '& .MuiOutlinedInput-root': {
@@ -518,13 +509,6 @@ All plants submitted.
                   },
                 }}
               />
-              <Typography
-                variant='caption'
-                color='text.secondary'
-                sx={{ display: 'block', mt: 0.5, textAlign: 'right' }}
-              >
-                {bulkRemark.length}/{maxLength}
-              </Typography>
               <Box sx={{ display: 'flex', gap: 1, mt: 1.5 }}>
                 <Button
                   variant='contained'
@@ -670,7 +654,7 @@ All plants submitted.
                         fontWeight: 600,
                         bgcolor: '#f5f5f5',
                         borderBottom: '2px solid #e0e0e0',
-                        width: '20%',
+                        width: '15%',
                       }}
                     >
                       Plant Name
@@ -680,12 +664,12 @@ All plants submitted.
                         fontWeight: 600,
                         bgcolor: '#f5f5f5',
                         borderBottom: '2px solid #e0e0e0',
-                        width: '12%',
+                        width: '10%',
                       }}
                     >
                       Status
                     </TableCell>
-                    {/* <TableCell
+                    <TableCell
                       sx={{
                         fontWeight: 600,
                         bgcolor: '#f5f5f5',
@@ -694,16 +678,16 @@ All plants submitted.
                       }}
                     >
                       Submission Remark
-                    </TableCell> */}
+                    </TableCell>
                     <TableCell
                       sx={{
                         fontWeight: 600,
                         bgcolor: '#f5f5f5',
                         borderBottom: '2px solid #e0e0e0',
-                        width: '48%',
+                        width: '30%',
                       }}
                     >
-                      AOM Remark
+                      Individual Remark
                     </TableCell>
                     <TableCell
                       align='center'
@@ -711,7 +695,7 @@ All plants submitted.
                         fontWeight: 600,
                         bgcolor: '#f5f5f5',
                         borderBottom: '2px solid #e0e0e0',
-                        width: '20%',
+                        width: '15%',
                       }}
                     >
                       Action
@@ -778,7 +762,7 @@ All plants submitted.
                           {plant.plantStatus}
                         </Box>
                       </TableCell>
-                      {/* <TableCell>
+                      <TableCell>
                         <Tooltip
                           title={
                             plant.submissionRemark || 'No submission remark'
@@ -804,7 +788,7 @@ All plants submitted.
                             {plant.submissionRemark || 'No submission remark'}
                           </Typography>
                         </Tooltip>
-                      </TableCell>*/}
+                      </TableCell>
                       <TableCell>
                         <TextField
                           fullWidth
@@ -832,23 +816,12 @@ All plants submitted.
                             isAnyIndividualActionLoading ||
                             plant.plantStatus !== 'PENDING'
                           }
-                          inputProps={{ maxLength }}
                           sx={{
                             '& .MuiOutlinedInput-root': {
                               fontSize: '0.875rem',
                             },
                           }}
                         />
-                        <Typography
-                          variant='caption'
-                          color='text.secondary'
-                          sx={{ display: 'block', mt: 0.5, textAlign: 'right' }}
-                        >
-                          {plant.plantStatus !== 'PENDING'
-                            ? plant.verifiedRemark?.length || 0
-                            : remarks[plant.plantId]?.length || 0}
-                          /{maxLength}
-                        </Typography>
                       </TableCell>
                       <TableCell align='center'>
                         <Box
@@ -858,101 +831,141 @@ All plants submitted.
                             justifyContent: 'center',
                           }}
                         >
-                          <>
-                            <Tooltip
-                              title={
-                                plant.plantStatus !== 'PENDING'
-                                  ? `Already ${plant.plantStatus.toLowerCase()}`
-                                  : individualLoading[plant.plantId] ===
-                                      'approve'
-                                    ? 'Approving...'
-                                    : 'Approve'
-                              }
-                              arrow
-                            >
-                              <span>
-                                <IconButton
-                                  size='small'
-                                  onClick={() =>
-                                    handleApproveClick(plant.plantId)
-                                  }
-                                  disabled={
-                                    remarks[plant.plantId] === '' ||
-                                    bulkApproveLoading ||
-                                    bulkRejectLoading ||
-                                    isAnyIndividualActionLoading ||
-                                    plant.plantStatus !== 'PENDING'
-                                  }
-                                  sx={{
-                                    color: '#2e7d32',
-                                    '&:hover': {
-                                      backgroundColor: '#e8f5e9',
-                                    },
-                                    '&.Mui-disabled': {
-                                      color: 'rgba(0, 0, 0, 0.26)',
-                                    },
-                                  }}
-                                >
-                                  {individualLoading[plant.plantId] ===
-                                  'approve' ? (
-                                    <CircularProgress
-                                      size={20}
-                                      sx={{ color: '#2e7d32' }}
-                                    />
-                                  ) : (
-                                    <CheckCircleIcon fontSize='small' />
-                                  )}
-                                </IconButton>
-                              </span>
+                          {selectedPlants.length > 1 ? (
+                            <Tooltip title='View History' arrow>
+                              <IconButton
+                                size='small'
+                                onClick={() => handleViewHistory(plant)}
+                                disabled={
+                                  bulkApproveLoading || bulkRejectLoading
+                                }
+                                sx={{
+                                  color: '#1976d2',
+                                  '&:hover': {
+                                    backgroundColor: '#e3f2fd',
+                                  },
+                                }}
+                              >
+                                <HistoryIcon fontSize='small' />
+                              </IconButton>
                             </Tooltip>
+                          ) : (
+                            <>
+                              <Tooltip
+                                title={
+                                  plant.plantStatus !== 'PENDING'
+                                    ? `Already ${plant.plantStatus.toLowerCase()}`
+                                    : individualLoading[plant.plantId] ===
+                                        'approve'
+                                      ? 'Approving...'
+                                      : 'Approve'
+                                }
+                                arrow
+                              >
+                                <span>
+                                  <IconButton
+                                    size='small'
+                                    onClick={() =>
+                                      handleApproveClick(plant.plantId)
+                                    }
+                                    disabled={
+                                      remarks[plant.plantId] === '' ||
+                                      bulkApproveLoading ||
+                                      bulkRejectLoading ||
+                                      isAnyIndividualActionLoading ||
+                                      plant.plantStatus !== 'PENDING'
+                                    }
+                                    sx={{
+                                      color: '#2e7d32',
+                                      '&:hover': {
+                                        backgroundColor: '#e8f5e9',
+                                      },
+                                      '&.Mui-disabled': {
+                                        color: 'rgba(0, 0, 0, 0.26)',
+                                      },
+                                    }}
+                                  >
+                                    {individualLoading[plant.plantId] ===
+                                    'approve' ? (
+                                      <CircularProgress
+                                        size={20}
+                                        sx={{ color: '#2e7d32' }}
+                                      />
+                                    ) : (
+                                      <CheckCircleIcon fontSize='small' />
+                                    )}
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
 
-                            <Tooltip
-                              title={
-                                plant.plantStatus !== 'PENDING'
-                                  ? `Already ${plant.plantStatus.toLowerCase()}`
-                                  : individualLoading[plant.plantId] ===
-                                      'reject'
-                                    ? 'Rejecting...'
-                                    : 'Reject'
-                              }
-                              arrow
-                            >
-                              <span>
+                              <Tooltip
+                                title={
+                                  plant.plantStatus !== 'PENDING'
+                                    ? `Already ${plant.plantStatus.toLowerCase()}`
+                                    : individualLoading[plant.plantId] ===
+                                        'reject'
+                                      ? 'Rejecting...'
+                                      : 'Reject'
+                                }
+                                arrow
+                              >
+                                <span>
+                                  <IconButton
+                                    size='small'
+                                    onClick={() =>
+                                      handleRejectClick(plant.plantId)
+                                    }
+                                    disabled={
+                                      remarks[plant.plantId] === '' ||
+                                      bulkApproveLoading ||
+                                      bulkRejectLoading ||
+                                      isAnyIndividualActionLoading ||
+                                      plant.plantStatus !== 'PENDING'
+                                    }
+                                    sx={{
+                                      color: '#d32f2f',
+                                      '&:hover': {
+                                        backgroundColor: '#ffebee',
+                                      },
+                                      '&.Mui-disabled': {
+                                        color: 'rgba(0, 0, 0, 0.26)',
+                                      },
+                                    }}
+                                  >
+                                    {individualLoading[plant.plantId] ===
+                                    'reject' ? (
+                                      <CircularProgress
+                                        size={20}
+                                        sx={{ color: '#d32f2f' }}
+                                      />
+                                    ) : (
+                                      <CancelIcon fontSize='small' />
+                                    )}
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+
+                              {/* <Tooltip title='View History' arrow>
                                 <IconButton
                                   size='small'
-                                  onClick={() =>
-                                    handleRejectClick(plant.plantId)
-                                  }
+                                  onClick={() => handleViewHistory(plant)}
                                   disabled={
-                                    remarks[plant.plantId] === '' ||
                                     bulkApproveLoading ||
                                     bulkRejectLoading ||
-                                    isAnyIndividualActionLoading ||
-                                    plant.plantStatus !== 'PENDING'
+                                    isAnyIndividualActionLoading
                                   }
                                   sx={{
-                                    color: '#d32f2f',
+                                    color: '#1976d2',
                                     '&:hover': {
-                                      backgroundColor: '#ffebee',
-                                    },
-                                    '&.Mui-disabled': {
-                                      color: 'rgba(0, 0, 0, 0.26)',
+                                      backgroundColor: '#e3f2fd',
                                     },
                                   }}
                                 >
-                                  {individualLoading[plant.plantId] ===
-                                  'reject' ? (
-                                    <CircularProgress
-                                      size={20}
-                                      sx={{ color: '#d32f2f' }}
-                                    />
-                                  ) : (
-                                    <CancelIcon fontSize='small' />
-                                  )}
+                                  <HistoryIcon fontSize='small' />
                                 </IconButton>
-                              </span>
-                            </Tooltip>
-                          </>
+                              </Tooltip> */}
+                            </>
+                          )}
                         </Box>
                       </TableCell>
                     </TableRow>
@@ -993,6 +1006,18 @@ All plants submitted.
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* History Dialog */}
+      {selectedPlantHistory && (
+        <HistoryDialog
+          open={historyDialogOpen}
+          onClose={handleCloseHistory}
+          plantId={selectedPlantHistory.plantId}
+          userRole={userRole}
+          type='PLANT_WISE'
+          timelineData={timelineData}
+        />
+      )}
     </>
   )
 }

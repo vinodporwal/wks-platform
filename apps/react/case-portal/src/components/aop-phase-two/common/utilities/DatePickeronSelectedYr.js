@@ -89,7 +89,6 @@ const DateTimePickerEditor = ({
         autoFill
         enableMouseWheel={false}
         steps={{ hour: 1, minute: 1, second: 0 }}
-        className='input-editor'
       />
     </td>
   )

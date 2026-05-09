@@ -19,7 +19,6 @@ import {
 } from 'utils/CustomAccrodian'
 
 import './ConfigurationAccordian.css'
-import { TextArea } from '../../../../node_modules/@progress/kendo-react-inputs/index'
 
 const ConfigurationAccordian = ({
   startDate,
@@ -48,7 +47,7 @@ const ConfigurationAccordian = ({
         className='k-table-box configuration-accordion-root'
       >
         <CustomAccordionSummary
-          expandIcon={<ExpandMoreIcon sx={{ fontSize: '1.2rem' }} />}
+          expandIcon={<ExpandMoreIcon sx={{ fontSize: '1rem' }} />}
           className='configuration-accordion-summary'
         >
           <Stack direction='row' spacing={1} alignItems='center'>
@@ -182,34 +181,38 @@ const ConfigurationAccordian = ({
                   <InfoIcon sx={{ fontSize: '0.9rem', color: '#00688C' }} />
 
                   <Typography className='last-refreshed-text'>
-                    {`Last loaded data on ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} by ${configurationExecutionDetails[0]?.User ?? ''} for period ${formatDateForText(startDate, false)} to ${formatDateForText(endDate, false)}`}
+                    Last loaded data on{' '}
+                    {
+                      formatDateForText(
+                        configurationExecutionDetails[0]?.ModifiedOn,
+                      ).split(' ')[0]
+                    }
+                    {' for period '}
+                    {formatDateForText(startDate, true)}
+                    {' - '}
+                    {formatDateForText(endDate, true)}
                   </Typography>
                 </Stack>
               </Tooltip>
             )}
 
             {/* ROW 2: AOP DESIGN BASIS */}
-            {summaryEnabled && (
-              <Box sx={{ width: '100%' }}>
-                <Typography
-                  variant='caption'
-                  className='aop-design-basis-label'
-                >
-                  AOP DESIGN BASIS
-                </Typography>
+            {summaryEnabled && (<Box sx={{ width: '100%' }}>
+              <Typography variant='caption' className='aop-design-basis-label'>
+                AOP DESIGN BASIS
+              </Typography>
 
-                <TextArea
-                  className='vertical-resize-textarea'
-                  disabled={READ_ONLY}
-                  value={summary}
-                  rows={2}
-                  onChange={(e) => {
-                    setSummary(e.target.value)
-                    setSummaryEdited(true)
-                  }}
-                />
-              </Box>
-            )}
+              <textarea
+                disabled={READ_ONLY}
+                value={summary}
+                rows={2}
+                onChange={(e) => {
+                  setSummary(e.target.value)
+                  setSummaryEdited(true)
+                }}
+                className='aop-design-basis-textarea'
+              />
+            </Box>)}
           </Stack>
         </CustomAccordionDetails>
       </CustomAccordion>

@@ -1,43 +1,14 @@
 [
-  {
-    "field": "idFromApi",
-    "title": "ID",
-    "hidden": true,
-    "minWidth": 100,
-    "isVisible": false
-  },
+  { "field": "idFromApi", "title": "ID", "hidden": true },
   {
     "field": "aopCaseId",
     "title": "Case ID",
     "hidden": true,
-    "editable": false,
-    "isVisible": false,
-    "minWidth": 100
+    "editable": false
   },
-  {
-    "field": "aopType",
-    "title": "Type",
-    "width": 80,
-    "hidden": true,
-    "minWidth": 100,
-    "isVisible": false
-  },
-  {
-    "field": "aopYear",
-    "title": "Year",
-    "width": 80,
-    "hidden": true,
-    "minWidth": 100,
-    "isVisible": false
-  },
-  {
-    "field": "plantFkId",
-    "title": "Plant ID",
-    "width": 80,
-    "hidden": true,
-    "minWidth": 100,
-    "isVisible": false
-  },
+  { "field": "aopType", "title": "Type", "width": 80, "hidden": true },
+  { "field": "aopYear", "title": "Year", "width": 80, "hidden": true },
+  { "field": "plantFkId", "title": "Plant ID", "width": 80, "hidden": true },
   {
     "field": "Particulars",
     "title": "Type",
@@ -46,39 +17,30 @@
     "headerClass": "bold-header",
     "filterable": "false",
     "editable": false,
-    "hidden": true,
-    "isVisible": false,
-    "minWidth": 100
+    "hidden": true
   },
   {
     "field": "normParameterId",
     "title": "Particulars",
     "editable": false,
     "width": 150,
-    "hidden": true,
-    "isVisible": false,
-    "minWidth": 100
+    "hidden": true
   },
   {
     "field": "materialFKId",
     "editable": false,
-    "hidden": true,
-    "isVisible": false,
-    "minWidth": 100
+    "hidden": true
   },
   {
     "field": "normParameterDisplayName",
     "editable": false,
-    "hidden": true,
-    "isVisible": false,
-    "minWidth": 100
+    "hidden": true
   },
   {
     "field": "displayName",
     "title": "Products",
     "editable": false,
-    "width": 125,
-    "minWidth": 120
+    "width": 125
   },
   {
     "field": "april",
@@ -86,8 +48,7 @@
     "align": "left",
     "editable": false,
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "may",
@@ -96,8 +57,7 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "june",
@@ -106,8 +66,7 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "july",
@@ -116,8 +75,7 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "aug",
@@ -126,8 +84,7 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "sep",
@@ -136,8 +93,7 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "oct",
@@ -146,8 +102,7 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "nov",
@@ -156,8 +111,7 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "dec",
@@ -166,8 +120,7 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "jan",
@@ -176,8 +129,7 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "feb",
@@ -187,8 +139,7 @@
 
     "align": "left",
     "type": "number",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "march",
@@ -197,32 +148,26 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
   {
     "field": "averageTPH",
     "title": "Total",
     "type": "number",
     "editable": false,
-    "format": "{0:#.##}",
-    "minWidth": 100
+    "format": "{0:#.##}"
   },
 
   {
     "field": "isEditable",
     "title": "isEditable",
-    "hidden": true,
-    "isVisible": false,
-    "minWidth": 100
+    "hidden": true
   },
 
   {
     "field": "aopStatus",
     "title": "aopStatus",
     "editable": false,
-    "hidden": true,
-    "isVisible": false,
-    "minWidth": 100
+    "hidden": true
   }
 ]

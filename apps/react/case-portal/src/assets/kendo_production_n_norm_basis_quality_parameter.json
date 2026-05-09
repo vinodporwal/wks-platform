@@ -3,14 +3,14 @@
     "field": "productName",
     "title": "Particular",
     "editable": false,
-    "minWidth": 220
+    "widthT": 220
   },
 
   {
     "field": "UOM",
     "title": "UOM",
     "editable": false,
-    "minWidth": 90
+    "widthT": 90
   },
 
   {
@@ -18,7 +18,7 @@
     "title": "Actual",
     "editable": true,
     "type": "number",
-    "minWidth": 150
+    "widthT": 150
   },
 
   {
@@ -26,12 +26,12 @@
     "title": "Proposed",
     "editable": true,
     "type": "number",
-    "minWidth": 150
+    "widthT": 150
   },
 
   {
     "field": "remarks",
     "title": "Remarks",
-    "minWidth": 150
+    "widthT": 150
   }
 ]

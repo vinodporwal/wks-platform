@@ -4,7 +4,6 @@ import { CircularProgress, Box, Typography, Button } from '@mui/material'
 import { useSession } from 'SessionStoreContext'
 import { Backdrop } from '../../../node_modules/@mui/material/index'
 import { BusinessDemandDataApiService } from 'services/business-demand-data-api-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 export default function SiteMaintenanceSummary() {
   const keycloak = useSession()
@@ -98,7 +97,14 @@ export default function SiteMaintenanceSummary() {
         }}
       />
 
-      {loading && <LoaderBackdrop open={!!loading} />}
+      {loading && (
+        <Backdrop
+          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          open={!!loading}
+        >
+          <CircularProgress color='inherit' />
+        </Backdrop>
+      )}
     </Box>
   )
 }

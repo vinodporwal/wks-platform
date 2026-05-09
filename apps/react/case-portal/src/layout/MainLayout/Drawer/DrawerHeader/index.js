@@ -1,88 +1,79 @@
 import PropTypes from 'prop-types'
+import { useTheme } from '@mui/material/styles'
+import Stack from '@mui/material/Stack'
 import { Box, Typography, IconButton } from '@mui/material'
-import DrawerHeaderStyled from './DrawerHeaderStyled'
-import logo from 'assets/images/ril-logo2.png'
-import MenuOpenIcon from '@mui/icons-material/MenuOpen'
-import MenuIcon from '@mui/icons-material/Menu'
-import HomeIcon from '@mui/icons-material/Home'
 import { useNavigate } from 'react-router-dom'
-import { DrawerCloseIcon, DrawerOpenIcon } from 'assets/images/icons/index'
+import HomeIcon from '@mui/icons-material/Home'
+import DrawerHeaderStyled from './DrawerHeaderStyled'
 
-const DrawerHeader = ({ open, handleDrawerToggle }) => {
+const DrawerHeader = ({ open = false }) => {
+  //  default here
+  const theme = useTheme()
   const navigate = useNavigate()
+
   return (
-    <DrawerHeaderStyled open={open}>
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          width: '100%',
-          justifyContent: open ? 'space-between' : 'center',
-          flexDirection: open ? 'row' : 'column',
-          gap: open ? 0 : 1.5,
-        }}
-      >
-        {/* LEFT LOGO + TEXT */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <IconButton
-            onClick={() => navigate('/dashboard')}
-            size='small'
-            sx={{
-              // color: '#6a7b92',
-              '&:hover': { color: '#6a7b92ff' },
-            }}
-          >
-            <HomeIcon sx={{ width: 28, height: 28, color: '#bfa161ff' }} />
-          </IconButton>
-          {/* <Box
-            component='img'
-            src={logo}
-            alt='Logo'
-            sx={{ width: 28, height: 28, cursor: 'pointer' }}
-            onClick={() => navigate('/dashboard')}
-          /> */}
+    <DrawerHeaderStyled theme={theme} open={open}>
+      <Stack direction='row' spacing={1} alignItems='center'>
+        <IconButton
+          onClick={() => navigate('/dashboard')}
+          size='small'
+          sx={{
+            '&:hover': { color: '#6a7b92ff' },
+          }}
+        >
+          <HomeIcon sx={{ width: 28, height: 28, color: '#bfa161ff' }} />
+        </IconButton>
 
-          {open && (
-            <Box>
-              <Typography
-                sx={{ fontWeight: 800, fontSize: 20, color: '#303030', fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif" }}
-              >
-                Reliance
-              </Typography>
-              <Typography sx={{ fontSize: 13, color: '#606060', fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif" }}>
-                AOP Dashboard
-              </Typography>
-            </Box>
-          )}
-        </Box>
-
-        {/* RIGHT COLLAPSE BUTTON */}
-        {/* {open && ( */}
-          <IconButton
-            onClick={handleDrawerToggle}
-            size='small'
-            sx={{
-              color: '#6a7b92',
-              ml: open ? 0 : 0,
-              '&:hover': { color: '#6a7b92' },
-            }}
-          >
-            <Box
-              component='img'
-              src={open ? DrawerCloseIcon : DrawerOpenIcon}
-              alt='Drawer Toggle'
-              sx={{ width: 20, height: 20, cursor: 'pointer' }}
-            />
-          </IconButton>
-        {/* )} */}
-      </Box>
+        {open && (
+          <Box>
+            <Typography
+              sx={{
+                fontWeight: 800,
+                fontSize: 20,
+                color: '#303030',
+                fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+              }}
+            >
+              Reliance
+            </Typography>
+          </Box>
+        )}
+      </Stack>
     </DrawerHeaderStyled>
   )
 }
 
 DrawerHeader.propTypes = {
   open: PropTypes.bool,
-  handleDrawerToggle: PropTypes.func,
 }
 
+// Removed DrawerHeader.defaultProps block
+
 export default DrawerHeader
+
+// import PropTypes from 'prop-types'
+// import { useTheme } from '@mui/material/styles'
+// import Stack from '@mui/material/Stack'
+// import DrawerHeaderStyled from './DrawerHeaderStyled'
+// // import Logo from 'components/Logo'
+
+// const DrawerHeader = ({ open }) => {
+//   const theme = useTheme()
+
+//   return (
+//     <DrawerHeaderStyled theme={theme} open={open}>
+//       <Stack direction='row' spacing={1} alignItems='center'>
+//         {/* <Logo /> */}
+//       </Stack>
+//     </DrawerHeaderStyled>
+//   )
+// }
+
+// DrawerHeader.propTypes = {
+//   open: PropTypes.bool,
+// }
+
+// DrawerHeader.defaultProps = {
+//   open: false,
+// }
+// export default DrawerHeader

@@ -14,7 +14,6 @@ const getEnhancedColDefsC2C3R = ({ headerMap, valueFormat }) => {
 
     if (col.type === 'number' && valueFormat) {
       updatedCol.format = valueFormat
-      updatedCol.minWidth = 100
     }
 
     return updatedCol

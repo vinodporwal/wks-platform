@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import {
   Box,
   Button,
-  Typography,
+  ButtonGroup,
 } from '../../../../../../node_modules/@mui/material/index'
 import RevConfirmDialog from './RevConfirmDialog'
 
@@ -69,73 +69,40 @@ const RevButtonSection = ({
 
   return (
     <Box>
-      <Box
-        sx={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          p: '3px',
-          bgcolor: 'rgba(0, 0, 0, 0.04)',
-          borderRadius: '8px',
-          border: '1px solid rgba(0, 0, 0, 0.05)',
-        }}
-      >
-        <Typography
-          variant='caption'
-          sx={{
-            px: 1,
-            fontWeight: 700,
-            color: 'text.secondary',
-            fontSize: '0.65rem',
-            textTransform: 'uppercase',
-          }}
-        >
-          Revision
-        </Typography>
+      <ButtonGroup aria-label='revision group'>
+        {['0', '1', '2', '3'].map((num) => {
+          const selected = revision === num
 
-        <Box sx={{ display: 'flex', gap: '2px' }}>
-          {['0', '1', '2', '3'].map((num) => {
-            const selected = revision === num
-
-            return (
-              <Button
-                key={num}
-                onClick={() => handleOpenDialogRev(num)}
-                variant='text'
-                size='small'
-                sx={{
-                  textTransform: 'none',
-                  fontSize: '0.72rem',
-                  minWidth: '45px',
-                  height: '24px',
-                  borderRadius: '6px',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-
-                  // Active State
-                  ...(selected && {
-                    bgcolor: '#fff',
-                    color: '#0100cb',
-                    boxShadow: '0 2px 6px rgba(1, 0, 203, 0.15)',
-                    fontWeight: 800,
-                    '&:hover': { bgcolor: '#fff' },
-                  }),
-
-                  // Inactive State
-                  ...(!selected && {
-                    color: 'text.secondary',
-                    fontWeight: 500,
-                    '&:hover': {
-                      bgcolor: 'rgba(1, 0, 203, 0.04)',
-                      color: '#0100cb',
-                    },
-                  }),
-                }}
-              >
-                R{num}
-              </Button>
-            )
-          })}
-        </Box>
-      </Box>
+          return (
+            <Button
+              key={num}
+              onClick={() => handleOpenDialogRev(num)}
+              variant={selected ? 'contained' : 'outlined'}
+              size='small'
+              sx={{
+                textTransform: 'none',
+                fontSize: '0.75rem',
+                padding: '5px 10px',
+                minWidth: '36px',
+                mr: 0.5,
+                ...(selected && {
+                  bgcolor: '#0100cb',
+                  color: '#fff',
+                  borderColor: '#0100cb',
+                  fontWeight: 'bold',
+                }),
+                ...(!selected && {
+                  borderColor: '#000000ff',
+                  color: '#000000ff',
+                  fontWeight: 'bold',
+                }),
+              }}
+            >
+              {`Rev ${num}`}
+            </Button>
+          )
+        })}
+      </ButtonGroup>
 
       <RevConfirmDialog
         openConfirmDialogRev={openConfirmDialogRev}

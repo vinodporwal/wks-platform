@@ -8,8 +8,7 @@ import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatt
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { configurationAndReportManualEntryResponse } from '../dummyData'
-import RevButtonSection from 'components/aop-phase-two/common/components/RevButtonSection'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import RevButtonSection from './components/RevButtonSection'
 
 const PIMSThroughput = () => {
   const keycloak = useSession()
@@ -320,7 +319,12 @@ const PIMSThroughput = () => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
       <RevButtonSection
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}

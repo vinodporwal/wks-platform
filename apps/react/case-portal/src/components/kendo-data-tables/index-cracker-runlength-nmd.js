@@ -45,7 +45,6 @@ import moment from '../../../node_modules/moment/moment'
 import { ExcelExport } from '../../../node_modules/@progress/kendo-react-excel-export/index'
 import { useSelector } from 'react-redux'
 import { getRoleName } from 'services/role-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
@@ -1710,7 +1709,12 @@ const KendoDataTablesCrackerRunLengthNMD = ({
 
           <div style={{ marginTop: '12px' }}>{renderGridDayWise()}</div>
 
-          <LoaderBackdrop open={!!loading1} />
+          <Backdrop
+            sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+            open={!!loading1}
+          >
+            <CircularProgress color='inherit' />
+          </Backdrop>
         </DialogContent>
 
         <DialogActions style={{ padding: '4px 8px' }}>

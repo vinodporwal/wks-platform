@@ -15,7 +15,6 @@ import KendoDataTables from './index'
 import { validateFields } from 'utils/validationUtils'
 import { ProductionConstarintsApiService } from 'services/production-constraints-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const CrakcerProductionConst = () => {
   const keycloak = useSession()
 
@@ -127,16 +126,14 @@ const CrakcerProductionConst = () => {
       field: 'DisplayName',
       title: 'Particulars',
       editable: false,
-      widthT: 150,
+      widthT: 220,
       hidden: false,
-      minWidth: 120,
     },
     {
       field: 'UOM',
       title: 'UOM',
       editable: false,
       widthT: 80,
-      minWidth: 60,
     },
     {
       field: 'ConstantValue',
@@ -145,16 +142,12 @@ const CrakcerProductionConst = () => {
       type: 'number',
       widthT: 120,
       format: FORMATE_VALUE,
-      minWidth: 100,
     },
 
     {
       field: 'remarks',
       title: 'Remark',
       editable: false,
-      widthT: 140,
-      minWidth: 80,
-      autoAdjust: false,
       type: 'string',
     },
   ]
@@ -398,7 +391,12 @@ const CrakcerProductionConst = () => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading1} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading1}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <Box>
         <KendoDataTables

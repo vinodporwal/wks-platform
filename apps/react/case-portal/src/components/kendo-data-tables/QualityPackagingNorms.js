@@ -29,8 +29,6 @@ import { validateFields } from 'utils/validationUtils'
 import { DataService } from 'services/DataService'
 import { useMenuContext } from 'menu/menuProvider'
 import { shouldShowReleaseButton } from 'utils/releaseButtonUtils'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import AopTabs from 'components/AopTabs'
 import { setIsBlocked, setIsReleased } from 'store/reducers/dataGridStore'
 
 import {
@@ -156,8 +154,6 @@ export default function QualityPackagingNorms() {
       title: 'ID',
       editable: false,
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
     {
       field: 'sno',
@@ -171,15 +167,11 @@ export default function QualityPackagingNorms() {
       field: 'normParameterTypeName ',
       title: 'Norm Parameter Type',
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
     {
       field: 'materialId',
       title: 'Material ID',
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
       editable: false,
     },
     {
@@ -191,7 +183,7 @@ export default function QualityPackagingNorms() {
       field: 'unit',
       title: 'Unit',
       editable: false,
-      widthT: 80,
+      widthT: 60,
     },
 
     {
@@ -467,31 +459,24 @@ export default function QualityPackagingNorms() {
       widthT: 50, // Changed from width
       editable: false,
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
     {
       field: 'materialId',
       title: 'Material ID',
       widthT: 120, // Changed from width
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
       editable: false,
     },
     {
       field: 'normParameterTypeName ',
       title: 'Norm Parameter Type',
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
     {
       field: 'qualityType',
       title: 'Quality Type',
       editable: false,
       widthT: 200,
-      minWidth: 150,
     },
     {
       field: 'percentage',
@@ -500,19 +485,15 @@ export default function QualityPackagingNorms() {
       type: 'numberWithUOMValidation',
       format: valueFormat,
       widthT: 200,
-      minWidth: 120,
     },
     {
       field: 'unit',
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
     {
       field: 'remark',
       title: 'Remark',
       editable: true,
-      minWidth: 100,
     },
   ]
 
@@ -530,27 +511,22 @@ export default function QualityPackagingNorms() {
       title: 'Material ID',
       editable: false,
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
     {
       field: 'sapMaterialCode',
       title: 'SAP Material Code',
       editable: false,
-      minWidth: 100,
     },
     {
       field: 'name',
       title: 'Name of Item',
       editable: false,
-      minWidth: 100,
     },
     {
       field: 'unit',
       title: 'Unit',
       widthT: 70,
       editable: false,
-      minWidth: 70,
     },
     {
       field: 'packagingPrice',
@@ -558,7 +534,6 @@ export default function QualityPackagingNorms() {
       editable: true,
       type: 'number',
       format: valueFormat,
-      minWidth: 100,
     },
     {
       field: 'budget',
@@ -566,7 +541,6 @@ export default function QualityPackagingNorms() {
       editable: false,
       type: 'number',
       format: valueFormat,
-      minWidth: 100,
     },
     {
       field: 'actual',
@@ -574,7 +548,6 @@ export default function QualityPackagingNorms() {
       editable: true,
       type: 'number',
       format: valueFormat,
-      minWidth: 100,
     },
     {
       field: 'proposedNorm',
@@ -582,13 +555,11 @@ export default function QualityPackagingNorms() {
       editable: true,
       type: 'number',
       format: valueFormat,
-      minWidth: 100,
     },
     {
       field: 'remark',
       title: 'Remark',
       editable: true,
-      minWidth: 100,
     },
   ]
 
@@ -599,40 +570,32 @@ export default function QualityPackagingNorms() {
       widthT: 70,
       type: 'number',
       format: '{0:n0}',
-      minWidth: 70,
     },
     {
       field: 'materialId',
       title: 'Material ID',
       editable: false,
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
     {
       field: 'sapMaterialCode',
       title: 'SAP Material Code',
       editable: false,
-      minWidth: 100,
     },
     {
       field: 'normParameterTypeName ',
       title: 'Norm Parameter Type',
       hidden: true,
-      isVisible: false,
-      minWidth: 100,
     },
     {
       field: 'name',
       title: 'Name of Item',
       editable: false,
-      minWidth: 100,
     },
     {
       field: 'unit',
       title: 'Unit',
       widthT: 80,
-      minWidth: 100,
     },
     {
       field: 'budget',
@@ -640,7 +603,6 @@ export default function QualityPackagingNorms() {
       editable: true,
       type: 'number',
       format: valueFormat,
-      minWidth: 100,
     },
     {
       field: 'actual',
@@ -648,7 +610,6 @@ export default function QualityPackagingNorms() {
       editable: true,
       type: 'number',
       format: valueFormat,
-      minWidth: 100,
     },
     {
       field: 'proposedNorm',
@@ -656,13 +617,11 @@ export default function QualityPackagingNorms() {
       editable: true,
       type: 'number',
       format: valueFormat,
-      minWidth: 100,
     },
     {
       field: 'remark',
       title: 'Remark',
       editable: true,
-      minWidth: 100,
     },
   ]
   const saveChanges = React.useCallback(async () => {
@@ -1394,13 +1353,41 @@ export default function QualityPackagingNorms() {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
       {defaultTabs?.length > 1 && (
-        <AopTabs
-          tabIndex={tabIndex}
-          setTabIndex={setTabIndex}
-          tabs={defaultTabs}
-        />
+        <Tabs
+          value={tabIndex}
+          onChange={(e, newIndex) => setTabIndex(newIndex)}
+          variant='scrollable'
+          scrollButtons='auto'
+          sx={{
+            borderBottom: '0px solid #ccc',
+            '.MuiTabs-indicator': { display: 'none' },
+            margin: '0px 0px 10px 0px',
+            minHeight: '28px',
+          }}
+          textColor='primary'
+          indicatorColor='primary'
+        >
+          {defaultTabs.map((label, idx) => (
+            <Tab
+              key={idx}
+              label={label}
+              sx={{
+                border: '1px solid #ADD8E6',
+                borderBottom: '1px solid #ADD8E6',
+                fontSize: '0.75rem',
+                padding: '9px',
+                minHeight: '12px',
+              }}
+            />
+          ))}
+        </Tabs>
       )}
       {tabIndex === 0 && (
         <Box>

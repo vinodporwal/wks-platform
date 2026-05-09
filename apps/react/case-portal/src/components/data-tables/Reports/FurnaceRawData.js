@@ -11,14 +11,13 @@ import {
   CustomAccordionDetails,
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
+import { Button } from '@mui/material'
 import {
   ExcelExport,
   ExcelExportColumn,
 } from '@progress/kendo-react-excel-export'
 import { CrackerReportsApiDataService } from 'services/cracker-reports-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
 const CALL_DELAY_MS = 20
 
@@ -68,9 +67,6 @@ const FurnaceRawData = () => {
   const VALUE_FORMATOR = ValueFormatterProduction()
 
   const enrichColumns = useCallback((backendCols = []) => {
-    const filteredCols = backendCols.filter((col) => col.field !== 'GRID_TYPE')
-    const applyFixedWidth = filteredCols.length < 7
-    const fixedWidth = applyFixedWidth ? 150 : 121
     return backendCols.map((col) => {
       const isTextCol = col.type === 'string'
       const isNumberCol = col.type === 'number'
@@ -83,7 +79,6 @@ const FurnaceRawData = () => {
         ...(isNumberCol ? { format: VALUE_FORMATOR } : {}),
         editable: false,
         isRightAlligned: isNumberCol ? 'numeric' : undefined,
-        ...(fixedWidth ? { widthT: fixedWidth } : {}),
       }
     })
   }, [])
@@ -247,8 +242,13 @@ const FurnaceRawData = () => {
   const renderTitle = (t) => t
 
   return (
-    <div className='configuration-accordion-wrapper'>
-      <LoaderBackdrop open={!!loading} />
+    <div>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <div style={{ display: 'none' }}>
         {gridNames.map((name) => {
@@ -294,18 +294,16 @@ const FurnaceRawData = () => {
           const d = dataMap[name] || { rows: [], columns: [] }
           return (
             <div key={name}>
-              <CustomAccordion defaultExpanded disableGutters className='k-table-box'>
+              <CustomAccordion defaultExpanded disableGutters>
                 <CustomAccordionSummary
                   aria-controls={`${name}-content`}
                   id={`${name}-header`}
-                  expandIcon={<ExpandMoreIcon sx={{ fontSize: '1.2rem' }} />}
-                  className='aop-report-accordion-summary'
                 >
                   <Typography component='span' className='grid-title'>
                     {renderTitle(name)}
                   </Typography>
                 </CustomAccordionSummary>
-                <CustomAccordionDetails sx={{ padding: '0px 0px 1px' }}>
+                <CustomAccordionDetails>
                   <Box sx={{ width: '100%', margin: 0 }}>
                     <KendoDataGrid
                       rows={d.rows}
