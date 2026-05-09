@@ -483,6 +483,7 @@ const CatalystChecmicalsCalculation = () => {
       setSnackbarData({ message: 'Recipe Saved!', severity: 'success' })
       setSnackbarOpen(true)
       fetchData()
+      setModifiedRecipeCells({})
     } catch (e) {
       console.error(e)
       setSnackbarData({ message: 'Recipe Saved!', severity: 'success' })
@@ -510,6 +511,9 @@ const CatalystChecmicalsCalculation = () => {
         severity: 'success',
       })
       setSnackbarOpen(true)
+      await fetchConstantsData()
+      await fetchData()
+      await getCatChemCalculationData(selectedGrade)
     } finally {
       setLoading(false)
     }
