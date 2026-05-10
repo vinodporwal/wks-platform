@@ -340,7 +340,6 @@ export const SlowDownElastomerColumnsSBR = [
     hidden: true,
     isVisible: false,
     minWidth: 100,
-    minWidth: 100,
   },
 
   // {
