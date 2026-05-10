@@ -272,7 +272,7 @@ const ProductionNormsBasisFCC = () => {
           <TabSection
             tabIndex={tabIndex}
             setTabIndex={setTabIndex}
-            tabs={filteredTabs}
+            tabs={filteredTabs.map((tab) => tab.name)}
           />
         </Stack>
       )}

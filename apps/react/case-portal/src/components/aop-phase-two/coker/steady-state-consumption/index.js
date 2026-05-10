@@ -9,6 +9,7 @@ import ValueFormatterPhaseTwo, {
 } from '../../common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
 import { SteadyStateConsumptionApiService } from '../../services/coker/steadyStateConsumptionApiService'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const SteadyStateConsumptionCoker = () => {
   const keycloak = useSession()
@@ -451,12 +452,7 @@ const SteadyStateConsumptionCoker = () => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <AdvanceKendoTable
         columns={columns}

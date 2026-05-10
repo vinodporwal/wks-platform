@@ -54,6 +54,7 @@ const DynamicDropdown = (props) => {
       dataItemKey='value'
       value={selectedOption}
       onChange={handleChange}
+      className='dropdown-editor'
       style={{ width: '100%' }}
     />
   )

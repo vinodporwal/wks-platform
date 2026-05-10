@@ -10,6 +10,7 @@ import {
   generateCalendarYearHeaders,
   generateHeaderNames,
 } from 'components/aop-phase-two/common/utilities/generateHeaders'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const UnitCapacityGrid = ({
   capacityType,
@@ -41,6 +42,9 @@ const UnitCapacityGrid = ({
   const [loadingUOM, setLoadingUOM] = useState(false)
   const [apiMetadata, setApiMetadata] = useState({ headers: [], keys: [] })
   const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
+
+  // Determine if this grid is the annual "design" capacity type
+  const isDesign = capacityType === 'design'
   // Fetch Unit Capacity data for this capacity type
   const fetchUnitCapacityData = useCallback(async () => {
     if (!SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
@@ -62,7 +66,38 @@ const UnitCapacityGrid = ({
         let plantIdCounter = 1
 
         transformedData = response.results.map((item, index) => {
-          // Backend data is in KBPSD, create nested structure for each month with both KBPSD and KTPD
+          let plantId = item.plantId
+
+          // If no plantId exists, use particulates field to determine plantId
+          if (!plantId && item.particulates) {
+            if (!particulatesMap.has(item.particulates)) {
+              particulatesMap.set(item.particulates, plantIdCounter++)
+            }
+            plantId = particulatesMap.get(item.particulates)
+          } else if (!plantId) {
+            plantId = new Date().getTime() + index
+          }
+
+          if (isDesign) {
+            // Design capacity: single annual value field
+            const kbpsdValue = item.jan || 0
+            return {
+              id: item.id || `row_${index}`,
+              particulates: item.particulates,
+              value: {
+                kbpsd: kbpsdValue,
+                ktpd: convertFromKBPSD(kbpsdValue, 'KTPD'),
+              },
+              remark: item.remark,
+              insertedDateTime: item.insertedDateTime,
+              plantId,
+              plantName: item.plantName || item.particulates,
+              inEdit: false,
+              isEditable: false,
+            }
+          }
+
+          // Other capacity types: monthly nested structure
           const months = [
             'jan',
             'feb',
@@ -87,26 +122,13 @@ const UnitCapacityGrid = ({
             }
           })
 
-          let plantId = item.plantId
-
-          // If no plantId exists, use particulates field to determine plantId
-          if (!plantId && item.particulates) {
-            if (!particulatesMap.has(item.particulates)) {
-              particulatesMap.set(item.particulates, plantIdCounter++)
-            }
-            plantId = particulatesMap.get(item.particulates)
-          } else if (!plantId) {
-            // Fallback if neither plantId nor particulates exists
-            plantId = new Date().getTime() + index
-          }
-
           return {
             id: item.id || `row_${index}`,
             particulates: item.particulates,
             ...monthData,
             remark: item.remark,
             insertedDateTime: item.insertedDateTime,
-            plantId: plantId,
+            plantId,
             plantName: item.plantName || item.particulates,
             inEdit: false,
             isEditable: false,
@@ -137,6 +159,7 @@ const UnitCapacityGrid = ({
     VERTICAL_ID,
     AOP_YEAR,
     capacityType,
+    isDesign,
     setSnackbarData,
     setSnackbarOpen,
   ])
@@ -148,7 +171,7 @@ const UnitCapacityGrid = ({
     }
   }, [SITE_ID, VERTICAL_ID, AOP_YEAR, fetchUnitCapacityData])
 
-  // Column configuration for Unit Capacity with monthly nested KBPSD and KTPD
+  // Column configuration for Unit Capacity
   const columnConfig = useMemo(() => {
     const config = {
       id: {
@@ -166,49 +189,69 @@ const UnitCapacityGrid = ({
       },
     }
 
-    // Add monthly columns with KBPSD and KTPD sub-columns
-    const months = [
-      'jan',
-      'feb',
-      'mar',
-      'apr',
-      'may',
-      'jun',
-      'jul',
-      'aug',
-      'sep',
-      'oct',
-      'nov',
-      'dec',
-    ]
-    months.forEach((month) => {
-      config[`${month}.kbpsd`] = {
+    if (isDesign) {
+      // Design capacity: single annual value column
+      config['value.kbpsd'] = {
         editable: false,
         type: 'number1',
         minWidth: 80,
-        widthT: 100,
+        widthT: 120,
         format: valueFormat,
         title: 'KBPSD',
       }
-      config[`${month}.ktpd`] = {
+      config['value.ktpd'] = {
         editable: false,
         type: 'number1',
         minWidth: 80,
-        widthT: 100,
+        widthT: 120,
         format: valueFormat,
         title: 'KTPD',
       }
-    })
+    } else {
+      // Other capacity types: monthly KBPSD and KTPD sub-columns
+      const months = [
+        'jan',
+        'feb',
+        'mar',
+        'apr',
+        'may',
+        'jun',
+        'jul',
+        'aug',
+        'sep',
+        'oct',
+        'nov',
+        'dec',
+      ]
+      months.forEach((month) => {
+        config[`${month}.kbpsd`] = {
+          editable: false,
+          type: 'number1',
+          minWidth: 80,
+          widthT: 100,
+          format: valueFormat,
+          title: 'KBPSD',
+        }
+        config[`${month}.ktpd`] = {
+          editable: false,
+          type: 'number1',
+          minWidth: 80,
+          widthT: 100,
+          format: valueFormat,
+          title: 'KTPD',
+        }
+      })
+    }
 
     config.remark = {
       editable: false,
       type: 'text',
-      minWidth: 200,
-      widthT: 250,
+      // minWidth: 200,
+      // widthT: 250,
     }
 
     return config
-  }, [valueFormat])
+  }, [isDesign, valueFormat])
 
   const columns = useMemo(() => {
     const { headers, keys } = apiMetadata
@@ -230,62 +273,83 @@ const UnitCapacityGrid = ({
       ...config,
     }))
 
-    // Group monthly columns with KBPSD and KTPD sub-columns
-    const months = [
-      { key: 'jan', headerKey: 1 },
-      { key: 'feb', headerKey: 2 },
-      { key: 'mar', headerKey: 3 },
-      { key: 'apr', headerKey: 4 },
-      { key: 'may', headerKey: 5 },
-      { key: 'jun', headerKey: 6 },
-      { key: 'jul', headerKey: 7 },
-      { key: 'aug', headerKey: 8 },
-      { key: 'sep', headerKey: 9 },
-      { key: 'oct', headerKey: 10 },
-      { key: 'nov', headerKey: 11 },
-      { key: 'dec', headerKey: 12 },
-    ]
-
-    const otherCols = cols.filter(
-      (col) => !months.some((m) => col.field.startsWith(`${m.key}.`)),
-    )
-
     const result = []
     // Position 0: id
-    result.push(otherCols.find((col) => col.field === 'id'))
+    result.push(cols.find((col) => col.field === 'id'))
     // Position 1: particulates
-    result.push(otherCols.find((col) => col.field === 'particulates'))
+    result.push(cols.find((col) => col.field === 'particulates'))
 
-    // Position 2: Capacity with monthly columns (Apr to Mar)
-    const monthlyColumns = months
-      .map((month) => {
-        const kbpsdCol = cols.find((col) => col.field === `${month.key}.kbpsd`)
-        const ktpdCol = cols.find((col) => col.field === `${month.key}.ktpd`)
-
-        return {
-          title: headerMap[month.headerKey] || month.key.toUpperCase(),
-          children: [kbpsdCol, ktpdCol].filter(Boolean),
-        }
-      })
-      .filter((col) => col.children.length > 0)
-
-    if (monthlyColumns.length > 0) {
+    if (isDesign) {
+      // Design capacity: Capacity ? [KBPSD, KTPD]
+      const kbpsdCol = cols.find((col) => col.field === 'value.kbpsd')
+      const ktpdCol = cols.find((col) => col.field === 'value.ktpd')
       result.push({
         title: 'Capacity',
-        children: monthlyColumns,
+        children: [kbpsdCol, ktpdCol].filter(Boolean),
       })
+    } else {
+      // Other types: Capacity ? monthly columns (Jan to Dec)
+      const months = [
+        { key: 'jan', headerKey: 1 },
+        { key: 'feb', headerKey: 2 },
+        { key: 'mar', headerKey: 3 },
+        { key: 'apr', headerKey: 4 },
+        { key: 'may', headerKey: 5 },
+        { key: 'jun', headerKey: 6 },
+        { key: 'jul', headerKey: 7 },
+        { key: 'aug', headerKey: 8 },
+        { key: 'sep', headerKey: 9 },
+        { key: 'oct', headerKey: 10 },
+        { key: 'nov', headerKey: 11 },
+        { key: 'dec', headerKey: 12 },
+      ]
+
+      const monthlyColumns = months
+        .map((month) => {
+          const kbpsdCol = cols.find(
+            (col) => col.field === `${month.key}.kbpsd`,
+          )
+          const ktpdCol = cols.find((col) => col.field === `${month.key}.ktpd`)
+          return {
+            title: headerMap[month.headerKey] || month.key.toUpperCase(),
+            children: [kbpsdCol, ktpdCol].filter(Boolean),
+          }
+        })
+        .filter((col) => col.children.length > 0)
+
+      if (monthlyColumns.length > 0) {
+        result.push({
+          title: 'Capacity',
+          children: monthlyColumns,
+        })
+      }
     }
 
-    // Position 3: remark and other remaining columns
-    const remainingCols = otherCols.filter(
+    // Remark and other remaining columns
+    const skipFields = isDesign
+      ? ['id', 'particulates', 'insertedDateTime', 'value.kbpsd', 'value.ktpd']
+      : ['id', 'particulates', 'insertedDateTime']
+    const remainingCols = cols.filter(
       (col) =>
-        col.field !== 'id' &&
-        col.field !== 'particulates' &&
-        col.field !== 'insertedDateTime',
+        !skipFields.includes(col.field) &&
+        ![
+          'jan',
+          'feb',
+          'mar',
+          'apr',
+          'may',
+          'jun',
+          'jul',
+          'aug',
+          'sep',
+          'oct',
+          'nov',
+          'dec',
+        ].some((m) => col.field.startsWith(`${m}.`)),
     )
     result.push(...remainingCols)
     return result
-  }, [apiMetadata, columnConfig, headerMap])
+  }, [isDesign, apiMetadata, columnConfig, headerMap])
 
   // Export handler
   const handleExport = async () => {
@@ -339,12 +403,7 @@ const UnitCapacityGrid = ({
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <Stack sx={{ mt: 2 }}>
         <AdvanceKendoTable

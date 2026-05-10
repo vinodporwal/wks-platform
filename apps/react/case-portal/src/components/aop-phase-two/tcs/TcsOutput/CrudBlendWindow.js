@@ -4,12 +4,14 @@ import { TcsOutputApiService } from 'components/aop-phase-two/services/tcs/tcsOu
 import { useSession } from 'SessionStoreContext'
 import CrudBlendWindowGrid from './CrudBlendWindowComponents/CrudBlendWindowGrid'
 import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const CrudBlendWindow = ({
   PLANT_ID,
   AOP_YEAR,
   currentTab,
   SITE_ID,
+  VERTICAL_ID,
   snackbarData,
   setSnackbarData,
   snackbarOpen,
@@ -42,6 +44,7 @@ const CrudBlendWindow = ({
 
       const response = await TcsOutputApiService.getCrudBlendWindowData(
         keycloak,
+        VERTICAL_ID,
         apiYear,
         SITE_ID,
       )
@@ -84,12 +87,7 @@ const CrudBlendWindow = ({
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {gridConfigs.map((config) => (
         <CrudBlendWindowGrid
@@ -98,6 +96,7 @@ const CrudBlendWindow = ({
           title={config.title}
           AOP_YEAR={AOP_YEAR}
           SITE_ID={SITE_ID}
+          VERTICAL_ID={VERTICAL_ID}
           tableData={allTablesData[config.key]}
           snackbarData={snackbarData}
           setSnackbarData={setSnackbarData}

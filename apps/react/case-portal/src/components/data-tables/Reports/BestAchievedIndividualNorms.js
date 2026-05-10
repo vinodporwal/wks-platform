@@ -17,8 +17,19 @@ import {
 } from 'utils/CustomAccrodian'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service.js'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+
+import AddIcon from '@mui/icons-material/Add'
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
+import DownloadIcon from '@mui/icons-material/Download'
+import UploadIcon from '@mui/icons-material/Upload'
+import CalculateIcon from '@mui/icons-material/Calculate'
+import SaveIcon from '@mui/icons-material/Save'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+
 const BestAchievedIndividualNorms = () => {
   const keycloak = useSession()
+  // const READ_ONLY = getRoleName(keycloak)
 
   const [dataMap, setDataMap] = useState({})
   const [gridNames, setGridNames] = useState([])
@@ -335,12 +346,7 @@ const BestAchievedIndividualNorms = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {/* Hidden ExcelExport instances for each grid */}
       <div style={{ display: 'none' }}>
@@ -372,8 +378,10 @@ const BestAchievedIndividualNorms = () => {
         <Button
           variant='contained'
           onClick={exportAllGrids}
-          className='btn-save'
+          className='btn-export'
           // disabled={READ_ONLY}
+          //ANY ONE CAN EXPORT
+          startIcon={<DownloadIcon fontSize='small' />}
         >
           Export
         </Button>

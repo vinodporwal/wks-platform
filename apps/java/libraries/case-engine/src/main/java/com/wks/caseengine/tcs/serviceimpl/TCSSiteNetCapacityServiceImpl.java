@@ -106,6 +106,7 @@ public class TCSSiteNetCapacityServiceImpl implements TCSSiteNetCapacityService 
                     plantId,
                     aopYear,
                     vertical.getName().toUpperCase(),
+                 plantId != null ? null : UUID.fromString(verticalId),
                     site.getId(),
                     capacityType);
 
@@ -139,6 +140,7 @@ public class TCSSiteNetCapacityServiceImpl implements TCSSiteNetCapacityService 
                     plantId,
                     aopYear,
                     vertical.getName().toUpperCase(),
+                    plantId != null ? null : verticalId,
                     site.getId().toString(),
                     capacityType
             // uom
@@ -166,23 +168,21 @@ public class TCSSiteNetCapacityServiceImpl implements TCSSiteNetCapacityService 
             String plantId,
             String aopYear,
             String verticalName,
+            UUID verticalId,
             UUID siteId,
             String capacityType
     ) {
 
         try {
             // Stored Procedure name
-            String procedureName = "GetPlantNetCapacity";
-            if (!"MEG".equalsIgnoreCase(verticalName)) {
-                if (plantId != null) {
-                    // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity";
-                    procedureName = "DTA" + "_GetPlantNetCapacity";
-                } else {
-                    // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_OutPut";
-                    procedureName = "DTA_GetPlantNetCapacity";
-                }
-            }
-            
+            String procedureName = null;
+            if (plantId != null) {
+                // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity";
+                procedureName = "DTA" + "_GetPlantNetCapacity";
+            } else {
+                // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_OutPut";
+                procedureName = "DTA_GetPlantNetCapacity";
+            }   
             log.debug("Implementation: getData() - Executing stored procedure: {}", procedureName);
 
             // Prepare native SQL call with parameters
@@ -193,7 +193,7 @@ public class TCSSiteNetCapacityServiceImpl implements TCSSiteNetCapacityService 
             } else {
                 // sql = "EXEC " + procedureName + " @aopYear = :aopYear, @capacityType =
                 // :capacityType";
-                sql = "EXEC " + procedureName + " ?, ?";
+                sql = "EXEC " + procedureName + " ?, ?, ?";
 
             }
             
@@ -210,8 +210,9 @@ public class TCSSiteNetCapacityServiceImpl implements TCSSiteNetCapacityService 
             }
 
             else {
-                query.setParameter(1, siteId);
-                query.setParameter(2, aopYear);
+                query.setParameter(1, verticalId);
+                query.setParameter(2, siteId);
+                query.setParameter(3, aopYear);
                 // query.setParameter(3, capacityType);
                 log.debug("Implementation: getData() - Parameters - siteId: {}, aopYear: {}, capacityType: {}", 
                         siteId, aopYear, capacityType);
@@ -236,6 +237,7 @@ public class TCSSiteNetCapacityServiceImpl implements TCSSiteNetCapacityService 
             String plantId,
             String aopYear,
             String verticalName,
+            String verticalId,
             String siteId,
             String capacityType
     // String uom
@@ -243,15 +245,13 @@ public class TCSSiteNetCapacityServiceImpl implements TCSSiteNetCapacityService 
         
         log.debug("Implementation: getHeaders() - Started with verticalName: {}", verticalName);
 
-        String procedureName = "GetPlantNetCapacity";
-        if (!"MEG".equalsIgnoreCase(verticalName)) {
-            if (plantId != null) {
-                // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity";
-                procedureName = "DTA" + "_GetPlantNetCapacity";
-            } else {
-                // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_OutPut";
-                procedureName = "DTA_GetPlantNetCapacity";
-            }
+        String procedureName = null;
+        if (plantId != null) {
+            // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity";
+            procedureName = "DTA" + "_GetPlantNetCapacity";
+        } else {
+            // procedureName = verticalName + "_" + "ALL" + "_GetTcsUnitCapacity_OutPut";
+            procedureName = "DTA_GetPlantNetCapacity";
         }
         
         log.debug("Implementation: getHeaders() - Procedure name: {}", procedureName);
@@ -260,7 +260,7 @@ public class TCSSiteNetCapacityServiceImpl implements TCSSiteNetCapacityService 
         if (plantId != null) {
             callableSql = "{call " + procedureName + "(?, ?, ?)}";
         } else {
-            callableSql = "{call " + procedureName + "(?, ?)}";
+            callableSql = "{call " + procedureName + "(?, ?, ?)}";
         }
         
         log.debug("Implementation: getHeaders() - Callable SQL: {}", callableSql);
@@ -279,8 +279,9 @@ public class TCSSiteNetCapacityServiceImpl implements TCSSiteNetCapacityService 
 
             else {
                 // Convert siteId to UUID for SQL Server uniqueidentifier type
-                stmt.setObject(1, UUID.fromString(siteId));
-                stmt.setString(2, aopYear);
+                stmt.setObject(1, UUID.fromString(verticalId));
+                stmt.setObject(2, UUID.fromString(siteId));
+                stmt.setString(3, aopYear);
                 // stmt.setString(3, capacityType);
                 log.debug("Implementation: getHeaders() - Parameters (siteId path) - siteId: {}, aopYear: {}, capacityType: {}", 
                         siteId, aopYear, capacityType);

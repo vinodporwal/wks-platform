@@ -24,10 +24,13 @@ import {
 import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
 import { NormalOperationNormsApiService } from 'services/normal-operation-norms-api-service'
 import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import ConfigurationAccordian from './common/ConfigurationAccordian'
 
 const AopDesignBasisNorms = () => {
   const hasExecutedRef = useRef(false)
   const keycloak = useSession()
+  // const READ_ONLY = getRoleName(keycloak)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -413,114 +416,114 @@ const AopDesignBasisNorms = () => {
   const startDateFromConfig = new Date(startDateConfig?.AttributeValue)
   const endDateDateFromConfig = new Date(endDateConfig?.AttributeValue)
 
-  const ConfigurationAccordian = useMemo(() => {
-    return (
-      <Box sx={{ mb: '0px' }}>
-        <CustomAccordion defaultExpanded disableGutters>
-          <CustomAccordionSummary
-            aria-controls='meg-grid-content'
-            id='meg-grid-header'
-          >
-            <Typography className='grid-title'>
-              AOP Historical Period Basis
-            </Typography>
-          </CustomAccordionSummary>
-          <CustomAccordionDetails>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-end',
-                mt: 0,
-              }}
-            >
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  marginTop: '5px',
-                }}
-              >
-                {true && (
-                  <Box
-                    sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}
-                  >
-                    <Box
-                      sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}
-                    >
-                      <Typography
-                        className='button-title'
-                        sx={{ whiteSpace: 'nowrap' }}
-                      >
-                        Start Date
-                      </Typography>
-                      <DatePicker
-                        id='start-date'
-                        format='dd-MM-yyyy'
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.value)}
-                        style={{ height: '80px' }}
-                        size={'medium'}
-                        disabled={READ_ONLY}
-                      />{' '}
-                    </Box>
-                    {/* End Date */}
-                    <Box
-                      sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}
-                    >
-                      <Typography
-                        className='button-title'
-                        sx={{ whiteSpace: 'nowrap' }}
-                      >
-                        End Date
-                      </Typography>
-                      <DatePicker
-                        id='end-date'
-                        format='dd-MM-yyyy'
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.value)}
-                        style={{ height: '80px' }}
-                        size={'medium'}
-                        disabled={READ_ONLY}
-                      />{' '}
-                    </Box>
-                    {/* Load Button */}
-                    {!isOldYear && (
-                      <Button
-                        variant='contained'
-                        // onClick={onLoad}
-                        onClick={handleOpenDialog}
-                        className='btn-save'
-                        disabled={READ_ONLY}
-                        sx={{ alignSelf: 'flex-end' }}
-                      >
-                        Load
-                      </Button>
-                    )}
-                  </Box>
-                )}
+  // const ConfigurationAccordian = useMemo(() => {
+  //   return (
+  //     <Box sx={{ mb: '0px' }}>
+  //       <CustomAccordion defaultExpanded disableGutters>
+  //         <CustomAccordionSummary
+  //           aria-controls='meg-grid-content'
+  //           id='meg-grid-header'
+  //         >
+  //           <Typography className='grid-title'>
+  //             AOP Historical Period Basis
+  //           </Typography>
+  //         </CustomAccordionSummary>
+  //         <CustomAccordionDetails>
+  //           <Box
+  //             sx={{
+  //               display: 'flex',
+  //               justifyContent: 'space-between',
+  //               alignItems: 'flex-end',
+  //               mt: 0,
+  //             }}
+  //           >
+  //             <Box
+  //               sx={{
+  //                 display: 'flex',
+  //                 alignItems: 'center',
+  //                 gap: 1,
+  //                 marginTop: '5px',
+  //               }}
+  //             >
+  //               {true && (
+  //                 <Box
+  //                   sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}
+  //                 >
+  //                   <Box
+  //                     sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}
+  //                   >
+  //                     <Typography
+  //                       className='button-title'
+  //                       sx={{ whiteSpace: 'nowrap' }}
+  //                     >
+  //                       Start Date
+  //                     </Typography>
+  //                     <DatePicker
+  //                       id='start-date'
+  //                       format='dd-MM-yyyy'
+  //                       value={startDate}
+  //                       onChange={(e) => setStartDate(e.value)}
+  //                       style={{ height: '80px' }}
+  //                       size={'medium'}
+  //                       disabled={READ_ONLY}
+  //                     />{' '}
+  //                   </Box>
+  //                   {/* End Date */}
+  //                   <Box
+  //                     sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}
+  //                   >
+  //                     <Typography
+  //                       className='button-title'
+  //                       sx={{ whiteSpace: 'nowrap' }}
+  //                     >
+  //                       End Date
+  //                     </Typography>
+  //                     <DatePicker
+  //                       id='end-date'
+  //                       format='dd-MM-yyyy'
+  //                       value={endDate}
+  //                       onChange={(e) => setEndDate(e.value)}
+  //                       style={{ height: '80px' }}
+  //                       size={'medium'}
+  //                       disabled={READ_ONLY}
+  //                     />{' '}
+  //                   </Box>
+  //                   {/* Load Button */}
+  //                   {!isOldYear && (
+  //                     <Button
+  //                       variant='contained'
+  //                       // onClick={onLoad}
+  //                       onClick={handleOpenDialog}
+  //                       className='btn-save'
+  //                       disabled={READ_ONLY}
+  //                       sx={{ alignSelf: 'flex-end' }}
+  //                     >
+  //                       Load
+  //                     </Button>
+  //                   )}
+  //                 </Box>
+  //               )}
 
-                {configurationExecutionDetails[0]?.ModifiedOn && (
-                  <Typography
-                    className={
-                      READ_ONLY ? 'summary-title-disabled' : 'summary-title'
-                    }
-                    sx={{
-                      whiteSpace: 'normal',
-                      alignSelf: 'flex-end', // ?? ensures it's bottom-aligned with the button
-                    }}
-                  >
-                    {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}
-                  </Typography>
-                )}
-              </Box>
-            </Box>
-          </CustomAccordionDetails>
-        </CustomAccordion>
-      </Box>
-    )
-  }, [startDate, endDate, summary, startDateFromConfig, endDateDateFromConfig])
+  //               {configurationExecutionDetails[0]?.ModifiedOn && (
+  //                 <Typography
+  //                   className={
+  //                     READ_ONLY ? 'summary-title-disabled' : 'summary-title'
+  //                   }
+  //                   sx={{
+  //                     whiteSpace: 'normal',
+  //                     alignSelf: 'flex-end', // ?? ensures it's bottom-aligned with the button
+  //                   }}
+  //                 >
+  //                   {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}
+  //                 </Typography>
+  //               )}
+  //             </Box>
+  //           </Box>
+  //         </CustomAccordionDetails>
+  //       </CustomAccordion>
+  //     </Box>
+  //   )
+  // }, [startDate, endDate, summary, startDateFromConfig, endDateDateFromConfig])
 
   const ConfigurationDialog = useMemo(() => {
     return (
@@ -551,13 +554,23 @@ const AopDesignBasisNorms = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading1}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
-      {ConfigurationAccordian}
+      <LoaderBackdrop open={!!loading1} />
+      <ConfigurationAccordian
+        startDate={startDate}
+        endDate={endDate}
+        summary={summary}
+        READ_ONLY={READ_ONLY}
+        isOldYear={isOldYear}
+        configurationExecutionDetails={configurationExecutionDetails}
+        setStartDate={setStartDate}
+        setEndDate={setEndDate}
+        setDateEdited={() => {}}
+        setSummary={setSummary}
+        setSummaryEdited={() => {}}
+        summaryEnabled={false}
+        handleOpenDialog={handleOpenDialog}
+        formatDateForText={formatDateForText}
+      />
       <Notification
         open={snackbarOpen}
         message={snackbarData?.message || ''}

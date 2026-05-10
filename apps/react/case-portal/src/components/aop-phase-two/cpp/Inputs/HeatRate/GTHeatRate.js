@@ -262,7 +262,7 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
 
   const dropdownConfig = {
     options: dropdownOptions,
-    label: 'Select Plant',
+    label: 'Plant',
     placeholder: 'Select Plant',
     valueKey: 'id',
     labelKey: 'name',

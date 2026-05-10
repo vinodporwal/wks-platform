@@ -26,7 +26,7 @@ const kendoBusinessDemColDef = ({ headerMap }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const vertName = dataGridStore.verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || verticalEnums.MEG
-  const siteName = dataGridStore.siteObject?.name?.toLowerCase()  // get site
+  const siteName = dataGridStore.siteObject?.name?.toLowerCase() // get site
   const IS_ELASTOMER_JMD = lowerVertName === 'elastomer' && siteName === 'jmd'
   const FORMATE_DECIMAL = ValueFormatterProduction()
 
@@ -54,6 +54,7 @@ const kendoBusinessDemColDef = ({ headerMap }) => {
       title: headerMap[col.title],
       align: 'right',
       format: FORMATE_DECIMAL,
+      minWidth: 100,
     }
   })
 

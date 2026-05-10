@@ -13,6 +13,7 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 export default function RelPerf() {
   // Reliability Performance Grid (already present)
   const keycloak = useSession()
@@ -139,16 +140,29 @@ export default function RelPerf() {
       field: 'incidentDescription',
       title: 'Incident Description',
       editable: true,
+      minWidth: 130,
     },
     {
       field: 'rootCauseAnalysis',
       title: 'Root Cause Analysis',
       editable: true,
+      minWidth: 130,
     },
-    { field: 'recommendation', title: 'Recommendation', editable: true },
-    { field: 'targetDate', title: 'Target Date', editable: true, type: 'date' },
-    { field: 'responsible', title: 'Resp.', editable: true },
-    { field: 'remarks', title: 'Remarks', editable: true },
+    {
+      field: 'recommendation',
+      title: 'Recommendation',
+      editable: true,
+      minWidth: 130,
+    },
+    {
+      field: 'targetDate',
+      title: 'Target Date',
+      editable: true,
+      type: 'date',
+      minWidth: 130,
+    },
+    { field: 'responsible', title: 'Resp.', editable: true, minWidth: 130 },
+    { field: 'remarks', title: 'Remarks', editable: true, minWidth: 130 },
   ]
 
   const [majorIncidentsRows, setMajorIncidentsRows] = useState([])
@@ -286,15 +300,17 @@ export default function RelPerf() {
       widthT: 70,
       editable: false,
       type: 'number',
+      minWidth: 70,
     },
-    { field: 'parameter', title: 'Parameter', editable: false },
-    { field: 'uom', title: 'UOM', editable: false, widthT: 70 },
+    { field: 'parameter', title: 'Parameter', editable: false, minWidth: 100 },
+    { field: 'uom', title: 'UOM', editable: false, widthT: 70, minWidth: 100 },
     {
       field: 'bestAchieved',
       title: 'Best Achieved',
       editable: true,
       type: 'numberWithUOMValidation',
       format: FORMATE_DECIMAL,
+      minWidth: 100,
     },
     {
       field: 'aop',
@@ -302,6 +318,7 @@ export default function RelPerf() {
       editable: true,
       type: 'numberWithUOMValidation',
       format: FORMATE_DECIMAL,
+      minWidth: 100,
     },
     {
       field: 'actual',
@@ -309,6 +326,7 @@ export default function RelPerf() {
       editable: true,
       type: 'numberWithUOMValidation',
       format: FORMATE_DECIMAL,
+      minWidth: 100,
     },
     {
       field: 'plann',
@@ -316,17 +334,20 @@ export default function RelPerf() {
       editable: true,
       type: 'numberWithUOMValidation',
       format: FORMATE_DECIMAL,
+      minWidth: 100,
     },
-    { field: 'limit', title: 'Limit', editable: true },
+    { field: 'limit', title: 'Limit', editable: true, minWidth: 100 },
     {
       field: 'rationale',
       title: 'Rationale / Reasons for Changes',
       editable: true,
+      minWidth: 100,
     },
     {
       field: 'remarks',
       title: 'Remarks',
       editable: true,
+      minWidth: 100,
     },
   ]
 
@@ -473,9 +494,10 @@ export default function RelPerf() {
       widthT: 70,
       editable: false,
       type: 'number',
+      minWidth: 70,
     },
-    { field: 'parameter', title: 'Parameter', editable: false },
-    { field: 'uom', title: 'UOM', editable: false, widthT: 70 },
+    { field: 'parameter', title: 'Parameter', editable: false, minWidth: 100 },
+    { field: 'uom', title: 'UOM', editable: false, widthT: 70, minWidth: 100 },
     {
       field: 'bestAchieved',
       title: 'Best Achieved',
@@ -483,6 +505,7 @@ export default function RelPerf() {
       format: FORMATE_DECIMAL,
 
       type: 'numberWithUOMValidation',
+      minWidth: 100,
     },
     {
       field: 'aop',
@@ -491,6 +514,7 @@ export default function RelPerf() {
       format: FORMATE_DECIMAL,
 
       type: 'numberWithUOMValidation',
+      minWidth: 100,
     },
     {
       field: 'actual',
@@ -499,6 +523,7 @@ export default function RelPerf() {
       format: FORMATE_DECIMAL,
 
       type: 'numberWithUOMValidation',
+      minWidth: 100,
     },
     {
       field: 'plann',
@@ -507,6 +532,7 @@ export default function RelPerf() {
       format: FORMATE_DECIMAL,
 
       type: 'numberWithUOMValidation',
+      minWidth: 100,
     },
     // { field: 'limit', title: 'Limit', editable: true },
 
@@ -514,18 +540,30 @@ export default function RelPerf() {
       field: 'rationale',
       title: 'Rationale / Reasons for Changes',
       editable: true,
+      minWidth: 100,
     },
-    { field: 'remarks', title: 'Remarks', editable: true },
+    { field: 'remarks', title: 'Remarks', minWidth: 100, editable: true },
   ]
 
   // Reliability Improvement Initiative Grid
   const reliabilityInitiativeColumns = [
-    { field: 'initiative', title: 'Initiative', editable: true },
-    { field: 'outcome', title: 'Outcome', editable: true },
-    { field: 'recommendation', title: 'Recommendation', editable: true },
-    { field: 'targetDate', title: 'Target Date', editable: true, type: 'date' },
-    { field: 'responsible', title: 'Resp.', editable: true },
-    { field: 'remarks', title: 'Remarks', editable: true },
+    { field: 'initiative', title: 'Initiative', editable: true, minWidth: 100 },
+    { field: 'outcome', title: 'Outcome', editable: true, minWidth: 100 },
+    {
+      field: 'recommendation',
+      title: 'Recommendation',
+      editable: true,
+      minWidth: 100,
+    },
+    {
+      field: 'targetDate',
+      title: 'Target Date',
+      editable: true,
+      type: 'date',
+      minWidth: 100,
+    },
+    { field: 'responsible', title: 'Resp.', editable: true, minWidth: 100 },
+    { field: 'remarks', title: 'Remarks', editable: true, minWidth: 100 },
   ]
 
   // Permissions (reuse for all grids or customize per grid)
@@ -1151,12 +1189,7 @@ export default function RelPerf() {
 
   return (
     <>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {/* Reliability Performance Grid */}
       <KendoDataTables

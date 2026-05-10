@@ -2,6 +2,7 @@ export const ExclusionDateColumns = [
   {
     field: 'id',
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'exclusionStartDate',
@@ -26,6 +27,7 @@ export const ExclusionDateColumns = [
   {
     field: 'originalRemark',
     hidden: true,
+    isVisible: false,
   },
 ]
 
@@ -35,32 +37,41 @@ export const ShutDownAllColumns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'descLimit',
+    widthT: 350,
+    autoAdjust: false,
+    minWidth: 350,
   },
   {
     field: 'maintenanceId',
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'maintStartDateTime',
     title: 'SD - From',
     editable: true,
+    widthT: 150,
   },
   {
     field: 'maintEndDateTime',
     title: 'SD - To',
     editable: true,
+    widthT: 150,
   },
   {
     field: 'durationInHrs',
     title: 'Duration (hrs)',
     editable: true,
+    widthT: 150,
   },
   {
     field: 'remark',
     title: 'Shutdown Basis',
     editable: true,
+    widthT: 250,
+    autoAdjust: false,
   },
 ]
 export const ShutDown_Elastomer_JMD_IIR_Columns = [
@@ -69,32 +80,41 @@ export const ShutDown_Elastomer_JMD_IIR_Columns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'descLimit',
+    widthT: 260,
+    autoAdjust: false,
+    minWidth: 350,
   },
   {
     field: 'maintenanceId',
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'maintStartDateTime',
     title: 'SD - From',
     editable: true,
+    widthT: 150,
   },
   {
     field: 'maintEndDateTime',
     title: 'SD - To',
     editable: true,
+    widthT: 150,
   },
   {
     field: 'durationInHrs',
     title: 'Duration (hrs)',
     editable: true,
+    widthT: 150,
   },
   {
     field: 'remark',
     title: 'Remarks',
     editable: true,
+    widthT: 250,
+    autoAdjust: false,
   },
 ]
 export const ShutDown_Elastomer_JMD_HIIR_Columns = [
@@ -103,12 +123,16 @@ export const ShutDown_Elastomer_JMD_HIIR_Columns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'descLimit',
+    widthT: 260,
+    autoAdjust: false,
+    minWidth: 350,
   },
   {
     field: 'maintenanceId',
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'monthly',
@@ -121,11 +145,14 @@ export const ShutDown_Elastomer_JMD_HIIR_Columns = [
     field: 'durationInHrs',
     title: 'Duration (hrs)',
     editable: true,
+    widthT: 150,
   },
   {
     field: 'remark',
     title: 'Remarks',
     editable: true,
+    widthT: 250,
+    autoAdjust: false,
   },
 ]
 export const SlowdownConfigColumns = [
@@ -133,33 +160,41 @@ export const SlowdownConfigColumns = [
     field: 'description',
     title: 'Slowdown Desc',
     editable: true,
+    minWidth: 230,
+    autoAdjust: false,
   },
 
   {
     field: 'maintStartDateTime',
     title: 'SD - From',
     editable: true,
+    minWidth: 100,
   },
   {
     field: 'maintEndDateTime',
     title: 'SD - To',
     editable: true,
+    minWidth: 100,
   },
   {
     field: 'durationInHrs',
     title: 'Duration (Hrs)',
     editable: true,
+    minWidth: 100,
   },
 
   {
     field: 'rate',
     title: 'Rate',
     editable: true,
+    minWidth: 100,
   },
   {
     field: 'remarks',
     title: 'Remarks',
     editable: true,
+    minWidth: 200,
+    autoAdjust: false,
   },
 ]
 
@@ -170,6 +205,9 @@ export const ShutDownPeColumns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'descLimit',
+    widthT: 250,
+    autoAdjust: false,
+    minWidth: 350,
   },
   // {
   //   field: 'productName1',
@@ -182,21 +220,25 @@ export const ShutDownPeColumns = [
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'maintStartDateTime',
     title: 'SD - From',
     editable: true,
+    widthT: 150,
   },
   {
     field: 'maintEndDateTime',
     title: 'SD - To',
     editable: true,
+    widthT: 150,
   },
   {
     field: 'durationInHrs',
     title: 'Duration (hrs)',
     editable: true,
+    widthT: 150,
   },
   {
     field: 'remark',
@@ -217,6 +259,7 @@ export const ShutDownPeC2Columns = [
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'maintStartDateTime',
@@ -258,6 +301,7 @@ export const ShutDownPeColumnsldpe12 = [
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'maintStartDateTime',
@@ -300,6 +344,7 @@ export const ShutDownPpColumns = [
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'maintStartDateTime',
@@ -328,13 +373,16 @@ export const ShutDownPpDtaColumns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'descLimit',
+    widthT: 225,
+    autoAdjust: false,
+    minWidth: 350,
   },
   {
     field: 'lineDisplayName',
     title: 'Line',
     type: 'lineDropdown',
     editable: true,
-    width: 130,
+    width: 100,
   },
   // {
   //   field: 'productName1',
@@ -347,6 +395,7 @@ export const ShutDownPpDtaColumns = [
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   // {
   //   field: 'maintStartDateTime',
@@ -401,6 +450,7 @@ export const ShutDownPVCDMDColumns = [
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'maintStartDateTime',
@@ -437,6 +487,7 @@ export const ShutDownPTAColumns = [
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'maintStartDateTime',
@@ -473,6 +524,7 @@ export const ShutDownPTADMDColumns = [
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   // {
   //   field: 'maintStartDateTime',
@@ -515,6 +567,7 @@ export const ShutDownChemicalColumns = [
     title: 'Maintenance ID',
     editable: false,
     hidden: true,
+    isVisible: false,
   },
   {
     field: 'maintStartDateTime',

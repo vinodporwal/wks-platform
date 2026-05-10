@@ -35,6 +35,7 @@ export const TcsApiService = {
   getTcsRogcData,
   saveRogcData,
   carryForwardRogc,
+  deleteRogcData,
 
   // TCS CPP Units SD Plan Data APIs
   getCPPUnitsSdPlanData,
@@ -249,8 +250,15 @@ async function getTcsShutdownData(keycloak, plantId, year) {
   }
 }
 
-async function saveShutdownData(keycloak, PLANT_ID, AOP_YEAR, payload) {
-  const url = `${Config.CaseEngineUrl}/task/tcs-shutdown?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+async function saveShutdownData(
+  keycloak,
+  VERTICAL_ID,
+  SITE_ID,
+  PLANT_ID,
+  AOP_YEAR,
+  payload,
+) {
+  const url = `${Config.CaseEngineUrl}/task/tcs-shutdown?verticalId=${VERTICAL_ID}&siteId=${SITE_ID}&plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -338,8 +346,15 @@ async function getTcsSlowdownData(keycloak, plantId, year) {
   }
 }
 
-async function saveSlowdownData(keycloak, PLANT_ID, AOP_YEAR, payload) {
-  const url = `${Config.CaseEngineUrl}/task/tcs-slowdown?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+async function saveSlowdownData(
+  keycloak,
+  VERTICAL_ID,
+  SITE_ID,
+  PLANT_ID,
+  AOP_YEAR,
+  payload,
+) {
+  const url = `${Config.CaseEngineUrl}/task/tcs-slowdown?verticalId=${VERTICAL_ID}&siteId=${SITE_ID}&plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -409,8 +424,14 @@ async function carryForwardTcsSlowdown(keycloak, plantId, year) {
 }
 
 // ===================== || TCS Crude Blend Window Data APIs || ===================== //
-async function getCrudBlendWindowData(keycloak, plantId, year, siteId) {
-  const url = `${Config.CaseEngineUrl}/task/crude-blend-window/${plantId}/${siteId}/${year}`
+async function getCrudBlendWindowData(
+  keycloak,
+  verticalId,
+  plantId,
+  year,
+  siteId,
+) {
+  const url = `${Config.CaseEngineUrl}/task/crude-blend-window/${plantId}/${siteId}/${year}/${verticalId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -430,12 +451,13 @@ async function getCrudBlendWindowData(keycloak, plantId, year, siteId) {
 
 async function saveCrudBlendWindowData(
   keycloak,
+  verticalId,
   plantId,
   year,
   siteId,
   payload,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/crude-blend-window/${plantId}/${siteId}/${year}/${payload.tableKey}`
+  const url = `${Config.CaseEngineUrl}/task/crude-blend-window/${plantId}/${verticalId}/${siteId}/${year}/${payload.tableKey}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -517,11 +539,12 @@ async function deleteCrudBlendWindowData(keycloak, id, table) {
 
 async function carryForwardCrudBlendWindow(
   keycloak,
+  verticalId,
   financialYear,
   siteId,
   plantId,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/crude-blend-window/carry-forward/${financialYear}/${siteId}/${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/crude-blend-window/carry-forward/${financialYear}/${verticalId}/${siteId}/${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -543,8 +566,13 @@ async function carryForwardCrudBlendWindow(
 }
 
 // ===================== || TCS CPP Units SD Plan Data APIs || ===================== //
-async function getCPPUnitsSdPlanData(keycloak, financialYear, siteId) {
-  const url = `${Config.CaseEngineUrl}/task/cpp-unit-sd-plan/${financialYear}/${siteId}`
+async function getCPPUnitsSdPlanData(
+  keycloak,
+  verticalId,
+  financialYear,
+  siteId,
+) {
+  const url = `${Config.CaseEngineUrl}/task/cpp-unit-sd-plan/${financialYear}/${verticalId}/${siteId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -564,11 +592,12 @@ async function getCPPUnitsSdPlanData(keycloak, financialYear, siteId) {
 
 async function saveCPPUnitsSdPlanData(
   keycloak,
+  verticalId,
   financialYear,
   siteId,
   payload,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/cpp-unit-sd-plan/${financialYear}/${siteId}`
+  const url = `${Config.CaseEngineUrl}/task/cpp-unit-sd-plan/${financialYear}/${verticalId}/${siteId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -615,8 +644,13 @@ async function deleteCPPUnitsSdPlanData(keycloak, id) {
   }
 }
 
-async function carryForwardCppUnitsSdPlan(keycloak, financialYear, siteId) {
-  const url = `${Config.CaseEngineUrl}/task/cpp-unit-sd-plan/carry-forward/${financialYear}/${siteId}`
+async function carryForwardCppUnitsSdPlan(
+  keycloak,
+  verticalId,
+  financialYear,
+  siteId,
+) {
+  const url = `${Config.CaseEngineUrl}/task/cpp-unit-sd-plan/carry-forward/${financialYear}/${verticalId}/${siteId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -672,7 +706,19 @@ async function saveRogcData(keycloak, SITE_ID, PLANT_ID, AOP_YEAR, payload) {
       body,
     })
     if (!resp.ok) {
-      throw new Error(`HTTP error! Status: ${resp.status}`)
+      // Parse error body so callers can display backend errorMessage
+      let errBody = {}
+      try {
+        errBody = await resp.json()
+      } catch (_) {
+        // intentionally ignore JSON parse errors; fall through to error handling
+      }
+      const err = new Error(
+        errBody?.errorMessage || `HTTP error! Status: ${resp.status}`,
+      )
+      err.errorMessage = errBody?.errorMessage || null
+      err.status = resp.status
+      throw err
     }
     const result = await json(keycloak, resp)
     return result || { success: true }
@@ -704,9 +750,28 @@ async function carryForwardRogc(keycloak, financialYear, siteId, plantId) {
   }
 }
 
+async function deleteRogcData(keycloak, id) {
+  const url = `${Config.CaseEngineUrl}/task/furnace/${id}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'DELETE', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
 // ===================== || TCS PCG Outlook Data APIs || ===================== //
-async function getPcgOutlookData(keycloak, siteId, financialYear) {
-  const url = `${Config.CaseEngineUrl}/task/pcg-outlook/${siteId}/${financialYear}`
+async function getPcgOutlookData(keycloak, verticalId, siteId, financialYear) {
+  const url = `${Config.CaseEngineUrl}/task/pcg-outlook/${verticalId}/${siteId}/${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -724,8 +789,14 @@ async function getPcgOutlookData(keycloak, siteId, financialYear) {
   }
 }
 
-async function savePcgOutlookData(keycloak, siteId, financialYear, payload) {
-  const url = `${Config.CaseEngineUrl}/task/pcg-outlook/${siteId}/${financialYear}`
+async function savePcgOutlookData(
+  keycloak,
+  verticalId,
+  siteId,
+  financialYear,
+  payload,
+) {
+  const url = `${Config.CaseEngineUrl}/task/pcg-outlook/${verticalId}/${siteId}/${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -749,8 +820,13 @@ async function savePcgOutlookData(keycloak, siteId, financialYear, payload) {
   }
 }
 
-async function carryForwardPcgOutlook(keycloak, financialYear, siteId) {
-  const url = `${Config.CaseEngineUrl}/task/pcg-outlook/carry-forward?financialYear=${financialYear}&siteId=${siteId}`
+async function carryForwardPcgOutlook(
+  keycloak,
+  verticalId,
+  financialYear,
+  siteId,
+) {
+  const url = `${Config.CaseEngineUrl}/task/pcg-outlook/carry-forward?financialYear=${financialYear}&verticalId=${verticalId}&siteId=${siteId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -872,10 +948,19 @@ async function exportExcelData(keycloak, endpoint, queryParams = {}, fileName) {
 // ===================== || SPECIFIC EXCEL IMPORT/EXPORT FUNCTIONS || ===================== //
 
 // TCS Shutdown Excel Import
-async function importShutdownExcel(keycloak, PLANT_ID, AOP_YEAR, file) {
+async function importShutdownExcel(
+  keycloak,
+  VERTICAL_ID,
+  SITE_ID,
+  PLANT_ID,
+  AOP_YEAR,
+  file,
+) {
   return saveExcelData(file, keycloak, 'tcs-shutdown/import', {
     plantId: PLANT_ID,
     year: AOP_YEAR,
+    verticalId: VERTICAL_ID,
+    siteId: SITE_ID,
   })
 }
 
@@ -890,10 +975,19 @@ async function exportShutdownExcel(keycloak, PLANT_ID, AOP_YEAR) {
 }
 
 // TCS Slowdown Excel Import
-async function importSlowdownExcel(keycloak, PLANT_ID, AOP_YEAR, file) {
+async function importSlowdownExcel(
+  keycloak,
+  VERTICAL_ID,
+  SITE_ID,
+  PLANT_ID,
+  AOP_YEAR,
+  file,
+) {
   return saveExcelData(file, keycloak, 'tcs-slowdown/import', {
     plantId: PLANT_ID,
     year: AOP_YEAR,
+    verticalId: VERTICAL_ID,
+    siteId: SITE_ID,
   })
 }
 
@@ -917,29 +1011,47 @@ async function importRogcExcel(keycloak, SITE_ID, PLANT_ID, AOP_YEAR, file) {
 }
 
 // TCS ROGC Excel Export
-async function exportRogcExcel(keycloak, SITE_ID, PLANT_ID, AOP_YEAR) {
+async function exportRogcExcel(
+  keycloak,
+  VERTICAL_ID,
+  SITE_ID,
+  PLANT_ID,
+  AOP_YEAR,
+) {
   return exportExcelData(
     keycloak,
     'furnace/export',
-    { financialYear: AOP_YEAR, siteId: SITE_ID, plantId: PLANT_ID },
+    {
+      financialYear: AOP_YEAR,
+      siteId: SITE_ID,
+      plantId: PLANT_ID,
+      verticalId: VERTICAL_ID,
+    },
     `TCS_ROGC_${AOP_YEAR}.xlsx`,
   )
 }
 
 // TCS PCG Outlook Excel Import
-async function importPcgOutlookExcel(keycloak, SITE_ID, AOP_YEAR, file) {
+async function importPcgOutlookExcel(
+  keycloak,
+  VERTICAL_ID,
+  SITE_ID,
+  AOP_YEAR,
+  file,
+) {
   return saveExcelData(file, keycloak, 'pcg-outlook/import', {
     siteId: SITE_ID,
     financialYear: AOP_YEAR,
+    verticalId: VERTICAL_ID,
   })
 }
 
 // TCS PCG Outlook Excel Export
-async function exportPcgOutlookExcel(keycloak, SITE_ID, AOP_YEAR) {
+async function exportPcgOutlookExcel(keycloak, VERTICAL_ID, SITE_ID, AOP_YEAR) {
   return exportExcelData(
     keycloak,
     'pcg-outlook/export',
-    { siteId: SITE_ID, financialYear: AOP_YEAR },
+    { siteId: SITE_ID, financialYear: AOP_YEAR, verticalId: VERTICAL_ID },
     `TCS_PCG_Outlook_${AOP_YEAR}.xlsx`,
   )
 }
@@ -947,6 +1059,7 @@ async function exportPcgOutlookExcel(keycloak, SITE_ID, AOP_YEAR) {
 // TCS Crud Blend Window Excel Import
 async function importCrudBlendWindowExcel(
   keycloak,
+  VERTICAL_ID,
   PLANT_ID,
   SITE_ID,
   AOP_YEAR,
@@ -956,6 +1069,7 @@ async function importCrudBlendWindowExcel(
   return saveExcelData(file, keycloak, 'crude-blend-window/import', {
     plantId: PLANT_ID,
     siteId: SITE_ID,
+    verticalId: VERTICAL_ID,
     financialYear: AOP_YEAR,
     table: tableKey,
   })
@@ -964,6 +1078,7 @@ async function importCrudBlendWindowExcel(
 // TCS Crud Blend Window Excel Export
 async function exportCrudBlendWindowExcel(
   keycloak,
+  VERTICAL_ID,
   PLANT_ID,
   SITE_ID,
   AOP_YEAR,
@@ -976,6 +1091,7 @@ async function exportCrudBlendWindowExcel(
       plantId: PLANT_ID,
       siteId: SITE_ID,
       financialYear: AOP_YEAR,
+      verticalId: VERTICAL_ID,
       table: tableKey,
     },
     `TCS_Crud_Blend_Window_${tableKey}_${AOP_YEAR}.xlsx`,
@@ -983,20 +1099,31 @@ async function exportCrudBlendWindowExcel(
 }
 
 // TCS CPP Units SD Plan Excel Import
-async function importCPPUnitsSdPlanExcel(keycloak, SITE_ID, AOP_YEAR, file) {
+async function importCPPUnitsSdPlanExcel(
+  keycloak,
+  VERTICAL_ID,
+  SITE_ID,
+  AOP_YEAR,
+  file,
+) {
   return saveExcelData(
     file,
     keycloak,
-    `cpp-unit-sd-plan/import/${AOP_YEAR}/${SITE_ID}`,
+    `cpp-unit-sd-plan/import/${AOP_YEAR}/${VERTICAL_ID}/${SITE_ID}`,
     {},
   )
 }
 
 // TCS CPP Units SD Plan Excel Export
-async function exportCPPUnitsSdPlanExcel(keycloak, SITE_ID, AOP_YEAR) {
+async function exportCPPUnitsSdPlanExcel(
+  keycloak,
+  VERTICAL_ID,
+  SITE_ID,
+  AOP_YEAR,
+) {
   return exportExcelData(
     keycloak,
-    `cpp-unit-sd-plan/export/${AOP_YEAR}/${SITE_ID}`,
+    `cpp-unit-sd-plan/export/${AOP_YEAR}/${VERTICAL_ID}/${SITE_ID}`,
     {},
     `TCS_CPP_Units_SD_Plan_${AOP_YEAR}.xlsx`,
   )

@@ -29,6 +29,7 @@ import AopDesignBasisNorms from './AopDesignBasisNorms'
 import useValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { getRoleName } from 'services/role-service'
 import { validateFields } from 'utils/validationUtils'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const CrakcerConstantsBestAchieved = () => {
   const hasExecutedRef = useRef(false)
   const keycloak = useSession()
@@ -449,13 +450,8 @@ const CrakcerConstantsBestAchieved = () => {
                 </Box>
 
                 {configurationExecutionDetails[0]?.ModifiedOn && (
-                  <Typography
-                    className={
-                      READ_ONLY ? 'summary-title-disabled' : 'summary-title'
-                    }
-                    sx={{ whiteSpace: 'normal' }} // <-- added alignSelf
-                  >
-                    {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}
+                  <Typography className='last-refreshed-text'>
+                    {`Last loaded data on ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} by ${configurationExecutionDetails[0]?.User ?? ''} for period ${formatDateForText(startDate, false)} to ${formatDateForText(endDate, false)}`}
                   </Typography>
                 )}
               </Box>
@@ -513,12 +509,13 @@ const CrakcerConstantsBestAchieved = () => {
       field: 'DisplayName',
       title: 'Particulars',
       widthT: '200px',
+      minWidth: 120,
     },
 
     {
       field: 'UOM',
       title: 'UOM',
-      widthT: '60px',
+      minWidth: 60,
       editable: false,
     },
 
@@ -528,7 +525,7 @@ const CrakcerConstantsBestAchieved = () => {
       editable: true,
       align: 'right',
       format: valueFormat,
-      widthT: '200px',
+      minWidth: 100,
       type: 'number',
     },
     {
@@ -832,12 +829,7 @@ const CrakcerConstantsBestAchieved = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading1}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading1} />
       <AopDesignBasisNorms />
       <Box>
         <KendoDataTables

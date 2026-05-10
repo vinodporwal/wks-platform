@@ -15,6 +15,7 @@ import {
 import KendoDataTables from './index'
 import { validateFields } from 'utils/validationUtils'
 import { ReportMannualEntryApiService } from 'services/report-mannual-entry-api-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const CrackerReportMannualEntry = (props) => {
   const keycloak = useSession()
 
@@ -124,7 +125,7 @@ const CrackerReportMannualEntry = (props) => {
       field: 'UOM',
       title: 'UOM',
       editable: false,
-      widthT: 60,
+      widthT: 80,
     },
     {
       field: 'apr',
@@ -526,12 +527,7 @@ const CrackerReportMannualEntry = (props) => {
   //  console.log('productionRows', productionRows)
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <Box>
         <KendoDataTables

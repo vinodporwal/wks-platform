@@ -11,6 +11,7 @@ import {
   CircularProgress,
   Typography,
 } from '../../../../node_modules/@mui/material/index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const specificConsumptionCategories = () => [
   {
@@ -281,12 +282,7 @@ export default function SpecificConsumptionNormsII() {
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <Typography component='div' className='grid-title' sx={{ mb: 0 }}>
         {`Specific Consumption Norms (T-17)`}

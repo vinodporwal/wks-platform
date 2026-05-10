@@ -17,6 +17,7 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import AopTabs from 'components/AopTabs'
 import { Box } from '@mui/material'
 import { DataService } from 'services/DataService'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const ProductionNorms = ({ permissions }) => {
   // State for tabs
   const [tabIndex, setTabIndex] = useState(0)
@@ -703,7 +704,6 @@ const ProductionNorms = ({ permissions }) => {
                 : item.dec,
             }),
           }
-
           const total = [
             transformedItem.april,
             transformedItem.may,
@@ -718,7 +718,6 @@ const ProductionNorms = ({ permissions }) => {
             transformedItem.feb,
             transformedItem.march,
           ].reduce((sum, val) => sum + (parseFloat(val) || 0), 0)
-
           return {
             ...transformedItem,
             averageTPH: total,
@@ -1093,6 +1092,8 @@ const ProductionNorms = ({ permissions }) => {
       title: 'ID',
       editable: false,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
 
     {
@@ -1100,20 +1101,26 @@ const ProductionNorms = ({ permissions }) => {
       title: 'Product',
       widthT: 200,
       editable: false,
+      autoAdjust: false,
+      minWidth: 100,
     },
     {
       field: 'value',
       title: 'Values',
       editable: false,
       type: 'number',
-      widthT: 200,
+      widthT: 100,
       format: valueFormat,
+      autoAdjust: false,
+      minWidth: 100,
     },
     {
       field: 'type',
       title: 'type',
       editable: false,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
   ]
 
@@ -1374,12 +1381,7 @@ const ProductionNorms = ({ permissions }) => {
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>
       )}
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       {IS_ELASTOMER_JMD && (
         <KendoDataTables
           columns={columnIIR}

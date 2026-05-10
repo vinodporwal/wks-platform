@@ -13,6 +13,7 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import KendoDataTables from './index'
 import { validateFields } from 'utils/validationUtils'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const CrakcerConstants = () => {
   const keycloak = useSession()
 
@@ -124,12 +125,15 @@ const CrakcerConstants = () => {
       editable: false,
       widthT: 220,
       hidden: false,
+      minWidth: 100,
+      isVisible: false,
     },
     {
       field: 'UOM',
       title: 'UOM',
       editable: false,
       widthT: 80,
+      minWidth: 80,
     },
     {
       field: 'ConstantValue',
@@ -137,6 +141,7 @@ const CrakcerConstants = () => {
       editable: true,
       type: 'number',
       widthT: 120,
+      minWidth: 120,
     },
 
     {
@@ -144,6 +149,7 @@ const CrakcerConstants = () => {
       title: 'Remark',
       editable: false,
       type: 'string',
+      minWidth: 120,
     },
   ]
 
@@ -385,12 +391,7 @@ const CrakcerConstants = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading1}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading1} />
 
       <Box>
         <KendoDataTables

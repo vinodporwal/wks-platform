@@ -9,6 +9,7 @@ import ValueFormatterPhaseTwo, {
 } from '../../common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
 import { SteadyStateConsumptionApiService } from '../../services/crude/steadyStateConsumptionApiService'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const SteadyStateConsumption = () => {
   const keycloak = useSession()
@@ -38,7 +39,7 @@ const SteadyStateConsumption = () => {
     {
       field: 'id',
       title: 'Id',
-      // widthT: 250,
+      widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
@@ -48,7 +49,7 @@ const SteadyStateConsumption = () => {
     {
       field: 'productName',
       title: 'Particulars',
-      // widthT: 250,
+      widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
@@ -57,7 +58,7 @@ const SteadyStateConsumption = () => {
     {
       field: 'normParameterTypeDisplayName',
       title: 'Type',
-      // widthT: 250,
+      widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
@@ -67,15 +68,15 @@ const SteadyStateConsumption = () => {
     {
       field: 'UOM',
       title: 'UOM',
-      // widthT: 100,
-      minWidth: 100,
+      widthT: 120,
+      minWidth: 120,
       type: 'text',
       editable: false,
     },
     {
       field: 'april',
       title: headerMap[4],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -84,7 +85,7 @@ const SteadyStateConsumption = () => {
     {
       field: 'may',
       title: headerMap[5],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -93,7 +94,7 @@ const SteadyStateConsumption = () => {
     {
       field: 'june',
       title: headerMap[6],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -102,7 +103,7 @@ const SteadyStateConsumption = () => {
     {
       field: 'july',
       title: headerMap[7],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -111,7 +112,7 @@ const SteadyStateConsumption = () => {
     {
       field: 'august',
       title: headerMap[8],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -120,7 +121,7 @@ const SteadyStateConsumption = () => {
     {
       field: 'september',
       title: headerMap[9],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -129,7 +130,7 @@ const SteadyStateConsumption = () => {
     {
       field: 'october',
       title: headerMap[10],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -138,7 +139,7 @@ const SteadyStateConsumption = () => {
     {
       field: 'november',
       title: headerMap[11],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -147,7 +148,7 @@ const SteadyStateConsumption = () => {
     {
       field: 'december',
       title: headerMap[12],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -156,7 +157,7 @@ const SteadyStateConsumption = () => {
     {
       field: 'january',
       title: headerMap[1],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -165,7 +166,7 @@ const SteadyStateConsumption = () => {
     {
       field: 'february',
       title: headerMap[2],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -174,7 +175,7 @@ const SteadyStateConsumption = () => {
     {
       field: 'march',
       title: headerMap[3],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -183,8 +184,8 @@ const SteadyStateConsumption = () => {
     {
       field: 'remarks',
       title: 'Remark',
-      // widthT: 150,
-      minWidth: 220,
+      widthT: 150,
+      minWidth: 120,
       type: 'textarea',
       editable: true,
     },
@@ -462,12 +463,7 @@ const SteadyStateConsumption = () => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <AdvanceKendoTable
         columns={columns}

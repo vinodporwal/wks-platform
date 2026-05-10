@@ -63,13 +63,15 @@ public class TCSShutdownController {
     public AOPMessageVM saveOrUpdate(
         @RequestParam String plantId,
         @RequestParam String year,
+        @RequestParam String verticalId,
+        @RequestParam String siteId,
         @RequestBody List<TCSShutdownDTO> payload) {
 
         if(year == null || year.isEmpty() || year.length() != 4) {
             throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
         }
 
-        return tcsShutdownService.saveOrUpdate(plantId, year, payload);
+        return tcsShutdownService.saveOrUpdate(plantId, year, verticalId, siteId, payload);
     }
 
     @DeleteMapping("/tcs-shutdown")
@@ -119,6 +121,8 @@ public class TCSShutdownController {
     public AOPMessageVM importTCSShutdown(
         @RequestParam String plantId,
         @RequestParam String year,
+        @RequestParam String verticalId,
+        @RequestParam String siteId,
         @RequestParam("file") MultipartFile file) {
 
         if(year == null || year.isEmpty() || year.length() != 4) {
@@ -128,6 +132,8 @@ public class TCSShutdownController {
         return tcsShutdownService.importExcel(
             plantId,
             year,
+            verticalId,
+            siteId,
             file);
     }
 }

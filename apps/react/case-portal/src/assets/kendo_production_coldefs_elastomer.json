@@ -2,49 +2,60 @@
   {
     "field": "idFromApi",
     "title": "ID",
-    "hidden": true
+    "hidden": true,
+    "minWidth": 100,
+    "isVisible": false
   },
   {
     "field": "aopCaseId",
     "title": "Case ID",
     "width": 120,
     "editable": false,
-    "hidden": true
+    "hidden": true,
+    "minWidth": 100,
+    "isVisible": false
   },
   {
     "field": "normParametersFKId",
     "title": "Particulars",
     "editable": false,
     "widthT": 100,
-    "hidden": true
+    "hidden": true,
+    "minWidth": 120,
+    "isVisible": false
   },
 
   {
     "field": "productName",
     "title": "Particulars",
     "editable": false,
-    "widthT": 200
+    "widthT": 120,
+    "minWidth": 120
   },
   {
     "field": "april",
     "title": "Value",
     "editable": true,
-    "widthT": 200,
+    "widthT": 100,
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:n2}"
-  }, 
+    "format": "{0:n2}",
+    "minWidth": 100
+  },
 
   {
     "field": "remarks",
     "title": "Remark",
     "editable": false,
-    "width": 90
+    "width": 90,
+    "minWidth": 100
   },
   {
     "field": "isEditable",
     "title": "isEditable",
-    "hidden": true
+    "hidden": true,
+    "minWidth": 100,
+    "isVisible": false
   }
 ]

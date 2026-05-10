@@ -143,7 +143,7 @@ export const MainRoutes = (
     children: [
       {
         path: '/',
-        element: <Navigate to='/production-norms-plan/configuration' />,
+        element: <Navigate to='/dashboard' />,
       },
 
       {
@@ -1152,6 +1152,10 @@ export const MainRoutes = (
             <AssessmentForm />
           </PrivateRoute>
         ),
+      },
+      {
+        path: '*',
+        element: <Navigate to='/dashboard' replace />,
       },
     ],
   }
