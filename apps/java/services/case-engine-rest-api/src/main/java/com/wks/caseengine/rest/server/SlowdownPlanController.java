@@ -33,6 +33,7 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
+import com.wks.caseengine.rest.entity.Plant;
 import com.wks.caseengine.service.ShutDownPlanService;
 import com.wks.caseengine.service.SlowdownPlanService;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -76,7 +77,8 @@ public class SlowdownPlanController {
 	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 	        Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 	        boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
-			if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc) {
+			boolean ElastomerHmdSbr=vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
+			if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc || ElastomerHmdSbr) {
 				 excelBytes = slowdownPlanService.slowdownExportPE(year, plantId,maintenanceTypeName, false, null);
 			}else {
 				  excelBytes = slowdownPlanService.slowdownExport(year, plantId,maintenanceTypeName, false, null);

@@ -640,7 +640,7 @@ const SelectivityData = (props) => {
           props?.configType,
           PLANT_ID,
           AOP_YEAR,
-          `${EXCEL_EXPORT_TITLE}${revisionName}`,
+          `${EXCEL_EXPORT_TITLE}${revisionName}_Production & Norms Basis ${props?.configType}`,
         )
       } else if (props?.tabIndex != 1) {
         if (

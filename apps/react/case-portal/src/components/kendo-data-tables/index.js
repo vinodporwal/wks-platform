@@ -65,6 +65,7 @@ import { DurationEditor } from './Utilities-Kendo/numericViewCells'
 import ProductCell from './Utilities-Kendo/ProductCell'
 import { RemarkCell } from './Utilities-Kendo/RemarkCell'
 import { TextCellEditor } from './Utilities-Kendo/TextCellEditor'
+import SwitchEditor from './Utilities-Kendo/SwitchEditor'
 import { NoSpinnerNumericEditorWithUOMValidation } from './Utilities-Kendo/numbericColumnsWithUOMValidation'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
@@ -74,6 +75,7 @@ import { NoSpinnerNumericEditorCrackerValidation } from './Utilities-Kendo/numbe
 import DynamicDropdown from './Utilities-Kendo/DynamicDropdown'
 import ShutdownRateDropdown from './Utilities-Kendo/ShutdownRateDropdown'
 import MonthDropdownPEPP1 from './Utilities-Kendo/MonthDropdownPEPP1'
+import RowAwareDropdownEditor from './Utilities-Kendo/RowAwareDropdownEditor'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -623,6 +625,22 @@ const KendoDataTables = ({
               updated.rate = ''
             }
           }
+          if (
+            screenType === 'slowdown' &&
+            lowerVertName === 'vcm' &&
+            lowerSiteName === 'hmd' &&
+            field === 'discription'
+          ) {
+            const desc = (value || '').trim()
+            if (
+              desc === 'Furnace decoking - (EBA-6401A)' ||
+              desc === 'Furnace decoking - (EBA-6401B)'
+            ) {
+              updated.rate = 32.5
+            } else if (desc === 'Furnace decoking - (EBA-6401C)') {
+              updated.rate = 22.75
+            }
+          }
 
           if (
             screenType === 'shutdown' &&
@@ -795,6 +813,7 @@ const KendoDataTables = ({
             ...(prev[uniqueItemId] || {}),
             ...dataItem,
             [field]: value,
+            inEdit: true,
           }
 
           if (
@@ -2653,7 +2672,10 @@ const KendoDataTables = ({
                   )
                 }
 
-                if (['discription', 'Name'].includes(col?.field)) {
+                if (
+                  ['discription', 'Name'].includes(col?.field) &&
+                  col?.type !== 'dynamicDropdownshared'
+                ) {
                   return (
                     <GridColumn
                       key={col?.field}
@@ -3240,7 +3262,9 @@ const KendoDataTables = ({
 
                 if (col.type === 'dynamicDropdownshared') {
                   const dropdownOptions =
-                    permissions?.dynamicDropdownOptions?.[col.field] || []
+                    col.dropdownOptions ||
+                    permissions?.dynamicDropdownOptions?.[col.field] ||
+                    []
                   return (
                     <GridColumn
                       key={col.field}
@@ -3382,7 +3406,7 @@ const KendoDataTables = ({
                         col.title || col.headerName || 'Rate Reduced (TPH)'
                       }
                       width={col.widthT}
-                      editable={true}
+                      editable={col?.editable ?? true}
                       columnMenu={ColumnMenuCheckboxFilter}
                       hidden={col.hidden}
                       format={'{0:n2}'}
@@ -3493,6 +3517,75 @@ const KendoDataTables = ({
                             )
                           }
 
+                          return showThreeColors ? (
+                            <RedHighlightCell2
+                              {...props}
+                              customModifiedCells={customModifiedCells}
+                              allRedCell={allRedCell}
+                              allRedCell2={allRedCell2}
+                              disableRedHighlight={disableRedHighlight}
+                            />
+                          ) : (
+                            <RedHighlightCell
+                              {...props}
+                              customModifiedCells={customModifiedCells}
+                              allRedCell={allRedCell}
+                              disableRedHighlight={disableRedHighlight}
+                            />
+                          )
+                        },
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                      filter='numeric'
+                      format={col.format}
+                    />
+                  )
+                }
+
+                // Dedicated block for ON/OFF dropdown rows (e.g. Business Demand UOM: 'ON/OFF')
+                // Enable via permissions.enableOnOffDropdown = true
+                if (col.type === 'number' && permissions?.enableOnOffDropdown) {
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title || col.headerName}
+                      width={col.widthT}
+                      hidden={col.hidden}
+                      className={`
+                        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+                        ${col?.isBold ? 'bold-text' : ''}
+                      `}
+                      editable={col?.editable ? true : false}
+                      headerClassName={isActive ? 'active-column' : ''}
+                      cells={{
+                        edit: {
+                          text: (props) => (
+                            <SwitchEditor
+                              {...props}
+                              onChange={(e) => itemChange(e)}
+                              condition={(dataItem) =>
+                                dataItem?.UOM === 'ON/OFF'
+                              }
+                            />
+                          ),
+                        },
+                        data: (props) => {
+                          // ON/OFF rows: show switch with direct edit mode
+                          if (props.dataItem?.UOM === 'ON/OFF') {
+                            return (
+                              <SwitchEditor
+                                {...props}
+                                directEditMode={true}
+                                onChange={(e) => itemChange(e)}
+                                customModifiedCells={customModifiedCells}
+                                rowId={props.dataItem.id}
+                                setRows={setRows}
+                              />
+                            )
+                          }
+                          // Regular rows
                           return showThreeColors ? (
                             <RedHighlightCell2
                               {...props}
@@ -3823,6 +3916,9 @@ const KendoDataTables = ({
         severity={snackbarData?.severity || 'info'}
         onClose={() => setSnackbarOpen(false)}
         duration={snackbarData?.duration}
+        autoHide={
+          snackbarData?.autoHide !== undefined ? snackbarData.autoHide : true
+        }
       />
 
       <Dialog

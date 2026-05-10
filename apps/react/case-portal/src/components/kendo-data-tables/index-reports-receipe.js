@@ -199,7 +199,8 @@ const KendoDataTablesReciepe = ({
     return (
       lowerVertName === 'pe' ||
       lowerVertName === 'pp' ||
-      lowerVertName === 'elastomer'
+      lowerVertName === 'elastomer' ||
+      lowerVertName === 'pvc'
     )
   }
   const initialGroup = groupBy

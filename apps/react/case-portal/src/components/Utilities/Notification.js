@@ -36,11 +36,12 @@ const Notification = ({
   severity = 'info',
   duration = 3000,
   onClose,
+  autoHide = true,
 }) => {
   return (
     <Snackbar
       open={open}
-      autoHideDuration={duration}
+      autoHideDuration={autoHide ? duration : null}
       onClose={onClose}
       anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       sx={{ top: '55px !important' }}

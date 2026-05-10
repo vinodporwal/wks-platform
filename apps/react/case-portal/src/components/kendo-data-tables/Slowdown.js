@@ -16,6 +16,7 @@ import {
 import {
   SlowDownDmdVcmColumns,
   SlowDownVcmColumns,
+  SlowDownVcmhmdColumns,
 } from 'components/colums/VcmColums'
 import { SlowDownAromaticsColumns } from 'components/colums/AromaticsColumns'
 import { SlowDownMegColumns } from 'components/colums/MegColums'
@@ -277,6 +278,29 @@ const SlowDown = ({ permissions }) => {
         rateEO: row.rateEO,
         rateEOE: row.rateEOE,
       }))
+      const slowDownDetailsElastomerHmdSbr = newRow.map((row) => ({
+        productId: (() => {
+          const matched = allProducts.find(
+            (p) => p.displayName === row.productName1,
+          )
+          return matched?.realId || null
+        })(),
+        productName: row.productName1,
+        discription: row.discription,
+        durationInHrs: (() => {
+          const v = findDuration('1', row)
+          if (!v) return null
+          const [h = '00', m = '00'] = String(v).split('.')
+          return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
+        })(),
+        month: row.monthly,
+        remark: row.remark,
+        rate: row.rate,
+        audityear: AOP_YEAR,
+        id: row.idFromApi || null,
+        rateEO: null,
+        rateEOE: null,
+      }))
       const slowDownDetailsElastomer = newRow.map((row) => ({
         productId: (() => {
           const matched = allProducts.find(
@@ -364,17 +388,19 @@ const SlowDown = ({ permissions }) => {
       }))
       const response = await DataService.saveSlowdownData(
         plantId,
-        lowerVertName === 'elastomer'
-          ? slowDownDetailsElastomer
-          : IS_PTA_DMD
-            ? slowDownDetailsPTADMD
-            : lowerVertName === 'pe' ||
-                lowerVertName === 'pp' ||
-                lowerVertName === 'pet' ||
-                IS_PVC_VMD ||
-                IS_PVC_DMD
-              ? slowDownDetailsPEPP
-              : slowDownDetailsMEG,
+        IS_ELASTOMER_HMD_SBR
+          ? slowDownDetailsElastomerHmdSbr
+          : lowerVertName === 'elastomer' && !IS_ELASTOMER_HMD_SBR
+            ? slowDownDetailsElastomer
+            : IS_PTA_DMD
+              ? slowDownDetailsPTADMD
+              : lowerVertName === 'pe' ||
+                  lowerVertName === 'pp' ||
+                  lowerVertName === 'pet' ||
+                  IS_PVC_VMD ||
+                  IS_PVC_DMD
+                ? slowDownDetailsPEPP
+                : slowDownDetailsMEG,
         keycloak,
       )
 
@@ -494,7 +520,8 @@ const SlowDown = ({ permissions }) => {
         !IS_PTA_DMD &&
         !IS_PVC_VMD &&
         !IS_PVC_DMD &&
-        !IS_ELASTOMER_JMD
+        !IS_ELASTOMER_JMD &&
+        !IS_ELASTOMER_HMD_SBR
       ) {
         for (const record of data) {
           const startDate =
@@ -656,7 +683,8 @@ const SlowDown = ({ permissions }) => {
         lowerVertName !== 'pet' &&
         !IS_PVC_VMD &&
         !IS_PVC_DMD &&
-        !IS_ELASTOMER_JMD
+        !IS_ELASTOMER_JMD &&
+        !IS_ELASTOMER_HMD_SBR
       ) {
         for (const record of data) {
           const startMissing = !record.maintStartDateTime
@@ -1319,9 +1347,11 @@ const SlowDown = ({ permissions }) => {
       case verticalEnums.PVC:
         return IS_PVC_VMD ? SlowDownPeColumns : SlowDownPpDtaColumns
       case verticalEnums.VCM:
-        return IS_VCM_DMD_VCM || IS_VCM_HMD_VCM
+        return IS_VCM_DMD_VCM
           ? SlowDownVcmColumns
-          : SlowDownDmdVcmColumns
+          : IS_VCM_HMD_VCM
+            ? SlowDownVcmhmdColumns
+            : SlowDownDmdVcmColumns
       case verticalEnums.PET:
         return SlowDownPeColumns
       case verticalEnums.CHEMICAL:

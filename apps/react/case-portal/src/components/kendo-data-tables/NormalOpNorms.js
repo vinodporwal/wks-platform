@@ -104,7 +104,7 @@ const NormalOpNormsScreen = () => {
   const IS_CHEMICAL_VMD_BUTADIENE =
     lowerVertName === 'chemical' &&
     lowerSiteName === 'vmd' &&
-    lowerPlantName === '1,3butadiene'
+    lowerPlantName === 'butadiene'
 
   const IS_VCM_HMD_VCM =
     lowerVertName === 'vcm' &&
@@ -835,7 +835,8 @@ const NormalOpNormsScreen = () => {
           severity: 'success',
         })
         setModifiedCells({})
-        fetchAllData(gradeId)
+        await fetchData(gradeId)
+        await getNormTransactions()
       } else if (response?.code === 400 && response?.data) {
         // Partial save, error file download
         const byteCharacters = atob(response.data)
@@ -860,6 +861,8 @@ const NormalOpNormsScreen = () => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
+        await fetchData(gradeId)
+        await getNormTransactions()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({

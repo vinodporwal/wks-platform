@@ -89,9 +89,10 @@ public class ProductionRangeController {
 	public AOPMessageVM importProductionRange(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year,
-			@RequestParam("file") MultipartFile file
+			@RequestParam("file") MultipartFile file,
+			@RequestParam( required = false,defaultValue = "false") boolean isMinMax
 	        ) {
-			return	productionRangeService.importProductionRange(year,UUID.fromString(plantId), file); 
+			return	productionRangeService.importProductionRange(year,UUID.fromString(plantId), file,isMinMax); 
 	}
 	
 	@PostMapping(value = "/production-range-limit-import", consumes = "multipart/form-data")

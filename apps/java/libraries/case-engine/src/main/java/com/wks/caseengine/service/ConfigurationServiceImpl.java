@@ -205,15 +205,16 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				list.add(dto.getJan());
 				list.add(dto.getFeb());
 				list.add(dto.getMar());
-				list.add(dto.getRemarks());
+			list.add(dto.getRemarks());
 
-				list.add(dto.getNormParameterFKId());
-				isEditable.add(dto.getIsEditable());
-				
-				if (isAfterSave) {
-					list.add(dto.getSaveStatus());
-					list.add(dto.getErrDescription());
-				}
+			list.add(dto.getNormParameterFKId());
+			list.add(dto.getId());
+			isEditable.add(dto.getIsEditable());
+			
+			if (isAfterSave) {
+				list.add(dto.getSaveStatus());
+				list.add(dto.getErrDescription());
+			}
 				rows.add(list);
 			}
 
@@ -233,9 +234,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			innerHeaders.addAll(monthsList);
 			innerHeaders.add("Remarks");
 
-			innerHeaders.add("NormParameterId");
+		innerHeaders.add("NormParameterId");
+		innerHeaders.add("Id");
 
-			if (isAfterSave) {
+		if (isAfterSave) {
 				innerHeaders.add("Status");
 				innerHeaders.add("Error Description");
 			}
@@ -281,11 +283,13 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				}
 			}
 
-			if ((verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc) && !isChemical) {
-				sheet.setColumnHidden(17, true);
-			} else {
-				sheet.setColumnHidden(16, true);
-			}
+		if ((verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc) && !isChemical) {
+			sheet.setColumnHidden(17, true);
+			sheet.setColumnHidden(18, true);
+		} else {
+			sheet.setColumnHidden(16, true);
+			sheet.setColumnHidden(17, true);
+		}
 
 			try {
 
@@ -1298,16 +1302,24 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		return null;
 	}
 
-		public AOPMessageVM getConfigurationConstants(String year, String plantFKId) {
+		public AOPMessageVM getConfigurationConstants(String year, String plantFKId, boolean iscatcam) {
 		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<Map<String, Object>> configurationConstantsList = new ArrayList<>();
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
-			String procedureName = verticalName + "_GetConfiguration_Constant";
+			String procedureName = null;
+			if(iscatcam) { 
+
+				procedureName =  vertical.getName() + "_GetCatChem_Constant";
+			}
+			else { procedureName = verticalName + "_GetConfiguration_Constant";
+	     	}
 			List<Object[]> obj = new ArrayList<>();
 			if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")
 					|| verticalName.equalsIgnoreCase("CRACKER") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical")
-					|| verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("AROMATICS")) {
+					|| verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("PVC")) {
 				obj = findConstantsByYearAndPlantFkId(year, plantFKId, procedureName);
 			}
 			for (Object[] row : obj) {
@@ -1494,8 +1506,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	@Override
 	public List<ConfigurationDTO> saveConfigurationData(String year, String plantFKId,String version,
-			List<ConfigurationDTO> configurationDTOList,Boolean calculation) {
+			List<ConfigurationDTO> configurationDTOList,Boolean calculation, boolean isMinMax) {
 		try {
+
+			
 			List<ConfigurationDTO> failedList = new ArrayList<>();
 			UUID plantId = UUID.fromString(plantFKId);
 			String verticalName = plantsRepository.findVerticalNameByPlantId(plantId);
@@ -1520,6 +1534,12 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					continue;
 				}
 
+		// skip the empty rows
+if(configurationDTO.getNormParameterFKId() == null || configurationDTO.getNormParameterFKId().isEmpty()) { 
+continue;
+
+}
+
 				UUID normParameterFKId = UUID.fromString(configurationDTO.getNormParameterFKId());
 
 				Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
@@ -1532,8 +1552,20 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				if (optionNormParameters.isPresent() && (!optionNormParameters.get().getIsEditable())) {
 					continue;
 				}
+             // apr value should not be greater than may value
+			 if(isMinMax) {
+				if(configurationDTO.getApr() != null && configurationDTO.getMay() != null && configurationDTO.getApr() > configurationDTO.getMay()) {
+					configurationDTO.setSaveStatus("Failed");
+					configurationDTO.setErrDescription("Min value should not be greater than Max value");
+					failedList.add(configurationDTO);
+					continue;
+				}
+			}
 
 				for (int i = 1; i <= 12; i++) {
+					// if(isMinMax) { 
+					// 	if(i !=4 && i!=5)  continue;
+					// }
 					Double attributeValue = getAttributeValue(configurationDTO, i);
 					System.out.println("attributeValue: " + attributeValue);
 					configurationDTO.setVertical(verticalName);
@@ -1874,14 +1906,22 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
 	@Transactional
 	@Override
-	public List<Map<String, Object>> getNormAttributeTransactionReceipe(String year, String plantId) {
+	public List<Map<String, Object>> getNormAttributeTransactionReceipe(String year, String plantId, boolean iscatcam) {
 		try {
+
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow();
 
 			List<NormAttributeTransactionReceipeDTO> listDTO = new ArrayList<>();
-			String storedProcedure = vertical.getName() + "_" + site.getName() + "_ReceipeWiseGradeDetail";
+
+			String storedProcedure = null;
+
+			if(iscatcam) { 
+             storedProcedure = vertical.getName() + "_" + site.getName() + "_ReceipeWiseCatChemDetail";
+			}
+			else 
+			 storedProcedure = vertical.getName() + "_" + site.getName() + "_ReceipeWiseGradeDetail";
 
 			List<Object[]> results = getNormAttributeTransactionReceipeSP(storedProcedure, year,
 					plant.getId().toString(), site.getId().toString(), vertical.getId().toString());
@@ -2379,7 +2419,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	}
 	
 	@Override
-	public AOPMessageVM importShutdownRateExcel(String year, UUID plantFKId,String type,String version, MultipartFile file,Boolean calculation) {
+	public AOPMessageVM importShutdownRateExcel(String year, UUID plantFKId,String type,String version, MultipartFile file,Boolean calculation, boolean isMinMax) {
 		// TODO Auto-generated method stub
 		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
 			throw new IllegalArgumentException("Invalid or empty Excel file.");
@@ -2391,7 +2431,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			List<ConfigurationDTO> data = readShutdownRate(file.getInputStream(), plantFKId, year,type);
 			System.out.println("Ended Read configuration in importExcel");
 			System.out.println("Started Save configuration in importExcel");
-			List<ConfigurationDTO> failedRecords = saveConfigurationData(year, plantFKId.toString(),version, data,calculation);
+			List<ConfigurationDTO> failedRecords = saveConfigurationData(year, plantFKId.toString(),version, data,calculation,isMinMax);
 			System.out.println("Ended Save configuration in importExcel");
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
@@ -2416,7 +2456,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	}
 
 	@Override
-	public AOPMessageVM importExcel(String year, UUID plantFKId,List<String> reportTypes,String version, MultipartFile file,Boolean calculation) {
+	public AOPMessageVM importExcel(String year, UUID plantFKId,List<String> reportTypes,String version, MultipartFile file,Boolean calculation, boolean isMinMax) {
 		// TODO Auto-generated method stub
 		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
 			throw new IllegalArgumentException("Invalid or empty Excel file.");
@@ -2428,7 +2468,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			List<ConfigurationDTO> data = readConfigurations(file.getInputStream(), plantFKId, year);
 			System.out.println("Ended Read configuration in importExcel");
 			System.out.println("Started Save configuration in importExcel");
-			List<ConfigurationDTO> failedRecords = saveConfigurationData(year, plantFKId.toString(),version, data,calculation);
+			List<ConfigurationDTO> failedRecords = saveConfigurationData(year, plantFKId.toString(),version, data,calculation,isMinMax);
 			System.out.println("Ended Save configuration in importExcel");
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
@@ -2495,10 +2535,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 						dto.setJan(getNumericCellValue(row.getCell(13), dto));
 						dto.setFeb(getNumericCellValue(row.getCell(14), dto));
 						dto.setMar(getNumericCellValue(row.getCell(15), dto));
-						dto.setRemarks(getStringCellValue(row.getCell(16), dto));
-						dto.setNormParameterFKId(getStringCellValue(row.getCell(17), dto));
-					} else {
-						dto.setNormType(getStringCellValue(row.getCell(0), dto));
+					dto.setRemarks(getStringCellValue(row.getCell(16), dto));
+					dto.setNormParameterFKId(getStringCellValue(row.getCell(17), dto));
+					dto.setId(getStringCellValue(row.getCell(18), dto));
+				} else {
+					dto.setNormType(getStringCellValue(row.getCell(0), dto));
 						dto.setProductName(getStringCellValue(row.getCell(1), dto));
 						dto.setUOM(getStringCellValue(row.getCell(2), dto));
 						dto.setAuditYear(year);
@@ -2514,9 +2555,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 						dto.setJan(getNumericCellValue(row.getCell(12), dto));
 						dto.setFeb(getNumericCellValue(row.getCell(13), dto));
 						dto.setMar(getNumericCellValue(row.getCell(14), dto));
-						dto.setRemarks(getStringCellValue(row.getCell(15), dto));
-						dto.setNormParameterFKId(getStringCellValue(row.getCell(16), dto));
-						if (dto.getProductName().equalsIgnoreCase("TST")) {
+					dto.setRemarks(getStringCellValue(row.getCell(15), dto));
+					dto.setNormParameterFKId(getStringCellValue(row.getCell(16), dto));
+					dto.setId(getStringCellValue(row.getCell(17), dto));
+					if (dto.getProductName().equalsIgnoreCase("TST")) {
 						    
 						    List<String> invalidMonthNames = new ArrayList<>(); 
 
@@ -3089,12 +3131,12 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	}
 
 	@Override
-	public AOPMessageVM importConfigurationConstantsExcel(String year, UUID plantId,String version, MultipartFile file,Boolean calculation) {
+	public AOPMessageVM importConfigurationConstantsExcel(String year, UUID plantId,String version, MultipartFile file,Boolean calculation, boolean isMinMax) {
 		// TODO Auto-generated method stub
 		try {
 			List<ConfigurationDTO> data = readConfigurationConstants(file.getInputStream(), plantId, year);
 
-			List<ConfigurationDTO> failedRecords = saveConfigurationData(year, plantId.toString(),version, data,calculation);
+			List<ConfigurationDTO> failedRecords = saveConfigurationData(year, plantId.toString(),version, data,calculation,isMinMax);
 
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
@@ -3124,7 +3166,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	public byte[] exportConfigData(String year,
 	                               UUID plantFKId,
 	                               boolean isAfterSave,
-	                               List<NormAttributeTransactionReceipeRequestDTO> dtoList) {
+	                               List<NormAttributeTransactionReceipeRequestDTO> dtoList,
+								boolean iscatcam) {
 	    try {
 	        
 	        if (isAfterSave) {
@@ -3141,7 +3184,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	                dtoList = failedDtos;
 	            }
 	        }
-	        List<Map<String, Object>> data = getNormAttributeTransactionReceipe(year, plantFKId.toString());
+	        List<Map<String, Object>> data = getNormAttributeTransactionReceipe(year, plantFKId.toString(), iscatcam);
 	        List<NormParameters> normParametersList = normParametersService.getAllGrades(plantFKId.toString());
 	        List<String> innerHeaders = new ArrayList<>();
 	        boolean hasTypeDisplayName = data != null && data.stream()
@@ -3479,7 +3522,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	}
 
 	@Override
-	public AOPMessageVM importRecipe(String year, UUID plantFKId, MultipartFile file) {
+	public AOPMessageVM importRecipe(String year, UUID plantFKId, MultipartFile file, boolean iscatcam) {
 		
 		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
 			throw new IllegalArgumentException("Invalid or empty Excel file.");
@@ -3495,7 +3538,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			System.out.println("Ended Save configuration in importExcel");
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
-				byte[] fileByteArray = exportConfigData(year, plantFKId, true, failedRecords);
+				byte[] fileByteArray = exportConfigData(year, plantFKId, true, failedRecords, iscatcam);
 				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 				aopMessageVM.setData(base64File);
 				aopMessageVM.setCode(400);
