@@ -297,7 +297,7 @@ const BusinessDemand = ({ permissions }) => {
         // IS_PTA_VERTICAL ||
         IS_PET_VERTICAL ||
         (IS_ELASTOMER_VERTICAL && !IS_ELASTOMER_HMD) ||
-        (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD)
+        (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD && !IS_ELASTOMER_HMD)
       ) {
         const productionRows = (rows || []).filter(
           (row) => row.Particulars?.toLowerCase() === 'production',
