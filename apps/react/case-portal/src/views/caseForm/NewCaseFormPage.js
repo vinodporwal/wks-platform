@@ -280,7 +280,7 @@ const createApmUrlBasedOnSelectedEvent = () => {
       handleFormClose()
       return
     } else {
-      navigate(`/case-list/create`)
+      navigate(`/case-list/cases`)
     }
   }
 
@@ -398,12 +398,16 @@ const createApmUrlBasedOnSelectedEvent = () => {
       .then((data) => {
         setLastCreatedCase(data)
         setSnackOpen(true)
-       
         setTimeout(() => {
-         window.location.href = data.caseUrl;
-    
-   
-          // handleClose()
+          if (data.caseUrl) {
+            try {
+              window.location.href = data.caseUrl
+            } catch (e) {
+              navigate('/case-list/cases')
+            }
+          } else {
+            navigate('/case-list/cases')
+          }
         }, 1000)
       })
       .catch((err) => {
@@ -586,8 +590,15 @@ const createApmUrlBasedOnSelectedEvent = () => {
         setLastCreatedCase(data);
         setSnackOpen(true)
         setTimeout(() => {
-          window.location.href = data.caseUrl;
-          // handleClose()
+          if (data.caseUrl) {
+            try {
+              window.location.href = data.caseUrl
+            } catch (e) {
+              navigate('/case-list/cases')
+            }
+          } else {
+            navigate('/case-list/cases')
+          }
         }, 1000)
       })
       .catch((err) => {
@@ -606,7 +617,7 @@ const createApmUrlBasedOnSelectedEvent = () => {
         color='primary'
         size='small'
         onClick={() => {
-          navigate(`/case-list/create${currentParams}`)
+          navigate(`/case-list/cases`)
           handleCloseSnack()
 		 
         }}
