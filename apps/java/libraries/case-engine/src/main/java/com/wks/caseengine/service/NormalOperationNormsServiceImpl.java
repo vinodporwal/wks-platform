@@ -1841,11 +1841,13 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					continue;
 				}
 
-				Sheet sheet = workbook.createSheet(sheetName);
-				int currentRow = 0;
+			Sheet sheet = workbook.createSheet(sheetName);
+			// CRITICAL: Sheet protection must be enabled for cell-level locking to take effect in Excel
+			sheet.protectSheet("secret_password");
+			int currentRow = 0;
 
-				List<List<Object>> rows = new ArrayList<>();
-				for (MCUNormsValueDTO dto : currentDtoList) {
+			List<List<Object>> rows = new ArrayList<>();
+			for (MCUNormsValueDTO dto : currentDtoList) {
 					List<Object> list = new ArrayList<>();
 					list.add(dto.getNormParameterTypeDisplayName());
 					list.add(dto.getProductName());
