@@ -164,7 +164,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					mCUNormsValueDTO.setMarch(row[17] != null ? Double.parseDouble(row[17].toString()) : null);
 
 					mCUNormsValueDTO.setFinancialYear(row[18].toString());
-					mCUNormsValueDTO.setRemarks(row[19] != null ? row[19].toString() : " ");
+					mCUNormsValueDTO.setRemarks(row[19] != null ? row[19].toString() : "");
 					mCUNormsValueDTO.setCreatedOn(row[20] != null ? (Date) row[20] : null);
 					mCUNormsValueDTO.setModifiedOn(row[21] != null ? (Date) row[21] : null);
 					mCUNormsValueDTO.setMcuVersion(row[22] != null ? row[22].toString() : null);
