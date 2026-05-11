@@ -778,7 +778,7 @@ const WorkFlowMerge = () => {
     activeTabs = vcmTabs
   } else if (lowerVertName === 'elastomer' || lowerVertName === 'aromatics') {
     activeTabs = elastomerTabs
-  } else if (lowerVertName === 'pet') {
+  } else if (lowerVertName === 'pet' || lowerVertName === 'chemical') {
     activeTabs = customPETTabs
   } else if (lowerVertName === 'pe') {
     activeTabs = customPETabs
@@ -942,7 +942,8 @@ const WorkFlowMerge = () => {
         {/* For OTHER verticals */}
         {(lowerVertName === 'pe' ||
           lowerVertName === 'pp' ||
-          lowerVertName === 'pet') && (
+          lowerVertName === 'pet' ||
+          lowerVertName === 'chemical') && (
           <>
             {tabIndex === 0 && (
               <ProductionAopView
@@ -1022,7 +1023,8 @@ const WorkFlowMerge = () => {
             )}
             {(lowerVertName === 'pe' ||
               lowerVertName === 'pp' ||
-              lowerVertName === 'pet') && (
+              lowerVertName === 'pet' ||
+              lowerVertName === 'chemical') && (
               <>{tabIndex === 9 && <SpecificConsumptionNorm />}</>
             )}
             {tabIndex === 10 && <ShutdownReport />} {/* T-19B */}

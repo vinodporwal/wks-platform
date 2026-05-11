@@ -381,6 +381,7 @@ export default function QualityPackagingNorms() {
   }, [keycloak, PLANT_ID, AOP_YEAR])
 
   const handleCalculate = async () => {
+    setLoading(true)
     try {
       const data = await QualityParameterService.calculatePackagingData(
         keycloak,
@@ -413,6 +414,8 @@ export default function QualityPackagingNorms() {
         severity: 'error',
       })
       console.error('Error!', error)
+    } finally {
+      setLoading(false)
     }
   }
   // // Fetch for Other Costs
