@@ -22,7 +22,7 @@ export default function ValueFormatterConsumption() {
   }
   if (
     VERTICAL_NAME === 'aromatics' &&
-    (SITE_NAME === 'sez' || SITE_NAME === 'dta')
+    (SITE_NAME === 'sez' || SITE_NAME === 'dta' || SITE_NAME === 'hmd')
   ) {
     return '{0:0.00000}'
   }
