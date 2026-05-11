@@ -6,6 +6,7 @@ import {
   ExcelExportColumn,
 } from '@progress/kendo-react-excel-export'
 import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
@@ -16,6 +17,14 @@ import {
   CustomAccordionDetails,
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
+
+import AddIcon from '@mui/icons-material/Add'
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
+import DownloadIcon from '@mui/icons-material/Download'
+import UploadIcon from '@mui/icons-material/Upload'
+import CalculateIcon from '@mui/icons-material/Calculate'
+import SaveIcon from '@mui/icons-material/Save'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 
 const ProductionTargetBasis = () => {
   const keycloak = useSession()
@@ -65,6 +74,9 @@ const ProductionTargetBasis = () => {
 
   const enrichColumns = useCallback(
     (backendCols = []) => {
+      const filteredCols = backendCols.filter((col) => col.field !== 'GRID_TYPE')
+      const applyFixedWidth = filteredCols.length < 7
+      const fixedWidth = applyFixedWidth ? 150 : 121
       return backendCols
         .filter((col) => col.field !== 'GRID_TYPE')
         .map((col) => {
@@ -79,6 +91,7 @@ const ProductionTargetBasis = () => {
             ...(isNumberCol ? { format: '{0:0.0000}' } : {}),
             editable: false,
             isRightAlligned: isNumberCol ? 'numeric' : undefined,
+            ...(fixedWidth ? { widthT: fixedWidth } : {}),
           }
         })
     },
@@ -207,12 +220,18 @@ const ProductionTargetBasis = () => {
           Array.isArray(g.columns) && g.columns.length
             ? g.columns
             : inferColumnsFromRows(rawRows)
-        const enrichedCols = enrichColumns(inferredCols)
+        let enrichedCols = enrichColumns(inferredCols)
 
         const rowsWithId = rawRows.map((r, i) => {
           const parsed = normalizeRowValues(r, inferredCols)
           return { ...parsed, id: i, isEditable: false }
         })
+
+        if (g.gridName === 'Raw Data - Max Achieved Capacity') {
+          enrichedCols = enrichedCols.map((col) => {
+            return { ...col, widthT: 120 }
+          })
+        }
 
         newMap[g.gridName] = { rows: rowsWithId, columns: enrichedCols }
       })
@@ -326,12 +345,7 @@ const ProductionTargetBasis = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {/* Hidden ExcelExport instances for each grid */}
       <div style={{ display: 'none' }}>
@@ -363,8 +377,9 @@ const ProductionTargetBasis = () => {
         <Button
           variant='contained'
           onClick={exportAllGrids}
-          className='btn-save'
+          className='btn-export'
           // disabled={READ_ONLY}
+          startIcon={<DownloadIcon fontSize='small' />}
         >
           Export
         </Button>

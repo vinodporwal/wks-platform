@@ -6,6 +6,7 @@ import { SiteReportDataService } from 'services/SiteReportDataService'
 import KendoDataTables from './index'
 import { useSelector } from 'react-redux'
 import { validateFields } from 'utils/validationUtils'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 export default function MCUCapacityUtilization() {
   const keycloak = useSession()
@@ -253,12 +254,7 @@ export default function MCUCapacityUtilization() {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <KendoDataTables
         columns={columns}

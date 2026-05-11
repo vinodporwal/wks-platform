@@ -106,21 +106,35 @@ const ModeSelection = ({ permissions }) => {
       title: headerMap[headerIdx],
       editable: true,
       type: 'dynamicDropdown',
+      minWidth: 100,
     }
   })
 
   // Choose which columns to use:
   // To use dynamic year headers:
   const columns = [
-    { field: 'productName', title: 'Particulars', editable: false },
-    { field: 'uom', title: 'UOM', editable: false, widthT: 55 },
-    { field: 'normType', title: 'Norm Type', editable: false, hidden: true },
+    {
+      field: 'productName',
+      title: 'Particulars',
+      editable: false,
+      widthT: 120,
+      minWidth: 120,
+    },
+    { field: 'uom', title: 'UOM', editable: false, widthT: 55, minWidth: 100 },
+    {
+      field: 'normType',
+      title: 'Norm Type',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
     ...dynamicYearMonthColumns,
     // Only include the remarks column if NON_EDITABLE_GRID is false/undefined
     ...(!permissions?.hideRemarkForNonEditableRows
-      ? [{ field: 'remarks', title: 'Remarks', editable: true }]
+      ? [{ field: 'remarks', title: 'Remarks', editable: true, minWidth: 100 }]
       : []),
   ]
+
   const fetchModes = useCallback(async () => {
     try {
       const resp = await OptimizerDataApiService.fetchModes(
@@ -175,7 +189,6 @@ const ModeSelection = ({ permissions }) => {
     setLoading(false)
   }, [PLANT_ID, SITE_ID, VERTICAL_ID, AOP_YEAR, keycloak, NON_EDITABLE_GRID])
 
-  // Fetch data when dependencies change
   useEffect(() => {
     fetchData()
   }, [fetchData])

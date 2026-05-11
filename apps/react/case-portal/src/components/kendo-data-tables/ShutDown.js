@@ -34,6 +34,7 @@ import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-s
 import { getRoleName } from 'services/role-service'
 import { calculateMonthDuration } from './Utilities-Kendo/durationHelpers'
 import ElastomerShutDown from './ElastomerShutDown'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import PtaShutDown from './PtaShutdown'
 const ShutDown = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
@@ -815,7 +816,14 @@ const ShutDown = ({ permissions }) => {
     }
   }
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD || IS_PVC_VMD) {
+    if (
+      IS_PP_DTA ||
+      IS_PP_SEZ ||
+      IS_PVC_DMD ||
+      IS_PP_HMD ||
+      IS_PVC_HMD ||
+      IS_PVC_VMD
+    ) {
       fetchLineDetails()
     }
   }, [lowerVertName, lowerSiteName, keycloak, PLANT_ID, AOP_YEAR])
@@ -1199,6 +1207,11 @@ const ShutDown = ({ permissions }) => {
 
       if (!idFromApi) {
         setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setModifiedCells((prev) => {
+          const newModifiedCells = { ...prev }
+          delete newModifiedCells[deleteId]
+          return newModifiedCells
+        })
       }
 
       if (idFromApi) {
@@ -1485,7 +1498,9 @@ const ShutDown = ({ permissions }) => {
       highlightDuration:
         lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
       highlightLine:
-        IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD ? true : false,
+        IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD
+          ? true
+          : false,
       deleteMultiple: IS_PP_DTA ? true : false,
     },
     isOldYear,
@@ -1499,12 +1514,8 @@ const ShutDown = ({ permissions }) => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
+
       {lowerVertName === 'meg' && (
         <Typography component='div' className='text-note'>
           * for the case of turnaround planning kindly specify turnaround text

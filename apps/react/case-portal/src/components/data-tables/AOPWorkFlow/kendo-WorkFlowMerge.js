@@ -53,6 +53,7 @@ import { getRoleName } from 'services/role-service'
 import ShutdownReport from '../Reports-kendo/kendo_DetailsPlannedShutdown'
 import ShutdownSummaryReport from '../Reports-kendo/kendo_ShutdownBreak_UpLastFourYear'
 import SpecificConsumptionnormForMeg from '../Reports-kendo/SpecificConsumptionnormForMeg'
+import AopTabs from 'components/AopTabs'
 const WorkFlowMerge = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -630,18 +631,17 @@ const WorkFlowMerge = () => {
   }
   const saveChanges = async () => {
     try {
+      // console.log(rows, 'workflowDto')
       await AOPWorkFlowService.saveAnnualWorkFlowData(keycloak, rows, PLANT_ID)
       setSnackbarData({
         message: 'Data Saved Successfully!',
         severity: 'success',
       })
       setActionDisabled(true)
+      // getCaseId()
     } catch (err) {
       console.error('Error while save', err)
-      setSnackbarData({
-        message: err.message || 'Save failed!',
-        severity: 'error',
-      })
+      setSnackbarData({ message: err.message, severity: 'error' })
       setActionDisabled(false)
     } finally {
       setSnackbarOpen(true) // ✅ THIS was the only missing piece
@@ -795,7 +795,7 @@ const WorkFlowMerge = () => {
         display: 'flex',
         flexDirection: 'column',
         gap: '5px',
-        marginTop: '-20px',
+        // marginTop: '-40px',
       }}
     >
       <Box>
@@ -844,34 +844,55 @@ const WorkFlowMerge = () => {
 
         <Typography
           component='div'
-          className='text-note'
-          style={{ marginTop: 24 }}
+          // className='info-note'
+          sx={{
+            mb: 1.5,
+            px: 1.5,
+            py: 1,
+            fontSize: '14px',
+            fontWeight: 500,
+            letterSpacing: '0.2px',
+            lineHeight: 1.7,
+            borderRadius: '10px',
+            background:
+              'linear-gradient(90deg, rgba(25,118,210,0.08) 0%, rgba(25,118,210,0.02) 100%)',
+            borderLeft: '4px solid #1976d2',
+            color: '#1f2937',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          }}
         >
-          * Prices - MIIS BPC (Last Budget Year), Actual Values - MIIS
-          Contribution (YTD).
+          <span
+            className='info-note__asterisk'
+            style={{
+              color: '#d32f2f',
+              fontSize: '18px',
+              fontWeight: 700,
+            }}
+          >
+            *
+          </span>
+
+          <span>
+            Prices - <strong>MIIS BPC</strong> (Last Budget Year), Actual Values
+            -<strong> MIIS Contribution</strong> (YTD).
+          </span>
         </Typography>
 
         <Stack
           direction='row'
           alignItems='center'
           justifyContent='space-between' // push children to extremes
-          sx={{ mt: 0, mb: '-5px' }}
+          sx={{ mt: 0, mb: 1 }}
         >
           {/* LEFT: Tabs */}
 
-          <Tabs
-            value={tabIndex}
-            onChange={(e, newIndex) => setTabIndex(newIndex)}
-            variant='scrollable'
-            scrollButtons='auto'
-            sx={{
-              borderBottom: '0px solid #ccc',
-              '.MuiTabs-indicator': { display: 'none' },
-              margin: '0px 0px 10px 0px',
-              minHeight: '28px',
-            }}
-            textColor='primary'
-            indicatorColor='primary'
+          <AopTabs
+            tabIndex={tabIndex}
+            setTabIndex={setTabIndex}
+            tabs={activeTabs}
           >
             {activeTabs.map((label, idx) => (
               <Tab
@@ -886,7 +907,7 @@ const WorkFlowMerge = () => {
                 }}
               />
             ))}
-          </Tabs>
+          </AopTabs>
 
           {/* RIGHT: Buttons */}
           <Stack direction='row' spacing={1} alignItems='center'>

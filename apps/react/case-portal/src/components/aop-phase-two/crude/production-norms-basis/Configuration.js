@@ -17,6 +17,7 @@ import {
   handleAdditionDependency,
 } from './utils/dependencyUtils'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/crude/productionNormsApiService'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const Configuration = ({ startDate, endDate, refreshData }) => {
   const keycloak = useSession()
@@ -598,12 +599,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       <RowBasedKendoTable
         columns={columns}
         rows={rows}

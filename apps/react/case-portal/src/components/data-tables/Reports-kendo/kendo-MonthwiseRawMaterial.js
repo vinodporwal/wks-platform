@@ -13,6 +13,7 @@ import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
 import { validateFields } from 'utils/validationUtils'
 import useValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { useSelector } from 'react-redux'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const MonthwiseRawMaterial = () => {
   const keycloak = useSession()
@@ -58,7 +59,7 @@ const MonthwiseRawMaterial = () => {
       headerName: 'Particulars',
       flex: 2,
       editable: false,
-      widthT: 160,
+      widthT: 100,
     },
     {
       field: 'UOM',
@@ -67,7 +68,7 @@ const MonthwiseRawMaterial = () => {
       align: 'left',
       headerAlign: 'left',
       flex: 1,
-      widthT: 50,
+      widthT: 80,
     },
 
     ...(lowerVertName === 'meg'
@@ -79,7 +80,7 @@ const MonthwiseRawMaterial = () => {
             align: 'left',
             headerAlign: 'left',
             flex: 1,
-            widthT: 50,
+            widthT: 80,
           },
         ]
       : []),
@@ -219,7 +220,7 @@ const MonthwiseRawMaterial = () => {
       editable: false,
       flex: 2,
 
-      widthT: 380,
+      widthT: 100,
     },
     {
       field: 'april',
@@ -603,12 +604,7 @@ const MonthwiseRawMaterial = () => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {lowerVertName !== 'pe' &&
         lowerVertName !== 'pp' &&
@@ -657,13 +653,16 @@ const MonthwiseRawMaterial = () => {
 
       {Object.entries(normRows).map(([normName, rows]) => (
         <div key={normName}>
-          <Typography component='div' className='grid-title' sx={{ mt: 1 }}>
+          {/* <Typography component='div' className='grid-title' sx={{ mt: 1 }}>
             {normName}
-          </Typography>
+          </Typography> */}
           <KendoDataTablesReports
             rows={rows}
             setRows={setRows}
-            title='Monthwise Production Summary'
+            title={normName}
+            permissions={{
+              showTitle: true
+            }}
             columns={columnDefs}
             handleRemarkCellClick={handleRemarkCellClick}
           />

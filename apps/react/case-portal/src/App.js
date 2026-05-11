@@ -20,7 +20,6 @@ import '@progress/kendo-font-icons/dist/index.css'
 // import { useSelector } from 'react-redux'
 import Layout from 'layout/FooterLayout/index'
 import { MenuProvider } from 'menu/menuProvider'
-import { useLocation, useNavigate } from 'react-router-dom'
 
 const ScrollTop = lazy(() => import('./components/ScrollTop'))
 
@@ -30,49 +29,23 @@ const App = () => {
   // const [recordsTypes, setRecordsTypes] = useState([])
   // const [casesDefinitions, setCasesDefinitions] = useState([])
 
-  const navigate = useNavigate()
-  const location = useLocation()
-
   useEffect(() => {
-    console.log('Current Pathname:', location.pathname)
-    console.log('Document Referrer:', document.referrer)
-    console.log('Window Origin:', window.location.origin)
-    console.log('History State:', window.history.state)
-
     const { keycloak } = sessionStore.bootstrap()
 
     keycloak.init({ onLoad: 'login-required' }).then((authenticated) => {
-      console.log('Keycloak initialized:', authenticated)
-
       setKeycloak(keycloak)
       setAuthenticated(authenticated)
-
-      const isDirectAccess =
-        !document.referrer ||
-        !document.referrer.includes(window.location.origin)
-
-      console.log('Is Direct Access:', isDirectAccess)
-
-      // allow dashboard route
-      if (isDirectAccess && location.pathname !== '/dashboard') {
-        console.log('Redirecting to /dashboard')
-
-        navigate('/dashboard', { replace: true })
-      }
-
+      // buildMenuItems(keycloak)
       RegisterInjectUserSession(keycloak)
       RegisteOptions(keycloak)
       forceLogoutIfUserNoMinimalRoleForSystem(keycloak)
     })
 
     keycloak.onAuthRefreshError = () => {
-      console.log('Auth refresh error - reloading window')
       window.location.reload()
     }
 
     keycloak.onTokenExpired = () => {
-      console.log('Token expired - updating token')
-
       keycloak
         .updateToken(70)
         .then((refreshed) => {
@@ -129,5 +102,4 @@ const App = () => {
     )
   )
 }
-
 export default App

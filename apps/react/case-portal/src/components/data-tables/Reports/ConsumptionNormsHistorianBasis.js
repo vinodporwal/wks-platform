@@ -6,6 +6,7 @@ import {
   ExcelExport,
   ExcelExportColumn,
 } from '@progress/kendo-react-excel-export'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
@@ -15,6 +16,9 @@ import {
   CustomAccordionDetails,
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
+
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import { FileExportIcon } from 'assets/images/icons/index'
 
 const ConsumptionNormsHistorianBasis = () => {
   const keycloak = useSession()
@@ -405,13 +409,8 @@ const ConsumptionNormsHistorianBasis = () => {
   if (lowerVertName === 'pe') activeTabs = PETabs
 
   return (
-    <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+    <div className='configuration-accordion-wrapper'>
+      <LoaderBackdrop open={!!loading} />
 
       {/* Hidden ExcelExport instances for each grid */}
       <div style={{ display: 'none' }}>
@@ -444,11 +443,18 @@ const ConsumptionNormsHistorianBasis = () => {
         })}
       </div>
 
-      <Box display='flex' justifyContent='flex-end' mb='2px'>
+      <Box display='flex' justifyContent='flex-end' sx={{ marginBottom: '8px', mt: '5px' }}>
         <Button
           variant='contained'
           onClick={exportAllGrids}
-          className='btn-save'
+          className='btn-export'
+          startIcon={
+            <Box
+              component='img'
+              src={FileExportIcon}
+              className='w16-icon'
+            />
+          }
         >
           Export
         </Button>
@@ -460,16 +466,18 @@ const ConsumptionNormsHistorianBasis = () => {
             const d = dataMap[name] || { rows: [], columns: [] }
             return (
               <div key={name}>
-                <CustomAccordion defaultExpanded disableGutters>
+                <CustomAccordion defaultExpanded disableGutters className='k-table-box'>
                   <CustomAccordionSummary
                     aria-controls={`${name}-content`}
                     id={`${name}-header`}
+                    expandIcon={<ExpandMoreIcon sx={{ fontSize: '1.2rem' }} />}
+                    className='aop-report-accordion-summary'
                   >
                     <Typography component='span' className='grid-title'>
                       {renderTitle(name)}
                     </Typography>
                   </CustomAccordionSummary>
-                  <CustomAccordionDetails>
+                  <CustomAccordionDetails sx={{ padding: '0px 0px 1px' }}>
                     <Box
                       sx={{
                         width: '100%',

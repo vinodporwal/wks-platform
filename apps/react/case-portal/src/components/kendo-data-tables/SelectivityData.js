@@ -15,6 +15,7 @@ import KendoDataTablesReciepe from './index-reports-receipe'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import ValueFormatterProductionProductionNormBasis from 'utils/ValueFormatterProduction_ProductionNormBasis'
 import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const SelectivityData = (props) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -129,10 +130,7 @@ const SelectivityData = (props) => {
         return
       }
 
-      if (
-        props?.configType !== 'grades' &&
-        props?.configType !== 'gradesCatChem'
-      ) {
+      if (props?.configType !== 'grades') {
         //TST VALIDATION SEPERATED
         if (
           lowerVertName == 'meg' ||
@@ -325,10 +323,7 @@ const SelectivityData = (props) => {
         saveSummary(props?.summary)
         props?.onSummaryEditChange(false)
 
-        if (
-          props?.configType !== 'grades' &&
-          props?.configType !== 'gradesCatChem'
-        ) {
+        if (props?.configType !== 'grades') {
           props?.fetchData(gradeId)
         }
       } else {
@@ -454,10 +449,7 @@ const SelectivityData = (props) => {
       getAllGrades()
     }
 
-    if (
-      props?.configType !== 'grades' &&
-      props?.configType !== 'gradesCatChem'
-    ) {
+    if (props?.configType !== 'grades') {
       // Fix: Check if it's PIO Impact and call without gradeId
       if (
         props?.configType === 'pioImpact' ||
@@ -486,14 +478,7 @@ const SelectivityData = (props) => {
   const fetchConfigData = async () => {
     setLoading(true)
     try {
-      var data =
-        props?.configType === 'gradesCatChem'
-          ? await DataService.getPeConfigCatChemData(
-              keycloak,
-              PLANT_ID,
-              AOP_YEAR,
-            )
-          : await DataService.getPeConfigData(keycloak, PLANT_ID, AOP_YEAR)
+      var data = await DataService.getPeConfigData(keycloak, PLANT_ID, AOP_YEAR)
 
       data = data.map((item, index) => ({
         ...item,
@@ -646,13 +631,6 @@ const SelectivityData = (props) => {
         )
 
         //NEW BUILD 17 NOV
-      } else if (props?.configType === 'gradesCatChem') {
-        await DataService.getRecipeCatChemExcel(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-          `${EXCEL_EXPORT_TITLE}${revisionName}_Production & Norms Basis Recipe Cat Chem`,
-        )
       } else if (
         props?.configType === 'ShutdownNorms' ||
         props?.configType === 'Constant'
@@ -750,13 +728,6 @@ const SelectivityData = (props) => {
           PLANT_ID,
           AOP_YEAR,
         )
-      } else if (props?.configType === 'gradesCatChem') {
-        response = await DataService.saveRecipeCatChemExcel(
-          rawFile,
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
       } else if (
         //NEW BUILD 17 NOV
         props?.configType === 'ShutdownNorms' ||
@@ -804,14 +775,10 @@ const SelectivityData = (props) => {
           }
         }
 
-        if (
-          props?.configType === 'grades' ||
-          props?.configType === 'gradesCatChem'
-        ) {
+        if (props?.configType === 'grades') {
           fetchConfigData() // This was missing!
         } else if (
           props?.configType !== 'grades' &&
-          props?.configType !== 'gradesCatChem' &&
           lowerVertName !== 'cracker'
         ) {
           props?.fetchData(gradeId)
@@ -852,14 +819,10 @@ const SelectivityData = (props) => {
           }
         }
 
-        if (
-          props?.configType === 'grades' ||
-          props?.configType === 'gradesCatChem'
-        ) {
+        if (props?.configType === 'grades') {
           fetchConfigData() // This was missing!
         } else if (
           props?.configType !== 'grades' &&
-          props?.configType !== 'gradesCatChem' &&
           lowerVertName !== 'cracker'
         ) {
           props?.fetchData(gradeId)
@@ -939,16 +902,11 @@ const SelectivityData = (props) => {
     }
   }
 
-  if (props?.configType == 'grades' || props?.configType == 'gradesCatChem') {
+  if (props?.configType == 'grades') {
     return (
       <div>
         <Box>
-          <Backdrop
-            sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-            open={!!loading}
-          >
-            <CircularProgress color='inherit' />
-          </Backdrop>
+          <LoaderBackdrop open={!!loading} />
           <KendoDataTablesReciepe
             handleRemarkCellClick={handleRemarkCellClick}
             NormParameterIdCell={NormParameterIdCell}
@@ -987,12 +945,7 @@ const SelectivityData = (props) => {
   return (
     <div>
       <Box>
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={!!loading}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
+        <LoaderBackdrop open={!!loading} />
         <KendoDataTables
           grades={grades}
           handleRemarkCellClick={handleRemarkCellClick}

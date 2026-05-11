@@ -10,6 +10,7 @@ import { ProductionNormsApiService } from 'services/production-norms-api-service
 import { getRoleName } from 'services/role-service'
 import KendoDataTables from './index'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const NaphthaLimsDataSet = ({ permissions }) => {
   const [editResetKey, setEditResetKey] = useState(0)
@@ -177,12 +178,7 @@ const NaphthaLimsDataSet = ({ permissions }) => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <KendoDataTables
         modifiedCells={modifiedCellsC2C3R}

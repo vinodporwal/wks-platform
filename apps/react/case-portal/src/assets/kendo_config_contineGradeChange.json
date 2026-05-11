@@ -2,20 +2,23 @@
   {
     "field": "Particulars",
     "title": "Type",
-    "widthT": 200,
+    "widthT": 100,
     "editable": false,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "normParameterFKId",
 
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "productName",
     "title": "Particulars",
     "widthT": 120,
-    "editable": false
+    "editable": false,
+    "minWidth": 150
   },
 
   {
@@ -94,12 +97,14 @@
     "field": "remarks",
     "title": "Remark",
     "widthT": 80,
-    "editable": true
+    "editable": true,
+    "minWidth": 150
   },
 
   {
     "field": "isEditable",
     "title": "isEditable",
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   }
 ]

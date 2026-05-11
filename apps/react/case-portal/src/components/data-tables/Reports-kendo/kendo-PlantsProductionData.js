@@ -12,6 +12,7 @@ import {
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const PlantsProductionSummary = () => {
   const keycloak = useSession()
 
@@ -113,7 +114,7 @@ const PlantsProductionSummary = () => {
         {
           field: 'Particulates',
           title: 'Production Volume',
-          widthT: 180,
+          widthT: 100,
           editable: false,
         },
       ],
@@ -127,7 +128,7 @@ const PlantsProductionSummary = () => {
         {
           field: 'BudgetPrevYear',
           title: 'Budget',
-          width: 120,
+          width: 100,
           editable: false,
           format: VALUE_FORMATTOR_PRODUCTION,
           type: 'number',
@@ -135,7 +136,7 @@ const PlantsProductionSummary = () => {
         {
           field: 'ActualPrevYear',
           title: 'Actual',
-          width: 120,
+          width: 100,
           format: VALUE_FORMATTOR_PRODUCTION,
           editable: false,
           type: 'number',
@@ -149,7 +150,7 @@ const PlantsProductionSummary = () => {
         {
           field: 'BudgetCurrentYear',
           title: 'Budget',
-          width: 120,
+          width: 100,
           editable: false,
           format: VALUE_FORMATTOR_PRODUCTION,
           type: 'number',
@@ -163,7 +164,7 @@ const PlantsProductionSummary = () => {
         {
           field: 'VarBudgetMT',
           title: 'MT',
-          width: 120,
+          width: 100,
           editable: false,
           format: VALUE_FORMATTOR_PRODUCTION,
           type: 'number',
@@ -185,7 +186,7 @@ const PlantsProductionSummary = () => {
         {
           field: 'VarActualMT',
           title: 'MT',
-          width: 120,
+          width: 100,
           editable: false,
           format: VALUE_FORMATTOR_PRODUCTION,
           type: 'number',
@@ -201,7 +202,7 @@ const PlantsProductionSummary = () => {
       ],
     },
 
-    { field: 'Remark', title: 'Remarks', widthT: 200, editable: true },
+    { field: 'Remark', title: 'Remarks', widthT: 100, editable: true },
   ]
 
   const fetchData = async () => {
@@ -334,13 +335,7 @@ const PlantsProductionSummary = () => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
-
+      <LoaderBackdrop open={!!loading} />
       <KendoDataTablesReports
         rows={rows}
         setRows={setRows}

@@ -14,6 +14,7 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import KendoDataTables from './index'
 import { validateFields } from 'utils/validationUtils'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const CrackerConfiguration = (props) => {
   const keycloak = useSession()
 
@@ -108,22 +109,28 @@ const CrackerConfiguration = (props) => {
       widthT: 200,
       editable: false,
       hidden: true,
+      minWidth: 100,
+      isVisible: false,
     },
     {
       field: 'normParameterFKId',
       hidden: true,
+      minWidth: 100,
+      isVisible: false,
     },
     {
       field: 'productName',
       title: 'Particulars',
       widthT: 140,
       editable: false,
+      minWidth: 120,
     },
     {
       field: 'UOM',
       title: 'UOM',
       editable: false,
-      widthT: 60,
+      widthT: 80,
+      minWidth: 80,
     },
     {
       field: 'apr',
@@ -133,6 +140,7 @@ const CrackerConfiguration = (props) => {
       align: 'right',
       format: valueFormat,
       type: 'negativeNumber',
+      minWidth: 100,
     },
     {
       field: 'may',
@@ -142,6 +150,7 @@ const CrackerConfiguration = (props) => {
       align: 'right',
       format: valueFormat,
       type: 'negativeNumber',
+      minWidth: 100,
     },
     {
       field: 'jun',
@@ -151,6 +160,7 @@ const CrackerConfiguration = (props) => {
       align: 'right',
       format: valueFormat,
       type: 'negativeNumber',
+      minWidth: 100,
     },
     {
       field: 'jul',
@@ -160,6 +170,7 @@ const CrackerConfiguration = (props) => {
       align: 'right',
       format: valueFormat,
       type: 'negativeNumber',
+      minWidth: 100,
     },
     {
       field: 'aug',
@@ -169,6 +180,7 @@ const CrackerConfiguration = (props) => {
       align: 'right',
       format: valueFormat,
       type: 'negativeNumber',
+      minWidth: 100,
     },
     {
       field: 'sep',
@@ -178,6 +190,7 @@ const CrackerConfiguration = (props) => {
       align: 'right',
       format: valueFormat,
       type: 'negativeNumber',
+      minWidth: 100,
     },
     {
       field: 'oct',
@@ -187,6 +200,7 @@ const CrackerConfiguration = (props) => {
       align: 'right',
       format: valueFormat,
       type: 'negativeNumber',
+      minWidth: 100,
     },
     {
       field: 'nov',
@@ -196,6 +210,7 @@ const CrackerConfiguration = (props) => {
       align: 'right',
       format: valueFormat,
       type: 'negativeNumber',
+      minWidth: 100,
     },
     {
       field: 'dec',
@@ -205,6 +220,7 @@ const CrackerConfiguration = (props) => {
       align: 'right',
       format: valueFormat,
       type: 'negativeNumber',
+      minWidth: 100,
     },
     {
       field: 'jan',
@@ -214,6 +230,7 @@ const CrackerConfiguration = (props) => {
       align: 'right',
       format: valueFormat,
       type: 'negativeNumber',
+      minWidth: 100,
     },
     {
       field: 'feb',
@@ -223,6 +240,7 @@ const CrackerConfiguration = (props) => {
       align: 'right',
       format: valueFormat,
       type: 'negativeNumber',
+      minWidth: 100,
     },
     {
       field: 'mar',
@@ -232,17 +250,21 @@ const CrackerConfiguration = (props) => {
       align: 'right',
       format: valueFormat,
       type: 'negativeNumber',
+      minWidth: 100,
     },
     {
       field: 'remarks',
       title: 'Remark',
       widthT: 130,
       editable: true,
+      minWidth: 100,
     },
     {
       field: 'isEditable',
       title: 'isEditable',
       hidden: true,
+      minWidth: 100,
+      isVisible: false,
     },
   ]
 
@@ -524,13 +546,7 @@ const CrackerConfiguration = (props) => {
   //  console.log('productionRows', productionRows)
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
-
+      <LoaderBackdrop open={!!loading} />
       <Box>
         <KendoDataTables
           modifiedCells={modifiedCellsConfiguration}

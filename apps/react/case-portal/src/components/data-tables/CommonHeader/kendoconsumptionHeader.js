@@ -40,6 +40,7 @@ const getEnhancedColDefs = ({
         format: valueFormat || '{0:#.###}',
         editable: false,
         width: 120,
+        minWidth: 100,
       }
     }
 
@@ -49,6 +50,7 @@ const getEnhancedColDefs = ({
         format: valueFormat || '{0:#.###}',
         editable: false,
         type: 'number',
+        minWidth: 100,
       }
     }
     if (col.field === 'wtAverage') {
@@ -56,6 +58,7 @@ const getEnhancedColDefs = ({
         ...col,
         type: 'number',
         format: valueFormat || '{0:#.###}',
+        minWidth: 100,
       }
     }
 

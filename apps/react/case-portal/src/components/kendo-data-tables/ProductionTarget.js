@@ -23,6 +23,7 @@ import {
   getColDefsPercentageSummaryElastomerJMD,
 } from './Utilities-Kendo/productionTargetColDefs'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ProductionTarget = ({ permissions }) => {
   const [editResetKey, setEditResetKey] = useState(0)
@@ -1094,12 +1095,7 @@ const ProductionTarget = ({ permissions }) => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {/* DESIGN_CAPACITY */}
       {conditionForFirst && (

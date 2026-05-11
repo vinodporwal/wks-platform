@@ -12,6 +12,7 @@ import { TcsApiService } from 'components/aop-phase-two/services/tcs/tcsApiServi
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const CPPUnitsSdPlan = ({
   PLANT_ID,
@@ -173,7 +174,7 @@ const CPPUnitsSdPlan = ({
     ibrDueDate: {
       editable: true,
       type: 'dateTime',
-      minWidth: 100,
+      minWidth: 120,
       widthT: 120,
       isFinancialYear: false,
     },
@@ -186,13 +187,13 @@ const CPPUnitsSdPlan = ({
         { value: 'RLA', label: 'RLA' },
       ],
       editable: true,
-      minWidth: 100,
+      minWidth: 150,
       widthT: 150,
     },
     noOfDays: {
       editable: true,
       type: 'wholeNumber',
-      minWidth: 80,
+      minWidth: 100,
       widthT: 100,
     },
     shutDownDate: {
@@ -528,12 +529,7 @@ const CPPUnitsSdPlan = ({
 
   return (
     <Box sx={{ mt: 2 }}>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <Stack spacing={2}>
         <AdvanceKendoTable

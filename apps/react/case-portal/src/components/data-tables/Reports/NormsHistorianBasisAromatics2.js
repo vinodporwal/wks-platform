@@ -12,6 +12,7 @@ import {
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
 import KendoDataGridAromatics2 from 'components/Kendo-Report-DataGrid/index-aromatics2'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const REPORT_TYPE_FOR_ALL = 'NormsHistorian'
 
@@ -106,12 +107,7 @@ const NormsHistorianBasisAromatics2 = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <Box display='flex' flexDirection='column' gap={1}>
         {panelMeta.map((meta, idx) => (

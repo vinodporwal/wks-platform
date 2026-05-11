@@ -17,6 +17,7 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import AopTabs from 'components/AopTabs'
 import { Box } from '@mui/material'
 import { DataService } from 'services/DataService'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const ProductionNorms = ({ permissions }) => {
   // State for tabs
   const [tabIndex, setTabIndex] = useState(0)
@@ -101,6 +102,10 @@ const ProductionNorms = ({ permissions }) => {
     lowerVertName === 'chemical' &&
     SITE_NAME_LOWERCASE === 'vmd' &&
     plantName === 'acrylonitrile'
+
+  const IS_CHEMICAL_NMD =
+    lowerVertName === 'chemical' && SITE_NAME_LOWERCASE === 'nmd'
+
   const [loading, setLoading] = useState(false)
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -231,7 +236,7 @@ const ProductionNorms = ({ permissions }) => {
         ...row,
         total: row.total ?? findSum('1', row),
       }))
-      if (!IS_CHEMICAL_VMD_ACRYLONITRILE) {
+      if (!IS_CHEMICAL_VMD_ACRYLONITRILE && !IS_CHEMICAL_NMD) {
         const result = validateTotalsWithIIR({
           data: enrichedData,
           rowsInKT,
@@ -240,7 +245,6 @@ const ProductionNorms = ({ permissions }) => {
         })
 
         if (!result.allMatch) {
-          console.log('result', result)
           const message = result.mismatches
             .map((m) =>
               m.error
@@ -560,7 +564,9 @@ const ProductionNorms = ({ permissions }) => {
           originalRemark: product.remark,
           remark: product.remark,
           isEditable:
-            IS_ELASTOMER_JMD_IIR || IS_CHEMICAL_VMD_ACRYLONITRILE
+            IS_ELASTOMER_JMD_IIR ||
+            IS_CHEMICAL_VMD_ACRYLONITRILE ||
+            IS_CHEMICAL_NMD
               ? true
               : false,
           april: product?.april,
@@ -609,73 +615,91 @@ const ProductionNorms = ({ permissions }) => {
         formattedData = data.map((item, index) => {
           const isKiloTon = selectedUnit === 'KT'
           const isKiloTonPerDay = selectedUnit === 'KT/Day'
+
           const transformedItem = {
             ...item,
             idFromApi: item.id,
-            uom: selectedUnit
-              ? selectedUnit
-              : 'MT',
+            uom: selectedUnit ? selectedUnit : 'MT',
             normParametersFKId: item?.normParametersFKId?.toLowerCase(),
             id: index,
             ...((isKiloTon || isKiloTonPerDay) && {
               jan: item.jan
                 ? item.jan /
-                  (isKiloTon ? 1000 : 1) /
+                  1000 /
                   (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.jan : 1)
                 : item.jan,
+
               feb: item.feb
                 ? item.feb /
-                  (isKiloTon ? 1000 : 1) /
+                  1000 /
                   (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.feb : 1)
                 : item.feb,
+
               march: item.march
                 ? item.march /
-                  (isKiloTon ? 1000 : 1) /
-                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.march : 1)
+                  1000 /
+                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4
+                    ? daysInMonth.march
+                    : 1)
                 : item.march,
+
               april: item.april
                 ? item.april /
-                  (isKiloTon ? 1000 : 1) /
-                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.april : 1)
+                  1000 /
+                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4
+                    ? daysInMonth.april
+                    : 1)
                 : item.april,
+
               may: item.may
                 ? item.may /
-                  (isKiloTon ? 1000 : 1) /
+                  1000 /
                   (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.may : 1)
                 : item.may,
+
               june: item.june
                 ? item.june /
-                  (isKiloTon ? 1000 : 1) /
-                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.june : 1)
+                  1000 /
+                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4
+                    ? daysInMonth.june
+                    : 1)
                 : item.june,
+
               july: item.july
                 ? item.july /
-                  (isKiloTon ? 1000 : 1) /
-                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.july : 1)
+                  1000 /
+                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4
+                    ? daysInMonth.july
+                    : 1)
                 : item.july,
+
               aug: item.aug
                 ? item.aug /
-                  (isKiloTon ? 1000 : 1) /
+                  1000 /
                   (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.aug : 1)
                 : item.aug,
+
               sep: item.sep
                 ? item.sep /
-                  (isKiloTon ? 1000 : 1) /
+                  1000 /
                   (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.sep : 1)
                 : item.sep,
+
               oct: item.oct
                 ? item.oct /
-                  (isKiloTon ? 1000 : 1) /
+                  1000 /
                   (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.oct : 1)
                 : item.oct,
+
               nov: item.nov
                 ? item.nov /
-                  (isKiloTon ? 1000 : 1) /
+                  1000 /
                   (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.nov : 1)
                 : item.nov,
+
               dec: item.dec
                 ? item.dec /
-                  (isKiloTon ? 1000 : 1) /
+                  1000 /
                   (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.dec : 1)
                 : item.dec,
             }),
@@ -703,7 +727,6 @@ const ProductionNorms = ({ permissions }) => {
           }
         })
       }
-
 
       if (lowerVertName === 'cracker') {
         formattedData = data.map((item, index) => {
@@ -1069,6 +1092,8 @@ const ProductionNorms = ({ permissions }) => {
       title: 'ID',
       editable: false,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
 
     {
@@ -1076,20 +1101,26 @@ const ProductionNorms = ({ permissions }) => {
       title: 'Product',
       widthT: 200,
       editable: false,
+      autoAdjust: false,
+      minWidth: 100,
     },
     {
       field: 'value',
       title: 'Values',
       editable: false,
       type: 'number',
-      widthT: 200,
+      widthT: 100,
       format: valueFormat,
+      autoAdjust: false,
+      minWidth: 100,
     },
     {
       field: 'type',
       title: 'type',
       editable: false,
       hidden: true,
+      isVisible: false,
+      minWidth: 100,
     },
   ]
 
@@ -1109,7 +1140,9 @@ const ProductionNorms = ({ permissions }) => {
   useEffect(() => {
     if (
       validateTotalsWithIIRRef.current &&
-      (IS_ELASTOMER_JMD_IIR || IS_CHEMICAL_VMD_ACRYLONITRILE) &&
+      (IS_ELASTOMER_JMD_IIR ||
+        IS_CHEMICAL_VMD_ACRYLONITRILE ||
+        IS_CHEMICAL_NMD) &&
       rows.length > 0 &&
       (rowsInKT.length > 0 || rowsInMT.length > 0)
     ) {
@@ -1153,6 +1186,7 @@ const ProductionNorms = ({ permissions }) => {
     selectedUnit,
     IS_ELASTOMER_JMD_IIR,
     IS_CHEMICAL_VMD_ACRYLONITRILE,
+    IS_CHEMICAL_NMD,
   ])
 
   useEffect(() => {
@@ -1241,7 +1275,9 @@ const ProductionNorms = ({ permissions }) => {
               ? permissions?.showCalculate ?? true
               : false,
           saveBtn:
-            IS_ELASTOMER_JMD_IIR || IS_CHEMICAL_VMD_ACRYLONITRILE
+            IS_ELASTOMER_JMD_IIR ||
+            IS_CHEMICAL_VMD_ACRYLONITRILE ||
+            IS_CHEMICAL_NMD
               ? true
               : permissions?.saveBtn ?? false,
           units:
@@ -1345,12 +1381,7 @@ const ProductionNorms = ({ permissions }) => {
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>
       )}
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       {IS_ELASTOMER_JMD && (
         <KendoDataTables
           columns={columnIIR}
