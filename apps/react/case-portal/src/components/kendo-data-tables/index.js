@@ -1859,15 +1859,19 @@ const KendoDataTables = ({
       )}
 
       {permissions?.showReportTitleMain && (
-        <Typography component='div' className='grid-title'>
-          {permissions?.titleNameMain}
-        </Typography>
+        <Box sx={{ pt: 1, pl: 1}}>
+          <Typography component='div' className='grid-title'>
+            {permissions?.titleNameMain}
+          </Typography>
+        </Box>
       )}
 
       {permissions?.showNote && (
-        <Typography component='div' className='text-note'>
-          {note}
-        </Typography>
+        <Box sx={{ pt: 1, pl: 1}}>
+          <Typography component='div' className='text-note'>
+            {note}
+          </Typography>
+        </Box>
       )}
 
       {(permissions?.allAction ?? false) && (

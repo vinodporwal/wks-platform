@@ -164,7 +164,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					mCUNormsValueDTO.setMarch(row[17] != null ? Double.parseDouble(row[17].toString()) : null);
 
 					mCUNormsValueDTO.setFinancialYear(row[18].toString());
-					mCUNormsValueDTO.setRemarks(row[19] != null ? row[19].toString() : " ");
+					mCUNormsValueDTO.setRemarks(row[19] != null ? row[19].toString() : "");
 					mCUNormsValueDTO.setCreatedOn(row[20] != null ? (Date) row[20] : null);
 					mCUNormsValueDTO.setModifiedOn(row[21] != null ? (Date) row[21] : null);
 					mCUNormsValueDTO.setMcuVersion(row[22] != null ? row[22].toString() : null);
@@ -192,7 +192,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					mCUNormsValueDTO.setMarch(row[16] != null ? Double.parseDouble(row[16].toString()) : null);
 
 					mCUNormsValueDTO.setFinancialYear(row[17].toString());
-					mCUNormsValueDTO.setRemarks(row[18] != null ? row[18].toString() : " ");
+					mCUNormsValueDTO.setRemarks(row[18] != null ? row[18].toString() : "");
 					mCUNormsValueDTO.setCreatedOn(row[19] != null ? (Date) row[19] : null);
 					mCUNormsValueDTO.setModifiedOn(row[20] != null ? (Date) row[20] : null);
 					mCUNormsValueDTO.setMcuVersion(row[21] != null ? row[21].toString() : null);
@@ -659,8 +659,12 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 						
 						Optional<MCUNormsValue> normsValue = normalOperationNormsRepository
 								.findById(UUID.fromString(mCUNormsValueDTO.getId()));
+
+					
+								
 						if (normsValue.isPresent()) {
 							mCUNormsValue = normsValue.get();
+							entityManager.detach(mCUNormsValue);
 							if (mCUNormsValue.getMaterialFkId() != null) {
 								Optional<NormParameters> normParametersOpt = normParametersRepository
 										.findById(mCUNormsValue.getMaterialFkId());
@@ -800,7 +804,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 							}
 							mCUNormsValue.setRemarks(mCUNormsValueDTO.getRemarks());
 							System.out.println("Data Saved Succussfully" + mCUNormsValue);
-							normalOperationNormsRepository.save(mCUNormsValue);
+
+							normalOperationNormsRepository.save(mCUNormsValue); 
 						} else {
 							if (isFromExcel) {
 								mCUNormsValueDTO.setSaveStatus("Failed");
@@ -1401,76 +1406,78 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		Plants plant = plantsRepository.findById(plantFKId).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
-			Sheet sheet = workbook.getSheetAt(0);
-			Iterator<Row> rowIterator = sheet.iterator();
+			for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
+				Sheet sheet = workbook.getSheetAt(sheetIndex);
+				Iterator<Row> rowIterator = sheet.iterator();
 
-			if (rowIterator.hasNext())
-				rowIterator.next();
+				if (rowIterator.hasNext())
+					rowIterator.next();
 
-			while (rowIterator.hasNext()) {
-				Row row = rowIterator.next();
-				MCUNormsValueDTO dto = new MCUNormsValueDTO();
+				while (rowIterator.hasNext()) {
+					Row row = rowIterator.next();
+					MCUNormsValueDTO dto = new MCUNormsValueDTO();
 
-				try {
-					dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
-					dto.setProductName(getStringCellValue(row.getCell(1), dto));
+					try {
+						dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
+						dto.setProductName(getStringCellValue(row.getCell(1), dto));
 
-					// if (dto.getProductName().equalsIgnoreCase("Total Fuel")) {
-					if ("Total Fuel".equalsIgnoreCase(dto.getProductName())) {
-						// calculateTotalFuel(dto, hydrogen, ambientEthane,naturalGas, vertical,
-						// plantFKId, year);
-					} else {
-						dto.setApril(getNumericCellValue(row.getCell(3), dto));
-						dto.setMay(getNumericCellValue(row.getCell(4), dto));
-						dto.setJune(getNumericCellValue(row.getCell(5), dto));
-						dto.setJuly(getNumericCellValue(row.getCell(6), dto));
-						dto.setAugust(getNumericCellValue(row.getCell(7), dto));
-						dto.setSeptember(getNumericCellValue(row.getCell(8), dto));
-						dto.setOctober(getNumericCellValue(row.getCell(9), dto));
-						dto.setNovember(getNumericCellValue(row.getCell(10), dto));
-						dto.setDecember(getNumericCellValue(row.getCell(11), dto));
-						dto.setJanuary(getNumericCellValue(row.getCell(12), dto));
-						dto.setFebruary(getNumericCellValue(row.getCell(13), dto));
-						dto.setMarch(getNumericCellValue(row.getCell(14), dto));
+						// if (dto.getProductName().equalsIgnoreCase("Total Fuel")) {
+						if ("Total Fuel".equalsIgnoreCase(dto.getProductName())) {
+							// calculateTotalFuel(dto, hydrogen, ambientEthane,naturalGas, vertical,
+							// plantFKId, year);
+						} else {
+							dto.setApril(getNumericCellValue(row.getCell(3), dto));
+							dto.setMay(getNumericCellValue(row.getCell(4), dto));
+							dto.setJune(getNumericCellValue(row.getCell(5), dto));
+							dto.setJuly(getNumericCellValue(row.getCell(6), dto));
+							dto.setAugust(getNumericCellValue(row.getCell(7), dto));
+							dto.setSeptember(getNumericCellValue(row.getCell(8), dto));
+							dto.setOctober(getNumericCellValue(row.getCell(9), dto));
+							dto.setNovember(getNumericCellValue(row.getCell(10), dto));
+							dto.setDecember(getNumericCellValue(row.getCell(11), dto));
+							dto.setJanuary(getNumericCellValue(row.getCell(12), dto));
+							dto.setFebruary(getNumericCellValue(row.getCell(13), dto));
+							dto.setMarch(getNumericCellValue(row.getCell(14), dto));
 
+						}
+						dto.setUOM(getStringCellValue(row.getCell(2), dto));
+
+						dto.setFinancialYear(year);
+
+						if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("PTA")) {
+							dto.setWtAverage(getNumericCellValue(row.getCell(15), dto));
+							dto.setRemarks(getStringCellValue(row.getCell(16), dto));
+							dto.setId(getStringCellValue(row.getCell(17), dto));
+						} else {
+							dto.setRemarks(getStringCellValue(row.getCell(15), dto));
+							dto.setId(getStringCellValue(row.getCell(16), dto));
+						}
+						// if (dto.getProductName().equalsIgnoreCase("AMBIENT ETHANE")) {
+						// ambientEthane.add(dto);
+						// }
+						// if (dto.getProductName().equalsIgnoreCase("Hydrogen")
+						// && dto.getNormParameterTypeDisplayName().equalsIgnoreCase("Utility
+						// Consumption")) {
+						// hydrogen.add(dto);
+						// }
+						// if (dto.getProductName().equalsIgnoreCase("NATURAL GAS")) {
+						// naturalGas.add(dto);
+						// }
+
+					} catch (Exception e) {
+						e.printStackTrace();
+						dto.setErrDescription(e.getMessage());
+						dto.setSaveStatus("Failed");
 					}
-					dto.setUOM(getStringCellValue(row.getCell(2), dto));
 
-					dto.setFinancialYear(year);
-
-					if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("PTA")) {
-						dto.setWtAverage(getNumericCellValue(row.getCell(15), dto));
-						dto.setRemarks(getStringCellValue(row.getCell(16), dto));
-						dto.setId(getStringCellValue(row.getCell(17), dto));
-					} else {
-						dto.setRemarks(getStringCellValue(row.getCell(15), dto));
-						dto.setId(getStringCellValue(row.getCell(16), dto));
-					}
-					// if (dto.getProductName().equalsIgnoreCase("AMBIENT ETHANE")) {
-					// ambientEthane.add(dto);
-					// }
-					// if (dto.getProductName().equalsIgnoreCase("Hydrogen")
-					// && dto.getNormParameterTypeDisplayName().equalsIgnoreCase("Utility
-					// Consumption")) {
-					// hydrogen.add(dto);
-					// }
-					// if (dto.getProductName().equalsIgnoreCase("NATURAL GAS")) {
-					// naturalGas.add(dto);
-					// }
-
-				} catch (Exception e) {
-					e.printStackTrace();
-					dto.setErrDescription(e.getMessage());
-					dto.setSaveStatus("Failed");
+					configList.add(dto);
 				}
-
-				configList.add(dto);
 			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
+	
 		return configList;
 	}
 
