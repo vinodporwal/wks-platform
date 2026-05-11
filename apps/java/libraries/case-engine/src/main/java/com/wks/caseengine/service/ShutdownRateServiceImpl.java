@@ -1,6 +1,8 @@
 package com.wks.caseengine.service;
 
 import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -11,6 +13,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -394,15 +397,25 @@ public class ShutdownRateServiceImpl implements ShutdownRateService {
 
 						// Remarks validation: if incoming remark matches the existing remark, skip and flag
 						if (dto.getSaveStatus() == null && normParamFKId != null && !normParamFKId.isBlank()) {
-							String existingRemark = fetchExistingRemark(normParamFKId, aopYear);
-							String incomingRemark = (newRemark != null) ? newRemark.trim() : "";
-							if (incomingRemark.equalsIgnoreCase(existingRemark)) {
+							String existingMajorShutdownValue = fetchExistingRecord(normParamFKId, aopYear, 4).getAttributeValue(); // major shutdown value
+							String existingOneDayShutdownValue = fetchExistingRecord(normParamFKId, aopYear, 5).getAttributeValue(); // one day shutdown value
+							String incomingRemark =  newRemark;
+							String existingRemark = fetchExistingRecord(normParamFKId, aopYear, 4).getRemarks();
+
+							boolean hasMajorShutdownValueChanged = hasValueChanged(existingMajorShutdownValue, dto.getApr());
+							boolean hasOneDayShutdownValueChanged = hasValueChanged(existingOneDayShutdownValue, dto.getMay());
+                double apr = dto.getApr();
+                double may = dto.getMay();
+							boolean hasRemarkChanged = !incomingRemark.equalsIgnoreCase(existingRemark);
+
+							if((hasMajorShutdownValueChanged || hasOneDayShutdownValueChanged) && !hasRemarkChanged) { 
+
 								dto.setSaveStatus("Failed");
-								dto.setErrDescription("please update the remark");
-								dto.setRemarks("please update the remark");
+								dto.setErrDescription("Value has changed; please provide a updated remark.");
 								remarkFailedRows.add(dto);
 								continue;
 							}
+
 						}
 
 					} catch (Exception e) {
@@ -443,22 +456,35 @@ public class ShutdownRateServiceImpl implements ShutdownRateService {
 		}
 	}
 
+	public boolean hasValueChanged(String majorShutdownValue, double apr) {  
+
+// 		String majorShutdownValue = "12.1234567891";
+// Double apr = 12.1234567891001;
+
+BigDecimal value1 = new BigDecimal(majorShutdownValue).setScale(6, RoundingMode.HALF_UP);
+BigDecimal value2 = BigDecimal.valueOf(apr).setScale(6, RoundingMode.HALF_UP);
+
+return !(value1.compareTo(value2) == 0);
+
+	}
+
 	/**
 	 * Fetches the existing remark for a NormParameter from NormAttributeTransactions
 	 * using AopMonth=1 (the MajorShutdown slot) as the reference record.
 	 */
-	private String fetchExistingRemark(String normParamFKId, String aopYear) {
+	private NormAttributeTransactions fetchExistingRecord(String normParamFKId, String aopYear, Integer month) {
 		try {
 			UUID normParamId = UUID.fromString(normParamFKId);
 			Optional<NormAttributeTransactions> existing =
-					normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParamId, 4, aopYear);
+					normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParamId, month, aopYear);
 			if (existing.isPresent() && existing.get().getRemarks() != null) {
-				return existing.get().getRemarks().trim();
+				return existing.get();
 			}
+			 return null;
 		} catch (Exception e) {
 			// If lookup fails (e.g. invalid UUID), proceed without blocking save
 		}
-		return "";
+	return null;
 	}
 
 	/**
