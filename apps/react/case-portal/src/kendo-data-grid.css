@@ -118,7 +118,7 @@
 }
 
 /* Odd rows */
-.kendo-data-grid .k-grid-content .k-grid-table tr:nth-child(odd) {
+.kendo-data-grid .k-grid-content .k-grid-table tr:nth-child(odd) td {
   background-color: #ffffff;
   border-width: 0px 1px 1px 0px;
   border-style: solid;
@@ -134,8 +134,8 @@
 }
 
 /* Even rows (overrides Kendo k-alt) */
-.kendo-data-grid .k-grid-content .k-grid-table tr:nth-child(even),
-.kendo-data-grid .k-grid-content tr.k-alt {
+.kendo-data-grid .k-grid-content .k-grid-table tr:nth-child(even) td,
+.kendo-data-grid .k-grid-content tr.k-alt td {
   background-color: #f7f9ff;
   border-width: 0px 1px 1px 0px;
   border-style: solid;

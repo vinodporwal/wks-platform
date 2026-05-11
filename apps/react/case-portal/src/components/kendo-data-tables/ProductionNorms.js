@@ -18,6 +18,22 @@ import AopTabs from 'components/AopTabs'
 import { Box } from '@mui/material'
 import { DataService } from 'services/DataService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+
+const monthFields = [
+  'april',
+  'may',
+  'june',
+  'july',
+  'aug',
+  'sep',
+  'oct',
+  'nov',
+  'dec',
+  'jan',
+  'feb',
+  'march',
+]
+
 const ProductionNorms = ({ permissions }) => {
   // State for tabs
   const [tabIndex, setTabIndex] = useState(0)
@@ -478,7 +494,7 @@ const ProductionNorms = ({ permissions }) => {
         const rowsInKT = res?.data.map((item) => ({
           id: item.id || null,
           product: item.product,
-          value: item.value ? item.value / 1000 : item.value, // convert to KT
+          value: item.value ? Number(item.value) / 1000 : item.value, // convert to KT
           Particulars: item.type,
           isEditable: false,
         }))
@@ -509,6 +525,11 @@ const ProductionNorms = ({ permissions }) => {
     setCurrentRowId(dataItem.id)
     setRemarkDialogOpen(true)
   }
+  const convertValue = (value, days = 1) => {
+    if (value === null || value === undefined || value === '') return null
+    return Number(value) / 1000 / days
+  }
+
   const fetchData = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     try {
@@ -622,102 +643,24 @@ const ProductionNorms = ({ permissions }) => {
             uom: selectedUnit ? selectedUnit : 'MT',
             normParametersFKId: item?.normParametersFKId?.toLowerCase(),
             id: index,
-            ...((isKiloTon || isKiloTonPerDay) && {
-              jan: item.jan
-                ? item.jan /
-                  1000 /
-                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.jan : 1)
-                : item.jan,
-
-              feb: item.feb
-                ? item.feb /
-                  1000 /
-                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.feb : 1)
-                : item.feb,
-
-              march: item.march
-                ? item.march /
-                  1000 /
-                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4
-                    ? daysInMonth.march
-                    : 1)
-                : item.march,
-
-              april: item.april
-                ? item.april /
-                  1000 /
-                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4
-                    ? daysInMonth.april
-                    : 1)
-                : item.april,
-
-              may: item.may
-                ? item.may /
-                  1000 /
-                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.may : 1)
-                : item.may,
-
-              june: item.june
-                ? item.june /
-                  1000 /
-                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4
-                    ? daysInMonth.june
-                    : 1)
-                : item.june,
-
-              july: item.july
-                ? item.july /
-                  1000 /
-                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4
-                    ? daysInMonth.july
-                    : 1)
-                : item.july,
-
-              aug: item.aug
-                ? item.aug /
-                  1000 /
-                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.aug : 1)
-                : item.aug,
-
-              sep: item.sep
-                ? item.sep /
-                  1000 /
-                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.sep : 1)
-                : item.sep,
-
-              oct: item.oct
-                ? item.oct /
-                  1000 /
-                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.oct : 1)
-                : item.oct,
-
-              nov: item.nov
-                ? item.nov /
-                  1000 /
-                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.nov : 1)
-                : item.nov,
-
-              dec: item.dec
-                ? item.dec /
-                  1000 /
-                  (isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth.dec : 1)
-                : item.dec,
-            }),
+            ...monthFields.reduce((acc, month) => {
+              const val = item[month]
+              if (isKiloTon || isKiloTonPerDay) {
+                acc[month] = convertValue(
+                  val,
+                  isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth[month] : 1,
+                )
+              } else {
+                acc[month] = val
+              }
+              return acc
+            }, {}),
           }
-          const total = [
-            transformedItem.april,
-            transformedItem.may,
-            transformedItem.june,
-            transformedItem.july,
-            transformedItem.aug,
-            transformedItem.sep,
-            transformedItem.oct,
-            transformedItem.nov,
-            transformedItem.dec,
-            transformedItem.jan,
-            transformedItem.feb,
-            transformedItem.march,
-          ].reduce((sum, val) => sum + (parseFloat(val) || 0), 0)
+          const total = monthFields.reduce(
+            (sum, month) =>
+              sum + (parseFloat(Number(transformedItem[month])) || 0),
+            0,
+          )
           return {
             ...transformedItem,
             averageTPH: total,
@@ -777,21 +720,6 @@ const ProductionNorms = ({ permissions }) => {
           }
         })
       }
-
-      const monthFields = [
-        'april',
-        'may',
-        'june',
-        'july',
-        'aug',
-        'sep',
-        'oct',
-        'nov',
-        'dec',
-        'jan',
-        'feb',
-        'march',
-      ]
 
       const mapTrainNumberToLabel = (val) => {
         const TOL = 0.0001
@@ -1080,7 +1008,7 @@ const ProductionNorms = ({ permissions }) => {
   }, [PLANT_ID, keycloak, yearChanged])
 
   const valueFormat_ = ValueFormatterProduction()
-  const valueFormat = IS_VCM ? '{0:0.000}' : valueFormat_
+  const valueFormat = IS_VCM ? '{0:0.000}' : IS_AROMATIC_SEZ_PX4 ? '{0:n4}' : valueFormat_
 
   const productionColumns = getEnhancedColDefs({
     headerMap,

@@ -1382,11 +1382,13 @@ const KendoDataTables = ({
         (!dataItem.isEditable && dataItem?.isEditable !== undefined)
       const hasError = dataItem?.isError
       const isTotal = dataItem?.isTotal
-      const rowClassName = hasError
-        ? 'error-row'
-        : isDisabled || isTotal
-          ? 'custom-disabled-row'
-          : className
+      const rowClassName = [
+        className,
+        hasError ? 'error-row' : '',
+        isDisabled || isTotal ? 'custom-disabled-row' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')
 
       return (
         <tr {...rest?.trProps} className={rowClassName}>
@@ -2508,6 +2510,19 @@ const KendoDataTables = ({
                 </Button>
               )}
 
+              {/* {showDeleteAll && (
+              <Button
+                variant='contained'
+                className='btn-save'
+                onClick={handleDeleteSelected}
+                disabled={isButtonDisabled || READ_ONLY}
+                loading={loading} // Use the loading prop to trigger loading state
+                loadingposition='start' // Use loadingPosition to control where the spinner appears
+              >
+                Delete
+              </Button>
+            )} */}
+
               {permissions?.showResetButton && (
                 <Button
                   variant='contained'
@@ -2585,6 +2600,9 @@ const KendoDataTables = ({
                 autoProcessData={true}
                 defaultGroup={initialGroup}
                 data={rows}
+                rowRender={(tr, props) => (
+                  <CustomRow {...props} trProps={tr.props} />
+                )}
                 rows={{ data: CustomRow }}
                 dataItemKey='id'
                 editField='inEdit'
@@ -2666,8 +2684,7 @@ const KendoDataTables = ({
                       ),
                       headerCell: () => (
                         <th
-                          className='k-header'
-                          style={{ textAlign: 'center' }}
+                          style={{ textAlign: 'center', padding: '0px !important' }}
                         >
                           <Checkbox
                             checked={
@@ -4241,7 +4258,7 @@ const KendoDataTables = ({
       </Collapse>
 
       {gridExpanded &&
-        (permissions?.approveBtn || permissions?.nextBtn || showDeleteAll) && (
+        (permissions?.approveBtn || permissions?.nextBtn) && (
           <Box className='action-box'>
             {/* {permissions?.showCreateCasebutton && (
             <Button
@@ -4282,18 +4299,6 @@ const KendoDataTables = ({
                 loadingposition='start' // Use loadingPosition to control where the spinner appears
               >
                 Next
-              </Button>
-            )}
-            {showDeleteAll && (
-              <Button
-                variant='contained'
-                className='btn-save'
-                onClick={handleDeleteSelected}
-                disabled={isButtonDisabled || READ_ONLY}
-                loading={loading} // Use the loading prop to trigger loading state
-                loadingposition='start' // Use loadingPosition to control where the spinner appears
-              >
-                Delete
               </Button>
             )}
           </Box>
