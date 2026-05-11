@@ -151,8 +151,6 @@ const ShutDown = ({ permissions }) => {
     setRemarkDialogOpen(true)
   }
 
-  console.log('rows', rows)
-  console.log('modifiedCells', modifiedCells)
   const saveChanges = React.useCallback(async () => {
     try {
       var data = Object.values(modifiedCells)
@@ -278,11 +276,7 @@ const ShutDown = ({ permissions }) => {
         const mergedExisting = rows.map((row) => modifiedById[row.id] ?? row)
         const newRows = data.filter((record) => !existingRowIds.has(record.id))
         const allRowsMerged = [...mergedExisting, ...newRows]
-        console.log('allRowsMerged', allRowsMerged)
-        console.log('modifiedById', modifiedById)
-        console.log('existingRowIds', existingRowIds)
-        console.log('mergedExisting', mergedExisting)
-        console.log('newRows', newRows)
+
         // Group by month and sum total minutes
         const monthTotals = {}
         const monthDisplayName = {}
