@@ -363,11 +363,12 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			AOPMessageVM gradesVM = getUniqueGrades(year, plantFKId.toString());
 			List<Map<String, String>> gradeInfoList = extractGradeInfo(gradesVM);
 			Workbook workbook = new XSSFWorkbook();
-			CellStyle lockedStyle = Utility.createLockedStyle(workbook);
-			CellStyle unlockedStyle = Utility.createUnlockedStyle(workbook);
+		CellStyle lockedStyle = Utility.createLockedStyle(workbook);
+		CellStyle unlockedStyle = Utility.createUnlockedStyle(workbook);
+		unlockedStyle.setLocked(false); // CRITICAL: Ensure active cells are explicitly unlocked
 
-			// Gray out non-active month columns based on activeMonths
-			CellStyle lockedGrayStyle = workbook.createCellStyle();
+		// Gray out non-active month columns based on activeMonths
+		CellStyle lockedGrayStyle = workbook.createCellStyle();
 			lockedGrayStyle.setLocked(true);
 			lockedGrayStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
 			lockedGrayStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -412,10 +413,11 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 					if (!currentDtoList.isEmpty()) {
 						Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId, plant.getName());
 
-						String sheetName = Utility.sanitizeSheetName("All Grade");
-						Sheet sheet = workbook.createSheet(sheetName);
-						sheet.protectSheet("secret_password"); 
-						int currentRow = 0;
+					String sheetName = Utility.sanitizeSheetName("All Grade");
+					Sheet sheet = workbook.createSheet(sheetName);
+					// ENABLE PROTECTION: Required for 'Locked' cells to actually be uneditable
+					sheet.protectSheet("secret_password");
+					int currentRow = 0;
 
 						List<List<Object>> rows = new ArrayList<>();
 						for (ShutdownNormsValueDTO dto : currentDtoList) {
@@ -520,29 +522,31 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 						continue;
 					}
 
-					String sheetName = Utility.sanitizeSheetName(displayName);
+				String sheetName = Utility.sanitizeSheetName(displayName);
 
-					AOPMessageVM aopMessageVM = null;
-					List<ShutdownNormsValueDTO> currentDtoList = new ArrayList<>();
-					List<Boolean> isEditable = new ArrayList<>();
-					if (!isAfterSave) {
-						aopMessageVM = getShutdownNormsData(year, plantFKId.toString(), currentGradeId);
-					}
-					if (aopMessageVM != null && aopMessageVM.getData() != null) {
-						Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
-						currentDtoList = (List<ShutdownNormsValueDTO>) responseMap.get("mcuNormsValueDTOList");
-					} else if (isAfterSave) {
-						currentDtoList = dtoList.stream()
-								.filter(dto -> currentGradeId.equals(dto.getGradeFkId()))
-								.collect(Collectors.toList());
-					} else {
-						continue;
-					}
+				AOPMessageVM aopMessageVM = null;
+				List<ShutdownNormsValueDTO> currentDtoList = new ArrayList<>();
+				List<Boolean> isEditable = new ArrayList<>();
+				if (!isAfterSave) {
+					aopMessageVM = getShutdownNormsData(year, plantFKId.toString(), currentGradeId);
+				}
+				if (aopMessageVM != null && aopMessageVM.getData() != null) {
+					Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+					currentDtoList = (List<ShutdownNormsValueDTO>) responseMap.get("mcuNormsValueDTOList");
+				} else if (isAfterSave) {
+					currentDtoList = dtoList.stream()
+							.filter(dto -> currentGradeId.equals(dto.getGradeFkId()))
+							.collect(Collectors.toList());
+				} else {
+					continue;
+				}
 
-					Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId, plant.getName());
+				Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId, plant.getName());
 
-					Sheet sheet = workbook.createSheet(sheetName);
-					int currentRow = 0;
+				Sheet sheet = workbook.createSheet(sheetName);
+				// ENABLE PROTECTION: Required for 'Locked' cells to actually be uneditable
+				sheet.protectSheet("secret_password");
+				int currentRow = 0;
 
 					List<List<Object>> rows = new ArrayList<>();
 					for (ShutdownNormsValueDTO dto : currentDtoList) {
