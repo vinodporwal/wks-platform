@@ -19,7 +19,16 @@ import {
 } from 'utils/CustomAccrodian'
 import { getRoleName } from 'services/role-service.js'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const REPORT_TYPE_FOR_ALL = 'OverallConsumption' // <-- change to your backend's value if needed
+
+import AddIcon from '@mui/icons-material/Add'
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
+import DownloadIcon from '@mui/icons-material/Download'
+import UploadIcon from '@mui/icons-material/Upload'
+import CalculateIcon from '@mui/icons-material/Calculate'
+import SaveIcon from '@mui/icons-material/Save'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 
 // ---------------------------------------------------------------------------
 // Helpers (kept lightweight / optimized)
@@ -175,7 +184,7 @@ function GridPanel({
 // ---------------------------------------------------------------------------
 export default function BestAchievedNorms() {
   const keycloak = useSession()
-
+  // const READ_ONLY = getRoleName(keycloak)
   const [dataMap, setDataMap] = useState({})
   const [gridNames, setGridNames] = useState([])
   const [loading, setLoading] = useState(false)
@@ -301,6 +310,7 @@ export default function BestAchievedNorms() {
   // ---------------------------------------------------------------------------
   // Fetch all grids in one call and build dataMap + gridNames (batched setState)
   // ---------------------------------------------------------------------------
+
   const fetchAllGrids = useCallback(async () => {
     // clear previous timers if any
     timeoutIdsRef.current.forEach((t) => clearTimeout(t))
@@ -617,13 +627,7 @@ export default function BestAchievedNorms() {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        // show backdrop during data loading OR while exporting the workbook
-        open={!!loading || !!isExporting}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading || !!isExporting} />
 
       {SITE_NAME !== 'VMD' && (
         <Typography component='div' className='grid-title' sx={{ mb: 0 }}>
@@ -651,8 +655,10 @@ export default function BestAchievedNorms() {
         <Button
           variant='contained'
           onClick={exportAllGrids}
-          className='btn-save'
-          //disabled={READ_ONLY}
+          className='btn-export'
+          // disabled={READ_ONLY}
+          //ANY ONE CAN EXPORT
+          startIcon={<DownloadIcon fontSize='small' />}
         >
           Export
         </Button>

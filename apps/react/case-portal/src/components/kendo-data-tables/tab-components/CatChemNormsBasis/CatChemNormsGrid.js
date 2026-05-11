@@ -10,6 +10,7 @@ import { getRoleName } from 'services/role-service'
 import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-basis-api-service'
 import { validateFields } from 'utils/validationUtils'
 import NormsConfigurationGrid from './NormConfigurationGrid'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
   const [rows, setRows] = useState([])
@@ -366,12 +367,7 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       <Box>
         <KendoDataTables
           modifiedCells={modifiedCells}

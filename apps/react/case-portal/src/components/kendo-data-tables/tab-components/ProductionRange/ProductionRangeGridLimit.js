@@ -10,6 +10,7 @@ import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-bas
 import { validateFields } from 'utils/validationUtils'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { ProductionRangeApiService } from 'services/production-range-api-service copy'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const ProductionRangeGridLimit = ({
   summary,
   summaryEdited,
@@ -67,44 +68,53 @@ const ProductionRangeGridLimit = ({
 
   const NormConfigurationColumns = [
     {
-      field: 'displayName', // matches API
+      field: 'displayName',
       title: 'Particulars',
       editable: false,
-      widthT: 200,
+      widthT: 250,
+      autoAdjust: false,
+      minWidth: 100,
     },
     {
       field: 'uom',
       title: 'UOM',
       editable: false,
-      widthT: 55,
+      widthT: 80,
+      minWidth: 100,
     },
 
     {
       field: 'productionLimit',
       title: 'Limit',
       editable: false,
-      widthT: 120,
+      widthT: 100,
+      minWidth: 100,
     },
 
     {
       field: 'apr',
       title: 'Value',
       editable: true,
-      widthT: 120,
+      widthT: 100,
       type: 'number',
+      minWidth: 100,
     },
     {
       field: 'remarks',
       title: 'Remark',
       editable: false,
-      widthT: 135,
+      widthT: 250,
+      autoAdjust: false,
       type: 'string',
+      minWidth: 100,
     },
     {
       field: 'normParameterFKId',
       title: 'idFromApi',
       filterable: 'false',
       hidden: true,
+      minWidth: 100,
+      isVisible: false,
     },
   ]
 
@@ -471,12 +481,7 @@ const ProductionRangeGridLimit = ({
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       <Box>
         <KendoDataTables
           modifiedCells={modifiedCells}

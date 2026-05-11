@@ -5,19 +5,22 @@
     "width": 110,
     "groupable": true,
     "editable": false,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "particulars",
     "title": "Particulars",
     "editable": false,
-    "width": 150
+    "width": 150,
+    "minWidth": 150
   },
   {
     "field": "uom",
     "title": "UOM",
     "editable": false,
-    "width": 120
+    "width": 120,
+    "minWidth": 90
   },
   {
     "field": "apr",
@@ -130,6 +133,7 @@
     "title": "Remark",
     "editable": false,
     "width": 180,
-    "type": "string"
+    "type": "string",
+    "minWidth": 120
   }
 ]

@@ -17,6 +17,7 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import AopTabs from 'components/AopTabs'
 import { Box } from '@mui/material'
 import { DataService } from 'services/DataService'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const ProductionNormsElastomerJmd = ({ permissions }) => {
   // State for tabs
   const [tabIndex, setTabIndex] = useState(0)
@@ -974,12 +975,7 @@ const ProductionNormsElastomerJmd = ({ permissions }) => {
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>
       )}
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       <KendoDataTables
         columns={columnIIR}
         rows={rowsIIR}

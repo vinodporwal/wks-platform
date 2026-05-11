@@ -23,9 +23,10 @@ const DateOnlyPicker = ({ dataItem, field, onChange }) => {
         size='small'
         style={{
           width: '100%',
-          fontSize: '0.75rem',
-          height: '28px',
+          fontSize: '15px',
+          height: '40px',
         }}
+        className='input-editor'
       />
     </td>
   )

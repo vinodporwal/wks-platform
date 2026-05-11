@@ -5,7 +5,8 @@
     "editable": false,
     "widthT": 180,
     "minWidth": 150,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "jmdNaphthaId",
@@ -13,7 +14,8 @@
     "editable": false,
     "widthT": 180,
     "minWidth": 150,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "pmdNaphthaId",
@@ -21,7 +23,8 @@
     "editable": false,
     "widthT": 180,
     "minWidth": 150,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "ioclNaphthaId",
@@ -29,7 +32,8 @@
     "editable": false,
     "widthT": 180,
     "minWidth": 150,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "gailNaphthaId",
@@ -37,7 +41,8 @@
     "editable": false,
     "widthT": 180,
     "minWidth": 150,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "bpclNaphthaId",
@@ -45,7 +50,8 @@
     "editable": false,
     "widthT": 180,
     "minWidth": 150,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "ongcNaphthaId",
@@ -53,7 +59,8 @@
     "editable": false,
     "widthT": 180,
     "minWidth": 150,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "otherNaphthaId",
@@ -69,7 +76,8 @@
     "editable": false,
     "widthT": 180,
     "minWidth": 150,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "type",
@@ -77,7 +85,8 @@
     "editable": false,
     "widthT": 180,
     "minWidth": 150,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "limsTagName",
@@ -162,6 +171,7 @@
     "field": "normParameterFKID",
     "title": "normParameterFKID",
     "filterable": false,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   }
 ]

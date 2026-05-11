@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { SpecificConsumptionService } from 'services/SpecificConsumptionService'
 import KendoDataTables from './index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const SpecificConsumptionCalculation = () => {
   const [loading, setLoading] = useState(false)
@@ -131,6 +132,7 @@ const SpecificConsumptionCalculation = () => {
             return {
               ...col,
               title: `${col.field}-${displayYear}`,
+              minWidth: 100,
               headerAttributes: { style: { textAlign: 'center' } },
               attributes: { style: { textAlign: 'right' } },
             }
@@ -146,6 +148,7 @@ const SpecificConsumptionCalculation = () => {
           format: '{0:0.000}',
           headerAttributes: { style: { textAlign: 'center' } },
           attributes: { style: { textAlign: 'right' } },
+          minWidth: 100,
         })
 
         // const totalsRow = computeTotalsRow(data, cols, 'Name')
@@ -183,6 +186,7 @@ const SpecificConsumptionCalculation = () => {
             format: col.type === 'number' ? '{0:0.000}' : col.format,
             editable: false,
             widthT: col.field === 'Value' ? 350 : 250,
+            minWidth: 100,
           }))
 
         const data = dataSet.map((item, index) => {
@@ -248,7 +252,7 @@ const SpecificConsumptionCalculation = () => {
       allAction: true,
       adjustedPermissions: true,
       units: ['MT', 'KT'],
-      dropdownLabel: 'Select UOM',
+      dropdownLabel: 'UOM',
       showUnit: true,
       isTotalFooterActive: false,
       downloadExcelBtnFromUI: true,
@@ -274,12 +278,7 @@ const SpecificConsumptionCalculation = () => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <Box sx={{ mb: 1, mt: 1 }}>
         <KendoDataTables

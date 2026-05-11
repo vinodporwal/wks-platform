@@ -10,7 +10,6 @@ import camundaModdleDescriptor from 'camunda-bpmn-moddle/resources/camunda.json'
 import 'bpmn-js/dist/assets/diagram-js.css'
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css'
 import '@bpmn-io/properties-panel/dist/assets/properties-panel.css'
-import 'components/aop-phase-two/css/workflow.css'
 
 import {
   Button,

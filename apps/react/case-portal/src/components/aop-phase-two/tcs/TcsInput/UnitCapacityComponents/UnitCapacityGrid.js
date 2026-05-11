@@ -11,6 +11,7 @@ import {
   generateHeaderNames,
   extractYear,
 } from 'components/aop-phase-two/common/utilities/generateHeaders'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const UnitCapacityGrid = ({
   capacityType,
@@ -374,7 +375,7 @@ const UnitCapacityGrid = ({
     result.push(cols.find((col) => col.field === 'particulates'))
 
     if (isDesign) {
-      // Design capacity: "Capacity" → "Value" → [KBPSD, KTPD] (mirrors monthly structure)
+      // Design capacity: "Capacity" ? "Value" ? [KBPSD, KTPD] (mirrors monthly structure)
       const kbpsdCol = cols.find((col) => col.field === 'value.kbpsd')
       const ktpdCol = cols.find((col) => col.field === 'value.ktpd')
       result.push({
@@ -517,7 +518,7 @@ const UnitCapacityGrid = ({
         return
       }
 
-      // Build payload — backend expects flat fields
+      // Build payload � backend expects flat fields
       const dataInKBPSD = data.map((row) => {
         if (isDesign) {
           // Design: single annual value field storing in jan
@@ -714,12 +715,7 @@ const UnitCapacityGrid = ({
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <Stack sx={{ mt: 2 }}>
         <AdvanceKendoTable

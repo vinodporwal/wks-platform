@@ -1,7 +1,8 @@
 const config = {
   basename: '/',
   defaultPath: '/production-norms-plan/configuration',
-  fontFamily: "'Public Sans', sans-serif",
+  fontFamily:
+    "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
   i18n: 'en',
   miniDrawer: false,
   container: true,
@@ -18,7 +19,8 @@ const config = {
 //     font-weight: 400;
 
 export default config
-export const drawerWidth = 200
+export const drawerWidth = 250
+export const miniDrawerWidth = 60
 
 export const twitterColor = '#1DA1F2'
 export const facebookColor = '#3b5998'

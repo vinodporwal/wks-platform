@@ -34,6 +34,7 @@ import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-s
 import { getRoleName } from 'services/role-service'
 import { calculateMonthDuration } from './Utilities-Kendo/durationHelpers'
 import ElastomerShutDown from './ElastomerShutDown'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import PtaShutDown from './PtaShutdown'
 const ShutDown = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
@@ -252,7 +253,7 @@ const ShutDown = ({ permissions }) => {
             record.monthly,
             AOP_YEAR,
           )
-          if (!expectedDuration) continue // no valid month ï¿½ skip
+          if (!expectedDuration) continue // no valid month — skip
           const recordMins = parseDurationToMinutes(record.durationInHrs)
           const expectedMins = parseDurationToMinutes(expectedDuration)
           if (recordMins > expectedMins) {
@@ -1499,12 +1500,8 @@ const ShutDown = ({ permissions }) => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
+
       {lowerVertName === 'meg' && (
         <Typography component='div' className='text-note'>
           * for the case of turnaround planning kindly specify turnaround text

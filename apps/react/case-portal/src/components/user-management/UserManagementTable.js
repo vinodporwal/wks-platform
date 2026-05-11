@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { DataService } from 'services/DataService'
 import { useLocation } from '../../../node_modules/react-router-dom/dist/index'
+import AopTabs from 'components/AopTabs'
 
 const UserManagementTable = ({ keycloak }) => {
   const navigate = useNavigate()
@@ -270,36 +271,15 @@ const UserManagementTable = ({ keycloak }) => {
       sx={{
         //  height: 600,
         width: '100%',
-        p: 2,
       }}
     >
       {/* Autocomplete for selecting multiple users */}
 
-      <Tabs
-        sx={{
-          borderBottom: '0px solid #ccc',
-          '.MuiTabs-indicator': { display: 'none' },
-          // margin: '-35px 0px -8px 0%',
-        }}
-        textColor='primary'
-        indicatorColor='primary'
-        value={tabIndex}
-        onChange={handleTabChange}
-      >
-        {['Grant Access', 'Revoke Access'].map((tabId) => (
-          <Tab
-            key={tabId}
-            sx={{
-              border: '1px solid #ADD8E6',
-              borderBottom: '1px solid #ADD8E6',
-              fontSize: '0.75rem',
-              padding: '9px',
-              minHeight: '12px',
-            }}
-            label={tabId}
-          />
-        ))}
-      </Tabs>
+      <AopTabs
+        tabIndex={tabIndex}
+        setTabIndex={setTabIndex}
+        tabs={['Grant Access', 'Revoke Access']}
+      />
 
       {tabIndex === 0 && (
         <Box

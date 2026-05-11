@@ -11,6 +11,7 @@ import TabAccessApiService from 'components/aop-phase-two/services/common/tabAcc
 import PIMSThroughput from './PIMSThroughput'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/coker/productionNormsApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
+import ManualEntry from './ManualEntry'
 
 const ProductionNormsBasisCoker = () => {
   const keycloak = useSession()
@@ -207,7 +208,7 @@ const ProductionNormsBasisCoker = () => {
 
       const name = tabInfo.displayName
 
-      if (name === 'Report Manual Entry' || name === 'Configuration') {
+      if (name === 'Configuration') {
         return null
       }
 
@@ -242,6 +243,8 @@ const ProductionNormsBasisCoker = () => {
         return <Constants startDate={startDate} endDate={endDate} />
       case 'PIMS Throughput':
         return <PIMSThroughput startDate={startDate} endDate={endDate} />
+      case 'Manual Entry':
+        return <ManualEntry />
       default:
         return null
     }
@@ -271,7 +274,7 @@ const ProductionNormsBasisCoker = () => {
           <TabSection
             tabIndex={tabIndex}
             setTabIndex={setTabIndex}
-            tabs={filteredTabs}
+            tabs={filteredTabs.map((tab) => tab.name)}
           />
         </Stack>
       )}

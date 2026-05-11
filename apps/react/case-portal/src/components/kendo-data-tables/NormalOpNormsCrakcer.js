@@ -30,6 +30,9 @@ import CrakcerConstants from './CrakcerConstants'
 import { validateFields } from 'utils/validationUtils'
 import CrackerConfiguration from './CrackerConfiguration'
 import CrackerReportMannualEntry from './CrackerReportMannualEntry'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import AopTabs from 'components/AopTabs'
+import { TextField } from '../../../node_modules/@mui/material/index'
 // Constants
 const MONTHS = [
   'april',
@@ -180,15 +183,28 @@ const NormalOpNormsScreenCracker = () => {
 
   const colDefsIndividual = useMemo(
     () => [
-      { field: 'isChecked', type: 'switch2', widthT: 30, filter: false },
+      {
+        field: 'isChecked',
+        type: 'switch2',
+        widthT: 30,
+        filter: false,
+        minWidth: 60,
+      },
       {
         field: 'sapMaterialCode',
         title: 'SAP MAT Code',
         widthT: 120,
         editable: false,
+        minWidth: 100,
       },
-      { field: 'materialDisplayName', title: 'Particulars' },
-      { field: 'uom', title: 'UOM', editable: false, widthT: 85 },
+      { field: 'materialDisplayName', title: 'Particulars', minWidth: 100 },
+      {
+        field: 'uom',
+        title: 'UOM',
+        editable: false,
+        widthT: 85,
+        minWidth: 100,
+      },
       {
         field: 'april',
         title: 'Value',
@@ -197,8 +213,15 @@ const NormalOpNormsScreenCracker = () => {
         format: valueFormat,
         type: 'number',
         widthT: 120,
+        minWidth: 100,
       },
-      { field: 'remark', title: 'Remarks', widthT: 200, editable: true },
+      {
+        field: 'remark',
+        title: 'Remarks',
+        widthT: 200,
+        editable: true,
+        minWidth: 100,
+      },
     ],
     [],
   )
@@ -226,22 +249,36 @@ const NormalOpNormsScreenCracker = () => {
         widthT: 120,
         editable: false,
         useMethodColors: true,
+        minWidth: 120,
       },
       {
         field: 'materialDisplayName',
         title: 'Particulars',
         widthT: 130,
         editable: false,
+        minWidth: 120,
       },
-      { field: 'uom', title: 'UOM', widthT: 60, editable: false },
+      {
+        field: 'uom',
+        title: 'UOM',
+        widthT: 80,
+        editable: false,
+        minWidth: 100,
+      },
       ...MONTHS.map((m, i) => ({
         field: m,
         title: headerMap[monthIndexMap[m]] || m,
         editable: true,
         type: 'number',
         format: valueFormat,
+        minWidth: 120,
       })),
-      { field: 'isEditable', title: 'isEditable', hidden: true },
+      {
+        field: 'isEditable',
+        title: 'isEditable',
+        hidden: true,
+        isVisible: false,
+      },
       // { field: 'remark', title: 'Remark', widthT: 140, editable: true },
     ],
     [headerMap, valueFormat],
@@ -254,20 +291,23 @@ const NormalOpNormsScreenCracker = () => {
         type: 'switch2',
         widthT: 30,
         filter: false,
+        minWidth: 60,
       },
       {
         field: 'sapMaterialCode',
         title: 'SAP MAT Code',
         widthT: 120,
         editable: false,
+        minWidth: 100,
       },
       {
         field: 'materialDisplayName',
         title: 'Particulars',
         widthT: 130,
         editable: false,
+        minWidth: 100,
       },
-      { field: 'uom', title: 'UOM', widthT: 60, editable: false },
+      { field: 'uom', title: 'UOM', widthT: 80, editable: false, minWidth: 80 },
       ...MONTHS.map((m, i) => ({
         field: m,
         title: headerMap[monthIndexMap[m]] || m,
@@ -276,9 +316,22 @@ const NormalOpNormsScreenCracker = () => {
         align: 'right',
         type: 'number',
         format: valueFormat,
+        minWidth: 100,
       })),
-      { field: 'isEditable', title: 'isEditable', hidden: true },
-      { field: 'remark', title: 'Remark', widthT: 140, editable: true },
+      {
+        field: 'isEditable',
+        title: 'isEditable',
+        hidden: true,
+        minWidth: 100,
+        isVisible: false,
+      },
+      {
+        field: 'remark',
+        title: 'Remark',
+        widthT: 140,
+        editable: true,
+        minWidth: 100,
+      },
     ],
     [headerMap, valueFormat],
   )
@@ -290,20 +343,23 @@ const NormalOpNormsScreenCracker = () => {
         type: 'switch',
         widthT: 30,
         filter: false,
+        minWidth: 60,
       },
       {
         field: 'sapMaterialCode',
         title: 'SAP MAT Code',
         widthT: 120,
         editable: false,
+        minWidth: 100,
       },
       {
         field: 'materialDisplayName',
         title: 'Particulars',
         widthT: 130,
         editable: false,
+        minWidth: 100,
       },
-      { field: 'uom', title: 'UOM', widthT: 60, editable: false },
+      { field: 'uom', title: 'UOM', widthT: 80, editable: false, minWidth: 80 },
       ...MONTHS.map((m, i) => ({
         field: m,
         title: headerMap[monthIndexMap[m]] || m,
@@ -312,9 +368,21 @@ const NormalOpNormsScreenCracker = () => {
         align: 'right',
         type: 'number',
         format: valueFormat,
+        minWidth: 100,
       })),
-      { field: 'isEditable', title: 'isEditable', hidden: true },
-      { field: 'remark', title: 'Remark', widthT: 140, editable: true },
+      {
+        field: 'isEditable',
+        title: 'isEditable',
+        hidden: true,
+        isVisible: false,
+      },
+      {
+        field: 'remark',
+        title: 'Remark',
+        widthT: 140,
+        editable: true,
+        minWidth: 100,
+      },
     ],
     [headerMap, valueFormat],
   )
@@ -354,7 +422,7 @@ const NormalOpNormsScreenCracker = () => {
       showCheckbox: false,
       marginBottom: false,
       showTitleNameBusiness: true,
-      dropdownLabel: 'Select Mode',
+      dropdownLabel: 'Mode',
       showCalculateVisibility: true,
       titleName: 'Best Achieved (Min CC)',
       isHeight: (rows?.length || 0) > 10,
@@ -1175,31 +1243,19 @@ const NormalOpNormsScreenCracker = () => {
     // 'Report Manual Entry',
   ]
 
+  const menuItemStyle = { fontSize: 14, fontWeight: 500, color: '#303030', fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif", letterSpacing: "0px", verticalAlign: "middle" }
+
   // UI render
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading1}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading1} />
 
       <Box sx={{ margin: 0, padding: 0 }}>
-        <Tabs
-          value={selectedTab}
-          onChange={handleTabChange}
-          sx={{
-            borderBottom: '0px solid #ccc',
-            '.MuiTabs-indicator': { display: 'none' },
-            margin: 0,
-            minHeight: '28px',
-          }}
-        >
-          {tabLabels.map((label) => (
-            <Tab key={label} label={label} sx={tabSx} />
-          ))}
-        </Tabs>
+        <AopTabs
+          tabIndex={selectedTab}
+          setTabIndex={setSelectedTab}
+          tabs={tabLabels}
+        />
       </Box>
 
       {selectedTab === 0 && <CrackerConfiguration tabIndex={0} />}
@@ -1214,23 +1270,74 @@ const NormalOpNormsScreenCracker = () => {
       {selectedTab === 3 && (
         <>
           {/* EXTERNAL DROPDOWN */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
-            <FormControl size='small' sx={{ minWidth: 120 }}>
-              <InputLabel id='mode-select-label'>Select Mode</InputLabel>
-              <Select
-                labelId='mode-select-label'
-                value={gradeId || ''}
-                label='Mode'
-                onChange={onModeSelect}
-                MenuProps={{ disableScrollLock: true }}
-              >
-                {grades.map((g) => (
-                  <MenuItem key={g.gradeId} value={g.gradeId}>
-                    {g.displayName}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2, mb: 2 }}>
+            <TextField
+              select
+              value={gradeId ?? ''}
+              onChange={onModeSelect}
+              variant='outlined'
+              size='small'
+              sx={{
+                minWidth: 140,
+                '& .MuiOutlinedInput-root': {
+                  height: '30px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                  borderRadius: '7px',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                  '& fieldset': {
+                    border: 'none',
+                  },
+                  '&:hover fieldset': {
+                    border: 'none',
+                  },
+                  '&.Mui-focused fieldset': {
+                    border: 'none',
+                  },
+                },
+                '& .MuiSelect-select': {
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '2px 6px !important',
+                },
+              }}
+              InputProps={{
+                startAdornment: (
+                  <Typography
+                    variant='caption'
+                    sx={{
+                      mr: 0.5,
+                      color: '#606060',
+                      fontWeight: 500,
+                      fontSize: '14px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.4px',
+                      lineHeight: 1,
+                      fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                    }}
+                  >
+                    Mode:
+                  </Typography>
+                ),
+              }}
+              SelectProps={{
+                MenuProps: {
+                  disableScrollLock: true,
+                },
+              }}
+              MenuProps={{ disableScrollLock: true }}
+            >
+              <MenuItem value='' disabled sx={menuItemStyle}>
+                Select Mode
+              </MenuItem>
+
+              {grades.map((m) => (
+                <MenuItem key={m.gradeId} value={m.gradeId} sx={menuItemStyle}>
+                  {m.displayName}
+                </MenuItem>
+              ))}
+            </TextField>
 
             <Typography component='div' className='grid-title'>
               <span style={{ color: 'orange', fontWeight: 'bold' }}>
@@ -1418,7 +1525,7 @@ const NormalOpNormsScreenCracker = () => {
         <>
           {/* Add color-coded legend for Final norms */}
           <Box
-            sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, mb: 0 }}
+            sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, mb: 1 }}
           >
             <Typography component='div' className='grid-title'>
               <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span> -

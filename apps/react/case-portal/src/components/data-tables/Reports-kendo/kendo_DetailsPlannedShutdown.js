@@ -13,6 +13,7 @@ import KendoDataTables from 'components/kendo-data-tables/index'
 import { getRoleName } from 'services/role-service'
 import { validateFields } from 'utils/validationUtils'
 import dayjs from 'dayjs'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 // ─── Helper: previous 4 year titles from AOP year ────────────────
 function getPrevYearTitles(aopYear, count = 4) {
@@ -799,12 +800,7 @@ export default function ShutdownReport() {
   }, [fetchRoutineShutdownPreviousYears])
   return (
     <Box sx={{ width: '100%' }}>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <Box>
         <KendoDataTables
