@@ -414,6 +414,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 
 						String sheetName = Utility.sanitizeSheetName("All Grade");
 						Sheet sheet = workbook.createSheet(sheetName);
+						sheet.protectSheet("secret_password"); 
 						int currentRow = 0;
 
 						List<List<Object>> rows = new ArrayList<>();
@@ -718,6 +719,12 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
                 if (shutdown != null) activeMonths.addAll(shutdown);
                 if (slowdown != null) activeMonths.addAll(slowdown);
 	    	}
+
+			if(vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD")) { 
+         
+				 activeMonths.addAll(Arrays.asList(1,2,3,4,5,6,7,8,9,10,11,12));
+
+			}
 	        
 	        for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
 	            Sheet sheet = workbook.getSheetAt(i);
@@ -1072,6 +1079,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				}
 
 				// remark validation 
+		
 
 				//check if the new values and old values has changed
 				boolean monthChanged = false;
