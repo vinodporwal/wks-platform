@@ -540,10 +540,10 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found"));
 	        Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 	        boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
-            boolean ElastomerHmdSbr=vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
+            boolean ElastomerHmd = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD");
 	        if (!isAfterSave) {
 	            String vName = vertical.getName();
-	            if (vName.equalsIgnoreCase("PE") || vName.equalsIgnoreCase("PP") || vName.equalsIgnoreCase("PET") || pvc || ElastomerHmdSbr) {
+	            if (vName.equalsIgnoreCase("PE") || vName.equalsIgnoreCase("PP") || vName.equalsIgnoreCase("PET") || pvc || ElastomerHmd) {
 	                dtoList = findSlowdownDetailsByPlantIdAndTypePE(UUID.fromString(plantId), maintenanceTypeName, year);
 	            } else {
 	                dtoList = findSlowdownDetailsByPlantIdAndType(UUID.fromString(plantId), maintenanceTypeName, year);
@@ -1125,10 +1125,10 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		        Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		        boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
-		       boolean ElastomerHmdSbr = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
+		       boolean ElastomerHmd = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD");
 		       
-				if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc || ElastomerHmdSbr) {
-		    	   data = readSlowdownDataPE(file.getInputStream(), plantId, year, ElastomerHmdSbr);
+				if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc || ElastomerHmd) {
+		    	   data = readSlowdownDataPE(file.getInputStream(), plantId, year, ElastomerHmd);
 		       }else {
 		    	   data = readSlowdownData(file.getInputStream(), plantId, year);
 		       }
@@ -1140,7 +1140,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			
 			if (failedList != null && failedList.size() > 0) {
 				byte[] fileByteArray=null;
-				if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc ||ElastomerHmdSbr) {
+				if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc ||ElastomerHmd) {
 					fileByteArray= slowdownExportPE(year, plantId.toString(),maintenanceTypeName, true, failedList);
 				}else {
 					fileByteArray = slowdownExport(year, plantId.toString(),maintenanceTypeName, true, failedList);
@@ -1751,7 +1751,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		return dtoList;
 	}
 
-	public List<ShutDownPlanDTO> readSlowdownDataPE(InputStream inputStream, UUID plantFKId, String year, boolean ElastomerHmdSbr) {
+	public List<ShutDownPlanDTO> readSlowdownDataPE(InputStream inputStream, UUID plantFKId, String year, boolean ElastomerHmd) {
 		List<ShutDownPlanDTO> dtoList = new ArrayList<>();
 		List<LocalDateTime[]> validTimeRanges = new ArrayList<>(); // Stores [ldtStart, ldtEnd] for valid rows
 

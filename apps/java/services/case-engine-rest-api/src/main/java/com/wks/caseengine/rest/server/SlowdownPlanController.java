@@ -77,8 +77,8 @@ public class SlowdownPlanController {
 	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 	        Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 	        boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
-			boolean ElastomerHmdSbr=vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
-			if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc || ElastomerHmdSbr) {
+			boolean ElastomerHmd=vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD");
+			if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc || ElastomerHmd) {
 				 excelBytes = slowdownPlanService.slowdownExportPE(year, plantId,maintenanceTypeName, false, null);
 			}else {
 				  excelBytes = slowdownPlanService.slowdownExport(year, plantId,maintenanceTypeName, false, null);
