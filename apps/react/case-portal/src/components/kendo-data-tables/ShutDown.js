@@ -151,6 +151,8 @@ const ShutDown = ({ permissions }) => {
     setRemarkDialogOpen(true)
   }
 
+  console.log('rows', rows)
+  console.log('modifiedCells', modifiedCells)
   const saveChanges = React.useCallback(async () => {
     try {
       var data = Object.values(modifiedCells)
@@ -253,7 +255,7 @@ const ShutDown = ({ permissions }) => {
             record.monthly,
             AOP_YEAR,
           )
-          if (!expectedDuration) continue // no valid month — skip
+          if (!expectedDuration) continue // no valid month ï¿½ skip
           const recordMins = parseDurationToMinutes(record.durationInHrs)
           const expectedMins = parseDurationToMinutes(expectedDuration)
           if (recordMins > expectedMins) {
@@ -276,7 +278,11 @@ const ShutDown = ({ permissions }) => {
         const mergedExisting = rows.map((row) => modifiedById[row.id] ?? row)
         const newRows = data.filter((record) => !existingRowIds.has(record.id))
         const allRowsMerged = [...mergedExisting, ...newRows]
-
+        console.log('allRowsMerged', allRowsMerged)
+        console.log('modifiedById', modifiedById)
+        console.log('existingRowIds', existingRowIds)
+        console.log('mergedExisting', mergedExisting)
+        console.log('newRows', newRows)
         // Group by month and sum total minutes
         const monthTotals = {}
         const monthDisplayName = {}
@@ -816,7 +822,14 @@ const ShutDown = ({ permissions }) => {
     }
   }
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD || IS_PVC_VMD) {
+    if (
+      IS_PP_DTA ||
+      IS_PP_SEZ ||
+      IS_PVC_DMD ||
+      IS_PP_HMD ||
+      IS_PVC_HMD ||
+      IS_PVC_VMD
+    ) {
       fetchLineDetails()
     }
   }, [lowerVertName, lowerSiteName, keycloak, PLANT_ID, AOP_YEAR])
@@ -1200,6 +1213,11 @@ const ShutDown = ({ permissions }) => {
 
       if (!idFromApi) {
         setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setModifiedCells((prev) => {
+          const newModifiedCells = { ...prev }
+          delete newModifiedCells[deleteId]
+          return newModifiedCells
+        })
       }
 
       if (idFromApi) {
@@ -1486,7 +1504,9 @@ const ShutDown = ({ permissions }) => {
       highlightDuration:
         lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
       highlightLine:
-        IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD ? true : false,
+        IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD
+          ? true
+          : false,
       deleteMultiple: IS_PP_DTA ? true : false,
     },
     isOldYear,

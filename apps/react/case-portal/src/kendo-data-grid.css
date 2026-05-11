@@ -117,8 +117,11 @@
   height: 44px !important;
 }
 
-/* Odd rows */
+/* Odd rows – applied on td so it wins over the base td rule */
 .kendo-data-grid .k-grid-content .k-grid-table tr:nth-child(odd) {
+  height: 44px !important;
+}
+.kendo-data-grid .k-grid-content .k-grid-table tr:nth-child(odd) td {
   background-color: #ffffff;
   border-width: 0px 1px 1px 0px;
   border-style: solid;
@@ -133,9 +136,13 @@
   color: #252525 !important;
 }
 
-/* Even rows (overrides Kendo k-alt) */
+/* Even rows (overrides Kendo k-alt) – applied on td so it wins over the base td rule */
 .kendo-data-grid .k-grid-content .k-grid-table tr:nth-child(even),
 .kendo-data-grid .k-grid-content tr.k-alt {
+  height: 44px !important;
+}
+.kendo-data-grid .k-grid-content .k-grid-table tr:nth-child(even) td,
+.kendo-data-grid .k-grid-content tr.k-alt td {
   background-color: #f7f9ff;
   border-width: 0px 1px 1px 0px;
   border-style: solid;
@@ -165,7 +172,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
 
-  background-color: #ffffff;
+  /* background-color set per-row via nth-child(odd/even) td rules below */
   border: 1px solid #e5e7eb; /* thin light-grey line */
   padding: 3px 6px;
   box-sizing: border-box !important;
