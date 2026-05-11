@@ -1406,76 +1406,78 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		Plants plant = plantsRepository.findById(plantFKId).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
-			Sheet sheet = workbook.getSheetAt(0);
-			Iterator<Row> rowIterator = sheet.iterator();
+			for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
+				Sheet sheet = workbook.getSheetAt(sheetIndex);
+				Iterator<Row> rowIterator = sheet.iterator();
 
-			if (rowIterator.hasNext())
-				rowIterator.next();
+				if (rowIterator.hasNext())
+					rowIterator.next();
 
-			while (rowIterator.hasNext()) {
-				Row row = rowIterator.next();
-				MCUNormsValueDTO dto = new MCUNormsValueDTO();
+				while (rowIterator.hasNext()) {
+					Row row = rowIterator.next();
+					MCUNormsValueDTO dto = new MCUNormsValueDTO();
 
-				try {
-					dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
-					dto.setProductName(getStringCellValue(row.getCell(1), dto));
+					try {
+						dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
+						dto.setProductName(getStringCellValue(row.getCell(1), dto));
 
-					// if (dto.getProductName().equalsIgnoreCase("Total Fuel")) {
-					if ("Total Fuel".equalsIgnoreCase(dto.getProductName())) {
-						// calculateTotalFuel(dto, hydrogen, ambientEthane,naturalGas, vertical,
-						// plantFKId, year);
-					} else {
-						dto.setApril(getNumericCellValue(row.getCell(3), dto));
-						dto.setMay(getNumericCellValue(row.getCell(4), dto));
-						dto.setJune(getNumericCellValue(row.getCell(5), dto));
-						dto.setJuly(getNumericCellValue(row.getCell(6), dto));
-						dto.setAugust(getNumericCellValue(row.getCell(7), dto));
-						dto.setSeptember(getNumericCellValue(row.getCell(8), dto));
-						dto.setOctober(getNumericCellValue(row.getCell(9), dto));
-						dto.setNovember(getNumericCellValue(row.getCell(10), dto));
-						dto.setDecember(getNumericCellValue(row.getCell(11), dto));
-						dto.setJanuary(getNumericCellValue(row.getCell(12), dto));
-						dto.setFebruary(getNumericCellValue(row.getCell(13), dto));
-						dto.setMarch(getNumericCellValue(row.getCell(14), dto));
+						// if (dto.getProductName().equalsIgnoreCase("Total Fuel")) {
+						if ("Total Fuel".equalsIgnoreCase(dto.getProductName())) {
+							// calculateTotalFuel(dto, hydrogen, ambientEthane,naturalGas, vertical,
+							// plantFKId, year);
+						} else {
+							dto.setApril(getNumericCellValue(row.getCell(3), dto));
+							dto.setMay(getNumericCellValue(row.getCell(4), dto));
+							dto.setJune(getNumericCellValue(row.getCell(5), dto));
+							dto.setJuly(getNumericCellValue(row.getCell(6), dto));
+							dto.setAugust(getNumericCellValue(row.getCell(7), dto));
+							dto.setSeptember(getNumericCellValue(row.getCell(8), dto));
+							dto.setOctober(getNumericCellValue(row.getCell(9), dto));
+							dto.setNovember(getNumericCellValue(row.getCell(10), dto));
+							dto.setDecember(getNumericCellValue(row.getCell(11), dto));
+							dto.setJanuary(getNumericCellValue(row.getCell(12), dto));
+							dto.setFebruary(getNumericCellValue(row.getCell(13), dto));
+							dto.setMarch(getNumericCellValue(row.getCell(14), dto));
 
+						}
+						dto.setUOM(getStringCellValue(row.getCell(2), dto));
+
+						dto.setFinancialYear(year);
+
+						if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("PTA")) {
+							dto.setWtAverage(getNumericCellValue(row.getCell(15), dto));
+							dto.setRemarks(getStringCellValue(row.getCell(16), dto));
+							dto.setId(getStringCellValue(row.getCell(17), dto));
+						} else {
+							dto.setRemarks(getStringCellValue(row.getCell(15), dto));
+							dto.setId(getStringCellValue(row.getCell(16), dto));
+						}
+						// if (dto.getProductName().equalsIgnoreCase("AMBIENT ETHANE")) {
+						// ambientEthane.add(dto);
+						// }
+						// if (dto.getProductName().equalsIgnoreCase("Hydrogen")
+						// && dto.getNormParameterTypeDisplayName().equalsIgnoreCase("Utility
+						// Consumption")) {
+						// hydrogen.add(dto);
+						// }
+						// if (dto.getProductName().equalsIgnoreCase("NATURAL GAS")) {
+						// naturalGas.add(dto);
+						// }
+
+					} catch (Exception e) {
+						e.printStackTrace();
+						dto.setErrDescription(e.getMessage());
+						dto.setSaveStatus("Failed");
 					}
-					dto.setUOM(getStringCellValue(row.getCell(2), dto));
 
-					dto.setFinancialYear(year);
-
-					if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("PTA")) {
-						dto.setWtAverage(getNumericCellValue(row.getCell(15), dto));
-						dto.setRemarks(getStringCellValue(row.getCell(16), dto));
-						dto.setId(getStringCellValue(row.getCell(17), dto));
-					} else {
-						dto.setRemarks(getStringCellValue(row.getCell(15), dto));
-						dto.setId(getStringCellValue(row.getCell(16), dto));
-					}
-					// if (dto.getProductName().equalsIgnoreCase("AMBIENT ETHANE")) {
-					// ambientEthane.add(dto);
-					// }
-					// if (dto.getProductName().equalsIgnoreCase("Hydrogen")
-					// && dto.getNormParameterTypeDisplayName().equalsIgnoreCase("Utility
-					// Consumption")) {
-					// hydrogen.add(dto);
-					// }
-					// if (dto.getProductName().equalsIgnoreCase("NATURAL GAS")) {
-					// naturalGas.add(dto);
-					// }
-
-				} catch (Exception e) {
-					e.printStackTrace();
-					dto.setErrDescription(e.getMessage());
-					dto.setSaveStatus("Failed");
+					configList.add(dto);
 				}
-
-				configList.add(dto);
 			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
+	
 		return configList;
 	}
 
