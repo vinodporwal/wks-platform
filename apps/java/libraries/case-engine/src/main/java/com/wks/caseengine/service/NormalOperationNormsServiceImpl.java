@@ -659,8 +659,12 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 						
 						Optional<MCUNormsValue> normsValue = normalOperationNormsRepository
 								.findById(UUID.fromString(mCUNormsValueDTO.getId()));
+
+					
+								
 						if (normsValue.isPresent()) {
 							mCUNormsValue = normsValue.get();
+							entityManager.detach(mCUNormsValue);
 							if (mCUNormsValue.getMaterialFkId() != null) {
 								Optional<NormParameters> normParametersOpt = normParametersRepository
 										.findById(mCUNormsValue.getMaterialFkId());
@@ -800,7 +804,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 							}
 							mCUNormsValue.setRemarks(mCUNormsValueDTO.getRemarks());
 							System.out.println("Data Saved Succussfully" + mCUNormsValue);
-							normalOperationNormsRepository.save(mCUNormsValue);
+
+							normalOperationNormsRepository.save(mCUNormsValue); 
 						} else {
 							if (isFromExcel) {
 								mCUNormsValueDTO.setSaveStatus("Failed");
