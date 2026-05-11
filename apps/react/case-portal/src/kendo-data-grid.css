@@ -117,10 +117,13 @@
   height: 44px !important;
 }
 
+/* Odd rows */
+
 /* Odd rows – applied on td so it wins over the base td rule */
 .kendo-data-grid .k-grid-content .k-grid-table tr:nth-child(odd) {
   height: 44px !important;
 }
+
 .kendo-data-grid .k-grid-content .k-grid-table tr:nth-child(odd) td {
   background-color: #ffffff;
   border-width: 0px 1px 1px 0px;
@@ -136,6 +139,7 @@
   color: #252525 !important;
 }
 
+/* Even rows (overrides Kendo k-alt) */
 /* Even rows (overrides Kendo k-alt) – applied on td so it wins over the base td rule */
 .kendo-data-grid .k-grid-content .k-grid-table tr:nth-child(even),
 .kendo-data-grid .k-grid-content tr.k-alt {
