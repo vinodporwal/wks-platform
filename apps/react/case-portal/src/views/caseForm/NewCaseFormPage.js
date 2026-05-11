@@ -323,8 +323,8 @@ const createApmUrlBasedOnSelectedEvent = () => {
     const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
 	
 	let updFormData = formData.data;
-	updFormData.businessKey = data.businessKey;
-	updFormData.caseNo = data.businessKey;
+	//updFormData.businessKey = data.businessKey;
+	//updFormData.caseNo = data.businessKey;
 
     const caseAttributes = Object.keys(updFormData).map((key) => ({
       name: key,
@@ -399,13 +399,10 @@ const createApmUrlBasedOnSelectedEvent = () => {
         setLastCreatedCase(data)
         setSnackOpen(true)
         setTimeout(() => {
-          if (data.caseUrl) {
-            try {
-              window.location.href = data.caseUrl
-            } catch (e) {
-              navigate('/case-list/cases')
-            }
-          } else {
+          try {
+            const target = data.caseUrl ? new URL(data.caseUrl) : null
+            navigate(target ? target.pathname + target.search : '/case-list/cases')
+          } catch (e) {
             navigate('/case-list/cases')
           }
         }, 1000)
@@ -590,13 +587,10 @@ const createApmUrlBasedOnSelectedEvent = () => {
         setLastCreatedCase(data);
         setSnackOpen(true)
         setTimeout(() => {
-          if (data.caseUrl) {
-            try {
-              window.location.href = data.caseUrl
-            } catch (e) {
-              navigate('/case-list/cases')
-            }
-          } else {
+          try {
+            const target = data.caseUrl ? new URL(data.caseUrl) : null
+            navigate(target ? target.pathname + target.search : '/case-list/cases')
+          } catch (e) {
             navigate('/case-list/cases')
           }
         }, 1000)

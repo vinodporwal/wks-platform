@@ -244,7 +244,7 @@ console.log('*****  taskId:  ', taskId);
         color='primary'
         size='small'
         onClick={() => {
-          navigate(`/case-list/create${currentParams}`)
+          navigate(`/case-list/cases`)
           handleCloseSnack()
         }}
       >
@@ -733,8 +733,10 @@ console.log('*****  taskId:  ', taskId);
         setLastCreatedCase(data)
         setSnackOpen(true)
         setTimeout(() => {
-          window.location.href = data.caseUrl;
-          handleClose()
+          try {
+            const target = data.caseUrl ? new URL(data.caseUrl) : null
+            navigate(target ? target.pathname + target.search : '/case-list/cases')
+          } catch (e) { navigate('/case-list/cases') }
         }, 1000)
       })
       .catch((err) => {
@@ -823,8 +825,10 @@ console.log('*****  taskId:  ', taskId);
         setLastCreatedCase(data)
         setSnackOpen(true)
         setTimeout(() => {
-          window.location.href = data.caseUrl;
-          // handleClose()
+          try {
+            const target = data.caseUrl ? new URL(data.caseUrl) : null
+            navigate(target ? target.pathname + target.search : '/case-list/cases')
+          } catch (e) { navigate('/case-list/cases') }
         }, 1000)
       })
       .catch((err) => {
@@ -997,8 +1001,10 @@ console.log('*****  taskId:  ', taskId);
       setSnackbarOpen(true)
       setIsConfirmationOpen(false)
       setTimeout(() => {
-        window.location.href = response.caseUrl;
-        // window.location.reload()
+        try {
+          const target = response.caseUrl ? new URL(response.caseUrl) : null
+          navigate(target ? target.pathname + target.search : '/case-list/cases')
+        } catch (e) { navigate('/case-list/cases') }
       }, 1000)
       }else{
         setIsConfirmationOpen(false)
@@ -1177,8 +1183,10 @@ console.log('*****  taskId:  ', taskId);
         setLastCreatedCase(data)
         setSnackOpen(true) // Show success notification
         setTimeout(() => {
-          window.location.href = data.caseUrl;
-          // handleClose()
+          try {
+            const target = data.caseUrl ? new URL(data.caseUrl) : null
+            navigate(target ? target.pathname + target.search : '/case-list/cases')
+          } catch (e) { navigate('/case-list/cases') }
         }, 1000)
       })
       .catch((err) => {
