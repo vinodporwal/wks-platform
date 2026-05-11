@@ -645,16 +645,28 @@ const ProductionNorms = ({ permissions }) => {
             id: index,
             ...monthFields.reduce((acc, month) => {
               const val = item[month]
+              const isTrainRow =
+                String(
+                  item.displayName ||
+                    item.Particulars ||
+                    item.normParameterDisplayName ||
+                    '',
+                )
+                  .toLowerCase()
+                  .includes('train')
               if (isKiloTon || isKiloTonPerDay) {
                 acc[month] = convertValue(
                   val,
-                  isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 ? daysInMonth[month] : 1,
+                  isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 && !isTrainRow
+                    ? daysInMonth[month]
+                    : 1,
                 )
               } else {
                 acc[month] = val
               }
               return acc
             }, {}),
+
           }
           const total = monthFields.reduce(
             (sum, month) =>
@@ -748,11 +760,18 @@ const ProductionNorms = ({ permissions }) => {
         Array.isArray(formattedData) &&
         formattedData.length
       ) {
-        const trainIndex = formattedData.findIndex(
-          (r) =>
-            String(r._displayNameLower || r.displayName || '').toLowerCase() ===
-            'train',
-        )
+        const trainIndex = formattedData.findIndex((item) => {
+            const isTrainRow =
+                String(
+                  item.displayName ||
+                    item.Particulars ||
+                    item.normParameterDisplayName ||
+                    '',
+                )
+                  .toLowerCase()
+                  .includes('train')
+            return isTrainRow
+        })
         if (trainIndex !== -1) {
           monthFields.forEach((m) => {
             const original = formattedData[trainIndex][m]
