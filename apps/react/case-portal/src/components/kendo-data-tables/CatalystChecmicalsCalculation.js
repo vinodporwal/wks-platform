@@ -10,6 +10,7 @@ import { validateFields } from 'utils/validationUtils'
 import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_ConfigHeader'
 import Notification from 'components/Utilities/Notification'
 import { NormalOperationNormsApiService } from 'services/normal-operation-norms-api-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const STATIC_CONSUMPTION = [
   {
@@ -161,7 +162,13 @@ const CatalystChecmicalsCalculation = () => {
         widthT: 200,
         editable: false,
       },
-      { field: 'uom', title: 'UOM', widthT: 80, editable: false },
+      {
+        field: 'uom',
+        title: 'UOM',
+        widthT: 80,
+        minWidth: 110,
+        editable: false,
+      },
     ]
 
     const dynamicCols = (
@@ -170,6 +177,7 @@ const CatalystChecmicalsCalculation = () => {
       field: grade?.id?.toUpperCase() || grade.name || grade.displayName,
       title: grade.displayName || grade.name,
       widthT: 100,
+      minWidth: 110,
       type: 'number',
       format: FORMATE_VALUE,
       editable: true,
@@ -351,6 +359,7 @@ const CatalystChecmicalsCalculation = () => {
             .map((col) => ({
               ...col,
               format: col.type === 'number' ? FORMATE_VALUE : undefined,
+              minWidth: col.field == 'Material' ? 130 : 110,
               editable: false,
             })),
         )
@@ -659,7 +668,7 @@ const CatalystChecmicalsCalculation = () => {
     showCalculate: true,
     showG: true,
     marginBottom: true,
-    dropdownLabel: 'Select Grade',
+    dropdownLabel: 'Grade',
     uploadExcelBtn: false,
     showTitle: true,
   })
@@ -671,12 +680,7 @@ const CatalystChecmicalsCalculation = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {/* Grid 1: Constant */}
       <KendoDataTables

@@ -1857,15 +1857,19 @@ const KendoDataTables = ({
       )}
 
       {permissions?.showReportTitleMain && (
-        <Typography component='div' className='grid-title'>
-          {permissions?.titleNameMain}
-        </Typography>
+        <Box sx={{ pt: 1, pl: 1 }}>
+          <Typography component='div' className='grid-title'>
+            {permissions?.titleNameMain}
+          </Typography>
+        </Box>
       )}
 
       {permissions?.showNote && (
-        <Typography component='div' className='text-note'>
-          {note}
-        </Typography>
+        <Box sx={{ pt: 1, pl: 1 }}>
+          <Typography component='div' className='text-note'>
+            {note}
+          </Typography>
+        </Box>
       )}
 
       {(permissions?.allAction ?? false) && (
@@ -2507,6 +2511,19 @@ const KendoDataTables = ({
                   Delete
                 </Button>
               )}
+
+              {/* {showDeleteAll && (
+              <Button
+                variant='contained'
+                className='btn-save'
+                onClick={handleDeleteSelected}
+                disabled={isButtonDisabled || READ_ONLY}
+                loading={loading} // Use the loading prop to trigger loading state
+                loadingposition='start' // Use loadingPosition to control where the spinner appears
+              >
+                Delete
+              </Button>
+            )} */}
 
               {permissions?.showResetButton && (
                 <Button
@@ -4240,10 +4257,9 @@ const KendoDataTables = ({
         </div>
       </Collapse>
 
-      {gridExpanded &&
-        (permissions?.approveBtn || permissions?.nextBtn || showDeleteAll) && (
-          <Box className='action-box'>
-            {/* {permissions?.showCreateCasebutton && (
+      {gridExpanded && (permissions?.approveBtn || permissions?.nextBtn) && (
+        <Box className='action-box'>
+          {/* {permissions?.showCreateCasebutton && (
             <Button
               variant='contained'
               onClick={createCase}
@@ -4254,55 +4270,44 @@ const KendoDataTables = ({
             </Button>
           )} */}
 
-            {permissions?.approveBtn && (
-              <Button
-                variant='contained'
-                className='btn-save'
-                onClick={saveModalOpen}
-                disabled={isButtonDisabled || READ_ONLY}
-                // loading={loading}
-                // loadingposition='start'
-                {...(loading ? {} : {})}
-              >
-                Approve
-              </Button>
-            )}
-            {permissions?.nextBtn && (
-              <Button
-                variant='contained'
-                className='btn-save'
-                onClick={() => {
-                  // Write any additional logic here before navigating.
-                  // console.log('Navigating to dashboard')
-                  // navigate('/user-form')
-                  handleAddPlantSite()
-                }}
-                disabled={isButtonDisabled || READ_ONLY}
-                loading={loading} // Use the loading prop to trigger loading state
-                loadingposition='start' // Use loadingPosition to control where the spinner appears
-              >
-                Next
-              </Button>
-            )}
-            {showDeleteAll && (
-              <Button
-                variant='contained'
-                className='btn-save'
-                onClick={handleDeleteSelected}
-                disabled={isButtonDisabled || READ_ONLY}
-                loading={loading} // Use the loading prop to trigger loading state
-                loadingposition='start' // Use loadingPosition to control where the spinner appears
-              >
-                Delete
-              </Button>
-            )}
-          </Box>
-        )}
+          {permissions?.approveBtn && (
+            <Button
+              variant='contained'
+              className='btn-save'
+              onClick={saveModalOpen}
+              disabled={isButtonDisabled || READ_ONLY}
+              // loading={loading}
+              // loadingposition='start'
+              {...(loading ? {} : {})}
+            >
+              Approve
+            </Button>
+          )}
+          {permissions?.nextBtn && (
+            <Button
+              variant='contained'
+              className='btn-save'
+              onClick={() => {
+                // Write any additional logic here before navigating.
+                // console.log('Navigating to dashboard')
+                // navigate('/user-form')
+                handleAddPlantSite()
+              }}
+              disabled={isButtonDisabled || READ_ONLY}
+              loading={loading} // Use the loading prop to trigger loading state
+              loadingposition='start' // Use loadingPosition to control where the spinner appears
+            >
+              Next
+            </Button>
+          )}
+        </Box>
+      )}
       <Notification
         open={snackbarOpen}
         message={snackbarData?.message || ''}
         severity={snackbarData?.severity || 'info'}
         onClose={() => setSnackbarOpen(false)}
+        autoHide={snackbarData?.autoHide}
       />
       <CompactDialog
         open={openDeleteDialogeBox}
