@@ -261,7 +261,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	                continue; 
 	            }
 
-	            Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId);
+	            Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId,null);
 	            int currentRowIndex = 0;
 
 	            // Headers
@@ -359,6 +359,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			List<ShutdownNormsValueDTO> dtoList,
 			boolean allGrade) {
 		try {
+			Plants plant = plantsRepository.findById(plantFKId).get();
 			AOPMessageVM gradesVM = getUniqueGrades(year, plantFKId.toString());
 			List<Map<String, String>> gradeInfoList = extractGradeInfo(gradesVM);
 			Workbook workbook = new XSSFWorkbook();
@@ -409,7 +410,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 
 					// If nothing to write, skip creation
 					if (!currentDtoList.isEmpty()) {
-						Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId);
+						Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId, plant.getName());
 
 						String sheetName = Utility.sanitizeSheetName("All Grade");
 						Sheet sheet = workbook.createSheet(sheetName);
@@ -502,7 +503,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 						sheet.setColumnHidden(17, true);
 					}
 				} else {
-					// no grade named "All Grade" found � do not aggregate everything accidentally.
+					// no grade named "All Grade" found ? do not aggregate everything accidentally.
 					// Optionally: you could fall back to aggregated behavior here if desired.
 				}
 
@@ -537,7 +538,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 						continue;
 					}
 
-					Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId);
+					Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId, plant.getName());
 
 					Sheet sheet = workbook.createSheet(sheetName);
 					int currentRow = 0;
@@ -668,7 +669,8 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			if (failedRecords != null && failedRecords.size() > 0) {
 				byte[] fileByteArray = null;
 				if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
-						|| vertical.getName().equalsIgnoreCase("PET") || pvc) {
+						|| vertical.getName().equalsIgnoreCase("PET") ||
+					 vertical.getName().equalsIgnoreCase("ELASTOMER") || pvc) {
 					fileByteArray = exportShutdownNorms(
 							year,
 							plantFKId,
@@ -1038,11 +1040,13 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				    }
 				}
 				
+			GradeShutdownNormsValue	existingGradeShutdownNormsValue= new GradeShutdownNormsValue();
 				plantId=UUID.fromString(shutdownNormsValueDTO.getPlantFkId());
 				GradeShutdownNormsValue gradeShutdownNormsValue = new GradeShutdownNormsValue();
 				if (shutdownNormsValueDTO.getId() != null && !shutdownNormsValueDTO.getId().isEmpty()) {
 					gradeShutdownNormsValue.setId(UUID.fromString(shutdownNormsValueDTO.getId()));
 					gradeShutdownNormsValue.setModifiedOn(new Date());
+					existingGradeShutdownNormsValue=gradeShutdownNormsValueRepository.findById(UUID.fromString(shutdownNormsValueDTO.getId())).orElse(null);
 				} else {
 					
 					UUID materialId = null;
@@ -1066,6 +1070,36 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 
 					gradeShutdownNormsValue.setCreatedOn(new Date());
 				}
+
+				// remark validation 
+
+				//check if the new values and old values has changed
+				boolean monthChanged = false;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getApril(), Optional.ofNullable(shutdownNormsValueDTO.getApril()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getMay(), Optional.ofNullable(shutdownNormsValueDTO.getMay()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getJune(), Optional.ofNullable(shutdownNormsValueDTO.getJune()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getJuly(), Optional.ofNullable(shutdownNormsValueDTO.
+					
+					getJuly()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getAugust(), Optional.ofNullable(shutdownNormsValueDTO.getAugust()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getSeptember(), Optional.ofNullable(shutdownNormsValueDTO.getSeptember()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getOctober(), Optional.ofNullable(shutdownNormsValueDTO.getOctober()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getNovember(), Optional.ofNullable(shutdownNormsValueDTO.getNovember()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getDecember(), Optional.ofNullable(shutdownNormsValueDTO.getDecember()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getJanuary(), Optional.ofNullable(shutdownNormsValueDTO.getJanuary()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getFebruary(), Optional.ofNullable(shutdownNormsValueDTO.getFebruary()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getMarch(), Optional.ofNullable(shutdownNormsValueDTO.getMarch()).orElse(0.0))) monthChanged = true;
+
+				if(monthChanged && Objects.equals(existingGradeShutdownNormsValue.getRemarks(), shutdownNormsValueDTO.getRemarks())) {  
+                    shutdownNormsValueDTO.setSaveStatus("Failed");
+                    shutdownNormsValueDTO.setErrDescription("Please update remark");
+                    failedList.add(shutdownNormsValueDTO);
+					continue;
+				}
+
+
+
+
 				gradeShutdownNormsValue.setApril(Optional.ofNullable(shutdownNormsValueDTO.getApril()).orElse(0.0));
 				gradeShutdownNormsValue.setMay(Optional.ofNullable(shutdownNormsValueDTO.getMay()).orElse(0.0));
 				gradeShutdownNormsValue.setJune(Optional.ofNullable(shutdownNormsValueDTO.getJune()).orElse(0.0));
@@ -1833,12 +1867,20 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	}
 
 	/** Active months for export = Shutdown + Slowdown. */
-	private Set<Integer> getActiveMonthsForExport(UUID plantFKId, String year, String gradeId) {
+	private Set<Integer> getActiveMonthsForExport(UUID plantFKId, String year, String gradeId, String plantName) {
 	    Set<Integer> activeMonths = new HashSet<>();
 	    List<Integer> shutdown = plantService.getShutdownMonths(plantFKId, "Shutdown", year, gradeId);
 	    if (shutdown != null) activeMonths.addAll(shutdown);
 	    List slowdown = slowdownNormsService.getSlowdownMonthsImport(plantFKId, "Slowdown", year);
-	    if (slowdown != null) activeMonths.addAll(slowdown);
+	    if (slowdown != null)   {
+			if(plantName != null && plantName.equalsIgnoreCase("SBR")) {  
+               return activeMonths;
+			}
+			else
+			activeMonths.addAll(slowdown); 
+
+
+		}
 	    return activeMonths;
 	}
 

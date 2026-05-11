@@ -75,7 +75,10 @@ const KendoDataGridAromatics2 = ({
         {...restThProps}
         aria-sort={ariaSort}
         title={props.title}
-        style={{ padding: '0px', borderRight: '1px solid #878787' }}
+        style={{
+          fontFamily:
+            "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
+        }}
       >
         <Tooltip
           position='top'
@@ -272,7 +275,7 @@ const KendoDataGridAromatics2 = ({
                   key={col.field}
                   field={col.field}
                   title={col.title || col.headerName}
-                  width={col.widthT || permissions?.widthT}
+                  width={col.widthT || permissions?.widthT || 130}
                   hidden={col.hidden}
                   className='k-number-right-disabled'
                   headerClassName={isActive ? 'active-column' : ''}

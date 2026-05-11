@@ -1,5 +1,6 @@
 package com.wks.caseengine.service;
 
+import java.io.ByteArrayOutputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -8,12 +9,20 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import javax.sql.DataSource;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,6 +35,7 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
+import com.wks.caseengine.utility.Utility;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -49,13 +59,21 @@ public class ProductionOptimizerServiceImpl implements ProductionOptimizerServic
 	@Autowired
 	private DataSource dataSource;
 
+	@Autowired
+	private ShutdownHistoryService shutdownHistoryService;
+
 	@Override
 	public AOPMessageVM getProductionOptimizer(String plantId, String aopYear, String lineFkId, String type) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
 			List<Object[]> results = getProductionOptimizerData(plantId, aopYear, lineFkId, type);
+			for(Object[] row : results) { 
+				for(Object obj : row) { 
+					System.out.println("obj: " + obj.toString());
+				}
+			}
 			List<String> columnNames = getProductionOptimizerColumns(plantId, aopYear, lineFkId, type);
-
+System.out.println("columnNames: " + columnNames);
 			List<Map<String, Object>> resultList = new ArrayList<>();
 			for (Object[] row : results) {
 				Map<String, Object> rowMap = new LinkedHashMap<>();
@@ -368,6 +386,222 @@ public class ProductionOptimizerServiceImpl implements ProductionOptimizerServic
 	}
 
 	
+	@Override
+	@SuppressWarnings("unchecked")
+	public byte[] exportProductionOptimizer(String plantId, String aopYear, String type) {
+		try {
+			AOPMessageVM lineVm = shutdownHistoryService.getLineDetails(plantId, aopYear);
+			List<Map<String, Object>> lines = new ArrayList<>();
+			if (lineVm != null && lineVm.getData() instanceof List) {
+				for (Object o : (List<?>) lineVm.getData()) {
+					if (o instanceof Map) {
+						lines.add((Map<String, Object>) o);
+					}
+				}
+			}
+
+			int[] bounds = parseProdFiscalYearBounds(aopYear);
+			List<String> monthHeaders = buildProdFiscalMonthHeaders(bounds[0], bounds[1]);
+
+			Workbook workbook = new XSSFWorkbook();
+			Set<String> usedSheetNames = new HashSet<>();
+
+			if (lines.isEmpty()) {
+				Sheet sheet = workbook.createSheet("ProductionOptimizer");
+				writeProductionOptimizerSheet(workbook, sheet, monthHeaders, new ArrayList<>());
+			} else {
+				for (Map<String, Object> line : lines) {
+					Object idObj = line.get("id");
+					if (idObj == null || idObj.toString().isBlank()) {
+						continue;
+					}
+					String lineId = idObj.toString();
+					String display = line.get("displayName") != null ? line.get("displayName").toString()
+							: (line.get("name") != null ? line.get("name").toString() : "Line");
+					String sheetName = uniqueProdSheetName(Utility.sanitizeSheetName(display), usedSheetNames);
+					usedSheetNames.add(sheetName);
+
+					List<Map<String, Object>> rowData = getProductionOptimizerRows(plantId, aopYear, lineId, type);
+					Sheet sheet = workbook.createSheet(sheetName);
+					writeProductionOptimizerSheet(workbook, sheet, monthHeaders, rowData);
+				}
+				if (usedSheetNames.isEmpty()) {
+					Sheet sheet = workbook.createSheet("ProductionOptimizer");
+					writeProductionOptimizerSheet(workbook, sheet, monthHeaders, new ArrayList<>());
+				}
+			}
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	private List<Map<String, Object>> getProductionOptimizerRows(String plantId, String aopYear, String lineId,
+			String type) {
+		try {
+			AOPMessageVM vm = getProductionOptimizer(plantId, aopYear, lineId, type);
+			if (vm != null && vm.getData() instanceof Map) {
+				Map<String, Object> dataMap = (Map<String, Object>) vm.getData();
+				Object dataObj = dataMap.get("data");
+				if (dataObj instanceof List) {
+					List<Map<String, Object>> rows = new ArrayList<>();
+					for (Object o : (List<?>) dataObj) {
+						if (o instanceof Map) {
+							rows.add((Map<String, Object>) o);
+						}
+					}
+					return rows;
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new ArrayList<>();
+	}
+
+	private void writeProductionOptimizerSheet(Workbook workbook, Sheet sheet, List<String> monthHeaders,
+			List<Map<String, Object>> rows) {
+		CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+		CellStyle totalStyle = Utility.createBoldBorderedStyle(workbook);
+
+		// Fixed SP month keys in fiscal order
+		String[] spMonthKeys = { "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar" };
+
+		int currentRow = 0;
+		Row headerRow = sheet.createRow(currentRow++);
+
+		Cell gradeNameHeader = headerRow.createCell(0);
+		gradeNameHeader.setCellValue("GradeName");
+		gradeNameHeader.setCellStyle(headerStyle);
+
+		for (int col = 0; col < monthHeaders.size(); col++) {
+			Cell cell = headerRow.createCell(col + 1);
+			cell.setCellValue(monthHeaders.get(col));
+			cell.setCellStyle(headerStyle);
+		}
+
+		Cell totalHeader = headerRow.createCell(1 + monthHeaders.size());
+		totalHeader.setCellValue("Total");
+		totalHeader.setCellStyle(headerStyle);
+
+		double[] columnTotals = new double[spMonthKeys.length];
+
+		for (Map<String, Object> rowData : rows) {
+			Row row = sheet.createRow(currentRow++);
+
+			Object gradeNameVal = rowData.get("GradeName");
+			row.createCell(0).setCellValue(gradeNameVal != null ? gradeNameVal.toString() : "");
+
+			double rowTotal = 0;
+			for (int i = 0; i < spMonthKeys.length; i++) {
+				Object val = rowData.get(spMonthKeys[i]);
+				double numVal = 0;
+				if (val instanceof Number) {
+					numVal = ((Number) val).doubleValue();
+				}
+				row.createCell(i + 1).setCellValue(numVal);
+				columnTotals[i] += numVal;
+				rowTotal += numVal;
+			}
+			row.createCell(spMonthKeys.length + 1).setCellValue(rowTotal);
+		}
+
+		Row totalRow = sheet.createRow(currentRow);
+		Cell totalLabelCell = totalRow.createCell(0);
+		totalLabelCell.setCellValue("Total");
+		totalLabelCell.setCellStyle(totalStyle);
+
+		double grandTotal = 0;
+		for (int i = 0; i < spMonthKeys.length; i++) {
+			Cell cell = totalRow.createCell(i + 1);
+			cell.setCellValue(columnTotals[i]);
+			cell.setCellStyle(totalStyle);
+			grandTotal += columnTotals[i];
+		}
+		Cell grandTotalCell = totalRow.createCell(spMonthKeys.length + 1);
+		grandTotalCell.setCellValue(grandTotal);
+		grandTotalCell.setCellStyle(totalStyle);
+
+		for (int i = 0; i <= spMonthKeys.length + 1; i++) {
+			sheet.autoSizeColumn(i);
+		}
+	}
+
+	private int[] parseProdFiscalYearBounds(String aopYear) {
+		if (aopYear == null || aopYear.isBlank()) {
+			int y = java.time.Year.now(java.time.ZoneId.systemDefault()).getValue();
+			return new int[] { y, y + 1 };
+		}
+		String trimmed = aopYear.trim();
+		int dash = trimmed.indexOf('-');
+		if (dash < 0) {
+			try {
+				int y = Integer.parseInt(trimmed);
+				return new int[] { y, y + 1 };
+			} catch (NumberFormatException e) {
+				int y = java.time.Year.now(java.time.ZoneId.systemDefault()).getValue();
+				return new int[] { y, y + 1 };
+			}
+		}
+		String first = trimmed.substring(0, dash).trim();
+		String second = trimmed.substring(dash + 1).trim();
+		try {
+			int startYear = Integer.parseInt(first);
+			int endYear;
+			if (second.length() <= 2) {
+				int century = (startYear / 100) * 100;
+				endYear = century + Integer.parseInt(second);
+				if (endYear <= startYear) {
+					endYear += 100;
+				}
+			} else {
+				endYear = Integer.parseInt(second);
+			}
+			return new int[] { startYear, endYear };
+		} catch (NumberFormatException e) {
+			int y = java.time.Year.now(java.time.ZoneId.systemDefault()).getValue();
+			return new int[] { y, y + 1 };
+		}
+	}
+
+	private static String prodTwoDigitYear(int fullYear) {
+		return String.format("%02d", fullYear % 100);
+	}
+
+	private List<String> buildProdFiscalMonthHeaders(int startYear, int endYear) {
+		String yy1 = prodTwoDigitYear(startYear);
+		String yy2 = prodTwoDigitYear(endYear);
+		List<String> headers = new ArrayList<>(12);
+		for (String m : new String[] { "Apr-", "May-", "Jun-", "Jul-", "Aug-", "Sep-", "Oct-", "Nov-", "Dec-" }) {
+			headers.add(m + yy1);
+		}
+		for (String m : new String[] { "Jan-", "Feb-", "Mar-" }) {
+			headers.add(m + yy2);
+		}
+		return headers;
+	}
+
+	private String uniqueProdSheetName(String sanitizedBase, Set<String> used) {
+		String name = sanitizedBase;
+		int counter = 1;
+		while (used.contains(name)) {
+			String suffix = "_" + (++counter);
+			int maxBase = Math.max(1, 31 - suffix.length());
+			String base = sanitizedBase.length() > maxBase ? sanitizedBase.substring(0, maxBase) : sanitizedBase;
+			name = base + suffix;
+			if (name.length() > 31) {
+				name = name.substring(0, 31);
+			}
+		}
+		return name;
+	}
+
 	private String getFrontendType(String sqlTypeName) {
 		if (sqlTypeName == null) {
 			return "string";

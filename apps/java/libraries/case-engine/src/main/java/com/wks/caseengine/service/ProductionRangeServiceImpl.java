@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
@@ -155,7 +156,21 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
 	            cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 	        }
 
-	        int dataRowCount = dtoList.size();
+        // Compute max Particulars column width (header + all rows)
+        int maxParticularsLen = "Particulars".length();
+        for (NormConfigurationDTO dto : dtoList) {
+            if (dto.getDisplayName() != null) {
+                maxParticularsLen = Math.max(maxParticularsLen, dto.getDisplayName().length());
+            }
+        }
+
+        // Wrap-text style for the Remarks column
+        CellStyle wrapStyle = workbook.createCellStyle();
+        wrapStyle.setWrapText(true);
+
+        final int REMARKS_COL_CHAR_WIDTH = 40;
+
+        int dataRowCount = dtoList.size();
 	        for (int i = 0; i < dataRowCount; i++) {
 	        	NormConfigurationDTO dto = dtoList.get(i);
 	            Row row = sheet.createRow(currentRow++);
@@ -174,6 +189,9 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
 
 	            for (int col = 0; col < rowData.size(); col++) {
 	                Cell cell = row.createCell(col);
+	                if (col == 4) {
+	                    cell.setCellStyle(wrapStyle);
+	                }
 	                Object value = rowData.get(col);
 	                if (value instanceof Number) {
 	                    cell.setCellValue(((Number) value).doubleValue());
@@ -185,7 +203,22 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
 	                    cell.setCellValue("");
 	                }  
 	            }
+
+	            // Adjust row height to fit wrapped Remarks text
+	            String remarksText = dto.getRemarks() != null ? dto.getRemarks() : "";
+	            if (!remarksText.isEmpty()) {
+	                int lines = (int) Math.ceil((double) remarksText.length() / REMARKS_COL_CHAR_WIDTH);
+	                lines = Math.max(lines, 1);
+	                row.setHeightInPoints(lines * 15f);
+	            }
 	        }
+
+        // Particulars column width based on max content length
+        sheet.setColumnWidth(0, (maxParticularsLen + 2) * 256);
+
+        // Remarks column: fixed default width with wrap text enabled
+        sheet.setColumnWidth(4, REMARKS_COL_CHAR_WIDTH * 256);
+
 	        sheet.setColumnHidden(5, true);
 	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 	        workbook.write(outputStream);
@@ -230,38 +263,70 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
 	            cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 	        }
 
-	        int dataRowCount = dtoList.size();
-	        for (int i = 0; i < dataRowCount; i++) {
-	        	NormConfigurationDTO dto = dtoList.get(i);
-	            Row row = sheet.createRow(currentRow++);
-	            List<Object> rowData = new ArrayList<>();
-	            //rowData.add(normParametersRepository.findById(UUID.fromString(dto.getNormParameterFkId())).get().getDisplayName());
-	            rowData.add(dto.getDisplayName());
-	            rowData.add(dto.getUom());
-	            rowData.add(">=");
-	            rowData.add(dto.getApr());
-	            rowData.add(dto.getRemarks());
-	            rowData.add(dto.getNormParameterFkId());
-	            if (isAfterSave) {
-	                rowData.add(dto.getSaveStatus());
-	                rowData.add(dto.getErrDescription());
-	            }
+        // Compute max Particulars column width (header + all rows)
+        int maxParticularsLen = "Particulars".length();
+        for (NormConfigurationDTO dto : dtoList) {
+            if (dto.getDisplayName() != null) {
+                maxParticularsLen = Math.max(maxParticularsLen, dto.getDisplayName().length());
+            }
+        }
 
-	            for (int col = 0; col < rowData.size(); col++) {
-	                Cell cell = row.createCell(col);
-	                Object value = rowData.get(col);
-	                if (value instanceof Number) {
-	                    cell.setCellValue(((Number) value).doubleValue());
-	                } else if (value instanceof Boolean) {
-	                    cell.setCellValue((Boolean) value);
-	                } else if (value != null) {
-	                    cell.setCellValue(value.toString());
-	                } else {
-	                    cell.setCellValue("");
-	                }  
-	            }
-	        }
-	        sheet.setColumnHidden(5, true);
+        // Wrap-text style for the Remarks column
+        CellStyle wrapStyle = workbook.createCellStyle();
+        wrapStyle.setWrapText(true);
+
+        final int REMARKS_COL_CHAR_WIDTH = 40;
+
+        int dataRowCount = dtoList.size();
+        for (int i = 0; i < dataRowCount; i++) {
+        	NormConfigurationDTO dto = dtoList.get(i);
+            Row row = sheet.createRow(currentRow++);
+            List<Object> rowData = new ArrayList<>();
+            //rowData.add(normParametersRepository.findById(UUID.fromString(dto.getNormParameterFkId())).get().getDisplayName());
+            rowData.add(dto.getDisplayName());
+            rowData.add(dto.getUom());
+            rowData.add(">=");
+            rowData.add(dto.getApr());
+            rowData.add(dto.getRemarks());
+            rowData.add(dto.getNormParameterFkId());
+            if (isAfterSave) {
+                rowData.add(dto.getSaveStatus());
+                rowData.add(dto.getErrDescription());
+            }
+
+            for (int col = 0; col < rowData.size(); col++) {
+                Cell cell = row.createCell(col);
+                if (col == 4) {
+                    cell.setCellStyle(wrapStyle);
+                }
+                Object value = rowData.get(col);
+                if (value instanceof Number) {
+                    cell.setCellValue(((Number) value).doubleValue());
+                } else if (value instanceof Boolean) {
+                    cell.setCellValue((Boolean) value);
+                } else if (value != null) {
+                    cell.setCellValue(value.toString());
+                } else {
+                    cell.setCellValue("");
+                }  
+            }
+
+            // Adjust row height to fit wrapped Remarks text
+            String remarksText = dto.getRemarks() != null ? dto.getRemarks() : "";
+            if (!remarksText.isEmpty()) {
+                int lines = (int) Math.ceil((double) remarksText.length() / REMARKS_COL_CHAR_WIDTH);
+                lines = Math.max(lines, 1);
+                row.setHeightInPoints(lines * 15f);
+            }
+        }
+
+        // Particulars column width based on max content length
+        sheet.setColumnWidth(0, (maxParticularsLen + 2) * 256);
+
+        // Remarks column: fixed default width with wrap text enabled
+        sheet.setColumnWidth(4, REMARKS_COL_CHAR_WIDTH * 256);
+
+        sheet.setColumnHidden(5, true);
 	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 	        workbook.write(outputStream);
 	        workbook.close();
@@ -371,10 +436,10 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
     }
     
     @Override
-	public AOPMessageVM importProductionRange(String year,UUID plantId,MultipartFile file) {
+	public AOPMessageVM importProductionRange(String year,UUID plantId,MultipartFile file,boolean isMinMax) {
 		try {
-			List<ConfigurationDTO> data = readProductionRange(file.getInputStream(), plantId, year);
-			List<ConfigurationDTO> failedList= configurationService.saveConfigurationData(year,plantId.toString(),"",data,false);
+			List<ConfigurationDTO> data = readProductionRange(file.getInputStream(), plantId, year, isMinMax);
+			List<ConfigurationDTO> failedList= configurationService.saveConfigurationData(year,plantId.toString(),"",data,null,isMinMax);
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<NormConfigurationDTO> normConfigurationDTOs = new ArrayList<NormConfigurationDTO>();
 			for(ConfigurationDTO configurationDTO:failedList) {
@@ -414,7 +479,7 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
 	public AOPMessageVM importProductionRangeLimit(String year,UUID plantId,MultipartFile file) {
 		try {
 			List<ConfigurationDTO> data = readProductionRangeLimit(file.getInputStream(), plantId, year);
-			List<ConfigurationDTO> failedList= configurationService.saveConfigurationData(year,plantId.toString(),"",data,false);
+			List<ConfigurationDTO> failedList= configurationService.saveConfigurationData(year,plantId.toString(),"",data,null,false);
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<NormConfigurationDTO> normConfigurationDTOs = new ArrayList<NormConfigurationDTO>();
 			for(ConfigurationDTO configurationDTO:failedList) {
@@ -450,7 +515,7 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
 		return null;
 	}
 
-	public List<ConfigurationDTO> readProductionRange(InputStream inputStream, UUID plantFKId, String year) {
+	public List<ConfigurationDTO> readProductionRange(InputStream inputStream, UUID plantFKId, String year, boolean isMinMax) {
 	    List<ConfigurationDTO> configurationDTOs = new ArrayList<>();
 
 	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
@@ -482,6 +547,21 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
 	                dto.setRemarks(getStringCellValue(row.getCell(4), dto));
 	                dto.setNormParameterFKId(getStringCellValue(row.getCell(5), dto));
 	               dto.setUOM(getStringCellValue(row.getCell(1), dto));
+
+				   if(isMinMax) { 
+
+					dto.setJun(null);
+	                dto.setJul(null);
+	                dto.setAug(null);
+	                dto.setSep(null);
+	                dto.setOct(null);
+	                dto.setNov(null);
+	                dto.setDec(null);
+	                dto.setJan(null);
+	                dto.setFeb(null);
+	                dto.setMar(null);
+
+				   }
 	              } 
 	              catch (Exception e) {
 	                e.printStackTrace();
@@ -516,17 +596,17 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
 	            	dto.setProductName(getStringCellValue(row.getCell(0), dto));
 	               
 	                dto.setApr(getNumericCellValue(row.getCell(3), dto));
-	                dto.setMay(getNumericCellValue(row.getCell(3), dto));
-	                dto.setJun(getNumericCellValue(row.getCell(3), dto));
-	                dto.setJul(getNumericCellValue(row.getCell(3), dto));
-	                dto.setAug(getNumericCellValue(row.getCell(3), dto));
-	                dto.setSep(getNumericCellValue(row.getCell(3), dto));
-	                dto.setOct(getNumericCellValue(row.getCell(3), dto));
-	                dto.setNov(getNumericCellValue(row.getCell(3), dto));
-	                dto.setDec(getNumericCellValue(row.getCell(3), dto));
-	                dto.setJan(getNumericCellValue(row.getCell(3), dto));
-	                dto.setFeb(getNumericCellValue(row.getCell(3), dto));
-	                dto.setMar(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setMay(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setJun(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setJul(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setAug(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setSep(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setOct(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setNov(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setDec(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setJan(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setFeb(getNumericCellValue(row.getCell(3), dto));
+	                // dto.setMar(getNumericCellValue(row.getCell(3), dto));
 	                dto.setRemarks(getStringCellValue(row.getCell(4), dto));
 	                dto.setNormParameterFKId(getStringCellValue(row.getCell(5), dto));
 	               dto.setUOM(getStringCellValue(row.getCell(1), dto));

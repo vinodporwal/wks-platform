@@ -9,6 +9,7 @@ import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 export default function PlantTeam() {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -66,44 +67,46 @@ export default function PlantTeam() {
         editable: false,
         type: 'number',
         hidden: true,
+        isVisible: false,
       },
       {
         field: 'serialNumber',
         title: 'S.No.',
-        widthT: 70,
         editable: false,
         type: 'number',
+        minWidth: 80,
       },
       {
         field: 'function',
         title: 'Function',
-
         editable: true,
+        minWidth: 180,
       },
       {
         field: 'jobRole',
         title: 'Job Role',
-
         editable: true,
+        minWidth: 180,
       },
       {
         field: 'name',
         title: 'Name',
         editable: true,
+        minWidth: 180,
       },
       {
         field: 'age',
         title: 'Age',
         editable: true,
         type: 'number',
-        widthT: 100,
+        minWidth: 100,
       },
       {
         field: 'teamSize',
         title: 'Team Size',
         editable: true,
         type: 'number',
-        widthT: 120,
+        minWidth: 120,
       },
     ],
     [plantID, yearChanged],
@@ -116,25 +119,46 @@ export default function PlantTeam() {
       editable: false,
       type: 'number',
       hidden: true,
+      isVisible: false,
     },
     {
       field: 'serialNumber',
       title: 'S.No.',
-      widthT: 70,
       editable: false,
       type: 'number',
+      minWidth: 80,
     },
-    { field: 'initiative', title: 'Initiative', editable: true },
-    { field: 'outcome', title: 'Outcome', editable: true },
-    { field: 'recommendation', title: 'Recommendation', editable: true },
+    {
+      field: 'initiative',
+      title: 'Initiative',
+      editable: true,
+      minWidth: 200,
+    },
+    {
+      field: 'outcome',
+      title: 'Outcome',
+      editable: true,
+      minWidth: 200,
+    },
+    {
+      field: 'recommendation',
+      title: 'Recommendation',
+      editable: true,
+      minWidth: 240,
+    },
     {
       field: 'targetDate',
       title: 'Target Date',
       editable: true,
       type: 'date',
-      widthT: 180,
+      minWidth: 160,
     },
-    { field: 'responsible', title: 'Resp.', editable: true, widthT: 120 },
+    {
+      field: 'responsible',
+      title: 'Resp.',
+      editable: true,
+      minWidth: 150,
+    },
   ]
 
   const fetchData = useCallback(async () => {
@@ -568,12 +592,7 @@ export default function PlantTeam() {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <KendoDataTables
         columns={columns}

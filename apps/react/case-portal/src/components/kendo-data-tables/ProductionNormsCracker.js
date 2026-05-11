@@ -15,6 +15,7 @@ import getEnhancedColDefs from '../data-tables/CommonHeader/Kendo_ProductionAopH
 import KendoDataTables from './index'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const ProductionNormsCracker = ({ permissions }) => {
   const [editResetKey, setEditResetKey] = useState(0)
 
@@ -75,6 +76,7 @@ const ProductionNormsCracker = ({ permissions }) => {
     severity: 'info',
   })
   const CRACKER_DMD = lowerVertName === 'cracker' && lowerSiteName === 'dmd'
+  const CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [selectedUnit, setSelectedUnit] = useState('')
@@ -749,15 +751,10 @@ const ProductionNormsCracker = ({ permissions }) => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {/* SHOW THIS GRID TO ALL SITES */}
-      {!CRACKER_DMD && (
+      {!CRACKER_HMD && !CRACKER_DMD && (
         <KendoDataTables
           modifiedCells={modifiedCellsC2C3R}
           setModifiedCells={setModifiedCellsC2C3R}

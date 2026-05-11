@@ -380,7 +380,8 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	        String year, 
 	        UUID plantFKId, 
 	        boolean isAfterSave, 
-	        List<SlowdownNormsValueDTO> dtoList) {
+	        List<SlowdownNormsValueDTO> dtoList,
+			String maintenanceName) {
 	    try {
 	        AOPMessageVM gradesVM = getUniqueGrades(year, plantFKId.toString());
 	        List<Map<String, String>> gradeInfoList = extractGradeInfo(gradesVM);
@@ -389,7 +390,19 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	            return null;
 	        }
 
-	        Workbook workbook = new XSSFWorkbook();
+		List<Integer> editableMonths = null;
+		if(maintenanceName != null && !maintenanceName.isEmpty()) {
+			editableMonths = getSlowdownMonths(plantFKId, maintenanceName, year, null);
+		}
+
+	
+
+        // Academic year month order: Apr(4), May(5), Jun(6), Jul(7), Aug(8), Sep(9), Oct(10), Nov(11), Dec(12), Jan(1), Feb(2), Mar(3)
+        final int[] ACADEMIC_MONTH_ORDER = {4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3};
+        final int MONTH_COL_START = 3;
+        final int MONTH_COL_END   = 14;
+
+        Workbook workbook = new XSSFWorkbook();
 	        CellStyle lockedStyle = Utility.createLockedStyle(workbook);
 	        lockedStyle.setLocked(true); // Ensure locked style is explicitly set to locked
 
@@ -474,13 +487,27 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	                    rowValues.add(dto.getErrDescription());
 	                }
 
-	                
-	                boolean isRowEditable = (dto.getIsEditable() != null) ? dto.getIsEditable() : true;
-	                CellStyle rowStyle = isRowEditable ? unlockedStyle : lockedStyle;
+                
+                boolean isRowEditable = (dto.getIsEditable() != null) ? dto.getIsEditable() : true;
+                CellStyle rowStyle = isRowEditable ? unlockedStyle : lockedStyle;
 
-	                for (int col = 0; col < rowValues.size(); col++) {
-	                    Cell cell = row.createCell(col);
-	                    Object val = rowValues.get(col);
+                for (int col = 0; col < rowValues.size(); col++) {
+                    Cell cell = row.createCell(col);
+                    Object val = rowValues.get(col);
+                    // Determine per-column cell style for month columns
+                    CellStyle cellStyle;
+                    if (col >= MONTH_COL_START && col <= MONTH_COL_END) {
+                        int monthNumber = ACADEMIC_MONTH_ORDER[col - MONTH_COL_START];
+                        if (editableMonths != null && !editableMonths.contains(monthNumber)) {
+                            // Month is not in the allowed list ? always locked
+                            cellStyle = lockedStyle;
+                        } else {
+                            // No restriction or month is allowed ? follow row editability
+                            cellStyle = rowStyle;
+                        }
+                    } else {
+                        cellStyle = rowStyle;
+                    }
 
 	                    if (val instanceof Number) {
 	                        cell.setCellValue(((Number) val).doubleValue());
@@ -489,7 +516,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	                    } else {
 	                        cell.setCellValue(val != null ? val.toString() : "");
 	                    }
-	                    cell.setCellStyle(rowStyle);
+	                    cell.setCellStyle(cellStyle);
 	                }
 	            }
 
@@ -570,6 +597,16 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	    UUID plantId = null;
 	    List<SlowdownNormsValueDTO> failedList = new ArrayList<SlowdownNormsValueDTO>();
 	    try {
+			
+			Plants plants = plantsRepository.findById(UUID.fromString(slowdownNormsValueDTOList.get(0).getPlantFkId())).orElse(null);
+			Verticals vertical = verticalRepository.findById(plants.getVerticalFKId()).orElse(null);
+			Sites site = siteRepository.findById(plants.getSiteFkId()).orElse(null);
+			boolean ElastomerJMDHIIR = vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plants.getName().equalsIgnoreCase("HIIR");
+
+			if(ElastomerJMDHIIR) {  
+				failedList = saveSlowdownNormsDataHIIR(slowdownNormsValueDTOList, null);
+				return failedList;
+			}
 	        for (SlowdownNormsValueDTO slowdownNormsValueDTO : slowdownNormsValueDTOList) {
 	            if (slowdownNormsValueDTO.getSaveStatus() != null
 	                    && slowdownNormsValueDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
@@ -581,6 +618,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	            plantId = UUID.fromString(slowdownNormsValueDTO.getPlantFkId());
 	            SlowdownNormsValue existingEntity = null;
 	            if (slowdownNormsValueDTO.getId() != null && !slowdownNormsValueDTO.getId().isEmpty()) {
+					
 	                existingEntity = slowdownNormsRepository.findById(UUID.fromString(slowdownNormsValueDTO.getId())).orElse(null);
 	            } else {
 	                UUID siteId = slowdownNormsValueDTO.getSiteFkId() != null ? UUID.fromString(slowdownNormsValueDTO.getSiteFkId()) : null;
@@ -681,8 +719,10 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	    }
 	} 
 
+	
+
 	@Override
-	public List<SlowdownNormsValueDTO> saveSlowdownNormsDataHIIR(List<SlowdownNormsValueDTO> slowdownNormsValueDTOList) {
+	public List<SlowdownNormsValueDTO> saveSlowdownNormsDataHIIR(List<SlowdownNormsValueDTO> slowdownNormsValueDTOList, String maintenanceName) {
 	    String year = null;
 	    UUID plantId = null;
 	    List<SlowdownNormsValueDTO> failedList = new ArrayList<SlowdownNormsValueDTO>();
@@ -693,6 +733,8 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	                failedList.add(slowdownNormsValueDTO);
 	                continue;
 	            }
+
+			
 
 	            year = slowdownNormsValueDTO.getFinancialYear();
 	            plantId = UUID.fromString(slowdownNormsValueDTO.getPlantFkId());
@@ -709,6 +751,68 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	                    existingEntity = gradeSlowdownNormsValuesRepository.findById(existingId).orElse(null);
 	                }
 	            }
+
+				List<Integer> editableMonths = null;
+				if(maintenanceName != null && !maintenanceName.isEmpty() && existingEntity != null) { 
+
+					editableMonths = getSlowdownMonths(plantId, maintenanceName, year, null);
+				
+
+					// set the non-editable months of slowdownNormsValueDTO to existing entity
+				
+					for (int month = 1; month <= 12; month++) { 
+
+						if (editableMonths.contains(month)) {
+							continue;
+						}
+
+						switch(month) {
+
+							case 1:
+								slowdownNormsValueDTO.setJanuary(Optional.ofNullable(existingEntity.getJanuary()).orElse(0.0));
+								break;
+							case 2:
+								slowdownNormsValueDTO.setFebruary(Optional.ofNullable(existingEntity.getFebruary()).orElse(0.0));
+								break;
+							case 3:
+								slowdownNormsValueDTO.setMarch(Optional.ofNullable(existingEntity.getMarch()).orElse(0.0));
+								break;
+
+							case 4:
+								slowdownNormsValueDTO.setApril(Optional.ofNullable(existingEntity.getApril()).orElse(0.0));
+								break;
+							case 5:
+								slowdownNormsValueDTO.setMay(Optional.ofNullable(existingEntity.getMay()).orElse(0.0));
+								break;
+
+							case 6:
+								slowdownNormsValueDTO.setJune(Optional.ofNullable(existingEntity.getJune()).orElse(0.0));
+								break;
+							case 7:
+								slowdownNormsValueDTO.setJuly(Optional.ofNullable(existingEntity.getJuly()).orElse(0.0));
+								break;
+							case 8:
+								slowdownNormsValueDTO.setAugust(Optional.ofNullable(existingEntity.getAugust()).orElse(0.0));
+								break;
+							case 9:
+								slowdownNormsValueDTO.setSeptember(Optional.ofNullable(existingEntity.getSeptember()).orElse(0.0));
+								break;
+							case 10:
+								slowdownNormsValueDTO.setOctober(Optional.ofNullable(existingEntity.getOctober()).orElse(0.0));
+								break;
+							case 11:
+								slowdownNormsValueDTO.setNovember(Optional.ofNullable(existingEntity.getNovember()).orElse(0.0));
+								break;
+
+							case 12:
+								slowdownNormsValueDTO.setDecember(Optional.ofNullable(existingEntity.getDecember()).orElse(0.0));
+								break;
+						
+						}
+					}
+					
+				
+			}
 	            if (existingEntity != null) {
 	                boolean monthChanged = false;
 
@@ -1226,30 +1330,32 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	}
 	
 	@Override
-	public AOPMessageVM gradeWiseImportExcel(String year, UUID plantFKId, MultipartFile file) {
-		// TODO Auto-generated method stub
+	public AOPMessageVM gradeWiseImportExcel(String year, UUID plantFKId, MultipartFile file, String maintenanceName) {
+		
 		try {
+
+		
+
+
 			Plants plant = plantsRepository.findById(plantFKId).get();
 			List<SlowdownNormsValueDTO> data=null;
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			
 				 data= readSlowdownConsumption(file.getInputStream(), plantFKId, year);
-				 List<SlowdownNormsValueDTO> failedRecords = saveSlowdownNormsDataHIIR(data);
+				 List<SlowdownNormsValueDTO> failedRecords = saveSlowdownNormsDataHIIR(data, maintenanceName);
 			
 			
-			AOPMessageVM aopMessageVM = new AOPMessageVM();
-			if (failedRecords != null && failedRecords.size() > 0) {
-				byte[] fileByteArray = null;
-				 
-					exportSlowdownNormsAllGrades(
-					         year, 
-					         plantFKId, 
-					         true, 
-					         failedRecords);
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		if (failedRecords != null && failedRecords.size() > 0) {
+			byte[] fileByteArray = exportSlowdownNormsAllGrades(
+			         year,
+			         plantFKId,
+			         true,
+			         failedRecords,
+			         maintenanceName);
 
-				
-				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+			String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 				aopMessageVM.setData(base64File);
 				aopMessageVM.setCode(400);
 				aopMessageVM.setMessage("Partial data has been saved");

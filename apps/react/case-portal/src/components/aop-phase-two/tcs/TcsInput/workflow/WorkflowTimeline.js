@@ -37,10 +37,10 @@ const WorkflowTimeline = ({ steps, currentStep }) => {
                 }}
               >
                 {pStep.status === 'completed'
-                  ? '✓ Completed'
+                  ? 'Completed'
                   : pStep.status === 'active'
-                    ? '⏳ Pending'
-                    : '○ Pending'}
+                    ? 'Pending'
+                    : 'Pending'}
               </div>
             </div>
           ))}

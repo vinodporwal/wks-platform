@@ -34,6 +34,7 @@ import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-s
 import { getRoleName } from 'services/role-service'
 import { calculateMonthDuration } from './Utilities-Kendo/durationHelpers'
 import ElastomerShutDown from './ElastomerShutDown'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import PtaShutDown from './PtaShutdown'
 const ShutDown = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
@@ -109,6 +110,7 @@ const ShutDown = ({ permissions }) => {
   const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
   const IS_PET = lowerVertName === 'pet'
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
+  const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
   const IS_PP_HMD = lowerVertName === 'pp' && lowerSiteName === 'hmd'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
@@ -228,22 +230,80 @@ const ShutDown = ({ permissions }) => {
       }
 
       if (IS_ELASTOMER_JMD_HIIR) {
+        // Helper: parse "HH.MM" string ? total minutes (numeric)
+        const parseDurationToMinutes = (val) => {
+          if (!val && val !== 0) return 0
+          const [hrsPart, minPart = '0'] = String(val).split('.')
+          const hrs = parseInt(hrsPart, 10) || 0
+          const mins =
+            parseInt(String(minPart).padEnd(2, '0').slice(0, 2), 10) || 0
+          return hrs * 60 + mins
+        }
+
+        // Helper: format total minutes back to "HH.MM" for display
+        const formatMinutesToDuration = (totalMins) => {
+          const hrs = Math.floor(totalMins / 60)
+          const mins = totalMins % 60
+          return `${hrs}.${mins.toString().padStart(2, '0')}`
+        }
+
+        // CHECK 1: Each individual modified record must not exceed month max
         for (const record of data) {
           const expectedDuration = calculateMonthDuration(
             record.monthly,
             AOP_YEAR,
           )
-
-          // Only block if greater (lower is allowed)
-          if (record.durationInHrs > expectedDuration) {
+          if (!expectedDuration) continue // no valid month — skip
+          const recordMins = parseDurationToMinutes(record.durationInHrs)
+          const expectedMins = parseDurationToMinutes(expectedDuration)
+          if (recordMins > expectedMins) {
             record.isError = true
-
             setSnackbarOpen(true)
             setSnackbarData({
               message: `Duration hrs for ${record.monthly} should not exceed ${expectedDuration}.`,
               severity: 'error',
             })
+            return
+          }
+        }
 
+        // CHECK 2: Sum of ALL rows for same month (modified + unmodified) must not exceed month max
+        const modifiedById = {}
+        for (const record of data) {
+          modifiedById[record.id] = record
+        }
+        const existingRowIds = new Set(rows.map((r) => r.id))
+        const mergedExisting = rows.map((row) => modifiedById[row.id] ?? row)
+        const newRows = data.filter((record) => !existingRowIds.has(record.id))
+        const allRowsMerged = [...mergedExisting, ...newRows]
+
+        // Group by month and sum total minutes
+        const monthTotals = {}
+        const monthDisplayName = {}
+        for (const row of allRowsMerged) {
+          const monthKey = (row.monthly || '').toLowerCase()
+          if (!monthKey) continue
+          monthTotals[monthKey] =
+            (monthTotals[monthKey] || 0) +
+            parseDurationToMinutes(row.durationInHrs)
+          if (!monthDisplayName[monthKey])
+            monthDisplayName[monthKey] = row.monthly
+        }
+
+        // Validate each month's total against its max
+        for (const [monthKey, totalMins] of Object.entries(monthTotals)) {
+          const displayMonth = monthDisplayName[monthKey] || monthKey
+          const expectedDuration = calculateMonthDuration(
+            displayMonth,
+            AOP_YEAR,
+          )
+          const expectedMins = parseDurationToMinutes(expectedDuration)
+          if (totalMins > expectedMins) {
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: `Total shutdown hours for ${displayMonth} (${formatMinutesToDuration(totalMins)} hrs) exceeds the month limit of ${expectedDuration} hrs. Please reduce the entries for ${displayMonth}.`,
+              severity: 'error',
+            })
             return
           }
         }
@@ -590,7 +650,7 @@ const ShutDown = ({ permissions }) => {
           id: row.idFromApi || null,
           remark: row.remark || 'null',
         }))
-      } else if (IS_PVC_DMD) {
+      } else if (IS_PVC_DMD || IS_PVC_HMD || IS_PVC_VMD) {
         // For PP DTA, match the GET payload structure
         shutdownDetails = newRow.map((row) => ({
           discription: row.discription || row.discriptionDrpdwn,
@@ -756,7 +816,7 @@ const ShutDown = ({ permissions }) => {
     }
   }
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD || IS_PVC_VMD) {
       fetchLineDetails()
     }
   }, [lowerVertName, lowerSiteName, keycloak, PLANT_ID, AOP_YEAR])
@@ -1106,7 +1166,7 @@ const ShutDown = ({ permissions }) => {
         return ShutDownPeColumns
 
       case verticalEnums.PP:
-        return IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD
+        return IS_PP_DTA || IS_PP_SEZ || IS_PP_HMD
           ? ShutDownPpDtaColumns
           : ShutDownPpColumns
 
@@ -1115,7 +1175,9 @@ const ShutDown = ({ permissions }) => {
       case verticalEnums.CHEMICAL:
         return IS_CHEMICAL ? ShutDownChemicalColumns : ShutDownAllColumns
       case verticalEnums.PVC:
-        return IS_PVC_DMD ? ShutDownPVCDMDColumns : ShutDownPpColumns
+        return IS_PVC_DMD || IS_PVC_HMD || IS_PVC_VMD
+          ? ShutDownPVCDMDColumns
+          : ShutDownPpColumns
 
       case verticalEnums.ELASTOMER:
         return IS_ELASTOMER_JMD_HIIR
@@ -1216,7 +1278,7 @@ const ShutDown = ({ permissions }) => {
           AOP_YEAR,
           EXCEL_EXPORT_TITLE,
         )
-      } else if (IS_PVC_DMD) {
+      } else if (IS_PVC_DMD || IS_PVC_HMD || IS_PVC_VMD) {
         response = await DtaDataService.exportShutdownLineWise(
           keycloak,
           PLANT_ID,
@@ -1275,7 +1337,7 @@ const ShutDown = ({ permissions }) => {
           PLANT_ID,
           AOP_YEAR,
         )
-      } else if (IS_PVC_DMD) {
+      } else if (IS_PVC_DMD || IS_PVC_HMD || IS_PVC_VMD) {
         response = await DtaDataService.ImportShutdownLineWise(
           rawFile,
           keycloak,
@@ -1410,7 +1472,9 @@ const ShutDown = ({ permissions }) => {
         lowerVertName === 'pet' ||
         lowerVertName === 'aromatics' ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD ||
+        IS_PVC_VMD
           ? true
           : false,
       highlightDiscription:
@@ -1422,7 +1486,7 @@ const ShutDown = ({ permissions }) => {
       highlightDuration:
         lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
       highlightLine:
-        IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD ? true : false,
+        IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD ? true : false,
       deleteMultiple: IS_PP_DTA ? true : false,
     },
     isOldYear,
@@ -1436,12 +1500,8 @@ const ShutDown = ({ permissions }) => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
+
       {lowerVertName === 'meg' && (
         <Typography component='div' className='text-note'>
           * for the case of turnaround planning kindly specify turnaround text

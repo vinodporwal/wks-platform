@@ -343,6 +343,96 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	}
 
 	@Override
+	public AOPMessageVM getMaintenanceCatChem(String plantId, String year, String gradeId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			UUID plantUUID = UUID.fromString(plantId);
+			Optional<Plants> plantOpt = plantsRepository.findById(plantUUID);
+
+			Plants plant = plantOpt.get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			if (!plantOpt.isPresent()) {
+				throw new RuntimeException("Plant not found for ID: " + plantId);
+			}
+
+			Map<String, Object> results = entityManager.unwrap(Session.class)
+					.doReturningWork(new ReturningWork<Map<String, Object>>() {
+						@Override
+						public Map<String, Object> execute(Connection connection) throws SQLException {
+							Map<String, Object> resultMap = new HashMap<>();
+							List<Object[]> rows = new ArrayList<>();
+							List<String> columnNames = new ArrayList<>();
+							List<String> columnTypes = new ArrayList<>();
+
+							String procedureName = vertical.getName() + "_" + site.getName() + "_GetCatChemConsumption";
+
+							String dataSql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?, @Grade_Fk_Id = ?";
+							try (PreparedStatement ps = connection.prepareStatement(dataSql)) {
+								ps.setString(1, plantId);
+								ps.setString(2, year);
+								ps.setString(3, gradeId);
+								try (ResultSet rs = ps.executeQuery()) {
+									ResultSetMetaData metaData = rs.getMetaData();
+									int colCount = metaData.getColumnCount();
+									for (int i = 1; i <= colCount; i++) {
+										columnNames.add(metaData.getColumnLabel(i));
+										columnTypes.add(metaData.getColumnTypeName(i));
+									}
+									while (rs.next()) {
+										Object[] row = new Object[colCount];
+										for (int i = 1; i <= colCount; i++) {
+											Object value = rs.getObject(i);
+											int sqlType = metaData.getColumnType(i);
+											row[i - 1] = (value == null) ? (isNumericType(sqlType) ? 0 : "") : value;
+										}
+										rows.add(row);
+									}
+								}
+							}
+
+							List<Map<String, Object>> dataList = new ArrayList<>();
+							for (Object[] row : rows) {
+								Map<String, Object> rowMap = new LinkedHashMap<>();
+								for (int i = 0; i < columnNames.size(); i++) {
+									rowMap.put(columnNames.get(i), row[i]);
+								}
+								dataList.add(rowMap);
+							}
+
+							List<Map<String, Object>> columnsList = new ArrayList<>();
+							for (int i = 0; i < columnNames.size(); i++) {
+								Map<String, Object> col = new LinkedHashMap<>();
+								col.put("field", columnNames.get(i));
+								col.put("title", columnNames.get(i));
+								col.put("type", getFrontendType(columnTypes.get(i)));
+								col.put("isVisible", "true");
+								columnsList.add(col);
+							}
+
+							resultMap.put("data", dataList);
+							resultMap.put("columns", columnsList);
+							return resultMap;
+						}
+					});
+
+			Map<String, Object> finalData = new HashMap<>();
+			finalData.put("data", results.get("data"));
+			finalData.put("columns", results.get("columns"));
+
+			aopMessageVM.setData(finalData);
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+
+			return aopMessageVM;
+
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch cat chem data", ex);
+		}
+	}
+
+	@Override
 	public AOPMessageVM getOtherPlants(final String plantId, final String year) {
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
 	    
@@ -1999,6 +2089,45 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	    }
 	}
 
+	@Override
+	@Transactional
+	public AOPMessageVM catChemCalculation(UUID plantId, String aopYear) {
+		AOPMessageVM response = new AOPMessageVM();
+		try {
+			// String sql = "EXEC [dbo].[CatChemCalculation] @PlantId = :plantId, @AopYear = :aopYear";
+			// Query query = entityManager.createNativeQuery(sql);
+			// query.setParameter("plantId", plantId);
+			// query.setParameter("aopYear", aopYear);
+			// query.executeUpdate();
+			// response.setCode(200);
+			// response.setMessage("CatChemCalculation executed successfully");
+			Plants plant = plantsRepository.findById(plantId).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+  String procedureName = vertical.getName() + "_" + site.getName() + "_CatChemCalculation";
+
+	String sql = "EXEC " + procedureName + " @PlantId = :plantId, @AopYear = :aopYear";
+
+Query query = entityManager.createNativeQuery(sql);
+query.setParameter("plantId", plantId);
+query.setParameter("aopYear", aopYear);
+
+boolean hasResultSet = query.unwrap(org.hibernate.query.NativeQuery.class)
+                            .getHibernateFlushMode() != null;
+
+response.setCode(200);
+response.setMessage("CatChemCalculation executed successfully");
+
+			
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to execute CatChemCalculation", ex);
+		}
+		return response;
+	}
+
+
+
 	String getJson() {
 	    return """
 	        {
@@ -2260,5 +2389,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 					}
 				});
 	}
+
+
 
 }

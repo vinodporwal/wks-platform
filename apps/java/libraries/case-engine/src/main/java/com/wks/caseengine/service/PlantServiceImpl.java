@@ -68,7 +68,11 @@ public class PlantServiceImpl implements PlantService {
 			return	plantsRepository.getVCMShutdownMonths(plantId,maintenanceName,year);
 		}else if(verticalName.equalsIgnoreCase("PTA") ) {	
 			return	plantsRepository.getPTAShutdownMonths(plantId,maintenanceName,year);
-		}else {
+		}
+		else if(verticalName.equalsIgnoreCase("CRACKER")) {
+			return	plantsRepository.getCRACKERShutdownMonths(plantId,maintenanceName,year);
+		}
+		else {
 			return	plantsRepository.getShutdownMonths(plantId,maintenanceName,year);
 		}
 	    	  	
@@ -83,6 +87,5 @@ public class PlantServiceImpl implements PlantService {
 	public List<Plants> getPlantListForWorkflow(UUID verticalId, UUID siteId) {
 		return plantsRepository.getPlantListForWorkflow(verticalId, siteId);
 	}
-
 }
 

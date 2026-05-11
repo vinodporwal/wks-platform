@@ -10,6 +10,7 @@ import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 export default function TechnicalAvailability() {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -72,6 +73,8 @@ export default function TechnicalAvailability() {
       title: 'ID',
       editable: false,
       hidden: true,
+      minWidth: 100,
+      isVisible: false,
     },
     {
       field: 'sno',
@@ -80,31 +83,42 @@ export default function TechnicalAvailability() {
       editable: false,
       align: 'right',
       format: '{0:0}',
+      minWidth: 100,
     },
-    { field: 'plant', title: 'Plant', widthT: 120, editable: false },
+    {
+      field: 'plant',
+      title: 'Plant',
+      widthT: 120,
+      editable: false,
+      minWidth: 100,
+    },
     {
       field: 'fyPrevAOP',
       title: `FY${prev} AOP`,
       editable: true,
       type: 'number',
+      minWidth: 100,
     },
     {
       field: 'fyPrevActual',
       title: `FY${prev} Actual`,
       editable: true,
       type: 'number',
+      minWidth: 100,
     },
     {
       field: 'fyCurrAOP',
       title: `FY${next} AOP`,
       editable: true,
       type: 'number',
+      minWidth: 100,
     },
     {
       field: 'remarks',
       title: 'Remarks',
       widthT: 200,
       editable: true,
+      minWidth: 100,
     },
   ]
 
@@ -297,12 +311,7 @@ export default function TechnicalAvailability() {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <KendoDataTables
         columns={technicalAvailabilityColumns}

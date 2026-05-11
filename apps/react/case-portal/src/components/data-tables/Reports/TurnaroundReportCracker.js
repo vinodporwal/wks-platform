@@ -2,6 +2,7 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { useGridApiRef } from '@mui/x-data-grid'
 import { useSession } from 'SessionStoreContext'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import getShutdownConsumptionColDef from 'components/data-tables/CommonHeader/getShutdownConsumptionColDef'
 import KendoDataTables from 'components/kendo-data-tables/index'
@@ -81,16 +82,16 @@ const TurnaroundReportCracker = () => {
     {
       field: 'sapCode',
       headerName: 'SAP MAT Code',
-      widthT: 130,
+      widthT: 100,
       editable: false,
     },
     {
       field: 'productName',
       headerName: 'Particulars',
-      widthT: 130,
+      widthT: 100,
       editable: false,
     },
-    { field: 'UOM', headerName: 'UOM', widthT: 60, editable: false },
+    { field: 'UOM', headerName: 'UOM', widthT: 80, editable: false },
 
     ...Array.from({ length: 12 }, (_, i) => {
       const monthIndex = (i + 4) % 12 || 12
@@ -207,12 +208,7 @@ const TurnaroundReportCracker = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       <KendoDataTables
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}

@@ -10,7 +10,7 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import Notification from 'components/Utilities/Notification'
 import ModeSelection from './ModeSelection'
-
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const MaterialBalance = ({ permissions }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -61,6 +61,7 @@ const MaterialBalance = ({ permissions }) => {
             Type: item?.Type,
             Remarks: item?.Remarks || '',
             originalRemark: item?.Remarks || '',
+            isEditable: item?.IsEditable,
           }),
         )
         setRows(formattedData)
@@ -100,6 +101,7 @@ const MaterialBalance = ({ permissions }) => {
       const fieldName = `${monthShort}-${yearSuffix}`
 
       return {
+        minWidth: 100,
         field: monthShort,
         title: fieldName,
         width: 120,
@@ -122,10 +124,17 @@ const MaterialBalance = ({ permissions }) => {
         title: 'Particulars',
         editable: false,
         widthT: 100,
+        minWidth: 120,
       },
-      { field: 'UOM', title: 'UOM', editable: false, widthT: 80 },
+      { field: 'UOM', title: 'UOM', editable: false, widthT: 80, minWidth: 80 },
       ...monthCols,
-      { field: 'Remarks', title: 'Remark', editable: false, widthT: 100 },
+      {
+        field: 'Remarks',
+        title: 'Remark',
+        editable: false,
+        widthT: 100,
+        minWidth: 100,
+      },
     ],
     [monthCols],
   )
@@ -169,7 +178,7 @@ const MaterialBalance = ({ permissions }) => {
         mar: row.Mar || null,
         UOM: '',
         auditYear: AOP_YEAR,
-        normParameterFKId: row.normParameterFKId || row.NormParameterType_FK_Id,
+        normParameterFKId: row.NormParameterId,
         remarks: row.Remarks,
         id: row.idFromApi || null,
       }))
@@ -289,12 +298,7 @@ const MaterialBalance = ({ permissions }) => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {IS_CRACKER_HMD && (
         <ModeSelection permissions={adjustedPermissionsReadyOnly} />

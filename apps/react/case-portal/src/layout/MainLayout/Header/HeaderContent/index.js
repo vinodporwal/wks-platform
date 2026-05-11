@@ -1,3 +1,4 @@
+// HeaderContent.jsx
 import {
   Box,
   FormControl,
@@ -6,8 +7,10 @@ import {
   Stack,
   Typography,
   useMediaQuery,
+  SvgIcon,
 } from '@mui/material'
-import { useEffect, useState } from 'react'
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
+import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import {
@@ -17,6 +20,7 @@ import {
   setOldYear,
   setPlantID,
   setPlantObject,
+  setScreenTitle,
   setSiteID,
   setSiteObject,
   setSitePlantChange,
@@ -26,13 +30,24 @@ import {
 } from 'store/reducers/dataGridStore'
 import MobileSection from './MobileSection'
 import Profile from './Profile/index'
+import { HIDE_VERTICAL_PATHS, HIDE_SITE_PATHS, HIDE_PLANT_PATHS } from './utils'
 
-// import Logo from '../../../assets/images/ril-logo2.png'
 import Logo from 'assets/images/ril-logo2.png'
 import DropdownSkeleton from 'utils/DropdownSkeleton'
-// import { Skeleton } from '../../../../../node_modules/@progress/kendo-react-indicators/index'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { openDrawer } from 'store/reducers/menu'
+import CalendarToday from '@mui/icons-material/CalendarToday'
+import Business from '@mui/icons-material/Business'
+import Domain from '@mui/icons-material/Domain'
+import Factory from '@mui/icons-material/Factory'
+import CorporateFare from '@mui/icons-material/CorporateFare'
+import {
+  BusinessBlueIcon,
+  CalenderIcon,
+  PlantIcon,
+  SiteIcon,
+} from 'assets/images/icons/index'
 
-// Utility to parse the Keycloak ?allowed? JSON
 function parseAllowed(raw) {
   const map = {}
   raw.forEach((vObj) => {
@@ -46,14 +61,15 @@ function parseAllowed(raw) {
   return map
 }
 
-export default function HeaderContent({ keycloak }) {
+export default function HeaderContent({ keycloak, navigation }) {
   const [headerLoading, setHeaderLoading] = useState(false)
   const getSelectedVerticalStorage = localStorage.getItem('selectedVertical')
     ? JSON.parse(localStorage.getItem('selectedVertical'))
     : null
-
   const dispatch = useDispatch()
   const matchesXs = useMediaQuery((theme) => theme.breakpoints.down('md'))
+
+  const location = useLocation()
 
   const [aopYears, setAopYears] = useState([])
   const [selectedYear, setSelectedYear] = useState('')
@@ -74,12 +90,94 @@ export default function HeaderContent({ keycloak }) {
   const [selectedSite, setSelectedSite] = useState('')
   const [selectedPlant, setSelectedPlant] = useState('')
 
+  const verticalFromDashboard = useSelector(
+    (state) => state.dataGridStore.verticalChangeFromDashboard,
+  )
+
+  const [currentStep, setCurrentStep] = useState(null)
+  const [totalSteps, setTotalSteps] = useState(0)
+
+  const PRODUCTION_NORMS_PLAN_PREFIX = '/production-norms-plan/'
+
+  useEffect(() => {
+    if (!navigation?.items) {
+      setCurrentStep(null)
+      setTotalSteps(0)
+      return
+    }
+
+    const collectItems = (menu, out = []) => {
+      if (!menu?.children) return out
+      for (const c of menu.children) {
+        if (c.type === 'collapse') collectItems(c, out)
+        else if (c.type === 'item') out.push(c)
+      }
+      return out
+    }
+
+    let matchedStepIndex = -1
+    let matchedTitle = ''
+
+    for (const g of navigation.items || []) {
+      if (g.type !== 'group') continue
+
+      const allItems = collectItems(g, [])
+
+      // Title should work for ALL routes
+      const titleIndex = allItems.findIndex(
+        (it) => it.url === location.pathname,
+      )
+      if (titleIndex !== -1) {
+        matchedTitle = allItems[titleIndex]?.title || ''
+      }
+
+      // Step should work ONLY for /production-norms-plan/
+      const productionItems = allItems.filter((it) =>
+        it.url?.startsWith(PRODUCTION_NORMS_PLAN_PREFIX),
+      )
+
+      matchedStepIndex = productionItems.findIndex(
+        (it) => it.url === location.pathname,
+      )
+
+      if (matchedStepIndex !== -1) {
+        setCurrentStep(matchedStepIndex + 1)
+        setTotalSteps(productionItems.length)
+      } else {
+        setCurrentStep(null)
+        setTotalSteps(0)
+      }
+
+      break
+    }
+
+    if (matchedTitle && matchedTitle !== screenTitleName) {
+      dispatch(setScreenTitle({ title: matchedTitle }))
+    }
+  }, [navigation, location.pathname, screenTitleName, dispatch])
+
   const HIDE_VERTICAL_DROPDOWN =
     keycloak?.realmAccess?.roles?.includes('maintenance_users')
-  // const roles = keycloak?.realmAccess?.roles || []
 
-  // const HIDE_VERTICAL_DROPDOWN =
-  //   roles.length === 1 && roles.includes('maintenance_users')
+  const HIDE_DASHBOARD_DROPDOWN = [
+    '/dashboard',
+    '/user-management',
+    '/user-form',
+  ].includes(location.pathname)
+
+  // Individual dropdown visibility ? extends HIDE_DASHBOARD_DROPDOWN with utils.js config
+  const hideVertical =
+    HIDE_DASHBOARD_DROPDOWN ||
+    HIDE_VERTICAL_PATHS.some((s) => location.pathname.includes(s))
+  const hideSite =
+    HIDE_DASHBOARD_DROPDOWN ||
+    HIDE_SITE_PATHS.some((s) => location.pathname.includes(s))
+  const hidePlant =
+    HIDE_DASHBOARD_DROPDOWN ||
+    HIDE_PLANT_PATHS.some((s) => location.pathname.includes(s))
+
+  if (['/dashboard'].includes(location.pathname))
+    dispatch(openDrawer({ drawerOpen: false }))
 
   useEffect(() => {
     let parsed = []
@@ -129,9 +227,7 @@ export default function HeaderContent({ keycloak }) {
       console.error('Error fetching data', error)
       setFullDetails([])
     } finally {
-      // setTimeout(() => {
       setHeaderLoading(false)
-      // }, 2000)
     }
   }
 
@@ -154,8 +250,6 @@ export default function HeaderContent({ keycloak }) {
 
     setVerticals(avail)
 
-    // --- Startt snippet ---
-    /* first available vertical so dropdown won't be empty */
     if (
       selectedVertical &&
       avail.length &&
@@ -180,7 +274,6 @@ export default function HeaderContent({ keycloak }) {
 
       dispatch(setVerticalObject({ id: defV.id, name: defV.name }))
     }
-    // --- end snippet ---
 
     if (!selectedVertical && avail.length) {
       const defV = avail[0]
@@ -277,7 +370,6 @@ export default function HeaderContent({ keycloak }) {
 
   useEffect(() => {
     async function fetchYears() {
-      // setHeaderLoading(true)
       try {
         var resp = await DataService.getAopyears(keycloak)
         if (resp?.length) {
@@ -348,10 +440,10 @@ export default function HeaderContent({ keycloak }) {
       dispatch(setPlantID({ plantId: plantObj.id, plantName: plantObj.name }))
     }
   }
+
   const handleVertChange = (e) => {
     const newVId = e.target.value
 
-    // Immediately clear dependent selections
     setSelectedSite('')
     setSelectedPlant('')
 
@@ -373,6 +465,7 @@ export default function HeaderContent({ keycloak }) {
       )
     }
   }
+
   useEffect(() => {
     if (!selectedVertical) return
     const vert = verticals.find((v) => v.id === selectedVertical)
@@ -391,6 +484,7 @@ export default function HeaderContent({ keycloak }) {
       }),
     )
   }, [selectedVertical, verticals, dispatch])
+
   const handleSiteChange = (e) => {
     const newSiteId = e.target.value
     setSelectedSite(newSiteId)
@@ -422,73 +516,321 @@ export default function HeaderContent({ keycloak }) {
     }
   }
 
-  const verticalFromDashboard = useSelector(
-    (state) => state.dataGridStore.verticalChangeFromDashboard,
-  )
+  const navigate = useNavigate()
 
   useEffect(() => {
-    if (verticalFromDashboard?.id) {
-      setSelectedVertical('')
-      handleVertChange({
-        target: {
-          value: verticalFromDashboard.id,
-        },
-      })
+    // console.log(1)
+
+    if (!verticalFromDashboard?.v_id || !verticalFromDashboard?.sid) return
+
+    if (verticalFromDashboard?.v_id === selectedVertical) return
+
+    setSelectedVertical(verticalFromDashboard?.v_id)
+  }, [verticalFromDashboard?.v_id])
+
+  useEffect(() => {
+    if (!verticalFromDashboard?.sid || !sites.length) return
+
+    const site = sites.find((s) => s?.id === verticalFromDashboard?.sid)
+
+    if (!site) {
+      // console.log('Site not found:', verticalFromDashboard?.sid)
+      return
     }
-  }, [verticalFromDashboard])
+
+    setSelectedSite(site?.id)
+
+    dispatch(
+      setSiteObject({
+        id: site?.id,
+        name: site?.displayName ?? site?.name ?? '',
+      }),
+    )
+  }, [verticalFromDashboard?.sid, sites, dispatch])
+
+  useEffect(() => {
+    // console.log(2)
+
+    if (!verticalFromDashboard?.v_id || !verticalFromDashboard?.sid) {
+      return
+    }
+    // setTimeout(() => {
+    //   dispatch(openDrawer({ drawerOpen: true }))
+    // }, 1500)
+    navigate('/production-norms-plan/configuration', { replace: true })
+  }, [verticalFromDashboard?.trigger])
+
+  useEffect(() => {
+    // console.log('--- Plant Effect Triggered ---')
+    // console.log('Dashboard PID:', verticalFromDashboard?.pid)
+    // console.log('Plants List:', plants)
+
+    if (!verticalFromDashboard?.pid) {
+      // console.log('? No PID from dashboard')
+      return
+    }
+
+    if (!plants.length) {
+      // console.log('? Plants not loaded yet')
+      return
+    }
+
+    const plant = plants.find((p) => p?.id === verticalFromDashboard?.pid)
+
+    // console.log('Matched Plant:', plant)
+
+    if (!plant) {
+      // console.log('? Plant not found for PID:', verticalFromDashboard?.pid)
+      return
+    }
+
+    // console.log('? Setting Plant:', plant.id, plant.name)
+
+    setSelectedPlant(plant.id)
+
+    localStorage.setItem(
+      'selectedPlant',
+      JSON.stringify({
+        id: plant.id,
+        name: plant.displayName ?? plant.name ?? '',
+      }),
+    )
+
+    dispatch(
+      setPlantObject({
+        id: plant.id,
+        name: plant.displayName ?? plant.name ?? '',
+      }),
+    )
+
+    dispatch(setSitePlantChange({ sitePlantChange: true }))
+
+    dispatch(
+      setPlantID({
+        plantId: plant.id,
+        plantName: plant.displayName ?? plant.name ?? '',
+      }),
+    )
+
+    // console.log('?? Dispatched plant to Redux')
+  }, [verticalFromDashboard?.pid, plants, dispatch])
+  // 4. Navigation Effect (Existing)
+  useEffect(() => {
+    if (!verticalFromDashboard?.v_id || !verticalFromDashboard?.sid) {
+      return
+    }
+    navigate('/production-norms-plan/configuration', { replace: true })
+  }, [verticalFromDashboard?.trigger])
+
+  // -------------------------
+  // Visual styles (pills & menus)
+  // -------------------------
+  // menuPropsStyle (replace your existing)
+  const menuPropsStyle = {
+    PaperProps: {
+      style: {
+        maxHeight: 240,
+        borderRadius: '6px', // menu panel radius
+        marginTop: 6,
+        background: '#FFFFFF',
+        gap: '4px',
+        boxShadow: '0 8px 24px rgba(15,23,42,0.08)',
+        border: '1px solid #DDDEE1',
+        color: '#0f172a',
+        padding: '6px 12px 6px 4px',
+      },
+      sx: {
+        // also add sx for runtime override (some MUI versions prefer sx)
+        borderRadius: '6px',
+      },
+    },
+    disableScrollLock: true,
+  }
+  const menuItemStyle = {
+    transition: 'all 0.12s ease',
+    borderRadius: 6, //  smaller
+    mx: 0.5,
+    my: 0.25,
+    color: '#303030',
+    fontWeight: 500,
+    fontSize: '14px !important',
+    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+    '&:hover': {
+      background: 'rgba(59,130,246,0.06)',
+    },
+    '&.Mui-selected': {
+      background: 'rgba(59,130,246,0.12)',
+      fontWeight: 600,
+    },
+  }
+
+  const dropdownContainerStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    background: '#ffffff',
+  }
+
+  const selectStyle = {
+    height: 34,
+    minWidth: 160,
+
+    '& .MuiOutlinedInput-root': {
+      borderRadius: '6px !important', // ?? THIS is the real border
+      background: '#eef3f8',
+      height: 34,
+    },
+
+    '& .MuiOutlinedInput-notchedOutline': {
+      border: '1px solid #DDDEE1',
+      borderRadius: '6px !important', // ?? must repeat here
+    },
+
+    '&:hover .MuiOutlinedInput-notchedOutline': {
+      borderColor: 'rgba(15,23,42,0.1)',
+    },
+
+    '& .MuiSelect-select': {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      padding: '6px 10px !important',
+      fontSize: '0.85rem',
+      fontWeight: 600,
+    },
+
+    '& .MuiSvgIcon-root': {
+      fontSize: 18,
+      color: '#6b7786',
+    },
+  }
 
   return (
     <>
       <Box
         sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr auto',
           alignItems: 'center',
           width: '100%',
-          // py: 0, // 4px top/bottom
+          position: 'relative',
+          pr: 2,
+          py: 0.75,
+          background: '#fff',
+          // borderBottom: '1px solid rgba(15,23,42,0.04)',
         }}
       >
-        {/* LEFT SIDE: Logo + Title */}
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Box sx={{ ml: 0 }}>
-            <img src={Logo} alt='RIL Logo' style={{ height: 32 }} />
-          </Box>
+        {/* LEFT SIDE: Title */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            minWidth: 0,
+            overflow: 'hidden',
+          }}
+        >
+          {!HIDE_DASHBOARD_DROPDOWN && (
+            <React.Fragment>
+              <Typography
+                variant='h6'
+                sx={{
+                  fontWeight: 700,
+                  fontSize: '16px',
+                  color: '#303030',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  fontFamily: "'Honeywell Sans Web',  'Inter', sans-serif",
+                }}
+              >
+                {screenTitleName}
+              </Typography>
 
-          <Box sx={{ ml: 1 }}>
-            <Typography
-              variant='body2'
-              color='white'
-              className='custom-title-font'
-            >
-              {screenTitleName}
-            </Typography>
-          </Box>
+              {!!currentStep && (
+                <Box
+                  sx={{
+                    p: '4px 8px',
+                    borderRadius: '100px',
+                    backgroundColor: '#ECEEFF',
+                    border: '1px solid #41424D',
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      color: '#41424D',
+                      fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
+                    }}
+                  >
+                    {`${currentStep} Step`}
+                  </Typography>
+                </Box>
+              )}
+            </React.Fragment>
+          )}
         </Box>
 
-        {/* RIGHT SIDE: Dropdowns */}
-        <Stack direction='row' spacing={1} alignItems='center'>
+        {/* CENTER: Dropdown Pills */}
+        <Stack
+          direction='row'
+          spacing={2}
+          alignItems='center'
+          sx={{
+            justifySelf: 'end',
+            width: '100%',
+            justifyContent: 'flex-end',
+            mr: 1,
+          }}
+        >
           {/* Year */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant='body2' className='custom-title-dropdown'>
-              Year:
-            </Typography>
+          <Box sx={dropdownContainerStyle}>
             {headerLoading ? (
               <DropdownSkeleton />
             ) : (
-              <FormControl sx={{ width: 80 }}>
+              <FormControl size='small' variant='outlined'>
+                {' '}
                 <Select
+                  IconComponent={ArrowDropDownIcon}
                   value={selectedYear}
                   onChange={handleYearChange}
-                  className='custom-title-dropdown-content'
-                  MenuProps={
-                    ({
-                      PaperProps: { style: { maxHeight: 200 } },
-                    },
-                    { disableScrollLock: true })
-                  }
+                  sx={selectStyle}
+                  MenuProps={menuPropsStyle}
+                  renderValue={(value) => {
+                    const yearObj = aopYears.find((y) => y.AOPYear === value)
+                    return (
+                      <Box
+                        sx={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 1,
+                        }}
+                      >
+                        <Box
+                          component='img'
+                          src={CalenderIcon}
+                          className='w16-icon'
+                        />
+
+                        <Box component='span' className='header-dropdown-label'>
+                          Year:
+                        </Box>
+                        <Box
+                          component='strong'
+                          className='header-dropdown-value'
+                        >
+                          {yearObj?.AOPDisplayYear}
+                        </Box>
+                      </Box>
+                    )
+                  }}
                 >
                   {aopYears.map((y) => (
-                    <MenuItem key={y.AOPYear} value={y.AOPYear}>
+                    <MenuItem
+                      key={y.AOPYear}
+                      value={y.AOPYear}
+                      sx={menuItemStyle}
+                    >
                       {y.AOPDisplayYear}
                     </MenuItem>
                   ))}
@@ -498,27 +840,52 @@ export default function HeaderContent({ keycloak }) {
           </Box>
 
           {/* Vertical */}
-          {!HIDE_VERTICAL_DROPDOWN && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant='body2' className='custom-title-dropdown'>
-                Vertical:
-              </Typography>
-
+          {!(HIDE_VERTICAL_DROPDOWN || HIDE_DASHBOARD_DROPDOWN) && (
+            <Box sx={dropdownContainerStyle}>
               {headerLoading ? (
                 <DropdownSkeleton />
               ) : (
-                <FormControl sx={{ width: 100 }}>
+                <FormControl size='small' variant='outlined'>
+                  {' '}
                   <Select
+                    IconComponent={ArrowDropDownIcon}
                     value={selectedVertical}
                     onChange={handleVertChange}
-                    className='custom-title-dropdown-content'
-                    MenuProps={{
-                      PaperProps: { style: { maxHeight: 200 } },
-                      disableScrollLock: true,
+                    sx={selectStyle}
+                    MenuProps={menuPropsStyle}
+                    renderValue={(value) => {
+                      const vert = verticals.find((v) => v.id === value)
+                      return (
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
+                        >
+                          <Box
+                            component='img'
+                            src={BusinessBlueIcon}
+                            className='w16-icon'
+                          />
+                          <Box
+                            component='span'
+                            className='header-dropdown-label'
+                          >
+                            Vertical:
+                          </Box>
+                          <Box
+                            component='strong'
+                            className='header-dropdown-value'
+                          >
+                            {vert?.name}
+                          </Box>
+                        </Box>
+                      )
                     }}
                   >
                     {verticals.map((v) => (
-                      <MenuItem key={v.id} value={v.id}>
+                      <MenuItem key={v.id} value={v.id} sx={menuItemStyle}>
                         {v.name}
                       </MenuItem>
                     ))}
@@ -529,70 +896,124 @@ export default function HeaderContent({ keycloak }) {
           )}
 
           {/* Site */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant='body2' className='custom-title-dropdown'>
-              Site:
-            </Typography>
-            {headerLoading ? (
-              <DropdownSkeleton />
-            ) : (
-              <FormControl sx={{ width: 80 }}>
-                <Select
-                  value={selectedSite}
-                  onChange={handleSiteChange}
-                  disabled={!sites.length}
-                  className='custom-title-dropdown-content'
-                  MenuProps={
-                    ({
-                      PaperProps: { style: { maxHeight: 200 } },
-                    },
-                    { disableScrollLock: true })
-                  }
-                >
-                  {sites.map((s) => (
-                    <MenuItem key={s.id} value={s.id}>
-                      {s.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
-          </Box>
+          {!HIDE_DASHBOARD_DROPDOWN && (
+            <Box sx={dropdownContainerStyle}>
+              {headerLoading ? (
+                <DropdownSkeleton />
+              ) : (
+                <FormControl size='small' variant='outlined'>
+                  {' '}
+                  <Select
+                    IconComponent={ArrowDropDownIcon}
+                    value={selectedSite}
+                    onChange={handleSiteChange}
+                    disabled={!sites.length}
+                    sx={selectStyle}
+                    MenuProps={menuPropsStyle}
+                    renderValue={(value) => {
+                      const site = sites.find((s) => s.id === value)
+                      return (
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
+                        >
+                          <Box
+                            component='img'
+                            src={SiteIcon}
+                            className='w16-icon'
+                          />
+                          <Box
+                            component='span'
+                            className='header-dropdown-label'
+                          >
+                            Site:
+                          </Box>
+                          <Box
+                            component='strong'
+                            className='header-dropdown-value'
+                          >
+                            {site?.name}
+                          </Box>
+                        </Box>
+                      )
+                    }}
+                  >
+                    {sites.map((s) => (
+                      <MenuItem key={s.id} value={s.id} sx={menuItemStyle}>
+                        {s.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+            </Box>
+          )}
 
           {/* Plant */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant='body2' className='custom-title-dropdown'>
-              Plant:
-            </Typography>
-            {headerLoading ? (
-              <DropdownSkeleton />
-            ) : (
-              <FormControl sx={{ width: 110 }}>
-                <Select
-                  value={selectedPlant}
-                  onChange={handlePlantChange}
-                  disabled={!plants.length}
-                  className='custom-title-dropdown-content'
-                  MenuProps={
-                    ({
-                      PaperProps: { style: { maxHeight: 200 } },
-                    },
-                    { disableScrollLock: true })
-                  }
-                >
-                  {plants.map((p) => (
-                    <MenuItem key={p.id} value={p.id}>
-                      {p.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
-          </Box>
+          {!HIDE_DASHBOARD_DROPDOWN && (
+            <Box sx={dropdownContainerStyle}>
+              {headerLoading ? (
+                <DropdownSkeleton />
+              ) : (
+                <FormControl size='small'>
+                  <Select
+                    IconComponent={ArrowDropDownIcon}
+                    value={selectedPlant}
+                    onChange={handlePlantChange}
+                    disabled={!plants.length}
+                    sx={selectStyle}
+                    MenuProps={menuPropsStyle}
+                    renderValue={(value) => {
+                      const plant = plants.find((p) => p.id === value)
+                      return (
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
+                        >
+                          <Box
+                            component='img'
+                            src={PlantIcon}
+                            className='w16-icon'
+                          />
+                          <Box
+                            component='span'
+                            className='header-dropdown-label'
+                          >
+                            Plant:
+                          </Box>
+                          <Box
+                            component='strong'
+                            className='header-dropdown-value'
+                          >
+                            {plant?.name}
+                          </Box>
+                        </Box>
+                      )
+                    }}
+                  >
+                    {plants.map((p) => (
+                      <MenuItem key={p.id} value={p.id} sx={menuItemStyle}>
+                        {p.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+            </Box>
+          )}
         </Stack>
-      </Box>
 
-      {!matchesXs ? <Profile keycloak={keycloak} /> : <MobileSection />}
+        {/* RIGHT: Profile */}
+        <Box sx={{ justifySelf: 'end' }}>
+          {!matchesXs ? <Profile keycloak={keycloak} /> : <MobileSection />}
+        </Box>
+      </Box>
     </>
   )
 }

@@ -123,8 +123,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 
 			for (Object[] row : results) {
 				Map<String, Object> map = new HashMap<>(); // Create a new map for each row
-				System.out.println(" row[3] " + row[3].toString() + " row[4] " + row[4].toString() + " type " + type);
-				if(!type.equalsIgnoreCase("Feeds") && row[4].toString().contains(type)) {	
+				if(!type.equalsIgnoreCase("Feeds") && row[4].toString().toLowerCase().contains(type.toLowerCase())) {	
 					
 					map.put("normParameterFKID", row[2]);
 					map.put("particulars", row[3]);
@@ -1862,6 +1861,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 		try {
 
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
 					.findByExcelIdAndVerticalFkIdAndSiteFkId("spyroOutput", plant.getVerticalFKId(),plant.getSiteFkId());
 
@@ -1935,11 +1935,18 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 								continue;
 							}
 						} else {
-							// AOPMessageVM vm = getSpyroOutputData(year, plantId, mode, dataInput);
-							AOPMessageVM vm = getSpyroOutputData(year, plantId, mode, "output");
+							AOPMessageVM vm = new AOPMessageVM();
+							if(site.getName().equalsIgnoreCase("HMD"))  {  
+								vm = getSpyroOutputData(year, plantId, dataInput, "output");
+							}
+							else {
+								vm = getSpyroOutputData(year, plantId, mode, dataInput);
+							}
+							
+						
 
 							spyroOutputDataList = (List<Map<String, Object>>) vm.getData();
-							System.out.println("sheetName " + sheetName + " " + spyroOutputDataList);
+							
 						}
 
 						if(spyroOutputDataList==null ||spyroOutputDataList.isEmpty()){
@@ -1950,7 +1957,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 						for (Map<String, Object> map : spyroOutputDataList) {
 							List<Object> list = new ArrayList<>();
 							for (String header : headers) {
-								System.out.println("header " + header);
+								
 								list.add(map.get(header));
 							}
 							list.add(tableId);
@@ -1960,11 +1967,11 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 
 					}
 
-					System.out.println("datalist " + dataList);
+				
 					data.put(tableId, dataList);
 				}
 			}
-			System.out.println("data in calling method " + data);
+			
 			return excelUtilityService.generateFlexibleExcel(structure, data);
 
 		} catch (Exception e) {
@@ -1983,10 +1990,9 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 
 		try {
 
-			System.out.println("started Read spyroOutput in importExcel");
+		
 			Map<String, List<SpyroOutputDTO>> map = readSpyroOutputExcel(file.getInputStream(), year);
-			System.out.println("Ended Read spyroOutput in importExcel");
-			System.out.println("Started Save spyroOutput in importExcel");
+			
 			Map<String, List<SpyroOutputDTO>> mapForExcel = new HashMap<>();
 			List<SpyroOutputDTO> failedRecords = new ArrayList<>();
 			for (String key : map.keySet()) {
@@ -1996,7 +2002,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 				mapForExcel.put(key, failedList);
 			}
 
-			System.out.println("Ended Save spyroOutput in importExcel");
+			
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
 				byte[] fileByteArray = createExcel(year, plantFKId, mode, true, mapForExcel);

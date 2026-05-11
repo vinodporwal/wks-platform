@@ -1,69 +1,17 @@
 legend {
   width: auto;
 }
-
 header {
-  background-color: #0100cb !important ; /* Example: Light gray background */
-  /* background-color: #0f3cc9 !important ; Example: Light gray background */
-}
-/* .css-1ynvhpv-MuiButtonBase-root-MuiListItemButton-root:hover,
-.css-h404g3-MuiButtonBase-root-MuiListItemButton-root:hover {
-  background-color: inherit !important;
-  color: inherit !important;
-} */
-
-.css-h404g3-MuiButtonBase-root-MuiListItemButton-root.Mui-selected:hover {
-  background-color: #0100cb; /* Example: Light gray background */
-  /* color: white; */
-}
-.css-5zfvd5-MuiButtonBase-root-MuiListItemButton-root:hover {
-  background-color: #0100cb; /* Example: Light gray background */
-  color: white !important;
-}
-
-.css-1ynvhpv-MuiButtonBase-root-MuiListItemButton-root.Mui-selected {
-  background-color: #0100cb; /* Example: Light gray background */
-  color: white;
-}
-
-.css-1ynvhpv-MuiButtonBase-root-MuiListItemButton-root.Mui-selected:hover {
-  background-color: #0100cb; /* Example: Light gray background */
-  /* color: white; */
-}
-.css-qztmtg-MuiTypography-root:hover {
-  color: white;
-  background-color: #0100cb;
-}
-
-.css-hd56dl-MuiTypography-root {
-  color: #ffffff; /* Example: Light gray background */
-}
-.MuiButtonBase-root-MuiListItemButton-root.Mui-selected {
-  background-color: #0100cb; /* Example: Light gray background */
-  /* background-color: #0f3cc9; Example: Light gray background */
-  color: white;
-}
-/* .css-h404g3-MuiButtonBase-root-MuiListItemButton-root:hover {
-  background-color: #fff; 
-  color: white;
-} */
-
-.css-h404g3-MuiButtonBase-root-MuiListItemButton-root.Mui-selected {
-  border-radius: 0px;
-}
-
-.css-1ynvhpv-MuiButtonBase-root-MuiListItemButton-root:hover {
-  background-color: #fff; /* Example: Light gray background */
-  color: white;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  /* box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06) !important; */
+  border-bottom: 1px solid #DDDEE1 !important;
+  /* color: #2c3e50 !important; */
 }
 
 .css-s857sy-MuiInputBase-input-MuiOutlinedInput-input {
   color: #ffffff; /* Example: Light gray background */
 }
-
-/* .css-1imnto4-MuiPaper-root-MuiCard-root {
-  display: none;
-} */
 
 .css-vognfw {
   width: 80%;
@@ -77,7 +25,6 @@ header {
   .MuiDataGrid-columnHeader--alignRight
   .MuiDataGrid-columnHeaderTitleContainer {
   -webkit-flex-direction: row;
-  /* -ms-flex-direction: row-reverse; */
   flex-direction: row;
 }
 
@@ -93,23 +40,24 @@ header {
 }
 
 .custom-title-font {
-  font-family: 'Roboto', sans-serif !important;
+  /* font-family: 'Open Sans', sans-serif !important; */
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
   font-weight: 600;
   white-space: nowrap;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
 }
 
 .custom-title-dropdown {
-  font-family: 'Roboto', sans-serif !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
   /* font-weight: bold; */
   white-space: nowrap;
   color: white;
   font-size: 0.65rem;
 }
 .custom-title-dropdown-content {
-  font-family: 'Roboto', sans-serif !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
   white-space: nowrap;
-  color: white;
+  color: white !important;
 }
 
 .custom-title-dropdown-content .MuiSelect-select {
@@ -125,21 +73,15 @@ header {
 }
 
 .grid-title {
-  font-family: 'Roboto', sans-serif !important;
-  font-weight: bold;
-  text-shadow: 0.5px 0.5px 0px rgba(0, 0, 0, 0.1);
-  font-size: 0.8rem;
-}
-
-.grid-title-extra {
-  font-family: 'Roboto', sans-serif !important;
-  font-weight: bold;
-  text-shadow: 0.5px 0.5px 0px rgba(0, 0, 0, 0.1);
-  font-size: 0.7rem;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+  font-weight: 700;
+  color: #252525;
+  font-size: 16px;
+  letter-spacing: 0.2px;
 }
 
 .button-title {
-  font-family: 'Roboto', sans-serif !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
   text-shadow: 0.5px 0.5px 0px rgba(0, 0, 0, 0.1);
   font-size: 0.7rem;
   font-weight: 550;
@@ -147,14 +89,15 @@ header {
 
 .accordian-title {
   /* Use a numerical weight like 550 or 550 for a "half-bold" look */
-  font-weight: 550;
-  font-family: 'Roboto', sans-serif !important;
+  font-weight: 700;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
   text-shadow: 0.5px 0.5px 0px rgba(0, 0, 0, 0.1);
-  font-size: 0.7rem;
+  font-size: 16px;
+  color: #252525;
 }
 
 .grid-header {
-  font-family: 'Roboto', sans-serif !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
   font-size: 12px;
   /* margin-top: 5px; */
   margin-bottom: 5px;
@@ -162,32 +105,6 @@ header {
 
 .MuiSelect-icon {
   color: 'white';
-}
-
-/* .MuiDataGrid-scrollbar--vertical {
-  overflow: hidden;
-} */
-
-/* footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  margin: 0 auto;
-} */
-
-.MuiButtonBase-root.MuiListItemButton-root.MuiListItemButton-gutters.MuiListItemButton-root:hover
-  h6 {
-  color: #fff;
-}
-.MuiButtonBase-root.MuiListItemButton-root.MuiListItemButton-gutters.MuiListItemButton-root:hover
-  svg {
-  color: #fff;
-}
-
-.MuiButtonBase-root.MuiListItemButton-root:hover {
-  background-color: #0100cb;
-  color: #fff;
 }
 
 .even-row.MuiDataGrid-row.Mui-selected.MuiDataGrid-row--editable {
@@ -208,60 +125,54 @@ header {
 main.MuiBox-root.css-vognfw {
   padding: 12px !important;
 }
-.MuiButtonBase-root-MuiListItemButton-root.Mui-selected {
-  background-color: rgba(27, 160, 242, 0.08) !important;
-}
-.MuiButtonBase-root.MuiListItemButton-root:hover {
-  background-color: #0100cb !important;
-  color: #fff;
-}
+
+/* .k-grid {
+  width: max-content;
+} */
 
 .k-grid th.active-column {
-  background-color: #e0f7fa; /* light cyan */
+  background-color: #1baaf529; /* light cyan */
   color: #00796b; /* teal text */
   font-weight: bold;
   border-bottom: 2px solid #790000;
 }
 
+
 .non-editable-cell {
-  background-color: #e7e7e7;
+  background-color: #f1f5f9;
 }
 .custom-disabled-row {
   background-color: #e7e7e7 !important;
 }
 
 .text-note {
-  font-family: 'Roboto', sans-serif !important;
-  font-weight: bold;
-  white-space: nowrap;
-  font-size: 0.7rem;
-  /* margin-top: 16px; */
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+  font-weight: 700;
+  color: #606060;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
 }
 
 .text-header {
-  font-family: 'Roboto', sans-serif !important;
-  font-weight: bold;
-  white-space: nowrap;
-  font-size: 0.9rem;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+  font-weight: 800;
+  color: #1e293b;
+  font-size: 0.95rem;
 }
 
 .summary-title {
-  font-family: 'Roboto', sans-serif !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
   margin-left: 5px;
   color: green;
   text-shadow: 0.5px 0.5px 0px rgba(0, 0, 0, 0.1);
 }
 
 .summary-title-disabled {
-  font-family: 'Roboto', sans-serif !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
   margin-left: 5px;
-  /* color: green; */
   text-shadow: 0.5px 0.5px 0px rgba(0, 0, 0, 0.1);
-}
-
-.k-animation-container,
-.k-popup {
-  z-index: 5500 !important;
 }
 
 .dropdown-select {
@@ -283,34 +194,9 @@ main.MuiBox-root.css-vognfw {
 }
 
 .MuiPaper-root .MuiMenuItem-root {
-  font-size: 0.65rem !important;
+  font-size: 14px !important;
   min-height: 28px;
   padding: 2px 8px;
-}
-
-.sub-side-menu {
-  font-size: 0.75rem;
-  color: white;
-  white-space: normal;
-  word-break: break-word;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--menu-text-color, #333);
-  transition: all 0.2s ease;
-}
-
-.sub-side-menu:hover {
-  color: white;
-  background-color: #0100cb;
-}
-.sub-side-menu.active {
-  color: white;
-  background-color: #0100cb;
-  font-weight: 600;
 }
 
 .side-menu {
@@ -359,18 +245,7 @@ main.MuiBox-root.css-vognfw {
   resize: vertical;
   font-size: 0.75rem;
 }
-/* 
-.k-filter-menu-container {
-  font-size: 12px !important;
-  padding: 4px 6px !important;
-  max-height: 250px !important;
-  overflow-y: auto !important;
-}
 
-.k-column-menu-filter-search {
-  min-height: unset !important;
-  margin-bottom: 6px;
-} */
 .fast-checkbox {
   width: 20px;
   height: 20px;
@@ -390,61 +265,9 @@ main.MuiBox-root.css-vognfw {
   border-radius: 4px;
 }
 
-.k-popup .k-columnmenu-actions .k-button.k-primary {
-  background-color: #3a1d1d !important; /* your blue */
-  border-color: #10754b !important;
-  color: white !important;
-}
-
-/* Reduce popup max height */
-.k-columnmenu-popup,
-.k-popup.k-columnmenu-popup {
-  max-height: 150px !important; /* DEFAULT is very tall (700px+) */
-  padding: 1px 1px !important;
-}
-
-/* Make the scroll area shorter */
-.k-columnmenu-item-wrapper,
-.k-checkbox-list {
-  max-height: 300px !important; /* adjust as needed */
-  overflow-y: auto !important;
-}
-
-/* Reduce spacing inside menu */
-.k-columnmenu-item,
-.k-treeview-item,
-.k-columnmenu-content {
-  padding: 1px 1px !important;
-}
-
-/* Make each checkbox row smaller */
-.k-checkbox-label {
-  padding: 2px 4px !important;
-  font-size: 12px !important;
-}
-
-/* Compact the footer buttons area */
-.k-columnmenu-actions {
-  padding: 1px 1px !important;
-}
-
-.k-textarea.k-input.k-disabled {
-  color: #4a4a4a !important;
-  -webkit-text-fill-color: #4a4a4a !important;
-  opacity: 1 !important;
-}
-/* Kendo TextArea disabled text color fix */
-.k-textarea.k-disabled,
-.k-input.k-disabled {
-  color: #4a4a4a !important;
-  -webkit-text-fill-color: #4a4a4a !important;
-  opacity: 1 !important; /* Remove faded look */
-  background-color: #f0f0f0 !important; /* Light grey background */
-}
-
 /* MUI DATA GRID */
 .custom-data-grid .MuiDataGrid-row {
-  background-color: #e7e7e7 !important; /* light grey */
+  background-color: #f1f5f9 !important; /* light grey */
   color: #777 !important; /* grey text */
 }
 
@@ -501,9 +324,9 @@ main.MuiBox-root.css-vognfw {
   background: rgba(25, 118, 210, 0.08);
 }
 
-html {
+/* html {
   overflow-y: scroll;
-}
+} */
 
 body {
   background: transparent;
@@ -513,4 +336,310 @@ body {
   color: #ffffff !important;
   font-size: 1.5rem !important;
   margin-left: -22 !important;
+}
+.info-note {
+  margin-top: 0px;
+  padding: 2px 2px;
+  font-family: sans-serif;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #0a1d38; /* slate-600 */
+  background: #f8fafc; /* subtle gray */
+  border-left: 3px solid #6366f1; /* indigo accent */
+  border-radius: 6px;
+  display: flex;
+  gap: 5px;
+  align-items: flex-start;
+}
+
+.info-note__asterisk {
+  color: #6366f1;
+  font-weight: 600;
+}
+.k-datepicker .k-input-button .k-icon,
+.k-datepicker .k-input-button svg {
+  color: #303284 !important;
+  fill: #303284 !important;
+  opacity: 1 !important;
+  stroke: #303284 !important;
+  stroke-width: 1.5px;
+}
+.outlet-wrapper {
+  flex: 1;
+  overflow: hidden;
+  background: #F6F7F8;
+}
+
+.outlet-border-box {
+  height: 100%;
+  overflow: auto;
+  /* padding: 0px; */
+  padding: 1px;
+  margin-left: 12px;
+  margin-right: 5px;
+  margin-bottom: 10px;
+}
+
+.k-table-box {
+  box-sizing: border-box;
+  background-color: #ffffff;
+  border: 1px solid #DDDEE1;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.breadcrumbs-box {
+  box-sizing: border-box;
+  border-radius: 8px;
+  border: 1px solid #DDDEE1;
+  padding: 12px 0px 12px 8px;
+  gap: 16px;
+  background-color: #ffffff;
+  margin: 10px 0px 10px 0px;
+}
+
+.action-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 10px 5px 2px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #FFFFFF;
+}
+
+/* =========================================================
+   HEADER CONTENT REDESIGN
+   ========================================================= */
+
+.header-content-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  padding-right: 16px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  background: #fff;
+}
+
+.header-left-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.header-screen-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: #303030;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+}
+
+.header-step-box {
+  padding: 4px 8px;
+  border-radius: 100px;
+  background-color: #ECEEFF;
+  border: 1px solid #41424D;
+}
+
+.header-step-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: #41424D;
+  font-family: 'Honeywell Cond Web', 'Inter', sans-serif;
+}
+
+.header-dropdown-stack {
+  justify-self: end;
+  width: 100%;
+  justify-content: flex-end;
+  margin-right: 8px;
+}
+
+.dropdown-container-header {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+}
+
+.header-select {
+  height: 34px;
+  min-width: 160px;
+}
+
+.header-select .MuiOutlinedInput-root {
+  border-radius: 6px !important;
+  background: #eef3f8;
+  height: 34px;
+}
+
+.header-select .MuiOutlinedInput-notchedOutline {
+  border: 1px solid #DDDEE1;
+  border-radius: 6px !important;
+}
+
+.header-select:hover .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(15, 23, 42, 0.1);
+}
+
+.header-select .MuiSelect-select {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px !important;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.header-select .MuiSvgIcon-root {
+  font-size: 18px;
+  color: #6b7786;
+}
+
+.header-render-value-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-menu-item {
+  transition: all 0.12s ease;
+  border-radius: 6px;
+  margin-left: 4px;
+  margin-right: 4px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+  color: #303030;
+  font-weight: 500;
+  font-size: 14px !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+}
+
+.header-menu-item:hover {
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.header-menu-item.Mui-selected {
+  background: rgba(59, 130, 246, 0.12);
+  font-weight: 600;
+}
+
+.header-menu-paper {
+  max-height: 240px;
+  border-radius: 6px !important;
+  margin-top: 6px;
+  background: #FFFFFF;
+  gap: 4px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  border: 1px solid #DDDEE1;
+  color: #0f172a;
+  padding: 6px 12px 6px 4px;
+}
+.header-profile-box { justify-self: end; }
+
+/* =========================================================
+   STEPPER NAV
+   ========================================================= */
+
+.stepper-nav-container {
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.stepper-nav-tabs {
+  min-height: 40px;
+}
+
+.stepper-nav-tabs .MuiTabs-flexContainer {
+  flex-wrap: nowrap;
+}
+
+.stepper-nav-tabs .MuiTabs-indicator {
+  top: 0;
+  height: 4px;
+  background-color: #AE4787;
+}
+
+.stepper-nav-tabs .MuiTab-root {
+  min-height: 40px;
+}
+
+.stepper-nav-tabs .MuiTabs-scrollButtons.Mui-disabled {
+  display: none;
+}
+
+.aop-tabs-tabs .MuiTabs-scrollButtons.Mui-disabled {
+  display: none;
+}
+
+.stepper-nav-tab {
+  text-transform: none !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+  min-height: 40px !important;
+  gap: 4px !important;
+  transition: all 0.2s ease !important;
+}
+
+.stepper-nav-tab:hover {
+  background-color: #eef2ff !important;
+}
+
+.stepper-nav-tab.Mui-selected {
+  background-color: #F6F7F8 !important;
+  color: #303030 !important;
+}
+
+.stepper-nav-tab .MuiTab-iconWrapper {
+  width: 16px;
+  height: 16px;
+}
+
+.stepper-nav-tab-label {
+  display: inline-block;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 400;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+  color: #303030;
+  text-transform: uppercase;
+}
+
+.aop-report-accordion-summary {
+  min-height: 36px !important;
+  padding: 10px !important;
+  background-color: #ffffff !important;
+  flex-direction: row-reverse !important;
+}
+
+.aop-report-accordion-summary .MuiAccordionSummary-content {
+  margin-left: 8px !important;
+  margin-top: 4px !important;
+  margin-bottom: 4px !important;
+}
+
+.aop-report-accordion-summary .MuiAccordionSummary-expandIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background-color: #ECEEFF;
+  color: #1e293b;
+  cursor: pointer;
+  padding: 8px;
 }

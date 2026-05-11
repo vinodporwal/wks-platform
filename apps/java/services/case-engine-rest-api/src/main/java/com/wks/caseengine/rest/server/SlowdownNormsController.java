@@ -63,10 +63,11 @@ public class SlowdownNormsController {
 	@GetMapping(value = "/slowdown-consumption-export-all-grades")
 	public ResponseEntity<byte[]> exportSlowdownNormsAllGrades(
 	         @RequestParam("plantId") String plantId,
-            @RequestParam("year") String year) {
+            @RequestParam("year") String year,
+		@RequestParam(required = false) String maintenanceName) {
 	    try {
 			
-	        byte[] excelBytes = slowdownNormsService.exportSlowdownNormsAllGrades(year,UUID.fromString(plantId),false,null); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+	        byte[] excelBytes = slowdownNormsService.exportSlowdownNormsAllGrades(year,UUID.fromString(plantId),false,null, maintenanceName); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
 
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(
@@ -119,9 +120,10 @@ public class SlowdownNormsController {
 	public AOPMessageVM gradeWiseImportExcel(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year,
-			@RequestParam("file") MultipartFile file
+			@RequestParam("file") MultipartFile file,
+			@RequestParam(required = false) String maintenanceName
 	        ) {
-			return	slowdownNormsService.gradeWiseImportExcel(year,UUID.fromString(plantId), file); 
+			return	slowdownNormsService.gradeWiseImportExcel(year,UUID.fromString(plantId), file, maintenanceName); 
 	}
 
 	
@@ -132,7 +134,7 @@ public class SlowdownNormsController {
 	
 	@PostMapping(value="/slowdown-norms-hiir")
 	public List<SlowdownNormsValueDTO> saveSlowdownNorms(@RequestBody List<SlowdownNormsValueDTO> slowdownNormsValueDTOList){
-		return	slowdownNormsService.saveSlowdownNormsDataHIIR(slowdownNormsValueDTOList);
+		return	slowdownNormsService.saveSlowdownNormsDataHIIR(slowdownNormsValueDTOList,null);
 	}
 	
 	@GetMapping(value="/getSlowdownNormsSPData")

@@ -89,6 +89,9 @@ const ModeSelection = ({ permissions }) => {
   const [currentRowId, setCurrentRowId] = useState(null)
   const [modes, setModes] = useState([])
 
+  // Extract only the permission value we need to avoid unnecessary API calls
+  const NON_EDITABLE_GRID = permissions?.NON_EDITABLE_GRID
+
   const unsavedChangesRef = useRef({ unsavedRows: {}, rowsBeforeChange: {} })
   const monthTitles = getMonthYearTitles(
     Number(AOP_YEAR) || new Date().getFullYear(),
@@ -103,21 +106,35 @@ const ModeSelection = ({ permissions }) => {
       title: headerMap[headerIdx],
       editable: true,
       type: 'dynamicDropdown',
+      minWidth: 100,
     }
   })
 
   // Choose which columns to use:
   // To use dynamic year headers:
   const columns = [
-    { field: 'productName', title: 'Particulars', editable: false },
-    { field: 'uom', title: 'UOM', editable: false, widthT: 55 },
-    { field: 'normType', title: 'Norm Type', editable: false, hidden: true },
+    {
+      field: 'productName',
+      title: 'Particulars',
+      editable: false,
+      widthT: 120,
+      minWidth: 120,
+    },
+    { field: 'uom', title: 'UOM', editable: false, widthT: 55, minWidth: 100 },
+    {
+      field: 'normType',
+      title: 'Norm Type',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
     ...dynamicYearMonthColumns,
     // Only include the remarks column if NON_EDITABLE_GRID is false/undefined
     ...(!permissions?.hideRemarkForNonEditableRows
-      ? [{ field: 'remarks', title: 'Remarks', editable: true }]
+      ? [{ field: 'remarks', title: 'Remarks', editable: true, minWidth: 100 }]
       : []),
   ]
+
   const fetchModes = useCallback(async () => {
     try {
       const resp = await OptimizerDataApiService.fetchModes(
@@ -147,7 +164,7 @@ const ModeSelection = ({ permissions }) => {
   // console.log('permissions?.NON_EDITABLE_GRID', permissions?.NON_EDITABLE_GRID)
 
   // Fetch data
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
     setLoading(true)
     try {
@@ -163,18 +180,28 @@ const ModeSelection = ({ permissions }) => {
         originalRemark: item.remarks || '', // Store original
         remarks: item.remarks || '', // Editable field
         Particulars: ' ',
-        isEditable: permissions?.NON_EDITABLE_GRID ? false : true,
+        isEditable: NON_EDITABLE_GRID ? false : true,
       }))
       setRows(formattedData)
     } catch (error) {
       setRows([])
     }
     setLoading(false)
-  }
+  }, [PLANT_ID, SITE_ID, VERTICAL_ID, AOP_YEAR, keycloak, NON_EDITABLE_GRID])
 
   useEffect(() => {
     fetchData()
-  }, [PLANT_ID, SITE_ID, VERTICAL_ID, AOP_YEAR, keycloak, permissions])
+  }, [fetchData])
+
+  // Update isEditable when permissions change without refetching
+  useEffect(() => {
+    setRows((prevRows) =>
+      prevRows.map((row) => ({
+        ...row,
+        isEditable: permissions?.NON_EDITABLE_GRID ? false : true,
+      })),
+    )
+  }, [permissions?.NON_EDITABLE_GRID])
 
   const savePropaneBusiness = async () => {
     setLoading(true)

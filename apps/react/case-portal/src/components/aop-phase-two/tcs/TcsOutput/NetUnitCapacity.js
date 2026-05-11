@@ -9,6 +9,7 @@ import {
   extractYear,
   generateCalendarYearHeaders,
 } from 'components/aop-phase-two/common/utilities/generateHeaders'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const NetUnitCapacity = ({
   title,
@@ -179,7 +180,7 @@ const NetUnitCapacity = ({
         field: 'jan',
         title: headerMap[1],
         editable: false,
-        widthT: 80,
+        widthT: 100,
         type: 'number1',
         format: valueFormat,
       },
@@ -187,7 +188,7 @@ const NetUnitCapacity = ({
         field: 'feb',
         title: headerMap[2],
         editable: false,
-        widthT: 80,
+        widthT: 100,
         type: 'number1',
         format: valueFormat,
       },
@@ -195,7 +196,7 @@ const NetUnitCapacity = ({
         field: 'mar',
         title: headerMap[3],
         editable: false,
-        widthT: 80,
+        widthT: 100,
         type: 'number1',
         format: valueFormat,
       },
@@ -203,7 +204,7 @@ const NetUnitCapacity = ({
         field: 'apr',
         title: headerMap[4],
         editable: false,
-        widthT: 80,
+        widthT: 100,
         type: 'number1',
         format: valueFormat,
       },
@@ -211,7 +212,7 @@ const NetUnitCapacity = ({
         field: 'may',
         title: headerMap[5],
         editable: false,
-        widthT: 80,
+        widthT: 100,
         type: 'number1',
         format: valueFormat,
       },
@@ -219,7 +220,7 @@ const NetUnitCapacity = ({
         field: 'jun',
         title: headerMap[6],
         editable: false,
-        widthT: 80,
+        widthT: 100,
         type: 'number1',
         format: valueFormat,
       },
@@ -227,7 +228,7 @@ const NetUnitCapacity = ({
         field: 'jul',
         title: headerMap[7],
         editable: false,
-        widthT: 80,
+        widthT: 100,
         type: 'number1',
         format: valueFormat,
       },
@@ -235,7 +236,7 @@ const NetUnitCapacity = ({
         field: 'aug',
         title: headerMap[8],
         editable: false,
-        widthT: 80,
+        widthT: 100,
         type: 'number1',
         format: valueFormat,
       },
@@ -243,7 +244,7 @@ const NetUnitCapacity = ({
         field: 'sep',
         title: headerMap[9],
         editable: false,
-        widthT: 80,
+        widthT: 100,
         type: 'number1',
         format: valueFormat,
       },
@@ -251,7 +252,7 @@ const NetUnitCapacity = ({
         field: 'oct',
         title: headerMap[10],
         editable: false,
-        widthT: 80,
+        widthT: 100,
         type: 'number1',
         format: valueFormat,
       },
@@ -259,7 +260,7 @@ const NetUnitCapacity = ({
         field: 'nov',
         title: headerMap[11],
         editable: false,
-        widthT: 80,
+        widthT: 100,
         type: 'number1',
         format: valueFormat,
       },
@@ -267,7 +268,7 @@ const NetUnitCapacity = ({
         field: 'dec',
         title: headerMap[12],
         editable: false,
-        widthT: 80,
+        widthT: 100,
         type: 'number1',
         format: valueFormat,
       },
@@ -353,13 +354,7 @@ const NetUnitCapacity = ({
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
-
+      <LoaderBackdrop open={!!loading} />
       <Stack sx={{ mt: 2 }}>
         <AdvanceKendoTable
           rows={rows}

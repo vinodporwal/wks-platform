@@ -28,6 +28,7 @@ import {
   isColumnMenuSortActive,
 } from '../../../../node_modules/@progress/kendo-react-grid/index'
 import { getColumnMenu1, getColumnMenuCheckboxFilter } from './ColumnMenu1'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const NormsHistorianBasis1 = () => {
   const keycloak = useSession()
@@ -185,12 +186,7 @@ const NormsHistorianBasis1 = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <Box display='flex' flexDirection='column' gap={2}>
         <Box sx={{ width: '100%' }}>

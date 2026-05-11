@@ -106,7 +106,7 @@ const defs = {
     aopDesignBasis: 'AOP Basis',
     tcs: 'Term Crude Sheet',
     tcsinput: 'TCS Input',
-    tcsoutput: 'TCS Input Review',
+    tcsoutput: 'TCS Output',
     pimsoutput: 'PIMS Output',
     workflowdesign: 'Workflow Design',
 
@@ -123,6 +123,7 @@ const defs = {
 
     causticSodaLyeBasis: 'Caustic Soda Lye Norms',
     materialBalance: 'Optimizer - Material Balance',
+    catChemConsumption: 'Catalyst & Checmicals Calculation',
   },
   pages: {
     dashboard: {

@@ -135,6 +135,23 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
     //PP NMD
     if (
       title == 'configuration' &&
+      PLANT_NAME?.toLowerCase() == 'hdpe' &&
+      SITE_NAME?.toLowerCase() == 'dmd' &&
+      VERTICAL_NAME?.toLowerCase() == 'pe'
+    )
+      url = `${window.location.origin}/files/Digital AOP Automation for DMD HDPE_Rev1.pdf`
+    //PE HMD PE1
+    if (
+      title == 'configuration' &&
+      PLANT_NAME?.toLowerCase() == 'pe1' &&
+      SITE_NAME?.toLowerCase() == 'hmd' &&
+      VERTICAL_NAME?.toLowerCase() == 'pe'
+    )
+      url = `${window.location.origin}/files/Digital AOP Automation for HMD PE_Rev1.pdf`
+
+    //PP NMD
+    if (
+      title == 'configuration' &&
       SITE_NAME?.toLowerCase() == 'nmd' &&
       VERTICAL_NAME?.toLowerCase() == 'pp'
     )
@@ -178,6 +195,17 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
     }
   }
 
+  const infoIconSx = {
+    fontSize: 14,
+    color: '#023985ff', // slate-500 (subtle)
+  }
+
+  const infoButtonSx = {
+    p: '1px',
+    width: 0,
+    height: 0,
+  }
+
   async function handleOpenPdfTempSSRS(title) {
     try {
       let baseurl = ''
@@ -202,9 +230,6 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
   const location = useLocation()
   const [main, setMain] = useState()
   const [item, setItem] = useState()
-
-  // Routes that should display StepperNav
-  const stepperNavRoutes = ['/production-norms-plan', '/tcs', '/utilityPlant']
 
   useEffect(() => {
     let title = item?.title
@@ -248,7 +273,6 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
     location.pathname = '/dashboard/analytics'
   }
 
-  let mainContent
   let itemContent
   let breadcrumbContent = <Typography />
   let itemTitle = ''
@@ -294,7 +318,13 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
         (VERTICAL_NAME?.toLowerCase() === 'pe' &&
           SITE_NAME?.toLowerCase() === 'nmd') ||
         (VERTICAL_NAME?.toLowerCase() === 'pp' &&
-          SITE_NAME?.toLowerCase() === 'nmd'))
+          SITE_NAME?.toLowerCase() === 'nmd') ||
+        (VERTICAL_NAME?.toLowerCase() === 'pe' &&
+          SITE_NAME?.toLowerCase() === 'dmd' &&
+          PLANT_NAME?.toLowerCase() === 'hdpe') ||
+        (PLANT_NAME?.toLowerCase() == 'pe1' &&
+          SITE_NAME?.toLowerCase() == 'hmd' &&
+          VERTICAL_NAME?.toLowerCase() == 'pe'))
     ) {
       itemContent = (
         <Typography
@@ -309,16 +339,10 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
             <IconButton
               size='small'
               disableRipple
-              sx={{
-                backgroundColor: 'transparent',
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
-                },
-                padding: '6px',
-              }}
+              sx={infoButtonSx}
               onClick={() => handleOpenPdfTemp(item?.id)}
             >
-              <InfoIcon fontSize='small' sx={{ color: '#0100cb' }} />
+              <InfoIcon sx={infoIconSx} />
             </IconButton>
           </Tooltip>
         </Typography>
@@ -338,18 +362,11 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
           {/* {title1} */}
           <Tooltip title={`Report`}>
             <IconButton
-              size='medium'
-              sx={{
-                ml: 1,
-                backgroundColor: 'transparent',
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
-                },
-                padding: '6px',
-              }}
+              size='small'
+              sx={infoButtonSx}
               onClick={() => handleOpenPdfTempSSRS(item?.id)}
             >
-              <InfoIcon fontSize='medium' sx={{ color: '#0100cb' }} />
+              <InfoIcon sx={infoIconSx} /> {/* ?? was fontSize="medium" */}
             </IconButton>
           </Tooltip>
         </Typography>
@@ -368,25 +385,20 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
       location?.pathname !== '/dashboard'
     ) {
       breadcrumbContent = (
-        <MainCard
+        <Box
           border={false}
           sx={{ bgcolor: 'transparent' }}
           {...others}
           content={false}
         >
-          {stepperNavRoutes.some((route) =>
-            location?.pathname.startsWith(route),
-          ) && (
-            <Box>
-              <StepperNav />
-            </Box>
+          {location?.pathname.startsWith('/production-norms-plan') && (
+            <Box>{/* <StepperNav /> */}</Box>
           )}
           <Grid
             container
             direction='column'
             justifyContent='flex-start'
             alignItems='flex-start'
-            spacing={1}
             // sx={{ marginTop: '-18px' }}
           >
             {/* <Grid item sx={{ ml: 1.5, display: none }}> */}
@@ -422,39 +434,65 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
 
             <Grid
               container
-              sx={{ mt: 1, ml: 1 }}
+              sx={{
+                m: 0,
+                // p: 0.5,
+                width: '100%',
+                transition: 'none',
+                '&:hover': {
+                  boxShadow: 'none',
+                  transform: 'none',
+                },
+              }}
               justifyContent='space-between'
               alignItems='center'
             >
               <Grid item>
                 {loading ? (
-                  <Skeleton
-                    variant='text'
-                    width={100}
-                    height={30}
-                    animation='wave'
-                    sx={{ mt: 0.5 }}
-                  />
+                  <Stack direction='row' spacing={1} alignItems='center'>
+                    <Skeleton variant='circular' width={16} height={16} />
+                    <Skeleton
+                      variant='text'
+                      width={180}
+                      height={20}
+                      animation='wave'
+                    />
+                  </Stack>
                 ) : (
-                  <Typography
-                    component='div'
-                    sx={{
-                      textDecoration: 'none',
-                      fontWeight: 800,
-                      color: 'black',
-                      fontSize: '0.7rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                  >
-                    {VERTICAL_NAME} / {SITE_NAME} / {PLANT_NAME}{' '}
-                    {/* {getRoleName(verticalId, item?.id)} */}
-                    {/* {keycloak?.realmAccess?.roles[0]} */}
-                    {itemContent}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {/* Hierarchy Path */}
+                    <Typography
+                      component='div'
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        fontWeight: 700,
+                        fontSize: '0.72rem',
+                        color: '#64748b', // Slate 500 for secondary text
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.4px',
+                        fontFamily:
+                          "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
+                      }}
+                    >
+                      {VERTICAL_NAME}
+                      <Box component='span' sx={{ mx: 0.7 }}>
+                        |
+                      </Box>
+                      {SITE_NAME}
+                      <Box component='span' sx={{ mx: 0.7 }}>
+                        |
+                      </Box>
+                      <Box component='span' sx={{ mx: 0.7 }}>
+                        {PLANT_NAME}
+                      </Box>
+                    </Typography>
+
+                    {/* Status/Item Pill */}
+                    {itemContent && <Box>{itemContent}</Box>}
+                  </Box>
                 )}
               </Grid>
-
               {/* <Stack spacing={0.5} sx={{ alignItems: 'center' }}>
                 <Grid item>
                   <Chip
@@ -482,7 +520,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
             severity={notification.severity}
             onClose={() => setNotification({ ...notification, open: false })}
           />
-        </MainCard>
+        </Box>
       )
     }
   }

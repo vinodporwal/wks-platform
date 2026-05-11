@@ -29,6 +29,7 @@ import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment'
 import { getRoleName } from 'services/role-service.js'
 import DecokingConfigNMD from './KendoConfigCrackerActivitiesNMD.js'
 import DownsteamShutdownDMD from './downsteamShutdownDMD.js'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop.js'
 import FurnaceMaintenanceActivity from './FurnaceMaintenanceActivity.js'
 import SteamHourTable from './steamHourTable.js'
 
@@ -340,6 +341,7 @@ const DecokingConfig = () => {
                     col.field.toLowerCase().includes('actual')
                   ),
                   hidden: hiddenKeys.includes(col.field) ? true : col.hidden,
+                  minWidth: 120,
                 }),
               )
               setRunLengthColumns(dynamicColumnDeckoking)
@@ -1500,12 +1502,7 @@ const DecokingConfig = () => {
   }
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+         <LoaderBackdrop open={!!loading} />
       {IS_CRACKER_VMD && (
         <CustomAccordion defaultExpanded disableGutters sx={{ mt: 1.5 }}>
           <CustomAccordionSummary

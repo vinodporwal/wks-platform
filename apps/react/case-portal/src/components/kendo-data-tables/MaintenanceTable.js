@@ -10,6 +10,7 @@ import KendoDataTables from './index'
 import AopTabs from 'components/AopTabs'
 import { Box } from '@mui/material'
 import { DataService } from 'services/DataService'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 //import ElastomerMaintenanceTable from './ElastomerMaintenanceTable'
 const MaintenanceTable = () => {
   // State for tabs
@@ -62,6 +63,12 @@ const MaintenanceTable = () => {
   const IS_PVC_DMD =
     verticalObject?.name?.toLowerCase() === 'pvc' &&
     siteObject?.name?.toLowerCase() === 'dmd'
+  const IS_PVC_HMD =
+    verticalObject?.name?.toLowerCase() === 'pvc' &&
+    siteObject?.name?.toLowerCase() === 'hmd'
+  const IS_PVC_VMD =
+    verticalObject?.name?.toLowerCase() === 'pvc' &&
+    siteObject?.name?.toLowerCase() === 'vmd'
   const IS_ELASTOMER_JMD =
     verticalObject?.name?.toLowerCase() === 'elastomer' &&
     siteObject?.name?.toLowerCase() === 'jmd'
@@ -69,7 +76,15 @@ const MaintenanceTable = () => {
   const dataConfig = useMemo(
     () => ({
       serviceFn: (keycloak, PLANT_ID, AOP_YEAR, lineId) => {
-        if ((IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) && lineId) {
+        if (
+          (IS_PP_DTA ||
+            IS_PP_SEZ ||
+            IS_PVC_DMD ||
+            IS_PP_HMD ||
+            IS_PVC_HMD ||
+            IS_PVC_VMD) &&
+          lineId
+        ) {
           return MaintenanceDetailsApiService.getMaintenanceDataLineWise(
             keycloak,
             PLANT_ID,
@@ -91,7 +106,9 @@ const MaintenanceTable = () => {
       IS_PP_DTA,
       IS_PP_SEZ,
       IS_PVC_DMD,
+      IS_PVC_HMD,
       IS_PP_HMD,
+      IS_PVC_VMD,
       tabIndex,
       lineDetails,
     ],
@@ -215,7 +232,14 @@ const MaintenanceTable = () => {
   }
 
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+    if (
+      IS_PP_DTA ||
+      IS_PP_SEZ ||
+      IS_PVC_DMD ||
+      IS_PP_HMD ||
+      IS_PVC_HMD ||
+      IS_PVC_VMD
+    ) {
       fetchLineDetails()
     }
   }, [PLANT_ID, keycloak, yearChanged])
@@ -245,6 +269,7 @@ const MaintenanceTable = () => {
       editable: false,
       align: 'right',
       headerAlign: 'left',
+      minWidth: 85,
     }))
   }
 
@@ -253,6 +278,7 @@ const MaintenanceTable = () => {
     field: 'isEditable',
     title: 'isEditable',
     hidden: true,
+    isVisible: false,
   }
 
   // Base function to generate column set
@@ -265,6 +291,7 @@ const MaintenanceTable = () => {
       widthT: nameWidthT,
       editable: false,
       isEditable: false,
+      minWidth: 200,
     },
     ...getMonthlyColumns(),
     isEditableField,
@@ -279,6 +306,7 @@ const MaintenanceTable = () => {
       widthT: nameWidthT,
       editable: false,
       isEditable: false,
+      minWidth: 200,
     },
     ...getMonthlyColumns(),
     isEditableField,
@@ -289,6 +317,7 @@ const MaintenanceTable = () => {
       type: 'number',
       format: '{0:n2}',
       editable: false,
+      minWidth: 85,
     },
   ]
 
@@ -300,6 +329,7 @@ const MaintenanceTable = () => {
       headerAlign: 'left',
       widthT: nameWidthT,
       editable: false,
+      minWidth: 200,
     },
     ...getMonthlyColumns(),
     isEditableField,
@@ -309,6 +339,7 @@ const MaintenanceTable = () => {
       type: 'number',
       format: '{0:00}',
       editable: false,
+      minWidth: 85,
     },
   ]
   const generateColumnsELASTOMERJMD = (nameWidthT) => [
@@ -319,6 +350,7 @@ const MaintenanceTable = () => {
       headerAlign: 'left',
       widthT: nameWidthT,
       editable: false,
+      minWidth: 200,
     },
     ...getMonthlyColumns(),
     isEditableField,
@@ -328,12 +360,13 @@ const MaintenanceTable = () => {
       type: 'number',
       format: '{0:n2}',
       editable: false,
+      minWidth: 85,
     },
   ]
 
   // Column sets
   const productionColumnsMEG = generateColumns(390)
-  const productionColumnsPE = generateColumnsPEPP(150)
+  const productionColumnsPE = generateColumnsPEPP(200)
   const productionColumnsPP = generateColumnsPEPP(220)
   const productionColumnsNonMEG = generateColumns(200)
   const productionColumnsELASTOMER = generateColumnsELASTOMER(200)
@@ -377,6 +410,7 @@ const MaintenanceTable = () => {
         type: 'number',
         format: '{0:n2}',
         editable: false,
+        minWidth: 85,
       },
     ]
   }
@@ -410,14 +444,28 @@ const MaintenanceTable = () => {
           saveBtn: dataConfig.isCracker,
           allAction: true,
           downloadExcelBtnFromUI:
-            IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD ? false : true,
+            IS_PP_DTA ||
+            IS_PP_SEZ ||
+            IS_PVC_DMD ||
+            IS_PP_HMD ||
+            IS_PVC_HMD ||
+            IS_PVC_VMD
+              ? false
+              : true,
           ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
           showRefresh: false,
           showTitleNameBusiness: true,
           titleName: SCREEN_NAME,
 
           downloadExcelBtn:
-            IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD ? true : false,
+            IS_PP_DTA ||
+            IS_PP_SEZ ||
+            IS_PVC_DMD ||
+            IS_PP_HMD ||
+            IS_PVC_HMD ||
+            IS_PVC_VMD
+              ? true
+              : false,
         },
         isOldYear,
       ),
@@ -456,18 +504,18 @@ const MaintenanceTable = () => {
   return (
     <>
       {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
-      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) && (
+      {(IS_PP_DTA ||
+        IS_PP_SEZ ||
+        IS_PVC_DMD ||
+        IS_PP_HMD ||
+        IS_PVC_HMD ||
+        IS_PVC_VMD) && (
         <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>
       )}
       <div>
-        <Backdrop
-          open={loading}
-          sx={{ color: '#fff', zIndex: (t) => t.zIndex.drawer + 1 }}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
+        <LoaderBackdrop open={!!loading} />
 
         <KendoDataTables
           columns={basecols}

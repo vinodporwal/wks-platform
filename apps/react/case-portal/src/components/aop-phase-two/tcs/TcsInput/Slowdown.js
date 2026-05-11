@@ -13,6 +13,7 @@ import {
 } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { Stack } from '../../../../../node_modules/@mui/material/index'
 import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const Slowdown = ({
   PLANT_ID,
@@ -148,12 +149,13 @@ const Slowdown = ({
 
   // Column configuration for Slowdown - dynamically generated from API response
   const columnConfig = {
-    particulates: { editable: false, type: 'text', minWidth: 100, widthT: 100 },
+    particulates: { editable: false, type: 'text', minWidth: 140, widthT: 140 },
+    
     throughputDuringSlowdown: {
       editable: true,
       type: 'wholeNumber',
-      minWidth: 170,
-      widthT: 170,
+      minWidth: 230,
+      widthT: 230,
     },
     throughputUOM: {
       editable: true,
@@ -669,12 +671,7 @@ const Slowdown = ({
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <Stack sx={{ mt: 2 }}>
         <AdvanceKendoTable

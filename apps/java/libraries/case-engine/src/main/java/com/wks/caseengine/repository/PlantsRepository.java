@@ -42,6 +42,9 @@ public interface PlantsRepository extends JpaRepository<Plants, UUID> {
       List<PlantConsumpProjection> findPlantConsumptionByMaterial(@Param("plantId") UUID plantId, @Param("year") String year);
 	
 
+	@Query(value = "SELECT  DISTINCT MaintForMonth  FROM vwCRACKER_GetShutdownMonths WHERE PlantId = :plantId AND MaintenanceName = :maintenanceName AND AuditYear = :AuditYear", nativeQuery = true)
+	List getCRACKERShutdownMonths(@Param("plantId") UUID plantId, @Param("maintenanceName") String maintenanceName,
+			@Param("AuditYear") String AuditYear);
 
 	//   @Query(
   

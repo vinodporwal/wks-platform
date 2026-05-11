@@ -8,7 +8,7 @@ import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatt
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { configurationAndReportManualEntryResponse } from '../dummyData'
-import RevButtonSection from './components/RevButtonSection'
+import RevButtonSection from 'components/aop-phase-two/common/components/RevButtonSection'
 
 const PIMSThroughput = () => {
   const keycloak = useSession()

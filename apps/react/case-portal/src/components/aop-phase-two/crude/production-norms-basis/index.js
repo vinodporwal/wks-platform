@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Box,
   Stack,
@@ -49,7 +49,7 @@ const ProductionNormsBasis = () => {
     autoHide: true,
   })
 
-  const getConfigurationTabsMatrix = useCallback(async () => {
+  const getConfigurationTabsMatrix = async () => {
     if (!PLANT_ID || !AOP_YEAR || !SITE_ID || !VERTICAL_ID) return
     setLoading(true)
     try {
@@ -72,9 +72,9 @@ const ProductionNormsBasis = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID, AOP_YEAR, SITE_ID, VERTICAL_ID])
+  }
 
-  const getConfigurationAvailableTabs = useCallback(async () => {
+  const getConfigurationAvailableTabs = async () => {
     setLoading(true)
     try {
       const response =
@@ -90,19 +90,14 @@ const ProductionNormsBasis = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak])
+  }
 
   useEffect(() => {
     if (!PLANT_ID || !AOP_YEAR) return
     setTabIndex(0)
     getConfigurationTabsMatrix()
     getConfigurationAvailableTabs()
-  }, [
-    PLANT_ID,
-    AOP_YEAR,
-    getConfigurationTabsMatrix,
-    getConfigurationAvailableTabs,
-  ])
+  }, [PLANT_ID, AOP_YEAR])
 
   // Callback to receive dates from ConfigurationAccordian
   const handleDatesChange = (start, end) => {
@@ -204,40 +199,35 @@ const ProductionNormsBasis = () => {
     return tab ? tab.displayName : null
   }
 
-  // Dynamic tab list from API (filtered to exclude 'Report Manual Entry' and 'Configuration')
-  const filteredTabs = tabs
+  // Dynamic tab list from API (filtered to exclude 'Report Manual Entry')
+  const tablist = tabs
     .map((tabId) => {
+      if (!tabId || !availableTabs.length) return ''
       const tabInfo = availableTabs.find(
         (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
       )
 
-      if (!tabInfo) {
-        return null
+      if (tabInfo) {
+        const originalName = tabInfo.displayName
+        // Filter out Report Manual Entry
+        if (originalName === 'Report Manual Entry') {
+          return null
+        }
+        return originalName
       }
-
-      const name = tabInfo.displayName
-
-      if (name === 'Report Manual Entry') {
-        return null
-      }
-
-      return {
-        id: tabId,
-        name,
-      }
+      return tabId
     })
-    .filter(Boolean)
+    .filter((tab) => tab !== null)
 
   const renderTab = () => {
-    if (!filteredTabs.length || !availableTabs.length) {
+    if (!tabs.length || !availableTabs.length) {
       return null
     }
 
-    const currentTabId = filteredTabs[tabIndex]?.id
+    const currentTabId = tabs[tabIndex]
     if (!currentTabId) return null
 
-    const tabData = getTabName(currentTabId)
-    const currentTabName = typeof tabData === 'object' ? tabData.name : tabData
+    const currentTabName = getTabName(currentTabId)
 
     switch (currentTabName) {
       case 'Configuration':
@@ -282,7 +272,7 @@ const ProductionNormsBasis = () => {
           <TabSection
             tabIndex={tabIndex}
             setTabIndex={setTabIndex}
-            tabs={filteredTabs}
+            tabs={tablist}
           />
         </Stack>
       )}

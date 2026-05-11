@@ -7,6 +7,7 @@ import { DataService } from 'services/DataService'
 import KendoDataTables from './index'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useSelector } from 'react-redux'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 export default function PlantSafetyPerformanceTarget() {
   const keycloak = useSession()
@@ -76,45 +77,58 @@ export default function PlantSafetyPerformanceTarget() {
         title: 'S.No',
         widthT: 70,
         editable: false,
+        minWidth: 70,
       },
       {
         field: 'kpi',
         title: 'KPI',
         editable: true,
         widthT: 300,
+        minWidth: 100,
       },
       {
         field: 'uom',
         title: 'UOM',
         widthT: 80,
         editable: true,
+        minWidth: 100,
       },
       {
         field: 'bestAchived',
         title: 'Best Achived',
 
         editable: true,
+        minWidth: 100,
       },
       {
         field: 'fyAop',
         title: 'FY25 AOP',
 
         editable: true,
+        minWidth: 100,
       },
       {
         field: 'fyActual',
         title: 'FY25 Actual',
 
         editable: true,
+        minWidth: 100,
       },
       {
         field: 'fyActual',
         title: 'FY26 Plan',
 
         editable: true,
+        minWidth: 100,
       },
 
-      { field: 'remarks', title: 'Remark', widthT: 60, editable: false },
+      {
+        field: 'remarks',
+        title: 'Remark',
+        widthT: 60,
+        editable: false,
+        minWidth: 100,
+      },
     ],
     [plantID, yearChanged],
   )
@@ -125,33 +139,39 @@ export default function PlantSafetyPerformanceTarget() {
         title: 'S.No',
         widthT: 70,
         editable: false,
+        minWidth: 70,
       },
       {
         field: 'initiative',
         title: 'Initiative',
         editable: true,
         widthT: 250,
+        minWidth: 100,
       },
       {
         field: 'outcome',
         title: 'Outcome',
         editable: true,
+        minWidth: 100,
       },
       {
         field: 'recommendation',
         title: 'Recommendation',
         editable: true,
+        minWidth: 100,
       },
       {
         field: 'targetDate',
         title: 'Target Date',
         editable: true,
+        minWidth: 100,
       },
       {
         field: 'responsible',
         title: 'Resp.',
         editable: true,
         widthT: 120,
+        minWidth: 100,
       },
     ],
     [plantID, yearChanged],
@@ -164,17 +184,20 @@ export default function PlantSafetyPerformanceTarget() {
         title: 'S.No',
         widthT: 70,
         editable: false,
+        minWidth: 70,
       },
       {
         field: 'incidentDescription',
         title: 'Incident Description',
         editable: true,
         widthT: 250,
+        minWidth: 100,
       },
       {
         field: 'rootCauses',
         title: 'Root Causes',
         editable: true,
+        minWidth: 100,
       },
       {
         field: 'recommendation',
@@ -185,12 +208,14 @@ export default function PlantSafetyPerformanceTarget() {
         field: 'targetDate',
         title: 'Target Date',
         editable: true,
+        minWidth: 100,
       },
       {
         field: 'responsible',
         title: 'Resp.',
         editable: true,
         widthT: 120,
+        minWidth: 100,
       },
     ],
     [plantID, yearChanged],
@@ -561,12 +586,7 @@ export default function PlantSafetyPerformanceTarget() {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <KendoDataTables
         rows={rows}

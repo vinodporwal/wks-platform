@@ -15,8 +15,13 @@ import {
   CustomAccordionDetails,
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
+
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import { CalculateIcon, FileExportIcon } from 'assets/images/icons/index'
+
 import { getRoleName } from 'services/role-service.js'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const CALL_DELAY_MS = 20
 const MONTH_GRID_NAME = 'Month wise Quantity, Tonnes / Month'
 
@@ -73,6 +78,9 @@ const OptimizerReport = () => {
   }
 
   const enrichColumns = useCallback((backendCols = []) => {
+    const filteredCols = backendCols.filter((col) => col.field !== 'GRID_TYPE')
+    const applyFixedWidth = filteredCols.length < 7
+    const fixedWidth = applyFixedWidth ? 150 : 121
     return backendCols.map((col) => {
       const isTextCol = col.type === 'string'
       const isNumberCol = col.type === 'number'
@@ -85,6 +93,7 @@ const OptimizerReport = () => {
         ...(isNumberCol ? { format: '{0:0.0000}' } : {}),
         editable: false,
         isRightAlligned: isNumberCol ? 'numeric' : undefined,
+        ...(fixedWidth ? { widthT: fixedWidth } : {}),
       }
     })
   }, [])
@@ -476,34 +485,43 @@ const OptimizerReport = () => {
   }
 
   return (
-    <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+    <div className='configuration-accordion-wrapper'>
+      <LoaderBackdrop open={!!loading} />
 
-      <Box display='flex' justifyContent='flex-end' mb='2px' gap={1}>
+      <Box display='flex' justifyContent='flex-end' sx={{ marginBottom: '8px', mt: '5px' }} gap={1}>
+        <Button
+          variant='contained'
+          onClick={exportAllGrids}
+          className='btn-export'
+          // disabled={READ_ONLY}
+          startIcon={
+            <Box
+              component='img'
+              src={FileExportIcon}
+              className='w16-icon'
+            />
+          }
+        >
+          Export
+        </Button>
         {isCracker && (
           <Button
             variant='contained'
             onClick={calculateMonthWiseData}
             disabled={READ_ONLY || calculating || loading}
-            className='btn-save'
+            className='btn-calculate'
             color='primary'
+            startIcon={
+              <Box
+                component='img'
+                src={CalculateIcon}
+                className='w16-icon'
+              />
+            }
           >
             {calculating ? 'Calculating...' : 'Calculate'}
           </Button>
         )}
-        <Button
-          variant='contained'
-          onClick={exportAllGrids}
-          className='btn-save'
-          //disabled={READ_ONLY}
-        >
-          Export
-        </Button>
       </Box>
 
       <Box display='flex' flexDirection='column' gap={2}>
@@ -511,16 +529,18 @@ const OptimizerReport = () => {
           const d = dataMap[name] || { rows: [], columns: [] }
           return (
             <div key={name}>
-              <CustomAccordion defaultExpanded disableGutters>
+              <CustomAccordion defaultExpanded disableGutters className='k-table-box'>
                 <CustomAccordionSummary
                   aria-controls={`${name}-content`}
                   id={`${name}-header`}
+                  expandIcon={<ExpandMoreIcon sx={{ fontSize: '1.2rem' }} />}
+                  className='aop-report-accordion-summary'
                 >
                   <Typography component='span' className='grid-title'>
                     {renderTitle(name)}
                   </Typography>
                 </CustomAccordionSummary>
-                <CustomAccordionDetails>
+                <CustomAccordionDetails sx={{ padding: '0px 0px 1px' }}>
                   <Box sx={{ width: '100%', margin: 0 }}>
                     <KendoDataGrid
                       rows={d.rows}

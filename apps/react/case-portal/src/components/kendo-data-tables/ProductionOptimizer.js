@@ -11,6 +11,7 @@ import { Box } from '@mui/material'
 import { DataService } from 'services/DataService'
 import { ProductionNormsApiService } from 'services/production-norms-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const MONTH_FIELDS = [
   'Apr',
@@ -64,6 +65,15 @@ const ProductionOptimizer = () => {
   const lowerVertName = vertName?.toLowerCase()
   const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
   const headerMap = generateHeaderNames(AOP_YEAR)
+  const IS_PP_DTA =
+    verticalObject?.name?.toLowerCase() === 'pp' &&
+    siteObject?.name?.toLowerCase() === 'dta'
+  const IS_PP_SEZ =
+    verticalObject?.name?.toLowerCase() === 'pp' &&
+    siteObject?.name?.toLowerCase() === 'sez'
+  const IS_PP_HMD =
+    verticalObject?.name?.toLowerCase() === 'pp' &&
+    siteObject?.name?.toLowerCase() === 'hmd'
 
   const [rows, setRows] = useState([])
   const [columns, setColumns] = useState([])
@@ -273,6 +283,7 @@ const ProductionOptimizer = () => {
             format: col.type === 'number' ? valueFormat : '{0:#.###}',
             type: col.type,
             isEditable: false,
+            minWidth: 100,
           }
         })
 
@@ -333,6 +344,7 @@ const ProductionOptimizer = () => {
             align: col.type === 'number' ? 'right' : 'left',
             format: col.type === 'number' ? valueFormat : '{0:#.###}',
             type: col.type,
+            minWidth: 100,
           }
         })
 
@@ -427,6 +439,34 @@ const ProductionOptimizer = () => {
       console.error('Error!', error)
     }
   }
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      let response
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PP_HMD) {
+        response = await ProductionNormsApiService.ProductionOptimizerExport(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          selectedMode,
+          `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
+        )
+      }
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -456,7 +496,9 @@ const ProductionOptimizer = () => {
           saveWithRemark: false,
           saveBtn: false,
           allAction: true,
-          downloadExcelBtnFromUI: true,
+          downloadExcelBtnFromUI:
+            IS_PP_DTA || IS_PP_SEZ || IS_PP_HMD ? false : true,
+          downloadExcelBtn: IS_PP_DTA || IS_PP_SEZ || IS_PP_HMD ? true : false,
           titleName: 'Production Optimizer',
           ExcelName: `${EXCEL_EXPORT_TITLE}_Production Optimizer`,
           showRefresh: false,
@@ -512,12 +554,7 @@ const ProductionOptimizer = () => {
       </Box>
 
       <div>
-        <Backdrop
-          open={loading}
-          sx={{ color: '#fff', zIndex: (t) => t.zIndex.drawer + 1 }}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
+        <LoaderBackdrop open={!!loading} />
 
         <KendoDataTables
           columns={columns}
@@ -538,6 +575,7 @@ const ProductionOptimizer = () => {
           selectMode={selectedMode}
           setSelectMode={(val) => setSelectedMode(val)}
           handleCalculate={handleCalculate}
+          downloadExcelForConfiguration={downloadExcelForConfiguration}
         />
         <KendoDataTables
           title='Combined Production Optimizer'

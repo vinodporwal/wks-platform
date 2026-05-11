@@ -6,82 +6,45 @@ export const SelectCellEditor = ({
   field,
   onChange,
   options = [],
-  textField = 'text',
+  textField = 'label',
   valueField = 'value',
   placeholder = 'Select...',
 }) => {
-  const storedValue = dataItem[field] ?? null
+  const storedValue = dataItem[field] ?? ''
+  // Find the matching option object based on the stored value
+  const selectedOption =
+    options.find((opt) => opt[valueField] === storedValue) || null
+  const [localValue, setLocalValue] = useState(selectedOption)
+  const inputRef = useRef(null)
 
-  // Find the object that matches the stored value
-  const getInitialSelection = () => {
-    if (!storedValue || !options.length) return null
-    return options.find((option) => option[valueField] === storedValue) || null
-  }
-
-  const [localValue, setLocalValue] = useState(getInitialSelection())
-  const isFirstRender = useRef(true)
-  const dropdownRef = useRef(null)
-
+  // Autofocus when cell enters edit mode
   useEffect(() => {
-    // Delay focus slightly to prevent interference with onChange
     const timer = setTimeout(() => {
-      if (dropdownRef.current) {
-        const el = dropdownRef.current.element || dropdownRef.current
-        if (el && typeof el.focus === 'function') el.focus()
+      if (inputRef.current?.element) {
+        inputRef.current.element.focus()
       }
     }, 50)
     return () => clearTimeout(timer)
   }, [])
 
   const handleChange = (e) => {
-    const selectedItem = e.target.value
-    setLocalValue(selectedItem)
+    const selectedOpt = e.value
+    const newValue = selectedOpt ? selectedOpt[valueField] : ''
+    setLocalValue(selectedOpt)
+    onChange({ dataItem, field, value: newValue })
   }
 
-  // Debounced sync to grid, but skip first render
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
-    }
-
-    const handler = setTimeout(() => {
-      // Extract the value to send
-      let valueToSend = localValue
-      if (
-        localValue &&
-        typeof localValue === 'object' &&
-        localValue[valueField] !== undefined
-      ) {
-        valueToSend = localValue[valueField]
-      }
-
-      // Only send if the value actually changed
-      if (valueToSend !== storedValue) {
-        onChange({ dataItem, field, value: valueToSend })
-      }
-    }, 300)
-
-    return () => clearTimeout(handler)
-  }, [localValue, dataItem, field, onChange, storedValue, valueField])
-
   return (
-    <td style={{ textAlign: 'start' }}>
+    <td>
       <DropDownList
-        ref={dropdownRef}
-        value={localValue}
-        onChange={handleChange}
+        ref={inputRef}
         data={options}
         textField={textField}
-        valueField={valueField}
-        placeholder={placeholder}
-        style={{
-          fontSize: '1rem',
-          fontWeight: 'normal',
-          height: '2rem',
-          width: '100%',
-          backgroundColor: 'lightGrey',
-        }}
+        dataItemKey={valueField}
+        value={localValue}
+        onChange={handleChange}
+        className='dropdown-editor'
+        style={{ width: '100%' }}
       />
     </td>
   )
