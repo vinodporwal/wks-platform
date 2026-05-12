@@ -2630,6 +2630,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 		boolean elastomerJMD =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD");
 		boolean elastomerAndHMD = verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("HMD");
+		boolean elastomerHmdsbr = verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
 		boolean elastomerHmdPbr3 = verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("PBR3");
 		boolean vcmHMD = verticalName.equalsIgnoreCase("VCM") && site.getName().equalsIgnoreCase("HMD");
 		Boolean monthDropdown = false;
@@ -2942,14 +2943,17 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	 	                    continue; 
 						}
 
-					
-							if(particularsChanged && java.util.Objects.equals(originalRemark, newRemark)) { 
-								shutDownPlanDTO.setSaveStatus("Failed");
-									 shutDownPlanDTO.setErrDescription("Remark must be updated when particulars are changed.");
-									 failedList.add(shutDownPlanDTO);
-									 continue; 
-							}
 						
+					}
+
+					if(elastomerHmdsbr) {  
+
+						if(particularsChanged && java.util.Objects.equals(originalRemark, newRemark)) { 
+							shutDownPlanDTO.setSaveStatus("Failed");
+								 shutDownPlanDTO.setErrDescription("Remark must be updated when particulars are changed.");
+								 failedList.add(shutDownPlanDTO);
+								 continue; 
+						}
 					}
 	                
 	                if(verticalName.equalsIgnoreCase("ELASTOMER") && (!java.util.Objects.equals(originalDurationInHrs, newDurationInHrs))) {
