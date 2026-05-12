@@ -43,6 +43,20 @@ def _num(value) -> float:
         return 0.0
 
 
+# ============================================================
+# BPC BOOK CACHE – parse the ODS/CSV once, reuse everywhere
+# ============================================================
+_BPC_BOOK_CACHE: dict = {}   # keyed by absolute file path
+
+
+def get_cached_bpc_book(file_path: str) -> 'BPCReferenceBook':
+    """Return a cached BPCReferenceBook, parsing the file only on the first call."""
+    abs_path = os.path.abspath(file_path)
+    if abs_path not in _BPC_BOOK_CACHE:
+        _BPC_BOOK_CACHE[abs_path] = BPCReferenceBook(file_path)
+    return _BPC_BOOK_CACHE[abs_path]
+
+
 class BPCReferenceBook:
     """Encapsulates BPC reference data from ODS/CSV with flexible querying."""
     
@@ -575,6 +589,7 @@ def build_nmd_budget_comparison_text(
     financial_year: int,
     calculation_result: dict,
     bpc_csv_path: Optional[str] = None,
+    bpc_book: Optional['BPCReferenceBook'] = None,
 ) -> Tuple[str, dict, dict]:
     # Preload all DB norms for this month in 1 query to avoid 50+ DB roundtrips!
     _preload_cpp_norms(month, year)
@@ -582,7 +597,8 @@ def build_nmd_budget_comparison_text(
     month_name = _month_name(month)
     if bpc_csv_path is None:
         bpc_csv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "BPC.ods")
-    book = BPCReferenceBook(bpc_csv_path)
+    # Reuse cached book if provided, otherwise use module-level cache
+    book = bpc_book if bpc_book is not None else get_cached_bpc_book(bpc_csv_path)
     values = _extract_values(calculation_result)
 
     utilities = values["utilities"]
@@ -1027,10 +1043,11 @@ def write_month_comparison_file(
     financial_year: int,
     calculation_result: dict,
     bpc_csv_path: Optional[str] = None,
+    bpc_book: Optional['BPCReferenceBook'] = None,
 ) -> str:
     os.makedirs(output_folder, exist_ok=True)
     month_name = _month_name(month)
-    text, _, _ = build_nmd_budget_comparison_text(month, year, financial_year, calculation_result, bpc_csv_path)
+    text, _, _ = build_nmd_budget_comparison_text(month, year, financial_year, calculation_result, bpc_csv_path, bpc_book=bpc_book)
     file_name = f"nmd_budget_comparison_{year}_{month:02d}_{month_name.lower()}.txt"
     file_path = os.path.join(output_folder, file_name)
     with open(file_path, "w", encoding="utf-8") as handle:
@@ -1043,16 +1060,20 @@ def write_full_year_comparison_file(
     financial_year: int,
     completed_months: List[Tuple[int, int, dict]],
     bpc_csv_path: Optional[str] = None,
+    bpc_book: Optional['BPCReferenceBook'] = None,
 ) -> str:
     os.makedirs(output_folder, exist_ok=True)
     ordered = sorted(
         completed_months,
         key=lambda item: (item[1], item[0]) if item[0] >= 4 else (item[1], item[0] + 12),
     )
+    # Resolve BPC book once for the entire call
+    if bpc_book is None and bpc_csv_path:
+        bpc_book = get_cached_bpc_book(bpc_csv_path)
     sections: List[str] = []
     monthly_totals = []
     for month, year, calculation_result in ordered:
-        text, cpp_totals, bpc_totals = build_nmd_budget_comparison_text(month, year, financial_year, calculation_result, bpc_csv_path)
+        text, cpp_totals, bpc_totals = build_nmd_budget_comparison_text(month, year, financial_year, calculation_result, bpc_csv_path, bpc_book=bpc_book)
         sections.append(text)
         sections.append("")
         monthly_totals.append({

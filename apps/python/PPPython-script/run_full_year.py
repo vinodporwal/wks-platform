@@ -27,6 +27,7 @@ from services.budget_service import calculate_budget_with_iteration
 from services.nmd_budget_comparison_service import (
     write_full_year_comparison_file,
     write_month_comparison_file,
+    get_cached_bpc_book,
 )
 from services.fixed_consumption_service import get_fixed_consumption_for_month, print_fixed_consumption
 from services.process_demand_service import (
@@ -490,6 +491,9 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
     completed_comparisons = []
     comparison_folder = os.path.join(run_log_folder, "nmd_budget_comparisons")
     bpc_csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "BPC.ods")
+    # Pre-parse the BPC ODS file ONCE (this is expensive: ~2-5s) and reuse
+    # across all 12 monthly comparisons + the final full-year file.
+    bpc_book = get_cached_bpc_book(bpc_csv_path)
 
     # Thread-local storage so each worker thread has its own stdout buffer
     _tls = threading.local()
@@ -666,6 +670,7 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
                                 financial_year=financial_year,
                                 calculation_result=calculation_result,
                                 bpc_csv_path=bpc_csv_path,
+                                bpc_book=bpc_book,
                             )
                             month_result["comparison_file"] = month_comparison_path
 
@@ -675,14 +680,7 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
                                 calculation_result,
                             ))
 
-                            full_year_comparison_path = write_full_year_comparison_file(
-                                output_folder=comparison_folder,
-                                financial_year=financial_year,
-                                completed_months=completed_comparisons,
-                                bpc_csv_path=bpc_csv_path,
-                            )
                             results["comparison_folder"] = comparison_folder
-                            results["full_year_comparison_file"] = full_year_comparison_path
                     except Exception as comparison_error:
                         month_result["comparison_error"] = str(comparison_error)
                         import traceback
@@ -695,6 +693,22 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
     finally:
         # Always restore real stdout
         sys.stdout = _real_stdout
+
+    # Generate the full-year comparison file ONCE (not incrementally per-month)
+    if completed_comparisons:
+        try:
+            full_year_comparison_path = write_full_year_comparison_file(
+                output_folder=comparison_folder,
+                financial_year=financial_year,
+                completed_months=completed_comparisons,
+                bpc_csv_path=bpc_csv_path,
+                bpc_book=bpc_book,
+            )
+            results["full_year_comparison_file"] = full_year_comparison_path
+        except Exception as fy_comparison_error:
+            print(f"  [WARN] Full-year comparison file generation failed: {fy_comparison_error}")
+            import traceback
+            traceback.print_exc()
 
     # Sort results back into FY order (April → March)
     month_order = {(m, y): i for i, (m, y) in enumerate(fy_months)}
