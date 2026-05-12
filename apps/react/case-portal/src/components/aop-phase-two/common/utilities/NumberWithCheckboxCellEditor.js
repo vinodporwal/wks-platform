@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Checkbox, Box } from '@mui/material'
-import { Input } from '@progress/kendo-react-inputs'
+import { InputBase } from '../../../../../node_modules/@mui/material/index'
 
 export const NumberWithCheckboxCellEditor = (props) => {
   const {
@@ -79,18 +79,13 @@ export const NumberWithCheckboxCellEditor = (props) => {
         />
         <Box sx={{ flexGrow: 1 }}>
           {isNumberEditable ? (
-            <Input
+            <InputBase
               ref={inputRef}
               value={localValue}
               onChange={handleValueChange}
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
-              style={{
-                fontSize: '0.8rem',
-                padding: '2px 2px',
-                height: '22px',
-                lineHeight: '1rem',
-              }}
+              className='input-editor'
             />
           ) : (
             <Box

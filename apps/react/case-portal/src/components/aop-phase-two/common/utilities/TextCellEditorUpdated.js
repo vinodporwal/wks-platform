@@ -1,4 +1,4 @@
-import { Input } from '@progress/kendo-react-inputs'
+import { InputBase } from '../../../../../node_modules/@mui/material/index'
 import { useState, useEffect, useRef } from 'react'
 
 export const TextCellEditorUpdated = ({ dataItem, field, onChange }) => {
@@ -35,35 +35,26 @@ export const TextCellEditorUpdated = ({ dataItem, field, onChange }) => {
   }, [localValue, dataItem, field, onChange, initialValue])
 
   useEffect(() => {
-    if (inputRef.current) {
-      const el = inputRef.current.element || inputRef.current
-      if (el && typeof el.focus === 'function') el.focus()
-    }
+    const timer = setTimeout(() => {
+      if (inputRef.current) {
+        const el = inputRef.current.element || inputRef.current
+        if (el && typeof el.focus === 'function') {
+          el.focus()
+        }
+      }
+    }, 0)
+    return () => clearTimeout(timer)
   }, [])
 
   return (
     <td style={{ textAlign: 'start' }}>
-      <Input
+      <InputBase
         ref={inputRef}
         value={localValue}
         onChange={handleChange}
         onBlur={handleBlur}
-        style={{
-          fontSize: '0.8125rem',
-          fontWeight: 600,
-          color: '#1d3665',
-          padding: '0 8px',
-          height: '40px',
-          lineHeight: '40px',
-          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif !important",
-          width: '100%',
-          borderRadius: '6px',
-          backgroundColor: '#FFFFFF',
-          border: '1px solid #E0E4EC',
-          boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)',
-          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-          textAlign: 'left',
-        }}
+        autoFocus
+        className='input-editor'
       />
     </td>
   )
