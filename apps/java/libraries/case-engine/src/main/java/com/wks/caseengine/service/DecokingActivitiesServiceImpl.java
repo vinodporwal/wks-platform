@@ -764,6 +764,11 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
 	    List<Map<String, Object>> failedList = new ArrayList<>();
 
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+        boolean CrackerVmd = vertical.getName().equalsIgnoreCase("CRACKER") && site.getName().equalsIgnoreCase("VMD");
+
 	    final Set<String> EXCLUDE = Set.of("AOPYear", "aopYear", "Id", "Plant_Fk_Id", "plantId",
 	                                       "saveStatus", "errDescription", "Month", "Date","id");
 
@@ -786,7 +791,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	            }
 
 	            if (existingRecord.isPresent()) {
-	                updateExistingRecordDynamic(existingRecord.get().getId(), payload, EXCLUDE);
+	                updateExistingRecordDynamic(existingRecord.get().getId(), payload, EXCLUDE, CrackerVmd);
 	            } else {
 	                
 	                insertNewRecordWithDefaults(payload, plantUuid, year, dateString);
@@ -806,18 +811,30 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	    }
 	}
 	
-	private void updateExistingRecordDynamic(UUID id, Map<String, Object> payload, Set<String> exclude) {
+	private void updateExistingRecordDynamic(UUID id, Map<String, Object> payload, Set<String> exclude, boolean isCrackerVmd) {
 	    StringBuilder sql = new StringBuilder("UPDATE DecokeRunLength SET ");
 	    Map<String, Object> params = new HashMap<>();
 	    boolean first = true;
 
-	    for (Map.Entry<String, Object> entry : payload.entrySet()) {
+	for (Map.Entry<String, Object> entry : payload.entrySet()) {
 	        String key = entry.getKey();
-	        if (exclude.contains(key) || key.contains("Actual")) continue; 
+			
+			if(exclude.contains(key) || key.contains("Actual")) continue;
+	     
 
-	        String dbColumn = key.replace(" ", "_");
+	        String dbColumn;
+	        if (isCrackerVmd && key.matches("H10[1-6] (Actual|Proposed)")) {
+	            String[] parts = key.split(" ", 2);
+	            String hPart = parts[0]; // e.g. "H101"
+	            String type  = parts[1]; // "Actual" or "Proposed"
+	            int lastDigit = Character.getNumericValue(hPart.charAt(hPart.length() - 1));
+	            int colNum = lastDigit + 9;
+	            dbColumn = "H" + colNum + "_" + type;
+	        } else {
+	            dbColumn = key.replace(" ", "_");
+	        }
+
 	        if (!first) sql.append(", ");
-	        
 	        String paramName = "p_" + dbColumn.replaceAll("[^a-zA-Z0-9]", "");
 	        sql.append("[").append(dbColumn).append("] = :").append(paramName);
 	        params.put(paramName, entry.getValue());
