@@ -2789,6 +2789,22 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                	monthChange=true;
 	                }
 	           // }
+			   if(elastomerAndHMD) { 
+                       Integer originalMonth = plantMaintenanceTransaction.getMaintForMonth() !=null ? plantMaintenanceTransaction.getMaintForMonth() : null;
+                   String incomingMonth = shutDownPlanDTO.getMonth();
+
+				   if (originalMonth != null && incomingMonth != null && !incomingMonth.trim().isEmpty()) {
+
+					// Convert month name to month number
+					int incomingMonthNumber = java.time.Month
+							.valueOf(incomingMonth.trim().toUpperCase())
+							.getValue();
+				
+					// Compare existing month number with incoming month number
+					monthChange = !Objects.equals(originalMonth, incomingMonthNumber);
+
+			   }
+			}
 	            String originalDesc = plantMaintenanceTransaction.getDiscription();
 	            String originalStart = plantMaintenanceTransaction.getMaintStartDateTime() != null ? 
 	                                   plantMaintenanceTransaction.getMaintStartDateTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime().format(COMPARISON_FORMATTER) : null;
@@ -2798,6 +2814,9 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	            Double originalRPFDownTime=null;
 	            Double originalNoOfRPF=null;
 	            UUID originalLineId=null;
+
+		
+				
 	            if(plantMaintenanceTransaction.getRate()!=null) {
 	            	 originalRate = plantMaintenanceTransaction.getRate();
 	            }
@@ -2908,6 +2927,30 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                    failedList.add(shutDownPlanDTO);
 	                    continue; 
 	                }
+
+					String originalParticulars = slowdownPlanRepository.findDisplayNameByNormParameterFKId(plantMaintenanceTransaction.getNormParametersFKId());
+					String incomingParticulars = shutDownPlanDTO.getProductName();
+					boolean particularsChanged = !java.util.Objects.equals(originalParticulars, incomingParticulars);
+
+					if(elastomerAndHMD) { 
+
+						if(monthChange && java.util.Objects.equals(originalRemark, newRemark)) { 
+
+						 shutDownPlanDTO.setSaveStatus("Failed");
+	 	                    shutDownPlanDTO.setErrDescription("Remark must be updated when month is changed.");
+	 	                    failedList.add(shutDownPlanDTO);
+	 	                    continue; 
+						}
+
+					
+							if(particularsChanged && java.util.Objects.equals(originalRemark, newRemark)) { 
+								shutDownPlanDTO.setSaveStatus("Failed");
+									 shutDownPlanDTO.setErrDescription("Remark must be updated when particulars are changed.");
+									 failedList.add(shutDownPlanDTO);
+									 continue; 
+							}
+						
+					}
 	                
 	                if(verticalName.equalsIgnoreCase("ELASTOMER") && (!java.util.Objects.equals(originalDurationInHrs, newDurationInHrs))) {
 	                	if(java.util.Objects.equals(originalRemark, newRemark)) {

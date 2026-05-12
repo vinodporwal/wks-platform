@@ -486,5 +486,24 @@ public class MatBalServiceImpl implements MatBalService {
 		}
 		return null;
 	}
+
+	@Override
+	public AOPMessageVM calculateMaterialBalance(String plantId, String year) {
+		try {
+		        Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+				Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+				Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+				String storedProcedure = vertical.getName() + "_" + site.getName() + "_LoadMATBAL";
+				String sql = "EXEC " + storedProcedure + " @plantId = :plantId, @AopYear = :AopYear";
+				Query query = entityManager.createNativeQuery(sql);
+				query.setParameter("plantId", plantId);
+				query.setParameter("AopYear", year);
+				query.executeUpdate();
+				return new AOPMessageVM(200, "Material Balance calculated successfully", null);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException("Failed to calculate Material Balance", e);
+		}
+	}
 }
 
