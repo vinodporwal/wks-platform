@@ -389,7 +389,72 @@ export const SlowDownElastomerColumnsSBR = [
     minWidth: 100,
   },
 ]
+export const SlowDownElastomerColumnsPBR3 = [
+  {
+    field: 'discription',
+    title: 'Slowdown Desc',
+    editable: true,
+    widthT: 230,
+    autoAdjust: false,
+    minWidth: 100,
+  },
+ 
+  {
+    field: 'maintenanceId',
+    title: 'maintenanceId',
+    editable: false,
+    hidden: true,
+    isVisible: false,
+    minWidth: 100,
+  },
 
+  // {
+  //   field: 'maintStartDateTime',
+  //   title: 'SD- From',
+  //   type: 'dateTime',
+  //   editable: true,
+  // },
+
+  // {
+  //   field: 'maintEndDateTime',
+  //   title: 'SD- To',
+  //   type: 'dateTime',
+  //   editable: true,
+  // },
+  {
+    field: 'monthly',
+    title: 'Month',
+    type: 'monthDropdownPEPP',
+    editable: true,
+    width: 150,
+  },
+
+  {
+    field: 'durationInHrs',
+    title: 'Duration (hrs)',
+    editable: true,
+    widthT: 140,
+    minWidth: 100,
+  },
+
+  {
+    field: 'rate',
+    title: 'Rate (TPH)',
+    editable: true,
+    type: 'number',
+    widthT: 110,
+    minWidth: 100,
+  },
+
+  {
+    field: 'remark',
+    title: 'Remarks',
+    editable: true,
+    widthT: 230,
+    autoAdjust: false,
+    minWidth: 100,
+  },
+]
 export const NormalOpNormElastomerColumns = [
   {
     field: 'Particulars',
