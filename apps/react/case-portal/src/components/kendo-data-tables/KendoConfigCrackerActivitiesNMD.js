@@ -831,6 +831,7 @@ const DecokingConfigNMD = () => {
       showTitleName: true,
       showAccordian: true,
       showCalculate: true,
+      showCalculateNextYear: false,
       // showCalculateVisibility:
       //   Object.keys(calculationObject || {}).length > 0 ? true : false,
 

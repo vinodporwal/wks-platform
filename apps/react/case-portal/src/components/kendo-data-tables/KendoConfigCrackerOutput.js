@@ -163,6 +163,8 @@ const CrackerConfig = () => {
       deleteButton: false,
       editButton: false,
       showUnit: false,
+      showCalculate: lowerVertName === 'cracker' && SITE_NAME === "HMD",
+      showCalculateVisibility: true,
       showModes:
         lowerVertName === 'cracker' &&
         !IS_CRACKER_HMD &&

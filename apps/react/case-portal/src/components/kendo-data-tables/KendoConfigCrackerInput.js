@@ -166,6 +166,8 @@ const CrackerConfig = () => {
       saveWithRemark: true,
       saveBtn: true,
       allAction: lowerVertName === 'cracker',
+      showCalculate: lowerVertName === 'cracker' && SITE_NAME === "HMD",
+      showCalculateVisibility: true,
       modes: modes,
       uploadExcelBtn:
         currentTabDisplay == 'Constant' ||
