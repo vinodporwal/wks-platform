@@ -404,8 +404,7 @@ public class ShutdownRateServiceImpl implements ShutdownRateService {
 
 							boolean hasMajorShutdownValueChanged = hasValueChanged(existingMajorShutdownValue, dto.getApr());
 							boolean hasOneDayShutdownValueChanged = hasValueChanged(existingOneDayShutdownValue, dto.getMay());
-                double apr = dto.getApr();
-                double may = dto.getMay();
+             
 							boolean hasRemarkChanged = !incomingRemark.equalsIgnoreCase(existingRemark);
 
 							if((hasMajorShutdownValueChanged || hasOneDayShutdownValueChanged) && !hasRemarkChanged) { 
@@ -511,30 +510,33 @@ return !(value1.compareTo(value2) == 0);
 			dataStyle.setBorderLeft(BorderStyle.THIN);
 			dataStyle.setBorderRight(BorderStyle.THIN);
 
-			String[] headers = { "Particular", "UOM", "Major Shutdown", "One Day Shutdown", "Remarks",
-					"NormParameter_FK_Id" };
+		String[] headers = { "Particular", "UOM", "Major Shutdown", "One Day Shutdown", "Remarks",
+				"NormParameter_FK_Id", "Status", "Error Description" };
 			Row headerRow = sheet.createRow(0);
 			for (int i = 0; i < headers.length; i++) {
 				Cell cell = headerRow.createCell(i);
 				cell.setCellValue(headers[i]);
 				cell.setCellStyle(headerStyle);
 			}
-
 			int rowIdx = 1;
 			for (ConfigurationDTO dto : failedRows) {
 				Row row = sheet.createRow(rowIdx++);
 				setExcelCellValue(row.createCell(0), dto.getProductName(), dataStyle);
 				setExcelCellValue(row.createCell(1), dto.getUOM(), dataStyle);
-				setExcelCellValue(row.createCell(2), dto.getJan(), dataStyle);
-				setExcelCellValue(row.createCell(3), dto.getFeb(), dataStyle);
+				setExcelCellValue(row.createCell(2), dto.getApr(), dataStyle);
+				setExcelCellValue(row.createCell(3), dto.getMay(), dataStyle);
 				setExcelCellValue(row.createCell(4), dto.getRemarks(), dataStyle);
 				setExcelCellValue(row.createCell(5), dto.getNormParameterFKId(), dataStyle);
+				setExcelCellValue(row.createCell(6), dto.getSaveStatus(), dataStyle);
+				setExcelCellValue(row.createCell(7), dto.getErrDescription(), dataStyle);
 			}
 
 			sheet.setColumnHidden(5, true);
 			sheet.setColumnWidth(5, 0);
-			for (int i = 0; i < 5; i++) {
-				sheet.autoSizeColumn(i);
+			for (int i = 0; i < headers.length; i++) {
+				if (i != 5) {
+					sheet.autoSizeColumn(i);
+				}
 			}
 
 			ByteArrayOutputStream out = new ByteArrayOutputStream();

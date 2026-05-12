@@ -226,5 +226,10 @@ public class SpyroOutputController {
 			return	spyroOutputService.importExcel(year, plantId, mode, file); 
 	}
 
+	@GetMapping(value = "/spyro-output/calculate")
+	public AOPMessageVM calculateSpyroOutputData(@RequestParam String year, @RequestParam String plantId,
+			@RequestParam String Mode, @RequestParam(value = "type", required = false) String type) {
+		return spyroOutputService.calculateSpyroOutputData(year, plantId, Mode, type);
+	}
 
 }

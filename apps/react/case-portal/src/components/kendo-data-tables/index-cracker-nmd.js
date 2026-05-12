@@ -16,8 +16,6 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import '../../kendo-data-grid.css'
 
-import DownloadIcon from '@mui/icons-material/Download'
-import UploadIcon from '@mui/icons-material/Upload'
 import Notification from 'components/Utilities/Notification'
 import { SvgIcon } from '../../../node_modules/@progress/kendo-react-common/index'
 import { trashIcon } from '../../../node_modules/@progress/kendo-svg-icons/dist/index'
@@ -46,6 +44,7 @@ import { getRoleName } from 'services/role-service'
 import { getColumnMenuDateFilter } from 'components/data-tables/Reports-kendo/ColumnMenuDateFilter'
 import { useSelector } from 'react-redux'
 import { PostCrDaysEditorNMD } from './Utilities-Kendo/numbericColumns_nmd'
+import { CalculateIcon, FileImportIcon, SaveIcon } from 'assets/images/icons/index'
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -773,8 +772,11 @@ const KendoDataTablesCrackerNMD = ({
                       size='large'
                       onClick={downloadExcelForConfiguration}
                       disabled={isButtonDisabled}
+                      startIcon={
+                        <Box component='img' src={FileExportIcon} className='w16-icon' />
+                      }
                     >
-                      <DownloadIcon fontSize='small' />
+                      Export
                     </Button>
                   </span>
                 </Tooltip>
@@ -787,8 +789,11 @@ const KendoDataTablesCrackerNMD = ({
                       size='large'
                       onClick={triggerFileUpload}
                       disabled={isButtonDisabled}
+                      startIcon={
+                        <Box component='img' src={FileImportIcon} className='w16-icon' />
+                      }
                     >
-                      <UploadIcon fontSize='small' />
+                      Import
                     </Button>
                   </span>
                   <input
@@ -811,6 +816,9 @@ const KendoDataTablesCrackerNMD = ({
                     (!summaryEdited && Object.keys(modifiedCells).length === 0)
                   }
                   {...(loading ? {} : {})}
+                  startIcon={
+                    <Box component='img' src={SaveIcon} className='w16-icon' />
+                  }
                 >
                   Save
                 </Button>
@@ -823,9 +831,12 @@ const KendoDataTablesCrackerNMD = ({
                     rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility
+                      !permissions?.showCalculateVisibility
                   }
                   className='btn-save'
+                  startIcon={
+                    <Box component='img' src={CalculateIcon} className='w16-icon' />
+                  }
                 >
                   Calculate
                 </Button>

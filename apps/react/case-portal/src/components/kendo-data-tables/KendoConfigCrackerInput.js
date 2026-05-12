@@ -166,6 +166,8 @@ const CrackerConfig = () => {
       saveWithRemark: true,
       saveBtn: true,
       allAction: lowerVertName === 'cracker',
+      showCalculate: lowerVertName === 'cracker' && SITE_NAME === 'HMD',
+      showCalculateVisibility: true,
       modes: modes,
       uploadExcelBtn:
         currentTabDisplay == 'Constant' ||
@@ -178,6 +180,8 @@ const CrackerConfig = () => {
           ? false
           : true,
       hideRemarkForNonEditableRows: true,
+      showCalculate: true,
+      showCalculateVisibility: true,
     },
     isOldYear,
   )
@@ -749,6 +753,47 @@ const CrackerConfig = () => {
     }
   }
 
+  const handleCalculate = useCallback(async () => {
+    setLoading(true)
+    try {
+      const mode = selectMode || currentTabDisplay || 'Feed'
+      const type = currentTabDisplay || 'Feed'
+
+      const response = await DataService.calculateSpyroInputData(
+        keycloak,
+        mode,
+        type,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data calculated successfully!',
+          severity: 'success',
+        })
+
+        fetchCrackerRows(currentTabDisplay, selectMode)
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Error calculating data!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error calculating spyro input data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to calculate data!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [keycloak, selectMode, currentTabDisplay, PLANT_ID, AOP_YEAR])
+
   const saveSpyroInputExcelFile = async (rawFile) => {
     setLoading(true)
     try {
@@ -982,7 +1027,7 @@ const CrackerConfig = () => {
       }
     }
   }, [currentTabDisplay, PLANT_ID, AOP_YEAR, keycloak])
-  
+
   const resolvedTabs = tabs.map((tabId) => {
     const info = availableTabs.find(
       (t) => t.id.toLowerCase() === tabId.toLowerCase(),
@@ -1038,6 +1083,7 @@ const CrackerConfig = () => {
                     setCurrentRemark={setCurrentRemark}
                     currentRowId={currentRowId}
                     permissions={adjustedPermissions}
+                    handleCalculate={handleCalculate}
                     selectMode={selectMode}
                     setSelectMode={setSelectMode}
                     saveChanges={saveChanges}
@@ -1168,6 +1214,7 @@ const CrackerConfig = () => {
                     setRemarkDialogOpen={setRemarkDialogOpen}
                     currentRemark={currentRemark}
                     setCurrentRemark={setCurrentRemark}
+                    handleCalculate={handleCalculate}
                     currentRowId={currentRowId}
                     permissions={adjustedPermissions}
                     selectMode={selectMode}

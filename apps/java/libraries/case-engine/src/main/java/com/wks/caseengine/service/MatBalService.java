@@ -15,5 +15,7 @@ public interface MatBalService {
 	byte[] exportMatBal(String year, String plantId, boolean isAfterSave, List<Map<String, Object>> dtoList);
 
 	AOPMessageVM importMatBal(String year, UUID plantId, MultipartFile file);
+
+	AOPMessageVM calculateMaterialBalance(String plantId, String year);
 }
 

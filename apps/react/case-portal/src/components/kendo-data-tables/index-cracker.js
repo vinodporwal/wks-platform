@@ -16,8 +16,6 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import '../../kendo-data-grid.css'
 
-import DownloadIcon from '@mui/icons-material/Download'
-import UploadIcon from '@mui/icons-material/Upload'
 import Notification from 'components/Utilities/Notification'
 import { SvgIcon } from '../../../node_modules/@progress/kendo-react-common/index'
 import { trashIcon } from '../../../node_modules/@progress/kendo-svg-icons/dist/index'
@@ -47,6 +45,7 @@ import { getColumnMenuDateFilter } from 'components/data-tables/Reports-kendo/Co
 import { PostCrDaysEditor } from './Utilities-Kendo/numbericColumns_dmd'
 import { useSelector } from 'react-redux'
 import { NoSpinnerNumericEditorCrackerValidation } from './Utilities-Kendo/numbericColumnsCrackerValidation'
+import { CalculateIcon, FileExportIcon, FileImportIcon, SaveIcon } from 'assets/images/icons/index'
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -469,6 +468,7 @@ const KendoDataTablesCracker = ({
               editor='date'
               hidden={col.hidden}
               filter='date'
+              width={col.widthT || 130}
               // columnMenu={DateColumnMenu}
               columnMenu={ColumnMenuCheckboxFilterDate}
             />
@@ -491,6 +491,7 @@ const KendoDataTablesCracker = ({
               editor='date'
               hidden={col.hidden}
               sortable={false}
+              width={col.widthT || 130}
             />
           )
         }
@@ -510,6 +511,7 @@ const KendoDataTablesCracker = ({
               filter='numeric'
               format={col.format}
               sortable={false}
+              width={col.widthT || 130}
             />
           )
         }
@@ -519,7 +521,7 @@ const KendoDataTablesCracker = ({
               key='productName1'
               field='productName1'
               title={col.title || col.headerName || 'Particulars'}
-              // width={210}
+              width={col.widthT || 130}
               editable={col.editable || true}
               hidden={col.hidden}
               cells={{
@@ -539,7 +541,7 @@ const KendoDataTablesCracker = ({
               title={col.title || col.headerName || 'month'}
               editable={col.editable || true}
               hidden={col.hidden}
-              width={col.widthT}
+              width={col.widthT || 130}
               cells={{
                 data: (cellProps) => (
                   <MonthCell {...cellProps} allMonths={allMonths} />
@@ -559,6 +561,7 @@ const KendoDataTablesCracker = ({
               title={col.title || col.headerName}
               // editor={true}
               // editable={{ mode: 'popup' }}
+              width={col.widthT || 130}
               cells={{
                 data: (cellProps, allRedCell) => (
                   <RemarkCell
@@ -631,7 +634,7 @@ const KendoDataTablesCracker = ({
               key={col.field}
               field={col.field}
               title={col.title || col.headerName}
-              // width={col.width}
+              width={col.widthT || 130}
               hidden={col.hidden}
               className={
                 col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'
@@ -654,7 +657,7 @@ const KendoDataTablesCracker = ({
               key={col.field}
               field={col.field}
               title={col.title || col.headerName}
-              width={col.width}
+              width={col.width || col.width || 130}
               hidden={col.hidden}
               className={
                 col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'
@@ -742,7 +745,7 @@ const KendoDataTablesCracker = ({
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
-            width={col.widthT}
+            width={col.widthT || 130}
             hidden={col.hidden}
             editable={col?.editable ? true : false}
             headerClassName={isActive ? 'active-column' : ''}
@@ -810,8 +813,11 @@ const KendoDataTablesCracker = ({
                       size='large'
                       onClick={downloadExcelForConfiguration}
                       disabled={isButtonDisabled}
+                      startIcon={
+                        <Box component='img' src={FileExportIcon} className='w16-icon' />
+                      }
                     >
-                      <DownloadIcon fontSize='small' />
+                      Export
                     </Button>
                   </span>
                 </Tooltip>
@@ -824,8 +830,11 @@ const KendoDataTablesCracker = ({
                       size='large'
                       onClick={triggerFileUpload}
                       disabled={isButtonDisabled}
+                      startIcon={
+                        <Box component='img' src={FileImportIcon} className='w16-icon' />
+                      }
                     >
-                      <UploadIcon fontSize='small' />
+                      Import
                     </Button>
                   </span>
                   <input
@@ -848,6 +857,9 @@ const KendoDataTablesCracker = ({
                     (!summaryEdited && Object.keys(modifiedCells).length === 0)
                   }
                   {...(loading ? {} : {})}
+                  startIcon={
+                    <Box component='img' src={SaveIcon} className='w16-icon' />
+                  }
                 >
                   Save
                 </Button>
@@ -860,9 +872,12 @@ const KendoDataTablesCracker = ({
                     rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility
+                      !permissions?.showCalculateVisibility
                   }
                   className='btn-calculate'
+                  startIcon={
+                    <Box component='img' src={CalculateIcon} className='w16-icon' />
+                  }
                 >
                   Calculate
                 </Button>

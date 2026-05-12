@@ -398,7 +398,9 @@ const SlowDown = ({ permissions }) => {
         plantId,
         IS_ELASTOMER_HMD_SBR || IS_ELASTOMER_HMD_PBR3
           ? slowDownDetailsElastomerHmdSbr
-          : lowerVertName === 'elastomer' && !IS_ELASTOMER_HMD_SBR && !IS_ELASTOMER_HMD_PBR3
+          : lowerVertName === 'elastomer' &&
+              !IS_ELASTOMER_HMD_SBR &&
+              !IS_ELASTOMER_HMD_PBR3
             ? slowDownDetailsElastomer
             : IS_PTA_DMD
               ? slowDownDetailsPTADMD
@@ -574,6 +576,13 @@ const SlowDown = ({ permissions }) => {
         'rate',
         'durationInHrs',
       ]
+      const requiredFieldsForElastomerHMD = [
+        'discription',
+        'monthly',
+        'remark',
+        'rate',
+        'durationInHrs',
+      ]
       const requiredFieldsForPe = [
         'discription',
         'remark',
@@ -599,15 +608,17 @@ const SlowDown = ({ permissions }) => {
       ]
 
       const chosenFields =
-        lowerVertName === 'elastomer'
-          ? requiredFieldsForElastomer
-          : lowerVertName === 'meg'
-            ? requiredFieldsForMeg
-            : IS_PE_PP || IS_PET || IS_PVC_VMD
-              ? requiredFieldsForPe
-              : IS_PTA_DMD
-                ? requiredFieldsISPTADMD
-                : requiredFields
+        IS_ELASTOMER_HMD_SBR || IS_ELASTOMER_HMD_PBR3
+          ? requiredFieldsForElastomerHMD
+          : lowerVertName === 'elastomer'
+            ? requiredFieldsForElastomer
+            : lowerVertName === 'meg'
+              ? requiredFieldsForMeg
+              : IS_PE_PP || IS_PET || IS_PVC_VMD
+                ? requiredFieldsForPe
+                : IS_PTA_DMD
+                  ? requiredFieldsISPTADMD
+                  : requiredFields
 
       // Missing required fields
       for (const record of data) {
@@ -694,7 +705,7 @@ const SlowDown = ({ permissions }) => {
         !IS_PVC_DMD &&
         !IS_ELASTOMER_JMD &&
         !IS_ELASTOMER_HMD_SBR &&
-        !IS_ELASTOMER_HMD_PBR3 
+        !IS_ELASTOMER_HMD_PBR3
       ) {
         for (const record of data) {
           const startMissing = !record.maintStartDateTime
@@ -1472,7 +1483,9 @@ const SlowDown = ({ permissions }) => {
           EXCEL_EXPORT_TITLE,
         )
       } else if (
-        (lowerVertName == 'elastomer' && !IS_ELASTOMER_HMD_SBR) ||
+        (lowerVertName == 'elastomer' &&
+          !IS_ELASTOMER_HMD_SBR &&
+          !IS_ELASTOMER_HMD_PBR3) ||
         lowerVertName == 'vcm' ||
         lowerVertName === 'aromatics' ||
         lowerVertName === 'pta' ||
@@ -1537,7 +1550,9 @@ const SlowDown = ({ permissions }) => {
           AOP_YEAR,
         )
       } else if (
-        (lowerVertName == 'elastomer' && !IS_ELASTOMER_HMD_SBR) ||
+        (lowerVertName == 'elastomer' &&
+          !IS_ELASTOMER_HMD_SBR &&
+          !IS_ELASTOMER_HMD_PBR3) ||
         lowerVertName == 'vcm' ||
         lowerVertName == 'pta' ||
         IS_AROMATICS_SEZ_PX4 ||
