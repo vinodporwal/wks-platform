@@ -55,4 +55,6 @@ public interface SpyroOutputService {
 
 	AOPMessageVM importSpyroOutputNewExcel(String year, String plantId, String mode, String type, MultipartFile file);
 
+	AOPMessageVM calculateSpyroOutputData(String year, String plantId, String Mode, String type);
+
 }

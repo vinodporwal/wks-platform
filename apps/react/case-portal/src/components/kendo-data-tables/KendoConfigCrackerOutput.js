@@ -163,7 +163,7 @@ const CrackerConfig = () => {
       deleteButton: false,
       editButton: false,
       showUnit: false,
-      showCalculate: lowerVertName === 'cracker' && SITE_NAME === "HMD",
+      showCalculate: lowerVertName === 'cracker' && SITE_NAME === 'HMD',
       showCalculateVisibility: true,
       showModes:
         lowerVertName === 'cracker' &&
@@ -181,6 +181,8 @@ const CrackerConfig = () => {
       downloadExcelBtnFromUI:
         SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? true : false,
       ExcelName: `Production_Constarints_${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}`,
+      showCalculate: true,
+      showCalculateVisibility: true,
     },
     isOldYear,
   )
@@ -918,6 +920,46 @@ const CrackerConfig = () => {
     saveSpyroOutputExcelFile(rawFile)
   }
 
+  const handleCalculate = useCallback(async () => {
+    setLoading(true)
+    try {
+      const mode = selectMode || currentTabDisplay || 'Spyro Matbal'
+      const type = currentTabDisplay || 'Spyro Matbal'
+
+      const response = await DataService.calculateSpyroOutputData(
+        keycloak,
+        mode,
+        type,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data calculated successfully!',
+          severity: 'success',
+        })
+        fetchCrackerRows(currentTabDisplay, selectMode)
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Error calculating data!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error calculating spyro output data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to calculate data!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [keycloak, selectMode, currentTabDisplay, PLANT_ID, AOP_YEAR])
+
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)
     setSnackbarData({
@@ -1100,6 +1142,7 @@ const CrackerConfig = () => {
                     setCurrentRemark={setCurrentRemark}
                     currentRowId={currentRowId}
                     permissions={adjustedPermissions}
+                    handleCalculate={handleCalculate}
                     selectMode={selectMode}
                     setSelectMode={setSelectMode}
                     saveChanges={saveChanges}

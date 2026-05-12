@@ -31,6 +31,7 @@ export const DataService = {
   saveSpyroInput,
   saveSpyroOutput,
   getSpyroOutputData,
+  calculateSpyroOutputData,
   saveSlowdownNormsData,
   updateSlowdownData,
   updateShutdownData,
@@ -40,6 +41,7 @@ export const DataService = {
   getTasksByBusinessKey,
   getProcessInstanceVariables,
   getSpyroInputData,
+  calculateSpyroInputData,
   deleteSlowdownData,
   deleteShutdownData,
   deleteMultipleShutdown,
@@ -1360,6 +1362,35 @@ async function getSpyroOutputData(keycloak, mode, type, PLANT_ID, AOP_YEAR) {
   }
 }
 
+async function calculateSpyroOutputData(
+  keycloak,
+  mode,
+  type,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url =
+    `${Config.CaseEngineUrl}/task/spyro-output/calculate` +
+    `?year=${encodeURIComponent(AOP_YEAR)}` +
+    `&plantId=${encodeURIComponent(PLANT_ID)}` +
+    `&Mode=${encodeURIComponent(mode)}` +
+    `&type=${encodeURIComponent(type)}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Failed to calculate spyro-output data', e)
+    return Promise.reject(e)
+  }
+}
+
 async function saveSlowdownNormsData(plantId, turnAroundDetails, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/slowdownNorms`
   const headers = {
@@ -1571,6 +1602,27 @@ async function getSlowDownPlantData(keycloak, PLANT_ID, AOP_YEAR) {
 
 async function getSpyroInputData(keycloak, mode, type, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/spyro-input?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}&Mode=${encodeURIComponent(mode)}&type=${type}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Failed to fetch spyro-input data', e)
+    return Promise.reject(e)
+  }
+}
+async function calculateSpyroInputData(
+  keycloak,
+  mode,
+  type,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url = `${Config.CaseEngineUrl}/task/spyro-input/calculate?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}&Mode=${encodeURIComponent(mode)}&type=${type}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
