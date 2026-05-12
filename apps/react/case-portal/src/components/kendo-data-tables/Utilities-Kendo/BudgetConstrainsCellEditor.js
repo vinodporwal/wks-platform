@@ -1,7 +1,8 @@
 import { DropDownList } from '@progress/kendo-react-dropdowns'
-import { useMemo } from 'react'
+import { useMemo, useEffect, useRef } from 'react'
 
 const BudgetConstrainsCellEditor = (props) => {
+  const inputRef = useRef(null)
   const { dataItem, field, onChange, ...tdProps } = props
 
   // Hardcoded dropdown options
@@ -41,6 +42,29 @@ const BudgetConstrainsCellEditor = (props) => {
     const n = Number(raw)
     return isNaN(n) ? NaN : n
   }
+
+  const handleBlur = () => {
+    const currentValue = currentValueObj?.value
+    const newValue = inputRef.current?.value
+    if (currentValue !== newValue) {
+      onChange({
+        dataItem,
+        field,
+        syntheticEvent: null,
+        value: newValue?.value || newValue,
+      })
+    }
+  }
+
+  // Auto-focus when cell enters edit mode
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (inputRef.current?.element) {
+        inputRef.current.element.focus()
+      }
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [])
 
   if (typeof onChange === 'function') {
     const handleChange = (e) => {
@@ -83,6 +107,7 @@ const BudgetConstrainsCellEditor = (props) => {
 
     return (
       <DropDownList
+        ref={inputRef}
         data={allOptions}
         textField='label'
         dataItemKey='value'

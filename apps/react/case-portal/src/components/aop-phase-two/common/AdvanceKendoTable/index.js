@@ -1111,7 +1111,10 @@ const AdvanceKendoTable = ({
         title={value}
         className={`${tdProps?.className || ''} ${highlightColor ? 'edited-cell' : ''}`.trim()}
         style={{
-          color: highlightColor && highlightColor !== 'orange' ? highlightColor : undefined,
+          color:
+            highlightColor && highlightColor !== 'orange'
+              ? highlightColor
+              : undefined,
           // backgroundColor: highlightColorFullCell ? 'lightGrey' : undefined,
         }}
       >
