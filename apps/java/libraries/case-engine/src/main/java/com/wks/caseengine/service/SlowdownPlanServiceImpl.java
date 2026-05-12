@@ -2654,6 +2654,14 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	        
 	        for (ShutDownPlanDTO shutDownPlanDTO : shutDownPlanDTOList) {
 
+				if(shutDownPlanDTO.getMonth() == null || shutDownPlanDTO.getMonth().isEmpty()
+				|| shutDownPlanDTO.getRate() == null || shutDownPlanDTO.getDurationInHrs() == null) {
+					shutDownPlanDTO.setSaveStatus("Failed");
+					shutDownPlanDTO.setErrDescription("Please enter the data in required fields");
+					failedList.add(shutDownPlanDTO);
+					continue;
+				}
+
 	            if (shutDownPlanDTO.getSaveStatus() != null
 	                    && shutDownPlanDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
 	                failedList.add(shutDownPlanDTO);
