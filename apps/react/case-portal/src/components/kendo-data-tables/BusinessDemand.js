@@ -201,7 +201,10 @@ const BusinessDemand = ({ permissions }) => {
           Particulars: item.normParameterTypeDisplayName,
           expanded: false,
           UOM:
-            IS_VCM_VERTICAL || lowerVertName === 'chemical' ? '%' : item?.UOM,
+            IS_VCM_VERTICAL ||
+            (lowerVertName === 'chemical' && !IS_CHEMICAL_VMD_BENZEN)
+              ? '%'
+              : item?.UOM,
         }))
 
       setRows(formattedData)
