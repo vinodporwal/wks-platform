@@ -283,6 +283,8 @@ const MaterialBalance = ({ permissions }) => {
       titleName: 'Material Balance',
       //LATER WE NEED TO ADD EXPORT IMPORT
       uploadExcelBtn: true,
+      showCalculate: true,
+      showCalculateVisibility: true,
       downloadExcelBtn: true,
     },
     isOldYear,

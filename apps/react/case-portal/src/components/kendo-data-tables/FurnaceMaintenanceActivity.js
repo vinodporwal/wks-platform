@@ -438,7 +438,6 @@ const FurnaceMaintenanceActivity = () => {
         setCurrentRowId={setCurrentRowId}
         saveChanges={saveChangesRunLength}
         handleRemarkCellClick={handleRemarkCellClick}
-        loading={loading}
         fetchData={fetchData}
         setModifiedCells={setModifiedCells}
         permissions={{

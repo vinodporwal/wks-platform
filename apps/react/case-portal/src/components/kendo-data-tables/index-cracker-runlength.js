@@ -18,14 +18,6 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import '../../kendo-data-grid.css'
 
-import AddIcon from '@mui/icons-material/Add'
-import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
-import DownloadIcon from '@mui/icons-material/Download'
-import UploadIcon from '@mui/icons-material/Upload'
-import CalculateIcon from '@mui/icons-material/Calculate'
-import SaveIcon from '@mui/icons-material/Save'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
-
 //import { ibrGridThreePopUP, singleRowColumn } from './columnDefs'
 
 import Notification from 'components/Utilities/Notification'
@@ -54,6 +46,13 @@ import { ExcelExport } from '../../../node_modules/@progress/kendo-react-excel-e
 import { useSelector } from 'react-redux'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import {
+  FileExportIcon,
+  FileImportIcon,
+  SaveIcon,
+  CalculateIcon,
+} from 'assets/images/icons'
+import { DashboardColors } from 'themes/colors'
 
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
@@ -766,6 +765,7 @@ const KendoDataTablesCrackerRunLength = ({
               title={col.title || col.headerName}
               format='{0:dd-MM-yyyy}'
               editor='date'
+              width={col.widthT || 130}
               hidden={col.hidden}
               sortable={false}
               cells={{
@@ -786,6 +786,7 @@ const KendoDataTablesCrackerRunLength = ({
               field={col.field}
               title={col.title || col.headerName}
               filter='date'
+              width={col.widthT || 130}
               filterable={true}
               columnMenu={ColumnMenuCheckboxFilter}
               format='{0:dd-MM-yyyy}'
@@ -804,6 +805,7 @@ const KendoDataTablesCrackerRunLength = ({
               field={col.field}
               title={col.title || col.headerName}
               hidden={col.hidden}
+              width={col.widthT || 130}
               headerClassName={isActive ? 'active-column' : ''}
               columnMenu={col.filter ? ColumnMenuCheckboxFilter : undefined}
               sortable={!!col.filter}
@@ -820,7 +822,7 @@ const KendoDataTablesCrackerRunLength = ({
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
-            // width={col.widthT}
+            width={col.widthT || 130}
             hidden={col.hidden}
             headerClassName={isActive ? 'active-column' : ''}
             columnMenu={col.filter ? ColumnMenuCheckboxFilter : undefined}
@@ -1408,7 +1410,7 @@ const KendoDataTablesCrackerRunLength = ({
   </Box>
 
   return (
-    <Box>
+    <Box className='k-table-box'>
       {(permissions?.allAction ?? false) && (
         <Box className='action-box'>
           <Box
@@ -1442,7 +1444,13 @@ const KendoDataTablesCrackerRunLength = ({
                   onClick={downloadExcelForConfiguration}
                   // disabled={isButtonDisabled || READ_ONLY}
                   disabled={isButtonDisabled}
-                  startIcon={<DownloadIcon fontSize='small' />}
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={FileExportIcon}
+                      className='w16-icon'
+                    />
+                  }
                 >
                   Export
                 </Button>
@@ -1456,7 +1464,13 @@ const KendoDataTablesCrackerRunLength = ({
                       className='btn-import'
                       onClick={triggerFileUpload}
                       disabled={isButtonDisabled || READ_ONLY}
-                      startIcon={<UploadIcon sx={{ fontSize: 16 }} />}
+                      startIcon={
+                        <Box
+                          component='img'
+                          src={FileImportIcon}
+                          className='w16-icon'
+                        />
+                      }
                     >
                       Import
                     </Button>
@@ -1476,7 +1490,9 @@ const KendoDataTablesCrackerRunLength = ({
                   variant='contained'
                   className='btn-save'
                   onClick={saveModalOpen}
-                  startIcon={<SaveIcon sx={{ fontSize: 16 }} />}
+                  startIcon={
+                    <Box component='img' src={SaveIcon} className='w16-icon' />
+                  }
                   disabled={
                     isButtonDisabled ||
                     Object.keys(modifiedCells).length === 0 ||
@@ -1491,26 +1507,38 @@ const KendoDataTablesCrackerRunLength = ({
                 <Button
                   variant='contained'
                   onClick={handleCalculateBtn}
-                  startIcon={<CalculateIcon sx={{ fontSize: 16 }} />}
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={CalculateIcon}
+                      className='w16-icon'
+                    />
+                  }
                   disabled={
                     READ_ONLY ||
                     (rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility)
+                      !permissions?.showCalculateVisibility)
                   }
                   className='btn-calculate'
                 >
                   Calculate
                 </Button>
               )}
-              {permissions?.showCalculate && (
+              {permissions?.showCalculateNextYear && (
                 <Button
                   variant='contained'
                   onClick={handleOpen}
                   className='btn-calculate'
                   disabled={READ_ONLY}
-                  startIcon={<CalculateIcon sx={{ fontSize: 16 }} />}
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={CalculateIcon}
+                      className='w16-icon'
+                    />
+                  }
                 >
                   Calculate For Next Year
                 </Button>

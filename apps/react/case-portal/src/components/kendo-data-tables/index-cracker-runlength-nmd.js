@@ -46,6 +46,7 @@ import { ExcelExport } from '../../../node_modules/@progress/kendo-react-excel-e
 import { useSelector } from 'react-redux'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { CalculateIcon, FileExportIcon, FileImportIcon, SaveIcon } from 'assets/images/icons/index'
 
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
@@ -1332,6 +1333,9 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                   className='btn-save'
                   onClick={downloadExcelForConfiguration}
                   disabled={isButtonDisabled || READ_ONLY}
+                  startIcon={
+                    <Box component='img' src={FileExportIcon} className='w16-icon' />
+                  }
                 >
                   Export
                 </Button>
@@ -1345,6 +1349,9 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                       className='btn-save'
                       onClick={triggerFileUpload}
                       disabled={isButtonDisabled || READ_ONLY}
+                      startIcon={
+                        <Box component='img' src={FileImportIcon} className='w16-icon' />
+                      }
                     >
                       Import
                     </Button>
@@ -1370,6 +1377,9 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                     READ_ONLY
                   }
                   {...(loading ? {} : {})}
+                  startIcon={
+                    <Box component='img' src={SaveIcon} className='w16-icon' />
+                  }
                 >
                   Save
                 </Button>
@@ -1383,19 +1393,25 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                     (rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility)
+                      !permissions?.showCalculateVisibility)
                   }
                   className='btn-save'
+                  startIcon={
+                    <Box component='img' src={CalculateIcon} className='w16-icon' />
+                  }
                 >
                   Calculate
                 </Button>
               )}
-              {permissions?.showCalculate && (
+              {permissions?.showCalculateNextYear && (
                 <Button
                   variant='contained'
                   onClick={handleOpen}
                   className='btn-save'
                   disabled={READ_ONLY}
+                  startIcon={
+                    <Box component='img' src={CalculateIcon} className='w16-icon' />
+                  }
                 >
                   Calculate For Next Year
                 </Button>

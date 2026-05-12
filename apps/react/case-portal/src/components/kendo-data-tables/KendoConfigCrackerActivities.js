@@ -1184,9 +1184,9 @@ const DecokingConfig = () => {
           let value = row[field]
           const colDef = runLengthColumns.find((col) => col.field === field)
           if (colDef?.type === 'date' && value instanceof Date) {
-            obj[field] = value
+            obj[field] = value?.trim()
           } else {
-            obj[field] = value ?? null
+            obj[field] = value?.trim() ?? null
           }
         })
         return obj
@@ -1289,6 +1289,7 @@ const DecokingConfig = () => {
       showTitleName: true,
       showAccordian: true,
       showCalculate: true,
+      showCalculateNextYear: false,
       // showCalculateVisibility:
       //   Object.keys(calculationObject || {}).length > 0 ? true : false,
 
