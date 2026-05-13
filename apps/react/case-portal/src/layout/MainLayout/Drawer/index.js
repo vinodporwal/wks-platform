@@ -115,13 +115,17 @@ const MainDrawer = ({ open, handleDrawerToggle, isDashboard, keycloak }) => {
               justifyContent='space-between'
               sx={{
                 bgcolor:
-                  mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                  mode === 'dark'
+                    ? 'rgba(255,255,255,0.05)'
+                    : 'rgba(0,0,0,0.02)',
                 borderRadius: '8px',
                 p: 1,
                 mx: 0.5,
                 border: '1px solid',
                 borderColor:
-                  mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                  mode === 'dark'
+                    ? 'rgba(255,255,255,0.1)'
+                    : 'rgba(0,0,0,0.05)',
               }}
             >
               <Stack direction='row' alignItems='center' spacing={1}>
@@ -231,7 +235,8 @@ const MainDrawer = ({ open, handleDrawerToggle, isDashboard, keycloak }) => {
                   noWrap
                   display='block'
                   sx={{
-                    color: mode === 'dark' ? 'rgba(255,255,255,0.7)' : '#303030',
+                    color:
+                      mode === 'dark' ? 'rgba(255,255,255,0.7)' : '#303030',
                     fontSize: '12px',
                     fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
                     mt: 0.2,

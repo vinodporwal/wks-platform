@@ -131,6 +131,9 @@ const ShutdownNorms = () => {
     SITE_NAME?.toLowerCase() == 'dmd' &&
     VERTICAL_NAME?.toLowerCase() == 'pe'
 
+  const IS_AROMATICS_HMD =
+    lowerVertName === 'aromatics' && SITE_NAME_LOWERCASE === 'hmd'
+
   const textNote =
     (IS_PE_PP_VERTICAL || IS_PVC_DMD || IS_ELASTOMER_JMD_HIIR) && !IS_PE_C2
       ? '*Adding shutdown consumption to all grades will replace any existing individual grade consumption entries.'
@@ -890,7 +893,8 @@ const ShutdownNorms = () => {
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta' ||
         IS_AROMATICS_SEZ_PX4 ||
-        IS_CHEMICAL
+        IS_CHEMICAL ||
+        IS_AROMATICS_HMD
           ? false
           : true,
       downloadExcelBtn:
@@ -905,7 +909,8 @@ const ShutdownNorms = () => {
         lowerVertName === 'pta' ||
         IS_AROMATICS_SEZ_PX4 ||
         IS_CHEMICAL ||
-        IS_ELASTOMER_JMD_IIR
+        IS_ELASTOMER_JMD_IIR ||
+        IS_AROMATICS_HMD
           ? true
           : false,
       uploadExcelBtn:
@@ -923,7 +928,8 @@ const ShutdownNorms = () => {
         IS_AROMATICS_SEZ_PX4 ||
         IS_ELASTOMER_HMD_SBR ||
         IS_PVC_DMD ||
-        IS_ELASTOMER_JMD_IIR
+        IS_ELASTOMER_JMD_IIR ||
+        IS_AROMATICS_HMD
           ? true
           : false,
       showTitleNameBusiness: IS_PE_DMD_HDPE ? false : true,

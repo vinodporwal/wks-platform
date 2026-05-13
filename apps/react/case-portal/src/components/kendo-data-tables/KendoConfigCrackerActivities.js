@@ -1311,17 +1311,17 @@ const DecokingConfig = () => {
   )
 
   const FurnaceMaintenanceActivityPermission = {
-    titleName: "Furnace Maintenance Activity",
-    showTitleNameBusiness: true
+    titleName: 'Furnace Maintenance Activity',
+    showTitleNameBusiness: true,
   }
 
   const DownsteamShutdownDMDPermission = {
-    titleName: "Downstream Plant Shutdown",
-    showTitleNameBusiness: true
+    titleName: 'Downstream Plant Shutdown',
+    showTitleNameBusiness: true,
   }
   const MaintenanceProcessPermission = {
-    titleName: "Maintenance Details",
-    showTitleNameBusiness: true
+    titleName: 'Maintenance Details',
+    showTitleNameBusiness: true,
   }
 
   const handleExcelUpload = (rawFile) => {
@@ -1517,9 +1517,11 @@ const DecokingConfig = () => {
   }
   return (
     <Box>
-         <LoaderBackdrop open={!!loading} />
+      <LoaderBackdrop open={!!loading} />
       {IS_CRACKER_VMD && (
-        <FurnaceMaintenanceActivity permissions={FurnaceMaintenanceActivityPermission} />
+        <FurnaceMaintenanceActivity
+          permissions={FurnaceMaintenanceActivityPermission}
+        />
       )}
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
@@ -1593,7 +1595,7 @@ const DecokingConfig = () => {
       />
 
       {IS_DMD && (
-        <DownsteamShutdownDMD permissions={DownsteamShutdownDMDPermission}/>
+        <DownsteamShutdownDMD permissions={DownsteamShutdownDMDPermission} />
       )}
 
       <FurnaceRunLengthGrid
@@ -1621,7 +1623,7 @@ const DecokingConfig = () => {
         handleCalculate={handleCalculate}
       />
 
-      <MaintenanceProcessTable  permissions={MaintenanceProcessPermission}/>
+      <MaintenanceProcessTable permissions={MaintenanceProcessPermission} />
       {/* {IS_CRACKER_HMD && (
         <CustomAccordion defaultExpanded disableGutters>
           <CustomAccordionSummary

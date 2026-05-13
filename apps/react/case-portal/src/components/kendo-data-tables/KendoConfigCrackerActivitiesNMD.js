@@ -1027,8 +1027,8 @@ const DecokingConfigNMD = () => {
       : ibrGridThree
 
   const MaintenanceProcessPermission = {
-    titleName: "Maintenance Details",
-    showTitleNameBusiness: true
+    titleName: 'Maintenance Details',
+    showTitleNameBusiness: true,
   }
   return (
     <Box>
@@ -1116,8 +1116,8 @@ const DecokingConfigNMD = () => {
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         handleCalculate={handleCalculate}
       />
-      
-      <MaintenanceProcessTableNMD permissions={MaintenanceProcessPermission}/>
+
+      <MaintenanceProcessTableNMD permissions={MaintenanceProcessPermission} />
     </Box>
   )
 }

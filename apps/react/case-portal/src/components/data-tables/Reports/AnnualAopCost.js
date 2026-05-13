@@ -279,7 +279,11 @@ const AnnualAopCost = () => {
       </div>
 
       {!isOldYear && (
-        <Box display='flex' justifyContent='flex-end' sx={{ marginBottom: '8px', mt: '5px' }}>
+        <Box
+          display='flex'
+          justifyContent='flex-end'
+          sx={{ marginBottom: '8px', mt: '5px' }}
+        >
           <Button
             variant='contained'
             onClick={exportAllGrids}
@@ -287,11 +291,7 @@ const AnnualAopCost = () => {
             //ANY ONE CAN EXPORT
             // disabled={READ_ONLY}
             startIcon={
-              <Box
-                component='img'
-                src={FileExportIcon}
-                className='w16-icon'
-              />
+              <Box component='img' src={FileExportIcon} className='w16-icon' />
             }
           >
             Export
@@ -338,25 +338,31 @@ const AnnualAopCost = () => {
         ].map(
           (section, i) =>
             section.visible && (
-              <CustomAccordion key={i} defaultExpanded disableGutters className='k-table-box'>
+              <CustomAccordion
+                key={i}
+                defaultExpanded
+                disableGutters
+                className='k-table-box'
+              >
                 <CustomAccordionSummary
                   expandIcon={<ExpandMoreIcon sx={{ fontSize: '1.2rem' }} />}
-                  className='aop-report-accordion-summary'>
+                  className='aop-report-accordion-summary'
+                >
                   <Typography component='span' className='grid-title'>
                     {section.label}
                   </Typography>
                 </CustomAccordionSummary>
                 <CustomAccordionDetails sx={{ padding: '0px 0px 1px' }}>
-                    <KendoDataGrid
-                      rows={section.rows}
-                      columns={section.cols}
-                      pageSize={10}
-                      scrollable='none'
-                      permissions={{
-                        allAction: false,
-                        isHeight: section?.rows?.length > 15,
-                      }}
-                    />
+                  <KendoDataGrid
+                    rows={section.rows}
+                    columns={section.cols}
+                    pageSize={10}
+                    scrollable='none'
+                    permissions={{
+                      allAction: false,
+                      isHeight: section?.rows?.length > 15,
+                    }}
+                  />
                 </CustomAccordionDetails>
               </CustomAccordion>
             ),

@@ -10,7 +10,7 @@
   background: transparent;
   border-radius: 6px;
   padding: 6px 16px;
-  font-family: "Honeywell Sans Web", "Inter", sans-serif;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
   font-size: 14px; /* Slightly larger for better readability */
   font-weight: 700;
   line-height: 1;
@@ -31,7 +31,7 @@
   background: transparent;
   border-radius: 6px;
   padding: 6px 16px;
-  font-family: "Honeywell Sans Web", "Inter", sans-serif;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
   font-size: 14px; /* Slightly larger for better readability */
   font-weight: 700;
   line-height: 1;
@@ -43,8 +43,8 @@
   transition: all 0.2s ease;
 
   /* Text Color from Image */
-  color: #4A4DDA;
-  border: 1px solid #4A4DDA;
+  color: #4a4dda;
+  border: 1px solid #4a4dda;
 }
 
 /* Base Icon Styling */
@@ -65,10 +65,10 @@
 }
 .btn-load:hover {
   background: #f8fafc; /* Very light gray flash */
-  border-color: #4A4DDA;
+  border-color: #4a4dda;
   transform: translateY(-1px);
 }
-  
+
 /* ===============================
    SPECIFIC ICON COLORS (FROM IMAGE)
 ================================ */
@@ -100,8 +100,8 @@
 
 /* LOAD - Indigo Icon */
 .btn-load .MuiButton-startIcon svg {
-  color: #4A4DDA;
-  border-color: #4A4DDA;
+  color: #4a4dda;
+  border-color: #4a4dda;
 }
 
 /* ===============================
@@ -144,7 +144,7 @@ button:disabled svg {
 }
 
 /* =========================================================
-   DATE PILL WRAPPER — matches header dropdown pill style
+   DATE PILL WRAPPER ï¿½ matches header dropdown pill style
    Strips all Kendo internal borders/backgrounds so the
    DatePicker blends into the outer pill container
    ========================================================= */
@@ -158,7 +158,7 @@ button:disabled svg {
   min-width: 160px;
   padding: 6px 12px 6px 8px;
   background: #ffffff;
-  border: 1px solid #DDDEE1;
+  border: 1px solid #dddee1;
   border-radius: 6px;
   cursor: pointer;
   transition: border-color 180ms ease;

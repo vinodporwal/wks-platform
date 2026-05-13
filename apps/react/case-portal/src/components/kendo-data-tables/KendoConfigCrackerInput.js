@@ -792,7 +792,14 @@ const CrackerConfig = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, selectMode, currentTabDisplay, PLANT_ID, AOP_YEAR, IS_CRACKER_HMD])
+  }, [
+    keycloak,
+    selectMode,
+    currentTabDisplay,
+    PLANT_ID,
+    AOP_YEAR,
+    IS_CRACKER_HMD,
+  ])
 
   const saveSpyroInputExcelFile = async (rawFile) => {
     setLoading(true)

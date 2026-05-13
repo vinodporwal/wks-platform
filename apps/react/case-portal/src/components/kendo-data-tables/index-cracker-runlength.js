@@ -1408,7 +1408,8 @@ const KendoDataTablesCrackerRunLength = ({
               }}
             >
               {/* CASE 1: Permission TRUE ? Full Header UI */}
-              {permissions?.showTitleNameBusiness || permissions?.showTitleName ? (
+              {permissions?.showTitleNameBusiness ||
+              permissions?.showTitleName ? (
                 <Typography
                   component='div'
                   sx={{
@@ -1456,34 +1457,36 @@ const KendoDataTablesCrackerRunLength = ({
                   {/* TITLE */}
                   {permissions?.titleName || titleName}
                 </Typography>
-              ) : permissions?.showAccordian && (
-                /* CASE 2: Permission FALSE ? ONLY ICON */
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 32,
-                    height: 32,
-                    borderRadius: '6px',
-                    backgroundColor: '#ECEEFF',
-                    color: '#1e293b',
-                    ml: 1,
-                    cursor: 'pointer',
-                    padding: '8px',
-                  }}
-                  onClick={toggleGrid}
-                >
-                  <KeyboardArrowUpIcon
+              ) : (
+                permissions?.showAccordian && (
+                  /* CASE 2: Permission FALSE ? ONLY ICON */
+                  <Box
                     sx={{
-                      fontSize: 20,
-                      transition: '0.2s',
-                      transform: gridExpanded
-                        ? 'rotate(0deg)'
-                        : 'rotate(180deg)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 32,
+                      height: 32,
+                      borderRadius: '6px',
+                      backgroundColor: '#ECEEFF',
+                      color: '#1e293b',
+                      ml: 1,
+                      cursor: 'pointer',
+                      padding: '8px',
                     }}
-                  />
-                </Box>
+                    onClick={toggleGrid}
+                  >
+                    <KeyboardArrowUpIcon
+                      sx={{
+                        fontSize: 20,
+                        transition: '0.2s',
+                        transform: gridExpanded
+                          ? 'rotate(0deg)'
+                          : 'rotate(180deg)',
+                      }}
+                    />
+                  </Box>
+                )
               )}
               {/* ITEMS BADGE */}
               <Box
@@ -1590,7 +1593,7 @@ const KendoDataTablesCrackerRunLength = ({
                     (rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                      !permissions?.showCalculateVisibility)
+                        !permissions?.showCalculateVisibility)
                   }
                   className='btn-calculate'
                 >
@@ -1620,9 +1623,9 @@ const KendoDataTablesCrackerRunLength = ({
       )}
       <Collapse in={gridExpanded}>
         <Box className='kendo-data-grid'>
-            <Tooltip openDelay={50} position='auto' anchorElement='target'>
-              {renderGrid()}
-            </Tooltip>
+          <Tooltip openDelay={50} position='auto' anchorElement='target'>
+            {renderGrid()}
+          </Tooltip>
         </Box>
       </Collapse>
 
