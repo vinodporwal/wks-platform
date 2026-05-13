@@ -181,8 +181,6 @@ const CrackerConfig = () => {
       downloadExcelBtnFromUI:
         SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? true : false,
       ExcelName: `Production_Constarints_${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}`,
-      showCalculate: true,
-      showCalculateVisibility: true,
     },
     isOldYear,
   )
@@ -923,9 +921,11 @@ const CrackerConfig = () => {
   const handleCalculate = useCallback(async () => {
     setLoading(true)
     try {
-      const mode = selectMode || currentTabDisplay || 'Spyro Matbal'
+      let mode = selectMode || currentTabDisplay || 'Spyro Matbal'
       const type = currentTabDisplay || 'Spyro Matbal'
-
+      if (IS_CRACKER_HMD) {
+        mode = currentTabDisplay
+      }
       const response = await DataService.calculateSpyroOutputData(
         keycloak,
         mode,
@@ -935,18 +935,18 @@ const CrackerConfig = () => {
       )
 
       if (response?.code === 200) {
-        setSnackbarOpen(true)
         setSnackbarData({
           message: 'Data calculated successfully!',
           severity: 'success',
         })
+        setSnackbarOpen(true)
         fetchCrackerRows(currentTabDisplay, selectMode)
       } else {
-        setSnackbarOpen(true)
         setSnackbarData({
           message: response?.message || 'Error calculating data!',
           severity: 'error',
         })
+        setSnackbarOpen(true)
       }
     } catch (error) {
       console.error('Error calculating spyro output data:', error)
@@ -958,7 +958,7 @@ const CrackerConfig = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, selectMode, currentTabDisplay, PLANT_ID, AOP_YEAR])
+  }, [keycloak, selectMode, currentTabDisplay, PLANT_ID, AOP_YEAR, IS_CRACKER_HMD])
 
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)

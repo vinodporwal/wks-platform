@@ -254,6 +254,42 @@ const MaterialBalance = ({ permissions }) => {
     }
   }
 
+  const handleCalculate = useCallback(async () => {
+    setLoading(true)
+    try {
+      const response = await DataService.calculateMaterialBalanceData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data calculated successfully!',
+          severity: 'success',
+        })
+
+        fetchMatbalData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Error calculating data!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error calculating spyro input data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to calculate data!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [keycloak, PLANT_ID, AOP_YEAR, IS_CRACKER_HMD])
+
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -283,7 +319,7 @@ const MaterialBalance = ({ permissions }) => {
       titleName: 'Material Balance',
       //LATER WE NEED TO ADD EXPORT IMPORT
       uploadExcelBtn: true,
-      showCalculate: true,
+      showCalculate: IS_CRACKER_HMD,
       showCalculateVisibility: true,
       downloadExcelBtn: true,
     },
@@ -323,6 +359,7 @@ const MaterialBalance = ({ permissions }) => {
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
         handleExcelUpload={handleExcelUpload}
+        handleCalculate={handleCalculate}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         plantID={PLANT_ID}
       />

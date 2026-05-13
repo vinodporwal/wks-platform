@@ -180,8 +180,6 @@ const CrackerConfig = () => {
           ? false
           : true,
       hideRemarkForNonEditableRows: true,
-      showCalculate: true,
-      showCalculateVisibility: true,
     },
     isOldYear,
   )
@@ -756,9 +754,11 @@ const CrackerConfig = () => {
   const handleCalculate = useCallback(async () => {
     setLoading(true)
     try {
-      const mode = selectMode || currentTabDisplay || 'Feed'
+      let mode = selectMode || currentTabDisplay || 'Feed'
       const type = currentTabDisplay || 'Feed'
-
+      if (IS_CRACKER_HMD) {
+        mode = currentTabDisplay
+      }
       const response = await DataService.calculateSpyroInputData(
         keycloak,
         mode,
@@ -792,7 +792,7 @@ const CrackerConfig = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, selectMode, currentTabDisplay, PLANT_ID, AOP_YEAR])
+  }, [keycloak, selectMode, currentTabDisplay, PLANT_ID, AOP_YEAR, IS_CRACKER_HMD])
 
   const saveSpyroInputExcelFile = async (rawFile) => {
     setLoading(true)
