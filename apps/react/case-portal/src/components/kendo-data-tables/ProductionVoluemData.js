@@ -543,8 +543,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         IS_PP_SEZ ||
         IS_PVC_DMD ||
         IS_PP_HMD ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD
+        IS_PVC_HMD
       ) {
         response =
           await ProductionVolumeDataApiService.getAOPMCCalculatedDataLineWise(
@@ -819,14 +818,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
   }
 
   useEffect(() => {
-    if (
-      IS_PP_DTA ||
-      IS_PP_SEZ ||
-      IS_PVC_DMD ||
-      IS_PP_HMD ||
-      IS_PVC_HMD ||
-      IS_PVC_VMD
-    ) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
       fetchLineDetails()
     }
   }, [
@@ -837,7 +829,6 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     IS_PP_SEZ,
     IS_PVC_DMD,
     IS_PVC_HMD,
-    IS_PVC_VMD,
   ])
 
   // Call fetchData when lineDetails is updated and has at least one item
@@ -848,8 +839,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         IS_PVC_DMD ||
         IS_PP_HMD ||
         IS_PVC_HMD ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD) &&
+        IS_PVC_HMD) &&
       lineDetails.length > 0 &&
       lineDetails[tabIndex]
     ) {
@@ -857,15 +847,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
       fetchDesignCapacityData()
       fetchMaxCapacityData()
     }
-  }, [
-    lineDetails,
-    tabIndex,
-    IS_PP_DTA,
-    IS_PP_SEZ,
-    IS_PVC_DMD,
-    IS_PVC_HMD,
-    IS_PVC_VMD,
-  ])
+  }, [lineDetails, tabIndex, IS_PP_DTA, IS_PP_SEZ, IS_PVC_DMD, IS_PVC_HMD])
 
   const colDefs_editable = getEnhancedProductionColDefs({
     headerMap,
@@ -904,14 +886,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     const lineId = selectedLine?.id
     try {
       let response = ''
-      if (
-        IS_PP_DTA ||
-        IS_PP_SEZ ||
-        IS_PVC_DMD ||
-        IS_PP_HMD ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD
-      ) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
         response =
           await ProductionVolumeDataApiService.getDesignCapacityDataLineWise(
             keycloak,
@@ -1000,14 +975,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     const lineId = selectedLine?.id
     try {
       let response = ''
-      if (
-        IS_PP_DTA ||
-        IS_PP_SEZ ||
-        IS_PVC_DMD ||
-        IS_PP_HMD ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD
-      ) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
         response =
           await ProductionVolumeDataApiService.getMaxAchievedCapacityDataLineWise(
             keycloak,

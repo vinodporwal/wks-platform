@@ -538,14 +538,7 @@ const ProductionNorms = ({ permissions }) => {
       const selectedLine = lineDetails[tabIndex]
       const lineId = selectedLine?.id
       let response = ''
-      if (
-        IS_PP_DTA ||
-        IS_PP_SEZ ||
-        IS_PVC_DMD ||
-        IS_PP_HMD ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD
-      ) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
         response = await ProductionNormsApiService.getAOPDataLineWise(
           keycloak,
           'Production',
@@ -967,12 +960,7 @@ const ProductionNorms = ({ permissions }) => {
       }
     }
     if (
-      (IS_PP_DTA ||
-        IS_PP_SEZ ||
-        IS_PVC_DMD ||
-        IS_PP_HMD ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD) &&
+      (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) &&
       lineDetails?.length === 0
     ) {
       return
@@ -1009,14 +997,7 @@ const ProductionNorms = ({ permissions }) => {
   }
 
   useEffect(() => {
-    if (
-      IS_PP_DTA ||
-      IS_PP_SEZ ||
-      IS_PVC_DMD ||
-      IS_PP_HMD ||
-      IS_PVC_HMD ||
-      IS_PVC_VMD
-    ) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
       fetchLineDetails()
     } else {
       setLineDetails([])
@@ -1319,12 +1300,7 @@ const ProductionNorms = ({ permissions }) => {
   return (
     <div>
       {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
-      {(IS_PP_DTA ||
-        IS_PP_SEZ ||
-        IS_PVC_DMD ||
-        IS_PP_HMD ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD) && (
+      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) && (
         <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>

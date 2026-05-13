@@ -666,6 +666,7 @@ const CatalystChecmicalsCalculation = () => {
     showTitleNameBusiness: true,
     titleName: 'Cat-chem Consumption',
     showCalculate: true,
+    showCalculateVisibility: true,
     showG: true,
     marginBottom: true,
     dropdownLabel: 'Grade',
