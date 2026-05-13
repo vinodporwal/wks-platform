@@ -15,14 +15,14 @@
     "title": "Particulars",
     "editable": false,
     "widthT": 300,
-    "minWidth": 120
+    "minWidth": 300
   },
   {
     "field": "UOM",
     "title": "UOM",
     "editable": false,
     "widthT": 60,
-    "minWidth": 120
+    "minWidth": 80
   },
   {
     "field": "apr",
@@ -36,6 +36,6 @@
     "field": "remarks",
     "title": "Remark",
     "editable": true,
-    "minWidth": 120
+    "minWidth": 200
   }
 ]

@@ -485,7 +485,7 @@ const KendoDataTablesReciepe = ({
             title={col.title || col.headerName}
             editable={col.editable || false}
             format={FORMATE_DECIMAL}
-            width='65px'
+            width={col.widthT ? `${col.widthT}px` : '100px'}
             cells={{
               edit: { text: NumericEditorWithLimit },
               data: toolTipRenderer,
@@ -505,7 +505,7 @@ const KendoDataTablesReciepe = ({
             editable={col.editable || false}
             format={FORMATE_DECIMAL}
             className={'k-number-right'}
-            width='150px'
+            width={col.widthT ? `${col.widthT}px` : '150px'}
             cells={{
               edit: { text: NumericEditorWithLimit },
               data: toolTipRenderer,
@@ -523,7 +523,7 @@ const KendoDataTablesReciepe = ({
           title={col.title || col.headerName}
           editable={col.editable || false}
           format={FORMATE_DECIMAL}
-          width='150px'
+          width={col.widthT ? `${col.widthT}px` : '150px'}
           cells={{
             edit: { text: NumericEditorWithLimit },
             data: toolTipRenderer,
