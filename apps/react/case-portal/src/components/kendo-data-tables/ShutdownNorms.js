@@ -649,7 +649,8 @@ const ShutdownNorms = () => {
         lowerVertName === 'pta' ||
         IS_CHEMICAL ||
         IS_AROMATICS_SEZ_PX4 ||
-        IS_ELASTOMER_JMD_IIR
+        IS_ELASTOMER_JMD_IIR ||
+        IS_AROMATICS_HMD
       ) {
         // Use shutdownNormsExportNonGrade for VCM
         response =
@@ -711,7 +712,8 @@ const ShutdownNorms = () => {
         lowerVertName === 'pta' ||
         IS_CHEMICAL ||
         IS_AROMATICS_SEZ_PX4 ||
-        IS_ELASTOMER_JMD_IIR
+        IS_ELASTOMER_JMD_IIR ||
+        IS_AROMATICS_HMD
       ) {
         // Use saveShutdownNormsExcelNonGrade for VCM
         response =
