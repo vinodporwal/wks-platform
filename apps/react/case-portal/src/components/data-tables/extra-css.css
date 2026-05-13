@@ -31,7 +31,7 @@
   cursor: pointer;
   transition: all 0.25s ease;
   box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35);
-  font-family: "Honeywell Sans Web", "Inter", sans-serif;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
 }
 
 /* ===============================
@@ -89,7 +89,10 @@
   background: linear-gradient(135deg, #7c3aed, #6d28d9);
 }
 
-.btn-add, .btn-export, .btn-import, .btn-calculate {
+.btn-add,
+.btn-export,
+.btn-import,
+.btn-calculate {
   color: #252525;
   border-radius: 8px;
   padding: 4px 12px;
@@ -102,16 +105,22 @@
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   display: inline-flex;
   align-items: center;
-  font-family: "Honeywell Sans Web", "Inter", sans-serif;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
   /* gap: 6px; */
 }
 
-.btn-add:hover, .btn-export:hover, .btn-import:hover, .btn-calculate:hover {
+.btn-add:hover,
+.btn-export:hover,
+.btn-import:hover,
+.btn-calculate:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
 }
 
-.btn-add:disabled, .btn-export:disabled, .btn-import:disabled, .btn-calculate:disabled {
+.btn-add:disabled,
+.btn-export:disabled,
+.btn-import:disabled,
+.btn-calculate:disabled {
   background: #cbd5e1;
   color: #94a3b8;
   cursor: not-allowed;

@@ -573,13 +573,19 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			boolean isChemical= vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("DMD") && plant.getName().equalsIgnoreCase("Chlor Alkali");
+			boolean isChemicalVmdbutadiene = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD") && plant.getName().equalsIgnoreCase("Butadiene");
 		    List<Object[]> obj = new ArrayList<>();
 			if ((verticalName.equalsIgnoreCase("MEG"))
-					|| (verticalName.equalsIgnoreCase("CRACKER")) || (isChemical)) {
+					|| (verticalName.equalsIgnoreCase("CRACKER")) || (isChemical) ) {
 
 				String procedureName = verticalName + "_GetConfiguration";
 				obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);
-			}else if(verticalName.equalsIgnoreCase("AROMATICS") && !site.getName().equalsIgnoreCase("HMD")) {		
+			}
+			else if(isChemicalVmdbutadiene) { 
+				String procedureName = verticalName + "_" + site.getName() + "_GetConfiguration";
+				obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);
+			}
+			else if(verticalName.equalsIgnoreCase("AROMATICS") && !site.getName().equalsIgnoreCase("HMD")) {		
 				obj = findByYearAndPlantFkIdAROMATICS(year, plantFKId, viewName,getVersion(year,plantFKId));
 			} else {
 				obj = findByYearAndPlantFkId(year, plantFKId, viewName);
@@ -630,7 +636,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 						: 0.0);
 				configurationDTO.setRemarks((row[13] != null ? row[13].toString() : ""));
 
-				if(isChemical) {
+				if(isChemical || isChemicalVmdbutadiene) {
 					configurationDTO.setAuditYear(row[14] != null ? row[14].toString() : "");
 					configurationDTO.setUOM(row[15] != null ? row[15].toString() : "");
 					configurationDTO.setNormType(row[16] != null ? row[16].toString() : "");
@@ -4281,6 +4287,43 @@ continue;
 			return Double.parseDouble(value.trim());
 		} catch (NumberFormatException e) {
 			return null;
+		}
+	}
+
+	@Override
+	public List<Map<String, Object>> getSeasonMonths(UUID plantId, String aopYear) {
+		try {
+			Plants plant = plantsRepository.findById(plantId).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			String procedureName = vertical.getName() + "_" + site.getName() + "_GetSeasonMonths";
+
+			String sql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?";
+
+			return jdbcTemplate.query(sql, new Object[] { plantId, aopYear },
+					new ResultSetExtractor<List<Map<String, Object>>>() {
+						@Override
+						public List<Map<String, Object>> extractData(ResultSet rs) throws SQLException {
+							List<Map<String, Object>> result = new ArrayList<>();
+							ResultSetMetaData metaData = rs.getMetaData();
+							int columnCount = metaData.getColumnCount();
+							List<String> headers = new ArrayList<>();
+							for (int i = 1; i <= columnCount; i++) {
+								headers.add(metaData.getColumnLabel(i));
+							}
+							while (rs.next()) {
+								Map<String, Object> row = new LinkedHashMap<>();
+								for (int i = 1; i <= columnCount; i++) {
+									row.put(headers.get(i - 1), rs.getObject(i));
+								}
+								result.add(row);
+							}
+							return result;
+						}
+					});
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to execute AROMATICS_HMD_GetSeasonMonths", ex);
 		}
 	}
 

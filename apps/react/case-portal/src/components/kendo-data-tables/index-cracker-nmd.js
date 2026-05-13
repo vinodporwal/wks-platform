@@ -16,8 +16,6 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import '../../kendo-data-grid.css'
 
-import DownloadIcon from '@mui/icons-material/Download'
-import UploadIcon from '@mui/icons-material/Upload'
 import Notification from 'components/Utilities/Notification'
 import { SvgIcon } from '../../../node_modules/@progress/kendo-react-common/index'
 import { trashIcon } from '../../../node_modules/@progress/kendo-svg-icons/dist/index'
@@ -46,32 +44,13 @@ import { getRoleName } from 'services/role-service'
 import { getColumnMenuDateFilter } from 'components/data-tables/Reports-kendo/ColumnMenuDateFilter'
 import { useSelector } from 'react-redux'
 import { PostCrDaysEditorNMD } from './Utilities-Kendo/numbericColumns_nmd'
-const CustomAccordion = styled((props) => (
-  <MuiAccordion disableGutters elevation={0} square {...props} />
-))(() => ({
-  position: 'unset',
-  border: 'none',
-  boxShadow: 'none',
-  margin: '0px',
-  '&:before': {
-    display: 'none',
-  },
-}))
-
-const CustomAccordionSummary = styled((props) => (
-  <MuiAccordionSummary expandIcon={<ExpandMoreIcon />} {...props} />
-))(() => ({
-  backgroundColor: '#fff',
-  padding: '0px 12px',
-  minHeight: '40px',
-  '& .MuiAccordionSummary-content': {
-    margin: '8px 0',
-  },
-}))
-const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
-  padding: '0px 0px 12px',
-  backgroundColor: '#F2F3F8',
-}))
+import {
+  CalculateIcon,
+  FileImportIcon,
+  SaveIcon,
+} from 'assets/images/icons/index'
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
+import Collapse from '@mui/material/Collapse'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -110,6 +89,7 @@ const KendoDataTablesCrackerNMD = ({
   allRedCell = [],
   modifiedCells = [],
   setRows,
+  rowRender,
   columns,
   summaryEdited,
   loading = false,
@@ -154,6 +134,7 @@ const KendoDataTablesCrackerNMD = ({
   const ColumnMenuCheckboxFilterDate = getColumnMenuDateFilter(rows)
 
   const [isDateFilterActive, setIsDateFilterActive] = useState([])
+  const [gridExpanded, setGridExpanded] = useState(true)
 
   const keycloak = useSession()
 
@@ -178,6 +159,7 @@ const KendoDataTablesCrackerNMD = ({
   const handleEditChange = useCallback((e) => {
     setEdit(e.edit)
   }, [])
+  const toggleGrid = () => setGridExpanded(!gridExpanded)
   const originalIsCrRef = useRef({})
 
   useEffect(() => {
@@ -729,13 +711,20 @@ const KendoDataTablesCrackerNMD = ({
   )
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div className='k-table-box'>
       {loading && (
         <div className='k-loading-mask'>
           <span className='k-loading-text'>Loading...</span>
           <div className='k-loading-image' />
           <div className='k-loading-color' />
         </div>
+      )}
+      {permissions?.showNote && (
+        <Box sx={{ pt: 1, pl: 1 }}>
+          <Typography component='div' className='text-note'>
+            {note}
+          </Typography>
+        </Box>
       )}
       {(permissions?.allAction ?? false) && (
         <Box className='action-box'>
@@ -748,12 +737,115 @@ const KendoDataTablesCrackerNMD = ({
             }}
           >
             {/* Left side - Note */}
-            <Box>
-              {permissions?.showNote && (
-                <Typography component='div' className='text-note'>
-                  {note}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                paddingBottom: 0.25,
+              }}
+            >
+              {/* CASE 1: Permission TRUE ? Full Header UI */}
+              {permissions?.showTitleNameBusiness ||
+              permissions?.showTitleName ? (
+                <Typography
+                  component='div'
+                  sx={{
+                    fontSize: '16px',
+                    fontWeight: 700,
+                    color: '#252525',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    mb: permissions?.marginBottom ? '12px' : '4px',
+                    fontFamily:
+                      '"Honeywell Sans Web", "Inter", sans-serif !important',
+                  }}
+                >
+                  {/* TOGGLE ICON */}
+                  {permissions?.showAccordian && (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 32,
+                        height: 32,
+                        borderRadius: '6px',
+                        backgroundColor: '#ECEEFF',
+                        color: '#1e293b',
+                        ml: 1,
+                        cursor: 'pointer',
+                        padding: '8px',
+                      }}
+                      onClick={toggleGrid}
+                    >
+                      <KeyboardArrowUpIcon
+                        sx={{
+                          fontSize: 20,
+                          transition: '0.2s',
+                          transform: gridExpanded
+                            ? 'rotate(0deg)'
+                            : 'rotate(180deg)',
+                        }}
+                      />
+                    </Box>
+                  )}
+
+                  {/* TITLE */}
+                  {permissions?.titleName || titleName}
                 </Typography>
+              ) : (
+                permissions?.showAccordian && (
+                  /* CASE 2: Permission FALSE ? ONLY ICON */
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 32,
+                      height: 32,
+                      borderRadius: '6px',
+                      backgroundColor: '#ECEEFF',
+                      color: '#1e293b',
+                      ml: 1,
+                      cursor: 'pointer',
+                      padding: '8px',
+                    }}
+                    onClick={toggleGrid}
+                  >
+                    <KeyboardArrowUpIcon
+                      sx={{
+                        fontSize: 20,
+                        transition: '0.2s',
+                        transform: gridExpanded
+                          ? 'rotate(0deg)'
+                          : 'rotate(180deg)',
+                      }}
+                    />
+                  </Box>
+                )
               )}
+              {/* ITEMS BADGE */}
+              <Box
+                sx={{
+                  p: '4px 8px',
+                  borderRadius: '100px',
+                  backgroundColor: '#ECEEFF',
+                  border: '1px solid #41424D',
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: '#41424D',
+                    fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
+                  }}
+                >
+                  {rows?.length || 0} {rows?.length === 1 ? 'Row' : 'Rows'}
+                </Typography>
+              </Box>
             </Box>
             {/* Right side - All other actions */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -765,8 +857,15 @@ const KendoDataTablesCrackerNMD = ({
                       size='large'
                       onClick={downloadExcelForConfiguration}
                       disabled={isButtonDisabled}
+                      startIcon={
+                        <Box
+                          component='img'
+                          src={FileExportIcon}
+                          className='w16-icon'
+                        />
+                      }
                     >
-                      <DownloadIcon fontSize='small' />
+                      Export
                     </Button>
                   </span>
                 </Tooltip>
@@ -779,8 +878,15 @@ const KendoDataTablesCrackerNMD = ({
                       size='large'
                       onClick={triggerFileUpload}
                       disabled={isButtonDisabled}
+                      startIcon={
+                        <Box
+                          component='img'
+                          src={FileImportIcon}
+                          className='w16-icon'
+                        />
+                      }
                     >
-                      <UploadIcon fontSize='small' />
+                      Import
                     </Button>
                   </span>
                   <input
@@ -803,6 +909,9 @@ const KendoDataTablesCrackerNMD = ({
                     (!summaryEdited && Object.keys(modifiedCells).length === 0)
                   }
                   {...(loading ? {} : {})}
+                  startIcon={
+                    <Box component='img' src={SaveIcon} className='w16-icon' />
+                  }
                 >
                   Save
                 </Button>
@@ -818,6 +927,13 @@ const KendoDataTablesCrackerNMD = ({
                         !permissions?.showCalculateVisibility
                   }
                   className='btn-save'
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={CalculateIcon}
+                      className='w16-icon'
+                    />
+                  }
                 >
                   Calculate
                 </Button>
@@ -826,42 +942,21 @@ const KendoDataTablesCrackerNMD = ({
           </Box>
         </Box>
       )}
-      <div className='kendo-data-grid'>
-        <>
-          {permissions?.showAccordian ? (
-            <CustomAccordion
-              defaultExpanded={!permissions?.byDefCollaps}
-              disableGutters
-            >
-              <CustomAccordionSummary
-                aria-controls='meg-grid-content'
-                id='meg-grid-header'
-              >
-                <Typography component='span' className='grid-title'>
-                  {titleName}
-                </Typography>
-              </CustomAccordionSummary>
-              <CustomAccordionDetails>
-                <Tooltip openDelay={50} position='auto' anchorElement='target'>
-                  {renderGrid()}
-                </Tooltip>
-              </CustomAccordionDetails>
-            </CustomAccordion>
-          ) : (
-            <Tooltip openDelay={50} position='auto' anchorElement='target'>
-              {renderGrid()}
-            </Tooltip>
-          )}
-        </>
-      </div>
-      <Box
-        sx={{
-          marginTop: 2,
-          display: 'flex',
-          gap: 2,
-        }}
-      >
-        {showDeleteAll && (
+      <Collapse in={gridExpanded}>
+        <div className='kendo-data-grid'>
+          <Tooltip openDelay={50} position='auto' anchorElement='target'>
+            {renderGrid()}
+          </Tooltip>
+        </div>
+      </Collapse>
+      {showDeleteAll && (
+        <Box
+          sx={{
+            marginTop: 2,
+            display: 'flex',
+            gap: 2,
+          }}
+        >
           <Button
             variant='contained'
             className='btn-save'
@@ -872,8 +967,8 @@ const KendoDataTablesCrackerNMD = ({
           >
             Delete
           </Button>
-        )}
-      </Box>
+        </Box>
+      )}
       <Notification
         open={snackbarOpen}
         message={snackbarData?.message || ''}

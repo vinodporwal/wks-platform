@@ -70,6 +70,7 @@ const BusinessDemand = ({ permissions }) => {
   const IS_CARCKER_VMD = lowerVertName === 'cracker' && lowerSiteName === 'vmd'
   const IS_CRACKER_DMD = lowerVertName === 'cracker' && lowerSiteName === 'dmd'
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
+  const IS_CRACKER_C2 = lowerVertName === 'cracker' && lowerSiteName === 'c2'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
 
@@ -879,7 +880,7 @@ const BusinessDemand = ({ permissions }) => {
 
       {IS_CRACKER_DMD && <ManualEntryForFeedStreams />}
 
-      {!IS_CARCKER_VMD && !IS_CRACKER_HMD && IS_CRACKER_VERTICAL && (
+      {!IS_CARCKER_VMD && !IS_CRACKER_HMD && !IS_CRACKER_C2 && IS_CRACKER_VERTICAL && (
         <>
           <Box sx={{ width: '100%', margin: 0 }}>
             <PropaneBusiness permissions={adjustedPermissions} />
@@ -887,7 +888,7 @@ const BusinessDemand = ({ permissions }) => {
         </>
       )}
 
-      {IS_CRACKER_HMD && <ModeSelection permissions={adjustedPermissions} />}
+      {(IS_CRACKER_HMD || IS_CRACKER_C2) && <ModeSelection permissions={adjustedPermissions} />}
     </div>
   )
 }

@@ -253,7 +253,7 @@ const ShutDown = ({ permissions }) => {
             record.monthly,
             AOP_YEAR,
           )
-          if (!expectedDuration) continue // no valid month — skip
+          if (!expectedDuration) continue // no valid month ? skip
           const recordMins = parseDurationToMinutes(record.durationInHrs)
           const expectedMins = parseDurationToMinutes(expectedDuration)
           if (recordMins > expectedMins) {
@@ -650,7 +650,7 @@ const ShutDown = ({ permissions }) => {
           id: row.idFromApi || null,
           remark: row.remark || 'null',
         }))
-      } else if (IS_PVC_DMD || IS_PVC_HMD || IS_PVC_VMD) {
+      } else if (IS_PVC_DMD || IS_PVC_HMD) {
         // For PP DTA, match the GET payload structure
         shutdownDetails = newRow.map((row) => ({
           discription: row.discription || row.discriptionDrpdwn,
@@ -816,14 +816,7 @@ const ShutDown = ({ permissions }) => {
     }
   }
   useEffect(() => {
-    if (
-      IS_PP_DTA ||
-      IS_PP_SEZ ||
-      IS_PVC_DMD ||
-      IS_PP_HMD ||
-      IS_PVC_HMD ||
-      IS_PVC_VMD
-    ) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
       fetchLineDetails()
     }
   }, [lowerVertName, lowerSiteName, keycloak, PLANT_ID, AOP_YEAR])
@@ -1182,7 +1175,7 @@ const ShutDown = ({ permissions }) => {
       case verticalEnums.CHEMICAL:
         return IS_CHEMICAL ? ShutDownChemicalColumns : ShutDownAllColumns
       case verticalEnums.PVC:
-        return IS_PVC_DMD || IS_PVC_HMD || IS_PVC_VMD
+        return IS_PVC_DMD || IS_PVC_HMD
           ? ShutDownPVCDMDColumns
           : ShutDownPpColumns
 
@@ -1290,7 +1283,7 @@ const ShutDown = ({ permissions }) => {
           AOP_YEAR,
           EXCEL_EXPORT_TITLE,
         )
-      } else if (IS_PVC_DMD || IS_PVC_HMD || IS_PVC_VMD) {
+      } else if (IS_PVC_DMD || IS_PVC_HMD) {
         response = await DtaDataService.exportShutdownLineWise(
           keycloak,
           PLANT_ID,
@@ -1349,7 +1342,7 @@ const ShutDown = ({ permissions }) => {
           PLANT_ID,
           AOP_YEAR,
         )
-      } else if (IS_PVC_DMD || IS_PVC_HMD || IS_PVC_VMD) {
+      } else if (IS_PVC_DMD || IS_PVC_HMD) {
         response = await DtaDataService.ImportShutdownLineWise(
           rawFile,
           keycloak,

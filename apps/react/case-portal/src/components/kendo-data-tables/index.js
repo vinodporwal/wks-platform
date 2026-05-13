@@ -2683,8 +2683,10 @@ const KendoDataTables = ({
                       ),
                       headerCell: () => (
                         <th
-                          className='k-header'
-                          style={{ textAlign: 'center' }}
+                          style={{
+                            textAlign: 'center',
+                            padding: '0px !important',
+                          }}
                         >
                           <Checkbox
                             checked={

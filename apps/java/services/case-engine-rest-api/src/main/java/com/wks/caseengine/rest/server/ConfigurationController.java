@@ -387,4 +387,11 @@ public class ConfigurationController {
 		return configurationService.updateLineConfiguration(year, plantId, normLineRequestDTOList);
 	}
 
+	@GetMapping(value = "/season-months")   
+	public List<Map<String, Object>> getSeasonMonths(
+			@RequestParam String plantId,
+			@RequestParam String aopYear) {
+		return configurationService.getSeasonMonths(UUID.fromString(plantId), aopYear);
+	}
+
 }

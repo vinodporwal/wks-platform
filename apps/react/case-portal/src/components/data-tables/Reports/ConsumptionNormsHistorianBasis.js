@@ -443,17 +443,17 @@ const ConsumptionNormsHistorianBasis = () => {
         })}
       </div>
 
-      <Box display='flex' justifyContent='flex-end' sx={{ marginBottom: '8px', mt: '5px' }}>
+      <Box
+        display='flex'
+        justifyContent='flex-end'
+        sx={{ marginBottom: '8px', mt: '5px' }}
+      >
         <Button
           variant='contained'
           onClick={exportAllGrids}
           className='btn-export'
           startIcon={
-            <Box
-              component='img'
-              src={FileExportIcon}
-              className='w16-icon'
-            />
+            <Box component='img' src={FileExportIcon} className='w16-icon' />
           }
         >
           Export
@@ -466,7 +466,11 @@ const ConsumptionNormsHistorianBasis = () => {
             const d = dataMap[name] || { rows: [], columns: [] }
             return (
               <div key={name}>
-                <CustomAccordion defaultExpanded disableGutters className='k-table-box'>
+                <CustomAccordion
+                  defaultExpanded
+                  disableGutters
+                  className='k-table-box'
+                >
                   <CustomAccordionSummary
                     aria-controls={`${name}-content`}
                     id={`${name}-header`}

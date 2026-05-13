@@ -28,7 +28,7 @@
     "valueGetter": "defaultValueGetter",
     "valueFormatter": "productDisplayNameFormatter",
     "renderEditCell": "renderNormParameterSelectCell",
-    "minWidth": 120
+    "minWidth": 300
   },
 
   {
@@ -167,6 +167,6 @@
     "editable": true,
     "renderCell": "renderRemarkCell",
     "widthT": 80,
-    "minWidth": 120
+    "minWidth": 200
   }
 ]

@@ -2633,6 +2633,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		boolean elastomerHmdsbr = verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
 		boolean elastomerHmdPbr3 = verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("PBR3");
 		boolean chemical = verticalName.equalsIgnoreCase("Chemical");
+		boolean aromatics = verticalName.equalsIgnoreCase("Aromatics");
 		boolean vcmHMD = verticalName.equalsIgnoreCase("VCM") && site.getName().equalsIgnoreCase("HMD");
 		Boolean monthDropdown = false;
 		if(verticalName.equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD")) {
@@ -2656,7 +2657,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	        
 	        for (ShutDownPlanDTO shutDownPlanDTO : shutDownPlanDTOList) {
 
-				if( !chemical && (shutDownPlanDTO.getMonth() == null || shutDownPlanDTO.getMonth().isEmpty()
+				if( elastomerAndHMD && (shutDownPlanDTO.getMonth() == null || shutDownPlanDTO.getMonth().isEmpty()
 				|| shutDownPlanDTO.getRate() == null || shutDownPlanDTO.getDurationInHrs() == null)) {
 					shutDownPlanDTO.setSaveStatus("Failed");
 					shutDownPlanDTO.setErrDescription("Please enter the data in required fields");

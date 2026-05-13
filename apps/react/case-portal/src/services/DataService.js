@@ -31,6 +31,7 @@ export const DataService = {
   saveSpyroInput,
   saveSpyroOutput,
   getSpyroOutputData,
+  calculateSpyroOutputData,
   saveSlowdownNormsData,
   updateSlowdownData,
   updateShutdownData,
@@ -40,6 +41,7 @@ export const DataService = {
   getTasksByBusinessKey,
   getProcessInstanceVariables,
   getSpyroInputData,
+  calculateSpyroInputData,
   deleteSlowdownData,
   deleteShutdownData,
   deleteMultipleShutdown,
@@ -196,6 +198,7 @@ export const DataService = {
 
   getMaterialBalanceData,
   saveMaterialBalanceData,
+  calculateMaterialBalanceData,
   materialBalanceExport,
   saveMaterialBalanceExcel,
   getPeConfigCatChemData,
@@ -204,6 +207,8 @@ export const DataService = {
 
   getCatChemCalculationData,
   postCatChemCalculate,
+
+  getSeasonMonth,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -1359,6 +1364,34 @@ async function getSpyroOutputData(keycloak, mode, type, PLANT_ID, AOP_YEAR) {
     return Promise.reject(e)
   }
 }
+async function calculateSpyroOutputData(
+  keycloak,
+  mode,
+  type,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url =
+    `${Config.CaseEngineUrl}/task/spyro-output/calculate` +
+    `?year=${encodeURIComponent(AOP_YEAR)}` +
+    `&plantId=${encodeURIComponent(PLANT_ID)}` +
+    `&Mode=${encodeURIComponent(mode)}` +
+    `&type=${encodeURIComponent(type)}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Failed to calculate spyro-output data', e)
+    return Promise.reject(e)
+  }
+}
 
 async function saveSlowdownNormsData(plantId, turnAroundDetails, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/slowdownNorms`
@@ -1571,6 +1604,27 @@ async function getSlowDownPlantData(keycloak, PLANT_ID, AOP_YEAR) {
 
 async function getSpyroInputData(keycloak, mode, type, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/spyro-input?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}&Mode=${encodeURIComponent(mode)}&type=${type}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Failed to fetch spyro-input data', e)
+    return Promise.reject(e)
+  }
+}
+async function calculateSpyroInputData(
+  keycloak,
+  mode,
+  type,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url = `${Config.CaseEngineUrl}/task/spyro-input/calculate?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}&Mode=${encodeURIComponent(mode)}&type=${type}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -4589,6 +4643,25 @@ async function saveMaterialBalanceExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
+export async function calculateMaterialBalanceData(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url = `${Config.CaseEngineUrl}/task/matbal-calculate?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(e)
+    return Promise.reject(e)
+  }
+}
 async function getPeConfigCatChemData(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/getPeConfigData?year=${AOP_YEAR}&plantId=${PLANT_ID}&iscatcam=true`
   const headers = {
@@ -4697,5 +4770,20 @@ async function postCatChemCalculate(keycloak, PLANT_ID, AOP_YEAR) {
   } catch (e) {
     console.error('Error importing recipe Cat Chem data:', e)
     return Promise.reject(e)
+  }
+}
+async function getSeasonMonth(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/season-months?plantId=${PLANT_ID}&aopYear=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }

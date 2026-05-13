@@ -9,7 +9,7 @@ import { DropDownList } from '@progress/kendo-react-dropdowns'
 import { DatePicker } from '@progress/kendo-react-dateinputs'
 import { useSelector } from 'react-redux'
 import { getRoleName } from 'services/role-service'
-const FurnaceMaintenanceActivity = () => {
+const FurnaceMaintenanceActivity = ({ permissions }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -438,10 +438,10 @@ const FurnaceMaintenanceActivity = () => {
         setCurrentRowId={setCurrentRowId}
         saveChanges={saveChangesRunLength}
         handleRemarkCellClick={handleRemarkCellClick}
-        loading={loading}
         fetchData={fetchData}
         setModifiedCells={setModifiedCells}
         permissions={{
+          ...permissions,
           remarksEditable: true,
           saveBtn: true,
           saveBtnForRemark: true,

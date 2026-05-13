@@ -538,14 +538,7 @@ const ProductionNorms = ({ permissions }) => {
       const selectedLine = lineDetails[tabIndex]
       const lineId = selectedLine?.id
       let response = ''
-      if (
-        IS_PP_DTA ||
-        IS_PP_SEZ ||
-        IS_PVC_DMD ||
-        IS_PP_HMD ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD
-      ) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
         response = await ProductionNormsApiService.getAOPDataLineWise(
           keycloak,
           'Production',
@@ -645,15 +638,14 @@ const ProductionNorms = ({ permissions }) => {
             id: index,
             ...monthFields.reduce((acc, month) => {
               const val = item[month]
-              const isTrainRow =
-                String(
-                  item.displayName ||
-                    item.Particulars ||
-                    item.normParameterDisplayName ||
-                    '',
-                )
-                  .toLowerCase()
-                  .includes('train')
+              const isTrainRow = String(
+                item.displayName ||
+                  item.Particulars ||
+                  item.normParameterDisplayName ||
+                  '',
+              )
+                .toLowerCase()
+                .includes('train')
               if (isKiloTon || isKiloTonPerDay) {
                 acc[month] = convertValue(
                   val,
@@ -760,16 +752,15 @@ const ProductionNorms = ({ permissions }) => {
         formattedData.length
       ) {
         const trainIndex = formattedData.findIndex((item) => {
-            const isTrainRow =
-                String(
-                  item.displayName ||
-                    item.Particulars ||
-                    item.normParameterDisplayName ||
-                    '',
-                )
-                  .toLowerCase()
-                  .includes('train')
-            return isTrainRow
+          const isTrainRow = String(
+            item.displayName ||
+              item.Particulars ||
+              item.normParameterDisplayName ||
+              '',
+          )
+            .toLowerCase()
+            .includes('train')
+          return isTrainRow
         })
         if (trainIndex !== -1) {
           monthFields.forEach((m) => {
@@ -969,12 +960,7 @@ const ProductionNorms = ({ permissions }) => {
       }
     }
     if (
-      (IS_PP_DTA ||
-        IS_PP_SEZ ||
-        IS_PVC_DMD ||
-        IS_PP_HMD ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD) &&
+      (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) &&
       lineDetails?.length === 0
     ) {
       return
@@ -1011,14 +997,7 @@ const ProductionNorms = ({ permissions }) => {
   }
 
   useEffect(() => {
-    if (
-      IS_PP_DTA ||
-      IS_PP_SEZ ||
-      IS_PVC_DMD ||
-      IS_PP_HMD ||
-      IS_PVC_HMD ||
-      IS_PVC_VMD
-    ) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
       fetchLineDetails()
     } else {
       setLineDetails([])
@@ -1026,7 +1005,11 @@ const ProductionNorms = ({ permissions }) => {
   }, [PLANT_ID, keycloak, yearChanged])
 
   const valueFormat_ = ValueFormatterProduction()
-  const valueFormat = IS_VCM ? '{0:0.000}' : IS_AROMATIC_SEZ_PX4 ? '{0:0.0000}' : valueFormat_
+  const valueFormat = IS_VCM
+    ? '{0:0.000}'
+    : IS_AROMATIC_SEZ_PX4
+      ? '{0:0.0000}'
+      : valueFormat_
 
   const productionColumns = getEnhancedColDefs({
     headerMap,
@@ -1201,12 +1184,12 @@ const ProductionNorms = ({ permissions }) => {
             lowerVertName === 'cracker' ||
             lowerVertName === 'chemical'
               ? true
-              : permissions?.showUnit ?? true,
+              : (permissions?.showUnit ?? true),
           saveWithRemark: permissions?.saveWithRemark ?? true,
 
           showCalculate: IS_ELASTOMER_JMD
             ? false
-            : permissions?.showCalculate ?? true,
+            : (permissions?.showCalculate ?? true),
 
           allAction: permissions?.allAction ?? true,
           showNote: true,
@@ -1218,14 +1201,14 @@ const ProductionNorms = ({ permissions }) => {
 
           showCalculateVisibility:
             calculationObject && Object.keys(calculationObject).length > 0
-              ? permissions?.showCalculate ?? true
+              ? (permissions?.showCalculate ?? true)
               : false,
           saveBtn:
             IS_ELASTOMER_JMD_IIR ||
             IS_CHEMICAL_VMD_ACRYLONITRILE ||
             IS_CHEMICAL_NMD
               ? true
-              : permissions?.saveBtn ?? false,
+              : (permissions?.saveBtn ?? false),
           units:
             lowerVertName === 'cracker'
               ? ['MT/Month', 'TPH']
@@ -1278,7 +1261,7 @@ const ProductionNorms = ({ permissions }) => {
       allAction: permissions?.allAction ?? true,
       showCalculateVisibility:
         calculationObject && Object.keys(calculationObject).length > 0
-          ? permissions?.showCalculate ?? true
+          ? (permissions?.showCalculate ?? true)
           : false,
       saveBtn: permissions?.saveBtn ?? false,
       units: lowerVertName == 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
@@ -1317,12 +1300,7 @@ const ProductionNorms = ({ permissions }) => {
   return (
     <div>
       {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
-      {(IS_PP_DTA ||
-        IS_PP_SEZ ||
-        IS_PVC_DMD ||
-        IS_PP_HMD ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD) && (
+      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) && (
         <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>

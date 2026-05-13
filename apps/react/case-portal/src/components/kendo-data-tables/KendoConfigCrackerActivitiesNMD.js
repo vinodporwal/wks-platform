@@ -831,6 +831,7 @@ const DecokingConfigNMD = () => {
       showTitleName: true,
       showAccordian: true,
       showCalculate: true,
+      showCalculateNextYear: false,
       // showCalculateVisibility:
       //   Object.keys(calculationObject || {}).length > 0 ? true : false,
 
@@ -1024,6 +1025,11 @@ const DecokingConfigNMD = () => {
     siteName === 'dmd'
       ? ibrGridThree.filter((col) => col.field !== 'demo')
       : ibrGridThree
+
+  const MaintenanceProcessPermission = {
+    titleName: 'Maintenance Details',
+    showTitleNameBusiness: true,
+  }
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
@@ -1111,21 +1117,7 @@ const DecokingConfigNMD = () => {
         handleCalculate={handleCalculate}
       />
 
-      <CustomAccordion defaultExpanded disableGutters>
-        <CustomAccordionSummary
-          aria-controls='meg-grid-content'
-          id='meg-grid-header'
-        >
-          <Typography component='span' className='grid-title'>
-            Maintenance Details
-          </Typography>
-        </CustomAccordionSummary>
-        <CustomAccordionDetails>
-          <Box sx={{ width: '100%', margin: 0 }}>
-            <MaintenanceProcessTableNMD />
-          </Box>
-        </CustomAccordionDetails>
-      </CustomAccordion>
+      <MaintenanceProcessTableNMD permissions={MaintenanceProcessPermission} />
     </Box>
   )
 }
