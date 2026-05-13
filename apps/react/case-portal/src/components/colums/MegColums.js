@@ -8,7 +8,7 @@ export const BusinessDemandMegColumns = [
     filterable: 'false',
     editable: false,
     hidden: true,
-    isVisible: false
+    isVisible: false,
   },
   {
     field: 'normParameterId',
@@ -16,7 +16,7 @@ export const BusinessDemandMegColumns = [
     editable: false,
     width: 150,
     hidden: true,
-    isVisible: false
+    isVisible: false,
   },
   {
     field: 'displayName',
@@ -159,7 +159,7 @@ export const BusinessDemandMegColumns = [
     editable: false,
     widthT: 50,
     type: 'string',
-    minWidth: 100
+    minWidth: 100,
   },
   {
     field: 'idFromApi',
@@ -167,7 +167,7 @@ export const BusinessDemandMegColumns = [
     filterable: 'false',
     hidden: true,
     isVisible: false,
-    minWidth: 100
+    minWidth: 100,
   },
 ]
 

@@ -53,7 +53,12 @@ import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import AddIcon from '@mui/icons-material/Add'
-import { FileExportIcon, FileImportIcon, SaveIcon, CalculateIcon } from 'assets/images/icons'
+import {
+  FileExportIcon,
+  FileImportIcon,
+  SaveIcon,
+  CalculateIcon,
+} from 'assets/images/icons'
 
 export const particulars = [
   'normParameterId',
@@ -562,7 +567,7 @@ const KendoDataTablesReciepe = ({
   }
 
   return (
-    <div className="k-table-box">
+    <div className='k-table-box'>
       {loading && <LoaderBackdrop open={!!loading} />}
 
       {(permissions?.allAction ?? true) && (
@@ -605,9 +610,7 @@ const KendoDataTablesReciepe = ({
                   sx={{
                     fontSize: 20,
                     transition: '0.2s',
-                    transform: gridExpanded
-                      ? 'rotate(0deg)'
-                      : 'rotate(180deg)',
+                    transform: gridExpanded ? 'rotate(0deg)' : 'rotate(180deg)',
                   }}
                 />
               </Box>
@@ -708,52 +711,48 @@ const KendoDataTablesReciepe = ({
                   </Button>
                 )}
 
-
               {/* Import Button */}
-              {permissions?.uploadExcelBtn && shouldShowExportImportButtons() && (
-                <div>
-                  <input
-                    accept='.xlsx,.xls'
-                    style={{ display: 'none' }}
-                    id='excel-upload-input'
-                    type='file'
-                    onChange={(e) => {
-                      const file = e.target.files[0]
-                      if (file) {
-                        handleExcelUpload(file)
-                        e.target.value = ''
-                      }
-                    }}
-                  />
-                  <label htmlFor='excel-upload-input'>
-                    <Button
-                      variant='contained'
-                      startIcon={
-                        <Box
-                          component='img'
-                          src={FileImportIcon}
-                          className='w16-icon'
-                        />
-                      }
-                      className='btn-import'
-                      disabled={isButtonDisabled || READ_ONLY}
-                    >
-                      Import
-                    </Button>
-                  </label>
-                </div>
-              )}
+              {permissions?.uploadExcelBtn &&
+                shouldShowExportImportButtons() && (
+                  <div>
+                    <input
+                      accept='.xlsx,.xls'
+                      style={{ display: 'none' }}
+                      id='excel-upload-input'
+                      type='file'
+                      onChange={(e) => {
+                        const file = e.target.files[0]
+                        if (file) {
+                          handleExcelUpload(file)
+                          e.target.value = ''
+                        }
+                      }}
+                    />
+                    <label htmlFor='excel-upload-input'>
+                      <Button
+                        variant='contained'
+                        startIcon={
+                          <Box
+                            component='img'
+                            src={FileImportIcon}
+                            className='w16-icon'
+                          />
+                        }
+                        className='btn-import'
+                        disabled={isButtonDisabled || READ_ONLY}
+                      >
+                        Import
+                      </Button>
+                    </label>
+                  </div>
+                )}
 
               {permissions?.saveBtn && (
                 <Button
                   variant='contained'
                   className='btn-save'
                   startIcon={
-                    <Box
-                      component='img'
-                      src={SaveIcon}
-                      className='w16-icon'
-                    />
+                    <Box component='img' src={SaveIcon} className='w16-icon' />
                   }
                   onClick={saveModalOpen}
                   disabled={
@@ -786,17 +785,17 @@ const KendoDataTablesReciepe = ({
                   Calculate
                 </Button>
               )}
-            {permissions?.showCalculate && (
-              <Button
-                variant='contained'
-                onClick={handleExport}
-                disabled={isButtonDisabled}
-                className='btn-save'
-              >
-                Export
-              </Button>
-            )}
-            {permissions?.showFinalSubmit && (
+              {permissions?.showCalculate && (
+                <Button
+                  variant='contained'
+                  onClick={handleExport}
+                  disabled={isButtonDisabled}
+                  className='btn-save'
+                >
+                  Export
+                </Button>
+              )}
+              {permissions?.showFinalSubmit && (
                 <Button
                   variant='contained'
                   // onClick={handleExport}

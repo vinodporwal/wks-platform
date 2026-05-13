@@ -398,7 +398,7 @@ export const SlowDownElastomerColumnsPBR3 = [
     autoAdjust: false,
     minWidth: 100,
   },
- 
+
   {
     field: 'maintenanceId',
     title: 'maintenanceId',

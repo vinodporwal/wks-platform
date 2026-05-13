@@ -108,7 +108,7 @@ export default function StepperNav() {
       variant='scrollable'
       scrollButtons='auto' // ✅ FIXED
       allowScrollButtonsMobile
-      className="stepper-nav-tabs"
+      className='stepper-nav-tabs'
     >
       {steps.map((step) => (
         <Tooltip key={step.key} title={step.label} arrow>
@@ -118,17 +118,13 @@ export default function StepperNav() {
                 ? React.isValidElement(step.icon)
                   ? step.icon
                   : React.createElement(step.icon, {
-                    fontSize: 'small',
-                  })
+                      fontSize: 'small',
+                    })
                 : null
             }
             iconPosition='start'
-            label={
-              <span className="stepper-nav-tab-label">
-                {step.label}
-              </span>
-            }
-            className="stepper-nav-tab"
+            label={<span className='stepper-nav-tab-label'>{step.label}</span>}
+            className='stepper-nav-tab'
           />
         </Tooltip>
       ))}
@@ -139,8 +135,7 @@ export default function StepperNav() {
   // Render
   // -------------------------
   return (
-    <Box className="stepper-nav-container">
-      
+    <Box className='stepper-nav-container'>
       {USE_FIXED ? (
         <>
           <Box

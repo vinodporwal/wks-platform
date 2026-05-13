@@ -488,18 +488,19 @@ const OptimizerReport = () => {
     <div className='configuration-accordion-wrapper'>
       <LoaderBackdrop open={!!loading} />
 
-      <Box display='flex' justifyContent='flex-end' sx={{ marginBottom: '8px', mt: '5px' }} gap={1}>
+      <Box
+        display='flex'
+        justifyContent='flex-end'
+        sx={{ marginBottom: '8px', mt: '5px' }}
+        gap={1}
+      >
         <Button
           variant='contained'
           onClick={exportAllGrids}
           className='btn-export'
           // disabled={READ_ONLY}
           startIcon={
-            <Box
-              component='img'
-              src={FileExportIcon}
-              className='w16-icon'
-            />
+            <Box component='img' src={FileExportIcon} className='w16-icon' />
           }
         >
           Export
@@ -512,11 +513,7 @@ const OptimizerReport = () => {
             className='btn-calculate'
             color='primary'
             startIcon={
-              <Box
-                component='img'
-                src={CalculateIcon}
-                className='w16-icon'
-              />
+              <Box component='img' src={CalculateIcon} className='w16-icon' />
             }
           >
             {calculating ? 'Calculating...' : 'Calculate'}
@@ -529,7 +526,11 @@ const OptimizerReport = () => {
           const d = dataMap[name] || { rows: [], columns: [] }
           return (
             <div key={name}>
-              <CustomAccordion defaultExpanded disableGutters className='k-table-box'>
+              <CustomAccordion
+                defaultExpanded
+                disableGutters
+                className='k-table-box'
+              >
                 <CustomAccordionSummary
                   aria-controls={`${name}-content`}
                   id={`${name}-header`}

@@ -2683,7 +2683,10 @@ const KendoDataTables = ({
                       ),
                       headerCell: () => (
                         <th
-                          style={{ textAlign: 'center', padding: '0px !important' }}
+                          style={{
+                            textAlign: 'center',
+                            padding: '0px !important',
+                          }}
                         >
                           <Checkbox
                             checked={
@@ -4256,10 +4259,9 @@ const KendoDataTables = ({
         </div>
       </Collapse>
 
-      {gridExpanded &&
-        (permissions?.approveBtn || permissions?.nextBtn) && (
-          <Box className='action-box'>
-            {/* {permissions?.showCreateCasebutton && (
+      {gridExpanded && (permissions?.approveBtn || permissions?.nextBtn) && (
+        <Box className='action-box'>
+          {/* {permissions?.showCreateCasebutton && (
             <Button
               variant='contained'
               onClick={createCase}
