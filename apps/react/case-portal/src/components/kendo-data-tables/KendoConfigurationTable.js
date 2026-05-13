@@ -50,6 +50,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import ExclusionDate from './ExclusionDate'
 import LineConfiguration from './LineConfiguration'
 import ConfigurationAccordian from './common/ConfigurationAccordian'
+import SeasonMonths from './tab-components/SeasonMonths/index'
 
 const ConfigurationTable = () => {
   const hasExecutedRef = useRef(false)
@@ -90,6 +91,8 @@ const ConfigurationTable = () => {
   const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
   const IS_AROMATICS_HMD =
     lowerVertName === 'aromatics' && lowerSiteName === 'hmd'
+  const IS_AROMATICS_PMD =
+    lowerVertName === 'aromatics' && lowerSiteName === 'pmd'
   const IS_CHEMICAL_DMD =
     lowerVertName === 'chemical' && lowerSiteName === 'dmd'
   const IS_CHEMICAL_VMD_BUTADIENE =
@@ -1420,6 +1423,7 @@ const ConfigurationTable = () => {
 
         {lowerVertName === 'aromatics' &&
           !IS_AROMATICS_HMD &&
+          !IS_AROMATICS_PMD &&
           tabs?.length > 0 && (
             <Box
               mb={1}
@@ -1740,6 +1744,14 @@ const ConfigurationTable = () => {
               case getTheId('ShutdownRate'):
                 return (
                   <ShutdownRate
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+              case getTheId('SeasonMonths'):
+                return (
+                  <SeasonMonths
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     setSummaryEdited={setSummaryEdited}
