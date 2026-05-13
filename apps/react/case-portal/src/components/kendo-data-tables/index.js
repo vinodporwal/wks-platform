@@ -95,6 +95,26 @@ import {
 import { DashboardColors } from 'themes/colors'
 import SwitchEditor from './Utilities-Kendo/SwitchEditor'
 import { handleTabKeyNavigation } from 'components/Utilities/ButtonNavigation'
+import { process } from '@progress/kendo-data-query'
+
+// Helper function to extract flat row sequence from grouped data
+const extractFlatRowsFromGrouped = (data) => {
+  const flatRows = []
+  const traverse = (items) => {
+    if (!items || !Array.isArray(items)) return
+    items.forEach((item) => {
+      if (item.items && Array.isArray(item.items)) {
+        // This is a group header, traverse its children
+        traverse(item.items)
+      } else {
+        // This is an actual data row
+        flatRows.push(item)
+      }
+    })
+  }
+  traverse(data)
+  return flatRows
+}
 
 export const dateFields = [
   'maintStartDateTime',
@@ -314,7 +334,9 @@ const KendoDataTables = ({
         !isKendoPopup // Don't close if clicking on Kendo popup elements
       ) {
         setRows((prev) =>
-          prev.map((r) => (r.inEdit ? { ...r, inEdit: false } : r)),
+          prev && Array.isArray(prev)
+            ? prev.map((r) => (r.inEdit ? { ...r, inEdit: false } : r))
+            : prev,
         )
         setEdit({})
       }
@@ -430,6 +452,21 @@ const KendoDataTables = ({
       ]
     : []
 
+  // Process grouped data to get flat row sequence for tab navigation
+  const processedFlatRows = useMemo(() => {
+    if (!groupBy || initialGroup.length === 0) {
+      return rows
+    }
+
+    const processedData = process(rows, {
+      group: initialGroup,
+      sort: sort,
+      filter: filter,
+    })
+
+    return extractFlatRowsFromGrouped(processedData.data)
+  }, [rows, groupBy, initialGroup, sort, filter])
+
   const MyFooterCustomCell = (props) => {
     const { tdProps } = props
     const { dataItem } = props
@@ -526,7 +563,7 @@ const KendoDataTables = ({
       activeCellRef,
       columns,
       hiddenFields: ['actions'], // Exclude action column from tab navigation
-      rows,
+      rows: processedFlatRows, // Use processed flat rows for correct grouped sequence
       setRows,
       setEdit,
       extractAllColumns: extractColumns,

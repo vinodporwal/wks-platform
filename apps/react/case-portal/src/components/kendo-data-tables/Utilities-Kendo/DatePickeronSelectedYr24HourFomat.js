@@ -1,5 +1,6 @@
 import { DateTimePicker } from '@progress/kendo-react-dateinputs'
 import { useSelector } from 'react-redux'
+import { useEffect, useRef } from 'react'
 
 const DateTimePickerEditor24HourFormat = ({ dataItem, field, onChange }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -8,6 +9,7 @@ const DateTimePickerEditor24HourFormat = ({ dataItem, field, onChange }) => {
   const AOP_YEAR = year?.selectedYear
   const currentRaw = dataItem[field]
   const currentDate = currentRaw ? new Date(currentRaw) : null
+  const inputRef = useRef(null)
 
   const handleChange = (event) => {
     onChange({
@@ -17,6 +19,27 @@ const DateTimePickerEditor24HourFormat = ({ dataItem, field, onChange }) => {
       syntheticEvent: event.syntheticEvent,
     })
   }
+
+  const handleBlur = () => {
+    const currentValue = inputRef.current?.value
+    if (currentValue !== currentRaw) {
+      onChange({
+        dataItem,
+        field,
+        value: currentValue,
+        syntheticEvent: null,
+      })
+    }
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (inputRef.current?.element) {
+        inputRef.current.element.focus()
+      }
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [])
 
   const fyString = AOP_YEAR
   let fyMin = null
@@ -61,11 +84,13 @@ const DateTimePickerEditor24HourFormat = ({ dataItem, field, onChange }) => {
   return (
     <td>
       <DateTimePicker
+        ref={inputRef}
         value={currentDate}
         min={dynamicMin}
         max={dynamicMax}
         format='dd-MM-yyyy HH:mm'
         onChange={handleChange}
+        onBlur={handleBlur}
         width='100%'
         size='small'
         autoFill

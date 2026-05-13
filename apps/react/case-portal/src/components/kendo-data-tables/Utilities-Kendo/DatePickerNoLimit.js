@@ -1,15 +1,37 @@
 import { DateTimePicker } from '@progress/kendo-react-dateinputs'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const isValidDate = (d) => d instanceof Date && !isNaN(d)
 
 const DatePickerNoLimit = ({ dataItem, field, onChange, min, max }) => {
   const initialValue = dataItem[field] ? new Date(dataItem[field]) : null
   const [localValue, setLocalValue] = useState(initialValue)
+  const inputRef = useRef(null)
 
   useEffect(() => {
     setLocalValue(initialValue)
   }, [dataItem.id])
+
+  const handleBlur = () => {
+    const currentValue = inputRef.current?.value
+    if (currentValue !== initialValue) {
+      onChange({
+        dataItem,
+        field,
+        value: currentValue,
+        syntheticEvent: null,
+      })
+    }
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (inputRef.current?.element) {
+        inputRef.current.element.focus()
+      }
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [])
 
   const isStart = field === 'maintStartDateTime'
   const isEnd = field === 'maintEndDateTime'
@@ -39,6 +61,7 @@ const DatePickerNoLimit = ({ dataItem, field, onChange, min, max }) => {
   return (
     <td>
       <DateTimePicker
+        ref={inputRef}
         value={localValue}
         format='dd-MM-yyyy hh:mm a'
         width='100%'
@@ -57,6 +80,7 @@ const DatePickerNoLimit = ({ dataItem, field, onChange, min, max }) => {
             })
           }
         }}
+        onBlur={handleBlur}
         className='input-editor'
       />
     </td>

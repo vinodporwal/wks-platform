@@ -34,6 +34,9 @@ export const handleTabKeyNavigation = ({
   const currentRowIndex = rows.findIndex((r) => String(r.id) === String(rowId))
   if (currentRowIndex === -1) return
 
+  const currentRow = rows[currentRowIndex]
+  if (currentRow.isEditable === false || currentRow.isEditable === 0) return
+
   const currentEditableColIndex = editableCols.findIndex(
     (c) => c.field === currentField,
   )
@@ -57,7 +60,7 @@ export const handleTabKeyNavigation = ({
       let nextRowIndex = currentRowIndex + 1
       while (nextRowIndex < rows.length) {
         const nextRow = rows[nextRowIndex]
-        if (nextRow.isEditable !== false) {
+        if (nextRow.isEditable !== false && nextRow.isEditable !== 0) {
           const nextField = editableCols[0].field
           setRows((prev) =>
             prev.map((r) => ({ ...r, inEdit: r.id === nextRow.id })),
@@ -74,7 +77,7 @@ export const handleTabKeyNavigation = ({
       let prevRowIndex = currentRowIndex - 1
       while (prevRowIndex >= 0) {
         const prevRow = rows[prevRowIndex]
-        if (prevRow.isEditable !== false) {
+        if (prevRow.isEditable !== false && prevRow.isEditable !== 0) {
           const nextField = editableCols[editableCols.length - 1].field
           setRows((prev) =>
             prev.map((r) => ({ ...r, inEdit: r.id === prevRow.id })),
@@ -93,7 +96,7 @@ export const handleTabKeyNavigation = ({
       let prevRowIndex = currentRowIndex - 1
       while (prevRowIndex >= 0) {
         const prevRow = rows[prevRowIndex]
-        if (prevRow.isEditable !== false) {
+        if (prevRow.isEditable !== false && prevRow.isEditable !== 0) {
           setRows((prev) =>
             prev.map((r) => ({ ...r, inEdit: r.id === prevRow.id })),
           )
@@ -109,7 +112,7 @@ export const handleTabKeyNavigation = ({
       let nextRowIndex = currentRowIndex + 1
       while (nextRowIndex < rows.length) {
         const nextRow = rows[nextRowIndex]
-        if (nextRow.isEditable !== false) {
+        if (nextRow.isEditable !== false && nextRow.isEditable !== 0) {
           setRows((prev) =>
             prev.map((r) => ({ ...r, inEdit: r.id === nextRow.id })),
           )

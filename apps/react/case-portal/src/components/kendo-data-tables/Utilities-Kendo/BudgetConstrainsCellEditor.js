@@ -113,6 +113,7 @@ const BudgetConstrainsCellEditor = (props) => {
         dataItemKey='value'
         value={currentValueObj}
         onChange={handleChange}
+        onBlur={handleBlur}
         className='dropdown-editor'
         style={{ width: '100%' }}
         disabled={dataItem?.percentChange == dataItem?.originalPercentChange}

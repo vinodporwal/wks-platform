@@ -1,9 +1,11 @@
 import { InputBase } from '@mui/material'
 import { monthMap } from '../index'
+import { useEffect, useRef } from 'react'
 
 export const DurationEditor = (props) => {
   const { dataItem, field, onChange } = props
   const raw = dataItem[field] ?? ''
+  const inputRef = useRef(null)
 
   const handleChange = (e) => {
     const v = e.target.value
@@ -19,11 +21,26 @@ export const DurationEditor = (props) => {
     }
   }
 
+  const handleBlur = () => {
+    const currentValue = inputRef.current?.value
+    if (currentValue !== raw) {
+      onChange({ dataItem, field, value: currentValue })
+    }
+  }
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [])
+
   return (
     <InputBase
+      inputRef={inputRef}
       value={raw}
       className='input-editor'
       onChange={handleChange}
+      onBlur={handleBlur}
       placeholder='HH:MM'
     />
   )

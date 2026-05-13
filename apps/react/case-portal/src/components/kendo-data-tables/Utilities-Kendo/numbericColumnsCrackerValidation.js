@@ -10,6 +10,7 @@ export const NoSpinnerNumericEditorCrackerValidation = ({
   const initialValue = dataItem[field] ?? ''
   const [localValue, setLocalValue] = useState(initialValue)
   const isFirstRender = useRef(true)
+  const inputRef = useRef(null)
 
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -134,6 +135,12 @@ export const NoSpinnerNumericEditorCrackerValidation = ({
     }
   }
 
+  const handleBlur = () => {
+    if (localValue !== initialValue) {
+      onChange({ dataItem, field, value: localValue })
+    }
+  }
+
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false
@@ -149,11 +156,19 @@ export const NoSpinnerNumericEditorCrackerValidation = ({
     return () => clearTimeout(handler)
   }, [localValue, dataItem, field, onChange, initialValue])
 
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [])
+
   return (
     <>
       <InputBase
+        inputRef={inputRef}
         value={localValue}
         onChange={handleChange}
+        onBlur={handleBlur}
         className='input-editor'
         style={{
           fontSize: '15px',

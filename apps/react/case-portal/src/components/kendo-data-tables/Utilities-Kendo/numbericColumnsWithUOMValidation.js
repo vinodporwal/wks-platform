@@ -9,6 +9,7 @@ export const NoSpinnerNumericEditorWithUOMValidation = ({
   const initialValue = dataItem[field] ?? ''
   const [localValue, setLocalValue] = useState(initialValue)
   const isFirstRender = useRef(true)
+  const inputRef = useRef(null)
 
   const handleChange = (e) => {
     let val = e.target.value
@@ -24,6 +25,12 @@ export const NoSpinnerNumericEditorWithUOMValidation = ({
       } else {
         setLocalValue(val)
       }
+    }
+  }
+
+  const handleBlur = () => {
+    if (localValue !== initialValue) {
+      onChange({ dataItem, field, value: localValue })
     }
   }
 
@@ -43,11 +50,19 @@ export const NoSpinnerNumericEditorWithUOMValidation = ({
     return () => clearTimeout(handler)
   }, [localValue, dataItem, field, onChange, initialValue])
 
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [])
+
   return (
     <td style={{ textAlign: 'end' }}>
       <InputBase
+        inputRef={inputRef}
         value={localValue}
         onChange={handleChange}
+        onBlur={handleBlur}
         className='input-editor'
         style={{
           fontSize: '15px',
