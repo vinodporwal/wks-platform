@@ -4290,4 +4290,41 @@ continue;
 		}
 	}
 
+	@Override
+	public List<Map<String, Object>> getSeasonMonths(UUID plantId, String aopYear) {
+		try {
+			Plants plant = plantsRepository.findById(plantId).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			String procedureName = vertical.getName() + "_" + site.getName() + "_GetSeasonMonths";
+
+			String sql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?";
+
+			return jdbcTemplate.query(sql, new Object[] { plantId, aopYear },
+					new ResultSetExtractor<List<Map<String, Object>>>() {
+						@Override
+						public List<Map<String, Object>> extractData(ResultSet rs) throws SQLException {
+							List<Map<String, Object>> result = new ArrayList<>();
+							ResultSetMetaData metaData = rs.getMetaData();
+							int columnCount = metaData.getColumnCount();
+							List<String> headers = new ArrayList<>();
+							for (int i = 1; i <= columnCount; i++) {
+								headers.add(metaData.getColumnLabel(i));
+							}
+							while (rs.next()) {
+								Map<String, Object> row = new LinkedHashMap<>();
+								for (int i = 1; i <= columnCount; i++) {
+									row.put(headers.get(i - 1), rs.getObject(i));
+								}
+								result.add(row);
+							}
+							return result;
+						}
+					});
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to execute AROMATICS_HMD_GetSeasonMonths", ex);
+		}
+	}
+
 }

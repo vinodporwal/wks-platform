@@ -64,4 +64,6 @@ public interface ConfigurationService {
 
         public AOPMessageVM importLineConfiguration(String year, UUID plantFKId, MultipartFile file);
 
+        public List<Map<String, Object>> getSeasonMonths(UUID plantId, String aopYear);
+
 }
