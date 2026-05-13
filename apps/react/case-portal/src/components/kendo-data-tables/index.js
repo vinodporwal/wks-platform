@@ -557,7 +557,7 @@ const KendoDataTables = ({
         hidden: col.hidden,
       }))
     }
-    console.log('extractColumns', extractColumns)
+
     handleTabKeyNavigation({
       e,
       activeCellRef,
@@ -3142,7 +3142,7 @@ const KendoDataTables = ({
                         key='productName1'
                         field='productName1'
                         title={col?.title || col?.headerName || 'Particulars'}
-                        width={setWidth(col?.minWidth || 150)}
+                        width={setWidth(200 || col?.minWidth || 150)}
                         editable={col?.editable || true}
                         hidden={col?.hidden}
                         cells={{
