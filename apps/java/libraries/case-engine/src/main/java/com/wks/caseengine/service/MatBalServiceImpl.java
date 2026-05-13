@@ -489,21 +489,39 @@ public class MatBalServiceImpl implements MatBalService {
 
 	@Override
 	public AOPMessageVM calculateMaterialBalance(String plantId, String year) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		
 		try {
-		        Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-				Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
-				Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
-				String storedProcedure = vertical.getName() + "_" + site.getName() + "_LoadMATBAL";
-				String sql = "EXEC " + storedProcedure + " @plantId = :plantId, @AopYear = :AopYear";
-				Query query = entityManager.createNativeQuery(sql);
-				query.setParameter("plantId", plantId);
-				query.setParameter("AopYear", year);
-				query.executeUpdate();
-				return new AOPMessageVM(200, "Material Balance calculated successfully", null);
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException("Failed to calculate Material Balance", e);
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			
+			// Create dynamic stored procedure name: {VerticalName}_{SiteName}_LoadSpyroOutput
+			String procedureName = vertical.getName() + "_" + site.getName() + "_LoadMATBAL";
+			
+			// Call the stored procedure dynamically
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @AopYear = :AopYear";
+			
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("AopYear", year);
+			
+			List<Object[]> results = query.getResultList();
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data calculated successfully");
+			aopMessageVM.setData(0);
+			return aopMessageVM;
+			
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to calculate spyro output data", ex);
 		}
 	}
+
 }
 

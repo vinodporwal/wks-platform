@@ -92,6 +92,10 @@ const ConfigurationTable = () => {
     lowerVertName === 'aromatics' && lowerSiteName === 'hmd'
   const IS_CHEMICAL_DMD =
     lowerVertName === 'chemical' && lowerSiteName === 'dmd'
+  const IS_CHEMICAL_VMD_BUTADIENE =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'vmd' &&
+    plantObject?.name?.toLowerCase().includes('butadiene')
   const [tabIndex, setTabIndex] = useState(0)
   const [loadBtnClicked, setLoadBtnClicked] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -239,7 +243,8 @@ const ConfigurationTable = () => {
       if (
         lowerVertName == verticalEnums.MEG ||
         lowerVertName == verticalEnums.CRACKER ||
-        IS_CHEMICAL_DMD
+        IS_CHEMICAL_DMD ||
+        IS_CHEMICAL_VMD_BUTADIENE
       ) {
         data = data?.filter(
           (item) =>
@@ -612,7 +617,8 @@ const ConfigurationTable = () => {
       if (
         lowerVertName != 'cracker' &&
         lowerVertName != 'meg' &&
-        !IS_CHEMICAL_DMD
+        !IS_CHEMICAL_DMD &&
+        !IS_CHEMICAL_VMD_BUTADIENE
       ) {
         if (lowerVertName === 'aromatics') {
           getRevision()
@@ -632,8 +638,9 @@ const ConfigurationTable = () => {
     if (hasModifiedOn) {
       const getDateValue = (name) =>
         new Date(
-          configurationExecutionDetails.find((item) => item.Name === name)
-            ?.AttributeValue,
+          configurationExecutionDetails.find(
+            (item) => item.Name === name,
+          )?.AttributeValue,
         )
       setStartDate(getDateValue('StartDate'))
       setEndDate(getDateValue('EndDate'))
@@ -1200,18 +1207,19 @@ const ConfigurationTable = () => {
   }, [openConfirmDialogRev])
 
   if (
-    (lowerVertName == 'meg' || IS_CHEMICAL_DMD) &&
+    (lowerVertName == 'meg' || IS_CHEMICAL_DMD || IS_CHEMICAL_VMD_BUTADIENE) &&
     lowerVertName !== 'cracker'
   ) {
     // const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
-    const megTabs = IS_CHEMICAL_DMD
-      ? ['Configuration', 'Constants']
-      : [
-          'Configuration',
-          'Constants',
-          'Report Manual Entry',
-          'NSR & Material Prices',
-        ]
+    const megTabs =
+      IS_CHEMICAL_DMD || IS_CHEMICAL_VMD_BUTADIENE
+        ? ['Configuration', 'Constants']
+        : [
+            'Configuration',
+            'Constants',
+            'Report Manual Entry',
+            'NSR & Material Prices',
+          ]
     const auditYear = AOP_YEAR
     let displayYear = ''
     if (auditYear) {

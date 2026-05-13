@@ -74,7 +74,9 @@ const ProductionTargetBasis = () => {
 
   const enrichColumns = useCallback(
     (backendCols = []) => {
-      const filteredCols = backendCols.filter((col) => col.field !== 'GRID_TYPE')
+      const filteredCols = backendCols.filter(
+        (col) => col.field !== 'GRID_TYPE',
+      )
       const applyFixedWidth = filteredCols.length < 7
       const fixedWidth = applyFixedWidth ? 150 : 121
       return backendCols

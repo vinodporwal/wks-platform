@@ -44,10 +44,13 @@ import { getRoleName } from 'services/role-service'
 import { getColumnMenuDateFilter } from 'components/data-tables/Reports-kendo/ColumnMenuDateFilter'
 import { useSelector } from 'react-redux'
 import { PostCrDaysEditorNMD } from './Utilities-Kendo/numbericColumns_nmd'
-import { CalculateIcon, FileImportIcon, SaveIcon } from 'assets/images/icons/index'
+import {
+  CalculateIcon,
+  FileImportIcon,
+  SaveIcon,
+} from 'assets/images/icons/index'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import Collapse from '@mui/material/Collapse'
-
 
 export const dateFields = [
   'maintStartDateTime',
@@ -743,7 +746,8 @@ const KendoDataTablesCrackerNMD = ({
               }}
             >
               {/* CASE 1: Permission TRUE ? Full Header UI */}
-              {permissions?.showTitleNameBusiness || permissions?.showTitleName ? (
+              {permissions?.showTitleNameBusiness ||
+              permissions?.showTitleName ? (
                 <Typography
                   component='div'
                   sx={{
@@ -791,34 +795,36 @@ const KendoDataTablesCrackerNMD = ({
                   {/* TITLE */}
                   {permissions?.titleName || titleName}
                 </Typography>
-              ) : permissions?.showAccordian && (
-                /* CASE 2: Permission FALSE ? ONLY ICON */
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 32,
-                    height: 32,
-                    borderRadius: '6px',
-                    backgroundColor: '#ECEEFF',
-                    color: '#1e293b',
-                    ml: 1,
-                    cursor: 'pointer',
-                    padding: '8px',
-                  }}
-                  onClick={toggleGrid}
-                >
-                  <KeyboardArrowUpIcon
+              ) : (
+                permissions?.showAccordian && (
+                  /* CASE 2: Permission FALSE ? ONLY ICON */
+                  <Box
                     sx={{
-                      fontSize: 20,
-                      transition: '0.2s',
-                      transform: gridExpanded
-                        ? 'rotate(0deg)'
-                        : 'rotate(180deg)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 32,
+                      height: 32,
+                      borderRadius: '6px',
+                      backgroundColor: '#ECEEFF',
+                      color: '#1e293b',
+                      ml: 1,
+                      cursor: 'pointer',
+                      padding: '8px',
                     }}
-                  />
-                </Box>
+                    onClick={toggleGrid}
+                  >
+                    <KeyboardArrowUpIcon
+                      sx={{
+                        fontSize: 20,
+                        transition: '0.2s',
+                        transform: gridExpanded
+                          ? 'rotate(0deg)'
+                          : 'rotate(180deg)',
+                      }}
+                    />
+                  </Box>
+                )
               )}
               {/* ITEMS BADGE */}
               <Box
@@ -852,7 +858,11 @@ const KendoDataTablesCrackerNMD = ({
                       onClick={downloadExcelForConfiguration}
                       disabled={isButtonDisabled}
                       startIcon={
-                        <Box component='img' src={FileExportIcon} className='w16-icon' />
+                        <Box
+                          component='img'
+                          src={FileExportIcon}
+                          className='w16-icon'
+                        />
                       }
                     >
                       Export
@@ -869,7 +879,11 @@ const KendoDataTablesCrackerNMD = ({
                       onClick={triggerFileUpload}
                       disabled={isButtonDisabled}
                       startIcon={
-                        <Box component='img' src={FileImportIcon} className='w16-icon' />
+                        <Box
+                          component='img'
+                          src={FileImportIcon}
+                          className='w16-icon'
+                        />
                       }
                     >
                       Import
@@ -910,11 +924,15 @@ const KendoDataTablesCrackerNMD = ({
                     rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                      !permissions?.showCalculateVisibility
+                        !permissions?.showCalculateVisibility
                   }
                   className='btn-save'
                   startIcon={
-                    <Box component='img' src={CalculateIcon} className='w16-icon' />
+                    <Box
+                      component='img'
+                      src={CalculateIcon}
+                      className='w16-icon'
+                    />
                   }
                 >
                   Calculate
