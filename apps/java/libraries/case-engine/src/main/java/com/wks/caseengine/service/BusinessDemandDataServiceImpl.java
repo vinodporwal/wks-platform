@@ -107,7 +107,7 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") && site.getName().equalsIgnoreCase("HMD"));
+		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("DMD") && site.getName().equalsIgnoreCase("HMD"));
 			String viewName = "vwScrn" + verticalName + "BusinessDemand";
 			List<Object[]> obj=null;
 			if(verticalName.equalsIgnoreCase("CRACKER") || verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("Elastomer") || pvc || verticalName.equalsIgnoreCase("Chemical")) {
