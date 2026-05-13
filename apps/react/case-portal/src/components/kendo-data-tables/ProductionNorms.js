@@ -666,7 +666,6 @@ const ProductionNorms = ({ permissions }) => {
               }
               return acc
             }, {}),
-
           }
           const total = monthFields.reduce(
             (sum, month) =>
@@ -1027,7 +1026,7 @@ const ProductionNorms = ({ permissions }) => {
   }, [PLANT_ID, keycloak, yearChanged])
 
   const valueFormat_ = ValueFormatterProduction()
-  const valueFormat = IS_VCM ? '{0:0.000}' : valueFormat_
+  const valueFormat = IS_VCM ? '{0:0.000}' : IS_AROMATIC_SEZ_PX4 ? '{0:0.0000}' : valueFormat_
 
   const productionColumns = getEnhancedColDefs({
     headerMap,

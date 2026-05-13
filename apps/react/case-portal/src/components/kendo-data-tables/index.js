@@ -1476,13 +1476,11 @@ const KendoDataTables = ({
         (!dataItem.isEditable && dataItem?.isEditable !== undefined)
       const hasError = dataItem?.isError
       const isTotal = dataItem?.isTotal
-      const rowClassName = [
-        className,
-        hasError ? 'error-row' : '',
-        isDisabled || isTotal ? 'custom-disabled-row' : '',
-      ]
-        .filter(Boolean)
-        .join(' ')
+      const rowClassName = hasError
+        ? 'error-row'
+        : isDisabled || isTotal
+          ? 'custom-disabled-row'
+          : className
 
       return (
         <tr {...rest?.trProps} className={rowClassName}>
@@ -2698,9 +2696,6 @@ const KendoDataTables = ({
                 autoProcessData={true}
                 defaultGroup={initialGroup}
                 data={rows}
-                rowRender={(tr, props) => (
-                  <CustomRow {...props} trProps={tr.props} />
-                )}
                 rows={{ data: CustomRow }}
                 dataItemKey='id'
                 editField='inEdit'
@@ -4409,6 +4404,7 @@ const KendoDataTables = ({
         message={snackbarData?.message || ''}
         severity={snackbarData?.severity || 'info'}
         onClose={() => setSnackbarOpen(false)}
+        autoHide={snackbarData?.autoHide ?? true}
       />
       <CompactDialog
         open={openDeleteDialogeBox}

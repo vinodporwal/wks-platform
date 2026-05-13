@@ -418,12 +418,7 @@ const KendoDataTablesReciepe = ({
       const isDisabled =
         READ_ONLY ||
         (!dataItem.isEditable && dataItem?.isEditable !== undefined)
-      const rowClassName = [
-        className,
-        isDisabled ? 'custom-disabled-row' : '',
-      ]
-        .filter(Boolean)
-        .join(' ')
+      const rowClassName = isDisabled ? `custom-disabled-row` : className
       return (
         <tr {...rest?.trProps} className={rowClassName}>
           {rest.children}
@@ -851,9 +846,6 @@ const KendoDataTablesReciepe = ({
               }}
               modifiedCells={modifiedCells}
               data={rows}
-              rowRender={(tr, props) => (
-                <CustomRow {...props} trProps={tr.props} />
-              )}
               rows={{ data: CustomRow }}
               sortable={{
                 mode: 'multiple',

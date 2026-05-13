@@ -42,6 +42,10 @@ const StyledAlert = styled(Alert)(({ theme, severity }) => ({
   position: 'relative',
   overflow: 'hidden',
 
+  //width
+  maxWidth: '420px',
+  width: 'max-content',
+
   // Apply the Spring Animation
   animation: `${springIn} 0.6s cubic-bezier(0.23, 1, 0.32, 1)`,
 

@@ -589,7 +589,7 @@ const KendoDataTablesReports = ({
             field={col.field}
             title={col.title || col.headerName}
             // width={col.fixedWidth || undefined}
-            width={setWidth(col?.fixedWidth || 200)}
+            width={setWidth(col?.fixedWidth || col?.minWidth || 200)}
             cells={{
               data: (cellProps) => (
                 <RemarkCell
@@ -618,7 +618,7 @@ const KendoDataTablesReports = ({
             className={!isEditable ? 'non-editable-cell' : ''}
             columnMenu={ColumnMenuCheckboxFilter}
             headerClassName={isActive ? 'active-column' : ''}
-            width={setWidth(col?.widthT || col?.fixedWidth)}
+            width={setWidth(col?.widthT || col?.fixedWidth || col?.minWidth)}
           />
         )
       }
@@ -677,7 +677,9 @@ const KendoDataTablesReports = ({
             columnMenu={ColumnMenuCheckboxFilter}
             filter='numeric'
             format={col.format}
-            width={setWidth(col?.widthT || col?.fixedWidth || 130)}
+            width={setWidth(
+              col?.widthT || col?.fixedWidth || col?.minWidth || 130,
+            )}
           />
         )
       }
@@ -688,7 +690,9 @@ const KendoDataTablesReports = ({
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
-            width={setWidth(col?.fixedWidth || col?.width || 130)}
+            width={setWidth(
+              col?.fixedWidth || col?.width || col?.minWidth || 130,
+            )}
             hidden={col.hidden}
             className={'k-number-right-disabled'}
             editable={col?.editable ? true : false}
@@ -742,7 +746,7 @@ const KendoDataTablesReports = ({
           className={!isEditable ? 'non-editable-cell' : ''}
           columnMenu={ColumnMenuCheckboxFilter}
           headerClassName={isActive ? 'active-column' : ''}
-          width={setWidth(col?.widthT || col?.fixedWidth)}
+          width={setWidth(col?.widthT || col?.fixedWidth || col?.minWidth)}
         />
       )
     })
@@ -1069,9 +1073,6 @@ const KendoDataTablesReports = ({
             <Grid
               modifiedCells={modifiedCells}
               data={rows}
-              rowRender={(tr, props) => (
-                <CustomRow {...props} trProps={tr.props} />
-              )}
               rows={{ data: CustomRow }}
               sortable={{
                 mode: 'multiple',
