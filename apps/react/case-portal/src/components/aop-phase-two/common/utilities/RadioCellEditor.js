@@ -85,7 +85,7 @@ export const InlineRadioCellEditor = (props) => {
         <Box sx={{ flexGrow: 1 }}>
           {isNumberEditable ? (
             <InputBase
-              ref={inputRef}
+              inputRef={inputRef}
               value={localValue}
               onChange={handleValueChange}
               onBlur={handleBlur}
