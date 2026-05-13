@@ -198,6 +198,7 @@ export const DataService = {
 
   getMaterialBalanceData,
   saveMaterialBalanceData,
+  calculateMaterialBalanceData,
   materialBalanceExport,
   saveMaterialBalanceExcel,
   getPeConfigCatChemData,
@@ -1361,7 +1362,6 @@ async function getSpyroOutputData(keycloak, mode, type, PLANT_ID, AOP_YEAR) {
     return Promise.reject(e)
   }
 }
-
 async function calculateSpyroOutputData(
   keycloak,
   mode,
@@ -4639,6 +4639,25 @@ async function saveMaterialBalanceExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)
+  }
+}
+export async function calculateMaterialBalanceData(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url = `${Config.CaseEngineUrl}/task/matbal-calculate?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(e)
+    return Promise.reject(e)
   }
 }
 async function getPeConfigCatChemData(keycloak, PLANT_ID, AOP_YEAR) {

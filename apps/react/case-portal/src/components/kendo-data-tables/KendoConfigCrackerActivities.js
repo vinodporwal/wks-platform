@@ -1310,6 +1310,20 @@ const DecokingConfig = () => {
     isOldYear,
   )
 
+  const FurnaceMaintenanceActivityPermission = {
+    titleName: "Furnace Maintenance Activity",
+    showTitleNameBusiness: true
+  }
+
+  const DownsteamShutdownDMDPermission = {
+    titleName: "Downstream Plant Shutdown",
+    showTitleNameBusiness: true
+  }
+  const MaintenanceProcessPermission = {
+    titleName: "Maintenance Details",
+    showTitleNameBusiness: true
+  }
+
   const handleExcelUpload = (rawFile) => {
     saveExcelFile(rawFile)
   }
@@ -1505,21 +1519,7 @@ const DecokingConfig = () => {
     <Box>
          <LoaderBackdrop open={!!loading} />
       {IS_CRACKER_VMD && (
-        <CustomAccordion defaultExpanded disableGutters sx={{ mt: 1.5 }}>
-          <CustomAccordionSummary
-            aria-controls='meg-grid-content'
-            id='meg-grid-header'
-          >
-            <Typography component='span' className='grid-title'>
-              Furnace Maintenance Activity
-            </Typography>
-          </CustomAccordionSummary>
-          <CustomAccordionDetails>
-            <Box sx={{ width: '100%', margin: 0 }}>
-              <FurnaceMaintenanceActivity />
-            </Box>
-          </CustomAccordionDetails>
-        </CustomAccordion>
+        <FurnaceMaintenanceActivity permissions={FurnaceMaintenanceActivityPermission} />
       )}
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
@@ -1593,21 +1593,7 @@ const DecokingConfig = () => {
       />
 
       {IS_DMD && (
-        <CustomAccordion defaultExpanded disableGutters>
-          <CustomAccordionSummary
-            aria-controls='meg-grid-content'
-            id='meg-grid-header'
-          >
-            <Typography component='span' className='grid-title'>
-              Downstream Plant Shutdown
-            </Typography>
-          </CustomAccordionSummary>
-          <CustomAccordionDetails>
-            <Box sx={{ width: '100%', margin: 0 }}>
-              <DownsteamShutdownDMD />
-            </Box>
-          </CustomAccordionDetails>
-        </CustomAccordion>
+        <DownsteamShutdownDMD permissions={DownsteamShutdownDMDPermission}/>
       )}
 
       <FurnaceRunLengthGrid
@@ -1635,21 +1621,7 @@ const DecokingConfig = () => {
         handleCalculate={handleCalculate}
       />
 
-      <CustomAccordion defaultExpanded disableGutters>
-        <CustomAccordionSummary
-          aria-controls='meg-grid-content'
-          id='meg-grid-header'
-        >
-          <Typography component='span' className='grid-title'>
-            Maintenance Details
-          </Typography>
-        </CustomAccordionSummary>
-        <CustomAccordionDetails>
-          <Box sx={{ width: '100%', margin: 0 }}>
-            <MaintenanceProcessTable />
-          </Box>
-        </CustomAccordionDetails>
-      </CustomAccordion>
+      <MaintenanceProcessTable  permissions={MaintenanceProcessPermission}/>
       {/* {IS_CRACKER_HMD && (
         <CustomAccordion defaultExpanded disableGutters>
           <CustomAccordionSummary
