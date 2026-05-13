@@ -114,6 +114,7 @@ const SlowDown = ({ permissions }) => {
     lowerSiteName === 'sez' &&
     lowerPlantName === 'px4'
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
+  const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
   const SHOW_EXCEL_UPLOAD_BUTTON =
     lowerVertName === 'pe' ||
     lowerVertName === 'pp' ||
@@ -124,7 +125,7 @@ const SlowDown = ({ permissions }) => {
     lowerVertName == 'chemical' ||
     lowerVertName == 'meg' ||
     IS_AROMATICS_SEZ_PX4 ||
-    IS_PVC_VMD ||
+    IS_PVC_HMD ||
     IS_PVC_DMD
 
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
@@ -360,7 +361,7 @@ const SlowDown = ({ permissions }) => {
         id: row.idFromApi || null,
         rateEO: null,
         rateEOE: null,
-        ...(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD
+        ...(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD
           ? { lineId: row.lineId }
           : {}),
       }))
@@ -530,6 +531,7 @@ const SlowDown = ({ permissions }) => {
         !IS_PTA_DMD &&
         !IS_PVC_VMD &&
         !IS_PVC_DMD &&
+        !IS_PVC_HMD &&
         !IS_ELASTOMER_JMD &&
         !IS_ELASTOMER_HMD_SBR &&
         !IS_ELASTOMER_HMD_PBR3
@@ -703,6 +705,7 @@ const SlowDown = ({ permissions }) => {
         lowerVertName !== 'pet' &&
         !IS_PVC_VMD &&
         !IS_PVC_DMD &&
+        !IS_PVC_HMD &&
         !IS_ELASTOMER_JMD &&
         !IS_ELASTOMER_HMD_SBR &&
         !IS_ELASTOMER_HMD_PBR3
@@ -1315,7 +1318,7 @@ const SlowDown = ({ permissions }) => {
     }
   }
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
       fetchLineDetails()
     }
   }, [lowerVertName, lowerSiteName, keycloak, PLANT_ID, AOP_YEAR])
@@ -1353,7 +1356,7 @@ const SlowDown = ({ permissions }) => {
       case verticalEnums.PE:
         return SlowDownPeColumns
       case verticalEnums.PP:
-        return IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD
+        return IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD
           ? SlowDownPpDtaColumns
           : SlowDownPpColumns
       case verticalEnums.PTA:
@@ -1468,7 +1471,13 @@ const SlowDown = ({ permissions }) => {
           AOP_YEAR,
           EXCEL_EXPORT_TITLE,
         )
-      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      } else if (
+        IS_PP_DTA ||
+        IS_PP_SEZ ||
+        IS_PVC_DMD ||
+        IS_PP_HMD ||
+        IS_PVC_HMD
+      ) {
         response = await DtaDataService.exportSlowdownLineWise(
           keycloak,
           PLANT_ID,
@@ -1535,7 +1544,13 @@ const SlowDown = ({ permissions }) => {
           PLANT_ID,
           AOP_YEAR,
         )
-      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      } else if (
+        IS_PP_DTA ||
+        IS_PP_SEZ ||
+        IS_PVC_DMD ||
+        IS_PP_HMD ||
+        IS_PVC_HMD
+      ) {
         response = await DtaDataService.ImportSlowdownLineWise(
           rawFile,
           keycloak,
@@ -1680,7 +1695,9 @@ const SlowDown = ({ permissions }) => {
       highlightProductName1:
         lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
       highlightLine:
-        IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD ? true : false,
+        IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD
+          ? true
+          : false,
       deleteMultiple: IS_PP_DTA ? true : false,
     },
     isOldYear,
