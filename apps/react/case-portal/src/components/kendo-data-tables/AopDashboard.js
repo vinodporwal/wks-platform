@@ -204,7 +204,7 @@ export default function AopDashboardCompact() {
 
       if (!vertical) {
         showSnackbar(
-          'Access restricted. You don�t have permission for this selection.',
+          'Access restricted. You dont have permission for this selection.',
           'error',
         )
         setLoading(false)
@@ -213,7 +213,7 @@ export default function AopDashboardCompact() {
 
       if (sid && !vertical.sids.includes(sid)) {
         showSnackbar(
-          'Access restricted. You don�t have permission for this selection.',
+          'Access restricted. You dont have permission for this selection.',
           'error',
         )
         setLoading(false)
@@ -225,7 +225,7 @@ export default function AopDashboardCompact() {
 
         if (!allowedPids.includes(pid)) {
           showSnackbar(
-            'Access restricted. You don�t have permission for this selection.',
+            'Access restricted. You dont have permission for this selection.',
             'error',
           )
           setLoading(false)

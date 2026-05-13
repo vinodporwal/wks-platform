@@ -144,7 +144,7 @@ button:disabled svg {
 }
 
 /* =========================================================
-   DATE PILL WRAPPER � matches header dropdown pill style
+   DATE PILL WRAPPER  matches header dropdown pill style
    Strips all Kendo internal borders/backgrounds so the
    DatePicker blends into the outer pill container
    ========================================================= */

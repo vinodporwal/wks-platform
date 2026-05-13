@@ -126,7 +126,7 @@ const SlowDown = ({ permissions }) => {
     lowerVertName == 'meg' ||
     IS_AROMATICS_SEZ_PX4 ||
     IS_PVC_HMD ||
-    IS_PVC_DMD ||
+    IS_PVC_DMD || IS_PVC_VMD
 
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_PET = lowerVertName === 'pet'
