@@ -2657,7 +2657,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	        
 	        for (ShutDownPlanDTO shutDownPlanDTO : shutDownPlanDTOList) {
 
-				if( !chemical && !aromatics && (shutDownPlanDTO.getMonth() == null || shutDownPlanDTO.getMonth().isEmpty()
+				if( elastomerAndHMD && (shutDownPlanDTO.getMonth() == null || shutDownPlanDTO.getMonth().isEmpty()
 				|| shutDownPlanDTO.getRate() == null || shutDownPlanDTO.getDurationInHrs() == null)) {
 					shutDownPlanDTO.setSaveStatus("Failed");
 					shutDownPlanDTO.setErrDescription("Please enter the data in required fields");
