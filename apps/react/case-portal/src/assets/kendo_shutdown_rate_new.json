@@ -17,13 +17,13 @@
     "field": "MajorShutdown",
     "title": "Major Shutdown",
     "editable": true,
-    "type": "number",
+    "type": "negativeNumber",
     "widthT": 125
   },
   {
     "field": "OneDayShutdown",
     "title": "One Day Shutdown",
-    "type": "number",
+    "type": "negativeNumber",
     "editable": true,
     "align": "left",
     "widthT": 125

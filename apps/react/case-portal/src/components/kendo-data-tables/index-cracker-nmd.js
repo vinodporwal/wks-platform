@@ -311,13 +311,9 @@ const KendoDataTablesCrackerNMD = ({
     ({ dataItem, className, ...rest }) => {
       const isDisabled =
         !dataItem.isEditable && dataItem?.isEditable !== undefined
-      const rowClassName = [
-        className,
-        dataItem.isError ? 'error-row' : '',
-        isDisabled ? 'custom-disabled-row' : '',
-      ]
-        .filter(Boolean)
-        .join(' ')
+      let rowClassName = className || ''
+      if (dataItem.isError) rowClassName += ' error-row'
+      if (isDisabled) rowClassName += ' custom-disabled-row'
       return (
         <tr {...rest?.trProps} className={rowClassName.trim()}>
           {rest.children}
@@ -390,10 +386,7 @@ const KendoDataTablesCrackerNMD = ({
       autoProcessData={true}
       defaultGroup={initialGroup}
       data={rows}
-      rowRender={(tr, props) => {
-        const ActiveCustomRow = rowRender || CustomRow
-        return <ActiveCustomRow {...props} trProps={tr.props} />
-      }}
+      rowRender={CustomRow}
       rows={{ data: CustomRow }}
       dataItemKey='id'
       editField='inEdit'

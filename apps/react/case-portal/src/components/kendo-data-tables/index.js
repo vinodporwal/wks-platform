@@ -1382,13 +1382,11 @@ const KendoDataTables = ({
         (!dataItem.isEditable && dataItem?.isEditable !== undefined)
       const hasError = dataItem?.isError
       const isTotal = dataItem?.isTotal
-      const rowClassName = [
-        className,
-        hasError ? 'error-row' : '',
-        isDisabled || isTotal ? 'custom-disabled-row' : '',
-      ]
-        .filter(Boolean)
-        .join(' ')
+      const rowClassName = hasError
+        ? 'error-row'
+        : isDisabled || isTotal
+          ? 'custom-disabled-row'
+          : className
 
       return (
         <tr {...rest?.trProps} className={rowClassName}>
@@ -1859,7 +1857,7 @@ const KendoDataTables = ({
       )}
 
       {permissions?.showReportTitleMain && (
-        <Box sx={{ pt: 1, pl: 1}}>
+        <Box sx={{ pt: 1, pl: 1 }}>
           <Typography component='div' className='grid-title'>
             {permissions?.titleNameMain}
           </Typography>
@@ -1867,7 +1865,7 @@ const KendoDataTables = ({
       )}
 
       {permissions?.showNote && (
-        <Box sx={{ pt: 1, pl: 1}}>
+        <Box sx={{ pt: 1, pl: 1 }}>
           <Typography component='div' className='text-note'>
             {note}
           </Typography>
@@ -2604,9 +2602,6 @@ const KendoDataTables = ({
                 autoProcessData={true}
                 defaultGroup={initialGroup}
                 data={rows}
-                rowRender={(tr, props) => (
-                  <CustomRow {...props} trProps={tr.props} />
-                )}
                 rows={{ data: CustomRow }}
                 dataItemKey='id'
                 editField='inEdit'
@@ -4275,43 +4270,44 @@ const KendoDataTables = ({
             </Button>
           )} */}
 
-            {permissions?.approveBtn && (
-              <Button
-                variant='contained'
-                className='btn-save'
-                onClick={saveModalOpen}
-                disabled={isButtonDisabled || READ_ONLY}
-                // loading={loading}
-                // loadingposition='start'
-                {...(loading ? {} : {})}
-              >
-                Approve
-              </Button>
-            )}
-            {permissions?.nextBtn && (
-              <Button
-                variant='contained'
-                className='btn-save'
-                onClick={() => {
-                  // Write any additional logic here before navigating.
-                  // console.log('Navigating to dashboard')
-                  // navigate('/user-form')
-                  handleAddPlantSite()
-                }}
-                disabled={isButtonDisabled || READ_ONLY}
-                loading={loading} // Use the loading prop to trigger loading state
-                loadingposition='start' // Use loadingPosition to control where the spinner appears
-              >
-                Next
-              </Button>
-            )}
-          </Box>
-        )}
+          {permissions?.approveBtn && (
+            <Button
+              variant='contained'
+              className='btn-save'
+              onClick={saveModalOpen}
+              disabled={isButtonDisabled || READ_ONLY}
+              // loading={loading}
+              // loadingposition='start'
+              {...(loading ? {} : {})}
+            >
+              Approve
+            </Button>
+          )}
+          {permissions?.nextBtn && (
+            <Button
+              variant='contained'
+              className='btn-save'
+              onClick={() => {
+                // Write any additional logic here before navigating.
+                // console.log('Navigating to dashboard')
+                // navigate('/user-form')
+                handleAddPlantSite()
+              }}
+              disabled={isButtonDisabled || READ_ONLY}
+              loading={loading} // Use the loading prop to trigger loading state
+              loadingposition='start' // Use loadingPosition to control where the spinner appears
+            >
+              Next
+            </Button>
+          )}
+        </Box>
+      )}
       <Notification
         open={snackbarOpen}
         message={snackbarData?.message || ''}
         severity={snackbarData?.severity || 'info'}
         onClose={() => setSnackbarOpen(false)}
+        autoHide={snackbarData?.autoHide ?? true}
       />
       <CompactDialog
         open={openDeleteDialogeBox}
