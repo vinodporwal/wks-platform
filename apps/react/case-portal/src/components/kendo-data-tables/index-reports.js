@@ -1069,9 +1069,6 @@ const KendoDataTablesReports = ({
             <Grid
               modifiedCells={modifiedCells}
               data={rows}
-              rowRender={(tr, props) => (
-                <CustomRow {...props} trProps={tr.props} />
-              )}
               rows={{ data: CustomRow }}
               sortable={{
                 mode: 'multiple',
