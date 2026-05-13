@@ -227,6 +227,21 @@ console.log('*****  taskId:  ', taskId);
     setSnackOpen(false)
   }
 
+  // Navigate to caseUrl after save/update, deduplicating any repeated path segments (e.g. /cm/cm -> /cm)
+  const navigateToCaseUrl = (caseUrl) => {
+    try {
+      const target = caseUrl ? new URL(caseUrl) : null
+      if (target) {
+        const cleanPath = target.pathname.replace(/\/([\w-]+)\/\1(\/|$)/g, '/$1$2')
+        navigate(cleanPath + target.search)
+      } else {
+        navigate('/case-list/cases')
+      }
+    } catch (e) {
+      navigate('/case-list/cases')
+    }
+  }
+
   // const handleConfirmSubmit = () => {
   //   // Proceed with the submit action if confirmed
   //   console.log('Submit confirmed');
@@ -732,12 +747,7 @@ console.log('*****  taskId:  ', taskId);
       .then((data) => {
         setLastCreatedCase(data)
         setSnackOpen(true)
-        setTimeout(() => {
-          try {
-            const target = data.caseUrl ? new URL(data.caseUrl) : null
-            navigate(target ? target.pathname + target.search : '/case-list/cases')
-          } catch (e) { navigate('/case-list/cases') }
-        }, 1000)
+        setTimeout(() => navigateToCaseUrl(data.caseUrl), 1000)
       })
       .catch((err) => {
         console.error(err.message)
@@ -824,12 +834,7 @@ console.log('*****  taskId:  ', taskId);
       .then((data) => {
         setLastCreatedCase(data)
         setSnackOpen(true)
-        setTimeout(() => {
-          try {
-            const target = data.caseUrl ? new URL(data.caseUrl) : null
-            navigate(target ? target.pathname + target.search : '/case-list/cases')
-          } catch (e) { navigate('/case-list/cases') }
-        }, 1000)
+        setTimeout(() => navigateToCaseUrl(data.caseUrl), 1000)
       })
       .catch((err) => {
         console.error(err.message)
@@ -1000,12 +1005,7 @@ console.log('*****  taskId:  ', taskId);
       setSnackbarMessages(['Recommendation submitted successfully'])
       setSnackbarOpen(true)
       setIsConfirmationOpen(false)
-      setTimeout(() => {
-        try {
-          const target = response.caseUrl ? new URL(response.caseUrl) : null
-          navigate(target ? target.pathname + target.search : '/case-list/cases')
-        } catch (e) { navigate('/case-list/cases') }
-      }, 1000)
+      setTimeout(() => navigateToCaseUrl(response.caseUrl), 1000)
       }else{
         setIsConfirmationOpen(false)
         console.error('Error submitting recommendation:', response)
@@ -1182,12 +1182,7 @@ console.log('*****  taskId:  ', taskId);
 
         setLastCreatedCase(data)
         setSnackOpen(true) // Show success notification
-        setTimeout(() => {
-          try {
-            const target = data.caseUrl ? new URL(data.caseUrl) : null
-            navigate(target ? target.pathname + target.search : '/case-list/cases')
-          } catch (e) { navigate('/case-list/cases') }
-        }, 1000)
+        setTimeout(() => navigateToCaseUrl(data.caseUrl), 1000)
       })
       .catch((err) => {
         console.error(err.message)

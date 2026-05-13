@@ -269,6 +269,33 @@ const createApmUrlBasedOnSelectedEvent = () => {
       })
   }, [caseDefId, keycloak])
 
+  const navigateToCaseUrl = (caseUrl) => {
+    // When opened as a modal from the case list, just close the dialog —
+    // CaseList's useEffect will re-fetch because openNewCaseForm toggles
+    if (openedFromList && typeof handleFormClose === 'function') {
+      handleFormClose()
+      return
+    }
+
+    // Standalone: if external app params present, redirect to caseUrl (opens case detail)
+    const urlParams = new URLSearchParams(window.location.search)
+    const isFromExternalApp = urlParams.has('eventIds') || urlParams.has('assetName') || urlParams.has('hierarchyName')
+
+    if (isFromExternalApp && caseUrl) {
+      try {
+        const target = new URL(caseUrl)
+        const cleanPath = target.pathname.replace(/\/([\w-]+)\/\1(\/|$)/g, '/$1$2')
+        navigate(cleanPath + target.search)
+        return
+      } catch (e) {
+        // fall through
+      }
+    }
+
+    // Standalone WKS: go to case list with a unique state to force re-fetch
+    navigate(`/case-list/cases?case_def=${caseDefId}`, { state: { refresh: Date.now() }, replace: true })
+  }
+
   const handleCloseSnack = () => {
     setSnackOpen(false)
   }
@@ -323,8 +350,8 @@ const createApmUrlBasedOnSelectedEvent = () => {
     const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
 	
 	let updFormData = formData.data;
-	//updFormData.businessKey = data.businessKey;
-	//updFormData.caseNo = data.businessKey;
+	updFormData.businessKey = data.businessKey;
+	updFormData.caseNo = data.businessKey;
 
     const caseAttributes = Object.keys(updFormData).map((key) => ({
       name: key,
@@ -393,19 +420,12 @@ const createApmUrlBasedOnSelectedEvent = () => {
         //  })(),
          
           }),
-        )
+        ).then((saveData) => ({ ...saveData, caseNo: businessKey, businessKey }))
       })
       .then((data) => {
         setLastCreatedCase(data)
         setSnackOpen(true)
-        setTimeout(() => {
-          try {
-            const target = data.caseUrl ? new URL(data.caseUrl) : null
-            navigate(target ? target.pathname + target.search : '/case-list/cases')
-          } catch (e) {
-            navigate('/case-list/cases')
-          }
-        }, 1000)
+        setTimeout(() => navigateToCaseUrl(data.caseUrl), 1000)
       })
       .catch((err) => {
         console.error(err.message)
@@ -581,19 +601,12 @@ const createApmUrlBasedOnSelectedEvent = () => {
     //     assignedTo: formData.data.container.caseAssignedTo.email.map(email => ({ emailId: email }))
 
           }),
-        )
+        ).then((saveData) => ({ ...saveData, caseNo: businessKey, businessKey }))
       })
       .then((data) => {
         setLastCreatedCase(data);
         setSnackOpen(true)
-        setTimeout(() => {
-          try {
-            const target = data.caseUrl ? new URL(data.caseUrl) : null
-            navigate(target ? target.pathname + target.search : '/case-list/cases')
-          } catch (e) {
-            navigate('/case-list/cases')
-          }
-        }, 1000)
+        setTimeout(() => navigateToCaseUrl(data.caseUrl), 1000)
       })
       .catch((err) => {
         console.error(err.message)

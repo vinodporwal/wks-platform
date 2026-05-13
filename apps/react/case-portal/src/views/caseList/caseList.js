@@ -66,7 +66,7 @@ const CaseNewFormPage = lazy(() =>
   })),
 )
 
-export const CaseList = ({ status, caseDefId }) => {
+export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
   const PaginationContext = createContext()
   const { t } = useTranslation()
   const [stages, setStages] = useState([])
@@ -104,6 +104,9 @@ export const CaseList = ({ status, caseDefId }) => {
   // If either businessKey or caseNo is present in the URL we should treat this as a "view" request
   const queryHasBusinessKey = searchParams.has('businessKey') || searchParams.has('caseNo');
   const taskId = searchParams.get('taskId');
+
+  // Fall back to ?case_def query param if no caseDefId prop was passed (e.g. redirect from NewCaseFormPage)
+  let caseDefId = caseDefIdProp || searchParams.get('case_def') || undefined;
 
   // Only treat '/case/create' as an auto-create path. '/case-list/create' should show the list page.
   const isCaseCreatePath = currentPath && currentPath === '/case/create';
@@ -302,7 +305,7 @@ export const CaseList = ({ status, caseDefId }) => {
         isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
       );
     }
-  }, [caseDefId, status, openNewCaseForm])
+  }, [caseDefId, status, openNewCaseForm, location.state?.refresh])
 
   useEffect(() => {
     CaseService.getCaseDefinitions(keycloak).then((resp) => {
