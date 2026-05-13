@@ -29,6 +29,7 @@ const MaterialBalance = ({ permissions }) => {
   const lowerVertName = verticalObject?.name?.toLowerCase()
   const SITE_NAME = siteObject?.name?.toUpperCase()
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && SITE_NAME === 'HMD'
+  const IS_CRACKER_C2 = lowerVertName === 'cracker' && SITE_NAME === 'C2'
 
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -288,7 +289,7 @@ const MaterialBalance = ({ permissions }) => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID, AOP_YEAR, IS_CRACKER_HMD])
+  }, [keycloak, PLANT_ID, AOP_YEAR])
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -319,7 +320,7 @@ const MaterialBalance = ({ permissions }) => {
       titleName: 'Material Balance',
       //LATER WE NEED TO ADD EXPORT IMPORT
       uploadExcelBtn: true,
-      showCalculate: IS_CRACKER_HMD,
+      showCalculate: IS_CRACKER_HMD || IS_CRACKER_C2,
       showCalculateVisibility: true,
       downloadExcelBtn: true,
     },
@@ -338,7 +339,7 @@ const MaterialBalance = ({ permissions }) => {
     <Box>
       <LoaderBackdrop open={!!loading} />
 
-      {IS_CRACKER_HMD && (
+      {(IS_CRACKER_HMD || IS_CRACKER_C2) && (
         <ModeSelection permissions={adjustedPermissionsReadyOnly} />
       )}
 

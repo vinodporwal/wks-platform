@@ -52,6 +52,7 @@ const CrackerConfig = () => {
   const lowerVertName = vertName?.toLowerCase()
 
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && SITE_NAME === 'HMD'
+  const IS_CRACKER_C2 = lowerVertName === 'cracker' && SITE_NAME === 'C2'
 
   const [modifiedCells, setModifiedCells] = useState({})
 
@@ -168,6 +169,7 @@ const CrackerConfig = () => {
       showModes:
         lowerVertName === 'cracker' &&
         !IS_CRACKER_HMD &&
+        !IS_CRACKER_C2 &&
         (SITE_NAME === 'VMD' || currentTabDisplay !== 'Yield'),
       saveWithRemark: true,
       saveBtn:
@@ -369,7 +371,7 @@ const CrackerConfig = () => {
       if (!PLANT_ID || !AOP_YEAR) return
       try {
         setLoading(true)
-        if (IS_CRACKER_HMD) {
+        if (IS_CRACKER_HMD || IS_CRACKER_C2) {
           mode = currentTabDisplay
         }
         const spyroVM = await DataService.getSpyroOutputData(
@@ -411,7 +413,7 @@ const CrackerConfig = () => {
       try {
         setLoading(true)
         var spyroVMYield1 = []
-        if (IS_CRACKER_HMD) {
+        if (IS_CRACKER_HMD || IS_CRACKER_C2) {
           mode = currentTabDisplay
         }
         if (currentTabDisplay == 'Yield') {
@@ -810,7 +812,7 @@ const CrackerConfig = () => {
 
     try {
       let mode = selectMode || '' // Optional
-      if (IS_CRACKER_HMD) {
+      if (IS_CRACKER_HMD || IS_CRACKER_C2) {
         mode = currentTabDisplay
       }
       let response
@@ -923,7 +925,7 @@ const CrackerConfig = () => {
     try {
       let mode = selectMode || currentTabDisplay || 'Spyro Matbal'
       const type = currentTabDisplay || 'Spyro Matbal'
-      if (IS_CRACKER_HMD) {
+      if (IS_CRACKER_HMD || IS_CRACKER_C2) {
         mode = currentTabDisplay
       }
       const response = await DataService.calculateSpyroOutputData(
@@ -958,14 +960,7 @@ const CrackerConfig = () => {
     } finally {
       setLoading(false)
     }
-  }, [
-    keycloak,
-    selectMode,
-    currentTabDisplay,
-    PLANT_ID,
-    AOP_YEAR,
-    IS_CRACKER_HMD,
-  ])
+  }, [keycloak, selectMode, currentTabDisplay, PLANT_ID, AOP_YEAR, IS_CRACKER_HMD, IS_CRACKER_C2])
 
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)
@@ -975,7 +970,7 @@ const CrackerConfig = () => {
     })
 
     let mode = selectMode // Can be empty  that's fine
-    if (IS_CRACKER_HMD) {
+    if (IS_CRACKER_HMD || IS_CRACKER_C2) {
       mode = currentTabDisplay
     }
     try {
@@ -1073,7 +1068,7 @@ const CrackerConfig = () => {
           tabs={resolvedTabs}
         />
       </Box>
-      {IS_CRACKER_HMD && (
+      {(IS_CRACKER_HMD || IS_CRACKER_C2) && (
         <ModeSelection permissions={adjustedPermissionsReadyOnly} />
       )}
 
