@@ -314,14 +314,32 @@ public class ShutdownRateServiceImpl implements ShutdownRateService {
 				cell.setCellStyle(headerStyle);
 			}
 
+			
 			// Data rows
 			int rowIdx = 1;
 			for (Map<String, Object> dataRow : dataList) {
+
+			
+
+			Object majorShutdown = dataRow.get("MajorShutdown");
+Object oneDayShutdown = dataRow.get("OneDayShutdown");
+
 				Row row = sheet.createRow(rowIdx++);
 				setExcelCellValue(row.createCell(0), dataRow.get("DisplayName"), dataStyle);
 				setExcelCellValue(row.createCell(1), dataRow.get("UOM"), dataStyle);
-				setExcelCellValue(row.createCell(2), dataRow.get("MajorShutdown"), dataStyle);
-				setExcelCellValue(row.createCell(3), dataRow.get("OneDayShutdown"), dataStyle);
+				// setExcelCellValue(row.createCell(2), dataRow.get("MajorShutdown"), dataStyle);
+				// setExcelCellValue(row.createCell(3), dataRow.get("OneDayShutdown"), dataStyle);
+				setExcelCellValue(
+					row.createCell(2),
+					(majorShutdown == null || majorShutdown.toString().trim().isEmpty()) ? 0.00 : majorShutdown,
+					dataStyle
+			);
+			
+			setExcelCellValue(
+					row.createCell(3),
+					(oneDayShutdown == null || oneDayShutdown.toString().trim().isEmpty()) ? 0.00 : oneDayShutdown,
+					dataStyle
+			);
 				setExcelCellValue(row.createCell(4), dataRow.get("remarks"), dataStyle);
 				setExcelCellValue(row.createCell(5), dataRow.get("NormParameter_FK_Id"), dataStyle);
 			}
@@ -397,10 +415,10 @@ public class ShutdownRateServiceImpl implements ShutdownRateService {
 
 						// Remarks validation: if incoming remark matches the existing remark, skip and flag
 						if (dto.getSaveStatus() == null && normParamFKId != null && !normParamFKId.isBlank()) {
-							String existingMajorShutdownValue = fetchExistingRecord(normParamFKId, aopYear, 4).getAttributeValue(); // major shutdown value
-							String existingOneDayShutdownValue = fetchExistingRecord(normParamFKId, aopYear, 5).getAttributeValue(); // one day shutdown value
+							String existingMajorShutdownValue = fetchExistingRecord(normParamFKId, aopYear, 4) == null ? "0.00" : fetchExistingRecord(normParamFKId, aopYear, 4).getAttributeValue();
+							String existingOneDayShutdownValue = fetchExistingRecord(normParamFKId, aopYear, 5) == null ? "0.00" : fetchExistingRecord(normParamFKId, aopYear, 5).getAttributeValue(); 
 							String incomingRemark =  newRemark;
-							String existingRemark = fetchExistingRecord(normParamFKId, aopYear, 4).getRemarks();
+							String existingRemark = fetchExistingRecord(normParamFKId, aopYear, 4) == null ? "" : fetchExistingRecord(normParamFKId, aopYear, 4).getRemarks();
 
 							boolean hasMajorShutdownValueChanged = hasValueChanged(existingMajorShutdownValue, dto.getApr());
 							boolean hasOneDayShutdownValueChanged = hasValueChanged(existingOneDayShutdownValue, dto.getMay());

@@ -165,6 +165,7 @@ const ProductionAopView = ({
             field: key,
             headerName: header,
             editable: isRemark,
+            minWidth: 110,
             flex: 1,
             ...(idx === 0 && {
               renderHeader: (params) => <div>{params.colDef.headerName}</div>,
