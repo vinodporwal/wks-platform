@@ -859,65 +859,6 @@ export const CaseList = ({ status, caseDefId }) => {
   )
 }
 
-// function fetchCases(
-//   setFetching,
-//   keycloak,
-//   caseDefId,
-//   setStages,
-//   status,
-//   filter,
-//   setCases,
-//   setFilter,
-// ) {
-//   setFetching(true)
-
-//   CaseService.getCaseDefinitionsById(keycloak, caseDefId)
-//     .then((resp) => {
-//       resp.stages.sort((a, b) => a.index - b.index).map((o) => o.name)
-//       setStages(resp.stages)
-//       return CaseService.filterCase(keycloak, caseDefId, status, filter)
-//     })
-//     .then((resp) => {
-//       const { data, paging } = resp
-//       console.log('resp', resp)
-//        const updatedCases = data.map((singleCase) => {
-//         let caseTitle = "";
-//         let caseNumber = "";
-
-//         try {
-//           const containerValue = singleCase.attributes.find(
-//             (attr) => attr.name === "container"
-//           )?.value;
-
-//           if (containerValue) {
-//             const parsedValue = JSON.parse(containerValue);
-//             caseTitle = parsedValue?.textField5 || parsedValue?.caseTitle;
-//             caseNumber = parsedValue?.textField || parsedValue.caseNo;
-//           }
-//         } catch (error) {
-//           console.error("Error parsing container value:", error);
-//         }
-
-//         return {
-//           ...singleCase,
-//           caseTitle,
-//           caseNumber,
-//         };
-//       });
-
-//       setCases(updatedCases)
-//       setFilter({
-//         ...filter,
-//         cursors: paging.cursors,
-//         hasPrevious: paging.hasPrevious,
-//         hasNext: paging.hasNext,
-//       })
-//     })
-//     .finally(() => {
-//       setFetching(false)
-//     })
-// }
-
 function fetchCases(
   setFetching,
   keycloak,
@@ -927,71 +868,130 @@ function fetchCases(
   filter,
   setCases,
   setFilter,
-  setACase,
-  setOpenCaseForm,
 ) {
   setFetching(true)
-  const searchParams = new URLSearchParams(window.location.search)
-  const assetName = searchParams.get('assetName') || 'defaultAssetName'
-  const hierarchyName =
-    searchParams.get('hierarchyName') || 'defaultHierarchyName'
 
-  CaseService.getCasesById(keycloak, caseDefId, assetName, hierarchyName)
+  CaseService.getCaseDefinitionsById(keycloak, caseDefId)
     .then((resp) => {
-      const caseList = Array.isArray(resp) ? resp : []
-
-      const updatedCases = caseList.map((singleCase) => {
-        let caseTitle = ''
-        let caseNumber = singleCase.caseNo
+      resp.stages.sort((a, b) => a.index - b.index).map((o) => o.name)
+      setStages(resp.stages)
+      return CaseService.filterCase(keycloak, caseDefId, status, filter)
+    })
+    .then((resp) => {
+      const { data, paging } = resp
+      console.log('resp', resp)
+       const updatedCases = data.map((singleCase) => {
+        let caseTitle = "";
+        let caseNumber = "";
 
         try {
           const containerValue = singleCase.attributes.find(
-            (attr) => attr.name === 'container',
-          )?.value
+            (attr) => attr.name === "container"
+          )?.value;
 
           if (containerValue) {
-            const parsedValue = JSON.parse(containerValue)
-            caseTitle = parsedValue?.textField5 || parsedValue?.caseTitle
-            caseNumber = caseNumber || parsedValue.caseNo
+            const parsedValue = JSON.parse(containerValue);
+            caseTitle = parsedValue?.textField5 || parsedValue?.caseTitle;
+            caseNumber = parsedValue?.textField || parsedValue.caseNo;
           }
         } catch (error) {
-          console.error('Error parsing container value:', error)
+          console.error("Error parsing container value:", error);
         }
 
         return {
           ...singleCase,
           caseTitle,
           caseNumber,
-        }
-      })
+        };
+      });
 
       setCases(updatedCases)
       setFilter({
         ...filter,
-        cursors: {}, // Reset cursors here
-        hasPrevious: false,
-        hasNext: false,
+        cursors: paging.cursors,
+        hasPrevious: paging.hasPrevious,
+        hasNext: paging.hasNext,
       })
-
-      const caseNo = getQueryParamValue(window.location.href, 'caseNo')
-
-      if (caseNo) {
-        const selectedCase = updatedCases.find((c) => c.caseNo == caseNo)
-        if (selectedCase && setACase) {
-          setACase(selectedCase)
-          setOpenCaseForm(true)
-
-          // Remove 'caseNo' from the URL without reloading
-          searchParams.delete('caseNo')
-          const newUrl = `${window.location.pathname}?${searchParams.toString()}`
-          window.history.replaceState(null, '', newUrl)
-        }
-      }
-    })
-    .catch((error) => {
-      console.error('Error fetching cases:', error)
     })
     .finally(() => {
       setFetching(false)
     })
 }
+
+// function fetchCases(
+//   setFetching,
+//   keycloak,
+//   caseDefId,
+//   setStages,
+//   status,
+//   filter,
+//   setCases,
+//   setFilter,
+//   setACase,
+//   setOpenCaseForm,
+// ) {
+//   setFetching(true)
+//   const searchParams = new URLSearchParams(window.location.search)
+//   const assetName = searchParams.get('assetName') || 'defaultAssetName'
+//   const hierarchyName =
+//     searchParams.get('hierarchyName') || 'defaultHierarchyName'
+
+//   CaseService.getCasesById(keycloak, caseDefId, assetName, hierarchyName)
+//     .then((resp) => {
+//       const caseList = Array.isArray(resp) ? resp : []
+
+//       const updatedCases = caseList.map((singleCase) => {
+//         let caseTitle = ''
+//         let caseNumber = singleCase.caseNo
+
+//         try {
+//           const containerValue = singleCase.attributes.find(
+//             (attr) => attr.name === 'container',
+//           )?.value
+
+//           if (containerValue) {
+//             const parsedValue = JSON.parse(containerValue)
+//             caseTitle = parsedValue?.textField5 || parsedValue?.caseTitle
+//             caseNumber = caseNumber || parsedValue.caseNo
+//           }
+//         } catch (error) {
+//           console.error('Error parsing container value:', error)
+//         }
+
+//         return {
+//           ...singleCase,
+//           caseTitle,
+//           caseNumber,
+//         }
+//       })
+
+//       setCases(updatedCases)
+//       setFilter({
+//         ...filter,
+//         cursors: {}, // Reset cursors here
+//         hasPrevious: false,
+//         hasNext: false,
+//       })
+
+//       const caseNo = getQueryParamValue(window.location.href, 'caseNo')
+
+//       if (caseNo) {
+//         const selectedCase = updatedCases.find((c) => c.caseNo == caseNo)
+//         if (selectedCase && setACase) {
+//           setACase(selectedCase)
+//           setOpenCaseForm(true)
+
+//           // Remove 'caseNo' from the URL without reloading
+//           searchParams.delete('caseNo')
+//           const newUrl = `${window.location.pathname}?${searchParams.toString()}`
+//           window.history.replaceState(null, '', newUrl)
+//         }
+//       }
+//     })
+//     .catch((error) => {
+//       console.error('Error fetching cases:', error)
+//     })
+//     .finally(() => {
+//       setFetching(false)
+//     })
+// }
