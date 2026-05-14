@@ -186,13 +186,6 @@ const CatalystChecmicalsCalculation = () => {
     return [...baseCols, ...dynamicCols]
   }, [recipeGrades])
 
-  const filteredConsumptionRows = useMemo(() => {
-    if (!selectedGrade) return consumptionRows
-    return consumptionRows.filter(
-      (row) => row.Grade_FK_Id === selectedGrade, // ? exact API field
-    )
-  }, [consumptionRows, selectedGrade])
-
   // Grid 3: Cat-chem Consumption Columns
   // const consumptionColumns = [
   //   { field: 'displayName', title: 'Material', widthT: 200, editable: false },
@@ -740,7 +733,7 @@ const CatalystChecmicalsCalculation = () => {
       <KendoDataTables
         title='Cat-chem Consumption'
         columns={consumptionColumns}
-        rows={filteredConsumptionRows}
+        rows={consumptionRows}
         grades={allGrades}
         setRows={setConsumptionRows}
         modifiedCells={modifiedConsumptionCells}
