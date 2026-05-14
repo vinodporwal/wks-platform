@@ -22,6 +22,7 @@ import { styled } from '@mui/material/styles'
 import SettingsIcon from '@mui/icons-material/Settings'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import InfoIcon from '@mui/icons-material/Info'
+import { useSelector } from 'react-redux'
 
 const CompactAccordion = styled(CustomAccordion)({
   mb: 0,
@@ -41,6 +42,7 @@ const ConfigurationAccordian = ({
 }) => {
   const keycloak = useSession()
   const hasExecutedRef = useRef(false)
+  const dataGridStore = useSelector((state) => state.dataGridStore)
   const { isReleased, oldYear } = dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased
