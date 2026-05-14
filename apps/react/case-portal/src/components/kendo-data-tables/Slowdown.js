@@ -1573,6 +1573,7 @@ const SlowDown = ({ permissions }) => {
         lowerVertName == 'vcm' ||
         lowerVertName == 'pta' ||
         IS_AROMATICS_SEZ_PX4 ||
+        IS_AROMATICS ||
         IS_CHEMICAL
       ) {
         response = await DataService.ImportSlowdownElastomerDetails(
