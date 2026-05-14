@@ -829,7 +829,7 @@ async function getCatalystSelectivityDataConstants(
   AOP_YEAR,
   iscatchem,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/configuration-constants?year=${AOP_YEAR}&plantFKId=${PLANT_ID}&isCatChem=${iscatchem}`
+  const url = `${Config.CaseEngineUrl}/task/configuration-constants?year=${AOP_YEAR}&plantFKId=${PLANT_ID}&iscatcam=${iscatchem}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
