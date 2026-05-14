@@ -16,6 +16,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -34,7 +35,10 @@ import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -379,6 +383,14 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 
 	
 	public byte[] exportBusinessDemand(String year, String plantId, boolean isAfterSave, List<BusinessDemandDataDTO> dtoList) {
+
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		 if(vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("HMD") ) {  
+			return exportBusinessDemandV2(year, plantId, isAfterSave, dtoList);
+		 }
+
 		try {
 			
 			List<Boolean> isEditable = new ArrayList<>();
@@ -540,6 +552,15 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 	@Override
 	public AOPMessageVM importExcel(String year, UUID plantFKId, MultipartFile file) {
 		// TODO Auto-generated method stub
+
+		Plants plant = plantsRepository.findById(plantFKId).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+		if(vertical.getName().equalsIgnoreCase("cracker") && site.getName().equalsIgnoreCase("HMD") ) {  
+
+               return importExcelV2(year, plantFKId, file);
+		}
 		try {
 			List<BusinessDemandDataDTO> data = readBusinessDemand(file.getInputStream(), plantFKId, year);
 			List<BusinessDemandDataDTO> failedRecords = saveBusinessDemandData(data);
@@ -802,6 +823,9 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 					failedList.add(businessDemandDataDTO);
 					continue;
 				}
+
+
+
 				BusinessDemand businessDemand = new BusinessDemand();
 				businessDemand.setApril(businessDemandDataDTO.getApril());
 				businessDemand.setAug(businessDemandDataDTO.getAug());
@@ -815,6 +839,26 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 				} else {
 					businessDemand.setId(UUID.fromString(businessDemandDataDTO.getId()));
 					businessDemand.setModifiedOn(new Date());
+
+					//remark validation
+				BusinessDemand existingBusinessDemand = businessDemandDataRepository.findById(businessDemand.getId()).get();
+				   if(existingBusinessDemand == null) { 
+					throw new RuntimeException("Business demand data not found");
+				   }
+    
+				 double  existingAprilValue = existingBusinessDemand.getApril();
+				 String existingRemark = existingBusinessDemand.getRemark();
+
+				 double newAprilValue = businessDemandDataDTO.getApril();
+				 String newRemark = businessDemandDataDTO.getRemark();
+
+				     if(!Objects.equals(existingAprilValue, newAprilValue) && Objects.equals(existingRemark, newRemark)) {  
+  
+						 businessDemandDataDTO.setSaveStatus("Failed");
+						 businessDemandDataDTO.setErrDescription("Please update remark");
+						 failedList.add(businessDemandDataDTO);
+						 continue;
+					 }
 				}
 
 				businessDemand.setJan(businessDemandDataDTO.getJan());
@@ -1195,6 +1239,335 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 			e.printStackTrace();
 		}
 		return 0;
+	}
+
+	// -------------------------------------------------------------------------
+	// Enhanced Export: May-March columns are locked/read-only; April is editable
+	// -------------------------------------------------------------------------
+
+	@Override
+	public byte[] exportBusinessDemandV2(String year, String plantId, boolean isAfterSave,
+			List<BusinessDemandDataDTO> dtoList) {
+		try {
+			if (!isAfterSave) {
+				dtoList = getBusinessDemandData(year, plantId);
+			}
+
+			Workbook workbook = new XSSFWorkbook();
+			Sheet sheet = workbook.createSheet("Sheet1");
+			sheet.protectSheet("Secret_Password");
+			int currentRow = 0;
+
+			List<List<Object>> rows = new ArrayList<>();
+			for (BusinessDemandDataDTO dto : dtoList) {
+				List<Object> list = new ArrayList<>();
+				list.add(dto.getDisplayName());
+				list.add(dto.getUOM());
+				list.add(dto.getApril());
+				list.add(dto.getMay());
+				list.add(dto.getJune());
+				list.add(dto.getJuly());
+				list.add(dto.getAug());
+				list.add(dto.getSep());
+				list.add(dto.getOct());
+				list.add(dto.getNov());
+				list.add(dto.getDec());
+				list.add(dto.getJan());
+				list.add(dto.getFeb());
+				list.add(dto.getMarch());
+				list.add(dto.getRemark());
+				list.add(dto.getId());
+				list.add(dto.getNormParameterId());
+				if (isAfterSave) {
+					list.add(dto.getSaveStatus());
+					list.add(dto.getErrDescription());
+				}
+				rows.add(list);
+			}
+
+			List<String> innerHeaders = new ArrayList<>();
+			innerHeaders.add("Particulars");
+			innerHeaders.add("UOM");
+			innerHeaders.add(getMonth(year, 4));
+			innerHeaders.add(getMonth(year, 5));
+			innerHeaders.add(getMonth(year, 6));
+			innerHeaders.add(getMonth(year, 7));
+			innerHeaders.add(getMonth(year, 8));
+			innerHeaders.add(getMonth(year, 9));
+			innerHeaders.add(getMonth(year, 10));
+			innerHeaders.add(getMonth(year, 11));
+			innerHeaders.add(getMonth(year, 12));
+			innerHeaders.add(getMonth(year, 1));
+			innerHeaders.add(getMonth(year, 2));
+			innerHeaders.add(getMonth(year, 3));
+			innerHeaders.add("Remark");
+			innerHeaders.add("Id");
+			innerHeaders.add("NormParameterId");
+			if (isAfterSave) {
+				innerHeaders.add("Status");
+				innerHeaders.add("Error Description");
+			}
+
+			// Styles: locked+gray for May-March (cols 3-13), unlocked for April (col 2),
+			// locked default for all other columns
+			CellStyle lockedMonthStyle = buildLockedMonthStyle(workbook);
+			CellStyle unlockedAprilStyle = Utility.createUnlockedStyle(workbook);
+			CellStyle lockedDefaultStyle = buildLockedDefaultStyle(workbook);
+
+			// Header row (locked by default when sheet protection is active)
+			Row headerRow = sheet.createRow(currentRow++);
+			for (int col = 0; col < innerHeaders.size(); col++) {
+				Cell cell = headerRow.createCell(col);
+				cell.setCellValue(innerHeaders.get(col));
+				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+			}
+
+			// Data rows with per-column locking styles
+			for (List<Object> rowData : rows) {
+				Row row = sheet.createRow(currentRow++);
+				for (int col = 0; col < rowData.size(); col++) {
+					Cell cell = row.createCell(col);
+					Object value = rowData.get(col);
+					if (value instanceof Number) {
+						cell.setCellValue(((Number) value).doubleValue());
+					} else if (value instanceof Boolean) {
+						cell.setCellValue((Boolean) value);
+					} else if (value != null) {
+						cell.setCellValue(value.toString());
+					} else {
+						cell.setCellValue("");
+					}
+
+					if (col == 2) {
+						// April column: editable
+						cell.setCellStyle(unlockedAprilStyle);
+					} else if (col >= 3 && col <= 13) {
+						// May through March: locked with gray fill to indicate read-only
+						cell.setCellStyle(lockedMonthStyle);
+					} else {
+						// Remaining columns (Particulars, UOM, Remark, Id, NormParameterId, Status...)
+						cell.setCellStyle(lockedDefaultStyle);
+					}
+				}
+			}
+
+			sheet.setColumnHidden(15, true);
+			sheet.setColumnHidden(16, true);
+
+			// Protect the sheet so that locked cells become non-editable
+			sheet.protectSheet("");
+
+			try {
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+				workbook.write(outputStream);
+				workbook.close();
+				return outputStream.toByteArray();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	private CellStyle buildLockedMonthStyle(Workbook workbook) {
+		CellStyle style = workbook.createCellStyle();
+		style.setLocked(true);
+		style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+		style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+		return style;
+	}
+
+	private CellStyle buildLockedDefaultStyle(Workbook workbook) {
+		CellStyle style = workbook.createCellStyle();
+		style.setLocked(true);
+		return style;
+	}
+
+	// -------------------------------------------------------------------------
+	// Enhanced Import: April is copied to all months; ON/OFF UOM validation
+	// -------------------------------------------------------------------------
+
+	@Override
+	public AOPMessageVM importExcelV2(String year, UUID plantFKId, MultipartFile file) {
+		try {
+			List<BusinessDemandDataDTO> data = readBusinessDemandV2(file.getInputStream(), plantFKId, year);
+			List<BusinessDemandDataDTO> failedRecords = saveBusinessDemandData(data);
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (failedRecords != null && failedRecords.size() > 0) {
+				byte[] fileByteArray = exportBusinessDemandV2(year, plantFKId.toString(), true, failedRecords);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+
+			return aopMessageVM;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public List<BusinessDemandDataDTO> readBusinessDemandV2(InputStream inputStream, UUID plantFKId, String year) {
+		List<BusinessDemandDataDTO> configList = new ArrayList<>();
+		String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
+		Plants plant = plantsRepository.findById(plantFKId)
+				.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		boolean pvc = vertical.getName().equalsIgnoreCase("PVC")
+				&& (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+
+			if (rowIterator.hasNext())
+				rowIterator.next(); // skip header row
+
+			List<BusinessDemandDataDTO> productionDtos = new ArrayList<>();
+
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+				BusinessDemandDataDTO dto = new BusinessDemandDataDTO();
+				try {
+					dto.setDisplayName(getStringCellValue(row.getCell(0), dto));
+					dto.setUOM(getStringCellValue(row.getCell(1), dto));
+
+					// Read only April from the spreadsheet
+					dto.setApril(getNumericCellValue(row.getCell(2), dto));
+
+					// Copy April value to all remaining months (May through March);
+					// any values present in those Excel columns are intentionally ignored.
+					Double aprilValue = dto.getApril();
+					dto.setMay(aprilValue);
+					dto.setJune(aprilValue);
+					dto.setJuly(aprilValue);
+					dto.setAug(aprilValue);
+					dto.setSep(aprilValue);
+					dto.setOct(aprilValue);
+					dto.setNov(aprilValue);
+					dto.setDec(aprilValue);
+					dto.setJan(aprilValue);
+					dto.setFeb(aprilValue);
+					dto.setMarch(aprilValue);
+
+			// Validate April value when UOM is ON/OFF			
+			String uom = dto.getUOM();
+			if (uom != null && uom.equalsIgnoreCase("ON/OFF")
+					&& !"Failed".equalsIgnoreCase(dto.getSaveStatus())) {
+				Double aprilVal = dto.getApril();
+				if (aprilVal == null
+						|| (Double.compare(aprilVal, 1.0) != 0 && Double.compare(aprilVal, 0.0) != 0)) {
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription(
+							"For UOM 'ON/OFF', April value must be 1 (ON) or 0 (OFF). Provided value: "
+									+ aprilVal);
+				}
+			}
+
+					dto.setPlantId(plantFKId.toString());
+					String normParameterId = getStringCellValue(row.getCell(16), dto);
+					dto.setNormParameterId(normParameterId);
+
+					boolean isProduction = false;
+					if (verticalName != null
+							&& (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP")
+									|| verticalName.equalsIgnoreCase("PET") || pvc)
+							&& normParameterId != null) {
+						isProduction = isProductionType(normParameterId, normParametersRepository,
+								normParameterTypeRepository);
+					}
+
+					if (isProduction) {
+						productionDtos.add(dto);
+					}
+
+					dto.setRemark(getStringCellValue(row.getCell(14), dto));
+					dto.setId(getStringCellValue(row.getCell(15), dto));
+
+					// Skip rows that have no id and all months are zero/null
+					boolean allMonthsZero = (dto.getApril() == null || dto.getApril() == 0.0)
+							&& (dto.getMay() == null || dto.getMay() == 0.0)
+							&& (dto.getJune() == null || dto.getJune() == 0.0)
+							&& (dto.getJuly() == null || dto.getJuly() == 0.0)
+							&& (dto.getAug() == null || dto.getAug() == 0.0)
+							&& (dto.getSep() == null || dto.getSep() == 0.0)
+							&& (dto.getOct() == null || dto.getOct() == 0.0)
+							&& (dto.getNov() == null || dto.getNov() == 0.0)
+							&& (dto.getDec() == null || dto.getDec() == 0.0)
+							&& (dto.getJan() == null || dto.getJan() == 0.0)
+							&& (dto.getFeb() == null || dto.getFeb() == 0.0)
+							&& (dto.getMarch() == null || dto.getMarch() == 0.0);
+
+					if (dto.getId() == null && allMonthsZero) {
+						continue;
+					}
+
+					dto.setVerticalFKId(vertical.getId().toString());
+					dto.setSiteFKId(site.getId().toString());
+					dto.setYear(year);
+
+				} catch (Exception e) {
+					e.printStackTrace();
+					dto.setErrDescription(e.getMessage());
+					dto.setSaveStatus("Failed");
+				}
+				configList.add(dto);
+			}
+
+			// Production percentage sum validation (same logic as readBusinessDemand)
+			if (!productionDtos.isEmpty() && (verticalName.equalsIgnoreCase("PE")
+					|| verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || pvc)) {
+				Map<String, Double> monthlyProductionSums = new HashMap<>();
+				String[] months = { "April", "May", "June", "July", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb",
+						"March" };
+
+				for (BusinessDemandDataDTO dto : productionDtos) {
+					monthlyProductionSums.merge("April", dto.getApril() != null ? dto.getApril() : 0.0, Double::sum);
+					monthlyProductionSums.merge("May", dto.getMay() != null ? dto.getMay() : 0.0, Double::sum);
+					monthlyProductionSums.merge("June", dto.getJune() != null ? dto.getJune() : 0.0, Double::sum);
+					monthlyProductionSums.merge("July", dto.getJuly() != null ? dto.getJuly() : 0.0, Double::sum);
+					monthlyProductionSums.merge("Aug", dto.getAug() != null ? dto.getAug() : 0.0, Double::sum);
+					monthlyProductionSums.merge("Sep", dto.getSep() != null ? dto.getSep() : 0.0, Double::sum);
+					monthlyProductionSums.merge("Oct", dto.getOct() != null ? dto.getOct() : 0.0, Double::sum);
+					monthlyProductionSums.merge("Nov", dto.getNov() != null ? dto.getNov() : 0.0, Double::sum);
+					monthlyProductionSums.merge("Dec", dto.getDec() != null ? dto.getDec() : 0.0, Double::sum);
+					monthlyProductionSums.merge("Jan", dto.getJan() != null ? dto.getJan() : 0.0, Double::sum);
+					monthlyProductionSums.merge("Feb", dto.getFeb() != null ? dto.getFeb() : 0.0, Double::sum);
+					monthlyProductionSums.merge("March", dto.getMarch() != null ? dto.getMarch() : 0.0, Double::sum);
+				}
+
+				for (String month : months) {
+					Double sum = monthlyProductionSums.getOrDefault(month, 0.0);
+					if (Math.abs(sum - 100.0) > 0.001) {
+						for (BusinessDemandDataDTO dto : productionDtos) {
+							if (!"Failed".equalsIgnoreCase(dto.getSaveStatus())) {
+								dto.setSaveStatus("Failed");
+								dto.setErrDescription(month + " Production sum is "
+										+ String.format("%.2f", sum) + ", but must be 100.");
+							} else {
+								String existingError = dto.getErrDescription() != null ? dto.getErrDescription() : "";
+								dto.setErrDescription(existingError + "; " + month + " Production sum is "
+										+ String.format("%.2f", sum) + ", but must be 100.");
+							}
+						}
+					}
+				}
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return configList;
 	}
 
 

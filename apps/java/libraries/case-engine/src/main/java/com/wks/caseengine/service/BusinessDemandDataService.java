@@ -21,6 +21,9 @@ public interface BusinessDemandDataService {
 	public 	List<BusinessDemandDataDTO>  editBusinessDemandData(List<BusinessDemandDataDTO> businessDemandDataDTO);
 	public 	BusinessDemandDataDTO  deleteBusinessDemandData(UUID id);
 	public AOPMessageVM importExcel(String year, UUID plantId, MultipartFile file);
-	
+
+	public byte[] exportBusinessDemandV2(String year, String plantFKId, boolean isAfterSave, List<BusinessDemandDataDTO> dtoList);
+
+	public AOPMessageVM importExcelV2(String year, UUID plantId, MultipartFile file);
 
 }
