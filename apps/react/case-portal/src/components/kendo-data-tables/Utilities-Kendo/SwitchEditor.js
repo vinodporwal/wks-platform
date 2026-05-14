@@ -12,6 +12,8 @@ const SwitchEditor = (props) => {
     customModifiedCells,
     rowId,
     setRows,
+    editable,
+    isDisabled,
     ...rest
   } = props
 
@@ -59,6 +61,7 @@ const SwitchEditor = (props) => {
   if (typeof onChange === 'function') {
     return (
       <td
+        className={isDisabled ? 'k-number-right-disabled' : ''}
         style={{
           textAlign: 'center',
           padding: 0,
@@ -67,6 +70,7 @@ const SwitchEditor = (props) => {
       >
         <Switch
           checked={isChecked}
+          disabled={editable === false}
           // color={isEdited ? 'warning' : 'primary'}
           size='small'
           onChange={handleSwitchChange}
@@ -78,18 +82,21 @@ const SwitchEditor = (props) => {
 
   // Display mode with direct edit (clickable switch)
   if (directEditMode) {
+    const isNonEditable = editable === false
     return (
       <td
+        className={isDisabled ? 'k-number-right-disabled' : ''}
         style={{
           textAlign: 'center',
           padding: '0.5rem',
-          cursor: 'pointer',
+          cursor: isNonEditable ? 'default' : 'pointer',
         }}
       >
         <Switch
           checked={isChecked}
           size='small'
-          onChange={handleSwitchChange}
+          disabled={isNonEditable}
+          onChange={isNonEditable ? undefined : handleSwitchChange}
           inputProps={{ 'aria-label': 'Switch toggle' }}
         />
       </td>

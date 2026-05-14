@@ -3529,7 +3529,7 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.widthT || col.width || 120}
+                        width={setWidth(col?.widthT || col?.minWidth || 100)}
                         hidden={col.hidden}
                         editable={false}
                         headerClassName={isActive ? 'active-column' : ''}
@@ -3951,7 +3951,7 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.widthT}
+                        width={setWidth(col?.minWidth || 150)}
                         hidden={col.hidden}
                         className={`
                         ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
@@ -3968,6 +3968,8 @@ const KendoDataTables = ({
                                 condition={(dataItem) =>
                                   dataItem?.UOM === 'ON/OFF'
                                 }
+                                editable={col?.editable}
+                                isDisabled={col?.isDisabled}
                               />
                             ),
                           },
@@ -3982,6 +3984,8 @@ const KendoDataTables = ({
                                   customModifiedCells={customModifiedCells}
                                   rowId={props.dataItem.id}
                                   setRows={setRows}
+                                  editable={col?.editable}
+                                  isDisabled={col?.isDisabled}
                                 />
                               )
                             }
