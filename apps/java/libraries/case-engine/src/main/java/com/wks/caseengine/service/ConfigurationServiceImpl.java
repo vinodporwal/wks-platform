@@ -574,6 +574,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			boolean isChemical= vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("DMD") && plant.getName().equalsIgnoreCase("Chlor Alkali");
 			boolean isChemicalVmdbutadiene = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD") && plant.getName().equalsIgnoreCase("Butadiene");
+			boolean isChemicalVmdbenzenes = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD") && plant.getName().equalsIgnoreCase("Benzene");
 		    List<Object[]> obj = new ArrayList<>();
 			if ((verticalName.equalsIgnoreCase("MEG"))
 					|| (verticalName.equalsIgnoreCase("CRACKER")) || (isChemical) ) {
@@ -581,7 +582,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				String procedureName = verticalName + "_GetConfiguration";
 				obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);
 			}
-			else if(isChemicalVmdbutadiene) { 
+			else if(isChemicalVmdbutadiene || isChemicalVmdbenzenes) { 
 				String procedureName = verticalName + "_" + site.getName() + "_GetConfiguration";
 				obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);
 			}
@@ -636,7 +637,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 						: 0.0);
 				configurationDTO.setRemarks((row[13] != null ? row[13].toString() : ""));
 
-				if(isChemical || isChemicalVmdbutadiene) {
+				if(isChemical || isChemicalVmdbutadiene || isChemicalVmdbenzenes) {
 					configurationDTO.setAuditYear(row[14] != null ? row[14].toString() : "");
 					configurationDTO.setUOM(row[15] != null ? row[15].toString() : "");
 					configurationDTO.setNormType(row[16] != null ? row[16].toString() : "");

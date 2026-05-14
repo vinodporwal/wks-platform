@@ -95,10 +95,8 @@ const ConfigurationTable = () => {
     lowerVertName === 'aromatics' && lowerSiteName === 'pmd'
   const IS_CHEMICAL_DMD =
     lowerVertName === 'chemical' && lowerSiteName === 'dmd'
-  const IS_CHEMICAL_VMD_BUTADIENE =
-    lowerVertName === 'chemical' &&
-    lowerSiteName === 'vmd' &&
-    plantObject?.name?.toLowerCase().includes('butadiene')
+  const IS_CHEMICAL_VMD =
+    lowerVertName === 'chemical' && lowerSiteName === 'vmd'
   const [tabIndex, setTabIndex] = useState(0)
   const [loadBtnClicked, setLoadBtnClicked] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -247,7 +245,7 @@ const ConfigurationTable = () => {
         lowerVertName == verticalEnums.MEG ||
         lowerVertName == verticalEnums.CRACKER ||
         IS_CHEMICAL_DMD ||
-        IS_CHEMICAL_VMD_BUTADIENE
+        IS_CHEMICAL_VMD
       ) {
         data = data?.filter(
           (item) =>
@@ -621,7 +619,7 @@ const ConfigurationTable = () => {
         lowerVertName != 'cracker' &&
         lowerVertName != 'meg' &&
         !IS_CHEMICAL_DMD &&
-        !IS_CHEMICAL_VMD_BUTADIENE
+        !IS_CHEMICAL_VMD
       ) {
         if (lowerVertName === 'aromatics') {
           getRevision()
@@ -1210,12 +1208,12 @@ const ConfigurationTable = () => {
   }, [openConfirmDialogRev])
 
   if (
-    (lowerVertName == 'meg' || IS_CHEMICAL_DMD || IS_CHEMICAL_VMD_BUTADIENE) &&
+    (lowerVertName == 'meg' || IS_CHEMICAL_DMD || IS_CHEMICAL_VMD) &&
     lowerVertName !== 'cracker'
   ) {
     // const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
     const megTabs =
-      IS_CHEMICAL_DMD || IS_CHEMICAL_VMD_BUTADIENE
+      IS_CHEMICAL_DMD || IS_CHEMICAL_VMD
         ? ['Configuration', 'Constants']
         : [
             'Configuration',
