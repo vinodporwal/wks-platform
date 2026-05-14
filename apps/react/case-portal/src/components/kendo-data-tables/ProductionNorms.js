@@ -18,6 +18,22 @@ import AopTabs from 'components/AopTabs'
 import { Box } from '@mui/material'
 import { DataService } from 'services/DataService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+
+const monthFields = [
+  'april',
+  'may',
+  'june',
+  'july',
+  'aug',
+  'sep',
+  'oct',
+  'nov',
+  'dec',
+  'jan',
+  'feb',
+  'march',
+]
+
 const ProductionNorms = ({ permissions }) => {
   // State for tabs
   const [tabIndex, setTabIndex] = useState(0)
@@ -71,8 +87,13 @@ const ProductionNorms = ({ permissions }) => {
   const IS_VCM = verticalObject?.name?.toLowerCase() == 'vcm'
   const IS_AROMATIC_SEZ =
     lowerVertName === 'aromatics' && SITE_NAME_LOWERCASE === 'sez'
+  const IS_AROMATIC_SEZ_PX4 =
+    lowerVertName === 'aromatics' &&
+    SITE_NAME_LOWERCASE === 'sez' &&
+    plantName === 'px4'
   const IS_PVC_VMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'vmd'
   const IS_PVC_DMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'dmd'
+  const IS_PVC_HMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'hmd'
   const IS_AROMATIC_DTA_PLATFORMER =
     lowerVertName === 'aromatics' &&
     SITE_NAME_LOWERCASE === 'dta' &&
@@ -82,6 +103,8 @@ const ProductionNorms = ({ permissions }) => {
   const IS_CHEMICAL = lowerVertName === 'chemical'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && SITE_NAME_LOWERCASE === 'jmd'
+  const IS_ELASTOMER_HMD =
+    lowerVertName === 'elastomer' && SITE_NAME_LOWERCASE === 'hmd'
 
   const IS_ELASTOMER_JMD_IIR =
     lowerVertName === 'elastomer' &&
@@ -95,6 +118,10 @@ const ProductionNorms = ({ permissions }) => {
     lowerVertName === 'chemical' &&
     SITE_NAME_LOWERCASE === 'vmd' &&
     plantName === 'acrylonitrile'
+
+  const IS_CHEMICAL_NMD =
+    lowerVertName === 'chemical' && SITE_NAME_LOWERCASE === 'nmd'
+
   const [loading, setLoading] = useState(false)
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -192,7 +219,7 @@ const ProductionNorms = ({ permissions }) => {
         calculatedTotal: roundedTotal,
         iirValue: roundedIIR,
         match: isMatch,
-        difference: roundedTotal - roundedIIR,
+        difference: roundedIIR - roundedTotal,
         unit: selectedUnit,
       }
 
@@ -212,12 +239,20 @@ const ProductionNorms = ({ permissions }) => {
 
   const saveChanges = React.useCallback(async () => {
     try {
+      // Merge both rows and modifiedCells to capture all changes
+      console.log('rows', rows)
       const editedData = Object.values(modifiedCells)
-      const enrichedData = editedData.map((row) => ({
+      const allData = rows
+        .filter((item) => item.displayName !== 'Total')
+        ?.map((row) => {
+          const modifiedRow = modifiedCells[row.id]
+          return modifiedRow ? { ...row, ...modifiedRow } : row
+        })
+      const enrichedData = allData.map((row) => ({
         ...row,
         total: row.total ?? findSum('1', row),
       }))
-      if (!IS_CHEMICAL_VMD_ACRYLONITRILE) {
+      if (!IS_CHEMICAL_VMD_ACRYLONITRILE && !IS_CHEMICAL_NMD) {
         const result = validateTotalsWithIIR({
           data: enrichedData,
           rowsInKT,
@@ -230,7 +265,7 @@ const ProductionNorms = ({ permissions }) => {
             .map((m) =>
               m.error
                 ? `${m.displayName}: ${m.error}`
-                : `${m.displayName}: Expected ${m.iirValue.toFixed(2)} ${m.unit}, got ${m.calculatedTotal.toFixed(2)} ${m.unit}`,
+                : `${m.displayName}: Expected ${m.iirValue.toFixed(2)} ${m.unit}, got ${m.calculatedTotal.toFixed(2)} ${m.unit} (Diff : ${m.difference.toFixed(2)})`,
             )
             .join('\n')
 
@@ -238,6 +273,8 @@ const ProductionNorms = ({ permissions }) => {
           setSnackbarData({
             message: `Total validation failed:\n${message}`,
             severity: 'error',
+            duration: 1000 * 30,
+            autoHide: false,
           })
           setLoading(false)
           return
@@ -457,7 +494,7 @@ const ProductionNorms = ({ permissions }) => {
         const rowsInKT = res?.data.map((item) => ({
           id: item.id || null,
           product: item.product,
-          value: item.value ? item.value / 1000 : item.value, // convert to KT
+          value: item.value ? Number(item.value) / 1000 : item.value, // convert to KT
           Particulars: item.type,
           isEditable: false,
         }))
@@ -488,6 +525,11 @@ const ProductionNorms = ({ permissions }) => {
     setCurrentRowId(dataItem.id)
     setRemarkDialogOpen(true)
   }
+  const convertValue = (value, days = 1) => {
+    if (value === null || value === undefined || value === '') return null
+    return Number(value) / 1000 / days
+  }
+
   const fetchData = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     try {
@@ -496,7 +538,7 @@ const ProductionNorms = ({ permissions }) => {
       const selectedLine = lineDetails[tabIndex]
       const lineId = selectedLine?.id
       let response = ''
-      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
         response = await ProductionNormsApiService.getAOPDataLineWise(
           keycloak,
           'Production',
@@ -536,7 +578,9 @@ const ProductionNorms = ({ permissions }) => {
           originalRemark: product.remark,
           remark: product.remark,
           isEditable:
-            IS_ELASTOMER_JMD_IIR || IS_CHEMICAL_VMD_ACRYLONITRILE
+            IS_ELASTOMER_JMD_IIR ||
+            IS_CHEMICAL_VMD_ACRYLONITRILE ||
+            IS_CHEMICAL_NMD
               ? true
               : false,
           april: product?.april,
@@ -560,44 +604,66 @@ const ProductionNorms = ({ permissions }) => {
 
       let formattedData = []
 
+      const fiscalYear = AOP_YEAR
+      const startYear = parseInt(fiscalYear.split('-')[0], 10)
+      const nextYear = startYear + 1
+
+      const isLeap = (year) => new Date(year, 1, 29).getDate() === 29
+
+      const daysInMonth = {
+        april: 30,
+        may: 31,
+        june: 30,
+        july: 31,
+        aug: 31,
+        sep: 30,
+        oct: 31,
+        nov: 30,
+        dec: 31,
+        jan: 31,
+        feb: isLeap(nextYear) ? 29 : 28,
+        march: 31,
+      }
+
       if (lowerVertName !== 'cracker') {
         formattedData = data.map((item, index) => {
-          const isKiloTon = selectedUnit == 'KT'
+          const isKiloTon = selectedUnit === 'KT'
+          const isKiloTonPerDay = selectedUnit === 'KT/Day'
+
           const transformedItem = {
             ...item,
             idFromApi: item.id,
             uom: selectedUnit ? selectedUnit : 'MT',
             normParametersFKId: item?.normParametersFKId?.toLowerCase(),
             id: index,
-            ...(isKiloTon && {
-              jan: item.jan ? item.jan / 1000 : item.jan,
-              feb: item.feb ? item.feb / 1000 : item.feb,
-              march: item.march ? item.march / 1000 : item.march,
-              april: item.april ? item.april / 1000 : item.april,
-              may: item.may ? item.may / 1000 : item.may,
-              june: item.june ? item.june / 1000 : item.june,
-              july: item.july ? item.july / 1000 : item.july,
-              aug: item.aug ? item.aug / 1000 : item.aug,
-              sep: item.sep ? item.sep / 1000 : item.sep,
-              oct: item.oct ? item.oct / 1000 : item.oct,
-              nov: item.nov ? item.nov / 1000 : item.nov,
-              dec: item.dec ? item.dec / 1000 : item.dec,
-            }),
+            ...monthFields.reduce((acc, month) => {
+              const val = item[month]
+              const isTrainRow = String(
+                item.displayName ||
+                  item.Particulars ||
+                  item.normParameterDisplayName ||
+                  '',
+              )
+                .toLowerCase()
+                .includes('train')
+              if (isKiloTon || isKiloTonPerDay) {
+                acc[month] = convertValue(
+                  val,
+                  isKiloTonPerDay && IS_AROMATIC_SEZ_PX4 && !isTrainRow
+                    ? daysInMonth[month]
+                    : 1,
+                )
+              } else {
+                acc[month] = val
+              }
+              return acc
+            }, {}),
           }
-          const total = [
-            transformedItem.april,
-            transformedItem.may,
-            transformedItem.june,
-            transformedItem.july,
-            transformedItem.aug,
-            transformedItem.sep,
-            transformedItem.oct,
-            transformedItem.nov,
-            transformedItem.dec,
-            transformedItem.jan,
-            transformedItem.feb,
-            transformedItem.march,
-          ].reduce((sum, val) => sum + (parseFloat(val) || 0), 0)
+          const total = monthFields.reduce(
+            (sum, month) =>
+              sum + (parseFloat(Number(transformedItem[month])) || 0),
+            0,
+          )
           return {
             ...transformedItem,
             averageTPH: total,
@@ -607,12 +673,6 @@ const ProductionNorms = ({ permissions }) => {
           }
         })
       }
-
-      const fiscalYear = AOP_YEAR
-      const startYear = parseInt(fiscalYear.split('-')[0], 10)
-      const nextYear = startYear + 1
-
-      const isLeap = (year) => new Date(year, 1, 29).getDate() === 29
 
       if (lowerVertName === 'cracker') {
         formattedData = data.map((item, index) => {
@@ -664,21 +724,6 @@ const ProductionNorms = ({ permissions }) => {
         })
       }
 
-      const monthFields = [
-        'april',
-        'may',
-        'june',
-        'july',
-        'aug',
-        'sep',
-        'oct',
-        'nov',
-        'dec',
-        'jan',
-        'feb',
-        'march',
-      ]
-
       const mapTrainNumberToLabel = (val) => {
         const TOL = 0.0001
         if (val === null || val === undefined || val === '') return val
@@ -706,11 +751,17 @@ const ProductionNorms = ({ permissions }) => {
         Array.isArray(formattedData) &&
         formattedData.length
       ) {
-        const trainIndex = formattedData.findIndex(
-          (r) =>
-            String(r._displayNameLower || r.displayName || '').toLowerCase() ===
-            'train',
-        )
+        const trainIndex = formattedData.findIndex((item) => {
+          const isTrainRow = String(
+            item.displayName ||
+              item.Particulars ||
+              item.normParameterDisplayName ||
+              '',
+          )
+            .toLowerCase()
+            .includes('train')
+          return isTrainRow
+        })
         if (trainIndex !== -1) {
           monthFields.forEach((m) => {
             const original = formattedData[trainIndex][m]
@@ -769,7 +820,8 @@ const ProductionNorms = ({ permissions }) => {
             !IS_AROMATIC_HMD &&
             !IS_AROMATIC_DTA_PLATFORMER) ||
           IS_ELASTOMER_JMD ||
-          IS_CHEMICAL_DMD_CHLOR_ALKALI
+          IS_CHEMICAL_DMD_CHLOR_ALKALI ||
+          IS_ELASTOMER_HMD
         ) {
           finalData = [...formattedData, totalsRow]
         } else {
@@ -908,7 +960,7 @@ const ProductionNorms = ({ permissions }) => {
       }
     }
     if (
-      (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) &&
+      (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) &&
       lineDetails?.length === 0
     ) {
       return
@@ -945,7 +997,7 @@ const ProductionNorms = ({ permissions }) => {
   }
 
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
       fetchLineDetails()
     } else {
       setLineDetails([])
@@ -953,7 +1005,11 @@ const ProductionNorms = ({ permissions }) => {
   }, [PLANT_ID, keycloak, yearChanged])
 
   const valueFormat_ = ValueFormatterProduction()
-  const valueFormat = IS_VCM ? '{0:0.000}' : valueFormat_
+  const valueFormat = IS_VCM
+    ? '{0:0.000}'
+    : IS_AROMATIC_SEZ_PX4
+      ? '{0:0.0000}'
+      : valueFormat_
 
   const productionColumns = getEnhancedColDefs({
     headerMap,
@@ -1013,7 +1069,9 @@ const ProductionNorms = ({ permissions }) => {
   useEffect(() => {
     if (
       validateTotalsWithIIRRef.current &&
-      (IS_ELASTOMER_JMD_IIR || IS_CHEMICAL_VMD_ACRYLONITRILE) &&
+      (IS_ELASTOMER_JMD_IIR ||
+        IS_CHEMICAL_VMD_ACRYLONITRILE ||
+        IS_CHEMICAL_NMD) &&
       rows.length > 0 &&
       (rowsInKT.length > 0 || rowsInMT.length > 0)
     ) {
@@ -1036,7 +1094,7 @@ const ProductionNorms = ({ permissions }) => {
           .map((m) =>
             m.error
               ? `${m.displayName}: ${m.error}`
-              : `${m.displayName}: Expected ${m.iirValue.toFixed(2)} ${m.unit || 'MT'}, got ${m.calculatedTotal.toFixed(2)} ${m.unit || 'MT'}`,
+              : `${m.displayName}: Expected ${m.iirValue.toFixed(2)} ${m.unit || 'MT'}, got ${m.calculatedTotal.toFixed(2)} ${m.unit || 'MT'} (Diff: ${m.difference.toFixed(2)})`,
           )
           .join('\n')
 
@@ -1045,6 +1103,7 @@ const ProductionNorms = ({ permissions }) => {
           message: `Total validation failed:\n${message}`,
           severity: 'error',
           duration: 1000 * 15,
+          autoHide: false,
         })
       }
       validateTotalsWithIIRRef.current = false
@@ -1056,6 +1115,7 @@ const ProductionNorms = ({ permissions }) => {
     selectedUnit,
     IS_ELASTOMER_JMD_IIR,
     IS_CHEMICAL_VMD_ACRYLONITRILE,
+    IS_CHEMICAL_NMD,
   ])
 
   useEffect(() => {
@@ -1124,12 +1184,12 @@ const ProductionNorms = ({ permissions }) => {
             lowerVertName === 'cracker' ||
             lowerVertName === 'chemical'
               ? true
-              : permissions?.showUnit ?? true,
+              : (permissions?.showUnit ?? true),
           saveWithRemark: permissions?.saveWithRemark ?? true,
 
           showCalculate: IS_ELASTOMER_JMD
             ? false
-            : permissions?.showCalculate ?? true,
+            : (permissions?.showCalculate ?? true),
 
           allAction: permissions?.allAction ?? true,
           showNote: true,
@@ -1141,14 +1201,20 @@ const ProductionNorms = ({ permissions }) => {
 
           showCalculateVisibility:
             calculationObject && Object.keys(calculationObject).length > 0
-              ? permissions?.showCalculate ?? true
+              ? (permissions?.showCalculate ?? true)
               : false,
           saveBtn:
-            IS_ELASTOMER_JMD_IIR || IS_CHEMICAL_VMD_ACRYLONITRILE
+            IS_ELASTOMER_JMD_IIR ||
+            IS_CHEMICAL_VMD_ACRYLONITRILE ||
+            IS_CHEMICAL_NMD
               ? true
-              : permissions?.saveBtn ?? false,
+              : (permissions?.saveBtn ?? false),
           units:
-            lowerVertName === 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
+            lowerVertName === 'cracker'
+              ? ['MT/Month', 'TPH']
+              : IS_AROMATIC_SEZ
+                ? ['MT', 'KT', 'KT/Day']
+                : ['MT', 'KT'],
           customHeight: permissions?.customHeight,
           downloadExcelBtnFromUI:
             lowerVertName === 'vcm' ||
@@ -1195,7 +1261,7 @@ const ProductionNorms = ({ permissions }) => {
       allAction: permissions?.allAction ?? true,
       showCalculateVisibility:
         calculationObject && Object.keys(calculationObject).length > 0
-          ? permissions?.showCalculate ?? true
+          ? (permissions?.showCalculate ?? true)
           : false,
       saveBtn: permissions?.saveBtn ?? false,
       units: lowerVertName == 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
@@ -1234,7 +1300,7 @@ const ProductionNorms = ({ permissions }) => {
   return (
     <div>
       {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
-      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) && (
+      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) && (
         <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>

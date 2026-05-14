@@ -69,7 +69,7 @@ const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
       editable: false,
       widthT: 250,
       autoAdjust: false,
-      minWidth: 100,
+      minWidth: 250,
     },
     {
       field: 'uom',
@@ -102,7 +102,7 @@ const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
       widthT: 250,
       autoAdjust: false,
       type: 'string',
-      minWidth: 100,
+      minWidth: 200,
     },
     {
       field: 'normParameterFKId',

@@ -5,7 +5,7 @@ export const SlowDownAromaticsColumns = [
     editable: true,
     type: 'descLimit',
     widthT: 200,
-    autoAdjust: false
+    autoAdjust: false,
   },
 
   {
@@ -51,6 +51,6 @@ export const SlowDownAromaticsColumns = [
     title: 'Remarks',
     editable: true,
     widthT: 230,
-    autoAdjust: false
+    autoAdjust: false,
   },
 ]

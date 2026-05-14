@@ -32,6 +32,7 @@ public class ShutDownPlanDTO {
 	private UUID productId;
 	private String maintenanceTypeName;
 	private Double durationInHrs;
+	private Double oldDurationInHrs;
 	private Double durationInDays;
 	private String product;
 	private UUID plantId;

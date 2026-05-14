@@ -12,47 +12,47 @@
 
   /* Status Colors from design specs */
   --status-go-live-bg: #dcfce7;
-  --status-go-live-border: #216E4E;
-  --status-go-live-text: #216E4E;
-  
-  --status-dev-bg: #FFF5DB;
-  --status-dev-border: #9E4C00;
-  --status-dev-text: #9E4C00;
+  --status-go-live-border: #216e4e;
+  --status-go-live-text: #216e4e;
 
-  --status-uat-bg: #DBEAFE;
-  --status-uat-border: #1558BC;
-  --status-uat-text: #1558BC;
+  --status-dev-bg: #fff5db;
+  --status-dev-border: #9e4c00;
+  --status-dev-text: #9e4c00;
 
-  --status-preuat-bg: #FEF7C8;
-  --status-preuat-border: #7F5F01;
-  --status-preuat-text: #7F5F01;
+  --status-uat-bg: #dbeafe;
+  --status-uat-border: #1558bc;
+  --status-uat-text: #1558bc;
 
-  --status-notstarted-bg: #F0F1F2;
+  --status-preuat-bg: #fef7c8;
+  --status-preuat-border: #7f5f01;
+  --status-preuat-text: #7f5f01;
+
+  --status-notstarted-bg: #f0f1f2;
   --status-notstarted-border: #464646;
   --status-notstarted-text: #464646;
 
   --status-label-text: #64748b;
   --status-value-text: #1e293b;
-  
+
   --d-top-summary-card: #ffffff;
   --d-top-summary-card-border: #e2e8f0;
-  --bg-plant-icon-box: #FFEAF1;
+  --bg-plant-icon-box: #ffeaf1;
 
   --text-heading: #303030;
   --text-secondary: #606060;
   --text-italic-gray: #707070;
   --text-placeholder-gray: #94a3b8;
-  --border-divider: #DDDEE1;
+  --border-divider: #dddee1;
   --border-hover-gray: #cbd5e1;
   --bg-hover-light: #f8fafc;
-  
+
   /* Icon Backgrounds */
   --bg-icon-cyan: #e0f2fe;
-  --bg-icon-cyan-light: #E7F9FF;
+  --bg-icon-cyan-light: #e7f9ff;
   --bg-icon-pink: #fdf2f8;
-  --bg-icon-purple-light: #F8EEFE;
+  --bg-icon-purple-light: #f8eefe;
   --bg-icon-red-light: #fff0f0;
-  
+
   /* Icon Colors */
   --icon-cyan: #0891b2;
   --icon-purple: #ae4787;
@@ -630,7 +630,7 @@
   border: 1px solid var(--d-top-summary-card-border);
   min-width: 209px;
   height: 50px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
 
 .icon-text-group {
@@ -698,7 +698,7 @@
   padding: 16px 20px;
   gap: 24px;
   height: 108px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
 
 .top-total-plants-section {
@@ -761,14 +761,16 @@
   flex-direction: column;
   gap: 6px;
   border: 1px solid var(--border-light);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   min-width: 150px;
   height: 76px;
 }
 
 .top-status-box:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .top-status-header {

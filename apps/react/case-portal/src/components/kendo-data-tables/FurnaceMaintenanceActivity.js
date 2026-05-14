@@ -9,7 +9,7 @@ import { DropDownList } from '@progress/kendo-react-dropdowns'
 import { DatePicker } from '@progress/kendo-react-dateinputs'
 import { useSelector } from 'react-redux'
 import { getRoleName } from 'services/role-service'
-const FurnaceMaintenanceActivity = () => {
+const FurnaceMaintenanceActivity = ({ permissions }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -44,6 +44,7 @@ const FurnaceMaintenanceActivity = () => {
   const [rows, setRows] = useState()
   const [runLengthColumns, setRunLengthColumns] = useState([])
   const [MaintActivityDropdownData, setMaintActivityDropdownData] = useState([])
+  const [uniqueFurnaceNames, setUniqueFurnaceNames] = useState([])
 
   const [loading, setLoading] = useState(false)
   const keycloak = useSession()
@@ -130,18 +131,40 @@ const FurnaceMaintenanceActivity = () => {
           }
         })
 
+        // Extract unique furnace names from data
+        const uniqueNames = [
+          ...new Set(
+            data2.data?.data?.map((item) => item.Name).filter(Boolean),
+          ),
+        ]
+        setUniqueFurnaceNames(uniqueNames)
+
         const mappedCols = (data2?.data?.columns || [])
           .filter((col) => !['Id', 'isEditable', 'Remarks'].includes(col.field))
-          .map((col) => ({
-            ...col,
-            editable: ['MaintActivity', 'StartDate', 'EndDate'].includes(
-              col.field,
-            ),
-            type:
-              col.field === 'MaintActivity'
-                ? 'dynamicDropdownshared'
-                : col.type,
-          }))
+          .map((col) => {
+            let columnConfig = {
+              ...col,
+              editable: [
+                'MaintActivity',
+                'StartDate',
+                'EndDate',
+                'Name',
+              ].includes(col.field),
+            }
+
+            // Set type for specific columns
+            if (col.field === 'MaintActivity') {
+              columnConfig.type = 'dynamicDropdownshared'
+            } else if (col.field === 'Name') {
+              columnConfig.type = 'dynamicDropdownshared'
+              columnConfig.dropdownOptions = uniqueNames.map((name) => ({
+                value: name,
+                name: name,
+              }))
+            }
+
+            return columnConfig
+          })
 
         const remarksCol = (data2?.data?.columns || [])
           .filter((col) => col.field === 'Remarks')
@@ -212,6 +235,41 @@ const FurnaceMaintenanceActivity = () => {
         setSnackbarOpen(true)
         setSnackbarData({
           message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+
+      // ? Duplicate Name validation - check against all rows in the grid
+      const duplicateNamesList = []
+
+      // Second pass: count all names from all rows (including newRow)
+      const allRows = rows || []
+      const nameCount = {}
+
+      for (const record of allRows) {
+        const name = record.Name?.trim()
+        if (name) {
+          nameCount[name] = (nameCount[name] || 0) + 1
+        }
+      }
+
+      // Third pass: mark records in newRow that have duplicates in the entire grid
+      for (const record of newRow) {
+        const name = record.Name?.trim()
+        if (name && nameCount[name] > 1) {
+          record.isError = true
+          if (!duplicateNamesList.includes(name)) {
+            duplicateNamesList.push(name)
+          }
+        }
+      }
+
+      if (duplicateNamesList.length > 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `Duplicate furnace name(s) found: ${duplicateNamesList.join(', ')}. Each furnace name must be unique. Available: ${uniqueFurnaceNames.join(', ')}`,
           severity: 'error',
         })
         setLoading(false)
@@ -342,6 +400,7 @@ const FurnaceMaintenanceActivity = () => {
           severity: 'success',
         })
         setModifiedCells({})
+        fetchData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({ message: 'Data Save Failed!', severity: 'error' })
@@ -379,10 +438,10 @@ const FurnaceMaintenanceActivity = () => {
         setCurrentRowId={setCurrentRowId}
         saveChanges={saveChangesRunLength}
         handleRemarkCellClick={handleRemarkCellClick}
-        loading={loading}
         fetchData={fetchData}
         setModifiedCells={setModifiedCells}
         permissions={{
+          ...permissions,
           remarksEditable: true,
           saveBtn: true,
           saveBtnForRemark: true,

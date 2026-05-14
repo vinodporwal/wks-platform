@@ -134,7 +134,8 @@ const SelectivityData = (props) => {
         //TST VALIDATION SEPERATED
         if (
           lowerVertName == 'meg' ||
-          (lowerVertName == 'chemical' && lowerSiteName == 'dmd')
+          (lowerVertName == 'chemical' && lowerSiteName == 'dmd') ||
+          (lowerVertName === 'chemical' && lowerSiteName === 'vmd')
         ) {
           const monthNameMap = {
             jan: 'January',
@@ -578,8 +579,7 @@ const SelectivityData = (props) => {
       saveWithRemark: true,
       saveBtn: true,
       downloadExcelBtn: true,
-      uploadExcelBtn:
-        lowerVertName === 'chemical' && lowerSiteName === 'dmd' ? false : true,
+      uploadExcelBtn: true,
       showLoad: true,
       allAction: true,
 
@@ -641,7 +641,7 @@ const SelectivityData = (props) => {
           props?.configType,
           PLANT_ID,
           AOP_YEAR,
-          `${EXCEL_EXPORT_TITLE}${revisionName}`,
+          `${EXCEL_EXPORT_TITLE}${revisionName}_Production & Norms Basis ${props?.configType}`,
         )
       } else if (props?.tabIndex != 1) {
         if (

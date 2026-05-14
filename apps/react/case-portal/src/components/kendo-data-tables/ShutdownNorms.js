@@ -105,6 +105,10 @@ const ShutdownNorms = () => {
     lowerVertName === 'aromatics' &&
     SITE_NAME_LOWERCASE === 'sez' &&
     PLANT_NAME_LOWERCASE === 'px4'
+
+  const IS_AROMATICS_DTA =
+    lowerVertName === 'aromatics' && SITE_NAME_LOWERCASE === 'dta'
+
   const IS_VCM_HMD = lowerVertName === 'vcm' && SITE_NAME_LOWERCASE === 'hmd'
 
   const IS_PVC_DMD =
@@ -130,6 +134,9 @@ const ShutdownNorms = () => {
     PLANT_NAME?.toLowerCase() == 'hdpe' &&
     SITE_NAME?.toLowerCase() == 'dmd' &&
     VERTICAL_NAME?.toLowerCase() == 'pe'
+
+  const IS_AROMATICS_HMD =
+    lowerVertName === 'aromatics' && SITE_NAME_LOWERCASE === 'hmd'
 
   const textNote =
     (IS_PE_PP_VERTICAL || IS_PVC_DMD || IS_ELASTOMER_JMD_HIIR) && !IS_PE_C2
@@ -646,7 +653,9 @@ const ShutdownNorms = () => {
         lowerVertName === 'pta' ||
         IS_CHEMICAL ||
         IS_AROMATICS_SEZ_PX4 ||
-        IS_ELASTOMER_JMD_IIR
+        IS_AROMATICS_DTA ||
+        IS_ELASTOMER_JMD_IIR ||
+        IS_AROMATICS_HMD
       ) {
         // Use shutdownNormsExportNonGrade for VCM
         response =
@@ -708,7 +717,9 @@ const ShutdownNorms = () => {
         lowerVertName === 'pta' ||
         IS_CHEMICAL ||
         IS_AROMATICS_SEZ_PX4 ||
-        IS_ELASTOMER_JMD_IIR
+        IS_AROMATICS_DTA ||
+        IS_ELASTOMER_JMD_IIR ||
+        IS_AROMATICS_HMD
       ) {
         // Use saveShutdownNormsExcelNonGrade for VCM
         response =
@@ -890,7 +901,8 @@ const ShutdownNorms = () => {
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta' ||
         IS_AROMATICS_SEZ_PX4 ||
-        IS_CHEMICAL
+        IS_CHEMICAL ||
+        IS_AROMATICS_HMD
           ? false
           : true,
       downloadExcelBtn:
@@ -904,8 +916,10 @@ const ShutdownNorms = () => {
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta' ||
         IS_AROMATICS_SEZ_PX4 ||
+        IS_AROMATICS_DTA ||
         IS_CHEMICAL ||
-        IS_ELASTOMER_JMD_IIR
+        IS_ELASTOMER_JMD_IIR ||
+        IS_AROMATICS_HMD
           ? true
           : false,
       uploadExcelBtn:
@@ -921,9 +935,11 @@ const ShutdownNorms = () => {
         IS_PVC_VMD ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_AROMATICS_SEZ_PX4 ||
+        IS_AROMATICS_DTA ||
         IS_ELASTOMER_HMD_SBR ||
         IS_PVC_DMD ||
-        IS_ELASTOMER_JMD_IIR
+        IS_ELASTOMER_JMD_IIR ||
+        IS_AROMATICS_HMD
           ? true
           : false,
       showTitleNameBusiness: IS_PE_DMD_HDPE ? false : true,

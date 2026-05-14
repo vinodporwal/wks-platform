@@ -126,6 +126,7 @@ import SpecificConsumptionCalculation from 'components/kendo-data-tables/Specifi
 import ProductionOptimizer from 'components/kendo-data-tables/ProductionOptimizer'
 import CausticSodaLyeBasis from 'components/data-tables/Reports/CausticSodaLyeBasis'
 import MaterialBalance from 'components/kendo-data-tables/MaterialBalance'
+import CatalystChecmicalsCalculation from 'components/kendo-data-tables/CatalystChecmicalsCalculation'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -370,6 +371,14 @@ export const MainRoutes = (
                 ),
               },
             ],
+          },
+          {
+            path: 'cat-chem-calculation',
+            element: (
+              <PrivateRoute routeId='cat-chem-calculation'>
+                <CatalystChecmicalsCalculation />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'production-volume-data',

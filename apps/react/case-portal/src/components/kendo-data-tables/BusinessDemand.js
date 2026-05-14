@@ -70,6 +70,7 @@ const BusinessDemand = ({ permissions }) => {
   const IS_CARCKER_VMD = lowerVertName === 'cracker' && lowerSiteName === 'vmd'
   const IS_CRACKER_DMD = lowerVertName === 'cracker' && lowerSiteName === 'dmd'
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
+  const IS_CRACKER_C2 = lowerVertName === 'cracker' && lowerSiteName === 'c2'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
 
@@ -81,6 +82,10 @@ const BusinessDemand = ({ permissions }) => {
   const IS_CHEMICAL_JMD =
     lowerVertName === 'chemical' && lowerSiteName === 'jmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'
+  const IS_CHEMICAL_VMD_BENZEN =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'vmd' &&
+    plantObject?.name?.toLowerCase() === 'benzene'
   const PRODUCTION_TARGET_LABEL = IS_VCM_VERTICAL
     ? 'Production Target (This is a reference for entering the Business Demand value)'
     : 'Production Target (MT) (This is a reference for entering the Business Demand value)'
@@ -197,7 +202,10 @@ const BusinessDemand = ({ permissions }) => {
           Particulars: item.normParameterTypeDisplayName,
           expanded: false,
           UOM:
-            IS_VCM_VERTICAL || lowerVertName === 'chemical' ? '%' : item?.UOM,
+            IS_VCM_VERTICAL ||
+            (lowerVertName === 'chemical' && !IS_CHEMICAL_VMD_BENZEN)
+              ? '%'
+              : item?.UOM,
         }))
 
       setRows(formattedData)
@@ -539,7 +547,8 @@ const BusinessDemand = ({ permissions }) => {
         IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_ELASTOMER_HMD
           ? true
           : false,
       uploadExcelBtn:
@@ -547,7 +556,8 @@ const BusinessDemand = ({ permissions }) => {
         IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_ELASTOMER_HMD
           ? true
           : false,
 
@@ -557,9 +567,13 @@ const BusinessDemand = ({ permissions }) => {
         IS_PET_VERTICAL ||
         IS_PVC_VMD ||
         IS_PVC_DMD ||
-        IS_ELASTOMER_JMD
+        IS_ELASTOMER_JMD ||
+        IS_ELASTOMER_HMD
           ? false
           : true,
+
+      // Enables ON/OFF dropdown for rows where UOM === 'ON/OFF'
+      enableOnOffDropdown: true,
     },
     isOldYear,
   )
@@ -706,24 +720,24 @@ const BusinessDemand = ({ permissions }) => {
         <CircularProgress color='inherit' />
       </Backdrop> */}
 
-      <LoaderBackdrop open={!!loading} />
-
-      {lowerVertName !== 'cracker' && !IS_ELASTOMER_JMD && (
-        <>
-          <Box
-            sx={{
-              pb: IS_PP_SEZ ? 0 : 1,
-              background: 'transparent',
-            }}
-          >
+      {lowerVertName !== 'cracker' &&
+        !IS_ELASTOMER_JMD &&
+        !IS_CHEMICAL_VMD_BENZEN && (
+          <>
             <Box
               sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
+                pb: IS_PP_SEZ ? 0 : 1,
+                background: 'transparent',
               }}
             >
-              {/* <Box
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
+              >
+                {/* <Box
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
@@ -748,40 +762,40 @@ const BusinessDemand = ({ permissions }) => {
                   }}
                 />
               </Box> */}
-              <Typography component='span' className='accordian-title'>
-                {PRODUCTION_TARGET_LABEL}
-              </Typography>
+                <Typography component='span' className='accordian-title'>
+                  {PRODUCTION_TARGET_LABEL}
+                </Typography>
+              </Box>
             </Box>
-          </Box>
-          {gridExpanded && (
-            <Box
-              sx={{
-                transition: '0.3s',
-                overflow: 'hidden',
-                background: 'transparent',
-              }}
-            >
-              <ProductionvolumeData
-                isBusinessDemand={true}
-                permissions={{
-                  allAction: true,
-                  showAction: false,
-                  addButton: false,
-                  deleteButton: false,
-                  editButton: false,
-                  showUnit: true,
-                  saveWithRemark: false,
-                  showCalculate: false,
-                  saveBtn: false,
-                  hideSummary: true,
-                  hideUploadExcel: true,
-                  hideDownloadExcel: true,
+            {gridExpanded && (
+              <Box
+                sx={{
+                  transition: '0.3s',
+                  overflow: 'hidden',
+                  background: 'transparent',
                 }}
-              />
-            </Box>
-          )}
-        </>
-      )}
+              >
+                <ProductionvolumeData
+                  isBusinessDemand={true}
+                  permissions={{
+                    allAction: true,
+                    showAction: false,
+                    addButton: false,
+                    deleteButton: false,
+                    editButton: false,
+                    showUnit: true,
+                    saveWithRemark: false,
+                    showCalculate: false,
+                    saveBtn: false,
+                    hideSummary: true,
+                    hideUploadExcel: true,
+                    hideDownloadExcel: true,
+                  }}
+                />
+              </Box>
+            )}
+          </>
+        )}
       {IS_ELASTOMER_JMD && (
         <KendoDataTables
           setRows={setRowRate}
@@ -866,7 +880,7 @@ const BusinessDemand = ({ permissions }) => {
 
       {IS_CRACKER_DMD && <ManualEntryForFeedStreams />}
 
-      {!IS_CARCKER_VMD && !IS_CRACKER_HMD && IS_CRACKER_VERTICAL && (
+      {!IS_CARCKER_VMD && !IS_CRACKER_HMD && !IS_CRACKER_C2 && IS_CRACKER_VERTICAL && (
         <>
           <Box sx={{ width: '100%', margin: 0 }}>
             <PropaneBusiness permissions={adjustedPermissions} />
@@ -874,7 +888,7 @@ const BusinessDemand = ({ permissions }) => {
         </>
       )}
 
-      {IS_CRACKER_HMD && <ModeSelection permissions={adjustedPermissions} />}
+      {(IS_CRACKER_HMD || IS_CRACKER_C2) && <ModeSelection permissions={adjustedPermissions} />}
     </div>
   )
 }

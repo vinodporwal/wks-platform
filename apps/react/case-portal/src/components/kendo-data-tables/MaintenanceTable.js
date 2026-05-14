@@ -63,6 +63,12 @@ const MaintenanceTable = () => {
   const IS_PVC_DMD =
     verticalObject?.name?.toLowerCase() === 'pvc' &&
     siteObject?.name?.toLowerCase() === 'dmd'
+  const IS_PVC_HMD =
+    verticalObject?.name?.toLowerCase() === 'pvc' &&
+    siteObject?.name?.toLowerCase() === 'hmd'
+  const IS_PVC_VMD =
+    verticalObject?.name?.toLowerCase() === 'pvc' &&
+    siteObject?.name?.toLowerCase() === 'vmd'
   const IS_ELASTOMER_JMD =
     verticalObject?.name?.toLowerCase() === 'elastomer' &&
     siteObject?.name?.toLowerCase() === 'jmd'
@@ -70,7 +76,10 @@ const MaintenanceTable = () => {
   const dataConfig = useMemo(
     () => ({
       serviceFn: (keycloak, PLANT_ID, AOP_YEAR, lineId) => {
-        if ((IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) && lineId) {
+        if (
+          (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) &&
+          lineId
+        ) {
           return MaintenanceDetailsApiService.getMaintenanceDataLineWise(
             keycloak,
             PLANT_ID,
@@ -92,6 +101,7 @@ const MaintenanceTable = () => {
       IS_PP_DTA,
       IS_PP_SEZ,
       IS_PVC_DMD,
+      IS_PVC_HMD,
       IS_PP_HMD,
       tabIndex,
       lineDetails,
@@ -216,7 +226,7 @@ const MaintenanceTable = () => {
   }
 
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
       fetchLineDetails()
     }
   }, [PLANT_ID, keycloak, yearChanged])
@@ -421,14 +431,28 @@ const MaintenanceTable = () => {
           saveBtn: dataConfig.isCracker,
           allAction: true,
           downloadExcelBtnFromUI:
-            IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD ? false : true,
+            IS_PP_DTA ||
+            IS_PP_SEZ ||
+            IS_PVC_DMD ||
+            IS_PP_HMD ||
+            IS_PVC_HMD ||
+            IS_PVC_VMD
+              ? false
+              : true,
           ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
           showRefresh: false,
           showTitleNameBusiness: true,
           titleName: SCREEN_NAME,
 
           downloadExcelBtn:
-            IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD ? true : false,
+            IS_PP_DTA ||
+            IS_PP_SEZ ||
+            IS_PVC_DMD ||
+            IS_PP_HMD ||
+            IS_PVC_HMD ||
+            IS_PVC_VMD
+              ? true
+              : false,
         },
         isOldYear,
       ),
@@ -467,7 +491,7 @@ const MaintenanceTable = () => {
   return (
     <>
       {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
-      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) && (
+      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) && (
         <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>

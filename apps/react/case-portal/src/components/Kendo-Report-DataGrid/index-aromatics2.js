@@ -76,8 +76,7 @@ const KendoDataGridAromatics2 = ({
         aria-sort={ariaSort}
         title={props.title}
         style={{
-          fontFamily:
-            "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
+          fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
         }}
       >
         <Tooltip

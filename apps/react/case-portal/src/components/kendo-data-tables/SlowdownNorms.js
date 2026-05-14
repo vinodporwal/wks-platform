@@ -126,6 +126,7 @@ const SlowdownNorms = () => {
     lowerVertName === 'elastomer' &&
     SITE_NAME_LOWERCASE === 'hmd' &&
     PLANT_NAME_LOWERCASE === 'sbr'
+  const IS_VCM_HMD = lowerVertName === 'vcm' && siteName === 'hmd'
   const saveChanges = React.useCallback(async () => {
     try {
       var data = Object.values(modifiedCells)
@@ -530,6 +531,7 @@ const SlowdownNorms = () => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+          IS_ELASTOMER_JMD_HIIR ? 'Slowdown' : undefined,
         )
       }
       // else if (lowerVertName === 'pp' || lowerVertName === 'pe') {
@@ -562,12 +564,13 @@ const SlowdownNorms = () => {
     setLoading(true)
     try {
       let response
-       if ((IS_PE_PP && !IS_PE_NMD) || IS_ELASTOMER_JMD_HIIR) {
+      if ((IS_PE_PP && !IS_PE_NMD) || IS_ELASTOMER_JMD_HIIR) {
         response = await DataService.saveSlowdownNormsExcelAllGrade(
           rawFile,
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+          IS_ELASTOMER_JMD_HIIR ? 'Slowdown' : undefined,
         )
       } else if (
         lowerVertName === 'vcm' ||
@@ -683,7 +686,7 @@ const SlowdownNorms = () => {
         IS_PE_PP ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_EDC_PLANT ||
-        IS_HMD_SITE
+        (IS_HMD_SITE && !IS_VCM_HMD)
           ? false
           : true,
 
@@ -699,7 +702,7 @@ const SlowdownNorms = () => {
         IS_ELASTOMER_JMD_HIIR
           ? false
           : true,
-      uploadExcelBtn:true,
+      uploadExcelBtn: true,
       downloadExcelBtn:
         IS_PE_PP ||
         lowerVertName === 'vcm' ||

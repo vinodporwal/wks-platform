@@ -363,11 +363,12 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			AOPMessageVM gradesVM = getUniqueGrades(year, plantFKId.toString());
 			List<Map<String, String>> gradeInfoList = extractGradeInfo(gradesVM);
 			Workbook workbook = new XSSFWorkbook();
-			CellStyle lockedStyle = Utility.createLockedStyle(workbook);
-			CellStyle unlockedStyle = Utility.createUnlockedStyle(workbook);
+		CellStyle lockedStyle = Utility.createLockedStyle(workbook);
+		CellStyle unlockedStyle = Utility.createUnlockedStyle(workbook);
+		unlockedStyle.setLocked(false); // CRITICAL: Ensure active cells are explicitly unlocked
 
-			// Gray out non-active month columns based on activeMonths
-			CellStyle lockedGrayStyle = workbook.createCellStyle();
+		// Gray out non-active month columns based on activeMonths
+		CellStyle lockedGrayStyle = workbook.createCellStyle();
 			lockedGrayStyle.setLocked(true);
 			lockedGrayStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
 			lockedGrayStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -412,9 +413,11 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 					if (!currentDtoList.isEmpty()) {
 						Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId, plant.getName());
 
-						String sheetName = Utility.sanitizeSheetName("All Grade");
-						Sheet sheet = workbook.createSheet(sheetName);
-						int currentRow = 0;
+					String sheetName = Utility.sanitizeSheetName("All Grade");
+					Sheet sheet = workbook.createSheet(sheetName);
+					// ENABLE PROTECTION: Required for 'Locked' cells to actually be uneditable
+					sheet.protectSheet("secret_password");
+					int currentRow = 0;
 
 						List<List<Object>> rows = new ArrayList<>();
 						for (ShutdownNormsValueDTO dto : currentDtoList) {
@@ -519,29 +522,31 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 						continue;
 					}
 
-					String sheetName = Utility.sanitizeSheetName(displayName);
+				String sheetName = Utility.sanitizeSheetName(displayName);
 
-					AOPMessageVM aopMessageVM = null;
-					List<ShutdownNormsValueDTO> currentDtoList = new ArrayList<>();
-					List<Boolean> isEditable = new ArrayList<>();
-					if (!isAfterSave) {
-						aopMessageVM = getShutdownNormsData(year, plantFKId.toString(), currentGradeId);
-					}
-					if (aopMessageVM != null && aopMessageVM.getData() != null) {
-						Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
-						currentDtoList = (List<ShutdownNormsValueDTO>) responseMap.get("mcuNormsValueDTOList");
-					} else if (isAfterSave) {
-						currentDtoList = dtoList.stream()
-								.filter(dto -> currentGradeId.equals(dto.getGradeFkId()))
-								.collect(Collectors.toList());
-					} else {
-						continue;
-					}
+				AOPMessageVM aopMessageVM = null;
+				List<ShutdownNormsValueDTO> currentDtoList = new ArrayList<>();
+				List<Boolean> isEditable = new ArrayList<>();
+				if (!isAfterSave) {
+					aopMessageVM = getShutdownNormsData(year, plantFKId.toString(), currentGradeId);
+				}
+				if (aopMessageVM != null && aopMessageVM.getData() != null) {
+					Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+					currentDtoList = (List<ShutdownNormsValueDTO>) responseMap.get("mcuNormsValueDTOList");
+				} else if (isAfterSave) {
+					currentDtoList = dtoList.stream()
+							.filter(dto -> currentGradeId.equals(dto.getGradeFkId()))
+							.collect(Collectors.toList());
+				} else {
+					continue;
+				}
 
-					Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId, plant.getName());
+				Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId, plant.getName());
 
-					Sheet sheet = workbook.createSheet(sheetName);
-					int currentRow = 0;
+				Sheet sheet = workbook.createSheet(sheetName);
+				// ENABLE PROTECTION: Required for 'Locked' cells to actually be uneditable
+				sheet.protectSheet("secret_password");
+				int currentRow = 0;
 
 					List<List<Object>> rows = new ArrayList<>();
 					for (ShutdownNormsValueDTO dto : currentDtoList) {
@@ -669,7 +674,8 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			if (failedRecords != null && failedRecords.size() > 0) {
 				byte[] fileByteArray = null;
 				if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
-						|| vertical.getName().equalsIgnoreCase("PET") || pvc) {
+						|| vertical.getName().equalsIgnoreCase("PET") ||
+					 vertical.getName().equalsIgnoreCase("ELASTOMER") || pvc) {
 					fileByteArray = exportShutdownNorms(
 							year,
 							plantFKId,
@@ -717,6 +723,12 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
                 if (shutdown != null) activeMonths.addAll(shutdown);
                 if (slowdown != null) activeMonths.addAll(slowdown);
 	    	}
+
+			if(vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD")) { 
+         
+				 activeMonths.addAll(Arrays.asList(1,2,3,4,5,6,7,8,9,10,11,12));
+
+			}
 	        
 	        for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
 	            Sheet sheet = workbook.getSheetAt(i);
@@ -1039,11 +1051,13 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				    }
 				}
 				
+			GradeShutdownNormsValue	existingGradeShutdownNormsValue= new GradeShutdownNormsValue();
 				plantId=UUID.fromString(shutdownNormsValueDTO.getPlantFkId());
 				GradeShutdownNormsValue gradeShutdownNormsValue = new GradeShutdownNormsValue();
 				if (shutdownNormsValueDTO.getId() != null && !shutdownNormsValueDTO.getId().isEmpty()) {
 					gradeShutdownNormsValue.setId(UUID.fromString(shutdownNormsValueDTO.getId()));
 					gradeShutdownNormsValue.setModifiedOn(new Date());
+					existingGradeShutdownNormsValue=gradeShutdownNormsValueRepository.findById(UUID.fromString(shutdownNormsValueDTO.getId())).orElse(null);
 				} else {
 					
 					UUID materialId = null;
@@ -1067,11 +1081,43 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 
 					gradeShutdownNormsValue.setCreatedOn(new Date());
 				}
+
+				// remark validation 
+		
+
+				//check if the new values and old values has changed
+				boolean monthChanged = false;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getApril(), Optional.ofNullable(shutdownNormsValueDTO.getApril()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getMay(), Optional.ofNullable(shutdownNormsValueDTO.getMay()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getJune(), Optional.ofNullable(shutdownNormsValueDTO.getJune()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getJuly(), Optional.ofNullable(shutdownNormsValueDTO.
+					
+					getJuly()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getAugust(), Optional.ofNullable(shutdownNormsValueDTO.getAugust()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getSeptember(), Optional.ofNullable(shutdownNormsValueDTO.getSeptember()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getOctober(), Optional.ofNullable(shutdownNormsValueDTO.getOctober()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getNovember(), Optional.ofNullable(shutdownNormsValueDTO.getNovember()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getDecember(), Optional.ofNullable(shutdownNormsValueDTO.getDecember()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getJanuary(), Optional.ofNullable(shutdownNormsValueDTO.getJanuary()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getFebruary(), Optional.ofNullable(shutdownNormsValueDTO.getFebruary()).orElse(0.0))) monthChanged = true;
+				if (!Objects.equals(existingGradeShutdownNormsValue.getMarch(), Optional.ofNullable(shutdownNormsValueDTO.getMarch()).orElse(0.0))) monthChanged = true;
+
+				if(monthChanged && Objects.equals(existingGradeShutdownNormsValue.getRemarks(), shutdownNormsValueDTO.getRemarks())) {  
+                    shutdownNormsValueDTO.setSaveStatus("Failed");
+                    shutdownNormsValueDTO.setErrDescription("Please update remark");
+                    failedList.add(shutdownNormsValueDTO);
+					continue;
+				}
+
+
+
+
 				gradeShutdownNormsValue.setApril(Optional.ofNullable(shutdownNormsValueDTO.getApril()).orElse(0.0));
 				gradeShutdownNormsValue.setMay(Optional.ofNullable(shutdownNormsValueDTO.getMay()).orElse(0.0));
 				gradeShutdownNormsValue.setJune(Optional.ofNullable(shutdownNormsValueDTO.getJune()).orElse(0.0));
 				gradeShutdownNormsValue.setJuly(Optional.ofNullable(shutdownNormsValueDTO.getJuly()).orElse(0.0));
 				gradeShutdownNormsValue.setAugust(Optional.ofNullable(shutdownNormsValueDTO.getAugust()).orElse(0.0));
+
 				gradeShutdownNormsValue.setSeptember(Optional.ofNullable(shutdownNormsValueDTO.getSeptember()).orElse(0.0));
 				gradeShutdownNormsValue.setOctober(Optional.ofNullable(shutdownNormsValueDTO.getOctober()).orElse(0.0));
 				gradeShutdownNormsValue.setNovember(Optional.ofNullable(shutdownNormsValueDTO.getNovember()).orElse(0.0));

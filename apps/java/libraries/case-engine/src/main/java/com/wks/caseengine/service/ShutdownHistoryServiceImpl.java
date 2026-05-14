@@ -62,23 +62,23 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 
 @Service
-public class ShutdownHistoryServiceImpl implements ShutdownHistoryService {
-
+public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
+	
 	@PersistenceContext
 	private EntityManager entityManager;
-
+	
 	@Autowired
 	private PlantsRepository plantsRepository;
-
+	
 	@Autowired
 	private SiteRepository siteRepository;
-
+	
 	@Autowired
 	private ScreenMappingRepository screenMappingRepository;
-
+	
 	@Autowired
 	private AopCalculationRepository aopCalculationRepository;
-
+	
 	@Autowired
 	private ShutdownHistoryConfigRepository shutdownHistoryConfigRepository;
 
@@ -87,18 +87,17 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService {
 
 	@Autowired
 	private SlowdownHistoryConfigRepository slowdownHistoryConfigRepository;
-
+	
 	@Autowired
 	private NormAttributeTransactionsRepository normAttributeTransactionsRepository;
 
 	@Override
 	public AOPMessageVM getShutdownHistory(String plantId, String year) {
-		List<ShutdownHistoryConfigDTO> shutdownHistoryConfigDTOs = new ArrayList<ShutdownHistoryConfigDTO>();
+		List<ShutdownHistoryConfigDTO> shutdownHistoryConfigDTOs=new ArrayList<ShutdownHistoryConfigDTO>();
 		try {
-			List<ShutdownHistoryConfig> shutdownHistoryConfigList = shutdownHistoryConfigRepository.findByAopYear(year,
-					UUID.fromString(plantId));
-			for (ShutdownHistoryConfig shutdownHistoryConfig : shutdownHistoryConfigList) {
-				ShutdownHistoryConfigDTO shutdownHistoryConfigDTO = new ShutdownHistoryConfigDTO();
+			List<ShutdownHistoryConfig> shutdownHistoryConfigList=shutdownHistoryConfigRepository.findByAopYear(year,UUID.fromString(plantId));
+			for(ShutdownHistoryConfig shutdownHistoryConfig:shutdownHistoryConfigList) {
+				ShutdownHistoryConfigDTO shutdownHistoryConfigDTO= new ShutdownHistoryConfigDTO();
 				shutdownHistoryConfigDTO.setId(shutdownHistoryConfig.getId());
 				shutdownHistoryConfigDTO.setMonth(shutdownHistoryConfig.getMonth());
 				shutdownHistoryConfigDTO.setRemark(shutdownHistoryConfig.getRemark());
@@ -133,15 +132,14 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService {
 			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 
 			for (ShutdownHistoryConfigDTO shutdownHistoryConfigDTO : shutdownHistoryConfigDTOs) {
-				ShutdownHistoryConfig shutdownHistoryConfig = null;
-				if (shutdownHistoryConfigDTO.getId() != null) {
-					Optional<ShutdownHistoryConfig> shutdownHistoryConfigOpt = shutdownHistoryConfigRepository
-							.findById(shutdownHistoryConfigDTO.getId());
-					if (shutdownHistoryConfigOpt.isPresent()) {
-						shutdownHistoryConfig = shutdownHistoryConfigOpt.get();
+				ShutdownHistoryConfig shutdownHistoryConfig=null;
+				if(shutdownHistoryConfigDTO.getId()!=null) {
+					Optional<ShutdownHistoryConfig> shutdownHistoryConfigOpt=shutdownHistoryConfigRepository.findById(shutdownHistoryConfigDTO.getId());
+					if(shutdownHistoryConfigOpt.isPresent()) {
+						shutdownHistoryConfig=shutdownHistoryConfigOpt.get();
 						shutdownHistoryConfig.setModifiedOn(new Date());
 					}
-				} else {
+				}else {
 					shutdownHistoryConfig = new ShutdownHistoryConfig();
 					shutdownHistoryConfig.setCreatedOn(new Date());
 				}
@@ -153,9 +151,9 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService {
 				shutdownHistoryConfig.setPlantFKId(plantId);
 				shutdownHistoryConfig.setTypeOfSD(shutdownHistoryConfigDTO.getTypeOfSD());
 				list.add(shutdownHistoryConfigRepository.save(shutdownHistoryConfig));
-
+				
 			}
-
+			
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			aopMessageVM.setCode(200);
 			aopMessageVM.setData(list);
@@ -163,16 +161,16 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService {
 			return aopMessageVM;
 		} catch (Exception ex) {
 			ex.printStackTrace();
-
+			
 			throw new RuntimeException("Failed to save data", ex);
 		}
 	}
 
 	@Override
 	public AOPMessageVM deleteShutdownHistory(UUID id) {
-		Optional<ShutdownHistoryConfig> shutdownHistoryConfigOpt = shutdownHistoryConfigRepository.findById(id);
-		if (shutdownHistoryConfigOpt.isPresent()) {
-			ShutdownHistoryConfig shutdownHistoryConfig = shutdownHistoryConfigOpt.get();
+		Optional<ShutdownHistoryConfig> shutdownHistoryConfigOpt=shutdownHistoryConfigRepository.findById(id);
+		if(shutdownHistoryConfigOpt.isPresent()) {
+			ShutdownHistoryConfig shutdownHistoryConfig= shutdownHistoryConfigOpt.get();
 			shutdownHistoryConfigRepository.delete(shutdownHistoryConfig);
 		}
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -181,47 +179,47 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService {
 		aopMessageVM.setMessage("Data deleted successfully");
 		return aopMessageVM;
 	}
-
+	
 	@Override
 	public AOPMessageVM getTypeOfSD(String plantId, String year) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
-			String view = "vwScrn" + verticalName + "TypeOfSD";
-			List<Object[]> obj = getTypeOfSDData(view);
-			List<Map<String, Object>> maps = new ArrayList<>();
+			String view="vwScrn"+verticalName+"TypeOfSD";
+			List<Object[]> obj=getTypeOfSDData(view);
+			List<Map<String,Object>> maps=new ArrayList<>();
 			for (Object[] row : obj) {
-
-				Map<String, Object> map = new HashMap<>();
+				
+				Map<String,Object> map=new HashMap<>();
 				map.put("name", row[0] != null ? row[0].toString() : null);
 				map.put("value", row[1] != null ? Integer.parseInt(row[1].toString()) : null);
 				maps.add(map);
-
+				
 			}
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			aopMessageVM.setCode(200);
 			aopMessageVM.setData(maps);
 			aopMessageVM.setMessage("Data fetched successfully");
-
+			
 			// TODO Auto-generated method stub
 			return aopMessageVM;
-		} catch (Exception ex) {
+		}catch (Exception ex) {
 			ex.printStackTrace();
-
+			
 			throw new RuntimeException("Failed to save data", ex);
 		}
-
+		
 	}
 
 	@Override
 	public AOPMessageVM getLineDetails(String plantId, String year) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
-			String view = "vwScrn" + verticalName + "GetLineDetails";
-			List<Object[]> obj = getLineDetailsData(view, plantId);
-			List<Map<String, Object>> maps = new ArrayList<>();
+			String view="vwScrn"+verticalName+"GetLineDetails";
+			List<Object[]> obj=getLineDetailsData(view,plantId);
+			List<Map<String,Object>> maps=new ArrayList<>();
 			for (Object[] row : obj) {
-
-				Map<String, Object> map = new HashMap<>();
+				
+				Map<String,Object> map=new HashMap<>();
 				map.put("id", row[0] != null ? row[0].toString() : null);
 				map.put("name", row[1] != null ? row[1].toString() : null);
 				map.put("displayName", row[2] != null ? row[2].toString() : null);
@@ -232,22 +230,22 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService {
 			aopMessageVM.setCode(200);
 			aopMessageVM.setData(maps);
 			aopMessageVM.setMessage("Data fetched successfully");
-
+			
 			// TODO Auto-generated method stub
 			return aopMessageVM;
-		} catch (Exception ex) {
+		}catch (Exception ex) {
 			ex.printStackTrace();
 			throw new RuntimeException("Failed to save data", ex);
 		}
-
+		
 	}
 
 	public List<Object[]> getTypeOfSDData(String viewName) {
 		try {
-			String sql = "SELECT * from " + viewName;
+			String sql = "SELECT * from "+ viewName;
 
 			Query query = entityManager.createNativeQuery(sql);
-
+			
 			return query.getResultList();
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
@@ -255,10 +253,10 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
-
-	public List<Object[]> getLineDetailsData(String viewName, String plantId) {
+	
+	public List<Object[]> getLineDetailsData(String viewName,String plantId) {
 		try {
-			String sql = "SELECT * from " + viewName + " where PlantId= :plantId";
+			String sql = "SELECT * from "+ viewName+" where PlantId= :plantId";
 
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("plantId", plantId);
@@ -281,16 +279,17 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService {
 
 			for (SlowdownHistoryConfigDTO dto : dtos) {
 
-				SlowdownHistoryConfig entity = null;
+				SlowdownHistoryConfig entity=null;
 
-				if (dto.getId() != null) {
+				if(dto.getId()!=null) {
 					Optional<SlowdownHistoryConfig> opt = slowdownHistoryConfigRepository.findById(dto.getId());
 					if (opt.isPresent()) {
 						entity = opt.get();
 					}
-				} else {
+				}
+				 else {
 					entity = new SlowdownHistoryConfig();
-
+					
 				}
 
 				entity.setDescription(dto.getDescription());
@@ -378,7 +377,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService {
 				.setParameter("aopyear", year)
 				.getResultList();
 	}
-
+	
 	@SuppressWarnings("unchecked")
 	public List<Object[]> getDataPTA(String plantId, String year, String procedureName) {
 
@@ -390,6 +389,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService {
 				.getResultList();
 	}
 
+	
 	@Override
 	public AOPMessageVM deleteSlowdownHistory(UUID id) {
 		Optional<SlowdownHistoryConfig> slowdownHistoryConfigOpt = slowdownHistoryConfigRepository.findById(id);
@@ -497,8 +497,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService {
 	}
 
 	private String getFrontendType(String sqlTypeName) {
-		if (sqlTypeName == null)
-			return "string";
+		if (sqlTypeName == null) return "string";
 		switch (sqlTypeName.toUpperCase()) {
 			case "VARCHAR":
 			case "NVARCHAR":
@@ -521,15 +520,15 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService {
 				return "string";
 		}
 	}
-
+	
 	@Override
 	public AOPMessageVM saveHistoryPTA(String plantId, String year,
 			List<NormAttributeTransactionsDTO> normAttributeTransactionsDTOList) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
-
+		
 		List<NormAttributeTransactions> normAttributeTransactionsList = new ArrayList<NormAttributeTransactions>();
 		try {
-			for (NormAttributeTransactionsDTO normAttributeTransactionsDTO : normAttributeTransactionsDTOList) {
+			for(NormAttributeTransactionsDTO normAttributeTransactionsDTO:normAttributeTransactionsDTOList) {
 				String rawDesc = normAttributeTransactionsDTO.getDescription();
 				String attributeValue = normAttributeTransactionsDTO.getAttributeValue();
 				if (attributeValue == null) {
@@ -538,32 +537,30 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService {
 				Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
 				Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 				Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-
+				
 				String viewName = vertical.getName() + site.getName() + "vwScrnShutdown";
-				List<Object[]> results = getDescriptionIdBySite(site.getId(), rawDesc, viewName);
+				List<Object[]> results = getDescriptionIdBySite(site.getId(),rawDesc, viewName);
 				UUID uuid = Optional.ofNullable(results)
-						.filter(res -> !res.isEmpty() && res.get(0).length > 0)
-						.map(res -> res.get(0)[0])
-						.map(val -> (val instanceof UUID) ? (UUID) val : UUID.fromString(val.toString()))
-						.orElse(null);
-				List<NormAttributeTransactions> normAttributeTransactions = normAttributeTransactionsRepository
-						.findByAuditYearAndIds(year, normAttributeTransactionsDTO.getNormParameterFKId(), uuid);
-				if (normAttributeTransactions != null && normAttributeTransactions.size() > 0) {
-					for (NormAttributeTransactions normAttributeTransaction : normAttributeTransactions) {
+					    .filter(res -> !res.isEmpty() && res.get(0).length > 0)
+					    .map(res -> res.get(0)[0])
+					    .map(val -> (val instanceof UUID) ? (UUID) val : UUID.fromString(val.toString()))
+					    .orElse(null);				
+				List<NormAttributeTransactions> normAttributeTransactions =normAttributeTransactionsRepository.findByAuditYearAndIds(year,normAttributeTransactionsDTO.getNormParameterFKId(),uuid);
+				if(normAttributeTransactions!=null && normAttributeTransactions.size()>0) {
+					for(NormAttributeTransactions normAttributeTransaction:normAttributeTransactions) {
 						normAttributeTransaction.setAttributeValue(attributeValue);
 						normAttributeTransaction.setModifiedOn(new Date());
 						normAttributeTransaction.setUserName(Utility.getUserName());
 						normAttributeTransactionsList.add(normAttributeTransaction);
 					}
-				} else {
-					for (int i = 1; i < 13; i++) {
+				}else {
+					for(int i=1;i<13;i++) {
 						NormAttributeTransactions normAttributeTransaction = new NormAttributeTransactions();
 						normAttributeTransaction.setAopMonth(i);
 						normAttributeTransaction.setAttributeValue(attributeValue);
 						normAttributeTransaction.setAuditYear(year);
 						normAttributeTransaction.setCreatedOn(new Date());
-						normAttributeTransaction
-								.setNormParameterFKId(normAttributeTransactionsDTO.getNormParameterFKId());
+						normAttributeTransaction.setNormParameterFKId(normAttributeTransactionsDTO.getNormParameterFKId());
 						normAttributeTransaction.setUserName(Utility.getUserName());
 						normAttributeTransaction.setShutdownTypeId(uuid);
 						normAttributeTransactionsList.add(normAttributeTransaction);
@@ -592,7 +589,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService {
 				}
 
 			}
-		} catch (Exception ex) {
+		}catch (Exception ex) {
 			ex.printStackTrace();
 			throw new RuntimeException("Failed to save/update data", ex);
 		}
@@ -602,11 +599,9 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService {
 		aopMessageVM.setMessage("Data updated successfully");
 		return aopMessageVM;
 	}
-
-	public List<Object[]> getDescriptionIdBySite(UUID siteId, String name, String viewName) {
+	public List<Object[]> getDescriptionIdBySite(UUID siteId,String name, String viewName) {
 		try {
-			String sql = "SELECT * from " + viewName
-					+ " where Site_FK_Id = :siteId and DisplayName = :name order by DisplayOrder";
+			String sql = "SELECT * from " + viewName + " where Site_FK_Id = :siteId and DisplayName = :name order by DisplayOrder";
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("siteId", siteId);
 			query.setParameter("name", name);
@@ -823,6 +818,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService {
 		}
 	}
 
+	
 	private String[] shutdownHistoryPTAPayloadRowToRawValues(Map<String, Object> item, List<String> headers) {
 		String[] vals = new String[headers.size()];
 		for (int c = 0; c < headers.size(); c++) {
@@ -894,8 +890,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService {
 	}
 
 	/**
-	 * Same mapping as
-	 * {@link com.wks.caseengine.rest.server.ShutdownHistoryController#saveHistoryPTA}.
+	 * Same mapping as {@link com.wks.caseengine.rest.server.ShutdownHistoryController#saveHistoryPTA}.
 	 */
 	private List<NormAttributeTransactionsDTO> convertPtaPayloadToNormAttributeDtos(List<Map<String, Object>> payload) {
 		List<NormAttributeTransactionsDTO> dtoList = new ArrayList<>();
@@ -908,7 +903,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService {
 					NormAttributeTransactionsDTO dto = new NormAttributeTransactionsDTO();
 					dto.setNormParameterFKId(normParameterId);
 					dto.setDescription(key);
-
+					// DB column AttributeValue is NOT NULL — never leave null on import
 					String attr = value != null ? value.toString() : "";
 					dto.setAttributeValue(attr);
 					dtoList.add(dto);

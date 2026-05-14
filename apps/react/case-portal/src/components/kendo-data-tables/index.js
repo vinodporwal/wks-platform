@@ -93,6 +93,7 @@ import {
   CalculateIcon,
 } from 'assets/images/icons'
 import { DashboardColors } from 'themes/colors'
+import SwitchEditor from './Utilities-Kendo/SwitchEditor'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -1856,15 +1857,19 @@ const KendoDataTables = ({
       )}
 
       {permissions?.showReportTitleMain && (
-        <Typography component='div' className='grid-title'>
-          {permissions?.titleNameMain}
-        </Typography>
+        <Box sx={{ pt: 1, pl: 1 }}>
+          <Typography component='div' className='grid-title'>
+            {permissions?.titleNameMain}
+          </Typography>
+        </Box>
       )}
 
       {permissions?.showNote && (
-        <Typography component='div' className='text-note'>
-          {note}
-        </Typography>
+        <Box sx={{ pt: 1, pl: 1 }}>
+          <Typography component='div' className='text-note'>
+            {note}
+          </Typography>
+        </Box>
       )}
 
       {(permissions?.allAction ?? false) && (
@@ -2507,6 +2512,19 @@ const KendoDataTables = ({
                 </Button>
               )}
 
+              {/* {showDeleteAll && (
+              <Button
+                variant='contained'
+                className='btn-save'
+                onClick={handleDeleteSelected}
+                disabled={isButtonDisabled || READ_ONLY}
+                loading={loading} // Use the loading prop to trigger loading state
+                loadingposition='start' // Use loadingPosition to control where the spinner appears
+              >
+                Delete
+              </Button>
+            )} */}
+
               {permissions?.showResetButton && (
                 <Button
                   variant='contained'
@@ -2665,8 +2683,10 @@ const KendoDataTables = ({
                       ),
                       headerCell: () => (
                         <th
-                          className='k-header'
-                          style={{ textAlign: 'center' }}
+                          style={{
+                            textAlign: 'center',
+                            padding: '0px !important',
+                          }}
                         >
                           <Checkbox
                             checked={
@@ -3068,7 +3088,10 @@ const KendoDataTables = ({
                     )
                   }
 
-                  if (['discription', 'Name'].includes(col?.field)) {
+                  if (
+                    ['discription', 'Name'].includes(col?.field) &&
+                    col?.type !== 'dynamicDropdownshared'
+                  ) {
                     return (
                       <GridColumn
                         key={col?.field}
@@ -3633,7 +3656,9 @@ const KendoDataTables = ({
 
                   if (col.type === 'dynamicDropdownshared') {
                     const dropdownOptions =
-                      permissions?.dynamicDropdownOptions?.[col.field] || []
+                      col.dropdownOptions ||
+                      permissions?.dynamicDropdownOptions?.[col.field] ||
+                      []
                     return (
                       <GridColumn
                         key={col.field}
@@ -3776,7 +3801,7 @@ const KendoDataTables = ({
                           col?.title || col?.headerName || 'Rate Reduced (TPH)'
                         }
                         width={setWidth(col?.minWidth || 150)}
-                        editable={true}
+                        editable={col?.editable ?? true}
                         columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col?.hidden}
                         format={'{0:n2}'}
@@ -3915,6 +3940,77 @@ const KendoDataTables = ({
                     )
                   }
 
+                  // Dedicated block for ON/OFF dropdown rows (e.g. Business Demand UOM: 'ON/OFF')
+                  // Enable via permissions.enableOnOffDropdown = true
+                  if (
+                    col.type === 'number' &&
+                    permissions?.enableOnOffDropdown
+                  ) {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.widthT}
+                        hidden={col.hidden}
+                        className={`
+                        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+                        ${col?.isBold ? 'bold-text' : ''}
+                      `}
+                        editable={col?.editable ? true : false}
+                        headerClassName={isActive ? 'active-column' : ''}
+                        cells={{
+                          edit: {
+                            text: (props) => (
+                              <SwitchEditor
+                                {...props}
+                                onChange={(e) => itemChange(e)}
+                                condition={(dataItem) =>
+                                  dataItem?.UOM === 'ON/OFF'
+                                }
+                              />
+                            ),
+                          },
+                          data: (props) => {
+                            // ON/OFF rows: show switch with direct edit mode
+                            if (props.dataItem?.UOM === 'ON/OFF') {
+                              return (
+                                <SwitchEditor
+                                  {...props}
+                                  directEditMode={true}
+                                  onChange={(e) => itemChange(e)}
+                                  customModifiedCells={customModifiedCells}
+                                  rowId={props.dataItem.id}
+                                  setRows={setRows}
+                                />
+                              )
+                            }
+                            // Regular rows
+                            return showThreeColors ? (
+                              <RedHighlightCell2
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                allRedCell2={allRedCell2}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ) : (
+                              <RedHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            )
+                          },
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col.format}
+                      />
+                    )
+                  }
                   if (col?.type === 'number') {
                     return (
                       <GridColumn
@@ -4163,10 +4259,9 @@ const KendoDataTables = ({
         </div>
       </Collapse>
 
-      {gridExpanded &&
-        (permissions?.approveBtn || permissions?.nextBtn || showDeleteAll) && (
-          <Box className='action-box'>
-            {/* {permissions?.showCreateCasebutton && (
+      {gridExpanded && (permissions?.approveBtn || permissions?.nextBtn) && (
+        <Box className='action-box'>
+          {/* {permissions?.showCreateCasebutton && (
             <Button
               variant='contained'
               onClick={createCase}
@@ -4177,55 +4272,44 @@ const KendoDataTables = ({
             </Button>
           )} */}
 
-            {permissions?.approveBtn && (
-              <Button
-                variant='contained'
-                className='btn-save'
-                onClick={saveModalOpen}
-                disabled={isButtonDisabled || READ_ONLY}
-                // loading={loading}
-                // loadingposition='start'
-                {...(loading ? {} : {})}
-              >
-                Approve
-              </Button>
-            )}
-            {permissions?.nextBtn && (
-              <Button
-                variant='contained'
-                className='btn-save'
-                onClick={() => {
-                  // Write any additional logic here before navigating.
-                  // console.log('Navigating to dashboard')
-                  // navigate('/user-form')
-                  handleAddPlantSite()
-                }}
-                disabled={isButtonDisabled || READ_ONLY}
-                loading={loading} // Use the loading prop to trigger loading state
-                loadingposition='start' // Use loadingPosition to control where the spinner appears
-              >
-                Next
-              </Button>
-            )}
-            {showDeleteAll && (
-              <Button
-                variant='contained'
-                className='btn-save'
-                onClick={handleDeleteSelected}
-                disabled={isButtonDisabled || READ_ONLY}
-                loading={loading} // Use the loading prop to trigger loading state
-                loadingposition='start' // Use loadingPosition to control where the spinner appears
-              >
-                Delete
-              </Button>
-            )}
-          </Box>
-        )}
+          {permissions?.approveBtn && (
+            <Button
+              variant='contained'
+              className='btn-save'
+              onClick={saveModalOpen}
+              disabled={isButtonDisabled || READ_ONLY}
+              // loading={loading}
+              // loadingposition='start'
+              {...(loading ? {} : {})}
+            >
+              Approve
+            </Button>
+          )}
+          {permissions?.nextBtn && (
+            <Button
+              variant='contained'
+              className='btn-save'
+              onClick={() => {
+                // Write any additional logic here before navigating.
+                // console.log('Navigating to dashboard')
+                // navigate('/user-form')
+                handleAddPlantSite()
+              }}
+              disabled={isButtonDisabled || READ_ONLY}
+              loading={loading} // Use the loading prop to trigger loading state
+              loadingposition='start' // Use loadingPosition to control where the spinner appears
+            >
+              Next
+            </Button>
+          )}
+        </Box>
+      )}
       <Notification
         open={snackbarOpen}
         message={snackbarData?.message || ''}
         severity={snackbarData?.severity || 'info'}
         onClose={() => setSnackbarOpen(false)}
+        autoHide={snackbarData?.autoHide ?? true}
       />
       <CompactDialog
         open={openDeleteDialogeBox}

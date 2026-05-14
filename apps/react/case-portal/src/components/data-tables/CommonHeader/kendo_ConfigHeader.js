@@ -98,21 +98,21 @@ const getEnhancedAOPColDefs = ({
 }) => {
   var config = []
 
-  if (configType == 'grades') {
+  if (configType == 'grades' || configType == 'gradesCatChem') {
     config = [
       {
         field: 'ReceipeName',
         title: 'Recipe',
         editable: false,
-        width1: 100,
-        minWidth: 100,
+        widthT: 250,
+        minWidth: 250,
       },
       {
         field: 'UOM',
         title: 'UOM',
         editable: false,
-        width1: 85,
-        minWidth: 90,
+        widthT: 85,
+        minWidth: 85,
       },
     ]
     allGradesReciepes?.forEach((field) => {
@@ -120,7 +120,7 @@ const getEnhancedAOPColDefs = ({
         field: field?.id?.toUpperCase(),
         title: field?.displayName,
         editable: true,
-        width1: 100,
+        widthT: 110,
         type: 'number',
         format: FORMATE_VALUE,
         minWidth: 100,
@@ -133,7 +133,7 @@ const getEnhancedAOPColDefs = ({
         title: 'Grade',
         editable: false,
         widthT: 100,
-        minWidth: 100,
+        minWidth: 250,
       },
       {
         field: 'UOM',

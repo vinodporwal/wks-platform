@@ -50,6 +50,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import ExclusionDate from './ExclusionDate'
 import LineConfiguration from './LineConfiguration'
 import ConfigurationAccordian from './common/ConfigurationAccordian'
+import SeasonMonths from './tab-components/SeasonMonths/index'
 
 const ConfigurationTable = () => {
   const hasExecutedRef = useRef(false)
@@ -90,8 +91,12 @@ const ConfigurationTable = () => {
   const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
   const IS_AROMATICS_HMD =
     lowerVertName === 'aromatics' && lowerSiteName === 'hmd'
+  const IS_AROMATICS_PMD =
+    lowerVertName === 'aromatics' && lowerSiteName === 'pmd'
   const IS_CHEMICAL_DMD =
     lowerVertName === 'chemical' && lowerSiteName === 'dmd'
+  const IS_CHEMICAL_VMD =
+    lowerVertName === 'chemical' && lowerSiteName === 'vmd'
   const [tabIndex, setTabIndex] = useState(0)
   const [loadBtnClicked, setLoadBtnClicked] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -239,7 +244,8 @@ const ConfigurationTable = () => {
       if (
         lowerVertName == verticalEnums.MEG ||
         lowerVertName == verticalEnums.CRACKER ||
-        IS_CHEMICAL_DMD
+        IS_CHEMICAL_DMD ||
+        IS_CHEMICAL_VMD
       ) {
         data = data?.filter(
           (item) =>
@@ -612,7 +618,8 @@ const ConfigurationTable = () => {
       if (
         lowerVertName != 'cracker' &&
         lowerVertName != 'meg' &&
-        !IS_CHEMICAL_DMD
+        !IS_CHEMICAL_DMD &&
+        !IS_CHEMICAL_VMD
       ) {
         if (lowerVertName === 'aromatics') {
           getRevision()
@@ -632,8 +639,9 @@ const ConfigurationTable = () => {
     if (hasModifiedOn) {
       const getDateValue = (name) =>
         new Date(
-          configurationExecutionDetails.find((item) => item.Name === name)
-            ?.AttributeValue,
+          configurationExecutionDetails.find(
+            (item) => item.Name === name,
+          )?.AttributeValue,
         )
       setStartDate(getDateValue('StartDate'))
       setEndDate(getDateValue('EndDate'))
@@ -1200,18 +1208,19 @@ const ConfigurationTable = () => {
   }, [openConfirmDialogRev])
 
   if (
-    (lowerVertName == 'meg' || IS_CHEMICAL_DMD) &&
+    (lowerVertName == 'meg' || IS_CHEMICAL_DMD || IS_CHEMICAL_VMD) &&
     lowerVertName !== 'cracker'
   ) {
     // const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
-    const megTabs = IS_CHEMICAL_DMD
-      ? ['Configuration', 'Constants']
-      : [
-          'Configuration',
-          'Constants',
-          'Report Manual Entry',
-          'NSR & Material Prices',
-        ]
+    const megTabs =
+      IS_CHEMICAL_DMD || IS_CHEMICAL_VMD
+        ? ['Configuration', 'Constants']
+        : [
+            'Configuration',
+            'Constants',
+            'Report Manual Entry',
+            'NSR & Material Prices',
+          ]
     const auditYear = AOP_YEAR
     let displayYear = ''
     if (auditYear) {
@@ -1412,6 +1421,7 @@ const ConfigurationTable = () => {
 
         {lowerVertName === 'aromatics' &&
           !IS_AROMATICS_HMD &&
+          !IS_AROMATICS_PMD &&
           tabs?.length > 0 && (
             <Box
               mb={1}
@@ -1732,6 +1742,14 @@ const ConfigurationTable = () => {
               case getTheId('ShutdownRate'):
                 return (
                   <ShutdownRate
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+              case getTheId('SeasonMonths'):
+                return (
+                  <SeasonMonths
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     setSummaryEdited={setSummaryEdited}

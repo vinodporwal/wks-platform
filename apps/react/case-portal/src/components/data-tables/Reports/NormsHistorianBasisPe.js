@@ -55,10 +55,14 @@ const NormsHistorianBasisPe = () => {
   const IS_OLD_YEAR = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
+  const lowerSiteName = siteObject?.name?.toLowerCase()
 
   const timeoutIdsRef = useRef([])
   const isMountedRef = useRef(true)
   const exportRefs = useRef({})
+
+  const IS_AROMATICS_HMD =
+    lowerVertName == 'aromatics' && lowerSiteName == 'hmd'
 
   useEffect(() => {
     isMountedRef.current = true
@@ -110,7 +114,9 @@ const NormsHistorianBasisPe = () => {
             renderCell: (params) => {
               const original = params?.row?.[col.field] ?? params?.value
               const decimals = countDecimals(original)
-              const decimalsToShow = Math.min(Math.max(decimals, 0), 3)
+              const decimalsToShow = IS_AROMATICS_HMD
+                ? Math.min(Math.max(decimals, 0), 5)
+                : Math.min(Math.max(decimals, 0), 3)
 
               const text =
                 params?.value == null || params?.value === ''

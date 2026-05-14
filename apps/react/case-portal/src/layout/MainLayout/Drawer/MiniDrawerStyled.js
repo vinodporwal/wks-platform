@@ -12,8 +12,14 @@ const openedMixin = (theme) => ({
   }),
   overflowX: 'hidden',
   boxShadow: 'none',
-  background: 'linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%)',
-  borderRight: '1px solid #DDDEE1 !important',
+  background:
+    theme.palette.mode === 'dark'
+      ? '#1e293b'
+      : 'linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%)',
+  borderRight:
+    theme.palette.mode === 'dark'
+      ? '1px solid rgba(255,255,255,0.1) !important'
+      : '1px solid #DDDEE1 !important',
 })
 
 const closedMixin = (theme) => ({
@@ -23,9 +29,14 @@ const closedMixin = (theme) => ({
   }),
   overflowX: 'hidden',
   width: miniDrawerWidth,
-  borderRight: '1px solid #DDDEE1 !important',
-  // boxShadow: theme.customShadows.z1,
-  background: 'linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%)',
+  borderRight:
+    theme.palette.mode === 'dark'
+      ? '1px solid rgba(255,255,255,0.1) !important'
+      : '1px solid #DDDEE1 !important',
+  background:
+    theme.palette.mode === 'dark'
+      ? '#1e293b'
+      : 'linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%)',
 })
 
 const MiniDrawerStyled = styled(Drawer, {

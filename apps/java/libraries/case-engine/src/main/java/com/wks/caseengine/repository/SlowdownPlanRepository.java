@@ -34,6 +34,10 @@ public interface SlowdownPlanRepository extends JpaRepository<PlantMaintenanceTr
 
         //List<Object[]> findSlowdownPlanDetailsByPlantIdAndType(String maintenanceTypeName, String plantId, String year);
 
+@Query(value = "select DisplayName from NormParameters where Id = :normParameterFKId", nativeQuery = true)
+String findDisplayNameByNormParameterFKId(@Param("normParameterFKId") UUID normParameterFKId);
+
+
 	@Query(value = "SELECT " +
             "pm.Discription " +
             "FROM PlantMaintenanceTransaction pm " +

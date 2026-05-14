@@ -5,7 +5,7 @@ header {
   background-color: #ffffff !important;
   background-image: none !important;
   /* box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06) !important; */
-  border-bottom: 1px solid #DDDEE1 !important;
+  border-bottom: 1px solid #dddee1 !important;
   /* color: #2c3e50 !important; */
 }
 
@@ -136,7 +136,6 @@ main.MuiBox-root.css-vognfw {
   font-weight: bold;
   border-bottom: 2px solid #790000;
 }
-
 
 .non-editable-cell {
   background-color: #f1f5f9;
@@ -367,7 +366,7 @@ body {
 .outlet-wrapper {
   flex: 1;
   overflow: hidden;
-  background: #F6F7F8;
+  background: #f6f7f8;
 }
 
 .outlet-border-box {
@@ -383,7 +382,7 @@ body {
 .k-table-box {
   box-sizing: border-box;
   background-color: #ffffff;
-  border: 1px solid #DDDEE1;
+  border: 1px solid #dddee1;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   margin-bottom: 10px;
@@ -394,7 +393,7 @@ body {
 .breadcrumbs-box {
   box-sizing: border-box;
   border-radius: 8px;
-  border: 1px solid #DDDEE1;
+  border: 1px solid #dddee1;
   padding: 12px 0px 12px 8px;
   gap: 16px;
   background-color: #ffffff;
@@ -408,7 +407,7 @@ body {
   gap: 16px;
   padding: 8px 10px 5px 2px;
   border-bottom: 1px solid #e2e8f0;
-  background: #FFFFFF;
+  background: #ffffff;
 }
 
 /* =========================================================
@@ -448,14 +447,14 @@ body {
 .header-step-box {
   padding: 4px 8px;
   border-radius: 100px;
-  background-color: #ECEEFF;
-  border: 1px solid #41424D;
+  background-color: #eceeff;
+  border: 1px solid #41424d;
 }
 
 .header-step-text {
   font-size: 12px;
   font-weight: 700;
-  color: #41424D;
+  color: #41424d;
   font-family: 'Honeywell Cond Web', 'Inter', sans-serif;
 }
 
@@ -484,7 +483,7 @@ body {
 }
 
 .header-select .MuiOutlinedInput-notchedOutline {
-  border: 1px solid #DDDEE1;
+  border: 1px solid #dddee1;
   border-radius: 6px !important;
 }
 
@@ -538,21 +537,23 @@ body {
   max-height: 240px;
   border-radius: 6px !important;
   margin-top: 6px;
-  background: #FFFFFF;
+  background: #ffffff;
   gap: 4px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-  border: 1px solid #DDDEE1;
+  border: 1px solid #dddee1;
   color: #0f172a;
   padding: 6px 12px 6px 4px;
 }
-.header-profile-box { justify-self: end; }
+.header-profile-box {
+  justify-self: end;
+}
 
 /* =========================================================
    STEPPER NAV
    ========================================================= */
 
 .stepper-nav-container {
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   border-bottom: 1px solid #e2e8f0;
 }
 
@@ -567,7 +568,7 @@ body {
 .stepper-nav-tabs .MuiTabs-indicator {
   top: 0;
   height: 4px;
-  background-color: #AE4787;
+  background-color: #ae4787;
 }
 
 .stepper-nav-tabs .MuiTab-root {
@@ -596,7 +597,7 @@ body {
 }
 
 .stepper-nav-tab.Mui-selected {
-  background-color: #F6F7F8 !important;
+  background-color: #f6f7f8 !important;
   color: #303030 !important;
 }
 
@@ -638,7 +639,7 @@ body {
   width: 32px;
   height: 32px;
   border-radius: 6px;
-  background-color: #ECEEFF;
+  background-color: #eceeff;
   color: #1e293b;
   cursor: pointer;
   padding: 8px;

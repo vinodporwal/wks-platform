@@ -101,6 +101,7 @@ const CrackerConfig = () => {
   const [furnace, setFurnance] = useState([])
 
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && SITE_NAME === 'HMD'
+  const IS_CRACKER_C2 = lowerVertName === 'cracker' && SITE_NAME === 'C2'
 
   // const allModes = ['5F', '4F', '4F+D']
 
@@ -160,12 +161,15 @@ const CrackerConfig = () => {
       showUnit: false,
       showModes:
         !IS_CRACKER_HMD &&
+        !IS_CRACKER_C2 &&
         lowerVertName === 'cracker' &&
         currentTabDisplay !== 'Naphtha' &&
         currentTabDisplay !== 'External Streams',
       saveWithRemark: true,
       saveBtn: true,
       allAction: lowerVertName === 'cracker',
+      showCalculate: lowerVertName === 'cracker' && SITE_NAME === 'HMD',
+      showCalculateVisibility: true,
       modes: modes,
       uploadExcelBtn:
         currentTabDisplay == 'Constant' ||
@@ -408,7 +412,7 @@ const CrackerConfig = () => {
         let transformedData1 = []
         let transformedData12 = []
         var spyroVM1 = []
-        if (IS_CRACKER_HMD) {
+        if (IS_CRACKER_HMD || IS_CRACKER_C2) {
           mode = currentTabDisplay
         }
         if (currentTabDisplay == 'Constant') {
@@ -749,12 +753,55 @@ const CrackerConfig = () => {
     }
   }
 
+  const handleCalculate = useCallback(async () => {
+    setLoading(true)
+    try {
+      let mode = selectMode || currentTabDisplay || 'Feed'
+      const type = currentTabDisplay || 'Feed'
+      if (IS_CRACKER_HMD || IS_CRACKER_C2) {
+        mode = currentTabDisplay
+      }
+      const response = await DataService.calculateSpyroInputData(
+        keycloak,
+        mode,
+        type,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data calculated successfully!',
+          severity: 'success',
+        })
+
+        fetchCrackerRows(currentTabDisplay, selectMode)
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Error calculating data!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error calculating spyro input data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to calculate data!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [keycloak, selectMode, currentTabDisplay, PLANT_ID, AOP_YEAR, IS_CRACKER_HMD, IS_CRACKER_C2])
+
   const saveSpyroInputExcelFile = async (rawFile) => {
     setLoading(true)
     try {
       let mode = selectMode || ''
       let response
-      if (IS_CRACKER_HMD) {
+      if (IS_CRACKER_HMD || IS_CRACKER_C2) {
         mode = currentTabDisplay
       }
       if (currentTabDisplay == 'Naphtha') {
@@ -831,7 +878,7 @@ const CrackerConfig = () => {
     })
 
     let mode = selectMode
-    if (IS_CRACKER_HMD) {
+    if (IS_CRACKER_HMD || IS_CRACKER_C2) {
       mode = currentTabDisplay
     }
     const EXCEL_NAME =
@@ -982,7 +1029,7 @@ const CrackerConfig = () => {
       }
     }
   }, [currentTabDisplay, PLANT_ID, AOP_YEAR, keycloak])
-  
+
   const resolvedTabs = tabs.map((tabId) => {
     const info = availableTabs.find(
       (t) => t.id.toLowerCase() === tabId.toLowerCase(),
@@ -1003,7 +1050,7 @@ const CrackerConfig = () => {
           tabs={resolvedTabs}
         />
       </Box>
-      {IS_CRACKER_HMD && (
+      {(IS_CRACKER_HMD || IS_CRACKER_C2) && (
         <ModeSelection permissions={adjustedPermissionsReadyOnly} />
       )}
       <Box>
@@ -1038,6 +1085,7 @@ const CrackerConfig = () => {
                     setCurrentRemark={setCurrentRemark}
                     currentRowId={currentRowId}
                     permissions={adjustedPermissions}
+                    handleCalculate={handleCalculate}
                     selectMode={selectMode}
                     setSelectMode={setSelectMode}
                     saveChanges={saveChanges}
@@ -1056,7 +1104,7 @@ const CrackerConfig = () => {
                 </Box>
               )
             case 'Naphtha':
-              if (IS_CRACKER_HMD) {
+              if (IS_CRACKER_HMD || IS_CRACKER_C2) {
                 return (
                   <Box key={currentTabDisplay}>
                     <NaphthaHMDComponent />
@@ -1168,6 +1216,7 @@ const CrackerConfig = () => {
                     setRemarkDialogOpen={setRemarkDialogOpen}
                     currentRemark={currentRemark}
                     setCurrentRemark={setCurrentRemark}
+                    handleCalculate={handleCalculate}
                     currentRowId={currentRowId}
                     permissions={adjustedPermissions}
                     selectMode={selectMode}

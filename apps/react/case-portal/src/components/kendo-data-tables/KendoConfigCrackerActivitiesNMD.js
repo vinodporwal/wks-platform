@@ -166,6 +166,19 @@ const DecokingConfigNMD = () => {
       setRunningDurationRows(data)
     }
   }, [])
+
+  const [renderGrid, setRenderGrid] = useState(false)
+
+  useEffect(() => {
+    setRenderGrid(false)
+
+    const timer = setTimeout(() => {
+      setRenderGrid(true)
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [ibrScreen2Rows])
+
   function calcPreCoilReplacementRunLength(actualRunLength, reduction) {
     if (
       actualRunLength === null ||
@@ -831,6 +844,7 @@ const DecokingConfigNMD = () => {
       showTitleName: true,
       showAccordian: true,
       showCalculate: true,
+      showCalculateNextYear: false,
       // showCalculateVisibility:
       //   Object.keys(calculationObject || {}).length > 0 ? true : false,
 
@@ -1024,6 +1038,11 @@ const DecokingConfigNMD = () => {
     siteName === 'dmd'
       ? ibrGridThree.filter((col) => col.field !== 'demo')
       : ibrGridThree
+
+  const MaintenanceProcessPermission = {
+    titleName: 'Maintenance Details',
+    showTitleNameBusiness: true,
+  }
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
@@ -1062,29 +1081,31 @@ const DecokingConfigNMD = () => {
         </Box>
       </LocalizationProvider>
 
-      <SDTAActivitiesGridNMD
-        columns={ibrPlanColumns}
-        rows={getRows('IBR Plan')[2]}
-        setRows={(data) => setRowsForTab('IBR Plan', data, 2)}
-        // fetchData={fetchData}
-        handleRemarkCellClick={handleRemarkCellClick2}
-        remarkDialogOpen={remarkDialogOpenSdTa}
-        currentRemark={currentRemarkSdTa}
-        setCurrentRemark={setCurrentRemarkSdTa}
-        currentRowId={currentRowIdSdTa}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
-        modifiedCells={modifiedCellsSdTa}
-        allMonths={allMonths}
-        setModifiedCells={setModifiedCellsSdTa}
-        permissions={adjustedPermissionsSdTa}
-        saveChanges={saveChangesSdTa}
-        setRemarkDialogOpen={setRemarkDialogOpenSdTa}
-        rowClass={rowClass}
-        handleCalculate={handleCalculateSdTa}
-      />
+      {renderGrid && (
+        <SDTAActivitiesGridNMD
+          columns={ibrPlanColumns}
+          rows={getRows('IBR Plan')[2]}
+          setRows={(data) => setRowsForTab('IBR Plan', data, 2)}
+          // fetchData={fetchData}
+          handleRemarkCellClick={handleRemarkCellClick2}
+          remarkDialogOpen={remarkDialogOpenSdTa}
+          currentRemark={currentRemarkSdTa}
+          setCurrentRemark={setCurrentRemarkSdTa}
+          currentRowId={currentRowIdSdTa}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          modifiedCells={modifiedCellsSdTa}
+          allMonths={allMonths}
+          setModifiedCells={setModifiedCellsSdTa}
+          permissions={adjustedPermissionsSdTa}
+          saveChanges={saveChangesSdTa}
+          setRemarkDialogOpen={setRemarkDialogOpenSdTa}
+          rowClass={rowClass}
+          handleCalculate={handleCalculateSdTa}
+        />
+      )}
 
       <FurnaceRunLengthGridNMD
         columns={filteredIbrGridThree}
@@ -1111,21 +1132,7 @@ const DecokingConfigNMD = () => {
         handleCalculate={handleCalculate}
       />
 
-      <CustomAccordion defaultExpanded disableGutters>
-        <CustomAccordionSummary
-          aria-controls='meg-grid-content'
-          id='meg-grid-header'
-        >
-          <Typography component='span' className='grid-title'>
-            Maintenance Details
-          </Typography>
-        </CustomAccordionSummary>
-        <CustomAccordionDetails>
-          <Box sx={{ width: '100%', margin: 0 }}>
-            <MaintenanceProcessTableNMD />
-          </Box>
-        </CustomAccordionDetails>
-      </CustomAccordion>
+      <MaintenanceProcessTableNMD permissions={MaintenanceProcessPermission} />
     </Box>
   )
 }

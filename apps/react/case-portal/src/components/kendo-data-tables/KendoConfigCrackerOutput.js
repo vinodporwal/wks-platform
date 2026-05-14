@@ -52,6 +52,7 @@ const CrackerConfig = () => {
   const lowerVertName = vertName?.toLowerCase()
 
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && SITE_NAME === 'HMD'
+  const IS_CRACKER_C2 = lowerVertName === 'cracker' && SITE_NAME === 'C2'
 
   const [modifiedCells, setModifiedCells] = useState({})
 
@@ -163,9 +164,12 @@ const CrackerConfig = () => {
       deleteButton: false,
       editButton: false,
       showUnit: false,
+      showCalculate: lowerVertName === 'cracker' && SITE_NAME === 'HMD',
+      showCalculateVisibility: true,
       showModes:
         lowerVertName === 'cracker' &&
         !IS_CRACKER_HMD &&
+        !IS_CRACKER_C2 &&
         (SITE_NAME === 'VMD' || currentTabDisplay !== 'Yield'),
       saveWithRemark: true,
       saveBtn:
@@ -367,7 +371,7 @@ const CrackerConfig = () => {
       if (!PLANT_ID || !AOP_YEAR) return
       try {
         setLoading(true)
-        if (IS_CRACKER_HMD) {
+        if (IS_CRACKER_HMD || IS_CRACKER_C2) {
           mode = currentTabDisplay
         }
         const spyroVM = await DataService.getSpyroOutputData(
@@ -409,7 +413,7 @@ const CrackerConfig = () => {
       try {
         setLoading(true)
         var spyroVMYield1 = []
-        if (IS_CRACKER_HMD) {
+        if (IS_CRACKER_HMD || IS_CRACKER_C2) {
           mode = currentTabDisplay
         }
         if (currentTabDisplay == 'Yield') {
@@ -808,7 +812,7 @@ const CrackerConfig = () => {
 
     try {
       let mode = selectMode || '' // Optional
-      if (IS_CRACKER_HMD) {
+      if (IS_CRACKER_HMD || IS_CRACKER_C2) {
         mode = currentTabDisplay
       }
       let response
@@ -916,6 +920,48 @@ const CrackerConfig = () => {
     saveSpyroOutputExcelFile(rawFile)
   }
 
+  const handleCalculate = useCallback(async () => {
+    setLoading(true)
+    try {
+      let mode = selectMode || currentTabDisplay || 'Spyro Matbal'
+      const type = currentTabDisplay || 'Spyro Matbal'
+      if (IS_CRACKER_HMD || IS_CRACKER_C2) {
+        mode = currentTabDisplay
+      }
+      const response = await DataService.calculateSpyroOutputData(
+        keycloak,
+        mode,
+        type,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarData({
+          message: 'Data calculated successfully!',
+          severity: 'success',
+        })
+        setSnackbarOpen(true)
+        fetchCrackerRows(currentTabDisplay, selectMode)
+      } else {
+        setSnackbarData({
+          message: response?.message || 'Error calculating data!',
+          severity: 'error',
+        })
+        setSnackbarOpen(true)
+      }
+    } catch (error) {
+      console.error('Error calculating spyro output data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to calculate data!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [keycloak, selectMode, currentTabDisplay, PLANT_ID, AOP_YEAR, IS_CRACKER_HMD, IS_CRACKER_C2])
+
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)
     setSnackbarData({
@@ -924,7 +970,7 @@ const CrackerConfig = () => {
     })
 
     let mode = selectMode // Can be empty  that's fine
-    if (IS_CRACKER_HMD) {
+    if (IS_CRACKER_HMD || IS_CRACKER_C2) {
       mode = currentTabDisplay
     }
     try {
@@ -1022,7 +1068,7 @@ const CrackerConfig = () => {
           tabs={resolvedTabs}
         />
       </Box>
-      {IS_CRACKER_HMD && (
+      {(IS_CRACKER_HMD || IS_CRACKER_C2) && (
         <ModeSelection permissions={adjustedPermissionsReadyOnly} />
       )}
 
@@ -1098,6 +1144,7 @@ const CrackerConfig = () => {
                     setCurrentRemark={setCurrentRemark}
                     currentRowId={currentRowId}
                     permissions={adjustedPermissions}
+                    handleCalculate={handleCalculate}
                     selectMode={selectMode}
                     setSelectMode={setSelectMode}
                     saveChanges={saveChanges}

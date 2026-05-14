@@ -110,6 +110,7 @@ const ShutDown = ({ permissions }) => {
   const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
   const IS_PET = lowerVertName === 'pet'
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
+  const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
   const IS_PP_HMD = lowerVertName === 'pp' && lowerSiteName === 'hmd'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
@@ -252,7 +253,7 @@ const ShutDown = ({ permissions }) => {
             record.monthly,
             AOP_YEAR,
           )
-          if (!expectedDuration) continue // no valid month — skip
+          if (!expectedDuration) continue // no valid month ? skip
           const recordMins = parseDurationToMinutes(record.durationInHrs)
           const expectedMins = parseDurationToMinutes(expectedDuration)
           if (recordMins > expectedMins) {
@@ -649,7 +650,7 @@ const ShutDown = ({ permissions }) => {
           id: row.idFromApi || null,
           remark: row.remark || 'null',
         }))
-      } else if (IS_PVC_DMD) {
+      } else if (IS_PVC_DMD || IS_PVC_HMD) {
         // For PP DTA, match the GET payload structure
         shutdownDetails = newRow.map((row) => ({
           discription: row.discription || row.discriptionDrpdwn,
@@ -815,7 +816,7 @@ const ShutDown = ({ permissions }) => {
     }
   }
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
       fetchLineDetails()
     }
   }, [lowerVertName, lowerSiteName, keycloak, PLANT_ID, AOP_YEAR])
@@ -1165,7 +1166,7 @@ const ShutDown = ({ permissions }) => {
         return ShutDownPeColumns
 
       case verticalEnums.PP:
-        return IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD
+        return IS_PP_DTA || IS_PP_SEZ || IS_PP_HMD
           ? ShutDownPpDtaColumns
           : ShutDownPpColumns
 
@@ -1174,7 +1175,9 @@ const ShutDown = ({ permissions }) => {
       case verticalEnums.CHEMICAL:
         return IS_CHEMICAL ? ShutDownChemicalColumns : ShutDownAllColumns
       case verticalEnums.PVC:
-        return IS_PVC_DMD ? ShutDownPVCDMDColumns : ShutDownPpColumns
+        return IS_PVC_DMD || IS_PVC_HMD
+          ? ShutDownPVCDMDColumns
+          : ShutDownPpColumns
 
       case verticalEnums.ELASTOMER:
         return IS_ELASTOMER_JMD_HIIR
@@ -1197,6 +1200,11 @@ const ShutDown = ({ permissions }) => {
 
       if (!idFromApi) {
         setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setModifiedCells((prev) => {
+          const newModifiedCells = { ...prev }
+          delete newModifiedCells[deleteId]
+          return newModifiedCells
+        })
       }
 
       if (idFromApi) {
@@ -1275,7 +1283,7 @@ const ShutDown = ({ permissions }) => {
           AOP_YEAR,
           EXCEL_EXPORT_TITLE,
         )
-      } else if (IS_PVC_DMD) {
+      } else if (IS_PVC_DMD || IS_PVC_HMD) {
         response = await DtaDataService.exportShutdownLineWise(
           keycloak,
           PLANT_ID,
@@ -1334,7 +1342,7 @@ const ShutDown = ({ permissions }) => {
           PLANT_ID,
           AOP_YEAR,
         )
-      } else if (IS_PVC_DMD) {
+      } else if (IS_PVC_DMD || IS_PVC_HMD) {
         response = await DtaDataService.ImportShutdownLineWise(
           rawFile,
           keycloak,
@@ -1469,7 +1477,9 @@ const ShutDown = ({ permissions }) => {
         lowerVertName === 'pet' ||
         lowerVertName === 'aromatics' ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD ||
+        IS_PVC_VMD
           ? true
           : false,
       highlightDiscription:
@@ -1481,7 +1491,9 @@ const ShutDown = ({ permissions }) => {
       highlightDuration:
         lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
       highlightLine:
-        IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD ? true : false,
+        IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD
+          ? true
+          : false,
       deleteMultiple: IS_PP_DTA ? true : false,
     },
     isOldYear,

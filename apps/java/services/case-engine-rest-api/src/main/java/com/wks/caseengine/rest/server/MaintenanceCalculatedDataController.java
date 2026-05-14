@@ -59,6 +59,11 @@ public class MaintenanceCalculatedDataController {
 	public AOPMessageVM getMaintenanceDataForCracker(@RequestParam String plantId, @RequestParam String year){
 		return maintenanceCalculatedDataService.getMaintenanceDataForCracker(plantId,year);		
 	}
+
+	@GetMapping(value="/cat-chem-calculation")
+	public AOPMessageVM getMaintenanceCatChem(@RequestParam String plantId, @RequestParam String year, @RequestParam String gradeId){
+		return maintenanceCalculatedDataService.getMaintenanceCatChem(plantId, year, gradeId);		
+	}
 	
 	@GetMapping(value="/maintenance-nmd")
 	public AOPMessageVM getMaintenanceDataNMDForCracker(@RequestParam String plantId, @RequestParam String year){
@@ -69,6 +74,7 @@ public class MaintenanceCalculatedDataController {
 	public AOPMessageVM getOtherPlants(@RequestParam String plantId, @RequestParam String year){
 		return maintenanceCalculatedDataService.getOtherPlants(plantId,year);		
 	}
+	
 	@GetMapping(value = "/maintenance-export")
 	public ResponseEntity<byte[]> maintenanceExport(
 	         @RequestParam String year,@RequestParam String plantId) {
@@ -207,5 +213,10 @@ public class MaintenanceCalculatedDataController {
 	@GetMapping(value="/macro")
 	public AOPMessageVM getMacroData(@RequestParam Double value, @RequestParam String year,@RequestParam String plantId){
 		return maintenanceCalculatedDataService.getMacroData(value,year,plantId);		
+	}
+
+	@PostMapping(value="/cat-chem-calculation")
+	public AOPMessageVM catChemCalculation(@RequestParam String plantId, @RequestParam String aopYear){
+		return maintenanceCalculatedDataService.catChemCalculation(UUID.fromString(plantId), aopYear);
 	}
 }
