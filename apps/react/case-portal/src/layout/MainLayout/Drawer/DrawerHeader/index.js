@@ -1,18 +1,15 @@
 import PropTypes from 'prop-types'
-import { Box, Typography, IconButton, useTheme } from '@mui/material'
+import { Box, Typography, IconButton } from '@mui/material'
 import DrawerHeaderStyled from './DrawerHeaderStyled'
 import logo from 'assets/images/ril-logo2.png'
 import MenuOpenIcon from '@mui/icons-material/MenuOpen'
 import MenuIcon from '@mui/icons-material/Menu'
 import HomeIcon from '@mui/icons-material/Home'
 import { useNavigate } from 'react-router-dom'
-import { DrawerCloseIcon, DrawerOpenIcon, DrawerOpenDarkIcon, DrawerCloseDarkIcon } from 'assets/images/icons/index'
+import { DrawerCloseIcon, DrawerOpenIcon } from 'assets/images/icons/index'
 
 const DrawerHeader = ({ open, handleDrawerToggle }) => {
   const navigate = useNavigate()
-  const theme = useTheme()
-  const isDark = theme.palette.mode === 'dark'
-
   return (
     <DrawerHeaderStyled open={open}>
       <Box
@@ -48,22 +45,11 @@ const DrawerHeader = ({ open, handleDrawerToggle }) => {
           {open && (
             <Box>
               <Typography
-                sx={{
-                  fontWeight: 800,
-                  fontSize: 20,
-                  color: isDark ? '#fff' : '#303030',
-                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                }}
+                sx={{ fontWeight: 800, fontSize: 20, color: '#303030', fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif" }}
               >
                 Reliance
               </Typography>
-              <Typography
-                sx={{
-                  fontSize: 13,
-                  color: isDark ? 'rgba(255,255,255,0.7)' : '#606060',
-                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                }}
-              >
+              <Typography sx={{ fontSize: 13, color: '#606060', fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif" }}>
                 AOP Dashboard
               </Typography>
             </Box>
@@ -72,27 +58,22 @@ const DrawerHeader = ({ open, handleDrawerToggle }) => {
 
         {/* RIGHT COLLAPSE BUTTON */}
         {/* {open && ( */}
-        <IconButton
-          onClick={handleDrawerToggle}
-          size='small'
-          sx={{
-            // color: '#6a7b92',
-            ml: open ? 0 : 0,
-            '&:hover': { color: '#6a7b92' },
-          }}
-        >
-          <Box
-            component='img'
-            src={open ? (isDark ? DrawerCloseDarkIcon : DrawerCloseIcon) : (isDark ? DrawerOpenDarkIcon : DrawerOpenIcon)}
-            alt='Drawer Toggle'
+          <IconButton
+            onClick={handleDrawerToggle}
+            size='small'
             sx={{
-              width: 20,
-              height: 20,
-              cursor: 'pointer',
-              filter: 'none',
+              color: '#6a7b92',
+              ml: open ? 0 : 0,
+              '&:hover': { color: '#6a7b92' },
             }}
-          />
-        </IconButton>
+          >
+            <Box
+              component='img'
+              src={open ? DrawerCloseIcon : DrawerOpenIcon}
+              alt='Drawer Toggle'
+              sx={{ width: 20, height: 20, cursor: 'pointer' }}
+            />
+          </IconButton>
         {/* )} */}
       </Box>
     </DrawerHeaderStyled>

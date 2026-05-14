@@ -1,13 +1,11 @@
+// Navigation.jsx
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
 import Divider from '@mui/material/Divider'
-import { useTheme } from '@mui/material/styles'
 import NavGroup from './NavGroup'
 import useFilteredMenu from 'hooks/useFilteredMenu'
 
 const Navigation = () => {
-  const theme = useTheme()
-  const isDark = theme.palette.mode === 'dark'
   const filteredMenu = useFilteredMenu()
 
   const navGroups = filteredMenu?.items?.map((item, index) => {
@@ -72,7 +70,7 @@ const Navigation = () => {
         flexDirection: 'column',
 
         // ? Dark navy gradient background (like your screenshot)
-        background: isDark ? 'transparent' : '#ffffff',
+        background: '#ffffff',
 
         // borderRight: '1px solid #ffffff',
         fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
@@ -81,13 +79,7 @@ const Navigation = () => {
       }}
     >
       {/* Thin divider */}
-      <Divider
-        sx={{
-          borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#DDDEE1',
-          my: 0.25,
-          borderWidth: '1px',
-        }}
-      />
+      <Divider sx={{ borderColor: '#DDDEE1', my: 0.25, borderWidth: '1px' }} />
 
       {/* Scrollable menu */}
       <Box
@@ -102,7 +94,7 @@ const Navigation = () => {
             width: '4px',
           },
           '&::-webkit-scrollbar-thumb': {
-            background: isDark ? 'rgba(255,255,255,0.2)' : '#334155',
+            background: '#334155',
             borderRadius: '999px',
           },
         }}

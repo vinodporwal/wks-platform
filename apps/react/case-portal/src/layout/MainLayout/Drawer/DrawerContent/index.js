@@ -5,7 +5,12 @@ const DrawerContent = () => (
   <SimpleBar
     sx={{
       height: '100%',
-      bgcolor: 'transparent',
+      bgcolor: '#f8fafc',
+
+      /* Modern depth */
+      // borderRight: '1px solid rgba(148,163,184,0.25)',
+      // boxShadow:
+      //   '4px 0 16px rgba(15,23,42,0.06), 1px 0 2px rgba(15,23,42,0.04)',
 
       /* Smooth feel */
       transition:

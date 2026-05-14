@@ -15,15 +15,13 @@ import DialogActions from '@mui/material/DialogActions'
 import Button from '@mui/material/Button'
 import { useSafeNavigate } from './useSafeNavigate'
 import { useLocation } from 'react-router-dom'
-import { useTheme, Tooltip } from '@mui/material'
+import { Tooltip } from '@mui/material'
 
 const NavItem = ({ item, level, onItemClick, isPopover }) => {
+  
   const isDashboard = item.id === 'dashboard'
 
   const dispatch = useDispatch()
-  const theme = useTheme()
-  const isDark = theme.palette.mode === 'dark'
-
   const { drawerOpen, openItem } = useSelector((state) => state.menu)
   const { safeNavigate, confirmLeave, setDialogOpen, dialogOpen, itemHandler } =
     useSafeNavigate()
@@ -31,10 +29,6 @@ const NavItem = ({ item, level, onItemClick, isPopover }) => {
 
   const isSelected = openItem.includes(item.id)
   const Icon = item.icon
-
-  const primaryColor = isDark ? '#4046CA' : '#4046CA'
-  const textColor = isDark ? '#606060' : '#606060'
-  const hoverBg = isDark ? 'rgba(129, 140, 248, 0.15)' : 'rgba(87, 91, 238, 0.08)'
 
   const handleClick = () => {
     if (onItemClick) onItemClick()
@@ -69,28 +63,27 @@ const NavItem = ({ item, level, onItemClick, isPopover }) => {
         borderRadius: '6px', // ? RESTORE PILL RADIUS
         backgroundColor: 'transparent', // default sidebar
 
-        color: textColor,
+        color: '#606060',
         transition: 'all 0.3s ease',
 
         '&:hover': {
-          backgroundColor: hoverBg,
-          color: primaryColor,
+          backgroundColor: 'rgba(87, 91, 238, 0.08)',
+          color: '#4046CA',
           '& .MuiTypography-root': {
-            color: `${primaryColor} !important`,
+            color: '#4046CA !important',
           },
           '& .MuiListItemIcon-root': {
-            color: `${primaryColor} !important`,
+            color: '#4046CA !important',
           },
         },
 
         /* ? SELECTED STYLE */
         '&.Mui-selected': {
-          backgroundColor: isDark ? '#EDEEFF' : '#fff', // Brand light blue/purple bg
+          backgroundColor: 'rgba(87, 91, 238, 0.1)', // Subtle selected background
           color: '#4046CA',
-          marginRight: '10px',
 
           '&:hover': {
-            backgroundColor: isDark ? '#EDEEFF' : 'rgba(87, 91, 238, 0.1)',
+            backgroundColor: 'rgba(87, 91, 238, 0.15)',
           },
 
           '& .MuiTypography-root': {
@@ -106,12 +99,12 @@ const NavItem = ({ item, level, onItemClick, isPopover }) => {
         '&.Mui-selected::before': {
           content: '""',
           position: 'absolute',
-          left: 0,
+          left: -4,
           top: '10%',
           bottom: '10%',
           width: '3px',
           borderRadius: '0 4px 4px 0',
-          backgroundColor: isPopover ? 'transparent' : (isDark ? '#818cf8' : '#575bee'),
+          backgroundColor: isPopover ? 'transparent' : '#575bee',
         },
       }}
     >
@@ -120,7 +113,7 @@ const NavItem = ({ item, level, onItemClick, isPopover }) => {
         <ListItemIcon
           sx={{
             minWidth: drawerOpen || isPopover ? 30 : 0,
-            color: isSelected || isDashboard ? primaryColor : textColor,
+            color: isSelected || isDashboard ? '#4046CA' : '#606060',
             justifyContent: 'center',
 
             '& svg': {
@@ -147,7 +140,7 @@ const NavItem = ({ item, level, onItemClick, isPopover }) => {
                 visibility: 'visible',
                 fontSize: isPopover ? '14px' : '16px',
                 fontWeight: isSelected ? 700 : 500,
-                color: isSelected ? primaryColor : textColor,
+                color: isSelected ? '#4046CA' : '#606060',
                 letterSpacing: isPopover ? '0.012em' : '0.01em',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
@@ -173,7 +166,7 @@ const NavItem = ({ item, level, onItemClick, isPopover }) => {
             height: 16,
             fontSize: '0.55rem',
             fontWeight: 700,
-            bgcolor: isDark ? '#818cf8' : '#575bee',
+            bgcolor: '#575bee',
             color: '#ffffff',
             borderRadius: '1px',
           }}
