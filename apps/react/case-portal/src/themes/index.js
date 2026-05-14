@@ -12,13 +12,16 @@ import Typography from './typography'
 import CustomShadows from './shadows'
 import componentsOverride from './overrides'
 
-// ==============================|| DEFAULT THEME - MAIN  ||============================== //
+// ==============================|| THEME HELPER ||============================== //
 
-export default function ThemeCustomization({ children }) {
-  const { mode } = useSelector((state) => state.theme)
-  const theme = Palette(mode, 'default')
+export const useCustomTheme = (mode) => {
+  const theme = useMemo(() => Palette(mode, 'default'), [mode])
 
-  const themeTypography = Typography("'Open Sans','Public Sans', sans-serif")
+  const themeTypography = useMemo(
+    () => Typography("'Honeywell Sans Web','Open Sans','Public Sans', sans-serif"),
+    [],
+  )
+
   const themeCustomShadows = useMemo(() => CustomShadows(theme), [theme])
 
   const themeOptions = useMemo(
@@ -47,8 +50,20 @@ export default function ThemeCustomization({ children }) {
     [theme, themeTypography, themeCustomShadows],
   )
 
-  const themes = createTheme(themeOptions)
-  themes.components = componentsOverride(themes)
+  const themes = useMemo(() => {
+    const t = createTheme(themeOptions)
+    t.components = componentsOverride(t)
+    return t
+  }, [themeOptions])
+
+  return themes
+}
+
+// ==============================|| DEFAULT THEME - MAIN  ||============================== //
+
+export default function ThemeCustomization({ children }) {
+  // Always use 'light' mode for main application screen
+  const themes = useCustomTheme('light')
 
   return (
     <StyledEngineProvider injectFirst>
@@ -61,5 +76,18 @@ export default function ThemeCustomization({ children }) {
 }
 
 ThemeCustomization.propTypes = {
+  children: PropTypes.node,
+}
+
+// ==============================|| SCOPED THEME - DRAWER ||============================== //
+
+export function DrawerThemeCustomization({ children }) {
+  const { mode } = useSelector((state) => state.theme)
+  const themes = useCustomTheme(mode)
+
+  return <ThemeProvider theme={themes}>{children}</ThemeProvider>
+}
+
+DrawerThemeCustomization.propTypes = {
   children: PropTypes.node,
 }

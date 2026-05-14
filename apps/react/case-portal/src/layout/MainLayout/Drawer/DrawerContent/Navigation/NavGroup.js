@@ -5,16 +5,17 @@ import ListItemIcon from '@mui/material/ListItemIcon'
 import ListSubheader from '@mui/material/ListSubheader'
 import Typography from '@mui/material/Typography'
 import Tooltip from '@mui/material/Tooltip'
+import { useTheme } from '@mui/material/styles'
 import NavItem from './NavItem'
 import NavCollapse from './NavCollapse'
 import AppsIcon from '@mui/icons-material/Apps' // Example static group icon
 
-/* ===== COMPACT SIDEBAR GROUP STYLES ===== */
-const GROUP_BG = 'transparent' // Changed to transparent for a cleaner look
-const GROUP_TEXT = '#606060' // Updated color
-
 const NavGroup = ({ item }) => {
   const { drawerOpen } = useSelector((state) => state.menu)
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
+
+  const GROUP_TEXT = '#606060'
 
   const navCollapse = item.children?.map((menuItem) => {
     switch (menuItem.type) {
@@ -44,7 +45,7 @@ const NavGroup = ({ item }) => {
       sx={{
         mb: drawerOpen ? 1.5 : 0,
         py: 0,
-        backgroundColor: GROUP_BG,
+        backgroundColor: 'transparent',
         mx: '3px',
       }}
       subheader={
@@ -82,7 +83,7 @@ const NavGroup = ({ item }) => {
                 display: 'flex',
                 justifyContent: 'center',
                 py: 1,
-                color: '#F0F0F0',
+                color: isDark ? '#606060' : '#606060',
               }}
             >
               <AppsIcon sx={{ fontSize: 18 }} />

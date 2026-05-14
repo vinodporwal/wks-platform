@@ -26,6 +26,7 @@ import Divider from '@mui/material/Divider'
 
 const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
   const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const [open, setOpen] = useState(false)
   const [selected, setSelected] = useState(null)
   const [anchorEl, setAnchorEl] = useState(null)
@@ -35,10 +36,12 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
     (state) => state.dataGridStore,
   )
 
+  const primaryColor = isDark ? '#4046CA' : '#4046CA'
+  const textColor = isDark ? '#606060' : '#606060'
+  const hoverBg = isDark ? 'rgba(129, 140, 248, 0.15)' : 'rgba(87, 91, 238, 0.08)'
+
   const plantName = plantID?.plantName
-
   const SITE_NAME = siteObject?.name?.toLowerCase()
-
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
 
@@ -130,27 +133,27 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
         transition: 'all 0.3s ease',
         fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
         '&:hover': {
-          backgroundColor: 'rgba(87, 91, 238, 0.08)',
+          backgroundColor: hoverBg,
           '& .MuiTypography-root': {
-            color: '#4A4DDA !important',
+            color: `${primaryColor} !important`,
           },
           '& svg': {
-            color: '#4A4DDA !important',
+            color: `${primaryColor} !important`,
           },
         },
 
         // SELECTED STATE (?? IMPORTANT)
         '&.Mui-selected': {
-          background: '#4A4DDA',
+          backgroundColor: '#4A4DDA',
           color: '#F0F0F0',
 
           '&:hover': {
-            background: '#4f46e5',
+            backgroundColor: isDark ? '#4f46e5' : '#E0E2FF',
             '& .MuiTypography-root': {
-              color: '#fff !important',
+              color: isDark ? '#fff !important' : '#4046CA !important',
             },
             '& svg': {
-              color: '#fff !important',
+              color: isDark ? '#fff !important' : '#4046CA !important',
             },
           },
 
@@ -180,7 +183,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
                   fontWeight: 500,
                   letterSpacing: 0,
                   textTransform: 'capitalize',
-                  color: '#606060',
+                  color: selected === menu.id ? '#4046CA' : textColor,
                   fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
                 }}
               >
@@ -197,7 +200,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
           <RemoveIcon
             sx={{
               fontSize: 13,
-              color: '#4046CA',
+              color: selected === menu.id ? '#F0F0F0' : textColor,
               flexShrink: 0,
               transition: 'all 200ms cubic-bezier(.4,0,.2,1)',
             }}
@@ -206,7 +209,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
           <AddIcon
             sx={{
               fontSize: 13,
-              color: '#4046CA',
+              color: selected === menu.id ? '#F0F0F0' : textColor,
               flexShrink: 0,
               transform: 'rotate(90deg)',
               transition: 'all 200ms cubic-bezier(.4,0,.2,1)',
@@ -219,13 +222,13 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
           <AppsIcon
             sx={{
               fontSize: 18,
-              color: selected === menu.id ? '#F0F0F0' : '#606060',
+              color: selected === menu.id ? '#F0F0F0' : textColor,
             }}
           />
           <IconChevronRight
             sx={{
               fontSize: 18,
-              color: selected === menu.id ? '#F0F0F0' : '#606060',
+              color: selected === menu.id ? '#F0F0F0' : textColor,
             }}
           />
         </Box>
@@ -271,11 +274,12 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
             mt: 0,
             ml: 0.75,
             minWidth: 250,
-            background: '#ffffff',
-            boxShadow:
-              '0 12px 28px 0 rgba(0, 0, 0, 0.12), 0 2px 4px 0 rgba(0, 0, 0, 0.08)',
+            background: isDark ? '#1e293b' : '#ffffff',
+            boxShadow: isDark
+              ? '0 12px 28px 0 rgba(0, 0, 0, 0.4), 0 2px 4px 0 rgba(0, 0, 0, 0.2)'
+              : '0 12px 28px 0 rgba(0, 0, 0, 0.12), 0 2px 4px 0 rgba(0, 0, 0, 0.08)',
             borderRadius: '10px',
-            border: '1px solid rgba(226, 232, 240, 0.8)',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(226, 232, 240, 0.8)',
             overflow: 'hidden',
           },
         }}
@@ -285,7 +289,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
           disablePadding
           sx={{
             py: 0,
-            bgcolor: '#ffffff',
+            bgcolor: isDark ? '#1e293b' : '#ffffff',
           }}
         >
           <Box
@@ -294,17 +298,17 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
               alignItems: 'center',
               py: 1.25,
               px: 2,
-              borderBottom: '1px solid #f1f5f9',
-              background: '#f8fafc', // Very subtle light gray/blue
+              borderBottom: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #f1f5f9',
+              background: isDark ? 'rgba(255,255,255,0.02)' : '#f8fafc', // Very subtle light gray/blue
               gap: 1,
             }}
           >
-            <AppsIcon sx={{ fontSize: 16, color: '#4046CA' }} />
+            <AppsIcon sx={{ fontSize: 16, color: primaryColor }} />
             <Typography
               sx={{
                 fontWeight: 700,
                 fontSize: '16px',
-                color: '#4046CA', // Brand color header
+                color: primaryColor, // Brand color header
                 textTransform: 'capitalize',
                 letterSpacing: 0,
                 fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
@@ -313,7 +317,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
               {menu.title}
             </Typography>
           </Box>
-          <Divider />
+          <Divider sx={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }} />
           {/* ITEM LIST */}
           <Box sx={{ paddingLeft: 1 }}>{menus}</Box>
         </List>
