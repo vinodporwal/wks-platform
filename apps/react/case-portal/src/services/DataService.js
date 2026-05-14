@@ -209,6 +209,7 @@ export const DataService = {
   postCatChemCalculate,
 
   getSeasonMonth,
+  getCatalystSelectivityDataConstantsCatChem,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -827,9 +828,8 @@ async function getCatalystSelectivityDataConstants(
   keycloak,
   PLANT_ID,
   AOP_YEAR,
-  iscatchem,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/configuration-constants?year=${AOP_YEAR}&plantFKId=${PLANT_ID}&iscatcam=${iscatchem}`
+  const url = `${Config.CaseEngineUrl}/task/configuration-constants?year=${AOP_YEAR}&plantFKId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -843,6 +843,7 @@ async function getCatalystSelectivityDataConstants(
     return await Promise.reject(e)
   }
 }
+
 async function getConfigurationTabsMatrix(
   keycloak,
   PLANT_ID,
@@ -4774,6 +4775,27 @@ async function postCatChemCalculate(keycloak, PLANT_ID, AOP_YEAR) {
 }
 async function getSeasonMonth(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/season-months?plantId=${PLANT_ID}&aopYear=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getCatalystSelectivityDataConstantsCatChem(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  iscatchem,
+) {
+  const url = `${Config.CaseEngineUrl}/task/configuration-constants?year=${AOP_YEAR}&plantFKId=${PLANT_ID}&iscatcam=${iscatchem}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
