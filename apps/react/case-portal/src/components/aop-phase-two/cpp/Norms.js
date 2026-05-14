@@ -1,18 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
 import NestedKendoTable from '../common/NestedKendoTable/index'
 import { Stack, Typography } from '../../../../node_modules/@mui/material/index'
+import { setIsReleased } from 'store/reducers/dataGridStore'
+import ReleaseDialog from '../common/components/ReleaseDialog'
+import { ReleaseAPIService } from '../services/common/releaseAPIService'
 
 const Norms = () => {
   const keycloak = useSession()
   // State management
-
+  const dispatch = useDispatch()
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -45,7 +48,8 @@ const Norms = () => {
   const [currentRowId, setCurrentRowId] = useState(null)
 
   const [calculateBtnEnabled, setCalculateBtnEnabled] = useState(false)
-
+  const [openReleaseDialogBox, setOpenReleaseDialogBox] = useState(false)
+  const [isReleaseDisabled, setIsReleaseDisabled] = useState(true)
   // Column definitions
   const nestedColumns = [
     //Generating Plant
@@ -710,8 +714,73 @@ const Norms = () => {
       enableCalculate: calculateBtnEnabled,
       showExport: true,
       ExcelName: `Norms - ${AOP_YEAR}`,
+      showReleaseBtn: true,
+      isReleaseDisabled: isReleaseDisabled,
     }
-  }, [calculateBtnEnabled])
+  }, [calculateBtnEnabled, isReleaseDisabled])
+
+  const getIsReleased = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    try {
+      const response = await ReleaseAPIService.getReleaseAOPStatus(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      // If response has data, disable the button (already released)
+      // If no data, enable the button (not yet released)
+      if (response?.data && Object.keys(response.data).length > 0) {
+        setIsReleaseDisabled(true)
+      } else {
+        setIsReleaseDisabled(false)
+      }
+    } catch (error) {
+      console.error('Error fetching release status:', error)
+    }
+  }
+  useEffect(() => {
+    getIsReleased()
+  }, [keycloak, AOP_YEAR, PLANT_ID])
+
+  const handleRelease = () => {
+    setOpenReleaseDialogBox(true)
+  }
+
+  const closeReleaseDialogBox = () => {
+    setOpenReleaseDialogBox(false)
+  }
+
+  const submitConfirmation = async () => {
+    setOpenReleaseDialogBox(false)
+    setLoading(true)
+    try {
+      const response = await ReleaseAPIService.releaseAOPReport(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Released Successfully!',
+        severity: 'success',
+      })
+      setIsReleaseDisabled(true)
+      let isReleased = 1
+      dispatch(setIsReleased({ isReleased }))
+    } catch (error) {
+      console.error('Error releasing report:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Release Failed!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Calculate Norms data via API
   const handleCalculate = async () => {
@@ -1012,6 +1081,14 @@ const Norms = () => {
         setSnackbarData={setSnackbarData}
         customHeight={80}
         groupBy={['generatingPlantName', 'accountName']}
+        handleRelease={handleRelease}
+        isReleaseDisabled={isReleaseDisabled}
+      />
+
+      <ReleaseDialog
+        openReleaseDialogBox={openReleaseDialogBox}
+        closeReleaseDialogBox={closeReleaseDialogBox}
+        submitConfirmation={submitConfirmation}
       />
     </Box>
   )
