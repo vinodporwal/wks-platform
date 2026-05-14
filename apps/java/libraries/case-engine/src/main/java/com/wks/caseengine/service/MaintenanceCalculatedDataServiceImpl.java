@@ -2113,8 +2113,10 @@ Query query = entityManager.createNativeQuery(sql);
 query.setParameter("plantId", plantId);
 query.setParameter("aopYear", aopYear);
 
-boolean hasResultSet = query.unwrap(org.hibernate.query.NativeQuery.class)
-                            .getHibernateFlushMode() != null;
+// boolean hasResultSet = query.unwrap(org.hibernate.query.NativeQuery.class)
+//                             .getHibernateFlushMode() != null;
+
+query.executeUpdate();
 
 response.setCode(200);
 response.setMessage("CatChemCalculation executed successfully");

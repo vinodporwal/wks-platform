@@ -26,6 +26,9 @@ export default function ValueFormatterConsumption() {
   ) {
     return '{0:0.00000}'
   }
+  if (VERTICAL_NAME === 'chemical' && SITE_NAME === 'vmd') {
+    return '{0:0.0000}'
+  }
 
   return '{0:0.000}'
 }

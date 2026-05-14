@@ -960,7 +960,15 @@ const CrackerConfig = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, selectMode, currentTabDisplay, PLANT_ID, AOP_YEAR, IS_CRACKER_HMD, IS_CRACKER_C2])
+  }, [
+    keycloak,
+    selectMode,
+    currentTabDisplay,
+    PLANT_ID,
+    AOP_YEAR,
+    IS_CRACKER_HMD,
+    IS_CRACKER_C2,
+  ])
 
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)
@@ -1068,9 +1076,10 @@ const CrackerConfig = () => {
           tabs={resolvedTabs}
         />
       </Box>
-      {(IS_CRACKER_HMD || IS_CRACKER_C2) && (
-        <ModeSelection permissions={adjustedPermissionsReadyOnly} />
-      )}
+      {(IS_CRACKER_HMD || IS_CRACKER_C2) &&
+        currentTabDisplay !== 'Other Spyro output' && (
+          <ModeSelection permissions={adjustedPermissionsReadyOnly} />
+        )}
 
       <Box>
         {(() => {
