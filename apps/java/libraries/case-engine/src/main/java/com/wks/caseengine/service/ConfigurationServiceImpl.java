@@ -1319,15 +1319,16 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<Map<String, Object>> configurationConstantsList = new ArrayList<>();
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
 			String procedureName = null;
 			if(iscatcam) { 
 
-				procedureName =  vertical.getName() + "_GetCatChem_Constant";
+				procedureName =  vertical.getName() + "_" + site.getName() + "_GetCatChem_Constant";
 			}
-			else { procedureName = verticalName + "_GetConfiguration_Constant";
+			else { procedureName = verticalName +  "_GetConfiguration_Constant";
 	     	}
 			List<Object[]> obj = new ArrayList<>();
 			// if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")
