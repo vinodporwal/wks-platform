@@ -184,6 +184,18 @@ const DecokingConfig = () => {
     }
   }, [])
 
+  const [renderGrid, setRenderGrid] = useState(false)
+
+  useEffect(() => {
+    setRenderGrid(false)
+
+    const timer = setTimeout(() => {
+      setRenderGrid(true)
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [ibrScreen2Rows])
+
   function calcPreCoilReplacementRunLength(actualRunLength, reduction) {
     if (
       actualRunLength === null ||
@@ -1566,33 +1578,35 @@ const DecokingConfig = () => {
         </Box>
       </LocalizationProvider>
 
-      <SDTAActivitiesGrid
-        columns={ibrPlanColumns.filter(
-          (col) => col.field !== 'TA_SD' && col.field !== 'TA_ED',
-        )}
-        rows={getRows('IBR Plan')[2]}
-        setRows={(data) => setRowsForTab('IBR Plan', data, 2)}
-        fetchData={fetchData}
-        handleRemarkCellClick={handleRemarkCellClick2}
-        remarkDialogOpen={remarkDialogOpenSdTa}
-        currentRemark={currentRemarkSdTa}
-        setCurrentRemark={setCurrentRemarkSdTa}
-        currentRowId={currentRowIdSdTa}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
-        modifiedCells={modifiedCellsSdTa}
-        allMonths={allMonths}
-        setModifiedCells={setModifiedCellsSdTa}
-        permissions={adjustedPermissionsSdTa}
-        saveChanges={saveChangesSdTa}
-        setRemarkDialogOpen={setRemarkDialogOpenSdTa}
-        rowClass={rowClass}
-        handleCalculate={handleCalculateSdTa}
-        summaryEdited={summaryEdited}
-        setSummaryEdited={setSummaryEdited}
-      />
+      {renderGrid && (
+        <SDTAActivitiesGrid
+          columns={ibrPlanColumns.filter(
+            (col) => col.field !== 'TA_SD' && col.field !== 'TA_ED',
+          )}
+          rows={getRows('IBR Plan')[2]}
+          setRows={(data) => setRowsForTab('IBR Plan', data, 2)}
+          fetchData={fetchData}
+          handleRemarkCellClick={handleRemarkCellClick2}
+          remarkDialogOpen={remarkDialogOpenSdTa}
+          currentRemark={currentRemarkSdTa}
+          setCurrentRemark={setCurrentRemarkSdTa}
+          currentRowId={currentRowIdSdTa}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          modifiedCells={modifiedCellsSdTa}
+          allMonths={allMonths}
+          setModifiedCells={setModifiedCellsSdTa}
+          permissions={adjustedPermissionsSdTa}
+          saveChanges={saveChangesSdTa}
+          setRemarkDialogOpen={setRemarkDialogOpenSdTa}
+          rowClass={rowClass}
+          handleCalculate={handleCalculateSdTa}
+          summaryEdited={summaryEdited}
+          setSummaryEdited={setSummaryEdited}
+        />
+      )}
 
       {IS_DMD && (
         <DownsteamShutdownDMD permissions={DownsteamShutdownDMDPermission} />
