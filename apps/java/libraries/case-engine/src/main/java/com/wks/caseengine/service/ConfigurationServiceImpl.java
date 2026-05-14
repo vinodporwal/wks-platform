@@ -1323,11 +1323,14 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			else { procedureName = verticalName + "_GetConfiguration_Constant";
 	     	}
 			List<Object[]> obj = new ArrayList<>();
-			if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")
-					|| verticalName.equalsIgnoreCase("CRACKER") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical")
-					|| verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("PVC")) {
-				obj = findConstantsByYearAndPlantFkId(year, plantFKId, procedureName);
-			}
+			// if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")
+			// 		|| verticalName.equalsIgnoreCase("CRACKER") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical")
+			// 		|| verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("PVC")) {
+			// 	obj = findConstantsByYearAndPlantFkId(year, plantFKId, procedureName);
+			// }
+
+			obj = findConstantsByYearAndPlantFkId(year, plantFKId, procedureName);
+
 			for (Object[] row : obj) {
 				Map<String, Object> map = new HashMap<>(); // Create a new map for each row
 				map.put("NormTypeName", row[0]);
