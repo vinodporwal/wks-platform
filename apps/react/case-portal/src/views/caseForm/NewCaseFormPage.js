@@ -350,8 +350,8 @@ const createApmUrlBasedOnSelectedEvent = () => {
     const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
 	
 	let updFormData = formData.data;
-	updFormData.businessKey = data.businessKey;
-	updFormData.caseNo = data.businessKey;
+	// updFormData.businessKey = data.businessKey;
+	// updFormData.caseNo = data.businessKey;
 
     const caseAttributes = Object.keys(updFormData).map((key) => ({
       name: key,
