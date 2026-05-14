@@ -105,6 +105,10 @@ const ShutdownNorms = () => {
     lowerVertName === 'aromatics' &&
     SITE_NAME_LOWERCASE === 'sez' &&
     PLANT_NAME_LOWERCASE === 'px4'
+
+  const IS_AROMATICS_DTA =
+    lowerVertName === 'aromatics' && SITE_NAME_LOWERCASE === 'dta'
+
   const IS_VCM_HMD = lowerVertName === 'vcm' && SITE_NAME_LOWERCASE === 'hmd'
 
   const IS_PVC_DMD =
@@ -649,6 +653,7 @@ const ShutdownNorms = () => {
         lowerVertName === 'pta' ||
         IS_CHEMICAL ||
         IS_AROMATICS_SEZ_PX4 ||
+        IS_AROMATICS_DTA ||
         IS_ELASTOMER_JMD_IIR ||
         IS_AROMATICS_HMD
       ) {
@@ -712,6 +717,7 @@ const ShutdownNorms = () => {
         lowerVertName === 'pta' ||
         IS_CHEMICAL ||
         IS_AROMATICS_SEZ_PX4 ||
+        IS_AROMATICS_DTA ||
         IS_ELASTOMER_JMD_IIR ||
         IS_AROMATICS_HMD
       ) {
@@ -910,6 +916,7 @@ const ShutdownNorms = () => {
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta' ||
         IS_AROMATICS_SEZ_PX4 ||
+        IS_AROMATICS_DTA ||
         IS_CHEMICAL ||
         IS_ELASTOMER_JMD_IIR ||
         IS_AROMATICS_HMD
@@ -928,6 +935,7 @@ const ShutdownNorms = () => {
         IS_PVC_VMD ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_AROMATICS_SEZ_PX4 ||
+        IS_AROMATICS_DTA ||
         IS_ELASTOMER_HMD_SBR ||
         IS_PVC_DMD ||
         IS_ELASTOMER_JMD_IIR ||
