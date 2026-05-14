@@ -218,7 +218,7 @@ const CatalystChecmicalsCalculation = () => {
     setProductionRowsConstants([])
     try {
       const constantsRes =
-        await DataService.getCatalystSelectivityDataConstants(
+        await DataService.getCatalystSelectivityDataConstantsCatChem(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
