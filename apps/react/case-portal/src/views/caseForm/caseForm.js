@@ -227,19 +227,9 @@ console.log('*****  taskId:  ', taskId);
     setSnackOpen(false)
   }
 
-  // Navigate to caseUrl after save/update, deduplicating any repeated path segments (e.g. /cm/cm -> /cm)
-  const navigateToCaseUrl = (caseUrl) => {
-    try {
-      const target = caseUrl ? new URL(caseUrl) : null
-      if (target) {
-        const cleanPath = target.pathname.replace(/\/([\w-]+)\/\1(\/|$)/g, '/$1$2')
-        navigate(cleanPath + target.search)
-      } else {
-        navigate('/case-list/cases')
-      }
-    } catch (e) {
-      navigate('/case-list/cases')
-    }
+  // After updating an existing case, always return to the cases list
+  const navigateToCaseUrl = (_caseUrl) => {
+    navigate('/case-list/create')
   }
 
   // const handleConfirmSubmit = () => {
