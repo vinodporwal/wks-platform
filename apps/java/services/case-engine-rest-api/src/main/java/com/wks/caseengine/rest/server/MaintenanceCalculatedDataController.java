@@ -219,4 +219,29 @@ public class MaintenanceCalculatedDataController {
 	public AOPMessageVM catChemCalculation(@RequestParam String plantId, @RequestParam String aopYear){
 		return maintenanceCalculatedDataService.catChemCalculation(UUID.fromString(plantId), aopYear);
 	}
+
+	@GetMapping(value = "/cat-chem-export-all-grades")
+	public ResponseEntity<byte[]> exportCatChemAllGrades(
+			@RequestParam String plantId,
+			@RequestParam String year) {
+		try {
+			byte[] excelBytes = maintenanceCalculatedDataService.exportCatChemAllGrades(plantId, year);
+
+			if (excelBytes == null || excelBytes.length == 0) {
+				return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+			}
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.parseMediaType(
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(ContentDisposition.builder("attachment")
+					.filename("cat-chem-all-grades.xlsx")
+					.build());
+			headers.setContentLength(excelBytes.length);
+
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 }
