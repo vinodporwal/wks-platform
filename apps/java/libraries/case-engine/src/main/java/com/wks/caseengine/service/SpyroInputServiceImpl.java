@@ -167,7 +167,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 				}
 			}
 
-			if(type.equalsIgnoreCase("Optimizer Input")) {   
+			if(type.equalsIgnoreCase("Optimizer Input") || type.equalsIgnoreCase("Optimizer Output")) {   
 
 				spyroInputDataList = getBusinessDemandData(plantId, year);
 			}
