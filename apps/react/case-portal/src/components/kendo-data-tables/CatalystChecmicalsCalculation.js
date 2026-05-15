@@ -128,21 +128,21 @@ const CatalystChecmicalsCalculation = () => {
       field: 'DisplayName',
       title: 'Particulars',
       editable: false,
-      widthT: 220,
+      minWidth: 250,
       hidden: false,
     },
     {
       field: 'UOM',
       title: 'UOM',
       editable: false,
-      widthT: 80,
+      minWidth: 90,
     },
     {
       field: 'ConstantValue',
       title: 'Value',
       editable: true,
       type: 'number',
-      widthT: 120,
+      minWidth: 120,
     },
 
     {
@@ -150,6 +150,7 @@ const CatalystChecmicalsCalculation = () => {
       title: 'Remark',
       editable: false,
       type: 'string',
+      minWidth: 150,
     },
   ]
 
@@ -159,14 +160,13 @@ const CatalystChecmicalsCalculation = () => {
       {
         field: 'particulars',
         title: 'Particulars',
-        widthT: 200,
+        minWidth: 220,
         editable: false,
       },
       {
         field: 'uom',
         title: 'UOM',
-        widthT: 80,
-        minWidth: 110,
+        minWidth: 80,
         editable: false,
       },
     ]
