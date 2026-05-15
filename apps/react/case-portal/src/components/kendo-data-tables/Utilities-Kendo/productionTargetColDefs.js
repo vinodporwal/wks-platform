@@ -23,7 +23,7 @@ export function getColDefsPercentageSummary(headerMap = {}, valueFormat) {
       title: 'Particulars',
       widthT: 120,
       editable: false,
-      minWidth: 120,
+      minWidth: 280,
     },
     ...generateMonthColumnsFixedWidth(headerMap, false, valueFormat),
     {
@@ -171,7 +171,7 @@ export function getColDefsDesignCapacity(headerMap = {}, valueFormat) {
       title: 'Particulars',
       widthT: 120,
       editable: false,
-      minWidth: 300,
+      minWidth: 250,
     },
     ...generateMonthColumns(headerMap, true, valueFormat),
     {
@@ -393,7 +393,7 @@ export function getColDefsMaxAchievedCapacity(headerMap = {}, valueFormat) {
       title: 'Particulars',
       widthT: 120,
       editable: false,
-      minWidth: 300,
+      minWidth: 250,
     },
     ...generateMonthColumnsFixedWidth(headerMap, true, valueFormat),
   ]
