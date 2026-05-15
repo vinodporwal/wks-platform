@@ -583,6 +583,7 @@ const CatalystChecmicalsCalculation = () => {
         setLoading(false)
 
         fetchData()
+        fetchConstantsData()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = new Array(byteCharacters.length)
