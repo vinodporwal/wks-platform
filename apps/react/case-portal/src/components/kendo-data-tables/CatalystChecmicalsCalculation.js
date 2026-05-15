@@ -362,6 +362,7 @@ const CatalystChecmicalsCalculation = () => {
           consumptionRes?.data?.data?.map((row, index) => ({
             ...row,
             id: index,
+            isEditable: false,
             // Grade_FK_Id already exists in row from API ?
           })),
         )
@@ -540,6 +541,12 @@ const CatalystChecmicalsCalculation = () => {
           PLANT_ID,
           AOP_YEAR,
           `${EXCEL_EXPORT_TITLE}_${title}`,
+        )
+      } else if (type === 'consumption') {
+        await DataService.getCatChemConsumptionExcel(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
         )
       }
       setSnackbarData({
@@ -756,6 +763,9 @@ const CatalystChecmicalsCalculation = () => {
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
         handleGradeChange={handleConsumptionGradeChange}
+        downloadExcelForConfiguration={() =>
+          downloadExcel('consumption', 'Cat-chem Consumption')
+        }
       />
 
       <Notification

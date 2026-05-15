@@ -212,6 +212,7 @@ export const DataService = {
   getCatalystSelectivityDataConstantsCatChem,
   getConfigurationExcelConstantsIsCatChem,
   saveConfigurationExcelConstantsIscatCam,
+  getCatChemConsumptionExcel,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -4870,5 +4871,37 @@ async function saveConfigurationExcelConstantsIscatCam(
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)
+  }
+}
+async function getCatChemConsumptionExcel(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/cat-chem-export-all-grades?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to export data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `Cat Chem Consumption.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting data:', e)
+    return Promise.reject(e)
   }
 }

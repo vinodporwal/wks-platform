@@ -78,7 +78,10 @@ const BusinessDemand = ({ permissions }) => {
 
   const IS_ELASTOMER_HMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'hmd'
-
+  const IS_ELASTOMER_HMD_SBR =
+    lowerVertName === 'elastomer' &&
+    lowerSiteName === 'hmd' &&
+    plantObject?.name?.toLowerCase() === 'sbr'
   const IS_CHEMICAL_JMD =
     lowerVertName === 'chemical' && lowerSiteName === 'jmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'
@@ -545,7 +548,9 @@ const BusinessDemand = ({ permissions }) => {
   const percentageTitle =
     IS_PE_PP_VERTICAL || IS_PET_VERTICAL || IS_PVC_VMD || IS_PVC_DMD
       ? `${SCREEN_NAME} (%)`
-      : `${SCREEN_NAME}`
+      : IS_ELASTOMER_HMD_SBR
+        ? `${SCREEN_NAME} (MT)`
+        : `${SCREEN_NAME}`
 
   const adjustedPermissions = getAdjustedPermissions(
     {
