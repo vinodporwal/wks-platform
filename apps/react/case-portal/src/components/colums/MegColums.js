@@ -23,7 +23,7 @@ export const BusinessDemandMegColumns = [
     title: 'Particulars',
     editable: false,
     widthT: 150,
-    minWidth: 300,
+    minWidth: 120,
   },
   {
     field: 'UOM',

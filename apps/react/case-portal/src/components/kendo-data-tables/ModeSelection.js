@@ -357,7 +357,7 @@ const ModeSelection = ({ permissions }) => {
         setCurrentRowId={setCurrentRowId}
         handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissions}
-        groupBy={permissions?.NON_EDITABLE_GRID ? undefined : 'Particulars'}
+        // groupBy={permissions?.NON_EDITABLE_GRID ? undefined : 'Particulars'}
         // Add other props as needed
       />
     </div>
