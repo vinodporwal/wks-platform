@@ -509,7 +509,7 @@ const CrakcerConstantsBestAchieved = () => {
       field: 'DisplayName',
       title: 'Particulars',
       widthT: '200px',
-      minWidth: 120,
+      minWidth: 300,
     },
 
     {
@@ -531,6 +531,7 @@ const CrakcerConstantsBestAchieved = () => {
     {
       field: 'remarks',
       title: 'Remark',
+      minWidth: 200,
     },
   ]
 

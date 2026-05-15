@@ -125,7 +125,7 @@ const CrakcerConstants = () => {
       editable: false,
       widthT: 220,
       hidden: false,
-      minWidth: 100,
+      minWidth: 300,
       isVisible: false,
     },
     {
@@ -149,7 +149,7 @@ const CrakcerConstants = () => {
       title: 'Remark',
       editable: false,
       type: 'string',
-      minWidth: 120,
+      minWidth: 200,
     },
   ]
 
