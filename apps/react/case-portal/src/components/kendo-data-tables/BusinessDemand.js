@@ -606,7 +606,7 @@ const BusinessDemand = ({ permissions }) => {
           : true,
 
       // Enables ON/OFF dropdown for rows where UOM === 'ON/OFF'
-      enableOnOffDropdown: true,
+      enableOnOffDropdown: IS_CRACKER_HMD,
     },
     isOldYear,
   )

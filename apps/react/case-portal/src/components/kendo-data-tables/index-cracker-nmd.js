@@ -384,7 +384,7 @@ const KendoDataTablesCrackerNMD = ({
 
   const renderGrid = () => (
     <Grid
-      scrollable='virtual'
+      scrollable='scrollable'
       modifiedCells={modifiedCells}
       autoProcessData={true}
       defaultGroup={initialGroup}
