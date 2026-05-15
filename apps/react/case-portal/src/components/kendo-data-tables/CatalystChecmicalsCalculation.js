@@ -239,6 +239,7 @@ const CatalystChecmicalsCalculation = () => {
         srNo: index + 1,
         Particulars: item.NormTypeName,
         remarks: item.Remarks,
+        isEditable: item.isEditable,
       }))
 
       setProductionRowsConstants(formattedData)
@@ -583,6 +584,7 @@ const CatalystChecmicalsCalculation = () => {
         setLoading(false)
 
         fetchData()
+        fetchConstantsData()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = new Array(byteCharacters.length)
@@ -608,6 +610,8 @@ const CatalystChecmicalsCalculation = () => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
+        fetchData()
+        fetchConstantsData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
