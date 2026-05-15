@@ -30,7 +30,7 @@
     "title": "Particulars",
     "editable": false,
     "widthT": 120,
-    "minWidth": 120
+    "minWidth": 280
   },
   {
     "field": "april",

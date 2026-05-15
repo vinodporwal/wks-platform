@@ -167,18 +167,6 @@ const DecokingConfigNMD = () => {
     }
   }, [])
 
-  const [renderGrid, setRenderGrid] = useState(false)
-
-  useEffect(() => {
-    setRenderGrid(false)
-
-    const timer = setTimeout(() => {
-      setRenderGrid(true)
-    }, 100)
-
-    return () => clearTimeout(timer)
-  }, [ibrScreen2Rows])
-
   function calcPreCoilReplacementRunLength(actualRunLength, reduction) {
     if (
       actualRunLength === null ||
@@ -1081,8 +1069,7 @@ const DecokingConfigNMD = () => {
         </Box>
       </LocalizationProvider>
 
-      {renderGrid && (
-        <SDTAActivitiesGridNMD
+      <SDTAActivitiesGridNMD
           columns={ibrPlanColumns}
           rows={getRows('IBR Plan')[2]}
           setRows={(data) => setRowsForTab('IBR Plan', data, 2)}
@@ -1105,7 +1092,6 @@ const DecokingConfigNMD = () => {
           rowClass={rowClass}
           handleCalculate={handleCalculateSdTa}
         />
-      )}
 
       <FurnaceRunLengthGridNMD
         columns={filteredIbrGridThree}
