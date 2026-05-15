@@ -2864,17 +2864,26 @@ continue;
 	}
 
 	@Override
-	public byte[] createConfigurationConstantsExcel(String year, UUID plantFKId) {
+	public byte[] createConfigurationConstantsExcel(String year, UUID plantFKId, boolean iscatcam) {
 		try {
 
-			String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
-			String procedureName = verticalName + "_GetConfiguration_Constant";
-			List<Object[]> obj = new ArrayList<>();
-			if ((verticalName.equalsIgnoreCase("MEG")) || (verticalName.equalsIgnoreCase("ELASTOMER"))
-					|| (verticalName.equalsIgnoreCase("CRACKER")) || (verticalName.equalsIgnoreCase("VCM")) || (verticalName.equalsIgnoreCase("Chemical"))
-					|| (verticalName.equalsIgnoreCase("PTA")) || (verticalName.equalsIgnoreCase("AROMATICS"))) {
-				obj = findConstantsByYearAndPlantFkId(year, plantFKId.toString(), procedureName);
+		Plants plant = plantsRepository.findById(plantFKId).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
+		
+			String procedureName = null;
+
+			if(iscatcam) { 
+
+				procedureName =  vertical.getName() + "_" + site.getName() + "_GetCatChem_Constant";
 			}
+			else { procedureName = vertical.getName() +  "_GetConfiguration_Constant";
+	     	}
+			List<Object[]> obj = new ArrayList<>();
+
+				obj = findConstantsByYearAndPlantFkId(year, plantFKId.toString(), procedureName);
+			
 			Workbook workbook = new XSSFWorkbook();
 
 			Sheet sheet = workbook.createSheet("Sheet1");
