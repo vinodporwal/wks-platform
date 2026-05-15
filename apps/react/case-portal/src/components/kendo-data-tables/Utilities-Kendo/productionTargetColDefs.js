@@ -171,7 +171,7 @@ export function getColDefsDesignCapacity(headerMap = {}, valueFormat) {
       title: 'Particulars',
       widthT: 120,
       editable: false,
-      minWidth: 120,
+      minWidth: 300,
     },
     ...generateMonthColumns(headerMap, true, valueFormat),
     {
@@ -393,7 +393,7 @@ export function getColDefsMaxAchievedCapacity(headerMap = {}, valueFormat) {
       title: 'Particulars',
       widthT: 120,
       editable: false,
-      minWidth: 120,
+      minWidth: 300,
     },
     ...generateMonthColumnsFixedWidth(headerMap, true, valueFormat),
   ]
@@ -586,7 +586,7 @@ export function getColDefsNonEditable(headerMap = {}, valueFormat) {
       title: 'Particulars',
       widthT: 120,
       editable: false,
-      minWidth: 120,
+      minWidth: 300,
     },
     ...generateMonthColumns(headerMap, false, valueFormat),
     {

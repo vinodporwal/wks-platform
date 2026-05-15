@@ -376,7 +376,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
         type: months.includes(col.field) ? 'number' : undefined,
         format: months.includes(col.field) ? FORMATE_DECIMAL : undefined,
         isVisible: hiddenFields.includes(col.field) ? false : true,
-        minWidth: 100,
+        minWidth: col.field == 'Metric' ? 300 : 100,
       }))
 
       setColumns(dynamicColumns)

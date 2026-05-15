@@ -125,7 +125,7 @@ const MaterialBalance = ({ permissions }) => {
         title: 'Particulars',
         editable: false,
         widthT: 100,
-        minWidth: 120,
+        minWidth: 300,
       },
       { field: 'UOM', title: 'UOM', editable: false, widthT: 80, minWidth: 80 },
       ...monthCols,

@@ -125,9 +125,9 @@ const PropaneBusiness = ({ permissions }) => {
       field: 'productName',
       title: 'Particulars',
       editable: false,
-      minWidth: 120,
+      minWidth: 300,
     },
-    { field: 'uom', title: 'UOM', editable: false, widthT: 55, minWidth: 70 },
+    { field: 'uom', title: 'UOM', editable: false, widthT: 80, minWidth: 80 },
     {
       field: 'normType',
       title: 'Norm Type',
