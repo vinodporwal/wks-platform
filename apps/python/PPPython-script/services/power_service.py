@@ -183,6 +183,8 @@ def _dispatch_once(
             "Priority": r["Priority"],
             "CapacityMW": float(r["capacity"]),
             "MinMW": float(r["minMW"]),
+            "FixedMin": float(r["FixedMin"]) if pd.notna(r.get("FixedMin")) else None,
+            "FixedMax": float(r["FixedMax"]) if pd.notna(r.get("FixedMax")) else None,
             "Hours": hours,
             "GrossMWh": round(gross, 6),
             "AuxMWh": round(aux, 6),

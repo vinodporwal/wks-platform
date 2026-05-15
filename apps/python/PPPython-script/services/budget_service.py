@@ -673,6 +673,7 @@ def calculate_budget_with_iteration(
     raw_water_process: float = 0.0,    # Raw Water consumed by process plants (M3)
     raw_water_fixed: float = 0.0,      # Raw Water fixed consumption (M3)
     oxygen_mt: float = 0.0,            # Oxygen consumed by process plants (MT)
+    effluent_m3: float = 0.0,          # Effluent treated by process plants (M3)
     save_to_db: bool = False,          # Auto-save calculated values to NormsMonthDetail
     hrsg_full_load: bool = False,      # If true, load HRSG without subtracting free steam
 ) -> dict:
@@ -912,7 +913,7 @@ def calculate_budget_with_iteration(
         lp_from_stg=lp_from_stg,
         mp_from_stg=mp_from_stg,
         oxygen_mt=oxygen_mt,  # Oxygen process consumption
-        effluent_m3=243000.0,  # Default value - can be parameterized
+        effluent_m3=effluent_m3,  # Effluent process consumption (from DB or parameter)
         air_process_nm3=air_process,  # Process compressed air consumption
         cw1_process_km3=cw1_process,  # Cooling Water 1 process consumption
         cw2_process_km3=cw2_process,  # Cooling Water 2 process consumption

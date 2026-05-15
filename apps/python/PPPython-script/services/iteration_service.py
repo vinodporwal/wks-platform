@@ -760,7 +760,7 @@ def usd_iterate(
     cw2_process = 9016.0
     air_process = 6095102.0
     oxygen_process = 5786.0
-    effluent_process = 243000.0
+    effluent_process = db_demands.get('effluent', {}).get('process', 243000.0) if db_demands and isinstance(db_demands, dict) else 243000.0
     
     print(f"  | BFW                  | M3     | {0:>13,.2f} | {bfw_process:>13,.2f} | {'(calc)':>13} | {'(calc)':>13} |")
     print(f"  | DM Water             | M3     | {dm_fixed:>13,.2f} | {dm_process:>13,.2f} | {'(calc)':>13} | {'(calc)':>13} |")
@@ -1398,9 +1398,9 @@ def usd_iterate(
         air_process = 6095102.0  # Process air
         air_total_estimate = air_gt + air_stg + air_hrsg + air_cw1 + air_cw2 + air_process
         
-        # Oxygen and Effluent (fixed process values)
+        # Oxygen and Effluent (process values from database or defaults)
         oxygen_total = 5786.0
-        effluent_total = 243000.0
+        effluent_total = effluent_process  # Use DB-fetched value instead of hardcoded
         
         # Calculate U4U Power from utilities
         u4u_power = calculate_u4u_power(

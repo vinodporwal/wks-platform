@@ -486,10 +486,16 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
     max_workers = min(4, multiprocessing.cpu_count())
     print_lock  = threading.Lock()    # For console progress lines
     db_log_lock = threading.Lock()    # Serialise DB log saves to avoid prepared-stmt collisions
+    comparison_enabled = (financial_year == 2025)
     comparison_lock = threading.Lock()
     completed_comparisons = []
-    comparison_folder = os.path.join(run_log_folder, "nmd_budget_comparisons")
-    bpc_csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "BPC.ods")
+    comparison_folder = os.path.join(run_log_folder, "nmd_budget_comparisons") if comparison_enabled else None
+    bpc_csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "BPC.ods") if comparison_enabled else None
+
+    if comparison_enabled:
+        print("NMD BPC comparison: enabled for FY 2025 only")
+    else:
+        print(f"NMD BPC comparison: skipped for FY {financial_year}-{str(financial_year + 1)[-2:]}")
 
     # Thread-local storage so each worker thread has its own stdout buffer
     _tls = threading.local()
@@ -658,31 +664,32 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
                 calculation_result = month_result.get("calculation_result")
                 if calculation_result:
                     try:
-                        with comparison_lock:
-                            month_comparison_path = write_month_comparison_file(
-                                output_folder=comparison_folder,
-                                month=month_result["month"],
-                                year=month_result["year"],
-                                financial_year=financial_year,
-                                calculation_result=calculation_result,
-                                bpc_csv_path=bpc_csv_path,
-                            )
-                            month_result["comparison_file"] = month_comparison_path
+                        if comparison_enabled:
+                            with comparison_lock:
+                                month_comparison_path = write_month_comparison_file(
+                                    output_folder=comparison_folder,
+                                    month=month_result["month"],
+                                    year=month_result["year"],
+                                    financial_year=financial_year,
+                                    calculation_result=calculation_result,
+                                    bpc_csv_path=bpc_csv_path,
+                                )
+                                month_result["comparison_file"] = month_comparison_path
 
-                            completed_comparisons.append((
-                                month_result["month"],
-                                month_result["year"],
-                                calculation_result,
-                            ))
+                                completed_comparisons.append((
+                                    month_result["month"],
+                                    month_result["year"],
+                                    calculation_result,
+                                ))
 
-                            full_year_comparison_path = write_full_year_comparison_file(
-                                output_folder=comparison_folder,
-                                financial_year=financial_year,
-                                completed_months=completed_comparisons,
-                                bpc_csv_path=bpc_csv_path,
-                            )
-                            results["comparison_folder"] = comparison_folder
-                            results["full_year_comparison_file"] = full_year_comparison_path
+                                full_year_comparison_path = write_full_year_comparison_file(
+                                    output_folder=comparison_folder,
+                                    financial_year=financial_year,
+                                    completed_months=completed_comparisons,
+                                    bpc_csv_path=bpc_csv_path,
+                                )
+                                results["comparison_folder"] = comparison_folder
+                                results["full_year_comparison_file"] = full_year_comparison_path
                     except Exception as comparison_error:
                         month_result["comparison_error"] = str(comparison_error)
                         import traceback
@@ -757,9 +764,9 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
                 f"FinancialYearMonthId={month_data.get('financial_year_month_id')} | "
                 f"Message={month_data.get('calculation_log_message')}"
             )
-    if results.get("comparison_folder"):
+    if comparison_enabled and results.get("comparison_folder"):
         print(f"Comparison folder: {results['comparison_folder']}")
-    if results.get("full_year_comparison_file"):
+    if comparison_enabled and results.get("full_year_comparison_file"):
         print(f"Combined comparison file: {results['full_year_comparison_file']}")
     
     # Save summary
@@ -784,9 +791,9 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
                     f"Message={month_data.get('calculation_log_message')}\n"
                 )
             f.write("\n")
-        if results.get("comparison_folder"):
+        if comparison_enabled and results.get("comparison_folder"):
             f.write(f"Comparison folder: {results['comparison_folder']}\n")
-        if results.get("full_year_comparison_file"):
+        if comparison_enabled and results.get("full_year_comparison_file"):
             f.write(f"Combined comparison file: {results['full_year_comparison_file']}\n\n")
         
         f.write("MONTH-BY-MONTH QUICK RESULTS:\n")

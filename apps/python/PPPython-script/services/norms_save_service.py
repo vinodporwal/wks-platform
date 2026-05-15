@@ -467,6 +467,11 @@ def _build_generation_map(result: dict) -> dict:
         ('NMD - Utility Plant', 'HRSG1_SHP STEAM', 'NATURAL GAS'): hrsg1_ng_norm,
         ('NMD - Utility Plant', 'HRSG2_SHP STEAM', 'NATURAL GAS'): hrsg2_ng_norm,
         ('NMD - Utility Plant', 'HRSG3_SHP STEAM', 'NATURAL GAS'): hrsg3_ng_norm,
+        
+        # Effluent Treated - Material and Utility norms
+        ('NMD - Utility Plant', 'Effluent Treated', 'Power_Dis'): utility_consumption.get('effluent_power_norm', 3.54),
+        ('NMD - Utility Plant', 'Effluent Treated', 'Water'): utility_consumption.get('effluent_water_norm', 0.0007),
+        ('NMD - Utility Plant', 'Effluent Treated', 'UREA'): utility_consumption.get('effluent_urea_norm', 0.00075),
     }
     
     return generation_map, norms_map
