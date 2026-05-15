@@ -371,9 +371,11 @@ def calculate_stg_extraction_requirements_load_based(
     lp_stg_ratio = lp_from_stg / lp_total if lp_total > 0 else 0
     mp_stg_ratio = mp_from_stg / mp_total if mp_total > 0 else 0
     
-    # SHP requirements for extraction
-    shp_for_lp_extraction = lp_from_stg * NORM_SHP_PER_LP_STG
-    shp_for_mp_extraction = mp_from_stg * NORM_SHP_PER_MP_STG
+    # SHP requirements for extraction (Option C: Physical mass flow, 1:1)
+    # The SHP entering the turbine either condenses (power) or gets extracted (LP/MP)
+    # So SHP for LP extraction = lp_from_stg (same mass, different pressure)
+    shp_for_lp_extraction = lp_from_stg
+    shp_for_mp_extraction = mp_from_stg
     total_shp_for_extraction = shp_for_lp_extraction + shp_for_mp_extraction
     
     # ============================================================
@@ -976,14 +978,20 @@ def usd_iterate(
                 stg_aux_mwh = aux
                 stg_net_mwh = net
                 
-                # Fetch sp_steam_power for the dispatched load
+                # Fetch total SHP inlet for the dispatched STG load
+                # STG Power Generation = SVHInletTPH × Hours (TOTAL steam into turbine)
+                # Condensing is derived: STG Power Gen - LP Extraction - MP Extraction
                 stg_load_mw = asset.get("LoadMW", 0)
-                sp_steam_power_val = 0.0
                 if use_stg_load_based and stg_load_mw > 0:
                     ext_data = get_stg_extraction_for_load(stg_load_mw, stg_extraction_lookup_df)
-                    sp_steam_power_val = ext_data.get("sp_steam_power", 0.0)
-                    
-                stg_shp_required = calculate_stg_shp_demand(stg_gross_mwh, sp_steam_power_val)
+                    shp_inlet_tph = ext_data.get("shp_inlet_tph", 0.0)
+                    if shp_inlet_tph > 0:
+                        stg_shp_required = shp_inlet_tph * hours
+                    else:
+                        # Fallback to legacy norm
+                        stg_shp_required = calculate_stg_shp_demand(stg_gross_mwh, 0.0)
+                else:
+                    stg_shp_required = calculate_stg_shp_demand(stg_gross_mwh, 0.0)
             elif "GT" in asset_upper or "POWER PLANT" in asset_upper:
                 gt_details.append({
                     "name": asset_name,
@@ -1032,8 +1040,11 @@ def usd_iterate(
             extraction_data = get_stg_extraction_for_load(stg_load_mw, stg_extraction_lookup_df)
             stg_lp_ext_tph = extraction_data["lp_extraction_tph"]
             stg_mp_ext_tph = extraction_data["mp_extraction_tph"]
-            stg_eq_svh_lp_tph = extraction_data["eq_svh_lp_tph"]
-            stg_eq_svh_mp_tph = extraction_data["eq_svh_mp_tph"]
+            # STG Power Gen = SVHInletTPH × hours (TOTAL inlet, includes extraction)
+            # So eq_svh = 0 to avoid double-counting in SHP balance
+            # LP/MP extraction is an INFORMATIONAL breakdown of STG Power Gen
+            stg_eq_svh_lp_tph = 0.0
+            stg_eq_svh_mp_tph = 0.0
             
             lp_balance = calculate_lp_balance_stg_based(
                 lp_process=lp_process,

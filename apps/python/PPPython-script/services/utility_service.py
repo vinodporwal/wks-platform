@@ -2075,22 +2075,24 @@ def print_nmd_budget_format(
     print(f"{'':<25} {'':<20} {'Power_Dis':<25} {'KWH':<8} {fmt_qty(oxygen_mt)} {oxygen_ref_qty:>18,.2f} {NORM_POWER_OXYGEN:>10.4f} {oxygen_power:>20,.2f} {EXPECTED['oxygen_power']:>20,.2f} {oxygen_power - EXPECTED['oxygen_power']:>18,.2f} {calc_pct(oxygen_power, EXPECTED['oxygen_power'])}")
     
     # ========================================
-    # NMD - Utility Plant - STG1_LP STEAM
+    # NMD - Utility Plant - LP Extraction (STG)
     # ========================================
-    stg_lp_shp = stg_lp * NORM_SHP_STG_LP
+    # Option C: Extraction is informational, 0.0 SHP consumed (already in STG Power Gen)
+    stg_lp_shp = stg_lp * 0.0
     exp_stg_lp = EXPECTED.get('lp_stg_dis', 0)
-    print(f"\n{'NMD - Utility Plant':<25} {'STG1_LP STEAM':<20} {'':<25} {'MT':<8}")
-    stg_lp_ref_qty = calc_ref_qty(EXPECTED['stg_lp_shp'], NORM_SHP_STG_LP) if NORM_SHP_STG_LP != 0 else 0
-    print(f"{'':<25} {'':<20} {'SHP Steam_Dis':<25} {'MT':<8} {fmt_qty(stg_lp)} {stg_lp_ref_qty:>18,.2f} {NORM_SHP_STG_LP:>10.4f} {stg_lp_shp:>20,.2f} {EXPECTED['stg_lp_shp']:>20,.2f} {stg_lp_shp - EXPECTED['stg_lp_shp']:>18,.2f} {calc_pct(stg_lp_shp, EXPECTED['stg_lp_shp'])}")
+    print(f"\n{'NMD - Utility Plant':<25} {'LP Extraction (STG)':<20} {'':<25} {'MT':<8}")
+    stg_lp_ref_qty = calc_ref_qty(EXPECTED['stg_lp_shp'], 0.0) if True else 0
+    print(f"{'':<25} {'':<20} {'SHP Steam_Dis':<25} {'MT':<8} {fmt_qty(stg_lp)} {stg_lp_ref_qty:>18,.2f} {'0.0000':>10} {stg_lp_shp:>20,.2f} {EXPECTED['stg_lp_shp']:>20,.2f} {stg_lp_shp - EXPECTED['stg_lp_shp']:>18,.2f} {calc_pct(stg_lp_shp, EXPECTED['stg_lp_shp'])}")
     
     # ========================================
-    # NMD - Utility Plant - STG1_MP STEAM
+    # NMD - Utility Plant - MP Extraction (STG)
     # ========================================
-    stg_mp_shp = stg_mp * NORM_SHP_STG_MP
+    # Option C: Extraction is informational, 0.0 SHP consumed (already in STG Power Gen)
+    stg_mp_shp = stg_mp * 0.0
     exp_stg_mp = EXPECTED.get('mp_stg_dis', 0)
-    print(f"\n{'NMD - Utility Plant':<25} {'STG1_MP STEAM':<20} {'':<25} {'MT':<8}")
-    stg_mp_ref_qty = calc_ref_qty(EXPECTED['stg_mp_shp'], NORM_SHP_STG_MP) if NORM_SHP_STG_MP != 0 else 0
-    print(f"{'':<25} {'':<20} {'SHP Steam_Dis':<25} {'MT':<8} {fmt_qty(stg_mp)} {stg_mp_ref_qty:>18,.2f} {NORM_SHP_STG_MP:>10.4f} {stg_mp_shp:>20,.2f} {EXPECTED['stg_mp_shp']:>20,.2f} {stg_mp_shp - EXPECTED['stg_mp_shp']:>18,.2f} {calc_pct(stg_mp_shp, EXPECTED['stg_mp_shp'])}")
+    print(f"\n{'NMD - Utility Plant':<25} {'MP Extraction (STG)':<20} {'':<25} {'MT':<8}")
+    stg_mp_ref_qty = calc_ref_qty(EXPECTED['stg_mp_shp'], 0.0) if True else 0
+    print(f"{'':<25} {'':<20} {'SHP Steam_Dis':<25} {'MT':<8} {fmt_qty(stg_mp)} {stg_mp_ref_qty:>18,.2f} {'0.0000':>10} {stg_mp_shp:>20,.2f} {EXPECTED['stg_mp_shp']:>20,.2f} {stg_mp_shp - EXPECTED['stg_mp_shp']:>18,.2f} {calc_pct(stg_mp_shp, EXPECTED['stg_mp_shp'])}")
     
     # ========================================
     # NMD - Utility/Power Dist - HP Steam_Dis

@@ -165,16 +165,19 @@ def _dispatch_once(
             heat_rate, free_steam = get_heat_rate_for_load(heat_df, load_mw)
         if is_stg and gross > 0:
             gross_kwh = gross * 1000
-            # Use dynamic sp_steam_power from lookup table (interpolated for actual load)
-            # sp_steam_power is in MT/MWh → divide by 1000 to get MT/KWh
-            shp_norm_per_kwh = NORM_STG_SHP_PER_KWH  # fallback
+            # STG Power Generation = SVHInletTPH × Hours (TOTAL steam into turbine)
+            # Condensing is derived: STG Power Gen - LP Extraction - MP Extraction
             if stg_extraction_lookup_df is not None and not stg_extraction_lookup_df.empty and load_mw > 0:
                 from database.power_asset_queries import get_stg_extraction_for_load
                 _ext = get_stg_extraction_for_load(load_mw, stg_extraction_lookup_df)
-                _sp = _ext.get('sp_steam_power', 0)
-                if _sp > 0:
-                    shp_norm_per_kwh = _sp / 1000  # MT/MWh → MT/KWh
-            stg_shp_required = gross_kwh * shp_norm_per_kwh
+                _inlet_tph = _ext.get('shp_inlet_tph', 0)
+                if _inlet_tph > 0:
+                    stg_shp_required = _inlet_tph * hours
+                else:
+                    # Fallback to legacy norm
+                    stg_shp_required = gross_kwh * NORM_STG_SHP_PER_KWH
+            else:
+                stg_shp_required = gross_kwh * NORM_STG_SHP_PER_KWH
             stg_power_required = gross_kwh * NORM_STG_POWER_PER_KWH / 1000
         
         return {

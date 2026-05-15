@@ -1294,8 +1294,8 @@ def create_annual_balance_report_excel(financial_year: int, monthly_results: dic
     filepath = os.path.join(output_folder, filename)
     
     wb.save(filepath)
-    print(f"  ✓ Annual Excel report saved: {filepath}")
-    print(f"  ✓ Total sheets created: {sheets_created}/12")
+    print(f"  [OK] Annual Excel report saved: {filepath}")
+    print(f"  [OK] Total sheets created: {sheets_created}/12")
     print(f"{'='*70}\n")
     
     return filepath
@@ -1403,7 +1403,7 @@ def create_balance_report_excel(month: int, year: int, calculation_result: dict,
     filepath = os.path.join(output_folder, filename)
     
     wb.save(filepath)
-    print(f"  ✓ Excel report saved: {filepath}")
+    print(f"  [OK] Excel report saved: {filepath}")
     print(f"{'='*70}\n")
     
     return filepath
@@ -1834,11 +1834,13 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
             ws.cell(row=row, column=col).border = THIN_BORDER
         row += 1
         
-        # SHP for LP via STG
-        shp_for_lp_stg = steam_balance.get('shp_for_stg_lp', 0)
-        ws[f'A{row}'] = "  LP Steam (via STG)"
-        ws[f'C{row}'] = round(shp_for_lp_stg, 2)
-        u4u_total += shp_for_lp_stg
+        # LP Extraction from STG (INFORMATIONAL - already included in STG Power Generation)
+        # Shows physical LP flow out of STG
+        lp_balance = final_steam.get('lp_balance', {})
+        lp_ext_mt = lp_balance.get('lp_from_stg_available', lp_balance.get('lp_from_stg', 0))
+        ws[f'A{row}'] = "  LP Extraction (STG)"
+        ws[f'C{row}'] = round(lp_ext_mt, 2)
+        # NOT added to u4u_total (already part of STG Power Gen)
         for col in range(1, 6):
             ws.cell(row=row, column=col).border = THIN_BORDER
         row += 1
@@ -1846,11 +1848,11 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
         # SHP for MP components - extract from MP balance
         mp_balance = final_steam.get('mp_balance', {})
         
-        # SHP for MP via STG
-        shp_for_mp_stg = mp_balance.get('shp_for_stg_mp', 0)
-        ws[f'A{row}'] = "  MP Steam (via STG)"
-        ws[f'C{row}'] = round(shp_for_mp_stg, 2)
-        u4u_total += shp_for_mp_stg
+        # MP Extraction from STG (INFORMATIONAL - already included in STG Power Generation)
+        mp_ext_mt = mp_balance.get('mp_from_stg_available', mp_balance.get('mp_from_stg', 0))
+        ws[f'A{row}'] = "  MP Extraction (STG)"
+        ws[f'C{row}'] = round(mp_ext_mt, 2)
+        # NOT added to u4u_total (already part of STG Power Gen)
         for col in range(1, 6):
             ws.cell(row=row, column=col).border = THIN_BORDER
         row += 1

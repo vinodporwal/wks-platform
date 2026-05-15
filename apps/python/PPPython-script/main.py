@@ -400,9 +400,9 @@ if __name__ == "__main__":
             save_result = save_model_quantities(month, year, utilities, power_dispatch)
             
             if save_result["success_count"] > 0:
-                print(f"\n✓ Successfully saved {save_result['success_count']} records to database")
+                print(f"\n[OK] Successfully saved {save_result['success_count']} records to database")
             if save_result["failed_count"] > 0:
-                print(f"✗ Failed to save {save_result['failed_count']} records")
+                print(f"[FAIL] Failed to save {save_result['failed_count']} records")
     
     # -----------------------------------------------------------
     # STEP 6: GENERATE EXCEL BALANCE REPORT

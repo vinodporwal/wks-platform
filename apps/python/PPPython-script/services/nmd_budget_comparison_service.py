@@ -554,8 +554,8 @@ def _extract_values(calculation_result: dict) -> dict:
         "hp_prds": hp_bal.get("hp_total", 0) or 0,
         "lp_prds": lp_bal.get("lp_from_prds", 0) or 0,
         "mp_prds": mp_bal.get("mp_from_prds", 0) or 0,
-        "stg_lp": lp_bal.get("lp_from_stg", 0) or 0,
-        "stg_mp": mp_bal.get("mp_from_stg", 0) or 0,
+        "stg_lp": lp_bal.get("lp_from_stg_available", lp_bal.get("lp_from_stg", 0)) or 0,
+        "stg_mp": mp_bal.get("mp_from_stg_available", mp_bal.get("mp_from_stg", 0)) or 0,
         "hrsg1_shp": utilities.get("shp_from_hrsg1", 0) or 0,
         "hrsg2_shp": utilities.get("shp_from_hrsg2", 0) or 0,
         "hrsg3_shp": utilities.get("shp_from_hrsg3", 0) or 0,
@@ -651,8 +651,11 @@ def build_nmd_budget_comparison_text(
     NORM_POWER_EFFLUENT = _fetch_cpp_norm(month, year, 'NMD - Utility Plant', 'Effluent Treated', 'Power_Dis', 3.5400)
     NORM_CW2_OXYGEN = _fetch_cpp_norm(month, year, 'NMD - Utility Plant', 'Oxygen', 'Cooling Water 2', 0.2610)
     NORM_POWER_OXYGEN = _fetch_cpp_norm(month, year, 'NMD - Utility Plant', 'Oxygen', 'Power_Dis', 968.6500)
-    NORM_SHP_STG_LP = _fetch_cpp_norm(month, year, 'NMD - Utility Plant', 'STG1_LP STEAM', 'SHP Steam_Dis', 0.4800)
-    NORM_SHP_STG_MP = _fetch_cpp_norm(month, year, 'NMD - Utility Plant', 'STG1_MP STEAM', 'SHP Steam_Dis', 0.6900)
+    # Option C: Physical flow norms = 0.0 for SHP consumption 
+    # STG Power Generation (SVHInletTPH × hours) accounts for ALL inlet steam. 
+    # Extraction rows are informational and consume 0 additional SHP.
+    NORM_SHP_STG_LP = 0.0
+    NORM_SHP_STG_MP = 0.0
     NORM_WATER_HRSG = _fetch_cpp_norm(month, year, 'NMD - Utility Plant', 'HRSG2_SHP STEAM', 'Water', 0.00266)
     # Fetch chemical norms from CPPNorms with fallback to hardcoded values
     NORM_SULPHURIC_ACID_CW1 = _fetch_cpp_norm(month, year, 'NMD - Utility Plant', 'Cooling Water 1', 'SULPHURIC ACID', 0.000158)
@@ -928,9 +931,9 @@ def build_nmd_budget_comparison_text(
     stg_lp_shp_ref = book.calculate_bpc_ref_qty(month_name, "STG1_LP STEAM", "SHP Steam_Dis", NORM_SHP_STG_LP, stg_lp_ref_qty, generating_plant="NMD - Utility Plant")
     stg_mp_shp_ref = book.calculate_bpc_ref_qty(month_name, "STG1_MP STEAM", "SHP Steam_Dis", NORM_SHP_STG_MP, stg_mp_ref_qty, generating_plant="NMD - Utility Plant")
     lines.append("")
-    lines.append(_line("NMD - Utility Plant", "STG1_LP STEAM", "SHP Steam_Dis", "MT", stg_lp, stg_lp_ref_qty, NORM_SHP_STG_LP, stg_lp * NORM_SHP_STG_LP, stg_lp_shp_ref, ".4f"))
+    lines.append(_line("NMD - Utility Plant", "LP Extraction (STG)", "SHP Steam_Dis", "MT", stg_lp, stg_lp_ref_qty, NORM_SHP_STG_LP, stg_lp * NORM_SHP_STG_LP, stg_lp_shp_ref, ".4f"))
     lines.append("")
-    lines.append(_line("NMD - Utility Plant", "STG1_MP STEAM", "SHP Steam_Dis", "MT", stg_mp, stg_mp_ref_qty, NORM_SHP_STG_MP, stg_mp * NORM_SHP_STG_MP, stg_mp_shp_ref, ".4f"))
+    lines.append(_line("NMD - Utility Plant", "MP Extraction (STG)", "SHP Steam_Dis", "MT", stg_mp, stg_mp_ref_qty, NORM_SHP_STG_MP, stg_mp * NORM_SHP_STG_MP, stg_mp_shp_ref, ".4f"))
 
     hp_dis_ref = book.get_quantity(month_name, generating_plant="NMD - Utility/Power Dist", utility="HP Steam_Dis", material="HP Steam PRDS")
     total_lp = lp_prds + stg_lp

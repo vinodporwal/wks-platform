@@ -171,7 +171,7 @@ def calculate_lp_balance_stg_based(
     lp_prds_ratio = lp_from_prds / lp_total if lp_total > 0 else 0
     
     # Step 4: Calculate what each supplier needs
-    # STG LP needs SHP (based on lookup table eq_svh_lp_tph)
+    # STG LP needs SHP (Option C: physical flow = SLExtFlowTPH × hours, 1:1 mass balance)
     shp_for_stg_lp = stg_eq_svh_lp_tph * stg_operating_hours
     
     # PRDS LP needs MP and BFW
@@ -305,7 +305,7 @@ def calculate_mp_balance_stg_based(
     mp_prds_ratio = mp_from_prds / mp_total if mp_total > 0 else 0
     
     # Step 3: Calculate what each supplier needs
-    # STG MP needs SHP (based on lookup table eq_svh_mp_tph)
+    # STG MP needs SHP (Option C: physical flow = SMBleedFlowTPH × hours, 1:1 mass balance)
     shp_for_stg_mp = stg_eq_svh_mp_tph * stg_operating_hours
     
     # PRDS MP needs SHP and BFW
@@ -1793,16 +1793,16 @@ def dispatch_hrsg_load(
     print(f"  {'TOTAL':<10} {'':<12} {'':<10} {'':<8} {dispatch_result['total_min_supp_mt']:>10.2f}   {dispatch_result['total_max_supp_mt']:>10.2f}   {dispatch_result['total_dispatched_supp_mt']:>10.2f}   {'':<12}")
     print("  " + "="*107)
     print(f"\n  SHP BALANCE SUMMARY:")
-    print(f"  ├─ Free Steam:                  {dispatch_result['total_free_steam_mt']:>12.2f} MT")
-    print(f"  ├─ Net SHP Demand:              {dispatch_result['net_shp_demand_mt']:>12.2f} MT")
-    print(f"  ├─ Dispatched Supp Firing:      {dispatch_result['total_dispatched_supp_mt']:>12.2f} MT")
-    print(f"  ├─ Total SHP Supply:            {dispatch_result['total_shp_supply_mt']:>12.2f} MT")
-    print(f"  ├─ SHP Demand:                  {dispatch_result['shp_demand_mt']:>12.2f} MT")
-    print(f"  └─ Balance:                     {dispatch_result['total_shp_supply_mt'] - dispatch_result['net_shp_demand_mt']:>12.2f} MT")
+    print(f"  |- Free Steam:                  {dispatch_result['total_free_steam_mt']:>12.2f} MT")
+    print(f"  |- Net SHP Demand:              {dispatch_result['net_shp_demand_mt']:>12.2f} MT")
+    print(f"  |- Dispatched Supp Firing:      {dispatch_result['total_dispatched_supp_mt']:>12.2f} MT")
+    print(f"  |- Total SHP Supply:            {dispatch_result['total_shp_supply_mt']:>12.2f} MT")
+    print(f"  |- SHP Demand:                  {dispatch_result['shp_demand_mt']:>12.2f} MT")
+    print(f"  `- Balance:                     {dispatch_result['total_shp_supply_mt'] - dispatch_result['net_shp_demand_mt']:>12.2f} MT")
     
     # Check for HRSG capacity violations
     if dispatch_result["has_capacity_violation"]:
-        print(f"\n  ❌ HRSG CAPACITY VIOLATION DETECTED!")
+        print(f"\n  [ERROR] HRSG CAPACITY VIOLATION DETECTED!")
         print(f"  " + "="*107)
         print(f"  The following HRSG(s) exceed their maximum hourly capacity (136 MT/hr):")
         print(f"\n  {'HRSG':<10} {'Linked GT':<12} {'Priority':<10} {'Hourly Rate':<14} {'Max Capacity':<14} {'Excess':<12} {'Violation %':<12}")

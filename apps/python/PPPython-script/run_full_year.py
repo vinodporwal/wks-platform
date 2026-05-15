@@ -799,7 +799,7 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
         f.write("MONTH-BY-MONTH QUICK RESULTS:\n")
         f.write("-" * 120 + "\n")
         for key, month_data in results["months"].items():
-            status = "✓" if month_data.get("success") else "✗"
+            status = "[OK]" if month_data.get("success") else "[FAIL]"
             f.write(f"{status} {month_data['month_name']} {month_data['year']}: ")
             if month_data.get("success"):
                 f.write(f"Power={month_data.get('total_power_kwh', 0):,.0f} KWH, ")
