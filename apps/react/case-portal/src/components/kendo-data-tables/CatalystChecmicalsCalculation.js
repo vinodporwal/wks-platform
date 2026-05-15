@@ -239,6 +239,7 @@ const CatalystChecmicalsCalculation = () => {
         srNo: index + 1,
         Particulars: item.NormTypeName,
         remarks: item.Remarks,
+        isEditable: item.isEditable,
       }))
 
       setProductionRowsConstants(formattedData)
@@ -609,6 +610,8 @@ const CatalystChecmicalsCalculation = () => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
+        fetchData()
+        fetchConstantsData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
