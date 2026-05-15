@@ -1341,7 +1341,7 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 					if (col == 2) {
 						// April column: editable
 						cell.setCellStyle(unlockedAprilStyle);
-					} else if (col >= 3 && col <= 13) {
+					} else if (col >= 3 && col <= 14) {
 						// May through March: locked with gray fill to indicate read-only
 						cell.setCellStyle(lockedMonthStyle);
 					} else {
