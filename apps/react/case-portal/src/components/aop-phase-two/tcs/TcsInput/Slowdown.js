@@ -150,7 +150,6 @@ const Slowdown = ({
   // Column configuration for Slowdown - dynamically generated from API response
   const columnConfig = {
     particulates: { editable: false, type: 'text', minWidth: 140, widthT: 140 },
-    
     throughputDuringSlowdown: {
       editable: true,
       type: 'wholeNumber',

@@ -1243,7 +1243,14 @@ const NormalOpNormsScreenCracker = () => {
     // 'Report Manual Entry',
   ]
 
-  const menuItemStyle = { fontSize: 14, fontWeight: 500, color: '#303030', fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif", letterSpacing: "0px", verticalAlign: "middle" }
+  const menuItemStyle = {
+    fontSize: 14,
+    fontWeight: 500,
+    color: '#303030',
+    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+    letterSpacing: '0px',
+    verticalAlign: 'middle',
+  }
 
   // UI render
   return (
@@ -1270,7 +1277,9 @@ const NormalOpNormsScreenCracker = () => {
       {selectedTab === 3 && (
         <>
           {/* EXTERNAL DROPDOWN */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2, mb: 2 }}>
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2, mb: 2 }}
+          >
             <TextField
               select
               value={gradeId ?? ''}

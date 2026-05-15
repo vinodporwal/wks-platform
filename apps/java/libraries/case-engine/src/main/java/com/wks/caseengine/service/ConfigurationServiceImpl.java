@@ -154,6 +154,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 		    boolean isChemical= vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("DMD") && plant.getName().equalsIgnoreCase("Chlor Alkali");
+			boolean ischemicalAndVmd = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD");
 		    String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
 			List<Boolean> isEditable = new ArrayList<>();
 
@@ -181,13 +182,13 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				List<Object> list = new ArrayList<>();
 
 				if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || (verticalName.equalsIgnoreCase("AROMATICS")) || (verticalName.equalsIgnoreCase("ELASTOMER")) || pvc) {
-					if(!isChemical) {
+					if(!isChemical && !ischemicalAndVmd) {
 						list.add(dto.getConfigTypeDisplayName());
 						list.add(dto.getTypeDisplayName());
 					}
 				}
 				if ((verticalName.equalsIgnoreCase("MEG")) 
-						|| (verticalName.equalsIgnoreCase("CRACKER")) || (isChemical)) {
+						|| (verticalName.equalsIgnoreCase("CRACKER")) || (isChemical) || ischemicalAndVmd) {
 					list.add(dto.getNormType());
 				}
 
@@ -220,7 +221,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
 			List<String> innerHeaders = new ArrayList<>();
 			if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc) {
-				if(!isChemical) {
+				if(!isChemical && !ischemicalAndVmd) {
 					innerHeaders.add("Category");
 				}
 			}
@@ -283,7 +284,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				}
 			}
 
-		if ((verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc) && !isChemical) {
+		if ((verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc) && !isChemical && !ischemicalAndVmd) {
 			sheet.setColumnHidden(17, true);
 			sheet.setColumnHidden(18, true);
 		} else {
@@ -573,13 +574,20 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			boolean isChemical= vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("DMD") && plant.getName().equalsIgnoreCase("Chlor Alkali");
+			boolean isChemicalVmdbutadiene = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD") && plant.getName().equalsIgnoreCase("Butadiene");
+			boolean isChemicalVmdbenzenes = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD") && plant.getName().equalsIgnoreCase("Benzene");
 		    List<Object[]> obj = new ArrayList<>();
 			if ((verticalName.equalsIgnoreCase("MEG"))
-					|| (verticalName.equalsIgnoreCase("CRACKER")) || (isChemical)) {
+					|| (verticalName.equalsIgnoreCase("CRACKER")) || (isChemical) ) {
 
 				String procedureName = verticalName + "_GetConfiguration";
 				obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);
-			}else if(verticalName.equalsIgnoreCase("AROMATICS") && !site.getName().equalsIgnoreCase("HMD")) {		
+			}
+			else if(isChemicalVmdbutadiene || isChemicalVmdbenzenes) { 
+				String procedureName = verticalName + "_" + site.getName() + "_GetConfiguration";
+				obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);
+			}
+			else if(verticalName.equalsIgnoreCase("AROMATICS") && !site.getName().equalsIgnoreCase("HMD")) {		
 				obj = findByYearAndPlantFkIdAROMATICS(year, plantFKId, viewName,getVersion(year,plantFKId));
 			} else {
 				obj = findByYearAndPlantFkId(year, plantFKId, viewName);
@@ -630,7 +638,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 						: 0.0);
 				configurationDTO.setRemarks((row[13] != null ? row[13].toString() : ""));
 
-				if(isChemical) {
+				if(isChemical || isChemicalVmdbutadiene || isChemicalVmdbenzenes) {
 					configurationDTO.setAuditYear(row[14] != null ? row[14].toString() : "");
 					configurationDTO.setUOM(row[15] != null ? row[15].toString() : "");
 					configurationDTO.setNormType(row[16] != null ? row[16].toString() : "");
@@ -692,13 +700,18 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			
 		    boolean pvc= verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 		    boolean isChemical= verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("DMD") && plant.getName().equalsIgnoreCase("Chlor Alkali");
+			boolean ischemicalAndVmd = verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD");
 		    List<Object[]> obj = new ArrayList<>();
-			Boolean vertical=(verticalName.equalsIgnoreCase("MEG")) || (verticalName.equalsIgnoreCase("CRACKER") || (isChemical));
+			Boolean vertical=(verticalName.equalsIgnoreCase("MEG")) || (verticalName.equalsIgnoreCase("CRACKER") || (isChemical) || ischemicalAndVmd);
 					
 			if (vertical) {
 				String procedureName = verticalName + "_GetConfiguration";
 				obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);
 			} 
+			else if(ischemicalAndVmd) { 
+				String procedureName = verticalName + "_" + site.getName() + "_GetConfiguration";
+				obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);
+			}
 			else if(verticalName.equalsIgnoreCase("AROMATICS"))
 			{   
 				obj = findByYearAndPlantFkIdAROMATICSExcel(year, plantFKId, viewName,getVersion(year,plantFKId),reportTypes.get(0));
@@ -756,7 +769,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				configurationDTO.setRemarks((row[13] != null ? row[13].toString() : ""));
 
 				if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || (verticalName.equalsIgnoreCase("PTA")) || (verticalName.equalsIgnoreCase("AROMATICS")) || (verticalName.equalsIgnoreCase("ELASTOMER")) || pvc) {
-					if(!isChemical) {
+					if(!isChemical && !ischemicalAndVmd) {
 						configurationDTO.setId(row[14] != null ? row[14].toString() : i + "#");
 
 						configurationDTO.setAuditYear(row[15] != null ? row[15].toString() : "");
@@ -774,7 +787,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					  configurationDTO.setVersion(row[22] != null ? row[22].toString() : ""); 
 			      }
 				 
-				if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("CRACKER") || (isChemical)) {					
+				if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("CRACKER") || (isChemical) || ischemicalAndVmd) {					
 					configurationDTO.setAuditYear(row[14] != null ? row[14].toString() : "");
 					configurationDTO.setUOM(row[15] != null ? row[15].toString() : "");
 					configurationDTO.setNormType(row[16] != null ? row[16].toString() : "");
@@ -1306,22 +1319,26 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<Map<String, Object>> configurationConstantsList = new ArrayList<>();
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
 			String procedureName = null;
 			if(iscatcam) { 
 
-				procedureName =  vertical.getName() + "_GetCatChem_Constant";
+				procedureName =  vertical.getName() + "_" + site.getName() + "_GetCatChem_Constant";
 			}
-			else { procedureName = verticalName + "_GetConfiguration_Constant";
+			else { procedureName = verticalName +  "_GetConfiguration_Constant";
 	     	}
 			List<Object[]> obj = new ArrayList<>();
-			if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")
-					|| verticalName.equalsIgnoreCase("CRACKER") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical")
-					|| verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("PVC")) {
-				obj = findConstantsByYearAndPlantFkId(year, plantFKId, procedureName);
-			}
+			// if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")
+			// 		|| verticalName.equalsIgnoreCase("CRACKER") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical")
+			// 		|| verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("PVC")) {
+			// 	obj = findConstantsByYearAndPlantFkId(year, plantFKId, procedureName);
+			// }
+
+			obj = findConstantsByYearAndPlantFkId(year, plantFKId, procedureName);
+
 			for (Object[] row : obj) {
 				Map<String, Object> map = new HashMap<>(); // Create a new map for each row
 				map.put("NormTypeName", row[0]);
@@ -2499,6 +2516,7 @@ continue;
                 .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		boolean isChemical= verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("DMD") && plant.getName().equalsIgnoreCase("Chlor Alkali");
+		boolean ischemicalAndVmd = verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD");
 	    boolean pvc= verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 			Sheet sheet = workbook.getSheetAt(0);
@@ -2517,7 +2535,7 @@ continue;
 					// we implement version here
 					if ((verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP")
 							|| verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA")
-							|| verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc || verticalName.equalsIgnoreCase("PET")) && !isChemical) {
+							|| verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc || verticalName.equalsIgnoreCase("PET")) && !isChemical && !ischemicalAndVmd) {
 						dto.setConfigTypeDisplayName(getStringCellValue(row.getCell(0), dto));
 						dto.setTypeDisplayName(getStringCellValue(row.getCell(1), dto));
 						dto.setProductName(getStringCellValue(row.getCell(2), dto));
@@ -4281,6 +4299,43 @@ continue;
 			return Double.parseDouble(value.trim());
 		} catch (NumberFormatException e) {
 			return null;
+		}
+	}
+
+	@Override
+	public List<Map<String, Object>> getSeasonMonths(UUID plantId, String aopYear) {
+		try {
+			Plants plant = plantsRepository.findById(plantId).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			String procedureName = vertical.getName() + "_" + site.getName() + "_GetSeasonMonths";
+
+			String sql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?";
+
+			return jdbcTemplate.query(sql, new Object[] { plantId, aopYear },
+					new ResultSetExtractor<List<Map<String, Object>>>() {
+						@Override
+						public List<Map<String, Object>> extractData(ResultSet rs) throws SQLException {
+							List<Map<String, Object>> result = new ArrayList<>();
+							ResultSetMetaData metaData = rs.getMetaData();
+							int columnCount = metaData.getColumnCount();
+							List<String> headers = new ArrayList<>();
+							for (int i = 1; i <= columnCount; i++) {
+								headers.add(metaData.getColumnLabel(i));
+							}
+							while (rs.next()) {
+								Map<String, Object> row = new LinkedHashMap<>();
+								for (int i = 1; i <= columnCount; i++) {
+									row.put(headers.get(i - 1), rs.getObject(i));
+								}
+								result.add(row);
+							}
+							return result;
+						}
+					});
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to execute AROMATICS_HMD_GetSeasonMonths", ex);
 		}
 	}
 

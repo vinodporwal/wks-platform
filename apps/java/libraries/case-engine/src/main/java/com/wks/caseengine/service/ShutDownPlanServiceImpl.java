@@ -3033,7 +3033,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 
 		Map<String, List<ShutDownPlanDTO>> dtosByMonth = new HashMap<>();
 		for (ShutDownPlanDTO dto : shutDownPlanDTOList) {
-			if(dto.getId() == null || dto.getId().isEmpty()) continue;
+		//	if(dto.getId() == null || dto.getId().isEmpty()) continue;
 			// if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) continue;
 			if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed") && !dto.getErrDescription().equalsIgnoreCase("Please update remark")) continue;
 

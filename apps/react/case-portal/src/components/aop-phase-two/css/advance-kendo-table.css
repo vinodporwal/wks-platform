@@ -41,9 +41,9 @@
    to header cells in rows with siblings (nested/spanned headers).
    Override here to remove the unwanted left border line. */
 .k-grid-header-wrap .k-table-row:not(:only-child) .k-table-th,
-.k-grid-header-wrap .k-table-row:not(:only-child) .k-table-td:nth-child(n+2),
+.k-grid-header-wrap .k-table-row:not(:only-child) .k-table-td:nth-child(n + 2),
 .k-grid-footer-wrap .k-table-row:not(:only-child) .k-table-th,
-.k-grid-footer-wrap .k-table-row:not(:only-child) .k-table-td:nth-child(n+2) {
+.k-grid-footer-wrap .k-table-row:not(:only-child) .k-table-td:nth-child(n + 2) {
   border-inline-start-width: 0 !important;
 }
 
@@ -52,4 +52,3 @@
 .k-grid .k-grid-header .k-table-th.k-first {
   border-inline-start-width: 0 !important;
 }
-

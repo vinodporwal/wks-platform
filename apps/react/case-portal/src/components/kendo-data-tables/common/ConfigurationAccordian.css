@@ -33,7 +33,7 @@
   width: 32px;
   height: 32px;
   border-radius: 6px;
-  background-color: #ECEEFF;
+  background-color: #eceeff;
   color: #1e293b;
   cursor: pointer;
   padding: 8px;
@@ -48,7 +48,7 @@
 
 .last-refreshed-container {
   color: #303030;
-  background-color: #F6FAFC;
+  background-color: #f6fafc;
   font-size: 12px;
   font-weight: 600;
   font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
@@ -56,7 +56,7 @@
   margin-top: 10px;
   height: 40px;
   border-radius: 6px;
-  border: 1px solid #00688C;
+  border: 1px solid #00688c;
   padding: 10px;
 }
 
@@ -80,7 +80,7 @@
   width: 100%;
   padding: 6px 8px;
   border-radius: 6px;
-  border: 1px solid #DDDEE1;
+  border: 1px solid #dddee1;
   font-size: 14px;
   font-weight: 500;
   font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
@@ -93,9 +93,9 @@
 }
 
 .aop-design-basis-textarea:hover {
-  border: 1px solid #DDDEE1 !important;
+  border: 1px solid #dddee1 !important;
 }
 
 .aop-design-basis-textarea textarea:focus {
-  border: 1px solid #DDDEE1 !important;
+  border: 1px solid #dddee1 !important;
 }

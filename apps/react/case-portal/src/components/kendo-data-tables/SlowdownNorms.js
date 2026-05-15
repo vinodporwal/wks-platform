@@ -570,7 +570,7 @@ const SlowdownNorms = () => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
-          IS_ELASTOMER_JMD_HIIR ? 'Slowdown' : undefined
+          IS_ELASTOMER_JMD_HIIR ? 'Slowdown' : undefined,
         )
       } else if (
         lowerVertName === 'vcm' ||
@@ -702,7 +702,7 @@ const SlowdownNorms = () => {
         IS_ELASTOMER_JMD_HIIR
           ? false
           : true,
-      uploadExcelBtn:true,
+      uploadExcelBtn: true,
       downloadExcelBtn:
         IS_PE_PP ||
         lowerVertName === 'vcm' ||

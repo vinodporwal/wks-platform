@@ -16,9 +16,9 @@
   {
     "field": "productName",
     "title": "Particulars",
-    "widthT": 140,
+    "widthT": 250,
     "editable": false,
-    "minWidth": 120
+    "minWidth": 250
   },
   {
     "field": "UOM",
@@ -124,9 +124,9 @@
   {
     "field": "remarks",
     "title": "Remark",
-    "widthT": 130,
+    "widthT": 200,
     "editable": true,
-    "minWidth": 100
+    "minWidth": 200
   },
 
   {

@@ -1,6 +1,8 @@
 package com.wks.caseengine.service;
 
 import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -11,6 +13,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -311,14 +314,32 @@ public class ShutdownRateServiceImpl implements ShutdownRateService {
 				cell.setCellStyle(headerStyle);
 			}
 
+			
 			// Data rows
 			int rowIdx = 1;
 			for (Map<String, Object> dataRow : dataList) {
+
+			
+
+			Object majorShutdown = dataRow.get("MajorShutdown");
+Object oneDayShutdown = dataRow.get("OneDayShutdown");
+
 				Row row = sheet.createRow(rowIdx++);
 				setExcelCellValue(row.createCell(0), dataRow.get("DisplayName"), dataStyle);
 				setExcelCellValue(row.createCell(1), dataRow.get("UOM"), dataStyle);
-				setExcelCellValue(row.createCell(2), dataRow.get("MajorShutdown"), dataStyle);
-				setExcelCellValue(row.createCell(3), dataRow.get("OneDayShutdown"), dataStyle);
+				// setExcelCellValue(row.createCell(2), dataRow.get("MajorShutdown"), dataStyle);
+				// setExcelCellValue(row.createCell(3), dataRow.get("OneDayShutdown"), dataStyle);
+				setExcelCellValue(
+					row.createCell(2),
+					(majorShutdown == null || majorShutdown.toString().trim().isEmpty()) ? 0.00 : majorShutdown,
+					dataStyle
+			);
+			
+			setExcelCellValue(
+					row.createCell(3),
+					(oneDayShutdown == null || oneDayShutdown.toString().trim().isEmpty()) ? 0.00 : oneDayShutdown,
+					dataStyle
+			);
 				setExcelCellValue(row.createCell(4), dataRow.get("remarks"), dataStyle);
 				setExcelCellValue(row.createCell(5), dataRow.get("NormParameter_FK_Id"), dataStyle);
 			}
@@ -374,14 +395,14 @@ public class ShutdownRateServiceImpl implements ShutdownRateService {
 
 					ConfigurationDTO dto = new ConfigurationDTO();
 					try {
-						// Col 0: Particular (DisplayName) � display only, stored for error reporting
+						// Col 0: Particular (DisplayName) — display only, stored for error reporting
 						dto.setProductName(readStringCell(row.getCell(0), dto));
 						// Col 1: UOM
 						dto.setUOM(readStringCell(row.getCell(1), dto));
-						// Col 2: Major Shutdown ? AopMonth = 1 (January slot)
+						// Col 2: Major Shutdown → AopMonth = 1 (January slot)
 						Double majorShutdown = readNumericCell(row.getCell(2), dto);
 						dto.setApr(majorShutdown);
-						// Col 3: One Day Shutdown ? AopMonth = 2 (February slot)
+						// Col 3: One Day Shutdown → AopMonth = 2 (February slot)
 						Double oneDayShutdown = readNumericCell(row.getCell(3), dto);
 						dto.setMay(oneDayShutdown);
 						// Col 4: Remarks
@@ -394,15 +415,24 @@ public class ShutdownRateServiceImpl implements ShutdownRateService {
 
 						// Remarks validation: if incoming remark matches the existing remark, skip and flag
 						if (dto.getSaveStatus() == null && normParamFKId != null && !normParamFKId.isBlank()) {
-							String existingRemark = fetchExistingRemark(normParamFKId, aopYear);
-							String incomingRemark = (newRemark != null) ? newRemark.trim() : "";
-							if (incomingRemark.equalsIgnoreCase(existingRemark)) {
+							String existingMajorShutdownValue = fetchExistingRecord(normParamFKId, aopYear, 4) == null ? "0.00" : fetchExistingRecord(normParamFKId, aopYear, 4).getAttributeValue();
+							String existingOneDayShutdownValue = fetchExistingRecord(normParamFKId, aopYear, 5) == null ? "0.00" : fetchExistingRecord(normParamFKId, aopYear, 5).getAttributeValue(); 
+							String incomingRemark =  newRemark;
+							String existingRemark = fetchExistingRecord(normParamFKId, aopYear, 4) == null ? "" : fetchExistingRecord(normParamFKId, aopYear, 4).getRemarks();
+
+							boolean hasMajorShutdownValueChanged = hasValueChanged(existingMajorShutdownValue, dto.getApr());
+							boolean hasOneDayShutdownValueChanged = hasValueChanged(existingOneDayShutdownValue, dto.getMay());
+             
+							boolean hasRemarkChanged = !incomingRemark.equalsIgnoreCase(existingRemark);
+
+							if((hasMajorShutdownValueChanged || hasOneDayShutdownValueChanged) && !hasRemarkChanged) { 
+
 								dto.setSaveStatus("Failed");
-								dto.setErrDescription("please update the remark");
-								dto.setRemarks("please update the remark");
+								dto.setErrDescription("Value has changed; please provide a updated remark.");
 								remarkFailedRows.add(dto);
 								continue;
 							}
+
 						}
 
 					} catch (Exception e) {
@@ -443,22 +473,35 @@ public class ShutdownRateServiceImpl implements ShutdownRateService {
 		}
 	}
 
+	public boolean hasValueChanged(String majorShutdownValue, double apr) {  
+
+// 		String majorShutdownValue = "12.1234567891";
+// Double apr = 12.1234567891001;
+
+BigDecimal value1 = new BigDecimal(majorShutdownValue).setScale(6, RoundingMode.HALF_UP);
+BigDecimal value2 = BigDecimal.valueOf(apr).setScale(6, RoundingMode.HALF_UP);
+
+return !(value1.compareTo(value2) == 0);
+
+	}
+
 	/**
 	 * Fetches the existing remark for a NormParameter from NormAttributeTransactions
 	 * using AopMonth=1 (the MajorShutdown slot) as the reference record.
 	 */
-	private String fetchExistingRemark(String normParamFKId, String aopYear) {
+	private NormAttributeTransactions fetchExistingRecord(String normParamFKId, String aopYear, Integer month) {
 		try {
 			UUID normParamId = UUID.fromString(normParamFKId);
 			Optional<NormAttributeTransactions> existing =
-					normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParamId, 4, aopYear);
+					normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParamId, month, aopYear);
 			if (existing.isPresent() && existing.get().getRemarks() != null) {
-				return existing.get().getRemarks().trim();
+				return existing.get();
 			}
+			 return null;
 		} catch (Exception e) {
 			// If lookup fails (e.g. invalid UUID), proceed without blocking save
 		}
-		return "";
+	return null;
 	}
 
 	/**
@@ -485,30 +528,33 @@ public class ShutdownRateServiceImpl implements ShutdownRateService {
 			dataStyle.setBorderLeft(BorderStyle.THIN);
 			dataStyle.setBorderRight(BorderStyle.THIN);
 
-			String[] headers = { "Particular", "UOM", "Major Shutdown", "One Day Shutdown", "Remarks",
-					"NormParameter_FK_Id" };
+		String[] headers = { "Particular", "UOM", "Major Shutdown", "One Day Shutdown", "Remarks",
+				"NormParameter_FK_Id", "Status", "Error Description" };
 			Row headerRow = sheet.createRow(0);
 			for (int i = 0; i < headers.length; i++) {
 				Cell cell = headerRow.createCell(i);
 				cell.setCellValue(headers[i]);
 				cell.setCellStyle(headerStyle);
 			}
-
 			int rowIdx = 1;
 			for (ConfigurationDTO dto : failedRows) {
 				Row row = sheet.createRow(rowIdx++);
 				setExcelCellValue(row.createCell(0), dto.getProductName(), dataStyle);
 				setExcelCellValue(row.createCell(1), dto.getUOM(), dataStyle);
-				setExcelCellValue(row.createCell(2), dto.getJan(), dataStyle);
-				setExcelCellValue(row.createCell(3), dto.getFeb(), dataStyle);
+				setExcelCellValue(row.createCell(2), dto.getApr(), dataStyle);
+				setExcelCellValue(row.createCell(3), dto.getMay(), dataStyle);
 				setExcelCellValue(row.createCell(4), dto.getRemarks(), dataStyle);
 				setExcelCellValue(row.createCell(5), dto.getNormParameterFKId(), dataStyle);
+				setExcelCellValue(row.createCell(6), dto.getSaveStatus(), dataStyle);
+				setExcelCellValue(row.createCell(7), dto.getErrDescription(), dataStyle);
 			}
 
 			sheet.setColumnHidden(5, true);
 			sheet.setColumnWidth(5, 0);
-			for (int i = 0; i < 5; i++) {
-				sheet.autoSizeColumn(i);
+			for (int i = 0; i < headers.length; i++) {
+				if (i != 5) {
+					sheet.autoSizeColumn(i);
+				}
 			}
 
 			ByteArrayOutputStream out = new ByteArrayOutputStream();

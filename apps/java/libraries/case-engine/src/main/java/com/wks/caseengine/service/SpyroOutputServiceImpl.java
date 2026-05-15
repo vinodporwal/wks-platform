@@ -2507,5 +2507,47 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 		return true;
 	}
 
+	@Override
+	public AOPMessageVM calculateSpyroOutputData(String year, String plantId, String Mode, String type) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			
+			String siteId = site.getId().toString();
+			String verticalId = vertical.getId().toString();
+			
+
+			// Create dynamic stored procedure name: {VerticalName}_{SiteName}_LoadSpyroOutput
+			String procedureName = vertical.getName() + "_" + site.getName() + "_LoadSpyroOutput";
+			
+			// Call the stored procedure dynamically
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @AopYear = :AopYear, @Mode = :Mode";
+			
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("siteId", siteId);
+			query.setParameter("verticalId", verticalId);
+			query.setParameter("AopYear", year);
+			query.setParameter("Mode", Mode);
+			
+			List<Object[]> results = query.getResultList();
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data calculated successfully");
+			aopMessageVM.setData(0);
+			return aopMessageVM;
+			
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to calculate spyro output data", ex);
+		}
+	}
 
 }

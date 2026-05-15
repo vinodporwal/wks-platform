@@ -1859,7 +1859,7 @@ const KendoDataTables = ({
       )}
 
       {permissions?.showReportTitleMain && (
-        <Box sx={{ pt: 1, pl: 1}}>
+        <Box sx={{ pt: 1, pl: 1 }}>
           <Typography component='div' className='grid-title'>
             {permissions?.titleNameMain}
           </Typography>
@@ -1867,7 +1867,7 @@ const KendoDataTables = ({
       )}
 
       {permissions?.showNote && (
-        <Box sx={{ pt: 1, pl: 1}}>
+        <Box sx={{ pt: 1, pl: 1 }}>
           <Typography component='div' className='text-note'>
             {note}
           </Typography>
@@ -2604,9 +2604,6 @@ const KendoDataTables = ({
                 autoProcessData={true}
                 defaultGroup={initialGroup}
                 data={rows}
-                rowRender={(tr, props) => (
-                  <CustomRow {...props} trProps={tr.props} />
-                )}
                 rows={{ data: CustomRow }}
                 dataItemKey='id'
                 editField='inEdit'
@@ -2688,7 +2685,10 @@ const KendoDataTables = ({
                       ),
                       headerCell: () => (
                         <th
-                          style={{ textAlign: 'center', padding: '0px !important' }}
+                          style={{
+                            textAlign: 'center',
+                            padding: '0px !important',
+                          }}
                         >
                           <Checkbox
                             checked={
@@ -3531,7 +3531,7 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.widthT || col.width || 120}
+                        width={setWidth(col?.widthT || col?.minWidth || 100)}
                         hidden={col.hidden}
                         editable={false}
                         headerClassName={isActive ? 'active-column' : ''}
@@ -3953,7 +3953,7 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.widthT}
+                        width={setWidth(col?.minWidth || 150)}
                         hidden={col.hidden}
                         className={`
                         ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
@@ -3970,6 +3970,8 @@ const KendoDataTables = ({
                                 condition={(dataItem) =>
                                   dataItem?.UOM === 'ON/OFF'
                                 }
+                                editable={col?.editable}
+                                isDisabled={col?.isDisabled}
                               />
                             ),
                           },
@@ -3984,6 +3986,8 @@ const KendoDataTables = ({
                                   customModifiedCells={customModifiedCells}
                                   rowId={props.dataItem.id}
                                   setRows={setRows}
+                                  editable={col?.editable}
+                                  isDisabled={col?.isDisabled}
                                 />
                               )
                             }
@@ -4261,10 +4265,9 @@ const KendoDataTables = ({
         </div>
       </Collapse>
 
-      {gridExpanded &&
-        (permissions?.approveBtn || permissions?.nextBtn) && (
-          <Box className='action-box'>
-            {/* {permissions?.showCreateCasebutton && (
+      {gridExpanded && (permissions?.approveBtn || permissions?.nextBtn) && (
+        <Box className='action-box'>
+          {/* {permissions?.showCreateCasebutton && (
             <Button
               variant='contained'
               onClick={createCase}
@@ -4275,43 +4278,44 @@ const KendoDataTables = ({
             </Button>
           )} */}
 
-            {permissions?.approveBtn && (
-              <Button
-                variant='contained'
-                className='btn-save'
-                onClick={saveModalOpen}
-                disabled={isButtonDisabled || READ_ONLY}
-                // loading={loading}
-                // loadingposition='start'
-                {...(loading ? {} : {})}
-              >
-                Approve
-              </Button>
-            )}
-            {permissions?.nextBtn && (
-              <Button
-                variant='contained'
-                className='btn-save'
-                onClick={() => {
-                  // Write any additional logic here before navigating.
-                  // console.log('Navigating to dashboard')
-                  // navigate('/user-form')
-                  handleAddPlantSite()
-                }}
-                disabled={isButtonDisabled || READ_ONLY}
-                loading={loading} // Use the loading prop to trigger loading state
-                loadingposition='start' // Use loadingPosition to control where the spinner appears
-              >
-                Next
-              </Button>
-            )}
-          </Box>
-        )}
+          {permissions?.approveBtn && (
+            <Button
+              variant='contained'
+              className='btn-save'
+              onClick={saveModalOpen}
+              disabled={isButtonDisabled || READ_ONLY}
+              // loading={loading}
+              // loadingposition='start'
+              {...(loading ? {} : {})}
+            >
+              Approve
+            </Button>
+          )}
+          {permissions?.nextBtn && (
+            <Button
+              variant='contained'
+              className='btn-save'
+              onClick={() => {
+                // Write any additional logic here before navigating.
+                // console.log('Navigating to dashboard')
+                // navigate('/user-form')
+                handleAddPlantSite()
+              }}
+              disabled={isButtonDisabled || READ_ONLY}
+              loading={loading} // Use the loading prop to trigger loading state
+              loadingposition='start' // Use loadingPosition to control where the spinner appears
+            >
+              Next
+            </Button>
+          )}
+        </Box>
+      )}
       <Notification
         open={snackbarOpen}
         message={snackbarData?.message || ''}
         severity={snackbarData?.severity || 'info'}
         onClose={() => setSnackbarOpen(false)}
+        autoHide={snackbarData?.autoHide ?? true}
       />
       <CompactDialog
         open={openDeleteDialogeBox}

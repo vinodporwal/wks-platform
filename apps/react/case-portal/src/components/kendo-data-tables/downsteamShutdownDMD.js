@@ -10,7 +10,7 @@ import { useSession } from 'SessionStoreContext'
 import { validateFields } from 'utils/validationUtils'
 import KendoDataTables from './index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-const DownsteamShutdownDMD = ({ viewOnly }) => {
+const DownsteamShutdownDMD = ({ viewOnly, permissions }) => {
   const keycloak = useSession()
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -462,6 +462,7 @@ const DownsteamShutdownDMD = ({ viewOnly }) => {
     () =>
       getAdjustedPermissions(
         {
+          ...permissions,
           showAction: false,
           addButton: false,
           deleteButton: false,

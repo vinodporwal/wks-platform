@@ -499,10 +499,10 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
                     if (col >= MONTH_COL_START && col <= MONTH_COL_END) {
                         int monthNumber = ACADEMIC_MONTH_ORDER[col - MONTH_COL_START];
                         if (editableMonths != null && !editableMonths.contains(monthNumber)) {
-                            // Month is not in the allowed list ? always locked
+                            // Month is not in the allowed list → always locked
                             cellStyle = lockedStyle;
                         } else {
-                            // No restriction or month is allowed ? follow row editability
+                            // No restriction or month is allowed → follow row editability
                             cellStyle = rowStyle;
                         }
                     } else {

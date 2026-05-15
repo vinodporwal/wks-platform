@@ -53,7 +53,12 @@ import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import AddIcon from '@mui/icons-material/Add'
-import { FileExportIcon, FileImportIcon, SaveIcon, CalculateIcon } from 'assets/images/icons'
+import {
+  FileExportIcon,
+  FileImportIcon,
+  SaveIcon,
+  CalculateIcon,
+} from 'assets/images/icons'
 
 export const particulars = [
   'normParameterId',
@@ -418,10 +423,7 @@ const KendoDataTablesReciepe = ({
       const isDisabled =
         READ_ONLY ||
         (!dataItem.isEditable && dataItem?.isEditable !== undefined)
-      const rowClassName = [
-        className,
-        isDisabled ? 'custom-disabled-row' : '',
-      ]
+      const rowClassName = [className, isDisabled ? 'custom-disabled-row' : '']
         .filter(Boolean)
         .join(' ')
       return (
@@ -485,7 +487,7 @@ const KendoDataTablesReciepe = ({
             title={col.title || col.headerName}
             editable={col.editable || false}
             format={FORMATE_DECIMAL}
-            width='65px'
+            width={col.widthT ? `${col.widthT}px` : '100px'}
             cells={{
               edit: { text: NumericEditorWithLimit },
               data: toolTipRenderer,
@@ -505,7 +507,7 @@ const KendoDataTablesReciepe = ({
             editable={col.editable || false}
             format={FORMATE_DECIMAL}
             className={'k-number-right'}
-            width='150px'
+            width={col.widthT ? `${col.widthT}px` : '150px'}
             cells={{
               edit: { text: NumericEditorWithLimit },
               data: toolTipRenderer,
@@ -523,7 +525,7 @@ const KendoDataTablesReciepe = ({
           title={col.title || col.headerName}
           editable={col.editable || false}
           format={FORMATE_DECIMAL}
-          width='150px'
+          width={col.widthT ? `${col.widthT}px` : '150px'}
           cells={{
             edit: { text: NumericEditorWithLimit },
             data: toolTipRenderer,
@@ -567,7 +569,7 @@ const KendoDataTablesReciepe = ({
   }
 
   return (
-    <div className="k-table-box">
+    <div className='k-table-box'>
       {loading && <LoaderBackdrop open={!!loading} />}
 
       {(permissions?.allAction ?? true) && (
@@ -610,9 +612,7 @@ const KendoDataTablesReciepe = ({
                   sx={{
                     fontSize: 20,
                     transition: '0.2s',
-                    transform: gridExpanded
-                      ? 'rotate(0deg)'
-                      : 'rotate(180deg)',
+                    transform: gridExpanded ? 'rotate(0deg)' : 'rotate(180deg)',
                   }}
                 />
               </Box>
@@ -713,52 +713,48 @@ const KendoDataTablesReciepe = ({
                   </Button>
                 )}
 
-
               {/* Import Button */}
-              {permissions?.uploadExcelBtn && shouldShowExportImportButtons() && (
-                <div>
-                  <input
-                    accept='.xlsx,.xls'
-                    style={{ display: 'none' }}
-                    id='excel-upload-input'
-                    type='file'
-                    onChange={(e) => {
-                      const file = e.target.files[0]
-                      if (file) {
-                        handleExcelUpload(file)
-                        e.target.value = ''
-                      }
-                    }}
-                  />
-                  <label htmlFor='excel-upload-input'>
-                    <Button
-                      variant='contained'
-                      startIcon={
-                        <Box
-                          component='img'
-                          src={FileImportIcon}
-                          className='w16-icon'
-                        />
-                      }
-                      className='btn-import'
-                      disabled={isButtonDisabled || READ_ONLY}
-                    >
-                      Import
-                    </Button>
-                  </label>
-                </div>
-              )}
+              {permissions?.uploadExcelBtn &&
+                shouldShowExportImportButtons() && (
+                  <div>
+                    <input
+                      accept='.xlsx,.xls'
+                      style={{ display: 'none' }}
+                      id='excel-upload-input'
+                      type='file'
+                      onChange={(e) => {
+                        const file = e.target.files[0]
+                        if (file) {
+                          handleExcelUpload(file)
+                          e.target.value = ''
+                        }
+                      }}
+                    />
+                    <label htmlFor='excel-upload-input'>
+                      <Button
+                        variant='contained'
+                        startIcon={
+                          <Box
+                            component='img'
+                            src={FileImportIcon}
+                            className='w16-icon'
+                          />
+                        }
+                        className='btn-import'
+                        disabled={isButtonDisabled || READ_ONLY}
+                      >
+                        Import
+                      </Button>
+                    </label>
+                  </div>
+                )}
 
               {permissions?.saveBtn && (
                 <Button
                   variant='contained'
                   className='btn-save'
                   startIcon={
-                    <Box
-                      component='img'
-                      src={SaveIcon}
-                      className='w16-icon'
-                    />
+                    <Box component='img' src={SaveIcon} className='w16-icon' />
                   }
                   onClick={saveModalOpen}
                   disabled={
@@ -791,17 +787,17 @@ const KendoDataTablesReciepe = ({
                   Calculate
                 </Button>
               )}
-            {permissions?.showCalculate && (
-              <Button
-                variant='contained'
-                onClick={handleExport}
-                disabled={isButtonDisabled}
-                className='btn-save'
-              >
-                Export
-              </Button>
-            )}
-            {permissions?.showFinalSubmit && (
+              {permissions?.showCalculate && (
+                <Button
+                  variant='contained'
+                  onClick={handleExport}
+                  disabled={isButtonDisabled}
+                  className='btn-save'
+                >
+                  Add Item
+                </Button>
+              )}
+              {permissions?.showFinalSubmit && (
                 <Button
                   variant='contained'
                   // onClick={handleExport}
@@ -851,9 +847,6 @@ const KendoDataTablesReciepe = ({
               }}
               modifiedCells={modifiedCells}
               data={rows}
-              rowRender={(tr, props) => (
-                <CustomRow {...props} trProps={tr.props} />
-              )}
               rows={{ data: CustomRow }}
               sortable={{
                 mode: 'multiple',

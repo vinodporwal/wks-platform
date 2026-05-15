@@ -184,6 +184,18 @@ const DecokingConfig = () => {
     }
   }, [])
 
+  const [renderGrid, setRenderGrid] = useState(false)
+
+  useEffect(() => {
+    setRenderGrid(false)
+
+    const timer = setTimeout(() => {
+      setRenderGrid(true)
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [ibrScreen2Rows])
+
   function calcPreCoilReplacementRunLength(actualRunLength, reduction) {
     if (
       actualRunLength === null ||
@@ -1184,9 +1196,9 @@ const DecokingConfig = () => {
           let value = row[field]
           const colDef = runLengthColumns.find((col) => col.field === field)
           if (colDef?.type === 'date' && value instanceof Date) {
-            obj[field] = value
+            obj[field] = value?.trim()
           } else {
-            obj[field] = value ?? null
+            obj[field] = value?.trim() ?? null
           }
         })
         return obj
@@ -1289,6 +1301,7 @@ const DecokingConfig = () => {
       showTitleName: true,
       showAccordian: true,
       showCalculate: true,
+      showCalculateNextYear: false,
       // showCalculateVisibility:
       //   Object.keys(calculationObject || {}).length > 0 ? true : false,
 
@@ -1308,6 +1321,20 @@ const DecokingConfig = () => {
     },
     isOldYear,
   )
+
+  const FurnaceMaintenanceActivityPermission = {
+    titleName: 'Furnace Maintenance Activity',
+    showTitleNameBusiness: true,
+  }
+
+  const DownsteamShutdownDMDPermission = {
+    titleName: 'Downstream Plant Shutdown',
+    showTitleNameBusiness: true,
+  }
+  const MaintenanceProcessPermission = {
+    titleName: 'Maintenance Details',
+    showTitleNameBusiness: true,
+  }
 
   const handleExcelUpload = (rawFile) => {
     saveExcelFile(rawFile)
@@ -1502,23 +1529,11 @@ const DecokingConfig = () => {
   }
   return (
     <Box>
-         <LoaderBackdrop open={!!loading} />
+      <LoaderBackdrop open={!!loading} />
       {IS_CRACKER_VMD && (
-        <CustomAccordion defaultExpanded disableGutters sx={{ mt: 1.5 }}>
-          <CustomAccordionSummary
-            aria-controls='meg-grid-content'
-            id='meg-grid-header'
-          >
-            <Typography component='span' className='grid-title'>
-              Furnace Maintenance Activity
-            </Typography>
-          </CustomAccordionSummary>
-          <CustomAccordionDetails>
-            <Box sx={{ width: '100%', margin: 0 }}>
-              <FurnaceMaintenanceActivity />
-            </Box>
-          </CustomAccordionDetails>
-        </CustomAccordion>
+        <FurnaceMaintenanceActivity
+          permissions={FurnaceMaintenanceActivityPermission}
+        />
       )}
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
@@ -1563,50 +1578,38 @@ const DecokingConfig = () => {
         </Box>
       </LocalizationProvider>
 
-      <SDTAActivitiesGrid
-        columns={ibrPlanColumns.filter(
-          (col) => col.field !== 'TA_SD' && col.field !== 'TA_ED',
-        )}
-        rows={getRows('IBR Plan')[2]}
-        setRows={(data) => setRowsForTab('IBR Plan', data, 2)}
-        fetchData={fetchData}
-        handleRemarkCellClick={handleRemarkCellClick2}
-        remarkDialogOpen={remarkDialogOpenSdTa}
-        currentRemark={currentRemarkSdTa}
-        setCurrentRemark={setCurrentRemarkSdTa}
-        currentRowId={currentRowIdSdTa}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
-        modifiedCells={modifiedCellsSdTa}
-        allMonths={allMonths}
-        setModifiedCells={setModifiedCellsSdTa}
-        permissions={adjustedPermissionsSdTa}
-        saveChanges={saveChangesSdTa}
-        setRemarkDialogOpen={setRemarkDialogOpenSdTa}
-        rowClass={rowClass}
-        handleCalculate={handleCalculateSdTa}
-        summaryEdited={summaryEdited}
-        setSummaryEdited={setSummaryEdited}
-      />
+      {renderGrid && (
+        <SDTAActivitiesGrid
+          columns={ibrPlanColumns.filter(
+            (col) => col.field !== 'TA_SD' && col.field !== 'TA_ED',
+          )}
+          rows={getRows('IBR Plan')[2]}
+          setRows={(data) => setRowsForTab('IBR Plan', data, 2)}
+          fetchData={fetchData}
+          handleRemarkCellClick={handleRemarkCellClick2}
+          remarkDialogOpen={remarkDialogOpenSdTa}
+          currentRemark={currentRemarkSdTa}
+          setCurrentRemark={setCurrentRemarkSdTa}
+          currentRowId={currentRowIdSdTa}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          modifiedCells={modifiedCellsSdTa}
+          allMonths={allMonths}
+          setModifiedCells={setModifiedCellsSdTa}
+          permissions={adjustedPermissionsSdTa}
+          saveChanges={saveChangesSdTa}
+          setRemarkDialogOpen={setRemarkDialogOpenSdTa}
+          rowClass={rowClass}
+          handleCalculate={handleCalculateSdTa}
+          summaryEdited={summaryEdited}
+          setSummaryEdited={setSummaryEdited}
+        />
+      )}
 
       {IS_DMD && (
-        <CustomAccordion defaultExpanded disableGutters>
-          <CustomAccordionSummary
-            aria-controls='meg-grid-content'
-            id='meg-grid-header'
-          >
-            <Typography component='span' className='grid-title'>
-              Downstream Plant Shutdown
-            </Typography>
-          </CustomAccordionSummary>
-          <CustomAccordionDetails>
-            <Box sx={{ width: '100%', margin: 0 }}>
-              <DownsteamShutdownDMD />
-            </Box>
-          </CustomAccordionDetails>
-        </CustomAccordion>
+        <DownsteamShutdownDMD permissions={DownsteamShutdownDMDPermission} />
       )}
 
       <FurnaceRunLengthGrid
@@ -1634,21 +1637,7 @@ const DecokingConfig = () => {
         handleCalculate={handleCalculate}
       />
 
-      <CustomAccordion defaultExpanded disableGutters>
-        <CustomAccordionSummary
-          aria-controls='meg-grid-content'
-          id='meg-grid-header'
-        >
-          <Typography component='span' className='grid-title'>
-            Maintenance Details
-          </Typography>
-        </CustomAccordionSummary>
-        <CustomAccordionDetails>
-          <Box sx={{ width: '100%', margin: 0 }}>
-            <MaintenanceProcessTable />
-          </Box>
-        </CustomAccordionDetails>
-      </CustomAccordion>
+      <MaintenanceProcessTable permissions={MaintenanceProcessPermission} />
       {/* {IS_CRACKER_HMD && (
         <CustomAccordion defaultExpanded disableGutters>
           <CustomAccordionSummary

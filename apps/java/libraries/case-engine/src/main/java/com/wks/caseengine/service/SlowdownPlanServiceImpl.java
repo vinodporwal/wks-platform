@@ -540,10 +540,11 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found"));
 	        Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 	        boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
-            boolean ElastomerHmdSbr=vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
+            boolean ElastomerHmd = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD");
+			boolean ElastomerHmdPbr3 = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("PBR3");
 	        if (!isAfterSave) {
 	            String vName = vertical.getName();
-	            if (vName.equalsIgnoreCase("PE") || vName.equalsIgnoreCase("PP") || vName.equalsIgnoreCase("PET") || pvc || ElastomerHmdSbr) {
+	            if (vName.equalsIgnoreCase("PE") || vName.equalsIgnoreCase("PP") || vName.equalsIgnoreCase("PET") || pvc || ElastomerHmd) {
 	                dtoList = findSlowdownDetailsByPlantIdAndTypePE(UUID.fromString(plantId), maintenanceTypeName, year);
 	            } else {
 	                dtoList = findSlowdownDetailsByPlantIdAndType(UUID.fromString(plantId), maintenanceTypeName, year);
@@ -568,16 +569,18 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	            List<Object> list = new ArrayList<>();
 	            
 	            list.add(dto.getDiscription());
-	            if (dto.getProduct() != null) {
-	                try {
-	                    UUID productId = UUID.fromString(dto.getProduct());
-	                    Optional<NormParameters> normParameter = normParametersRepository.findById(productId);
-	                    list.add(normParameter.isPresent() ? normParameter.get().getDisplayName() : dto.getProduct());
-	                } catch (Exception e) {
-	                    list.add("Invalid Product ID");
+	            if (!ElastomerHmdPbr3) {
+	                if (dto.getProduct() != null) {
+	                    try {
+	                        UUID productId = UUID.fromString(dto.getProduct());
+	                        Optional<NormParameters> normParameter = normParametersRepository.findById(productId);
+	                        list.add(normParameter.isPresent() ? normParameter.get().getDisplayName() : dto.getProduct());
+	                    } catch (Exception e) {
+	                        list.add("Invalid Product ID");
+	                    }
+	                } else {
+	                    list.add(dto.getProductName());
 	                }
-	            } else {
-	                list.add(dto.getProductName());
 	            }
 
 	            if (dto.getMaintStartDateTime() != null) {
@@ -600,7 +603,12 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	            rows.add(list);
 	        }
 
-	        List<String> headers = new ArrayList<>(Arrays.asList("Slowdown Desc", "Particulars", "Month", "Duration (hrs)", "Reduced Rate (TPH)", "Remarks", "Id", "Product"));
+	        List<String> headers;
+	        if (ElastomerHmdPbr3) {
+	            headers = new ArrayList<>(Arrays.asList("Slowdown Desc", "Month", "Duration (hrs)", "Reduced Rate (TPH)", "Remarks", "Id", "Product"));
+	        } else {
+	            headers = new ArrayList<>(Arrays.asList("Slowdown Desc", "Particulars", "Month", "Duration (hrs)", "Reduced Rate (TPH)", "Remarks", "Id", "Product"));
+	        }
 	        if (isAfterSave) {
 	            headers.add("Status");
 	            headers.add("Error Description");
@@ -623,7 +631,8 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                    cell.setCellStyle(dateTimeStyle);
 	                } else if (value instanceof Number) {
 	                    cell.setCellValue(((Number) value).doubleValue());
-	                    if (col == 3) {
+	                    int durationCol = ElastomerHmdPbr3 ? 2 : 3;
+	                    if (col == durationCol) {
 	                        cell.setCellStyle(decimalStyle);
 	                    }
 	                } else if (value instanceof Boolean) {
@@ -636,8 +645,13 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	            }
 	        }
 
-	        sheet.setColumnHidden(6, true);
-	        sheet.setColumnHidden(7, true);
+	        if (ElastomerHmdPbr3) {
+	            sheet.setColumnHidden(5, true);
+	            sheet.setColumnHidden(6, true);
+	        } else {
+	            sheet.setColumnHidden(6, true);
+	            sheet.setColumnHidden(7, true);
+	        }
 	        for (int i = 0; i < headers.size(); i++) {
 	            sheet.autoSizeColumn(i);
 	        }
@@ -1125,10 +1139,11 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		        Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		        boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
-		       boolean ElastomerHmdSbr = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
+		       boolean ElastomerHmd = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD");
+			   boolean ElastomerHmdPbr3 = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("PBR3");
 		       
-				if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc || ElastomerHmdSbr) {
-		    	   data = readSlowdownDataPE(file.getInputStream(), plantId, year, ElastomerHmdSbr);
+				if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc || ElastomerHmd) {
+		    	   data = readSlowdownDataPE(file.getInputStream(), plantId, year, ElastomerHmdPbr3);
 		       }else {
 		    	   data = readSlowdownData(file.getInputStream(), plantId, year);
 		       }
@@ -1140,7 +1155,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			
 			if (failedList != null && failedList.size() > 0) {
 				byte[] fileByteArray=null;
-				if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc ||ElastomerHmdSbr) {
+				if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc ||ElastomerHmd) {
 					fileByteArray= slowdownExportPE(year, plantId.toString(),maintenanceTypeName, true, failedList);
 				}else {
 					fileByteArray = slowdownExport(year, plantId.toString(),maintenanceTypeName, true, failedList);
@@ -1751,7 +1766,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		return dtoList;
 	}
 
-	public List<ShutDownPlanDTO> readSlowdownDataPE(InputStream inputStream, UUID plantFKId, String year, boolean ElastomerHmdSbr) {
+	public List<ShutDownPlanDTO> readSlowdownDataPE(InputStream inputStream, UUID plantFKId, String year, boolean ElastomerHmdPbr3) {
 		List<ShutDownPlanDTO> dtoList = new ArrayList<>();
 		List<LocalDateTime[]> validTimeRanges = new ArrayList<>(); // Stores [ldtStart, ldtEnd] for valid rows
 
@@ -1792,8 +1807,9 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 						}
 					}
 					
+				if (!ElastomerHmdPbr3) {
 					// --- 2. Product Name (Cell 1) ---
-					dto.setProductName(getStringCellValue(row.getCell(1), dto)); 
+					dto.setProductName(getStringCellValue(row.getCell(1), dto));
 					if (dto.getSaveStatus() == null) {
 						if (dto.getProductName() != null) {
 							UUID productId = normParametersRepository
@@ -1810,33 +1826,34 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 							dto.setErrDescription("Please enter particulars");
 						}
 					}
+				}
 
-					
-					
-					dto.setMonth(getCellAsString(row.getCell(2), dto, evaluator));
-					dto.setDurationInHrs(Double.parseDouble(getCellAsString(row.getCell(3), dto, evaluator)));
-					Double rate = getNumericCellValue(row.getCell(4), dto);
-					dto.setRate(rate); 
-					if (dto.getSaveStatus() == null) {
-						if (rate == null) {
-							dto.setSaveStatus("Failed");
-							dto.setErrDescription("Rate cannot be null");
-						}
+				// Column offsets: when ElastomerHmdPbr3 is true the Particulars column
+				// is absent so all subsequent columns shift one position to the left.
+				int colOffset = ElastomerHmdPbr3 ? 1 : 2;
+
+				dto.setMonth(getCellAsString(row.getCell(colOffset), dto, evaluator));
+				dto.setDurationInHrs(Double.parseDouble(getCellAsString(row.getCell(colOffset + 1), dto, evaluator)));
+				Double rate = getNumericCellValue(row.getCell(colOffset + 2), dto);
+				dto.setRate(rate);
+				if (dto.getSaveStatus() == null) {
+					if (rate == null) {
+						dto.setSaveStatus("Failed");
+						dto.setErrDescription("Rate cannot be null");
 					}
+				}
 
-					// --- 6. Remark (Cell 6) ---
-					String remark = getStringCellValue(row.getCell(5), dto);
-					dto.setRemark(remark); 
-					if (dto.getSaveStatus() == null) {
-						if (remark == null || remark.trim().isEmpty()) {
-							dto.setSaveStatus("Failed");
-							dto.setErrDescription("Please enter remark");
-						}
+				String remark = getStringCellValue(row.getCell(colOffset + 3), dto);
+				dto.setRemark(remark);
+				if (dto.getSaveStatus() == null) {
+					if (remark == null || remark.trim().isEmpty()) {
+						dto.setSaveStatus("Failed");
+						dto.setErrDescription("Please enter remark");
 					}
+				}
 
-					// --- 7. ID (Cell 7) ---
-					String idString = getStringCellValue(row.getCell(6), dto);
-					dto.setId(idString); 
+				String idString = getStringCellValue(row.getCell(colOffset + 4), dto);
+				dto.setId(idString);
 
 					if (dto.getId() == null && dto.getSaveStatus() == null) {
 						List<Object[]> obj = shutDownPlanRepository
@@ -2612,7 +2629,11 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		boolean pvc = verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 		boolean elastomerJMD =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD");
-		boolean elastomerAndHMDSBR = verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
+		boolean elastomerAndHMD = verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("HMD");
+		boolean elastomerHmdsbr = verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
+		boolean elastomerHmdPbr3 = verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("PBR3");
+		boolean chemical = verticalName.equalsIgnoreCase("Chemical");
+		boolean aromatics = verticalName.equalsIgnoreCase("Aromatics");
 		boolean vcmHMD = verticalName.equalsIgnoreCase("VCM") && site.getName().equalsIgnoreCase("HMD");
 		Boolean monthDropdown = false;
 		if(verticalName.equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD")) {
@@ -2636,6 +2657,14 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	        
 	        for (ShutDownPlanDTO shutDownPlanDTO : shutDownPlanDTOList) {
 
+				if( elastomerAndHMD && (shutDownPlanDTO.getMonth() == null || shutDownPlanDTO.getMonth().isEmpty()
+				|| shutDownPlanDTO.getRate() == null || shutDownPlanDTO.getDurationInHrs() == null)) {
+					shutDownPlanDTO.setSaveStatus("Failed");
+					shutDownPlanDTO.setErrDescription("Please enter the data in required fields");
+					failedList.add(shutDownPlanDTO);
+					continue;
+				}
+
 	            if (shutDownPlanDTO.getSaveStatus() != null
 	                    && shutDownPlanDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
 	                failedList.add(shutDownPlanDTO);
@@ -2649,7 +2678,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	            if (shutDownPlanDTO.getId() == null || shutDownPlanDTO.getId().isEmpty()) {
 	                plantMaintenanceTransaction = new PlantMaintenanceTransaction();
 	                plantMaintenanceTransaction.setId(UUID.randomUUID());
-	                if(verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || elastomerAndHMDSBR || monthDropdown || pvc || verticalName.equalsIgnoreCase("VCM")) {
+	                if(verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || elastomerAndHMD || elastomerJMD || monthDropdown || pvc || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("Aromatics")) {
 		            	if(shutDownPlanDTO.getMonth()!=null) {
 		            		shutDownPlanDTO.setMaintStartDateTime(getStartOfMonthDate(shutDownPlanDTO.getMonth(), year));
 		            		shutDownPlanDTO.setMaintEndDateTime(getEndOfMonthDate(shutDownPlanDTO.getMonth(), year));
@@ -2734,6 +2763,11 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 						// ***********************************************
 
 		            }
+
+
+			
+
+			
 	                
 	            } else {
 	                plantMaintenanceTransaction = slowdownPlanRepository
@@ -2747,7 +2781,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                    continue;
 	                }
 	                isUpdate = true;
-	                if(verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || elastomerAndHMDSBR || monthDropdown || pvc) {
+	                if(verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || elastomerAndHMD || monthDropdown || pvc || chemical) {
 		            	if(shutDownPlanDTO.getMonth()!=null) {
 		            		shutDownPlanDTO.setMaintStartDateTime(getStartOfMonthDate(shutDownPlanDTO.getMonth(), year));
 		            		shutDownPlanDTO.setMaintEndDateTime(getEndOfMonthDate(shutDownPlanDTO.getMonth(), year));
@@ -2758,6 +2792,22 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                	monthChange=true;
 	                }
 	           // }
+			   if(elastomerAndHMD) { 
+                       Integer originalMonth = plantMaintenanceTransaction.getMaintForMonth() !=null ? plantMaintenanceTransaction.getMaintForMonth() : null;
+                   String incomingMonth = shutDownPlanDTO.getMonth();
+
+				   if (originalMonth != null && incomingMonth != null && !incomingMonth.trim().isEmpty()) {
+
+					// Convert month name to month number
+					int incomingMonthNumber = java.time.Month
+							.valueOf(incomingMonth.trim().toUpperCase())
+							.getValue();
+				
+					// Compare existing month number with incoming month number
+					monthChange = !Objects.equals(originalMonth, incomingMonthNumber);
+
+			   }
+			}
 	            String originalDesc = plantMaintenanceTransaction.getDiscription();
 	            String originalStart = plantMaintenanceTransaction.getMaintStartDateTime() != null ? 
 	                                   plantMaintenanceTransaction.getMaintStartDateTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime().format(COMPARISON_FORMATTER) : null;
@@ -2767,6 +2817,9 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	            Double originalRPFDownTime=null;
 	            Double originalNoOfRPF=null;
 	            UUID originalLineId=null;
+
+		
+				
 	            if(plantMaintenanceTransaction.getRate()!=null) {
 	            	 originalRate = plantMaintenanceTransaction.getRate();
 	            }
@@ -2864,7 +2917,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                }
 	                boolean fieldsChanged = 
 	                	    !java.util.Objects.equals(originalDesc, newDesc) ||
-	                	    (!monthDropdown && !elastomer && !elastomerJMD && !elastomerAndHMDSBR && (!java.util.Objects.equals(originalStart, newStart) || 
+	                	    (!monthDropdown && !elastomer && !elastomerJMD && !elastomerAndHMD && (!java.util.Objects.equals(originalStart, newStart) || 
 	                	                        !java.util.Objects.equals(originalEnd, newEnd))) ||
 	                	   !java.util.Objects.equals(originalRate, newRate)  ||
 	                	    !java.util.Objects.equals(originalRPFDownTime, newRPFDownTime) ||
@@ -2877,6 +2930,33 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                    failedList.add(shutDownPlanDTO);
 	                    continue; 
 	                }
+
+					String originalParticulars = slowdownPlanRepository.findDisplayNameByNormParameterFKId(plantMaintenanceTransaction.getNormParametersFKId());
+					String incomingParticulars = shutDownPlanDTO.getProductName();
+					boolean particularsChanged = !java.util.Objects.equals(originalParticulars, incomingParticulars);
+
+					if(elastomerAndHMD) { 
+
+						if(monthChange && java.util.Objects.equals(originalRemark, newRemark)) { 
+
+						 shutDownPlanDTO.setSaveStatus("Failed");
+	 	                    shutDownPlanDTO.setErrDescription("Remark must be updated when month is changed.");
+	 	                    failedList.add(shutDownPlanDTO);
+	 	                    continue; 
+						}
+
+						
+					}
+
+					if(elastomerHmdsbr) {  
+
+						if(particularsChanged && java.util.Objects.equals(originalRemark, newRemark)) { 
+							shutDownPlanDTO.setSaveStatus("Failed");
+								 shutDownPlanDTO.setErrDescription("Remark must be updated when particulars are changed.");
+								 failedList.add(shutDownPlanDTO);
+								 continue; 
+						}
+					}
 	                
 	                if(verticalName.equalsIgnoreCase("ELASTOMER") && (!java.util.Objects.equals(originalDurationInHrs, newDurationInHrs)) && !elastomerAndHMDSBR) {
 	                	if(java.util.Objects.equals(originalRemark, newRemark)) {

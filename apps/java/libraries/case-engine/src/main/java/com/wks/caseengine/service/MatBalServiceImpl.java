@@ -238,7 +238,7 @@ public class MatBalServiceImpl implements MatBalService {
 				String[] monthAbbrevs = { "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb",
 						"Mar" };
 
-				// Build ordered visible columns: display header ? data key
+				// Build ordered visible columns: display header → data key
 				LinkedHashMap<String, String> visibleColumns = new LinkedHashMap<>();
 
 				String particularsKey = findKey(allDataKeys, "Particulars");
@@ -486,5 +486,42 @@ public class MatBalServiceImpl implements MatBalService {
 		}
 		return null;
 	}
+
+	@Override
+	public AOPMessageVM calculateMaterialBalance(String plantId, String year) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			
+			// Create dynamic stored procedure name: {VerticalName}_{SiteName}_LoadSpyroOutput
+			String procedureName = vertical.getName() + "_" + site.getName() + "_LoadMATBAL";
+			
+			// Call the stored procedure dynamically
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @AopYear = :AopYear";
+			
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("AopYear", year);
+			
+			List<Object[]> results = query.getResultList();
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data calculated successfully");
+			aopMessageVM.setData(0);
+			return aopMessageVM;
+			
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to calculate spyro output data", ex);
+		}
+	}
+
 }
 

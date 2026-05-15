@@ -372,7 +372,11 @@ export default function MonthWiseRawData() {
           const d = dataMap[name] || { rows: [], columns: [] }
           return (
             <div key={name}>
-              <CustomAccordion defaultExpanded disableGutters className='k-table-box'>
+              <CustomAccordion
+                defaultExpanded
+                disableGutters
+                className='k-table-box'
+              >
                 <CustomAccordionSummary
                   aria-controls={`${name}-content`}
                   id={`${name}-header`}

@@ -13,7 +13,7 @@ import crackercolumnsDMD from '../../assets/CrackerMaintenanceColumn_DMD.json'
 import KendoDataTables from './index'
 import { getRoleName } from 'services/role-service'
 import MaintenanceProcessTableNMD from './processTableNMD'
-const MaintenanceProcessTable = ({ viewOnly }) => {
+const MaintenanceProcessTable = ({ viewOnly, permissions }) => {
   const keycloak = useSession()
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -483,6 +483,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
     () =>
       getAdjustedPermissions(
         {
+          ...permissions,
           showAction: false,
           addButton: false,
           deleteButton: false,

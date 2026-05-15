@@ -49,5 +49,12 @@ public class MatBalController {
 	public AOPMessageVM importMatBal(@RequestParam("plantId") String plantId, @RequestParam("year") String year, @RequestParam("file") MultipartFile file) {
 		return matBalService.importMatBal(year, UUID.fromString(plantId), file);
 	}
+
+	// api for calcualte button 
+
+	@GetMapping(value = "/matbal-calculate")
+	public AOPMessageVM calculateMaterialBalance(@RequestParam String plantId, @RequestParam String year) {
+		return matBalService.calculateMaterialBalance(plantId, year);
+	}
 }
 

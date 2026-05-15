@@ -77,12 +77,7 @@ const MaintenanceTable = () => {
     () => ({
       serviceFn: (keycloak, PLANT_ID, AOP_YEAR, lineId) => {
         if (
-          (IS_PP_DTA ||
-            IS_PP_SEZ ||
-            IS_PVC_DMD ||
-            IS_PP_HMD ||
-            IS_PVC_HMD ||
-            IS_PVC_VMD) &&
+          (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) &&
           lineId
         ) {
           return MaintenanceDetailsApiService.getMaintenanceDataLineWise(
@@ -232,14 +227,7 @@ const MaintenanceTable = () => {
   }
 
   useEffect(() => {
-    if (
-      IS_PP_DTA ||
-      IS_PP_SEZ ||
-      IS_PVC_DMD ||
-      IS_PP_HMD ||
-      IS_PVC_HMD ||
-      IS_PVC_VMD
-    ) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
       fetchLineDetails()
     }
   }, [PLANT_ID, keycloak, yearChanged])
@@ -504,12 +492,7 @@ const MaintenanceTable = () => {
   return (
     <>
       {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
-      {(IS_PP_DTA ||
-        IS_PP_SEZ ||
-        IS_PVC_DMD ||
-        IS_PP_HMD ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD) && (
+      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) && (
         <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>

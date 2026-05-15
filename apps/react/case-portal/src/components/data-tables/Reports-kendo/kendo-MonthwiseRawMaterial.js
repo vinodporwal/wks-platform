@@ -661,7 +661,7 @@ const MonthwiseRawMaterial = () => {
             setRows={setRows}
             title={normName}
             permissions={{
-              showTitle: true
+              showTitle: true,
             }}
             columns={columnDefs}
             handleRemarkCellClick={handleRemarkCellClick}
