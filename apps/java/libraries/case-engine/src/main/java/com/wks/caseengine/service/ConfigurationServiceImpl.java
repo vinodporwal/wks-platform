@@ -704,7 +704,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		    List<Object[]> obj = new ArrayList<>();
 			Boolean vertical=(verticalName.equalsIgnoreCase("MEG")) || (verticalName.equalsIgnoreCase("CRACKER") || (isChemical) || ischemicalAndVmd);
 					
-			if (vertical) {
+			if (vertical && !ischemicalAndVmd) {
 				String procedureName = verticalName + "_GetConfiguration";
 				obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);
 			} 
