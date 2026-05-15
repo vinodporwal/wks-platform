@@ -25,6 +25,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wks.caseengine.dto.BusinessDemandMonthlyDTO;
+import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.SpyroInputDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.ExcelConfigurations;
@@ -83,6 +85,9 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 	private NormParametersRepository normParametersRepository;
 	@Autowired
 	private ExcelConfigurationsRepository excelConfigurationsRepository;
+
+	@Autowired
+	private BusinessDemandDataService businessDemandDataService;
 
 	private static final Pattern UUID_PATTERN = 
 		    Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
@@ -161,6 +166,11 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 					}
 				}
 			}
+
+			if(type.equalsIgnoreCase("BusinessDemand")) {   
+
+				spyroInputDataList = getBusinessDemandData(plantId, year);
+			}
 			aopMessageVM.setCode(200);
 			aopMessageVM.setMessage("Data fetched successfully");
 			aopMessageVM.setData(spyroInputDataList);
@@ -172,6 +182,40 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 
+	}
+
+	public List<Map<String, Object>> getBusinessDemandData(String plantId, String year) {
+
+		AOPMessageVM aopMessageVM = businessDemandDataService.getBusinessDemandMode(year, UUID.fromString(plantId));
+
+		List<BusinessDemandMonthlyDTO> configurationDTOList = (List<BusinessDemandMonthlyDTO>) aopMessageVM.getData();
+
+		List<Map<String, Object>> spyroInputDataList = new ArrayList<>();
+
+		for (BusinessDemandMonthlyDTO dto : configurationDTOList) {
+			Map<String, Object> map = new HashMap<>();
+			map.put("normParameterFKID", dto.getNormParameterFKId());
+			map.put("particulars", dto.getProductName());
+			map.put("normParameterTypeName", null);
+			map.put("uom", dto.getUom());
+			map.put("remarks", "");
+			map.put("jan", (dto.getJan() == null || dto.getJan().isEmpty()) ? "" : dto.getJan());
+			map.put("feb", (dto.getFeb() == null || dto.getFeb().isEmpty()) ? "" : dto.getFeb());
+			map.put("mar", (dto.getMar() == null || dto.getMar().isEmpty()) ? "" : dto.getMar());
+			map.put("apr", (dto.getApr() == null || dto.getApr().isEmpty()) ? "" : dto.getApr());
+			map.put("may", (dto.getMay() == null || dto.getMay().isEmpty()) ? "" : dto.getMay());
+			map.put("jun", (dto.getJun() == null || dto.getJun().isEmpty()) ? "" : dto.getJun());
+			map.put("jul", (dto.getJul() == null || dto.getJul().isEmpty()) ? "" : dto.getJul());
+			map.put("aug", (dto.getAug() == null || dto.getAug().isEmpty()) ? "" : dto.getAug());
+			map.put("sep", (dto.getSep() == null || dto.getSep().isEmpty()) ? "" : dto.getSep());
+			map.put("oct", (dto.getOct() == null || dto.getOct().isEmpty()) ? "" : dto.getOct());
+			map.put("nov", (dto.getNov() == null || dto.getNov().isEmpty()) ? "" : dto.getNov());
+			map.put("dec", (dto.getDec() == null || dto.getDec().isEmpty()) ? "" : dto.getDec());
+			map.put("isEditable", dto.getIsEditable());
+			spyroInputDataList.add(map);
+		}
+
+		return spyroInputDataList;
 	}
 
 	public List<Object[]> getData(String plantId, String AopYear, String siteId,
@@ -540,10 +584,14 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 
 		
 			Map<String, List<SpyroInputDTO>> map = readSpyroInputsExcel(file.getInputStream(), year);
+
+			// remove BusinessDemand from map
+		
 			
 			Map<String, List<SpyroInputDTO>> mapForExcel = new HashMap<>();
 			List<SpyroInputDTO> failedRecords = new ArrayList<>();
 			for (String key : map.keySet()) {
+			
 				AOPMessageVM vm = updateSpyroInputData(map.get(key), plantFKId, year);
 				List<SpyroInputDTO> failedList = (List<SpyroInputDTO>) vm.getData();
 				failedRecords.addAll(failedList);
@@ -585,6 +633,27 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 
 			while (rowIterator.hasNext()) {
 				Row row = rowIterator.next();
+
+				// if tableId is BusinessDemand, then skip the row
+
+Cell tableId = row.getCell(16);
+String tableIdValue = null;
+if (tableId != null) {
+	try {
+	tableId.setCellType(CellType.STRING);
+	 tableIdValue = tableId.getStringCellValue().trim(); }
+	 catch (Exception e) {
+		e.printStackTrace();
+	 }
+}
+
+if(tableIdValue != null && tableIdValue.equalsIgnoreCase("BusinessDemand")) {
+	continue;
+}
+
+
+
+
 				Cell tableIdCell = row.getCell(16, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
 				if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
 					continue;
