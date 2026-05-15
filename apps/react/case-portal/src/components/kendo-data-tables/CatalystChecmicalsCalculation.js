@@ -526,11 +526,12 @@ const CatalystChecmicalsCalculation = () => {
       setSnackbarData({ message: 'Excel Export Started!', severity: 'success' })
       setSnackbarOpen(true)
       if (type === 'constant') {
-        await DataService.getConfigurationExcelConstants(
+        await DataService.getConfigurationExcelConstantsIsCatChem(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
           `${EXCEL_EXPORT_TITLE}_${title}`,
+          true,
         )
       } else if (type === 'recipe') {
         await DataService.getRecipeCatChemExcel(
@@ -556,11 +557,12 @@ const CatalystChecmicalsCalculation = () => {
     try {
       let response
       if (type === 'constant') {
-        response = await DataService.saveConfigurationExcelConstants(
+        response = await DataService.saveConfigurationExcelConstantsIscatCam(
           file,
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+          true,
         )
       } else if (type === 'recipe') {
         response = await DataService.saveRecipeCatChemExcel(
