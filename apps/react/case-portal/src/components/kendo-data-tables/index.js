@@ -1109,7 +1109,7 @@ const KendoDataTables = ({
       }
     })
     return map
-  }, [columns, itemChange]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [columns, itemChange])
 
   const handleAddRow = () => {
     setEdit({})

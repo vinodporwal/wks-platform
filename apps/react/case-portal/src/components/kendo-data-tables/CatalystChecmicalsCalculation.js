@@ -547,6 +547,7 @@ const CatalystChecmicalsCalculation = () => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+          `${EXCEL_EXPORT_TITLE}_${title}`,
         )
       }
       setSnackbarData({

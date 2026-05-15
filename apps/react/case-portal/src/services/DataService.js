@@ -4873,7 +4873,7 @@ async function saveConfigurationExcelConstantsIscatCam(
     return await Promise.reject(e)
   }
 }
-async function getCatChemConsumptionExcel(keycloak, PLANT_ID, AOP_YEAR) {
+async function getCatChemConsumptionExcel(keycloak, PLANT_ID, AOP_YEAR, EXCEL_EXPORT_TITLE) {
   const url = `${Config.CaseEngineUrl}/task/cat-chem-export-all-grades?year=${AOP_YEAR}&plantId=${PLANT_ID}`
 
   const headers = {
@@ -4895,7 +4895,7 @@ async function getCatChemConsumptionExcel(keycloak, PLANT_ID, AOP_YEAR) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = `Cat Chem Consumption.xlsx`
+    a.download = `${EXCEL_EXPORT_TITLE}.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
