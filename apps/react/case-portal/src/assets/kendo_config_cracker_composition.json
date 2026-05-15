@@ -13,7 +13,7 @@
     "title": "Particulars",
     "editable": false,
     "width": 150,
-    "minWidth": 150
+    "minWidth": 300
   },
   {
     "field": "uom",

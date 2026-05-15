@@ -4,6 +4,7 @@
     "title": "Particulars",
     "editable": false,
     "widthT": 120,
+    "minWidth": 300,
     "hidden": false,
     "isVisible": true
   },

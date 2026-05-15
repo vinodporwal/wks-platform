@@ -128,21 +128,21 @@ const CatalystChecmicalsCalculation = () => {
       field: 'DisplayName',
       title: 'Particulars',
       editable: false,
-      widthT: 220,
+      minWidth: 250,
       hidden: false,
     },
     {
       field: 'UOM',
       title: 'UOM',
       editable: false,
-      widthT: 80,
+      minWidth: 90,
     },
     {
       field: 'ConstantValue',
       title: 'Value',
       editable: true,
       type: 'number',
-      widthT: 120,
+      minWidth: 120,
     },
 
     {
@@ -150,6 +150,7 @@ const CatalystChecmicalsCalculation = () => {
       title: 'Remark',
       editable: false,
       type: 'string',
+      minWidth: 150,
     },
   ]
 
@@ -159,14 +160,13 @@ const CatalystChecmicalsCalculation = () => {
       {
         field: 'particulars',
         title: 'Particulars',
-        widthT: 200,
+        minWidth: 220,
         editable: false,
       },
       {
         field: 'uom',
         title: 'UOM',
-        widthT: 80,
-        minWidth: 110,
+        minWidth: 80,
         editable: false,
       },
     ]
@@ -239,6 +239,7 @@ const CatalystChecmicalsCalculation = () => {
         srNo: index + 1,
         Particulars: item.NormTypeName,
         remarks: item.Remarks,
+        isEditable: item.isEditable,
       }))
 
       setProductionRowsConstants(formattedData)
@@ -361,6 +362,7 @@ const CatalystChecmicalsCalculation = () => {
           consumptionRes?.data?.data?.map((row, index) => ({
             ...row,
             id: index,
+            isEditable: false,
             // Grade_FK_Id already exists in row from API ?
           })),
         )
@@ -526,14 +528,22 @@ const CatalystChecmicalsCalculation = () => {
       setSnackbarData({ message: 'Excel Export Started!', severity: 'success' })
       setSnackbarOpen(true)
       if (type === 'constant') {
-        await DataService.getConfigurationExcelConstants(
+        await DataService.getConfigurationExcelConstantsIsCatChem(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          `${EXCEL_EXPORT_TITLE}_${title}`,
+          true,
+        )
+      } else if (type === 'recipe') {
+        await DataService.getRecipeCatChemExcel(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
           `${EXCEL_EXPORT_TITLE}_${title}`,
         )
-      } else if (type === 'recipe') {
-        await DataService.getRecipeCatChemExcel(
+      } else if (type === 'consumption') {
+        await DataService.getCatChemConsumptionExcel(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
@@ -556,11 +566,12 @@ const CatalystChecmicalsCalculation = () => {
     try {
       let response
       if (type === 'constant') {
-        response = await DataService.saveConfigurationExcelConstants(
+        response = await DataService.saveConfigurationExcelConstantsIscatCam(
           file,
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+          true,
         )
       } else if (type === 'recipe') {
         response = await DataService.saveRecipeCatChemExcel(
@@ -581,6 +592,7 @@ const CatalystChecmicalsCalculation = () => {
         setLoading(false)
 
         fetchData()
+        fetchConstantsData()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = new Array(byteCharacters.length)
@@ -606,6 +618,8 @@ const CatalystChecmicalsCalculation = () => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
+        fetchData()
+        fetchConstantsData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -750,6 +764,9 @@ const CatalystChecmicalsCalculation = () => {
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
         handleGradeChange={handleConsumptionGradeChange}
+        downloadExcelForConfiguration={() =>
+          downloadExcel('consumption', 'Cat-chem Consumption')
+        }
       />
 
       <Notification

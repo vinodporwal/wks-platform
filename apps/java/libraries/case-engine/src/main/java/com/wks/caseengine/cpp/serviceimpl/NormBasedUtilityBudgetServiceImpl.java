@@ -694,30 +694,22 @@ public class NormBasedUtilityBudgetServiceImpl implements NormBasedUtilityBudget
             int currentRow = 0;
             int col = 0;
 
-            // Create top header row (Row 0) with merged cells for months
+            // Row 0: top header row — empty for static/trailing columns, month names for month columns
             Row topHeaderRow = sheet.createRow(currentRow++);
             col = 0;
-            
-            // Static columns that span both rows
-            createMergedHeaderCell(sheet, topHeaderRow, 0, 1, col, col, "Generating Plant", headerStyle);
-            col++;
-            createMergedHeaderCell(sheet, topHeaderRow, 0, 1, col, col, "Utility", headerStyle);
-            col++;
-            createMergedHeaderCell(sheet, topHeaderRow, 0, 1, col, col, "Utility ID", headerStyle);
-            col++;
-            createMergedHeaderCell(sheet, topHeaderRow, 0, 1, col, col, "UOM", headerStyle);
-            col++;
-            createMergedHeaderCell(sheet, topHeaderRow, 0, 1, col, col, "Account", headerStyle);
-            col++;
-            createMergedHeaderCell(sheet, topHeaderRow, 0, 1, col, col, "Material", headerStyle);
-            col++;
-            createMergedHeaderCell(sheet, topHeaderRow, 0, 1, col, col, "SAP Code", headerStyle);
-            col++;
-            createMergedHeaderCell(sheet, topHeaderRow, 0, 1, col, col, "Issuing Plant", headerStyle);
-            col++;
-            createMergedHeaderCell(sheet, topHeaderRow, 0, 1, col, col, "Issuing UOM", headerStyle);
-            col++;
-            
+
+            // Static columns: Row 0 is empty but styled (header appears in Row 1)
+            String[] staticColNames = {
+                "Generating Plant", "Utility", "Utility ID", "UOM",
+                "Account", "Material", "SAP Code", "Issuing Plant", "Issuing UOM"
+            };
+            for (int i = 0; i < staticColNames.length; i++) {
+                Cell emptyCell = topHeaderRow.createCell(col + i);
+                emptyCell.setCellValue("");
+                emptyCell.setCellStyle(headerStyle);
+            }
+            col += staticColNames.length;
+
             // Month headers (each spans 5 columns: Norms, Quantity, Amount, Price, financialYearMonthFkId)
             // Qty and Generation UOM removed
             String[] months = {"Apr-" + startYearSuffix, "May-" + startYearSuffix, "Jun-" + startYearSuffix, "Jul-" + startYearSuffix,
@@ -740,29 +732,44 @@ public class NormBasedUtilityBudgetServiceImpl implements NormBasedUtilityBudget
                 financialYearMonthFkIdColumns.add(col + 4); // Track the financialYearMonthFkId column position
                 col += 5;
             }
-            
+
+            // Trailing columns: Row 0 is empty but styled (headers appear in Row 1)
             int remarksCol = col;
-            createMergedHeaderCell(sheet, topHeaderRow, 0, 1, col, col, "Remarks", headerStyle);
-            col++;
-            createMergedHeaderCell(sheet, topHeaderRow, 0, 1, col, col, "id", headerStyle);
+            Cell emptyRemarks = topHeaderRow.createCell(col++);
+            emptyRemarks.setCellValue("");
+            emptyRemarks.setCellStyle(headerStyle);
+
             int idCol = col;
-            col++;
-            createMergedHeaderCell(sheet, topHeaderRow, 0, 1, col, col, "normHeaderId", headerStyle);
+            Cell emptyId = topHeaderRow.createCell(col++);
+            emptyId.setCellValue("");
+            emptyId.setCellStyle(headerStyle);
+
             int normHeaderIdCol = col;
-            col++;
-            
+            Cell emptyNormHeaderId = topHeaderRow.createCell(col++);
+            emptyNormHeaderId.setCellValue("");
+            emptyNormHeaderId.setCellStyle(headerStyle);
+
             if (isAfterSave) {
-                createMergedHeaderCell(sheet, topHeaderRow, 0, 1, col, col, "Status", headerStyle);
-                col++;
-                createMergedHeaderCell(sheet, topHeaderRow, 0, 1, col, col, "Error Description", headerStyle);
-                col++;
+                Cell emptyStatus = topHeaderRow.createCell(col++);
+                emptyStatus.setCellValue("");
+                emptyStatus.setCellStyle(headerStyle);
+                Cell emptyErrDesc = topHeaderRow.createCell(col++);
+                emptyErrDesc.setCellValue("");
+                emptyErrDesc.setCellStyle(headerStyle);
             }
             int totalColumns = col;
-            
-            // Create sub-header row (Row 1) for month details
+
+            // Row 1: actual header labels for all columns
             Row subHeaderRow = sheet.createRow(currentRow++);
-            col = monthStartCol; // Start after static columns
-            
+            col = 0;
+
+            // Static column headers in Row 1
+            for (String colName : staticColNames) {
+                Cell cell = subHeaderRow.createCell(col++);
+                cell.setCellValue(colName);
+                cell.setCellStyle(headerStyle);
+            }
+
             // Sub-headers for each month (Norms, Quantity, Amount, Price, financialYearMonthFkId)
             // Qty and Generation UOM headers commented out
             for (int i = 0; i < 12; i++) {
@@ -797,18 +804,27 @@ public class NormBasedUtilityBudgetServiceImpl implements NormBasedUtilityBudget
                 cell.setCellStyle(headerStyle);
             }
 
-            // sheet.createRow() for subHeaderRow wiped all Row-1 cells that createMergedHeaderCell
-            // had previously styled for static and trailing columns. Re-apply headerStyle to them.
-            for (int c = 0; c < monthStartCol; c++) {
-                Cell staticCell = subHeaderRow.createCell(c);
-                staticCell.setCellValue("");
-                staticCell.setCellStyle(headerStyle);
-            }
-            int trailingStart = monthStartCol + (12 * 5); // 12 months x 5 child columns
-            for (int c = trailingStart; c < totalColumns; c++) {
-                Cell trailingCell = subHeaderRow.createCell(c);
-                trailingCell.setCellValue("");
-                trailingCell.setCellStyle(headerStyle);
+            // Trailing column headers in Row 1
+            Cell remarksHeaderCell = subHeaderRow.createCell(col++);
+            remarksHeaderCell.setCellValue("Remarks");
+            remarksHeaderCell.setCellStyle(headerStyle);
+
+            Cell idHeaderCell = subHeaderRow.createCell(col++);
+            idHeaderCell.setCellValue("id");
+            idHeaderCell.setCellStyle(headerStyle);
+
+            Cell normHeaderIdCell = subHeaderRow.createCell(col++);
+            normHeaderIdCell.setCellValue("normHeaderId");
+            normHeaderIdCell.setCellStyle(headerStyle);
+
+            if (isAfterSave) {
+                Cell statusHeaderCell = subHeaderRow.createCell(col++);
+                statusHeaderCell.setCellValue("Status");
+                statusHeaderCell.setCellStyle(headerStyle);
+
+                Cell errDescHeaderCell = subHeaderRow.createCell(col++);
+                errDescHeaderCell.setCellValue("Error Description");
+                errDescHeaderCell.setCellStyle(headerStyle);
             }
 
             // Data rows

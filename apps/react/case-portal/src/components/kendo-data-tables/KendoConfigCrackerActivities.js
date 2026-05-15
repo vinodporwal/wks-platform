@@ -299,6 +299,8 @@ const DecokingConfig = () => {
                   )
                   .map((col) => ({
                     ...col,
+                    widthT: 150,
+                    minWidth: col.field == 'DisplayName' ? 200 : 100,
                     editable: ![
                       'Pre_CR_Days',
                       'TA_Duration_Days',

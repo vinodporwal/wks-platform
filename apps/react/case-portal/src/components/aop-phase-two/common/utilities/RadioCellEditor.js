@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Radio, Box } from '@mui/material'
-import { Input } from '@progress/kendo-react-inputs'
+import { InputBase } from '../../../../../node_modules/@mui/material/index'
 
 // Inline radio component - displays value with radio button in same cell
 export const InlineRadioCellEditor = (props) => {
@@ -84,23 +84,13 @@ export const InlineRadioCellEditor = (props) => {
         />
         <Box sx={{ flexGrow: 1 }}>
           {isNumberEditable ? (
-            <Input
+            <InputBase
               ref={inputRef}
               value={localValue}
               onChange={handleValueChange}
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
-              style={{
-                fontSize: '15px',
-                padding: '2px 2px',
-                height: '40px',
-                fontWeight: 600,
-                fontFamily:
-                  "'Honeywell Sans Web', 'Inter', sans-serif !important",
-                lineHeight: '1rem',
-                textAlign: 'right',
-                width: '100%',
-              }}
+              className='input-editor'
             />
           ) : (
             <Box
