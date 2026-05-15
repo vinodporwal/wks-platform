@@ -34,7 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import com.wks.caseengine.dto.BusinessDemandMonthlyDTO;
 import com.wks.caseengine.dto.SpyroOutputDTO;
 import com.wks.caseengine.dto.YieldDMDDTO;
 import com.wks.caseengine.dto.YieldDTO;
@@ -100,6 +100,9 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 
 	@Autowired
 	private ExcelConfigurationsRepository excelConfigurationsRepository;
+
+	@Autowired
+	private BusinessDemandDataService businessDemandDataService;
 
 
 	@Override
@@ -198,6 +201,11 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 
 						
 			}
+
+			if(Mode.equalsIgnoreCase("Optimizer Output")) {
+				spyroOutputDataList = getBusinessDemandData(plantId, year);
+			}
+			
 			aopMessageVM.setCode(200);
 			aopMessageVM.setMessage("Data fetched successfully");
 			aopMessageVM.setData(spyroOutputDataList);
@@ -209,6 +217,40 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 
+	}
+
+	public List<Map<String, Object>> getBusinessDemandData(String plantId, String year) {
+
+		AOPMessageVM aopMessageVM = businessDemandDataService.getBusinessDemandMode(year, UUID.fromString(plantId));
+
+		List<BusinessDemandMonthlyDTO> configurationDTOList = (List<BusinessDemandMonthlyDTO>) aopMessageVM.getData();
+
+		List<Map<String, Object>> spyroInputDataList = new ArrayList<>();
+
+		for (BusinessDemandMonthlyDTO dto : configurationDTOList) {
+			Map<String, Object> map = new HashMap<>();
+			map.put("normParameterFKID", dto.getNormParameterFKId());
+			map.put("particulars", dto.getProductName());
+			map.put("normParameterTypeName", null);
+			map.put("uom", dto.getUom());
+			map.put("remarks", "");
+			map.put("jan", (dto.getJan() == null || dto.getJan().isEmpty()) ? "" : dto.getJan());
+			map.put("feb", (dto.getFeb() == null || dto.getFeb().isEmpty()) ? "" : dto.getFeb());
+			map.put("mar", (dto.getMar() == null || dto.getMar().isEmpty()) ? "" : dto.getMar());
+			map.put("apr", (dto.getApr() == null || dto.getApr().isEmpty()) ? "" : dto.getApr());
+			map.put("may", (dto.getMay() == null || dto.getMay().isEmpty()) ? "" : dto.getMay());
+			map.put("jun", (dto.getJun() == null || dto.getJun().isEmpty()) ? "" : dto.getJun());
+			map.put("jul", (dto.getJul() == null || dto.getJul().isEmpty()) ? "" : dto.getJul());
+			map.put("aug", (dto.getAug() == null || dto.getAug().isEmpty()) ? "" : dto.getAug());
+			map.put("sep", (dto.getSep() == null || dto.getSep().isEmpty()) ? "" : dto.getSep());
+			map.put("oct", (dto.getOct() == null || dto.getOct().isEmpty()) ? "" : dto.getOct());
+			map.put("nov", (dto.getNov() == null || dto.getNov().isEmpty()) ? "" : dto.getNov());
+			map.put("dec", (dto.getDec() == null || dto.getDec().isEmpty()) ? "" : dto.getDec());
+			map.put("isEditable", dto.getIsEditable());
+			spyroInputDataList.add(map);
+		}
+
+		return spyroInputDataList;
 	}
 	
 	public List<String> getTypes(String plantId, String aopYear, String siteId,String procedureName) {
@@ -2042,6 +2084,22 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
                 	if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
                     	continue;
                 	}
+
+
+					Cell tableId = row.getCell(16);
+String tableIdValue = null;
+if (tableId != null) {
+	try {
+	tableId.setCellType(CellType.STRING);
+	 tableIdValue = tableId.getStringCellValue().trim(); }
+	 catch (Exception e) {
+		e.printStackTrace();
+	 }
+}
+
+if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Output")) {
+	continue;
+}
 
 					SpyroOutputDTO dto = new SpyroOutputDTO();
 

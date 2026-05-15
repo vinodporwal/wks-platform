@@ -167,7 +167,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 				}
 			}
 
-			if(type.equalsIgnoreCase("BusinessDemand")) {   
+			if(type.equalsIgnoreCase("Optimizer Input") || type.equalsIgnoreCase("Optimizer Output")) {   
 
 				spyroInputDataList = getBusinessDemandData(plantId, year);
 			}
@@ -585,7 +585,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 		
 			Map<String, List<SpyroInputDTO>> map = readSpyroInputsExcel(file.getInputStream(), year);
 
-			// remove BusinessDemand from map
+			// remove Optimizer Input from map
 		
 			
 			Map<String, List<SpyroInputDTO>> mapForExcel = new HashMap<>();
@@ -634,7 +634,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 			while (rowIterator.hasNext()) {
 				Row row = rowIterator.next();
 
-				// if tableId is BusinessDemand, then skip the row
+				// if tableId is Optimizer Input, then skip the row
 
 Cell tableId = row.getCell(16);
 String tableIdValue = null;
@@ -647,7 +647,7 @@ if (tableId != null) {
 	 }
 }
 
-if(tableIdValue != null && tableIdValue.equalsIgnoreCase("BusinessDemand")) {
+if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 	continue;
 }
 
