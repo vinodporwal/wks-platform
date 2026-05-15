@@ -210,6 +210,8 @@ export const DataService = {
 
   getSeasonMonth,
   getCatalystSelectivityDataConstantsCatChem,
+  getConfigurationExcelConstantsIsCatChem,
+  saveConfigurationExcelConstantsIscatCam,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -4802,6 +4804,68 @@ async function getCatalystSelectivityDataConstantsCatChem(
   }
   try {
     const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getConfigurationExcelConstantsIsCatChem(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  FILE_NAME,
+  iscatchem,
+) {
+  const url = `${Config.CaseEngineUrl}/task/configuration-constants-export-excel?year=${AOP_YEAR}&plantFKId=${PLANT_ID}&iscatcam=${iscatchem}`
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Failed to edit data: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = FILE_NAME || 'Production & Norms Basis - Constants.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error Editing data:', e)
+    return Promise.reject(e)
+  }
+}
+async function saveConfigurationExcelConstantsIscatCam(
+  file,
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  iscatchem,
+) {
+  const url = `${Config.CaseEngineUrl}/task/configuration-constants-import-excel?plantFKId=${PLANT_ID}&year=${AOP_YEAR}&iscatcam=${iscatchem}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)
