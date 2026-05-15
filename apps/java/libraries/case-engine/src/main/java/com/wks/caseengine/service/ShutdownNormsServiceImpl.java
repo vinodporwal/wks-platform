@@ -506,7 +506,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 						sheet.setColumnHidden(17, true);
 					}
 				} else {
-					// no grade named "All Grade" found ? do not aggregate everything accidentally.
+					// no grade named "All Grade" found � do not aggregate everything accidentally.
 					// Optionally: you could fall back to aggregated behavior here if desired.
 				}
 

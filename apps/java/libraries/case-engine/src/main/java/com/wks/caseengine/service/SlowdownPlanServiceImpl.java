@@ -2958,7 +2958,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 						}
 					}
 	                
-	                if(verticalName.equalsIgnoreCase("ELASTOMER") && (!java.util.Objects.equals(originalDurationInHrs, newDurationInHrs)) && !elastomerAndHMDSBR) {
+	                if(verticalName.equalsIgnoreCase("ELASTOMER") && (!java.util.Objects.equals(originalDurationInHrs, newDurationInHrs))) {
 	                	if(java.util.Objects.equals(originalRemark, newRemark)) {
 	                		 shutDownPlanDTO.setSaveStatus("Failed");
 	 	                    shutDownPlanDTO.setErrDescription("Remark must be updated when duration is changed.");
