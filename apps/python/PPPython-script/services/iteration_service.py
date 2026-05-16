@@ -1240,7 +1240,7 @@ def usd_iterate(
             print("\n" + "-"*90)
             print("HRSG NATURAL GAS REVERSE CALCULATION (From Heat Rate Lookup)")
             print("-"*90)
-            print(f"  {'HRSG':<10} {'Supp Fire':<14} {'Hours':<10} {'Flow TPH':<12} {'Heat Rate':<12} {'NG Norm':<14} {'NG Qty':<14}")
+            print(f"  {'HRSG':<10} {'SHP Total':<14} {'Hours':<10} {'Flow TPH':<12} {'Heat Rate':<12} {'NG Norm':<14} {'NG Qty':<14}")
             print(f"  {'Name':<10} {'(MT)':<14} {'(hrs)':<10} {'(MT/hr)':<12} {'(BTU/lb)':<12} {'(MMBTU/MT)':<14} {'(MMBTU)':<14}")
             print("  " + "-"*88)
             
@@ -1249,13 +1249,15 @@ def usd_iterate(
             for hrsg_data in hrsg_dispatch_list:
                 hrsg_name = hrsg_data.get("name", "")
                 dispatched_supp = hrsg_data.get("dispatched_supp_mt", 0.0)
+                free_steam = hrsg_data.get("free_steam_mt", 0.0)
+                total_shp = dispatched_supp + free_steam
                 hours = hrsg_data.get("hours", 0.0)
                 
-                if dispatched_supp > 0:
-                    # Calculate NG using heat rate lookup based on dispatched supp firing
+                if total_shp > 0:
+                    # Calculate NG using heat rate lookup based on total SHP production (Fired + Free)
                     ng_result = calculate_hrsg_ng_from_heat_rate(
                         hrsg_name=hrsg_name,
-                        shp_production_mt=dispatched_supp,
+                        shp_production_mt=total_shp,
                         operational_hours=hours,
                         lookup_df=hrsg_heat_rate_lookup_df
                     )
@@ -1263,7 +1265,7 @@ def usd_iterate(
                     hrsg_ng_results.append(ng_result)
                     total_ng_from_hrsg += ng_result.get("ng_quantity_mmbtu", 0.0)
                     
-                    print(f"  {hrsg_name:<10} {dispatched_supp:>12.2f}   {hours:>8.0f}   {ng_result['steam_flow_tph']:>10.4f}   {ng_result['heat_rate_btu_lb']:>10.2f}   {ng_result['ng_norm_mmbtu_mt']:>12.7f}   {ng_result['ng_quantity_mmbtu']:>12.2f}")
+                    print(f"  {hrsg_name:<10} {total_shp:>12.2f}   {hours:>8.0f}   {ng_result['steam_flow_tph']:>10.4f}   {ng_result['heat_rate_btu_lb']:>10.2f}   {ng_result['ng_norm_mmbtu_mt']:>12.7f}   {ng_result['ng_quantity_mmbtu']:>12.2f}")
                 else:
                     hrsg_ng_results.append({
                         "hrsg_name": hrsg_name,

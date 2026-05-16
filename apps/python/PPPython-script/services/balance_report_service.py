@@ -19,7 +19,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from database.connection import get_connection
-from database.power_asset_queries import get_month_hours
+from database.power_asset_queries import get_month_hours, get_asset_capacity_limits
 
 
 # ============================================================
@@ -55,9 +55,19 @@ THIN_BORDER = Border(
 # HELPER FUNCTIONS FOR ASSET DEFAULT VALUES
 # ============================================================
 
-def get_asset_default_min_load(asset_name: str, month: int, year: int) -> float:
+# Hardcoded fallback defaults (used only if DB fetch fails)
+_FALLBACK_FIXED_MIN = {
+    'GT1': 5.0, 'GT2': 5.0, 'GT3': 5.0, 'STG': 6.0
+}
+_FALLBACK_FIXED_MAX = {
+    'GT1': 22.0, 'GT2': 22.0, 'GT3': 22.0, 'STG': 25.0
+}
+
+
+def get_asset_fixed_min_max(asset_name: str, month: int, year: int) -> dict:
     """
-    Get default min load for an asset from database.
+    Get FixedMin and FixedMax for an asset from AssetAvailability table.
+    Same source as the Java /asset-capacity endpoint (CPP_NMD_GetAssetCapacity SP).
     
     Args:
         asset_name: Asset name (GT1, GT2, GT3, STG)
@@ -65,100 +75,33 @@ def get_asset_default_min_load(asset_name: str, month: int, year: int) -> float:
         year: Year
         
     Returns:
-        Default min load in MW
+        dict with 'FixedMin' and 'FixedMax' (float or fallback)
     """
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
+        limits = get_asset_capacity_limits(asset_name, month, year)
+        fixed_min = limits.get('FixedMin')
+        fixed_max = limits.get('FixedMax')
         
-        # Query for asset min operating capacity
-        query = """
-        SELECT TOP 1 MinOperatingCapacity 
-        FROM dbo.PowerAssetMaster 
-        WHERE AssetName LIKE ? AND IsActive = 1
-        ORDER BY Priority
-        """
-        
-        cursor.execute(query, (f'%{asset_name}%',))
-        result = cursor.fetchone()
-        
-        if result and result[0]:
-            return float(result[0])
-        else:
-            # Default fallback values based on asset type
-            defaults = {
-                'GT1': 11.0,
-                'GT2': 11.0, 
-                'GT3': 11.0,
-                'STG': 5.0
-            }
-            return defaults.get(asset_name, 0.0)
-            
+        if fixed_min is not None and fixed_max is not None:
+            return {'FixedMin': float(fixed_min), 'FixedMax': float(fixed_max)}
     except Exception as e:
-        print(f"Warning: Could not get default min load for {asset_name}: {e}")
-        # Default fallback values
-        defaults = {
-            'GT1': 11.0,
-            'GT2': 11.0,
-            'GT3': 11.0,
-            'STG': 5.0
-        }
-        return defaults.get(asset_name, 0.0)
-    finally:
-        conn.close()
+        print(f"Warning: Could not get FixedMin/FixedMax for {asset_name}: {e}")
+    
+    # Fallback to hardcoded defaults
+    return {
+        'FixedMin': _FALLBACK_FIXED_MIN.get(asset_name, 5.0),
+        'FixedMax': _FALLBACK_FIXED_MAX.get(asset_name, 22.0)
+    }
+
+
+def get_asset_default_min_load(asset_name: str, month: int, year: int) -> float:
+    """Get default min load for an asset from AssetAvailability.FixedMin."""
+    return get_asset_fixed_min_max(asset_name, month, year)['FixedMin']
 
 
 def get_asset_default_max_load(asset_name: str, month: int, year: int) -> float:
-    """
-    Get default max load for an asset from database.
-    
-    Args:
-        asset_name: Asset name (GT1, GT2, GT3, STG)
-        month: Month number
-        year: Year
-        
-    Returns:
-        Default max load in MW
-    """
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        
-        # Query for asset max operating capacity
-        query = """
-        SELECT TOP 1 MaxOperatingCapacity 
-        FROM dbo.PowerAssetMaster 
-        WHERE AssetName LIKE ? AND IsActive = 1
-        ORDER BY Priority
-        """
-        
-        cursor.execute(query, (f'%{asset_name}%',))
-        result = cursor.fetchone()
-        
-        if result and result[0]:
-            return float(result[0])
-        else:
-            # Default fallback values based on asset type
-            defaults = {
-                'GT1': 22.0,
-                'GT2': 22.0,
-                'GT3': 22.0,
-                'STG': 25.0
-            }
-            return defaults.get(asset_name, 0.0)
-            
-    except Exception as e:
-        print(f"Warning: Could not get default max load for {asset_name}: {e}")
-        # Default fallback values
-        defaults = {
-            'GT1': 22.0,
-            'GT2': 22.0,
-            'GT3': 22.0,
-            'STG': 25.0
-        }
-        return defaults.get(asset_name, 0.0)
-    finally:
-        conn.close()
+    """Get default max load for an asset from AssetAvailability.FixedMax."""
+    return get_asset_fixed_min_max(asset_name, month, year)['FixedMax']
 
 
 # ============================================================
@@ -489,8 +432,10 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
             gross_mwh = gt_data.get('GrossMWh', 0)
             hours = gt_data.get('Hours', get_month_hours(month, year))
             load_mw = gt_data.get('LoadMW', 0)
-            min_mw = gt_data.get('MinMW', 0)
-            max_mw = gt_data.get('CapacityMW', 22)
+            # Get FixedMin/FixedMax from AssetAvailability table (same as Java endpoint)
+            _gt_limits = get_asset_fixed_min_max(gt_name, month, year)
+            min_mw = _gt_limits['FixedMin']
+            max_mw = _gt_limits['FixedMax']
             
             print(f"[DEBUG] {gt_name} dispatch data: MinMW={min_mw}, MaxMW={max_mw}, LoadMW={load_mw}")
             
@@ -531,8 +476,9 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
         gross_mwh = stg_data.get('GrossMWh', 0)
         hours = stg_data.get('Hours', get_month_hours(month, year))
         load_mw = stg_data.get('LoadMW', 0)
-        min_mw = stg_data.get('MinMW', 0)
-        max_mw = stg_data.get('CapacityMW', 25)
+        _stg_limits = get_asset_fixed_min_max('STG', month, year)
+        min_mw = 6.0  # Hardcoded STG min capacity as requested
+        max_mw = _stg_limits['FixedMax']
         
         if load_mw == 0 and hours > 0:
             load_mw = gross_mwh / hours
@@ -546,7 +492,7 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
         })
     else:
         # STG not in dispatch - get default min/max load from database
-        default_min_mw = get_asset_default_min_load('STG', month, year)
+        default_min_mw = 6.0  # Hardcoded STG min capacity as requested
         default_max_mw = get_asset_default_max_load('STG', month, year)
         
         generation_assets.append({
@@ -581,16 +527,21 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
     })
     
     # Extract steam assets (HRSGs)
-    # Get HRSG allocated load from fuel demand data (already calculated there)
-    fuel_data = extract_fuel_demand_data(month, year, calculation_result)
-    hrsg_fuel_assets = fuel_data.get('hrsg_assets', [])
+    hrsg_dispatch = usd_result.get('hrsg_dispatch', {})
+    hrsg_dispatch_list = hrsg_dispatch.get('hrsg_dispatch', [])
     
-    # Create map of HRSG allocated load from fuel demand section
-    hrsg_load_map = {}
-    for hrsg_fuel in hrsg_fuel_assets:
-        hrsg_name = hrsg_fuel.get('asset_name', '')
-        allocated_load = hrsg_fuel.get('allocated_load_mt_per_hr', 0)
-        hrsg_load_map[hrsg_name] = allocated_load
+    # Create map of total SHP (fired + free) from iteration results
+    hrsg_total_shp_map = {}
+    for h in hrsg_dispatch_list:
+        hrsg_name = h.get('name', '')
+        # Remove any spaces or dashes to match "HRSG1" format
+        clean_name = hrsg_name.replace(' ', '').replace('-', '').upper()
+        if 'HRSG1' in clean_name:
+            hrsg_total_shp_map['HRSG1'] = h.get('total_shp_mt', 0)
+        elif 'HRSG2' in clean_name:
+            hrsg_total_shp_map['HRSG2'] = h.get('total_shp_mt', 0)
+        elif 'HRSG3' in clean_name:
+            hrsg_total_shp_map['HRSG3'] = h.get('total_shp_mt', 0)
     
     steam_assets = []
     hrsg_names = ['HRSG1', 'HRSG2', 'HRSG3']
@@ -613,32 +564,31 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
                 gt_hours = gen_asset['availability_hr']
                 break
         
+        # Calculate total allocated load (fired + free)
+        total_shp_mt = hrsg_total_shp_map.get(hrsg_name, 0)
+        avg_total_load = total_shp_mt / gt_hours if gt_hours > 0 else 0
+        
+        display_name = f"{hrsg_name} (fired + free steam)"
+        
         if hrsg_name in hrsg_availability:
             hrsg_data = hrsg_availability[hrsg_name]
-            is_available = hrsg_data.get('is_available', False)
             min_cap = hrsg_data.get('min_capacity_mt', 60)
             max_cap = hrsg_data.get('max_capacity_mt', 130)
             
-            # Get allocated load from fuel demand data
-            avg_load = hrsg_load_map.get(hrsg_name, 0)
-            
             steam_assets.append({
-                'asset_name': hrsg_name,
-                'availability_hr': gt_hours,  # Use linked GT hours
+                'asset_name': display_name,
+                'availability_hr': gt_hours,
                 'min_capacity': min_cap,
                 'max_capacity': max_cap,
-                'avg_load_per_hr': round(avg_load, 2)
+                'avg_load_per_hr': round(avg_total_load, 2)
             })
         else:
-            # Get allocated load from fuel demand data even if HRSG availability not found
-            avg_load = hrsg_load_map.get(hrsg_name, 0)
-            
             steam_assets.append({
-                'asset_name': hrsg_name,
-                'availability_hr': gt_hours,  # Use linked GT hours even if HRSG data not available
+                'asset_name': display_name,
+                'availability_hr': gt_hours,
                 'min_capacity': 60,
                 'max_capacity': 130,
-                'avg_load_per_hr': round(avg_load, 2)
+                'avg_load_per_hr': round(avg_total_load, 2)
             })
     
     return {
@@ -1824,40 +1774,51 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
     
     # Add steam-specific U4U items based on steam type
     if steam_type == 'SHP':
-        # SHP consumed by STG for power generation (not extraction)
-        # Use stg_shp_power from SHP balance, not stg_shp_inlet_mt which includes extraction
+        # Get STG extraction lookup data for display
+        stg_ext = stg_extraction if stg_extraction else {}
+        stg_op_hrs = stg_ext.get('stg_operating_hours', 0)
+        sp_steam_power_norm = stg_ext.get('sp_steam_power', 0)  # MT/MWH from lookup
+        
+        # STG Power Generation = SpSteamPower × Gross MWH (= SVHInletTPH × Hours)
         stg_shp_power = steam_balance.get('stg_shp_power', 0)
+        # Get STG gross MWH for norm display
+        stg_gross_kwh = stg_ext.get('stg_gross_kwh', 0)
+        stg_gross_mwh = stg_gross_kwh / 1000 if stg_gross_kwh > 0 else 0
+        
         ws[f'A{row}'] = "  STG Power Generation"
+        if sp_steam_power_norm > 0:
+            ws[f'B{row}'] = round(sp_steam_power_norm, 4)  # SpSteamPower norm (MT/MWH)
         ws[f'C{row}'] = round(stg_shp_power, 2)
         u4u_total += stg_shp_power
         for col in range(1, 6):
             ws.cell(row=row, column=col).border = THIN_BORDER
         row += 1
         
-        # LP Extraction from STG (INFORMATIONAL - already included in STG Power Generation)
-        # Shows physical LP flow out of STG
-        lp_balance = final_steam.get('lp_balance', {})
-        lp_ext_mt = lp_balance.get('lp_from_stg_available', lp_balance.get('lp_from_stg', 0))
+        # --- Informational breakdown of STG inlet steam ---
+        # LP Extraction from STG = SLExtFlowTPH × Operating Hours (from lookup table)
+        lp_ext_tph = stg_ext.get('lp_extraction_tph', 0)
+        lp_ext_mt = lp_ext_tph * stg_op_hrs
         ws[f'A{row}'] = "  LP Extraction (STG)"
         ws[f'C{row}'] = round(lp_ext_mt, 2)
-        # NOT added to u4u_total (already part of STG Power Gen)
+        # NOT added to u4u_total - already part of STG Power Gen (SVHInletTPH)
         for col in range(1, 6):
             ws.cell(row=row, column=col).border = THIN_BORDER
         row += 1
         
-        # SHP for MP components - extract from MP balance
-        mp_balance = final_steam.get('mp_balance', {})
-        
-        # MP Extraction from STG (INFORMATIONAL - already included in STG Power Generation)
-        mp_ext_mt = mp_balance.get('mp_from_stg_available', mp_balance.get('mp_from_stg', 0))
+        # MP Extraction from STG = SMBleedFlowTPH × Operating Hours (from lookup table)
+        mp_ext_tph = stg_ext.get('mp_extraction_tph', 0)
+        mp_ext_mt = mp_ext_tph * stg_op_hrs
         ws[f'A{row}'] = "  MP Extraction (STG)"
         ws[f'C{row}'] = round(mp_ext_mt, 2)
-        # NOT added to u4u_total (already part of STG Power Gen)
+        # NOT added to u4u_total - already part of STG Power Gen (SVHInletTPH)
         for col in range(1, 6):
             ws.cell(row=row, column=col).border = THIN_BORDER
         row += 1
+
         
         # SHP for MP via PRDS
+        lp_balance = final_steam.get('lp_balance', {})
+        mp_balance = final_steam.get('mp_balance', {})
         shp_for_mp_prds = mp_balance.get('shp_for_prds_mp', 0)
         ws[f'A{row}'] = "  MP Steam (via PRDS)"
         ws[f'C{row}'] = round(shp_for_mp_prds, 2)
@@ -1997,7 +1958,7 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
         hrsg_dispatch = usd_result.get('hrsg_dispatch', {})
         hrsg_dispatch_list = hrsg_dispatch.get('hrsg_dispatch', [])
 
-        # Build name → supplementary MT map from dispatch list
+        # SHP generated (Fired + Free Steam)
         hrsg_shp_gen = {
             'HRSG-1 (Supp Firing)': 0.0, 'GT-1 (Free Steam)': 0.0,
             'HRSG-2 (Supp Firing)': 0.0, 'GT-2 (Free Steam)': 0.0,

@@ -855,13 +855,13 @@ def calculate_budget_with_iteration(
             is_available = (free_steam > 0 or dispatched_supp > 0)
             
             if 'HRSG1' in hrsg_name_normalized:
-                shp_from_hrsg1 = dispatched_supp
+                shp_from_hrsg1 = dispatched_supp + free_steam
                 hrsg1_available = is_available
             elif 'HRSG2' in hrsg_name_normalized:
-                shp_from_hrsg2 = dispatched_supp
+                shp_from_hrsg2 = dispatched_supp + free_steam
                 hrsg2_available = is_available
             elif 'HRSG3' in hrsg_name_normalized:
-                shp_from_hrsg3 = dispatched_supp
+                shp_from_hrsg3 = dispatched_supp + free_steam
                 hrsg3_available = is_available
     else:
         # Fallback to old logic if hrsg_dispatch not available
@@ -877,18 +877,17 @@ def calculate_budget_with_iteration(
                     total_free_steam += free_steam
                     
                     if 'HRSG1' in hrsg_name:
-                        shp_from_hrsg1 = supp_min
+                        shp_from_hrsg1 = supp_min + free_steam
                         hrsg1_available = True
                     elif 'HRSG2' in hrsg_name:
-                        shp_from_hrsg2 = supp_min
+                        shp_from_hrsg2 = supp_min + free_steam
                         hrsg2_available = True
                     elif 'HRSG3' in hrsg_name:
-                        shp_from_hrsg3 = supp_min
+                        shp_from_hrsg3 = supp_min + free_steam
                         hrsg3_available = True
     
-    # Note: shp_from_hrsg values now represent ONLY supplementary firing
-    # Free steam is tracked separately in total_free_steam
-    # Total SHP supply = total_free_steam + shp_from_hrsg1 + shp_from_hrsg2 + shp_from_hrsg3
+    # Note: shp_from_hrsg values now represent Fired + Free Steam
+    # Total SHP supply = shp_from_hrsg1 + shp_from_hrsg2 + shp_from_hrsg3
     
     # Extract power result data for utility calculation
     power_result_data = usd_result.get("power_result", {})
