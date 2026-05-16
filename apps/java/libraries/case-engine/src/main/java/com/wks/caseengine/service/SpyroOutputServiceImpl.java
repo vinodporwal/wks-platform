@@ -2585,16 +2585,21 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Output")) {
 			String procedureName = vertical.getName() + "_" + site.getName() + "_LoadSpyroOutput";
 			
 			// Call the stored procedure dynamically
-			String sql = "EXEC " + procedureName + " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @AopYear = :AopYear, @Mode = :Mode";
-			
-			Query query = entityManager.createNativeQuery(sql);
-			query.setParameter("plantId", plantId);
-			query.setParameter("siteId", siteId);
-			query.setParameter("verticalId", verticalId);
-			query.setParameter("AopYear", year);
-			query.setParameter("Mode", Mode);
-			
-			List<Object[]> results = query.getResultList();
+		//	String sql = "EXEC " + procedureName + " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @AopYear = :AopYear, @Mode = :Mode";
+		String sql = "EXEC " + procedureName + " ?, ?, ?, ?, ?";
+
+		Session session = entityManager.unwrap(Session.class);
+		session.doWork(connection -> {
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setObject(1, plantId);
+				ps.setObject(2, siteId);
+				ps.setObject(3, verticalId);
+				ps.setObject(4, year);
+				ps.setObject(5, Mode);
+
+				boolean hasResultSet = ps.execute();
+			}
+		});
 
 			aopMessageVM.setCode(200);
 			aopMessageVM.setMessage("Data calculated successfully");
