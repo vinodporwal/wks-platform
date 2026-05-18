@@ -1259,7 +1259,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			List<MCUNormsValueDTO> data = null;
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
 			if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
 					|| vertical.getName().equalsIgnoreCase("PET") || pvc) {
 				data = readSteadyState(file.getInputStream(), plantFKId, year);
