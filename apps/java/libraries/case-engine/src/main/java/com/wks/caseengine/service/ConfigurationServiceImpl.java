@@ -1816,8 +1816,11 @@ continue;
 	  
 	  Optional<NormAttributeTransactions> existingRecord;
 	  if ("AROMATICS".equalsIgnoreCase(verticalName)) {
-	      existingRecord = normAttributeTransactionsRepository
-	          .findByNormParameterFKIdAndAOPMonthAndAuditYearAndVersion(normParameter.getId(), i, year, version);
+	    //   existingRecord = normAttributeTransactionsRepository
+	    //       .findByNormParameterFKIdAndAOPMonthAndAuditYearAndVersion(normParameter.getId(), i, year, version);
+
+		existingRecord = normAttributeTransactionsRepository
+			.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
 	  } else {
 	      existingRecord = normAttributeTransactionsRepository
 	          .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
