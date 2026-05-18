@@ -1151,12 +1151,15 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			Plants plant = plantsRepository.findById(plantId).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+			boolean elastomerHmdSbr = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
+
 			Boolean withGrade = false;
-			if (plant.getName().equalsIgnoreCase("SBR") && site.getName().equalsIgnoreCase("HMD")
-					&& vertical.getName().equalsIgnoreCase("ELASTOMER")) {
+			if (elastomerHmdSbr || pvc) {
 				withGrade = true;
 			}
-			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+			
 			Boolean elastomer=vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 			String viewName = "vwScrn" + vertical.getName() + "NormalOperationNorms";
 			if (withGrade || elastomer) {
