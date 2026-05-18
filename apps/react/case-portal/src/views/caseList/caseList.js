@@ -66,7 +66,7 @@ const CaseNewFormPage = lazy(() =>
   })),
 )
 
-export const CaseList = ({ status, caseDefId }) => {
+export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
   const PaginationContext = createContext()
   const { t } = useTranslation()
   const [stages, setStages] = useState([])
@@ -104,6 +104,9 @@ export const CaseList = ({ status, caseDefId }) => {
   // If either businessKey or caseNo is present in the URL we should treat this as a "view" request
   const queryHasBusinessKey = searchParams.has('businessKey') || searchParams.has('caseNo');
   const taskId = searchParams.get('taskId');
+
+  // Fall back to ?case_def query param if no caseDefId prop was passed (e.g. redirect from NewCaseFormPage)
+  let caseDefId = caseDefIdProp || searchParams.get('case_def') || undefined;
 
   // Only treat '/case/create' as an auto-create path. '/case-list/create' should show the list page.
   const isCaseCreatePath = currentPath && currentPath === '/case/create';
@@ -244,156 +247,215 @@ export const CaseList = ({ status, caseDefId }) => {
     }
   }, [])
 
+  // useEffect(() => {
+  //   const isNavToView = (isCaseViewPath && !error && caseBusinessKey);
+
+
+  //   if (queryHasBusinessKey && caseBusinessKey) {
+  //     // Use getCasesById (which returns cases filtered by asset/hierarchy) and try to match the caseNo
+
+  //     //logic for navigation after form submission
+  //     setFetching(true);
+  //     try {
+  //       const searchParamsWindow = new URLSearchParams(window.location.search);
+  //       const assetName = searchParamsWindow.get('assetName') || 'defaultAssetName';
+  //       const hierarchyName = searchParamsWindow.get('hierarchyName') || 'defaultHierarchyName';
+
+  //       CaseService.getCasesById(keycloak, caseDefId, assetName, hierarchyName)
+  //         .then((resp) => {
+  //           const caseList = Array.isArray(resp) ? resp : [];
+
+  //           const updatedCases = caseList.map((singleCase) => {
+
+  //             // for link-case
+             
+  //             let caseTitle = '';
+  //             let caseNumber = singleCase.caseNo || singleCase.businessKey || singleCase.caseNumber;
+
+  //             try {
+  //               const attributes =
+  //                 typeof singleCase.attributes === 'string'
+  //                   ? JSON.parse(singleCase.attributes)
+  //                   : singleCase.attributes;
+
+  //               const containerValue = attributes?.find((attr) => attr.name === 'container')?.value;
+
+  //               if (containerValue) {
+  //                 const parsedValue = typeof containerValue === 'string' ? JSON.parse(containerValue) : containerValue;
+  //                 caseTitle = parsedValue?.textField5 || parsedValue?.caseTitle || '';
+  //                 caseNumber = caseNumber || parsedValue?.caseNo || parsedValue?.businessKey || parsedValue?.caseNumber;
+  //               }
+  //             } catch (error) {
+  //               console.error('Error parsing container value:', error);
+  //             }
+
+  //             return {
+  //               ...singleCase,
+  //               caseTitle,
+  //               caseNumber,
+  //             };
+  //           });
+  // console.log('updatedCases: ', updatedCases);
+  //  console.log("#### cases are being set 2 : ", updatedCases)
+  //           setCases(updatedCases);
+  //           setFilter({
+  //             ...filter,
+  //             cursors: {},
+  //             hasPrevious: false,
+  //             hasNext: false,
+  //           });
+
+  //           const caseNoParam = caseBusinessKey || searchParamsWindow.get('caseNo') || searchParamsWindow.get('businessKey');
+  //           if (caseNoParam) {
+  //             const target = String(caseNoParam);
+  //             const selectedCase = updatedCases.find((c) => {
+  //               if (!c) return false;
+  //               const candidates = [c.businessKey, c.caseNumber, c.caseNo, c.caseTitle];
+  //               try {
+  //                 const attributes =
+  //                   typeof c.attributes === 'string' ? JSON.parse(c.attributes) : c.attributes;
+  //                 const containerValue = attributes?.find((attr) => attr.name === 'container')?.value;
+  //                 const parsedContainer = containerValue ? (typeof containerValue === 'string' ? JSON.parse(containerValue) : containerValue) : {};
+  //                 candidates.push(parsedContainer.caseNo, parsedContainer.businessKey, parsedContainer.caseNumber);
+  //               } catch (e) {
+  //                 // ignore
+  //               }
+  //               return candidates.some((fld) => fld !== undefined && fld !== null && String(fld) === target);
+  //             });
+
+  //             if (selectedCase && setACase) {
+  //               setACase(selectedCase);
+  //               setOpenCaseForm(true);
+
+  //               // Remove 'caseNo' and 'businessKey' from the URL without reloading
+  //               searchParamsWindow.delete('caseNo');
+  //               searchParamsWindow.delete('businessKey');
+  //               const newUrl = `${window.location.pathname}?${searchParamsWindow.toString()}`;
+  //               window.history.replaceState(null, '', newUrl);
+  //               return;
+  //             }
+  //           //  else clear variables from URL
+  //           //  else {
+  //           //   console.log('clearing variables from URL..........')
+  //           //   searchParamsWindow.delete('assetName');
+  //           //   searchParamsWindow.delete('hierarchyName');
+  //           //   searchParamsWindow.delete('sourceSystem');
+  //           //   searchParamsWindow.delete('eventIds');
+  //           //   searchParamsWindow.delete('businessKey');
+  //           //   searchParamsWindow.delete('caseNo');
+  //           //   searchParamsWindow.delete('caseNumber');
+  //           //   searchParamsWindow.delete('caseTitle');
+  //           //   searchParamsWindow.delete('caseStatus');
+  //           //   searchParamsWindow.delete('caseAssignedTo');
+  //           //   const newUrl = `${window.location.pathname}?${searchParamsWindow.toString()}`;
+  //           //   window.history.replaceState(null, '', newUrl);
+  //           //  }
+  //           }
+
+  //           // If not found, fallback to full list fetch behavior
+  //           fetchCases(
+  //             setFetching,
+  //             keycloak,
+  //             caseDefId,
+  //             setStages,
+  //             status,
+  //             filter,
+  //             setCases,
+  //             setFilter,
+  //             isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
+  //           );
+  //         })
+  //         .catch((err) => {
+  //           console.error('Error in getCasesById for nav-to-view', err);
+  //           fetchCases(
+  //             setFetching,
+  //             keycloak,
+  //             caseDefId,
+  //             setStages,
+  //             status,
+  //             filter,
+  //             setCases,
+  //             setFilter,
+  //             isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
+  //           );
+  //         })
+  //         .finally(() => {
+  //           setFetching(false);
+  //         });
+  //     } catch (err) {
+  //       console.error('nav-to-view error', err);
+  //       fetchCases(
+  //         setFetching,
+  //         keycloak,
+  //         caseDefId,
+  //         setStages,
+  //         status,
+  //         filter,
+  //         setCases,
+  //         setFilter,
+  //         isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
+  //       );
+  //       setFetching(false);
+  //     }
+  //   } else {
+  //     fetchCases(
+  //       setFetching,
+  //       keycloak,
+  //       caseDefId,
+  //       setStages,
+  //       status,
+  //       filter,
+  //       setCases,
+  //       setFilter,
+  //       isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
+  //     );
+  //   }
+  // }, [caseDefId, status, openNewCaseForm])
   useEffect(() => {
     const isNavToView = (isCaseViewPath && !error && caseBusinessKey);
 
 
     if (queryHasBusinessKey && caseBusinessKey) {
-      // Use getCasesById (which returns cases filtered by asset/hierarchy) and try to match the caseNo
-
-      //logic for navigation after form submission
+      // Fetch the specific case directly by businessKey using GET /case/{businessKey}
       setFetching(true);
-      try {
-        const searchParamsWindow = new URLSearchParams(window.location.search);
-        const assetName = searchParamsWindow.get('assetName') || 'defaultAssetName';
-        const hierarchyName = searchParamsWindow.get('hierarchyName') || 'defaultHierarchyName';
-
-        CaseService.getCasesById(keycloak, caseDefId, assetName, hierarchyName)
-          .then((resp) => {
-            const caseList = Array.isArray(resp) ? resp : [];
-
-            const updatedCases = caseList.map((singleCase) => {
-
-              // for link-case
-             
-              let caseTitle = '';
-              let caseNumber = singleCase.caseNo || singleCase.businessKey || singleCase.caseNumber;
-
-              try {
-                const attributes =
-                  typeof singleCase.attributes === 'string'
-                    ? JSON.parse(singleCase.attributes)
-                    : singleCase.attributes;
-
-                const containerValue = attributes?.find((attr) => attr.name === 'container')?.value;
-
-                if (containerValue) {
-                  const parsedValue = typeof containerValue === 'string' ? JSON.parse(containerValue) : containerValue;
-                  caseTitle = parsedValue?.textField5 || parsedValue?.caseTitle || '';
-                  caseNumber = caseNumber || parsedValue?.caseNo || parsedValue?.businessKey || parsedValue?.caseNumber;
-                }
-              } catch (error) {
-                console.error('Error parsing container value:', error);
+      CaseService.getCaseByBusinessKey(keycloak, caseDefId, caseBusinessKey)
+        .then((selectedCase) => {
+          if (selectedCase) {
+            // Enrich with caseTitle/caseNumber like the rest of the list
+            let caseTitle = '';
+            let caseNumber = selectedCase.caseNo || selectedCase.businessKey || selectedCase.caseNumber;
+            try {
+              const attributes =
+                typeof selectedCase.attributes === 'string'
+                  ? JSON.parse(selectedCase.attributes)
+                  : selectedCase.attributes;
+              const containerValue = attributes?.find((attr) => attr.name === 'container')?.value;
+              if (containerValue) {
+                const parsed = typeof containerValue === 'string' ? JSON.parse(containerValue) : containerValue;
+                caseTitle = parsed?.textField5 || parsed?.caseTitle || '';
+                caseNumber = caseNumber || parsed?.caseNo || parsed?.businessKey || parsed?.caseNumber;
               }
-
-              return {
-                ...singleCase,
-                caseTitle,
-                caseNumber,
-              };
-            });
-  console.log('updatedCases: ', updatedCases);
-   console.log("#### cases are being set 2 : ", updatedCases)
-            setCases(updatedCases);
-            setFilter({
-              ...filter,
-              cursors: {},
-              hasPrevious: false,
-              hasNext: false,
-            });
-
-            const caseNoParam = caseBusinessKey || searchParamsWindow.get('caseNo') || searchParamsWindow.get('businessKey');
-            if (caseNoParam) {
-              const target = String(caseNoParam);
-              const selectedCase = updatedCases.find((c) => {
-                if (!c) return false;
-                const candidates = [c.businessKey, c.caseNumber, c.caseNo, c.caseTitle];
-                try {
-                  const attributes =
-                    typeof c.attributes === 'string' ? JSON.parse(c.attributes) : c.attributes;
-                  const containerValue = attributes?.find((attr) => attr.name === 'container')?.value;
-                  const parsedContainer = containerValue ? (typeof containerValue === 'string' ? JSON.parse(containerValue) : containerValue) : {};
-                  candidates.push(parsedContainer.caseNo, parsedContainer.businessKey, parsedContainer.caseNumber);
-                } catch (e) {
-                  // ignore
-                }
-                return candidates.some((fld) => fld !== undefined && fld !== null && String(fld) === target);
-              });
-
-              if (selectedCase && setACase) {
-                setACase(selectedCase);
-                setOpenCaseForm(true);
-
-                // Remove 'caseNo' and 'businessKey' from the URL without reloading
-                searchParamsWindow.delete('caseNo');
-                searchParamsWindow.delete('businessKey');
-                const newUrl = `${window.location.pathname}?${searchParamsWindow.toString()}`;
-                window.history.replaceState(null, '', newUrl);
-                return;
-              }
-            //  else clear variables from URL
-            //  else {
-            //   console.log('clearing variables from URL..........')
-            //   searchParamsWindow.delete('assetName');
-            //   searchParamsWindow.delete('hierarchyName');
-            //   searchParamsWindow.delete('sourceSystem');
-            //   searchParamsWindow.delete('eventIds');
-            //   searchParamsWindow.delete('businessKey');
-            //   searchParamsWindow.delete('caseNo');
-            //   searchParamsWindow.delete('caseNumber');
-            //   searchParamsWindow.delete('caseTitle');
-            //   searchParamsWindow.delete('caseStatus');
-            //   searchParamsWindow.delete('caseAssignedTo');
-            //   const newUrl = `${window.location.pathname}?${searchParamsWindow.toString()}`;
-            //   window.history.replaceState(null, '', newUrl);
-            //  }
+            } catch (e) {
+              console.error('Error parsing container value:', e);
             }
-
-            // If not found, fallback to full list fetch behavior
-            fetchCases(
-              setFetching,
-              keycloak,
-              caseDefId,
-              setStages,
-              status,
-              filter,
-              setCases,
-              setFilter,
-              isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
-            );
-          })
-          .catch((err) => {
-            console.error('Error in getCasesById for nav-to-view', err);
-            fetchCases(
-              setFetching,
-              keycloak,
-              caseDefId,
-              setStages,
-              status,
-              filter,
-              setCases,
-              setFilter,
-              isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
-            );
-          })
-          .finally(() => {
-            setFetching(false);
-          });
-      } catch (err) {
-        console.error('nav-to-view error', err);
-        fetchCases(
-          setFetching,
-          keycloak,
-          caseDefId,
-          setStages,
-          status,
-          filter,
-          setCases,
-          setFilter,
-          isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
-        );
-        setFetching(false);
-      }
+            const enriched = { ...selectedCase, caseTitle, caseNumber };
+            setACase(enriched);
+            setOpenCaseForm(true);
+            // Clean businessKey/caseNo from URL
+            const searchParamsWindow = new URLSearchParams(window.location.search);
+            searchParamsWindow.delete('caseNo');
+            searchParamsWindow.delete('businessKey');
+            window.history.replaceState(null, '', `${window.location.pathname}?${searchParamsWindow.toString()}`);
+          }
+        })
+        .catch((err) => {
+          console.error('Error fetching case by businessKey:', err);
+        })
+        .finally(() => {
+          setFetching(false);
+          // Always load the full list in the background
+          fetchCases(setFetching, keycloak, caseDefId, setStages, status, filter, setCases, setFilter, null);
+        });
     } else {
       fetchCases(
         setFetching,
@@ -407,8 +469,8 @@ export const CaseList = ({ status, caseDefId }) => {
         isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
       );
     }
-  }, [caseDefId, status, openNewCaseForm])
-
+  }, [caseDefId, status, openNewCaseForm, location.state?.refresh])
+  
   useEffect(() => {
     CaseService.getCaseDefinitions(keycloak).then((resp) => {
       setCaseDefs(resp);
