@@ -95,6 +95,22 @@ import {
 import { DashboardColors } from 'themes/colors'
 import SwitchEditor from './Utilities-Kendo/SwitchEditor'
 
+// the input on every parent re-render and the user loses focus mid-typing.
+const ON_OFF_CONDITION = (dataItem) => dataItem?.UOM === 'ON/OFF'
+function makeOnOffSwitchEditCell(itemChange, editable, isDisabled) {
+  return function OnOffSwitchEditCell(props) {
+    return (
+      <SwitchEditor
+        {...props}
+        onChange={(e) => itemChange(e)}
+        condition={ON_OFF_CONDITION}
+        editable={editable}
+        isDisabled={isDisabled}
+      />
+    )
+  }
+}
+
 export const dateFields = [
   'maintStartDateTime',
   'maintEndDateTime',
@@ -1080,6 +1096,20 @@ const KendoDataTables = ({
       )?.length || 0
     )
   }, [columns])
+
+  const onOffSwitchEditCells = useMemo(() => {
+    const map = {}
+    columns?.forEach((col) => {
+      if (col?.type === 'number' && col?.field) {
+        map[col.field] = makeOnOffSwitchEditCell(
+          itemChange,
+          col?.editable,
+          col?.isDisabled,
+        )
+      }
+    })
+    return map
+  }, [columns, itemChange])
 
   const handleAddRow = () => {
     setEdit({})
@@ -3963,17 +3993,7 @@ const KendoDataTables = ({
                         headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: {
-                            text: (props) => (
-                              <SwitchEditor
-                                {...props}
-                                onChange={(e) => itemChange(e)}
-                                condition={(dataItem) =>
-                                  dataItem?.UOM === 'ON/OFF'
-                                }
-                                editable={col?.editable}
-                                isDisabled={col?.isDisabled}
-                              />
-                            ),
+                            text: onOffSwitchEditCells[col.field],
                           },
                           data: (props) => {
                             // ON/OFF rows: show switch with direct edit mode

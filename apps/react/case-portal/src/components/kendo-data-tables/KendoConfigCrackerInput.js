@@ -558,11 +558,11 @@ const CrackerConfig = () => {
         }, 500)
       } catch (err) {
         // console.warn(`Failed to load ${tabId} data:`, err)
-        setSnackbarData({
-          message: `Failed to load ${currentTabDisplay} data. Please try again.`,
-          severity: 'error',
-        })
-        setSnackbarOpen(true)
+        // setSnackbarData({
+        //   message: `Failed to load ${currentTabDisplay} data. Please try again.`,
+        //   severity: 'error',
+        // })
+        // setSnackbarOpen(true)
         setRowsForTab(currentTabDisplay, [])
       } finally {
         setLoading(false)
@@ -1001,11 +1001,11 @@ const CrackerConfig = () => {
       setSnackbarData({ message: 'Naphtha data loaded!', severity: 'success' })
       setSnackbarOpen(true)
     } catch (error) {
-      setSnackbarData({
-        message: 'Failed to load Naphtha data.',
-        severity: 'error',
-      })
-      setSnackbarOpen(true)
+      // setSnackbarData({
+      //   message: 'Failed to load Naphtha data.',
+      //   severity: 'error',
+      // })
+      // setSnackbarOpen(true)
     } finally {
       setLoading(false)
     }

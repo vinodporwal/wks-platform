@@ -274,10 +274,6 @@ const AdvanceKendoTable = ({
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
-  console.log('dataGridStore', dataGridStore)
-  console.log('READ_ONLY', READ_ONLY)
-  console.log('isReleased', IS_RELEASED)
-
   const ColumnMenuCheckboxFilterDate = getColumnMenuDateFilter(rows)
   const initialGroup = Array.isArray(groupBy)
     ? groupBy.map((field) => ({ field, dir: undefined }))

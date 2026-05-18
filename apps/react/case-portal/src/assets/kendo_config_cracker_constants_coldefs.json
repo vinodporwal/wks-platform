@@ -6,7 +6,7 @@
     "widthT": 250,
     "autoAdjust": false,
     "hidden": false,
-    "minWidth": 120
+    "minWidth": 250
   },
   {
     "field": "UOM",

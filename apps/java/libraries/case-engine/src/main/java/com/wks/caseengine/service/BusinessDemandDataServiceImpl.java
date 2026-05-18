@@ -1308,8 +1308,8 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 				innerHeaders.add("Error Description");
 			}
 
-			// Styles: locked+gray for May-March (cols 3-13), unlocked for April (col 2),
-			// locked default for all other columns
+		// Styles: locked+gray for May-March (cols 3-13), unlocked for April (col 2) and Remark (col 14),
+		// locked default for all other columns
 			CellStyle lockedMonthStyle = buildLockedMonthStyle(workbook);
 			CellStyle unlockedAprilStyle = Utility.createUnlockedStyle(workbook);
 			CellStyle lockedDefaultStyle = buildLockedDefaultStyle(workbook);
@@ -1338,16 +1338,16 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 						cell.setCellValue("");
 					}
 
-					if (col == 2) {
-						// April column: editable
-						cell.setCellStyle(unlockedAprilStyle);
-					} else if (col >= 3 && col <= 13) {
-						// May through March: locked with gray fill to indicate read-only
-						cell.setCellStyle(lockedMonthStyle);
-					} else {
-						// Remaining columns (Particulars, UOM, Remark, Id, NormParameterId, Status...)
-						cell.setCellStyle(lockedDefaultStyle);
-					}
+				if (col == 2 || col == 14) {
+					// April column and Remark column: editable
+					cell.setCellStyle(unlockedAprilStyle);
+				} else if (col >= 3 && col <= 13) {
+					// May through March: locked with gray fill to indicate read-only
+					cell.setCellStyle(lockedMonthStyle);
+				} else {
+					// Remaining columns (Particulars, UOM, Id, NormParameterId, Status...)
+					cell.setCellStyle(lockedDefaultStyle);
+				}
 				}
 			}
 

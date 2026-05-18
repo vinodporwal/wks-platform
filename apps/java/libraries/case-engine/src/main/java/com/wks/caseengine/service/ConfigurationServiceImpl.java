@@ -574,8 +574,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			boolean isChemical= vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("DMD") && plant.getName().equalsIgnoreCase("Chlor Alkali");
-			boolean isChemicalVmdbutadiene = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD") && plant.getName().equalsIgnoreCase("Butadiene");
-			boolean isChemicalVmdbenzenes = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD") && plant.getName().equalsIgnoreCase("Benzene");
+			// boolean isChemicalVmdbutadiene = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD") && plant.getName().equalsIgnoreCase("Butadiene");
+			// boolean isChemicalVmdbenzenes = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD") && plant.getName().equalsIgnoreCase("Benzene");
+			boolean isChemicalVmd = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD");
 		    List<Object[]> obj = new ArrayList<>();
 			if ((verticalName.equalsIgnoreCase("MEG"))
 					|| (verticalName.equalsIgnoreCase("CRACKER")) || (isChemical) ) {
@@ -583,7 +584,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				String procedureName = verticalName + "_GetConfiguration";
 				obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);
 			}
-			else if(isChemicalVmdbutadiene || isChemicalVmdbenzenes) { 
+			// else if(isChemicalVmdbutadiene || isChemicalVmdbenzenes) { 
+				else if(isChemicalVmd) { 
 				String procedureName = verticalName + "_" + site.getName() + "_GetConfiguration";
 				obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);
 			}
@@ -638,7 +640,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 						: 0.0);
 				configurationDTO.setRemarks((row[13] != null ? row[13].toString() : ""));
 
-				if(isChemical || isChemicalVmdbutadiene || isChemicalVmdbenzenes) {
+				if(isChemical || isChemicalVmd) {
 					configurationDTO.setAuditYear(row[14] != null ? row[14].toString() : "");
 					configurationDTO.setUOM(row[15] != null ? row[15].toString() : "");
 					configurationDTO.setNormType(row[16] != null ? row[16].toString() : "");
@@ -704,7 +706,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		    List<Object[]> obj = new ArrayList<>();
 			Boolean vertical=(verticalName.equalsIgnoreCase("MEG")) || (verticalName.equalsIgnoreCase("CRACKER") || (isChemical) || ischemicalAndVmd);
 					
-			if (vertical) {
+			if (vertical && !ischemicalAndVmd) {
 				String procedureName = verticalName + "_GetConfiguration";
 				obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);
 			} 
@@ -2864,17 +2866,26 @@ continue;
 	}
 
 	@Override
-	public byte[] createConfigurationConstantsExcel(String year, UUID plantFKId) {
+	public byte[] createConfigurationConstantsExcel(String year, UUID plantFKId, boolean iscatcam) {
 		try {
 
-			String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
-			String procedureName = verticalName + "_GetConfiguration_Constant";
-			List<Object[]> obj = new ArrayList<>();
-			if ((verticalName.equalsIgnoreCase("MEG")) || (verticalName.equalsIgnoreCase("ELASTOMER"))
-					|| (verticalName.equalsIgnoreCase("CRACKER")) || (verticalName.equalsIgnoreCase("VCM")) || (verticalName.equalsIgnoreCase("Chemical"))
-					|| (verticalName.equalsIgnoreCase("PTA")) || (verticalName.equalsIgnoreCase("AROMATICS"))) {
-				obj = findConstantsByYearAndPlantFkId(year, plantFKId.toString(), procedureName);
+		Plants plant = plantsRepository.findById(plantFKId).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
+		
+			String procedureName = null;
+
+			if(iscatcam) { 
+
+				procedureName =  vertical.getName() + "_" + site.getName() + "_GetCatChem_Constant";
 			}
+			else { procedureName = vertical.getName() +  "_GetConfiguration_Constant";
+	     	}
+			List<Object[]> obj = new ArrayList<>();
+
+				obj = findConstantsByYearAndPlantFkId(year, plantFKId.toString(), procedureName);
+			
 			Workbook workbook = new XSSFWorkbook();
 
 			Sheet sheet = workbook.createSheet("Sheet1");

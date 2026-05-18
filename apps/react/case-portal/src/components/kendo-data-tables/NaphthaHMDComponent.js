@@ -17,6 +17,7 @@ import {
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian.js'
 import { Typography } from '../../../node_modules/@mui/material/index.js'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 export default function NaphthaHMDComponent() {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -519,12 +520,7 @@ export default function NaphthaHMDComponent() {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       <CustomAccordion defaultExpanded disableGutters>
         <CustomAccordionSummary
           aria-controls='meg-grid-content'
