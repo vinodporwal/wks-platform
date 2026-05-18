@@ -55,6 +55,7 @@ const getShutdownConsumptionColDef = ({
     ['lldpe1', 'lldpe2'].includes(PLANT_NAME_LOWERCASE)
   const IS_PVC_VMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'vmd'
   const IS_PVC_DMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'dmd'
+  const IS_PVC_HMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'hmd'
 
   let safeShutdownMonths = Array.isArray(shutdownMonths) ? shutdownMonths : []
 
@@ -71,7 +72,7 @@ const getShutdownConsumptionColDef = ({
     cols = ShutdownConsumptionPtadmdColumns
   } else if (IS_PVC_VMD) {
     cols = ShutdownConsumptionPeColumns
-  } else if (IS_PVC_DMD) {
+  } else if (IS_PVC_DMD || IS_PVC_HMD) {
     cols = ShutdownConsumptionPpColumns
   } else {
     cols = VERTICAL_COLDEFS_MAP[lowerVertName] || []
