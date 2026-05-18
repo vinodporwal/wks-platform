@@ -815,6 +815,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
               editor='date'
               hidden={col.hidden}
               sortable={false}
+              width={setWidth(col.minWidth || col.widthT || 130)}
               cells={{
                 headerCell: SimpleHeaderWithTooltip,
               }}
