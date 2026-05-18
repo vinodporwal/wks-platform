@@ -222,19 +222,19 @@ const KendoDataTablesCrackerRunLengthNMD = ({
       0,
     )
 
-    // 🔥 Decide behavior based on available space
+    // ?? Decide behavior based on available space
     const hasExtraSpace = gridCurrent > totalMinWidth
 
     let width
 
     if (!hasExtraSpace) {
-      // ✅ Not enough space → respect minWidth → enable scroll
+      // ? Not enough space ? respect minWidth ? enable scroll
       width = minWidth
     } else {
-      // ✅ Extra space → distribute nicely (but controlled)
+      // ? Extra space ? distribute nicely (but controlled)
       const extraPerCol = (gridCurrent - totalMinWidth) / visibleCols.length
 
-      // 🔥 limit expansion so it doesn't look ugly
+      // ?? limit expansion so it doesn't look ugly
       const MAX_GROWTH = 80 // tweak if needed
 
       width = minWidth + Math.min(extraPerCol, MAX_GROWTH)
@@ -815,6 +815,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
               editor='date'
               hidden={col.hidden}
               sortable={false}
+              width={setWidth(col.minWidth || col.widthT || 130)}
               cells={{
                 headerCell: SimpleHeaderWithTooltip,
               }}

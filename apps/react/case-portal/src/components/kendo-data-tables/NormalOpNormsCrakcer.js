@@ -1255,7 +1255,7 @@ const NormalOpNormsScreenCracker = () => {
   // UI render
   return (
     <div>
-      <LoaderBackdrop open={!!loading || !!loading1} />
+      <LoaderBackdrop open={!!loading1} />
 
       <Box sx={{ margin: 0, padding: 0 }}>
         <AopTabs
