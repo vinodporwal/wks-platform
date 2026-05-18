@@ -1,9 +1,11 @@
-import { Tab, Tabs, Box } from '@mui/material'
+import { Tab, Tabs, Box, useTheme } from '@mui/material'
 import PropTypes from 'prop-types'
 import { useEffect, useRef } from 'react'
 
 const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
   const tabRefs = useRef([])
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const BOX_TABS = false // ?? change to false when needed
 
   useEffect(() => {
@@ -30,7 +32,7 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
         WebkitOverflowScrolling: 'touch',
         p: 0.125,
         borderRadius: '0px',
-        borderBottom: '1px solid #E0E0E0',
+        borderBottom: `1px solid ${isDark ? '#505050' : '#E0E0E0'}`,
         marginBottom: '15px',
         scrollbarWidth: 'none',
         '&::-webkit-scrollbar': { display: 'none' },
@@ -77,7 +79,7 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
                 fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
                 borderRadius: 0,
 
-                color: isSelected ? '#303030 !important' : '#606060',
+                color: isSelected ? (isDark ? '#f0f0f0 !important' : '#303030 !important') : (isDark ? '#D0D0D0 !important' : '#606060 !important'),
                 bgcolor: 'transparent',
                 border: 'none',
 
@@ -85,7 +87,7 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
 
                 '&:hover': {
                   bgcolor: 'transparent',
-                  color: '#0f172a',
+                  color: isDark ? '#f0f0f0' : '#0f172a',
                   boxShadow: 'none !important',
                 },
 
@@ -102,7 +104,7 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
                 '&:active': {
                   boxShadow: 'none !important',
                   bgcolor: 'transparent',
-                  color: '#303030 !important',
+                  color: isDark ? '#f0f0f0 !important' : '#303030 !important',
                 },
 
                 transition: 'all 160ms ease',

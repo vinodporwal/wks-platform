@@ -59,7 +59,7 @@ const Header = ({
           sx={{
             fontWeight: 800,
             fontSize: 14,
-            color: DashboardColors.text.heading,
+            color: theme.palette.mode === 'dark' ? '#F0F0F0' : DashboardColors.text.heading,
             fontFamily:
               "'Hiragino Sans', 'Honeywell Sans Web', 'Inter', sans-serif",
           }}

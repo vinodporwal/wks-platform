@@ -8,6 +8,7 @@ import {
   Typography,
   useMediaQuery,
   SvgIcon,
+  useTheme,
 } from '@mui/material'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import React, { useEffect, useState } from 'react'
@@ -42,9 +43,13 @@ import Domain from '@mui/icons-material/Domain'
 import Factory from '@mui/icons-material/Factory'
 import CorporateFare from '@mui/icons-material/CorporateFare'
 import {
+  BriefcaseDarkIcon,
   BusinessBlueIcon,
+  CalenderDarkIcon,
   CalenderIcon,
+  PlantDarkIcon,
   PlantIcon,
+  SiteDarkIcon,
   SiteIcon,
 } from 'assets/images/icons/index'
 
@@ -62,6 +67,8 @@ function parseAllowed(raw) {
 }
 
 export default function HeaderContent({ keycloak, navigation }) {
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const [headerLoading, setHeaderLoading] = useState(false)
   const getSelectedVerticalStorage = localStorage.getItem('selectedVertical')
     ? JSON.parse(localStorage.getItem('selectedVertical'))
@@ -632,15 +639,14 @@ export default function HeaderContent({ keycloak, navigation }) {
         maxHeight: 240,
         borderRadius: '6px', // menu panel radius
         marginTop: 6,
-        background: '#FFFFFF',
+        background: isDark ? '#2A2F45' : '#FFFFFF',
         gap: '4px',
-        boxShadow: '0 8px 24px rgba(15,23,42,0.08)',
-        border: '1px solid #DDDEE1',
-        color: '#0f172a',
+        boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : '0 8px 24px rgba(15,23,42,0.08)',
+        border: isDark ? '1px solid #3A3F5C' : '1px solid #DDDEE1',
+        color: isDark ? '#F0F0F0' : '#0f172a',
         padding: '6px 12px 6px 4px',
       },
       sx: {
-        // also add sx for runtime override (some MUI versions prefer sx)
         borderRadius: '6px',
       },
     },
@@ -648,26 +654,27 @@ export default function HeaderContent({ keycloak, navigation }) {
   }
   const menuItemStyle = {
     transition: 'all 0.12s ease',
-    borderRadius: 6, //  smaller
+    borderRadius: 6,
     mx: 0.5,
     my: 0.25,
-    color: '#303030',
+    color: isDark ? '#F0F0F0' : '#303030',
     fontWeight: 500,
     fontSize: '14px !important',
     fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
     '&:hover': {
-      background: 'rgba(59,130,246,0.06)',
+      background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(59,130,246,0.06)',
     },
     '&.Mui-selected': {
-      background: 'rgba(59,130,246,0.12)',
+      background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(59,130,246,0.12)',
       fontWeight: 600,
+      color: isDark ? '#F0F0F0' : '#303030',
     },
   }
 
   const dropdownContainerStyle = {
     display: 'flex',
     alignItems: 'center',
-    background: '#ffffff',
+    background: isDark ? '#2A2F45' : '#ffffff',
   }
 
   const selectStyle = {
@@ -675,32 +682,33 @@ export default function HeaderContent({ keycloak, navigation }) {
     minWidth: 160,
 
     '& .MuiOutlinedInput-root': {
-      borderRadius: '6px !important', // ?? THIS is the real border
-      background: '#eef3f8',
+      borderRadius: '6px !important',
+      background: isDark ? '#2A2F45' : '#ffffff',
       height: 34,
+      color: isDark ? '#F0F0F0' : '#303030',
     },
 
     '& .MuiOutlinedInput-notchedOutline': {
-      border: '1px solid #DDDEE1',
-      borderRadius: '6px !important', // ?? must repeat here
+      border: isDark ? '1px solid #3A3F5C' : '1px solid #DDDEE1',
+      borderRadius: '6px !important',
     },
 
     '&:hover .MuiOutlinedInput-notchedOutline': {
-      borderColor: 'rgba(15,23,42,0.1)',
+      borderColor: isDark ? '#3A3F5C' : 'rgba(15,23,42,0.1)',
     },
 
     '& .MuiSelect-select': {
       display: 'flex',
       alignItems: 'center',
-      gap: 6,
+      gap: '4px',
       padding: '6px 10px !important',
-      fontSize: '0.85rem',
+      fontSize: '14px',
       fontWeight: 600,
     },
 
     '& .MuiSvgIcon-root': {
       fontSize: 18,
-      color: '#6b7786',
+      color: isDark ? '#F0F0F0' : '#6b7786',
     },
   }
 
@@ -715,7 +723,7 @@ export default function HeaderContent({ keycloak, navigation }) {
           position: 'relative',
           pr: 2,
           py: 0.75,
-          background: '#fff',
+          background: isDark ? '#1C2236' : '#fff',
           // borderBottom: '1px solid rgba(15,23,42,0.04)',
         }}
       >
@@ -736,7 +744,7 @@ export default function HeaderContent({ keycloak, navigation }) {
                 sx={{
                   fontWeight: 700,
                   fontSize: '16px',
-                  color: '#303030',
+                  color: isDark ? '#F0F0F0' : '#303030',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -751,15 +759,17 @@ export default function HeaderContent({ keycloak, navigation }) {
                   sx={{
                     p: '4px 8px',
                     borderRadius: '100px',
-                    backgroundColor: '#ECEEFF',
-                    border: '1px solid #41424D',
+                    backgroundColor: isDark ? '#3A4066' : '#ECEEFF',
+                    border: '1px solid',
+                    borderColor: isDark ? '#DDE0FF' : '#41424D',
+                    display: { xs: 'none', xl: 'flex' },
                   }}
                 >
                   <Typography
                     sx={{
                       fontSize: '12px',
                       fontWeight: 700,
-                      color: '#41424D',
+                      color: isDark ? '#DDE0FF' : '#41424D',
                       fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
                     }}
                   >
@@ -808,16 +818,21 @@ export default function HeaderContent({ keycloak, navigation }) {
                       >
                         <Box
                           component='img'
-                          src={CalenderIcon}
+                          src={isDark ? CalenderDarkIcon : CalenderIcon}
                           className='w16-icon'
                         />
 
-                        <Box component='span' className='header-dropdown-label'>
+                        <Box
+                          component='span'
+                          className='header-dropdown-label'
+                          style={{ color: isDark ? '#D0D0D0' : '#606060' }}
+                        >
                           Year:
                         </Box>
                         <Box
                           component='strong'
                           className='header-dropdown-value'
+                          style={{ color: isDark ? '#F0F0F0' : '#303030' }}
                         >
                           {yearObj?.AOPDisplayYear}
                         </Box>
@@ -865,18 +880,20 @@ export default function HeaderContent({ keycloak, navigation }) {
                         >
                           <Box
                             component='img'
-                            src={BusinessBlueIcon}
+                            src={isDark ? BriefcaseDarkIcon : BusinessBlueIcon}
                             className='w16-icon'
                           />
                           <Box
                             component='span'
                             className='header-dropdown-label'
+                            style={{ color: isDark ? '#D0D0D0' : '#606060' }}
                           >
                             Vertical:
                           </Box>
                           <Box
                             component='strong'
                             className='header-dropdown-value'
+                            style={{ color: isDark ? '#F0F0F0' : '#303030' }}
                           >
                             {vert?.name}
                           </Box>
@@ -922,18 +939,20 @@ export default function HeaderContent({ keycloak, navigation }) {
                         >
                           <Box
                             component='img'
-                            src={SiteIcon}
+                            src={isDark ? SiteDarkIcon : SiteIcon}
                             className='w16-icon'
                           />
                           <Box
                             component='span'
                             className='header-dropdown-label'
+                            style={{ color: isDark ? '#D0D0D0' : '#606060' }}
                           >
                             Site:
                           </Box>
                           <Box
                             component='strong'
                             className='header-dropdown-value'
+                            style={{ color: isDark ? '#F0F0F0' : '#303030' }}
                           >
                             {site?.name}
                           </Box>
@@ -978,18 +997,20 @@ export default function HeaderContent({ keycloak, navigation }) {
                         >
                           <Box
                             component='img'
-                            src={PlantIcon}
+                            src={isDark ? PlantDarkIcon : PlantIcon}
                             className='w16-icon'
                           />
                           <Box
                             component='span'
                             className='header-dropdown-label'
+                            style={{ color: isDark ? '#D0D0D0' : '#606060' }}
                           >
                             Plant:
                           </Box>
                           <Box
                             component='strong'
                             className='header-dropdown-value'
+                            style={{ color: isDark ? '#F0F0F0' : '#303030' }}
                           >
                             {plant?.name}
                           </Box>

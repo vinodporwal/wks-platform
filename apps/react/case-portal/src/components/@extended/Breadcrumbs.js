@@ -24,9 +24,12 @@ import {
   Skeleton,
 } from '../../../node_modules/@mui/material/index'
 import { setVerticalChangeFromDashboard } from 'store/reducers/dataGridStore'
+import { useTheme } from '@mui/material'
 
 const Breadcrumbs = ({ navigation, title, ...others }) => {
   const keycloak = useSession()
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { verticalChange, plantObject, verticalObject, siteObject, year } =
     dataGridStore
@@ -387,7 +390,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
       breadcrumbContent = (
         <Box
           border={false}
-          sx={{ bgcolor: 'transparent' }}
+          className={isDark ? 'breadcrumbs-box-dark' : 'breadcrumbs-box'}
           {...others}
           content={false}
         >
@@ -468,7 +471,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
                         alignItems: 'center',
                         fontWeight: 700,
                         fontSize: '0.72rem',
-                        color: '#64748b', // Slate 500 for secondary text
+                        color: isDark ? '#F0F0F0' : '#64748b',
                         textTransform: 'uppercase',
                         letterSpacing: '0.4px',
                         fontFamily:
@@ -508,7 +511,8 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
 
             {/* HIDE THE TITLE NAME */}
             {title && (
-              <Grid item sx={{ mt: 0.5 }}>
+              <Grid item sx={{ mt: 0.5, color: isDark ? '#F0F0F0' : '#64748b', fontFamily:
+                          "'Honeywell Sans Web', 'Inter', Arial, sans-serif", }}>
                 <Typography variant='h5'>{item.title}</Typography>
               </Grid>
             )}

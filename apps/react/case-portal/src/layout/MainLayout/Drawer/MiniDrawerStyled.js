@@ -14,7 +14,7 @@ const openedMixin = (theme) => ({
   boxShadow: 'none',
   background:
     theme.palette.mode === 'dark'
-      ? '#1e293b'
+      ? '#131A2A'
       : 'linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%)',
   borderRight:
     theme.palette.mode === 'dark'
@@ -35,7 +35,7 @@ const closedMixin = (theme) => ({
       : '1px solid #DDDEE1 !important',
   background:
     theme.palette.mode === 'dark'
-      ? '#1e293b'
+      ? '#131A2A'
       : 'linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%)',
 })
 

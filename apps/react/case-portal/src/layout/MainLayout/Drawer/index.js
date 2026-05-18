@@ -15,7 +15,6 @@ import DrawerHeader from './DrawerHeader'
 import DrawerContent from './DrawerContent'
 import MiniDrawerStyled from './MiniDrawerStyled'
 import { setMode } from 'store/reducers/theme'
-import { DrawerThemeCustomization } from 'themes'
 
 const MainDrawer = ({ open, handleDrawerToggle, isDashboard, keycloak }) => {
   const dispatch = useDispatch()
@@ -66,7 +65,6 @@ const MainDrawer = ({ open, handleDrawerToggle, isDashboard, keycloak }) => {
   }
 
   return (
-    <DrawerThemeCustomization>
       <MiniDrawerStyled
         variant='permanent'
         open={open}
@@ -255,8 +253,6 @@ const MainDrawer = ({ open, handleDrawerToggle, isDashboard, keycloak }) => {
           </Box>
         </Box>
       </MiniDrawerStyled>
-    </DrawerThemeCustomization>
-
   )
 }
 

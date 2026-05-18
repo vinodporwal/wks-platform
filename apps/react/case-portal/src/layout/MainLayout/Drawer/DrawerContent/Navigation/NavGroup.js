@@ -15,7 +15,7 @@ const NavGroup = ({ item }) => {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
 
-  const GROUP_TEXT = '#606060'
+  const GROUP_TEXT = isDark ? '#D0D0D0' : '#606060'
 
   const navCollapse = item.children?.map((menuItem) => {
     switch (menuItem.type) {
@@ -83,7 +83,7 @@ const NavGroup = ({ item }) => {
                 display: 'flex',
                 justifyContent: 'center',
                 py: 1,
-                color: isDark ? '#606060' : '#606060',
+                color: isDark ? '#D0D0D0' : '#606060',
               }}
             >
               <AppsIcon sx={{ fontSize: 18 }} />

@@ -2,10 +2,8 @@ legend {
   width: auto;
 }
 header {
-  background-color: #ffffff !important;
   background-image: none !important;
   /* box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06) !important; */
-  border-bottom: 1px solid #dddee1 !important;
   /* color: #2c3e50 !important; */
 }
 
@@ -369,6 +367,12 @@ body {
   background: #f6f7f8;
 }
 
+.outlet-wrapper-dark {
+  flex: 1;
+  overflow: hidden;
+  background: #1C2236;
+}
+
 .outlet-border-box {
   height: 100%;
   overflow: auto;
@@ -397,6 +401,15 @@ body {
   padding: 12px 0px 12px 8px;
   gap: 16px;
   background-color: #ffffff;
+  margin: 10px 0px 10px 0px;
+}
+.breadcrumbs-box-dark {
+  box-sizing: border-box;
+  border-radius: 8px;
+  border: 1px solid #3C4055;
+  padding: 12px 0px 12px 8px;
+  gap: 16px;
+  background-color: #1C2236;
   margin: 10px 0px 10px 0px;
 }
 
@@ -553,8 +566,7 @@ body {
    ========================================================= */
 
 .stepper-nav-container {
-  background-color: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
+  /* Dynamic styles managed via JS/sx */
 }
 
 .stepper-nav-tabs {
@@ -593,12 +605,11 @@ body {
 }
 
 .stepper-nav-tab:hover {
-  background-color: #eef2ff !important;
+  /* Dynamic styles managed via JS/sx */
 }
 
 .stepper-nav-tab.Mui-selected {
-  background-color: #f6f7f8 !important;
-  color: #303030 !important;
+  /* Dynamic styles managed via JS/sx */
 }
 
 .stepper-nav-tab .MuiTab-iconWrapper {
@@ -615,7 +626,6 @@ body {
   font-size: 12px;
   font-weight: 400;
   font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
-  color: #303030;
   text-transform: uppercase;
 }
 

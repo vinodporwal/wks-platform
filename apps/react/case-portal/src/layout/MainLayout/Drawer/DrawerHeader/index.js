@@ -83,7 +83,7 @@ const DrawerHeader = ({ open, handleDrawerToggle }) => {
         >
           <Box
             component='img'
-            src={open ? (isDark ? DrawerCloseDarkIcon : DrawerCloseIcon) : (isDark ? DrawerOpenDarkIcon : DrawerOpenIcon)}
+            src={open ? (isDark ? DrawerOpenDarkIcon : DrawerCloseIcon) : (isDark ? DrawerCloseDarkIcon : DrawerOpenIcon)}
             alt='Drawer Toggle'
             sx={{
               width: 20,

@@ -8,6 +8,7 @@ import {
   Tab,
   Tabs,
   Typography,
+  useTheme
 } from '@mui/material'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
@@ -78,6 +79,10 @@ const mapGridRowToPayload = (rows = [], savingMonthlyBestAchieved = false) =>
   })
 
 const NormalOpNormsScreenCracker = () => {
+
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  
   // state
   const [modifiedCells, setModifiedCells] = useState({})
   const [modifiedCellsFinalNorms, setModifiedCellsFinalNorms] = useState({})
@@ -1243,10 +1248,30 @@ const NormalOpNormsScreenCracker = () => {
     // 'Report Manual Entry',
   ]
 
+  const menuPropsStyle = {
+    PaperProps: {
+      style: {
+        maxHeight: 240,
+        borderRadius: '6px', // menu panel radius
+        marginTop: 6,
+        background: isDark ? '#2A2F45' : '#FFFFFF',
+        gap: '4px',
+        boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : '0 8px 24px rgba(15,23,42,0.08)',
+        border: isDark ? '1px solid #3A3F5C' : '1px solid #DDDEE1',
+        color: isDark ? '#F0F0F0' : '#0f172a',
+        padding: '6px 12px 6px 4px',
+      },
+      sx: {
+        borderRadius: '6px',
+      },
+    },
+    disableScrollLock: true,
+  }
+
   const menuItemStyle = {
     fontSize: 14,
     fontWeight: 500,
-    color: '#303030',
+    color: isDark ? '#F0F0F0' : '#303030',
     fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
     letterSpacing: '0px',
     verticalAlign: 'middle',
@@ -1290,7 +1315,7 @@ const NormalOpNormsScreenCracker = () => {
                 minWidth: 140,
                 '& .MuiOutlinedInput-root': {
                   height: '30px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                  backgroundColor: isDark ? '#2A2F45' : 'rgba(255, 255, 255, 0.85)',
                   borderRadius: '7px',
                   fontSize: '14px',
                   fontWeight: 700,
@@ -1317,7 +1342,7 @@ const NormalOpNormsScreenCracker = () => {
                     variant='caption'
                     sx={{
                       mr: 0.5,
-                      color: '#606060',
+                      color: isDark ? '#D0D0D0' : '#606060',
                       fontWeight: 500,
                       fontSize: '14px',
                       textTransform: 'uppercase',
@@ -1331,11 +1356,9 @@ const NormalOpNormsScreenCracker = () => {
                 ),
               }}
               SelectProps={{
-                MenuProps: {
-                  disableScrollLock: true,
-                },
+                MenuProps: menuPropsStyle
               }}
-              MenuProps={{ disableScrollLock: true }}
+
             >
               <MenuItem value='' disabled sx={menuItemStyle}>
                 Select Mode
@@ -1348,7 +1371,7 @@ const NormalOpNormsScreenCracker = () => {
               ))}
             </TextField>
 
-            <Typography component='div' className='grid-title'>
+            <Typography component='div' className='grid-title' style={{ color: isDark ? '#F0F0F0' : '#252525' }}>
               <span style={{ color: 'orange', fontWeight: 'bold' }}>
                 Orange
               </span>{' '}
@@ -1536,7 +1559,7 @@ const NormalOpNormsScreenCracker = () => {
           <Box
             sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, mb: 1 }}
           >
-            <Typography component='div' className='grid-title'>
+            <Typography component='div' className='grid-title' style={{ color: isDark ? '#F0F0F0' : '#252525' }}>
               <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span> -
               Expression &nbsp;&nbsp;
               <span style={{ color: 'green', fontWeight: 'bold' }}>

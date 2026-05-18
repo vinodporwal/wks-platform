@@ -36,9 +36,9 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
     (state) => state.dataGridStore,
   )
 
-  const primaryColor = isDark ? '#4046CA' : '#4046CA'
-  const textColor = isDark ? '#606060' : '#606060'
-  const hoverBg = isDark ? 'rgba(129, 140, 248, 0.15)' : 'rgba(87, 91, 238, 0.08)'
+  const primaryColor = isDark ? '#818cf8' : '#4046CA'
+  const textColor = isDark ? '#D0D0D0' : '#606060'
+  const hoverBg = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(87, 91, 238, 0.08)'
 
   const plantName = plantID?.plantName
   const SITE_NAME = siteObject?.name?.toLowerCase()
@@ -183,7 +183,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
                   fontWeight: 500,
                   letterSpacing: 0,
                   textTransform: 'capitalize',
-                  color: selected === menu.id ? '#4046CA' : textColor,
+                  color: selected === menu.id ? (isDark ? '#818cf8' : '#4046CA') : textColor,
                   fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
                 }}
               >

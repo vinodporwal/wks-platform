@@ -32,9 +32,9 @@ const NavItem = ({ item, level, onItemClick, isPopover }) => {
   const isSelected = openItem.includes(item.id)
   const Icon = item.icon
 
-  const primaryColor = isDark ? '#4046CA' : '#4046CA'
-  const textColor = isDark ? '#606060' : '#606060'
-  const hoverBg = isDark ? 'rgba(129, 140, 248, 0.15)' : 'rgba(87, 91, 238, 0.08)'
+  const primaryColor = isDark ? '#818cf8' : '#4046CA'
+  const textColor = isDark ? '#D0D0D0' : '#606060'
+  const hoverBg = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(87, 91, 238, 0.08)'
 
   const handleClick = () => {
     if (onItemClick) onItemClick()
@@ -85,20 +85,20 @@ const NavItem = ({ item, level, onItemClick, isPopover }) => {
 
         /* ? SELECTED STYLE */
         '&.Mui-selected': {
-          backgroundColor: isDark ? '#EDEEFF' : '#fff', // Brand light blue/purple bg
-          color: '#4046CA',
+          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#fff', // Brand light blue/purple bg
+          color: isDark ? '#ffffff' : '#4046CA',
           marginRight: '10px',
 
           '&:hover': {
-            backgroundColor: isDark ? '#EDEEFF' : 'rgba(87, 91, 238, 0.1)',
+            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(87, 91, 238, 0.1)',
           },
 
           '& .MuiTypography-root': {
-            color: '#4046CA !important',
+            color: isDark ? '#ffffff !important' : '#4046CA !important',
           },
 
           '& .MuiListItemIcon-root': {
-            color: '#4046CA !important',
+            color: isDark ? '#ffffff !important' : '#4046CA !important',
           },
         },
 

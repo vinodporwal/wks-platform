@@ -1,4 +1,4 @@
-import { Box, Button, Checkbox, ListItemText, Tab, Tabs } from '@mui/material'
+import { Box, Button, Checkbox, ListItemText, Tab, Tabs, useTheme } from '@mui/material'
 import Autocomplete from '@mui/material/Autocomplete'
 import TextField from '@mui/material/TextField'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -9,6 +9,10 @@ import AopTabs from 'components/AopTabs'
 
 const UserManagementTable = ({ keycloak }) => {
   const navigate = useNavigate()
+
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
+
   const [rows, setRows] = useState([]) // State for grid rows
   const [plantSiteData, setPlantSiteData] = useState([])
   // const [roles, setRoles] = useState([])
@@ -317,12 +321,31 @@ const UserManagementTable = ({ keycloak }) => {
             }}
             loading={loading}
             noOptionsText='No users found'
-            sx={{ width: '100%' }}
+            sx={{
+              width: '100%',
+              '& .MuiChip-root': {
+                backgroundColor: isDark ? '#3A3F5C !important' : '#e0e0e0 !important',
+                color: isDark ? '#F0F0F0 !important' : '#252525 !important',
+              },
+              '& .MuiChip-deleteIcon': {
+                color: isDark ? '#D0D0D0 !important' : '#757575 !important',
+                '&:hover': { color: isDark ? '#FFFFFF !important' : '#252525 !important' }
+              }
+            }}
+            componentsProps={{
+              paper: {
+                sx: {
+                  background: isDark ? '#2A2F45' : '#FFFFFF',
+                  color: isDark ? '#F0F0F0' : '#303030',
+                  border: isDark ? '1px solid #3A3F5C' : '1px solid #DDDEE1',
+                }
+              }
+            }}
             renderOption={(props, option, { selected }) => {
               const { id } = props
               return (
-                <li key={id} {...props}>
-                  <Checkbox checked={selected} style={{ marginRight: 8 }} />
+                <li key={id} {...props} style={{ color: isDark ? '#F0F0F0' : '#303030' }}>
+                  <Checkbox checked={selected} style={{ marginRight: 8, color: isDark ? '#F0F0F0' : undefined }} />
                   <ListItemText primary={option.username} />
                 </li>
               )
@@ -332,6 +355,25 @@ const UserManagementTable = ({ keycloak }) => {
                 {...params}
                 label='Select Users'
                 variant='outlined'
+                InputLabelProps={{
+                  sx: {
+                    color: isDark ? '#D0D0D0' : '#606060',
+                    backgroundColor: isDark ? '#1C2236 !important' : '#ffffff !important',
+                    '&.Mui-focused': {
+                      color: isDark ? '#F0F0F0 !important' : '#303030 !important',
+                    }
+                  }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    color: isDark ? '#F0F0F0' : '#252525',
+                    '& fieldset': { borderColor: isDark ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0,0,0,0.23)' },
+                  },
+                  '& .MuiIconButton-root': { color: isDark ? '#D0D0D0' : '#606060' },
+                  '& .MuiOutlinedInput-root.Mui-focused fieldset': {
+                    borderColor: isDark ? '#DDE0FF !important' : '#303030 !important',
+                  }
+                }}
                 // onKeyDown={(e) => {
                 //   if (e.key === 'Enter') {
                 //     finalizeSelection(tempSelectedUsers)
@@ -345,6 +387,17 @@ const UserManagementTable = ({ keycloak }) => {
             variant='contained'
             // style={{marginBottom:'-80%', marginLeft:'90%'}}
             className='btn-save'
+            sx={{
+              ...{
+                backgroundColor: isDark ? '#3A3F5C !important' : 'transparent !important',
+                color: isDark ? '#F0F0F0 !important' : '#334155 !important',
+                '&:hover': { backgroundColor: isDark ? '#4A5073 !important' : 'transparent !important' },
+                '&.Mui-disabled': {
+                  backgroundColor: isDark ? '#2A2F45 !important' : 'transparent !important',
+                  color: isDark ? '#606060 !important' : '#606060 !important',
+                }
+              }
+            }}
             onClick={() => {
               // Write any additional logic here before navigating.
               // console.log('Navigating to dashboard')
@@ -403,19 +456,72 @@ const UserManagementTable = ({ keycloak }) => {
             }}
             loading={loading}
             noOptionsText='No users found'
-            sx={{ width: '100%' }}
+            sx={{
+              width: '100%',
+              '& .MuiChip-root': {
+                backgroundColor: isDark ? '#3A3F5C !important' : '#e0e0e0 !important',
+                color: isDark ? '#F0F0F0 !important' : '#252525 !important',
+              },
+              '& .MuiChip-deleteIcon': {
+                color: isDark ? '#D0D0D0 !important' : '#757575 !important',
+                '&:hover': { color: isDark ? '#FFFFFF !important' : '#252525 !important' }
+              }
+            }}
+            componentsProps={{
+              paper: {
+                sx: {
+                  background: isDark ? '#2A2F45' : '#FFFFFF',
+                  color: isDark ? '#F0F0F0' : '#303030',
+                  border: isDark ? '1px solid #3A3F5C' : '1px solid #DDDEE1',
+                }
+              }
+            }}
             renderOption={(props, option) => (
-              <li {...props}>
+              <li {...props} style={{ color: isDark ? '#F0F0F0' : '#303030' }}>
                 <ListItemText primary={option.username} />
               </li>
             )}
             renderInput={(params) => (
-              <TextField {...params} label='Select User' variant='outlined' />
+              <TextField 
+                {...params} 
+                label='Select User' 
+                variant='outlined'
+                InputLabelProps={{
+                  sx: {
+                    color: isDark ? '#D0D0D0' : '#606060',
+                    backgroundColor: isDark ? '#1C2236 !important' : '#ffffff !important',
+                    '&.Mui-focused': {
+                      color: isDark ? '#F0F0F0 !important' : '#303030 !important',
+                    }
+                  }
+                }} 
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    color: isDark ? '#F0F0F0' : '#252525',
+                    '& fieldset': { borderColor: isDark ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0,0,0,0.23)' },
+                  },
+                  '& .MuiIconButton-root': { color: isDark ? '#D0D0D0' : '#606060' },
+                  '& .MuiOutlinedInput-root.Mui-focused fieldset': {
+                    borderColor: isDark ? '#DDE0FF !important' : '#303030 !important',
+                  }
+                }} 
+              />
             )}
           />
           <Button
             variant='contained'
             className='btn-save'
+            sx={{
+              ...{
+                backgroundColor: isDark ? '#3A3F5C !important' : 'transparent !important',
+                color: isDark ? '#F0F0F0 !important' : '#334155 !important',
+                '&:hover': { backgroundColor: isDark ? '#4A5073 !important' : 'transparent !important' },
+                '&.Mui-disabled': {
+                  backgroundColor: isDark ? '#2A2F45 !important' : 'transparent !important',
+                  color: isDark ? '#606060 !important' : '#606060 !important',
+                }
+              }
+            }}
             onClick={handleAddPlantSite}
             style={{ marginTop: '100px', width: '10%', alignSelf: 'flex-end' }}
             disabled={!selectedUsers.length}

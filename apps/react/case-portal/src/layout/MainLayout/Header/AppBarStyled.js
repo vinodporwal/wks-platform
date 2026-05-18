@@ -11,6 +11,10 @@ const AppBarStyled = styled(AppBar, {
   shouldForwardProp: (prop) => prop !== 'open' && prop !== 'isDashboard',
 })(({ theme, open, isDashboard }) => ({
   zIndex: theme.zIndex.drawer + 1,
+  backgroundColor: theme.palette.mode === 'dark' ? '#1C2236 !important' : '#ffffff !important',
+  backgroundImage: 'none !important',
+  boxShadow: 'none !important',
+  borderBottom: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.1) !important' : '1px solid #dddee1 !important',
   transition: theme.transitions.create(['width', 'margin'], {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,

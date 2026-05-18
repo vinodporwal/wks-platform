@@ -62,8 +62,8 @@ export const useCustomTheme = (mode) => {
 // ==============================|| DEFAULT THEME - MAIN  ||============================== //
 
 export default function ThemeCustomization({ children }) {
-  // Always use 'light' mode for main application screen
-  const themes = useCustomTheme('light')
+  const { mode } = useSelector((state) => state.theme)
+  const themes = useCustomTheme(mode)
 
   return (
     <StyledEngineProvider injectFirst>

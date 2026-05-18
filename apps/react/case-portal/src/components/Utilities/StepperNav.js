@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Box, Tabs, Tab, Tooltip } from '@mui/material'
+import { Box, Tabs, Tab, Tooltip, useTheme } from '@mui/material'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { useMenuContext } from 'menu/menuProvider'
@@ -11,6 +11,8 @@ const USE_FIXED = false
 export default function StepperNav() {
   const location = useLocation()
   const navigate = useNavigate()
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
 
   const { items: menuItems } = useMenuContext()
   const { drawerOpen } = useSelector((state) => state.menu)
@@ -109,6 +111,16 @@ export default function StepperNav() {
       scrollButtons='auto' // ✅ FIXED
       allowScrollButtonsMobile
       className='stepper-nav-tabs'
+      sx={{
+        '& .MuiTabs-indicator': {
+          top: 0,
+          height: 4,
+          backgroundColor: '#ae4787',
+        },
+        '& .MuiTabs-scrollButtons': {
+          color: isDark ? '#F0F0F0' : 'inherit',
+        },
+      }}
     >
       {steps.map((step) => (
         <Tooltip key={step.key} title={step.label} arrow>
@@ -123,8 +135,28 @@ export default function StepperNav() {
                 : null
             }
             iconPosition='start'
-            label={<span className='stepper-nav-tab-label'>{step.label}</span>}
+            label={<span className='stepper-nav-tab-label' style={{ color: 'inherit' }}>{step.label}</span>}
             className='stepper-nav-tab'
+            sx={{
+              textTransform: 'none !important',
+              paddingLeft: '12px !important',
+              paddingRight: '12px !important',
+              minHeight: '40px !important',
+              gap: '4px !important',
+              transition: 'all 0.2s ease !important',
+              color: isDark ? '#F0F0F0 !important' : '#303030 !important',
+              '&:hover': {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05) !important' : '#eef2ff !important',
+              },
+              '&.Mui-selected': {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08) !important' : '#f6f7f8 !important',
+                color: isDark ? '#F0F0F0 !important' : '#303030 !important',
+                '& .stepper-nav-tab-label': {
+                  color: isDark ? '#F0F0F0 !important' : '#303030 !important',
+                  fontWeight: 600,
+                },
+              },
+            }}
           />
         </Tooltip>
       ))}
@@ -135,7 +167,14 @@ export default function StepperNav() {
   // Render
   // -------------------------
   return (
-    <Box className='stepper-nav-container'>
+    <Box
+      className='stepper-nav-container'
+      sx={{
+        backgroundColor: isDark ? '#1C2236' : '#ffffff',
+        borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #e2e8f0',
+        transition: 'all 0.3s ease',
+      }}
+    >
       {USE_FIXED ? (
         <>
           <Box

@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Outlet, useLocation } from 'react-router-dom'
-import { Box, Toolbar } from '@mui/material'
+import { Box, Toolbar, useTheme } from '@mui/material'
 import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import Drawer from './Drawer'
 import Header from './Header'
@@ -12,6 +12,8 @@ import UtilityDetails from 'components/Utilities/UtilityDetails'
 
 const MainLayout = ({ keycloak, authenticated }) => {
   const dispatch = useDispatch()
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const { drawerOpen: open } = useSelector((state) => state.menu)
   const { items: menuItems } = useMenuContext()
   const menu = { items: [...menuItems] }
@@ -20,8 +22,8 @@ const MainLayout = ({ keycloak, authenticated }) => {
   // Routes that should display StepperNav
   const stepperNavRoutes = ['/production-norms-plan', '/tcs', '/utilityPlant']
 
-  const BG_COLOR = '#ffff'
-  const BG_COLOR_FULL = '#ffff'
+  const BG_COLOR = isDark ? '#131A2A' : '#ffff'
+  const BG_COLOR_FULL = isDark ? '#131A2A' : '#ffff'
 
   const handleDrawerToggle = useCallback(() => {
     dispatch(openDrawer({ drawerOpen: !open }))
@@ -57,17 +59,17 @@ const MainLayout = ({ keycloak, authenticated }) => {
 
           // border: '1px solid rgba(0,0,0,0.08)',
           // boxShadow: '0 4px 14px rgba(0,0,0,0.10)',
-          borderRadius: '6px',
+          // borderRadius: '6px',
         }}
       >
         {/* Header ONLY for right content */}
-        <Header
-          open={open}
-          handleDrawerToggle={handleDrawerToggle}
-          keycloak={keycloak}
-          isDashboard={isDashboard}
-          navigation={menu}
-        />
+          <Header
+            open={open}
+            handleDrawerToggle={handleDrawerToggle}
+            keycloak={keycloak}
+            isDashboard={isDashboard}
+            navigation={menu}
+          />
 
         {/* Push content below header */}
         <Box sx={{ pt: '46px' }} />
@@ -81,9 +83,9 @@ const MainLayout = ({ keycloak, authenticated }) => {
         {stepperNavRoutes.some((route) =>
           location?.pathname.startsWith(route),
         ) && (
-          <Box>
-            <StepperNav />
-          </Box>
+            <Box>
+              <StepperNav />
+            </Box>
         )}
 
         {/* HIDE AS OF NOW - 16 APRIL 2026 */}
@@ -105,16 +107,14 @@ const MainLayout = ({ keycloak, authenticated }) => {
           </Box>
         </Box> */}
 
-        <Box className='outlet-wrapper'>
+        <Box className={isDark ? 'outlet-wrapper-dark' : 'outlet-wrapper'}>
           <Box className='outlet-border-box'>
             {!hideBreadcrumbs && (
-              <Box className='breadcrumbs-box'>
                 <Breadcrumbs
                   variant='dense'
                   navigation={menu}
                   divider={false}
                 />
-              </Box>
             )}
 
             <Outlet />

@@ -54,8 +54,11 @@ import ShutdownReport from '../Reports-kendo/kendo_DetailsPlannedShutdown'
 import ShutdownSummaryReport from '../Reports-kendo/kendo_ShutdownBreak_UpLastFourYear'
 import SpecificConsumptionnormForMeg from '../Reports-kendo/SpecificConsumptionnormForMeg'
 import AopTabs from 'components/AopTabs'
+import { useTheme } from '@mui/material'
 const WorkFlowMerge = () => {
   const keycloak = useSession()
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   // const READ_ONLY = getRoleName(keycloak)
   // const [steps, setSteps] = useState([])
   const [activeStep, setActiveStep] = useState(0)
@@ -852,7 +855,7 @@ const WorkFlowMerge = () => {
             background:
               'linear-gradient(90deg, rgba(25,118,210,0.08) 0%, rgba(25,118,210,0.02) 100%)',
             borderLeft: '4px solid #1976d2',
-            color: '#1f2937',
+            color: isDark ? '#F0F0F0' : '#1f2937',
             display: 'flex',
             alignItems: 'center',
             gap: 0.5,
