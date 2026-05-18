@@ -107,6 +107,10 @@ const NormalOpNormsScreen = () => {
     lowerVertName === 'chemical' &&
     lowerSiteName === 'vmd' &&
     lowerPlantName === 'butadiene'
+  const IS_CHEMICAL_HMD_BUTADIENE =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'hmd' &&
+    lowerPlantName === 'butadiene'
 
   const IS_VCM_HMD_VCM =
     lowerVertName === 'vcm' &&
@@ -279,7 +283,8 @@ const NormalOpNormsScreen = () => {
         lowerVertName === 'meg' ||
         IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
         IS_CHEMICAL_VMD_BUTADIENE ||
-        IS_VCM_HMD_VCM
+        IS_VCM_HMD_VCM ||
+        IS_CHEMICAL_HMD_BUTADIENE
       ) {
         promises.push(fetchDataIntermediateValues())
       }
@@ -964,7 +969,8 @@ const NormalOpNormsScreen = () => {
       {(lowerVertName === 'meg' ||
         IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
         IS_CHEMICAL_VMD_BUTADIENE ||
-        IS_VCM_HMD_VCM) && (
+        IS_VCM_HMD_VCM ||
+        IS_CHEMICAL_HMD_BUTADIENE) && (
         <Box sx={{ width: '100%', marginTop: 1 }}>
           <CustomAccordion defaultExpanded disableGutters>
             <CustomAccordionSummary
