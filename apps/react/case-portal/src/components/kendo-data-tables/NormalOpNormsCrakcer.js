@@ -606,7 +606,7 @@ const NormalOpNormsScreenCracker = () => {
   // --- Data fetchers ---
   const fetchFinalNorms = useCallback(async () => {
     try {
-      getCombinedNormTransactions()
+      await getCombinedNormTransactions()
 
       const response = await NormalOperationNormsApiService.getfinalNorms(
         keycloak,
@@ -780,7 +780,7 @@ const NormalOpNormsScreenCracker = () => {
         setLoading(false)
       }
     },
-    [fetchModeData, fetchFinalNorms, selectedTab, PLANT_ID, AOP_YEAR],
+    [fetchModeData, fetchFinalNorms],
   )
 
   const fetchAllDataNormsSelection = useCallback(
@@ -804,7 +804,7 @@ const NormalOpNormsScreenCracker = () => {
   )
 
   useEffect(() => {
-    fetchAllData(gradeId)
+    fetchAllData(gradeId, selectedTab)
   }, [
     fetchAllData,
     oldYear,
@@ -1218,14 +1218,14 @@ const NormalOpNormsScreenCracker = () => {
   const [summaryEdited, setSummaryEdited] = useState(false)
 
   // tabs
-  const handleTabChange = useCallback(
-    (_, newValue) => {
-      setModifiedCells({})
-      setSelectedTab(newValue)
-      fetchAllData(gradeId, newValue)
-    },
-    [gradeId, fetchAllData, AOP_YEAR, PLANT_ID],
-  )
+  // const handleTabChange = useCallback(
+  //   (_, newValue) => {
+  //     setModifiedCells({})
+  //     setSelectedTab(newValue)
+  //     fetchAllData(gradeId, newValue)
+  //   },
+  //   [gradeId, fetchAllData, AOP_YEAR, PLANT_ID],
+  // )
 
   const tabSx = {
     border: '1px solid #ADD8E6',
@@ -1255,7 +1255,7 @@ const NormalOpNormsScreenCracker = () => {
   // UI render
   return (
     <div>
-      <LoaderBackdrop open={!!loading1} />
+      <LoaderBackdrop open={!!loading || !!loading1} />
 
       <Box sx={{ margin: 0, padding: 0 }}>
         <AopTabs

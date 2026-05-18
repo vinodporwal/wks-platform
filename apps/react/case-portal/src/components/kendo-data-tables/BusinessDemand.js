@@ -63,6 +63,7 @@ const BusinessDemand = ({ permissions }) => {
   const IS_PE_PP_VERTICAL = lowerVertName === 'pp' || lowerVertName === 'pe'
   const IS_PTA_VERTICAL = lowerVertName === 'pta'
   const IS_PET_VERTICAL = lowerVertName === 'pet'
+  const IS_PVC_VERTICAL = lowerVertName === 'pvc'
   const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const IS_VCM_VERTICAL = lowerVertName === 'vcm'
@@ -573,6 +574,7 @@ const BusinessDemand = ({ permissions }) => {
         // FOR PTA IT IS NOT REQUIRED
         // IS_PTA_VERTICAL ||
         IS_PET_VERTICAL ||
+        IS_PVC_VERTICAL ||
         IS_PVC_VMD ||
         IS_PVC_DMD ||
         IS_ELASTOMER_VERTICAL ||
