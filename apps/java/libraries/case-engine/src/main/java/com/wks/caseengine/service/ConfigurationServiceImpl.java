@@ -152,7 +152,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") ||  site.getName().equalsIgnoreCase("HMD"));
 		    boolean isChemical= vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("DMD") && plant.getName().equalsIgnoreCase("Chlor Alkali");
 			boolean ischemicalAndVmd = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD");
 		    String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
@@ -572,7 +572,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") ||  site.getName().equalsIgnoreCase("HMD"));
 			boolean isChemical= vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("DMD") && plant.getName().equalsIgnoreCase("Chlor Alkali");
 			// boolean isChemicalVmdbutadiene = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD") && plant.getName().equalsIgnoreCase("Butadiene");
 			// boolean isChemicalVmdbenzenes = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD") && plant.getName().equalsIgnoreCase("Benzene");
@@ -700,7 +700,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			
-		    boolean pvc= verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+		    boolean pvc= verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD")|| site.getName().equalsIgnoreCase("HMD"));
 		    boolean isChemical= verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("DMD") && plant.getName().equalsIgnoreCase("Chlor Alkali");
 			boolean ischemicalAndVmd = verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD");
 		    List<Object[]> obj = new ArrayList<>();
@@ -1809,15 +1809,20 @@ continue;
 	void saveData(NormParameters normParameter, Integer i, String year, Double attributeValue,
             ConfigurationDTO configurationDTO, String plantFKId) {
   
+		Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).orElseThrow();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 	  String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
-	  String version = "AROMATICS".equalsIgnoreCase(verticalName) 
+	  String version = ("AROMATICS".equalsIgnoreCase(verticalName) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD")))
 	                   ? getVersion(year, UUID.fromString(plantFKId)) 
 	                   : "V1";
 	  
 	  Optional<NormAttributeTransactions> existingRecord;
-	  if ("AROMATICS".equalsIgnoreCase(verticalName)) {
+	  if ("AROMATICS".equalsIgnoreCase(verticalName) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD"))) {
 	      existingRecord = normAttributeTransactionsRepository
 	          .findByNormParameterFKIdAndAOPMonthAndAuditYearAndVersion(normParameter.getId(), i, year, version);
+
+		// existingRecord = normAttributeTransactionsRepository
+		// 	.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
 	  } else {
 	      existingRecord = normAttributeTransactionsRepository
 	          .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
@@ -2519,7 +2524,7 @@ continue;
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		boolean isChemical= verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("DMD") && plant.getName().equalsIgnoreCase("Chlor Alkali");
 		boolean ischemicalAndVmd = verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD");
-	    boolean pvc= verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+	    boolean pvc= verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();

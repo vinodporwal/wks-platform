@@ -129,13 +129,13 @@ const MaterialBalance = ({ permissions }) => {
       },
       { field: 'UOM', title: 'UOM', editable: false, widthT: 80, minWidth: 80 },
       ...monthCols,
-      {
-        field: 'Remarks',
-        title: 'Remark',
-        editable: false,
-        widthT: 100,
-        minWidth: 100,
-      },
+      // {
+      //   field: 'Remarks',
+      //   title: 'Remark',
+      //   editable: false,
+      //   widthT: 100,
+      //   minWidth: 100,
+      // },
     ],
     [monthCols],
   )
@@ -313,16 +313,16 @@ const MaterialBalance = ({ permissions }) => {
     {
       showAction: permissions?.showAction ?? true,
       saveWithRemark: permissions?.saveWithRemark ?? true,
-      saveBtn: permissions?.saveBtn ?? true,
+      saveBtn: permissions?.saveBtn ?? false,
       allAction: true,
 
       showTitleNameBusiness: true,
       titleName: 'Material Balance',
       //LATER WE NEED TO ADD EXPORT IMPORT
-      uploadExcelBtn: true,
+      downloadExcelBtn: false,
+      uploadExcelBtn: false,
       showCalculate: IS_CRACKER_HMD || IS_CRACKER_C2,
       showCalculateVisibility: true,
-      downloadExcelBtn: true,
     },
     isOldYear,
   )
@@ -350,7 +350,7 @@ const MaterialBalance = ({ permissions }) => {
         permissions={adjustedPermissions}
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
-        groupBy='Type'
+        // groupBy='Type'
         title='Material Balance'
         saveChanges={saveChanges}
         handleRemarkCellClick={handleRemarkCellClick}

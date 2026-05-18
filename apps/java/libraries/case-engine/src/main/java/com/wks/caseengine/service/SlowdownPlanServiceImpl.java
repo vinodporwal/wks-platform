@@ -2626,7 +2626,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	    String verticalName = plantsService.findVerticalNameByPlantId(plantId);
 	    Plants plant = plantsRepository.findById(plantId).orElseThrow();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-		boolean pvc = verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+		boolean pvc = verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
 		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 		boolean elastomerJMD =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD");
 		boolean elastomerAndHMD = verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("HMD");

@@ -114,8 +114,10 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Boolean withGrade=false;
+			boolean elastomerHmdSbr = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
+			boolean pvc = vertical.getName().equalsIgnoreCase("PVC");
 			Boolean elastomer = vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
-			if(plant.getName().equalsIgnoreCase("SBR") && site.getName().equalsIgnoreCase("HMD") && vertical.getName().equalsIgnoreCase("ELASTOMER")) {
+			if(elastomerHmdSbr || pvc) {
 				withGrade=true;
 			}if(elastomer) {
 				String storedProcedure = verticalName + "_" + site.getName() + "_GetShutdownnormsGrade";
@@ -127,10 +129,12 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				// view converted to sp
 				String storedProcedure = verticalName + "_" + site.getName() + "_GetShutdownnorms";
 				objList = getShutdownConsumptionData( plantId,year, storedProcedure);
-			}else if (  vertical.getName().equalsIgnoreCase("PVC") ) {
-				String viewName="vwScrn"+vertical.getName()+"ShutdownNorms";
-				objList = getShutdownNormsMEG(year, plant.getId(), viewName, gradeId);
-			}else if(vertical.getName().equalsIgnoreCase("CRACKER")) {
+			}
+			// else if (  vertical.getName().equalsIgnoreCase("PVC") ) {
+			// 	String viewName="vwScrn"+vertical.getName()+"ShutdownNorms";
+			// 	objList = getShutdownNormsMEG(year, plant.getId(), viewName, gradeId);
+			// }
+			else if(vertical.getName().equalsIgnoreCase("CRACKER")) {
 				List<Object[]> obj=getShutdownConsumptionData(plantId,year);
 				return getData(obj, plantId, year);
 			}else if(withGrade) {
