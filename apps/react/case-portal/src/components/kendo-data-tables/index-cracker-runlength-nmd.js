@@ -13,6 +13,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  IconButton,
   TextField,
   Typography,
 } from '../../../node_modules/@mui/material/index'
@@ -53,9 +54,29 @@ import {
   SaveIcon,
 } from 'assets/images/icons/index'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import CloseIcon from '@mui/icons-material/Close'
 import Collapse from '@mui/material/Collapse'
 export const dateFields1 = ['ibrSD', 'ibrED', 'taSD', 'taED', 'sdED', 'sdSD']
 export const dateFieldsRunLength = ['date']
+
+const CompactDialog = styled(Dialog)(({ theme }) => ({
+  '& .MuiPaper-root': {
+    borderRadius: '12px',
+    width: '600px',
+    boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+  },
+}))
+
+const CompactTextField = styled(TextField)({
+  '& .MuiOutlinedInput-root': {
+    fontSize: '0.85rem',
+    backgroundColor: '#fff',
+    '& fieldset': { borderColor: '#e2e8f0' },
+    '&:hover fieldset': { borderColor: '#cbd5e1' },
+    '&.Mui-focused fieldset': { borderColor: '#0100cb' },
+  },
+})
 
 const KendoDataTablesCrackerRunLengthNMD = ({
   rows = [],
@@ -160,6 +181,8 @@ const KendoDataTablesCrackerRunLengthNMD = ({
   const [lowerLimitDate, setLowerLimitDate] = useState(null)
   const [upperLimitDate, setUpperLimitDate] = useState(null)
   const [gridExpanded, setGridExpanded] = useState(true)
+  const [gridCurrent, setGridCurrent] = useState(0)
+  const [applyMinWidth, setApplyMinWidth] = useState(false)
 
   useEffect(() => {
     setHValues({})
@@ -170,12 +193,60 @@ const KendoDataTablesCrackerRunLengthNMD = ({
   }, [yearChanged])
 
   useEffect(() => {
+    minGridWidth.current = columns
+      .filter((col) => col?.isVisible !== false)
+      .reduce((sum, col) => sum + (col?.minWidth || 100), 0)
+    setGridCurrent(grid.current?.offsetWidth || 0)
+    setApplyMinWidth((grid.current?.offsetWidth || 0) < minGridWidth.current)
+  }, [])
+
+  useEffect(() => {
     const startYear = parseInt(AOP_YEAR?.split('-')[0], 10)
     const lowerLimit = new Date(startYear, 3, 1)
     const upperLimit = new Date(startYear + 1, 2, 31)
     setLowerLimitDate(lowerLimit)
     setUpperLimitDate(upperLimit)
   }, [PLANT_ID, AOP_YEAR])
+
+  const grid = useRef(null)
+  const minGridWidth = useRef(0)
+
+  const ADJUST_PADDING = 4
+  const COLUMN_MIN = 4
+
+  const setWidth = (minWidth = 0) => {
+    const visibleCols = columns.filter((col) => col?.isVisible !== false)
+
+    const totalMinWidth = visibleCols.reduce(
+      (sum, col) => sum + (col.minWidth || 0),
+      0,
+    )
+
+    // ?? Decide behavior based on available space
+    const hasExtraSpace = gridCurrent > totalMinWidth
+
+    let width
+
+    if (!hasExtraSpace) {
+      // ? Not enough space ? respect minWidth ? enable scroll
+      width = minWidth
+    } else {
+      // ? Extra space ? distribute nicely (but controlled)
+      const extraPerCol = (gridCurrent - totalMinWidth) / visibleCols.length
+
+      // ?? limit expansion so it doesn't look ugly
+      const MAX_GROWTH = 80 // tweak if needed
+
+      width = minWidth + Math.min(extraPerCol, MAX_GROWTH)
+    }
+
+    // optional padding adjustment
+    if (width >= COLUMN_MIN) {
+      width -= ADJUST_PADDING
+    }
+
+    return Math.max(minWidth, width)
+  }
 
   const toggleGrid = () => setGridExpanded(!gridExpanded)
 
@@ -705,8 +776,8 @@ const KendoDataTablesCrackerRunLengthNMD = ({
   }
   const renderGrid = () => (
     <Grid
+      ref={grid}
       style={{ height: 600 }}
-      scrollable={'virtual'}
       rowHeight={40}
       data={rows}
       total={rows.length}
@@ -770,6 +841,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
               cells={{
                 headerCell: SimpleHeaderWithTooltip,
               }}
+              width={setWidth(col.minWidth || col.widthT || 130)}
             />
           )
         }
@@ -790,6 +862,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                 ? { data: CellWithState, headerCell: SimpleHeaderWithTooltip }
                 : { headerCell: SimpleHeaderWithTooltip }
             }
+            width={setWidth(col.minWidth || col.widthT || 130)}
           />
         )
       })}
@@ -799,7 +872,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
           key='actions'
           field='actions'
           title='Action'
-          width={80}
+          width={setWidth(80)}
           className='k-text-center'
           filterable={false}
           editable={false}
@@ -820,7 +893,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
       >
         <Grid
           style={{ height: 630 }}
-          scrollable={'virtual'}
+          // scrollable={'virtual'}
           rowHeight={40}
           data={rowsPopUp}
           total={rowsPopUp?.length}
@@ -866,6 +939,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                       ? 'k-right-disabled'
                       : ''
                   }
+                  width={setWidth(col.minWidth || col.widthT || 130)}
                 />
               )
             }
@@ -886,6 +960,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                   cells={{
                     headerCell: SimpleHeaderWithTooltip,
                   }}
+                  width={setWidth(col.minWidth || col.widthT || 130)}
                 />
               )
             }
@@ -909,6 +984,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                       }
                     : { headerCell: SimpleHeaderWithTooltip }
                 }
+                width={setWidth(col.minWidth || col.widthT || 130)}
               />
             )
           })}
@@ -918,7 +994,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
               key='actions'
               field='actions'
               title='Action'
-              width={80}
+              width={setWidth(80)}
               className='k-text-center'
               filterable={false}
               editable={false}
@@ -934,6 +1010,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
 
   const renderGridSingleRow = () => (
     <Grid
+      ref={grid}
       scrollable={'virtual'}
       rowHeight={40}
       data={singleRow}
@@ -968,6 +1045,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                   ? 'k-right-disabled'
                   : ''
               }
+              width={setWidth(col.minWidth || col.widthT || 130)}
             />
           )
         }
@@ -984,6 +1062,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
               cells={{
                 headerCell: SimpleHeaderWithTooltip,
               }}
+              width={setWidth(col.minWidth || col.widthT || 130)}
             />
           )
         }
@@ -1003,6 +1082,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                 ? { data: CellWithState, headerCell: SimpleHeaderWithTooltip }
                 : { headerCell: SimpleHeaderWithTooltip }
             }
+            width={setWidth(col.minWidth || col.widthT || 130)}
           />
         )
       })}
@@ -1012,7 +1092,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
           key='actions'
           field='actions'
           title='Action'
-          width={80}
+          width={setWidth(80)}
           className='k-text-center'
           filterable={false}
           editable={false}
@@ -1551,86 +1631,272 @@ const KendoDataTablesCrackerRunLengthNMD = ({
         onClose={() => setSnackbarOpen1(false)}
       />
 
-      <Dialog
+      <CompactDialog
         open={openDeleteDialogeBox}
         onClose={() => setOpenDeleteDialogeBox(false)}
-        aria-labelledby='alert-dialog-title'
-        aria-describedby='alert-dialog-description'
+        disableScrollLock
+        slotProps={{ backdrop: { disableScrollLock: true } }}
       >
-        <DialogTitle id='alert-dialog-title'>{'Delete ?'}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
+        {/* Header */}
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#fef2f2', // soft red
+            borderBottom: '1px solid #fee2e2',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <DeleteOutlineIcon sx={{ fontSize: '1rem', color: '#dc2626' }} />
+            <Typography
+              sx={{
+                fontWeight: 800,
+                fontSize: '0.8rem',
+                color: '#7f1d1d',
+                letterSpacing: '0.4px',
+              }}
+            >
+              CONFIRM DELETE
+            </Typography>
+          </Box>
+
+          <IconButton
+            size='small'
+            onClick={() => setOpenDeleteDialogeBox(false)}
+            sx={{ color: '#7f1d1d' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        {/* Content */}
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: '#7f1d1d',
+              lineHeight: 1.5,
+              fontWeight: 600,
+            }}
+          >
             Are you sure you want to delete this row?
-          </DialogContentText>
+          </Typography>
+
+          <Typography
+            sx={{
+              mt: 1,
+              fontSize: '0.7rem',
+              color: '#991b1b',
+              fontWeight: 600,
+            }}
+          >
+            This action cannot be undone.
+          </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDeleteDialogeBox(false)}>Cancel</Button>
-          <Button onClick={deleteTheRecord} autoFocus>
+
+        {/* Actions */}
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button
+            onClick={() => setOpenDeleteDialogeBox(false)}
+            className='btn-no'
+          >
+            Cancel
+          </Button>
+
+          <Button
+            onClick={deleteTheRecord}
+            variant='contained'
+            size='small'
+            className='btn-yes'
+          >
             Delete
           </Button>
         </DialogActions>
-      </Dialog>
+      </CompactDialog>
 
-      <Dialog
+      <CompactDialog
         open={openSaveDialogeBox}
         onClose={closeSaveDialogeBox}
-        aria-labelledby='alert-dialog-title'
-        aria-describedby='alert-dialog-description'
         disableScrollLock
-        slotProps={{
-          backdrop: { disableScrollLock: true },
-        }}
+        slotProps={{ backdrop: { disableScrollLock: true } }}
       >
-        <DialogTitle id='alert-dialog-title'>{'Save ?'}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
+        {/* Header */}
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#f8fafc',
+            borderBottom: '1px solid #e2e8f0',
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              color: '#334155',
+              letterSpacing: '0.5px',
+            }}
+          >
+            CONFIRM SAVE
+          </Typography>
+
+          <IconButton
+            size='small'
+            onClick={closeSaveDialogeBox}
+            sx={{ color: '#64748b' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        {/* Content */}
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: '#475569',
+              lineHeight: 1.5,
+              fontWeight: 500,
+            }}
+          >
             Are you sure you want to save these changes?
-          </DialogContentText>
+          </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={closeSaveDialogeBox}>Cancel</Button>
-          <Button onClick={saveConfirmation} autoFocus>
+
+        {/* Actions */}
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button onClick={closeSaveDialogeBox} className='btn-no'>
+            Cancel
+          </Button>
+
+          <Button
+            onClick={saveConfirmation}
+            variant='contained'
+            size='small'
+            autoFocus
+            className='btn-yes'
+          >
             Save
           </Button>
         </DialogActions>
-      </Dialog>
+      </CompactDialog>
 
-      <Dialog
+      <CompactDialog
         open={openSaveDialogeBoxSingleRow}
         onClose={closeSaveDialogeBoxSingleRow}
-        aria-labelledby='alert-dialog-title'
-        aria-describedby='alert-dialog-description'
-        sx={{ zIndex: 2000 }} // Works in most cases disableScrollLock
         disableScrollLock
-        slotProps={{
-          backdrop: { disableScrollLock: true },
-        }}
+        slotProps={{ backdrop: { disableScrollLock: true } }}
+        sx={{ zIndex: 2000 }}
       >
-        <DialogTitle id='alert-dialog-title'>{'Save ?'}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
+        {/* Header */}
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#f8fafc',
+            borderBottom: '1px solid #e2e8f0',
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              color: '#334155',
+              letterSpacing: '0.5px',
+            }}
+          >
+            CONFIRM SAVE
+          </Typography>
+
+          <IconButton
+            size='small'
+            onClick={closeSaveDialogeBoxSingleRow}
+            sx={{ color: '#64748b' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        {/* Content */}
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: '#475569',
+              lineHeight: 1.5,
+              fontWeight: 500,
+            }}
+          >
             Are you sure you want to save these changes?
-          </DialogContentText>
+          </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={closeSaveDialogeBoxSingleRow}>Cancel</Button>
-          <Button onClick={saveConfirmationSingleRow} autoFocus>
+
+        {/* Actions */}
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button onClick={closeSaveDialogeBoxSingleRow} className='btn-no'>
+            Cancel
+          </Button>
+
+          <Button
+            onClick={saveConfirmationSingleRow}
+            variant='contained'
+            size='small'
+            autoFocus
+            className='btn-yes'
+          >
             Save
           </Button>
         </DialogActions>
-      </Dialog>
+      </CompactDialog>
 
-      <Dialog
+      <CompactDialog
         open={!!remarkDialogOpen}
         onClose={() => setRemarkDialogOpen(false)}
         disableScrollLock
-        slotProps={{
-          backdrop: { disableScrollLock: true },
-        }}
+        slotProps={{ backdrop: { disableScrollLock: true } }}
       >
-        <DialogTitle>Add Remark</DialogTitle>
-        <DialogContent>
-          <TextField
+        {/* Compact Header */}
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#f8fafc',
+            borderBottom: '1px solid #e2e8f0',
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              color: '#334155',
+              letterSpacing: '0.5px',
+            }}
+          >
+            ADD REMARK
+          </Typography>
+          <IconButton
+            size='small'
+            onClick={() => setRemarkDialogOpen(false)}
+            sx={{ color: '#64748b' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <CompactTextField
             autoFocus
             margin='dense'
             id='remark'
@@ -1638,22 +1904,28 @@ const KendoDataTablesCrackerRunLengthNMD = ({
             type='text'
             fullWidth
             variant='outlined'
-            sx={{ width: '100%', minWidth: '600px' }}
             value={currentRemark || ''}
-            // value={remark}
             onChange={(e) => setCurrentRemark(e.target.value)}
             multiline
             rows={8}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRemarkDialogOpen(false)}>Cancel</Button>
-          {/* <Button onClick={handleCloseRemark}>Cancel</Button> */}
-          <Button onClick={handleRemarkSave} disabled={!currentRemark?.trim()}>
+
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button onClick={() => setRemarkDialogOpen(false)} className='btn-no'>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleRemarkSave}
+            variant='contained'
+            size='small'
+            disabled={!currentRemark?.trim()}
+            className='btn-yes'
+          >
             Add
           </Button>
         </DialogActions>
-      </Dialog>
+      </CompactDialog>
 
       <Dialog
         open={open}

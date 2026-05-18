@@ -117,6 +117,8 @@ const ShutdownNorms = () => {
   //   ['pe'].includes(lowerVertName) &&
   //   ['nmd'].includes(SITE_NAME_LOWERCASE) &&
   //   ['lldpe1', 'lldpe2'].includes(PLANT_NAME_LOWERCASE)
+  const IS_PVC_HMD =
+    ['pvc'].includes(lowerVertName) && ['hmd'].includes(SITE_NAME_LOWERCASE)
 
   const IS_PE_PP_VERTICAL_NMD_LLDPE =
     ['pe'].includes(lowerVertName) &&
@@ -139,7 +141,8 @@ const ShutdownNorms = () => {
     lowerVertName === 'aromatics' && SITE_NAME_LOWERCASE === 'hmd'
 
   const textNote =
-    (IS_PE_PP_VERTICAL || IS_PVC_DMD || IS_ELASTOMER_JMD_HIIR) && !IS_PE_C2
+    ((IS_PE_PP_VERTICAL || IS_PVC_DMD || IS_ELASTOMER_JMD_HIIR) && !IS_PE_C2) ||
+    IS_PVC_HMD
       ? '*Adding shutdown consumption to all grades will replace any existing individual grade consumption entries.'
       : '*Quantities are per day basis'
   const textNoteWhileSaving =
@@ -192,7 +195,8 @@ const ShutdownNorms = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
       ) {
         try {
           const response =
@@ -230,7 +234,8 @@ const ShutdownNorms = () => {
           IS_ELASTOMER_HMD_SBR ||
           IS_ELASTOMER_JMD_HIIR ||
           IS_PVC_VMD ||
-          IS_PVC_DMD
+          IS_PVC_DMD ||
+          IS_PVC_HMD
         ) {
           if (!gradeId) return
           await fetchData(gradeId)
@@ -256,7 +261,8 @@ const ShutdownNorms = () => {
           IS_PE_DMD ||
           IS_PET_VERTICAL ||
           IS_PVC_VMD ||
-          IS_PVC_DMD
+          IS_PVC_DMD ||
+          IS_PVC_HMD
         ) {
           const gradesRes =
             await NormalOperationNormsApiService.getGradesForShutdownNorms(
@@ -298,7 +304,8 @@ const ShutdownNorms = () => {
           IS_PE_DMD ||
           IS_PET_VERTICAL ||
           IS_PVC_VMD ||
-          IS_PVC_DMD
+          IS_PVC_DMD ||
+          IS_PVC_HMD
             ? [
                 ...new Set([
                   ...(Array.isArray(shutdownMonthsRes)
@@ -429,7 +436,8 @@ const ShutdownNorms = () => {
       if (
         (verticalsRequiringGrade.includes(lowerVertName) ||
           IS_PVC_DMD ||
-          IS_ELASTOMER_JMD_HIIR) &&
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_PVC_HMD) &&
         !gradeId
       ) {
         setLoading(false)
@@ -566,6 +574,7 @@ const ShutdownNorms = () => {
       IS_PET_VERTICAL ||
       IS_PVC_VMD ||
       IS_PVC_DMD ||
+      IS_PVC_HMD ||
       IS_ELASTOMER_JMD_HIIR
     ) {
       try {
@@ -683,7 +692,8 @@ const ShutdownNorms = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
       ) {
         // Use shutdownNormsExport for PE/PP/Elastomer
         response = await NormalOperationNormsApiService.shutdownNormsExport(
@@ -827,13 +837,14 @@ const ShutdownNorms = () => {
         lowerVertName === 'meg' ||
         IS_PE_PP_VERTICAL ||
         IS_PVC_DMD ||
+        IS_PVC_HMD ||
         IS_ELASTOMER_JMD_HIIR
           ? gradeName == 'All Grade'
             ? true
             : false
           : false,
       showNoteWhileSaving:
-        IS_PE_PP_VERTICAL || IS_PVC_DMD || IS_ELASTOMER_JMD_HIIR
+        IS_PE_PP_VERTICAL || IS_PVC_DMD || IS_PVC_HMD || IS_ELASTOMER_JMD_HIIR
           ? gradeName == 'All Grade'
             ? true
             : false
@@ -856,6 +867,7 @@ const ShutdownNorms = () => {
               IS_PVC_VMD ||
               !IS_PTA_DMD ||
               IS_PVC_DMD ||
+              IS_PVC_HMD ||
               IS_ELASTOMER_JMD
             ? IS_PE_C2 || IS_VCM_HMD
               ? true
@@ -874,7 +886,8 @@ const ShutdownNorms = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
 
@@ -885,7 +898,8 @@ const ShutdownNorms = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       dropdownLabel: 'Grade',
@@ -898,6 +912,7 @@ const ShutdownNorms = () => {
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
         IS_PVC_DMD ||
+        IS_PVC_HMD ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta' ||
         IS_AROMATICS_SEZ_PX4 ||
@@ -912,6 +927,7 @@ const ShutdownNorms = () => {
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
         IS_PVC_DMD ||
+        IS_PVC_HMD ||
         IS_PE_HMD ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta' ||
@@ -938,6 +954,7 @@ const ShutdownNorms = () => {
         IS_AROMATICS_DTA ||
         IS_ELASTOMER_HMD_SBR ||
         IS_PVC_DMD ||
+        IS_PVC_HMD ||
         IS_ELASTOMER_JMD_IIR ||
         IS_AROMATICS_HMD
           ? true

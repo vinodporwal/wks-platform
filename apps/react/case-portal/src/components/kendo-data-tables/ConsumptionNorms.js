@@ -118,6 +118,7 @@ const ConsumptionNorms = () => {
     PLANT_NAME_NO_CASE === 'HIIR'
 
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
+  const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
@@ -259,7 +260,8 @@ const ConsumptionNorms = () => {
         lowerVertName == 'pp' ||
         lowerVertName == 'pet' ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
       ) {
         try {
           setLoading(true)
@@ -371,7 +373,8 @@ const ConsumptionNorms = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD) &&
+        IS_PVC_DMD ||
+        IS_PVC_HMD) &&
       !gradeId
     )
       return
@@ -386,7 +389,8 @@ const ConsumptionNorms = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
       ) {
         response = await ConsumptionNormsApiService.getConsumptionNormsData(
           keycloak,
@@ -471,7 +475,8 @@ const ConsumptionNorms = () => {
       IS_ELASTOMER_HMD_SBR ||
       IS_ELASTOMER_JMD_HIIR ||
       IS_PVC_VMD ||
-      IS_PVC_DMD
+      IS_PVC_DMD ||
+      IS_PVC_HMD
     ) {
       fetchGradeDropdowns()
     } else {
@@ -557,7 +562,8 @@ const ConsumptionNorms = () => {
           IS_ELASTOMER_HMD_SBR ||
           IS_ELASTOMER_JMD_HIIR ||
           IS_PVC_VMD ||
-          IS_PVC_DMD
+          IS_PVC_DMD ||
+          IS_PVC_HMD
         ) {
           fetchGradeDropdownsAfterCalc()
         } else {
@@ -598,7 +604,8 @@ const ConsumptionNorms = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
       ) {
         response =
           await ConsumptionNormsApiService.OverallConsumptionPEPPExport(
@@ -660,7 +667,8 @@ const ConsumptionNorms = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       marginBottom:
@@ -670,7 +678,8 @@ const ConsumptionNorms = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       dropdownLabel: 'Grade',
@@ -681,7 +690,8 @@ const ConsumptionNorms = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? false
           : true,
       downloadExcelBtn:
@@ -691,7 +701,8 @@ const ConsumptionNorms = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
