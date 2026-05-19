@@ -411,7 +411,8 @@ const SlowDown = ({ permissions }) => {
                   lowerVertName === 'pp' ||
                   lowerVertName === 'pet' ||
                   IS_PVC_VMD ||
-                  IS_PVC_DMD
+                  IS_PVC_DMD ||
+                  IS_PVC_HMD
                 ? slowDownDetailsPEPP
                 : slowDownDetailsMEG,
         keycloak,

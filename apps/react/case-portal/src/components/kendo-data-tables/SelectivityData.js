@@ -57,6 +57,8 @@ const SelectivityData = (props) => {
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
+  const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
+
   const [loading, setLoading] = useState(false)
   const apiRef = useGridApiRef()
   const [open1, setOpen1] = useState(false)
@@ -542,6 +544,13 @@ const SelectivityData = (props) => {
   ) {
     FORMATE_VALUE = '{0:0.00000}'
   }
+  if (
+    props?.configType === 'megConstants' &&
+    lowerVertName == 'chemical' &&
+    lowerSiteName == 'dmd'
+  ) {
+    FORMATE_VALUE = '{0:0.0000}'
+  }
 
   const productionColumns = getEnhancedAOPColDefs({
     allGradesReciepes,
@@ -582,6 +591,8 @@ const SelectivityData = (props) => {
       uploadExcelBtn: true,
       showLoad: true,
       allAction: true,
+      showNote:
+        IS_PE_PP && props?.currentTabDisplayName === 'Constant' ? true : false,
 
       showTitleNameBusiness: true,
       titleName:
@@ -979,6 +990,11 @@ const SelectivityData = (props) => {
           downloadExcelForConfiguration={downloadExcelForConfiguration}
           handleGradeChange={handleGradeChange}
           deleteRowData={deleteRowData}
+          note={
+            adjustedPermissions?.showNote
+              ? '*Please load the data again whenever a constant is changed and saved.'
+              : ''
+          }
         />
       </Box>
     </div>

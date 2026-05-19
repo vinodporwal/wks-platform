@@ -4,13 +4,13 @@ export const CrackerColums = [
     title: 'SAP MAT Code',
     widthT: 120,
     editable: false,
-    minWidth: 100,
+    minWidth: 150,
   },
   {
     field: 'materialDisplayName',
     title: 'Particulars',
     widthT: 120,
-    minWidth: 100,
+    minWidth: 300,
   },
   {
     field: 'uom',
@@ -189,14 +189,14 @@ export const ShutdownConsumptionCrackerColumns = [
     headerName: 'SAP MAT Code',
     widthT: 130,
     editable: false,
-    minWidth: 120,
+    minWidth: 150,
   },
   {
     field: 'productName',
     headerName: 'Particulars',
     widthT: 130,
     editable: false,
-    minWidth: 120,
+    minWidth: 300,
   },
   {
     field: 'UOM',

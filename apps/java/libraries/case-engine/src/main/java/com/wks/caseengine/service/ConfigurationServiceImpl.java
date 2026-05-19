@@ -577,6 +577,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			// boolean isChemicalVmdbutadiene = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD") && plant.getName().equalsIgnoreCase("Butadiene");
 			// boolean isChemicalVmdbenzenes = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD") && plant.getName().equalsIgnoreCase("Benzene");
 			boolean isChemicalVmd = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD");
+
+			boolean isChemicalHmd = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("HMD");
 		    List<Object[]> obj = new ArrayList<>();
 			if ((verticalName.equalsIgnoreCase("MEG"))
 					|| (verticalName.equalsIgnoreCase("CRACKER")) || (isChemical) ) {
@@ -703,9 +705,13 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		    boolean pvc= verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD")|| site.getName().equalsIgnoreCase("HMD"));
 		    boolean isChemical= verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("DMD") && plant.getName().equalsIgnoreCase("Chlor Alkali");
 			boolean ischemicalAndVmd = verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD");
+			boolean ischemicalAndHmd = verticalName.equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("HMD");
 		    List<Object[]> obj = new ArrayList<>();
 			Boolean vertical=(verticalName.equalsIgnoreCase("MEG")) || (verticalName.equalsIgnoreCase("CRACKER") || (isChemical) || ischemicalAndVmd);
-					
+				
+			if(ischemicalAndHmd) { 
+				return (List<ConfigurationDTO>) getConfigurationData(year, plantFKId,version).getData();
+			}
 			if (vertical && !ischemicalAndVmd) {
 				String procedureName = verticalName + "_GetConfiguration";
 				obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);

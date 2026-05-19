@@ -118,6 +118,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     VERTICAL_NAME === 'aromatics' && SITE_NAME === 'sez' && PLANT_NAME === 'px4'
   const IS_CRACKER_HMD = VERTICAL_NAME === 'cracker' && SITE_NAME === 'hmd'
   const IS_CRACKER_C2 = VERTICAL_NAME === 'cracker' && SITE_NAME === 'c2'
+  const IS_CRACKER_DMD = VERTICAL_NAME === 'cracker' && SITE_NAME === 'dmd'
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [rows, setRows] = useState()
   const [rowsPercentageSummary, setRowsPercentageSummary] = useState()
@@ -1220,6 +1221,9 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     if (IS_AROMATICS_SEZ_PX4 && unitDesignCapacity === 'TPD') {
       return false
     }
+    if (IS_CRACKER_DMD) {
+      return unitDesignCapacity === 'TPD' ? false : true
+    }
     if (IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PP_SEZ || IS_AROMATICS_SEZ_PX4) {
       return true
     }
@@ -1231,6 +1235,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     IS_PP_SEZ,
     unitDesignCapacity,
     IS_AROMATICS_SEZ_PX4,
+    IS_CRACKER_DMD,
   ])
 
   const excelUploadBtnGrid2 = useMemo(() => {
@@ -1240,6 +1245,9 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     if (IS_AROMATICS_SEZ_PX4 && unitDesignCapacity === 'TPD') {
       return false
     }
+    if (IS_CRACKER_DMD) {
+      return unitDesignCapacity === 'TPD' ? false : true
+    }
     if (IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PP_SEZ || IS_AROMATICS_SEZ_PX4) {
       return true
     }
@@ -1251,6 +1259,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     IS_PP_SEZ,
     unitDesignCapacity,
     IS_AROMATICS_SEZ_PX4,
+    IS_CRACKER_DMD,
   ])
   const adjustedPermissionsGrid2 = getAdjustedPermissions(
     {
@@ -1268,7 +1277,12 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
 
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
       downloadExcelBtnFromUI:
-        IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PP_SEZ || IS_AROMATICS_SEZ_PX4
+        IS_PE_PP ||
+        IS_PET ||
+        IS_PVC_VMD ||
+        IS_PP_SEZ ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_CRACKER_DMD
           ? false
           : true,
       downloadExcelBtn: excelBtnGrid2,
@@ -1438,12 +1452,22 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         )
       } else {
         if (gridType === 'design') {
-          await ProductionVolumeDataApiService.getDesignCapacityExcel(
-            keycloak,
-            PLANT_ID,
-            AOP_YEAR,
-            EXCEL_EXPORT_TITLE,
-          )
+          if (IS_CRACKER_DMD) {
+            await ProductionVolumeDataApiService.getDesignCapacityExcel(
+              keycloak,
+              PLANT_ID,
+              AOP_YEAR,
+              EXCEL_EXPORT_TITLE,
+              'design-capacity',
+            )
+          } else {
+            await ProductionVolumeDataApiService.getDesignCapacityExcel(
+              keycloak,
+              PLANT_ID,
+              AOP_YEAR,
+              EXCEL_EXPORT_TITLE,
+            )
+          }
         } else if (gridType === 'max') {
           await ProductionVolumeDataApiService.getMaxAchievedCapacityExcel(
             keycloak,
@@ -1495,6 +1519,13 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
             PLANT_ID,
             AOP_YEAR,
           )
+      } else if (IS_CRACKER_DMD) {
+        response = await ProductionVolumeDataApiService.saveDesignCapacity(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       } else {
         response =
           await ProductionVolumeDataApiService.saveProductionVolDataExcel(
@@ -1527,6 +1558,9 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         // setLoading(false)
 
         fetchData()
+        if (IS_CRACKER_DMD) {
+          fetchDesignCapacityData(unitDesignCapacity)
+        }
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = new Array(byteCharacters.length)
@@ -1709,7 +1743,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         VERTICAL_NAME !== 'pta' &&
         !IS_CHEMICAL &&
         !IS_CRACKER_VMD &&
-        !IS_CRACKER_HMD && 
+        !IS_CRACKER_HMD &&
         !IS_CRACKER_C2 && (
           <>
             <KendoDataTables

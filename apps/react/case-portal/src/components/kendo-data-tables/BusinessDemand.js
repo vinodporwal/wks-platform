@@ -63,6 +63,7 @@ const BusinessDemand = ({ permissions }) => {
   const IS_PE_PP_VERTICAL = lowerVertName === 'pp' || lowerVertName === 'pe'
   const IS_PTA_VERTICAL = lowerVertName === 'pta'
   const IS_PET_VERTICAL = lowerVertName === 'pet'
+  const IS_PVC_VERTICAL = lowerVertName === 'pvc'
   const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const IS_VCM_VERTICAL = lowerVertName === 'vcm'
@@ -78,7 +79,10 @@ const BusinessDemand = ({ permissions }) => {
 
   const IS_ELASTOMER_HMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'hmd'
-
+  const IS_ELASTOMER_HMD_SBR =
+    lowerVertName === 'elastomer' &&
+    lowerSiteName === 'hmd' &&
+    plantObject?.name?.toLowerCase() === 'sbr'
   const IS_CHEMICAL_JMD =
     lowerVertName === 'chemical' && lowerSiteName === 'jmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'
@@ -193,20 +197,50 @@ const BusinessDemand = ({ permissions }) => {
           }
           return true // all items when not IS_CRACKER_DMD
         })
-        .map((item, index) => ({
-          ...item,
-          idFromApi: item.id,
-          id: index,
-          originalRemark: item.remark,
-          inEdit: false,
-          Particulars: item.normParameterTypeDisplayName,
-          expanded: false,
-          UOM:
-            IS_VCM_VERTICAL ||
-            (lowerVertName === 'chemical' && !IS_CHEMICAL_VMD_BENZEN)
-              ? '%'
-              : item?.UOM,
-        }))
+        .map((item, index) => {
+          // For Cracker HMD compute avg of the 12 month values
+          let avg = null
+          if (IS_CRACKER_HMD) {
+            const MONTH_FIELDS = [
+              'april',
+              'may',
+              'june',
+              'july',
+              'aug',
+              'sep',
+              'oct',
+              'nov',
+              'dec',
+              'jan',
+              'feb',
+              'march',
+            ]
+            const values = MONTH_FIELDS.map((m) => item[m]).filter(
+              (v) =>
+                v !== null && v !== undefined && v !== '' && !isNaN(Number(v)),
+            )
+            avg =
+              values.length > 0
+                ? values.reduce((sum, v) => sum + Number(v), 0) / values.length
+                : null
+          }
+
+          return {
+            ...item,
+            idFromApi: item.id,
+            id: index,
+            originalRemark: item.remark,
+            inEdit: false,
+            Particulars: item.normParameterTypeDisplayName,
+            expanded: false,
+            UOM:
+              IS_VCM_VERTICAL ||
+              (lowerVertName === 'chemical' && !IS_CHEMICAL_VMD_BENZEN)
+                ? '%'
+                : item?.UOM,
+            ...(IS_CRACKER_HMD && { avg }),
+          }
+        })
 
       setRows(formattedData)
 
@@ -417,29 +451,32 @@ const BusinessDemand = ({ permissions }) => {
 
   const saveBusinessDemandData = async (newRows) => {
     try {
-      const payloadData = newRows.map((row) => ({
-        april: row.april || null,
-        may: row.may || null,
-        june: row.june || null,
-        july: row.july || null,
-        aug: row.aug || null,
-        sep: row.sep || null,
-        oct: row.oct || null,
-        nov: row.nov || null,
-        dec: row.dec || null,
-        jan: row.jan || null,
-        feb: row.feb || null,
-        march: row.march || null,
-        remark: row.remark || null,
-        avgTph: row.avgTph || null,
-        year: AOP_YEAR,
-        plantId: PLANT_ID,
-        siteFKId: SITE_ID,
-        verticalFKId: VERTICAL_ID,
-        normParameterId: row.normParameterId,
-        id: row.idFromApi || null,
-        inEdit: row.inEdit || false,
-      }))
+      const payloadData = newRows.map((row) => {
+        const aprilVal = row.april ?? null
+        return {
+          april: aprilVal,
+          may: IS_CRACKER_HMD ? aprilVal : row.may ?? null,
+          june: IS_CRACKER_HMD ? aprilVal : row.june ?? null,
+          july: IS_CRACKER_HMD ? aprilVal : row.july ?? null,
+          aug: IS_CRACKER_HMD ? aprilVal : row.aug ?? null,
+          sep: IS_CRACKER_HMD ? aprilVal : row.sep ?? null,
+          oct: IS_CRACKER_HMD ? aprilVal : row.oct ?? null,
+          nov: IS_CRACKER_HMD ? aprilVal : row.nov ?? null,
+          dec: IS_CRACKER_HMD ? aprilVal : row.dec ?? null,
+          jan: IS_CRACKER_HMD ? aprilVal : row.jan ?? null,
+          feb: IS_CRACKER_HMD ? aprilVal : row.feb ?? null,
+          march: IS_CRACKER_HMD ? aprilVal : row.march ?? null,
+          remark: row.remark || null,
+          avgTph: row.avgTph || null,
+          year: AOP_YEAR,
+          plantId: PLANT_ID,
+          siteFKId: SITE_ID,
+          verticalFKId: VERTICAL_ID,
+          normParameterId: row.normParameterId,
+          id: row.idFromApi || null,
+          inEdit: row.inEdit || false,
+        }
+      })
 
       const response =
         await BusinessDemandDataApiService.saveBusinessDemandData(
@@ -463,7 +500,7 @@ const BusinessDemand = ({ permissions }) => {
     } catch (error) {
       console.error('Error in saving data!', error)
     } finally {
-      // fetchData()
+      setLoading(false)
     }
   }
   const deleteRowData = async (paramsForDelete) => {
@@ -512,7 +549,9 @@ const BusinessDemand = ({ permissions }) => {
   const percentageTitle =
     IS_PE_PP_VERTICAL || IS_PET_VERTICAL || IS_PVC_VMD || IS_PVC_DMD
       ? `${SCREEN_NAME} (%)`
-      : `${SCREEN_NAME}`
+      : IS_ELASTOMER_HMD_SBR
+        ? `${SCREEN_NAME} (MT)`
+        : `${SCREEN_NAME}`
 
   const adjustedPermissions = getAdjustedPermissions(
     {
@@ -535,6 +574,7 @@ const BusinessDemand = ({ permissions }) => {
         // FOR PTA IT IS NOT REQUIRED
         // IS_PTA_VERTICAL ||
         IS_PET_VERTICAL ||
+        IS_PVC_VERTICAL ||
         IS_PVC_VMD ||
         IS_PVC_DMD ||
         IS_ELASTOMER_VERTICAL ||
@@ -573,7 +613,7 @@ const BusinessDemand = ({ permissions }) => {
           : true,
 
       // Enables ON/OFF dropdown for rows where UOM === 'ON/OFF'
-      enableOnOffDropdown: true,
+      enableOnOffDropdown: IS_CRACKER_HMD,
     },
     isOldYear,
   )
@@ -719,6 +759,8 @@ const BusinessDemand = ({ permissions }) => {
       >
         <CircularProgress color='inherit' />
       </Backdrop> */}
+
+      <LoaderBackdrop open={!!loading} />
 
       {lowerVertName !== 'cracker' &&
         !IS_ELASTOMER_JMD &&
@@ -880,15 +922,20 @@ const BusinessDemand = ({ permissions }) => {
 
       {IS_CRACKER_DMD && <ManualEntryForFeedStreams />}
 
-      {!IS_CARCKER_VMD && !IS_CRACKER_HMD && !IS_CRACKER_C2 && IS_CRACKER_VERTICAL && (
-        <>
-          <Box sx={{ width: '100%', margin: 0 }}>
-            <PropaneBusiness permissions={adjustedPermissions} />
-          </Box>
-        </>
-      )}
+      {!IS_CARCKER_VMD &&
+        !IS_CRACKER_HMD &&
+        !IS_CRACKER_C2 &&
+        IS_CRACKER_VERTICAL && (
+          <>
+            <Box sx={{ width: '100%', margin: 0 }}>
+              <PropaneBusiness permissions={adjustedPermissions} />
+            </Box>
+          </>
+        )}
 
-      {(IS_CRACKER_HMD || IS_CRACKER_C2) && <ModeSelection permissions={adjustedPermissions} />}
+      {(IS_CRACKER_HMD || IS_CRACKER_C2) && (
+        <ModeSelection permissions={adjustedPermissions} />
+      )}
     </div>
   )
 }

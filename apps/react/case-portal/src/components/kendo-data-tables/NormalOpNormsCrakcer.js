@@ -200,9 +200,9 @@ const NormalOpNormsScreenCracker = () => {
         title: 'SAP MAT Code',
         widthT: 120,
         editable: false,
-        minWidth: 100,
+        minWidth: 150,
       },
-      { field: 'materialDisplayName', title: 'Particulars', minWidth: 100 },
+      { field: 'materialDisplayName', title: 'Particulars', minWidth: 300 },
       {
         field: 'uom',
         title: 'UOM',
@@ -254,14 +254,14 @@ const NormalOpNormsScreenCracker = () => {
         widthT: 120,
         editable: false,
         useMethodColors: true,
-        minWidth: 120,
+        minWidth: 150,
       },
       {
         field: 'materialDisplayName',
         title: 'Particulars',
         widthT: 130,
         editable: false,
-        minWidth: 120,
+        minWidth: 300,
       },
       {
         field: 'uom',
@@ -303,14 +303,14 @@ const NormalOpNormsScreenCracker = () => {
         title: 'SAP MAT Code',
         widthT: 120,
         editable: false,
-        minWidth: 100,
+        minWidth: 150,
       },
       {
         field: 'materialDisplayName',
         title: 'Particulars',
         widthT: 130,
         editable: false,
-        minWidth: 100,
+        minWidth: 300,
       },
       { field: 'uom', title: 'UOM', widthT: 80, editable: false, minWidth: 80 },
       ...MONTHS.map((m, i) => ({
@@ -355,14 +355,14 @@ const NormalOpNormsScreenCracker = () => {
         title: 'SAP MAT Code',
         widthT: 120,
         editable: false,
-        minWidth: 100,
+        minWidth: 150,
       },
       {
         field: 'materialDisplayName',
         title: 'Particulars',
         widthT: 130,
         editable: false,
-        minWidth: 100,
+        minWidth: 300,
       },
       { field: 'uom', title: 'UOM', widthT: 80, editable: false, minWidth: 80 },
       ...MONTHS.map((m, i) => ({
@@ -611,7 +611,7 @@ const NormalOpNormsScreenCracker = () => {
   // --- Data fetchers ---
   const fetchFinalNorms = useCallback(async () => {
     try {
-      getCombinedNormTransactions()
+      await getCombinedNormTransactions()
 
       const response = await NormalOperationNormsApiService.getfinalNorms(
         keycloak,
@@ -785,7 +785,7 @@ const NormalOpNormsScreenCracker = () => {
         setLoading(false)
       }
     },
-    [fetchModeData, fetchFinalNorms, selectedTab, PLANT_ID, AOP_YEAR],
+    [fetchModeData, fetchFinalNorms],
   )
 
   const fetchAllDataNormsSelection = useCallback(
@@ -809,7 +809,7 @@ const NormalOpNormsScreenCracker = () => {
   )
 
   useEffect(() => {
-    fetchAllData(gradeId)
+    fetchAllData(gradeId, selectedTab)
   }, [
     fetchAllData,
     oldYear,
@@ -1223,14 +1223,14 @@ const NormalOpNormsScreenCracker = () => {
   const [summaryEdited, setSummaryEdited] = useState(false)
 
   // tabs
-  const handleTabChange = useCallback(
-    (_, newValue) => {
-      setModifiedCells({})
-      setSelectedTab(newValue)
-      fetchAllData(gradeId, newValue)
-    },
-    [gradeId, fetchAllData, AOP_YEAR, PLANT_ID],
-  )
+  // const handleTabChange = useCallback(
+  //   (_, newValue) => {
+  //     setModifiedCells({})
+  //     setSelectedTab(newValue)
+  //     fetchAllData(gradeId, newValue)
+  //   },
+  //   [gradeId, fetchAllData, AOP_YEAR, PLANT_ID],
+  // )
 
   const tabSx = {
     border: '1px solid #ADD8E6',

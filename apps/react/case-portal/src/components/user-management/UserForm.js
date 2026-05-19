@@ -590,7 +590,13 @@ const UserForm = ({ keycloak }) => {
           ? {
               ...sourceEntry,
               site: newSiteId,
-              plants: JSON.parse(JSON.stringify(sourceEntry.plants)),
+              plants: [
+                {
+                  plantId: [],
+                  screens: [],
+                  permissions: [],
+                },
+              ],
             }
           : {
               site: [],
@@ -623,13 +629,17 @@ const UserForm = ({ keycloak }) => {
     setVerticalSites((prev) => {
       const updatedSites = [...prev[verticalId]]
       const newPlant = sourcePlant
-        ? JSON.parse(JSON.stringify(sourcePlant))
-        : {
-            plantId: [],
+        ? {
+            ...JSON.parse(JSON.stringify(sourcePlant)),
+            plantId: newPlantId,
             screens: [],
             permissions: [],
           }
-      newPlant.plantId = newPlantId
+        : {
+            plantId: newPlantId,
+            screens: [],
+            permissions: [],
+          }
 
       updatedSites[siteIndex] = {
         ...updatedSites[siteIndex],

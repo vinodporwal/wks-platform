@@ -45,7 +45,6 @@ import {
   NumberWithCheckboxCellEditor,
   NumberWithCheckboxDisplayCell,
 } from '../utilities/NumberWithCheckboxCellEditor'
-import dataGridStore from 'store/reducers/dataGridStore'
 import Notification from 'components/Utilities/Notification'
 
 import AddIcon from '@mui/icons-material/Add'
@@ -59,6 +58,7 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import Collapse from '@mui/material/Collapse'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { useSelector } from 'react-redux'
 
 // Helper function to extract flat row sequence from grouped data
 const extractFlatRowsFromGrouped = (data) => {
@@ -151,6 +151,8 @@ const NestedKendoTable = ({
   dateCalculationConfig = {},
   customHeight = null,
   customItemChange = null,
+  isReleaseDisabled = true,
+  handleRelease = () => {},
 }) => {
   const fileInputRef = useRef(null)
   const minGridWidth = useRef(0)
@@ -171,6 +173,7 @@ const NestedKendoTable = ({
   const [customModifiedCells, setCustomModifiedCells] = useState({})
   const keycloak = useSession()
 
+  const dataGridStore = useSelector((state) => state.dataGridStore)
   const { isReleased, oldYear } = dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased
@@ -1461,6 +1464,16 @@ const NestedKendoTable = ({
                   className='btn-calculate'
                 >
                   Calculate
+                </Button>
+              )}
+              {permissions?.showReleaseBtn && (
+                <Button
+                  variant='contained'
+                  className='btn-save'
+                  disabled={isReleaseDisabled || READ_ONLY}
+                  onClick={handleRelease}
+                >
+                  Release
                 </Button>
               )}
             </Box>

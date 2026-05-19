@@ -65,7 +65,6 @@ import { NoSpinnerNumericEditor } from '../utilities/numbericColumns'
 import { getColumnMenuDateFilter } from '../utilities/ColumnMenuDateFilter'
 import { getColumnMenuCheckboxFilter } from '../utilities/ColumnMenu1'
 import DateTimePickerEditor from '../utilities/DatePickeronSelectedYr'
-import dataGridStore from 'store/reducers/dataGridStore'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import Notification from 'components/Utilities/Notification'
 
@@ -80,6 +79,7 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import Collapse from '@mui/material/Collapse'
+import { useSelector } from 'react-redux'
 
 // Helper function to get nested value from object
 const getNestedValue = (obj, path) => {
@@ -223,7 +223,10 @@ const AdvanceKendoTable = ({
   externalCustomModifiedCells = null,
   externalSetCustomModifiedCells = null,
   customHandleRemarkSave = null,
+  isReleaseDisabled = true,
+  handleRelease = () => {},
 }) => {
+  const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     plantObject,
     year,
@@ -2255,6 +2258,17 @@ const AdvanceKendoTable = ({
                   className='btn-save'
                 >
                   Submit
+                </Button>
+              )}
+
+              {permissions?.showReleaseBtn && (
+                <Button
+                  variant='contained'
+                  className='btn-save'
+                  disabled={isReleaseDisabled || READ_ONLY}
+                  onClick={handleRelease}
+                >
+                  Release
                 </Button>
               )}
 
