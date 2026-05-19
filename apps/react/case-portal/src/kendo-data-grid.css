@@ -171,7 +171,7 @@
    =============================== */
 
 .kendo-data-grid .k-grid-content .k-grid-table td {
-  position: relative;
+  /* position: relative; */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
