@@ -104,11 +104,12 @@ public class ConfigurationController {
 	@GetMapping(value = "/configuration-constants-export-excel")
 	public ResponseEntity<byte[]> exportConfigurationConstantsReport(
 	         @RequestParam("plantFKId") String plantFKId,
-            @RequestParam("year") String year
+            @RequestParam("year") String year,
+			@RequestParam(required = false) boolean iscatcam
 	        ) {
 	    try {
 			
-	        byte[] excelBytes = configurationService.createConfigurationConstantsExcel(year,UUID.fromString(plantFKId)); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+	        byte[] excelBytes = configurationService.createConfigurationConstantsExcel(year,UUID.fromString(plantFKId), iscatcam); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
 
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(

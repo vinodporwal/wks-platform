@@ -120,6 +120,9 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	@Autowired
 	private ShutdownHistoryService shutdownHistoryService;
 
+	@Autowired
+	private NormalOperationNormsService normalOperationNormsService;
+
 	@Override
 	public List<MaintenanceDetailsDTO> getMaintenanceCalculatedData(String plantId, String year) {
 		try {
@@ -429,6 +432,108 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch cat chem data", ex);
+		}
+	}
+
+	@Override
+	public byte[] exportCatChemAllGrades(String plantId, String year) {
+		try {
+			AOPMessageVM gradesVM = normalOperationNormsService.getNormalOperationNormsGrades(year, plantId);
+
+			if (gradesVM == null || gradesVM.getData() == null) {
+				return null;
+			}
+
+			List<Map<String, Object>> gradeList = (List<Map<String, Object>>) gradesVM.getData();
+
+			if (gradeList.isEmpty()) {
+				return null;
+			}
+
+			Workbook workbook = new XSSFWorkbook();
+
+			for (Map<String, Object> gradeInfo : gradeList) {
+				String gradeId = gradeInfo.get("gradeId") != null ? gradeInfo.get("gradeId").toString() : null;
+				String displayName = gradeInfo.get("displayName") != null ? gradeInfo.get("displayName").toString() : null;
+
+				if (gradeId == null) {
+					continue;
+				}
+
+				AOPMessageVM catChemVM = getMaintenanceCatChem(plantId, year, gradeId);
+
+				if (catChemVM == null || catChemVM.getData() == null) {
+					continue;
+				}
+
+				Map<String, Object> catChemData = (Map<String, Object>) catChemVM.getData();
+				List<Map<String, Object>> dataRows = (List<Map<String, Object>>) catChemData.get("data");
+				List<Map<String, Object>> columns = (List<Map<String, Object>>) catChemData.get("columns");
+
+				if (dataRows == null || dataRows.isEmpty()) {
+					continue;
+				}
+
+				String sheetName = Utility.sanitizeSheetName(displayName != null ? displayName : "Grade_" + gradeId);
+				Sheet sheet = workbook.createSheet(sheetName);
+
+				// Header row
+				if (columns != null && !columns.isEmpty()) {
+					Row headerRow = sheet.createRow(0);
+					CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+					for (int col = 0; col < columns.size(); col++) {
+						Cell cell = headerRow.createCell(col);
+						Object title = columns.get(col).get("title");
+						cell.setCellValue(title != null ? title.toString() : "");
+						cell.setCellStyle(headerStyle);
+					}
+
+					// Data rows
+					for (int rowIdx = 0; rowIdx < dataRows.size(); rowIdx++) {
+						Map<String, Object> rowData = dataRows.get(rowIdx);
+						Row row = sheet.createRow(rowIdx + 1);
+						for (int col = 0; col < columns.size(); col++) {
+							Object field = columns.get(col).get("field");
+							Object value = field != null ? rowData.get(field.toString()) : null;
+							Cell cell = row.createCell(col);
+							if (value instanceof Number) {
+								cell.setCellValue(((Number) value).doubleValue());
+							} else {
+								cell.setCellValue(value != null ? value.toString() : "");
+							}
+						}
+					}
+
+						// Auto-size first few columns for readability
+					for (int col = 0; col < Math.min(5, columns.size()); col++) {
+						sheet.autoSizeColumn(col);
+					}
+
+					// Hide Grade_FK_Id column
+					for (int col = 0; col < columns.size(); col++) {
+						Object field = columns.get(col).get("field");
+						if (field != null && "Grade_FK_Id".equalsIgnoreCase(field.toString())) {
+							sheet.setColumnHidden(col, true);
+							break;
+						}
+					}
+				}
+			}
+
+			if (workbook.getNumberOfSheets() == 0) {
+				workbook.close();
+				return null;
+			}
+
+			try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+				workbook.write(outputStream);
+				workbook.close();
+				return outputStream.toByteArray();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException("Failed to export Cat Chem data for all grades", e);
 		}
 	}
 
@@ -2113,8 +2218,10 @@ Query query = entityManager.createNativeQuery(sql);
 query.setParameter("plantId", plantId);
 query.setParameter("aopYear", aopYear);
 
-boolean hasResultSet = query.unwrap(org.hibernate.query.NativeQuery.class)
-                            .getHibernateFlushMode() != null;
+// boolean hasResultSet = query.unwrap(org.hibernate.query.NativeQuery.class)
+//                             .getHibernateFlushMode() != null;
+
+query.executeUpdate();
 
 response.setCode(200);
 response.setMessage("CatChemCalculation executed successfully");

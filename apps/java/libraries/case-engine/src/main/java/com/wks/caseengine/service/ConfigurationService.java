@@ -32,7 +32,7 @@ public interface ConfigurationService {
     public AOPMessageVM getConfigurationIntermediateValuesData(String year, String plantId);
     public byte[] createExcel(String year, UUID plantFKId, List<String> reportTypes,String version,boolean isAfterSave, List<ConfigurationDTO> list);
     public byte[] createShutdownRateExcel(String year, UUID plantFKId,String type, boolean isAfterSave, List<ConfigurationDTO> list);
-    public byte[] createConfigurationConstantsExcel(String year, UUID plantFKId);
+    public byte[] createConfigurationConstantsExcel(String year, UUID plantFKId, boolean iscatcam);
     public byte[] createProductionConstraintsExcel(String year, UUID plantFKId, String type);
     public byte[] exportConfigurationConstantsNorms(String year, String plantId);
     public byte[] exportConfigData(String year, UUID plantFKId, boolean isAfterSave, List<NormAttributeTransactionReceipeRequestDTO> dtoList, boolean iscatcam);

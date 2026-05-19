@@ -31,4 +31,5 @@ public interface MaintenanceCalculatedDataService {
 	public byte[] exportMaintenanceDetails(String year, String plantFKId);
 	public AOPMessageVM maintenanceImport(String year,UUID plantId,MultipartFile file);
 	public AOPMessageVM catChemCalculation(UUID plantId, String aopYear);
+	public byte[] exportCatChemAllGrades(String plantId, String year);
 }

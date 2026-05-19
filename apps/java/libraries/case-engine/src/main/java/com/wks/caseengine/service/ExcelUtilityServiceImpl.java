@@ -182,8 +182,18 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
             lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
             lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
+            CellStyle lockedBorderStyle = workbook.createCellStyle();
+            lockedBorderStyle.cloneStyleFrom(borderStyle);
+            lockedBorderStyle.setLocked(true);
+            lockedBorderStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            lockedBorderStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
             CellStyle unlockedStyle = workbook.createCellStyle();
             unlockedStyle.setLocked(false);
+
+            CellStyle unlockedBorderStyle = workbook.createCellStyle();
+            unlockedBorderStyle.cloneStyleFrom(borderStyle);
+            unlockedBorderStyle.setLocked(false);
 
             
 
@@ -217,6 +227,8 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
                     rows = data.get(tableId);
                     List<String> specialTableIds = Arrays.asList("DesignCapacity", "MaxAchievedCapacity", "SummaryProposedOperatingCapacity");
                     boolean isSpecialTable = specialTableIds.contains(tableId);
+                    boolean isOptimizerInput = tableId != null && tableId.equalsIgnoreCase("Optimizer Input");
+                    boolean isOptimizerOutput = tableId != null && tableId.equalsIgnoreCase("Optimizer Output");
                     System.out.println("rows " + rows);
                     Boolean isColumnMergeRequired = (Boolean) table.get(ExcelConstants.IS_COLUMN_MERGE_REQUIRED);
                     Boolean isRowMergeRequired = (Boolean) table.get(ExcelConstants.IS_ROW_MERGE_REQUIRED);
@@ -299,19 +311,23 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
                                 }
                                 
 
-                                if (boldCols.contains(col))
-                                    cell.setCellStyle(boldStyle);
-                                if (borders) {
-                                    if (isSpecialTable) {
-                                        if (col < rowData.size() - 5) {
-                                            cell.setCellStyle(borderStyle);
+                                if (isOptimizerInput || isOptimizerOutput) {
+                                    cell.setCellStyle(lockedBorderStyle);
+                                } else {
+                                    if (boldCols.contains(col))
+                                        cell.setCellStyle(boldStyle);
+                                    if (borders) {
+                                        if (isSpecialTable) {
+                                            if (col < rowData.size() - 5) {
+                                                cell.setCellStyle(unlockedBorderStyle);
+                                            }
+                                        } else {
+                                            cell.setCellStyle(unlockedBorderStyle);
                                         }
-                                    } else {
-                                        cell.setCellStyle(borderStyle);
                                     }
-                                }
-                                if(greyOut){
-                                	cell.setCellStyle(lockedStyle);
+                                    if (greyOut) {
+                                        cell.setCellStyle(lockedStyle);
+                                    }
                                 }
 
                             }
@@ -397,6 +413,8 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
                 for (int i = 0; i < columnCount; i++) {
                     sheet.autoSizeColumn(i);
                 }
+
+                sheet.protectSheet("");
 
                 //sheet.setDisplayGridlines(false);
             }

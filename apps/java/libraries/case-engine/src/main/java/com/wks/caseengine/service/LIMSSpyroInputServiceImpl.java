@@ -970,16 +970,15 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 		String finYear) {
 	try {
 		
-		String callSql = "{call " + procedureName + "(?, ?, ?, ?)}";
+		String callSql = "{call " + procedureName + "(?, ?)}";
 
 		try (Connection connection = dataSource.getConnection();
 			 CallableStatement stmt = connection.prepareCall(callSql)) {
 
 			// Set parameters in the correct order
-			stmt.setString(1, plantId); // @finYear
-			stmt.setString(2, siteId.toString()); // @plantId
-			stmt.setString(3, verticalId.toString()); // @verticalId
-			stmt.setString(4, finYear); // @siteId
+			stmt.setString(1, plantId); 
+			stmt.setString(2, finYear); 
+			
 
 			// Execute the stored procedure
 			int rowsAffected = stmt.executeUpdate();
