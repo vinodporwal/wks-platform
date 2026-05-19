@@ -406,15 +406,17 @@ const KendoDataTablesCracker = ({
   )
 
   const SimpleHeaderWithTooltip = (props) => {
-    const { ariaSort, ...restThProps } = props.thProps || {}
+    const { ariaSort, style: thStyle, className, ...restThProps } = props.thProps || {}
 
     return (
       <th
-        {...restThProps}
+        {...props.thProps}
+        className={`${className || ''}`.trim()}
         aria-sort={ariaSort}
         title={props.title}
         style={{
           fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
+          ...thStyle,
         }}
       >
         <Tooltip
@@ -444,6 +446,7 @@ const KendoDataTablesCracker = ({
         title={value}
         style={{
           color: isRed ? 'orange' : undefined,
+          ...props.tdProps?.style,
         }}
       >
         {props.children}

@@ -319,7 +319,7 @@ const KendoDataTablesReportsTcs = ({
   }
 
   const RemarkCell = (props) => {
-    const { dataItem, field, onRemarkClick, ...tdProps } = props
+    const { dataItem, field, onRemarkClick, tdProps } = props
     const rawValue = dataItem[field]
     const displayText = String(rawValue ?? '')
     return (

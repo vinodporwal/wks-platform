@@ -448,7 +448,7 @@ const KendoDataTablesReports = ({
   }
 
   const RemarkCell = (props) => {
-    const { dataItem, field, onRemarkClick, ...tdProps } = props
+    const { dataItem, field, onRemarkClick, tdProps } = props
     const rawValue = dataItem[field]
     const displayText = String(rawValue ?? '')
     const isDisabled = READ_ONLY

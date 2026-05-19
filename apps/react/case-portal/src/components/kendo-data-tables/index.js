@@ -1448,6 +1448,7 @@ const KendoDataTables = ({
         title={value}
         style={{
           backgroundColor: isDisabled ? '#f0f0f0' : undefined,
+          ...props.tdProps?.style,
         }}
       >
         {props.children}
@@ -1479,6 +1480,7 @@ const KendoDataTables = ({
         style={{
           fontWeight:
             !(highlight && isEdited) && isBoldFromCells ? 'bold' : undefined,
+          ...tdProps?.style,
         }}
       >
         {children}
@@ -1503,7 +1505,10 @@ const KendoDataTables = ({
         <td
           {...tdProps}
           title={value}
-          style={{ fontWeight: isBoldFromCells ? 'bold' : undefined }}
+          style={{
+            fontWeight: isBoldFromCells ? 'bold' : undefined,
+            ...tdProps?.style,
+          }}
         >
           {children}
         </td>
@@ -1533,6 +1538,7 @@ const KendoDataTables = ({
         className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
           fontWeight: !shouldHighlight && isBoldFromCells ? 'bold' : undefined,
+          ...tdProps?.style,
         }}
       >
         {children}
@@ -1560,7 +1566,10 @@ const KendoDataTables = ({
         <td
           {...tdProps}
           title={value}
-          style={{ fontWeight: isBoldFromCells ? 'bold' : undefined }}
+          style={{
+            fontWeight: isBoldFromCells ? 'bold' : undefined,
+            ...tdProps?.style,
+          }}
         >
           {children}
         </td>
@@ -1639,6 +1648,7 @@ const KendoDataTables = ({
               : undefined,
           fontWeight: !highlightColor && isBoldFromCells ? 'bold' : undefined,
           // backgroundColor: highlightColorFullCell ? 'lightGrey' : undefined,
+          ...tdProps?.style,
         }}
       >
         {children}
@@ -1672,15 +1682,17 @@ const KendoDataTables = ({
   }
 
   const SimpleHeaderWithTooltip = (props) => {
-    const { ariaSort, ...restThProps } = props.thProps || {}
+    const { ariaSort, style: thStyle, className, ...restThProps } = props.thProps || {}
 
     return (
       <th
-        {...restThProps}
+        {...props.thProps}
+        className={`${className || ''}`.trim()}
         aria-sort={ariaSort}
         title={props.title}
         style={{
           fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
+          ...thStyle,
         }}
       >
         <Tooltip
@@ -1696,14 +1708,19 @@ const KendoDataTables = ({
   }
 
   const BlankHeader = (props) => {
-    const { ariaSort, ...restThProps } = props.thProps || {}
+    const { ariaSort, style: thStyle, className, ...restThProps } = props.thProps || {}
 
     return (
       <th
-        {...restThProps}
+        {...props.thProps}
+        className={`${className || ''}`.trim()}
         aria-sort={ariaSort}
         title=''
-        style={{ padding: '0px', borderRight: '1px solid #878787' }}
+        style={{
+          padding: '0px',
+          borderRight: '1px solid #878787',
+          ...thStyle,
+        }}
       ></th>
     )
   }
@@ -3032,6 +3049,7 @@ const KendoDataTables = ({
                         editable={col?.editable || true}
                         hidden={col?.hidden}
                         width={setWidth(col?.minWidth || 150)}
+                        locked={col?.locked || false}
                         cells={{
                           data: (cellProps) => (
                             <ProductCell
@@ -3056,6 +3074,7 @@ const KendoDataTables = ({
                         title={col?.title || col?.headerName || 'Particulars'}
                         editable={col?.editable || true}
                         hidden={col?.hidden}
+                        locked={col?.locked || false}
                         cells={{
                           data: (cellProps) => (
                             <ProductCell
@@ -3080,6 +3099,7 @@ const KendoDataTables = ({
                         width={setWidth(col?.minWidth || 150)}
                         editable={col?.editable || true}
                         hidden={col?.hidden}
+                        locked={col?.locked || false}
                         cells={{
                           data: (cellProps) => (
                             <ProductCell
@@ -3132,6 +3152,7 @@ const KendoDataTables = ({
                         columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col?.hidden}
                         headerClassName={isActive ? 'active-column' : ''}
+                        locked={col?.locked || false}
                         cells={{
                           edit: { text: TextCellEditor },
                           data: (props) =>
@@ -3197,6 +3218,7 @@ const KendoDataTables = ({
                         editable={false}
                         columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col?.hidden}
+                        locked={col?.locked || false}
                         cells={{
                           data: toolTipRenderer,
                           headerCell: SimpleHeaderWithTooltip,
@@ -3469,6 +3491,7 @@ const KendoDataTables = ({
                         editable={false}
                         columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col?.hidden}
+                        locked={col?.locked || false}
                         cells={{
                           data: toolTipRenderer,
                           headerCell: SimpleHeaderWithTooltip,
@@ -3494,10 +3517,11 @@ const KendoDataTables = ({
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
+                        locked={col?.locked || false}
                         // editor={true}
                         // editable={{ mode: 'popup' }}
                         cells={{
-                          data: (cellProps, allRedCell) => (
+                          data: (cellProps) => (
                             <RemarkCell
                               {...cellProps}
                               allRedCell={allRedCell}
@@ -4251,6 +4275,7 @@ const KendoDataTables = ({
                       width={setWidth(col?.minWidth || 150)}
                       hidden={col?.hidden}
                       editable={col?.editable ? true : false}
+                      locked={col?.locked || false}
                       headerClassName={isActive ? 'active-column' : ''}
                       cells={{
                         edit: { text: TextCellEditor },

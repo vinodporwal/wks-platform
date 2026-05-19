@@ -11,7 +11,7 @@ const ProductCellEditor = (props) => {
     highlightField,
     highlight,
     rowId,
-    ...tdProps
+    tdProps,
   } = props
 
   const allOptions = useMemo(
@@ -58,14 +58,27 @@ const ProductCellEditor = (props) => {
   const productObj = allProducts.find((p) => p.id === dataItem[field])
   const displayLabel = productObj ? productObj.displayName : ''
 
+  const {
+    className,
+    colSpan,
+    rowSpan,
+    headers,
+    style: extraStyle,
+    id,
+    role,
+    'data-testid': dataTestId,
+  } = tdProps || {}
+
   return (
     <td
       {...tdProps}
+      className={`${className || ''}`.trim()}
       style={{
         padding: '0.5rem 1rem',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
+        ...extraStyle,
       }}
     >
       {displayLabel || '—'}

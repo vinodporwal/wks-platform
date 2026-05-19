@@ -1,13 +1,16 @@
 import { monthMap } from '../index'
 
-export const RemarkCell = ({
-  dataItem,
-  field,
-  onRemarkClick,
-  allRedCell,
-  setEdit,
-  ...tdProps
-}) => {
+export const RemarkCell = (props) => {
+  const {
+    dataItem,
+    field,
+    onRemarkClick,
+    allRedCell,
+    setEdit,
+    customModifiedCells,
+    tdProps,
+  } = props
+
   const rawValue = dataItem[field]
   const displayText = String(rawValue ?? '')
 
@@ -23,7 +26,6 @@ export const RemarkCell = ({
       cell.normParameterFKId?.toLowerCase() === normId?.toLowerCase(),
   )
 
-  // Whitelist only valid HTML <td> attributes from tdProps
   const {
     className,
     colSpan,
@@ -44,6 +46,7 @@ export const RemarkCell = ({
 
   return (
     <td
+      {...tdProps}
       className={`${className} ${isRed || isEdited ? 'edited-cell' : 'non-edited-cell '}`}
       colSpan={colSpan}
       rowSpan={rowSpan}
