@@ -1,17 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  IconMapPin,
-  IconBriefcase,
-  IconBuildingFactory,
   IconChevronDown,
   IconChevronUp,
   IconChevronRight,
-  IconCircleCheck,
-  IconCode,
-  IconSearch,
-  IconEye,
-  IconClock,
-  IconAdjustments,
   IconDots,
 } from '@tabler/icons-react'
 import {
@@ -34,7 +25,6 @@ import '../../dashboard-v2.css'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import {
   AllStatusIcon,
-  BusinessBlackIcon,
   BusinessBlueIcon,
   DevIcon,
   UatIcon,
@@ -610,7 +600,7 @@ export default function AopDashboardCompact() {
             />
             <input
               type='text'
-              placeholder='Search for Site or Business name...'
+              placeholder='Search for Site, Plant or Business name...'
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
