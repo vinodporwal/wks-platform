@@ -114,8 +114,10 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Boolean withGrade=false;
+			boolean elastomerHmdSbr = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
+			boolean pvc = vertical.getName().equalsIgnoreCase("PVC");
 			Boolean elastomer = vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
-			if(plant.getName().equalsIgnoreCase("SBR") && site.getName().equalsIgnoreCase("HMD") && vertical.getName().equalsIgnoreCase("ELASTOMER")) {
+			if(elastomerHmdSbr || pvc) {
 				withGrade=true;
 			}if(elastomer) {
 				String storedProcedure = verticalName + "_" + site.getName() + "_GetShutdownnormsGrade";
@@ -127,10 +129,12 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				// view converted to sp
 				String storedProcedure = verticalName + "_" + site.getName() + "_GetShutdownnorms";
 				objList = getShutdownConsumptionData( plantId,year, storedProcedure);
-			}else if (  vertical.getName().equalsIgnoreCase("PVC") ) {
-				String viewName="vwScrn"+vertical.getName()+"ShutdownNorms";
-				objList = getShutdownNormsMEG(year, plant.getId(), viewName);
-			}else if(vertical.getName().equalsIgnoreCase("CRACKER")) {
+			}
+			// else if (  vertical.getName().equalsIgnoreCase("PVC") ) {
+			// 	String viewName="vwScrn"+vertical.getName()+"ShutdownNorms";
+			// 	objList = getShutdownNormsMEG(year, plant.getId(), viewName, gradeId);
+			// }
+			else if(vertical.getName().equalsIgnoreCase("CRACKER")) {
 				List<Object[]> obj=getShutdownConsumptionData(plantId,year);
 				return getData(obj, plantId, year);
 			}else if(withGrade) {
@@ -888,7 +892,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 		Map<String,Object> map=null;
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-		boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+		boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
 		boolean sbr=vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR"); 
 		boolean hiir=vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR"); 
 		if(vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PET") || pvc || hiir || sbr) {
@@ -1313,7 +1317,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 		}
 	}
 
-	public List<Object[]> getShutdownNormsMEG(String year, UUID plantId, String viewName) {
+	public List<Object[]> getShutdownNormsMEG(String year, UUID plantId, String viewName, String gradeId) {
 		try {
 			String sql = "SELECT TOP (1000) [Id], [Site_FK_Id], [Plant_FK_Id], [Vertical_FK_Id], "
 					+ "[Material_FK_Id], [April], [May], [June], [July], [August], [September], "
@@ -1322,13 +1326,14 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 					+ "[UpdatedBy], [NormParameterTypeId], [NormParameterTypeName], "
 					+ "[NormParameterTypeDisplayName], [NormTypeDisplayOrder], [MaterialDisplayOrder], [UOM],[isEditable],[DisplayName] "
 					+ "FROM " + viewName + " "
-					+ "WHERE Plant_FK_Id = :plantId AND (FinancialYear = :year OR FinancialYear IS NULL) "
+					+ "WHERE Plant_FK_Id = :plantId AND (FinancialYear = :year OR FinancialYear IS NULL) " 
+					+ "AND Grade_FK_Id = :gradeId "
 					+ "ORDER BY NormTypeDisplayOrder,MaterialDisplayOrder";
 
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("plantId", plantId);
 			query.setParameter("year", year);
-			
+			query.setParameter("gradeId", gradeId);
 
 			return query.getResultList();
 		} catch (IllegalArgumentException e) {

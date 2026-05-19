@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  IconButton,
   Switch,
   TextField,
   Typography,
@@ -52,6 +53,8 @@ import {
   SaveIcon,
 } from 'assets/images/icons/index'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import CloseIcon from '@mui/icons-material/Close'
 import Collapse from '@mui/material/Collapse'
 
 export const dateFields = [
@@ -86,6 +89,24 @@ export const monthMap = {
   november: 11,
   december: 12,
 }
+
+const CompactDialog = styled(Dialog)(({ theme }) => ({
+  '& .MuiPaper-root': {
+    borderRadius: '12px',
+    width: '600px',
+    boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+  },
+}))
+
+const CompactTextField = styled(TextField)({
+  '& .MuiOutlinedInput-root': {
+    fontSize: '0.85rem',
+    backgroundColor: '#fff',
+    '& fieldset': { borderColor: '#e2e8f0' },
+    '&:hover fieldset': { borderColor: '#cbd5e1' },
+    '&.Mui-focused fieldset': { borderColor: '#0100cb' },
+  },
+})
 
 const KendoDataTablesCracker = ({
   rows = [],
@@ -139,6 +160,8 @@ const KendoDataTablesCracker = ({
 
   const [isDateFilterActive, setIsDateFilterActive] = useState([])
   const [gridExpanded, setGridExpanded] = useState(true)
+  const [gridCurrent, setGridCurrent] = useState(0)
+  const [applyMinWidth, setApplyMinWidth] = useState(false)
 
   const keycloak = useSession()
 
@@ -160,6 +183,46 @@ const KendoDataTablesCracker = ({
       ]
     : []
   const fileInputRef = useRef(null)
+  const minGridWidth = useRef(0)
+  const grid = useRef(null)
+
+  const ADJUST_PADDING = 4
+  const COLUMN_MIN = 4
+
+  const setWidth = (minWidth = 0) => {
+    const visibleCols = columns.filter((col) => col?.isVisible !== false)
+
+    const totalMinWidth = visibleCols.reduce(
+      (sum, col) => sum + (col.minWidth || 0),
+      0,
+    )
+
+    // 🔥 Decide behavior based on available space
+    const hasExtraSpace = gridCurrent > totalMinWidth
+
+    let width
+
+    if (!hasExtraSpace) {
+      // ✅ Not enough space → respect minWidth → enable scroll
+      width = minWidth
+    } else {
+      // ✅ Extra space → distribute nicely (but controlled)
+      const extraPerCol = (gridCurrent - totalMinWidth) / visibleCols.length
+
+      // 🔥 limit expansion so it doesn't look ugly
+      const MAX_GROWTH = 80 // tweak if needed
+
+      width = minWidth + Math.min(extraPerCol, MAX_GROWTH)
+    }
+
+    // optional padding adjustment
+    if (width >= COLUMN_MIN) {
+      width -= ADJUST_PADDING
+    }
+
+    return Math.max(minWidth, width)
+  }
+
   const handleEditChange = useCallback((e) => {
     setEdit(e.edit)
   }, [])
@@ -173,6 +236,14 @@ const KendoDataTablesCracker = ({
       }
     })
   }, [rows])
+
+  useEffect(() => {
+    minGridWidth.current = columns
+      .filter((col) => col?.isVisible !== false)
+      .reduce((sum, col) => sum + (col?.minWidth || 100), 0)
+    setGridCurrent(grid.current?.offsetWidth || 0)
+    setApplyMinWidth((grid.current?.offsetWidth || 0) < minGridWidth.current)
+  }, [])
 
   const toggleGrid = () => setGridExpanded(!gridExpanded)
 
@@ -398,7 +469,7 @@ const KendoDataTablesCracker = ({
 
   const renderGrid = () => (
     <Grid
-      scrollable='virtual'
+      ref={grid}
       modifiedCells={modifiedCells}
       autoProcessData={true}
       defaultGroup={initialGroup}
@@ -451,7 +522,7 @@ const KendoDataTablesCracker = ({
               editor='date'
               hidden={col.hidden}
               filter='date'
-              width={col.widthT || 130}
+              width={setWidth(col.minWidth || 130)}
               // columnMenu={DateColumnMenu}
               columnMenu={ColumnMenuCheckboxFilterDate}
             />
@@ -474,7 +545,7 @@ const KendoDataTablesCracker = ({
               editor='date'
               hidden={col.hidden}
               sortable={false}
-              width={col.widthT || 130}
+              width={setWidth(col.minWidth || col.widthT || 130)}
             />
           )
         }
@@ -494,7 +565,7 @@ const KendoDataTablesCracker = ({
               filter='numeric'
               format={col.format}
               sortable={false}
-              width={col.widthT || 130}
+              width={setWidth(col.minWidth || col.widthT || 130)}
             />
           )
         }
@@ -504,7 +575,7 @@ const KendoDataTablesCracker = ({
               key='productName1'
               field='productName1'
               title={col.title || col.headerName || 'Particulars'}
-              width={col.widthT || 130}
+              width={setWidth(col.minWidth || col.widthT || 130)}
               editable={col.editable || true}
               hidden={col.hidden}
               cells={{
@@ -524,7 +595,7 @@ const KendoDataTablesCracker = ({
               title={col.title || col.headerName || 'month'}
               editable={col.editable || true}
               hidden={col.hidden}
-              width={col.widthT || 130}
+              width={setWidth(col.minWidth || col.widthT || 130)}
               cells={{
                 data: (cellProps) => (
                   <MonthCell {...cellProps} allMonths={allMonths} />
@@ -544,7 +615,7 @@ const KendoDataTablesCracker = ({
               title={col.title || col.headerName}
               // editor={true}
               // editable={{ mode: 'popup' }}
-              width={col.widthT || 130}
+              width={setWidth(col.minWidth || col.widthT || 130)}
               cells={{
                 data: (cellProps, allRedCell) => (
                   <RemarkCell
@@ -569,7 +640,7 @@ const KendoDataTablesCracker = ({
               key={col.field}
               field={col.field}
               title={col.title || col.headerName}
-              width={col.widthT || 130}
+              width={setWidth(col.minWidth || col.widthT || 130)}
               hidden={col.hidden}
               className={
                 col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'
@@ -593,7 +664,7 @@ const KendoDataTablesCracker = ({
               key={col.field}
               field={col.field}
               title={col.title || col.headerName}
-              width={col.widthT || 130}
+              width={setWidth(col.minWidth || col.widthT || 130)}
               hidden={col.hidden}
               className={
                 col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'
@@ -617,7 +688,7 @@ const KendoDataTablesCracker = ({
               key={col.field}
               field={col.field}
               title={col.title || col.headerName}
-              width={col.widthT || 130}
+              width={setWidth(col.minWidth || col.widthT || col.width || 130)}
               hidden={col.hidden}
               className={
                 col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'
@@ -640,7 +711,7 @@ const KendoDataTablesCracker = ({
               key={col.field}
               field={col.field}
               title={col.title || col.headerName}
-              width={col.width || col.width || 130}
+              width={setWidth(col.minWidth || col.widthT || col.width || 130)}
               hidden={col.hidden}
               className={
                 col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'
@@ -674,7 +745,7 @@ const KendoDataTablesCracker = ({
               key={col.field}
               field={col.field}
               title={col.title || col.headerName}
-              width={col.width || 150}
+              width={setWidth(col.minWidth || col.width || 150)}
               hidden={col.hidden}
               editable={true}
               headerClassName={
@@ -747,7 +818,7 @@ const KendoDataTablesCracker = ({
           key='actions'
           field='actions'
           title='Action'
-          width={80}
+          width={setWidth(80)}
           className='k-text-center'
           filterable={false}
           editable={false}
@@ -1024,62 +1095,199 @@ const KendoDataTablesCracker = ({
         severity={snackbarData?.severity || 'info'}
         onClose={() => setSnackbarOpen(false)}
       />
-      <Dialog
+      <CompactDialog
         open={openDeleteDialogeBox}
         onClose={() => setOpenDeleteDialogeBox(false)}
-        aria-labelledby='alert-dialog-title'
-        aria-describedby='alert-dialog-description'
+        disableScrollLock
+        slotProps={{ backdrop: { disableScrollLock: true } }}
       >
-        <DialogTitle id='alert-dialog-title'>{'Delete ?'}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
+        {/* Header */}
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#fef2f2', // soft red
+            borderBottom: '1px solid #fee2e2',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <DeleteOutlineIcon sx={{ fontSize: '1rem', color: '#dc2626' }} />
+            <Typography
+              sx={{
+                fontWeight: 800,
+                fontSize: '0.8rem',
+                color: '#7f1d1d',
+                letterSpacing: '0.4px',
+              }}
+            >
+              CONFIRM DELETE
+            </Typography>
+          </Box>
+
+          <IconButton
+            size='small'
+            onClick={() => setOpenDeleteDialogeBox(false)}
+            sx={{ color: '#7f1d1d' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        {/* Content */}
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: '#7f1d1d',
+              lineHeight: 1.5,
+              fontWeight: 600,
+            }}
+          >
             Are you sure you want to delete this row?
-          </DialogContentText>
+          </Typography>
+
+          <Typography
+            sx={{
+              mt: 1,
+              fontSize: '0.7rem',
+              color: '#991b1b',
+              fontWeight: 600,
+            }}
+          >
+            This action cannot be undone.
+          </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDeleteDialogeBox(false)}>Cancel</Button>
-          <Button onClick={deleteTheRecord} autoFocus>
+
+        {/* Actions */}
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button
+            onClick={() => setOpenDeleteDialogeBox(false)}
+            className='btn-no'
+          >
+            Cancel
+          </Button>
+
+          <Button
+            onClick={deleteTheRecord}
+            variant='contained'
+            size='small'
+            className='btn-yes'
+          >
             Delete
           </Button>
         </DialogActions>
-      </Dialog>
-      <Dialog
+      </CompactDialog>
+      <CompactDialog
         open={openSaveDialogeBox}
         onClose={closeSaveDialogeBox}
-        aria-labelledby='alert-dialog-title'
-        aria-describedby='alert-dialog-description'
         disableScrollLock
-        slotProps={{
-          backdrop: { disableScrollLock: true },
-        }}
+        slotProps={{ backdrop: { disableScrollLock: true } }}
       >
-        <DialogTitle id='alert-dialog-title'>{'Save ?'}</DialogTitle>
-        <DialogContent>
-          <DialogContentText
-            id='alert-dialog-description'
-            sx={{ color: 'text.primary' }}
+        {/* Header */}
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#f8fafc',
+            borderBottom: '1px solid #e2e8f0',
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              color: '#334155',
+              letterSpacing: '0.5px',
+            }}
+          >
+            CONFIRM SAVE
+          </Typography>
+
+          <IconButton
+            size='small'
+            onClick={closeSaveDialogeBox}
+            sx={{ color: '#64748b' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        {/* Content */}
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: '#475569',
+              lineHeight: 1.5,
+              fontWeight: 500,
+            }}
           >
             Are you sure you want to save these changes?
-          </DialogContentText>
+          </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={closeSaveDialogeBox}>Cancel</Button>
-          <Button onClick={saveConfirmation} autoFocus>
+
+        {/* Actions */}
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button onClick={closeSaveDialogeBox} className='btn-no'>
+            Cancel
+          </Button>
+
+          <Button
+            onClick={saveConfirmation}
+            variant='contained'
+            size='small'
+            autoFocus
+            className='btn-yes'
+          >
             Save
           </Button>
         </DialogActions>
-      </Dialog>
-      <Dialog
+      </CompactDialog>
+      <CompactDialog
         open={!!remarkDialogOpen}
         onClose={() => setRemarkDialogOpen(false)}
         disableScrollLock
-        slotProps={{
-          backdrop: { disableScrollLock: true },
-        }}
+        slotProps={{ backdrop: { disableScrollLock: true } }}
       >
-        <DialogTitle>Add Remark</DialogTitle>
-        <DialogContent>
-          <TextField
+        {/* Compact Header */}
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#f8fafc',
+            borderBottom: '1px solid #e2e8f0',
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              color: '#334155',
+              letterSpacing: '0.5px',
+            }}
+          >
+            ADD REMARK
+          </Typography>
+          <IconButton
+            size='small'
+            onClick={() => setRemarkDialogOpen(false)}
+            sx={{ color: '#64748b' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <CompactTextField
             autoFocus
             margin='dense'
             id='remark'
@@ -1087,22 +1295,28 @@ const KendoDataTablesCracker = ({
             type='text'
             fullWidth
             variant='outlined'
-            sx={{ width: '100%', minWidth: '600px' }}
             value={currentRemark || ''}
-            // value={remark}
             onChange={(e) => setCurrentRemark(e.target.value)}
             multiline
             rows={8}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRemarkDialogOpen(false)}>Cancel</Button>
-          {/* <Button onClick={handleCloseRemark}>Cancel</Button> */}
-          <Button onClick={handleRemarkSave} disabled={!currentRemark?.trim()}>
+
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button onClick={() => setRemarkDialogOpen(false)} className='btn-no'>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleRemarkSave}
+            variant='contained'
+            size='small'
+            disabled={!currentRemark?.trim()}
+            className='btn-yes'
+          >
             Add
           </Button>
         </DialogActions>
-      </Dialog>
+      </CompactDialog>
     </div>
   )
 }

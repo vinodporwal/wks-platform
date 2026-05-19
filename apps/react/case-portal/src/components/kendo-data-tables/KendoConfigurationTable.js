@@ -51,6 +51,7 @@ import ExclusionDate from './ExclusionDate'
 import LineConfiguration from './LineConfiguration'
 import ConfigurationAccordian from './common/ConfigurationAccordian'
 import SeasonMonths from './tab-components/SeasonMonths/index'
+import MaterialBalance from './MaterialBalance'
 
 const ConfigurationTable = () => {
   const hasExecutedRef = useRef(false)
@@ -1755,6 +1756,8 @@ const ConfigurationTable = () => {
                     setSummaryEdited={setSummaryEdited}
                   />
                 )
+              case getTheId('MaterialBalance'):
+                return <MaterialBalance />
               default:
                 return null
             }
