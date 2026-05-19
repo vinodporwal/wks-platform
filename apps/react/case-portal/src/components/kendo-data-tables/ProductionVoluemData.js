@@ -1558,6 +1558,9 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         // setLoading(false)
 
         fetchData()
+        if (IS_CRACKER_DMD) {
+          fetchDesignCapacityData(unitDesignCapacity)
+        }
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = new Array(byteCharacters.length)
