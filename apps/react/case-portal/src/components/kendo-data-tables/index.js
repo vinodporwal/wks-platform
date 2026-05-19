@@ -94,7 +94,27 @@ import {
 } from 'assets/images/icons'
 import { DashboardColors } from 'themes/colors'
 import SwitchEditor from './Utilities-Kendo/SwitchEditor'
+import { handleTabKeyNavigation } from 'components/Utilities/ButtonNavigation'
+import { process } from '@progress/kendo-data-query'
 
+// Helper function to extract flat row sequence from grouped data
+const extractFlatRowsFromGrouped = (data) => {
+  const flatRows = []
+  const traverse = (items) => {
+    if (!items || !Array.isArray(items)) return
+    items.forEach((item) => {
+      if (item.items && Array.isArray(item.items)) {
+        // This is a group header, traverse its children
+        traverse(item.items)
+      } else {
+        // This is an actual data row
+        flatRows.push(item)
+      }
+    })
+  }
+  traverse(data)
+  return flatRows
+}
 // the input on every parent re-render and the user loses focus mid-typing.
 const ON_OFF_CONDITION = (dataItem) => dataItem?.UOM === 'ON/OFF'
 function makeOnOffSwitchEditCell(itemChange, editable, isDisabled) {
@@ -258,6 +278,8 @@ const KendoDataTables = ({
   }, [rows])
   const grid = React.useRef(null)
   const gridRef = useRef(null)
+  const gridContainerRef = useRef(null)
+  const activeCellRef = useRef({ rowId: null, field: null })
   const [gridExpanded, setGridExpanded] = useState(true)
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [openResetDialogeBox, setOpenResetDialogeBox] = useState(false)
@@ -312,6 +334,31 @@ const KendoDataTables = ({
   }
 
   console.log('columns', columns)
+
+  // Close inline edit mode when user clicks outside the grid container
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      // Check if click is on Kendo popup/portal elements (dropdown, date picker, etc.)
+      const isKendoPopup = e.target.closest(
+        '.k-animation-container, .k-popup, .k-list-container, .k-calendar-container',
+      )
+
+      if (
+        gridContainerRef.current &&
+        !gridContainerRef.current.contains(e.target) &&
+        !isKendoPopup // Don't close if clicking on Kendo popup elements
+      ) {
+        setRows((prev) =>
+          prev && Array.isArray(prev)
+            ? prev.map((r) => (r.inEdit ? { ...r, inEdit: false } : r))
+            : prev,
+        )
+        setEdit({})
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [setRows])
 
   // ...inside columns?.map((col) => { ... })...
   const fieldToMonthNumber = {
@@ -420,6 +467,21 @@ const KendoDataTables = ({
       ]
     : []
 
+  // Process grouped data to get flat row sequence for tab navigation
+  const processedFlatRows = useMemo(() => {
+    if (!groupBy || initialGroup.length === 0) {
+      return rows
+    }
+
+    const processedData = process(rows, {
+      group: initialGroup,
+      sort: sort,
+      filter: filter,
+    })
+
+    return extractFlatRowsFromGrouped(processedData.data)
+  }, [rows, groupBy, initialGroup, sort, filter])
+
   const MyFooterCustomCell = (props) => {
     const { tdProps } = props
     const { dataItem } = props
@@ -490,7 +552,38 @@ const KendoDataTables = ({
 
   const handleEditChange = useCallback((e) => {
     setEdit(e.edit)
+    // Track active cell for Tab/Enter key navigation
+    const rowId = Object.keys(e.edit)[0]
+    const field = e.edit[rowId]?.[0]
+    if (rowId && field) {
+      activeCellRef.current = { rowId, field }
+    }
   }, [])
+
+  // Handle Tab key navigation between editable cells in the grid
+  const onTabKeyPressed = (e) => {
+    // Extract columns from the columns array - flatten if nested
+    const extractColumns = (cols) => {
+      if (!cols) return []
+      return cols.flat().map((col) => ({
+        field: col.field,
+        editable: col.editable === true, // Default to false if not explicitly true
+        type: col.type,
+        hidden: col.hidden,
+      }))
+    }
+
+    handleTabKeyNavigation({
+      e,
+      activeCellRef,
+      columns,
+      hiddenFields: ['actions'], // Exclude action column from tab navigation
+      rows: processedFlatRows, // Use processed flat rows for correct grouped sequence
+      setRows,
+      setEdit,
+      extractAllColumns: extractColumns,
+    })
+  }
 
   const fileInputRef = useRef(null)
   const onSelectionChange = (event) => {
@@ -2609,7 +2702,7 @@ const KendoDataTables = ({
       )}
 
       <Collapse in={gridExpanded}>
-        <div className='kendo-data-grid'>
+        <div className='kendo-data-grid' ref={gridContainerRef}>
           <Tooltip openDelay={50} position='auto' anchorElement='target'>
             <ExcelExport
               data={rows}
@@ -2641,6 +2734,7 @@ const KendoDataTables = ({
                 filter={filter}
                 onFilterChange={(e) => setFilter(e.filter)}
                 onItemChange={itemChange}
+                onKeyDown={(e) => onTabKeyPressed(e)}
                 resizable={true}
                 defaultSkip={0}
                 defaultTake={50}

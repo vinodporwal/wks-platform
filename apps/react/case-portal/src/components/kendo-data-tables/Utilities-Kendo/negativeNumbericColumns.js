@@ -9,12 +9,19 @@ export const NoSpinnerNumericEditorNegative = ({
   const initialValue = dataItem[field] ?? ''
   const [localValue, setLocalValue] = useState(initialValue)
   const isFirstRender = useRef(true)
+  const inputRef = useRef(null)
 
   const handleChange = (e) => {
     const val = e.target.value
     // ✅ Allow leading + or - and decimals while typing
     if (val === '' || /^[-+]?\d*(\.\d*)?$/.test(val)) {
       setLocalValue(val)
+    }
+  }
+
+  const handleBlur = () => {
+    if (localValue !== initialValue) {
+      onChange({ dataItem, field, value: localValue })
     }
   }
 
@@ -34,11 +41,19 @@ export const NoSpinnerNumericEditorNegative = ({
     return () => clearTimeout(handler)
   }, [localValue, dataItem, field, onChange, initialValue])
 
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [])
+
   return (
     <td style={{ textAlign: 'end' }}>
       <InputBase
+        inputRef={inputRef}
         value={localValue}
         onChange={handleChange}
+        onBlur={handleBlur}
         className='input-editor'
         style={{
           fontSize: '15px',

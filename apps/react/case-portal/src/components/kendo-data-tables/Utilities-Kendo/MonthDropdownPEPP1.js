@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { DropDownList } from '@progress/kendo-react-dropdowns'
 
 const monthOptions = [
@@ -18,6 +18,7 @@ const monthOptions = [
 
 const MonthDropdownPEPP1 = (props) => {
   const { dataItem, field, onChange, customModifiedCells, options = [] } = props
+  const inputRef = useRef(null)
 
   const handleChange = (e) => {
     onChange({
@@ -27,6 +28,28 @@ const MonthDropdownPEPP1 = (props) => {
       value: e.target.value?.value || e.target.value,
     })
   }
+
+  const handleBlur = () => {
+    const currentValue = selectedMonth?.value
+    const newValue = inputRef.current?.value
+    if (currentValue !== newValue) {
+      onChange({
+        dataItem: dataItem,
+        field: field,
+        syntheticEvent: null,
+        value: newValue?.value || newValue,
+      })
+    }
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (inputRef.current?.element) {
+        inputRef.current.element.focus()
+      }
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [])
 
   const selectedMonth = options.find((item) => item.value === dataItem[field])
 
@@ -47,11 +70,13 @@ const MonthDropdownPEPP1 = (props) => {
       }}
     >
       <DropDownList
+        ref={inputRef}
         data={options}
         textField='text'
         dataItemKey='value'
         value={selectedMonth}
         onChange={handleChange}
+        onBlur={handleBlur}
         className='dropdown-editor'
         style={{
           width: '100%',

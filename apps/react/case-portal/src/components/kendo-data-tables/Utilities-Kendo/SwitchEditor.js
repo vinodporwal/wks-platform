@@ -1,7 +1,9 @@
 import { Switch } from '@mui/material'
+import { useEffect, useRef } from 'react'
 import { NoSpinnerNumericEditor } from './numbericColumns'
 
 const SwitchEditor = (props) => {
+  const switchRef = useRef(null)
   const {
     dataItem,
     field,
@@ -12,8 +14,6 @@ const SwitchEditor = (props) => {
     customModifiedCells,
     rowId,
     setRows,
-    editable,
-    isDisabled,
     ...rest
   } = props
 
@@ -61,7 +61,6 @@ const SwitchEditor = (props) => {
   if (typeof onChange === 'function') {
     return (
       <td
-        className={isDisabled ? 'k-number-right-disabled' : ''}
         style={{
           textAlign: 'center',
           padding: 0,
@@ -70,7 +69,6 @@ const SwitchEditor = (props) => {
       >
         <Switch
           checked={isChecked}
-          disabled={editable === false}
           // color={isEdited ? 'warning' : 'primary'}
           size='small'
           onChange={handleSwitchChange}
@@ -82,21 +80,18 @@ const SwitchEditor = (props) => {
 
   // Display mode with direct edit (clickable switch)
   if (directEditMode) {
-    const isNonEditable = editable === false
     return (
       <td
-        className={isDisabled ? 'k-number-right-disabled' : ''}
         style={{
           textAlign: 'center',
           padding: '0.5rem',
-          cursor: isNonEditable ? 'default' : 'pointer',
+          cursor: 'pointer',
         }}
       >
         <Switch
           checked={isChecked}
           size='small'
-          disabled={isNonEditable}
-          onChange={isNonEditable ? undefined : handleSwitchChange}
+          onChange={handleSwitchChange}
           inputProps={{ 'aria-label': 'Switch toggle' }}
         />
       </td>
