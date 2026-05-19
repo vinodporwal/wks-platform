@@ -35,7 +35,6 @@ export const RemarkCell = (props) => {
     id,
     role,
     'data-testid': dataTestId,
-    customModifiedCells,
   } = tdProps || {}
 
   // Check if this remark field was edited
