@@ -64,9 +64,10 @@ _FALLBACK_FIXED_MAX = {
 }
 
 
-def get_asset_fixed_min_max(asset_name: str, month: int, year: int) -> dict:
+def get_asset_capacity_for_month(asset_name: str, month: int, year: int) -> dict:
     """
-    Get FixedMin and FixedMax for an asset from AssetAvailability table.
+    Get month-wise MinOperatingCapacity and MaxOperatingCapacity for an asset from AssetAvailability table.
+    Falls back to FixedMin and FixedMax if monthly values are not set.
     Same source as the Java /asset-capacity endpoint (CPP_NMD_GetAssetCapacity SP).
     
     Args:
@@ -75,33 +76,41 @@ def get_asset_fixed_min_max(asset_name: str, month: int, year: int) -> dict:
         year: Year
         
     Returns:
-        dict with 'FixedMin' and 'FixedMax' (float or fallback)
+        dict with 'MinCapacity' and 'MaxCapacity' (float or fallback)
     """
     try:
         limits = get_asset_capacity_limits(asset_name, month, year)
-        fixed_min = limits.get('FixedMin')
-        fixed_max = limits.get('FixedMax')
         
-        if fixed_min is not None and fixed_max is not None:
-            return {'FixedMin': float(fixed_min), 'FixedMax': float(fixed_max)}
+        # Try to get month-wise MinOperatingCapacity, fallback to FixedMin
+        min_cap = limits.get('MinOperatingCapacity')
+        if min_cap is None:
+            min_cap = limits.get('FixedMin')
+            
+        # Try to get month-wise MaxOperatingCapacity, fallback to FixedMax
+        max_cap = limits.get('MaxOperatingCapacity')
+        if max_cap is None:
+            max_cap = limits.get('FixedMax')
+            
+        if min_cap is not None and max_cap is not None:
+            return {'MinCapacity': float(min_cap), 'MaxCapacity': float(max_cap)}
     except Exception as e:
-        print(f"Warning: Could not get FixedMin/FixedMax for {asset_name}: {e}")
+        print(f"Warning: Could not get Min/Max Capacity for {asset_name}: {e}")
     
     # Fallback to hardcoded defaults
     return {
-        'FixedMin': _FALLBACK_FIXED_MIN.get(asset_name, 5.0),
-        'FixedMax': _FALLBACK_FIXED_MAX.get(asset_name, 22.0)
+        'MinCapacity': _FALLBACK_FIXED_MIN.get(asset_name, 5.0),
+        'MaxCapacity': _FALLBACK_FIXED_MAX.get(asset_name, 22.0)
     }
 
 
 def get_asset_default_min_load(asset_name: str, month: int, year: int) -> float:
-    """Get default min load for an asset from AssetAvailability.FixedMin."""
-    return get_asset_fixed_min_max(asset_name, month, year)['FixedMin']
+    """Get default min load for an asset."""
+    return get_asset_capacity_for_month(asset_name, month, year)['MinCapacity']
 
 
 def get_asset_default_max_load(asset_name: str, month: int, year: int) -> float:
-    """Get default max load for an asset from AssetAvailability.FixedMax."""
-    return get_asset_fixed_min_max(asset_name, month, year)['FixedMax']
+    """Get default max load for an asset."""
+    return get_asset_capacity_for_month(asset_name, month, year)['MaxCapacity']
 
 
 # ============================================================
@@ -432,10 +441,10 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
             gross_mwh = gt_data.get('GrossMWh', 0)
             hours = gt_data.get('Hours', get_month_hours(month, year))
             load_mw = gt_data.get('LoadMW', 0)
-            # Get FixedMin/FixedMax from AssetAvailability table (same as Java endpoint)
-            _gt_limits = get_asset_fixed_min_max(gt_name, month, year)
-            min_mw = _gt_limits['FixedMin']
-            max_mw = _gt_limits['FixedMax']
+            # Get Month-wise Min/Max from AssetAvailability table
+            _gt_limits = get_asset_capacity_for_month(gt_name, month, year)
+            min_mw = _gt_limits['MinCapacity']
+            max_mw = _gt_limits['MaxCapacity']
             
             print(f"[DEBUG] {gt_name} dispatch data: MinMW={min_mw}, MaxMW={max_mw}, LoadMW={load_mw}")
             
@@ -476,9 +485,9 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
         gross_mwh = stg_data.get('GrossMWh', 0)
         hours = stg_data.get('Hours', get_month_hours(month, year))
         load_mw = stg_data.get('LoadMW', 0)
-        _stg_limits = get_asset_fixed_min_max('STG', month, year)
-        min_mw = 6.0  # Hardcoded STG min capacity as requested
-        max_mw = _stg_limits['FixedMax']
+        _stg_limits = get_asset_capacity_for_month('STG', month, year)
+        min_mw = _stg_limits['MinCapacity']
+        max_mw = _stg_limits['MaxCapacity']
         
         if load_mw == 0 and hours > 0:
             load_mw = gross_mwh / hours

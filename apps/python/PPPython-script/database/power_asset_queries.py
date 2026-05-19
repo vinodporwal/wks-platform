@@ -742,8 +742,23 @@ def get_asset_operational_hours(asset_name: str, month: int, year: int) -> Optio
         return None
     
     name_upper = asset_name.upper()
+    
+    search_gt_num = None
+    if name_upper.startswith("GT") and len(name_upper) > 2 and name_upper[2:].isdigit():
+        search_gt_num = int(name_upper[2:])
+        
     for asset in result.get("assets", []):
-        if name_upper in asset.get("AssetName", "").upper():
+        db_name = asset.get("AssetName", "").upper()
+        
+        match = False
+        if name_upper in db_name:
+            match = True
+        elif search_gt_num and asset.get("is_gt") and asset.get("gt_number") == search_gt_num:
+            match = True
+        elif name_upper == "STG" and asset.get("is_stg"):
+            match = True
+            
+        if match:
             return asset.get("OperationalHours")
     
     return None
@@ -924,8 +939,23 @@ def get_asset_priority(asset_name: str, month: int, year: int) -> Optional[int]:
         return None
     
     name_upper = asset_name.upper()
+    
+    search_gt_num = None
+    if name_upper.startswith("GT") and len(name_upper) > 2 and name_upper[2:].isdigit():
+        search_gt_num = int(name_upper[2:])
+        
     for asset in result.get("assets", []):
-        if name_upper in asset.get("AssetName", "").upper():
+        db_name = asset.get("AssetName", "").upper()
+        
+        match = False
+        if name_upper in db_name:
+            match = True
+        elif search_gt_num and asset.get("is_gt") and asset.get("gt_number") == search_gt_num:
+            match = True
+        elif name_upper == "STG" and asset.get("is_stg"):
+            match = True
+            
+        if match:
             return asset.get("Priority")
     
     return None
@@ -953,8 +983,23 @@ def get_asset_capacity_limits(asset_name: str, month: int, year: int) -> Dict:
         }
     
     name_upper = asset_name.upper()
+    
+    search_gt_num = None
+    if name_upper.startswith("GT") and len(name_upper) > 2 and name_upper[2:].isdigit():
+        search_gt_num = int(name_upper[2:])
+        
     for asset in result.get("assets", []):
-        if name_upper in asset.get("AssetName", "").upper():
+        db_name = asset.get("AssetName", "").upper()
+        
+        match = False
+        if name_upper in db_name:
+            match = True
+        elif search_gt_num and asset.get("is_gt") and asset.get("gt_number") == search_gt_num:
+            match = True
+        elif name_upper == "STG" and asset.get("is_stg"):
+            match = True
+            
+        if match:
             return {
                 "MinOperatingCapacity": asset.get("MinOperatingCapacity"),
                 "MaxOperatingCapacity": asset.get("MaxOperatingCapacity"),
