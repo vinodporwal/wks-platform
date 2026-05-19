@@ -10,6 +10,7 @@ export const ProductionVolumeDataApiService = {
   getMaxAchievedCapacityData,
   getMaxAchievedCapacityExcel,
   saveProductionVolDataExcel,
+  saveDesignCapacity,
   getProductionVolExcel,
   getProductionVolExcelCommon,
   editMaxAchievedCapacityData,
@@ -145,8 +146,12 @@ async function getDesignCapacityExcel(
   PLANT_ID,
   AOP_YEAR,
   EXCEL_EXPORT_TITLE,
+  gridName = null,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/production-target-export?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  let url = `${Config.CaseEngineUrl}/task/production-target-export?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  if (gridName) {
+    url += `&gridName=${gridName}`
+  }
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -282,6 +287,27 @@ async function getProductionVolExcel(
 
 async function saveProductionVolDataExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/production-target-import?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function saveDesignCapacity(file, keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/design-capacity-import?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const formData = new FormData()
   formData.append('file', file)
   const headers = {
