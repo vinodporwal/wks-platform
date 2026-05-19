@@ -503,13 +503,23 @@ public class MatBalServiceImpl implements MatBalService {
 			String procedureName = vertical.getName() + "_" + site.getName() + "_LoadMATBAL";
 			
 			// Call the stored procedure dynamically
-			String sql = "EXEC " + procedureName + " @plantId = :plantId, @AopYear = :AopYear";
+		//	String sql = "EXEC " + procedureName + " @plantId = :plantId, @AopYear = :AopYear";
+			// Query query = entityManager.createNativeQuery(sql);
+			// query.setParameter("plantId", plantId);
+			// query.setParameter("AopYear", year);
 			
-			Query query = entityManager.createNativeQuery(sql);
-			query.setParameter("plantId", plantId);
-			query.setParameter("AopYear", year);
-			
-			List<Object[]> results = query.getResultList();
+			// List<Object[]> results = query.getResultList();
+
+			String sql = "EXEC " + procedureName + " ?, ?";
+
+			Session session = entityManager.unwrap(Session.class);
+			session.doWork(connection -> {
+				PreparedStatement ps = connection.prepareStatement(sql);
+				ps.setObject(1, plantId);
+				ps.setObject(2, year);
+				
+				boolean hasResultSet = ps.execute();
+			});
 
 			aopMessageVM.setCode(200);
 			aopMessageVM.setMessage("Data calculated successfully");

@@ -755,7 +755,7 @@ const ProductionNormsCracker = ({ permissions }) => {
       <LoaderBackdrop open={!!loading} />
 
       {/* SHOW THIS GRID TO ALL SITES */}
-      {!CRACKER_HMD && !CRACKER_DMD && !IS_CRACKER_C2 && (
+      {!CRACKER_HMD && !CRACKER_DMD && (
         <KendoDataTables
           modifiedCells={modifiedCellsC2C3R}
           setModifiedCells={setModifiedCellsC2C3R}

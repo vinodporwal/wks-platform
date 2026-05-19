@@ -165,10 +165,10 @@ public class AOPMCCalculatedDataController {
 
 	@GetMapping(value = "/production-target-export")
 	public ResponseEntity<byte[]> exportProductionVolumeDataReport(@RequestParam("plantId") String plantId,
-			@RequestParam("year") String year) {
+			@RequestParam("year") String year, @RequestParam(required=false) String gridName) {
 		try {
 
-			byte[] excelBytes = aOPMCCalculatedDataService.createExcel(year, plantId, false, null); // excelService.generateFlexibleExcel(data,
+			byte[] excelBytes = aOPMCCalculatedDataService.createExcel(year, plantId, false, null, gridName); // excelService.generateFlexibleExcel(data,
 																									// plantId,
 																									// year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId,
 																									// year,
@@ -208,6 +208,12 @@ public class AOPMCCalculatedDataController {
 	public AOPMessageVM importLineWiseExcel(@RequestParam("plantId") String plantId,
 			@RequestParam("year") String year, @RequestParam("file") MultipartFile file) {
 		return aOPMCCalculatedDataService.importLineWiseExcel(year, plantId, file);
+	}
+
+	@PostMapping(value = "/design-capacity-import", consumes = "multipart/form-data")
+	public AOPMessageVM importExcelDesignCapacity(@RequestParam("plantId") String plantId,
+			@RequestParam("year") String year, @RequestParam("file") MultipartFile file) {
+		return aOPMCCalculatedDataService.importExcelDesignCapacity(year, plantId, file);
 	}
 
 }

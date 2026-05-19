@@ -31,9 +31,10 @@ public interface AOPMCCalculatedDataService {
 	public  AOPMessageVM updateDesignCapacity(String plantId, String year,List<AOPMCCalculatedDataDTO> aopMCCalculatedDataDTO);
 	public List<AOPMCCalculatedDataDTO> editAOPMCCalculatedData(List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList, boolean isFromExcel, String year, String plantFKId);
 	public  AOPMessageVM getAOPMCCalculatedDataSP(String plantId, String year);
-	public byte[] createExcel(String year, String plantFKId, boolean isAfterSave,List<AOPMCCalculatedDataDTO> dtoList);
+	public byte[] createExcel(String year, String plantFKId, boolean isAfterSave,List<AOPMCCalculatedDataDTO> dtoList, String gridName);
 	public AOPMessageVM importExcel(String year, String plantId, MultipartFile file);
 	public AOPMessageVM importExcelPE(String year, String plantFKId, MultipartFile file);
 	public AOPMessageVM importLineWiseExcel(String year, String plantFKId, MultipartFile file);
+	public AOPMessageVM importExcelDesignCapacity(String year, String plantFKId, MultipartFile file);
 
 }

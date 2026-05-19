@@ -391,6 +391,8 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 			return exportBusinessDemandV2(year, plantId, isAfterSave, dtoList);
 		 }
 
+		 boolean crackerDmd = vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("DMD");
+
 		try {
 			
 			List<Boolean> isEditable = new ArrayList<>();
@@ -409,7 +411,10 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 			
 			// Data rows
 			for (BusinessDemandDataDTO dto : dtoList) {
-				//if (isAfterSave) {
+			   
+				if(crackerDmd && dto.getNormParameterTypeName().equalsIgnoreCase("Feed Stream")) {
+					continue;
+				}
 					List<Object> list = new ArrayList<>();
 					
 					list.add(dto.getDisplayName());

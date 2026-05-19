@@ -544,6 +544,13 @@ const SelectivityData = (props) => {
   ) {
     FORMATE_VALUE = '{0:0.00000}'
   }
+  if (
+    props?.configType === 'megConstants' &&
+    lowerVertName == 'chemical' &&
+    lowerSiteName == 'dmd'
+  ) {
+    FORMATE_VALUE = '{0:0.0000}'
+  }
 
   const productionColumns = getEnhancedAOPColDefs({
     allGradesReciepes,
