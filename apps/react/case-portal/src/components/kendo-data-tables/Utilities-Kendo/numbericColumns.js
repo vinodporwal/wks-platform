@@ -8,9 +8,17 @@ export const NoSpinnerNumericEditor = ({
   onChange,
   maxLength,
 }) => {
-  const initialValue = dataItem[field] ?? ''
+  // Handle nested field paths (e.g., "apr.shutdownHrs")
+  const getNestedValue = (obj, path) => {
+    if (!path || !obj) return undefined
+    const keys = path.split('.')
+    return keys.reduce((acc, key) => acc?.[key], obj)
+  }
+
+  const initialValue = getNestedValue(dataItem, field) ?? ''
   const [localValue, setLocalValue] = useState(initialValue)
   const isFirstRender = useRef(true)
+  const inputRef = useRef(null)
 
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -32,6 +40,12 @@ export const NoSpinnerNumericEditor = ({
     }
   }
 
+  const handleBlur = () => {
+    if (localValue !== initialValue) {
+      onChange({ dataItem, field, value: localValue })
+    }
+  }
+
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false
@@ -45,11 +59,19 @@ export const NoSpinnerNumericEditor = ({
     return () => clearTimeout(handler)
   }, [localValue, dataItem, field, onChange, initialValue])
 
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [])
+
   return (
     <>
       <InputBase
+        inputRef={inputRef}
         value={localValue}
         onChange={handleChange}
+        onBlur={handleBlur}
         autoComplete='off'
         maxLength={maxLength}
         className='input-editor'

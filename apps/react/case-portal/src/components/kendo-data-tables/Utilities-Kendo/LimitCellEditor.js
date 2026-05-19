@@ -1,7 +1,8 @@
 import { DropDownList } from '@progress/kendo-react-dropdowns'
-import { useMemo } from 'react'
+import { useMemo, useEffect, useRef } from 'react'
 
 const LimitCellEditor = (props) => {
+  const inputRef = useRef(null)
   const { READ_ONLY, dataItem, field, onChange, ...tdProps } = props
 
   // Hardcoded dropdown options
@@ -19,6 +20,29 @@ const LimitCellEditor = (props) => {
     [allOptions, dataItem, field],
   )
 
+  const handleBlur = () => {
+    const currentValue = currentValueObj?.value
+    const newValue = inputRef.current?.value
+    if (currentValue !== newValue) {
+      onChange({
+        dataItem,
+        field,
+        syntheticEvent: null,
+        value: newValue?.value || newValue,
+      })
+    }
+  }
+
+  // Auto-focus when cell enters edit mode
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (inputRef.current?.element) {
+        inputRef.current.element.focus()
+      }
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [])
+
   if (typeof onChange === 'function') {
     const handleChange = (e) => {
       onChange({
@@ -30,11 +54,13 @@ const LimitCellEditor = (props) => {
 
     return (
       <DropDownList
+        ref={inputRef}
         data={allOptions}
         textField='label'
         dataItemKey='value'
         value={currentValueObj}
         onChange={handleChange}
+        onBlur={handleBlur}
         className='dropdown-editor'
         style={{ width: '100%' }}
         disabled={dataItem?.uom != '%' || READ_ONLY}

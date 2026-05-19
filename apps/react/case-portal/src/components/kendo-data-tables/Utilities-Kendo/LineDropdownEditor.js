@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useEffect, useRef } from 'react'
 import { DropDownList } from '@progress/kendo-react-dropdowns'
 
 const LineDropdownEditor = (props) => {
@@ -12,6 +12,7 @@ const LineDropdownEditor = (props) => {
     highlight,
     rowId,
   } = props
+  const inputRef = useRef(null)
 
   const allOptions = useMemo(
     () =>
@@ -34,6 +35,29 @@ const LineDropdownEditor = (props) => {
   const isEdited = !!(
     customModifiedCells?.[rowId] && checkField in customModifiedCells[rowId]
   )
+
+  const handleBlur = () => {
+    const currentValue = currentValueObj?.value
+    const newValue = inputRef.current?.value
+    if (currentValue !== newValue) {
+      onChange({
+        dataItem,
+        field,
+        syntheticEvent: null,
+        value: newValue?.value || newValue,
+      })
+    }
+  }
+
+  // Auto-focus when cell enters edit mode
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (inputRef.current?.element) {
+        inputRef.current.element.focus()
+      }
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [])
 
   const handleChange = (e) => {
     const selectedItem = e.value || e.target?.value
@@ -76,11 +100,13 @@ const LineDropdownEditor = (props) => {
         }}
       >
         <DropDownList
+          ref={inputRef}
           data={allOptions}
           textField='label'
           dataItemKey='value'
           value={currentValueObj}
           onChange={handleChange}
+          onBlur={handleBlur}
           className='dropdown-editor'
           style={{
             color: highlight && isEdited ? 'orange' : undefined,

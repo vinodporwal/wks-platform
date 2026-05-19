@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { DropDownList } from '@progress/kendo-react-dropdowns'
 
 const ShutdownRateDropdown = (props) => {
   const { dataItem, field, onChange, customModifiedCells, dropdownData } = props
+  const inputRef = useRef(null)
 
   const handleChange = (e) => {
     onChange({
@@ -12,6 +13,28 @@ const ShutdownRateDropdown = (props) => {
       value: e.target.value?.value || e.target.value,
     })
   }
+
+  const handleBlur = () => {
+    const currentValue = selectedValue?.value
+    const newValue = inputRef.current?.value
+    if (currentValue !== newValue) {
+      onChange({
+        dataItem: dataItem,
+        field: field,
+        syntheticEvent: null,
+        value: newValue?.value || newValue,
+      })
+    }
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (inputRef.current?.element) {
+        inputRef.current.element.focus()
+      }
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [])
 
   // Find the selected object based on the value in the grid data
   const selectedValue =
@@ -35,11 +58,13 @@ const ShutdownRateDropdown = (props) => {
       }}
     >
       <DropDownList
+        ref={inputRef}
         data={dropdownData || []}
         textField='text'
         dataItemKey='value'
         value={selectedValue}
         onChange={handleChange}
+        onBlur={handleBlur}
         className='dropdown-editor'
         style={{ width: '100%', border: 'none', height: '100%' }}
         popupSettings={{

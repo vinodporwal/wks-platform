@@ -1,7 +1,9 @@
 import { Switch } from '@mui/material'
+import { useEffect, useRef } from 'react'
 import { NoSpinnerNumericEditor } from './numbericColumns'
 
 const SwitchEditor = (props) => {
+  const switchRef = useRef(null)
   const {
     dataItem,
     field,

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { DropDownList } from '@progress/kendo-react-dropdowns'
 
 const PROPANE_OPTIONS = [
@@ -9,6 +9,7 @@ const PROPANE_OPTIONS = [
 
 const PropaneDropdown = (props) => {
   const { dataItem, field, onChange } = props
+  const inputRef = useRef(null)
 
   const handleChange = (e) => {
     onChange({
@@ -19,17 +20,41 @@ const PropaneDropdown = (props) => {
     })
   }
 
+  const handleBlur = () => {
+    const currentValue = selectedOption?.value
+    const newValue = inputRef.current?.value
+    if (currentValue !== newValue) {
+      onChange({
+        dataItem: dataItem,
+        field: field,
+        syntheticEvent: null,
+        value: newValue?.value || newValue,
+      })
+    }
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (inputRef.current?.element) {
+        inputRef.current.element.focus()
+      }
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [])
+
   const selectedOption = PROPANE_OPTIONS.find(
     (opt) => opt.value === dataItem[field],
   )
 
   return (
     <DropDownList
+      ref={inputRef}
       data={PROPANE_OPTIONS}
       textField='label'
       dataItemKey='value'
       value={selectedOption}
       onChange={handleChange}
+      onBlur={handleBlur}
       className='dropdown-editor'
       style={{ width: '100%' }}
     />

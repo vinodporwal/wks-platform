@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { DropDownList } from '@progress/kendo-react-dropdowns'
 
 const monthOptions = [
@@ -18,6 +18,7 @@ const monthOptions = [
 
 const MonthDropdownEditor = (props) => {
   const { dataItem, field, onChange } = props
+  const inputRef = useRef(null)
 
   const handleChange = (e) => {
     onChange({
@@ -28,17 +29,42 @@ const MonthDropdownEditor = (props) => {
     })
   }
 
+  const handleBlur = () => {
+    const currentValue = selectedMonth?.value
+    const newValue = inputRef.current?.value
+    if (currentValue !== newValue) {
+      onChange({
+        dataItem: dataItem,
+        field: field,
+        syntheticEvent: null,
+        value: newValue?.value || newValue,
+      })
+    }
+  }
+
+  // Auto-focus when cell enters edit mode
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (inputRef.current?.element) {
+        inputRef.current.element.focus()
+      }
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [])
+
   const selectedMonth = monthOptions.find(
     (month) => month.value === dataItem[field],
   )
 
   return (
     <DropDownList
+      ref={inputRef}
       data={monthOptions}
       textField='text'
       dataItemKey='value'
       value={selectedMonth}
       onChange={handleChange}
+      onBlur={handleBlur}
       className='dropdown-editor'
       style={{ width: '100%' }} // <--- use full cell width
     />

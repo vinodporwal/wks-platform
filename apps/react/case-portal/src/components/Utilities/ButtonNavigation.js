@@ -1,90 +1,3 @@
-import { recalcDuration, recalcEndDate } from '../commonUtilityFunctions'
-
-/**
- * Apply date calculations based on dateCalculationConfig
- * @param {Object} rowData - The row data object
- * @param {string} field - The field being changed
- * @param {any} value - The new value
- * @param {Object} config - Date calculation configuration
- * @param {boolean} convertToISO - Whether to convert dates to ISO strings
- * @returns {Object} Object with calculated field updates
- */
-export const applyDateCalculations = (
-  rowData,
-  field,
-  value,
-  config,
-  convertToISO = false,
-) => {
-  if (!config) return {}
-
-  const { dateField1, dateField2, daysField, requiredInHr, roundDaysAndDates } =
-    config
-  const updates = {}
-
-  // Scenario 1: If both dates exist and one is changed, calculate duration
-  if (field === dateField1 || field === dateField2) {
-    if (rowData[dateField1] && rowData[dateField2]) {
-      const duration = recalcDuration(
-        rowData[dateField1],
-        rowData[dateField2],
-        requiredInHr,
-      )
-      updates[daysField] = roundDaysAndDates ? Math.floor(duration) : duration
-    }
-    // Scenario 4: If startDate is changed and days exists (but no endDate), calculate endDate
-    else if (
-      field === dateField1 &&
-      rowData[daysField] &&
-      !rowData[dateField2]
-    ) {
-      const newEnd = recalcEndDate(value, rowData[daysField], requiredInHr)
-      if (newEnd) {
-        updates[dateField2] = convertToISO ? newEnd.toISOString() : newEnd
-      }
-    }
-    // Scenario 5: If endDate is changed and days exists (but no startDate), calculate startDate
-    else if (
-      field === dateField2 &&
-      rowData[daysField] &&
-      !rowData[dateField1]
-    ) {
-      const days = requiredInHr
-        ? parseFloat(rowData[daysField]) / 24
-        : parseFloat(rowData[daysField])
-      if (!isNaN(days) && days >= 0) {
-        const newStart = new Date(
-          new Date(value).getTime() - days * 24 * 60 * 60000,
-        )
-        updates[dateField1] = convertToISO ? newStart.toISOString() : newStart
-      }
-    }
-  }
-  // Scenario 2: If duration is changed and startDate exists, calculate endDate
-  else if (field === daysField && rowData[dateField1] && value) {
-    const newEnd = recalcEndDate(rowData[dateField1], value, requiredInHr)
-    if (newEnd) {
-      updates[dateField2] = convertToISO ? newEnd.toISOString() : newEnd
-    }
-  }
-  // Scenario 3: If duration is changed and endDate exists (but no startDate), calculate startDate
-  else if (
-    field === daysField &&
-    !rowData[dateField1] &&
-    rowData[dateField2] &&
-    value
-  ) {
-    const endDate = new Date(rowData[dateField2])
-    const days = requiredInHr ? parseFloat(value) / 24 : parseFloat(value)
-    if (!isNaN(days) && days >= 0) {
-      const newStart = new Date(endDate.getTime() - days * 24 * 60 * 60000)
-      updates[dateField1] = convertToISO ? newStart.toISOString() : newStart
-    }
-  }
-
-  return updates
-}
-
 export const handleTabKeyNavigation = ({
   e,
   activeCellRef,
@@ -103,13 +16,17 @@ export const handleTabKeyNavigation = ({
   if (!rowId || !currentField) return
 
   const allCols = extractAllColumns(columns).filter(
-    (col) => !hiddenFields.includes(col.field) && !col.hidden,
+    (col) =>
+      !hiddenFields.includes(col.field) &&
+      !col.hidden &&
+      col.field !== 'actions',
   )
   const editableCols = allCols.filter(
     (col) =>
       col.editable === true &&
       col.type !== 'textarea' &&
       col.field !== 'remarks' &&
+      col.field !== 'remark' &&
       col.field !== 'reasons',
   )
   if (editableCols.length === 0) return
@@ -209,3 +126,195 @@ export const handleTabKeyNavigation = ({
     }
   }
 }
+
+const columns = [
+  {
+    field: 'Particulars',
+    title: 'Type',
+    width: 100,
+    groupable: true,
+    editable: false,
+    hidden: true,
+    minWidth: 100,
+    isVisible: false,
+    format: '{0:0.00000}',
+  },
+  {
+    field: 'materialFkId',
+    title: 'Particulars',
+    width: 100,
+    hidden: true,
+    minWidth: 100,
+    isVisible: false,
+    format: '{0:0.00000}',
+  },
+  {
+    field: 'productName',
+    title: 'Particulars',
+    widthT: 120,
+    minWidth: 100,
+    format: '{0:0.00000}',
+  },
+  {
+    field: 'UOM',
+    title: 'UOM/MT',
+    widthT: 90,
+    editable: false,
+    minWidth: 80,
+    format: '{0:0.00000}',
+  },
+  {
+    field: 'april',
+    title: 'Apr-26',
+    editable: true,
+    width: 100,
+    align: 'right',
+    format: '{0:0.00000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'may',
+    title: 'May-26',
+    editable: true,
+    width: 100,
+    align: 'right',
+    format: '{0:0.00000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'june',
+    title: 'Jun-26',
+    editable: true,
+    width: 100,
+    align: 'right',
+    format: '{0:0.00000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'july',
+    title: 'Jul-26',
+    editable: true,
+    width: 100,
+    align: 'right',
+    format: '{0:0.00000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'august',
+    title: 'Aug-26',
+    editable: true,
+    width: 100,
+    align: 'right',
+    format: '{0:0.00000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'september',
+    title: 'Sep-26',
+    editable: true,
+    width: 100,
+    align: 'right',
+    format: '{0:0.00000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'october',
+    title: 'Oct-26',
+    editable: true,
+    width: 100,
+    align: 'right',
+    format: '{0:0.00000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'november',
+    title: 'Nov-26',
+    editable: true,
+    width: 100,
+    align: 'right',
+    format: '{0:0.00000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'december',
+    title: 'Dec-26',
+    editable: true,
+    width: 100,
+    align: 'right',
+    format: '{0:0.00000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'january',
+    title: 'Jan-27',
+    editable: true,
+    width: 100,
+    align: 'right',
+    format: '{0:0.00000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'february',
+    title: 'Feb-27',
+    editable: true,
+    width: 100,
+    align: 'right',
+    format: '{0:0.00000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'march',
+    title: 'Mar-27',
+    editable: true,
+    width: 100,
+    align: 'right',
+    format: '{0:0.00000}',
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'wtAverage',
+    title: 'Weighted Avg',
+    align: 'right',
+    format: '{0:0.00000}',
+    editable: false,
+    width: 100,
+    type: 'number',
+    minWidth: 100,
+  },
+  {
+    field: 'remarks',
+    title: 'Remark',
+    width: 100,
+    editable: true,
+    minWidth: 100,
+    format: '{0:0.00000}',
+  },
+  {
+    field: 'idFromApi',
+    title: 'idFromApi',
+    hidden: true,
+    minWidth: 100,
+    isVisible: false,
+    format: '{0:0.00000}',
+  },
+  {
+    field: 'isEditable',
+    title: 'isEditable',
+    hidden: true,
+    minWidth: 100,
+    isVisible: false,
+    format: '{0:0.00000}',
+  },
+]
