@@ -28,8 +28,14 @@ const MaterialBalance = ({ permissions }) => {
 
   const lowerVertName = verticalObject?.name?.toLowerCase()
   const SITE_NAME = siteObject?.name?.toUpperCase()
+  const PLANT_NAME = plantObject?.name?.toUpperCase()
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && SITE_NAME === 'HMD'
   const IS_CRACKER_C2 = lowerVertName === 'cracker' && SITE_NAME === 'C2'
+  const IS_CHEMICAL_HMD = lowerVertName === 'chemical' && SITE_NAME === 'HMD'
+  const IS_CHEMICAL_VMD_BUTADIENE =
+    lowerVertName === 'chemical' &&
+    SITE_NAME === 'VMD' &&
+    PLANT_NAME === 'BUTADIENE'
 
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -118,8 +124,35 @@ const MaterialBalance = ({ permissions }) => {
     })
   }, [startYearSuffix, endYearSuffix])
 
-  const colDefs = useMemo(
-    () => [
+  const colDefs = useMemo(() => {
+    if (IS_CHEMICAL_HMD) {
+      return [
+        {
+          field: 'Particulars',
+          title: 'Particulars',
+          editable: false,
+          widthT: 100,
+          minWidth: 300,
+        },
+        {
+          field: 'UOM',
+          title: 'UOM',
+          editable: false,
+          widthT: 80,
+          minWidth: 80,
+        },
+        ...monthCols,
+        {
+          field: 'Remarks',
+          title: 'Remark',
+          editable: false,
+          widthT: 100,
+          minWidth: 100,
+        },
+      ]
+    }
+
+    return [
       {
         field: 'Particulars',
         title: 'Particulars',
@@ -129,16 +162,8 @@ const MaterialBalance = ({ permissions }) => {
       },
       { field: 'UOM', title: 'UOM', editable: false, widthT: 80, minWidth: 80 },
       ...monthCols,
-      // {
-      //   field: 'Remarks',
-      //   title: 'Remark',
-      //   editable: false,
-      //   widthT: 100,
-      //   minWidth: 100,
-      // },
-    ],
-    [monthCols],
-  )
+    ]
+  }, [monthCols, IS_CHEMICAL_HMD])
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -313,15 +338,16 @@ const MaterialBalance = ({ permissions }) => {
     {
       showAction: permissions?.showAction ?? true,
       saveWithRemark: permissions?.saveWithRemark ?? true,
-      saveBtn: permissions?.saveBtn ?? false,
+      saveBtn: IS_CHEMICAL_HMD ? true : false,
       allAction: true,
 
       showTitleNameBusiness: true,
       titleName: 'Material Balance',
       //LATER WE NEED TO ADD EXPORT IMPORT
-      downloadExcelBtn: false,
-      uploadExcelBtn: false,
-      showCalculate: IS_CRACKER_HMD || IS_CRACKER_C2,
+      downloadExcelBtn: IS_CHEMICAL_HMD ? true : false,
+      uploadExcelBtn: IS_CHEMICAL_HMD ? true : false,
+      showCalculate:
+        IS_CRACKER_HMD || IS_CRACKER_C2 || IS_CHEMICAL_VMD_BUTADIENE,
       showCalculateVisibility: true,
     },
     isOldYear,
