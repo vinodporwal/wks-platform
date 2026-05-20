@@ -346,7 +346,8 @@ const ModeSelection = ({ permissions }) => {
       widthT: 120,
       minWidth: 120,
     },
-    { field: 'uom', title: 'UOM', editable: false, widthT: 55, minWidth: 100 },
+    //UOM NOT REQUIRED HERE
+    // { field: 'uom', title: 'UOM', editable: false, widthT: 55, minWidth: 100 },
     {
       field: 'normType',
       title: 'Norm Type',
