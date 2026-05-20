@@ -1,19 +1,28 @@
 package com.wks.caseengine.service;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.hibernate.Session;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.wks.caseengine.dto.MonthwiseOperatingHoursDTO;
+import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.Sites;
+import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.db2.entity.MonthwiseOperatingHours;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.rest.entity.Site;
 import com.wks.caseengine.utility.Utility;
 
 import jakarta.persistence.EntityManager;
@@ -25,6 +34,8 @@ public class MonthwiseOperatingHoursServiceImpl implements MonthwiseOperatingHou
 
     @PersistenceContext(unitName = "db2")
     private EntityManager entityManager;
+
+
 
     @Override
     @Transactional(transactionManager = "db2TransactionManager", readOnly = true)
@@ -172,6 +183,121 @@ public class MonthwiseOperatingHoursServiceImpl implements MonthwiseOperatingHou
             return null;
         }
         return UUID.fromString(trimmed);
+    }
+
+    @Override
+    @Transactional(transactionManager = "db2TransactionManager", readOnly = true)
+    public AOPMessageVM getMonthwiseProductionPlanReport(String plantId, String year) {
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        try {
+            if (plantId == null || plantId.trim().isEmpty()) {
+                throw new RestInvalidArgumentException("Plant ID cannot be NULL or empty", new IllegalArgumentException("empty plantId"));
+            }
+            if (year == null || year.trim().isEmpty()) {
+                throw new RestInvalidArgumentException("Year cannot be NULL or empty", new IllegalArgumentException("empty year"));
+            }
+
+            String sql = "EXEC [dbo].[MEG_HMD_GetMonthWiseProductionPlanReport] @plantId = :plantId, @aopYear = :year";
+            Query query = entityManager.createNativeQuery(sql);
+            query.setParameter("plantId", plantId);
+            query.setParameter("year", year);
+
+            @SuppressWarnings("unchecked")
+            List<Object[]> results = query.getResultList();
+
+            List<String> columnNames = getMonthwiseProductionPlanReportColumns(plantId, year);
+
+            List<Map<String, Object>> resultList = new ArrayList<>();
+            for (Object[] row : results) {
+                Map<String, Object> rowMap = new LinkedHashMap<>();
+                for (int i = 0; i < columnNames.size(); i++) {
+                    rowMap.put(columnNames.get(i), i < row.length ? row[i] : null);
+                }
+                resultList.add(rowMap);
+            }
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("data", resultList);
+            data.put("columns", getMonthwiseProductionPlanReportColumnMetadata(plantId, year));
+
+            aopMessageVM.setCode(200);
+            aopMessageVM.setMessage("SP Executed successfully");
+            aopMessageVM.setData(data);
+            return aopMessageVM;
+        } catch (RestInvalidArgumentException e) {
+            throw e;
+        } catch (IllegalArgumentException e) {
+            throw new RestInvalidArgumentException("Invalid argument", e);
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to fetch monthwise production plan report", ex);
+        }
+    }
+
+    private List<String> getMonthwiseProductionPlanReportColumns(String plantId, String year) {
+        return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+            List<String> columnNames = new ArrayList<>();
+            String sql = "EXEC [dbo].[MEG_HMD_GetMonthWiseProductionPlanReport] @plantId = ?, @aopYear = ?";
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                ps.setString(1, plantId);
+                ps.setString(2, year);
+                try (ResultSet rs = ps.executeQuery()) {
+                    ResultSetMetaData rsMetaData = rs.getMetaData();
+                    for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+                        columnNames.add(rsMetaData.getColumnLabel(i));
+                    }
+                }
+            }
+            return columnNames;
+        });
+    }
+
+    private List<Map<String, Object>> getMonthwiseProductionPlanReportColumnMetadata(String plantId, String year) {
+        return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+            List<Map<String, Object>> columnMetadata = new ArrayList<>();
+            String sql = "EXEC [dbo].[MEG_HMD_GetMonthWiseProductionPlanReport] @plantId = ?, @aopYear = ?";
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                ps.setString(1, plantId);
+                ps.setString(2, year);
+                try (ResultSet rs = ps.executeQuery()) {
+                    ResultSetMetaData rsMetaData = rs.getMetaData();
+                    for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+                        Map<String, Object> columnInfo = new HashMap<>();
+                        String columnName = rsMetaData.getColumnLabel(i);
+                        String columnType = rsMetaData.getColumnTypeName(i);
+                        columnInfo.put("field", columnName);
+                        columnInfo.put("title", columnName.replace("_", " "));
+                        columnInfo.put("editable", false);
+                        columnInfo.put("type", resolveFrontendType(columnType));
+                        columnMetadata.add(columnInfo);
+                    }
+                }
+            }
+            return columnMetadata;
+        });
+    }
+
+    private String resolveFrontendType(String sqlTypeName) {
+        switch (sqlTypeName.toUpperCase()) {
+            case "VARCHAR":
+            case "NVARCHAR":
+            case "CHAR":
+                return "string";
+            case "INT":
+            case "TINYINT":
+            case "BIGINT":
+            case "SMALLINT":
+            case "DECIMAL":
+            case "FLOAT":
+            case "DOUBLE":
+            case "NUMERIC":
+                return "number";
+            case "DATE":
+            case "DATETIME":
+            case "DATETIME2":
+                return "date";
+            default:
+                return "string";
+        }
     }
 
 }
