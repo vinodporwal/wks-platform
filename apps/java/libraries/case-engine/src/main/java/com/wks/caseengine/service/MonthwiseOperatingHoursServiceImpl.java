@@ -255,7 +255,11 @@ public class MonthwiseOperatingHoursServiceImpl implements MonthwiseOperatingHou
     private List<String> getMonthwiseProductionPlanReportColumns(String plantId, String year) {
         return entityManager.unwrap(Session.class).doReturningWork(connection -> {
             List<String> columnNames = new ArrayList<>();
-            String sql = "EXEC [dbo].[MEG_HMD_GetMonthWiseProductionPlanReport] @plantId = ?, @aopYear = ?";
+            Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+            Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+            Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+            String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetMonthWiseProductionPlanReport";
+            String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?";
             try (PreparedStatement ps = connection.prepareStatement(sql)) {
                 ps.setString(1, plantId);
                 ps.setString(2, year);
@@ -273,7 +277,11 @@ public class MonthwiseOperatingHoursServiceImpl implements MonthwiseOperatingHou
     private List<Map<String, Object>> getMonthwiseProductionPlanReportColumnMetadata(String plantId, String year) {
         return entityManager.unwrap(Session.class).doReturningWork(connection -> {
             List<Map<String, Object>> columnMetadata = new ArrayList<>();
-            String sql = "EXEC [dbo].[MEG_HMD_GetMonthWiseProductionPlanReport] @plantId = ?, @aopYear = ?";
+            Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+            Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+            Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+            String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetMonthWiseProductionPlanReport";
+            String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?";
             try (PreparedStatement ps = connection.prepareStatement(sql)) {
                 ps.setString(1, plantId);
                 ps.setString(2, year);
