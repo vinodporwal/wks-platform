@@ -2,6 +2,7 @@ package com.wks.caseengine.service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -204,8 +205,13 @@ public class ExclusionServiceImpl implements ExclusionService{
 						continue;
 					}
 				}
-				AOPMessageVM response = configurationService.getConfigurationVersion(year, plantId.toString());
 
+				if(aromaticsHmdandPmd) { 
+					exclusionDate.setRevision(1);
+				}
+				else {
+					
+				AOPMessageVM response = configurationService.getConfigurationVersion(year, plantId.toString());
 				
 				if (response != null && response.getData() != null && !((List<?>) response.getData()).isEmpty()) {
 				
@@ -213,17 +219,11 @@ public class ExclusionServiceImpl implements ExclusionService{
 				    
 				    String attributeValue = dataList.get(0).getAttributeValue();
 				    
-					// if(attributeValue == null || attributeValue.trim().equalsIgnoreCase("")) { 
-					// 	exclusionDate.setRevision(1);
-					// }
-					if(aromaticsHmdandPmd) {
-						exclusionDate.setRevision(1);
-					}
-					else {
 				    exclusionDate.setRevision(Integer.parseInt(attributeValue));	
-					}
+				
 				
 				}
+			}
 				
 				
 				exclusionDate.setStartDate(exclusionDTO.getStartDate());
@@ -396,14 +396,27 @@ public class ExclusionServiceImpl implements ExclusionService{
 		  SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
 	        
 	        for (Map<String, Object> map : configData) {
-	            try {
-	                String name = String.valueOf(map.get("Name"));
-	                String val = String.valueOf(map.get("AttributeValue"));
-	                if ("StartDate".equalsIgnoreCase(name)) {
-	                    boundaryStart = sdf.parse(val);
-	                } else if ("EndDate".equalsIgnoreCase(name)) {
-	                    boundaryEnd = sdf.parse(val);
-	                }
+	            // try {
+	            //     String name = String.valueOf(map.get("Name"));
+	            //     String val = String.valueOf(map.get("AttributeValue"));
+	            //     if ("StartDate".equalsIgnoreCase(name)) {
+	            //         boundaryStart = sdf.parse(val);
+	            //     } else if ("EndDate".equalsIgnoreCase(name)) {
+	            //         boundaryEnd = sdf.parse(val);
+	            //     }
+				try {
+					String name = String.valueOf(map.get("Name"));
+					String val = String.valueOf(map.get("AttributeValue"));
+			
+					if (val != null && !val.trim().isEmpty()) {
+			
+						if ("StartDate".equalsIgnoreCase(name)) {
+							boundaryStart = parseDate(val.trim());
+			
+						} else if ("EndDate".equalsIgnoreCase(name)) {
+							boundaryEnd = parseDate(val.trim());
+						}
+					}
 	            } catch (Exception e) {
 	            }
 	        }
@@ -459,6 +472,25 @@ public class ExclusionServiceImpl implements ExclusionService{
 	    }
 	    
 	    return exclusionDTOs;
+	}
+
+	private static Date parseDate(String dateStr) throws ParseException {
+		String[] formats = {
+			"dd-MM-yyyy",
+			"yyyy-MM-dd"
+		};
+	
+		for (String format : formats) {
+			try {
+				SimpleDateFormat sdf = new SimpleDateFormat(format);
+				sdf.setLenient(false);
+				return sdf.parse(dateStr);
+			} catch (ParseException e) {
+				// try next format
+			}
+		}
+	
+		throw new ParseException("Invalid date format: " + dateStr, 0);
 	}
 
 	private void validateOverlaps(List<ExclusionDTO> list) {
