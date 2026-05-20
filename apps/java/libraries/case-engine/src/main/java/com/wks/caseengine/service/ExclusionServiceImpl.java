@@ -147,6 +147,11 @@ public class ExclusionServiceImpl implements ExclusionService{
 	public AOPMessageVM saveExclusionDate(String year, String plantFKId,
 			List<ExclusionDTO> exclusionDTOs) {
 		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			boolean aromaticsHmdandPmd = vertical.getName().equalsIgnoreCase("Aromatics") && (site.getName().equalsIgnoreCase("HMD") || plant.getName().equalsIgnoreCase("PMD"));
 			List<ExclusionDTO> failedList = new ArrayList<>();
 			UUID plantId = UUID.fromString(plantFKId);
 
@@ -201,13 +206,20 @@ public class ExclusionServiceImpl implements ExclusionService{
 				}
 				AOPMessageVM response = configurationService.getConfigurationVersion(year, plantId.toString());
 
+				
 				if (response != null && response.getData() != null && !((List<?>) response.getData()).isEmpty()) {
-				    
+				
 				    List<ConfigurationVersionDTO> dataList = (List<ConfigurationVersionDTO>) response.getData();
 				    
 				    String attributeValue = dataList.get(0).getAttributeValue();
 				    
+					if(attributeValue == null || attributeValue.trim().equalsIgnoreCase("")) { 
+						exclusionDate.setRevision(1);
+					}
+					else {
 				    exclusionDate.setRevision(Integer.parseInt(attributeValue));	
+					}
+				
 				}
 				
 				
