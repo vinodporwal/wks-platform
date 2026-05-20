@@ -22,6 +22,9 @@ import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.db2.entity.MonthwiseOperatingHours;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.SiteRepository;
+import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.rest.entity.Site;
 import com.wks.caseengine.utility.Utility;
 
@@ -29,11 +32,22 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 @Service
 public class MonthwiseOperatingHoursServiceImpl implements MonthwiseOperatingHoursService {
 
     @PersistenceContext(unitName = "db2")
     private EntityManager entityManager;
+
+    @Autowired
+    private PlantsRepository plantsRepository;
+
+    @Autowired
+    private SiteRepository siteRepository;
+
+    @Autowired
+    private VerticalsRepository verticalRepository;
 
 
 
@@ -197,7 +211,12 @@ public class MonthwiseOperatingHoursServiceImpl implements MonthwiseOperatingHou
                 throw new RestInvalidArgumentException("Year cannot be NULL or empty", new IllegalArgumentException("empty year"));
             }
 
-            String sql = "EXEC [dbo].[MEG_HMD_GetMonthWiseProductionPlanReport] @plantId = :plantId, @aopYear = :year";
+            Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+            Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+            Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+            String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetMonthWiseProductionPlanReport";
+
+            String sql = "EXEC " + storedProcedure + " @plantId = :plantId, @aopYear = :year";
             Query query = entityManager.createNativeQuery(sql);
             query.setParameter("plantId", plantId);
             query.setParameter("year", year);
