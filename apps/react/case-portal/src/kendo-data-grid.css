@@ -171,7 +171,7 @@
    =============================== */
 
 .kendo-data-grid .k-grid-content .k-grid-table td {
-  position: relative;
+  /* position: relative; */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -242,9 +242,10 @@
 }
 
 /* ===============================
-   LEFT INDICATOR BAR (UNCHANGED)
+   LEFT INDICATOR BAR (DISABLED FOR LOCKED COLUMNS)
    =============================== */
 
+/* Disabled to support locked columns - position: relative breaks Kendo locked column positioning */
 .kendo-data-grid .k-grid-content .k-grid-table td:first-child::before {
   content: '';
   position: absolute;
@@ -254,6 +255,7 @@
   width: 2px;
   border-radius: 2px;
   box-shadow: 0 1px 4px rgba(11, 18, 32, 0.12);
+  display: none !important;
 }
 
 /* ===============================
