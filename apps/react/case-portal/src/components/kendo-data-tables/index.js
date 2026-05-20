@@ -3658,6 +3658,30 @@ const KendoDataTables = ({
                   if (col?.type === 'dynamicDropdown') {
                     const dropdownOptions =
                       permissions?.dynamicDropdownOptions || []
+
+                    const DynamicDisplayCell = (props) => {
+                      const { dataItem, field, tdProps } = props
+                      const value = dataItem[field]
+                      const rowId = dataItem.id
+
+                      const isEdited = Object.prototype.hasOwnProperty.call(
+                        customModifiedCells?.[rowId] || {},
+                        field,
+                      )
+
+                      const shouldHighlight = isEdited
+
+                      return (
+                        <td
+                          {...tdProps}
+                          title={value}
+                          className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
+                        >
+                          {value}
+                        </td>
+                      )
+                    }
+
                     return (
                       <GridColumn
                         key={col?.field}
@@ -3672,11 +3696,16 @@ const KendoDataTables = ({
                             text: (props) => (
                               <DynamicDropdown
                                 {...props}
-                                options={dropdownOptions}
+                                options={
+                                  col?.getDropdownOptions
+                                    ? col.getDropdownOptions(props.dataItem)
+                                    : dropdownOptions
+                                }
+                                getDropdownOptions={col?.getDropdownOptions}
                               />
                             ),
                           },
-                          data: MonthDisplayCell,
+                          data: DynamicDisplayCell,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}

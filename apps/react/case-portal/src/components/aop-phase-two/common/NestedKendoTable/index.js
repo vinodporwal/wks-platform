@@ -868,6 +868,7 @@ const NestedKendoTable = ({
         {...tdProps}
         title={value}
         style={{
+          ...tdProps?.style,
           color: isEdited ? 'orange' : undefined,
           fontWeight: isEdited ? 'bold' : undefined,
         }}
@@ -940,6 +941,7 @@ const NestedKendoTable = ({
         aria-sort={ariaSort}
         title={props.title}
         style={{
+          ...restThProps?.style,
           padding: '0px',
           // borderRight: '1px solid #878787',
           textAlign: 'center',
@@ -982,6 +984,7 @@ const NestedKendoTable = ({
             key={col.title || idx}
             title={col.title}
             headerClassName='center-group-header'
+            locked={col?.locked || false}
           >
             {renderColumns(col.children, filter, sort)}
           </GridColumn>
@@ -1008,6 +1011,7 @@ const NestedKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
             }
@@ -1049,6 +1053,7 @@ const NestedKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={!READ_ONLY} // Always editable, ignore row-level isEditable
             className={`${READ_ONLY ? 'non-editable-cell' : 'k-number-right'}`}
             headerClassName={isActive ? 'active-column' : ''}
@@ -1087,6 +1092,7 @@ const NestedKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
@@ -1138,6 +1144,7 @@ const NestedKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             className={!isEditable ? 'k-left-disabled' : undefined}
             headerClassName={isActive ? 'active-column' : ''}
@@ -1187,6 +1194,8 @@ const NestedKendoTable = ({
           key={col.field}
           field={col.field}
           title={col.title || col.headerName}
+          hidden={col.hidden}
+          locked={col?.locked || false}
           editable={isEditable}
           format={col.format || '{0:0.000}'}
           cells={{
@@ -1227,6 +1236,7 @@ const NestedKendoTable = ({
         {...props.tdProps}
         title={displayValue}
         style={{
+          ...props.tdProps?.style,
           textAlign: typeof value === 'boolean' ? 'center' : undefined,
         }}
       >
@@ -1490,6 +1500,7 @@ const NestedKendoTable = ({
               fileName={`${permissions?.ExcelName}.xlsx`}
             >
               <Grid
+                key={groupBy}
                 style={{
                   flex: 1,
                   overflow: 'auto',
@@ -1520,6 +1531,11 @@ const NestedKendoTable = ({
                 defaultTake={100}
                 contextMenu={true}
                 filterable={filterable}
+                groupable={{
+                  enabled: false,
+                  footer: 'none',
+                  showGroupPanel: false,
+                }}
                 size='small'
                 pageable={
                   rows?.length > 100
@@ -1544,6 +1560,7 @@ const NestedKendoTable = ({
                     key='actions'
                     field='actions'
                     title='Action'
+                    locked={false}
                     width={80}
                     className='k-text-center'
                     filterable={false}

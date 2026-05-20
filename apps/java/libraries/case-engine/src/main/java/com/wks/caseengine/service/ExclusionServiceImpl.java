@@ -2,6 +2,7 @@ package com.wks.caseengine.service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -147,6 +148,11 @@ public class ExclusionServiceImpl implements ExclusionService{
 	public AOPMessageVM saveExclusionDate(String year, String plantFKId,
 			List<ExclusionDTO> exclusionDTOs) {
 		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			boolean aromaticsHmdandPmd = vertical.getName().equalsIgnoreCase("Aromatics") && (site.getName().equalsIgnoreCase("HMD") || plant.getName().equalsIgnoreCase("PMD"));
 			List<ExclusionDTO> failedList = new ArrayList<>();
 			UUID plantId = UUID.fromString(plantFKId);
 
@@ -199,16 +205,25 @@ public class ExclusionServiceImpl implements ExclusionService{
 						continue;
 					}
 				}
-				AOPMessageVM response = configurationService.getConfigurationVersion(year, plantId.toString());
 
+				if(aromaticsHmdandPmd) { 
+					exclusionDate.setRevision(1);
+				}
+				else {
+					
+				AOPMessageVM response = configurationService.getConfigurationVersion(year, plantId.toString());
+				
 				if (response != null && response.getData() != null && !((List<?>) response.getData()).isEmpty()) {
-				    
+				
 				    List<ConfigurationVersionDTO> dataList = (List<ConfigurationVersionDTO>) response.getData();
 				    
 				    String attributeValue = dataList.get(0).getAttributeValue();
 				    
 				    exclusionDate.setRevision(Integer.parseInt(attributeValue));	
+				
+				
 				}
+			}
 				
 				
 				exclusionDate.setStartDate(exclusionDTO.getStartDate());
@@ -377,17 +392,31 @@ public class ExclusionServiceImpl implements ExclusionService{
 
 	    if (configResp != null && configResp.getData() != null) {
 	        List<Map<String, Object>> configData = (List<Map<String, Object>>) configResp.getData();
-	        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+	      //  SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		  SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
 	        
 	        for (Map<String, Object> map : configData) {
-	            try {
-	                String name = String.valueOf(map.get("Name"));
-	                String val = String.valueOf(map.get("AttributeValue"));
-	                if ("StartDate".equalsIgnoreCase(name)) {
-	                    boundaryStart = sdf.parse(val);
-	                } else if ("EndDate".equalsIgnoreCase(name)) {
-	                    boundaryEnd = sdf.parse(val);
-	                }
+	            // try {
+	            //     String name = String.valueOf(map.get("Name"));
+	            //     String val = String.valueOf(map.get("AttributeValue"));
+	            //     if ("StartDate".equalsIgnoreCase(name)) {
+	            //         boundaryStart = sdf.parse(val);
+	            //     } else if ("EndDate".equalsIgnoreCase(name)) {
+	            //         boundaryEnd = sdf.parse(val);
+	            //     }
+				try {
+					String name = String.valueOf(map.get("Name"));
+					String val = String.valueOf(map.get("AttributeValue"));
+			
+					if (val != null && !val.trim().isEmpty()) {
+			
+						if ("StartDate".equalsIgnoreCase(name)) {
+							boundaryStart = parseDate(val.trim());
+			
+						} else if ("EndDate".equalsIgnoreCase(name)) {
+							boundaryEnd = parseDate(val.trim());
+						}
+					}
 	            } catch (Exception e) {
 	            }
 	        }
@@ -443,6 +472,25 @@ public class ExclusionServiceImpl implements ExclusionService{
 	    }
 	    
 	    return exclusionDTOs;
+	}
+
+	private static Date parseDate(String dateStr) throws ParseException {
+		String[] formats = {
+			"dd-MM-yyyy",
+			"yyyy-MM-dd"
+		};
+	
+		for (String format : formats) {
+			try {
+				SimpleDateFormat sdf = new SimpleDateFormat(format);
+				sdf.setLenient(false);
+				return sdf.parse(dateStr);
+			} catch (ParseException e) {
+				// try next format
+			}
+		}
+	
+		throw new ParseException("Invalid date format: " + dateStr, 0);
 	}
 
 	private void validateOverlaps(List<ExclusionDTO> list) {

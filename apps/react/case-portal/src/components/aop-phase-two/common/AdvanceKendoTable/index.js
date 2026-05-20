@@ -814,15 +814,31 @@ const AdvanceKendoTable = ({
     deleteRowData(paramsForDelete)
     setOpenDeleteDialogeBox(false)
   }
-  const ActionsCell = ({ dataItem }) => {
+  const ActionsCell = ({ dataItem, tdProps }) => {
     const isNonDeletable =
       (!dataItem.isEditable && dataItem?.isEditable !== undefined) ||
       dataItem?.hideDelete === true
     if (isNonDeletable) {
-      return <td style={{ textAlign: 'center', verticalAlign: 'middle' }} />
+      return (
+        <td
+          {...tdProps}
+          style={{
+            ...tdProps?.style,
+            textAlign: 'center',
+            verticalAlign: 'middle',
+          }}
+        />
+      )
     }
     return (
-      <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+      <td
+        {...tdProps}
+        style={{
+          ...tdProps?.style,
+          textAlign: 'center',
+          verticalAlign: 'middle',
+        }}
+      >
         <SvgIcon
           onClick={() => !READ_ONLY && handleDeleteClick(dataItem)}
           icon={trashIcon}
@@ -886,9 +902,10 @@ const AdvanceKendoTable = ({
 
     return (
       <td
-        {...restProps}
+        {...tdProps}
         title={displayText}
         style={{
+          ...tdProps?.style,
           cursor: isRowEditable ? 'pointer' : 'not-allowed',
           color:
             isEdited && displayText ? 'orange' : rawValue ? 'inherit' : 'gray',
@@ -900,6 +917,7 @@ const AdvanceKendoTable = ({
           whiteSpace: 'nowrap',
           opacity: isRowEditable ? 1 : 0.6,
         }}
+        className={`${tdProps?.className || ''} remark-cell`.trim()}
         onClick={(e) => {
           e.preventDefault()
           e.stopPropagation()
@@ -981,8 +999,14 @@ const AdvanceKendoTable = ({
 
     if (disableRedHighlight) {
       return (
-        <td {...tdProps} title={value}>
-          {formattedValue}
+        <td
+          {...tdProps}
+          title={value}
+          style={{
+            ...tdProps?.style,
+          }}
+        >
+          {children}
         </td>
       )
     }
@@ -1008,6 +1032,9 @@ const AdvanceKendoTable = ({
         {...tdProps}
         title={value}
         className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
+        style={{
+          ...tdProps?.style,
+        }}
       >
         {formattedValue}
       </td>
@@ -1118,7 +1145,7 @@ const AdvanceKendoTable = ({
             highlightColor && highlightColor !== 'orange'
               ? highlightColor
               : undefined,
-          // backgroundColor: highlightColorFullCell ? 'lightGrey' : undefined,
+          ...tdProps?.style,
         }}
       >
         {children}
@@ -1143,7 +1170,11 @@ const AdvanceKendoTable = ({
 
     if (disableRedHighlight) {
       return (
-        <td {...tdProps} title={displayValue} style={{ textAlign: 'center' }}>
+        <td
+          {...tdProps}
+          title={displayValue}
+          style={{ textAlign: 'center', ...tdProps?.style }}
+        >
           {displayValue}
         </td>
       )
@@ -1173,6 +1204,7 @@ const AdvanceKendoTable = ({
         title={displayValue}
         className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
+          ...tdProps?.style,
           textAlign: 'center',
         }}
       >
@@ -1191,6 +1223,7 @@ const AdvanceKendoTable = ({
         aria-sort={ariaSort}
         title={props.title}
         style={{
+          ...restThProps?.style,
           padding: '0px',
           // borderRight: '1px solid #878787',
           textAlign: 'start',
@@ -1253,6 +1286,7 @@ const AdvanceKendoTable = ({
             key={col.title || idx}
             title={col.title}
             headerClassName='center-group-header'
+            locked={col?.locked || false}
           >
             {renderColumns(col.children, filter, sort)}
           </GridColumn>
@@ -1267,6 +1301,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             width={setWidth(col?.minWidth || 120)}
+            locked={col?.locked || false}
             className={!isEditable ? 'non-editable-cell' : undefined}
             cells={{
               data: (cellProps) => (
@@ -1299,6 +1334,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             width={setWidth(col?.minWidth || 120)}
+            locked={col?.locked || false}
             className={!isEditable ? 'non-editable-cell' : undefined}
             cells={{
               data: (cellProps) => (
@@ -1319,6 +1355,7 @@ const AdvanceKendoTable = ({
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
+            locked={col?.locked || false}
             cells={{
               edit: { date: DateOnlyPicker },
               data: toolTipRenderer,
@@ -1341,6 +1378,7 @@ const AdvanceKendoTable = ({
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
+            locked={col?.locked || false}
             cells={{
               edit: {
                 date:
@@ -1387,6 +1425,7 @@ const AdvanceKendoTable = ({
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
+            locked={col?.locked || false}
             editable={isEditable}
             columnMenu={ColumnMenuCheckboxFilter}
             hidden={col.hidden}
@@ -1407,6 +1446,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
             }
@@ -1434,6 +1474,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
             }
@@ -1486,6 +1527,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
@@ -1541,6 +1583,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
@@ -1591,6 +1634,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             className={!isEditable ? 'k-left-disabled' : undefined}
             headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
@@ -1617,6 +1661,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
@@ -1639,6 +1684,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
@@ -1706,6 +1752,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             cells={{
               edit: {
@@ -1739,6 +1786,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             cells={{
               edit: {
@@ -1773,6 +1821,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             className={!isEditable ? 'k-right-disabled' : undefined}
             headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
@@ -1813,6 +1862,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
@@ -1864,6 +1914,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             className={!isEditable ? 'k-right-disabled' : undefined}
             headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
@@ -1909,6 +1960,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             cells={{
               edit: {
@@ -1939,6 +1991,7 @@ const AdvanceKendoTable = ({
           key={col.field}
           field={col.field}
           title={col.title || col.headerName}
+          locked={col?.locked || false}
           editable={col.editable || false}
           format={col.format || '{0:0.000}'}
           cells={{
@@ -1988,6 +2041,7 @@ const AdvanceKendoTable = ({
         title={displayValue}
         className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
+          ...props.tdProps?.style,
           textAlign: typeof value === 'boolean' ? 'center' : undefined,
         }}
       >
@@ -2297,6 +2351,7 @@ const AdvanceKendoTable = ({
               fileName={`${permissions?.ExcelName}.xlsx`}
             >
               <Grid
+                key={groupBy}
                 style={{
                   flex: 1,
                   overflow: 'auto',
@@ -2331,6 +2386,11 @@ const AdvanceKendoTable = ({
                   permissions.filterable &&
                   columns.some((col) => dateFields.includes(col.field))
                 }
+                groupable={{
+                  enabled: false,
+                  footer: 'none',
+                  showGroupPanel: false,
+                }}
                 size='small'
                 pageable={getPaginationConfig()}
                 onRowClick={handleRowClick}

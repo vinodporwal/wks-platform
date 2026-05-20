@@ -2,7 +2,20 @@ import React from 'react'
 import { DropDownList, MultiSelect } from '@progress/kendo-react-dropdowns'
 
 const DynamicDropdown = (props) => {
-  const { dataItem, field, onChange, options = [], multiSelect = false } = props
+  const {
+    dataItem,
+    field,
+    onChange,
+    options = [],
+    multiSelect = false,
+    getDropdownOptions,
+  } = props
+
+  // Determine which options to use
+  let dropdownOptions = options
+  if (getDropdownOptions) {
+    dropdownOptions = getDropdownOptions(dataItem)
+  }
 
   const handleChange = (e) => {
     if (multiSelect) {
@@ -29,27 +42,30 @@ const DynamicDropdown = (props) => {
         ? [dataItem[field]]
         : []
 
-    const selectedOptions = options.filter((opt) =>
+    const selectedOptions = dropdownOptions.filter((opt) =>
       selectedValues.includes(opt.value),
     )
 
     return (
       <MultiSelect
-        data={options}
+        data={dropdownOptions}
         textField='name'
         dataItemKey='value'
         value={selectedOptions}
         onChange={handleChange}
         style={{ width: '100%' }}
+        className='dropdown-editor'
       />
     )
   }
 
-  const selectedOption = options.find((opt) => opt.value === dataItem[field])
+  const selectedOption = dropdownOptions.find(
+    (opt) => opt.value === dataItem[field],
+  )
 
   return (
     <DropDownList
-      data={options}
+      data={dropdownOptions}
       textField='name'
       dataItemKey='value'
       value={selectedOption}
