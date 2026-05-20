@@ -421,18 +421,12 @@ const createApmUrlBasedOnSelectedEvent = () => {
         //  })(),
          
           }),
-        )
+        ).then((saveData) => ({ ...saveData, caseNo: businessKey, businessKey }))
       })
       .then((data) => {
         setLastCreatedCase(data)
         setSnackOpen(true)
-       
-        setTimeout(() => {
-         window.location.href = data.caseUrl;
-    
-   
-          // handleClose()
-        }, 1000)
+        setTimeout(() => navigateToCaseUrl(data.caseUrl), 1000)
       })
       .catch((err) => {
         console.error(err.message)
@@ -608,15 +602,12 @@ const createApmUrlBasedOnSelectedEvent = () => {
     //     assignedTo: formData.data.container.caseAssignedTo.email.map(email => ({ emailId: email }))
 
           }),
-        )
+        ).then((saveData) => ({ ...saveData, caseNo: businessKey, businessKey }))
       })
       .then((data) => {
         setLastCreatedCase(data);
         setSnackOpen(true)
-        setTimeout(() => {
-          window.location.href = data.caseUrl;
-          // handleClose()
-        }, 1000)
+        setTimeout(() => navigateToCaseUrl(data.caseUrl), 1000)
       })
       .catch((err) => {
         console.error(err.message)
