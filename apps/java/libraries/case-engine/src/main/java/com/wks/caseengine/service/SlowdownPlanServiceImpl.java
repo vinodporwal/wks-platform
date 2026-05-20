@@ -131,7 +131,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			List<ShutDownPlanDTO> dtoList = new ArrayList<>();
 
 			for (Object[] result : listOfSite) {
-				System.out.println("LineId: " + result[15] != null ? result[15].toString() : null);
+				//System.out.println("LineId: " + result[15] != null ? result[15].toString() : null);
 				ShutDownPlanDTO dto = new ShutDownPlanDTO();
 				dto.setDiscription((String) result[0]);
 				dto.setMaintStartDateTime((Date) result[1]);
