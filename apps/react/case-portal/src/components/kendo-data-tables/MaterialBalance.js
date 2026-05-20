@@ -69,6 +69,7 @@ const MaterialBalance = ({ permissions }) => {
             Remarks: item?.Remarks || '',
             originalRemark: item?.Remarks || '',
             isEditable: item?.IsEditable,
+            ParticularG: item?.Type,
           }),
         )
         setRows(formattedData)
@@ -418,6 +419,7 @@ const MaterialBalance = ({ permissions }) => {
         handleCalculate={handleCalculate}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         plantID={PLANT_ID}
+        groupBy={lowerVertName === 'chemical' ? 'ParticularG' : undefined}
       />
 
       <Notification
