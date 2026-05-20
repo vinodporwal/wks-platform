@@ -213,7 +213,10 @@ public class ExclusionServiceImpl implements ExclusionService{
 				    
 				    String attributeValue = dataList.get(0).getAttributeValue();
 				    
-					if(attributeValue == null || attributeValue.trim().equalsIgnoreCase("")) { 
+					// if(attributeValue == null || attributeValue.trim().equalsIgnoreCase("")) { 
+					// 	exclusionDate.setRevision(1);
+					// }
+					if(aromaticsHmdandPmd) {
 						exclusionDate.setRevision(1);
 					}
 					else {
@@ -389,7 +392,8 @@ public class ExclusionServiceImpl implements ExclusionService{
 
 	    if (configResp != null && configResp.getData() != null) {
 	        List<Map<String, Object>> configData = (List<Map<String, Object>>) configResp.getData();
-	        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+	      //  SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		  SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
 	        
 	        for (Map<String, Object> map : configData) {
 	            try {
