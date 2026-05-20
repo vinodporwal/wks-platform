@@ -195,7 +195,7 @@ console.log('*****  taskId:  ', taskId);
        if(aCase.caseDefinitionId === 'create-Asset' || aCase.caseDefinitionId === 'asset-onboarding')
 
         filteredProcessDefs =    data.filter((o) => {  
-             return o.name === 'XOM Asset Train Onboarding'
+             return o.name === 'Asset Train Onboarding'
            })
 
            console.log("filteredProcessDefs : ", filteredProcessDefs)
@@ -1426,7 +1426,7 @@ console.log('*****  taskId:  ', taskId);
     let content = `
     <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #333;">
       <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
-        <h2 style="text-align: center; margin: 0;">XOM Case Management System</h2>
+        <h2 style="text-align: center; margin: 0;">Case Management System</h2>
       </div>
 
       <!-- Case Information Panel -->
