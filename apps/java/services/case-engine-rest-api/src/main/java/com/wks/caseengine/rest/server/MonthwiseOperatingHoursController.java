@@ -34,7 +34,7 @@ public class MonthwiseOperatingHoursController {
         return monthwiseOperatingHoursService.saveMonthwiseOperatingHours(plantId, year, monthwiseOperatingHoursDTOs);
     }
 
-    @GetMapping(value = "/monthwise-production-plan-report")
+    @GetMapping(value = "/monthly-production-report")
     public AOPMessageVM getMonthwiseProductionPlanReport(@RequestParam String plantId, @RequestParam String year) {
         return monthwiseOperatingHoursService.getMonthwiseProductionPlanReport(plantId, year);
     }
