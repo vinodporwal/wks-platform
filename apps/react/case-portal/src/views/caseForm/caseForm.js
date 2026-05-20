@@ -195,7 +195,7 @@ console.log('*****  taskId:  ', taskId);
        if(aCase.caseDefinitionId === 'create-Asset' || aCase.caseDefinitionId === 'asset-onboarding')
 
         filteredProcessDefs =    data.filter((o) => {  
-             return o.name === 'XOM Asset Train Onboarding'
+             return o.name === 'Asset Train Onboarding'
            })
 
            console.log("filteredProcessDefs : ", filteredProcessDefs)

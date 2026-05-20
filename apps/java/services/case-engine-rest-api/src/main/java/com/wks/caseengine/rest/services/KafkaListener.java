@@ -97,9 +97,7 @@ public class KafkaListener {
       
 
 
-       
-
-        //http://localhost:3001/case-list/create?assetName=XOM&hierarchyName=PlantHierarchy&eventIds=225%2C6&sourceSystem=Default&caseNo=52744
+    
 
         // http://localhost:3001/case-list/create?taskId=0a2ec62b-c43a-11f0-894b-fa26691c57d3&caseNo=56596
         

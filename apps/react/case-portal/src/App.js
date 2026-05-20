@@ -173,7 +173,7 @@ const App = () => {
 
   async function checkAndPostForm(keycloak) {
     if (localStorage.getItem('formCreated')) {
-      console.log('Form "XOM Case Management System" already exists.')
+      console.log('Form "Case Management System" already exists.')
       return
     }
     try {
@@ -182,14 +182,14 @@ const App = () => {
 
       // Check if "EED Case Management System" exists in the list
       const formExists = data.some(
-        (form) => form.title === 'XOM Case Management System',
+        (form) => form.title === 'Case Management System',
       )
 
       if (formExists) {
-        console.log('XOM Case Management System" already exists.')
+        console.log('Case Management System" already exists.')
       } else {
         console.log(
-          'Form "XOM Case Management System" does not exist. Creating form...',
+          'Form "Case Management System" does not exist. Creating form...',
         )
         await createForm(keycloak)
       }

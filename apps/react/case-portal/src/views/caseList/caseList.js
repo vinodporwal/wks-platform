@@ -93,7 +93,7 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
 
   const columns = React.useMemo(() => makeColumns(), []);
 
-  // XOM - Route changes -Start
+  // - Route changes -Start
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
@@ -220,7 +220,7 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
     }
   }, [accepted]);  
 
-  // XOM - Route changes - End
+  // - Route changes - End
 
   useEffect(() => {
     if (Config.WebsocketsEnabled) {
@@ -474,13 +474,13 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
   useEffect(() => {
     CaseService.getCaseDefinitions(keycloak).then((resp) => {
       setCaseDefs(resp);
-      // XOM - Route changes - Start
+      // - Route changes - Start
       if(!resp.some(i => i.id === caseDefId)) {
         setLoading(false);
         setError(true);
         setErrorMsg('Invalid Case Definition "' + caseDefId + '" !! ');
       }
-      // XOM - Route changes - End
+      // - Route changes - End
 
     })
 
