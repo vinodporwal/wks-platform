@@ -969,6 +969,7 @@ const NormalOpNormsScreen = () => {
       {(lowerVertName === 'meg' ||
         IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
         IS_CHEMICAL_VMD_BUTADIENE ||
+        IS_CHEMICAL_HMD_BUTADIENE ||
         IS_VCM_HMD_VCM) && (
         <Box sx={{ width: '100%', marginTop: 1 }}>
           <CustomAccordion defaultExpanded disableGutters>
