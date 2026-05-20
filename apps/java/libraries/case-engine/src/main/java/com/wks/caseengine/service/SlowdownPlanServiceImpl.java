@@ -3230,7 +3230,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	    String verticalName = plantsService.findVerticalNameByPlantId(plantId);
 	    Plants plant = plantsRepository.findById(plantId).orElseThrow();
 	    Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-	    boolean pvc = verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+	    boolean pvc = verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
 	    DateTimeFormatter COMPARISON_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"); 
 	    Boolean monthChange=false;
 	    int changedMonth=0;
