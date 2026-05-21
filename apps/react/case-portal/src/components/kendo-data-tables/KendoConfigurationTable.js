@@ -52,8 +52,11 @@ import LineConfiguration from './LineConfiguration'
 import ConfigurationAccordian from './common/ConfigurationAccordian'
 import SeasonMonths from './tab-components/SeasonMonths/index'
 import MaterialBalance from './MaterialBalance'
+import { useTheme } from '@mui/material/styles'
 
 const ConfigurationTable = () => {
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const hasExecutedRef = useRef(false)
   const keycloak = useSession()
 
@@ -962,18 +965,18 @@ const ConfigurationTable = () => {
     '& .MuiPaper-root': {
       borderRadius: '24px',
       padding: '12px',
-      backgroundColor: 'rgba(255, 255, 255, 0.98)',
+      background: isDark ? '#131726' : 'rgba(255, 255, 255, 0.98)',
       backdropFilter: 'blur(16px)',
       boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.2)',
-      border: '1px solid #ffffff',
+      // border: isDark ? '1px solid #131726' : '1px solid #ffffff',
     },
   }))
 
   const DateHighlight = styled(Box)(({ theme }) => ({
     display: 'inline-flex',
     alignItems: 'center',
-    backgroundColor: 'rgba(1, 0, 203, 0.05)',
-    color: '#0100cb',
+    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(167, 168, 255, 0.1)' : 'rgba(1, 0, 203, 0.05)',
+    color: theme.palette.mode === 'dark' ? '#A7A8FF' : '#0100cb',
     padding: '4px 12px',
     borderRadius: '8px',
     fontWeight: 700,
@@ -1025,7 +1028,7 @@ const ConfigurationTable = () => {
               textAlign: 'center',
               fontWeight: 800,
               fontSize: '1.15rem', // ?
-              color: '#1e293b',
+              color: isDark ? '#f0f0f0' : '#1e293b',
               pb: 0,
             }}
           >
@@ -1036,7 +1039,7 @@ const ConfigurationTable = () => {
         <DialogContent sx={{ textAlign: 'center', pt: 1 }}>
           <DialogContentText
             sx={{
-              color: '#64748b',
+              color: isDark ? '#d0d0d0' : '#64748b',
               fontSize: '0.85rem', // ?
               lineHeight: 1.45,
             }}
@@ -1082,7 +1085,7 @@ const ConfigurationTable = () => {
             px: 0,
           }}
         >
-          <Button onClick={handleCloseDialog} className='btn-save'>
+          <Button onClick={handleCloseDialog} className={isDark ? 'btn-dark-no' : 'btn-save'} >
             No
           </Button>
 
@@ -1090,7 +1093,7 @@ const ConfigurationTable = () => {
             onClick={handleConfirmLoad}
             variant='contained'
             autoFocus
-            className='btn-save'
+            className={isDark ? 'btn-dark-yes' : 'btn-save'}
           >
             Yes, Refresh Data
           </Button>
@@ -1111,7 +1114,12 @@ const ConfigurationTable = () => {
         {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: -1 }}>
           <IconButton onClick={handleCloseDialogRev} size='small'>
-            <CloseIcon fontSize='small' />
+            <CloseIcon
+              fontSize='small'
+              sx={{
+                color: isDark ? '#D0D0D0' : '#606060',
+              }}
+            />
           </IconButton>
         </Box>
 
@@ -1140,8 +1148,9 @@ const ConfigurationTable = () => {
               textAlign: 'center',
               fontWeight: 800,
               fontSize: '1.15rem',
-              color: '#1e293b',
+              color: isDark ? '#F0F0F0' : '#1e293b',
               pb: 0,
+              fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
             }}
           >
             Confirm Revision Change
@@ -1151,9 +1160,10 @@ const ConfigurationTable = () => {
         <DialogContent sx={{ textAlign: 'center', pt: 1 }}>
           <DialogContentText
             sx={{
-              color: '#64748b',
+              color: isDark ? '#D0D0D0' : '#64748b',
               fontSize: '0.85rem',
               lineHeight: 1.45,
+              fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
             }}
           >
             Are you sure you want to change the revision?
@@ -1170,12 +1180,14 @@ const ConfigurationTable = () => {
         >
           <Button
             onClick={handleCloseDialogRev}
+            className={isDark ? 'btn-dark-no' : ''}
             sx={{
-              color: '#64748b',
+              color: isDark ? '#A7A8FF' : '#64748b',
               textTransform: 'none',
               fontWeight: 700,
               fontSize: '0.85rem',
               px: 0,
+              fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
             }}
           >
             No
@@ -1200,6 +1212,7 @@ const ConfigurationTable = () => {
                 boxShadow: '0 12px 16px -3px rgba(1, 0, 203, 0.4)',
               },
             }}
+            className={isDark ? 'btn-dark-yes' : ''}
           >
             Yes, Change
           </Button>
@@ -1430,9 +1443,9 @@ const ConfigurationTable = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 p: '3px',
-                bgcolor: 'rgba(0, 0, 0, 0.04)', // Light track background
+                bgcolor: isDark ? '#131726' : 'rgba(0, 0, 0, 0.04)', // Light track background
                 borderRadius: '8px',
-                border: '1px solid rgba(0, 0, 0, 0.05)',
+                border: `1px solid ${isDark ? '#3C4055' : 'rgba(0, 0, 0, 0.05)'}`,
               }}
             >
               <Typography
@@ -1440,7 +1453,7 @@ const ConfigurationTable = () => {
                 sx={{
                   px: 1,
                   fontWeight: 700,
-                  color: '#252525',
+                  color: isDark ? '#F0F0F0' : '#252525',
                   fontSize: '14px',
                   textTransform: 'uppercase',
                   fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
@@ -1479,10 +1492,12 @@ const ConfigurationTable = () => {
 
                         // Inactive State
                         ...(!selected && {
-                          color: '#606060',
+                          color: isDark ? '#D0D0D0' : '#606060',
                           fontWeight: 500,
                           '&:hover': {
-                            bgcolor: 'rgba(1, 0, 203, 0.04)',
+                            bgcolor: isDark
+                              ? 'rgba(244, 243, 243, 0.87)'
+                              : 'rgba(1, 0, 203, 0.04)',
                             color: '#0100cb',
                           },
                         }),

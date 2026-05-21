@@ -32,6 +32,7 @@ import {
   Typography,
   Stack,
   Zoom,
+  useTheme,
 } from '@mui/material'
 import { styled } from '@mui/material/styles'
 import { Info, ExpandMore } from '@mui/icons-material'
@@ -39,6 +40,7 @@ import SettingsIcon from '@mui/icons-material/Settings'
 import CloseIcon from '@mui/icons-material/Close'
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
 import { DatePicker } from '@progress/kendo-react-dateinputs'
 import { BusinessDemandDataApiService } from 'services/business-demand-data-api-service'
@@ -48,24 +50,24 @@ import CrakcerConstants from './CrakcerConstants'
 import CrakcerProductionConst from './CrakcerProductionConst'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import './common/ConfigurationAccordian.css'
-import { CalenderIcon } from 'assets/images/icons/index'
+import { CalenderIcon, CalenderDarkIcon } from 'assets/images/icons/index'
 
-const StyledConfirmDialog = styled(Dialog)(() => ({
+const StyledConfirmDialog = styled(Dialog)((theme) => ({
   '& .MuiPaper-root': {
     borderRadius: '24px',
     padding: '12px',
-    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    background: theme.palette.mode === 'dark' ? '#131726' : 'rgba(255, 255, 255, 0.98)',
     backdropFilter: 'blur(16px)',
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.2)',
-    border: '1px solid #ffffff',
+    border: theme.palette.mode === 'dark' ? '1px solid #00000033' : '1px solid #ffffff',
   },
 }))
 
-const DateHighlight = styled(Box)(() => ({
+const DateHighlight = styled(Box)(({theme}) => ({
   display: 'inline-flex',
   alignItems: 'center',
-  backgroundColor: 'rgba(1, 0, 203, 0.05)',
-  color: '#0100cb',
+  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(167, 168, 255, 0.1)' : 'rgba(1, 0, 203, 0.05)',
+  color: theme.palette.mode === 'dark' ? '#A7A8FF' : '#0100cb',
   padding: '4px 12px',
   borderRadius: '8px',
   fontWeight: 700,
@@ -75,7 +77,8 @@ const DateHighlight = styled(Box)(() => ({
 
 const AopDesignBasis = () => {
   const hasExecutedRef = useRef(false)
-
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const keycloak = useSession()
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -560,7 +563,7 @@ const AopDesignBasis = () => {
               textAlign: 'center',
               fontWeight: 800,
               fontSize: '1.15rem',
-              color: '#1e293b',
+              color: isDark ? '#f0f0f0' : '#1e293b',
               pb: 0,
             }}
           >
@@ -572,7 +575,7 @@ const AopDesignBasis = () => {
         <DialogContent sx={{ textAlign: 'center', pt: 1 }}>
           <DialogContentText
             sx={{
-              color: '#64748b',
+              color: isDark ? '#D0D0D0' : '#64748b',
               fontSize: '0.85rem',
               lineHeight: 1.45,
             }}
@@ -620,7 +623,7 @@ const AopDesignBasis = () => {
             px: 0,
           }}
         >
-          <Button onClick={handleCloseDialog} className='btn-save'>
+          <Button onClick={handleCloseDialog} className={isDark ? 'btn-dark-no' : 'btn-save'}>
             No
           </Button>
 
@@ -628,7 +631,7 @@ const AopDesignBasis = () => {
             onClick={handleConfirmLoad}
             variant='contained'
             autoFocus
-            className='btn-save'
+            className={isDark ? 'btn-dark-yes' : 'btn-save'}
           >
             Yes, Refresh Data
           </Button>
@@ -645,11 +648,11 @@ const AopDesignBasis = () => {
         <CustomAccordion
           defaultExpanded
           disableGutters
-          className='k-table-box configuration-accordion-root'
+          className={`${isDark ? 'k-table-box-dark' : 'k-table-box'} configuration-accordion-root`}
         >
           <CustomAccordionSummary
-            expandIcon={<ExpandMore sx={{ fontSize: '1.2rem' }} />}
-            className='configuration-accordion-summary'
+            expandIcon={<ExpandMoreIcon sx={{ fontSize: '1.2rem' }} />}
+            className={isDark ? 'configuration-accordion-summary-dark' : 'configuration-accordion-summary'}
           >
             <Stack
               direction='row'
@@ -659,15 +662,15 @@ const AopDesignBasis = () => {
             >
               <Stack direction='row' spacing={1} alignItems='center'>
                 <SettingsIcon sx={{ color: '#0100cb', fontSize: '1rem' }} />
-                <Typography className='configuration-accordion-title'>
+                <Typography className={isDark ? 'configuration-accordion-title-dark' : 'configuration-accordion-title'}>
                   AOP Historical Period Basis for Production Target
                 </Typography>
               </Stack>
 
               {!isOldYear && (
                 <Button
-                  variant='contained'
-                  className='btn-save'
+                  variant={isDark ? 'outlined' : 'contained'}
+                  className={isDark ? 'btn-dark-no' : 'btn-save'}
                   startIcon={
                     <Box component='img' src={SaveIcon} className='w16-icon' />
                   }
@@ -696,15 +699,15 @@ const AopDesignBasis = () => {
                 flexWrap='wrap'
               >
                 {/* START */}
-                <Box className='date-pill-wrapper'>
+                <Box className={`date-pill-wrapper ${isDark ? 'date-pill-dark' : 'date-pill-light'}`}>
                   <Box
                     component='img'
-                    src={CalenderIcon}
+                    src={isDark ? CalenderDarkIcon : CalenderIcon}
                     className='w16-icon'
                     style={{ cursor: READ_ONLY ? 'not-allowed' : 'pointer' }}
                     onClick={() => !READ_ONLY && setStartShow((v) => !v)}
                   />
-                  <Box component='span' className='header-dropdown-label'>
+                  <Box component='span' className={`${isDark ? 'header-dropdown-label-dark' : 'header-dropdown-label'}`}>
                     Start Date:
                   </Box>
                   <DatePicker
@@ -728,20 +731,20 @@ const AopDesignBasis = () => {
                     onClick={() => !READ_ONLY && setStartShow((v) => !v)}
                     size='small'
                   >
-                    <ExpandMore sx={{ fontSize: '1rem', color: '#606060' }} />
+                    <ExpandMoreIcon sx={{ fontSize: '1rem', color: isDark ? '#D0D0D0' : '#606060' }} />
                   </IconButton>
                 </Box>
 
                 {/* END */}
-                <Box className='date-pill-wrapper'>
+                <Box className={`date-pill-wrapper ${isDark ? 'date-pill-dark' : 'date-pill-light'}`}>
                   <Box
                     component='img'
-                    src={CalenderIcon}
+                    src={isDark ? CalenderDarkIcon : CalenderIcon}
                     className='w16-icon'
                     style={{ cursor: READ_ONLY ? 'not-allowed' : 'pointer' }}
                     onClick={() => !READ_ONLY && setEndShow((v) => !v)}
                   />
-                  <Box component='span' className='header-dropdown-label'>
+                  <Box component='span' className={`${isDark ? 'header-dropdown-label-dark' : 'header-dropdown-label'}`}>
                     End Date:
                   </Box>
                   <DatePicker
@@ -765,7 +768,7 @@ const AopDesignBasis = () => {
                     onClick={() => !READ_ONLY && setEndShow((v) => !v)}
                     size='small'
                   >
-                    <ExpandMore sx={{ fontSize: '1rem', color: '#606060' }} />
+                    <ExpandMoreIcon sx={{ fontSize: '1rem', color: isDark ? '#D0D0D0' : '#606060' }} />
                   </IconButton>
                 </Box>
 
@@ -774,7 +777,7 @@ const AopDesignBasis = () => {
                   <Tooltip title='Refresh Data'>
                     <Button
                       variant='outlined'
-                      className='btn-load'
+                      className={isDark ? 'btn-dark-no' : 'btn-load'}
                       onClick={handleOpenDialog}
                       disabled={READ_ONLY}
                       sx={{
@@ -801,11 +804,11 @@ const AopDesignBasis = () => {
                     direction='row'
                     spacing={0.5}
                     alignItems='center'
-                    className='last-refreshed-container'
+                    className={isDark ? 'last-refreshed-container-dark' : 'last-refreshed-container'}
                   >
-                    <Info sx={{ fontSize: '0.9rem', color: '#00688C' }} />
+                    <Info sx={{ fontSize: '0.9rem', color: isDark ? '#B1E4F7' : '#00688C' }} />
 
-                    <Typography className='last-refreshed-text'>
+                    <Typography className={isDark ? 'last-refreshed-text-dark' : 'last-refreshed-text'}>
                       {`Last loaded data on ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} by ${configurationExecutionDetails[0]?.User ?? ''} for period ${formatDateForText(startDate, false)} to ${formatDateForText(endDate, false)}`}
                     </Typography>
                   </Stack>
@@ -816,13 +819,13 @@ const AopDesignBasis = () => {
               <Box sx={{ width: '100%' }}>
                 <Typography
                   variant='caption'
-                  className='aop-design-basis-label'
+                  className={isDark ? 'aop-design-basis-label-dark' : 'aop-design-basis-label'}
                 >
                   AOP DESIGN BASIS
                 </Typography>
 
                 <TextArea
-                  className='vertical-resize-textarea'
+                  className={isDark ? 'vertical-resize-textarea-dark' : 'vertical-resize-textarea'}
                   disabled={READ_ONLY}
                   value={summary}
                   rows={2}

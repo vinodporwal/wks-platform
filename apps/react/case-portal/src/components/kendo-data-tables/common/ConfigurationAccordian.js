@@ -6,6 +6,7 @@ import {
   Tooltip,
   Button,
   IconButton,
+  useTheme,
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import SettingsIcon from '@mui/icons-material/Settings'
@@ -20,6 +21,7 @@ import {
 
 import './ConfigurationAccordian.css'
 import { TextArea } from '../../../../node_modules/@progress/kendo-react-inputs/index'
+import { CalenderDarkIcon } from 'assets/images/icons/index'
 
 const ConfigurationAccordian = ({
   startDate,
@@ -37,6 +39,8 @@ const ConfigurationAccordian = ({
   summaryEnabled = true,
   formatDateForText,
 }) => {
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const [startShow, setStartShow] = useState(false)
   const [endShow, setEndShow] = useState(false)
 
@@ -45,15 +49,15 @@ const ConfigurationAccordian = ({
       <CustomAccordion
         defaultExpanded
         disableGutters
-        className='k-table-box configuration-accordion-root'
+        className={`${isDark ? 'k-table-box-dark' : 'k-table-box'} configuration-accordion-root`}
       >
         <CustomAccordionSummary
           expandIcon={<ExpandMoreIcon sx={{ fontSize: '1.2rem' }} />}
-          className='configuration-accordion-summary'
+          className={isDark ? 'configuration-accordion-summary-dark' : 'configuration-accordion-summary'}
         >
           <Stack direction='row' spacing={1} alignItems='center'>
             <SettingsIcon sx={{ color: '#0100cb', fontSize: '1rem' }} />
-            <Typography className='configuration-accordion-title'>
+            <Typography className={isDark ? 'configuration-accordion-title-dark' : 'configuration-accordion-title'}>
               AOP Historical Period Basis
             </Typography>
           </Stack>
@@ -72,15 +76,15 @@ const ConfigurationAccordian = ({
               flexWrap='wrap'
             >
               {/* START */}
-              <Box className='date-pill-wrapper'>
+              <Box className={`date-pill-wrapper ${isDark ? 'date-pill-dark' : 'date-pill-light'}`}>
                 <Box
                   component='img'
-                  src={CalenderIcon}
+                  src={isDark ? CalenderDarkIcon : CalenderIcon}
                   className='w16-icon'
                   style={{ cursor: READ_ONLY ? 'not-allowed' : 'pointer' }}
                   onClick={() => !READ_ONLY && setStartShow((v) => !v)}
                 />
-                <Box component='span' className='header-dropdown-label'>
+                <Box component='span' className={`${isDark ? 'header-dropdown-label-dark' : 'header-dropdown-label'}`}>
                   Start Date:
                 </Box>
                 <DatePicker
@@ -104,20 +108,20 @@ const ConfigurationAccordian = ({
                   onClick={() => !READ_ONLY && setStartShow((v) => !v)}
                   size='small'
                 >
-                  <ExpandMoreIcon sx={{ fontSize: '1rem', color: '#606060' }} />
+                  <ExpandMoreIcon sx={{ fontSize: '1rem', color: isDark ? '#D0D0D0' : '#606060' }} />
                 </IconButton>
               </Box>
 
               {/* END */}
-              <Box className='date-pill-wrapper'>
+              <Box className={`date-pill-wrapper ${isDark ? 'date-pill-dark' : 'date-pill-light'}`}>
                 <Box
                   component='img'
-                  src={CalenderIcon}
+                  src={isDark ? CalenderDarkIcon : CalenderIcon}
                   className='w16-icon'
                   style={{ cursor: READ_ONLY ? 'not-allowed' : 'pointer' }}
                   onClick={() => !READ_ONLY && setEndShow((v) => !v)}
                 />
-                <Box component='span' className='header-dropdown-label'>
+                <Box component='span' className={`${isDark ? 'header-dropdown-label-dark' : 'header-dropdown-label'}`}>
                   End Date:
                 </Box>
                 <DatePicker
@@ -141,7 +145,7 @@ const ConfigurationAccordian = ({
                   onClick={() => !READ_ONLY && setEndShow((v) => !v)}
                   size='small'
                 >
-                  <ExpandMoreIcon sx={{ fontSize: '1rem', color: '#606060' }} />
+                  <ExpandMoreIcon sx={{ fontSize: '1rem', color: isDark ? '#D0D0D0' : '#606060' }} />
                 </IconButton>
               </Box>
 
@@ -150,7 +154,7 @@ const ConfigurationAccordian = ({
                 <Tooltip title='Refresh Data'>
                   <Button
                     variant='outlined'
-                    className='btn-load'
+                    className={isDark ? 'btn-dark-no' : 'btn-load'}
                     onClick={handleOpenDialog}
                     disabled={READ_ONLY}
                     sx={{
@@ -177,11 +181,11 @@ const ConfigurationAccordian = ({
                   direction='row'
                   spacing={0.5}
                   alignItems='center'
-                  className='last-refreshed-container'
+                  className={isDark ? 'last-refreshed-container-dark' : 'last-refreshed-container'}
                 >
-                  <InfoIcon sx={{ fontSize: '0.9rem', color: '#00688C' }} />
+                  <InfoIcon sx={{ fontSize: '0.9rem', color: isDark ? '#B1E4F7' : '#00688C' }} />
 
-                  <Typography className='last-refreshed-text'>
+                  <Typography className={isDark ? 'last-refreshed-text-dark' : 'last-refreshed-text'}>
                     {`Last loaded data on ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} by ${configurationExecutionDetails[0]?.User ?? ''} for period ${formatDateForText(startDate, false)} to ${formatDateForText(endDate, false)}`}
                   </Typography>
                 </Stack>
@@ -193,13 +197,13 @@ const ConfigurationAccordian = ({
               <Box sx={{ width: '100%' }}>
                 <Typography
                   variant='caption'
-                  className='aop-design-basis-label'
+                  className={isDark ? 'aop-design-basis-label-dark' : 'aop-design-basis-label'}
                 >
                   AOP DESIGN BASIS
                 </Typography>
 
                 <TextArea
-                  className='vertical-resize-textarea'
+                  className={isDark ? 'aop-design-basis-textarea-dark' : 'aop-design-basis-textarea'}
                   disabled={READ_ONLY}
                   value={summary}
                   rows={2}

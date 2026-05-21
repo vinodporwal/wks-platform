@@ -423,6 +423,13 @@
   font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
 }
 
+.header-dropdown-label-dark {
+  font-weight: 500;
+  font-size: 14px;
+  color: #d0d0d0;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+}
+
 .header-dropdown-value {
   font-weight: 700;
   font-size: 14px;

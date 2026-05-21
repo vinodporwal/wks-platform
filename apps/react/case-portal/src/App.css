@@ -370,7 +370,7 @@ body {
 .outlet-wrapper-dark {
   flex: 1;
   overflow: hidden;
-  background: #1C2236;
+  background: #24283B;
 }
 
 .outlet-border-box {
@@ -393,6 +393,16 @@ body {
   position: relative;
   overflow: hidden;
 }
+.k-table-box-dark {
+  box-sizing: border-box;
+  background-color: #131726;
+  border: 1px solid #3C4055;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+}
 
 .breadcrumbs-box {
   box-sizing: border-box;
@@ -409,8 +419,15 @@ body {
   border: 1px solid #3C4055;
   padding: 12px 0px 12px 8px;
   gap: 16px;
-  background-color: #1C2236;
+  background-color: #131726;
   margin: 10px 0px 10px 0px;
+}
+
+.dark-primary-text {
+  color: #f0f0f0;
+}
+.dark-secondary-text {
+  color: #d0d0d0;
 }
 
 .action-box {

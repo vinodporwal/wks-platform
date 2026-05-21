@@ -57,7 +57,10 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
             height: '3px',
             borderRadius: '2px',
             backgroundColor: '#AE4787',
-            marginLeft: '5px',
+            // marginLeft: '5px',
+          },
+          '& .MuiTabs-scrollButtons': {
+            color: isDark ? '#F0F0F0' : 'inherit',
           },
         }}
       >

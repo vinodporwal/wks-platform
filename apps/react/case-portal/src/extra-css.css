@@ -46,6 +46,46 @@
   color: #4a4dda;
   border: 1px solid #4a4dda;
 }
+.btn-dark-yes {
+  appearance: none;
+  background: #A7A8FF;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+  font-size: 14px; /* Slightly larger for better readability */
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  /* gap: 8px; */
+  white-space: nowrap;
+  transition: all 0.2s ease;
+
+  /* Text Color from Image */
+  color: #101010;
+  border: 1px solid #A7A8FF;
+}
+.btn-dark-no {
+  appearance: none;
+  background: transparent;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+  font-size: 14px; /* Slightly larger for better readability */
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  /* gap: 8px; */
+  white-space: nowrap;
+  transition: all 0.2s ease;
+
+  /* Text Color from Image */
+  color: #A7A8FF;
+  border: 1px solid #9092FF;
+}
 
 /* Base Icon Styling */
 .MuiButton-startIcon svg {
@@ -66,6 +106,18 @@
 .btn-load:hover {
   background: #f8fafc; /* Very light gray flash */
   border-color: #4a4dda;
+  transform: translateY(-1px);
+}
+.btn-dark-no:hover {
+  background: transparent;
+  border-color: #A7A8FF;
+  color: #A7A8FF;
+  transform: translateY(-1px);
+}
+.btn-dark-yes:hover {
+  color: #101010;
+  background: #A7A8FF;
+  border-color: #A7A8FF;
   transform: translateY(-1px);
 }
 
@@ -148,7 +200,16 @@ button:disabled svg {
    Strips all Kendo internal borders/backgrounds so the
    DatePicker blends into the outer pill container
    ========================================================= */
-
+.date-pill-light{
+  background: #ffffff;
+  border: 1px solid #dddee1;
+  color: #303030;
+}
+.date-pill-dark{
+  background: #2A2F45;
+  border: 1px solid #3A3F5C;
+  color: #f0f0f0;
+}
 .date-pill-wrapper {
   display: inline-flex;
   align-items: center;
@@ -157,15 +218,16 @@ button:disabled svg {
   /* width: 212px; */
   min-width: 160px;
   padding: 6px 12px 6px 8px;
-  background: #ffffff;
-  border: 1px solid #dddee1;
   border-radius: 6px;
   cursor: pointer;
   transition: border-color 180ms ease;
 }
 
-.date-pill-wrapper:hover {
+.date-pill-wrapper.date-pill-light:hover {
   border-color: rgba(15, 23, 42, 0.2);
+}
+.date-pill-wrapper.date-pill-dark:hover {
+  border-color: #5A5F7C;
 }
 
 /* Strip Kendo datepicker root */
@@ -189,7 +251,7 @@ button:disabled svg {
   padding: 0 !important;
   height: 20px !important;
   width: 99px !important;
-  color: #303030 !important;
+  color: inherit !important;
   font-family: "'Honeywell Sans Web', 'Inter', sans-serif" !important;
   font-size: 14px !important;
   font-weight: 700 !important;
@@ -203,7 +265,7 @@ button:disabled svg {
   padding: 0 0px !important;
   font-size: 14px !important;
   font-weight: 700 !important;
-  color: #303030 !important;
+  color: inherit !important;
   font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
   height: 20px !important;
   width: 83px !important;
@@ -225,10 +287,21 @@ button:disabled svg {
   min-width: unset !important;
 }
 
-.date-pill-wrapper .k-button:hover,
-.date-pill-wrapper .k-input-button:hover {
+.date-pill-wrapper.date-pill-dark .k-button,
+.date-pill-wrapper.date-pill-dark .k-button-flat {
+  color: #a0aec0 !important;
+}
+
+.date-pill-wrapper.date-pill-light .k-button:hover,
+.date-pill-wrapper.date-pill-light .k-input-button:hover {
   background: transparent !important;
   color: #303030 !important;
+}
+
+.date-pill-wrapper.date-pill-dark .k-button:hover,
+.date-pill-wrapper.date-pill-dark .k-input-button:hover {
+  background: transparent !important;
+  color: #ffffff !important;
 }
 
 .date-pill-wrapper .k-button svg,
@@ -240,11 +313,19 @@ button:disabled svg {
 }
 
 /* Disabled state */
-.date-pill-wrapper.disabled,
-.date-pill-wrapper[disabled] {
+.date-pill-wrapper.date-pill-light.disabled,
+.date-pill-wrapper.date-pill-light[disabled] {
   background: #f1f5f9 !important;
   border-color: rgba(203, 213, 225, 0.8) !important;
   cursor: not-allowed !important;
+}
+
+.date-pill-wrapper.date-pill-dark.disabled,
+.date-pill-wrapper.date-pill-dark[disabled] {
+  background: #1C2236 !important;
+  border-color: #3C4055 !important;
+  cursor: not-allowed !important;
+  opacity: 0.6;
 }
 
 .date-pill-wrapper .k-input-inner:disabled,

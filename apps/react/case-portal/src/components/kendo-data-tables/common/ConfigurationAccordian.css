@@ -38,12 +38,44 @@
   cursor: pointer;
   padding: 8px;
 }
+.configuration-accordion-summary-dark {
+  min-height: 36px !important;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+  background-color: #131726 !important;
+  flex-direction: row-reverse !important;
+}
+
+.configuration-accordion-summary-dark .MuiAccordionSummary-content {
+  margin-left: 8px !important;
+  margin-top: 4px !important;
+  margin-bottom: 4px !important;
+}
+
+.configuration-accordion-summary-dark .MuiAccordionSummary-expandIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background-color: #3A4066;
+  color: #F0F0F0;
+  cursor: pointer;
+  padding: 8px;
+}
 
 .configuration-accordion-title {
   font-weight: 700 !important;
   font-size: 16px !important;
   font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
   color: #303030 !important;
+}
+.configuration-accordion-title-dark {
+  font-weight: 700 !important;
+  font-size: 16px !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+  color: #f0f0f0 !important;
 }
 
 .last-refreshed-container {
@@ -67,6 +99,27 @@
   line-height: 1.2 !important;
   font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
 }
+.last-refreshed-container-dark {
+  color: #f0f0f0;
+  background-color: #1E3137;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+  white-space: nowrap;
+  margin-top: 10px;
+  height: 40px;
+  border-radius: 6px;
+  border: 1px solid #001F2A;
+  padding: 10px;
+}
+
+.last-refreshed-text-dark {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #f0f0f0 !important;
+  line-height: 1.2 !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+}
 
 .aop-design-basis-label {
   font-size: 14px !important;
@@ -75,13 +128,20 @@
   color: #303030 !important;
   letter-spacing: 0.3px !important;
 }
+.aop-design-basis-label-dark {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif !important;
+  color: #f0f0f0 !important;
+  letter-spacing: 0.3px !important;
+}
 
 .aop-design-basis-textarea {
   width: 100%;
   padding: 6px 8px;
   border-radius: 6px;
   border: 1px solid #DDDEE1;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
   color: #303030;
@@ -98,4 +158,31 @@
 
 .aop-design-basis-textarea textarea:focus {
   border: 1px solid #DDDEE1 !important;
+}
+.aop-design-basis-textarea-dark {
+  width: 100%;
+  border-color: #3A3F5C !important;
+  border-radius: 6px;
+}
+.aop-design-basis-textarea-dark textarea {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #3A3F5C;
+  background-color: #2A2F45;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+  color: #f0f0f0;
+}
+
+.aop-design-basis-textarea-dark:disabled {
+  background-color: #f8fafc;
+}
+
+.aop-design-basis-textarea-dark:hover {
+  border: 1px solid #3A3F5C !important;
+}
+
+.aop-design-basis-textarea-dark textarea:focus {
+  border: 1px solid #3A3F5C !important;
 }

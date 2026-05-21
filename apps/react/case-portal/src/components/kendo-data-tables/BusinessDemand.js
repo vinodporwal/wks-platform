@@ -1,4 +1,4 @@
-import { Box } from '@mui/material'
+import { Box, useTheme } from '@mui/material'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import Typography from '@mui/material/Typography'
@@ -28,7 +28,8 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const BusinessDemand = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const keycloak = useSession()
-
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -804,7 +805,7 @@ const BusinessDemand = ({ permissions }) => {
                   }}
                 />
               </Box> */}
-                <Typography component='span' className='accordian-title'>
+                <Typography component='span' className={`accordian-title ${isDark ? 'dark-primary-text' : ''}`}>
                   {PRODUCTION_TARGET_LABEL}
                 </Typography>
               </Box>

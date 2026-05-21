@@ -815,3 +815,30 @@
 .vertical-resize-textarea textarea:disabled {
   background-color: #f8fafc;
 }
+.vertical-resize-textarea-dark {
+  width: 100%;
+  border-color: #3A3F5C !important;
+}
+.vertical-resize-textarea-dark .k-input-solid {
+    --kendo-input-text: #f0f0f0;
+    --kendo-input-bg: #2A2F45;
+    border-color: #3A3F5C !important;
+}
+
+.vertical-resize-textarea-dark textarea {
+  width: 100%;
+  resize: vertical !important;
+  min-height: 100px;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+  color: #f0f0f0;
+  background-color: #2A2F45;
+  box-sizing: border-box;
+  border-color: #3A3F5C;
+}
+
+.vertical-resize-textarea-dark textarea:disabled {
+  background-color: #2A2F45;
+}

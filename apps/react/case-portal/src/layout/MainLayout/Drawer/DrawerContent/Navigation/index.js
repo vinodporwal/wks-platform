@@ -94,7 +94,7 @@ const Navigation = () => {
         sx={{
           flex: 1,
           px: 0,
-          pb: '140px',
+          pb: '200px',
           pt: 1,
           overflowY: 'auto',
           overflowX: 'hidden',

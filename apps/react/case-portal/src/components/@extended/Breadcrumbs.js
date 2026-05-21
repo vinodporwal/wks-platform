@@ -200,7 +200,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
 
   const infoIconSx = {
     fontSize: 14,
-    color: '#023985ff', // slate-500 (subtle)
+    color: isDark ? '#B1E4F7' : '#023985ff', // slate-500 (subtle)
   }
 
   const infoButtonSx = {

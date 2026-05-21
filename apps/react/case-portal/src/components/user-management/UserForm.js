@@ -17,6 +17,7 @@ import {
   Skeleton,
   Stack,
   Typography,
+  useTheme,
 } from '@mui/material'
 import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
@@ -33,15 +34,60 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import styled from '../../../node_modules/@mui/material/styles/styled'
 import CloseIcon from '@mui/icons-material/Close'
 
-const CompactDialog = styled(Dialog)(({ theme }) => ({
-  '& .MuiPaper-root': {
-    borderRadius: '12px',
-    width: '600px',
-    boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
-  },
-}))
+const CompactDialog = styled(Dialog)(({ theme }) => {
+  const isDark = theme.palette.mode === 'dark'
+  return {
+    '& .MuiPaper-root': {
+      borderRadius: '12px',
+      width: '600px',
+      boxShadow: isDark ? '0 12px 40px rgba(0,0,0,0.5)' : '0 12px 40px rgba(0,0,0,0.15)',
+      backgroundColor: isDark ? '#1C2236' : '#ffffff',
+      border: isDark ? '1px solid #3A3F5C' : '1px solid #e2e8f0',
+    },
+  }
+})
 
 const UserForm = ({ keycloak }) => {
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
+
+  const selectSx = {
+    color: isDark ? '#F0F0F0' : '#252525',
+    '& fieldset': { borderColor: isDark ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0,0,0,0.23)' },
+    '&.Mui-focused fieldset': {
+      borderColor: isDark ? '#DDE0FF !important' : '#303030 !important',
+    },
+    '& .MuiSvgIcon-root': { color: isDark ? '#D0D0D0' : '#606060' }
+  }
+
+  const menuProps = {
+    disableScrollLock: true,
+    PaperProps: {
+      sx: {
+        backgroundColor: isDark ? '#2A2F45' : '#FFFFFF',
+        color: isDark ? '#F0F0F0' : '#303030',
+        border: isDark ? '1px solid #3A3F5C' : '1px solid #DDDEE1',
+        '& .MuiMenuItem-root': {
+          '&:hover': {
+            backgroundColor: isDark ? '#3A3F5C' : '#f5f5f5',
+          },
+          '&.Mui-selected': {
+            backgroundColor: isDark ? '#4A5073' : '#e0e0e0',
+            '&:hover': {
+              backgroundColor: isDark ? '#5A6083' : '#d5d5d5',
+            },
+          },
+        },
+      },
+    },
+  }
+
+  const checkboxSx = {
+    color: isDark ? '#D0D0D0' : undefined,
+    '&.Mui-checked': {
+      color: isDark ? '#DDE0FF' : undefined,
+    }
+  }
   const location = useLocation()
   const data = location?.state?.rows || {}
   const tabIndex = location?.state?.tabIndex || 0
@@ -797,8 +843,8 @@ const UserForm = ({ keycloak }) => {
   return (
     <Container
       sx={{
-        backgroundColor: 'white',
-        color: 'black',
+        backgroundColor: isDark ? '#24283B' : 'white',
+        color: isDark ? '#f0f0f0' : 'black',
         p: 2,
         marginLeft: '10px',
       }}
@@ -819,16 +865,17 @@ const UserForm = ({ keycloak }) => {
 
               <Box
                 sx={{
-                  border: '1px solid #e0e0e0',
+                  border: isDark ? '1px solid #3A3F5C' : '1px solid #e0e0e0',
                   borderRadius: '8px',
                   padding: 1,
                   marginBottom: 1,
+                  backgroundColor: isDark ? '#1C2236' : '#f8fafc',
                 }}
               >
                 <Typography
                   variant='body1'
                   sx={{
-                    color: '#333',
+                    color: isDark ? '#F0F0F0' : '#333',
                     whiteSpace: 'pre-wrap',
                     wordBreak: 'break-word',
                   }}
@@ -836,7 +883,14 @@ const UserForm = ({ keycloak }) => {
                   <Stack direction='row' flexWrap='wrap' gap={1}>
                     {data?.length
                       ? data.map((user, index) => (
-                          <Chip key={index} label={user.username} />
+                          <Chip
+                            key={index}
+                            label={user.username}
+                            sx={{
+                              backgroundColor: isDark ? '#3A3F5C !important' : '#e0e0e0 !important',
+                              color: isDark ? '#F0F0F0 !important' : '#252525 !important',
+                            }}
+                          />
                         ))
                       : 'No user selected'}
                   </Stack>
@@ -849,7 +903,7 @@ const UserForm = ({ keycloak }) => {
                 <Typography
                   variant='h6'
                   gutterBottom
-                  style={{ marginLeft: '8px', fontWeight: 600 }}
+                  style={{ marginLeft: '8px', fontWeight: 600, color: isDark ? '#E0E0E0' : 'inherit' }}
                 >
                   Vertical
                 </Typography>
@@ -858,7 +912,8 @@ const UserForm = ({ keycloak }) => {
                     multiple
                     value={selectedVerticals}
                     onChange={handleVerticalChange}
-                    MenuProps={{ disableScrollLock: true }}
+                    sx={selectSx}
+                    MenuProps={menuProps}
                     renderValue={(selected) =>
                       selected
                         .map((id) => getVerticalById(id)?.displayName || '')
@@ -870,6 +925,7 @@ const UserForm = ({ keycloak }) => {
                         checked={
                           selectedVerticals.length === plantSiteData.length
                         }
+                        sx={checkboxSx}
                       />
                       <ListItemText primary='Select All' />
                     </MenuItem>
@@ -877,6 +933,7 @@ const UserForm = ({ keycloak }) => {
                       <MenuItem key={vertical.id} value={vertical.id}>
                         <Checkbox
                           checked={selectedVerticals.includes(vertical.id)}
+                          sx={checkboxSx}
                         />
                         <ListItemText primary={vertical.displayName} />
                       </MenuItem>
@@ -887,7 +944,7 @@ const UserForm = ({ keycloak }) => {
             </Grid>
           </Box>
           <Box my={2}>
-            <Divider sx={{ borderTop: '2px solid #ccc', mt: 2, pt: 2 }} />
+            <Divider sx={{ borderTop: isDark ? '2px solid #3A3F5C' : '2px solid #ccc', mt: 2}} />
           </Box>
 
           {selectedVerticals.map((verticalId) => {
@@ -900,18 +957,19 @@ const UserForm = ({ keycloak }) => {
                 <Typography
                   variant='h6'
                   fontWeight='bold'
-                  sx={{ mb: 1, ml: 1 }}
+                  sx={{ mb: 1, ml: 1, color: isDark ? '#E0E0E0' : 'inherit' }}
                 >
                   {vertical.displayName}
                 </Typography>
                 <Box
                   p={2}
                   sx={{
-                    border: '1px solid #eee',
+                    border: isDark ? '1px solid #3A3F5C' : '1px solid #eee',
                     borderRadius: '4px',
                     display: 'flex',
                     flexDirection: 'column-reverse',
                     width: '100%',
+                    backgroundColor: isDark ? '#1C2236' : 'transparent',
                   }}
                 >
                   {isLoading
@@ -962,7 +1020,7 @@ const UserForm = ({ keycloak }) => {
                             <Grid container spacing={2} alignItems='center'>
                               {/* Site Dropdown */}
                               <Grid item xs={3} sm={2}>
-                                <Typography variant='h6' gutterBottom>
+                                <Typography variant='h6' gutterBottom sx={{ color: isDark ? '#E0E0E0' : 'inherit' }}>
                                   Site
                                 </Typography>
                                 <FormControl fullWidth size='small'>
@@ -1002,8 +1060,8 @@ const UserForm = ({ keycloak }) => {
                                       }
                                     }}
                                     value={siteEntry.site || []}
-                                    sx={{ height: '40px' }}
-                                    MenuProps={{ disableScrollLock: true }}
+                                    sx={{ height: '40px', ...selectSx }}
+                                    MenuProps={menuProps}
                                     onChange={(e) => {
                                       const allAvailable = getAvailableSites(
                                         verticalId,
@@ -1065,6 +1123,7 @@ const UserForm = ({ keycloak }) => {
                                             siteIndex,
                                           ).length > 0
                                         }
+                                        sx={checkboxSx}
                                       />
                                       <ListItemText primary='Select All' />
                                     </MenuItem>
@@ -1080,6 +1139,7 @@ const UserForm = ({ keycloak }) => {
                                           checked={(
                                             siteEntry.site || []
                                           ).includes(siteOption.id)}
+                                          sx={checkboxSx}
                                         />
                                         <ListItemText
                                           primary={siteOption.displayName}
@@ -1099,7 +1159,7 @@ const UserForm = ({ keycloak }) => {
                                     color='primary'
                                     sx={{ marginTop: '25px' }}
                                   >
-                                    <AddIcon sx={{ color: '#0100cb' }} />
+                                    <AddIcon sx={{ color: isDark ? '#7E8BFF' : '#0100cb' }} />
                                   </IconButton>
                                 ) : (
                                   <IconButton
@@ -1109,7 +1169,7 @@ const UserForm = ({ keycloak }) => {
                                     color='secondary'
                                     sx={{ marginTop: '25px' }}
                                   >
-                                    <DeleteIcon sx={{ color: 'red' }} />
+                                    <DeleteIcon sx={{ color: isDark ? '#FF6B6B' : 'red' }} />
                                   </IconButton>
                                 )}
                               </Grid>
@@ -1131,7 +1191,7 @@ const UserForm = ({ keycloak }) => {
                                     >
                                       {/* Plant Dropdown */}
                                       <Grid item xs={4} sm={3}>
-                                        <Typography variant='h6' gutterBottom>
+                                        <Typography variant='h6' gutterBottom sx={{ color: isDark ? '#E0E0E0' : 'inherit' }}>
                                           Plant
                                         </Typography>
                                         <FormControl fullWidth size='small'>
@@ -1179,10 +1239,8 @@ const UserForm = ({ keycloak }) => {
                                               }
                                             }}
                                             value={plantEntry.plantId || []}
-                                            MenuProps={{
-                                              disableScrollLock: true,
-                                            }}
-                                            sx={{ height: '40px' }}
+                                            sx={{ height: '40px', ...selectSx }}
+                                            MenuProps={menuProps}
                                             onChange={(e) => {
                                               const allAvailable =
                                                 getAvailablePlants(
@@ -1258,6 +1316,7 @@ const UserForm = ({ keycloak }) => {
                                                     plantIndex,
                                                   ).length > 0
                                                 }
+                                                sx={checkboxSx}
                                               />
                                               <ListItemText primary='Select All' />
                                             </MenuItem>
@@ -1274,6 +1333,7 @@ const UserForm = ({ keycloak }) => {
                                                   checked={(
                                                     plantEntry.plantId || []
                                                   ).includes(plantOption.id)}
+                                                  sx={checkboxSx}
                                                 />
                                                 <ListItemText
                                                   primary={
@@ -1308,7 +1368,7 @@ const UserForm = ({ keycloak }) => {
                                             sx={{ marginTop: '22px' }}
                                           >
                                             <AddIcon
-                                              sx={{ color: '#0100cb' }}
+                                              sx={{ color: isDark ? '#7E8BFF' : '#0100cb' }}
                                             />
                                           </IconButton>
                                         ) : (
@@ -1323,24 +1383,22 @@ const UserForm = ({ keycloak }) => {
                                             color='secondary'
                                             sx={{ marginTop: '22px' }}
                                           >
-                                            <DeleteIcon sx={{ color: 'red' }} />
+                                            <DeleteIcon sx={{ color: isDark ? '#FF6B6B' : 'red' }} />
                                           </IconButton>
                                         )}
                                       </Grid>
                                       {/* Screens Dropdown */}
                                       <Grid item xs={4} sm={3}>
-                                        <Typography variant='h6' gutterBottom>
+                                        <Typography variant='h6' gutterBottom sx={{ color: isDark ? '#E0E0E0' : 'inherit' }}>
                                           Screens
                                         </Typography>
 
                                         <FormControl fullWidth size='small'>
                                           <Select
                                             multiple
-                                            sx={{ height: '40px' }}
+                                            sx={{ height: '40px', ...selectSx }}
                                             value={plantEntry.screens || []}
-                                            MenuProps={{
-                                              disableScrollLock: true,
-                                            }}
+                                            MenuProps={menuProps}
                                             onChange={(e) => {
                                               const allScreens =
                                                 getAvailableScreens(
@@ -1387,8 +1445,9 @@ const UserForm = ({ keycloak }) => {
                                                     verticalId,
                                                     siteIndex,
                                                     plantIndex,
-                                                  ).length
+                                                    ).length
                                                 }
+                                                sx={checkboxSx}
                                               />
                                               <ListItemText primary='Select All' />
                                             </MenuItem>
@@ -1406,6 +1465,7 @@ const UserForm = ({ keycloak }) => {
                                                   checked={(
                                                     plantEntry.screens || []
                                                   ).includes(screen)}
+                                                  sx={checkboxSx}
                                                 />
                                                 <ListItemText
                                                   primary={i18n.t(screen)}
@@ -1469,7 +1529,7 @@ const UserForm = ({ keycloak }) => {
               <Button
                 variant='contained'
                 color='primary'
-                className='btn-save'
+                className={isDark ? 'btn-dark-yes' : 'btn-save'}
                 onClick={setOpenSaveDialogeBox}
               >
                 Save
@@ -1478,6 +1538,14 @@ const UserForm = ({ keycloak }) => {
                 variant='outlined'
                 color='secondary'
                 onClick={handleReset}
+                sx={{
+                  borderColor: isDark ? '#A7A8FF !important' : undefined,
+                  color: isDark ? '#A7A8FF !important' : undefined,
+                  '&:hover': {
+                    borderColor: isDark ? '#8082FF !important' : undefined,
+                    backgroundColor: isDark ? 'rgba(167, 168, 255, 0.08) !important' : undefined,
+                  }
+                }}
               >
                 Reset
               </Button>
@@ -1498,15 +1566,15 @@ const UserForm = ({ keycloak }) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                bgcolor: '#f8fafc',
-                borderBottom: '1px solid #e2e8f0',
+                bgcolor: isDark ? '#2A2F45' : '#f8fafc',
+                borderBottom: isDark ? '1px solid #3A3F5C' : '1px solid #e2e8f0',
               }}
             >
               <Typography
                 sx={{
                   fontWeight: 800,
                   fontSize: '0.8rem',
-                  color: '#334155',
+                  color: isDark ? '#F0F0F0' : '#334155',
                   letterSpacing: '0.5px',
                 }}
               >
@@ -1516,7 +1584,7 @@ const UserForm = ({ keycloak }) => {
               <IconButton
                 size='small'
                 onClick={closeSaveDialogeBox}
-                sx={{ color: '#64748b' }}
+                sx={{ color: isDark ? '#94A3B8' : '#64748b' }}
               >
                 <CloseIcon fontSize='small' />
               </IconButton>
@@ -1527,7 +1595,7 @@ const UserForm = ({ keycloak }) => {
               <Typography
                 sx={{
                   fontSize: '0.75rem',
-                  color: '#475569',
+                  color: isDark ? '#CBD5E1' : '#475569',
                   lineHeight: 1.5,
                   fontWeight: 500,
                 }}
@@ -1538,7 +1606,7 @@ const UserForm = ({ keycloak }) => {
 
             {/* Actions */}
             <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
-              <Button onClick={closeSaveDialogeBox} className='btn-no'>
+              <Button onClick={closeSaveDialogeBox} className={isDark ? 'btn-dark-no' : 'btn-no'}>
                 Cancel
               </Button>
 
@@ -1547,7 +1615,7 @@ const UserForm = ({ keycloak }) => {
                 variant='contained'
                 size='small'
                 autoFocus
-                className='btn-yes'
+                className={isDark ? 'btn-dark-yes' : 'btn-yes'}
               >
                 Save
               </Button>

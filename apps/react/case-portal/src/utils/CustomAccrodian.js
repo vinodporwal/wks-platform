@@ -21,8 +21,8 @@ export const CustomAccordion = styled((props) => (
 // Custom Accordion Summary
 export const CustomAccordionSummary = styled((props) => (
   <MuiAccordionSummary expandIcon={<ExpandMoreIcon />} {...props} />
-))(() => ({
-  backgroundColor: '#fff',
+))((theme) => ({
+  // backgroundColor: theme.palette.mode === 'dark' ? '#131726' : '#fff',
   padding: '0px 12px',
   minHeight: '36px',
   '& .MuiAccordionSummary-content': {
@@ -31,7 +31,7 @@ export const CustomAccordionSummary = styled((props) => (
 }))
 
 // Custom Accordion Details
-export const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
+export const CustomAccordionDetails = styled(MuiAccordionDetails)((t) => ({
   padding: '0px 0px 12px',
-  backgroundColor: '#ffffff',
+  // backgroundColor: '#ffffff',
 }))

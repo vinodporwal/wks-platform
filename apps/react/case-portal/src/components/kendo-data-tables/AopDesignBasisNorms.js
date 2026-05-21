@@ -20,6 +20,7 @@ import {
   DialogTitle,
   TextField,
   Typography,
+  useTheme,
 } from '../../../node_modules/@mui/material/index'
 import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
 import { NormalOperationNormsApiService } from 'services/normal-operation-norms-api-service'
@@ -30,6 +31,8 @@ import ConfigurationAccordian from './common/ConfigurationAccordian'
 const AopDesignBasisNorms = () => {
   const hasExecutedRef = useRef(false)
   const keycloak = useSession()
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   // const READ_ONLY = getRoleName(keycloak)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -532,21 +535,25 @@ const AopDesignBasisNorms = () => {
         onClose={handleCloseDialog}
         aria-labelledby='alert-dialog-title'
         aria-describedby='alert-dialog-description'
+        sx={{ 
+          background: isDark ? '#131726' : 'rgba(255, 255, 255, 0.98)',
+          backdropFilter: 'blur(16px)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.2)',
+          border: isDark ? '1px solid #00000033' : '1px solid #ffffff',
+        }}
       >
-        <DialogTitle id='alert-dialog-title'>{'Load?'}</DialogTitle>
+        <DialogTitle id='alert-dialog-title' sx={{ color: isDark ? '#F0F0F0' : '#303030' }} >{'Load?'}</DialogTitle>
         <DialogContent>
           <DialogContentText
             id='alert-dialog-description'
-            sx={{ color: 'text.primary' }}
+            sx={{ color: isDark ? '#D0D0D0' : '#606060' }}
           >
             {`Are you sure you want to load data for the period from ${formatDateForText(startDate)} to ${formatDateForText(endDate)}?`}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleConfirmLoad} autoFocus>
-            Load
-          </Button>
+          <Button onClick={handleCloseDialog} className={isDark ? 'btn-dark-no' : 'btn-load'} >Cancel</Button>
+          <Button onClick={handleConfirmLoad} autoFocus className={isDark ? 'btn-dark-yes' : ''}>Load</Button>
         </DialogActions>
       </Dialog>
     )
