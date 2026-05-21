@@ -88,7 +88,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: false,
-      widthT: 70,
+      widthT: 40,
       align: 'right',
     },
     {
@@ -100,6 +100,7 @@ const AnnualProductionPlan = () => {
     {
       field: 'idFromApi',
       hidden: true,
+      isVisible: false,
     },
   ]
 
@@ -108,7 +109,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: false,
-      widthT: 70,
+      widthT: 40,
       align: 'right',
     },
     {
@@ -120,6 +121,7 @@ const AnnualProductionPlan = () => {
     {
       field: 'id',
       hidden: true,
+      isVisible: false,
     },
     {
       field: 'maxHourlyRateValue',
@@ -139,7 +141,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: false,
-      widthT: 70,
+      widthT: 40,
       align: 'right',
     },
     {
@@ -151,6 +153,7 @@ const AnnualProductionPlan = () => {
     {
       field: 'id',
       hidden: true,
+      isVisible: false,
     },
     {
       field: 'rateValue',
@@ -177,7 +180,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: false,
-      widthT: 70,
+      widthT: 40,
       align: 'right',
     },
     {
@@ -189,6 +192,7 @@ const AnnualProductionPlan = () => {
     {
       field: 'id',
       hidden: true,
+      isVisible: false,
     },
     {
       field: 'rateValue',
@@ -228,7 +232,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       title: 'SL.No',
       editable: false,
-      widthT: 70,
+      widthT: 40,
       format: '{0:#.#}',
       align: 'right',
     },
