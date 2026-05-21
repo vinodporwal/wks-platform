@@ -49,7 +49,7 @@ export const TextCellEditorUpdated = ({ dataItem, field, onChange }) => {
   return (
     <td style={{ textAlign: 'start' }}>
       <InputBase
-        inputRef={inputRef}
+        ref={inputRef}
         value={localValue}
         onChange={handleChange}
         onBlur={handleBlur}

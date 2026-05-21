@@ -101,6 +101,10 @@ const ConfigurationTable = () => {
     lowerVertName === 'chemical' && lowerSiteName === 'dmd'
   const IS_CHEMICAL_VMD =
     lowerVertName === 'chemical' && lowerSiteName === 'vmd'
+  const IS_CHEMICAL_VMD_BUTADIENE =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'vmd' &&
+    plantObject?.name?.toUpperCase() === 'BUTADIENE'
   const [tabIndex, setTabIndex] = useState(0)
   const [loadBtnClicked, setLoadBtnClicked] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -1226,8 +1230,11 @@ const ConfigurationTable = () => {
     lowerVertName !== 'cracker'
   ) {
     // const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
-    const megTabs =
-      IS_CHEMICAL_DMD || IS_CHEMICAL_VMD
+    const megTabs = IS_CHEMICAL_VMD_BUTADIENE
+      ? ['Configuration', 'Constants', 'MaterialBalance']
+      : IS_CHEMICAL_DMD ||
+          (IS_CHEMICAL_VMD &&
+            !(plantObject?.name?.toUpperCase() === 'BUTADIENE'))
         ? ['Configuration', 'Constants']
         : [
             'Configuration',
@@ -1363,6 +1370,8 @@ const ConfigurationTable = () => {
                     currentTabDisplayName={currentTabDisplayName}
                   />
                 )
+              case 'materialbalance':
+                return <MaterialBalance />
               default:
                 return null
             }

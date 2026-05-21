@@ -20,6 +20,7 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import ProductionNormsReport from 'components/kendo-data-tables/ProductionNormsReport'
 const MonthwiseProduction = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -535,25 +536,8 @@ const MonthwiseProduction = () => {
         handleRemarkCellClick={handleRemarkCellClick}
       />
 
-      <ProductionNorms
-        permissions={{
-          showAction: false,
-          addButton: false,
-          deleteButton: false,
-          editButton: false,
-          showUnit: false,
-          saveWithRemark: false,
-          saveBtn: false,
-          showCalculate: false,
-          customHeight: defaultCustomHeight,
-          needTotal: true,
-          roundOffDecimals: true,
-          hideByProducts: true,
-          hideNoteText: true,
-          hideExportBtn: true,
-          title: 'Main Products - Production for the budget year',
-        }}
-      />
+      <ProductionNormsReport />
+
       <Notification
         open={snackbarOpen}
         message={snackbarData.message}

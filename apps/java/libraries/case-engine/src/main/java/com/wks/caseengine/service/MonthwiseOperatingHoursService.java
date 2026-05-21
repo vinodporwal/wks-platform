@@ -7,5 +7,7 @@ public interface MonthwiseOperatingHoursService {
 
     AOPMessageVM saveMonthwiseOperatingHours(String plantId, String year,
             java.util.List<com.wks.caseengine.dto.MonthwiseOperatingHoursDTO> monthwiseOperatingHoursDTOs);
+
+    AOPMessageVM getMonthwiseProductionPlanReport(String plantId, String year);
 }
 
