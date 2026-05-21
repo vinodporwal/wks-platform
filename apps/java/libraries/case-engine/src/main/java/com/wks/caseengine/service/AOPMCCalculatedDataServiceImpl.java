@@ -1295,7 +1295,8 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 					String procedureName=vertical.getName()+"_GetAOPMCValues";
 		        	obj= findByYearAndPlantId(year, UUID.fromString(plantFKId) ,  procedureName);
 					}
-		        } if (vertical.getName().equalsIgnoreCase("PTA")) {
+		        } 
+				else if (vertical.getName().equalsIgnoreCase("PTA")) {
 		            String view = "vw" + vertical.getName() + "_" + site.getName() + "_AOPMCValues";
 		            obj = getDataMCUValuesAllData(year, plantFKId, view);
 		        }else {
