@@ -592,7 +592,10 @@ const SelectivityData = (props) => {
       showLoad: true,
       allAction: true,
       showNote:
-        IS_PE_PP && props?.currentTabDisplayName === 'Constant' ? true : false,
+        (IS_PE_PP || lowerVertName === 'pvc' || lowerVertName === 'pet') &&
+        props?.currentTabDisplayName === 'Constant'
+          ? true
+          : false,
 
       showTitleNameBusiness: true,
       titleName:
