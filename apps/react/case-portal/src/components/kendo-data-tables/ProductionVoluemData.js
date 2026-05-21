@@ -1514,13 +1514,14 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
             PLANT_ID,
             AOP_YEAR,
           )
-      } else if (IS_CRACKER_DMD) {
-        response = await ProductionVolumeDataApiService.saveDesignCapacity(
-          rawFile,
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
+        // } else if (IS_CRACKER_DMD) {
+        //   response = await ProductionVolumeDataApiService.saveDesignCapacity(
+        //     rawFile,
+        //     keycloak,
+        //     PLANT_ID,
+        //     AOP_YEAR,
+        //   )
+        // }
       } else {
         response =
           await ProductionVolumeDataApiService.saveProductionVolDataExcel(
