@@ -1199,8 +1199,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         IS_PVC_VMD ||
         IS_PVC_DMD ||
         IS_AROMATICS_SEZ_PX4 ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD
+        IS_PVC_HMD
           ? false
           : true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Max Achieved Capacity`,
@@ -1215,16 +1214,18 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
   }, [tabIndex, PLANT_ID])
 
   const excelBtnGrid2 = useMemo(() => {
-    if (IS_PE_PP && unitDesignCapacity === 'TPD') {
+    if (unitDesignCapacity === 'TPD') {
       return false
     }
-    if (IS_AROMATICS_SEZ_PX4 && unitDesignCapacity === 'TPD') {
-      return false
-    }
-    if (IS_CRACKER_DMD) {
-      return unitDesignCapacity === 'TPD' ? false : true
-    }
-    if (IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PP_SEZ || IS_AROMATICS_SEZ_PX4) {
+    if (
+      IS_PE_PP ||
+      IS_PET ||
+      IS_PVC_VMD ||
+      IS_PP_SEZ ||
+      IS_AROMATICS_SEZ_PX4 ||
+      IS_PVC_DMD ||
+      IS_PVC_HMD
+    ) {
       return true
     }
     return false
@@ -1236,19 +1237,23 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     unitDesignCapacity,
     IS_AROMATICS_SEZ_PX4,
     IS_CRACKER_DMD,
+    IS_PVC_DMD,
+    IS_PVC_HMD,
   ])
 
   const excelUploadBtnGrid2 = useMemo(() => {
-    if (IS_PE_PP && unitDesignCapacity === 'TPD') {
+    if (unitDesignCapacity === 'TPD') {
       return false
     }
-    if (IS_AROMATICS_SEZ_PX4 && unitDesignCapacity === 'TPD') {
-      return false
-    }
-    if (IS_CRACKER_DMD) {
-      return unitDesignCapacity === 'TPD' ? false : true
-    }
-    if (IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PP_SEZ || IS_AROMATICS_SEZ_PX4) {
+    if (
+      IS_PE_PP ||
+      IS_PET ||
+      IS_PVC_VMD ||
+      IS_PP_SEZ ||
+      IS_AROMATICS_SEZ_PX4 ||
+      IS_PVC_DMD ||
+      IS_PVC_HMD
+    ) {
       return true
     }
     return false
@@ -1260,6 +1265,8 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     unitDesignCapacity,
     IS_AROMATICS_SEZ_PX4,
     IS_CRACKER_DMD,
+    IS_PVC_DMD,
+    IS_PVC_HMD,
   ])
   const adjustedPermissionsGrid2 = getAdjustedPermissions(
     {
@@ -1282,7 +1289,9 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         IS_PVC_VMD ||
         IS_PP_SEZ ||
         IS_AROMATICS_SEZ_PX4 ||
-        IS_CRACKER_DMD
+        IS_CRACKER_DMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? false
           : true,
       downloadExcelBtn: excelBtnGrid2,
@@ -1424,14 +1433,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     })
 
     try {
-      if (
-        IS_PP_DTA ||
-        IS_PP_SEZ ||
-        IS_PVC_DMD ||
-        IS_PP_HMD ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD
-      ) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
         const selectedLine = lineDetails[tabIndex]
         const lineId = selectedLine?.id
         const LineName = lineDetails[tabIndex]?.displayName
@@ -1504,14 +1506,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     setLoading(true)
     try {
       let response
-      if (
-        IS_PP_SEZ ||
-        IS_PP_DTA ||
-        IS_PP_HMD ||
-        IS_PVC_DMD ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD
-      ) {
+      if (IS_PP_SEZ || IS_PP_DTA || IS_PP_HMD || IS_PVC_DMD || IS_PVC_HMD) {
         response =
           await ProductionVolumeDataApiService.saveProductionVolDataLineExcel(
             rawFile,
@@ -1619,12 +1614,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
       <LoaderBackdrop open={!!loading} />
 
       {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
-      {(IS_PP_DTA ||
-        IS_PP_SEZ ||
-        IS_PVC_DMD ||
-        IS_PP_HMD ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD) && (
+      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) && (
         <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>
