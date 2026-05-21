@@ -1,4 +1,4 @@
-import { Box, Button, Typography } from '@mui/material'
+import { Box, Button, Typography, useTheme } from '@mui/material'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { DataGrid } from '@mui/x-data-grid'
@@ -18,11 +18,13 @@ import {
 import ConsumptionNormsHistorianBasis from './ConsumptionNormsHistorianBasis'
 import { DataSetaApiService } from 'services/data-set-api-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { FileExportIcon } from 'assets/images/icons/index'
 const REPORT_TYPE_FOR_ALL = 'CausticSodaLye'
 
 const CausticSodaLyeBasis = () => {
   const keycloak = useSession()
-
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const [dataMap, setDataMap] = useState({})
   const [gridNames, setGridNames] = useState([])
   const [loading, setLoading] = useState(false)
@@ -551,7 +553,10 @@ const CausticSodaLyeBasis = () => {
           <Button
             variant='contained'
             onClick={exportAllGrids}
-            className='btn-save'
+            className={isDark ? 'btn-dark-no' : 'btn-export'}
+            startIcon={
+              <Box component='img' src={FileExportIcon} className='w16-icon' />
+            }
           >
             Export
           </Button>

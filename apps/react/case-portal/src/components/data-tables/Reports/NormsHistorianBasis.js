@@ -6,6 +6,7 @@ import {
   MenuItem,
   TextField,
   Typography,
+  useTheme,
 } from '@mui/material'
 import {
   ExcelExport,
@@ -37,8 +38,11 @@ import UploadIcon from '@mui/icons-material/Upload'
 import CalculateIcon from '@mui/icons-material/Calculate'
 import SaveIcon from '@mui/icons-material/Save'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import { FileExportIcon } from 'assets/images/icons/index'
 const NormsHistorianBasis = () => {
   const keycloak = useSession()
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   // const READ_ONLY = getRoleName(keycloak)
 
   const [rowsHistorianValues, setHistorianValues] = useState([])
@@ -356,9 +360,11 @@ const NormsHistorianBasis = () => {
             <Button
               variant='contained'
               onClick={exportAllGrids}
-              className='btn-export'
+              className={isDark ? 'btn-dark-no' : 'btn-export'}
               // disabled={READ_ONLY}
-              startIcon={<DownloadIcon fontSize='small' />}
+              startIcon={
+                <Box component='img' src={FileExportIcon} className='w16-icon' />
+              }
             >
               Export
             </Button>

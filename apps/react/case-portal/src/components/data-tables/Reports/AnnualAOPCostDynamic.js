@@ -1,4 +1,4 @@
-import { Box, Button, Tab, Tabs, Typography } from '@mui/material'
+import { Box, Button, Tab, Tabs, Typography, useTheme } from '@mui/material'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { DataGrid } from '@mui/x-data-grid'
@@ -17,11 +17,13 @@ import {
 } from 'utils/CustomAccrodian'
 import ConsumptionNormsHistorianBasis from './ConsumptionNormsHistorianBasis'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { FileExportIcon } from 'assets/images/icons/index'
 const REPORT_TYPE_FOR_ALL = 'AnnualAOPCost'
 
 const AnnualAOPCostDynamic = () => {
   const keycloak = useSession()
-
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const [dataMap, setDataMap] = useState({})
   const [gridNames, setGridNames] = useState([])
   const [loading, setLoading] = useState(false)
@@ -490,7 +492,10 @@ const AnnualAOPCostDynamic = () => {
           <Button
             variant='contained'
             onClick={exportAllGrids}
-            className='btn-save'
+            className={isDark ? 'btn-dark-no' : 'btn-save'}
+            startIcon={
+              <Box component='img' src={FileExportIcon} className='w16-icon' />
+            }
           >
             Export
           </Button>

@@ -449,6 +449,11 @@
   padding-left: 0px !important;
 }
 
+.kendo-data-grid .k-grid-content .k-grid-table tr.k-grouping-row td {
+  overflow: visible !important;
+  border-width: 0px 0px 1px 0px !important;
+}
+
 /* ? Real first column after group indent */
 .k-grid td[role='gridcell']:not(.k-group-cell):first-of-type {
   padding-left: 6px !important; /* keep small padding */

@@ -1,4 +1,4 @@
-import { Box, Button } from '@mui/material'
+import { Box, Button, useTheme } from '@mui/material'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import Typography from '@mui/material/Typography'
@@ -27,7 +27,8 @@ const MONTH_GRID_NAME = 'Month wise Quantity, Tonnes / Month'
 
 const OptimizerReport = () => {
   const keycloak = useSession()
-
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const [dataMap, setDataMap] = useState({})
   const [gridNames, setGridNames] = useState([])
   const [loading, setLoading] = useState(false)
@@ -497,7 +498,7 @@ const OptimizerReport = () => {
         <Button
           variant='contained'
           onClick={exportAllGrids}
-          className='btn-export'
+          className={isDark ? 'btn-dark-no' : 'btn-export'}
           // disabled={READ_ONLY}
           startIcon={
             <Box component='img' src={FileExportIcon} className='w16-icon' />
@@ -510,7 +511,7 @@ const OptimizerReport = () => {
             variant='contained'
             onClick={calculateMonthWiseData}
             disabled={READ_ONLY || calculating || loading}
-            className='btn-calculate'
+            className={isDark ? 'btn-dark-no' : 'btn-calculate'}
             color='primary'
             startIcon={
               <Box component='img' src={CalculateIcon} className='w16-icon' />

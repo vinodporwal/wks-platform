@@ -1,4 +1,4 @@
-import { Box } from '@mui/material'
+import { Box, useTheme } from '@mui/material'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import Typography from '@mui/material/Typography'
@@ -24,7 +24,8 @@ const CALL_DELAY_MS = 20
 
 const FurnaceRawData = () => {
   const keycloak = useSession()
-
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const [dataMap, setDataMap] = useState({})
   const [gridNames, setGridNames] = useState([])
   const [loading, setLoading] = useState(false)
@@ -279,7 +280,10 @@ const FurnaceRawData = () => {
         <Button
           variant='contained'
           onClick={exportAllGrids}
-          className='btn-save'
+          className={isDark ? 'btn-dark-no' : 'btn-export'}
+          startIcon={
+            <Box component='img' src={FileExportIcon} className='w16-icon' />
+          }
         >
           Export
         </Button>

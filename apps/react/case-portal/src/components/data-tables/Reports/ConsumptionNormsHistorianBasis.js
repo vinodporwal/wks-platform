@@ -1,4 +1,4 @@
-import { Box, Button, Typography } from '@mui/material'
+import { Box, Button, useTheme, Typography } from '@mui/material'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { DataGrid } from '@mui/x-data-grid'
@@ -22,6 +22,9 @@ import { FileExportIcon } from 'assets/images/icons/index'
 
 const ConsumptionNormsHistorianBasis = () => {
   const keycloak = useSession()
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
+
   const REPORT_TYPE_FOR_ALL = 'OverallConsumption'
   const [dataMap, setDataMap] = useState({})
   const [gridNames, setGridNames] = useState([])
@@ -451,7 +454,7 @@ const ConsumptionNormsHistorianBasis = () => {
         <Button
           variant='contained'
           onClick={exportAllGrids}
-          className='btn-export'
+          className={isDark ? 'btn-dark-no' : 'btn-export'}
           startIcon={
             <Box component='img' src={FileExportIcon} className='w16-icon' />
           }

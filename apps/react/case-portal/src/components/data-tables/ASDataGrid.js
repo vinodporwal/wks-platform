@@ -3,7 +3,8 @@ import CancelIcon from '@mui/icons-material/Close'
 import DeleteIcon from '@mui/icons-material/DeleteOutlined'
 import EditIcon from '@mui/icons-material/Edit'
 import VisibilityIcon from '@mui/icons-material/Visibility'
-import SaveIcon from '@mui/icons-material/Save'
+import SaveMuiIcon from '@mui/icons-material/Save'
+import AddIcon from '@mui/icons-material/Add'
 import { Box, Button, IconButton, TextField } from '@mui/material'
 import { DataGrid, GridToolbar } from '@mui/x-data-grid'
 import * as React from 'react'
@@ -34,6 +35,7 @@ import {
 } from '../../../node_modules/@mui/icons-material/index'
 import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { CalculateIcon, FileExportIcon, FileImportIcon, SaveIcon } from 'assets/images/icons/index'
 
 const jioColors = {
   primaryBlue: '#387ec3',
@@ -242,7 +244,7 @@ const DataGridTable = ({
                 return [
                   <GridActionsCellItem
                     key={`save-${id}`}
-                    icon={<SaveIcon />}
+                    icon={<SaveMuiIcon />}
                     label='Save'
                     sx={{ color: 'primary.main', display: 'none' }}
                     onClick={() => handleSaveClick(id, params.row)} // Pass row data
@@ -492,6 +494,7 @@ const DataGridTable = ({
               className='btn-save'
               onClick={handleAddRow}
               disabled={isButtonDisabled}
+              startIcon={<AddIcon sx={{ color: '#4A4DDA !important' }} />}
             >
               Add Item
             </Button>
@@ -506,6 +509,9 @@ const DataGridTable = ({
               // loading={loading}
               // loadingposition='start'
               {...(loading ? {} : {})}
+              startIcon={
+                <Box component='img' src={SaveIcon} className='w16-icon' />
+              }
             >
               Save
             </Button>
@@ -521,6 +527,9 @@ const DataGridTable = ({
                   : isButtonDisabled || !permissions?.showCalculateVisibility
               }
               className='btn-save'
+              startIcon={
+                <Box component='img' src={CalculateIcon} className='w16-icon' />
+              }
             >
               Calculate
             </Button>
@@ -613,7 +622,7 @@ const DataGridTable = ({
                 },
               }}
             >
-              <FileDownload sx={{ color: '#2A3ACD' }} />
+              <Box component='img' src={FileImportIcon} className='w16-icon' />
               <span style={{ fontSize: '0.875rem', color: '#2A3ACD' }}>
                 Import
               </span>
@@ -639,7 +648,7 @@ const DataGridTable = ({
                 },
               }}
             >
-              <FileUpload sx={{ color: '#2A3ACD' }} />
+              <Box component='img' src={FileExportIcon} className='w16-icon' />
               <span style={{ fontSize: '0.875rem', color: '#2A3ACD' }}>
                 Export
               </span>

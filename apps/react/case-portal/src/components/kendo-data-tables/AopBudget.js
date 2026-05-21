@@ -7,6 +7,7 @@ import {
   CircularProgress,
   Typography,
   Button,
+  useTheme
 } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { useSession } from 'SessionStoreContext'
@@ -23,7 +24,8 @@ import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 export default function AopBudget() {
   const keycloak = useSession()
-
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   // const READ_ONLY = getRoleName(keycloak)
 
   const [row, setRows] = useState([])
@@ -722,7 +724,10 @@ export default function AopBudget() {
       <LoaderBackdrop open={!!loading} />
 
       {PLANT_NAME?.toLowerCase() === 'eoeg' && (
-        <Typography component='div' className='grid-title'>
+        <Typography
+          component='div'
+          className={`grid-title ${isDark ? 'dark-primary-text' : ''}`}
+        >
           <div>Planning Plant : 40N0 </div>
           <div>Maintenance Plant : 40N3</div>
         </Typography>
@@ -730,10 +735,14 @@ export default function AopBudget() {
 
       <Typography
         component='div'
-        className='grid-title'
+        className={`grid-title ${isDark ? 'dark-primary-text' : ''}`}
         sx={{ marginBottom: '5px' }}
       >
-        <Grid container spacing={1}>
+        <Grid container spacing={1} className={isDark ? 'k-table-box-dark' : 'k-table-box'} sx={{
+          padding : '0 10px 10px 5px',
+          margin: '0px',
+          width : '100%'
+        }}>
           {/* Design Basis Section */}
           <Grid item xs={6}>
             <Grid
@@ -744,6 +753,7 @@ export default function AopBudget() {
             >
               <Grid item>
                 <div
+                  className={isDark ? 'dark-primary-text' : ''}
                   style={{
                     fontWeight: 600,
                     // marginBottom: 0.5,
@@ -757,7 +767,7 @@ export default function AopBudget() {
 
             <TextArea
               disabled={READ_ONLY}
-              className={textAreaRedDesign ? 'textarea-error' : ''}
+              className={`${isDark ? 'vertical-resize-textarea-dark' : 'vertical-resize-textarea'} ${textAreaRedDesign ? 'textarea-error' : ''}`}
               value={designBasis}
               rows={3}
               onChange={(e) => {
@@ -777,6 +787,7 @@ export default function AopBudget() {
             >
               <Grid item>
                 <div
+                  className={isDark ? 'dark-primary-text' : ''}
                   style={{
                     fontWeight: 600,
                     // marginBottom: 0.5,
@@ -790,7 +801,7 @@ export default function AopBudget() {
 
             <TextArea
               disabled={READ_ONLY}
-              className={textAreaRedRemark ? 'textarea-error' : ''}
+              className={`${isDark ? 'vertical-resize-textarea-dark' : 'vertical-resize-textarea'} ${textAreaRedRemark ? 'textarea-error' : ''}`}
               value={designRemarks}
               rows={3}
               onChange={(e) => {
