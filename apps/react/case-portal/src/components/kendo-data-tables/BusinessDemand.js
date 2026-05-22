@@ -66,6 +66,7 @@ const BusinessDemand = ({ permissions }) => {
   const IS_PVC_VERTICAL = lowerVertName === 'pvc'
   const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
+  const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
   const IS_VCM_VERTICAL = lowerVertName === 'vcm'
   const IS_CRACKER_VERTICAL = lowerVertName == 'cracker'
   const IS_CARCKER_VMD = lowerVertName === 'cracker' && lowerSiteName === 'vmd'
@@ -588,6 +589,7 @@ const BusinessDemand = ({ permissions }) => {
         IS_PET_VERTICAL ||
         IS_PVC_VMD ||
         IS_PVC_DMD ||
+        IS_PVC_HMD ||
         IS_ELASTOMER_HMD
           ? true
           : false,
@@ -597,6 +599,7 @@ const BusinessDemand = ({ permissions }) => {
         IS_PET_VERTICAL ||
         IS_PVC_VMD ||
         IS_PVC_DMD ||
+        IS_PVC_HMD ||
         IS_ELASTOMER_HMD
           ? true
           : false,
@@ -607,6 +610,7 @@ const BusinessDemand = ({ permissions }) => {
         IS_PET_VERTICAL ||
         IS_PVC_VMD ||
         IS_PVC_DMD ||
+        IS_PVC_HMD ||
         IS_ELASTOMER_JMD ||
         IS_ELASTOMER_HMD
           ? false
