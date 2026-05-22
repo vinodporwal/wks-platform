@@ -284,7 +284,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				}
 			}
 
-		if ((verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc) && !isChemical && !ischemicalAndVmd) {
+		if ((verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc) && !isChemical && !ischemicalAndVmd) {
 			sheet.setColumnHidden(17, true);
 			sheet.setColumnHidden(18, true);
 		} else {

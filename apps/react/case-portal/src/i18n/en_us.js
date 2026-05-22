@@ -124,6 +124,9 @@ const defs = {
     causticSodaLyeBasis: 'Caustic Soda Lye Norms',
     materialBalance: 'Optimizer - Material Balance',
     catChemConsumption: 'Catalyst & Checmicals Calculation',
+
+    causticSodaLyeBasis: 'Caustic Soda Lye Norms',
+    causticSodaLyeBasisCatChem: 'Cat-Chem Calculation Dataset',
   },
   pages: {
     dashboard: {
