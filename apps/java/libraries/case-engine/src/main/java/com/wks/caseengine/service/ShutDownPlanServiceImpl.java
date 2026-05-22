@@ -2495,6 +2495,25 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					}
 				}
 			}
+
+			if("PVC".equalsIgnoreCase(verticalName)) { 
+				int month = plantMaintenanceTransaction.getMaintForMonth();
+				Long shutdownCount = plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId, month, "Shutdown",
+						year);
+				Long slowdownCount = plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId, month, "Slowdown",
+						year);
+				
+						Long count = shutdownCount + slowdownCount;
+
+						if (count == 1) {
+							List<GradeShutdownNormsValue> shutdownNormsValues = gradeShutdownNormsValueRepository
+									.findByPlantFkIdAndFinancialYear(plantId, plantMaintenanceTransaction.getAuditYear());
+							for (GradeShutdownNormsValue shutdownNormsValue : shutdownNormsValues) {
+								setMonthShutdown(month, shutdownNormsValue);
+							}
+						}	
+				
+			}
 			
 			if ("VCM".equalsIgnoreCase(verticalName))  {
 				Date start = plantMaintenanceTransaction.getMaintStartDateTime();
@@ -2644,6 +2663,25 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 						setMonthShutdown(month, shutdownNormsValue);
 					}
 				}
+			}
+
+			if("PVC".equalsIgnoreCase(verticalName)) { 
+				int month = plantMaintenanceTransaction.getMaintForMonth();
+				Long shutdownCount = plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId, month, "Shutdown",
+						year);
+				Long slowdownCount = plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId, month, "Slowdown",
+						year);
+				
+						Long count = shutdownCount + slowdownCount;
+
+						if (count == 1) {
+							List<GradeShutdownNormsValue> shutdownNormsValues = gradeShutdownNormsValueRepository
+									.findByPlantFkIdAndFinancialYear(plantId, plantMaintenanceTransaction.getAuditYear());
+							for (GradeShutdownNormsValue shutdownNormsValue : shutdownNormsValues) {
+								setMonthShutdown(month, shutdownNormsValue);
+							}
+						}	
+				
 			}
 
 			if ("MEG".equalsIgnoreCase(verticalName)) {
