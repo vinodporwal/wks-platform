@@ -1214,8 +1214,14 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
   }, [tabIndex, PLANT_ID])
 
   const excelBtnGrid2 = useMemo(() => {
-    if (unitDesignCapacity === 'TPD') {
+    if (IS_PE_PP && unitDesignCapacity === 'TPD') {
       return false
+    }
+    if (IS_AROMATICS_SEZ_PX4 && unitDesignCapacity === 'TPD') {
+      return false
+    }
+    if (IS_CRACKER_DMD) {
+      return unitDesignCapacity === 'TPD' ? false : true
     }
     if (
       IS_PE_PP ||
@@ -1237,13 +1243,17 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     unitDesignCapacity,
     IS_AROMATICS_SEZ_PX4,
     IS_CRACKER_DMD,
-    IS_PVC_DMD,
-    IS_PVC_HMD,
   ])
 
   const excelUploadBtnGrid2 = useMemo(() => {
-    if (unitDesignCapacity === 'TPD') {
+    if (IS_PE_PP && unitDesignCapacity === 'TPD') {
       return false
+    }
+    if (IS_AROMATICS_SEZ_PX4 && unitDesignCapacity === 'TPD') {
+      return false
+    }
+    if (IS_CRACKER_DMD) {
+      return unitDesignCapacity === 'TPD' ? false : true
     }
     if (
       IS_PE_PP ||
