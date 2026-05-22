@@ -1214,8 +1214,14 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
   }, [tabIndex, PLANT_ID])
 
   const excelBtnGrid2 = useMemo(() => {
-    if (unitDesignCapacity === 'TPD') {
+    if (IS_PE_PP && unitDesignCapacity === 'TPD') {
       return false
+    }
+    if (IS_AROMATICS_SEZ_PX4 && unitDesignCapacity === 'TPD') {
+      return false
+    }
+    if (IS_CRACKER_DMD) {
+      return unitDesignCapacity === 'TPD' ? false : true
     }
     if (
       IS_PE_PP ||
@@ -1242,8 +1248,14 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
   ])
 
   const excelUploadBtnGrid2 = useMemo(() => {
-    if (unitDesignCapacity === 'TPD') {
+    if (IS_PE_PP && unitDesignCapacity === 'TPD') {
       return false
+    }
+    if (IS_AROMATICS_SEZ_PX4 && unitDesignCapacity === 'TPD') {
+      return false
+    }
+    if (IS_CRACKER_DMD) {
+      return unitDesignCapacity === 'TPD' ? false : true
     }
     if (
       IS_PE_PP ||
@@ -1420,8 +1432,8 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
 
   var rows1 = permissions?.hideSummary ? rowsFormattedAndNonEditable : rows
 
-  const handleExcelUpload = (rawFile) => {
-    saveExcelFile(rawFile)
+  const handleExcelUpload = (rawFile, gridType) => {
+    saveExcelFile(rawFile, gridType)
   }
   const downloadExcelForConfiguration = async (gridType) => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
@@ -1500,7 +1512,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
       })
     }
   }
-  const saveExcelFile = async (rawFile) => {
+  const saveExcelFile = async (rawFile, gridType) => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
 
     setLoading(true)
@@ -1514,14 +1526,13 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
             PLANT_ID,
             AOP_YEAR,
           )
-        // } else if (IS_CRACKER_DMD) {
-        //   response = await ProductionVolumeDataApiService.saveDesignCapacity(
-        //     rawFile,
-        //     keycloak,
-        //     PLANT_ID,
-        //     AOP_YEAR,
-        //   )
-        // }
+      } else if (IS_CRACKER_DMD && gridType === 'design') {
+        response = await ProductionVolumeDataApiService.saveDesignCapacity(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       } else {
         response =
           await ProductionVolumeDataApiService.saveProductionVolDataExcel(
@@ -1655,7 +1666,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
           downloadExcelForConfiguration={() =>
             downloadExcelForConfiguration('design')
           }
-          handleExcelUpload={handleExcelUpload}
+          handleExcelUpload={(rawFile) => handleExcelUpload(rawFile, 'design')}
           resetEditSignal={editResetKey}
           setEditResetKey={setEditResetKey}
           groupBy={

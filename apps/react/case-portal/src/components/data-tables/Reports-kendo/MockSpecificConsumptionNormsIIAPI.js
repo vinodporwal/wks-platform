@@ -42,11 +42,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 130,
               },
               {
                 field: 'price',
@@ -220,11 +222,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 130,
               },
               {
                 field: 'price',
@@ -392,11 +396,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 130,
               },
               {
                 field: 'price',
@@ -564,11 +570,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 130,
               },
               {
                 field: 'price',
@@ -736,11 +744,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 130,
               },
               {
                 field: 'price',
@@ -907,11 +917,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 130,
               },
               {
                 field: 'price',
@@ -1078,10 +1090,12 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
+                widthT: 130,
                 editable: false,
               },
               {
@@ -1249,6 +1263,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
@@ -1289,11 +1304,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 130,
               },
               {
                 field: 'price',
@@ -1467,11 +1484,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 130,
               },
               {
                 field: 'price',
@@ -1639,11 +1658,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 130,
               },
               {
                 field: 'price',
@@ -1811,11 +1832,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 130,
               },
               {
                 field: 'price',
@@ -1983,11 +2006,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 130,
               },
               {
                 field: 'price',
@@ -2154,11 +2179,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 130,
               },
               {
                 field: 'price',
@@ -2325,11 +2352,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 130,
               },
               {
                 field: 'price',
@@ -2496,6 +2525,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
