@@ -2800,7 +2800,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 									continue;
 								  }
 							}
-							
+
 	                isUpdate = true;
 	                if(verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || elastomerAndHMD || monthDropdown || pvc || chemical) {
 		            	if(shutDownPlanDTO.getMonth()!=null) {
@@ -2851,9 +2851,9 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	            	originalNoOfRPF = plantMaintenanceTransaction.getNoOfRPF();
 	            }
        // for vcm hmd skip rate update by setting the value to original rate
-				if(vcmHMD) { 
-					shutDownPlanDTO.setRate(originalRate);
-				}
+				// if(vcmHMD) { 
+				// 	shutDownPlanDTO.setRate(originalRate);
+				// }
 	            // Double originalDurationInHrs = plantMaintenanceTransaction.getDurationInMins() != null ? 
                 //         plantMaintenanceTransaction.getDurationInMins() / 60.0 : null;
 
