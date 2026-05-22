@@ -38,6 +38,7 @@ import {
   MenuItem,
   TextField,
   Typography,
+  useTheme
 } from '../../../node_modules/@mui/material/index'
 import { SvgIcon } from '../../../node_modules/@progress/kendo-react-common/index'
 import {
@@ -96,6 +97,7 @@ import { DashboardColors } from 'themes/colors'
 import SwitchEditor from './Utilities-Kendo/SwitchEditor'
 import { handleTabKeyNavigation } from 'components/Utilities/ButtonNavigation'
 import { process } from '@progress/kendo-data-query'
+import { FileExportDarkIcon, SaveDarkIcon } from 'assets/images/icons/index'
 
 // Helper function to extract flat row sequence from grouped data
 const extractFlatRowsFromGrouped = (data) => {
@@ -267,6 +269,19 @@ const KendoDataTables = ({
   isEditable = false,
 }) => {
   const _export = useRef(null)
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
+  
+  useEffect(() => {
+    if (isDark) {
+      document.body.classList.add('theme-dark')
+    } else {
+      document.body.classList.remove('theme-dark')
+    }
+    return () => {
+      document.body.classList.remove('theme-dark')
+    }
+  }, [isDark])
 
   const _grid = React.useRef(undefined)
   const minGridWidth = useRef(0)
@@ -1970,7 +1985,7 @@ const KendoDataTables = ({
   const CHECK_TYPES2 = ['raw material', 'by products']
 
   return (
-    <div className='k-table-box'>
+    <div className={isDark ? 'k-table-box-dark' : 'k-table-box'}>
       {loading && (
         <div className='k-loading-mask'>
           <span className='k-loading-text'>Loading...</span>
@@ -1981,22 +1996,22 @@ const KendoDataTables = ({
 
       {permissions?.showReportTitleMain && (
         <Box sx={{ pt: 1, pl: 1 }}>
-          <Typography component='div' className='grid-title'>
+          <Typography component='div' className={`grid-title ${isDark ? 'dark-primary-text' : ''}`}>
             {permissions?.titleNameMain}
           </Typography>
         </Box>
       )}
 
-      {permissions?.showNote && (
+      {(permissions?.showNote && (note?.trim()?.length > 0)) && (
         <Box sx={{ pt: 1, pl: 1 }}>
-          <Typography component='div' className='text-note'>
+          <Typography component='div' className={`text-note ${isDark ? 'dark-secondary-text' : ''}`}>
             {note}
           </Typography>
         </Box>
       )}
 
       {(permissions?.allAction ?? false) && (
-        <Box className='action-box'>
+        <Box className={isDark ? 'action-box-dark' : 'action-box'}>
           <Box
             sx={{
               display: 'flex',
@@ -2022,7 +2037,7 @@ const KendoDataTables = ({
                   sx={{
                     fontSize: '16px',
                     fontWeight: 700,
-                    color: '#252525',
+                    color: isDark ? '#f0f0f0' : '#252525',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 1.5,
@@ -2040,8 +2055,7 @@ const KendoDataTables = ({
                       width: 32,
                       height: 32,
                       borderRadius: '6px',
-                      backgroundColor: '#ECEEFF',
-                      color: '#1e293b',
+                      backgroundColor: isDark ? '#3A4066' : '#ECEEFF',
                       ml: 1,
                       cursor: 'pointer',
                       padding: '8px',
@@ -2055,6 +2069,7 @@ const KendoDataTables = ({
                         transform: gridExpanded
                           ? 'rotate(0deg)'
                           : 'rotate(180deg)',
+                        color: isDark ? '#f0f0f0' : '#303030',
                       }}
                     />
                   </Box>
@@ -2072,7 +2087,7 @@ const KendoDataTables = ({
                     width: 32,
                     height: 32,
                     borderRadius: '6px',
-                    backgroundColor: '#ECEEFF',
+                    backgroundColor: isDark ? '#3A4066' : '#ECEEFF',
                     color: '#1e293b',
                     ml: 1,
                     cursor: 'pointer',
@@ -2087,18 +2102,19 @@ const KendoDataTables = ({
                       transform: gridExpanded
                         ? 'rotate(0deg)'
                         : 'rotate(180deg)',
+                      color: isDark ? '#f0f0f0' : '#303030',
                     }}
                   />
                 </Box>
               )}
 
               {permissions?.showReportTitle && (
-                <Typography component='div' className='grid-title'>
+                <Typography component='div' className={`grid-title ${isDark ? 'dark-primary-text' : ''}`}>
                   {titleName}
                 </Typography>
               )}
               {permissions?.showTitleName && (
-                <Typography component='div' className='grid-title'>
+                <Typography component='div' className={`grid-title ${isDark ? 'dark-primary-text' : ''}`}>
                   {titleName}
                 </Typography>
               )}
@@ -2116,7 +2132,7 @@ const KendoDataTables = ({
                     component='div'
                     sx={{
                       // fontSize: '0.85rem',
-                      color: '#252525', // Slate 800
+                      color: isDark ? '#f0f0f0' : '#252525', // Slate 800
                       letterSpacing: '0.2px',
                       position: 'relative',
                       fontFamily:
@@ -2167,7 +2183,7 @@ const KendoDataTables = ({
                   sx={{
                     fontSize: '0.60rem', // little smaller
                     fontWeight: 700,
-                    color: '#336063', // very light grey
+                    color: isDark ? '#D0D0D0' : '#336063', // very light grey
                     fontStyle: 'italic',
                     lineHeight: 1.4,
                     fontFamily:
@@ -2209,7 +2225,7 @@ const KendoDataTables = ({
                         variant='caption'
                         sx={{
                           mr: 0.5,
-                          color: '#606060',
+                          color: isDark ? '#D0D0D0' : '#606060',
                           fontWeight: 500,
                           fontSize: '14px',
                           textTransform: 'uppercase',
@@ -2226,6 +2242,24 @@ const KendoDataTables = ({
                   SelectProps={{
                     MenuProps: {
                       disableScrollLock: true,
+                      PaperProps: {
+                        sx: {
+                          ...(isDark && {
+                            bgcolor: '#1E2338',
+                            border: '1px solid #3C4055',
+                            boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
+                            '& .MuiMenuItem-root': {
+                              color: '#E0E3EF',
+                              '&.Mui-selected': {
+                                bgcolor: 'rgba(96,165,250,0.15)',
+                                color: '#60a5fa',
+                                '&:hover': { bgcolor: 'rgba(96,165,250,0.25)' },
+                              },
+                              '&:hover': { bgcolor: 'rgba(255,255,255,0.06)' },
+                            },
+                          }),
+                        },
+                      },
                     },
                   }}
                 >
@@ -2266,7 +2300,7 @@ const KendoDataTables = ({
                         variant='caption'
                         sx={{
                           mr: 0.5,
-                          color: '#606060',
+                          color: isDark ? '#D0D0D0' : '#606060',
                           fontWeight: 600,
                           fontSize: '14px',
                           textTransform: 'uppercase',
@@ -2281,6 +2315,24 @@ const KendoDataTables = ({
                   SelectProps={{
                     MenuProps: {
                       disableScrollLock: true,
+                      PaperProps: {
+                        sx: {
+                          ...(isDark && {
+                            bgcolor: '#1E2338',
+                            border: '1px solid #3C4055',
+                            boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
+                            '& .MuiMenuItem-root': {
+                              color: '#E0E3EF',
+                              '&.Mui-selected': {
+                                bgcolor: 'rgba(96,165,250,0.15)',
+                                color: '#60a5fa',
+                                '&:hover': { bgcolor: 'rgba(96,165,250,0.25)' },
+                              },
+                              '&:hover': { bgcolor: 'rgba(255,255,255,0.06)' },
+                            },
+                          }),
+                        },
+                      },
                     },
                   }}
                 >
@@ -2305,15 +2357,15 @@ const KendoDataTables = ({
                 sx={{
                   p: '4px 8px',
                   borderRadius: '100px',
-                  backgroundColor: '#ECEEFF',
-                  border: '1px solid #41424D',
+                  backgroundColor: isDark ? '#3A4066' : '#ECEEFF',
+                  border: `1px solid ${isDark ? '#DDE0FF' : '#303030'}`,
                 }}
               >
                 <Typography
                   sx={{
                     fontSize: '12px',
                     fontWeight: 700,
-                    color: '#41424D',
+                    color: isDark ? '#DDE0FF' : '#41424D',
                     fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
                   }}
                 >
@@ -2325,15 +2377,15 @@ const KendoDataTables = ({
                   sx={{
                     p: '4px 8px',
                     borderRadius: '100px',
-                    backgroundColor: '#F3EEE7',
-                    border: '1px solid #934403',
+                    backgroundColor: isDark ? '#3A2C1F' : '#F3EEE7',
+                    border: `1px solid ${isDark ? '#FCE4A6' : '#303030'}`,
                   }}
                 >
                   <Typography
                     sx={{
                       fontSize: '12px',
                       fontWeight: 700,
-                      color: '#934403',
+                      color: isDark ? '#FCE4A6' : '#934403',
                       fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
                     }}
                   >
@@ -2372,7 +2424,7 @@ const KendoDataTables = ({
                           variant='caption'
                           sx={{
                             mr: 0.5,
-                            color: '#606060',
+                            color: isDark ? '#D0D0D0' : '#606060',
                             fontWeight: 500,
                             fontSize: '14px',
                             textTransform: 'uppercase',
@@ -2397,7 +2449,13 @@ const KendoDataTables = ({
                           sx: {
                             borderRadius: '8px',
                             mt: 0.5,
-                            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                            boxShadow: isDark
+                              ? '0 4px 16px rgba(0,0,0,0.35)'
+                              : '0 4px 16px rgba(0,0,0,0.08)',
+                            ...(isDark && {
+                              bgcolor: '#1E2338',
+                              border: '1px solid #3C4055',
+                            }),
                             '& .MuiMenuItem-root': {
                               fontSize: '14px',
                               fontWeight: 700,
@@ -2406,14 +2464,22 @@ const KendoDataTables = ({
                               fontFamily:
                                 "'Honeywell Sans Web', 'Inter', sans-serif",
                               borderRadius: '7px',
+                              color: isDark ? '#E0E3EF' : undefined,
                               '&.Mui-selected': {
-                                bgcolor: 'rgba(1, 0, 203, 0.08)',
-                                color: '#0100cb',
+                                bgcolor: isDark
+                                  ? 'rgba(96,165,250,0.15)'
+                                  : 'rgba(1, 0, 203, 0.08)',
+                                color: isDark ? '#60a5fa' : '#0100cb',
                                 fontWeight: 700,
                                 '&:hover': {
-                                  bgcolor: 'rgba(1, 0, 203, 0.12)',
+                                  bgcolor: isDark
+                                    ? 'rgba(96,165,250,0.25)'
+                                    : 'rgba(1, 0, 203, 0.12)',
                                 },
                               },
+                              '&:hover': isDark
+                                ? { bgcolor: 'rgba(255,255,255,0.06)' }
+                                : {},
                             },
                           },
                         },
@@ -2466,7 +2532,7 @@ const KendoDataTables = ({
                         variant='caption'
                         sx={{
                           mr: 0.5,
-                          color: '#606060',
+                          color: isDark ? '#D0D0D0' : '#606060',
                           fontWeight: 500,
                           fontSize: '14px',
                           textTransform: 'uppercase',
@@ -2483,6 +2549,24 @@ const KendoDataTables = ({
                   SelectProps={{
                     MenuProps: {
                       disableScrollLock: true,
+                      PaperProps: {
+                        sx: {
+                          ...(isDark && {
+                            bgcolor: '#1E2338',
+                            border: '1px solid #3C4055',
+                            boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
+                            '& .MuiMenuItem-root': {
+                              color: '#E0E3EF',
+                              '&.Mui-selected': {
+                                bgcolor: 'rgba(96,165,250,0.15)',
+                                color: '#60a5fa',
+                                '&:hover': { bgcolor: 'rgba(96,165,250,0.25)' },
+                              },
+                              '&:hover': { bgcolor: 'rgba(255,255,255,0.06)' },
+                            },
+                          }),
+                        },
+                      },
                     },
                   }}
                 >
@@ -2504,8 +2588,8 @@ const KendoDataTables = ({
               {permissions?.addButton && (
                 <Button
                   variant='contained'
-                  className='btn-add'
-                  startIcon={<AddIcon sx={{ color: '#4A4DDA !important' }} />}
+                  className={`btn-add ${isDark ? 'dark-primary-text' : ''}`}
+                  startIcon={<AddIcon sx={{ color: `${isDark ? '#A7A8FF' : '#4A4DDA'} !important` }} />}
                   onClick={handleAddRow}
                   disabled={isButtonDisabled || READ_ONLY}
                 >
@@ -2516,11 +2600,11 @@ const KendoDataTables = ({
               {permissions?.downloadExcelBtn && (
                 <Button
                   variant='contained'
-                  className='btn-export'
+                  className={`btn-export ${isDark ? 'dark-primary-text' : ''}`}
                   startIcon={
                     <Box
                       component='img'
-                      src={FileExportIcon}
+                      src={isDark ? FileExportDarkIcon : FileExportIcon}
                       className='w16-icon'
                     />
                   }
@@ -2536,11 +2620,11 @@ const KendoDataTables = ({
               {permissions?.downloadExcelBtnFromUI && (
                 <Button
                   variant='contained'
-                  className='btn-export'
+                  className={`btn-export ${isDark ? 'dark-primary-text' : ''}`}
                   startIcon={
                     <Box
                       component='img'
-                      src={FileExportIcon}
+                      src={isDark ? FileExportDarkIcon : FileExportIcon}
                       className='w16-icon'
                     />
                   }
@@ -2565,7 +2649,7 @@ const KendoDataTables = ({
                         className='w16-icon'
                       />
                     }
-                    className='btn-import'
+                    className={`btn-import ${isDark ? 'dark-primary-text' : ''}`}
                     disabled={isButtonDisabled || READ_ONLY}
                   >
                     Import
@@ -2584,9 +2668,9 @@ const KendoDataTables = ({
               {permissions?.saveBtn && (
                 <Button
                   variant='contained'
-                  className='btn-save'
+                  className={`btn-save ${isDark ? 'dark-primary-text' : ''}`}
                   startIcon={
-                    <Box component='img' src={SaveIcon} className='w16-icon' />
+                    <Box component='img' src={isDark ? SaveDarkIcon : SaveIcon} className='w16-icon' />
                   }
                   onClick={saveModalOpen}
                   disabled={
@@ -2618,7 +2702,7 @@ const KendoDataTables = ({
                       : isButtonDisabled ||
                         !permissions?.showCalculateVisibility)
                   }
-                  className='btn-calculate'
+                  className={`btn-calculate ${isDark ? 'dark-primary-text' : ''}`}
                 >
                   Calculate
                 </Button>
@@ -2627,7 +2711,7 @@ const KendoDataTables = ({
               {(permissions?.deleteAllBtn || permissions?.deleteMultiple) && (
                 <Button
                   variant='contained'
-                  className='btn-calculate'
+                  className={`btn-calculate ${isDark ? 'dark-primary-text' : ''}`}
                   onClick={handleOpenDeleteMultipleDialog}
                   disabled={isButtonDisabled || READ_ONLY || !showDeleteAll}
                 >
@@ -2651,7 +2735,7 @@ const KendoDataTables = ({
               {permissions?.showResetButton && (
                 <Button
                   variant='contained'
-                  className='btn-save'
+                  className={`btn-save ${isDark ? 'dark-primary-text' : ''}`}
                   onClick={resetDataModalOpen}
                   disabled={
                     isButtonDisabled ||
@@ -2669,7 +2753,7 @@ const KendoDataTables = ({
                   variant='contained'
                   onClick={handleCalculateBtn}
                   disabled={isButtonDisabled || READ_ONLY}
-                  className='btn-save'
+                  className={`btn-save ${isDark ? 'dark-primary-text' : ''}`}
                 >
                   Refresh
                 </Button>
@@ -2679,7 +2763,7 @@ const KendoDataTables = ({
                 <Button
                   variant='contained'
                   onClick={handleRefresh}
-                  className='btn-save'
+                  className={`btn-save ${isDark ? 'dark-primary-text' : ''}`}
                   disabled={isButtonDisabled || READ_ONLY}
                 >
                   Refresh
@@ -2689,7 +2773,7 @@ const KendoDataTables = ({
               {permissions?.showReleaseBtn && (
                 <Button
                   variant='contained'
-                  className='btn-save'
+                  className={`btn-save ${isDark ? 'dark-primary-text' : ''}`}
                   disabled={isReleaseDisabled || READ_ONLY}
                   onClick={handleRelease}
                 >
@@ -4408,7 +4492,7 @@ const KendoDataTables = ({
       </Collapse>
 
       {gridExpanded && (permissions?.approveBtn || permissions?.nextBtn) && (
-        <Box className='action-box'>
+        <Box className={isDark ? 'action-box-dark' : 'action-box'}>
           {/* {permissions?.showCreateCasebutton && (
             <Button
               variant='contained'

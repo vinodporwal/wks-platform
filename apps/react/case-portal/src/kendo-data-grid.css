@@ -849,3 +849,333 @@
 .vertical-resize-textarea-dark textarea:disabled {
   background-color: #2A2F45;
 }
+
+/* =========================================================
+   DARK MODE – KENDO GRID  (scoped to .k-table-box-dark)
+   ========================================================= */
+
+/* --- Grid wrapper background --- */
+.k-table-box-dark .kendo-data-grid .k-grid-content {
+  background-color: var(--Table-Row, #24283B);
+}
+.k-table-box-dark .kendo-data-grid .k-grid {
+  border: unset;
+}
+
+/* --- Grid Header --- */
+.k-table-box-dark .kendo-data-grid .k-grid-header {
+  background: var(--Table-Primary-header, #2F3550) !important;
+  border-bottom: 1px solid var(--Table-Table-Stroke, #3A3F5C) !important;
+}
+.k-table-box-dark .kendo-data-grid .k-grid-header .k-column-headers {
+  background: transparent !important;
+  border: 1px solid var(--Table-Table-Stroke, #3A3F5C);
+}
+.k-table-box-dark .kendo-data-grid .k-grid-header th {
+  border-width: 1px 1px 1px 0px !important;
+  border-style: solid !important;
+  border-color: var(--Table-Table-Stroke, #3A3F5C) !important;
+  color: var(--General-Text-Primary, #F0F0F0) !important;
+}
+.k-table-box-dark .kendo-data-grid .k-grid-header .k-column-title {
+  color: var(--General-Text-Primary, #F0F0F0) !important;
+}
+.k-table-box-dark .k-grid .k-table-row {
+  background: var(--Table-Primary-header, #2F3550);
+  color: var(--General-Text-Primary, #F0F0F0) !important;
+  border-color: var(--Table-Table-Stroke, #3A3F5C) !important;
+}
+
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-norecords .k-grid-norecords-template {
+  background-color: var(--Table-Row, #24283B) !important;
+  color: var(--General-Text-Primary, #F0F0F0) !important;
+}
+
+/* --- Odd rows (Table Row) --- */
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr:nth-child(odd) td {
+  background-color: var(--Table-Row, #24283B) !important;
+  border-width: 0px 1px 1px 0px !important;
+  border-style: solid !important;
+  border-color: var(--Table-Table-Stroke, #3A3F5C) !important;
+  color: var(--General-Text-Primary, #F0F0F0) !important;
+}
+
+/* --- Even rows (Table Alt Row) --- */
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr:nth-child(even) td,
+.k-table-box-dark .kendo-data-grid .k-grid-content tr.k-alt td {
+  background-color: var(--Table-Alt-row, #2A2F45) !important;
+  border-width: 0px 1px 1px 0px !important;
+  border-style: solid !important;
+  border-color: var(--Table-Table-Stroke, #3A3F5C) !important;
+  color: var(--General-Text-Primary, #F0F0F0) !important;
+}
+
+/* --- Row hover --- */
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr:hover td {
+  background-color: #353b5a !important;
+}
+
+/* --- Cell font size --- */
+.k-table-box-dark .k-grid-sm .k-table-td,
+.k-table-box-dark .k-grid-md .k-table-td {
+  color: var(--General-Text-Primary, #F0F0F0) !important;
+}
+
+/* --- Disabled / non-editable cells --- */
+.k-table-box-dark .disabled-cell,
+.k-table-box-dark .non-editable-cell,
+.k-table-box-dark .k-right-disabled,
+.k-table-box-dark .k-number-right-disabled {
+  background-color: #252A40 !important;
+  border-right: 1px solid var(--Table-Table-Stroke, #3A3F5C) !important;
+  border-bottom: 1px solid var(--Table-Table-Stroke, #3A3F5C) !important;
+  color: #7A82A6 !important;
+}
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr:nth-child(odd) td.k-number-right-disabled,
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr:nth-child(even) td.k-number-right-disabled,
+.k-table-box-dark .kendo-data-grid .k-grid-content tr.k-alt td.k-number-right-disabled,
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr td.disabled-cell,
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr td.non-editable-cell,
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr td.k-right-disabled {
+  background-color: #252A40 !important;
+  border-color: var(--Table-Table-Stroke, #3A3F5C) !important;
+  color: #7A82A6 !important;
+}
+
+/* --- Hover over disabled cells in dark --- */
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr:hover td.k-number-right-disabled,
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr:hover td.disabled-cell,
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr:hover td.non-editable-cell,
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr:hover td.k-right-disabled,
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr:hover td.k-left-disabled {
+  background-color: #2D3360 !important;
+}
+.k-table-box-dark .k-grid .k-grid-content td.k-left-disabled {
+  background-color: #252A40 !important;
+  border-right: 1px solid var(--Table-Table-Stroke, #3A3F5C) !important;
+  border-bottom: 1px solid var(--Table-Table-Stroke, #3A3F5C) !important;
+  color: #7A82A6 !important;
+}
+
+/* --- Custom disabled row --- */
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr.custom-disabled-row td,
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr.custom-disabled-row:hover td {
+  background-color: #252A40 !important;
+  border-color: var(--Table-Table-Stroke, #3A3F5C) !important;
+  color: #d0d0d0 !important;
+  /* opacity: 0.8; */
+}
+
+/* --- Group / grouping rows --- */
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr.k-grouping-row {
+  color: var(--General-Text-Primary, #F0F0F0) !important;
+}
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr.k-grouping-row td {
+  background: transparent !important;
+  border-bottom: 1px solid var(--Table-Table-Stroke, #3A3F5C) !important;
+  transition: background-color 150ms ease !important;
+}
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr.k-grouping-row td .k-reset {
+  color: var(--General-Text-Primary, #F0F0F0) !important;
+  transition: color 150ms ease !important;
+}
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr.k-grouping-row td .k-icon,
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr.k-grouping-row td svg,
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr.k-grouping-row td .k-svg-icon {
+  color: var(--General-Text-Primary, #F0F0F0) !important;
+  transition: color 150ms ease !important;
+}
+
+/* Grouping row hover state */
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr.k-grouping-row:hover td {
+  background-color: var(--Table-Alt-row, #2A2F45) !important;
+}
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr.k-grouping-row:hover td .k-reset,
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr.k-grouping-row:hover td .k-icon,
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr.k-grouping-row:hover td svg,
+.k-table-box-dark .kendo-data-grid .k-grid-content .k-grid-table tr.k-grouping-row:hover td .k-svg-icon {
+  color: #ffffff !important;
+}
+
+/* --- Selection --- */
+.k-table-box-dark .kendo-data-grid .k-grid-content tr.k-state-selected td {
+  background-color: #2D3870 !important;
+  border-color: #4A5280;
+}
+
+/* --- Input editor dark --- */
+.k-table-box-dark .input-editor {
+  background-color: #2A2F45 !important;
+  color: #E0E3EF !important;
+  border: 1px solid var(--Table-Table-Stroke, #3A3F5C) !important;
+  box-shadow: none !important;
+}
+.k-table-box-dark .input-editor:hover {
+  border-color: #5C6180 !important;
+  background-color: #2D3350 !important;
+}
+
+/* --- Dropdown editor dark --- */
+.k-table-box-dark .dropdown-editor {
+  color: #E0E3EF !important;
+  background-color: rgba(42, 47, 69, 0.9) !important;
+  border: 1px solid var(--Table-Table-Stroke, #3A3F5C) !important;
+}
+.k-table-box-dark .dropdown-editor:hover {
+  background-color: #2D3350 !important;
+  border-color: #5C6180 !important;
+}
+.k-table-box-dark .dropdown-editor:focus,
+.k-table-box-dark .dropdown-editor.k-focus {
+  background-color: #2A2F45 !important;
+  border-color: #5C6180 !important;
+}
+
+/* --- Edit cell input --- */
+.k-table-box-dark .k-grid-edit-cell .k-input {
+  background-color: #2A2F45;
+  color: #E0E3EF;
+  border: 1px solid var(--Table-Table-Stroke, #3A3F5C);
+}
+
+/* --- Custom select textfield dropdown (in action bar) --- */
+.k-table-box-dark .custom-select-textfield .MuiOutlinedInput-root {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: #E0E3EF !important;
+}
+.k-table-box-dark .custom-select-textfield .MuiSelect-select {
+  color: #E0E3EF !important;
+}
+.k-table-box-dark .custom-select-textfield .MuiSvgIcon-root {
+  color: #9099B5 !important;
+}
+
+/* --- Error rows (preserve in dark) --- */
+.k-table-box-dark .error-row td {
+  background-color: #3D1A1A !important;
+  border-color: #7F2020 !important;
+  color: #FCA5A5 !important;
+}
+.k-table-box-dark .error-row:hover td {
+  background-color: #4D2020 !important;
+}
+
+/* =========================================================
+   GRID HEADER FILTER / COLUMN MENU & MODAL POPUPS
+   ========================================================= */
+
+/* --- Filter & column menu icons on header --- */
+.k-table-box-dark .kendo-data-grid .k-grid-header th .k-grid-filter,
+.k-table-box-dark .kendo-data-grid .k-grid-header th .k-header-column-menu,
+.k-table-box-dark .kendo-data-grid .k-grid-header th .k-grid-header-menu,
+.k-table-box-dark .kendo-data-grid .k-grid-header th .k-filter-icon,
+.k-table-box-dark .kendo-data-grid .k-grid-header th svg,
+.k-table-box-dark .kendo-data-grid .k-grid-header th .k-svg-icon {
+  color: var(--General-Text-Primary, #F0F0F0) !important;
+  opacity: 0.8 !important;
+  transition: opacity 150ms ease, color 150ms ease !important;
+}
+.k-table-box-dark .kendo-data-grid .k-grid-header th:hover .k-grid-filter,
+.k-table-box-dark .kendo-data-grid .k-grid-header th:hover .k-header-column-menu,
+.k-table-box-dark .kendo-data-grid .k-grid-header th:hover .k-grid-header-menu,
+.k-table-box-dark .kendo-data-grid .k-grid-header th:hover .k-filter-icon,
+.k-table-box-dark .kendo-data-grid .k-grid-header th:hover svg,
+.k-table-box-dark .kendo-data-grid .k-grid-header th:hover .k-svg-icon {
+  opacity: 1 !important;
+  color: #ffffff !important;
+}
+
+/* Hover directly over the filter icon button itself in dark mode */
+.k-table-box-dark .kendo-data-grid .k-grid-header th .k-grid-filter:hover,
+.k-table-box-dark .kendo-data-grid .k-grid-header th .k-grid-filter.k-hover,
+.k-table-box-dark .kendo-data-grid .k-grid-header th .k-grid-filter.k-state-hover,
+.k-table-box-dark .kendo-data-grid .k-grid-header th .k-header-column-menu:hover,
+.k-table-box-dark .kendo-data-grid .k-grid-header th .k-header-column-menu.k-hover,
+.k-table-box-dark .kendo-data-grid .k-grid-header th .k-grid-header-menu:hover,
+.k-table-box-dark .kendo-data-grid .k-grid-header th .k-grid-header-menu.k-hover,
+.k-table-box-dark .kendo-data-grid .k-grid-header th .k-filter-icon:hover {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  border-radius: 4px !important;
+  border-color: transparent !important;
+}
+
+/* --- Portal Popup Modal Container --- */
+.theme-dark .k-popup,
+.theme-dark .k-columnmenu-popup,
+.theme-dark .k-menu-group,
+.theme-dark .k-filter-menu-container {
+  background-color: #1e243a !important; /* Premium dark navy background */
+  border: 1px solid var(--Table-Table-Stroke, #3A3F5C) !important;
+  color: var(--General-Text-Primary, #F0F0F0) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3) !important;
+  border-radius: 8px !important;
+}
+
+/* --- Menu Items / Options list --- */
+.theme-dark .k-popup .k-item,
+.theme-dark .k-popup .k-columnmenu-item,
+.theme-dark .k-filter-menu-container .k-filter-item {
+  color: var(--General-Text-Primary, #F0F0F0) !important;
+  background-color: transparent !important;
+  padding: 8px 12px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* --- Hover/Active state on list items --- */
+.theme-dark .k-popup .k-item:hover,
+.theme-dark .k-popup .k-item.k-focus,
+.theme-dark .k-popup .k-columnmenu-item:hover,
+.theme-dark .k-popup .k-item.k-selected {
+  background-color: var(--Table-Primary-header, #2F3550) !important;
+  color: #ffffff !important;
+}
+
+/* --- Checkboxes & Labels inside filter modal --- */
+.theme-dark .k-filter-menu-container label,
+.theme-dark .k-columnmenu-item label,
+.theme-dark .k-checkbox-label {
+  color: var(--General-Text-Primary, #F0F0F0) !important;
+}
+
+/* --- Input Fields / Textboxes inside filter menu --- */
+.theme-dark .k-popup .k-textbox,
+.theme-dark .k-popup .k-input-inner,
+.theme-dark .k-popup .k-input {
+  background-color: var(--Table-Row, #24283B) !important;
+  color: var(--General-Text-Primary, #F0F0F0) !important;
+  border: 1px solid var(--Table-Table-Stroke, #3A3F5C) !important;
+}
+.theme-dark .k-popup .k-textbox:focus,
+.theme-dark .k-popup .k-input:focus {
+  border-color: #5C6180 !important;
+  box-shadow: none !important;
+}
+
+/* --- Buttons inside the filter popup (Clear / Filter) --- */
+.theme-dark .k-popup .k-button,
+.theme-dark .k-filter-menu-container .k-button {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: var(--General-Text-Primary, #F0F0F0) !important;
+  border: 1px solid var(--Table-Table-Stroke, #3A3F5C) !important;
+  border-radius: 4px !important;
+  font-weight: 500 !important;
+}
+.theme-dark .k-popup .k-button:hover,
+.theme-dark .k-filter-menu-container .k-button:hover {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+/* --- Primary Button inside filter popup (e.g. Filter / Submit button) --- */
+.theme-dark .k-popup .k-button-solid-primary,
+.theme-dark .k-filter-menu-container .k-button-solid-primary {
+  background-color: #3b82f6 !important; /* Bright blue for main action */
+  color: #ffffff !important;
+  border: 1px solid #2563eb !important;
+}
+.theme-dark .k-popup .k-button-solid-primary:hover,
+.theme-dark .k-filter-menu-container .k-button-solid-primary:hover {
+  background-color: #2563eb !important;
+}
+

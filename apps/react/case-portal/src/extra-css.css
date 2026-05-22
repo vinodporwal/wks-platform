@@ -190,9 +190,32 @@ button:disabled {
   border-color: #e2e8f0 !important;
   cursor: not-allowed;
 }
-
-button:disabled svg {
-  color: #cbd5e1 !important;
+.k-table-box-dark .btn-add:hover:not(:disabled) {
+  background: transparent !important;
+}
+.k-table-box-dark .btn-import {
+  background: transparent !important;
+}
+.k-table-box-dark .btn-add:hover:not(:disabled),
+.k-table-box-dark .btn-save:hover:not(:disabled), 
+.k-table-box-dark .btn-export:hover:not(:disabled), 
+.k-table-box-dark .btn-import:hover:not(:disabled) {
+  background: transparent !important;
+}
+.k-table-box-dark .btn-calculate {
+  background: transparent !important;
+}
+.k-table-box-dark .btn-calculate:hover:not(:disabled) {
+  background: transparent !important;
+}
+.k-table-box-dark .btn-save:disabled,
+.k-table-box-dark .btn-load:disabled,
+.k-table-box-dark .btn-export:disabled,
+.k-table-box-dark .btn-add:disabled,
+.k-table-box-dark .btn-import:disabled,
+.k-table-box-dark .btn-calculate:disabled {
+  color: #d0d0d0 !important;
+  background: transparent !important;
 }
 
 /* =========================================================

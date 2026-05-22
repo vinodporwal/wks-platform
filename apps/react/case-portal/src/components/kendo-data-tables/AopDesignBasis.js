@@ -52,14 +52,14 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import './common/ConfigurationAccordian.css'
 import { CalenderIcon, CalenderDarkIcon } from 'assets/images/icons/index'
 
-const StyledConfirmDialog = styled(Dialog)((theme) => ({
+const StyledConfirmDialog = styled(Dialog)(({theme}) => ({
   '& .MuiPaper-root': {
     borderRadius: '24px',
     padding: '12px',
-    background: theme.palette.mode === 'dark' ? '#131726' : 'rgba(255, 255, 255, 0.98)',
+    background: theme?.palette?.mode === 'dark' ? '#131726' : 'rgba(255, 255, 255, 0.98)',
     backdropFilter: 'blur(16px)',
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.2)',
-    border: theme.palette.mode === 'dark' ? '1px solid #00000033' : '1px solid #ffffff',
+    border: theme?.palette?.mode === 'dark' ? '1px solid #00000033' : '1px solid #ffffff',
   },
 }))
 

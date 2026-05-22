@@ -424,10 +424,10 @@ body {
 }
 
 .dark-primary-text {
-  color: #f0f0f0;
+  color: #f0f0f0 !important;
 }
 .dark-secondary-text {
-  color: #d0d0d0;
+  color: #d0d0d0 !important;
 }
 
 .action-box {
@@ -438,6 +438,15 @@ body {
   padding: 8px 10px 5px 2px;
   border-bottom: 1px solid #e2e8f0;
   background: #ffffff;
+}
+.action-box-dark {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 10px 5px 2px;
+  border-bottom: 1px solid #3C4055;
+  background: #131726;
 }
 
 /* =========================================================
