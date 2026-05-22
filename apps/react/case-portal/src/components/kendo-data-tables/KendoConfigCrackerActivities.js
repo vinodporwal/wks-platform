@@ -1517,6 +1517,17 @@ const DecokingConfig = () => {
   if (siteName === 'hmd') {
     return <SteamHourTable pid={PLANT_ID} />
   }
+
+  const [sdtaGridKey, setSdtaGridKey] = useState(0)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSdtaGridKey((prev) => prev + 1)
+    }, 200)
+
+    return () => clearTimeout(timer)
+  }, [loading])
+
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
@@ -1572,6 +1583,7 @@ const DecokingConfig = () => {
         columns={ibrPlanColumns.filter(
           (col) => col.field !== 'TA_SD' && col.field !== 'TA_ED',
         )}
+        gridKey={sdtaGridKey}
         rows={getRows('IBR Plan')[2]}
         setRows={(data) => setRowsForTab('IBR Plan', data, 2)}
         fetchData={fetchData}
