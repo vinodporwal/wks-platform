@@ -52,7 +52,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import './common/ConfigurationAccordian.css'
 import { CalenderIcon, CalenderDarkIcon } from 'assets/images/icons/index'
 
-const StyledConfirmDialog = styled(Dialog)((theme) => ({
+const StyledConfirmDialog = styled(Dialog)(({theme}) => ({
   '& .MuiPaper-root': {
     borderRadius: '24px',
     padding: '12px',

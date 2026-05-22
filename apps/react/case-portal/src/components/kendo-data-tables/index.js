@@ -1987,7 +1987,7 @@ const KendoDataTables = ({
         </Box>
       )}
 
-      {permissions?.showNote && (
+      {(permissions?.showNote && (note?.trim()?.length > 0)) && (
         <Box sx={{ pt: 1, pl: 1 }}>
           <Typography component='div' className='text-note'>
             {note}

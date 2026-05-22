@@ -9,6 +9,7 @@ import { openDrawer } from 'store/reducers/menu'
 import { useMenuContext } from 'menu/menuProvider'
 import StepperNav from 'components/Utilities/StepperNav'
 import UtilityDetails from 'components/Utilities/UtilityDetails'
+import { DrawerThemeCustomization } from 'themes'
 
 const MainLayout = ({ keycloak, authenticated }) => {
   const dispatch = useDispatch()
@@ -39,12 +40,14 @@ const MainLayout = ({ keycloak, authenticated }) => {
   return (
     <Box sx={{ display: 'flex', width: '100%', height: '100vh' }}>
       {/* Sidebar LEFT */}
-      <Drawer
-        open={open}
-        handleDrawerToggle={handleDrawerToggle}
-        isDashboard={isDashboard}
-        keycloak={keycloak}
-      />
+      <DrawerThemeCustomization>
+        <Drawer
+          open={open}
+          handleDrawerToggle={handleDrawerToggle}
+          isDashboard={isDashboard}
+          keycloak={keycloak}
+        />
+      </DrawerThemeCustomization>
 
       {/* RIGHT SIDE CONTENT */}
       <Box
