@@ -31,7 +31,7 @@ import com.wks.caseengine.repository.VerticalsRepository;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
-
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -454,31 +454,73 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 						cell.setCellValue("");
 					}
 				}
-			}
-			if(vertical.getName().equalsIgnoreCase("PTA")) {
-				sheet.setColumnHidden(4, true);
-			}else {
-				sheet.setColumnHidden(5, true);	
-			}
-			
-			// sheet.setColumnHidden(7, true);
-			try {
+		}
 
-				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-				workbook.write(outputStream);
-				workbook.close();
-				return outputStream.toByteArray();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+		// Determine remark ("Shutdown Basis") column index based on vertical
+		int remarkColIndex = vertical.getName().equalsIgnoreCase("PTA") ? 3 : 4;
+		int totalCols = innerHeaders.size();
 
+		// Wrap style for remark column — top-aligned with text wrapping enabled
+		CellStyle wrapStyle = workbook.createCellStyle();
+		wrapStyle.setWrapText(true);
+		wrapStyle.setVerticalAlignment(VerticalAlignment.TOP);
+
+		// Fixed preferred width for remark column (~50 characters × 256 units)
+		final int REMARK_CHARS = 50;
+		sheet.setColumnWidth(remarkColIndex, REMARK_CHARS * 256);
+
+		// Apply wrap style to every data cell in the remark column and adjust row height
+		for (int rowIdx = 1; rowIdx < currentRow; rowIdx++) {
+			Row row = sheet.getRow(rowIdx);
+			if (row == null) continue;
+			Cell cell = row.getCell(remarkColIndex);
+			if (cell != null) {
+				cell.setCellStyle(wrapStyle);
+				String cellValue = cell.getStringCellValue();
+				if (cellValue != null && !cellValue.isEmpty()) {
+					// Count wrapped lines: explicit newlines + lines that exceed column width
+					long explicitLines = cellValue.chars().filter(c -> c == '\n').count() + 1;
+					long wrappedLines = (long) Math.ceil((double) cellValue.length() / REMARK_CHARS);
+					int numLines = (int) Math.max(explicitLines, wrappedLines);
+					float neededHeight = numLines * 15.0f; // ~15pt per line
+					if (row.getHeightInPoints() < neededHeight) {
+						row.setHeightInPoints(neededHeight);
+					}
+				}
+			}
+		}
+
+		// Auto-size all columns based on content, skip the fixed-width remark column
+		for (int col = 0; col < totalCols; col++) {
+			if (col != remarkColIndex) {
+				sheet.autoSizeColumn(col);
+			}
+		}
+
+		if(vertical.getName().equalsIgnoreCase("PTA")) {
+			sheet.setColumnHidden(4, true);
+		}else {
+			sheet.setColumnHidden(5, true);	
+		}
+		
+		// sheet.setColumnHidden(7, true);
+		try {
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return null;
-	}
 
-	public byte[] shutdownNonProductLineExport(String year, String plantId, String maintenanceTypeName, boolean isAfterSave,
+	} catch (Exception e) {
+		e.printStackTrace();
+	}
+	return null;
+}
+
+public byte[] shutdownNonProductLineExport(String year, String plantId, String maintenanceTypeName, boolean isAfterSave,
 			List<ShutDownPlanDTO> dtoList) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
@@ -660,6 +702,11 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 			CellStyle dateTimeStyle = createDateTimeStyle(workbook, "dd-MM-yyyy HH:mm");
 			CellStyle decimalStyle = workbook.createCellStyle();
 	        decimalStyle.setDataFormat(workbook.createDataFormat().getFormat("0.00"));
+			int remarkColIndex = vertical.getName().equalsIgnoreCase("PP") ? 4 : 5;
+			int remarkColWidthChars = 60;
+			CellStyle wrapStyle = workbook.createCellStyle();
+			wrapStyle.setWrapText(true);
+			wrapStyle.setVerticalAlignment(VerticalAlignment.TOP);
 			Sheet sheet = workbook.createSheet("Sheet1");
 			int currentRow = 0;
 			List<List<Object>> rows = new ArrayList<>();
@@ -783,11 +830,42 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 						cell.setCellValue((Boolean) value);
 					} else if (value != null) {
 						cell.setCellValue(value.toString());
+						if (col == remarkColIndex) {
+							cell.setCellStyle(wrapStyle);
+						}
 					} else {
 						cell.setCellValue("");
 					}
 				}
 			}
+
+			// Auto-size all columns based on content; give the Remark column a fixed wide width
+			int totalCols = innerHeaders.size();
+			for (int col = 0; col < totalCols; col++) {
+				if (col != remarkColIndex) {
+					sheet.autoSizeColumn(col);
+				}
+			}
+			sheet.setColumnWidth(remarkColIndex, remarkColWidthChars * 256);
+
+			// Adjust row heights so wrapped remark text is fully visible
+			int dataStartRow = headers.size();
+			float defaultRowHeight = sheet.getDefaultRowHeightInPoints();
+			for (int rowIdx = dataStartRow; rowIdx < currentRow; rowIdx++) {
+				Row dataRow = sheet.getRow(rowIdx);
+				if (dataRow != null) {
+					Cell remarkCell = dataRow.getCell(remarkColIndex);
+					if (remarkCell != null && remarkCell.getCellType() == CellType.STRING) {
+						String text = remarkCell.getStringCellValue();
+						if (text != null && !text.isEmpty()) {
+							int lineCount = (int) Math.ceil((double) text.length() / remarkColWidthChars);
+							lineCount = Math.max(lineCount, 1);
+							dataRow.setHeightInPoints(lineCount * defaultRowHeight);
+						}
+					}
+				}
+			}
+
 			if(vertical.getName().equalsIgnoreCase("PP")) {
 				sheet.setColumnHidden(5, true);
 			}else {
@@ -2495,6 +2573,25 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					}
 				}
 			}
+
+			if("PVC".equalsIgnoreCase(verticalName)) { 
+				int month = plantMaintenanceTransaction.getMaintForMonth();
+				Long shutdownCount = plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId, month, "Shutdown",
+						year);
+				Long slowdownCount = plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId, month, "Slowdown",
+						year);
+				
+						Long count = shutdownCount + slowdownCount;
+
+						if (count == 1) {
+							List<GradeShutdownNormsValue> shutdownNormsValues = gradeShutdownNormsValueRepository
+									.findByPlantFkIdAndFinancialYear(plantId, plantMaintenanceTransaction.getAuditYear());
+							for (GradeShutdownNormsValue shutdownNormsValue : shutdownNormsValues) {
+								setMonthShutdown(month, shutdownNormsValue);
+							}
+						}	
+				
+			}
 			
 			if ("VCM".equalsIgnoreCase(verticalName))  {
 				Date start = plantMaintenanceTransaction.getMaintStartDateTime();
@@ -2644,6 +2741,25 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 						setMonthShutdown(month, shutdownNormsValue);
 					}
 				}
+			}
+
+			if("PVC".equalsIgnoreCase(verticalName)) { 
+				int month = plantMaintenanceTransaction.getMaintForMonth();
+				Long shutdownCount = plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId, month, "Shutdown",
+						year);
+				Long slowdownCount = plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId, month, "Slowdown",
+						year);
+				
+						Long count = shutdownCount + slowdownCount;
+
+						if (count == 1) {
+							List<GradeShutdownNormsValue> shutdownNormsValues = gradeShutdownNormsValueRepository
+									.findByPlantFkIdAndFinancialYear(plantId, plantMaintenanceTransaction.getAuditYear());
+							for (GradeShutdownNormsValue shutdownNormsValue : shutdownNormsValues) {
+								setMonthShutdown(month, shutdownNormsValue);
+							}
+						}	
+				
 			}
 
 			if ("MEG".equalsIgnoreCase(verticalName)) {
@@ -3072,9 +3188,9 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 
     int actualYear;
     if (month.getValue() >= Month.APRIL.getValue()) {
-        actualYear = startYear; // Aprâ€“Dec â†’ 2026
+        actualYear = startYear; // Apr–Dec ? 2026
     } else {
-        actualYear = endYear;   // Janâ€“Mar â†’ 2027
+        actualYear = endYear;   // Jan–Mar ? 2027
     }
 
     YearMonth yearMonth = YearMonth.of(actualYear, month);

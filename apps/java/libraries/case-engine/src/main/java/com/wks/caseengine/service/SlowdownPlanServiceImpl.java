@@ -686,6 +686,17 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	        
 	        CellStyle boldStyle = Utility.createBoldBorderedStyle(workbook);
 
+	        // Wrap-text style for the Remarks column
+	        CellStyle wrapStyle = workbook.createCellStyle();
+	        wrapStyle.setWrapText(true);
+
+	        final int REMARKS_COL_INDEX = 6;
+	        // ~60 character-widths (POI unit: 1/256th of a character width)
+	        final int REMARKS_COL_WIDTH = 60 * 256;
+	        // Usable characters per line inside the fixed column width
+	        final int REMARKS_CHARS_PER_LINE = 58;
+	        final float LINE_HEIGHT_PT = 15.0f;
+
 	        Sheet sheet = workbook.createSheet("Sheet1");
 	        int currentRow = 0;
 
@@ -755,7 +766,17 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                Cell cell = row.createCell(col);
 	                Object value = rowData.get(col);
 
-	                if (value instanceof Date) {
+	                if (col == REMARKS_COL_INDEX) {
+	                    // Apply wrap style; calculate row height from estimated line count
+	                    cell.setCellStyle(wrapStyle);
+	                    String text = (value != null) ? value.toString() : "";
+	                    cell.setCellValue(text);
+	                    int lineCount = (int) Math.ceil((double) Math.max(text.length(), 1) / REMARKS_CHARS_PER_LINE);
+	                    float requiredHeight = lineCount * LINE_HEIGHT_PT;
+	                    if (requiredHeight > row.getHeightInPoints()) {
+	                        row.setHeightInPoints(requiredHeight);
+	                    }
+	                } else if (value instanceof Date) {
 	                    cell.setCellValue((Date) value);
 	                    cell.setCellStyle(dateTimeStyle);
 	                } else if (value instanceof Number) {
@@ -775,8 +796,13 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 
 	        sheet.setColumnHidden(7, true);
 	        sheet.setColumnHidden(8, true);
+	        // Auto-size all columns; give Remarks a fixed wider width for wrapped text
 	        for (int i = 0; i < headers.size(); i++) {
-	            sheet.autoSizeColumn(i);
+	            if (i == REMARKS_COL_INDEX) {
+	                sheet.setColumnWidth(REMARKS_COL_INDEX, REMARKS_COL_WIDTH);
+	            } else {
+	                sheet.autoSizeColumn(i);
+	            }
 	        }
 
 	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
