@@ -311,7 +311,7 @@ const KendoDataTables = ({
     setGridExpanded((prev) => !prev)
   }
 
-  console.log('columns', columns)
+  // console.log('columns', columns)
 
   // ...inside columns?.map((col) => { ... })...
   const fieldToMonthNumber = {
@@ -745,6 +745,22 @@ const KendoDataTables = ({
               updated.rate = 26.458
             } else if (desc === 'Furnace Decoking') {
               updated.rate = ''
+            }
+          }
+          if (
+            screenType === 'slowdown' &&
+            lowerVertName === 'vcm' &&
+            lowerSiteName === 'hmd' &&
+            field === 'discription'
+          ) {
+            const desc = (value || '').trim()
+            if (
+              desc === 'Furnace decoking - (EBA-6401A)' ||
+              desc === 'Furnace decoking - (EBA-6401B)'
+            ) {
+              updated.rate = 32.5
+            } else if (desc === 'Furnace decoking - (EBA-6401C)') {
+              updated.rate = 22.75
             }
           }
 

@@ -2781,6 +2781,26 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                    failedList.add(shutDownPlanDTO);
 	                    continue;
 	                }
+					if(vcmHMD) { 
+						double updatedRate = shutDownPlanDTO.getRate();
+						String desc = shutDownPlanDTO.getDiscription();
+							
+									 if((desc.equalsIgnoreCase("Furnace decoking - (EBA-6401A)") ||
+									desc.equalsIgnoreCase("Furnace decoking - (EBA-6401B)") ) && updatedRate!=32.5)
+								   {
+									
+									  shutDownPlanDTO.setSaveStatus("Failed");
+									  shutDownPlanDTO.setErrDescription("Rate for Furnace decoking must be 32.5");
+									  failedList.add(shutDownPlanDTO);
+									  continue;
+								  } else if (desc.equalsIgnoreCase("Furnace decoking - (EBA-6401C)") && updatedRate!=22.75) {
+									shutDownPlanDTO.setSaveStatus("Failed");
+									shutDownPlanDTO.setErrDescription("Rate for Furnace decoking must be 22.75");
+									failedList.add(shutDownPlanDTO);
+									continue;
+								  }
+							}
+
 	                isUpdate = true;
 	                if(verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || elastomerAndHMD || monthDropdown || pvc || chemical) {
 		            	if(shutDownPlanDTO.getMonth()!=null) {
@@ -2831,9 +2851,9 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	            	originalNoOfRPF = plantMaintenanceTransaction.getNoOfRPF();
 	            }
        // for vcm hmd skip rate update by setting the value to original rate
-				if(vcmHMD) { 
-					shutDownPlanDTO.setRate(originalRate);
-				}
+				// if(vcmHMD) { 
+				// 	shutDownPlanDTO.setRate(originalRate);
+				// }
 	            // Double originalDurationInHrs = plantMaintenanceTransaction.getDurationInMins() != null ? 
                 //         plantMaintenanceTransaction.getDurationInMins() / 60.0 : null;
 

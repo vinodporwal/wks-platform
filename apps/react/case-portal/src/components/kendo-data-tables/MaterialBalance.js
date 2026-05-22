@@ -68,7 +68,8 @@ const MaterialBalance = ({ permissions }) => {
             Type: item?.Type,
             Remarks: item?.Remarks || '',
             originalRemark: item?.Remarks || '',
-            isEditable: item?.IsEditable,
+            isEditable:
+              IS_CHEMICAL_HMD || IS_CRACKER_HMD ? true : item?.isEditable,
             ParticularG: item?.Type,
           }),
         )
@@ -126,7 +127,7 @@ const MaterialBalance = ({ permissions }) => {
   }, [startYearSuffix, endYearSuffix])
 
   const colDefs = useMemo(() => {
-    if (IS_CHEMICAL_HMD) {
+    if (IS_CHEMICAL_HMD || IS_CRACKER_HMD) {
       return [
         {
           field: 'Particulars',
@@ -164,7 +165,7 @@ const MaterialBalance = ({ permissions }) => {
       { field: 'UOM', title: 'UOM', editable: false, widthT: 80, minWidth: 80 },
       ...monthCols,
     ]
-  }, [monthCols, IS_CHEMICAL_HMD])
+  }, [monthCols, IS_CHEMICAL_HMD, IS_CRACKER_HMD])
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -368,14 +369,14 @@ const MaterialBalance = ({ permissions }) => {
     {
       showAction: permissions?.showAction ?? true,
       saveWithRemark: permissions?.saveWithRemark ?? true,
-      saveBtn: IS_CHEMICAL_HMD ? true : false,
+      saveBtn: IS_CHEMICAL_HMD || IS_CRACKER_HMD ? true : false,
       allAction: true,
 
       showTitleNameBusiness: true,
       titleName: 'Material Balance',
       //LATER WE NEED TO ADD EXPORT IMPORT
-      downloadExcelBtn: IS_CHEMICAL_HMD ? true : false,
-      uploadExcelBtn: IS_CHEMICAL_HMD ? true : false,
+      downloadExcelBtn: IS_CHEMICAL_HMD || IS_CRACKER_HMD ? true : false,
+      uploadExcelBtn: IS_CHEMICAL_HMD || IS_CRACKER_HMD ? true : false,
       showCalculate:
         IS_CRACKER_HMD || IS_CRACKER_C2 || IS_CHEMICAL_VMD_BUTADIENE,
       showCalculateVisibility: true,
