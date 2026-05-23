@@ -562,7 +562,7 @@ const KendoDataTablesReports = ({
       const isEditable = col.editable === true
       const isActive = isColumnActive(col.field, filter, sort)
 
-      console.log('cols', cols)
+      // console.log('col', col)
 
       const headerColorClass = undefined
 

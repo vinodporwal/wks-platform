@@ -311,7 +311,7 @@ const KendoDataTables = ({
     setGridExpanded((prev) => !prev)
   }
 
-  console.log('columns', columns)
+  // console.log('columns', columns)
 
   // ...inside columns?.map((col) => { ... })...
   const fieldToMonthNumber = {

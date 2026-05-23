@@ -87,7 +87,7 @@ const PlantsProductionSummary = () => {
           step='any'
           value={dataItem[field] ?? ''}
           onChange={handleChange}
-          style={{ fixedWidth: '100%' }}
+          style={{ width: '100%' }}
         />
       </td>
     )
