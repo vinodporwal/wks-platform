@@ -63,5 +63,7 @@ public interface ExcelDataService {
      Map<String, Object> getShutdownDetails(String plantId, String year, String dataInput, List<String> headers);
 
      Map<String, Object> getPlantShutdownSlowdownNormsDuration(String plantId, String year, List<String> headers);
+     Map<String, Object> getSpecificConsumptionNormsT17Report(String reportType,String plantId, String year, List<String> headers);
+     
 
 }
