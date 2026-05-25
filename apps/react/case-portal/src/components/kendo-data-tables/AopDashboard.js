@@ -122,12 +122,21 @@ export default function AopDashboardCompact() {
   }
 
   const buildIdMap = useCallback((details = []) => {
-    return details.reduce((acc, item) => {
-      if (!item?.name || !item?.id) return acc
-      const key = item.name.toUpperCase().replace(/\s+/g, '_')
-      acc[key] = item.id
-      return acc
-    }, {})
+    const map = {}
+
+    details.forEach((vertical) => {
+      vertical?.sites?.forEach((site) => {
+        site?.plants?.forEach((plant) => {
+          const key = `${vertical.id}_${site.displayName}_${plant.displayName}`
+            .toUpperCase()
+            .replace(/\s+/g, '_')
+
+          map[key] = plant.id
+        })
+      })
+    })
+
+    return map
   }, [])
 
   const toggleSite = (siteName) => {
@@ -213,7 +222,18 @@ export default function AopDashboardCompact() {
       if (sid && pid) {
         const allowedPids = vertical.pids?.[sid] || []
 
-        if (!allowedPids.includes(pid)) {
+        const hasPermission = allowedPids.some(
+          (p) => p?.toUpperCase() === pid?.toUpperCase(),
+        )
+
+        if (!hasPermission) {
+          console.log('Permission Failed =>', {
+            pid,
+            sid,
+            v_id,
+            allowedPids,
+          })
+
           showSnackbar(
             'Access restricted. You dont have permission for this selection.',
             'error',
@@ -371,7 +391,8 @@ export default function AopDashboardCompact() {
           (row.site_name && row.site_name.toLowerCase().includes(q)) ||
           (row.business_category &&
             row.business_category.toLowerCase().includes(q)) ||
-          (row.verticalName && row.verticalName.toLowerCase().includes(q)),
+          (row.verticalName && row.verticalName.toLowerCase().includes(q)) ||
+          (row.vertical_name && row.vertical_name.toLowerCase().includes(q)),
       )
     }
 
@@ -387,11 +408,16 @@ export default function AopDashboardCompact() {
           if (!acc[site])
             acc[site] = { site, rows: [], businessCategories: new Set() }
           const verticalName = item.vertical_name || 'N/A'
+          const key = `${item.v_id}_${item.site_name}_${verticalName}`
+            .toUpperCase()
+            .replace(/\s+/g, '_')
+
           acc[site].rows.push({
             idx: idx++,
-            id:
-              idMap[verticalName.toUpperCase().replace(/\s+/g, '_')] ??
-              item.vertical_id,
+
+            id: (() => {
+              return idMap[key] ?? item.vertical_id
+            })(),
             sId: item.site_id,
             verticalName: verticalName,
             status: item.status,
@@ -414,6 +440,7 @@ export default function AopDashboardCompact() {
       const grouped = Object.values(
         filteredData.reduce((acc, item) => {
           const business = item.business_category || 'Other'
+
           if (!acc[business])
             acc[business] = {
               site: business,
@@ -421,11 +448,15 @@ export default function AopDashboardCompact() {
               businessCategories: new Set(),
             }
           const verticalName = item.vertical_name || 'N/A'
+          const key = `${item.v_id}_${item.site_name}_${verticalName}`
+            .toUpperCase()
+            .replace(/\s+/g, '_')
+
           acc[business].rows.push({
             idx: idx++,
-            id:
-              idMap[verticalName.toUpperCase().replace(/\s+/g, '_')] ??
-              item.vertical_id,
+            id: (() => {
+              return idMap[key] ?? item.vertical_id
+            })(),
             sId: item.site_id,
             verticalName: verticalName,
             status: item.status,
@@ -934,7 +965,7 @@ export default function AopDashboardCompact() {
                               <Box className='plant-grid'>
                                 {catRows?.map((plant) => (
                                   <Box
-                                    key={`${catName}-${plant.idx}`}
+                                    key={`${catName}-${plant.id}-${plant.sId}`}
                                     className='plant-item-card'
                                     onClick={(e) =>
                                       handlePlantClick(

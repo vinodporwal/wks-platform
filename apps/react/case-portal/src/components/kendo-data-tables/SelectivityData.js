@@ -544,6 +544,13 @@ const SelectivityData = (props) => {
   ) {
     FORMATE_VALUE = '{0:0.00000}'
   }
+  if (
+    props?.configType === 'megConstants' &&
+    lowerVertName == 'chemical' &&
+    lowerSiteName == 'dmd'
+  ) {
+    FORMATE_VALUE = '{0:0.0000}'
+  }
 
   const productionColumns = getEnhancedAOPColDefs({
     allGradesReciepes,
@@ -585,7 +592,10 @@ const SelectivityData = (props) => {
       showLoad: true,
       allAction: true,
       showNote:
-        IS_PE_PP && props?.currentTabDisplayName === 'Constant' ? true : false,
+        (IS_PE_PP || lowerVertName === 'pvc' || lowerVertName === 'pet') &&
+        props?.currentTabDisplayName === 'Constant'
+          ? true
+          : false,
 
       showTitleNameBusiness: true,
       titleName:

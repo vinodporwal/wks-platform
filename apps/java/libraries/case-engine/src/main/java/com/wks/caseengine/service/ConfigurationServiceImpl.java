@@ -284,7 +284,62 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				}
 			}
 
-		if ((verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc) && !isChemical && !ischemicalAndVmd) {
+		// "Category" column is present only for certain verticals; it shifts Remarks by one
+		boolean hasCategory = (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET")
+				|| verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM")
+				|| verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA")
+				|| verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc)
+				&& !isChemical && !ischemicalAndVmd;
+		int remarkColIndex = hasCategory ? 16 : 15;
+		int totalCols = innerHeaders.size();
+
+		// Wrap styles for the remarks column — preserve locked/unlocked appearance
+		CellStyle wrapUnlockedStyle = workbook.createCellStyle();
+		wrapUnlockedStyle.setWrapText(true);
+		wrapUnlockedStyle.setVerticalAlignment(VerticalAlignment.TOP);
+		wrapUnlockedStyle.setLocked(false);
+
+		CellStyle wrapLockedStyle = workbook.createCellStyle();
+		wrapLockedStyle.setWrapText(true);
+		wrapLockedStyle.setVerticalAlignment(VerticalAlignment.TOP);
+		wrapLockedStyle.setLocked(true);
+		wrapLockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+		wrapLockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+		// Fixed preferred width for remarks column (~50 characters × 256 units)
+		final int REMARK_CHARS = 50;
+		sheet.setColumnWidth(remarkColIndex, REMARK_CHARS * 256);
+
+		// Apply wrap style to every data cell in remarks column and adjust row height
+		for (int rowIdx = 1; rowIdx < currentRow; rowIdx++) {
+			Row row = sheet.getRow(rowIdx);
+			if (row == null) continue;
+			Cell cell = row.getCell(remarkColIndex);
+			if (cell != null) {
+				boolean editable = isEditable.get(rowIdx - 1) == null || isEditable.get(rowIdx - 1);
+				cell.setCellStyle(editable ? wrapUnlockedStyle : wrapLockedStyle);
+				String cellValue = cell.getStringCellValue();
+				if (cellValue != null && !cellValue.isEmpty()) {
+					// Count wrapped lines: explicit newlines + lines that exceed column width
+					long explicitLines = cellValue.chars().filter(c -> c == '\n').count() + 1;
+					long wrappedLines = (long) Math.ceil((double) cellValue.length() / REMARK_CHARS);
+					int numLines = (int) Math.max(explicitLines, wrappedLines);
+					float neededHeight = numLines * 15.0f; // ~15pt per line
+					if (row.getHeightInPoints() < neededHeight) {
+						row.setHeightInPoints(neededHeight);
+					}
+				}
+			}
+		}
+
+		// Auto-size all columns based on content, skip the fixed-width remarks column
+		for (int col = 0; col < totalCols; col++) {
+			if (col != remarkColIndex) {
+				sheet.autoSizeColumn(col);
+			}
+		}
+
+		if (hasCategory) {
 			sheet.setColumnHidden(17, true);
 			sheet.setColumnHidden(18, true);
 		} else {

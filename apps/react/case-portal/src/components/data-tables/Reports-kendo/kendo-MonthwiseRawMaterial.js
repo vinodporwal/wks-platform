@@ -52,7 +52,7 @@ const MonthwiseRawMaterial = () => {
   const valueFormat = useValueFormatterConsumption()
 
   const columnDefs = [
-    { field: 'id', headerName: 'ID', editable: false },
+    { field: 'id', headerName: 'ID', editable: false, isVisible: false },
 
     {
       field: 'material',
@@ -93,6 +93,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'april',
@@ -103,6 +104,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'may',
@@ -112,6 +114,7 @@ const MonthwiseRawMaterial = () => {
       editable: false,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'june',
@@ -121,6 +124,7 @@ const MonthwiseRawMaterial = () => {
       headerAlign: 'left',
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'july',
@@ -130,6 +134,7 @@ const MonthwiseRawMaterial = () => {
       headerAlign: 'left',
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'aug',
@@ -139,6 +144,7 @@ const MonthwiseRawMaterial = () => {
       editable: false,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'sep',
@@ -148,6 +154,7 @@ const MonthwiseRawMaterial = () => {
       editable: false,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'oct',
@@ -157,6 +164,7 @@ const MonthwiseRawMaterial = () => {
       editable: false,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'nov',
@@ -166,6 +174,7 @@ const MonthwiseRawMaterial = () => {
       editable: false,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'dec',
@@ -175,6 +184,7 @@ const MonthwiseRawMaterial = () => {
       editable: false,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'jan',
@@ -184,6 +194,7 @@ const MonthwiseRawMaterial = () => {
       editable: false,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'feb',
@@ -193,6 +204,7 @@ const MonthwiseRawMaterial = () => {
       editable: false,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'march',
@@ -202,6 +214,7 @@ const MonthwiseRawMaterial = () => {
       editable: false,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'total',
@@ -210,10 +223,11 @@ const MonthwiseRawMaterial = () => {
       editable: false,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
   ]
   const columns = [
-    { field: 'id', headerName: 'ID' },
+    { field: 'id', headerName: 'ID', widthT: 100, isVisible: false },
     {
       field: 'material',
       headerName: 'Parameters',
@@ -231,6 +245,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'may',
@@ -241,6 +256,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'june',
@@ -251,6 +267,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'july',
@@ -261,6 +278,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'aug',
@@ -271,6 +289,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'sep',
@@ -281,6 +300,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'oct',
@@ -291,6 +311,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'nov',
@@ -301,6 +322,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'dec',
@@ -311,6 +333,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'jan',
@@ -321,6 +344,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'feb',
@@ -331,6 +355,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'march',
@@ -341,6 +366,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     // {
     //   field: 'Remark',

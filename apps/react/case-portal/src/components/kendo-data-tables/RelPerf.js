@@ -1215,8 +1215,8 @@ export default function RelPerf() {
           ...gridPermissions,
           titleName: 'Reliability Performance',
           ExcelName: 'Reliability_Performance',
-          downloadExcelBtn: false,
-          uploadExcelBtn: false,
+          downloadExcelBtn: true,
+          uploadExcelBtn: true,
         }}
         columns={reliabilityPerformanceColumns}
         saveChanges={saveChangesReliabilityPerformance}

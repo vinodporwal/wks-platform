@@ -311,7 +311,7 @@ const KendoDataTables = ({
     setGridExpanded((prev) => !prev)
   }
 
-  console.log('columns', columns)
+  // console.log('columns', columns)
 
   // ...inside columns?.map((col) => { ... })...
   const fieldToMonthNumber = {
@@ -745,6 +745,22 @@ const KendoDataTables = ({
               updated.rate = 26.458
             } else if (desc === 'Furnace Decoking') {
               updated.rate = ''
+            }
+          }
+          if (
+            screenType === 'slowdown' &&
+            lowerVertName === 'vcm' &&
+            lowerSiteName === 'hmd' &&
+            field === 'discription'
+          ) {
+            const desc = (value || '').trim()
+            if (
+              desc === 'Furnace decoking - (EBA-6401A)' ||
+              desc === 'Furnace decoking - (EBA-6401B)'
+            ) {
+              updated.rate = 32.5
+            } else if (desc === 'Furnace decoking - (EBA-6401C)') {
+              updated.rate = 22.75
             }
           }
 
@@ -3660,6 +3676,30 @@ const KendoDataTables = ({
                   if (col?.type === 'dynamicDropdown') {
                     const dropdownOptions =
                       permissions?.dynamicDropdownOptions || []
+
+                    const DynamicDisplayCell = (props) => {
+                      const { dataItem, field, tdProps } = props
+                      const value = dataItem[field]
+                      const rowId = dataItem.id
+
+                      const isEdited = Object.prototype.hasOwnProperty.call(
+                        customModifiedCells?.[rowId] || {},
+                        field,
+                      )
+
+                      const shouldHighlight = isEdited
+
+                      return (
+                        <td
+                          {...tdProps}
+                          title={value}
+                          className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
+                        >
+                          {value}
+                        </td>
+                      )
+                    }
+
                     return (
                       <GridColumn
                         key={col?.field}
@@ -3674,11 +3714,16 @@ const KendoDataTables = ({
                             text: (props) => (
                               <DynamicDropdown
                                 {...props}
-                                options={dropdownOptions}
+                                options={
+                                  col?.getDropdownOptions
+                                    ? col.getDropdownOptions(props.dataItem)
+                                    : dropdownOptions
+                                }
+                                getDropdownOptions={col?.getDropdownOptions}
                               />
                             ),
                           },
-                          data: MonthDisplayCell,
+                          data: DynamicDisplayCell,
                           headerCell: SimpleHeaderWithTooltip,
                         }}
                         columnMenu={ColumnMenuCheckboxFilter}

@@ -37,11 +37,13 @@ const SDTAActivitiesGrid = ({
   handleCalculate,
   summaryEdited,
   setSummaryEdited,
+  gridKey,
 }) => {
   return (
     <Box sx={{ mt: 1 }}>
       <KendoDataTablesCracker
         columns={columns}
+        key={gridKey}
         rows={rows}
         setRows={setRows}
         editable={true}

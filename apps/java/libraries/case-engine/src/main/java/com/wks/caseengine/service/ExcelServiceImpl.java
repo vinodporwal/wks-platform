@@ -166,7 +166,7 @@ public class ExcelServiceImpl implements ExcelService {
                             }
                         }else if (sheetName.equalsIgnoreCase("ShutdownBreakupForLast4Years")) {
                             if (tableId.equalsIgnoreCase("ShutdownBreakupForLast4Years")) {
-                                // title = "Plant Production Summary (T-16)";
+                                // title = "Plant Production Summary (T-16)";d
                                 Map<String, Object> map = excelDataService.getShutdownSummaryLastFourYear(plantId, year,
                                         headers);
 
@@ -195,6 +195,16 @@ public class ExcelServiceImpl implements ExcelService {
                                 rows = (List<List<Object>>) map.get("rows");
                                 
                             }
+                            
+                        }
+                        else if (sheetName.equalsIgnoreCase("SpecificConsumptionNorms")) {
+                            
+                                Map<String, Object> map = excelDataService.getSpecificConsumptionNormsT17Report(dataInput, plantId, year,
+                                        headers);
+
+                                rows = (List<List<Object>>) map.get("rows");
+                                
+                            
                             
                         }
                         

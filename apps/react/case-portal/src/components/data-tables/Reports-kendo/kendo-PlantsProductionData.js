@@ -103,7 +103,7 @@ const PlantsProductionSummary = () => {
     {
       field: 'RowNo',
       title: 'SL.No',
-      widthT: 80,
+      fixedWidth: 40,
       format: '{0:#.#}',
       editable: false,
     },
@@ -114,13 +114,13 @@ const PlantsProductionSummary = () => {
         {
           field: 'Particulates',
           title: 'Production Volume',
-          widthT: 100,
+          fixedWidth: 100,
           editable: false,
         },
       ],
     },
 
-    { field: 'UOM', title: 'Unit', widthT: 80, editable: false },
+    { field: 'UOM', title: 'Unit', fixedWidth: 50, editable: false },
 
     {
       title: itoldYear || 'Old Year',
@@ -128,7 +128,7 @@ const PlantsProductionSummary = () => {
         {
           field: 'BudgetPrevYear',
           title: 'Budget',
-          width: 100,
+          fixedWidth: 80,
           editable: false,
           format: VALUE_FORMATTOR_PRODUCTION,
           type: 'number',
@@ -136,7 +136,7 @@ const PlantsProductionSummary = () => {
         {
           field: 'ActualPrevYear',
           title: 'Actual',
-          width: 100,
+          fixedWidth: 80,
           format: VALUE_FORMATTOR_PRODUCTION,
           editable: false,
           type: 'number',
@@ -150,7 +150,7 @@ const PlantsProductionSummary = () => {
         {
           field: 'BudgetCurrentYear',
           title: 'Budget',
-          width: 100,
+          fixedWidth: 80,
           editable: false,
           format: VALUE_FORMATTOR_PRODUCTION,
           type: 'number',
@@ -164,7 +164,7 @@ const PlantsProductionSummary = () => {
         {
           field: 'VarBudgetMT',
           title: 'MT',
-          width: 100,
+          fixedWidth: 80,
           editable: false,
           format: VALUE_FORMATTOR_PRODUCTION,
           type: 'number',
@@ -172,7 +172,7 @@ const PlantsProductionSummary = () => {
         {
           field: 'VarBudgetPer',
           title: '%',
-          width: 100,
+          fixedWidth: 80,
           editable: false,
           format: VALUE_FORMATTOR_PRODUCTION,
           type: 'number',
@@ -186,7 +186,7 @@ const PlantsProductionSummary = () => {
         {
           field: 'VarActualMT',
           title: 'MT',
-          width: 100,
+          fixedWidth: 80,
           editable: false,
           format: VALUE_FORMATTOR_PRODUCTION,
           type: 'number',
@@ -194,7 +194,7 @@ const PlantsProductionSummary = () => {
         {
           field: 'VarActualPer',
           title: '%',
-          width: 100,
+          fixedWidth: 80,
           editable: false,
           format: VALUE_FORMATTOR_PRODUCTION,
           type: 'number',
@@ -202,7 +202,7 @@ const PlantsProductionSummary = () => {
       ],
     },
 
-    { field: 'Remark', title: 'Remarks', widthT: 100, editable: true },
+    { field: 'Remark', title: 'Remarks', fixedWidth: 80, editable: true },
   ]
 
   const fetchData = async () => {
