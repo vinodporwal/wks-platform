@@ -1702,7 +1702,7 @@ const SlowDown = ({ permissions }) => {
         IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD
           ? true
           : false,
-      deleteMultiple: IS_PP_DTA ? true : false,
+      deleteMultiple: true,  // IS_PP_DTA ? true : false,
     },
     isOldYear,
   )
