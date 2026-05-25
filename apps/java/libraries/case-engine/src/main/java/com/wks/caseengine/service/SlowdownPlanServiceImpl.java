@@ -131,7 +131,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			List<ShutDownPlanDTO> dtoList = new ArrayList<>();
 
 			for (Object[] result : listOfSite) {
-				System.out.println("LineId: " + result[15] != null ? result[15].toString() : null);
+				//System.out.println("LineId: " + result[15] != null ? result[15].toString() : null);
 				ShutDownPlanDTO dto = new ShutDownPlanDTO();
 				dto.setDiscription((String) result[0]);
 				dto.setMaintStartDateTime((Date) result[1]);
@@ -686,6 +686,17 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	        
 	        CellStyle boldStyle = Utility.createBoldBorderedStyle(workbook);
 
+	        // Wrap-text style for the Remarks column
+	        CellStyle wrapStyle = workbook.createCellStyle();
+	        wrapStyle.setWrapText(true);
+
+	        final int REMARKS_COL_INDEX = 6;
+	        // ~60 character-widths (POI unit: 1/256th of a character width)
+	        final int REMARKS_COL_WIDTH = 60 * 256;
+	        // Usable characters per line inside the fixed column width
+	        final int REMARKS_CHARS_PER_LINE = 58;
+	        final float LINE_HEIGHT_PT = 15.0f;
+
 	        Sheet sheet = workbook.createSheet("Sheet1");
 	        int currentRow = 0;
 
@@ -755,7 +766,17 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                Cell cell = row.createCell(col);
 	                Object value = rowData.get(col);
 
-	                if (value instanceof Date) {
+	                if (col == REMARKS_COL_INDEX) {
+	                    // Apply wrap style; calculate row height from estimated line count
+	                    cell.setCellStyle(wrapStyle);
+	                    String text = (value != null) ? value.toString() : "";
+	                    cell.setCellValue(text);
+	                    int lineCount = (int) Math.ceil((double) Math.max(text.length(), 1) / REMARKS_CHARS_PER_LINE);
+	                    float requiredHeight = lineCount * LINE_HEIGHT_PT;
+	                    if (requiredHeight > row.getHeightInPoints()) {
+	                        row.setHeightInPoints(requiredHeight);
+	                    }
+	                } else if (value instanceof Date) {
 	                    cell.setCellValue((Date) value);
 	                    cell.setCellStyle(dateTimeStyle);
 	                } else if (value instanceof Number) {
@@ -775,8 +796,13 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 
 	        sheet.setColumnHidden(7, true);
 	        sheet.setColumnHidden(8, true);
+	        // Auto-size all columns; give Remarks a fixed wider width for wrapped text
 	        for (int i = 0; i < headers.size(); i++) {
-	            sheet.autoSizeColumn(i);
+	            if (i == REMARKS_COL_INDEX) {
+	                sheet.setColumnWidth(REMARKS_COL_INDEX, REMARKS_COL_WIDTH);
+	            } else {
+	                sheet.autoSizeColumn(i);
+	            }
 	        }
 
 	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -856,28 +882,36 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	        
 	        CellStyle decimalStyle = createDecimalStyle(workbook, "0.00"); 
 	        
-	        Sheet sheet = workbook.createSheet("Sheet1");
-	        int currentRow = 0;
+        Sheet sheet = workbook.createSheet("Sheet1");
+        int currentRow = 0;
 
-	        List<List<Object>> rows = new ArrayList<>();
-	        for (ShutDownPlanDTO dto : dtoList) {
-	            List<Object> list = new ArrayList<>();
-	            String formattedDuration = "";
-	            String formattedStartDate = "";
-	            String formattedEndDate = "";
-	            try {
-	                Double durationObject = dto.getDurationInHrs();
-	                if (durationObject != null) {
-	                    double durationDouble = durationObject.doubleValue();
-	                    int hours = (int) durationDouble;
-	                    int minutes = (int) Math.round((durationDouble - hours) * 100);
-	                    formattedDuration = String.format("%02d:%02d", hours, minutes);
-	                }
-	            } catch (Exception e) {
-	                formattedDuration = "Invalid Duration";
-	            }
-	            
-	            list.add(dto.getDiscription());
+        final int REMARKS_COL_INDEX = 5;
+        final int REMARKS_COL_WIDTH = 60 * 256;
+        final int REMARKS_CHARS_PER_LINE = 58;
+        final float LINE_HEIGHT_PT = 15.0f;
+
+        CellStyle wrapStyle = workbook.createCellStyle();
+        wrapStyle.setWrapText(true);
+
+        List<List<Object>> rows = new ArrayList<>();
+        for (ShutDownPlanDTO dto : dtoList) {
+            List<Object> list = new ArrayList<>();
+            String formattedDuration = "";
+            String formattedStartDate = "";
+            String formattedEndDate = "";
+            try {
+                Double durationObject = dto.getDurationInHrs();
+                if (durationObject != null) {
+                    double durationDouble = durationObject.doubleValue();
+                    int hours = (int) durationDouble;
+                    int minutes = (int) Math.round((durationDouble - hours) * 100);
+                    formattedDuration = String.format("%02d:%02d", hours, minutes);
+                }
+            } catch (Exception e) {
+                formattedDuration = "Invalid Duration";
+            }
+            
+            list.add(dto.getDiscription());
 	            
 	            try {
 	                if (dto.getMaintStartDateTime() != null) {
@@ -942,42 +976,55 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	        }
 	        
 	       
-	        for (List<Object> rowData : rows) {
-					 Row row = sheet.createRow(currentRow++);
-					 for (int col = 0; col < rowData.size(); col++) {
-					 Cell cell = row.createCell(col);
-					 Object value = rowData.get(col);
-				
-					 if (value instanceof Date) {
-					 cell.setCellValue((Date) value);
-					 cell.setCellStyle(dateTimeStyle);
-					 } else if (value instanceof Number) {
-					 cell.setCellValue(((Number) value).doubleValue());
-	                    
-	                 
-	                    if (col == 3) {
-	                        cell.setCellStyle(decimalStyle);
-	                    }
-	                    
-						} else if (value instanceof Boolean) {
-							cell.setCellValue((Boolean) value);
-							 } else if (value != null) {
-							 cell.setCellValue(value.toString());
-							} else {
-							 cell.setCellValue("");
-							}}}
-	        
-	        
-	        	 sheet.setColumnHidden(6, true);
-	        try {
+        for (List<Object> rowData : rows) {
+            Row row = sheet.createRow(currentRow++);
+            for (int col = 0; col < rowData.size(); col++) {
+                Cell cell = row.createCell(col);
+                Object value = rowData.get(col);
 
-	            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-	            workbook.write(outputStream);
-	            workbook.close();
-	            return outputStream.toByteArray();
-	        } catch (Exception e) {
-	            e.printStackTrace();
-	        }
+                if (col == REMARKS_COL_INDEX) {
+                    cell.setCellStyle(wrapStyle);
+                    String text = (value != null) ? value.toString() : "";
+                    cell.setCellValue(text);
+                    int lineCount = (int) Math.ceil((double) Math.max(text.length(), 1) / REMARKS_CHARS_PER_LINE);
+                    float requiredHeight = lineCount * LINE_HEIGHT_PT;
+                    if (requiredHeight > row.getHeightInPoints()) {
+                        row.setHeightInPoints(requiredHeight);
+                    }
+                } else if (value instanceof Date) {
+                    cell.setCellValue((Date) value);
+                    cell.setCellStyle(dateTimeStyle);
+                } else if (value instanceof Number) {
+                    cell.setCellValue(((Number) value).doubleValue());
+                    if (col == 3) {
+                        cell.setCellStyle(decimalStyle);
+                    }
+                } else if (value instanceof Boolean) {
+                    cell.setCellValue((Boolean) value);
+                } else if (value != null) {
+                    cell.setCellValue(value.toString());
+                } else {
+                    cell.setCellValue("");
+                }
+            }
+        }
+
+        sheet.setColumnHidden(6, true);
+        for (int i = 0; i < innerHeaders.size(); i++) {
+            if (i == REMARKS_COL_INDEX) {
+                sheet.setColumnWidth(REMARKS_COL_INDEX, REMARKS_COL_WIDTH);
+            } else {
+                sheet.autoSizeColumn(i);
+            }
+        }
+        try {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+            return outputStream.toByteArray();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
 	    } catch (Exception e) {
 	        e.printStackTrace();
@@ -2781,6 +2828,26 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                    failedList.add(shutDownPlanDTO);
 	                    continue;
 	                }
+					if(vcmHMD) { 
+						double updatedRate = shutDownPlanDTO.getRate();
+						String desc = shutDownPlanDTO.getDiscription();
+							
+									 if((desc.equalsIgnoreCase("Furnace decoking - (EBA-6401A)") ||
+									desc.equalsIgnoreCase("Furnace decoking - (EBA-6401B)") ) && updatedRate!=32.5)
+								   {
+									
+									  shutDownPlanDTO.setSaveStatus("Failed");
+									  shutDownPlanDTO.setErrDescription("Rate for Furnace decoking must be 32.5");
+									  failedList.add(shutDownPlanDTO);
+									  continue;
+								  } else if (desc.equalsIgnoreCase("Furnace decoking - (EBA-6401C)") && updatedRate!=22.75) {
+									shutDownPlanDTO.setSaveStatus("Failed");
+									shutDownPlanDTO.setErrDescription("Rate for Furnace decoking must be 22.75");
+									failedList.add(shutDownPlanDTO);
+									continue;
+								  }
+							}
+
 	                isUpdate = true;
 	                if(verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || elastomerAndHMD || monthDropdown || pvc || chemical) {
 		            	if(shutDownPlanDTO.getMonth()!=null) {
@@ -2831,9 +2898,9 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	            	originalNoOfRPF = plantMaintenanceTransaction.getNoOfRPF();
 	            }
        // for vcm hmd skip rate update by setting the value to original rate
-				if(vcmHMD) { 
-					shutDownPlanDTO.setRate(originalRate);
-				}
+				// if(vcmHMD) { 
+				// 	shutDownPlanDTO.setRate(originalRate);
+				// }
 	            // Double originalDurationInHrs = plantMaintenanceTransaction.getDurationInMins() != null ? 
                 //         plantMaintenanceTransaction.getDurationInMins() / 60.0 : null;
 
@@ -3230,7 +3297,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	    String verticalName = plantsService.findVerticalNameByPlantId(plantId);
 	    Plants plant = plantsRepository.findById(plantId).orElseThrow();
 	    Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-	    boolean pvc = verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+	    boolean pvc = verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
 	    DateTimeFormatter COMPARISON_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"); 
 	    Boolean monthChange=false;
 	    int changedMonth=0;

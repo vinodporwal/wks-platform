@@ -638,6 +638,7 @@ const KendoDataTablesReports = ({
             editable={col.editable || false}
             hidden={col.hidden}
             className={!isEditable ? 'non-editable-cell' : ''}
+            width={setWidth(col?.widthT || col?.fixedWidth || col?.minWidth)}
           />
         )
       }
@@ -652,6 +653,7 @@ const KendoDataTablesReports = ({
             hidden={col.hidden}
             format={'{0:n2}'}
             className={!isEditable ? 'non-editable-cell' : ''}
+            width={setWidth(col?.widthT || col?.fixedWidth || col?.minWidth)}
             cells={{
               edit: { text: DurationEditor },
               data: DurationDisplayWithTooltipCell,
@@ -727,6 +729,7 @@ const KendoDataTablesReports = ({
             columnMenu={ColumnMenuCheckboxFilter}
             filter='numeric'
             format={col.format}
+            width={setWidth(col?.widthT || col?.fixedWidth || col?.minWidth)}
           />
         )
       }

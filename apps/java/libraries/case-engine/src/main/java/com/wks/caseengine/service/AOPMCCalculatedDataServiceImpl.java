@@ -1295,7 +1295,8 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 					String procedureName=vertical.getName()+"_GetAOPMCValues";
 		        	obj= findByYearAndPlantId(year, UUID.fromString(plantFKId) ,  procedureName);
 					}
-		        } if (vertical.getName().equalsIgnoreCase("PTA")) {
+		        } 
+				else if (vertical.getName().equalsIgnoreCase("PTA")) {
 		            String view = "vw" + vertical.getName() + "_" + site.getName() + "_AOPMCValues";
 		            obj = getDataMCUValuesAllData(year, plantFKId, view);
 		        }else {
@@ -1393,15 +1394,17 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 					Cell cell = row1.createCell(col);
 					Object value = rowData.get(col);
 
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
-					} else if (value != null) {
-						cell.setCellValue(value.toString());
-					} else {
-						cell.setCellValue("");
-					}
+				if (value instanceof Number) {
+					cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
+				} else if (value instanceof Boolean) {
+					cell.setCellValue((Boolean) value);
+				} else if (value != null) {
+					cell.setCellValue(value.toString());
+				} else if (col >= 1 && col <= 12) {
+					cell.setCellValue(0);
+				} else {
+					cell.setCellValue("");
+				}
 
 				}
 			}

@@ -194,6 +194,38 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 		}
 	}
 	
+	public String getCrackerFuelDisplayName(String plantId) {
+    try {
+        Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+        String viewName = "vw" + vertical.getName() + "FuelDropdown";
+
+        String sql = "SELECT TOP 1 DisplayName FROM " + viewName
+                + " WHERE PlantId = :plantId ORDER BY DisplayOrder";
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("plantId", UUID.fromString(plantId));
+
+        @SuppressWarnings("unchecked")
+        List<Object> result = query.getResultList();
+
+        if (result == null || result.isEmpty() || result.get(0) == null) {
+            return "";
+        }
+
+        return result.get(0).toString();
+
+    } catch (IllegalArgumentException e) {
+        throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+    } catch (Exception ex) {
+        throw new RuntimeException("Failed to fetch fuel display name", ex);
+    }
+}
+	
 	public List<Object[]> findByYearAndPlantId(String aopYear, UUID plantId, String procedureName) {
 		try {
 
@@ -311,57 +343,64 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 		}
 	}
 
-	public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
-		AOPMessageVM aopMessageVM = new AOPMessageVM();
-		try {
-			String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
-			List<Object[]> obj = new ArrayList<>();
-			
-				String procedureName = verticalName + "_GetBusinessDemandMonthly";
-				obj = getData(year, plantFKId, procedureName);
-				String defaultValue=getCrackerModeDisplayName(plantFKId.toString());
-			List<BusinessDemandMonthlyDTO> configurationDTOList = new ArrayList<BusinessDemandMonthlyDTO>();
-			
-			int i = 0;
-			for (Object[] row : obj) {
-				BusinessDemandMonthlyDTO configurationDTO = new BusinessDemandMonthlyDTO();
-				configurationDTO.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
+public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
+    AOPMessageVM aopMessageVM = new AOPMessageVM();
+    try {
+        String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
+        List<Object[]> obj = new ArrayList<>();
 
-				configurationDTO.setJan(row[1] != null ? row[1].toString() : defaultValue);
-				configurationDTO.setFeb(row[2] != null ? row[2].toString() : defaultValue);
-				configurationDTO.setMar(row[3] != null ? row[3].toString() : defaultValue);
-				configurationDTO.setApr(row[4] != null ? row[4].toString() : defaultValue);
-				configurationDTO.setMay(row[5] != null ? row[5].toString() : defaultValue);
-				configurationDTO.setJun(row[6] != null ? row[6].toString() : defaultValue);
-				configurationDTO.setJul(row[7] != null ? row[7].toString() : defaultValue);
-				configurationDTO.setAug(row[8] != null ? row[8].toString() : defaultValue);
-				configurationDTO.setSep(row[9] != null ? row[9].toString() : defaultValue);
-				configurationDTO.setOct(row[10] != null ? row[10].toString() : defaultValue);
-				configurationDTO.setNov(row[11] != null ? row[11].toString() : defaultValue);
-				configurationDTO.setDec(row[12] != null ? row[12].toString() : defaultValue);
-				configurationDTO.setRemarks((row[13] != null ? row[13].toString() : ""));
-					configurationDTO.setAuditYear(row[14] != null ? row[14].toString() : "");
-					configurationDTO.setUom(row[15] != null ? row[15].toString() : "");
-					configurationDTO.setNormType(row[16] != null ? row[16].toString() : "");
-					configurationDTO.setIsEditable(row[17] != null ? ((Boolean) row[17]).booleanValue() : null);
-					configurationDTO.setProductName(row[18] != null ? row[18].toString() : "");
-					configurationDTO.setType(row[19] != null ? row[19].toString() : "");				
-					configurationDTOList.add(configurationDTO);
-				if (row[14] == null) {
-					i++;
-				}
-			}
-			aopMessageVM.setCode(200);
-			aopMessageVM.setMessage("Data fetched successfully");
-			aopMessageVM.setData(configurationDTOList);
-			return aopMessageVM;
-		} catch (IllegalArgumentException e) {
-			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			throw new RuntimeException("Failed to fetch data", ex);
-		}
-	}
+        String procedureName = verticalName + "_GetBusinessDemandMonthly";
+        obj = getData(year, plantFKId, procedureName);
+
+        String defaultModeValue = getCrackerModeDisplayName(plantFKId.toString());
+        String defaultFuelValue = getCrackerFuelDisplayName(plantFKId.toString());
+
+        List<BusinessDemandMonthlyDTO> configurationDTOList = new ArrayList<>();
+
+        for (Object[] row : obj) {
+            BusinessDemandMonthlyDTO configurationDTO = new BusinessDemandMonthlyDTO();
+
+            String uom = row[15] != null ? row[15].toString() : "";
+            String fallbackValue = "Fuel".equalsIgnoreCase(uom) ? defaultFuelValue : defaultModeValue;
+
+            configurationDTO.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
+
+            configurationDTO.setJan(row[1] != null ? row[1].toString() : fallbackValue);
+            configurationDTO.setFeb(row[2] != null ? row[2].toString() : fallbackValue);
+            configurationDTO.setMar(row[3] != null ? row[3].toString() : fallbackValue);
+            configurationDTO.setApr(row[4] != null ? row[4].toString() : fallbackValue);
+            configurationDTO.setMay(row[5] != null ? row[5].toString() : fallbackValue);
+            configurationDTO.setJun(row[6] != null ? row[6].toString() : fallbackValue);
+            configurationDTO.setJul(row[7] != null ? row[7].toString() : fallbackValue);
+            configurationDTO.setAug(row[8] != null ? row[8].toString() : fallbackValue);
+            configurationDTO.setSep(row[9] != null ? row[9].toString() : fallbackValue);
+            configurationDTO.setOct(row[10] != null ? row[10].toString() : fallbackValue);
+            configurationDTO.setNov(row[11] != null ? row[11].toString() : fallbackValue);
+            configurationDTO.setDec(row[12] != null ? row[12].toString() : fallbackValue);
+
+            configurationDTO.setRemarks(row[13] != null ? row[13].toString() : "");
+            configurationDTO.setAuditYear(row[14] != null ? row[14].toString() : "");
+            configurationDTO.setUom(uom);
+            configurationDTO.setNormType(row[16] != null ? row[16].toString() : "");
+            configurationDTO.setIsEditable(row[17] != null ? ((Boolean) row[17]).booleanValue() : null);
+            configurationDTO.setProductName(row[18] != null ? row[18].toString() : "");
+            configurationDTO.setType(row[19] != null ? row[19].toString() : "");
+
+            configurationDTOList.add(configurationDTO);
+        }
+
+        aopMessageVM.setCode(200);
+        aopMessageVM.setMessage("Data fetched successfully");
+        aopMessageVM.setData(configurationDTOList);
+        return aopMessageVM;
+    } catch (IllegalArgumentException e) {
+        throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+    } catch (Exception ex) {
+        ex.printStackTrace();
+        throw new RuntimeException("Failed to fetch data", ex);
+    }
+}
+
 
 	public List<Object[]> getData(String aopYear, UUID plantId, String procedureName) {
 		try {
@@ -851,10 +890,10 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 					throw new RuntimeException("Business demand data not found");
 				   }
     
-				 double  existingAprilValue = existingBusinessDemand.getApril();
+				 Double  existingAprilValue = existingBusinessDemand.getApril() != null ? existingBusinessDemand.getApril() : 0.0;
 				 String existingRemark = existingBusinessDemand.getRemark();
 
-				 double newAprilValue = businessDemandDataDTO.getApril();
+				 Double newAprilValue = businessDemandDataDTO.getApril();
 				 String newRemark = businessDemandDataDTO.getRemark();
 
 				     if(!Objects.equals(existingAprilValue, newAprilValue) && Objects.equals(existingRemark, newRemark)) {  

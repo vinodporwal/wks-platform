@@ -191,6 +191,12 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		            if (financialAspectData != null) {
 		            	reliabilityPerformanceListMap.put("ReliabilityIncident", financialAspectData);
 		            }
+
+					AOPMessageVM commanParameterVm = getReliabilityPerformance(plantId, year, "Common Parameter");
+					List<ReliabilityPerformanceDto> commanParameterData = (List<ReliabilityPerformanceDto>) commanParameterVm.getData();
+					if (commanParameterData != null) {
+						reliabilityPerformanceListMap.put("CommonParameter", commanParameterData);
+					}
 		        }
 		        
 		        Map<String, Object> sheetData = (Map<String, Object>) structure.get("ReliabilityPerformance");
@@ -482,7 +488,14 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 	                	ReliabilityPerformanceDto dto = new ReliabilityPerformanceDto();
 
 						try {
-							dto.setRowNo(Integer.parseInt(getStringCellValue(row.getCell(0), dto)));
+						//	dto.setRowNo(Integer.parseInt(getStringCellValue(row.getCell(0), dto)));
+						String rowNoStr = getStringCellValue(row.getCell(0), dto);
+
+						if (rowNoStr != null && !rowNoStr.trim().isEmpty()) {
+							dto.setRowNo(Integer.parseInt(rowNoStr));
+						} else {
+							dto.setRowNo(null); // or null if Integer type
+						}
 							dto.setParameter(getStringCellValue(row.getCell(1), dto));
 							dto.setUom(getStringCellValue(row.getCell(2), dto));
 							dto.setBestAchieved(getNumericCellValue(row.getCell(3), dto));
@@ -585,6 +598,7 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 				if (cell == null)
 					return null;
 				cell.setCellType(CellType.STRING);
+				System.out.println("cell.getStringCellValue().trim() : " + cell.getStringCellValue().trim());
 				return cell.getStringCellValue().trim();
 			} catch (Exception e) {
 				dto.setSaveStatus("Failed");
@@ -737,7 +751,51 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		            "                    \"columns\": [],\r\n" + //
 		            "                    \"rows\": []\r\n" + //
 		            "                }\r\n" + //
+		            "            },\r\n" + //
+
+                    "               {\r\n" + //
+		            "                \"startRow\": 0,\r\n" + //
+		            "                \"headers\": [\r\n" + //
+		            "\t\t\t\t\t\"rowNo\", \r\n" + // (Fixed: Removed the preceding empty line)
+		            "\t\t\t\t\t\"parameter\", \r\n" + //
+		            "\t\t\t\t\t\"uom\", \r\n" + //
+		            "\t\t\t\t\t\"bestAchieved\", \r\n" + //
+		            "\t\t\t\t\t\"aop\", \r\n" + //
+		            "\t\t\t\t\t\"actual\", \r\n" + //
+		            "\t\t\t\t\t\"plann\", \r\n" + //
+		            "\t\t\t\t\t\"limit\", \r\n" + //
+		            "\t\t\t\t\t\"rationale\", \r\n" + //
+		            "\t\t\t\t\t\"remarks\", \r\n" + //
+		            "\t\t\t\t\t\"id\"\r\n" + //
+		            "                ],\r\n" + //
+		            "                \"startingIndexOfYear\":4,\r\n" + //
+		            "                \"hideTable\":false,\r\n" + //
+		            "                \"textBeforeTitle\":\"\",\r\n" + //
+		            "                \"title\":\"Common Parameter\",\r\n" + //
+		            "                \"tableId\":\"CommonParameter\",\r\n" + //
+		            "                \"dataInput\":\"Common Parameter\",\r\n" + //
+		            "                \"isColumnMergeRequired\":false,\r\n" + //
+		            "                \"isRowMergeRequired\":false,\r\n" + //
+		            "                \"headersTitles\":[[\r\n" + //
+		            "                    \"S.No\",\r\n" + //
+		            "                    \"Parameter\",\r\n" + //
+		            "                    \"UOM\",\r\n" + //
+		            "                    \"Best Achieved\",\r\n" + //
+		            "                    \"Limit\",\"Rationale / Reasons for Changes\",\"Remarks\"]],\r\n" + // (Fixed: Added closing ']' and comma)
+		            "                \"rows\": [],\r\n" + //
+		            "                \"hiddenColumns\":[10,11],\r\n" + //
+		            "                \"styles\": {\r\n" + //
+		            "                    \"boldColumns\": [\r\n" + //
+		            "                        0\r\n" + //
+		            "                    ],\r\n" + //
+		            "                    \"borders\": true\r\n" + //
+		            "                },\r\n" + //
+		            "                \"autoMerge\": {\r\n" + //
+		            "                    \"columns\": [],\r\n" + //
+		            "                    \"rows\": []\r\n" + //
+		            "                }\r\n" + //
 		            "            }\r\n" + //
+
 		            "        ]\r\n" + //
 		            "    }\r\n" + //
 		            "    \r\n" + //

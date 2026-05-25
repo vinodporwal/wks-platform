@@ -127,6 +127,7 @@ import ProductionOptimizer from 'components/kendo-data-tables/ProductionOptimize
 import CausticSodaLyeBasis from 'components/data-tables/Reports/CausticSodaLyeBasis'
 import MaterialBalance from 'components/kendo-data-tables/MaterialBalance'
 import CatalystChecmicalsCalculation from 'components/kendo-data-tables/CatalystChecmicalsCalculation'
+import CausticSodaLyeBasisCatChem from 'components/data-tables/Reports/CausticSodaLyeBasisCatChem'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -923,6 +924,15 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='caustic-soda-lye-basis'>
                 <CausticSodaLyeBasis />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'caustic-soda-lye-basis-cat-chem',
+            element: (
+              <PrivateRoute routeId='caustic-soda-lye-basis-cat-chem'>
+                <CausticSodaLyeBasisCatChem />
               </PrivateRoute>
             ),
           },

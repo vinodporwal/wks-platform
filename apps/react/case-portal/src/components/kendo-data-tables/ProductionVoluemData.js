@@ -1199,8 +1199,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         IS_PVC_VMD ||
         IS_PVC_DMD ||
         IS_AROMATICS_SEZ_PX4 ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD
+        IS_PVC_HMD
           ? false
           : true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Max Achieved Capacity`,
@@ -1224,7 +1223,15 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     if (IS_CRACKER_DMD) {
       return unitDesignCapacity === 'TPD' ? false : true
     }
-    if (IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PP_SEZ || IS_AROMATICS_SEZ_PX4) {
+    if (
+      IS_PE_PP ||
+      IS_PET ||
+      IS_PVC_VMD ||
+      IS_PP_SEZ ||
+      IS_AROMATICS_SEZ_PX4 ||
+      IS_PVC_DMD ||
+      IS_PVC_HMD
+    ) {
       return true
     }
     return false
@@ -1236,6 +1243,8 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     unitDesignCapacity,
     IS_AROMATICS_SEZ_PX4,
     IS_CRACKER_DMD,
+    IS_PVC_DMD,
+    IS_PVC_HMD,
   ])
 
   const excelUploadBtnGrid2 = useMemo(() => {
@@ -1248,7 +1257,15 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     if (IS_CRACKER_DMD) {
       return unitDesignCapacity === 'TPD' ? false : true
     }
-    if (IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PP_SEZ || IS_AROMATICS_SEZ_PX4) {
+    if (
+      IS_PE_PP ||
+      IS_PET ||
+      IS_PVC_VMD ||
+      IS_PP_SEZ ||
+      IS_AROMATICS_SEZ_PX4 ||
+      IS_PVC_DMD ||
+      IS_PVC_HMD
+    ) {
       return true
     }
     return false
@@ -1260,6 +1277,8 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     unitDesignCapacity,
     IS_AROMATICS_SEZ_PX4,
     IS_CRACKER_DMD,
+    IS_PVC_DMD,
+    IS_PVC_HMD,
   ])
   const adjustedPermissionsGrid2 = getAdjustedPermissions(
     {
@@ -1282,7 +1301,9 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         IS_PVC_VMD ||
         IS_PP_SEZ ||
         IS_AROMATICS_SEZ_PX4 ||
-        IS_CRACKER_DMD
+        IS_CRACKER_DMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? false
           : true,
       downloadExcelBtn: excelBtnGrid2,
@@ -1411,8 +1432,8 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
 
   var rows1 = permissions?.hideSummary ? rowsFormattedAndNonEditable : rows
 
-  const handleExcelUpload = (rawFile) => {
-    saveExcelFile(rawFile)
+  const handleExcelUpload = (rawFile, gridType) => {
+    saveExcelFile(rawFile, gridType)
   }
   const downloadExcelForConfiguration = async (gridType) => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
@@ -1424,14 +1445,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     })
 
     try {
-      if (
-        IS_PP_DTA ||
-        IS_PP_SEZ ||
-        IS_PVC_DMD ||
-        IS_PP_HMD ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD
-      ) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
         const selectedLine = lineDetails[tabIndex]
         const lineId = selectedLine?.id
         const LineName = lineDetails[tabIndex]?.displayName
@@ -1498,20 +1512,13 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
       })
     }
   }
-  const saveExcelFile = async (rawFile) => {
+  const saveExcelFile = async (rawFile, gridType) => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
 
     setLoading(true)
     try {
       let response
-      if (
-        IS_PP_SEZ ||
-        IS_PP_DTA ||
-        IS_PP_HMD ||
-        IS_PVC_DMD ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD
-      ) {
+      if (IS_PP_SEZ || IS_PP_DTA || IS_PP_HMD || IS_PVC_DMD || IS_PVC_HMD) {
         response =
           await ProductionVolumeDataApiService.saveProductionVolDataLineExcel(
             rawFile,
@@ -1519,7 +1526,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
             PLANT_ID,
             AOP_YEAR,
           )
-      } else if (IS_CRACKER_DMD) {
+      } else if (IS_CRACKER_DMD && gridType === 'design') {
         response = await ProductionVolumeDataApiService.saveDesignCapacity(
           rawFile,
           keycloak,
@@ -1619,12 +1626,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
       <LoaderBackdrop open={!!loading} />
 
       {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
-      {(IS_PP_DTA ||
-        IS_PP_SEZ ||
-        IS_PVC_DMD ||
-        IS_PP_HMD ||
-        IS_PVC_HMD ||
-        IS_PVC_VMD) && (
+      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) && (
         <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>
@@ -1664,7 +1666,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
           downloadExcelForConfiguration={() =>
             downloadExcelForConfiguration('design')
           }
-          handleExcelUpload={handleExcelUpload}
+          handleExcelUpload={(rawFile) => handleExcelUpload(rawFile, 'design')}
           resetEditSignal={editResetKey}
           setEditResetKey={setEditResetKey}
           groupBy={

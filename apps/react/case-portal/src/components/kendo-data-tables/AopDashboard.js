@@ -391,7 +391,7 @@ export default function AopDashboardCompact() {
           (row.site_name && row.site_name.toLowerCase().includes(q)) ||
           (row.business_category &&
             row.business_category.toLowerCase().includes(q)) ||
-          (row.verticalName && row.verticalName.toLowerCase().includes(q)) || 
+          (row.verticalName && row.verticalName.toLowerCase().includes(q)) ||
           (row.vertical_name && row.vertical_name.toLowerCase().includes(q)),
       )
     }

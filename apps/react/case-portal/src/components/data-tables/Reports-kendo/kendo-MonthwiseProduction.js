@@ -20,6 +20,7 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import ProductionNormsReport from 'components/kendo-data-tables/ProductionNormsReport'
 const MonthwiseProduction = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -83,7 +84,7 @@ const MonthwiseProduction = () => {
     {
       field: 'RowNo',
       title: 'SL.No',
-      widthT: 80,
+      fixedWidth: 50,
       format: '{0:#.#}',
       editable: false,
     },
@@ -91,7 +92,7 @@ const MonthwiseProduction = () => {
     {
       field: 'Month',
       title: 'Month',
-      widthT: 120,
+      fixedWidth: 120,
       editable: false,
     },
 
@@ -104,7 +105,7 @@ const MonthwiseProduction = () => {
             {
               field: 'EOEProdBudget',
               title: 'Budget',
-              width: 120,
+              fixedWidth: 120,
               editable: false,
               type: 'number',
               format: VALUE_FORMATTOR_PRODUCTION,
@@ -112,7 +113,7 @@ const MonthwiseProduction = () => {
             {
               field: 'EOEProdActual',
               title: 'Actual',
-              width: 120,
+              fixedWidth: 120,
               editable: false,
               type: 'number',
               format: VALUE_FORMATTOR_PRODUCTION,
@@ -125,7 +126,7 @@ const MonthwiseProduction = () => {
             {
               field: 'OpHrsBudget',
               title: 'Budget',
-              width: 120,
+              fixedWidth: 120,
               editable: false,
               type: 'number',
               format: VALUE_FORMATTOR_PRODUCTION,
@@ -133,7 +134,7 @@ const MonthwiseProduction = () => {
             {
               field: 'OpHrsActual',
               title: 'Actual',
-              width: 120,
+              fixedWidth: 120,
               editable: false,
               type: 'number',
               format: VALUE_FORMATTOR_PRODUCTION,
@@ -146,7 +147,7 @@ const MonthwiseProduction = () => {
             {
               field: 'ThroughputBudget',
               title: 'Budget',
-              width: 120,
+              fixedWidth: 120,
               editable: false,
               type: 'number',
               format: VALUE_FORMATTOR_PRODUCTION,
@@ -154,7 +155,7 @@ const MonthwiseProduction = () => {
             {
               field: 'ThroughputActual',
               title: 'Actual',
-              width: 120,
+              fixedWidth: 120,
               editable: false,
               type: 'number',
               format: VALUE_FORMATTOR_PRODUCTION,
@@ -170,7 +171,7 @@ const MonthwiseProduction = () => {
         {
           field: 'OperatingHours',
           title: 'Operating Hours',
-          width: 150,
+          fixedWidth: 120,
           editable: false,
           type: 'number',
           format: VALUE_FORMATTOR_PRODUCTION,
@@ -178,7 +179,7 @@ const MonthwiseProduction = () => {
         {
           field: 'MEGThroughput',
           title: 'MEG Throughput, TPH',
-          width: 150,
+          fixedWidth: 120,
           editable: false,
           type: 'number',
           format: VALUE_FORMATTOR_PRODUCTION,
@@ -186,7 +187,7 @@ const MonthwiseProduction = () => {
         {
           field: 'EOThroughput',
           title: 'EO Throughput, TPH',
-          width: 150,
+          fixedWidth: 120,
           editable: false,
           type: 'number',
           format: VALUE_FORMATTOR_PRODUCTION,
@@ -194,7 +195,7 @@ const MonthwiseProduction = () => {
         {
           field: 'EOEThroughput',
           title: 'EOE Throughput, TPH',
-          width: 150,
+          fixedWidth: 120,
           editable: false,
           type: 'number',
           format: VALUE_FORMATTOR_PRODUCTION,
@@ -202,7 +203,7 @@ const MonthwiseProduction = () => {
         {
           field: 'TotalEOE',
           title: 'Total EOE, MT',
-          width: 150,
+          fixedWidth: 120,
           editable: false,
           type: 'number',
           format: VALUE_FORMATTOR_PRODUCTION,
@@ -213,7 +214,7 @@ const MonthwiseProduction = () => {
     {
       field: 'Remark',
       title: 'Remarks',
-      widthT: 200,
+      fixedWidth: 100,
       editable: true,
     },
   ]
@@ -222,7 +223,7 @@ const MonthwiseProduction = () => {
     {
       field: 'RowNo',
       title: 'SL.No',
-      widthT: 70,
+      fixedWidth: 50,
       editable: false,
       format: '{0:#.#}',
     },
@@ -230,7 +231,7 @@ const MonthwiseProduction = () => {
     {
       field: 'Month',
       title: 'Month',
-      widthT: 160,
+      fixedWidth: 160,
       editable: false,
     },
 
@@ -243,7 +244,7 @@ const MonthwiseProduction = () => {
             {
               field: 'ProdBudget',
               title: 'Budget',
-              width: 120,
+              fixedWidth: 120,
               editable: false,
               type: 'number',
               format: VALUE_FORMATTOR_PRODUCTION,
@@ -251,7 +252,7 @@ const MonthwiseProduction = () => {
             {
               field: 'ProdActual',
               title: 'Actual',
-              width: 120,
+              fixedWidth: 120,
               editable: false,
               type: 'number',
               format: VALUE_FORMATTOR_PRODUCTION,
@@ -264,7 +265,7 @@ const MonthwiseProduction = () => {
             {
               field: 'OpHrsBudget',
               title: 'Budget',
-              width: 120,
+              fixedWidth: 120,
               editable: false,
               type: 'number',
               format: VALUE_FORMATTOR_PRODUCTION,
@@ -272,7 +273,7 @@ const MonthwiseProduction = () => {
             {
               field: 'OpHrsActual',
               title: 'Actual',
-              width: 120,
+              fixedWidth: 120,
               editable: false,
               type: 'number',
               format: VALUE_FORMATTOR_PRODUCTION,
@@ -285,7 +286,7 @@ const MonthwiseProduction = () => {
             {
               field: 'ThroughputBudget',
               title: 'Budget',
-              width: 120,
+              fixedWidth: 120,
               editable: false,
               type: 'number',
               format: VALUE_FORMATTOR_PRODUCTION,
@@ -293,7 +294,7 @@ const MonthwiseProduction = () => {
             {
               field: 'ThroughputActual',
               title: 'Actual',
-              width: 120,
+              fixedWidth: 120,
               editable: false,
               type: 'number',
               format: VALUE_FORMATTOR_PRODUCTION,
@@ -309,7 +310,7 @@ const MonthwiseProduction = () => {
         {
           field: 'OperatingHours',
           title: 'Operating Hours',
-          width: 150,
+          fixedWidth: 120,
           editable: false,
           type: 'number',
           format: VALUE_FORMATTOR_PRODUCTION,
@@ -317,7 +318,7 @@ const MonthwiseProduction = () => {
         {
           field: 'Throughput',
           title: 'Throughput, TPH',
-          width: 150,
+          fixedWidth: 120,
           editable: false,
           type: 'number',
           format: VALUE_FORMATTOR_PRODUCTION,
@@ -325,7 +326,7 @@ const MonthwiseProduction = () => {
         {
           field: 'Total',
           title: 'Total, MT',
-          width: 150,
+          fixedWidth: 120,
           editable: false,
           type: 'number',
           format: VALUE_FORMATTOR_PRODUCTION,
@@ -336,7 +337,7 @@ const MonthwiseProduction = () => {
     {
       field: 'Remark',
       title: 'Remarks',
-      widthT: 200,
+      fixedWidth: 150,
 
       editable: true,
     },
@@ -535,25 +536,8 @@ const MonthwiseProduction = () => {
         handleRemarkCellClick={handleRemarkCellClick}
       />
 
-      <ProductionNorms
-        permissions={{
-          showAction: false,
-          addButton: false,
-          deleteButton: false,
-          editButton: false,
-          showUnit: false,
-          saveWithRemark: false,
-          saveBtn: false,
-          showCalculate: false,
-          customHeight: defaultCustomHeight,
-          needTotal: true,
-          roundOffDecimals: true,
-          hideByProducts: true,
-          hideNoteText: true,
-          hideExportBtn: true,
-          title: 'Main Products - Production for the budget year',
-        }}
-      />
+      <ProductionNormsReport />
+
       <Notification
         open={snackbarOpen}
         message={snackbarData.message}

@@ -1276,6 +1276,13 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 	@Override
 	public AOPMessageVM getModes(String year, String plantId, String type) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		
+		// Handle fuel type separately
+		if ("fuel".equalsIgnoreCase(type)) {
+			return getModesForFuel(plantId);
+		}
+		
+		// Handle non-fuel types (original logic)
 		String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 		String viewName = "vw" + verticalName + "Modes";
 		List<Map<String, Object>> modes = new ArrayList<>();
@@ -1311,6 +1318,48 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("plantId", plantId);
 			query.setParameter("type", type);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	private AOPMessageVM getModesForFuel(String plantId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<Map<String, Object>> modes = new ArrayList<>();
+		try {
+			List<Object[]> obj = findByYearAndPlantIdForFuel(UUID.fromString(plantId));
+			for(Object[] row:obj) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("name", (row[6] != null ? row[6].toString() : ""));
+				map.put("displayName", (row[7] != null ? row[7].toString() : ""));
+				modes.add(map);
+			}
+			
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(modes);
+		}catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+		
+		return aopMessageVM;
+	}
+	
+	public List<Object[]> findByYearAndPlantIdForFuel(UUID plantId) {
+		try {
+			// Columns: Id(0), VerticalId(1), SiteId(2), PlantId(3), DisplayOrder(4), Name(5), DisplayName(6)
+			// We add a dummy column at index 5 to shift Name to index 6 and DisplayName to index 7
+			String sql = "SELECT " + "Id, VerticalId, SiteId, PlantId, DisplayOrder, NULL as DummyType, Name, DisplayName "
+					 + "FROM vwCrackerFuelDropdown "
+					+ " ORDER BY DisplayOrder";
+
+			Query query = entityManager.createNativeQuery(sql);
 
 			return query.getResultList();
 		} catch (IllegalArgumentException e) {
