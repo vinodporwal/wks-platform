@@ -186,6 +186,28 @@ export function getColDefsDesignCapacity(headerMap = {}, valueFormat) {
   ]
 }
 
+export function getColDefsDesignCapacityPVC(headerMap = {}, valueFormat) {
+  return [
+    {
+      field: 'materialFKId',
+      title: 'Particulars',
+      widthT: 100,
+      editable: true,
+      hidden: true,
+      isVisible: false,
+      minWidth: 120,
+    },
+    {
+      field: 'productName',
+      title: 'Particulars',
+      widthT: 120,
+      editable: false,
+      minWidth: 120,
+    },
+    ...generateMonthColumns(headerMap, true, valueFormat),
+  ]
+}
+
 export function getColDefsDesignCapacityPTA(headerMap = {}, valueFormat) {
   return [
     {

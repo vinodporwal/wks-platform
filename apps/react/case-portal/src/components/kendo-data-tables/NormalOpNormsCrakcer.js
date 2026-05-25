@@ -1354,7 +1354,7 @@ const NormalOpNormsScreenCracker = () => {
               </span>{' '}
               - Overridden&nbsp;&nbsp;
               {/* Only show the following if SITE_NAME is NOT 'vmd' */}
-              {lowerSiteName !== 'vmd' && lowerSiteName !== 'hmd' && (
+              {lowerSiteName !== 'vmd' && lowerSiteName !== 'hmd' && lowerSiteName !== 'c2' && (
                 <>
                   <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span>{' '}
                   - Propane (1Z)&nbsp;&nbsp;

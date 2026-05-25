@@ -1058,7 +1058,7 @@ const CrackerConfig = () => {
           tabs={resolvedTabs}
         />
       </Box>
-      {(IS_CRACKER_HMD || IS_CRACKER_C2) && (
+      {(IS_CRACKER_HMD) && (
         <ModeSelection permissions={adjustedPermissionsReadyOnly} />
       )}
       <Box>

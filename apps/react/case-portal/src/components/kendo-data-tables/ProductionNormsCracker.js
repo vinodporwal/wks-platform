@@ -618,7 +618,65 @@ const ProductionNormsCracker = ({ permissions }) => {
       //   handleCalculateOtherProduction()
       // }
 
-      setRowsC2C3R(data)
+      let formattedData = []
+
+      const fiscalYear = AOP_YEAR
+      const startYear = parseInt(fiscalYear.split('-')[0], 10)
+      const nextYear = startYear + 1
+
+      const isLeap = (year) => new Date(year, 1, 29).getDate() === 29
+
+      if (IS_CRACKER_C2) {
+        formattedData = data.map((item) => {
+          const TPH = selectedUnit == 'TPH'
+
+          return {
+            ...item,
+            ...(TPH && {
+              apr: item.april
+                ? item.april / 24 / 30
+                : item.april?.toFixed(2) ?? '0.00',
+              may: item.may
+                ? item.may / 24 / 31
+                : item.may?.toFixed(2) ?? '0.00',
+              jun: item.june
+                ? item.june / 24 / 30
+                : item.june?.toFixed(2) ?? '0.00',
+              jul: item.july
+                ? item.july / 24 / 31
+                : item.july?.toFixed(2) ?? '0.00',
+              aug: item.aug
+                ? item.aug / 24 / 31
+                : item.aug?.toFixed(2) ?? '0.00',
+              sep: item.sep
+                ? item.sep / 24 / 30
+                : item.sep?.toFixed(2) ?? '0.00',
+              oct: item.oct
+                ? item.oct / 24 / 31
+                : item.oct?.toFixed(2) ?? '0.00',
+              nov: item.nov
+                ? item.nov / 24 / 30
+                : item.nov?.toFixed(2) ?? '0.00',
+              dec: item.dec
+                ? item.dec / 24 / 31
+                : item.dec?.toFixed(2) ?? '0.00',
+              jan: item.jan
+                ? item.jan / 24 / 31
+                : item.jan?.toFixed(2) ?? '0.00',
+              feb: item.feb
+                ? item.feb / 24 / (isLeap(nextYear) ? 29 : 28)
+                : item.feb?.toFixed(2) ?? '0.00',
+              mar: item.mar
+                ? item.mar / 24 / 31
+                : item.mar?.toFixed(2) ?? '0.00',
+            }),
+          }
+        })
+      } else {
+        formattedData = data
+      }
+
+      setRowsC2C3R(formattedData)
       setLoading(false)
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -718,7 +776,8 @@ const ProductionNormsCracker = ({ permissions }) => {
           addButton: false,
           deleteButton: false,
           editButton: false,
-          showUnit: false,
+          showUnit: IS_CRACKER_C2 ? true : false,
+          units: ['MT/Month', 'TPH'],
           saveWithRemark: true,
           showCalculate: IS_NMD || IS_VMD ? false : true,
           allAction: true,
@@ -781,6 +840,7 @@ const ProductionNormsCracker = ({ permissions }) => {
           setCurrentRemark={setCurrentRemarkC2C3R}
           currentRowId={currentRowIdC2C3R}
           permissions={adjustedPermissionsForC2C3R}
+          handleUnitChange={handleUnitChange}
           selectedUOM={'UOM'}
           note={''}
           handleRemarkCellClick={handleRemarkCellClick}
