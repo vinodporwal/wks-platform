@@ -141,9 +141,7 @@ console.log('*****  taskId:  ', taskId);
    // do not execute the effect if the task does not exits
     if(taskId && isBlocked) return;
     console.log("useEffect isBlocked: ", isBlocked)
-    localStorage.setItem('aCaseOwnerEmail', JSON.stringify(aCase.owner?.email))
-
- 
+    localStorage.setItem('aCaseOwnerEmail', JSON.stringify(aCase.owner?.name)) 
 
     // taskAssignedTo = taskId ? ProcessDefService.getTaskByTaskId(keycloak, taskId).assignee : null;
     // console.log('*****  taskAssignedTo:  ', taskAssignedTo);
@@ -421,6 +419,7 @@ console.log('*****  taskId:  ', taskId);
 
         aCase.documents = caseData?.documents || []
         aCase.comments = caseData?.comments || []
+        // aCase.owner = caseData?.owner?.name || {}  
         // aCase.stage = caseData?.stage || "Stage 0";
         return { caseData: aCase, updatedFormStructure }
       })
@@ -489,6 +488,7 @@ console.log('*****  taskId:  ', taskId);
               if (caseNo) {
                 caseNo.calculateValue = `value = ${aCase.businessKey}`
               }
+
 
               const caseTitleField =
                 level2.components[0].columns.length > 1

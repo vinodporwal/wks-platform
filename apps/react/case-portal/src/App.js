@@ -7,7 +7,7 @@ import menuItemsDefs from './menu'
 import { RegisterInjectUserSession, RegisteOptions } from './plugins'
 import { accountStore, sessionStore } from './store'
 import './App.css'
-import formPayload from './createFormJSON.json'
+// import formPayload from './createFormJSON.json'
 import dtrPayload from './DTR.json'
 import rejectPayload from './Reject.json'
 import assetTrainCreateCasePayload from './AssetTrainCreateCase.json'
@@ -54,7 +54,7 @@ const App = () => {
       forceLogoutIfUserNoMinimalRoleForSystem(keycloak)
 
       if (!formChecked) {
-          checkAndPostForm(keycloak);
+          // checkAndPostForm(keycloak);
           checkAndPostDTR(keycloak);
           checkAndPostReject(keycloak);
           checkAndPostAssetTrainCreateCase(keycloak); 
@@ -171,32 +171,32 @@ const App = () => {
     return setMenu(menu)
   }
 
-  async function checkAndPostForm(keycloak) {
-    if (localStorage.getItem('formCreated')) {
-      console.log('Form "Case Management System" already exists.')
-      return
-    }
-    try {
-      // Use FormService to get all forms
-      const data = await FormService.getAll(keycloak)
+  // async function checkAndPostForm(keycloak) {
+  //   if (localStorage.getItem('formCreated')) {
+  //     console.log('Form "Case Management System" already exists.')
+  //     return
+  //   }
+  //   try {
+  //     // Use FormService to get all forms
+  //     const data = await FormService.getAll(keycloak)
 
-      // Check if "EED Case Management System" exists in the list
-      const formExists = data.some(
-        (form) => form.title === 'Case Management System',
-      )
+  //     // Check if "EED Case Management System" exists in the list
+  //     const formExists = data.some(
+  //       (form) => form.title === 'Case Management System',
+  //     )
 
-      if (formExists) {
-        console.log('Case Management System" already exists.')
-      } else {
-        console.log(
-          'Form "Case Management System" does not exist. Creating form...',
-        )
-        await createForm(keycloak)
-      }
-    } catch (error) {
-      console.error('Error checking form existence:', error)
-    }
-  }
+  //     if (formExists) {
+  //       console.log('Case Management System" already exists.')
+  //     } else {
+  //       console.log(
+  //         'Form "Case Management System" does not exist. Creating form...',
+  //       )
+  //       await createForm(keycloak)
+  //     }
+  //   } catch (error) {
+  //     console.error('Error checking form existence:', error)
+  //   }
+  // }
 
   async function checkAndPostDTR(keycloak) {
   if (localStorage.getItem('dtrCreated')) {
@@ -317,20 +317,20 @@ async function checkAndPostCaseManagement(keycloak) {
 
 
 
-  async function createForm(keycloak) {
-    try {
-      // Use FormService to create a new form with the JSON payload
-      const response = await FormService.create(keycloak, formPayload)
+  // async function createForm(keycloak) {
+  //   try {
+  //     // Use FormService to create a new form with the JSON payload
+  //     const response = await FormService.create(keycloak, formPayload)
 
-      if (!response.ok) {
-        throw new Error('Failed to create form')
-      }
-      console.log('Form created successfully')
-      localStorage.setItem('formCreated', 'true')
-    } catch (error) {
-      console.error('Error creating form:', error)
-    }
-  }
+  //     if (!response.ok) {
+  //       throw new Error('Failed to create form')
+  //     }
+  //     console.log('Form created successfully')
+  //     localStorage.setItem('formCreated', 'true')
+  //   } catch (error) {
+  //     console.error('Error creating form:', error)
+  //   }
+  // }
 
 async function createDTR(keycloak) {
   try {
