@@ -2,6 +2,7 @@ import productionColDefs from '../../../assets/kendo_consumption_aop.json'
 import productionColDefsElastomerJmd from '../../../assets/kendo_consumption_aop_elastomerJmd.json'
 import productionColDefsElastomer from '../../../assets/kendo_consumption_aop_elastomer.json'
 import productionColDefs1 from '../../../assets/kendo_consumption_aop_cracker.json'
+import productionColCrackerC2Defs from '../../../assets/kendo_consumption_aop_cracker_c2.json'
 import productionColDefsVcm from '../../../assets/kendo_consumption_aop_vcm.json'
 import productionColDefsPta from '../../../assets/kendo_consumption_aop_pta.json'
 import productionColDefsChemical from '../../../assets/kendo_consumption_aop_chemical.json'
@@ -16,8 +17,12 @@ const getEnhancedColDefs = ({
   let colDefs = productionColDefs
 
   // console.log('lowerVertName', lowerVertName)
-
-  if (lowerVertName === 'cracker') {
+  if (lowerVertName === 'cracker' && lowerSiteName === 'c2') {
+    colDefs = productionColCrackerC2Defs
+  } else if (
+    lowerVertName === 'cracker' &&
+    !(lowerVertName === 'cracker' && lowerSiteName === 'c2')
+  ) {
     colDefs = productionColDefs1
   } else if (lowerVertName === 'elastomer' && lowerSiteName === 'jmd') {
     colDefs = productionColDefsElastomerJmd
