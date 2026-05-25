@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.wks.caseengine.dto.AOPDTO;
 import com.wks.caseengine.dto.ModeWiseNormsDTO;
 import com.wks.caseengine.dto.MonthwiseOperatingHoursDTO;
+import com.wks.caseengine.dto.PlantContributionSummaryT17DTO;
 import com.wks.caseengine.dto.PlantShutdownSlowdownNormsDurationDTO;
 import com.wks.caseengine.dto.ShutdownDetailsDTO;
 import com.wks.caseengine.dto.ShutdownNormsValueDTO;
@@ -884,5 +885,36 @@ public class ExcelDataServiceImpl implements ExcelDataService {
         map.put("rows", dataList);
         return map;
     }
+
+    @Override
+    public Map<String, Object> getSpecificConsumptionNormsT17Report(String reportType,String plantId, String year, List<String> headers) {
+        Map<String, Object> outMap = new HashMap<>();
+         AOPMessageVM aopMessageVM  = aopReportService.getSpecificConsumptionNormsT17Report(reportType,plantId, year);
+        // List<String> headers = (List<String>) map.get("headers");
+        Map<String, Object> map = (Map<String, Object>) aopMessageVM.getData();
+        List<PlantContributionSummaryT17DTO> dtoList = (List<PlantContributionSummaryT17DTO>) map.get("plantProductionData");
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (PlantContributionSummaryT17DTO dto : dtoList) {
+            List<Object> list = new ArrayList<>();
+             for (String fieldName : headers) {
+                try {
+                    Field field = dto.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true); // in case field is private
+                    Object value = field.get(dto); // Get the value as Object
+                    list.add(Objects.toString(value, null)); // Safely convert to String
+                } catch (Exception e) {
+                    // If field doesn't exist or is not accessible, add null
+                    list.add(null);
+                }
+
+            }
+            dataList.add(list);
+        }
+
+        map.put("rows", dataList);
+        return map;
+    }
+
 
 }

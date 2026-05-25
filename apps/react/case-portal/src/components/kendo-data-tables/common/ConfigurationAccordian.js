@@ -40,6 +40,17 @@ const ConfigurationAccordian = ({
   const [startShow, setStartShow] = useState(false)
   const [endShow, setEndShow] = useState(false)
 
+  const startDateConfig = configurationExecutionDetails.find(
+    (item) => item.Name === 'StartDateNorms' || item.Name === 'StartDate',
+  )
+
+  const endDateConfig = configurationExecutionDetails.find(
+    (item) => item.Name === 'EndDateNorms' || item.Name === 'EndDate',
+  )
+ 
+  const startDateFromConfig = new Date(startDateConfig?.AttributeValue)
+  const endDateDateFromConfig = new Date(endDateConfig?.AttributeValue)
+
   return (
     <Box className='configuration-accordion-wrapper'>
       <CustomAccordion
@@ -182,7 +193,7 @@ const ConfigurationAccordian = ({
                   <InfoIcon sx={{ fontSize: '0.9rem', color: '#00688C' }} />
 
                   <Typography className='last-refreshed-text'>
-                    {`Last loaded data on ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} by ${configurationExecutionDetails[0]?.User ?? ''} for period ${formatDateForText(startDate, false)} to ${formatDateForText(endDate, false)}`}
+                    {`Last loaded data on ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} by ${configurationExecutionDetails[0]?.User ?? ''} for period ${formatDateForText(startDateFromConfig, false)} to ${formatDateForText(endDateDateFromConfig, false)}`}
                   </Typography>
                 </Stack>
               </Tooltip>

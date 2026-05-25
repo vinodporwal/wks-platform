@@ -197,6 +197,16 @@ public class ExcelServiceImpl implements ExcelService {
                             }
                             
                         }
+                        else if (sheetName.equalsIgnoreCase("SpecificConsumptionNorms")) {
+                            
+                                Map<String, Object> map = excelDataService.getSpecificConsumptionNormsT17Report(dataInput, plantId, year,
+                                        headers);
+
+                                rows = (List<List<Object>>) map.get("rows");
+                                
+                            
+                            
+                        }
                         
                         else if (sheetName.equalsIgnoreCase("MonthwiseRawData")) {
                             if (tableId.equalsIgnoreCase("MonthwiseConsumptionT18")) {

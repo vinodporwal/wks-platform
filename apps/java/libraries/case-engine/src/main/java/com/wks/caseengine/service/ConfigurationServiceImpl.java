@@ -293,7 +293,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		int remarkColIndex = hasCategory ? 16 : 15;
 		int totalCols = innerHeaders.size();
 
-		// Wrap styles for the remarks column — preserve locked/unlocked appearance
+		// Wrap styles for the remarks column ? preserve locked/unlocked appearance
 		CellStyle wrapUnlockedStyle = workbook.createCellStyle();
 		wrapUnlockedStyle.setWrapText(true);
 		wrapUnlockedStyle.setVerticalAlignment(VerticalAlignment.TOP);
@@ -306,7 +306,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		wrapLockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
 		wrapLockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-		// Fixed preferred width for remarks column (~50 characters × 256 units)
+		// Fixed preferred width for remarks column (~50 characters ? 256 units)
 		final int REMARK_CHARS = 50;
 		sheet.setColumnWidth(remarkColIndex, REMARK_CHARS * 256);
 
@@ -646,7 +646,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				String procedureName = verticalName + "_" + site.getName() + "_GetConfiguration";
 				obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);
 			}
-			else if(verticalName.equalsIgnoreCase("AROMATICS") && !site.getName().equalsIgnoreCase("HMD")) {		
+			else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD"))) {		
 				obj = findByYearAndPlantFkIdAROMATICS(year, plantFKId, viewName,getVersion(year,plantFKId));
 			} else {
 				obj = findByYearAndPlantFkId(year, plantFKId, viewName);

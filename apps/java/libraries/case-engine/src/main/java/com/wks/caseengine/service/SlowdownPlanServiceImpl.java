@@ -882,28 +882,36 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	        
 	        CellStyle decimalStyle = createDecimalStyle(workbook, "0.00"); 
 	        
-	        Sheet sheet = workbook.createSheet("Sheet1");
-	        int currentRow = 0;
+        Sheet sheet = workbook.createSheet("Sheet1");
+        int currentRow = 0;
 
-	        List<List<Object>> rows = new ArrayList<>();
-	        for (ShutDownPlanDTO dto : dtoList) {
-	            List<Object> list = new ArrayList<>();
-	            String formattedDuration = "";
-	            String formattedStartDate = "";
-	            String formattedEndDate = "";
-	            try {
-	                Double durationObject = dto.getDurationInHrs();
-	                if (durationObject != null) {
-	                    double durationDouble = durationObject.doubleValue();
-	                    int hours = (int) durationDouble;
-	                    int minutes = (int) Math.round((durationDouble - hours) * 100);
-	                    formattedDuration = String.format("%02d:%02d", hours, minutes);
-	                }
-	            } catch (Exception e) {
-	                formattedDuration = "Invalid Duration";
-	            }
-	            
-	            list.add(dto.getDiscription());
+        final int REMARKS_COL_INDEX = 5;
+        final int REMARKS_COL_WIDTH = 60 * 256;
+        final int REMARKS_CHARS_PER_LINE = 58;
+        final float LINE_HEIGHT_PT = 15.0f;
+
+        CellStyle wrapStyle = workbook.createCellStyle();
+        wrapStyle.setWrapText(true);
+
+        List<List<Object>> rows = new ArrayList<>();
+        for (ShutDownPlanDTO dto : dtoList) {
+            List<Object> list = new ArrayList<>();
+            String formattedDuration = "";
+            String formattedStartDate = "";
+            String formattedEndDate = "";
+            try {
+                Double durationObject = dto.getDurationInHrs();
+                if (durationObject != null) {
+                    double durationDouble = durationObject.doubleValue();
+                    int hours = (int) durationDouble;
+                    int minutes = (int) Math.round((durationDouble - hours) * 100);
+                    formattedDuration = String.format("%02d:%02d", hours, minutes);
+                }
+            } catch (Exception e) {
+                formattedDuration = "Invalid Duration";
+            }
+            
+            list.add(dto.getDiscription());
 	            
 	            try {
 	                if (dto.getMaintStartDateTime() != null) {
@@ -968,42 +976,55 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	        }
 	        
 	       
-	        for (List<Object> rowData : rows) {
-					 Row row = sheet.createRow(currentRow++);
-					 for (int col = 0; col < rowData.size(); col++) {
-					 Cell cell = row.createCell(col);
-					 Object value = rowData.get(col);
-				
-					 if (value instanceof Date) {
-					 cell.setCellValue((Date) value);
-					 cell.setCellStyle(dateTimeStyle);
-					 } else if (value instanceof Number) {
-					 cell.setCellValue(((Number) value).doubleValue());
-	                    
-	                 
-	                    if (col == 3) {
-	                        cell.setCellStyle(decimalStyle);
-	                    }
-	                    
-						} else if (value instanceof Boolean) {
-							cell.setCellValue((Boolean) value);
-							 } else if (value != null) {
-							 cell.setCellValue(value.toString());
-							} else {
-							 cell.setCellValue("");
-							}}}
-	        
-	        
-	        	 sheet.setColumnHidden(6, true);
-	        try {
+        for (List<Object> rowData : rows) {
+            Row row = sheet.createRow(currentRow++);
+            for (int col = 0; col < rowData.size(); col++) {
+                Cell cell = row.createCell(col);
+                Object value = rowData.get(col);
 
-	            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-	            workbook.write(outputStream);
-	            workbook.close();
-	            return outputStream.toByteArray();
-	        } catch (Exception e) {
-	            e.printStackTrace();
-	        }
+                if (col == REMARKS_COL_INDEX) {
+                    cell.setCellStyle(wrapStyle);
+                    String text = (value != null) ? value.toString() : "";
+                    cell.setCellValue(text);
+                    int lineCount = (int) Math.ceil((double) Math.max(text.length(), 1) / REMARKS_CHARS_PER_LINE);
+                    float requiredHeight = lineCount * LINE_HEIGHT_PT;
+                    if (requiredHeight > row.getHeightInPoints()) {
+                        row.setHeightInPoints(requiredHeight);
+                    }
+                } else if (value instanceof Date) {
+                    cell.setCellValue((Date) value);
+                    cell.setCellStyle(dateTimeStyle);
+                } else if (value instanceof Number) {
+                    cell.setCellValue(((Number) value).doubleValue());
+                    if (col == 3) {
+                        cell.setCellStyle(decimalStyle);
+                    }
+                } else if (value instanceof Boolean) {
+                    cell.setCellValue((Boolean) value);
+                } else if (value != null) {
+                    cell.setCellValue(value.toString());
+                } else {
+                    cell.setCellValue("");
+                }
+            }
+        }
+
+        sheet.setColumnHidden(6, true);
+        for (int i = 0; i < innerHeaders.size(); i++) {
+            if (i == REMARKS_COL_INDEX) {
+                sheet.setColumnWidth(REMARKS_COL_INDEX, REMARKS_COL_WIDTH);
+            } else {
+                sheet.autoSizeColumn(i);
+            }
+        }
+        try {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+            return outputStream.toByteArray();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
 	    } catch (Exception e) {
 	        e.printStackTrace();
