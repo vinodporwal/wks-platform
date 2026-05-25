@@ -104,7 +104,7 @@ const NormalOpNormsScreenCracker = () => {
   const lowerVertName = (vertName || '').toLowerCase()
   const lowerSiteName = (siteObject?.name || '').toLowerCase()
   const lowerPlantName = (plantObject?.name || '').toLowerCase()
-
+  const IS_CRACKER_C2 = lowerVertName === 'cracker' && lowerSiteName === 'c2'
   const dispatch = useDispatch()
   const keycloak = useSession()
 
@@ -241,7 +241,57 @@ const NormalOpNormsScreenCracker = () => {
     march: 3,
   }
 
-  const colDefsFinalNorms = useMemo(
+  const colDefsFinalNormsC2 = useMemo(
+    () => [
+      {
+        field: 'sapMaterialCode',
+        title: 'SAP MAT Code',
+        widthT: 120,
+        editable: false,
+        useMethodColors: true,
+        minWidth: 150,
+      },
+      {
+        field: 'materialDisplayName',
+        title: 'Particulars',
+        widthT: 130,
+        editable: false,
+        minWidth: 300,
+      },
+      {
+        field: 'uom',
+        title: 'UOM',
+        widthT: 80,
+        editable: false,
+        minWidth: 100,
+      },
+      ...MONTHS.map((m, i) => ({
+        field: m,
+        title: headerMap[monthIndexMap[m]] || m,
+        editable: true,
+        type: 'number',
+        format: valueFormat,
+        minWidth: 120,
+      })),
+      {
+        field: 'wtAverage',
+        title: 'Weighted Average',
+        editable: false,
+        type: 'number',
+        format: valueFormat,
+        minWidth: 120,
+      },
+      {
+        field: 'isEditable',
+        title: 'isEditable',
+        hidden: true,
+        isVisible: false,
+      },
+    ],
+    [headerMap, valueFormat],
+  )
+
+  const colDefsFinalNormsDefault = useMemo(
     () => [
       {
         field: 'sapMaterialCode',
@@ -283,6 +333,9 @@ const NormalOpNormsScreenCracker = () => {
     ],
     [headerMap, valueFormat],
   )
+  const colDefsFinalNorms = IS_CRACKER_C2
+    ? colDefsFinalNormsC2
+    : colDefsFinalNormsDefault
 
   const colDefsFinalNorms1 = useMemo(
     () => [

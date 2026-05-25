@@ -171,6 +171,22 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
     )
       url = `${window.location.origin}/files/Digital AOP Automation for DMD VCM_Rev0.pdf`
 
+    // Elastomer HIIR
+    if (
+      title == 'configuration' &&
+      VERTICAL_NAME?.toLowerCase() == 'elastomer' &&
+      SITE_NAME?.toLowerCase() == 'jmd' &&
+      PLANT_NAME?.toLowerCase() == 'hiir'
+    )
+      url = `${window.location.origin}/files/Blue Print RIL AOP Automation Elastomer JMD HIIR_Rev.pdf`
+    // Elastomer IIR
+    if (
+      title == 'configuration' &&
+      VERTICAL_NAME?.toLowerCase() == 'elastomer' &&
+      SITE_NAME?.toLowerCase() == 'jmd' &&
+      PLANT_NAME?.toLowerCase() == 'iir'
+    )
+      url = `${window.location.origin}/files/Blue Print RIL AOP Automation Elastomer JMD IIR_Rev0.pdf`
     try {
       const resp = await fetch(url, {
         method: 'GET',
@@ -324,7 +340,11 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
           PLANT_NAME?.toLowerCase() === 'hdpe') ||
         (PLANT_NAME?.toLowerCase() == 'pe1' &&
           SITE_NAME?.toLowerCase() == 'hmd' &&
-          VERTICAL_NAME?.toLowerCase() == 'pe'))
+          VERTICAL_NAME?.toLowerCase() == 'pe') ||
+        ((PLANT_NAME?.toLowerCase() == 'iir' ||
+          PLANT_NAME?.toLowerCase() == 'hiir') &&
+          SITE_NAME?.toLowerCase() == 'jmd' &&
+          VERTICAL_NAME?.toLowerCase() == 'elastomer'))
     ) {
       itemContent = (
         <Typography
