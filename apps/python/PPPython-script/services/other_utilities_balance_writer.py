@@ -29,8 +29,15 @@ THIN_BORDER = Border(
 # HELPER: Norm lookup
 # ============================================================
 
+# Cache for norm lookups — avoid redundant DB roundtrips
+_NORM_DB_CACHE: dict = {}
+
+
 def get_utility_norm_from_db(month: int, year: int, plant_name: str, utility_name: str, material_name: str) -> float:
-    """Fetch norm value from NormsMonthDetail for a specific plant/utility/material."""
+    """Fetch norm value from NormsMonthDetail for a specific plant/utility/material. Cached."""
+    cache_key = (month, year, plant_name, utility_name, material_name)
+    if cache_key in _NORM_DB_CACHE:
+        return _NORM_DB_CACHE[cache_key]
     conn = get_connection()
     cursor = conn.cursor()
     try:
@@ -49,7 +56,10 @@ def get_utility_norm_from_db(month: int, year: int, plant_name: str, utility_nam
         cursor.execute(query, (month, year, plant_name, utility_name, material_name))
         db_row = cursor.fetchone()
         if db_row and db_row[0] is not None:
-            return float(db_row[0])
+            val = float(db_row[0])
+            _NORM_DB_CACHE[cache_key] = val
+            return val
+        _NORM_DB_CACHE[cache_key] = 0.0
         return 0.0
     except Exception as e:
         print(f"  [NORM FETCH] Error fetching norm for {plant_name}/{utility_name}/{material_name}: {e}")

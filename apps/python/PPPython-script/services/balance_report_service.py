@@ -23,6 +23,19 @@ from database.power_asset_queries import get_month_hours
 
 
 # ============================================================
+# MODULE-LEVEL CACHES
+# ============================================================
+# These caches avoid redundant DB roundtrips during report generation.
+# They are safe because the balance report is generated sequentially
+# (not concurrently) and data does not change mid-run.
+_PLANT_DEMAND_CACHE: dict = {}     # (month, year, utility_name) -> List[Dict]
+_FIXED_CONSUMPTION_CACHE: dict = {}  # (month, year, utility_name) -> List[Dict]
+_ASSET_MIN_MAX_CACHE: dict = {}    # (asset_name, 'min'|'max') -> float
+_NCV_CACHE: dict = {}              # (month, year, fuel_name) -> float
+_GT_HEATRATE_CACHE: dict = {}      # (month, year) -> List[rows]
+
+
+# ============================================================
 # CONSTANTS
 # ============================================================
 MONTH_NAMES = {
@@ -58,15 +71,11 @@ THIN_BORDER = Border(
 def get_asset_default_min_load(asset_name: str, month: int, year: int) -> float:
     """
     Get default min load for an asset from database.
-    
-    Args:
-        asset_name: Asset name (GT1, GT2, GT3, STG)
-        month: Month number
-        year: Year
-        
-    Returns:
-        Default min load in MW
+    Results are cached since they don't change between months.
     """
+    cache_key = (asset_name, 'min')
+    if cache_key in _ASSET_MIN_MAX_CACHE:
+        return _ASSET_MIN_MAX_CACHE[cache_key]
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -83,7 +92,9 @@ def get_asset_default_min_load(asset_name: str, month: int, year: int) -> float:
         result = cursor.fetchone()
         
         if result and result[0]:
-            return float(result[0])
+            val = float(result[0])
+            _ASSET_MIN_MAX_CACHE[cache_key] = val
+            return val
         else:
             # Default fallback values based on asset type
             defaults = {
@@ -92,7 +103,9 @@ def get_asset_default_min_load(asset_name: str, month: int, year: int) -> float:
                 'GT3': 11.0,
                 'STG': 5.0
             }
-            return defaults.get(asset_name, 0.0)
+            val = defaults.get(asset_name, 0.0)
+            _ASSET_MIN_MAX_CACHE[cache_key] = val
+            return val
             
     except Exception as e:
         print(f"Warning: Could not get default min load for {asset_name}: {e}")
@@ -103,7 +116,9 @@ def get_asset_default_min_load(asset_name: str, month: int, year: int) -> float:
             'GT3': 11.0,
             'STG': 5.0
         }
-        return defaults.get(asset_name, 0.0)
+        val = defaults.get(asset_name, 0.0)
+        _ASSET_MIN_MAX_CACHE[cache_key] = val
+        return val
     finally:
         conn.close()
 
@@ -111,15 +126,11 @@ def get_asset_default_min_load(asset_name: str, month: int, year: int) -> float:
 def get_asset_default_max_load(asset_name: str, month: int, year: int) -> float:
     """
     Get default max load for an asset from database.
-    
-    Args:
-        asset_name: Asset name (GT1, GT2, GT3, STG)
-        month: Month number
-        year: Year
-        
-    Returns:
-        Default max load in MW
+    Results are cached since they don't change between months.
     """
+    cache_key = (asset_name, 'max')
+    if cache_key in _ASSET_MIN_MAX_CACHE:
+        return _ASSET_MIN_MAX_CACHE[cache_key]
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -136,7 +147,9 @@ def get_asset_default_max_load(asset_name: str, month: int, year: int) -> float:
         result = cursor.fetchone()
         
         if result and result[0]:
-            return float(result[0])
+            val = float(result[0])
+            _ASSET_MIN_MAX_CACHE[cache_key] = val
+            return val
         else:
             # Default fallback values based on asset type
             defaults = {
@@ -145,7 +158,9 @@ def get_asset_default_max_load(asset_name: str, month: int, year: int) -> float:
                 'GT3': 22.0,
                 'STG': 25.0
             }
-            return defaults.get(asset_name, 0.0)
+            val = defaults.get(asset_name, 0.0)
+            _ASSET_MIN_MAX_CACHE[cache_key] = val
+            return val
             
     except Exception as e:
         print(f"Warning: Could not get default max load for {asset_name}: {e}")
@@ -156,7 +171,9 @@ def get_asset_default_max_load(asset_name: str, month: int, year: int) -> float:
             'GT3': 22.0,
             'STG': 25.0
         }
-        return defaults.get(asset_name, 0.0)
+        val = defaults.get(asset_name, 0.0)
+        _ASSET_MIN_MAX_CACHE[cache_key] = val
+        return val
     finally:
         conn.close()
 
@@ -170,15 +187,11 @@ def get_plant_wise_demand(month: int, year: int, utility_name: str) -> List[Dict
     Fetch plant-wise demand from CalculatedProcessDemand table.
     Returns ALL NMD plants (using Power_Dis as master list) with 0 for any
     plant that has no demand for the requested utility/month.
-
-    Args:
-        month: Month number (1-12)
-        year: Year
-        utility_name: Utility name (e.g., 'Power_Dis', 'SHP Steam_Dis')
-
-    Returns:
-        List of dicts with plant_name and demand_value (0 if no data)
+    Results are cached for the duration of the process.
     """
+    cache_key = (month, year, utility_name)
+    if cache_key in _PLANT_DEMAND_CACHE:
+        return _PLANT_DEMAND_CACHE[cache_key]
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -225,6 +238,7 @@ def get_plant_wise_demand(month: int, year: int, utility_name: str) -> List[Dict
                 'demand_value': float(row[1])
             })
 
+        _PLANT_DEMAND_CACHE[cache_key] = result
         return result
 
     except Exception as e:
@@ -239,15 +253,11 @@ def get_fixed_consumption_details(month: int, year: int, utility_name: str) -> L
     Fetch fixed consumption with consumer and plant details.
     Returns ALL cost centers (using CPPCostCenters as master list) with 0 for any
     cost center that has no entry for the requested utility/month.
-
-    Args:
-        month: Month number (1-12)
-        year: Year
-        utility_name: Utility name (e.g., 'Power_Dis', 'LP Steam_Dis')
-
-    Returns:
-        List of dicts with consumer_name, plant_name, and consumption_value (0 if no data)
+    Results are cached for the duration of the process.
     """
+    cache_key = (month, year, utility_name)
+    if cache_key in _FIXED_CONSUMPTION_CACHE:
+        return _FIXED_CONSUMPTION_CACHE[cache_key]
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -296,6 +306,7 @@ def get_fixed_consumption_details(month: int, year: int, utility_name: str) -> L
                 'consumption_value': float(row[2]) if row[2] else 0.0
             })
 
+        _FIXED_CONSUMPTION_CACHE[cache_key] = result
         return result
 
     except Exception as e:
@@ -310,15 +321,11 @@ def get_fixed_consumption_details(month: int, year: int, utility_name: str) -> L
 def get_ncv_from_fuel_availability(month: int, year: int, fuel_name: str = 'NATURAL GAS') -> float:
     """
     Fetch NCV (Net Calorific Value) from CPPFuelAvailability table for a specific month.
-    
-    Args:
-        month: Month number (1-12)
-        year: Year
-        fuel_name: Fuel name (default: 'NATURAL GAS')
-    
-    Returns:
-        NCV value in GBT (Gross Billion Therms) or 0 if not found
+    Results are cached for the duration of the process.
     """
+    cache_key = (month, year, fuel_name)
+    if cache_key in _NCV_CACHE:
+        return _NCV_CACHE[cache_key]
     conn = get_connection()
     cursor = conn.cursor()
     
@@ -346,7 +353,10 @@ def get_ncv_from_fuel_availability(month: int, year: int, fuel_name: str = 'NATU
         row = cursor.fetchone()
         
         if row and row[0]:
-            return float(row[0])
+            val = float(row[0])
+            _NCV_CACHE[cache_key] = val
+            return val
+        _NCV_CACHE[cache_key] = 0.0
         return 0.0
         
     except Exception as e:
@@ -361,85 +371,77 @@ def get_gt_heat_rate_and_free_steam(month: int, year: int, asset_name: str, gt_l
     """
     Fetch GT Heat Rate and Free Steam Factor from CPP_GTHeatRate table based on allocated load.
     Uses the heat rate for the load point closest to (but not exceeding) the actual load.
-    
-    Args:
-        month: Month number (1-12)
-        year: Year
-        asset_name: Asset name (e.g., 'GT-1', 'GT-2', 'GT-3')
-        gt_load_mw: GT allocated load in MW
-    
-    Returns:
-        Tuple of (heat_rate, free_steam_factor) or (0.0, 0.0) if not found
+    The underlying heat rate table (GT-1 curve) is cached per financial year.
     """
-    conn = get_connection()
-    cursor = conn.cursor()
-    
-    try:
-        # Get financial year string
-        if month >= 4:
-            fy_string = f"{year}-{str(year + 1)[-2:]}"
+    # Get financial year string
+    if month >= 4:
+        fy_string = f"{year}-{str(year + 1)[-2:]}"
+    else:
+        fy_string = f"{year - 1}-{str(year)[-2:]}"
+
+    # Cache the heat rate table rows (same for all GTs - uses GT-1 curve)
+    cache_key = fy_string
+    if cache_key not in _GT_HEATRATE_CACHE:
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            query = """
+                SELECT GTLoad, FinalHeatRate, FreeSteamFactor
+                FROM dbo.CPP_GTHeatRate
+                WHERE FinancialYear = ? AND AssetName = 'GT-1'
+                ORDER BY GTLoad
+            """
+            cursor.execute(query, (fy_string,))
+            _GT_HEATRATE_CACHE[cache_key] = cursor.fetchall()
+        except Exception as e:
+            print(f"Error fetching GT Heat Rate table: {e}")
+            _GT_HEATRATE_CACHE[cache_key] = []
+        finally:
+            cursor.close()
+            conn.close()
+
+    rows = _GT_HEATRATE_CACHE[cache_key]
+
+    if not rows:
+        return 0.0, 0.0
+
+    # Find the appropriate heat rate based on load
+    # Use the heat rate for the highest load point that doesn't exceed actual load
+    selected_heat_rate = 0.0
+    selected_free_steam = 0.0
+    for row in rows:
+        load_point = float(row[0])
+        heat_rate = float(row[1])
+        free_steam = float(row[2])
+
+        if load_point <= gt_load_mw:
+            selected_heat_rate = heat_rate
+            selected_free_steam = free_steam
         else:
-            fy_string = f"{year - 1}-{str(year)[-2:]}"
-        
-        # Query heat rate table - get all load points for this asset, ordered by load
-        # Use GT-1 as common curve for consistency
-        query = """
-            SELECT GTLoad, FinalHeatRate, FreeSteamFactor
-            FROM dbo.CPP_GTHeatRate
-            WHERE FinancialYear = ? AND AssetName = 'GT-1'
-            ORDER BY GTLoad
-        """
-        
-        cursor.execute(query, (fy_string,))
-        rows = cursor.fetchall()
-        
-        if not rows:
-            return 0.0, 0.0
-        
-        # Find the appropriate heat rate based on load
-        # Use the heat rate for the highest load point that doesn't exceed actual load
-        selected_heat_rate = 0.0
-        selected_free_steam = 0.0
+            break  # Stop when we exceed the actual load
+
+    # If selected heat rate is 0, find the nearest non-zero heat rate
+    if selected_heat_rate == 0.0:
+        # Look for the nearest load point with non-zero heat rate
+        min_diff = float('inf')
+        nearest_heat_rate = 0.0
+        nearest_free_steam = 0.0
         for row in rows:
             load_point = float(row[0])
             heat_rate = float(row[1])
             free_steam = float(row[2])
-            
-            if load_point <= gt_load_mw:
-                selected_heat_rate = heat_rate
-                selected_free_steam = free_steam
-            else:
-                break  # Stop when we exceed the actual load
-        
-        # If selected heat rate is 0, find the nearest non-zero heat rate
-        if selected_heat_rate == 0.0:
-            # Look for the nearest load point with non-zero heat rate
-            min_diff = float('inf')
-            nearest_heat_rate = 0.0
-            nearest_free_steam = 0.0
-            for row in rows:
-                load_point = float(row[0])
-                heat_rate = float(row[1])
-                free_steam = float(row[2])
-                
-                if heat_rate != 0.0:
-                    diff = abs(load_point - gt_load_mw)
-                    if diff < min_diff:
-                        min_diff = diff
-                        nearest_heat_rate = heat_rate
-                        nearest_free_steam = free_steam
-            
-            selected_heat_rate = nearest_heat_rate
-            selected_free_steam = nearest_free_steam
-        
-        return selected_heat_rate, selected_free_steam
-        
-    except Exception as e:
-        print(f"Error fetching GT Heat Rate and Free Steam: {e}")
-        return 0.0, 0.0
-    finally:
-        cursor.close()
-        conn.close()
+
+            if heat_rate != 0.0:
+                diff = abs(load_point - gt_load_mw)
+                if diff < min_diff:
+                    min_diff = diff
+                    nearest_heat_rate = heat_rate
+                    nearest_free_steam = free_steam
+
+        selected_heat_rate = nearest_heat_rate
+        selected_free_steam = nearest_free_steam
+
+    return selected_heat_rate, selected_free_steam
 
 
 def extract_asset_availability_data(month: int, year: int, calculation_result: dict) -> Dict:
@@ -595,6 +597,13 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
     steam_assets = []
     hrsg_names = ['HRSG1', 'HRSG2', 'HRSG3']
     
+    # Display names for HRSGs (shown in Excel Section V)
+    hrsg_display_names = {
+        'HRSG1': 'HRSG1 (Fired + Free Steam)',
+        'HRSG2': 'HRSG2 (Fired + Free Steam)',
+        'HRSG3': 'HRSG3 (Fired + Free Steam)',
+    }
+    
     # Create GT to HRSG mapping
     gt_hrsg_map = {
         'HRSG1': 'GT1',
@@ -606,6 +615,7 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
         # Get linked GT availability hours
         linked_gt = gt_hrsg_map.get(hrsg_name)
         gt_hours = 0
+        display_name = hrsg_display_names.get(hrsg_name, hrsg_name)
         
         # Find the linked GT's availability hours from generation_assets
         for gen_asset in generation_assets:
@@ -623,7 +633,7 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
             avg_load = hrsg_load_map.get(hrsg_name, 0)
             
             steam_assets.append({
-                'asset_name': hrsg_name,
+                'asset_name': display_name,
                 'availability_hr': gt_hours,  # Use linked GT hours
                 'min_capacity': min_cap,
                 'max_capacity': max_cap,
@@ -634,7 +644,7 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
             avg_load = hrsg_load_map.get(hrsg_name, 0)
             
             steam_assets.append({
-                'asset_name': hrsg_name,
+                'asset_name': display_name,
                 'availability_hr': gt_hours,  # Use linked GT hours even if HRSG data not available
                 'min_capacity': 60,
                 'max_capacity': 130,
@@ -1734,6 +1744,7 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
     final_steam = usd_result.get('final_steam_balance', {})
     stg_extraction = calculation_result.get('stg_extraction', {})
     utility_consumption = calculation_result.get('utility_consumption', {})
+    hrsg_full_load_mode = calculation_result.get('hrsg_full_load_mode', False)
     
     steam_type_lower = steam_type.lower()
     steam_balance = final_steam.get(f'{steam_type_lower}_balance', {})
@@ -1871,15 +1882,21 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
         for col in range(1, 6):
             ws.cell(row=row, column=col).border = THIN_BORDER
         row += 1
-
-        hrsg_dispatch = usd_result.get('hrsg_dispatch', {}) or {}
-        free_steam_offset = hrsg_dispatch.get('total_free_steam_mt', 0) or 0
-        ws[f'A{row}'] = "  Free Steam Offset"
-        ws[f'C{row}'] = round(-free_steam_offset, 2)
-        u4u_total -= free_steam_offset
-        for col in range(1, 6):
-            ws.cell(row=row, column=col).border = THIN_BORDER
-        row += 1
+        
+        if hrsg_full_load_mode:
+            # Free steam is considered negative demand
+            hrsg_dispatch = usd_result.get('hrsg_dispatch', {})
+            hrsg_dispatch_list = hrsg_dispatch.get('hrsg_dispatch', [])
+            
+            for h in hrsg_dispatch_list:
+                free_mt = h.get('free_steam_mt', 0)
+                if free_mt > 0:
+                    ws[f'A{row}'] = f"  {h.get('linked_gt', 'GT')} (Free Steam Offset)"
+                    ws[f'C{row}'] = -round(free_mt, 2)
+                    u4u_total -= free_mt
+                    for col in range(1, 6):
+                        ws.cell(row=row, column=col).border = THIN_BORDER
+                    row += 1
     
     elif steam_type == 'MP':
         # MP consumed by PRDS to generate LP (steam cascade)
@@ -1954,9 +1971,11 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
     
     # SHP uses 'shp_total_demand' key, others use '{type}_total'
     if steam_type == 'SHP':
-        hrsg_dispatch = usd_result.get('hrsg_dispatch', {}) or {}
-        free_steam_offset = hrsg_dispatch.get('total_free_steam_mt', 0) or 0
-        total_demand_actual = max(0, steam_result.get('shp_total_demand', 0) - free_steam_offset)
+        total_demand_actual = steam_result.get('shp_total_demand', 0)
+        if hrsg_full_load_mode:
+            hrsg_dispatch = usd_result.get('hrsg_dispatch', {})
+            total_free = sum(h.get('free_steam_mt', 0) for h in hrsg_dispatch.get('hrsg_dispatch', []))
+            total_demand_actual -= total_free
     else:
         total_demand_actual = steam_result.get(f'{steam_type_lower}_total', 0)
     
@@ -1987,29 +2006,43 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
         hrsg_dispatch_list = hrsg_dispatch.get('hrsg_dispatch', [])
 
         # Build name → supplementary MT map from dispatch list
-        hrsg_shp_gen = {'HRSG-1': 0.0, 'HRSG-2': 0.0, 'HRSG-3': 0.0}
+        hrsg_shp_gen = {
+            'HRSG-1 (Supp Firing)': 0.0, 'GT-1 (Free Steam)': 0.0,
+            'HRSG-2 (Supp Firing)': 0.0, 'GT-2 (Free Steam)': 0.0,
+            'HRSG-3 (Supp Firing)': 0.0, 'GT-3 (Free Steam)': 0.0
+        }
         for hrsg_data in hrsg_dispatch_list:
             raw_name = hrsg_data.get('name', '')
             dispatched_supp_mt = hrsg_data.get('dispatched_supp_mt', 0) or 0
+            free_steam_mt = hrsg_data.get('free_steam_mt', 0) or 0
+            
             norm = (raw_name.upper()
                     .replace('NMD-', '').replace('NMD ', '')
                     .replace('_SHP STEAM', '').replace('SHP STEAM', '')
                     .strip())
             # Map to canonical labels
             if '1' in norm:
-                hrsg_shp_gen['HRSG-1'] = dispatched_supp_mt
+                hrsg_shp_gen['HRSG-1 (Supp Firing)'] = dispatched_supp_mt
+                if not hrsg_full_load_mode:
+                    hrsg_shp_gen['GT-1 (Free Steam)'] = free_steam_mt
             elif '2' in norm:
-                hrsg_shp_gen['HRSG-2'] = dispatched_supp_mt
+                hrsg_shp_gen['HRSG-2 (Supp Firing)'] = dispatched_supp_mt
+                if not hrsg_full_load_mode:
+                    hrsg_shp_gen['GT-2 (Free Steam)'] = free_steam_mt
             elif '3' in norm:
-                hrsg_shp_gen['HRSG-3'] = dispatched_supp_mt
+                hrsg_shp_gen['HRSG-3 (Supp Firing)'] = dispatched_supp_mt
+                if not hrsg_full_load_mode:
+                    hrsg_shp_gen['GT-3 (Free Steam)'] = free_steam_mt
         
+        # Add to excel
         for hrsg_label, shp_mt in hrsg_shp_gen.items():
-            ws[f'D{gen_row}'] = hrsg_label
-            ws[f'E{gen_row}'] = round(shp_mt, 2)
-            generation_total += shp_mt
-            for col in range(1, 6):
-                ws.cell(row=gen_row, column=col).border = THIN_BORDER
-            gen_row += 1
+            if shp_mt > 0 or 'Supp Firing' in hrsg_label: # Always show HRSG rows even if 0, but only show GT rows if >0
+                ws[f'D{gen_row}'] = hrsg_label
+                ws[f'E{gen_row}'] = round(shp_mt, 2)
+                generation_total += shp_mt
+                for col in range(1, 6):
+                    ws.cell(row=gen_row, column=col).border = THIN_BORDER
+                gen_row += 1
     
     elif steam_type == 'HP':
         # HP from PRDS (SHP → HP) — always show
@@ -2242,20 +2275,18 @@ def write_other_utilities_section(ws, start_row: int, month: int, year: int, cal
 # SECTION IV: OTHER UTILITIES BALANCE
 # ============================================================
 
+# Cache for get_utility_norm_from_db — called 30+ times per month across files
+_UTILITY_NORM_CACHE: dict = {}  # (month, year, plant, utility, material) -> float
+
+
 def get_utility_norm_from_db(month: int, year: int, plant_name: str, utility_name: str, material_name: str) -> float:
     """
     Fetch norm value from NormsMonthDetail table for a specific plant, utility, and material.
-    
-    Args:
-        month: Month number (1-12)
-        year: Year
-        plant_name: Plant name (e.g., 'NMD - Utility Plant')
-        utility_name: Utility name (e.g., 'Boiler Feed Water')
-        material_name: Material name (e.g., 'D M Water', 'Power_Dis')
-    
-    Returns:
-        Norm value from database, or 0.0 if not found
+    Results are cached for the duration of the process.
     """
+    cache_key = (month, year, plant_name, utility_name, material_name)
+    if cache_key in _UTILITY_NORM_CACHE:
+        return _UTILITY_NORM_CACHE[cache_key]
     conn = get_connection()
     cursor = conn.cursor()
     
@@ -2277,7 +2308,10 @@ def get_utility_norm_from_db(month: int, year: int, plant_name: str, utility_nam
         row = cursor.fetchone()
         
         if row and row[0] is not None:
-            return float(row[0])
+            val = float(row[0])
+            _UTILITY_NORM_CACHE[cache_key] = val
+            return val
+        _UTILITY_NORM_CACHE[cache_key] = 0.0
         return 0.0
         
     except Exception as e:

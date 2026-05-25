@@ -134,11 +134,12 @@ def _get_steam_balance_totals(usd_result: dict, steam_type: str) -> dict:
 
     if steam_type == "SHP":
         hrsg_dispatch = usd_result.get("hrsg_dispatch", {}) or {}
-        free_steam_offset = float(hrsg_dispatch.get("total_free_steam_mt", 0) or 0)
-        demand_mt = max(0.0, float(steam_balance.get("shp_total_demand", 0) or 0) - free_steam_offset)
+        demand_mt = float(steam_balance.get("shp_total_demand", 0) or 0)
 
+        # Total SHP generation = free steam + supplementary firing for all HRSGs
         generation_mt = 0.0
         for hrsg_data in hrsg_dispatch.get("hrsg_dispatch", []) or []:
+            generation_mt += float(hrsg_data.get("free_steam_mt", 0) or 0)
             generation_mt += float(hrsg_data.get("dispatched_supp_mt", 0) or 0)
 
         return {
@@ -674,6 +675,7 @@ def calculate_budget_with_iteration(
     raw_water_fixed: float = 0.0,      # Raw Water fixed consumption (M3)
     oxygen_mt: float = 0.0,            # Oxygen consumed by process plants (MT)
     save_to_db: bool = False,          # Auto-save calculated values to NormsMonthDetail
+    hrsg_full_load: bool = False,      # If true, load HRSG without subtracting free steam
 ) -> dict:
     """
     Complete budget calculation with USD iteration following the flowchart.
@@ -729,6 +731,7 @@ def calculate_budget_with_iteration(
         export_available=export_available,
         dm_process=dm_process,
         dm_fixed=dm_fixed,
+        hrsg_full_load=hrsg_full_load
     )
     
     # Print summary if verbose
@@ -823,10 +826,8 @@ def calculate_budget_with_iteration(
         mp_from_prds = mp_bal.get("mp_from_prds", 0)
     
     # Get HRSG SHP values from HRSG Dispatch (priority-based allocation)
-    # NEW LOGIC:
-    # - HRSG SHP = Dispatched Supplementary Firing only (NOT including free steam)
-    # - Free Steam is separate and adds to total SHP supply
-    # - Total SHP Supply = Free Steam + HRSG1 Supp + HRSG2 Supp + HRSG3 Supp
+    # HRSG SHP = Free Steam + Dispatched Supplementary Firing (total HRSG output)
+    # This total is used for all downstream utility calculations (BFW, Air, Water, etc.)
     shp_from_hrsg1 = 0.0
     shp_from_hrsg2 = 0.0
     shp_from_hrsg3 = 0.0
@@ -835,7 +836,7 @@ def calculate_budget_with_iteration(
     hrsg2_available = False
     hrsg3_available = False
     
-    # Get dispatched supp firing from hrsg_dispatch result
+    # Get free steam + dispatched supp firing from hrsg_dispatch result
     if usd_result.get("hrsg_dispatch"):
         hrsg_dispatch = usd_result["hrsg_dispatch"]
         total_free_steam = hrsg_dispatch.get("total_free_steam_mt", 0)
@@ -848,17 +849,20 @@ def calculate_budget_with_iteration(
             dispatched_supp = hrsg_data.get("dispatched_supp_mt", 0)
             free_steam = hrsg_data.get("free_steam_mt", 0)
             
+            # Total HRSG SHP = free steam + supplementary firing
+            total_hrsg_shp = free_steam + dispatched_supp
+            
             # HRSG is available only if it has free steam or dispatched supp firing
             is_available = (free_steam > 0 or dispatched_supp > 0)
             
             if 'HRSG1' in hrsg_name_normalized:
-                shp_from_hrsg1 = dispatched_supp
+                shp_from_hrsg1 = total_hrsg_shp
                 hrsg1_available = is_available
             elif 'HRSG2' in hrsg_name_normalized:
-                shp_from_hrsg2 = dispatched_supp
+                shp_from_hrsg2 = total_hrsg_shp
                 hrsg2_available = is_available
             elif 'HRSG3' in hrsg_name_normalized:
-                shp_from_hrsg3 = dispatched_supp
+                shp_from_hrsg3 = total_hrsg_shp
                 hrsg3_available = is_available
     else:
         # Fallback to old logic if hrsg_dispatch not available
@@ -868,24 +872,23 @@ def calculate_budget_with_iteration(
             for hrsg_data in hrsg_details:
                 hrsg_name = hrsg_data.get("name", "").upper()
                 if hrsg_data.get("is_available"):
-                    # Use MIN supp firing as fallback
+                    # Use free steam + MIN supp firing as fallback
                     supp_min = hrsg_data.get("supp_min_mt_month", 0)
                     free_steam = hrsg_data.get("free_steam_mt", 0)
                     total_free_steam += free_steam
                     
                     if 'HRSG1' in hrsg_name:
-                        shp_from_hrsg1 = supp_min
+                        shp_from_hrsg1 = free_steam + supp_min
                         hrsg1_available = True
                     elif 'HRSG2' in hrsg_name:
-                        shp_from_hrsg2 = supp_min
+                        shp_from_hrsg2 = free_steam + supp_min
                         hrsg2_available = True
                     elif 'HRSG3' in hrsg_name:
-                        shp_from_hrsg3 = supp_min
+                        shp_from_hrsg3 = free_steam + supp_min
                         hrsg3_available = True
     
-    # Note: shp_from_hrsg values now represent ONLY supplementary firing
-    # Free steam is tracked separately in total_free_steam
-    # Total SHP supply = total_free_steam + shp_from_hrsg1 + shp_from_hrsg2 + shp_from_hrsg3
+    # Note: shp_from_hrsg values now represent total HRSG output (free steam + supplementary firing)
+    # Total SHP supply = shp_from_hrsg1 + shp_from_hrsg2 + shp_from_hrsg3
     
     # Extract power result data for utility calculation
     power_result_data = usd_result.get("power_result", {})
@@ -993,6 +996,7 @@ def calculate_budget_with_iteration(
         "final_lp_balance": usd_result.get("final_lp_balance"),  # STG load-based LP balance
         "final_mp_balance": usd_result.get("final_mp_balance"),  # STG load-based MP balance
         "utility_consumption": utilities,  # Now includes calculated utilities
+        "hrsg_full_load_mode": hrsg_full_load, # Store flag for reporting
         "adjustments": {
             "supplementary_firing_mt": usd_result.get("supplementary_firing_mt", 0),
         },
@@ -1028,6 +1032,12 @@ def calculate_budget_with_iteration(
         print_save_summary(save_result)
         result["save_result"] = save_result
     
+    # Set top-level message for easier status reporting
+    if result.get("errors"):
+        result["message"] = result["errors"][0]["message"]
+    else:
+        result["message"] = "Converged"
+
     return result
 
 

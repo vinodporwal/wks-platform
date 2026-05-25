@@ -126,13 +126,13 @@ NORM_AIR_PER_MT_SHP_HRSG = 9.7440           # ~468720 NM3 per ~48000 MT SHP (sca
 
 # Iteration Constants
 USD_ITERATION_LIMIT = 50
-USD_TOLERANCE = 0.001  # MWh tolerance for aux power convergence
+USD_TOLERANCE = 0.02  # MWh tolerance for aux power convergence (relaxed to handle rounding steps)
 EXCESS_STEAM_ACTION_THRESHOLD_MT = 1.0
 EXCESS_STEAM_PRACTICAL_TOLERANCE_MT = 0.1
 STALL_ITERATION_LIMIT = 3
 STALL_EXCESS_STEAM_DELTA_MT = 1.1
-STALL_POWER_AUX_DELTA_MWH = 0.001
-STALL_STG_DELTA_MWH = 0.001
+STALL_POWER_AUX_DELTA_MWH = 0.02
+STALL_STG_DELTA_MWH = 0.02
 
 
 # ============================================================
@@ -557,6 +557,7 @@ def usd_iterate(
     export_available: bool = False,
     dm_process: float = 54779.0,       # DM Water process consumption (M3)
     dm_fixed: float = 0.0,             # DM Water fixed consumption (M3)
+    hrsg_full_load: bool = False,      # If true, load HRSG without subtracting free steam
 ) -> dict:
     """
     Execute USD iteration loop to balance power and steam.
@@ -1076,7 +1077,10 @@ def usd_iterate(
         # (Linked to GT dispatch - HRSG available when GT is running)
         # ---------------------------------------------------------
         hrsg_availability = get_hrsg_availability_from_dispatch(current_dispatch)
-        shp_capacity = calculate_shp_generation_capacity(hrsg_availability)
+        shp_capacity = calculate_shp_generation_capacity(
+            hrsg_availability=hrsg_availability,
+            hrsg_full_load=hrsg_full_load
+        )
         
         print("\n" + "="*90)
         print("HRSG AVAILABILITY & SHP CAPACITY")
@@ -1209,7 +1213,8 @@ def usd_iterate(
         # Also calculate MIN load result for backward compatibility
         hrsg_min_load_result = calculate_hrsg_min_load_and_excess_steam(
             power_dispatch=current_dispatch,
-            shp_demand=shp_demand
+            shp_demand=shp_demand,
+            hrsg_full_load=hrsg_full_load
         )
         final_hrsg_min_load = hrsg_min_load_result
         
@@ -1358,7 +1363,7 @@ def usd_iterate(
         
         # BFW = HRSG BFW + PRDS BFW + Fixed (300 M3)
         # HRSG BFW based on total HRSG SHP supply (free steam + supplementary firing)
-        total_shp_from_hrsg = hrsg_dispatch_result.get("total_shp_supply_mt", supplementary_firing_needed)
+        total_shp_from_hrsg = hrsg_dispatch_result.get("actual_total_shp_output_mt", supplementary_firing_needed)
         bfw_hrsg = total_shp_from_hrsg * NORM_BFW_PER_MT_SHP
         bfw_hp_prds = hp_process * 0.0768
         bfw_mp_prds = mp_total * 0.09
@@ -1568,19 +1573,27 @@ def usd_iterate(
         # 2. Reduce GT dispatch to maintain power balance
         # IMPORTANT: Only start balancing AFTER power has initially converged
         # ---------------------------------------------------------
+        # ---------------------------------------------------------
+        # STEP 3g.1: EXCESS STEAM BALANCING (PROPORTIONAL CONTROLLER)
+        # If HRSG MIN load produces excess steam, increase STG to absorb it.
+        # If we overshot (deficit), decrease STG override.
+        # ---------------------------------------------------------
         stg_increased = False
         excess_steam_adjustment_mwh = 0.0
         
         # Check if power has initially converged (aux error is small enough)
         if aux_power_error < 10.0:  # Power is close to converged
             power_initially_converged = True
-        
-        if excess_steam_mt > 0 and power_initially_converged:
-            # Calculate how much STG can increase to absorb excess steam
-            # Excess power from steam = excess_steam_mt / 3.56 MT/MWh
-            potential_stg_increase = excess_power_from_steam_mwh
             
-            # Check STG capacity limits
+        true_excess_steam_mt = total_supp_min - net_shp_demand
+        if power_initially_converged and (true_excess_steam_mt > EXCESS_STEAM_PRACTICAL_TOLERANCE_MT or excess_steam_controller_mode == "HRSG_MIN_EXCESS"):
+            # Use dynamic conversion factor if available
+            conversion_rate = stg_extraction.get("sp_steam_power", STEAM_TO_POWER_MT_PER_MWH) if stg_extraction else STEAM_TO_POWER_MT_PER_MWH
+            if conversion_rate <= 0:
+                conversion_rate = STEAM_TO_POWER_MT_PER_MWH
+                
+            desired_stg_adj_mwh = true_excess_steam_mt / conversion_rate
+            
             stg_db_min_mwh = 0.0
             stg_db_max_mwh = 0.0
             stg_current_mwh = stg_gross_mwh
@@ -1591,114 +1604,50 @@ def usd_iterate(
                     stg_db_min_mwh = asset.get("MinMW", 5.0) * asset.get("Hours", 720)
                     stg_db_max_mwh = asset.get("CapacityMW", 25) * asset.get("Hours", 720)
                     break
+                    
+            target_stg_mwh = stg_current_mwh + desired_stg_adj_mwh
+            # Clamp to limits
+            target_stg_mwh = max(stg_db_min_mwh, min(target_stg_mwh, stg_db_max_mwh))
             
-            # Calculate how much STG can actually increase
-            stg_available_increase = stg_db_max_mwh - stg_current_mwh
-            actual_stg_increase = min(potential_stg_increase, stg_available_increase)
+            actual_stg_adj = target_stg_mwh - stg_current_mwh
+            action_threshold_mwh = EXCESS_STEAM_ACTION_THRESHOLD_MT / conversion_rate
             
-            # Check if GTs can be reduced further (not below MIN)
-            gt_available_reduction = 0.0
-            for asset in current_dispatch:
-                asset_name = str(asset.get("AssetName", "")).upper()
-                if "GT" in asset_name or "PLANT" in asset_name:
-                    gt_current = asset.get("GrossMWh", 0)
-                    gt_min = asset.get("MinMW", 5.0) * asset.get("Hours", 720)
-                    gt_available_reduction += max(0, gt_current - gt_min)
-            
-            # Actual increase is limited by both STG capacity AND GT reduction available
-            actual_stg_increase = min(actual_stg_increase, gt_available_reduction)
-            damped_stg_increase = actual_stg_increase * 0.5
-            actual_stg_increase = min(actual_stg_increase, damped_stg_increase if damped_stg_increase > 0 else actual_stg_increase)
-            damped_stg_increase = actual_stg_increase * 0.5
-            actual_stg_increase = min(actual_stg_increase, damped_stg_increase if damped_stg_increase > 0 else actual_stg_increase)
-            
-            action_threshold_mwh = EXCESS_STEAM_ACTION_THRESHOLD_MT / STEAM_TO_POWER_MT_PER_MWH
-            if actual_stg_increase > action_threshold_mwh:
+            if abs(actual_stg_adj) > action_threshold_mwh or abs(true_excess_steam_mt) > EXCESS_STEAM_PRACTICAL_TOLERANCE_MT:
                 print("\n" + "="*90)
-                print("⚡ EXCESS STEAM BALANCING (ITERATIVE)")
+                print("⚡ EXCESS STEAM BALANCING (PROPORTIONAL CONTROLLER)")
                 print("="*90)
                 print(f"  Iteration:                          {iteration}")
-                print(f"  Excess Steam from HRSG MIN Load:    {excess_steam_mt:>12.2f} MT")
-                print(f"  Potential STG Increase:             {potential_stg_increase:>12.2f} MWh")
-                print(f"  STG Current:                        {stg_current_mwh:>12.2f} MWh")
-                print(f"  STG Max Capacity:                   {stg_db_max_mwh:>12.2f} MWh")
-                print(f"  STG Available Increase:             {stg_available_increase:>12.2f} MWh")
-                print(f"  GT Available Reduction:             {gt_available_reduction:>12.2f} MWh")
-                print(f"  Damped STG Increase (50%):          {damped_stg_increase:>12.2f} MWh")
-                print(f"  Damped STG Increase (50%):          {damped_stg_increase:>12.2f} MWh")
-                print(f"  Actual STG Increase:                {actual_stg_increase:>12.2f} MWh")
+                print(f"  True Excess Steam:                  {true_excess_steam_mt:>12.2f} MT")
+                print(f"  Desired STG Adj:                    {desired_stg_adj_mwh:>12.2f} MWh")
+                print(f"  Actual STG Adj:                     {actual_stg_adj:>12.2f} MWh")
+                print(f"  Target STG Load:                    {target_stg_mwh:>12.2f} MWh")
                 print(f"  ─────────────────────────────────────────────")
-                
-                # Calculate GT reduction needed to maintain power balance
-                gt_reduction_needed = actual_stg_increase
-                print(f"  GT Reduction Needed:                {gt_reduction_needed:>12.2f} MWh")
-                print(f"  ─────────────────────────────────────────────")
-                print(f"  ACTION: Will increase STG and reduce GT in next iteration")
+                print(f"  ACTION: Adjusting STG override for next iteration")
                 print("="*90 + "\n")
                 
-                # SET VALUES FOR NEXT ITERATION
-                # Calculate target STG (not incremental - direct target)
-                target_stg_mwh = stg_current_mwh + actual_stg_increase
-                stg_min_override_mwh = min(target_stg_mwh, stg_db_max_mwh)
-                
-                # Calculate GT reduction needed (fresh calculation, not accumulated)
-                # GT reduction = how much STG increased from its natural dispatch
-                gt_reduction_for_balance_mwh = actual_stg_increase
+                stg_min_override_mwh = target_stg_mwh
+                gt_reduction_for_balance_mwh = 0.0 # Handled naturally by power_service
                 excess_steam_balancing_active = True
                 excess_steam_controller_mode = "HRSG_MIN_EXCESS"
                 
-                # Store adjustment for next iteration
-                excess_steam_adjustment_mwh = actual_stg_increase
-                stg_increased = True
-                
-                iteration_record["action"] = f"EXCESS_STEAM_BALANCE_STG+{actual_stg_increase:.2f}_GT-{gt_reduction_needed:.2f}"
+                excess_steam_adjustment_mwh = actual_stg_adj
+                if actual_stg_adj > 0:
+                    stg_increased = True
+                    
+                iteration_record["action"] = f"EXCESS_STEAM_BALANCE_STG{actual_stg_adj:+.2f}"
                 iteration_record["status"] = "EXCESS_STEAM_BALANCING"
-            elif excess_steam_mt > EXCESS_STEAM_PRACTICAL_TOLERANCE_MT and (stg_available_increase <= action_threshold_mwh or gt_available_reduction <= action_threshold_mwh):
-                # Excess steam exists but can't be absorbed (GTs at MIN or STG at MAX)
-                print("\n" + "="*90)
-                print("⚠️ EXCESS STEAM - CANNOT BE FULLY ABSORBED")
-                print("="*90)
-                print(f"  Remaining Excess Steam:             {excess_steam_mt:>12.2f} MT")
-                print(f"  Equivalent Power:                   {excess_power_from_steam_mwh:>12.2f} MWh")
-                print(f"  STG Available Increase:             {stg_available_increase:>12.2f} MWh")
-                print(f"  GT Available Reduction:             {gt_available_reduction:>12.2f} MWh")
-                print(f"  ─────────────────────────────────────────────")
-                if stg_available_increase <= 0:
-                    print(f"  REASON: STG at MAX capacity ({stg_db_max_mwh:.2f} MWh)")
-                if gt_available_reduction <= 0:
-                    print(f"  REASON: All GTs at MIN load")
-                print(f"  ─────────────────────────────────────────────")
-                print(f"  OPTIONS:")
-                print(f"    1. Export excess power ({excess_power_from_steam_mwh:.2f} MWh)")
-                print(f"    2. Reduce HRSG supplementary firing (violates MIN rule)")
-                print(f"    3. Accept wasted steam ({excess_steam_mt:.2f} MT)")
-                print("="*90 + "\n")
-                
-                iteration_record["action"] = f"EXCESS_STEAM_UNABSORBED_{excess_steam_mt:.2f}_MT"
-                iteration_record["status"] = "EXCESS_STEAM_LIMIT_REACHED"
-                excess_steam_balancing_active = False
-                excess_steam_controller_mode = None
-                stg_min_override_mwh = None
-                gt_reduction_for_balance_mwh = 0.0
-            elif excess_steam_mt > EXCESS_STEAM_PRACTICAL_TOLERANCE_MT:
-                print(f"\n  [INFO] Excess steam ({excess_steam_mt:.2f} MT) remains solvable; preserving current STG/GT override for next iteration")
+            else:
+                print(f"\n  [INFO] True excess steam ({true_excess_steam_mt:.2f} MT) is small, maintaining override at {stg_min_override_mwh:.2f} MWh")
                 excess_steam_balancing_active = True
                 excess_steam_controller_mode = "HRSG_MIN_EXCESS"
-                iteration_record["action"] = f"HOLD_EXCESS_STEAM_OVERRIDE_{excess_steam_mt:.2f}_MT"
+                iteration_record["action"] = f"HOLD_EXCESS_STEAM_OVERRIDE_{true_excess_steam_mt:.2f}_MT"
                 iteration_record["status"] = "EXCESS_STEAM_HOLD"
-            else:
-                # Excess steam is small, no adjustment needed
-                print(f"\n  [INFO] Excess steam ({excess_steam_mt:.2f} MT) is small, no balancing needed")
-                excess_steam_balancing_active = False
-                excess_steam_controller_mode = None
-                stg_min_override_mwh = None
-                gt_reduction_for_balance_mwh = 0.0
-        elif excess_steam_mt <= 0:
+        elif not power_initially_converged:
             excess_steam_balancing_active = False
             excess_steam_controller_mode = None
             stg_min_override_mwh = None
             gt_reduction_for_balance_mwh = 0.0
-        elif not power_initially_converged:
+        else:
             excess_steam_balancing_active = False
             excess_steam_controller_mode = None
             stg_min_override_mwh = None
