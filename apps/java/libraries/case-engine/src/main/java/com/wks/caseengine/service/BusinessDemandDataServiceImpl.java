@@ -890,10 +890,10 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 					throw new RuntimeException("Business demand data not found");
 				   }
     
-				 double  existingAprilValue = existingBusinessDemand.getApril();
+				 Double  existingAprilValue = existingBusinessDemand.getApril() != null ? existingBusinessDemand.getApril() : 0.0;
 				 String existingRemark = existingBusinessDemand.getRemark();
 
-				 double newAprilValue = businessDemandDataDTO.getApril();
+				 Double newAprilValue = businessDemandDataDTO.getApril();
 				 String newRemark = businessDemandDataDTO.getRemark();
 
 				     if(!Objects.equals(existingAprilValue, newAprilValue) && Objects.equals(existingRemark, newRemark)) {  
