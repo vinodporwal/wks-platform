@@ -700,6 +700,12 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 	}
 	
 	public AOPMessageVM getData(List<Object[]> obj,String plantId,String year){
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+		boolean crackerC2 = vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("C2");
+
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		List<AOPConsumptionNormDTO> aopConsumptionNormDTOs = new ArrayList<AOPConsumptionNormDTO>();
 		for(Object[] row:obj) {
@@ -725,6 +731,9 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			aopConsumptionNormDTO.setDec(row[20] != null ? Double.parseDouble(row[20].toString()) : 0.0);
 			aopConsumptionNormDTO.setNormParameterTypeDisplayName(row[21] != null ? row[21].toString() : null);
 			aopConsumptionNormDTO.setSapCode(row[22] != null ? row[22].toString() : null);
+			if(crackerC2) { 
+				aopConsumptionNormDTO.setWtAverage(row[25] != null ? Double.parseDouble(row[25].toString()) : 0.0);
+			}
 			aopConsumptionNormDTOs.add(aopConsumptionNormDTO);
 		}
 		Map<String, Object> map = new HashMap<>(); 
