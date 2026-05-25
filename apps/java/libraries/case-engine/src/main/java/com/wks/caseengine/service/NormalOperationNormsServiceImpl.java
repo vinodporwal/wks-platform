@@ -261,6 +261,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
 			boolean elastomerJMDIIR = vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("IIR");
+			boolean aromaticPmd = vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("PMD");
 			for (MCUNormsValueDTO dto : mCUNormsValueDTOList) {
 				System.out.println(dto.getProductName());
 				Boolean changed = false;
@@ -828,7 +829,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
 				aopCalculationRepository.save(aopCalculation);
 			}
-			if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical")) {
+			if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || aromaticPmd) {
 				String procedure = vertical.getName() + "_" + site.getName() + "_CalculateTotalFuelNorms";
 				executeProcedure(procedure, plantFKId.toString(), year);
 			}
