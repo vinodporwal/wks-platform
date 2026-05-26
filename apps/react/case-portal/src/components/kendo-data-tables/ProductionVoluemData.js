@@ -1225,7 +1225,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     if (IS_AROMATICS_SEZ_PX4 && unitDesignCapacity === 'TPD') {
       return false
     }
-    if (IS_CRACKER_DMD) {
+    if (IS_CRACKER_DMD || IS_CRACKER_C2) {
       return unitDesignCapacity === 'TPD' ? false : true
     }
     if (
@@ -1252,6 +1252,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     IS_CRACKER_DMD,
     IS_PVC_DMD,
     IS_PVC_HMD,
+    IS_CRACKER_C2,
   ])
 
   const excelUploadBtnGrid2 = useMemo(() => {
@@ -1315,7 +1316,8 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         IS_AROMATICS_SEZ_PX4 ||
         IS_CRACKER_DMD ||
         IS_PVC_DMD ||
-        IS_PVC_HMD
+        IS_PVC_HMD ||
+        IS_CRACKER_C2
           ? false
           : true,
       downloadExcelBtn: excelBtnGrid2,
@@ -1478,7 +1480,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         )
       } else {
         if (gridType === 'design') {
-          if (IS_CRACKER_DMD) {
+          if (IS_CRACKER_DMD || IS_CRACKER_C2) {
             await ProductionVolumeDataApiService.getDesignCapacityExcel(
               keycloak,
               PLANT_ID,
@@ -1538,7 +1540,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
             PLANT_ID,
             AOP_YEAR,
           )
-      } else if (IS_CRACKER_DMD && gridType === 'design') {
+      } else if ((IS_CRACKER_DMD || IS_CRACKER_C2) && gridType === 'design') {
         response = await ProductionVolumeDataApiService.saveDesignCapacity(
           rawFile,
           keycloak,
