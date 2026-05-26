@@ -37,4 +37,5 @@ public interface CPPAssetOperationalHoursProjection {
     String getAssetName();
     String getAssetType();
     String getPlantName();
+    String getAssetCategory();
 }

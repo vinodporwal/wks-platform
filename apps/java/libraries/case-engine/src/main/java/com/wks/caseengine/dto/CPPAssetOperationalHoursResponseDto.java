@@ -44,4 +44,5 @@ public class CPPAssetOperationalHoursResponseDto {
     private String assetName;
     private String plantName;
     private String assetType;
+    private String assetCategory;
 }
