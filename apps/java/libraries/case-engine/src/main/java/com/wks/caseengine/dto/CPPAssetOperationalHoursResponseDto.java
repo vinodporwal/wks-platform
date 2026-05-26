@@ -1,6 +1,5 @@
 package com.wks.caseengine.dto;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
@@ -39,8 +38,8 @@ public class CPPAssetOperationalHoursResponseDto {
     private UUID verticalFkId;
     private UUID plantFkId;
 
-    private LocalDateTime createdDate;
-    private LocalDateTime modifiedDate;
+    private String createdDate;
+    private String modifiedDate;
 
     private String assetName;
     private String plantName;

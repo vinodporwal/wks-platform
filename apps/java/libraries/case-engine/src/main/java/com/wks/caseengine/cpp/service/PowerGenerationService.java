@@ -101,8 +101,8 @@ public class PowerGenerationService {
                 h.Site_FK_Id AS siteFkId,
                 h.Vertical_FK_ID AS verticalFkId,
                 h.Plant_FK_Id AS plantFkId,
-                h.CreatedDate AS createdDate,
-                h.ModifiedDate AS modifiedDate,
+                CONVERT(VARCHAR(19), h.CreatedDate, 120) AS createdDate,
+                CONVERT(VARCHAR(19), h.ModifiedDate, 120) AS modifiedDate,
                 pga.AssetName AS assetName,
                 pga.AssetType AS assetType,
                 pl.DisplayName AS plantName
@@ -140,8 +140,8 @@ public class PowerGenerationService {
             dto.setSiteFkId(rs.getObject("siteFkId", UUID.class));
             dto.setVerticalFkId(rs.getObject("verticalFkId", UUID.class));
             dto.setPlantFkId(rs.getObject("plantFkId", UUID.class));
-            dto.setCreatedDate(rs.getObject("createdDate", java.time.LocalDateTime.class));
-            dto.setModifiedDate(rs.getObject("modifiedDate", java.time.LocalDateTime.class));
+            dto.setCreatedDate(rs.getString("createdDate"));
+            dto.setModifiedDate(rs.getString("modifiedDate"));
             dto.setAssetName(rs.getString("assetName"));
             dto.setPlantName(rs.getString("plantName"));
             dto.setAssetType(rs.getString("assetType"));
