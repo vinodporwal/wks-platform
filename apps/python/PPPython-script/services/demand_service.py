@@ -14,55 +14,27 @@ This service calculates the complete demand breakdown for:
 """
 
 from database.connection import get_connection
+from services.norm_lookup_service import get_month_norm
 
-# ============================================================
-# NORMS CONSTANTS (From Norms Table)
-# ============================================================
-
-# Power Plant Auxiliary Consumption (KWH per KWH generated)
-NORM_GT_AUX_PER_KWH = 0.0140          # GT1, GT2, GT3: 1.4% aux consumption
-NORM_STG_AUX_PER_KWH = 0.0020         # STG: 0.2% aux consumption
-
-# Utility Power Consumption Norms (KWH per unit)
-NORM_BFW_POWER_PER_M3 = 9.5000        # 9.5 KWH per M3 BFW
-NORM_DM_POWER_PER_M3 = 1.2100         # 1.21 KWH per M3 DM Water
-NORM_CW1_POWER_PER_KM3 = 245.0000     # 245 KWH per KM3 Cooling Water 1
-NORM_CW2_POWER_PER_KM3 = 250.0000     # 250 KWH per KM3 Cooling Water 2
-NORM_AIR_POWER_PER_NM3 = 0.1650       # 0.165 KWH per NM3 Compressed Air
-NORM_EFFLUENT_POWER_PER_M3 = 3.5400   # 3.54 KWH per M3 Effluent
-NORM_OXYGEN_POWER_PER_MT = 968.6500   # 968.65 KWH per MT Oxygen
-
-# BFW Consumption Norms (M3 per MT steam)
-NORM_BFW_PER_MT_SHP = 1.0240          # 1.024 M3 BFW per MT SHP (HRSG)
-NORM_BFW_PER_MT_HP_PRDS = 0.0768      # 0.0768 M3 BFW per MT HP PRDS
-NORM_BFW_PER_MT_MP_PRDS = 0.0900      # 0.09 M3 BFW per MT MP PRDS
-NORM_BFW_PER_MT_LP_PRDS = 0.2500      # 0.25 M3 BFW per MT LP PRDS
-
-# DM Water Consumption Norms
-NORM_DM_PER_M3_BFW = 0.8600           # 0.86 M3 DM per M3 BFW
-
-# Cooling Water Consumption Norms (KM3 per unit)
-NORM_CW2_PER_1000MT_SHP_STG = 2.4550  # 2.455 KM3 per 1000 MT SHP for STG
-NORM_CW2_PER_1000MWH_GT = 0.112       # 0.112 KM3 per 1000 MWH GT
-
-# Compressed Air Consumption Norms (NM3 fixed per month per asset)
-NORM_AIR_GT_PER_MONTH = 30960.0       # 30,960 NM3 per GT per month
-NORM_AIR_STG_PER_MONTH = 41040.0      # 41,040 NM3 per STG per month
-NORM_AIR_HRSG_PER_MONTH = 453600.0    # 453,600 NM3 per HRSG per month
-NORM_AIR_CW_PER_MONTH = 0.0           # CW air consumption (if any)
-
-# STG Steam Requirement
-NORM_STG_SHP_PER_KWH = 0.0036         # 0.0036 MT SHP per KWH STG
-
-# STG Extraction Ratios
-NORM_LP_FROM_STG_RATIO = 0.6134       # 61.34% of LP from STG
-NORM_MP_FROM_STG_RATIO = 0.2908       # 29.08% of MP from STG
-NORM_SHP_PER_LP_STG = 0.48            # 0.48 MT SHP per MT LP extraction
-NORM_SHP_PER_MP_STG = 0.69            # 0.69 MT SHP per MT MP extraction
-
-# PRDS Steam Conversion
-NORM_SHP_PER_HP_PRDS = 1.0            # 1 MT SHP per MT HP PRDS
-NORM_SHP_PER_MP_PRDS = 1.0            # 1 MT SHP per MT MP PRDS (via HP)
+def _norm(
+    month: int,
+    year: int,
+    plant_name: str,
+    utility_name: str,
+    material_name: str,
+    account_name: str = "Utilities",
+    issuing_plant_name: str = None,
+) -> float:
+    return get_month_norm(
+        month=month,
+        year=year,
+        plant_name=plant_name,
+        utility_name=utility_name,
+        material_name=material_name,
+        account_name=account_name,
+        issuing_plant_name=issuing_plant_name,
+        required=True,
+    )
 
 
 def fetch_fixed_process_demands(month: int, year: int) -> dict:
@@ -119,6 +91,8 @@ def fetch_fixed_process_demands(month: int, year: int) -> dict:
 
 
 def calculate_u4u_power(
+    month: int,
+    year: int,
     # Power generation (for aux calculation)
     gt1_gross_mwh: float = 0.0,
     gt2_gross_mwh: float = 0.0,
@@ -138,21 +112,34 @@ def calculate_u4u_power(
     
     Returns breakdown of power consumed by each utility.
     """
-    # Power Plant Auxiliary (U4U for power generation)
-    gt1_aux_kwh = gt1_gross_mwh * 1000 * NORM_GT_AUX_PER_KWH
-    gt2_aux_kwh = gt2_gross_mwh * 1000 * NORM_GT_AUX_PER_KWH
-    gt3_aux_kwh = gt3_gross_mwh * 1000 * NORM_GT_AUX_PER_KWH
-    stg_aux_kwh = stg_gross_mwh * 1000 * NORM_STG_AUX_PER_KWH
+    # Power Plant Auxiliary (U4U for power generation) - DB norms
+    gt1_aux_norm = _norm(month, year, "NMD - Power Plant 1", "POWERGEN", "Power_Dis", issuing_plant_name="NMD - Utility/Power Dist")
+    gt2_aux_norm = _norm(month, year, "NMD - Power Plant 2", "POWERGEN", "Power_Dis", issuing_plant_name="NMD - Utility/Power Dist")
+    gt3_aux_norm = _norm(month, year, "NMD - Power Plant 3", "POWERGEN", "Power_Dis", issuing_plant_name="NMD - Utility/Power Dist")
+    stg_aux_norm = _norm(month, year, "NMD - STG Power Plant", "POWERGEN", "Power_Dis", issuing_plant_name="NMD - Utility/Power Dist")
+
+    gt1_aux_kwh = gt1_gross_mwh * 1000 * gt1_aux_norm
+    gt2_aux_kwh = gt2_gross_mwh * 1000 * gt2_aux_norm
+    gt3_aux_kwh = gt3_gross_mwh * 1000 * gt3_aux_norm
+    stg_aux_kwh = stg_gross_mwh * 1000 * stg_aux_norm
     total_power_aux_kwh = gt1_aux_kwh + gt2_aux_kwh + gt3_aux_kwh + stg_aux_kwh
     
-    # Utility Power Consumption (U4U for utilities)
-    bfw_power_kwh = bfw_total_m3 * NORM_BFW_POWER_PER_M3
-    dm_power_kwh = dm_total_m3 * NORM_DM_POWER_PER_M3
-    cw1_power_kwh = cw1_total_km3 * NORM_CW1_POWER_PER_KM3
-    cw2_power_kwh = cw2_total_km3 * NORM_CW2_POWER_PER_KM3
-    air_power_kwh = air_total_nm3 * NORM_AIR_POWER_PER_NM3
-    oxygen_power_kwh = oxygen_total_mt * NORM_OXYGEN_POWER_PER_MT
-    effluent_power_kwh = effluent_total_m3 * NORM_EFFLUENT_POWER_PER_M3
+    # Utility Power Consumption (U4U for utilities) - DB norms
+    bfw_power_norm = _norm(month, year, "NMD - Utility Plant", "Boiler Feed Water", "Power_Dis")
+    dm_power_norm = _norm(month, year, "NMD - Utility Plant", "D M Water", "Power_Dis")
+    cw1_power_norm = _norm(month, year, "NMD - Utility Plant", "Cooling Water 1", "Power_Dis")
+    cw2_power_norm = _norm(month, year, "NMD - Utility Plant", "Cooling Water 2", "Power_Dis")
+    air_power_norm = _norm(month, year, "NMD - Utility Plant", "COMPRESSED AIR", "Power_Dis")
+    oxygen_power_norm = _norm(month, year, "NMD - Utility Plant", "Oxygen", "Power_Dis")
+    effluent_power_norm = _norm(month, year, "NMD - Utility Plant", "Effluent Treated", "Power_Dis")
+
+    bfw_power_kwh = bfw_total_m3 * bfw_power_norm
+    dm_power_kwh = dm_total_m3 * dm_power_norm
+    cw1_power_kwh = cw1_total_km3 * cw1_power_norm
+    cw2_power_kwh = cw2_total_km3 * cw2_power_norm
+    air_power_kwh = air_total_nm3 * air_power_norm
+    oxygen_power_kwh = oxygen_total_mt * oxygen_power_norm
+    effluent_power_kwh = effluent_total_m3 * effluent_power_norm
     
     total_utility_power_kwh = (bfw_power_kwh + dm_power_kwh + cw1_power_kwh + 
                                cw2_power_kwh + air_power_kwh + oxygen_power_kwh + 
@@ -186,6 +173,8 @@ def calculate_u4u_power(
 
 
 def calculate_u4u_bfw(
+    month: int,
+    year: int,
     shp_from_hrsg_mt: float = 0.0,
     hp_from_prds_mt: float = 0.0,
     mp_from_prds_mt: float = 0.0,
@@ -194,10 +183,15 @@ def calculate_u4u_bfw(
     """
     Calculate U4U BFW consumption from steam generation.
     """
-    bfw_hrsg = shp_from_hrsg_mt * NORM_BFW_PER_MT_SHP
-    bfw_hp_prds = hp_from_prds_mt * NORM_BFW_PER_MT_HP_PRDS
-    bfw_mp_prds = mp_from_prds_mt * NORM_BFW_PER_MT_MP_PRDS
-    bfw_lp_prds = lp_from_prds_mt * NORM_BFW_PER_MT_LP_PRDS
+    bfw_hrsg_norm = _norm(month, year, "NMD - Utility Plant", "HRSG2_SHP STEAM", "Boiler Feed Water")
+    bfw_hp_prds_norm = _norm(month, year, "NMD - Utility Plant", "HP Steam PRDS", "Boiler Feed Water")
+    bfw_mp_prds_norm = _norm(month, year, "NMD - Utility Plant", "MP Steam PRDS SHP", "Boiler Feed Water")
+    bfw_lp_prds_norm = _norm(month, year, "NMD - Utility Plant", "LP Steam PRDS", "Boiler Feed Water")
+
+    bfw_hrsg = shp_from_hrsg_mt * bfw_hrsg_norm
+    bfw_hp_prds = hp_from_prds_mt * bfw_hp_prds_norm
+    bfw_mp_prds = mp_from_prds_mt * bfw_mp_prds_norm
+    bfw_lp_prds = lp_from_prds_mt * bfw_lp_prds_norm
     
     total_bfw = bfw_hrsg + bfw_hp_prds + bfw_mp_prds + bfw_lp_prds
     
@@ -210,11 +204,12 @@ def calculate_u4u_bfw(
     }
 
 
-def calculate_u4u_dm(bfw_total_m3: float = 0.0) -> dict:
+def calculate_u4u_dm(month: int, year: int, bfw_total_m3: float = 0.0) -> dict:
     """
     Calculate U4U DM Water consumption from BFW.
     """
-    dm_for_bfw = bfw_total_m3 * NORM_DM_PER_M3_BFW
+    dm_per_bfw_norm = _norm(month, year, "NMD - Utility Plant", "Boiler Feed Water", "D M Water")
+    dm_for_bfw = bfw_total_m3 * dm_per_bfw_norm
     return {
         "for_bfw_m3": round(dm_for_bfw, 2),
         "total_m3": round(dm_for_bfw, 2),
@@ -222,15 +217,28 @@ def calculate_u4u_dm(bfw_total_m3: float = 0.0) -> dict:
 
 
 def calculate_u4u_cw2(
+    month: int,
+    year: int,
     stg_gross_mwh: float = 0.0,
-    gt_gross_mwh: float = 0.0,
+    gt1_gross_mwh: float = 0.0,
+    gt2_gross_mwh: float = 0.0,
+    gt3_gross_mwh: float = 0.0,
     shp_from_stg_mt: float = 0.0,
 ) -> dict:
     """
     Calculate U4U Cooling Water 2 consumption from power plants.
     """
-    cw2_stg = (shp_from_stg_mt / 1000) * NORM_CW2_PER_1000MT_SHP_STG
-    cw2_gt = (gt_gross_mwh / 1000) * NORM_CW2_PER_1000MWH_GT
+    gt1_cw2_norm = _norm(month, year, "NMD - Power Plant 1", "POWERGEN", "Cooling Water 2", issuing_plant_name="NMD - Utility Plant")
+    gt2_cw2_norm = _norm(month, year, "NMD - Power Plant 2", "POWERGEN", "Cooling Water 2", issuing_plant_name="NMD - Utility Plant")
+    gt3_cw2_norm = _norm(month, year, "NMD - Power Plant 3", "POWERGEN", "Cooling Water 2", issuing_plant_name="NMD - Utility Plant")
+    stg_cw2_norm = _norm(month, year, "NMD - STG Power Plant", "POWERGEN", "Cooling Water 2", issuing_plant_name="NMD - Utility Plant")
+
+    cw2_stg = (stg_gross_mwh * 1000) * stg_cw2_norm
+    cw2_gt = (
+        (gt1_gross_mwh * 1000 * gt1_cw2_norm)
+        + (gt2_gross_mwh * 1000 * gt2_cw2_norm)
+        + (gt3_gross_mwh * 1000 * gt3_cw2_norm)
+    )
     
     return {
         "stg_km3": round(cw2_stg, 2),
@@ -240,16 +248,30 @@ def calculate_u4u_cw2(
 
 
 def calculate_u4u_air(
-    gt_count: int = 0,
-    stg_available: bool = False,
-    hrsg_count: int = 0,
+    month: int,
+    year: int,
+    gt1_gross_mwh: float = 0.0,
+    gt2_gross_mwh: float = 0.0,
+    gt3_gross_mwh: float = 0.0,
+    stg_gross_mwh: float = 0.0,
+    shp_from_hrsg_mt: float = 0.0,
 ) -> dict:
     """
     Calculate U4U Compressed Air consumption from power plants.
     """
-    air_gt = gt_count * NORM_AIR_GT_PER_MONTH
-    air_stg = NORM_AIR_STG_PER_MONTH if stg_available else 0.0
-    air_hrsg = hrsg_count * NORM_AIR_HRSG_PER_MONTH
+    gt1_air_norm = _norm(month, year, "NMD - Power Plant 1", "POWERGEN", "COMPRESSED AIR", issuing_plant_name="NMD - Utility Plant")
+    gt2_air_norm = _norm(month, year, "NMD - Power Plant 2", "POWERGEN", "COMPRESSED AIR", issuing_plant_name="NMD - Utility Plant")
+    gt3_air_norm = _norm(month, year, "NMD - Power Plant 3", "POWERGEN", "COMPRESSED AIR", issuing_plant_name="NMD - Utility Plant")
+    stg_air_norm = _norm(month, year, "NMD - STG Power Plant", "POWERGEN", "COMPRESSED AIR", issuing_plant_name="NMD - Utility Plant")
+    hrsg_air_norm = _norm(month, year, "NMD - Utility Plant", "HRSG2_SHP STEAM", "COMPRESSED AIR")
+
+    air_gt = (
+        (gt1_gross_mwh * 1000 * gt1_air_norm)
+        + (gt2_gross_mwh * 1000 * gt2_air_norm)
+        + (gt3_gross_mwh * 1000 * gt3_air_norm)
+    )
+    air_stg = stg_gross_mwh * 1000 * stg_air_norm
+    air_hrsg = shp_from_hrsg_mt * hrsg_air_norm
     
     return {
         "gt_nm3": round(air_gt, 2),
@@ -333,6 +355,8 @@ def calculate_u4u_mp_steam(
 
 
 def calculate_u4u_shp(
+    month: int,
+    year: int,
     stg_gross_mwh: float = 0.0,
     lp_from_stg_mt: float = 0.0,
     mp_from_stg_mt: float = 0.0,
@@ -342,11 +366,17 @@ def calculate_u4u_shp(
     """
     Calculate U4U SHP consumption from STG and PRDS.
     """
-    shp_stg_power = stg_gross_mwh * 1000 * NORM_STG_SHP_PER_KWH
-    shp_lp_extraction = lp_from_stg_mt * NORM_SHP_PER_LP_STG
-    shp_mp_extraction = mp_from_stg_mt * NORM_SHP_PER_MP_STG
-    shp_hp_prds = hp_from_prds_mt * NORM_SHP_PER_HP_PRDS
-    shp_mp_prds = mp_from_prds_mt * NORM_SHP_PER_MP_PRDS
+    stg_shp_norm = _norm(month, year, "NMD - STG Power Plant", "POWERGEN", "SHP Steam_Dis", issuing_plant_name="NMD - Utility/Power Dist")
+    shp_lp_stg_norm = _norm(month, year, "NMD - Utility Plant", "STG1_LP STEAM", "SHP Steam_Dis")
+    shp_mp_stg_norm = _norm(month, year, "NMD - Utility Plant", "STG1_MP STEAM", "SHP Steam_Dis")
+    shp_hp_prds_norm = _norm(month, year, "NMD - Utility Plant", "HP Steam PRDS", "SHP Steam_Dis")
+    shp_mp_prds_norm = _norm(month, year, "NMD - Utility Plant", "MP Steam PRDS SHP", "SHP Steam_Dis")
+
+    shp_stg_power = stg_gross_mwh * 1000 * stg_shp_norm
+    shp_lp_extraction = lp_from_stg_mt * shp_lp_stg_norm
+    shp_mp_extraction = mp_from_stg_mt * shp_mp_stg_norm
+    shp_hp_prds = hp_from_prds_mt * shp_hp_prds_norm
+    shp_mp_prds = mp_from_prds_mt * shp_mp_prds_norm
     
     total_shp = shp_stg_power + shp_lp_extraction + shp_mp_extraction + shp_hp_prds + shp_mp_prds
     
@@ -414,18 +444,41 @@ def calculate_all_demands(
     power_process = db_demands["power"]["process"] if db_demands else 0.0
     
     # Calculate U4U for BFW
-    u4u_bfw = calculate_u4u_bfw(shp_from_hrsg_mt, hp_from_prds_mt, mp_from_prds_mt, lp_from_prds_mt)
+    u4u_bfw = calculate_u4u_bfw(
+        month,
+        year,
+        shp_from_hrsg_mt,
+        hp_from_prds_mt,
+        mp_from_prds_mt,
+        lp_from_prds_mt,
+    )
     bfw_u4u = u4u_bfw["total_m3"]
     bfw_total = bfw_fixed + bfw_process + bfw_u4u
     
     # Calculate U4U for DM (depends on total BFW)
-    u4u_dm = calculate_u4u_dm(bfw_total)
+    u4u_dm = calculate_u4u_dm(month, year, bfw_total)
     dm_u4u = u4u_dm["total_m3"]
     dm_total = dm_fixed + dm_process + dm_u4u
     
     # Calculate U4U for CW2
-    shp_for_stg = stg_gross_mwh * 1000 * NORM_STG_SHP_PER_KWH
-    u4u_cw2 = calculate_u4u_cw2(stg_gross_mwh, gt1_gross_mwh + gt2_gross_mwh + gt3_gross_mwh, shp_for_stg)
+    stg_shp_norm = _norm(
+        month,
+        year,
+        "NMD - STG Power Plant",
+        "POWERGEN",
+        "SHP Steam_Dis",
+        issuing_plant_name="NMD - Utility/Power Dist",
+    )
+    shp_for_stg = stg_gross_mwh * 1000 * stg_shp_norm
+    u4u_cw2 = calculate_u4u_cw2(
+        month,
+        year,
+        stg_gross_mwh=stg_gross_mwh,
+        gt1_gross_mwh=gt1_gross_mwh,
+        gt2_gross_mwh=gt2_gross_mwh,
+        gt3_gross_mwh=gt3_gross_mwh,
+        shp_from_stg_mt=shp_for_stg,
+    )
     cw2_u4u = u4u_cw2["total_km3"]
     cw2_total = cw2_fixed + cw2_process + cw2_u4u
     
@@ -434,7 +487,15 @@ def calculate_all_demands(
     cw1_total = cw1_fixed + cw1_process + cw1_u4u
     
     # Calculate U4U for Compressed Air
-    u4u_air = calculate_u4u_air(gt_count, stg_available, hrsg_count)
+    u4u_air = calculate_u4u_air(
+        month,
+        year,
+        gt1_gross_mwh=gt1_gross_mwh,
+        gt2_gross_mwh=gt2_gross_mwh,
+        gt3_gross_mwh=gt3_gross_mwh,
+        stg_gross_mwh=stg_gross_mwh,
+        shp_from_hrsg_mt=shp_from_hrsg_mt,
+    )
     air_u4u = u4u_air["total_nm3"]
     air_total = air_fixed + air_process + air_u4u
     
@@ -446,14 +507,33 @@ def calculate_all_demands(
     
     # Calculate U4U for Power (depends on all utility totals)
     u4u_power = calculate_u4u_power(
-        gt1_gross_mwh, gt2_gross_mwh, gt3_gross_mwh, stg_gross_mwh,
-        bfw_total, dm_total, cw1_total, cw2_total, air_total, oxygen_total, effluent_total
+        month=month,
+        year=year,
+        gt1_gross_mwh=gt1_gross_mwh,
+        gt2_gross_mwh=gt2_gross_mwh,
+        gt3_gross_mwh=gt3_gross_mwh,
+        stg_gross_mwh=stg_gross_mwh,
+        bfw_total_m3=bfw_total,
+        dm_total_m3=dm_total,
+        cw1_total_km3=cw1_total,
+        cw2_total_km3=cw2_total,
+        air_total_nm3=air_total,
+        oxygen_total_mt=oxygen_total,
+        effluent_total_m3=effluent_total,
     )
     power_u4u_mwh = u4u_power["total_u4u_mwh"]
     power_total = power_fixed + power_process + power_u4u_mwh
     
     # Calculate U4U for SHP
-    u4u_shp = calculate_u4u_shp(stg_gross_mwh, lp_from_stg_mt, mp_from_stg_mt, hp_from_prds_mt, mp_from_prds_mt)
+    u4u_shp = calculate_u4u_shp(
+        month,
+        year,
+        stg_gross_mwh,
+        lp_from_stg_mt,
+        mp_from_stg_mt,
+        hp_from_prds_mt,
+        mp_from_prds_mt,
+    )
     shp_u4u = u4u_shp["total_mt"]
     shp_total = shp_fixed + shp_process + shp_u4u
     

@@ -251,7 +251,7 @@ def save_month_log(output_text: str, month: int, year: int, log_folder: str) -> 
     return filepath
 
 
-def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_calculation_log_enabled=True, parent_execution_id=None):
+def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_calculation_log_enabled=True, parent_execution_id=None, hrsg_full_load=False):
     """
     Run the model for a single month.
     
@@ -267,6 +267,7 @@ def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_c
         save_to_db: Save norms to database
         save_calculation_log_enabled: Save execution log to ModelCalculationLogs table
         parent_execution_id: FK to parent execution log (for full year runs)
+        hrsg_full_load: If True, do not subtract free steam from HRSG min target
     
     Returns:
         Dict with calculation result and execution time
@@ -297,7 +298,8 @@ def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_c
             cw1_fixed=demands.get("cw1_fixed", 0.0),
             cw2_fixed=demands.get("cw2_fixed", 0.0),
             raw_water_fixed=demands.get("raw_water_fixed", 0.0),
-            save_to_db=save_to_db
+            save_to_db=save_to_db,
+            hrsg_full_load=hrsg_full_load
         )
         
         execution_time = time.time() - start_time
@@ -376,7 +378,8 @@ def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_c
 def run_full_financial_year(financial_year: int, cpp_plant_id: str = None, 
                             process_demands=None, save_to_db=True, save_logs=True,
                             use_db_process: bool = True, use_db_fixed: bool = True,
-                            save_calculation_logs: bool = True, is_single_month: bool = False):
+                            save_calculation_logs: bool = True, is_single_month: bool = False,
+                            hrsg_full_load: bool = False):
     """
     Run the budget model for all 12 months of a financial year.
     Both process and fixed demands are fetched dynamically from DB for each month.
@@ -391,6 +394,7 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
         use_db_fixed: If True, fetch fixed demands from DB
         save_calculation_logs: If True, save execution logs to ModelCalculationLogs
         is_single_month: If True, running single month mode (don't save logs)
+        hrsg_full_load: If True, do not subtract free steam from HRSG min target
     
     Returns:
         Dict with summary of all month results
@@ -482,10 +486,16 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
     max_workers = min(4, multiprocessing.cpu_count())
     print_lock  = threading.Lock()    # For console progress lines
     db_log_lock = threading.Lock()    # Serialise DB log saves to avoid prepared-stmt collisions
+    comparison_enabled = (financial_year == 2025)
     comparison_lock = threading.Lock()
     completed_comparisons = []
-    comparison_folder = os.path.join(run_log_folder, "nmd_budget_comparisons")
-    bpc_csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "BPC.ods")
+    comparison_folder = os.path.join(run_log_folder, "nmd_budget_comparisons") if comparison_enabled else None
+    bpc_csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "BPC.ods") if comparison_enabled else None
+
+    if comparison_enabled:
+        print("NMD BPC comparison: enabled for FY 2025 only")
+    else:
+        print(f"NMD BPC comparison: skipped for FY {financial_year}-{str(financial_year + 1)[-2:]}")
 
     # Thread-local storage so each worker thread has its own stdout buffer
     _tls = threading.local()
@@ -512,11 +522,13 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
         result = run_single_month.__wrapped__(  # call the plain calculation part
             month, year, cpp_plant_id, month_demands, save_to_db,
             save_calculation_log_enabled=False,   # We'll do it below under the lock
-            parent_execution_id=parent_execution_id
+            parent_execution_id=parent_execution_id,
+            hrsg_full_load=hrsg_full_load
         ) if hasattr(run_single_month, '__wrapped__') else run_single_month(
             month, year, cpp_plant_id, month_demands, save_to_db,
             save_calculation_log_enabled=False,
-            parent_execution_id=parent_execution_id
+            parent_execution_id=parent_execution_id,
+            hrsg_full_load=hrsg_full_load
         )
         # Save calculation log serialised
         if save_calculation_logs and not is_single_month:
@@ -652,31 +664,32 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
                 calculation_result = month_result.get("calculation_result")
                 if calculation_result:
                     try:
-                        with comparison_lock:
-                            month_comparison_path = write_month_comparison_file(
-                                output_folder=comparison_folder,
-                                month=month_result["month"],
-                                year=month_result["year"],
-                                financial_year=financial_year,
-                                calculation_result=calculation_result,
-                                bpc_csv_path=bpc_csv_path,
-                            )
-                            month_result["comparison_file"] = month_comparison_path
+                        if comparison_enabled:
+                            with comparison_lock:
+                                month_comparison_path = write_month_comparison_file(
+                                    output_folder=comparison_folder,
+                                    month=month_result["month"],
+                                    year=month_result["year"],
+                                    financial_year=financial_year,
+                                    calculation_result=calculation_result,
+                                    bpc_csv_path=bpc_csv_path,
+                                )
+                                month_result["comparison_file"] = month_comparison_path
 
-                            completed_comparisons.append((
-                                month_result["month"],
-                                month_result["year"],
-                                calculation_result,
-                            ))
+                                completed_comparisons.append((
+                                    month_result["month"],
+                                    month_result["year"],
+                                    calculation_result,
+                                ))
 
-                            full_year_comparison_path = write_full_year_comparison_file(
-                                output_folder=comparison_folder,
-                                financial_year=financial_year,
-                                completed_months=completed_comparisons,
-                                bpc_csv_path=bpc_csv_path,
-                            )
-                            results["comparison_folder"] = comparison_folder
-                            results["full_year_comparison_file"] = full_year_comparison_path
+                                full_year_comparison_path = write_full_year_comparison_file(
+                                    output_folder=comparison_folder,
+                                    financial_year=financial_year,
+                                    completed_months=completed_comparisons,
+                                    bpc_csv_path=bpc_csv_path,
+                                )
+                                results["comparison_folder"] = comparison_folder
+                                results["full_year_comparison_file"] = full_year_comparison_path
                     except Exception as comparison_error:
                         month_result["comparison_error"] = str(comparison_error)
                         import traceback
@@ -751,9 +764,9 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
                 f"FinancialYearMonthId={month_data.get('financial_year_month_id')} | "
                 f"Message={month_data.get('calculation_log_message')}"
             )
-    if results.get("comparison_folder"):
+    if comparison_enabled and results.get("comparison_folder"):
         print(f"Comparison folder: {results['comparison_folder']}")
-    if results.get("full_year_comparison_file"):
+    if comparison_enabled and results.get("full_year_comparison_file"):
         print(f"Combined comparison file: {results['full_year_comparison_file']}")
     
     # Save summary
@@ -778,15 +791,15 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
                     f"Message={month_data.get('calculation_log_message')}\n"
                 )
             f.write("\n")
-        if results.get("comparison_folder"):
+        if comparison_enabled and results.get("comparison_folder"):
             f.write(f"Comparison folder: {results['comparison_folder']}\n")
-        if results.get("full_year_comparison_file"):
+        if comparison_enabled and results.get("full_year_comparison_file"):
             f.write(f"Combined comparison file: {results['full_year_comparison_file']}\n\n")
         
         f.write("MONTH-BY-MONTH QUICK RESULTS:\n")
         f.write("-" * 120 + "\n")
         for key, month_data in results["months"].items():
-            status = "✓" if month_data.get("success") else "✗"
+            status = "[OK]" if month_data.get("success") else "[FAIL]"
             f.write(f"{status} {month_data['month_name']} {month_data['year']}: ")
             if month_data.get("success"):
                 f.write(f"Power={month_data.get('total_power_kwh', 0):,.0f} KWH, ")
@@ -920,6 +933,12 @@ Examples:
     )
     
     parser.add_argument(
+        "--hrsg-full-load", 
+        action="store_true",
+        help="Load HRSG directly on min load, considering free steam as negative SHP demand"
+    )
+    
+    parser.add_argument(
         "--json", 
         action="store_true",
         help="Output results as JSON (for Java/API integration)"
@@ -993,7 +1012,8 @@ Examples:
                 save_to_db=not args.no_save,
                 save_logs=not args.no_logs,
                 save_calculation_logs=True,  # Always enabled, but skipped for single month
-                is_single_month=is_single_month
+                is_single_month=is_single_month,
+                hrsg_full_load=args.hrsg_full_load
             )
             
             if args.json:

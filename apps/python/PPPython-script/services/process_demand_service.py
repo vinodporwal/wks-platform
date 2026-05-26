@@ -65,6 +65,9 @@ UTILITY_MAPPING = {
     "Raw Water": "raw_water_process",
     # Oxygen
     "Oxygen": "oxygen_process",
+    # Effluent
+    "Effluent Treated": "effluent_process",
+    "Effluent": "effluent_process",
 }
 
 
@@ -158,6 +161,7 @@ def get_process_demand_for_month(month: int, year: int) -> Dict[str, float]:
             "cw2_process": 0.0,
             "raw_water_process": 0.0,
             "oxygen_process": 0.0,
+            "effluent_process": 0.0,
         }
         
         # Map utility names to result keys
@@ -235,6 +239,7 @@ def get_default_process_demands() -> Dict[str, float]:
         "cw2_process": 9016.0,
         "raw_water_process": 0.0,
         "oxygen_process": 0.0,
+        "effluent_process": 243000.0,
     }
 
 
@@ -252,6 +257,7 @@ def print_process_demands(data: Dict[str, float], month: int = None, year: int =
     print(f"  DM Water:       {data['dm_process']:>12,.0f} M3")
     print(f"  Cooling Water 1:{data['cw1_process']:>12,.2f} KM3")
     print(f"  Cooling Water 2:{data['cw2_process']:>12,.2f} KM3")
+    print(f"  Effluent:       {data.get('effluent_process', 0):>12,.0f} M3")
 
 
 def get_combined_demands_for_month(month: int, year: int, 
