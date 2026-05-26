@@ -1,21 +1,32 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { Box } from '@mui/material'
 import { Stack } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
-import { InputApiService } from 'components/aop-phase-two/services/cpp/inputApiService'
+import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/inputApiService'
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import NestedKendoTable from 'components/aop-phase-two/common/NestedKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { useDebounce } from 'hooks/useDebounce'
+import {
+  transformApiResponseToGridFormat,
+  transformGridFormatToApiFormat,
+} from './utils'
 
 const PowerGrid = ({ hoursRows = [] }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year, screenTitle } = dataGridStore
+  const { plantObject, year, screenTitle, jmdSelectedPlants } = dataGridStore
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
+
+  const PLANT_ID_LIST = useMemo(
+    () => jmdSelectedPlants?.map((plant) => plant.id) || [],
+    [jmdSelectedPlants],
+  )
+
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterProduction()
 
@@ -374,33 +385,34 @@ const PowerGrid = ({ hoursRows = [] }) => {
     },
   ]
 
-  useEffect(() => {
-    if (PLANT_ID && AOP_YEAR) {
-      fetchData()
-      setModifiedCells({})
-    }
-  }, [PLANT_ID, AOP_YEAR])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     try {
       const res = await InputApiService.getOperationHoursData(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
 
-      if (!res || res?.powerResponse?.length === 0) {
+      if (!res || res?.data?.PowerOperationalHours?.length === 0) {
         setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
         setLoading(false)
         return
       }
-
-      const rowsWithIds = res?.powerResponse
-        ?.filter((row) => row.assetType !== 'Power_Dis')
-        ?.map((row, index) => ({ ...row, id: row.id || index + 1 }))
+      const powerResponse = res?.data?.PowerOperationalHours
+      const filteredData = powerResponse?.filter(
+        (row) => row.assetType !== 'Power_Dis',
+      )
+      const transformedData = transformApiResponseToGridFormat(
+        filteredData,
+        hoursRows,
+      )
+      const rowsWithIds = transformedData?.map((row, index) => ({
+        ...row,
+        id: row.id || index + 1,
+      }))
 
       setRows(rowsWithIds)
       setOriginalRows(rowsWithIds)
@@ -411,7 +423,18 @@ const PowerGrid = ({ hoursRows = [] }) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+
+  useDebounce(
+    () => {
+      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+        fetchData()
+        setModifiedCells({})
+      }
+    },
+    1000,
+    [PLANT_ID_LIST, AOP_YEAR, fetchData],
+  )
 
   const permissions = {
     showAction: true,
@@ -473,11 +496,17 @@ const PowerGrid = ({ hoursRows = [] }) => {
       return
     }
 
-    const payload = modifiedData.map(({ id, inEdit, ...rest }) => rest)
+    const gridFormatData = modifiedData.map(({ inEdit, ...rest }) => rest)
+    const apiFormatData = transformGridFormatToApiFormat(gridFormatData)
     try {
-      await InputApiService.saveOperationHours(keycloak, PLANT_ID, AOP_YEAR, {
-        powerResponse: payload,
-      })
+      await InputApiService.saveOperationHours(
+        keycloak,
+        PLANT_ID_LIST,
+        AOP_YEAR,
+        {
+          powerResponse: apiFormatData,
+        },
+      )
       setModifiedCells({})
       setSnackbarOpen(true)
       setSnackbarData({
@@ -611,7 +640,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
           setSnackbarOpen={setSnackbarOpen}
           setSnackbarData={setSnackbarData}
           hoursRows={hoursRows}
-          groupBy={['assetType']}
+          groupBy={['plantName', 'assetType']}
         />
       </Stack>
     </Box>

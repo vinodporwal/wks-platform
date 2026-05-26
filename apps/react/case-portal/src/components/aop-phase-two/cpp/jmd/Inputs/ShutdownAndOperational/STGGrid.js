@@ -1,21 +1,32 @@
-import { useEffect, useState } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { useEffect, useState, useMemo, useCallback } from 'react'
+import { Box } from '@mui/material'
 import { Stack } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
-import { InputApiService } from 'components/aop-phase-two/services/cpp/inputApiService'
+import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/inputApiService'
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import NestedKendoTable from 'components/aop-phase-two/common/NestedKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { useDebounce } from 'hooks/useDebounce'
+import {
+  transformApiResponseToGridFormat,
+  transformGridFormatToApiFormat,
+} from './utils'
 
 const STGGrid = ({ hoursRows = [] }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year } = dataGridStore
+  const { plantObject, year, screenTitle, jmdSelectedPlants } = dataGridStore
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
+
+  const PLANT_ID_LIST = useMemo(
+    () => jmdSelectedPlants?.map((plant) => plant.id) || [],
+    [jmdSelectedPlants],
+  )
+
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterProduction()
 
@@ -36,57 +47,53 @@ const STGGrid = ({ hoursRows = [] }) => {
     {
       field: 'assetName',
       title: 'Asset Name',
-      width: 150,
+      widthT: 150,
       minWidth: 150,
       type: 'text',
       editable: false,
       locked: true,
     },
     {
+      field: 'assetType',
+      title: 'Asset Type',
+      widthT: 150,
+      minWidth: 150,
+      type: 'text',
+      editable: false,
+      locked: false,
+      hidden: true,
+    },
+    {
       field: 'utilityDistributed.name',
       title: 'Utility Distributed',
-      width: 180,
+      widthT: 180,
       minWidth: 180,
       type: 'text',
       editable: false,
-      // locked: true,
     },
     {
       field: 'utilityDistributed.sapCode',
       title: 'Distributed SAP Code',
-      width: 200,
+      widthT: 200,
       minWidth: 200,
       type: 'text',
       editable: false,
-      // locked: true,
     },
     {
       field: 'utilityGenerated.name',
       title: 'Utility Generated',
-      width: 180,
+      widthT: 180,
       minWidth: 180,
       type: 'text',
       editable: false,
-      // locked: true,
     },
     {
       field: 'utilityGenerated.sapCode',
       title: 'Generated SAP Code',
-      width: 220,
-      minWidth: 220,
+      widthT: 200,
+      minWidth: 200,
       type: 'text',
       editable: false,
-      // locked: true,
-    },
-    {
-      field: 'assetType',
-      title: 'Asset Type',
-      width: 180,
-      minWidth: 180,
-      type: 'text',
-      editable: false,
-      // locked: true,
-      hidden: true,
     },
     {
       title: headerMap[4],
@@ -374,23 +381,28 @@ const STGGrid = ({ hoursRows = [] }) => {
     },
   ]
 
-  useEffect(() => {
-    if (PLANT_ID && AOP_YEAR) {
-      fetchData()
-      setModifiedCells({})
-    }
-  }, [PLANT_ID, AOP_YEAR])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     try {
       const res = await InputApiService.getOperationHoursData(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
 
-      const rowsWithIds = res?.steamResponse?.map((row, index) => ({
+      if (!res || res?.data?.SteamOperationalHours?.length === 0) {
+        setRows([])
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'No data found', severity: 'info' })
+        setLoading(false)
+        return
+      }
+      const steamResponse = res?.data?.SteamOperationalHours
+      const transformedData = transformApiResponseToGridFormat(
+        steamResponse,
+        hoursRows,
+      )
+      const rowsWithIds = transformedData?.map((row, index) => ({
         ...row,
         id: row.id || index + 1,
       }))
@@ -398,13 +410,24 @@ const STGGrid = ({ hoursRows = [] }) => {
       setRows(rowsWithIds)
       setOriginalRows(rowsWithIds)
     } catch (error) {
-      console.error('Error fetching STG grid data:', error)
+      console.error('Error fetching power grid data:', error)
       setSnackbarOpen(true)
       setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
       setLoading(false)
     }
-  }
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+
+  useDebounce(
+    () => {
+      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+        fetchData()
+        setModifiedCells({})
+      }
+    },
+    1000,
+    [PLANT_ID_LIST, AOP_YEAR, fetchData],
+  )
 
   const permissions = {
     showAction: true,
@@ -456,6 +479,7 @@ const STGGrid = ({ hoursRows = [] }) => {
       data,
       originalRows,
       fieldsToCheck,
+      'assetName',
     )
     if (validationError) {
       setSnackbarOpen(true)
@@ -464,17 +488,24 @@ const STGGrid = ({ hoursRows = [] }) => {
       return
     }
 
-    const payload = modifiedData.map(({ id, inEdit, ...rest }) => rest)
+    const gridFormatData = modifiedData.map(({ id, inEdit, ...rest }) => rest)
+    const apiFormatData = transformGridFormatToApiFormat(gridFormatData)
     try {
-      await InputApiService.saveOperationHours(keycloak, PLANT_ID, AOP_YEAR, {
-        steamResponse: payload,
-      })
+      await InputApiService.saveOperationHours(
+        keycloak,
+        PLANT_ID_LIST,
+        AOP_YEAR,
+        {
+          steamResponse: apiFormatData,
+        },
+      )
       setModifiedCells({})
       setSnackbarOpen(true)
       setSnackbarData({
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+      fetchData()
     } catch (error) {
       console.error('Error saving STG grid data:', error)
       setSnackbarOpen(true)

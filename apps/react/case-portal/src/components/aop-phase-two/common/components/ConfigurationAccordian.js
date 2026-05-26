@@ -414,10 +414,6 @@ const ConfigurationAccordian = ({
       },
     }
 
-    console.log(
-      'configurationExecutionDetails[0]',
-      configurationExecutionDetails[0],
-    )
     return (
       <Box sx={{ mb: 1 }}>
         <CompactAccordion

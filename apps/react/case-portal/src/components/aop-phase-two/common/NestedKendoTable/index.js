@@ -867,6 +867,7 @@ const NestedKendoTable = ({
       <td
         {...tdProps}
         title={value}
+        className={`${tdProps?.className || ''} ${isEdited ? 'edited-cell' : ''}`.trim()}
         style={{
           ...tdProps?.style,
           color: isEdited ? 'orange' : undefined,
@@ -901,6 +902,7 @@ const NestedKendoTable = ({
         {...tdProps}
         {...(alwaysEditable ? { 'data-always-editable': 'true' } : {})}
         title={displayText}
+        className={`${tdProps?.className || ''} ${isEdited ? 'edited-cell' : ''}`.trim()}
         style={{
           cursor: isRowEditable ? 'pointer' : 'not-allowed',
           color:
@@ -1231,10 +1233,18 @@ const NestedKendoTable = ({
     const cellContent =
       typeof value === 'boolean' ? displayValue : props.children
 
+    // Check if field was edited - customModifiedCells stores fields as flat keys
+    const rowId = props.dataItem?.id
+    const isEdited = Object.prototype.hasOwnProperty.call(
+      customModifiedCells?.[rowId] || {},
+      props.field,
+    )
+
     return (
       <td
         {...props.tdProps}
         title={displayValue}
+        className={`${props.tdProps?.className || ''} ${isEdited ? 'edited-cell' : ''}`.trim()}
         style={{
           ...props.tdProps?.style,
           textAlign: typeof value === 'boolean' ? 'center' : undefined,
