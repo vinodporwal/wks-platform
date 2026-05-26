@@ -775,7 +775,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				String procedureName = verticalName + "_" + site.getName() + "_GetConfiguration";
 				obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);
 			}
-			else if(verticalName.equalsIgnoreCase("AROMATICS"))
+//else if(verticalName.equalsIgnoreCase("AROMATICS"))
+else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD")))	
+
 			{   
 				obj = findByYearAndPlantFkIdAROMATICSExcel(year, plantFKId, viewName,getVersion(year,plantFKId),reportTypes.get(0));
 			}
@@ -846,7 +848,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					}
 				}			
 				
-				  if(verticalName.equalsIgnoreCase("AROMATICS")) {
+				  if(verticalName.equalsIgnoreCase("AROMATICS" ) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD"))) {
 					  configurationDTO.setVersion(row[22] != null ? row[22].toString() : ""); 
 			      }
 				 
