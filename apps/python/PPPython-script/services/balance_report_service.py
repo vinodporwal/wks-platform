@@ -19,7 +19,8 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from database.connection import get_connection
-from database.power_asset_queries import get_month_hours, get_asset_capacity_limits
+from database.power_asset_queries import get_month_hours, get_asset_capacity_limits, get_hrsg_heat_rate_for_load
+from services.norm_lookup_service import get_month_norm
 
 
 # ============================================================
@@ -312,7 +313,7 @@ def get_ncv_from_fuel_availability(month: int, year: int, fuel_name: str = 'NATU
 def get_gt_heat_rate_and_free_steam(month: int, year: int, asset_name: str, gt_load_mw: float) -> tuple:
     """
     Fetch GT Heat Rate and Free Steam Factor from CPP_GTHeatRate table based on allocated load.
-    Uses the heat rate for the load point closest to (but not exceeding) the actual load.
+    Uses linear interpolation between nearest GTLoad points (same logic as power dispatch).
     
     Args:
         month: Month number (1-12)
@@ -333,58 +334,81 @@ def get_gt_heat_rate_and_free_steam(month: int, year: int, asset_name: str, gt_l
         else:
             fy_string = f"{year - 1}-{str(year)[-2:]}"
         
-        # Query heat rate table - get all load points for this asset, ordered by load
-        # Use GT-1 as common curve for consistency
+        # Query heat rate table - get all load points for this specific GT asset, ordered by load
         query = """
             SELECT GTLoad, FinalHeatRate, FreeSteamFactor
             FROM dbo.CPP_GTHeatRate
-            WHERE FinancialYear = ? AND AssetName = 'GT-1'
+            WHERE FinancialYear = ? AND AssetName = ?
             ORDER BY GTLoad
         """
         
-        cursor.execute(query, (fy_string,))
+        cursor.execute(query, (fy_string, asset_name))
         rows = cursor.fetchall()
         
         if not rows:
             return 0.0, 0.0
-        
-        # Find the appropriate heat rate based on load
-        # Use the heat rate for the highest load point that doesn't exceed actual load
-        selected_heat_rate = 0.0
-        selected_free_steam = 0.0
-        for row in rows:
-            load_point = float(row[0])
-            heat_rate = float(row[1])
-            free_steam = float(row[2])
-            
-            if load_point <= gt_load_mw:
-                selected_heat_rate = heat_rate
-                selected_free_steam = free_steam
-            else:
-                break  # Stop when we exceed the actual load
-        
-        # If selected heat rate is 0, find the nearest non-zero heat rate
-        if selected_heat_rate == 0.0:
-            # Look for the nearest load point with non-zero heat rate
+
+        # Normalize and sort points
+        points = sorted(
+            [(float(r[0]), float(r[1]), float(r[2])) for r in rows],
+            key=lambda x: x[0]
+        )
+
+        if gt_load_mw is None:
+            return 0.0, 0.0
+
+        min_load = points[0][0]
+        max_load = points[-1][0]
+
+        # Clamp outside range to nearest endpoint (same as power_service behavior)
+        if gt_load_mw <= min_load:
+            _, hr, fs = points[0]
+            return hr, fs
+        if gt_load_mw >= max_load:
+            _, hr, fs = points[-1]
+            return hr, fs
+
+        # Exact match or find interpolation bracket
+        lower = None
+        upper = None
+        for load_point, heat_rate, free_steam in points:
+            if abs(load_point - gt_load_mw) < 1e-9:
+                return heat_rate, free_steam
+            if load_point < gt_load_mw:
+                lower = (load_point, heat_rate, free_steam)
+            elif load_point > gt_load_mw and upper is None:
+                upper = (load_point, heat_rate, free_steam)
+                break
+
+        if lower is None or upper is None:
+            return 0.0, 0.0
+
+        x1, hr1, fs1 = lower
+        x2, hr2, fs2 = upper
+
+        if abs(x2 - x1) < 1e-9:
+            return hr1, fs1
+
+        frac = (gt_load_mw - x1) / (x2 - x1)
+        heat = hr1 + frac * (hr2 - hr1)
+        steam = fs1 + frac * (fs2 - fs1)
+
+        # If interpolated heat rate is 0, use nearest non-zero point
+        if heat == 0.0:
             min_diff = float('inf')
-            nearest_heat_rate = 0.0
-            nearest_free_steam = 0.0
-            for row in rows:
-                load_point = float(row[0])
-                heat_rate = float(row[1])
-                free_steam = float(row[2])
-                
-                if heat_rate != 0.0:
+            nearest_heat = 0.0
+            nearest_steam = 0.0
+            for load_point, row_heat, row_steam in points:
+                if row_heat != 0.0:
                     diff = abs(load_point - gt_load_mw)
                     if diff < min_diff:
                         min_diff = diff
-                        nearest_heat_rate = heat_rate
-                        nearest_free_steam = free_steam
-            
-            selected_heat_rate = nearest_heat_rate
-            selected_free_steam = nearest_free_steam
-        
-        return selected_heat_rate, selected_free_steam
+                        nearest_heat = row_heat
+                        nearest_steam = row_steam
+            heat = nearest_heat
+            steam = nearest_steam
+
+        return heat, steam
         
     except Exception as e:
         print(f"Error fetching GT Heat Rate and Free Steam: {e}")
@@ -633,6 +657,20 @@ def extract_fuel_demand_data(month: int, year: int, calculation_result: dict) ->
     # May 2025 = 31 days = 744 hours, April 2025 = 30 days = 720 hours, etc.
     default_operating_hours = get_month_hours(month, year)
     
+    # Get total SHP (fired + free) from hrsg_dispatch for accurate heat rate calculation
+    hrsg_dispatch = usd_result.get('hrsg_dispatch', {})
+    hrsg_dispatch_list = hrsg_dispatch.get('hrsg_dispatch', [])
+    hrsg_total_shp_map = {}
+    for h in hrsg_dispatch_list:
+        hrsg_name = h.get('name', '')
+        clean_name = hrsg_name.replace(' ', '').replace('-', '').upper()
+        if 'HRSG1' in clean_name:
+            hrsg_total_shp_map['HRSG1'] = h.get('total_shp_mt', 0)
+        elif 'HRSG2' in clean_name:
+            hrsg_total_shp_map['HRSG2'] = h.get('total_shp_mt', 0)
+        elif 'HRSG3' in clean_name:
+            hrsg_total_shp_map['HRSG3'] = h.get('total_shp_mt', 0)
+    
     # Extract GT data - Create map from dispatch data
     gt_dispatch_map = {}
     for asset in final_dispatch:
@@ -755,35 +793,63 @@ def extract_fuel_demand_data(month: int, year: int, calculation_result: dict) ->
     # Get HRSG SHP generation from utility_consumption
     hrsg_assets = []
     hrsg_configs = [
-        ('HRSG1', 'shp_from_hrsg1', 'hrsg1_mmbtu', natural_gas.get('hrsg1_ng_norm', 2.8115696)),
-        ('HRSG2', 'shp_from_hrsg2', 'hrsg2_mmbtu', natural_gas.get('hrsg2_ng_norm', 2.8115696)),
-        ('HRSG3', 'shp_from_hrsg3', 'hrsg3_mmbtu', natural_gas.get('hrsg3_ng_norm', 2.8115696))
+        ('HRSG1', 'shp_from_hrsg1', 'hrsg1_mmbtu', natural_gas.get('hrsg1_ng_norm', 2.8115696), natural_gas.get('hrsg1_heat_rate', 0.0)),
+        ('HRSG2', 'shp_from_hrsg2', 'hrsg2_mmbtu', natural_gas.get('hrsg2_ng_norm', 2.8115696), natural_gas.get('hrsg2_heat_rate', 0.0)),
+        ('HRSG3', 'shp_from_hrsg3', 'hrsg3_mmbtu', natural_gas.get('hrsg3_ng_norm', 2.8115696), natural_gas.get('hrsg3_heat_rate', 0.0))
     ]
     
-    for hrsg_name, shp_key, mmbtu_key, ng_norm_per_mt in hrsg_configs:
-        # Get actual SHP generated from utility_consumption
-        shp_generated_mt = utility_consumption.get(shp_key, 0)
-        
-        # Calculate average hourly load (MT/h) for HRSGs
-        avg_load_mt_per_hr = shp_generated_mt / operating_hours if operating_hours > 0 else 0
-        
-        # Get pre-calculated MMBTU from natural_gas (reverse calculated from heat rate)
+    gt_to_hrsg_map = {
+        'HRSG1': 'GT1',
+        'HRSG2': 'GT2',
+        'HRSG3': 'GT3'
+    }
+    
+    for hrsg_name, shp_key, mmbtu_key, ng_norm_per_mt, lookup_heat_rate_btu_lb in hrsg_configs:
+        linked_gt = gt_to_hrsg_map.get(hrsg_name, '')
+        gt_data = gt_dispatch_map.get(linked_gt, {'gross_mwh': 0, 'hours': default_operating_hours})
+        total_shp_mt = hrsg_total_shp_map.get(hrsg_name, 0)
+
+        # HRSG off when linked GT is not running or no total SHP output
+        if gt_data['gross_mwh'] == 0 or total_shp_mt <= 0:
+            hrsg_assets.append({
+                'asset_name': hrsg_name,
+                'ncv_gbt': ncv_gbt,
+                'quantity_mmbtu': 0,
+                'allocated_load_mt_per_hr': 0,
+                'heat_rate_btu_lb': 0,
+            })
+            continue
+
+        # Average hourly load (MT/h) from total SHP (fired + free steam)
+        avg_load_mt_per_hr = total_shp_mt / default_operating_hours if default_operating_hours > 0 else 0
+
         quantity_mmbtu = natural_gas.get(mmbtu_key, 0)
-        
-        # If MMBTU is 0 but SHP is generated, calculate it manually using NG norm
-        if quantity_mmbtu == 0 and shp_generated_mt > 0:
-            quantity_mmbtu = shp_generated_mt * ng_norm_per_mt
-        
-        # Heat rate (Kcal/Kg) - convert from MMBTU/MT
-        # 1 MMBTU = 251,995.76 Kcal, 1 MT = 1000 Kg
-        heat_rate_kcal_kg = (ng_norm_per_mt * 251995.76) / 1000
-        
+        if quantity_mmbtu == 0 and total_shp_mt > 0:
+            quantity_mmbtu = total_shp_mt * ng_norm_per_mt
+
+        # Heat rate from CPP_HRSGHeatRate lookup at this load (BTU/lb) — same as Inputs screen
+        heat_rate_btu_lb = 0.0
+        try:
+            hr_result = get_hrsg_heat_rate_for_load(
+                equipment_name=hrsg_name,
+                hrsg_load_tph=avg_load_mt_per_hr,
+                month=month,
+                year=year,
+            )
+            if hr_result.get('heat_rate_btu_lb', 0) > 0:
+                heat_rate_btu_lb = hr_result['heat_rate_btu_lb']
+            elif lookup_heat_rate_btu_lb and lookup_heat_rate_btu_lb > 0:
+                heat_rate_btu_lb = lookup_heat_rate_btu_lb
+        except Exception:
+            if lookup_heat_rate_btu_lb and lookup_heat_rate_btu_lb > 0:
+                heat_rate_btu_lb = lookup_heat_rate_btu_lb
+
         hrsg_assets.append({
             'asset_name': hrsg_name,
-            'ncv_gbt': ncv_gbt,  # Use NCV from database (same as GTs)
-            'quantity_mmbtu': quantity_mmbtu,  # Use pre-calculated or calculated MMBTU
-            'allocated_load_mt_per_hr': avg_load_mt_per_hr,  # Average hourly load in MT/h
-            'heat_rate_kcal_kg': heat_rate_kcal_kg
+            'ncv_gbt': ncv_gbt,
+            'quantity_mmbtu': quantity_mmbtu,
+            'allocated_load_mt_per_hr': avg_load_mt_per_hr,
+            'heat_rate_btu_lb': heat_rate_btu_lb,
         })
     
     return {
@@ -1425,7 +1491,7 @@ def write_fuel_demand_section(ws, start_row: int, month: int, year: int, calcula
         ws[f'C{row}'] = f"{round(hrsg['ncv_gbt'], 2)} GBT/MT"  # Use NCV from database (GBT/MT)
         ws[f'D{row}'] = round(hrsg['quantity_mmbtu'], 2)
         ws[f'E{row}'] = f"{round(hrsg['allocated_load_mt_per_hr'], 2)} MT/h"  # Average hourly load
-        ws[f'F{row}'] = f"{round(hrsg['heat_rate_kcal_kg'], 2)} Kcal/kg"
+        ws[f'F{row}'] = f"{round(hrsg['heat_rate_btu_lb'], 2)} Kcal/kg"
         
         for col in range(1, 7):
             ws.cell(row=row, column=col).border = THIN_BORDER
@@ -1441,18 +1507,34 @@ def write_power_balance_section(ws, start_row: int, month: int, year: int, calcu
     final_dispatch = usd_result.get('final_dispatch', [])
     utility_consumption = calculation_result.get('utility_consumption', {})
     
-    # Auxiliary power norms (from demand_service.py)
-    NORM_GT_AUX = 0.0140  # 1.4% for GTs
-    NORM_STG_AUX = 0.0020  # 0.2% for STG
-    
-    # Utility power consumption norms (KWH per unit)
-    NORM_BFW_POWER = 9.5000        # KWH per M3
-    NORM_DM_POWER = 1.2100         # KWH per M3
-    NORM_CW1_POWER = 245.0000      # KWH per KM3
-    NORM_CW2_POWER = 250.0000      # KWH per KM3
-    NORM_AIR_POWER = 0.1650        # KWH per NM3
-    NORM_OXYGEN_POWER = 968.6500   # KWH per MT
-    NORM_EFFLUENT_POWER = 3.5400   # KWH per M3
+    # Month-wise norms from DB
+    norm_gt_aux = {
+        "GT1": get_utility_norm_from_db(
+            month, year, "NMD - Power Plant 1", "POWERGEN", "Power_Dis",
+            issuing_plant_name="NMD - Utility/Power Dist",
+        ),
+        "GT2": get_utility_norm_from_db(
+            month, year, "NMD - Power Plant 2", "POWERGEN", "Power_Dis",
+            issuing_plant_name="NMD - Utility/Power Dist",
+        ),
+        "GT3": get_utility_norm_from_db(
+            month, year, "NMD - Power Plant 3", "POWERGEN", "Power_Dis",
+            issuing_plant_name="NMD - Utility/Power Dist",
+        ),
+    }
+    norm_stg_aux = get_utility_norm_from_db(
+        month, year, "NMD - STG Power Plant", "POWERGEN", "Power_Dis",
+        issuing_plant_name="NMD - Utility/Power Dist",
+    )
+    utility_power_norms = {
+        "BFW Plant": get_utility_norm_from_db(month, year, "NMD - Utility Plant", "Boiler Feed Water", "Power_Dis"),
+        "DM Water Plant": get_utility_norm_from_db(month, year, "NMD - Utility Plant", "D M Water", "Power_Dis"),
+        "Cooling Water 1": get_utility_norm_from_db(month, year, "NMD - Utility Plant", "Cooling Water 1", "Power_Dis"),
+        "Cooling Water 2": get_utility_norm_from_db(month, year, "NMD - Utility Plant", "Cooling Water 2", "Power_Dis"),
+        "Compressed Air": get_utility_norm_from_db(month, year, "NMD - Utility Plant", "COMPRESSED AIR", "Power_Dis"),
+        "Oxygen Plant": get_utility_norm_from_db(month, year, "NMD - Utility Plant", "Oxygen", "Power_Dis"),
+        "Effluent Treatment": get_utility_norm_from_db(month, year, "NMD - Utility Plant", "Effluent Treated", "Power_Dis"),
+    }
     
     row = start_row
     
@@ -1542,8 +1624,9 @@ def write_power_balance_section(ws, start_row: int, month: int, year: int, calcu
     # GT auxiliary power
     for gt_name in ['GT1', 'GT2', 'GT3']:
         ws[f'A{row}'] = f"  {gt_name} - Power"
-        ws[f'B{row}'] = NORM_GT_AUX
-        aux_mw = gt_generation[gt_name] * NORM_GT_AUX
+        gt_aux_norm = norm_gt_aux.get(gt_name, 0)
+        ws[f'B{row}'] = gt_aux_norm
+        aux_mw = gt_generation[gt_name] * gt_aux_norm
         ws[f'C{row}'] = round(aux_mw, 2)
         aux_power_total += aux_mw
         for col in range(1, 6):
@@ -1552,8 +1635,8 @@ def write_power_balance_section(ws, start_row: int, month: int, year: int, calcu
     
     # STG auxiliary power
     ws[f'A{row}'] = f"  STG - Power"
-    ws[f'B{row}'] = NORM_STG_AUX
-    stg_aux_mw = stg_generation * NORM_STG_AUX
+    ws[f'B{row}'] = norm_stg_aux
+    stg_aux_mw = stg_generation * norm_stg_aux
     ws[f'C{row}'] = round(stg_aux_mw, 2)
     aux_power_total += stg_aux_mw
     for col in range(1, 6):
@@ -1571,16 +1654,17 @@ def write_power_balance_section(ws, start_row: int, month: int, year: int, calcu
         utility_power_from_u4u = utility_consumption.get('utility_power', {})
     
     utility_power_items = [
-        ('BFW Plant', utility_power_from_u4u.get('bfw_kwh', 0) / 1000, NORM_BFW_POWER),  # Convert KWH to MWH
-        ('DM Water Plant', utility_power_from_u4u.get('dm_kwh', 0) / 1000, NORM_DM_POWER),
-        ('Cooling Water 1', utility_power_from_u4u.get('cw1_kwh', 0) / 1000, NORM_CW1_POWER),
-        ('Cooling Water 2', utility_power_from_u4u.get('cw2_kwh', 0) / 1000, NORM_CW2_POWER),
-        ('Compressed Air', utility_power_from_u4u.get('air_kwh', 0) / 1000, NORM_AIR_POWER),
-        ('Oxygen Plant', utility_power_from_u4u.get('oxygen_kwh', 0) / 1000, NORM_OXYGEN_POWER),
-        ('Effluent Treatment', utility_power_from_u4u.get('effluent_kwh', 0) / 1000, NORM_EFFLUENT_POWER),
+        ('BFW Plant', utility_power_from_u4u.get('bfw_kwh', 0) / 1000),
+        ('DM Water Plant', utility_power_from_u4u.get('dm_kwh', 0) / 1000),
+        ('Cooling Water 1', utility_power_from_u4u.get('cw1_kwh', 0) / 1000),
+        ('Cooling Water 2', utility_power_from_u4u.get('cw2_kwh', 0) / 1000),
+        ('Compressed Air', utility_power_from_u4u.get('air_kwh', 0) / 1000),
+        ('Oxygen Plant', utility_power_from_u4u.get('oxygen_kwh', 0) / 1000),
+        ('Effluent Treatment', utility_power_from_u4u.get('effluent_kwh', 0) / 1000),
     ]
     
-    for utility_name, power_mwh, norm_value in utility_power_items:
+    for utility_name, power_mwh in utility_power_items:
+        norm_value = utility_power_norms.get(utility_name, 0)
         ws[f'A{row}'] = f"  {utility_name}"
         ws[f'B{row}'] = norm_value  # Add norm value
         ws[f'C{row}'] = round(power_mwh, 2)
@@ -1862,10 +1946,10 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
     
     elif steam_type == 'MP':
         # MP consumed by PRDS to generate LP (steam cascade)
-        # norm = 0.75 MT MP / MT LP (NORM_MP_PER_LP_PRDS from steam_service)
         mp_for_lp = steam_balance.get('mp_for_lp', 0)
         lp_from_prds_mt = usd_result.get('final_steam_balance', {}).get('lp_balance', {}).get('lp_from_prds', 0.0)
-        lp_prds_norm = round(mp_for_lp / lp_from_prds_mt, 4) if lp_from_prds_mt else 0.75
+        lp_prds_norm_db = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'LP Steam PRDS', 'MP Steam_Dis')
+        lp_prds_norm = round(mp_for_lp / lp_from_prds_mt, 4) if lp_from_prds_mt else lp_prds_norm_db
         ws[f'A{row}'] = "  LP Steam (via PRDS)"
         ws[f'B{row}'] = lp_prds_norm
         ws[f'C{row}'] = round(mp_for_lp, 2)
@@ -2237,7 +2321,15 @@ def write_other_utilities_section(ws, start_row: int, month: int, year: int, cal
 # SECTION IV: OTHER UTILITIES BALANCE
 # ============================================================
 
-def get_utility_norm_from_db(month: int, year: int, plant_name: str, utility_name: str, material_name: str) -> float:
+def get_utility_norm_from_db(
+    month: int,
+    year: int,
+    plant_name: str,
+    utility_name: str,
+    material_name: str,
+    account_name: str = "Utilities",
+    issuing_plant_name: str = None,
+) -> float:
     """
     Fetch norm value from NormsMonthDetail table for a specific plant, utility, and material.
     
@@ -2251,35 +2343,20 @@ def get_utility_norm_from_db(month: int, year: int, plant_name: str, utility_nam
     Returns:
         Norm value from database, or 0.0 if not found
     """
-    conn = get_connection()
-    cursor = conn.cursor()
-    
     try:
-        query = """
-            SELECT nmd.Norms
-            FROM NormsMonthDetail nmd
-            INNER JOIN NormsHeader nh ON nh.Id = nmd.NormsHeader_FK_Id
-            INNER JOIN Plants p ON p.Id = nh.Plant_FK_Id
-            INNER JOIN FinancialYearMonth fym ON fym.Id = nmd.FinancialYearMonth_FK_Id
-            WHERE fym.Month = ? AND fym.Year = ?
-              AND p.Name = ?
-              AND nh.UtilityName = ?
-              AND nh.MaterialName = ?
-              AND nh.IsActive = 1
-        """
-        
-        cursor.execute(query, (month, year, plant_name, utility_name, material_name))
-        row = cursor.fetchone()
-        
-        if row and row[0] is not None:
-            return float(row[0])
-        return 0.0
-        
+        return get_month_norm(
+            month=month,
+            year=year,
+            plant_name=plant_name,
+            utility_name=utility_name,
+            material_name=material_name,
+            account_name=account_name,
+            issuing_plant_name=issuing_plant_name,
+            required=False,
+        )
     except Exception as e:
         print(f"  [NORM FETCH] Error fetching norm for {plant_name}/{utility_name}/{material_name}: {e}")
         return 0.0
-    finally:
-        conn.close()
 
 
 # ============================================================
