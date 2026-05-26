@@ -4486,33 +4486,85 @@ const KendoDataTables = ({
         </DialogActions>
       </CompactDialog>
 
-      <Dialog
+      <CompactDialog
         open={deleteMultipleConfirms}
         onClose={() => setDeleteMultipleConfirms(false)}
-        aria-labelledby='alert-dialog-title'
-        aria-describedby='alert-dialog-description'
         disableScrollLock
+        slotProps={{ backdrop: { disableScrollLock: true } }}
       >
-        <DialogTitle id='alert-dialog-title'>{'Delete ?'}</DialogTitle>
-        <DialogContent>
-          <DialogContentText
-            id='alert-dialog-description'
-            sx={{ color: 'text.primary' }}
+        {/* Header */}
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#fef2f2', // soft red
+            borderBottom: '1px solid #fee2e2',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <DeleteOutlineIcon sx={{ fontSize: '1rem', color: '#dc2626' }} />
+            <Typography
+              sx={{
+                fontWeight: 800,
+                fontSize: '0.8rem',
+                color: '#7f1d1d',
+                letterSpacing: '0.4px',
+              }}
+            >
+              CONFIRM DELETE
+            </Typography>
+          </Box>
+
+          <IconButton
+            size='small'
+            onClick={() => setDeleteMultipleConfirms(false)}
+            sx={{ color: '#7f1d1d' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        {/* Content */}
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: '#7f1d1d',
+              lineHeight: 1.5,
+              fontWeight: 600,
+            }}
           >
             {'Are you sure you want to delete?'}{' '}
-          </DialogContentText>
+          </Typography>
+
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteMultipleConfirms(false)}>
+
+        {/* Actions */}
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button
+            onClick={() => setDeleteMultipleConfirms(false)}
+            className='btn-no'
+          >
             Cancel
           </Button>
-          <Button onClick={handleDeleteMultiple} autoFocus disabled={READ_ONLY}>
+
+          <Button
+            onClick={handleDeleteMultiple}
+            variant='contained'
+            size='small'
+            disabled={READ_ONLY}
+            className='btn-yes'
+          >
             Delete
           </Button>
         </DialogActions>
-      </Dialog>
+      </CompactDialog>
 
-      <Dialog
+
+      <CompactDialog
         open={openCalculateDialogeBox}
         onClose={closeCalculateDialogBox}
         aria-labelledby='alert-dialog-title'
@@ -4522,25 +4574,76 @@ const KendoDataTables = ({
           backdrop: { disableScrollLock: true },
         }}
       >
-        <DialogTitle id='alert-dialog-title'>{'Calculate ?'}</DialogTitle>
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#f6f8fa',
+            borderBottom: '1px solid #DDDEE1',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              component='img'
+              src={CalculateIcon}
+              className='w16-icon'
+            />
+            <Typography
+              sx={{
+                fontWeight: 800,
+                fontSize: '0.8rem',
+                color: 'text.primary',
+                letterSpacing: '0.4px',
+              }}
+            >
+              Confirm Calculate
+            </Typography>
+          </Box>
 
-        <DialogContent>
-          <DialogContentText
-            id='alert-dialog-description'
+          <IconButton
+            size='small'
+            onClick={closeCalculateDialogBox}
             sx={{ color: 'text.primary' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: 'text.primary',
+              lineHeight: 1.5,
+              fontWeight: 600,
+            }}
           >
             Are you sure you want to calculate? This will override the existing
             values.
-          </DialogContentText>
+          </Typography>
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={closeCalculateDialogBox}>Cancel</Button>
-          <Button onClick={handleCalculateConfirmation} autoFocus>
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button
+            onClick={closeCalculateDialogBox}
+            className='btn-no'
+          >
+            Cancel
+          </Button>
+
+          <Button
+            onClick={handleCalculateConfirmation}
+            variant='contained'
+            size='small'
+            className='btn-yes'
+          >
             Calculate
           </Button>
         </DialogActions>
-      </Dialog>
+      </CompactDialog>
 
       <CompactDialog
         open={openSaveDialogeBox}
