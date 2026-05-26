@@ -2,10 +2,7 @@ import React from 'react'
 import { Box } from '@mui/material'
 import KendoDataTablesCracker from './index-cracker.js'
 const CustomRow = ({ dataItem, className, ...rest }) => {
-  const rowClassName = [
-    className,
-    dataItem.isError ? 'error-row' : '',
-  ]
+  const rowClassName = [className, dataItem.isError ? 'error-row' : '']
     .filter(Boolean)
     .join(' ')
   return (

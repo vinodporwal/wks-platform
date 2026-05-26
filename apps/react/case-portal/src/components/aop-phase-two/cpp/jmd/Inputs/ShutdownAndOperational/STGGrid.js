@@ -10,10 +10,10 @@ import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/commo
 import NestedKendoTable from 'components/aop-phase-two/common/NestedKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-const PowerGrid = ({ hoursRows = [] }) => {
+const STGGrid = ({ hoursRows = [] }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year, screenTitle } = dataGridStore
+  const { plantObject, year } = dataGridStore
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
   const headerMap = generateHeaderNames(AOP_YEAR)
@@ -36,57 +36,57 @@ const PowerGrid = ({ hoursRows = [] }) => {
     {
       field: 'assetName',
       title: 'Asset Name',
-      widthT: 150,
+      width: 150,
       minWidth: 150,
       type: 'text',
       editable: false,
-      locked: false,
-    },
-    {
-      field: 'assetType',
-      title: 'Asset Type',
-      widthT: 150,
-      minWidth: 150,
-      type: 'text',
-      editable: false,
-      locked: false,
-      hidden: true,
+      locked: true,
     },
     {
       field: 'utilityDistributed.name',
       title: 'Utility Distributed',
-      widthT: 180,
+      width: 180,
       minWidth: 180,
       type: 'text',
       editable: false,
-      locked: false,
+      // locked: true,
     },
     {
       field: 'utilityDistributed.sapCode',
       title: 'Distributed SAP Code',
-      widthT: 200,
+      width: 200,
       minWidth: 200,
       type: 'text',
       editable: false,
-      locked: false,
+      // locked: true,
     },
     {
       field: 'utilityGenerated.name',
       title: 'Utility Generated',
-      widthT: 180,
+      width: 180,
       minWidth: 180,
       type: 'text',
       editable: false,
-      locked: false,
+      // locked: true,
     },
     {
       field: 'utilityGenerated.sapCode',
       title: 'Generated SAP Code',
-      widthT: 200,
-      minWidth: 200,
+      width: 220,
+      minWidth: 220,
       type: 'text',
       editable: false,
-      locked: false,
+      // locked: true,
+    },
+    {
+      field: 'assetType',
+      title: 'Asset Type',
+      width: 180,
+      minWidth: 180,
+      type: 'text',
+      editable: false,
+      // locked: true,
+      hidden: true,
     },
     {
       title: headerMap[4],
@@ -367,7 +367,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
     {
       field: 'remarks',
       title: 'Remarks',
-      widthT: 250,
+      width: 250,
       type: 'textarea',
       editable: true,
       minWidth: 250,
@@ -390,22 +390,15 @@ const PowerGrid = ({ hoursRows = [] }) => {
         AOP_YEAR,
       )
 
-      if (!res || res?.powerResponse?.length === 0) {
-        setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
-        setLoading(false)
-        return
-      }
-
-      const rowsWithIds = res?.powerResponse
-        ?.filter((row) => row.assetType !== 'Power_Dis')
-        ?.map((row, index) => ({ ...row, id: row.id || index + 1 }))
+      const rowsWithIds = res?.steamResponse?.map((row, index) => ({
+        ...row,
+        id: row.id || index + 1,
+      }))
 
       setRows(rowsWithIds)
       setOriginalRows(rowsWithIds)
     } catch (error) {
-      console.error('Error fetching power grid data:', error)
+      console.error('Error fetching STG grid data:', error)
       setSnackbarOpen(true)
       setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
@@ -422,10 +415,9 @@ const PowerGrid = ({ hoursRows = [] }) => {
     allAction: true,
     showImport: true,
     showExport: true,
-    ExcelName: `Shutdown and Operational - ${AOP_YEAR}`,
+    ExcelName: `STG Shutdown and Operational - ${AOP_YEAR}`,
     showTitleNameBusiness: true,
-    showTitle: true,
-    titleName: screenTitle?.title,
+    showTitle: false,
   }
 
   const saveChanges = async () => {
@@ -464,7 +456,6 @@ const PowerGrid = ({ hoursRows = [] }) => {
       data,
       originalRows,
       fieldsToCheck,
-      'assetName',
     )
     if (validationError) {
       setSnackbarOpen(true)
@@ -476,7 +467,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
     const payload = modifiedData.map(({ id, inEdit, ...rest }) => rest)
     try {
       await InputApiService.saveOperationHours(keycloak, PLANT_ID, AOP_YEAR, {
-        powerResponse: payload,
+        steamResponse: payload,
       })
       setModifiedCells({})
       setSnackbarOpen(true)
@@ -484,9 +475,8 @@ const PowerGrid = ({ hoursRows = [] }) => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
-      fetchData()
     } catch (error) {
-      console.error('Error saving power grid data:', error)
+      console.error('Error saving STG grid data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to save changes. Please try again.',
@@ -501,7 +491,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
     if (!file) return
     setLoading(true)
     try {
-      const response = await InputApiService.savePowerResponseExcel(
+      const response = await InputApiService.saveSteamResponseExcel(
         file,
         keycloak,
         PLANT_ID,
@@ -528,7 +518,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
         link.href = url
         link.setAttribute(
           'download',
-          'Error File - Shutdown and Operational.xlsx',
+          'Error File - STG Shutdown and Operational.xlsx',
         )
         document.body.appendChild(link)
         link.click()
@@ -560,7 +550,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
     setSnackbarOpen(true)
     setSnackbarData({ message: 'Excel download started!', severity: 'info' })
     try {
-      await InputApiService.exportPowerResponseExcel(
+      await InputApiService.exportSteamResponseExcel(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -570,7 +560,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error exporting power response data:', error)
+      console.error('Error exporting STG response data:', error)
       setSnackbarData({
         message: 'Excel download failed. Please try again.',
         severity: 'error',
@@ -594,7 +584,6 @@ const PowerGrid = ({ hoursRows = [] }) => {
           setRows={setRows}
           modifiedCells={modifiedCells}
           setModifiedCells={setModifiedCells}
-          title='Shutdown and Operational Input (Hours)'
           permissions={permissions}
           handleRemarkCellClick={handleRemarkCellClick}
           remarkDialogOpen={remarkDialogOpen}
@@ -610,12 +599,12 @@ const PowerGrid = ({ hoursRows = [] }) => {
           snackbarOpen={snackbarOpen}
           setSnackbarOpen={setSnackbarOpen}
           setSnackbarData={setSnackbarData}
-          hoursRows={hoursRows}
           groupBy={['assetType']}
+          hoursRows={hoursRows}
         />
       </Stack>
     </Box>
   )
 }
 
-export default PowerGrid
+export default STGGrid

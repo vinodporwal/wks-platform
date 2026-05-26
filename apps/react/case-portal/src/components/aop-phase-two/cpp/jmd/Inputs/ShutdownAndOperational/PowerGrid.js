@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { Box } from '@mui/material'
 import { Stack } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -40,7 +40,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
       minWidth: 150,
       type: 'text',
       editable: false,
-      locked: false,
+      locked: true,
     },
     {
       field: 'assetType',

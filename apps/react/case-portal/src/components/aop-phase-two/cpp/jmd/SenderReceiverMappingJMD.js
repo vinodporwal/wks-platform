@@ -3,10 +3,9 @@ import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
 import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
-import AdvanceKendoTable from '../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import SenderReceiverMappingJMD from './jmd/SenderReceiverMappingJMD'
-const SenderReceiverMapping = () => {
+import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
+const SenderReceiverMappingJMD = () => {
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -23,19 +22,20 @@ const SenderReceiverMapping = () => {
 
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, siteObject, verticalObject, year } = dataGridStore
+  const { verticalObject, siteObject, plantObject, year } = dataGridStore
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
 
   const lowerVertName = verticalObject?.name?.toLowerCase()
   const lowerSiteName = siteObject?.name?.toLowerCase()
-  const IS_CPP = lowerVertName === 'cpp'
+  const IS_CPP_JMD = lowerVertName === 'cpp' && lowerSiteName === 'jmd'
+  const IS_CPP_NMD = lowerVertName === 'cpp' && lowerSiteName === 'nmd'
 
   useEffect(() => {
-    if (PLANT_ID && AOP_YEAR && lowerSiteName === 'nmd') {
+    if (PLANT_ID && AOP_YEAR) {
       fetchPlantRequirementData()
     }
-  }, [PLANT_ID, AOP_YEAR, lowerSiteName])
+  }, [PLANT_ID, AOP_YEAR])
 
   const fetchPlantRequirementData = async () => {
     setLoading(true)
@@ -356,60 +356,44 @@ const SenderReceiverMapping = () => {
     setRemarkDialogOpen(true)
   }
 
-  const renderBySite = () => {
-    switch (lowerSiteName) {
-      case 'jmd':
-        return <SenderReceiverMappingJMD />
-      // case 'hmd':
-      //   return <SenderReceiverMappingHMD />
-      case 'nmd':
-      default:
-        return (
-          <Stack sx={{ mt: 2 }}>
-            <AdvanceKendoTable
-              columns={columns}
-              rows={rows}
-              setRows={setRows}
-              modifiedCells={modifiedCells}
-              setModifiedCells={setModifiedCells}
-              title={permissions.showTitle ? permissions.titleName : ''}
-              permissions={permissions}
-              handleExport={handleExport}
-              handleExcelUpload={handleExcelUpload}
-              saveChanges={saveChanges}
-              fetchData={fetchPlantRequirementData}
-              snackbarData={snackbarData}
-              snackbarOpen={snackbarOpen}
-              setSnackbarOpen={setSnackbarOpen}
-              setSnackbarData={setSnackbarData}
-              customHeight={80}
-              paginationConfig={{
-                threshold: 100,
-                buttonCount: 5,
-                pageSizes: [10, 20, 50, 100],
-                defaultPageSize: 100,
-              }}
-              handleRemarkCellClick={handleRemarkCellClick}
-              remarkDialogOpen={remarkDialogOpen}
-              setRemarkDialogOpen={setRemarkDialogOpen}
-              currentRemark={currentRemark}
-              setCurrentRemark={setCurrentRemark}
-              currentRowId={currentRowId}
-              setCurrentRowId={() => {}}
-            />
-          </Stack>
-        )
-    }
-  }
-
-  if (!IS_CPP) return null
-
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
-      {renderBySite()}
+      <Stack sx={{ mt: 2 }}>
+        <AdvanceKendoTable
+          columns={columns}
+          rows={rows}
+          setRows={setRows}
+          modifiedCells={modifiedCells}
+          setModifiedCells={setModifiedCells}
+          title={permissions.showTitle ? permissions.titleName : ''}
+          permissions={permissions}
+          handleExport={handleExport}
+          handleExcelUpload={handleExcelUpload}
+          saveChanges={saveChanges}
+          fetchData={fetchPlantRequirementData}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          customHeight={80}
+          paginationConfig={{
+            threshold: 100,
+            buttonCount: 5,
+            pageSizes: [10, 20, 50, 100],
+            defaultPageSize: 100,
+          }}
+          handleRemarkCellClick={handleRemarkCellClick}
+          remarkDialogOpen={remarkDialogOpen}
+          setRemarkDialogOpen={setRemarkDialogOpen}
+          currentRemark={currentRemark}
+          setCurrentRemark={setCurrentRemark}
+          currentRowId={currentRowId}
+          setCurrentRowId={() => {}}
+        />
+      </Stack>
     </Box>
   )
 }
 
-export default SenderReceiverMapping
+export default SenderReceiverMappingJMD

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
+import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
@@ -8,7 +8,7 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { customValueFormatterPhaseTwo as customValueFormat } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
+const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
   const keycloak = useSession()
 
   const [modifiedCells, setModifiedCells] = useState({})
@@ -32,42 +32,45 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
   const AOP_YEAR = year?.selectedYear
   const valueFormat = ValueFormatterPhaseTwo()
 
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
+
   const columns = [
     {
       field: 'equipType',
       title: 'Equipment Type',
       widthT: 150,
+      minWidth: 150,
       type: 'text',
       editable: false,
-      locked: false,
-      minWidth: 150,
+      locked: true,
     },
     {
       field: 'cppUtility',
       title: 'CPP Utility',
       widthT: 120,
+      minWidth: 120,
       type: 'text',
       editable: false,
-      minWidth: 120,
     },
     {
-      field: 'gtLoad',
-      title: 'GT Load',
-      widthT: 120,
+      field: 'stgLoad',
+      title: 'STG Load (MW)',
+      width: 150,
+      minWidth: 150,
       type: 'number1',
-      format: customValueFormat(1),
-      editable: true,
-      minWidth: 120,
+      editable: false,
     },
     {
       field: 'oemHeatRate',
       title: 'OEM HR',
       widthT: 150,
+      minWidth: 150,
       type: 'numberWithRadio',
       format: customValueFormat(1),
       editable: true,
       numericEditable: true,
-      minWidth: 150,
       radioGroupField: 'selectedHeatRate',
       targetField: 'finalHeatRate',
       radioValue: 'OEM',
@@ -76,25 +79,25 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
       field: 'previousYearHeatRate',
       title: 'PREVIOUS YEAR BUDGET HR',
       widthT: 230,
+      minWidth: 230,
       type: 'numberWithRadio',
       format: customValueFormat(1),
       editable: true,
       numericEditable: false,
-      minWidth: 230,
       radioGroupField: 'selectedHeatRate',
       targetField: 'finalHeatRate',
       radioValue: 'PREVIOUS_YEAR',
     },
     {
-      field: 'heatRate',
+      field: 'proposedHeatRate',
       title: 'PROPOSED HR',
       subtitle: '(Based On Actual Data)',
       widthT: 200,
+      minWidth: 200,
       type: 'numberWithRadio',
       format: customValueFormat(1),
       editable: true,
       numericEditable: false,
-      minWidth: 200,
       radioGroupField: 'selectedHeatRate',
       targetField: 'finalHeatRate',
       radioValue: 'PROPOSED',
@@ -103,38 +106,32 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
       field: 'finalHeatRate',
       title: 'Final HR',
       widthT: 150,
+      minWidth: 150,
       type: 'number1',
       format: customValueFormat(1),
       editable: true,
-      minWidth: 150,
     },
-    {
-      field: 'freeSteamFactor',
-      title: 'Free Steam Factor',
-      widthT: 170,
-      type: 'number1',
-      format: customValueFormat(2),
-      editable: true,
-      minWidth: 170,
-    },
+
     {
       field: 'remarks',
       title: 'Remark',
-      widthT: 250,
+      width: 230,
       type: 'textarea',
       editable: true,
-      minWidth: 250,
+      minWidth: 230,
     },
   ]
 
-  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
-  const [currentRemark, setCurrentRemark] = useState('')
-  const [currentRowId, setCurrentRowId] = useState(null)
-
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
-  const [selectedPlant, setSelectedPlant] = useState('')
-  const [dropdownOptions, setDropdownOptions] = useState([])
+
+  console.log('startDate', startDate)
+  console.log('endDate', endDate)
+  useEffect(() => {
+    if (AOP_YEAR && startDate && endDate) {
+      fetchHeatRateData()
+    }
+  }, [AOP_YEAR, startDate, endDate])
 
   const formatDate = (date) => {
     if (!date) return ''
@@ -143,59 +140,15 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
     const day = String(date.getDate()).padStart(2, '0')
     return `${year}-${month}-${day}`
   }
-  useEffect(() => {
-    if (selectedPlant && startDate && endDate) {
-      const formattedStartDate = formatDate(startDate)
-      const formattedEndDate = formatDate(endDate)
-      fetchHeatRateData(selectedPlant, formattedStartDate, formattedEndDate)
-    }
-  }, [PLANT_ID, AOP_YEAR, selectedPlant, startDate, endDate])
 
-  useEffect(() => {
-    getPlantList()
-  }, [PLANT_ID, AOP_YEAR])
-
-  const getPlantList = async () => {
+  const fetchHeatRateData = async () => {
     setLoading(true)
     try {
-      const res = await InputApiService.getPlantList(
+      const res = await InputApiService.getSTGHeatRateData(
         keycloak,
-        PLANT_ID,
         AOP_YEAR,
-      )
-
-      // Convert to required format
-      const convertedData = res?.map((item) => ({
-        id: item[0],
-        name: item[1],
-      }))
-
-      if (convertedData?.length === 0) {
-        setDropdownOptions([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
-        return
-      }
-      setSelectedPlant(convertedData[0]?.id)
-      setDropdownOptions(convertedData)
-    } catch (error) {
-      console.error('Error fetching plant list:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchHeatRateData = async (assetId, startDate, endDate) => {
-    setLoading(true)
-    try {
-      const res = await InputApiService.getHeatRateData(
-        keycloak,
-        assetId,
-        AOP_YEAR,
-        startDate,
-        endDate,
+        formatDate(startDate),
+        formatDate(endDate),
       )
 
       if (res?.length === 0) {
@@ -204,39 +157,11 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
         setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
-      let tempRes = res?.map((item, index) => {
-        const selectedHeatRate = item.selectedHeatRate || 'PROPOSED'
-
-        // Validate if selectedHeatRate matches the actual finalHeatRate value
-        const fieldMapping = {
-          OEM: 'oemHeatRate',
-          PREVIOUS_YEAR: 'previousYearHeatRate',
-          PROPOSED: 'heatRate',
-        }
-
-        const selectedField = fieldMapping[selectedHeatRate]
-        const selectedValue = selectedField ? item[selectedField] : null
-        const finalValue = item.finalHeatRate
-
-        // Check if selected column value matches final heat rate
-        const isMatch =
-          selectedValue !== null &&
-          selectedValue !== undefined &&
-          finalValue !== null &&
-          finalValue !== undefined &&
-          parseFloat(selectedValue) === parseFloat(finalValue)
-
-        return {
-          ...item,
-          id: item.id || index + 1,
-          remarks: item.remarks || '',
-          selectedHeatRate: isMatch ? selectedHeatRate : 'OTHER',
-        }
-      })
-      setRows(tempRes)
-      setOriginalRows(tempRes)
+      console.log('res', res)
+      setRows(res)
+      setOriginalRows(res)
     } catch (error) {
-      console.error('Error fetching heat rate data:', error)
+      console.error('Error fetching STG heat rate data:', error)
       setSnackbarOpen(true)
       setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
@@ -255,17 +180,9 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
     titleName: screenTitle?.title,
     showImport: true,
     showExport: true,
-    ExcelName: `GT Heat Rate - ${AOP_YEAR}`,
+    ExcelName: `STG Heat Rate - ${AOP_YEAR}`,
     showTitle: true,
-    showDropdown: true,
-  }
-
-  const dropdownConfig = {
-    options: dropdownOptions,
-    label: 'Plant',
-    placeholder: 'Select Plant',
-    valueKey: 'id',
-    labelKey: 'name',
+    showDropdown: false,
   }
 
   const saveChanges = async () => {
@@ -281,7 +198,8 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
       return
     }
 
-    const data = modifiedData.filter((row) => row.inEdit)
+    var rawData = Object.values(modifiedCells)
+    const data = rawData.filter((row) => row.inEdit)
     if (data.length == 0) {
       setSnackbarOpen(true)
       setSnackbarData({
@@ -294,16 +212,15 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
 
     // Custom validation: If any row data is updated, remarks must be filled and different from original
     const fieldsToCheck = [
-      'gtLoad',
       'oemHeatRate',
-      'freeSteamFactor',
+      'previousYearHeatRate',
+      'proposedHeatRate',
       'finalHeatRate',
     ]
     const validationError = validateRowDataWithRemarks(
       data,
       originalRows,
       fieldsToCheck,
-      'equipType',
     )
 
     if (validationError) {
@@ -321,40 +238,37 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
         const { inEdit, ...rest } = item
         return rest
       })
+      const tempPayload = JSON.stringify(payload)
 
-      const res = await InputApiService.saveHeatRateData(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        payload,
-      )
+      await InputApiService.saveSTGHeatRateData(keycloak, AOP_YEAR, payload)
+
       setModifiedCells({})
       setSnackbarOpen(true)
       setSnackbarData({
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+      await fetchHeatRateData()
     } catch (error) {
       console.error('Error saving heat rate data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
-        message: `Failed to save changes. Error: ${error?.message || 'Unknown error'}`,
+        message: 'Failed to save changes. Please try again.',
         severity: 'error',
       })
     } finally {
       setLoading(false)
     }
   }
+
   const handleExcelUpload = async (file) => {
     if (!file) return
 
     setLoading(true)
     try {
-      const response = await InputApiService.saveHeatRateExcel(
+      const response = await InputApiService.saveSTGHeatRateExcel(
         file,
         keycloak,
-        PLANT_ID,
-        AOP_YEAR,
       )
 
       if (response?.success) {
@@ -364,7 +278,7 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
           severity: 'success',
         })
         setModifiedCells({})
-        await fetchHeatRateData(selectedPlant)
+        await fetchHeatRateData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -392,12 +306,11 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
     })
 
     try {
-      const formattedStartDate = formatDate(startDate)
-      const formattedEndDate = formatDate(endDate)
+      const formattedStartDate = startDate ? formatDate(startDate) : null
+      const formattedEndDate = endDate ? formatDate(endDate) : null
 
-      await InputApiService.exportHeatRateExcel(
+      await InputApiService.exportSTGHeatRateExcel(
         keycloak,
-        selectedPlant,
         AOP_YEAR,
         formattedStartDate,
         formattedEndDate,
@@ -407,7 +320,7 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error exporting Heat Rate data:', error)
+      console.error('Error exporting STG Heat Rate data:', error)
       setSnackbarData({
         message: 'Excel download failed. Please try again.',
         severity: 'error',
@@ -433,7 +346,7 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
       const fieldMapping = {
         OEM: 'oemHeatRate',
         PREVIOUS_YEAR: 'previousYearHeatRate',
-        PROPOSED: 'heatRate',
+        PROPOSED: 'proposedHeatRate',
       }
 
       const selectedField = fieldMapping[value]
@@ -482,7 +395,7 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
     const sourceFieldMapping = {
       oemHeatRate: 'OEM',
       previousYearHeatRate: 'PREVIOUS_YEAR',
-      heatRate: 'PROPOSED',
+      proposedHeatRate: 'PROPOSED',
     }
 
     if (sourceFieldMapping[field]) {
@@ -567,7 +480,11 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
           field: 'previousYearHeatRate',
           value: dataItem.previousYearHeatRate,
         },
-        { radioValue: 'PROPOSED', field: 'heatRate', value: dataItem.heatRate },
+        {
+          radioValue: 'PROPOSED',
+          field: 'proposedHeatRate',
+          value: dataItem.proposedHeatRate,
+        },
       ]
 
       let matchedRadioValue = null
@@ -626,6 +543,7 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
+
       <AdvanceKendoTable
         columns={columns}
         rows={rows}
@@ -634,7 +552,7 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
         setModifiedCells={setModifiedCells}
         externalCustomModifiedCells={customModifiedCells}
         externalSetCustomModifiedCells={setCustomModifiedCells}
-        title='GT Heat Rate'
+        title='STG Heat Rate'
         permissions={permissions}
         handleRemarkCellClick={handleRemarkCellClick}
         remarkDialogOpen={remarkDialogOpen}
@@ -650,19 +568,10 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        dropdownConfig={dropdownConfig}
-        selectedDropdownValue={selectedPlant}
-        setSelectedDropdownValue={setSelectedPlant}
         customItemChange={handleCustomItemChange}
-        paginationConfig={{
-          threshold: 20, // Show pagination if > 50 rows
-          buttonCount: 5,
-          pageSizes: [10, 20, 50, 100],
-          defaultPageSize: 20,
-        }}
       />
     </Box>
   )
 }
 
-export default GTHeatRate
+export default STGHeatRate
