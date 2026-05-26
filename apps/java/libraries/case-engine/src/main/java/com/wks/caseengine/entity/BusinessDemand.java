@@ -87,6 +87,9 @@ public class BusinessDemand {
     
     @Column(name="ModifiedOn")
     private Date modifiedOn;
+
+    @Column(name="Line_FK_Id")
+    private UUID lineId;
     
 
 }

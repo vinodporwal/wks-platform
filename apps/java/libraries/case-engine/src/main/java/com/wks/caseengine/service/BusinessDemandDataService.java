@@ -13,11 +13,13 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 public interface BusinessDemandDataService {
 	public	List<BusinessDemandDataDTO> getBusinessDemandData(String year, String plantId);
 	public AOPMessageVM getBusinessDemand(String year, UUID plantFKId);
+	public List<BusinessDemandDataDTO> getBusinessDemandLineData(String year, String plantId, String lineId);
 	public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId);
 	AOPMessageVM loadPlantContribution(String year, String plantId);
 	public AOPMessageVM saveBusinessDemand( String year, String plantFKId, List<BusinessDemandMonthlyDTO> businessDemandMonthlyDTOs);
 	public byte[] exportBusinessDemand(String year, String plantFKId,boolean isAfterSave,List<BusinessDemandDataDTO> dtoList);
 	public 	List<BusinessDemandDataDTO>  saveBusinessDemandData(List<BusinessDemandDataDTO> businessDemandDataDTO);
+	public 	List<BusinessDemandDataDTO>  saveBusinessDemandLineData(List<BusinessDemandDataDTO> businessDemandDataDTO);
 	public 	List<BusinessDemandDataDTO>  editBusinessDemandData(List<BusinessDemandDataDTO> businessDemandDataDTO);
 	public 	BusinessDemandDataDTO  deleteBusinessDemandData(UUID id);
 	public AOPMessageVM importExcel(String year, UUID plantId, MultipartFile file);
