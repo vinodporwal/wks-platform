@@ -77,7 +77,7 @@ public class FinalNormsServiceImpl implements FinalNormsService {
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 				.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 		String procedureName = vertical.getName() + "_" + site.getName() + "_GetFinalNorms";
-		boolean crackerC2 = vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("C2");
+		boolean crackerC2AndHmd = vertical.getName().equalsIgnoreCase("Cracker") && (site.getName().equalsIgnoreCase("C2") || site.getName().equalsIgnoreCase("HMD"));
 		try {
 			List<Object[]> results = getFinalNormsData(plantId, year, mode, method, procedureName);
 
@@ -109,7 +109,7 @@ public class FinalNormsServiceImpl implements FinalNormsService {
 				finalNormsDTO.setIsEditable(row[24] != null ? Boolean.valueOf(row[24].toString()) : null);
 				finalNormsDTO.setMethod(row[25] != null ? row[25].toString() : "");
 				finalNormsDTO.setMaterialName(row[26] != null ? row[26].toString() : "");
-				if(crackerC2) { 
+				if(crackerC2AndHmd) { 
 					finalNormsDTO.setWtAverage(row[27] != null ? Double.parseDouble(row[27].toString()) : 0.0);
 				}
 				finalNormsDTOList.add(finalNormsDTO);
