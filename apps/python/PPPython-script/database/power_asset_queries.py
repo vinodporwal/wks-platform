@@ -1892,29 +1892,59 @@ if __name__ == "__main__":
 BTU_LB_TO_MMBTU_MT = 0.00396567
 
 
-def fetch_hrsg_heat_rate_lookup() -> pd.DataFrame:
+def _financial_year_string(month: int, year: int) -> str:
+    """Convert month/year into FY string format like '2026-27'."""
+    if month >= 4:
+        return f"{year}-{str(year + 1)[-2:]}"
+    return f"{year - 1}-{str(year)[-2:]}"
+
+
+def fetch_hrsg_heat_rate_lookup(month: int = None, year: int = None, financial_year: str = None) -> pd.DataFrame:
     """
-    Fetch all HRSG heat rate lookup data from database.
+    Fetch HRSG heat rate lookup data from CPP_HRSGHeatRate.
     
     Returns:
-        DataFrame with columns: EquipmentName, CPPUtility, HRSGLoad, HeatRate
+        DataFrame with columns: EquipmentName, CPPUtility, HRSGLoad, HeatRate, FinancialYear
         Sorted by EquipmentName and HRSGLoad ascending.
     """
+    fy = financial_year
+    if fy is None and month is not None and year is not None:
+        fy = _financial_year_string(int(month), int(year))
+
     conn = get_connection()
     cur = conn.cursor()
     
-    cur.execute("""
-        SELECT 
-            EquipmentName,
-            CPPUtility,
-            HRSGLoad,
-            HeatRate
-        FROM HRSGHeatRateLookup
-        ORDER BY EquipmentName ASC, HRSGLoad ASC
-    """)
+    if fy:
+        cur.execute(
+            """
+            SELECT
+                AssetName AS EquipmentName,
+                UtilityId AS CPPUtility,
+                HRSGLoad,
+                FinalHeatRate AS HeatRate,
+                FinancialYear
+            FROM CPP_HRSGHeatRate
+            WHERE FinancialYear = ?
+            ORDER BY AssetName ASC, HRSGLoad ASC
+            """,
+            (fy,),
+        )
+    else:
+        cur.execute(
+            """
+            SELECT
+                AssetName AS EquipmentName,
+                UtilityId AS CPPUtility,
+                HRSGLoad,
+                FinalHeatRate AS HeatRate,
+                FinancialYear
+            FROM CPP_HRSGHeatRate
+            ORDER BY FinancialYear DESC, AssetName ASC, HRSGLoad ASC
+            """
+        )
     
     rows = cur.fetchall()
-    cols = ["EquipmentName", "CPPUtility", "HRSGLoad", "HeatRate"]
+    cols = ["EquipmentName", "CPPUtility", "HRSGLoad", "HeatRate", "FinancialYear"]
     
     conn.close()
     
@@ -1933,7 +1963,9 @@ def fetch_hrsg_heat_rate_lookup() -> pd.DataFrame:
 def get_hrsg_heat_rate_for_load(
     equipment_name: str, 
     hrsg_load_tph: float, 
-    lookup_df: pd.DataFrame = None
+    lookup_df: pd.DataFrame = None,
+    month: int = None,
+    year: int = None,
 ) -> dict:
     """
     Get heat rate for a given HRSG at a specific load using interpolation.
@@ -1953,7 +1985,7 @@ def get_hrsg_heat_rate_for_load(
     """
     # Fetch lookup table if not provided
     if lookup_df is None or lookup_df.empty:
-        lookup_df = fetch_hrsg_heat_rate_lookup()
+        lookup_df = fetch_hrsg_heat_rate_lookup(month=month, year=year)
     
     if lookup_df.empty:
         return {
@@ -1965,12 +1997,17 @@ def get_hrsg_heat_rate_for_load(
             "error": "No lookup data available"
         }
     
-    # Normalize HRSG name: remove hyphens to match database format
-    # e.g., "HRSG-1" -> "HRSG1", "HRSG-2" -> "HRSG2"
-    normalized_name = equipment_name.replace("-", "")
-    
-    # Filter for specific HRSG
-    hrsg_df = lookup_df[lookup_df["EquipmentName"] == normalized_name]
+    # Normalize HRSG names for matching
+    normalized_name = str(equipment_name).upper().replace("-", "").replace(" ", "")
+    lookup_norm = (
+        lookup_df["EquipmentName"]
+        .astype(str)
+        .str.upper()
+        .str.replace("-", "", regex=False)
+        .str.replace(" ", "", regex=False)
+    )
+    # Filter for specific HRSG asset curve
+    hrsg_df = lookup_df[lookup_norm == normalized_name]
     
     if hrsg_df.empty:
         # Debug: print available equipment names
@@ -2074,7 +2111,9 @@ def calculate_hrsg_ng_from_heat_rate(
     hrsg_name: str,
     shp_production_mt: float,
     operational_hours: float,
-    lookup_df: pd.DataFrame = None
+    lookup_df: pd.DataFrame = None,
+    month: int = None,
+    year: int = None,
 ) -> dict:
     """
     Calculate HRSG Natural Gas consumption using heat rate from lookup table.
@@ -2103,7 +2142,13 @@ def calculate_hrsg_ng_from_heat_rate(
     steam_flow_tph = shp_production_mt / operational_hours if operational_hours > 0 else 0.0
     
     # Get heat rate for this load
-    heat_rate_result = get_hrsg_heat_rate_for_load(hrsg_name, steam_flow_tph, lookup_df)
+    heat_rate_result = get_hrsg_heat_rate_for_load(
+        hrsg_name,
+        steam_flow_tph,
+        lookup_df,
+        month=month,
+        year=year,
+    )
     
     heat_rate = heat_rate_result.get("heat_rate_btu_lb", 0.0)
     ng_norm = heat_rate_result.get("ng_norm_mmbtu_mt", 0.0)
@@ -2132,17 +2177,18 @@ def print_hrsg_heat_rate_lookup_summary():
     print("="*80)
     
     if df.empty:
-        print("  No data available in HRSGHeatRateLookup table.")
+        print("  No data available in CPP_HRSGHeatRate table.")
         print("="*80)
         return
     
-    print(f"{'Equipment':<12} {'CPPUtility':<15} {'HRSGLoad':<15} {'HeatRate':<12} {'NG Norm':<15}")
-    print(f"{'Name':<12} {'(AssetId)':<15} {'(TPH)':<15} {'(BTU/lb)':<12} {'(MMBTU/MT)':<15}")
+    print(f"{'Equipment':<12} {'CPPUtility':<15} {'HRSGLoad':<10} {'HeatRate':<10} {'FY':<8} {'NG Norm':<15}")
+    print(f"{'Name':<12} {'(AssetId)':<15} {'(TPH)':<10} {'(FinalHR)':<10} {'':<8} {'(MMBTU/MT)':<15}")
     print("-"*80)
     
     for _, row in df.iterrows():
         ng_norm = row["HeatRate"] * BTU_LB_TO_MMBTU_MT
-        print(f"{row['EquipmentName']:<12} {row['CPPUtility']:<15} {row['HRSGLoad']:>12.2f}   {row['HeatRate']:>10.2f}   {ng_norm:>12.7f}")
+        fy = str(row.get("FinancialYear", ""))
+        print(f"{row['EquipmentName']:<12} {row['CPPUtility']:<15} {row['HRSGLoad']:>8.2f}   {row['HeatRate']:>8.2f}   {fy:<8} {ng_norm:>12.7f}")
     
     print("="*80)
     print(f"  Conversion: NG Norm (MMBTU/MT) = Heat Rate (BTU/lb) × {BTU_LB_TO_MMBTU_MT}")

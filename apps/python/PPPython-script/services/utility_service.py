@@ -773,21 +773,29 @@ def calculate_utilities_from_dispatch(
         hrsg1_ng_norm = NORM_HRSG_NATURAL_GAS_MMBTU_PER_MT  # Default
         hrsg2_ng_norm = NORM_HRSG_NATURAL_GAS_MMBTU_PER_MT
         hrsg3_ng_norm = NORM_HRSG_NATURAL_GAS_MMBTU_PER_MT
+        hrsg1_heat_rate = 0.0
+        hrsg2_heat_rate = 0.0
+        hrsg3_heat_rate = 0.0
         
         for ng_detail in hrsg_ng_details:
             hrsg_name = ng_detail.get("hrsg_name", "")
+            hrsg_name_norm = str(hrsg_name).upper().replace("-", "").replace(" ", "")
             ng_qty = ng_detail.get("ng_quantity_mmbtu", 0.0)
             ng_norm = ng_detail.get("ng_norm_mmbtu_mt", NORM_HRSG_NATURAL_GAS_MMBTU_PER_MT)
+            heat_rate = ng_detail.get("heat_rate_btu_lb", 0.0)
             
-            if "HRSG1" in hrsg_name.upper():
+            if "HRSG1" in hrsg_name_norm:
                 ng_hrsg1 = ng_qty
                 hrsg1_ng_norm = ng_norm
-            elif "HRSG2" in hrsg_name.upper():
+                hrsg1_heat_rate = heat_rate
+            elif "HRSG2" in hrsg_name_norm:
                 ng_hrsg2 = ng_qty
                 hrsg2_ng_norm = ng_norm
-            elif "HRSG3" in hrsg_name.upper():
+                hrsg2_heat_rate = heat_rate
+            elif "HRSG3" in hrsg_name_norm:
                 ng_hrsg3 = ng_qty
                 hrsg3_ng_norm = ng_norm
+                hrsg3_heat_rate = heat_rate
     else:
         # Fallback to legacy fixed norms
         ng_hrsg1 = shp_from_hrsg1 * NORM_HRSG_NATURAL_GAS_MMBTU_PER_MT if hrsg1_available else 0
@@ -796,6 +804,9 @@ def calculate_utilities_from_dispatch(
         hrsg1_ng_norm = NORM_HRSG_NATURAL_GAS_MMBTU_PER_MT
         hrsg2_ng_norm = NORM_HRSG_NATURAL_GAS_MMBTU_PER_MT
         hrsg3_ng_norm = NORM_HRSG_NATURAL_GAS_MMBTU_PER_MT
+        hrsg1_heat_rate = 0.0
+        hrsg2_heat_rate = 0.0
+        hrsg3_heat_rate = 0.0
     
     total_natural_gas = ng_gt1 + ng_gt2 + ng_gt3 + ng_hrsg1 + ng_hrsg2 + ng_hrsg3
     
@@ -952,6 +963,10 @@ def calculate_utilities_from_dispatch(
             "hrsg1_ng_norm": hrsg1_ng_norm,
             "hrsg2_ng_norm": hrsg2_ng_norm,
             "hrsg3_ng_norm": hrsg3_ng_norm,
+            # HRSG heat rates from lookup (FinalHeatRate based, asset-specific)
+            "hrsg1_heat_rate": hrsg1_heat_rate,
+            "hrsg2_heat_rate": hrsg2_heat_rate,
+            "hrsg3_heat_rate": hrsg3_heat_rate,
             "calculation_method": hrsg_ng_calculation.get("calculation_method", "legacy_fixed_norm") if hrsg_ng_calculation else "legacy_fixed_norm",
         },
         # Cooling Water (CW1 and CW2 separately)

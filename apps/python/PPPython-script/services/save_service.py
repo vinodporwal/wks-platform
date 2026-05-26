@@ -10,6 +10,7 @@ Columns updated:
 
 from database.connection import get_connection
 from decimal import Decimal
+from services.norm_lookup_service import get_month_norm
 
 
 def get_fym_id(month: int, year: int) -> str:
@@ -111,6 +112,32 @@ def update_norms_month_detail(
         conn.close()
 
 
+def _qty_from_norm(
+    month: int,
+    year: int,
+    plant_name: str,
+    utility_name: str,
+    material_name: str,
+    qty_generation: float,
+    account_name: str = "Utilities",
+    issuing_plant_name: str = None,
+) -> float:
+    """
+    Calculate material quantity from DB norm and generation quantity.
+    """
+    norm = get_month_norm(
+        month=month,
+        year=year,
+        plant_name=plant_name,
+        utility_name=utility_name,
+        material_name=material_name,
+        account_name=account_name,
+        issuing_plant_name=issuing_plant_name,
+        required=False,
+    )
+    return float(qty_generation or 0.0) * float(norm or 0.0)
+
+
 def save_model_quantities(month: int, year: int, utilities: dict, power_dispatch: dict) -> dict:
     """
     Save all model calculated quantities to the database.
@@ -179,8 +206,18 @@ def save_model_quantities(month: int, year: int, utilities: dict, power_dispatch
     lp_from_prds = steam.get("lp_from_prds_mt", 0)
     lp_from_stg = steam.get("lp_from_stg_mt", 0)
     mp_from_stg = steam.get("mp_from_stg_mt", 0)
-    shp_for_stg_lp = steam.get("shp_for_stg_lp_mt", lp_from_stg * 0.48)
-    shp_for_stg_mp = steam.get("shp_for_stg_mp_mt", mp_from_stg * 0.69)
+    shp_for_stg_lp = steam.get(
+        "shp_for_stg_lp_mt",
+        _qty_from_norm(
+            month, year, "NMD - Utility Plant", "STG1_LP STEAM", "SHP Steam_Dis", lp_from_stg
+        ),
+    )
+    shp_for_stg_mp = steam.get(
+        "shp_for_stg_mp_mt",
+        _qty_from_norm(
+            month, year, "NMD - Utility Plant", "STG1_MP STEAM", "SHP Steam_Dis", mp_from_stg
+        ),
+    )
     
     # Define all mappings: (plant, utility, material, quantity, qty_generation)
     # quantity = calculated material consumption
@@ -194,68 +231,203 @@ def save_model_quantities(month: int, year: int, utilities: dict, power_dispatch
         ("NMD - Power Plant 1", "POWERGEN", "NATURAL GAS", ng.get("gt1_mmbtu", 0), gt1_kwh),
         ("NMD - Power Plant 1", "POWERGEN", "COMPRESSED AIR", air.get("gt1_nm3", 0), gt1_kwh),
         ("NMD - Power Plant 1", "POWERGEN", "Cooling Water 2", cw.get("cw2_gt1_km3", 0), gt1_kwh),
-        ("NMD - Power Plant 1", "POWERGEN", "Power_Dis", gt1_kwh * 0.0140, gt1_kwh),
+        (
+            "NMD - Power Plant 1",
+            "POWERGEN",
+            "Power_Dis",
+            _qty_from_norm(
+                month, year, "NMD - Power Plant 1", "POWERGEN", "Power_Dis",
+                gt1_kwh, issuing_plant_name="NMD - Utility/Power Dist"
+            ),
+            gt1_kwh,
+        ),
         
         # Power Plant 2 (GT2)
         ("NMD - Power Plant 2", "POWERGEN", "NATURAL GAS", ng.get("gt2_mmbtu", 0), gt2_kwh),
         ("NMD - Power Plant 2", "POWERGEN", "COMPRESSED AIR", air.get("gt2_nm3", 0), gt2_kwh),
         ("NMD - Power Plant 2", "POWERGEN", "Cooling Water 2", cw.get("cw2_gt2_km3", 0), gt2_kwh),
-        ("NMD - Power Plant 2", "POWERGEN", "Power_Dis", gt2_kwh * 0.0140, gt2_kwh),
+        (
+            "NMD - Power Plant 2",
+            "POWERGEN",
+            "Power_Dis",
+            _qty_from_norm(
+                month, year, "NMD - Power Plant 2", "POWERGEN", "Power_Dis",
+                gt2_kwh, issuing_plant_name="NMD - Utility/Power Dist"
+            ),
+            gt2_kwh,
+        ),
         
         # Power Plant 3 (GT3)
         ("NMD - Power Plant 3", "POWERGEN", "NATURAL GAS", ng.get("gt3_mmbtu", 0), gt3_kwh),
         ("NMD - Power Plant 3", "POWERGEN", "COMPRESSED AIR", air.get("gt3_nm3", 0), gt3_kwh),
         ("NMD - Power Plant 3", "POWERGEN", "Cooling Water 2", cw.get("cw2_gt3_km3", 0), gt3_kwh),
-        ("NMD - Power Plant 3", "POWERGEN", "Power_Dis", gt3_kwh * 0.0140, gt3_kwh),
+        (
+            "NMD - Power Plant 3",
+            "POWERGEN",
+            "Power_Dis",
+            _qty_from_norm(
+                month, year, "NMD - Power Plant 3", "POWERGEN", "Power_Dis",
+                gt3_kwh, issuing_plant_name="NMD - Utility/Power Dist"
+            ),
+            gt3_kwh,
+        ),
         
         # STG Power Plant
         ("NMD - STG Power Plant", "POWERGEN", "Ret steam condensate", condensate.get("stg_m3", 0), stg_kwh),
         ("NMD - STG Power Plant", "POWERGEN", "COMPRESSED AIR", air.get("stg_nm3", 0), stg_kwh),
         ("NMD - STG Power Plant", "POWERGEN", "Cooling Water 2", cw.get("cw2_stg_km3", 0), stg_kwh),
-        ("NMD - STG Power Plant", "POWERGEN", "Power_Dis", stg_kwh * 0.0020, stg_kwh),
-        ("NMD - STG Power Plant", "POWERGEN", "SHP Steam_Dis", stg_kwh * 0.0036, stg_kwh),
+        (
+            "NMD - STG Power Plant",
+            "POWERGEN",
+            "Power_Dis",
+            _qty_from_norm(
+                month, year, "NMD - STG Power Plant", "POWERGEN", "Power_Dis",
+                stg_kwh, issuing_plant_name="NMD - Utility/Power Dist"
+            ),
+            stg_kwh,
+        ),
+        (
+            "NMD - STG Power Plant",
+            "POWERGEN",
+            "SHP Steam_Dis",
+            _qty_from_norm(
+                month, year, "NMD - STG Power Plant", "POWERGEN", "SHP Steam_Dis",
+                stg_kwh, issuing_plant_name="NMD - Utility/Power Dist"
+            ),
+            stg_kwh,
+        ),
         
         # ========================================
         # UTILITY PLANT - BFW
         # ========================================
         ("NMD - Utility Plant", "Boiler Feed Water", "D M Water", bfw.get("dm_for_bfw_m3", 0), bfw_total),
         ("NMD - Utility Plant", "Boiler Feed Water", "LP Steam_Dis", bfw.get("lp_steam_mt", 0), bfw_total),
-        ("NMD - Utility Plant", "Boiler Feed Water", "Power_Dis", bfw_total * 9.5, bfw_total),
-        ("NMD - Utility Plant", "Boiler Feed Water", "Cooling Water 2", 108.0, bfw_total),  # Fixed
+        (
+            "NMD - Utility Plant",
+            "Boiler Feed Water",
+            "Power_Dis",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "Boiler Feed Water", "Power_Dis", bfw_total),
+            bfw_total,
+        ),
+        (
+            "NMD - Utility Plant",
+            "Boiler Feed Water",
+            "Cooling Water 2",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "Boiler Feed Water", "Cooling Water 2", bfw_total),
+            bfw_total,
+        ),
         
         # ========================================
         # UTILITY PLANT - COMPRESSED AIR
         # ========================================
-        ("NMD - Utility Plant", "COMPRESSED AIR", "Cooling Water 2", 175.0, air_total),  # Fixed
-        ("NMD - Utility Plant", "COMPRESSED AIR", "Power_Dis", air_total * 0.165, air_total),
+        (
+            "NMD - Utility Plant",
+            "COMPRESSED AIR",
+            "Cooling Water 2",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "COMPRESSED AIR", "Cooling Water 2", air_total),
+            air_total,
+        ),
+        (
+            "NMD - Utility Plant",
+            "COMPRESSED AIR",
+            "Power_Dis",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "COMPRESSED AIR", "Power_Dis", air_total),
+            air_total,
+        ),
         
         # ========================================
         # UTILITY PLANT - COOLING WATER 1
         # ========================================
-        ("NMD - Utility Plant", "Cooling Water 1", "Water", cw1_total * 11.05, cw1_total),
-        ("NMD - Utility Plant", "Cooling Water 1", "SULPHURIC ACID", cw1_total * 0.0001580, cw1_total),
-        ("NMD - Utility Plant", "Cooling Water 1", "COMPRESSED AIR", 1650.0, cw1_total),  # Fixed
-        ("NMD - Utility Plant", "Cooling Water 1", "Power_Dis", cw1_total * 245.0, cw1_total),
+        (
+            "NMD - Utility Plant",
+            "Cooling Water 1",
+            "Water",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "Cooling Water 1", "Water", cw1_total),
+            cw1_total,
+        ),
+        (
+            "NMD - Utility Plant",
+            "Cooling Water 1",
+            "SULPHURIC ACID",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "Cooling Water 1", "SULPHURIC ACID", cw1_total),
+            cw1_total,
+        ),
+        (
+            "NMD - Utility Plant",
+            "Cooling Water 1",
+            "COMPRESSED AIR",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "Cooling Water 1", "COMPRESSED AIR", cw1_total),
+            cw1_total,
+        ),
+        (
+            "NMD - Utility Plant",
+            "Cooling Water 1",
+            "Power_Dis",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "Cooling Water 1", "Power_Dis", cw1_total),
+            cw1_total,
+        ),
         
         # ========================================
         # UTILITY PLANT - COOLING WATER 2
         # ========================================
-        ("NMD - Utility Plant", "Cooling Water 2", "Water", cw2_total * 11.50, cw2_total),
-        ("NMD - Utility Plant", "Cooling Water 2", "SULPHURIC ACID", cw2_total * 0.0001580, cw2_total),
-        ("NMD - Utility Plant", "Cooling Water 2", "COMPRESSED AIR", 1650.0, cw2_total),  # Fixed
-        ("NMD - Utility Plant", "Cooling Water 2", "Power_Dis", cw2_total * 250.0, cw2_total),
+        (
+            "NMD - Utility Plant",
+            "Cooling Water 2",
+            "Water",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "Cooling Water 2", "Water", cw2_total),
+            cw2_total,
+        ),
+        (
+            "NMD - Utility Plant",
+            "Cooling Water 2",
+            "SULPHURIC ACID",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "Cooling Water 2", "SULPHURIC ACID", cw2_total),
+            cw2_total,
+        ),
+        (
+            "NMD - Utility Plant",
+            "Cooling Water 2",
+            "COMPRESSED AIR",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "Cooling Water 2", "COMPRESSED AIR", cw2_total),
+            cw2_total,
+        ),
+        (
+            "NMD - Utility Plant",
+            "Cooling Water 2",
+            "Power_Dis",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "Cooling Water 2", "Power_Dis", cw2_total),
+            cw2_total,
+        ),
         
         # ========================================
         # UTILITY PLANT - DM WATER
         # ========================================
-        ("NMD - Utility Plant", "D M Water", "Water", dm_total * 1.05, dm_total),
-        ("NMD - Utility Plant", "D M Water", "Power_Dis", dm_total * 1.21, dm_total),
+        (
+            "NMD - Utility Plant",
+            "D M Water",
+            "Water",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "D M Water", "Water", dm_total),
+            dm_total,
+        ),
+        (
+            "NMD - Utility Plant",
+            "D M Water",
+            "Power_Dis",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "D M Water", "Power_Dis", dm_total),
+            dm_total,
+        ),
         ("NMD - Utility Plant", "D M Water", "Ret steam condensate", dm.get("condensate_m3", 0), dm_total),
         
         # ========================================
         # UTILITY PLANT - EFFLUENT
         # ========================================
-        ("NMD - Utility Plant", "Effluent Treated", "Power_Dis", effluent_m3 * 3.54, effluent_m3),
+        (
+            "NMD - Utility Plant",
+            "Effluent Treated",
+            "Power_Dis",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "Effluent Treated", "Power_Dis", effluent_m3),
+            effluent_m3,
+        ),
         
         # ========================================
         # UTILITY PLANT - HRSG
@@ -263,42 +435,132 @@ def save_model_quantities(month: int, year: int, utilities: dict, power_dispatch
         # HRSG1
         ("NMD - Utility Plant", "HRSG1_SHP STEAM", "NATURAL GAS", ng.get("hrsg1_mmbtu", 0), hrsg1_shp),
         ("NMD - Utility Plant", "HRSG1_SHP STEAM", "Boiler Feed Water", bfw.get("hrsg1_m3", 0), hrsg1_shp),
-        ("NMD - Utility Plant", "HRSG1_SHP STEAM", "COMPRESSED AIR", 453600.0 if hrsg1_shp > 0 else 0, hrsg1_shp),
-        ("NMD - Utility Plant", "HRSG1_SHP STEAM", "LP Steam_Dis", hrsg1_shp * -0.0504, hrsg1_shp),
+        (
+            "NMD - Utility Plant",
+            "HRSG1_SHP STEAM",
+            "COMPRESSED AIR",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "HRSG1_SHP STEAM", "COMPRESSED AIR", hrsg1_shp),
+            hrsg1_shp,
+        ),
+        (
+            "NMD - Utility Plant",
+            "HRSG1_SHP STEAM",
+            "LP Steam_Dis",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "HRSG1_SHP STEAM", "LP Steam_Dis", hrsg1_shp),
+            hrsg1_shp,
+        ),
         
         # HRSG2
         ("NMD - Utility Plant", "HRSG2_SHP STEAM", "NATURAL GAS", ng.get("hrsg2_mmbtu", 0), hrsg2_shp),
         ("NMD - Utility Plant", "HRSG2_SHP STEAM", "Boiler Feed Water", bfw.get("hrsg2_m3", 0), hrsg2_shp),
-        ("NMD - Utility Plant", "HRSG2_SHP STEAM", "COMPRESSED AIR", 453600.0 if hrsg2_shp > 0 else 0, hrsg2_shp),
-        ("NMD - Utility Plant", "HRSG2_SHP STEAM", "LP Steam_Dis", hrsg2_shp * -0.0504, hrsg2_shp),
+        (
+            "NMD - Utility Plant",
+            "HRSG2_SHP STEAM",
+            "COMPRESSED AIR",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "HRSG2_SHP STEAM", "COMPRESSED AIR", hrsg2_shp),
+            hrsg2_shp,
+        ),
+        (
+            "NMD - Utility Plant",
+            "HRSG2_SHP STEAM",
+            "LP Steam_Dis",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "HRSG2_SHP STEAM", "LP Steam_Dis", hrsg2_shp),
+            hrsg2_shp,
+        ),
         
         # HRSG3
         ("NMD - Utility Plant", "HRSG3_SHP STEAM", "NATURAL GAS", ng.get("hrsg3_mmbtu", 0), hrsg3_shp),
         ("NMD - Utility Plant", "HRSG3_SHP STEAM", "Boiler Feed Water", bfw.get("hrsg3_m3", 0), hrsg3_shp),
-        ("NMD - Utility Plant", "HRSG3_SHP STEAM", "COMPRESSED AIR", 453600.0 if hrsg3_shp > 0 else 0, hrsg3_shp),
-        ("NMD - Utility Plant", "HRSG3_SHP STEAM", "LP Steam_Dis", hrsg3_shp * -0.0504, hrsg3_shp),
+        (
+            "NMD - Utility Plant",
+            "HRSG3_SHP STEAM",
+            "COMPRESSED AIR",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "HRSG3_SHP STEAM", "COMPRESSED AIR", hrsg3_shp),
+            hrsg3_shp,
+        ),
+        (
+            "NMD - Utility Plant",
+            "HRSG3_SHP STEAM",
+            "LP Steam_Dis",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "HRSG3_SHP STEAM", "LP Steam_Dis", hrsg3_shp),
+            hrsg3_shp,
+        ),
         
         # ========================================
         # UTILITY PLANT - PRDS
         # ========================================
         # HP PRDS
-        ("NMD - Utility Plant", "HP Steam PRDS", "Boiler Feed Water", hp_from_prds * 0.0768, hp_from_prds),
-        ("NMD - Utility Plant", "HP Steam PRDS", "SHP Steam_Dis", hp_from_prds * 0.9232, hp_from_prds),
+        (
+            "NMD - Utility Plant",
+            "HP Steam PRDS",
+            "Boiler Feed Water",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "HP Steam PRDS", "Boiler Feed Water", hp_from_prds),
+            hp_from_prds,
+        ),
+        (
+            "NMD - Utility Plant",
+            "HP Steam PRDS",
+            "SHP Steam_Dis",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "HP Steam PRDS", "SHP Steam_Dis", hp_from_prds),
+            hp_from_prds,
+        ),
         
         # MP PRDS
-        ("NMD - Utility Plant", "MP Steam PRDS SHP", "Boiler Feed Water", mp_from_prds * 0.09, mp_from_prds),
-        ("NMD - Utility Plant", "MP Steam PRDS SHP", "SHP Steam_Dis", mp_from_prds * 0.91, mp_from_prds),
+        (
+            "NMD - Utility Plant",
+            "MP Steam PRDS SHP",
+            "Boiler Feed Water",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "MP Steam PRDS SHP", "Boiler Feed Water", mp_from_prds),
+            mp_from_prds,
+        ),
+        (
+            "NMD - Utility Plant",
+            "MP Steam PRDS SHP",
+            "SHP Steam_Dis",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "MP Steam PRDS SHP", "SHP Steam_Dis", mp_from_prds),
+            mp_from_prds,
+        ),
         
         # LP PRDS
-        ("NMD - Utility Plant", "LP Steam PRDS", "Boiler Feed Water", lp_from_prds * 0.25, lp_from_prds),
-        ("NMD - Utility Plant", "LP Steam PRDS", "MP Steam_Dis", lp_from_prds * 0.75, lp_from_prds),
+        (
+            "NMD - Utility Plant",
+            "LP Steam PRDS",
+            "Boiler Feed Water",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "LP Steam PRDS", "Boiler Feed Water", lp_from_prds),
+            lp_from_prds,
+        ),
+        (
+            "NMD - Utility Plant",
+            "LP Steam PRDS",
+            "MP Steam_Dis",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "LP Steam PRDS", "MP Steam_Dis", lp_from_prds),
+            lp_from_prds,
+        ),
         
         # ========================================
         # UTILITY PLANT - OXYGEN
         # ========================================
-        ("NMD - Utility Plant", "Oxygen", "Nitrogen Gas", oxygen_mt * -2448.4, oxygen_mt),  # Byproduct (negative)
-        ("NMD - Utility Plant", "Oxygen", "Cooling Water 2", oxygen_mt * 0.261, oxygen_mt),
-        ("NMD - Utility Plant", "Oxygen", "Power_Dis", oxygen_mt * 968.65, oxygen_mt),
+        (
+            "NMD - Utility Plant",
+            "Oxygen",
+            "Nitrogen Gas",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "Oxygen", "Nitrogen Gas", oxygen_mt),
+            oxygen_mt,
+        ),
+        (
+            "NMD - Utility Plant",
+            "Oxygen",
+            "Cooling Water 2",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "Oxygen", "Cooling Water 2", oxygen_mt),
+            oxygen_mt,
+        ),
+        (
+            "NMD - Utility Plant",
+            "Oxygen",
+            "Power_Dis",
+            _qty_from_norm(month, year, "NMD - Utility Plant", "Oxygen", "Power_Dis", oxygen_mt),
+            oxygen_mt,
+        ),
         
         # ========================================
         # UTILITY PLANT - STG EXTRACTION
@@ -437,8 +699,28 @@ def save_budget_results(month: int, year: int, budget_result: dict) -> dict:
         "lp_from_prds_mt": lp_balance.get("lp_from_prds", 0),
         "lp_from_stg_mt": lp_balance.get("lp_from_stg", 0),
         "mp_from_stg_mt": mp_balance.get("mp_from_stg", 0),
-        "shp_for_stg_lp_mt": lp_balance.get("shp_for_stg_lp", lp_balance.get("lp_from_stg", 0) * 0.48),
-        "shp_for_stg_mp_mt": mp_balance.get("shp_for_stg_mp", mp_balance.get("mp_from_stg", 0) * 0.69),
+        "shp_for_stg_lp_mt": lp_balance.get(
+            "shp_for_stg_lp",
+            _qty_from_norm(
+                month,
+                year,
+                "NMD - Utility Plant",
+                "STG1_LP STEAM",
+                "SHP Steam_Dis",
+                lp_balance.get("lp_from_stg", 0),
+            ),
+        ),
+        "shp_for_stg_mp_mt": mp_balance.get(
+            "shp_for_stg_mp",
+            _qty_from_norm(
+                month,
+                year,
+                "NMD - Utility Plant",
+                "STG1_MP STEAM",
+                "SHP Steam_Dis",
+                mp_balance.get("mp_from_stg", 0),
+            ),
+        ),
     }
     
     return save_model_quantities(month, year, utilities, power_dispatch)
