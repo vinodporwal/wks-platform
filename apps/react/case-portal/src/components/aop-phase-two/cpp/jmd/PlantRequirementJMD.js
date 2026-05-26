@@ -2,17 +2,17 @@ import { useEffect, useState } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
-import { useSession } from 'SessionStoreContext'
 import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
+import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
-import AdvanceKendoTable from '../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import FixedConsumptionJMD from './jmd/FixedConsumptionJMD'
+import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 
-const FixedConsumption = () => {
+const PlantRequirementJMD = () => {
   const keycloak = useSession()
   // State management
+
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -40,62 +40,50 @@ const FixedConsumption = () => {
 
   const lowerVertName = verticalObject?.name?.toLowerCase()
   const lowerSiteName = siteObject?.name?.toLowerCase()
-  const IS_CPP = lowerVertName === 'cpp'
+  const IS_CPP_JMD = lowerVertName === 'cpp' && lowerSiteName === 'jmd'
+  const IS_CPP_NMD = lowerVertName === 'cpp' && lowerSiteName === 'nmd'
 
   const headerMap = generateHeaderNames(AOP_YEAR)
+  const valueFormat = ValueFormatterPhaseTwo()
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
-  const valueFormat = ValueFormatterPhaseTwo()
-
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+
   // Column definitions
   const columns = [
-    { field: 'id', title: 'ID', hidden: true },
     {
-      field: 'plant',
-      title: 'Plant',
+      field: 'processPlant',
+      title: 'Process Plant',
       widthT: 150,
+      minWidth: 150,
       type: 'text',
       editable: false,
       hidden: false,
     },
     {
-      field: 'plantId',
-      title: 'Plant ID',
+      field: 'processPlantId',
+      title: 'Plant Code',
       widthT: 120,
+      minWidth: 120,
       type: 'text',
       editable: false,
-      hidden: false,
-    },
-    {
-      field: 'costCenter',
-      title: 'Cost Center',
-      widthT: 150,
-      type: 'text',
-      editable: false,
-      hidden: false,
-    },
-    {
-      field: 'costCenterId',
-      title: 'Cost Center ID',
-      widthT: 170,
-      type: 'text',
-      editable: false,
-      hidden: false,
+      hidden: true,
     },
     {
       field: 'cppUtility',
       title: 'CPP Utilities',
       widthT: 150,
+      minWidth: 150,
       type: 'text',
       editable: false,
     },
     {
       field: 'cppUtilityId',
-      title: 'CPP Utility IDs',
-      widthT: 150,
+      title: 'CPP Utility ID',
+      widthT: 170,
+      minWidth: 170,
       type: 'text',
       editable: false,
     },
@@ -103,22 +91,33 @@ const FixedConsumption = () => {
       field: 'cppPlant',
       title: 'CPP Plant',
       widthT: 150,
+      minWidth: 150,
       type: 'text',
       editable: false,
     },
     {
       field: 'cppPlantId',
       title: 'CPP Plant ID',
-      widthT: 150,
+      widthT: 170,
+      minWidth: 170,
+      type: 'text',
+      editable: false,
+      hidden: true,
+    },
+    {
+      field: 'uom',
+      title: 'UOM',
+      widthT: 100,
+      minWidth: 100,
       type: 'text',
       editable: false,
     },
-    { field: 'uom', title: 'UOM', widthT: 100, type: 'text', editable: false },
     {
-      field: 'april',
+      field: 'apr',
       title: headerMap[4], // will be 'Apr-25' if AOP_YEAR is 2025-26
       editable: true,
       widthT: 100,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -129,26 +128,29 @@ const FixedConsumption = () => {
       title: headerMap[5],
       editable: true,
       widthT: 100,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
       format: valueFormat,
     },
     {
-      field: 'june',
+      field: 'jun',
       title: headerMap[6],
       editable: true,
       widthT: 100,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
       format: valueFormat,
     },
     {
-      field: 'july',
+      field: 'jul',
       title: headerMap[7],
       editable: true,
       widthT: 100,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -159,6 +161,7 @@ const FixedConsumption = () => {
       title: headerMap[8],
       editable: true,
       widthT: 100,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -169,6 +172,7 @@ const FixedConsumption = () => {
       title: headerMap[9],
       editable: true,
       widthT: 100,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -179,6 +183,7 @@ const FixedConsumption = () => {
       title: headerMap[10],
       editable: true,
       widthT: 100,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -189,6 +194,7 @@ const FixedConsumption = () => {
       title: headerMap[11],
       editable: true,
       widthT: 100,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -199,6 +205,7 @@ const FixedConsumption = () => {
       title: headerMap[12],
       editable: true,
       widthT: 100,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -209,6 +216,7 @@ const FixedConsumption = () => {
       title: headerMap[1],
       editable: true,
       widthT: 100,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -219,6 +227,7 @@ const FixedConsumption = () => {
       title: headerMap[2],
       editable: true,
       widthT: 100,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
@@ -229,11 +238,13 @@ const FixedConsumption = () => {
       title: headerMap[3],
       editable: true,
       widthT: 100,
+      minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
       format: valueFormat,
     },
+
     {
       field: 'remarks',
       title: 'Remarks',
@@ -245,16 +256,15 @@ const FixedConsumption = () => {
   ]
 
   useEffect(() => {
-    if (PLANT_ID && AOP_YEAR && lowerSiteName=='nmd') {
-      fetchFixedConsumptionData(keycloak, PLANT_ID, AOP_YEAR)
-      setModifiedCells({})
+    if (PLANT_ID && AOP_YEAR) {
+      fetchPlantRequirementData()
     }
   }, [PLANT_ID, AOP_YEAR])
 
-  const fetchFixedConsumptionData = async (keycloak, PLANT_ID, AOP_YEAR) => {
+  const fetchPlantRequirementData = async () => {
     setLoading(true)
     try {
-      const res = await UtilityPlantApiServiceV2.getFixedConsumptionData(
+      const res = await UtilityPlantApiServiceV2.getPlantRequirementData(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -266,14 +276,12 @@ const FixedConsumption = () => {
         return
       }
 
-      const formattedData = res.map((item, index) => ({
+      console.log('res', res)
+      const formattedData = res?.map((item, index) => ({
         ...item,
         remarks: item.remarks || '',
-        id: item.id || index + 1,
+        id: item?.id || index + 1,
       }))
-      // Process and set the fetched data to rows
-      console.log('*** fixed consumption data', formattedData)
-
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
@@ -294,13 +302,14 @@ const FixedConsumption = () => {
     saveBtn: true,
     allAction: true,
     showExport: true,
-    ExcelName: `Fixed Consumption - ${AOP_YEAR}`,
+    ExcelName: `Plant Requirement - ${AOP_YEAR}`,
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
+    titleName: screenTitle?.title,
   }
 
-  // Dummy save handler
+  // Save handler with API call
   const saveChanges = async () => {
     setLoading(true)
 
@@ -329,10 +338,10 @@ const FixedConsumption = () => {
 
     // Custom validation: If any row data is updated, remarks must be filled and different from original
     const fieldsToCheck = [
-      'april',
+      'apr',
       'may',
-      'june',
-      'july',
+      'jun',
+      'jul',
       'aug',
       'sep',
       'oct',
@@ -346,7 +355,7 @@ const FixedConsumption = () => {
       data,
       originalRows,
       fieldsToCheck,
-      'plant',
+      'processPlant',
     )
 
     if (validationError) {
@@ -359,27 +368,24 @@ const FixedConsumption = () => {
       return
     }
 
-    console.log('modifiedData', modifiedData)
-    // const payload = JSON.stringify(modifiedData)
     const payload = modifiedData
-
     try {
       // Transform modifiedCells into the format expected by the API
+      console.log('payload', payload)
 
       // Call the API to save changes
-      const response = await UtilityPlantApiServiceV2.saveFixedConsumptionData(
+      const response = await UtilityPlantApiServiceV2.savePlantRequirementData(
         keycloak,
-        PLANT_ID,
-        payload,
         AOP_YEAR,
+        payload,
       )
-      console.log('response', response)
+
       // Update the local state with the saved data
       // setRows(updatedRows)
       setModifiedCells({})
       setSnackbarOpen(true)
       setSnackbarData({
-        message: `Successfully saved ${modifiedData.length} rows changes!`,
+        message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
     } catch (error) {
@@ -399,7 +405,7 @@ const FixedConsumption = () => {
 
     setLoading(true)
     try {
-      const response = await UtilityPlantApiServiceV2.saveFixedConsumptionExcel(
+      const response = await UtilityPlantApiServiceV2.savePlantRequirementExcel(
         file,
         keycloak,
         PLANT_ID,
@@ -413,7 +419,7 @@ const FixedConsumption = () => {
           severity: 'success',
         })
         // Refresh data after import
-        await fetchFixedConsumptionData(keycloak, PLANT_ID, AOP_YEAR)
+        await fetchPlantRequirementData()
       } else if (response?.code === 400 && response?.data) {
         // Handle error response with Excel file download
         try {
@@ -429,7 +435,7 @@ const FixedConsumption = () => {
           const url = window.URL.createObjectURL(blob)
           const link = document.createElement('a')
           link.href = url
-          link.download = `Fixed_Consumption_Errors_${new Date().getTime()}.xlsx`
+          link.download = `Plant_Requirement_Errors_${new Date().getTime()}.xlsx`
           document.body.appendChild(link)
           link.click()
           document.body.removeChild(link)
@@ -443,7 +449,7 @@ const FixedConsumption = () => {
             severity: 'error',
           })
           // Refresh data after import
-          await fetchFixedConsumptionData(keycloak, PLANT_ID, AOP_YEAR)
+          await fetchPlantRequirementData()
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
@@ -479,7 +485,7 @@ const FixedConsumption = () => {
     })
 
     try {
-      await UtilityPlantApiServiceV2.exportFixedConsumptionExcel(
+      await UtilityPlantApiServiceV2.exportPlantRequirementExcel(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -489,7 +495,7 @@ const FixedConsumption = () => {
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error exporting Fixed Consumption data:', error)
+      console.error('Error exporting Plant Requirement data:', error)
       setSnackbarData({
         message: 'Excel download failed. Please try again.',
         severity: 'error',
@@ -504,55 +510,42 @@ const FixedConsumption = () => {
     setRemarkDialogOpen(true)
   }
 
-  const renderBySite = () => {
-    switch (lowerSiteName) {
-      case 'jmd':
-        return <FixedConsumptionJMD />
-      // case 'hmd':
-      //   return <FixedConsumptionHMD />
-      case 'nmd':
-      default:
-        return (
-          <AdvanceKendoTable
-            columns={columns}
-            rows={rows}
-            setRows={setRows}
-            modifiedCells={modifiedCells}
-            setModifiedCells={setModifiedCells}
-            // title='Fixed Consumption'
-            title={screenTitle?.title}
-            permissions={permissions}
-            handleRemarkCellClick={handleRemarkCellClick}
-            remarkDialogOpen={remarkDialogOpen}
-            setRemarkDialogOpen={setRemarkDialogOpen}
-            currentRemark={currentRemark}
-            setCurrentRemark={setCurrentRemark}
-            currentRowId={currentRowId}
-            setCurrentRowId={() => {}}
-            saveChanges={saveChanges}
-            handleExcelUpload={handleExcelUpload}
-            handleExport={handleExport}
-            snackbarData={snackbarData}
-            snackbarOpen={snackbarOpen}
-            setSnackbarOpen={setSnackbarOpen}
-            setSnackbarData={setSnackbarData}
-            customHeight={80}
-            groupBy='plant'
-            // groupBy={['plant', 'plantId']}
-          />
-        )
-    }
-  }
-
-  if (!IS_CPP) return null
-
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
-      {/* <KendoDataTables */}
-      {renderBySite()}
+      <AdvanceKendoTable
+        columns={columns}
+        rows={rows}
+        setRows={setRows}
+        modifiedCells={modifiedCells}
+        setModifiedCells={setModifiedCells}
+        title={permissions.showTitle ? permissions.titleName : ''}
+        permissions={permissions}
+        handleRemarkCellClick={handleRemarkCellClick}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        setCurrentRowId={() => {}}
+        saveChanges={saveChanges}
+        handleExcelUpload={handleExcelUpload}
+        handleExport={handleExport}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        customHeight={80}
+        paginationConfig={{
+          threshold: 100, // Show pagination if > 50 rows
+          buttonCount: 5,
+          pageSizes: [10, 20, 50, 100],
+          defaultPageSize: 100,
+        }}
+        groupBy={'processPlant'}
+      />
     </Box>
   )
 }
 
-export default FixedConsumption
+export default PlantRequirementJMD

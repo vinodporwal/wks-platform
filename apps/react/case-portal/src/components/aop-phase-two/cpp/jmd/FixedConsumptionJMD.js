@@ -6,11 +6,10 @@ import { useSession } from 'SessionStoreContext'
 import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
-import AdvanceKendoTable from '../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import FixedConsumptionJMD from './jmd/FixedConsumptionJMD'
+import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 
-const FixedConsumption = () => {
+const FixedConsumptionJMD = () => {
   const keycloak = useSession()
   // State management
   const [modifiedCells, setModifiedCells] = useState({})
@@ -37,11 +36,6 @@ const FixedConsumption = () => {
   const VERTICAL_ID = verticalObject?.id
   const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
-
-  const lowerVertName = verticalObject?.name?.toLowerCase()
-  const lowerSiteName = siteObject?.name?.toLowerCase()
-  const IS_CPP = lowerVertName === 'cpp'
-
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
@@ -245,7 +239,7 @@ const FixedConsumption = () => {
   ]
 
   useEffect(() => {
-    if (PLANT_ID && AOP_YEAR && lowerSiteName=='nmd') {
+    if (PLANT_ID && AOP_YEAR) {
       fetchFixedConsumptionData(keycloak, PLANT_ID, AOP_YEAR)
       setModifiedCells({})
     }
@@ -504,55 +498,40 @@ const FixedConsumption = () => {
     setRemarkDialogOpen(true)
   }
 
-  const renderBySite = () => {
-    switch (lowerSiteName) {
-      case 'jmd':
-        return <FixedConsumptionJMD />
-      // case 'hmd':
-      //   return <FixedConsumptionHMD />
-      case 'nmd':
-      default:
-        return (
-          <AdvanceKendoTable
-            columns={columns}
-            rows={rows}
-            setRows={setRows}
-            modifiedCells={modifiedCells}
-            setModifiedCells={setModifiedCells}
-            // title='Fixed Consumption'
-            title={screenTitle?.title}
-            permissions={permissions}
-            handleRemarkCellClick={handleRemarkCellClick}
-            remarkDialogOpen={remarkDialogOpen}
-            setRemarkDialogOpen={setRemarkDialogOpen}
-            currentRemark={currentRemark}
-            setCurrentRemark={setCurrentRemark}
-            currentRowId={currentRowId}
-            setCurrentRowId={() => {}}
-            saveChanges={saveChanges}
-            handleExcelUpload={handleExcelUpload}
-            handleExport={handleExport}
-            snackbarData={snackbarData}
-            snackbarOpen={snackbarOpen}
-            setSnackbarOpen={setSnackbarOpen}
-            setSnackbarData={setSnackbarData}
-            customHeight={80}
-            groupBy='plant'
-            // groupBy={['plant', 'plantId']}
-          />
-        )
-    }
-  }
-
-  if (!IS_CPP) return null
-
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
       {/* <KendoDataTables */}
-      {renderBySite()}
+
+      <AdvanceKendoTable
+        columns={columns}
+        rows={rows}
+        setRows={setRows}
+        modifiedCells={modifiedCells}
+        setModifiedCells={setModifiedCells}
+        // title='Fixed Consumption'
+        title={screenTitle?.title}
+        permissions={permissions}
+        handleRemarkCellClick={handleRemarkCellClick}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        setCurrentRowId={() => {}}
+        saveChanges={saveChanges}
+        handleExcelUpload={handleExcelUpload}
+        handleExport={handleExport}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        customHeight={80}
+        groupBy='plant'
+        // groupBy={['plant', 'plantId']}
+      />
     </Box>
   )
 }
 
-export default FixedConsumption
+export default FixedConsumptionJMD

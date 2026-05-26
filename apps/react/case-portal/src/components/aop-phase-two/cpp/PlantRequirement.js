@@ -8,6 +8,7 @@ import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatt
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import PlantRequirementJMD from './jmd/PlantRequirementJMD'
 
 const PlantRequirement = () => {
   const keycloak = useSession()
@@ -37,6 +38,11 @@ const PlantRequirement = () => {
   const VERTICAL_ID = verticalObject?.id
   const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
+
+  const lowerVertName = verticalObject?.name?.toLowerCase()
+  const lowerSiteName = siteObject?.name?.toLowerCase()
+  const IS_CPP = lowerVertName === 'cpp'
+
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
   const [rows, setRows] = useState([])
@@ -250,10 +256,10 @@ const PlantRequirement = () => {
   ]
 
   useEffect(() => {
-    if (PLANT_ID && AOP_YEAR) {
+    if (PLANT_ID && AOP_YEAR && lowerSiteName=='nmd') {
       fetchPlantRequirementData()
     }
-  }, [PLANT_ID, AOP_YEAR])
+  }, [PLANT_ID, AOP_YEAR, lowerSiteName])
 
   const fetchPlantRequirementData = async () => {
     setLoading(true)
@@ -504,40 +510,56 @@ const PlantRequirement = () => {
     setRemarkDialogOpen(true)
   }
 
+  const renderBySite = () => {
+    switch (lowerSiteName) {
+      case 'jmd':
+        return <PlantRequirementJMD />
+      // case 'hmd':
+      //   return <PlantRequirementHMD />
+      case 'nmd':
+      default:
+        return (
+          <AdvanceKendoTable
+            columns={columns}
+            rows={rows}
+            setRows={setRows}
+            modifiedCells={modifiedCells}
+            setModifiedCells={setModifiedCells}
+            title={permissions.showTitle ? permissions.titleName : ''}
+            permissions={permissions}
+            handleRemarkCellClick={handleRemarkCellClick}
+            remarkDialogOpen={remarkDialogOpen}
+            setRemarkDialogOpen={setRemarkDialogOpen}
+            currentRemark={currentRemark}
+            setCurrentRemark={setCurrentRemark}
+            currentRowId={currentRowId}
+            setCurrentRowId={() => {}}
+            saveChanges={saveChanges}
+            handleExcelUpload={handleExcelUpload}
+            handleExport={handleExport}
+            snackbarData={snackbarData}
+            snackbarOpen={snackbarOpen}
+            setSnackbarOpen={setSnackbarOpen}
+            setSnackbarData={setSnackbarData}
+            customHeight={80}
+            paginationConfig={{
+              threshold: 100,
+              buttonCount: 5,
+              pageSizes: [10, 20, 50, 100],
+              defaultPageSize: 100,
+            }}
+            groupBy={'processPlant'}
+          />
+        )
+    }
+  }
+
+  if (!IS_CPP) return null
+
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
-      <AdvanceKendoTable
-        columns={columns}
-        rows={rows}
-        setRows={setRows}
-        modifiedCells={modifiedCells}
-        setModifiedCells={setModifiedCells}
-        title={permissions.showTitle ? permissions.titleName : ''}
-        permissions={permissions}
-        handleRemarkCellClick={handleRemarkCellClick}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
-        saveChanges={saveChanges}
-        handleExcelUpload={handleExcelUpload}
-        handleExport={handleExport}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
-        customHeight={80}
-        paginationConfig={{
-          threshold: 100, // Show pagination if > 50 rows
-          buttonCount: 5,
-          pageSizes: [10, 20, 50, 100],
-          defaultPageSize: 100,
-        }}
-        groupBy={'processPlant'}
-      />
+      {renderBySite()}
     </Box>
   )
 }

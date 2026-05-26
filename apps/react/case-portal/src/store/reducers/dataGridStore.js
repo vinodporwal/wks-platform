@@ -20,6 +20,7 @@ const initialState = {
   verticalObject: null,
   verticalChangeFromDashboard: null,
   isReleased: 0,
+  jmdSelectedPlants: [], // multi-select plant list for CPP-JMD; index 0 = primary plant
 }
 
 const dataGridStore = createSlice({
@@ -82,6 +83,15 @@ const dataGridStore = createSlice({
     setIsReleased: (state, action) => {
       state.isReleased = action.payload.isReleased
     },
+    setJmdSelectedPlants(state, action) {
+      // payload: array of { id, name } objects
+      // index 0 is always the primary plant (mirrors plantID)
+      state.jmdSelectedPlants = action.payload
+      if (action.payload.length > 0) {
+        state.plantID = { plantId: action.payload[0].id, plantName: action.payload[0].name }
+        state.plantObject = { id: action.payload[0].id, name: action.payload[0].name }
+      }
+    },
   },
 })
 
@@ -103,4 +113,5 @@ export const {
   setVerticalObject,
   setVerticalChangeFromDashboard,
   setIsReleased,
+  setJmdSelectedPlants,
 } = dataGridStore.actions

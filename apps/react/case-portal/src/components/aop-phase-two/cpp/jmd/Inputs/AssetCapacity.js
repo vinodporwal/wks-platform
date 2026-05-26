@@ -53,7 +53,7 @@ const AssetCapacity = () => {
       minWidth: 150,
       type: 'text',
       editable: false,
-      locked: false,
+      locked: true,
     },
     {
       field: 'plantCode',
@@ -62,7 +62,7 @@ const AssetCapacity = () => {
       minWidth: 130,
       type: 'text',
       editable: false,
-      locked: false,
+      locked: true,
     },
     {
       field: 'utilityDistributed.name',
@@ -71,7 +71,7 @@ const AssetCapacity = () => {
       minWidth: 180,
       type: 'text',
       editable: false,
-      // locked: false,
+      // locked: true,
     },
     {
       field: 'utilityDistributed.sapCode',
@@ -80,7 +80,7 @@ const AssetCapacity = () => {
       minWidth: 200,
       type: 'text',
       editable: false,
-      // locked: false,
+      // locked: true,
     },
     {
       field: 'utilityGenerated.name',
@@ -89,7 +89,7 @@ const AssetCapacity = () => {
       minWidth: 180,
       type: 'text',
       editable: false,
-      // locked: false,
+      // locked: true,
     },
     {
       field: 'utilityGenerated.sapCode',
@@ -98,7 +98,7 @@ const AssetCapacity = () => {
       minWidth: 200,
       type: 'text',
       editable: false,
-      // locked: false,
+      // locked: true,
     },
     {
       field: 'uom',
