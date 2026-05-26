@@ -245,7 +245,7 @@ const FixedConsumption = () => {
   ]
 
   useEffect(() => {
-    if (PLANT_ID && AOP_YEAR && lowerSiteName=='nmd') {
+    if (PLANT_ID && AOP_YEAR && lowerSiteName == 'nmd') {
       fetchFixedConsumptionData(keycloak, PLANT_ID, AOP_YEAR)
       setModifiedCells({})
     }

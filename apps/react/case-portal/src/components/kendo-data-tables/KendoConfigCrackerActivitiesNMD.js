@@ -1070,28 +1070,28 @@ const DecokingConfigNMD = () => {
       </LocalizationProvider>
 
       <SDTAActivitiesGridNMD
-          columns={ibrPlanColumns}
-          rows={getRows('IBR Plan')[2]}
-          setRows={(data) => setRowsForTab('IBR Plan', data, 2)}
-          // fetchData={fetchData}
-          handleRemarkCellClick={handleRemarkCellClick2}
-          remarkDialogOpen={remarkDialogOpenSdTa}
-          currentRemark={currentRemarkSdTa}
-          setCurrentRemark={setCurrentRemarkSdTa}
-          currentRowId={currentRowIdSdTa}
-          snackbarData={snackbarData}
-          snackbarOpen={snackbarOpen}
-          setSnackbarOpen={setSnackbarOpen}
-          setSnackbarData={setSnackbarData}
-          modifiedCells={modifiedCellsSdTa}
-          allMonths={allMonths}
-          setModifiedCells={setModifiedCellsSdTa}
-          permissions={adjustedPermissionsSdTa}
-          saveChanges={saveChangesSdTa}
-          setRemarkDialogOpen={setRemarkDialogOpenSdTa}
-          rowClass={rowClass}
-          handleCalculate={handleCalculateSdTa}
-        />
+        columns={ibrPlanColumns}
+        rows={getRows('IBR Plan')[2]}
+        setRows={(data) => setRowsForTab('IBR Plan', data, 2)}
+        // fetchData={fetchData}
+        handleRemarkCellClick={handleRemarkCellClick2}
+        remarkDialogOpen={remarkDialogOpenSdTa}
+        currentRemark={currentRemarkSdTa}
+        setCurrentRemark={setCurrentRemarkSdTa}
+        currentRowId={currentRowIdSdTa}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        modifiedCells={modifiedCellsSdTa}
+        allMonths={allMonths}
+        setModifiedCells={setModifiedCellsSdTa}
+        permissions={adjustedPermissionsSdTa}
+        saveChanges={saveChangesSdTa}
+        setRemarkDialogOpen={setRemarkDialogOpenSdTa}
+        rowClass={rowClass}
+        handleCalculate={handleCalculateSdTa}
+      />
 
       <FurnaceRunLengthGridNMD
         columns={filteredIbrGridThree}

@@ -88,8 +88,14 @@ const dataGridStore = createSlice({
       // index 0 is always the primary plant (mirrors plantID)
       state.jmdSelectedPlants = action.payload
       if (action.payload.length > 0) {
-        state.plantID = { plantId: action.payload[0].id, plantName: action.payload[0].name }
-        state.plantObject = { id: action.payload[0].id, name: action.payload[0].name }
+        state.plantID = {
+          plantId: action.payload[0].id,
+          plantName: action.payload[0].name,
+        }
+        state.plantObject = {
+          id: action.payload[0].id,
+          name: action.payload[0].name,
+        }
       }
     },
   },

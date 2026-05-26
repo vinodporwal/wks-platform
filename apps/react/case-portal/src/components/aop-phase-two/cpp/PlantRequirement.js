@@ -256,7 +256,7 @@ const PlantRequirement = () => {
   ]
 
   useEffect(() => {
-    if (PLANT_ID && AOP_YEAR && lowerSiteName=='nmd') {
+    if (PLANT_ID && AOP_YEAR && lowerSiteName == 'nmd') {
       fetchPlantRequirementData()
     }
   }, [PLANT_ID, AOP_YEAR, lowerSiteName])
