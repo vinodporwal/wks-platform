@@ -120,6 +120,7 @@ const BusinessDemand = ({ permissions }) => {
   const [gridExpanded, setGridExpanded] = useState(true)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+  const [selectedLine, setSelectedLine] = useState(null)
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
@@ -180,16 +181,28 @@ const BusinessDemand = ({ permissions }) => {
   ]
   const fetchData = async () => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
+    if (IS_PVC_DMD && !selectedLine?.id) return
 
     setModifiedCells({})
 
     setLoading(true)
     try {
-      var data = await BusinessDemandDataApiService.getBDData(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      let data
+      if (IS_PVC_DMD) {
+        const lineId = selectedLine?.id
+        data = await BusinessDemandDataApiService.getBDLineData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          lineId,
+        )
+      } else {
+        data = await BusinessDemandDataApiService.getBDData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
 
       const formattedData = data
         .filter((item) => {
@@ -254,7 +267,7 @@ const BusinessDemand = ({ permissions }) => {
 
   useEffect(() => {
     fetchData()
-  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
+  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, selectedLine])
 
   const handleUnitChangeMain = (unit) => {
     setSelectedUnit(unit)
@@ -452,6 +465,7 @@ const BusinessDemand = ({ permissions }) => {
 
   const saveBusinessDemandData = async (newRows) => {
     try {
+      const lineId = selectedLine?.id
       const payloadData = newRows.map((row) => {
         const aprilVal = row.april ?? null
         return {
@@ -476,14 +490,21 @@ const BusinessDemand = ({ permissions }) => {
           normParameterId: row.normParameterId,
           id: row.idFromApi || null,
           inEdit: row.inEdit || false,
+          lineId: lineId || null,
         }
       })
-
-      const response =
-        await BusinessDemandDataApiService.saveBusinessDemandData(
+      var response
+      if (IS_PVC_DMD) {
+        response = await BusinessDemandDataApiService.saveBDLineData(
           payloadData,
           keycloak,
         )
+      } else {
+        response = await BusinessDemandDataApiService.saveBusinessDemandData(
+          payloadData,
+          keycloak,
+        )
+      }
 
       setSnackbarOpen(true)
       setSnackbarData({
@@ -642,13 +663,23 @@ const BusinessDemand = ({ permissions }) => {
 
     try {
       let response
-
-      response = await BusinessDemandDataApiService.businessDemandImport(
-        rawFile,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      if (IS_PVC_DMD) {
+        const lineId = selectedLine?.id
+        response = await BusinessDemandDataApiService.businessDemandLineImport(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          lineId,
+        )
+      } else {
+        response = await BusinessDemandDataApiService.businessDemandImport(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -733,12 +764,23 @@ const BusinessDemand = ({ permissions }) => {
 
     try {
       let response
-      response = await BusinessDemandDataApiService.businessDemandExport(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        EXCEL_NAME,
-      )
+      if (IS_PVC_DMD) {
+        const lineId = selectedLine?.id
+        response = await BusinessDemandDataApiService.businessDemandLineExport(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          lineId,
+          EXCEL_NAME,
+        )
+      } else {
+        response = await BusinessDemandDataApiService.businessDemandExport(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_NAME,
+        )
+      }
     } catch (error) {
       console.error('Error downloading Excel:', error)
       setSnackbarData({
@@ -823,6 +865,7 @@ const BusinessDemand = ({ permissions }) => {
               >
                 <ProductionvolumeData
                   isBusinessDemand={true}
+                  setSelectedLineData={setSelectedLine}
                   permissions={{
                     allAction: true,
                     showAction: false,

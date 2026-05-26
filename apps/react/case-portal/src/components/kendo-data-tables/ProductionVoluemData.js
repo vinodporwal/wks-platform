@@ -35,7 +35,11 @@ import { getRoleName } from 'services/role-service'
 import AopTabs from 'components/AopTabs'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
+const ProductionvolumeData = ({
+  isBusinessDemand,
+  permissions,
+  setSelectedLineData,
+}) => {
   // State for tabs and line details
   const [tabIndex, setTabIndex] = useState(0)
   const [tabs, setTabs] = useState([])
@@ -794,6 +798,13 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
 
     fetchConfiguration()
   }, [oldYear, yearChanged, keycloak, selectedUnit, PLANT_ID, tabIndex])
+
+  useEffect(() => {
+    if (isBusinessDemand) {
+      const selectedLine = lineDetails[tabIndex]
+      setSelectedLineData(selectedLine)
+    }
+  }, [lineDetails, tabIndex])
 
   // Fetch line details when component mounts or plantID/year changes
   const fetchLineDetails = async () => {
@@ -1579,7 +1590,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         // setLoading(false)
 
         fetchData()
-        if (IS_CRACKER_DMD) {
+        if (IS_CRACKER_DMD || IS_CRACKER_C2) {
           fetchDesignCapacityData(unitDesignCapacity)
         }
       } else if (response?.code === 400 && response?.data) {
