@@ -598,7 +598,6 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 				if (cell == null)
 					return null;
 				cell.setCellType(CellType.STRING);
-				System.out.println("cell.getStringCellValue().trim() : " + cell.getStringCellValue().trim());
 				return cell.getStringCellValue().trim();
 			} catch (Exception e) {
 				dto.setSaveStatus("Failed");
@@ -795,7 +794,6 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		            "                    \"rows\": []\r\n" + //
 		            "                }\r\n" + //
 		            "            }\r\n" + //
-
 		            "        ]\r\n" + //
 		            "    }\r\n" + //
 		            "    \r\n" + //
