@@ -184,13 +184,13 @@ const createApmUrlBasedOnSelectedEvent = () => {
       const eventrendUrlArray = mappedData.map((item) => ({
       
          urlId : item.selectedEventId,
-         url: `https://apm-exxonmobil-useast.connectedplant.honeywell.com/Forge/APM/ShellUI/#/trends?rootNode=${item.assetName}&assetDisplayName=${item.assetDisplayName}&period=Custom+Range&startTimeStamp=${item.startTimeStamp}&endTimeStamp=${item.endTimeStamp}&selectedEventId=${item.selectedEventId}&eventName=${item.eventName}&eventId=${item.selectedEventId}&assetId=${item.assetId}&hierarchyName=Planthierarchy&hierarchyLevel=null`
+         url: `https://apm-demo-useast.connectedplant.honeywell.com/Forge/APM/ShellUI/#/trends?rootNode=${item.assetName}&assetDisplayName=${item.assetDisplayName}&period=Custom+Range&startTimeStamp=${item.startTimeStamp}&endTimeStamp=${item.endTimeStamp}&selectedEventId=${item.selectedEventId}&eventName=${item.eventName}&eventId=${item.selectedEventId}&assetId=${item.assetId}&hierarchyName=Planthierarchy&hierarchyLevel=null`
         
       }))
 
       const eventReportUrlArray = mappedData.map((item) => ({
         urlId : item.selectedEventId,
-        url: `https://apm-exxonmobil-useast.connectedplant.honeywell.com/ReportServer/Pages/ReportViewer.aspx?%2fDailyFaultReport_Test&rs:Command=Render&EventID=${item.selectedEventId}`
+        url: `https://apm-demo-useast.connectedplant.honeywell.com/ReportServer/Pages/ReportViewer.aspx?%2fDailyFaultReport_Test&rs:Command=Render&EventID=${item.selectedEventId}`
       }))
 
 
@@ -271,7 +271,7 @@ const createApmUrlBasedOnSelectedEvent = () => {
   }, [caseDefId, keycloak])
 
   const navigateToCaseUrl = (caseUrl) => {
-    // When opened as a modal from the case list, just close the dialog —
+    // When opened as a modal from the case list, just close the dialog ï¿½
     // CaseList's useEffect will re-fetch because openNewCaseForm toggles
     if (openedFromList && typeof handleFormClose === 'function') {
       handleFormClose()

@@ -56,9 +56,9 @@ const CaseForm = lazy(() =>
   })),
 )
 const NewCaseForm = lazy(() =>
-   import('../caseForm/newCaseForm').then((module) => ({
-     default: module.NewCaseForm,
-   })),
+  import('../caseForm/newCaseForm').then((module) => ({
+    default: module.NewCaseForm,
+  })),
 )
 const CaseNewFormPage = lazy(() =>
   import('../caseForm/NewCaseFormPage').then((module) => ({
@@ -119,106 +119,104 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
   const isCaseDefValid = (caseDefId && caseDefId.length !== 0 && caseDefId.trim().length !== 0);
 
   // role based access control
-  const[isCaseViewer, setIsCaseViewer] = useState(false);
-  const[isCaseEditor, setIsCaseEditor] = useState(false);
-  const[isAdmin, setIsAdmin] = useState(false);
-  const[isCaseCreator, setIsCaseCreator] = useState(false);
-  const[groups, setGroups] = useState([]);
+  const [isCaseViewer, setIsCaseViewer] = useState(false);
+  const [isCaseEditor, setIsCaseEditor] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isCaseCreator, setIsCaseCreator] = useState(false);
+  const [groups, setGroups] = useState([]);
   // for link-case
-  const[showLinkCaseButton, setShowLinkCaseButton] = useState(false);
+  const [showLinkCaseButton, setShowLinkCaseButton] = useState(false);
 
 
 
 
   useEffect(() => {
     const token = keycloak.tokenParsed;
-    
+
     console.log("*** token : ", token);
-    const clientId = token?.azp || token?.client_id; 
-    
+    const clientId = token?.azp || token?.client_id;
+
     const clientRoles = token?.resource_access?.[clientId]?.roles || [];
     console.log("*** clientRoles : ", clientRoles);
     const groups = token?.groups || [];
     setGroups(groups);
-      
+
     setIsCaseViewer(clientRoles.includes('case_viewer'));
-    setIsCaseEditor(clientRoles.includes('case_editor'));  
+    setIsCaseEditor(clientRoles.includes('case_editor'));
     setIsAdmin(clientRoles.includes('admin'));
     setIsCaseCreator(clientRoles.includes('case_creator'));
 
     console.log("*** isCaseEditor : ", isCaseEditor);
     console.log("*** isCaseViewer : ", isCaseViewer);
   }, [keycloak]);
-  
-  
-  if(isCaseCreatePath && !isCaseDefValid)
-  {
+
+
+  if (isCaseCreatePath && !isCaseDefValid) {
     const location = useLocation();
 
     // console.log("*** location : ", location);
     // const path = location.pathname; 
     // console.log("*** path : ", path);
-    
+
     // // Split by "/" and get the element after "case-list"
     // const segment = path.split("/")[2];  // index 2 = 'create'
-  
+
     // console.log(segment);
     // console.log("*** segment : ", segment);
 
 
     const isCaseDefPresentInRoute = searchParams.has('case_def');
     caseDefId = isCaseDefPresentInRoute ? searchParams.get('case_def') : 'create';
-    if(!caseDefId || caseDefId.length === 0 || caseDefId.trim().length === 0) {
+    if (!caseDefId || caseDefId.length === 0 || caseDefId.trim().length === 0) {
       setLoading(false);
       setError(true);
       setErrorMsg('Invalid Case Definition "' + caseDefId + '" !! ');
     }
   }
-  
-  if(isCaseViewPath)
-  {
+
+  if (isCaseViewPath) {
     const isCaseDefPresentInRoute = searchParams.has('case_def');
     const isBusinessKeyPresentInRoute = searchParams.has('businessKey') || searchParams.has('caseNo');
-   // caseDefId = isCaseDefPresentInRoute ? searchParams.get('case_def') : 'create';
+    // caseDefId = isCaseDefPresentInRoute ? searchParams.get('case_def') : 'create';
 
-    if(!isBusinessKeyPresentInRoute) {
+    if (!isBusinessKeyPresentInRoute) {
       setLoading(false);
       setError(true);
       setErrorMsg('Business Key missing in parameters !! ');
     } else {
       caseBusinessKey = searchParams.get('businessKey') || searchParams.get('caseNo');
-      if(!caseBusinessKey || caseBusinessKey.length === 0 || caseBusinessKey.trim().length === 0) {
+      if (!caseBusinessKey || caseBusinessKey.length === 0 || caseBusinessKey.trim().length === 0) {
         setLoading(false);
         setError(true);
         setErrorMsg('Invalid Business Key !! ');
-      } 
+      }
     }
   }
 
   useEffect(() => {
     // Do not auto-open the 'create new case' form when a businessKey/caseNo is present in the URL
-    
+
     if (isCaseCreatePath && !queryHasBusinessKey && !error && !accepted) {
       const fireEvent = (el, eventName) => {
         const event = new Event(eventName, { bubbles: true });
         el.dispatchEvent(event);
       };
-    
-	  var autoClickTimeout = null;
+
+      var autoClickTimeout = null;
       autoClickTimeout = setTimeout(() => {
-      if (createButtonRef && createButtonRef.current) {
+        if (createButtonRef && createButtonRef.current) {
           setOpenNewCaseForm(true);
           setAccepted(true);
-		  createButtonRef.current.click();
+          createButtonRef.current.click();
           //fireEvent(createButtonRef, "click");
         }
       }, 500);
 
       return () => {
-        if(autoClickTimeout) { clearTimeout(autoClickTimeout); } // Clear the timeout when component unmounts
+        if (autoClickTimeout) { clearTimeout(autoClickTimeout); } // Clear the timeout when component unmounts
       };
     }
-  }, [accepted]);  
+  }, [accepted]);
 
   // - Route changes - End
 
@@ -268,7 +266,7 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
   //           const updatedCases = caseList.map((singleCase) => {
 
   //             // for link-case
-             
+
   //             let caseTitle = '';
   //             let caseNumber = singleCase.caseNo || singleCase.businessKey || singleCase.caseNumber;
 
@@ -470,12 +468,12 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
       );
     }
   }, [caseDefId, status, openNewCaseForm, location.state?.refresh])
-  
+
   useEffect(() => {
     CaseService.getCaseDefinitions(keycloak).then((resp) => {
       setCaseDefs(resp);
       // - Route changes - Start
-      if(!resp.some(i => i.id === caseDefId)) {
+      if (!resp.some(i => i.id === caseDefId)) {
         setLoading(false);
         setError(true);
         setErrorMsg('Invalid Case Definition "' + caseDefId + '" !! ');
@@ -488,18 +486,18 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
 
   }, [])
 
-//  const makeColumns = () => {
+  //  const makeColumns = () => {
   function makeColumns() {
     return [
       {
         field: 'caseNumber',
         headerName: t('pages.caselist.datagrid.columns.caseNumber'),
         width: 150,
-		valueGetter: (value, row) => {
+        valueGetter: (value, row) => {
           try {
-			if(row.businessKey && row.businessKey !== '')
-				return row.businessKey;
-			
+            if (row.businessKey && row.businessKey !== '')
+              return row.businessKey;
+
             const attributes =
               typeof row.attributes === 'string'
                 ? JSON.parse(row.attributes)
@@ -517,13 +515,13 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
           } catch (error) {
             console.error('Error parsing mainAsset:', error)
             return ''
-          }			
-		}
+          }
+        }
 
-    
+
       },
 
-   
+
       {
         field: 'caseTitle',
         headerName: t('pages.caselist.datagrid.columns.caseTitle'),
@@ -590,27 +588,27 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
             const caseStatusOptions = JSON.parse(
               localStorage.getItem('caseStatusOptions'),
             ) || [
-              {
-                label: 'Assigned',
-                value: 1,
-              },
-              {
-                label: 'Under Analysis',
-                value: 2,
-              },
-              {
-                label: 'Closed',
-                value: 3,
-              },
-              {
-                label: 'Overdue',
-                value: 4,
-              },
-              {
-                label: 'Rejected',
-                value: 10002,
-              },
-            ]
+                {
+                  label: 'Assigned',
+                  value: 1,
+                },
+                {
+                  label: 'Under Analysis',
+                  value: 2,
+                },
+                {
+                  label: 'Closed',
+                  value: 3,
+                },
+                {
+                  label: 'Overdue',
+                  value: 4,
+                },
+                {
+                  label: 'Rejected',
+                  value: 10002,
+                },
+              ]
 
             // Parse the container value to get the caseStatus value
             const attributes =
@@ -654,9 +652,9 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
         flex: 1,
         valueGetter: (value, row) => {
 
-           try {
-			
-			
+          try {
+
+
             const attributes =
               typeof row.attributes === 'string'
                 ? JSON.parse(row.attributes)
@@ -674,28 +672,28 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
           } catch (error) {
             console.error('Error parsing CaseAssignedTo:', error)
             return ''
-          }			
+          }
 
 
 
           //return value ? value?.userId : '';
-	//	  return row ? row?.caseAssignedTo : '';
+          //	  return row ? row?.caseAssignedTo : '';
         },
       },
 
-         {
-          field: 'Assigned By',
-          headerName: 'Assigned By',
-          width: 150,
-      valueGetter: (value, row) => {
-        
-             return row.owner.name || '';
-          
-      }
-  
-      
-        },
- 
+      {
+        field: 'Assigned By',
+        headerName: 'Assigned By',
+        width: 150,
+        valueGetter: (value, row) => {
+
+          return row.owner.name || '';
+
+        }
+
+
+      },
+
       // {
       //   field: 'ownerName',
       //   headerName: t('pages.caselist.datagrid.columns.caseOwnerName'),
@@ -792,10 +790,10 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
   const handleCloseCaseForm = () => {
 
     console.log("In CaseList handleCloseCaseForm........");
-   
+
     // Remove all URL parameters
     navigate(location.pathname, { replace: true });
-   
+
     setOpenCaseForm(false);
     fetchCases(
       setFetching,
@@ -812,21 +810,21 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
   }
 
   const handleCloseNewCaseForm = () => {
-    
+
     setOpenNewCaseForm(false)
     setSnackOpen(true)
-    
+
   }
 
   const handleNewCaseAction = () => {
-   if(isLinkCaseUrl) {
-    const urlParams = new URLSearchParams(window.location.search);
-    const linkIdsValue = urlParams.get('linkIds');
-    urlParams.delete('linkIds');
-    urlParams.set('eventIds', linkIdsValue);
-    const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
-    window.history.replaceState(null, '', newUrl);
-  }
+    if (isLinkCaseUrl) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const linkIdsValue = urlParams.get('linkIds');
+      urlParams.delete('linkIds');
+      urlParams.set('eventIds', linkIdsValue);
+      const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+      window.history.replaceState(null, '', newUrl);
+    }
     setLastCreatedCase(null)
     setNewCaseDefId(caseDefId)
     setOpenNewCaseForm(true)
@@ -881,13 +879,13 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
     console.log("handlerNextPage");
     setFetching(true)
 
-  const next = {
+    const next = {
       sort: filter.sort,
       limit: filter.limit,
       after: filter.cursors.after,
-  }
+    }
 
-  CaseService.filterCase(keycloak, caseDefId, status, next)
+    CaseService.filterCase(keycloak, caseDefId, status, next)
       .then((resp) => {
         const { data, paging } = resp
         console.log("#### cases are being set 3 : ", data)
@@ -1036,10 +1034,10 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
 
   function generateRandom() {
     var length = 8,
-        charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-        retVal = "";
+      charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+      retVal = "";
     for (var i = 0, n = charset.length; i < length; ++i) {
-        retVal += charset.charAt(Math.floor(Math.random() * n));
+      retVal += charset.charAt(Math.floor(Math.random() * n));
     }
     return retVal;
   }
@@ -1049,21 +1047,21 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
   return (
     <div style={{ height: 650, width: '100%' }}>
       {/* {caseDefId && accountStore.isManagerUser(keycloak) && ( */}
-          {caseDefId && (
-     showLinkCaseButton ? null :     <Button
-            id='basic-button'
-            onClick={handleNewCaseAction}
-			ref={createButtonRef}
-            variant='contained'
-            disabled={ (isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator}
-          >
-            {t('pages.caselist.action.newcase')}
-          </Button>
+      {caseDefId && (
+        showLinkCaseButton ? null : <Button
+          id='basic-button'
+          onClick={handleNewCaseAction}
+          ref={createButtonRef}
+          variant='contained'
+          disabled={(isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator}
+        >
+          {t('pages.caselist.action.newcase')}
+        </Button>
       )}
       {caseDefId && (
         <ToggleButtonGroup
           orientation='horizontal'
-		  style={{ float: 'right' }}
+          style={{ float: 'right' }}
           value={view}
           exclusive
           onChange={handleChangeView}
@@ -1078,50 +1076,50 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
             <CalendarMonthIcon />
           </ToggleButton>
         </ToggleButtonGroup>
-      )}  
-       {showLinkCaseButton ? (
-                <Box
-                  sx={{
-                    height: 500,
-                    width: '99%',
-                    backgroundColor: '#ffffff',
-                    mt: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 2,
-                  }}
-                >
-                  <Typography variant="h6" color="textSecondary">
-                    No existing cases found for the selected events.
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => {
-                      // Change 'linkIds' to 'eventIds' in URL before opening form
-                      const urlParams = new URLSearchParams(window.location.search);
-                      if (urlParams.has('linkIds')) {
-                        const linkIdsValue = urlParams.get('linkIds');
-                        urlParams.delete('linkIds');
-                        urlParams.set('eventIds', linkIdsValue);
-                        const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
-                        window.history.replaceState(null, '', newUrl);
-                      }
-                      setNewCaseDefId(caseDefId);
-                      setOpenNewCaseForm(true);
-                    }}
-                  >
-                    Create New Case
-                  </Button>
-                </Box>
-              ) :
-    (  <MainCard sx={{ mt: 2 }} content={false}>
-        <Box>
-          {view === 'list' && (
-            <div>
-              
+      )}
+      {showLinkCaseButton ? (
+        <Box
+          sx={{
+            height: 500,
+            width: '99%',
+            backgroundColor: '#ffffff',
+            mt: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 2,
+          }}
+        >
+          <Typography variant="h6" color="textSecondary">
+            No existing cases found for the selected events.
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              // Change 'linkIds' to 'eventIds' in URL before opening form
+              const urlParams = new URLSearchParams(window.location.search);
+              if (urlParams.has('linkIds')) {
+                const linkIdsValue = urlParams.get('linkIds');
+                urlParams.delete('linkIds');
+                urlParams.set('eventIds', linkIdsValue);
+                const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+                window.history.replaceState(null, '', newUrl);
+              }
+              setNewCaseDefId(caseDefId);
+              setOpenNewCaseForm(true);
+            }}
+          >
+            Create New Case
+          </Button>
+        </Box>
+      ) :
+        (<MainCard sx={{ mt: 2 }} content={false}>
+          <Box>
+            {view === 'list' && (
+              <div>
+
                 <Suspense fallback={<div>Loading...</div>}>
                   <DataGrid
                     sx={{
@@ -1137,10 +1135,10 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
                       },
                     }}
                     rows={cases}
-                   // columns={makeColumns()}
+                    // columns={makeColumns()}
                     columns={columns}
                     getRowId={(row) => {
-                    //  return generateRandom();
+                      //  return generateRandom();
 
                       return row.businessKey ?? row.caseNo ?? row.id ?? row._id ?? generateRandom();
 
@@ -1148,14 +1146,14 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
                       //return (isCaseCreatePath || isCaseViewPath)? generateRandom() : row.businessKey?.caseNo?.id?._id
                     }}
                     loading={fetching}
-                   // components={{ Pagination: CustomPagination }}
-                   slots={{ pagination: CustomPagination }}
+                    // components={{ Pagination: CustomPagination }}
+                    slots={{ pagination: CustomPagination }}
                   />
                 </Suspense>
-              
-            </div>
-          )}
-          {/*{view === 'list' && (
+
+              </div>
+            )}
+            {/*{view === 'list' && (
             <div>
               <Grid
                 data={cases}
@@ -1187,31 +1185,31 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
               </Grid>
             </div>
           )} */}
-          {view === 'kanban' && (
-            <Suspense fallback={<div>Loading...</div>}>
-              <Kanban
-                stages={stages}
-                cases={cases}
-                caseDefId={caseDefId}
-                kanbanConfig={fetchKanbanConfig()}
-                setACase={setACase}
-                setOpenCaseForm={setOpenCaseForm}
-              />
-            </Suspense>
-          )}
-          {view === 'calendar' && (
-            <Suspense fallback={<div>Loading...</div>}>
-              <ScheduleView
-                cases={cases}
-                caseDefId={caseDefId}
-                setACase={setACase}
-				handleClose={handleCloseCaseForm}
-                setOpenCaseForm={setOpenCaseForm}
-              />
-            </Suspense>
-          )}  		  
-        </Box>
-      </MainCard>    )  }
+            {view === 'kanban' && (
+              <Suspense fallback={<div>Loading...</div>}>
+                <Kanban
+                  stages={stages}
+                  cases={cases}
+                  caseDefId={caseDefId}
+                  kanbanConfig={fetchKanbanConfig()}
+                  setACase={setACase}
+                  setOpenCaseForm={setOpenCaseForm}
+                />
+              </Suspense>
+            )}
+            {view === 'calendar' && (
+              <Suspense fallback={<div>Loading...</div>}>
+                <ScheduleView
+                  cases={cases}
+                  caseDefId={caseDefId}
+                  setACase={setACase}
+                  handleClose={handleCloseCaseForm}
+                  setOpenCaseForm={setOpenCaseForm}
+                />
+              </Suspense>
+            )}
+          </Box>
+        </MainCard>)}
 
       <br />
 
@@ -1284,28 +1282,28 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
         console.log('resp', resp)
 
         // for link-case
-        if(isLinkCaseUrl) {  
-  
+        if (isLinkCaseUrl) {
+
           const eventIds = searchParams.get('linkIds');
-          if(eventIds) {
+          if (eventIds) {
             const eventIdsArray = eventIds.split(',');
             console.log('eventIdsArray: ', eventIdsArray);
             data = data.filter((singleCase) => {
-              return singleCase.eventIds ?   singleCase.eventIds.some((eventId) => eventIdsArray.includes(eventId)) : false;
+              return singleCase.eventIds ? singleCase.eventIds.some((eventId) => eventIdsArray.includes(eventId)) : false;
             });
 
-            if(data.length === 0) {  
+            if (data.length === 0) {
               setShowLinkCaseButton(true);
 
             }
-           
-             
+
+
           }
           else {
             console.log('eventIds not found in the URL');
           }
         }
-        else { 
+        else {
           console.log('isLinkCaseUrl is false');
         }
 
@@ -1313,12 +1311,12 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
         const updatedCases = data.map((singleCase) => {
           let caseTitle = "";
           let caseNumber = "";
-  
+
           try {
             const containerValue = singleCase.attributes.find(
               (attr) => attr.name === "container"
             )?.value;
-  
+
             if (containerValue) {
               const parsedValue = JSON.parse(containerValue);
               caseTitle = parsedValue?.textField5 || parsedValue?.caseTitle;
@@ -1327,15 +1325,15 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
           } catch (error) {
             console.error("Error parsing container value:", error);
           }
-  
+
           return {
             ...singleCase,
             caseTitle,
             caseNumber,
           };
         });
-      
-      const uniqueUpdatedCases = updatedCases.filter((obj, index, self) =>
+
+        const uniqueUpdatedCases = updatedCases.filter((obj, index, self) =>
           index === self.findIndex((t) => t.businessKey === obj.businessKey)
         );
         console.log("#### cases are being set: ", uniqueUpdatedCases)
@@ -1346,7 +1344,7 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
           hasPrevious: paging.hasPrevious,
           hasNext: paging.hasNext,
         })
-      
+
         if (navToView && navToView[0]) {
           const target = String(navToView[1]);
           const selectedCase = uniqueUpdatedCases.find((c) => {
@@ -1363,7 +1361,7 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
             }
             return candidates.some((fld) => fld !== undefined && fld !== null && String(fld) === target);
           });
-  
+
           if (selectedCase && navToView[2]) {
             navToView[2]({ ...selectedCase });
             navToView[3](true);
@@ -1376,6 +1374,6 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
       .finally(() => {
         setFetching(false)
       })
-    }
+  }
 }
 
