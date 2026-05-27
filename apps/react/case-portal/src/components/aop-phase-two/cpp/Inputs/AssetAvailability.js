@@ -53,7 +53,7 @@ const AssetAvailability = () => {
       widthT: 150,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
       minWidth: 150,
     },
 

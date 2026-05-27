@@ -3,10 +3,7 @@ import { Box } from '@mui/material'
 import KendoDataTablesCracker from './index-cracker.js'
 import KendoDataTablesCrackerNMD from './index-cracker-nmd.js'
 const CustomRow = ({ dataItem, className, ...rest }) => {
-  const rowClassName = [
-    className,
-    dataItem.isError ? 'error-row' : '',
-  ]
+  const rowClassName = [className, dataItem.isError ? 'error-row' : '']
     .filter(Boolean)
     .join(' ')
   return (

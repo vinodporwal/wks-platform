@@ -8,6 +8,7 @@ import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatt
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import FixedConsumptionJMD from './jmd/FixedConsumptionJMD'
 
 const FixedConsumption = () => {
   const keycloak = useSession()
@@ -36,6 +37,11 @@ const FixedConsumption = () => {
   const VERTICAL_ID = verticalObject?.id
   const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
+
+  const lowerVertName = verticalObject?.name?.toLowerCase()
+  const lowerSiteName = siteObject?.name?.toLowerCase()
+  const IS_CPP = lowerVertName === 'cpp'
+
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
@@ -239,7 +245,7 @@ const FixedConsumption = () => {
   ]
 
   useEffect(() => {
-    if (PLANT_ID && AOP_YEAR) {
+    if (PLANT_ID && AOP_YEAR && lowerSiteName == 'nmd') {
       fetchFixedConsumptionData(keycloak, PLANT_ID, AOP_YEAR)
       setModifiedCells({})
     }
@@ -498,38 +504,53 @@ const FixedConsumption = () => {
     setRemarkDialogOpen(true)
   }
 
+  const renderBySite = () => {
+    switch (lowerSiteName) {
+      case 'jmd':
+        return <FixedConsumptionJMD />
+      // case 'hmd':
+      //   return <FixedConsumptionHMD />
+      case 'nmd':
+      default:
+        return (
+          <AdvanceKendoTable
+            columns={columns}
+            rows={rows}
+            setRows={setRows}
+            modifiedCells={modifiedCells}
+            setModifiedCells={setModifiedCells}
+            // title='Fixed Consumption'
+            title={screenTitle?.title}
+            permissions={permissions}
+            handleRemarkCellClick={handleRemarkCellClick}
+            remarkDialogOpen={remarkDialogOpen}
+            setRemarkDialogOpen={setRemarkDialogOpen}
+            currentRemark={currentRemark}
+            setCurrentRemark={setCurrentRemark}
+            currentRowId={currentRowId}
+            setCurrentRowId={() => {}}
+            saveChanges={saveChanges}
+            handleExcelUpload={handleExcelUpload}
+            handleExport={handleExport}
+            snackbarData={snackbarData}
+            snackbarOpen={snackbarOpen}
+            setSnackbarOpen={setSnackbarOpen}
+            setSnackbarData={setSnackbarData}
+            customHeight={80}
+            groupBy='plant'
+            // groupBy={['plant', 'plantId']}
+          />
+        )
+    }
+  }
+
+  if (!IS_CPP) return null
+
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
       {/* <KendoDataTables */}
-
-      <AdvanceKendoTable
-        columns={columns}
-        rows={rows}
-        setRows={setRows}
-        modifiedCells={modifiedCells}
-        setModifiedCells={setModifiedCells}
-        // title='Fixed Consumption'
-        title={screenTitle?.title}
-        permissions={permissions}
-        handleRemarkCellClick={handleRemarkCellClick}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
-        saveChanges={saveChanges}
-        handleExcelUpload={handleExcelUpload}
-        handleExport={handleExport}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
-        customHeight={80}
-        groupBy='plant'
-        // groupBy={['plant', 'plantId']}
-      />
+      {renderBySite()}
     </Box>
   )
 }

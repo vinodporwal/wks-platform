@@ -6,6 +6,7 @@ import CppExecutionList from './CppExecutionList'
 import MonthlyExecutionList from './MonthlyExecutionList'
 import AssetStatusList from './AssetStatusList'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import SummaryJMD from '../jmd/Summary/index'
 
 const Summary = () => {
   const keycloak = useSession()
@@ -16,6 +17,10 @@ const Summary = () => {
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
+
+  const lowerVertName = verticalObject?.name?.toLowerCase()
+  const lowerSiteName = siteObject?.name?.toLowerCase()
+  const IS_CPP = lowerVertName === 'cpp'
 
   const [loading, setLoading] = useState(false)
   const [selectedExecutionId, setSelectedExecutionId] = useState(null)
@@ -34,35 +39,52 @@ const Summary = () => {
     setSelectedMonthData(dataItem)
   }
 
+  const renderBySite = () => {
+    switch (lowerSiteName) {
+      case 'jmd':
+        return <SummaryJMD />
+      // case 'hmd':
+      //   return <SummaryHMD />
+      case 'nmd':
+      default:
+        return (
+          <>
+            {/* Grid 1: CPP Execution List - Always visible */}
+            <Box sx={{ mb: 3 }}>
+              <CppExecutionList onViewClick={handleExecutionViewClick} />
+            </Box>
+
+            {/* Grid 2: Monthly Execution List - Shows when execution is selected */}
+            {selectedExecutionId && (
+              <Box sx={{ mb: 3 }}>
+                <MonthlyExecutionList
+                  executionId={selectedExecutionId}
+                  onViewClick={handleMonthlyViewClick}
+                />
+              </Box>
+            )}
+
+            {/* Grid 3: Asset Status List - Shows when month is selected */}
+            {selectedMonthData && (
+              <Box sx={{ mb: 3 }}>
+                <AssetStatusList
+                  executionId={selectedMonthData.parentExecutionFkId}
+                  month={selectedMonthData.month}
+                  financialYear={selectedMonthData.financialYear}
+                />
+              </Box>
+            )}
+          </>
+        )
+    }
+  }
+
+  if (!IS_CPP) return null
+
   return (
-    <Box sx={{ p: 2 }}>
+    <Box>
       <LoaderBackdrop open={!!loading} />
-
-      {/* Grid 1: CPP Execution List - Always visible */}
-      <Box sx={{ mb: 3 }}>
-        <CppExecutionList onViewClick={handleExecutionViewClick} />
-      </Box>
-
-      {/* Grid 2: Monthly Execution List - Shows when execution is selected */}
-      {selectedExecutionId && (
-        <Box sx={{ mb: 3 }}>
-          <MonthlyExecutionList
-            executionId={selectedExecutionId}
-            onViewClick={handleMonthlyViewClick}
-          />
-        </Box>
-      )}
-
-      {/* Grid 3: Asset Status List - Shows when month is selected */}
-      {selectedMonthData && (
-        <Box sx={{ mb: 3 }}>
-          <AssetStatusList
-            executionId={selectedMonthData.parentExecutionFkId}
-            month={selectedMonthData.month}
-            financialYear={selectedMonthData.financialYear}
-          />
-        </Box>
-      )}
+      {renderBySite()}
     </Box>
   )
 }

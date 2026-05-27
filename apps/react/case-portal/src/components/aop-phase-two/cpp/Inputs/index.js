@@ -16,6 +16,7 @@ import FixedNorms from './FixedNorms'
 import Fuel from './Fuel/index'
 import AopDesignBasis from './AopDesignBasis'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import InputsJMD from '../jmd/Inputs/index'
 
 const Inputs = () => {
   const keycloak = useSession()
@@ -26,6 +27,10 @@ const Inputs = () => {
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
+
+  const lowerVertName = verticalObject?.name?.toLowerCase()
+  const lowerSiteName = siteObject?.name?.toLowerCase()
+  const IS_CPP = lowerVertName === 'cpp'
 
   // State management
   const [tabObj, setTabObj] = useState([])
@@ -172,21 +177,38 @@ const Inputs = () => {
     }
   }
 
+  const renderBySite = () => {
+    switch (lowerSiteName) {
+      case 'jmd':
+        return <InputsJMD />
+      // case 'hmd':
+      //   return <InputsHMD />
+      case 'nmd':
+      default:
+        return (
+          <>
+            {/* Tabs */}
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+              <AopTabs
+                tabIndex={tabIndex}
+                setTabIndex={setTabIndex}
+                tabs={tabObj?.map((tab) => tab.displayName || tab.name) || []}
+              />
+            </Box>
+
+            {/* Tab Content */}
+            <Box>{renderTabContent()}</Box>
+          </>
+        )
+    }
+  }
+
+  if (!IS_CPP) return null
+
   return (
     <Box sx={{ p: 0 }}>
       <LoaderBackdrop open={!!loading} />
-
-      {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-        <AopTabs
-          tabIndex={tabIndex}
-          setTabIndex={setTabIndex}
-          tabs={tabObj?.map((tab) => tab.displayName || tab.name) || []}
-        />
-      </Box>
-
-      {/* Tab Content */}
-      <Box>{renderTabContent()}</Box>
+      {renderBySite()}
     </Box>
   )
 }

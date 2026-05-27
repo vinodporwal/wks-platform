@@ -111,6 +111,35 @@ const extractFlatRowsFromGrouped = (data) => {
   return flatRows
 }
 
+// Helper function to create select tooltip renderer with label display
+const createSelectToolTipRenderer = (allOptions, toolTipRenderer) => {
+  return (props) => {
+    const value = props.dataItem[props.field]
+    const displayMode = props.displayMode || 'label'
+
+    let displayChildren = props.children
+    let tooltipValue = value
+
+    if (displayMode === 'label' && allOptions) {
+      // Normalize values to handle 4 vs 4.0 mismatches
+      const normalizeValue = (val) => String(parseFloat(val))
+      const option = allOptions.find(
+        (opt) => normalizeValue(opt.value) === normalizeValue(value),
+      )
+      if (option) {
+        displayChildren = option.label
+        tooltipValue = option.label
+      }
+    }
+
+    return toolTipRenderer({
+      ...props,
+      children: displayChildren,
+      dataItem: { ...props.dataItem, [props.field]: tooltipValue },
+    })
+  }
+}
+
 // Helper function to apply Kendo number format
 const applyKendoNumberFormat = (value, format) => {
   if (!format || value === null || value === undefined) return value
@@ -1513,6 +1542,71 @@ const AdvanceKendoTable = ({
         )
       }
 
+      if (col.type === 'number1' && permissions.dropdownCell) {
+        // Special handler for Pigging Status dropdown in SteadyStateConsumption
+        const dropdownOptions = [
+          { value: '4', label: 'P-4' },
+          { value: '5', label: 'P-5' },
+          { value: '1', label: 'NP' },
+        ]
+
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={isEditable}
+            className={
+              !isEditable ? 'k-number-right-disabled' : 'k-number-right'
+            }
+            headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
+            cells={{
+              edit: {
+                text: (cellProps) => {
+                  const isPiggingStatus =
+                    cellProps.dataItem?.normParameterTypeName ===
+                    'Pigging Status'
+
+                  if (isPiggingStatus) {
+                    return (
+                      <SelectCellEditor
+                        {...cellProps}
+                        options={dropdownOptions}
+                        textField='label'
+                        valueField='value'
+                        placeholder='Select...'
+                      />
+                    )
+                  }
+
+                  return <NoSpinnerNumericEditor {...cellProps} />
+                },
+              },
+              data: (props) => {
+                const isPiggingStatus =
+                  props.dataItem?.normParameterTypeName === 'Pigging Status'
+
+                if (isPiggingStatus) {
+                  return createSelectToolTipRenderer(
+                    dropdownOptions,
+                    toolTipRenderer,
+                  )({ ...props, displayMode: 'label' })
+                }
+
+                return toolTipRenderer(props)
+              },
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
+
       if (col.type === 'number1') {
         // Determine which numeric editor to use based on min/max constraints
         const hasMinMaxConstraints =
@@ -1730,22 +1824,6 @@ const AdvanceKendoTable = ({
         // Change this to your multiselect field name
         let allOptions = col.options
 
-        // Wrapper for toolTipRenderer to handle select display mode
-        const selectToolTipRenderer = (props) => {
-          const value = props.dataItem[props.field]
-          const displayMode = col.displayMode || 'label' // 'label' or 'value'
-
-          // If displayMode is 'label', find and display the label instead of value
-          let displayChildren = props.children
-          if (displayMode === 'label' && allOptions) {
-            const option = allOptions.find((opt) => opt.value === value)
-            displayChildren = option ? option.label : value
-          }
-
-          // Call the original toolTipRenderer with modified children
-          return toolTipRenderer({ ...props, children: displayChildren })
-        }
-
         return (
           <GridColumn
             key={col.field}
@@ -1766,7 +1844,11 @@ const AdvanceKendoTable = ({
                   />
                 ),
               },
-              data: selectToolTipRenderer,
+              data: (props) =>
+                createSelectToolTipRenderer(
+                  allOptions,
+                  toolTipRenderer,
+                )({ ...props, displayMode: col.displayMode || 'label' }),
               headerCell: col.subtitle
                 ? createHeaderWithSubtitle(col.subtitle)
                 : SimpleHeaderWithTooltip,

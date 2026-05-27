@@ -1,7 +1,9 @@
 // HeaderContent.jsx
 import {
   Box,
+  Checkbox,
   FormControl,
+  ListItemText,
   MenuItem,
   Select,
   Stack,
@@ -17,6 +19,8 @@ import {
   setAopYear,
   setCurrentYear,
   setIsReleased,
+  setJmdSelectedPlants,
+  setVerticalChangeFromDashboard,
   setOldYear,
   setPlantID,
   setPlantObject,
@@ -89,11 +93,22 @@ export default function HeaderContent({ keycloak, navigation }) {
   )
   const [selectedSite, setSelectedSite] = useState('')
   const [selectedPlant, setSelectedPlant] = useState('')
-
+  //=====================================================
+  // CPP-JMD multi-select state
+  // selectedPlantsJMD: array of plant IDs; index 0 mirrors selectedPlant
+  const [selectedPlantsJMD, setSelectedPlantsJMD] = useState([])
+  //=====================================================
   const verticalFromDashboard = useSelector(
     (state) => state.dataGridStore.verticalChangeFromDashboard,
   )
-
+  //=====================================================
+  // Derive CPP-JMD flag from Redux (verticalObject/siteObject set by header itself)
+  const verticalObject = useSelector((s) => s.dataGridStore.verticalObject)
+  const siteObject = useSelector((s) => s.dataGridStore.siteObject)
+  const IS_CPP_JMD =
+    verticalObject?.name?.toLowerCase() === 'cpp' &&
+    siteObject?.name?.toLowerCase() === 'jmd'
+  //=====================================================
   const [currentStep, setCurrentStep] = useState(null)
   const [totalSteps, setTotalSteps] = useState(0)
 
@@ -367,6 +382,58 @@ export default function HeaderContent({ keycloak, navigation }) {
       dispatch(setPlantID({ plantId: defP.id, plantName: defP.name }))
     }
   }, [selectedSite, selectedVertical, fullDetails, allowedMap, dispatch])
+  //=====================================================
+  // When plants list changes and we are in CPP-JMD, restore or init multi-select from Redux
+  const jmdSelectedPlantsFromRedux = useSelector(
+    (s) => s.dataGridStore.jmdSelectedPlants,
+  )
+
+  useEffect(() => {
+    if (!IS_CPP_JMD || !plants.length) return
+
+    // Skip initialization if coming from dashboard navigation
+    if (verticalFromDashboard?.pid) return
+
+    // Keep only IDs that still exist in current plants list
+    const validRestored = jmdSelectedPlantsFromRedux
+      .map((p) => p.id)
+      .filter((id) => plants.some((p) => p.id === id))
+
+    if (validRestored.length) {
+      setSelectedPlantsJMD(validRestored)
+      setSelectedPlant(validRestored[0])
+
+      const primaryPlant = plants.find((p) => p.id === validRestored[0])
+      if (primaryPlant) {
+        dispatch(
+          setPlantID({
+            plantId: primaryPlant.id,
+            plantName: primaryPlant.name,
+          }),
+        )
+        dispatch(
+          setPlantObject({ id: primaryPlant.id, name: primaryPlant.name }),
+        )
+      }
+
+      const plantObjects = validRestored
+        .map((id) => plants.find((p) => p.id === id))
+        .filter(Boolean)
+        .map((p) => ({ id: p.id, name: p.name }))
+      dispatch(setJmdSelectedPlants(plantObjects))
+    } else {
+      // Default: select first plant only
+      const defP = plants[0]
+      setSelectedPlantsJMD([defP.id])
+      setSelectedPlant(defP.id)
+      dispatch(setPlantID({ plantId: defP.id, plantName: defP.name }))
+      dispatch(setPlantObject({ id: defP.id, name: defP.name }))
+      dispatch(setJmdSelectedPlants([{ id: defP.id, name: defP.name }]))
+    }
+
+    dispatch(setSitePlantChange({ sitePlantChange: true }))
+  }, [IS_CPP_JMD, plants, verticalFromDashboard?.pid, dispatch])
+  //=====================================================
 
   useEffect(() => {
     async function fetchYears() {
@@ -440,6 +507,61 @@ export default function HeaderContent({ keycloak, navigation }) {
       dispatch(setPlantID({ plantId: plantObj.id, plantName: plantObj.name }))
     }
   }
+
+  //=====================================================
+  // CPP-JMD multi-select handler
+  const handleJmdPlantChange = (e) => {
+    const newValues = e.target.value // array of IDs (MUI passes all currently-selected values)
+
+    // Handle "All" sentinel
+    if (newValues.includes('__all__')) {
+      const allIds = plants.map((p) => p.id)
+      const isAllSelected = selectedPlantsJMD.length === allIds.length
+
+      const nextIds = isAllSelected
+        ? [plants[0].id] // deselect all → keep first
+        : allIds // select all
+
+      const nextObjs = nextIds
+        .map((id) => plants.find((p) => p.id === id))
+        .filter(Boolean)
+        .map((p) => ({ id: p.id, name: p.name }))
+
+      setSelectedPlantsJMD(nextIds)
+      setSelectedPlant(nextIds[0])
+      dispatch(
+        setPlantID({ plantId: nextObjs[0].id, plantName: nextObjs[0].name }),
+      )
+      dispatch(setPlantObject({ id: nextObjs[0].id, name: nextObjs[0].name }))
+      dispatch(setJmdSelectedPlants(nextObjs))
+      dispatch(setSitePlantChange({ sitePlantChange: true }))
+      return
+    }
+
+    // Normal individual plant toggle
+    if (!newValues.length) return // keep at least one
+
+    setSelectedPlantsJMD(newValues)
+    const primaryId = newValues[0]
+    setSelectedPlant(primaryId)
+
+    const primaryPlant = plants.find((p) => p.id === primaryId)
+    if (primaryPlant) {
+      dispatch(
+        setPlantID({ plantId: primaryPlant.id, plantName: primaryPlant.name }),
+      )
+      dispatch(setPlantObject({ id: primaryPlant.id, name: primaryPlant.name }))
+    }
+
+    const plantObjects = newValues
+      .map((id) => plants.find((p) => p.id === id))
+      .filter(Boolean)
+      .map((p) => ({ id: p.id, name: p.name }))
+
+    dispatch(setJmdSelectedPlants(plantObjects))
+    dispatch(setSitePlantChange({ sitePlantChange: true }))
+  }
+  //=====================================================
 
   const handleVertChange = (e) => {
     const newVId = e.target.value
@@ -612,8 +734,21 @@ export default function HeaderContent({ keycloak, navigation }) {
       }),
     )
 
+    // For CPP-JMD: reset multiselect to only this plant when coming from dashboard
+    if (IS_CPP_JMD) {
+      setSelectedPlantsJMD([plant.id])
+      dispatch(
+        setJmdSelectedPlants([
+          { id: plant.id, name: plant.displayName ?? plant.name },
+        ]),
+      )
+    }
+
+    // Clear dashboard navigation after handling
+    dispatch(setVerticalChangeFromDashboard(null))
+
     // console.log('?? Dispatched plant to Redux')
-  }, [verticalFromDashboard?.pid, plants, dispatch])
+  }, [verticalFromDashboard?.pid, plants, IS_CPP_JMD, dispatch])
   // 4. Navigation Effect (Existing)
   useEffect(() => {
     if (!verticalFromDashboard?.v_id || !verticalFromDashboard?.sid) {
@@ -957,7 +1092,127 @@ export default function HeaderContent({ keycloak, navigation }) {
             <Box sx={dropdownContainerStyle}>
               {headerLoading ? (
                 <DropdownSkeleton />
+              ) : IS_CPP_JMD ? (
+                /* ── CPP-JMD: multi-select ── */
+                <FormControl size='small' variant='outlined'>
+                  <Select
+                    multiple
+                    IconComponent={ArrowDropDownIcon}
+                    value={selectedPlantsJMD}
+                    onChange={handleJmdPlantChange}
+                    disabled={!plants.length}
+                    sx={{ ...selectStyle, minWidth: 180 }}
+                    MenuProps={menuPropsStyle}
+                    renderValue={(selected) => {
+                      const isAll =
+                        plants.length > 0 && selected.length === plants.length
+                      const primaryPlant = plants.find(
+                        (p) => p.id === selected[0],
+                      )
+                      return (
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
+                        >
+                          <Box
+                            component='img'
+                            src={PlantIcon}
+                            className='w16-icon'
+                          />
+                          <Box
+                            component='span'
+                            className='header-dropdown-label'
+                          >
+                            Plant:
+                          </Box>
+                          <Box
+                            component='strong'
+                            className='header-dropdown-value'
+                          >
+                            {isAll
+                              ? 'All'
+                              : selected.length === 1
+                                ? primaryPlant?.name
+                                : `${primaryPlant?.name} +${selected.length - 1}`}
+                          </Box>
+                        </Box>
+                      )
+                    }}
+                  >
+                    {/* Select All item */}
+                    <MenuItem
+                      value='__all__'
+                      sx={{
+                        ...menuItemStyle,
+                        px: 0.5,
+                        borderBottom: '1px solid #DDDEE1',
+                        mb: 0.5,
+                      }}
+                    >
+                      <Checkbox
+                        checked={
+                          plants.length > 0 &&
+                          selectedPlantsJMD.length === plants.length
+                        }
+                        indeterminate={
+                          selectedPlantsJMD.length > 0 &&
+                          selectedPlantsJMD.length < plants.length
+                        }
+                        size='small'
+                        sx={{
+                          p: 0.5,
+                          mr: 0.5,
+                          color: '#6b7786',
+                          '&.Mui-checked': { color: '#3b82f6' },
+                          '&.MuiCheckbox-indeterminate': { color: '#3b82f6' },
+                        }}
+                      />
+                      <ListItemText
+                        primary='All'
+                        primaryTypographyProps={{
+                          fontSize: '14px',
+                          fontWeight: 600,
+                          fontFamily:
+                            "'Honeywell Sans Web', 'Inter', sans-serif",
+                        }}
+                      />
+                    </MenuItem>
+                    {plants.map((p) => (
+                      <MenuItem
+                        key={p.id}
+                        value={p.id}
+                        sx={{ ...menuItemStyle, px: 0.5 }}
+                      >
+                        <Checkbox
+                          checked={selectedPlantsJMD.includes(p.id)}
+                          size='small'
+                          sx={{
+                            p: 0.5,
+                            mr: 0.5,
+                            color: '#6b7786',
+                            '&.Mui-checked': { color: '#3b82f6' },
+                          }}
+                        />
+                        <ListItemText
+                          primary={p.name}
+                          primaryTypographyProps={{
+                            fontSize: '14px',
+                            fontWeight: selectedPlantsJMD.includes(p.id)
+                              ? 600
+                              : 500,
+                            fontFamily:
+                              "'Honeywell Sans Web', 'Inter', sans-serif",
+                          }}
+                        />
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               ) : (
+                /* ── All other sites: single-select (unchanged) ── */
                 <FormControl size='small'>
                   <Select
                     IconComponent={ArrowDropDownIcon}
