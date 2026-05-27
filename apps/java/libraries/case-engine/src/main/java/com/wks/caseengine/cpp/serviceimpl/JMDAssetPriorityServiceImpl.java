@@ -264,8 +264,8 @@ public class JMDAssetPriorityServiceImpl implements JMDAssetPriorityService {
         entity.setUpdatedDate(LocalDateTime.now());
 
         // Map DTO to Entity
-        entity.setAssetFkId(dto.getAssetFkId());
-        entity.setPlantFkId(dto.getPlantFkId());
+        // entity.setAssetFkId(dto.getAssetFkId());
+        // entity.setPlantFkId(dto.getPlantFkId());
 
         entity.setApr(dto.getApr());
         entity.setMay(dto.getMay());
