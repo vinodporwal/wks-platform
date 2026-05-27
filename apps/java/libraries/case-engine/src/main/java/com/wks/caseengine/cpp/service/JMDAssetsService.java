@@ -16,4 +16,12 @@ public interface JMDAssetsService {
             List<UUID> plantIds,
             String financialYear,
             JMDOperationalHoursRequestDTO payload);
+
+    byte[] exportPowerOperationalHours(
+            List<UUID> plantIds,
+            String financialYear);
+
+    byte[] exportSteamOperationalHours(
+            List<UUID> plantIds,
+            String financialYear);
 }
