@@ -64,6 +64,7 @@ export const DataService = {
   getUserBySearch,
   getUserScreen,
   getScreenbyPlant,
+  getPlantScreenMapping,
   getAnnualCostAopReport,
   getProductionVolDataBasis,
   getNormsHistorianBasis,
@@ -515,6 +516,22 @@ async function getScreenbyPlant(keycloak, verticalId, plantId, userId) {
   if (userId) {
     url += `&userId=${userId}`
   }
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getPlantScreenMapping(keycloak, plantId, aopYear) {
+  const url = `${Config.CaseEngineUrl}/task/screen-mapping/plant-screen-mapping?plantId=${plantId}&aopYear=${aopYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

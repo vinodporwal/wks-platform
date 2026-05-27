@@ -25,6 +25,7 @@ import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import Notification from 'components/Utilities/Notification'
 import { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { DataService } from 'services/DataService'
 import i18n from '../../i18n'
@@ -54,6 +55,9 @@ const UserForm = ({ keycloak }) => {
 
   const navigate = useNavigate()
 
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const aopYear = dataGridStore?.year?.selectedYear || ''
+
   // Loading & Snackbar state
   const [loading, setLoading] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -82,8 +86,8 @@ const UserForm = ({ keycloak }) => {
   const [selectedVerticals, setSelectedVerticals] = useState([])
   const [verticalSites, setVerticalSites] = useState({})
 
-  // Screens fetched per vertical (verticalId → [titles])
-  const [screensByVertical, setScreensByVertical] = useState({})
+  // Screens fetched per plant (plantId → [titles])
+  const [screensByPlant, setScreensByPlant] = useState({})
   const [siteOpen, setSiteOpen] = useState({})
   const [plantOpen, setPlantOpen] = useState({})
 
@@ -116,43 +120,58 @@ const UserForm = ({ keycloak }) => {
     }
   }
 
-  const fetchScreensForVerticals = async () => {
-    const newMap = { ...screensByVertical }
-
-    // 1. Fetch screens for any newly selected verticals
-    const fetchPromises = selectedVerticals.map(async (verticalId) => {
-      if (!newMap[verticalId]) {
-        try {
-          const response = await DataService.getUserScreen(keycloak, verticalId)
-          const groups = response.data
-          const screens = extractScreens(groups).map((s) => s.title)
-          newMap[verticalId] = screens
-        } catch (err) {
-          newMap[verticalId] = []
-        }
-      }
-    })
-    // 2. Remove data for any deselected verticals
-    // console.log('fetchPromises', newMap)
-    Object.keys(newMap).forEach((vId) => {
-      if (!selectedVerticals.includes(vId)) {
-        delete newMap[vId]
-      }
-    })
-
-    // 3. Wait for all fetches to complete, then update state
-    await Promise.all(fetchPromises)
-    const testing = await Promise.all(fetchPromises)
-    // console.log('fetchPromises', testing)
-    setScreensByVertical(newMap)
-    setIsLoading(false)
-  }
-
   useEffect(() => {
-    if (selectedVerticals.length) {
-      fetchScreensForVerticals()
+    const fetchAllPlantScreens = async () => {
+      const uniquePlantIds = new Set()
+      Object.values(verticalSites).forEach((siteEntries) => {
+        if (Array.isArray(siteEntries)) {
+          siteEntries.forEach((entry) => {
+            if (entry.plants) {
+              entry.plants.forEach((plantEntry) => {
+                if (plantEntry.plantId && plantEntry.plantId.length > 0) {
+                  plantEntry.plantId.forEach((pid) => {
+                    if (pid) uniquePlantIds.add(pid)
+                  })
+                }
+              })
+            }
+          })
+        }
+      })
+
+      const missingPlantIds = Array.from(uniquePlantIds).filter((pid) => !screensByPlant[pid])
+      if (missingPlantIds.length === 0) return
+
+      try {
+        const fetches = missingPlantIds.map(async (pid) => {
+          try {
+            const response = await DataService.getPlantScreenMapping(keycloak, pid, aopYear)
+            const groups = response?.data || []
+            const screens = extractScreens(groups).map((s) => s.title)
+            return { pid, screens }
+          } catch (err) {
+            console.error('Error fetching screens for plant:', pid, err)
+            return { pid, screens: [] }
+          }
+        })
+
+        const results = await Promise.all(fetches)
+        setScreensByPlant((prev) => {
+          const updated = { ...prev }
+          results.forEach(({ pid, screens }) => {
+            updated[pid] = screens
+          })
+          return updated
+        })
+      } catch (e) {
+        console.error(e)
+      }
     }
-  }, [selectedVerticals, keycloak])
+
+    if (keycloak && aopYear && Object.keys(verticalSites).length > 0) {
+      fetchAllPlantScreens()
+    }
+  }, [verticalSites, keycloak, aopYear])
 
   const getAllScreens = (screens) => {
     const result = []
@@ -438,35 +457,41 @@ const UserForm = ({ keycloak }) => {
     'feed-stock',
   ]
 
-  // Retrieve available screens for a given plant block (per vertical)
+  // Retrieve available screens for a given plant block (per plant)
   const getAvailableScreens = (verticalId, siteIndex, plantIndex) => {
-    const verticalScreens = screensByVertical[verticalId] || screenOptions
-    // console.log('verticalScreens', verticalScreens)
     const verticalData = verticalSites[verticalId]
-    if (!verticalData) return verticalScreens
+    // if (!verticalData) return screenOptions
 
     const siteEntry = verticalData[siteIndex]
-    if (!siteEntry || !siteEntry.plants) return verticalScreens
+    // if (!siteEntry || !siteEntry.plants) return screenOptions
 
     const currentPlantBlock = siteEntry.plants[plantIndex]
-    if (
-      !currentPlantBlock ||
-      !currentPlantBlock.plantId ||
-      currentPlantBlock.plantId.length === 0
-    )
-      return verticalScreens
+    // if (
+    //   !currentPlantBlock ||
+    //   !currentPlantBlock.plantId ||
+    //   currentPlantBlock.plantId.length === 0
+    // )
+    //   return screenOptions
+
+    const plantId = currentPlantBlock.plantId[0]
+    const plantScreens = plantId ? (screensByPlant[plantId] || []) : []
 
     // Prevent duplicates within the same plant block
     const duplicateScreens = siteEntry.plants
       .filter(
         (_, idx) =>
-          idx !== plantIndex && _.plantId === currentPlantBlock.plantId,
+          idx !== plantIndex &&
+          Array.isArray(_.plantId) &&
+          Array.isArray(currentPlantBlock.plantId) &&
+          _.plantId[0] === currentPlantBlock.plantId[0],
       )
       .reduce((acc, block) => acc.concat(block.screens || []), [])
 
     const currentSelected = currentPlantBlock.screens || []
 
-    return verticalScreens.filter(
+    const availableBase = plantScreens.length > 0 ? plantScreens : currentSelected
+
+    return availableBase.filter(
       (screen) =>
         currentSelected.includes(screen) || !duplicateScreens.includes(screen),
     )
@@ -524,6 +549,14 @@ const UserForm = ({ keycloak }) => {
     }
     setVerticalSites((prev) => {
       const updated = { ...prev }
+      
+      // Delete any verticals that are no longer selected
+      Object.keys(updated).forEach((verticalId) => {
+        if (!newValue.includes(verticalId)) {
+          delete updated[verticalId]
+        }
+      })
+
       newValue.forEach((verticalId) => {
         if (!updated[verticalId]) {
           updated[verticalId] = [
@@ -772,13 +805,12 @@ const UserForm = ({ keycloak }) => {
     })
     if (plantSiteData.length > 0) {
       if (tabIndex === 1) {
-        setScreensByVertical({})
-        fetchScreensForVerticals()
+        setScreensByPlant({})
         getScreensForVerticals()
       } else {
         setSelectedVerticals([plantSiteData[0].id])
         setVerticalSites(getInitialVerticalSites(plantSiteData))
-        setScreensByVertical({})
+        setScreensByPlant({})
       }
     }
   }
