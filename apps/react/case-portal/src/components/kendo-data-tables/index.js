@@ -753,14 +753,16 @@ const KendoDataTables = ({
             lowerSiteName === 'hmd' &&
             field === 'discription'
           ) {
-            const desc = (value || '').trim()
-            if (
-              desc === 'Furnace decoking - (EBA-6401A)' ||
-              desc === 'Furnace decoking - (EBA-6401B)'
-            ) {
-              updated.rate = 32.5
-            } else if (desc === 'Furnace decoking - (EBA-6401C)') {
-              updated.rate = 22.75
+            const desc = (value || '').toLowerCase().replace(/\s+/g, ' ').trim()
+
+            const rateMap = {
+              'furnace decoking - (eba-6401a)': 32.5,
+              'furnace decoking - (eba-6401b)': 32.5,
+              'furnace decoking - (eba-6401c)': 22.75,
+            }
+
+            if (rateMap[desc] !== undefined) {
+              updated.rate = rateMap[desc]
             }
           }
 
