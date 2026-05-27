@@ -245,6 +245,7 @@ const KendoDataTables = ({
   handleRelease = () => {},
   customItemChange = null,
   isEditable = false,
+  paginationOptions,
 }) => {
   const _export = useRef(null)
 
@@ -2693,10 +2694,10 @@ const KendoDataTables = ({
                 pageable={
                   permissions?.makePagable === false
                     ? false
-                    : rows?.length > 100
+                    : rows?.length > (paginationOptions && paginationOptions.length > 0 ? paginationOptions[0] : 100)
                       ? {
                           buttonCount: 4,
-                          pageSizes: [10, 50, 100],
+                          pageSizes: paginationOptions || [10, 50, 100],
                         }
                       : false
                 }
