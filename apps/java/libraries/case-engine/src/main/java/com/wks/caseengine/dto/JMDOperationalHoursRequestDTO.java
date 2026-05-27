@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class JMDOperationalHoursRequestDTO {
     
-    private List<CPPAssetOperationalHoursResponseDto> PowerOperationalHours;
-    private List<CPPAssetOperationalHoursResponseDto> SteamOperationalHours;
+    private List<CPPAssetOperationalHoursResponseDto> powerResponse;
+    private List<CPPAssetOperationalHoursResponseDto> steamResponse;
 }

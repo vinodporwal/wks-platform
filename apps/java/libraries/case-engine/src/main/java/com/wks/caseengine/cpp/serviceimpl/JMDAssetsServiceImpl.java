@@ -8,6 +8,8 @@ import com.wks.caseengine.cpp.entity.CPPSteamAssetsOperationalHours;
 import com.wks.caseengine.cpp.repository.CPPAssetOperationalHoursRepository;
 import com.wks.caseengine.cpp.service.JMDAssetsService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,8 @@ import java.util.stream.Collectors;
 @Service
 public class JMDAssetsServiceImpl implements JMDAssetsService {
 
+    private static final Logger logger = LoggerFactory.getLogger(JMDAssetsServiceImpl.class);
+
     @Autowired
     private CPPAssetOperationalHoursRepository repository;
 
@@ -33,11 +37,14 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             List<UUID> plantIds,
             String financialYear) {
 
+        logger.info("[GET Service] Fetching operational hours for plantIds: {}, financialYear: {}", plantIds, financialYear);
         AOPMessageVM aopMessageVM = new AOPMessageVM();
         
         try {
+            logger.debug("[GET Service] Executing repository query...");
             List<CPPAssetOperationalHoursProjection> projections =
                     repository.findOperationalHoursByPlantsAndYear(plantIds, financialYear);
+            logger.info("[GET Service] Query returned {} records", projections.size());
 
             List<CPPAssetOperationalHoursResponseDto> allResults = projections.stream()
                     .map(this::mapToDto)
@@ -47,10 +54,12 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             List<CPPAssetOperationalHoursResponseDto> powerOperationalHours = allResults.stream()
                     .filter(dto -> "Power".equals(dto.getAssetCategory()))
                     .collect(Collectors.toList());
+            logger.info("[GET Service] Filtered {} power assets", powerOperationalHours.size());
 
             List<CPPAssetOperationalHoursResponseDto> steamOperationalHours = allResults.stream()
                     .filter(dto -> "Steam".equals(dto.getAssetCategory()))
                     .collect(Collectors.toList());
+            logger.info("[GET Service] Filtered {} steam assets", steamOperationalHours.size());
 
             Map<String, Object> data = new HashMap<>();
             data.put("PowerOperationalHours", powerOperationalHours);
@@ -59,7 +68,9 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             aopMessageVM.setCode(200);
             aopMessageVM.setMessage("Data fetched successfully");
             aopMessageVM.setData(data);
+            logger.info("[GET Service] Successfully fetched operational hours data");
         } catch (Exception e) {
+            logger.error("[GET Service] Error fetching operational hours: {}", e.getMessage(), e);
             aopMessageVM.setCode(500);
             aopMessageVM.setMessage("Failed to fetch data: " + e.getMessage());
             aopMessageVM.setData(null);
@@ -116,6 +127,7 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             String financialYear,
             JMDOperationalHoursRequestDTO payload) {
 
+        logger.info("[POST Service] Saving operational hours for plantIds: {}, financialYear: {}", plantIds, financialYear);
         AOPMessageVM aopMessageVM = new AOPMessageVM();
 
         try {
@@ -123,19 +135,29 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             int steamSaved = 0;
 
             // Process Power Operational Hours
-            if (payload.getPowerOperationalHours() != null) {
-                for (CPPAssetOperationalHoursResponseDto dto : payload.getPowerOperationalHours()) {
+            if (payload.getPowerResponse() != null) {
+                logger.info("[POST Service] Processing {} power operational hours records", payload.getPowerResponse().size());
+                for (CPPAssetOperationalHoursResponseDto dto : payload.getPowerResponse()) {
+                    logger.debug("[POST Service] Saving power asset - ID: {}, AssetFkId: {}", dto.getId(), dto.getAssetFkId());
                     savePowerOperationalHours(dto, financialYear);
                     powerSaved++;
                 }
+                logger.info("[POST Service] Successfully saved {} power operational hours", powerSaved);
+            } else {
+                logger.info("[POST Service] No power operational hours to process");
             }
 
             // Process Steam Operational Hours
-            if (payload.getSteamOperationalHours() != null) {
-                for (CPPAssetOperationalHoursResponseDto dto : payload.getSteamOperationalHours()) {
+            if (payload.getSteamResponse() != null) {
+                logger.info("[POST Service] Processing {} steam operational hours records", payload.getSteamResponse().size());
+                for (CPPAssetOperationalHoursResponseDto dto : payload.getSteamResponse()) {
+                    logger.debug("[POST Service] Saving steam asset - ID: {}, AssetFkId: {}", dto.getId(), dto.getAssetFkId());
                     saveSteamOperationalHours(dto, financialYear);
                     steamSaved++;
                 }
+                logger.info("[POST Service] Successfully saved {} steam operational hours", steamSaved);
+            } else {
+                logger.info("[POST Service] No steam operational hours to process");
             }
 
             Map<String, Object> data = new HashMap<>();
@@ -146,8 +168,10 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             aopMessageVM.setCode(200);
             aopMessageVM.setMessage("Operational hours saved successfully");
             aopMessageVM.setData(data);
+            logger.info("[POST Service] Save operation completed - Power: {}, Steam: {}, Total: {}", powerSaved, steamSaved, powerSaved + steamSaved);
 
         } catch (Exception e) {
+            logger.error("[POST Service] Error saving operational hours: {}", e.getMessage(), e);
             aopMessageVM.setCode(500);
             aopMessageVM.setMessage("Failed to save operational hours: " + e.getMessage());
             aopMessageVM.setData(null);
@@ -160,11 +184,13 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         CPPAssetOperationalHours entity;
 
         if (dto.getId() != null) {
+            logger.debug("[POST Service - Power] Updating existing record with ID: {}", dto.getId());
             // Update existing record
             entity = repository.findById(dto.getId())
                     .orElse(new CPPAssetOperationalHours());
             entity.setModifiedDate(LocalDateTime.now());
         } else {
+            logger.debug("[POST Service - Power] Creating new record for AssetFkId: {}", dto.getAssetFkId());
             // Create new record
             entity = new CPPAssetOperationalHours();
             entity.setId(UUID.randomUUID());
@@ -198,18 +224,21 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         entity.setVerticalFkId(dto.getVerticalFkId());
         entity.setPlantFkId(dto.getPlantFkId());
 
-        repository.save(entity);
+        CPPAssetOperationalHours saved = repository.save(entity);
+        logger.debug("[POST Service - Power] Saved entity with ID: {}", saved.getId());
     }
 
     private void saveSteamOperationalHours(CPPAssetOperationalHoursResponseDto dto, String financialYear) {
         CPPSteamAssetsOperationalHours entity;
 
         if (dto.getId() != null) {
+            logger.debug("[POST Service - Steam] Updating existing record with ID: {}", dto.getId());
             // Update existing record
             entity = steamRepository.findById(dto.getId())
                     .orElse(new CPPSteamAssetsOperationalHours());
             entity.setUpdatedDate(LocalDateTime.now());
         } else {
+            logger.debug("[POST Service - Steam] Creating new record for SteamAssetFkId: {}", dto.getAssetFkId());
             // Create new record
             entity = new CPPSteamAssetsOperationalHours();
             entity.setId(UUID.randomUUID());
@@ -243,6 +272,7 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         entity.setVerticalFkId(dto.getVerticalFkId());
         entity.setPlantFkId(dto.getPlantFkId());
 
-        steamRepository.save(entity);
+        CPPSteamAssetsOperationalHours saved = steamRepository.save(entity);
+        logger.debug("[POST Service - Steam] Saved entity with ID: {}", saved.getId());
     }
 }
