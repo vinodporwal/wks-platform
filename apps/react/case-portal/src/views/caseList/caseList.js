@@ -668,7 +668,7 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
               ? JSON.parse(containerValue)
               : {}
 
-            return parsedContainer.caseAssignedTo || parsedContainer.caseAssignedTo || ''
+            return parsedContainer.caseAssignedTo.label || parsedContainer.caseAssignedTo.email[0] || ''
           } catch (error) {
             console.error('Error parsing CaseAssignedTo:', error)
             return ''
