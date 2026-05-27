@@ -1219,6 +1219,7 @@ const ProductionvolumeData = ({
           ? false
           : true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Max Achieved Capacity`,
+      makePagable: true,
     },
     isOldYear,
   )
@@ -1360,6 +1361,7 @@ const ProductionvolumeData = ({
       showCalculate: VERTICAL_NAME === 'aromatics' && SITE_NAME === 'sez',
       showCalculateVisibility:
         VERTICAL_NAME === 'aromatics' && SITE_NAME === 'sez',
+      makePagable: true,
     },
     isOldYear,
   )
@@ -1424,6 +1426,7 @@ const ProductionvolumeData = ({
             ? 'Steady State Operating Capacity'
             : 'Proposed Operating Capacity',
       showNoteWhileSaving: IS_PP_SEZ ? true : false,
+      makePagable: true,
     },
     isOldYear,
   )
@@ -1447,6 +1450,7 @@ const ProductionvolumeData = ({
           : !IS_PE_PP && !IS_PET && !IS_PVC_VMD
             ? 'Percentage Summary'
             : '% Summary of Proposed Operating Capacity',
+      makePagable: true,
     },
     isOldYear,
   )
@@ -1667,7 +1671,7 @@ const ProductionvolumeData = ({
           setRows={setRowsDesignCapacity}
           columns={colDefs_design_capacity}
           rows={rowsDesignCapacity}
-          paginationOptions={[100, 200, 300]}
+          paginationOptions={[50, 100, 200, 300]}
           saveChanges={saveChangesDesignCapacity}
           snackbarData={snackbarData}
           snackbarOpen={snackbarOpen}
@@ -1707,6 +1711,7 @@ const ProductionvolumeData = ({
           setRows={setRowsMaxCapacity}
           columns={max_achieved_capacity}
           rows={rowsMaxCapacity}
+          paginationOptions={[50, 100, 200, 300]}
           fetchData={fetchMaxCapacityData}
           permissions={adjustedPermissionsGrid1}
           selectedUnit={unitDesignCapacity}
@@ -1733,7 +1738,7 @@ const ProductionvolumeData = ({
           setRows={setRows}
           columns={colDefs_current_operating_capacity}
           rows={rows1}
-          paginationOptions={[100, 200, 300]}
+          paginationOptions={[50, 100, 200, 300]}
           saveChanges={saveChanges}
           snackbarData={snackbarData}
           snackbarOpen={snackbarOpen}
@@ -1777,6 +1782,7 @@ const ProductionvolumeData = ({
               setRows={setRowsPercentageSummary}
               columns={colDefs_percentage_summary}
               rows={rowsPercentageSummary}
+              paginationOptions={[50, 100, 200, 300]}
               title='Production target Reference'
               fetchData={fetchData}
               permissions={adjustedPermissionsLast}
