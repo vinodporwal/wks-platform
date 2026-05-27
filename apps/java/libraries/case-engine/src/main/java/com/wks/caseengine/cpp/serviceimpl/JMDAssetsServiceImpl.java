@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -364,6 +365,36 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             List<CPPAssetOperationalHoursResponseDto> powerData = 
                 (List<CPPAssetOperationalHoursResponseDto>) data.get("PowerOperationalHours");
             
+            logger.info("[Export Power] Received {} power assets from GET service", powerData != null ? powerData.size() : 0);
+            
+            // Log all asset names for debugging
+            if (powerData != null && !powerData.isEmpty()) {
+                logger.debug("[Export Power] Asset list before sorting:");
+                for (int i = 0; i < powerData.size(); i++) {
+                    CPPAssetOperationalHoursResponseDto asset = powerData.get(i);
+                    logger.debug("[Export Power]   [{}] Plant: {}, AssetType: {}, AssetName: {}, ID: {}", 
+                        i + 1, asset.getPlantName(), asset.getAssetType(), asset.getAssetName(), asset.getId());
+                }
+            }
+            
+            // Sort by plantName first, then by assetType
+            if (powerData != null && !powerData.isEmpty()) {
+                int beforeSort = powerData.size();
+                powerData.sort(Comparator
+                    .comparing(CPPAssetOperationalHoursResponseDto::getPlantName, 
+                        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
+                    .thenComparing(CPPAssetOperationalHoursResponseDto::getAssetType, 
+                        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)));
+                int afterSort = powerData.size();
+                logger.info("[Export Power] Sorted {} power assets by plantName and assetType (before: {}, after: {})", 
+                    afterSort, beforeSort, afterSort);
+                
+                if (beforeSort != afterSort) {
+                    logger.error("[Export Power] WARNING: Asset count changed during sorting! Before: {}, After: {}", 
+                        beforeSort, afterSort);
+                }
+            }
+            
             logger.info("[Export Power] Generating Excel for {} power assets", powerData != null ? powerData.size() : 0);
             
             return generateExcel(powerData, "Power Operational Hours", financialYear);
@@ -388,6 +419,16 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             List<CPPAssetOperationalHoursResponseDto> steamData = 
                 (List<CPPAssetOperationalHoursResponseDto>) data.get("SteamOperationalHours");
             
+            // Sort by plantName first, then by assetType
+            if (steamData != null && !steamData.isEmpty()) {
+                steamData.sort(Comparator
+                    .comparing(CPPAssetOperationalHoursResponseDto::getPlantName, 
+                        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
+                    .thenComparing(CPPAssetOperationalHoursResponseDto::getAssetType, 
+                        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)));
+                logger.debug("[Export Steam] Sorted {} steam assets by plantName and assetType", steamData.size());
+            }
+            
             logger.info("[Export Steam] Generating Excel for {} steam assets", steamData != null ? steamData.size() : 0);
             
             return generateExcel(steamData, "Steam Operational Hours", financialYear);
@@ -399,7 +440,16 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
     }
 
     private byte[] generateExcel(List<CPPAssetOperationalHoursResponseDto> dataList, String sheetName, String financialYear) throws Exception {
-        logger.debug("[Excel Generation] Creating workbook for sheet: {}", sheetName);
+        logger.info("[Excel Generation] Creating workbook for sheet: {} with {} records", sheetName, dataList != null ? dataList.size() : 0);
+        
+        if (dataList != null && !dataList.isEmpty()) {
+            logger.debug("[Excel Generation] Assets to be written to Excel:");
+            for (int i = 0; i < dataList.size(); i++) {
+                CPPAssetOperationalHoursResponseDto asset = dataList.get(i);
+                logger.debug("[Excel Generation]   [{}] Plant: {}, AssetType: {}, AssetName: {}", 
+                    i + 1, asset.getPlantName(), asset.getAssetType(), asset.getAssetName());
+            }
+        }
         
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet(sheetName);
@@ -460,9 +510,12 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         int totalColumns = col;
         
         // Data rows
+        int rowCount = 0;
         for (CPPAssetOperationalHoursResponseDto dto : dataList) {
+            rowCount++;
             Row row = sheet.createRow(currentRow++);
             col = 0;
+            logger.debug("[Excel Generation] Writing row {} for asset: {}", rowCount, dto.getAssetName());
 
             createCell(row, col++, dto.getAssetName(), dataStyle);
             createCell(row, col++, dto.getAssetType(), dataStyle);
@@ -510,7 +563,14 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         workbook.write(outputStream);
         workbook.close();
         
-        logger.info("[Excel Generation] Successfully generated Excel with {} rows", dataList.size());
+        logger.info("[Excel Generation] Successfully generated Excel with {} data rows (expected: {}, actual rows written: {})", 
+            dataList.size(), dataList.size(), rowCount);
+        
+        if (dataList.size() != rowCount) {
+            logger.error("[Excel Generation] ERROR: Mismatch between expected rows ({}) and actual rows written ({})", 
+                dataList.size(), rowCount);
+        }
+        
         return outputStream.toByteArray();
     }
 
