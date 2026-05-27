@@ -448,6 +448,7 @@ const SteadyStateConsumptionCoker = () => {
     titleName: 'Steady State Consumption (Norm/Quantity)',
     showDropdown: false,
     remarksEditable: true,
+    dropdownCell: true,
   }
 
   return (
