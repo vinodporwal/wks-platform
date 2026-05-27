@@ -105,6 +105,7 @@ const NormalOpNormsScreenCracker = () => {
   const lowerSiteName = (siteObject?.name || '').toLowerCase()
   const lowerPlantName = (plantObject?.name || '').toLowerCase()
   const IS_CRACKER_C2 = lowerVertName === 'cracker' && lowerSiteName === 'c2'
+  const IS_CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
   const dispatch = useDispatch()
   const keycloak = useSession()
 
@@ -333,7 +334,7 @@ const NormalOpNormsScreenCracker = () => {
     ],
     [headerMap, valueFormat],
   )
-  const colDefsFinalNorms = IS_CRACKER_C2
+  const colDefsFinalNorms = (IS_CRACKER_C2 || IS_CRACKER_HMD)
     ? colDefsFinalNormsC2
     : colDefsFinalNormsDefault
 

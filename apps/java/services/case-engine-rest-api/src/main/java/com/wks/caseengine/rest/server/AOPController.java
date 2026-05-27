@@ -40,6 +40,11 @@ public class AOPController {
 	public AOPMessageVM getMonthlyProduction(@RequestParam String plantId,@RequestParam String year,@RequestParam(required=false) String type,@RequestParam(required=false) String lineId){
 		 return  aopService.getMonthlyProduction(plantId,year,type,lineId);
 	}
+
+	@GetMapping(value="/monthly-production-combined")
+	public AOPMessageVM getMonthlyProductionCombined(@RequestParam String plantId,@RequestParam String year){
+		 return  aopService.getMonthlyProductionCombined(plantId,year);
+	}
 	
 	@GetMapping(value = "/monthly-production-export")
 	public ResponseEntity<byte[]> exportAOPData(@RequestParam String plantId,@RequestParam String year,@RequestParam(required=false) String type) {

@@ -10,10 +10,6 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -21,18 +17,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import javax.sql.DataSource;
-
-import com.wks.caseengine.entity.AopCalculation;
-import com.wks.caseengine.entity.BusinessDemand;
-import com.wks.caseengine.entity.NormAttributeTransactions;
-import com.wks.caseengine.entity.NormParameterType;
-import com.wks.caseengine.entity.NormParameters;
-import com.wks.caseengine.entity.Plants;
-import com.wks.caseengine.entity.ScreenMapping;
-import com.wks.caseengine.entity.Sites;
-import com.wks.caseengine.entity.Verticals;
-import com.wks.caseengine.exception.RestInvalidArgumentException;
-import com.wks.caseengine.message.vm.AOPMessageVM;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -51,6 +35,17 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.BusinessDemandDataDTO;
 import com.wks.caseengine.dto.BusinessDemandMonthlyDTO;
+import com.wks.caseengine.entity.AopCalculation;
+import com.wks.caseengine.entity.BusinessDemand;
+import com.wks.caseengine.entity.NormAttributeTransactions;
+import com.wks.caseengine.entity.NormParameterType;
+import com.wks.caseengine.entity.NormParameters;
+import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.ScreenMapping;
+import com.wks.caseengine.entity.Sites;
+import com.wks.caseengine.entity.Verticals;
+import com.wks.caseengine.exception.RestInvalidArgumentException;
+import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.AopCalculationRepository;
 import com.wks.caseengine.repository.BusinessDemandDataRepository;
 import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
@@ -61,6 +56,10 @@ import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.Utility;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 
 @Service
 public class BusinessDemandDataServiceImpl implements BusinessDemandDataService {
@@ -166,6 +165,71 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 		}
 	}
 
+
+	@Override
+	public List<BusinessDemandDataDTO> getBusinessDemandLineData(String year, String plantId, String lineId) {
+		try {
+		
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		
+			List<Object[]> obj=null;
+				String procedureName= vertical.getName()+"_"+site.getName()+"_GetBusinessDemand";
+				obj=findByYearPlantIdAndLineId(year,UUID.fromString(plantId), UUID.fromString(lineId), procedureName);
+		 
+			List<BusinessDemandDataDTO> businessDemandDataDTOList = new ArrayList<>();
+
+			for (Object[] row : obj) { 
+
+					BusinessDemandDataDTO businessDemandDataDTO = new BusinessDemandDataDTO();
+
+			businessDemandDataDTO.setId(row[0] != null ? row[0].toString() : null);
+			businessDemandDataDTO.setPlantId(row[2] != null ? row[2].toString().toUpperCase() : null);
+			businessDemandDataDTO.setNormParameterId(row[4] != null ? row[4].toString() : null);
+			businessDemandDataDTO.setDisplayName(row[6] != null ? row[6].toString() : null);
+			businessDemandDataDTO.setApril(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
+			businessDemandDataDTO.setMay(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
+			businessDemandDataDTO.setJune(row[9] != null ? Double.parseDouble(row[9].toString()) : 0.0);
+			businessDemandDataDTO.setJuly(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
+			businessDemandDataDTO.setAug(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
+			businessDemandDataDTO.setSep(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
+			businessDemandDataDTO.setOct(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0);
+			businessDemandDataDTO.setNov(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
+			businessDemandDataDTO.setDec(row[15] != null ? Double.parseDouble(row[15].toString()) : 0.0);
+			
+			businessDemandDataDTO.setJan(row[16] != null ? Double.parseDouble(row[16].toString()) : 0.0);
+			businessDemandDataDTO.setFeb(row[17] != null ? Double.parseDouble(row[17].toString()) : 0.0);
+			businessDemandDataDTO.setMarch(row[18] != null ? Double.parseDouble(row[18].toString()) : 0.0);
+			
+			businessDemandDataDTO.setYear(row[19] != null ? row[19].toString() : null);
+			businessDemandDataDTO.setRemark(row[20] != null ? row[20].toString() : null);
+			
+			businessDemandDataDTO.setAvgTph(row[24] != null ? Double.parseDouble(row[24].toString()) : null);
+			businessDemandDataDTO.setNormParameterTypeId(row[25] != null ? row[25].toString() : null);
+			businessDemandDataDTO.setNormParameterTypeName(row[26] != null ? row[26].toString() : null);
+			businessDemandDataDTO.setNormParameterTypeDisplayName(row[27] != null ? row[27].toString() : null);
+			businessDemandDataDTO.setDisplayOrder(row[29] != null ? Integer.parseInt(row[29].toString()) : null);
+			
+			
+			
+			businessDemandDataDTO.setIsEditable(row[31] != null ? Boolean.valueOf(row[31].toString()) : null);
+			businessDemandDataDTO.setIsVisible(row[32] != null ? Boolean.valueOf(row[32].toString()) : null);
+			businessDemandDataDTO.setUOM(row[33] != null ? row[33].toString() : null);
+
+			businessDemandDataDTO.setLineId(row[35] != null ? row[35].toString() : null);
+			businessDemandDataDTOList.add(businessDemandDataDTO);
+			}
+
+			return businessDemandDataDTOList;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
 	
 	public String getCrackerModeDisplayName(String plantId) {
 		try {
@@ -235,6 +299,25 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	public List<Object[]> findByYearPlantIdAndLineId(String aopYear, UUID plantId, UUID lineId, String procedureName) {
+		try {
+
+			String sql = "EXEC " + procedureName
+					+ " @plantId = :plantId, @aopYear = :aopYear, @lineId = :lineId";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+			query.setParameter("lineId", lineId);
 
 			return query.getResultList();
 		} catch (IllegalArgumentException e) {
@@ -557,6 +640,141 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 		return null;
 
 	}
+
+   @Override
+	public byte[] exportBusinessDemandLine(String year, String plantId, String lineId, boolean isAfterSave, List<BusinessDemandDataDTO> dtoList) {
+		
+
+
+		try {
+			
+			List<Boolean> isEditable = new ArrayList<>();
+
+			if (!isAfterSave) {
+				 dtoList = getBusinessDemandLineData(year,plantId,lineId);
+			}
+
+			Workbook workbook = new XSSFWorkbook();
+
+			Sheet sheet = workbook.createSheet("Sheet1");
+			int currentRow = 0;
+			// List<List<Object>> rows = new ArrayList<>();
+
+			List<List<Object>> rows = new ArrayList<>();
+			
+			// Data rows
+			for (BusinessDemandDataDTO dto : dtoList) {
+			   
+				
+					List<Object> list = new ArrayList<>();
+					
+					list.add(dto.getDisplayName());
+					list.add(dto.getUOM());
+					list.add(dto.getApril());
+					list.add(dto.getMay());
+					list.add(dto.getJune());
+					list.add(dto.getJuly());
+					list.add(dto.getAug());
+					list.add(dto.getSep());
+					list.add(dto.getOct());
+					list.add(dto.getNov());
+					list.add(dto.getDec());
+					list.add(dto.getJan());
+					list.add(dto.getFeb());
+					list.add(dto.getMarch());
+					list.add(dto.getRemark());
+					list.add(dto.getId());  //15
+					list.add(dto.getNormParameterId());
+					list.add(dto.getLineId());
+					
+					
+					if (isAfterSave) {
+						list.add(dto.getSaveStatus());
+						list.add(dto.getErrDescription());
+					}
+					rows.add(list);
+				//}
+			}
+
+			List<String> innerHeaders = new ArrayList<>();
+			
+			innerHeaders.add("Particulars");
+			innerHeaders.add("UOM");
+			innerHeaders.add(getMonth( year, 4));
+			innerHeaders.add(getMonth( year, 5));
+			innerHeaders.add(getMonth( year, 6));
+			innerHeaders.add(getMonth( year, 7));
+			innerHeaders.add(getMonth( year, 8));
+			innerHeaders.add(getMonth( year, 9));
+			innerHeaders.add(getMonth( year, 10));
+			innerHeaders.add(getMonth( year, 11));
+			innerHeaders.add(getMonth( year, 12));
+			innerHeaders.add(getMonth( year, 1));
+			innerHeaders.add(getMonth( year, 2));
+			innerHeaders.add(getMonth( year, 3));
+			innerHeaders.add("Remark");
+			innerHeaders.add("Id");
+			innerHeaders.add("NormParameterId");
+			innerHeaders.add("LineId");
+			// innerHeaders.add("NormParamterId");
+			 //innerHeaders.add("IsEditable");
+			if (isAfterSave) {
+				innerHeaders.add("Status");
+				innerHeaders.add("Error Description");
+			}
+			List<List<String>> headers = new ArrayList<>();
+			headers.add(innerHeaders);
+
+			for (List<String> headerRowData : headers) {
+				Row headerRow = sheet.createRow(currentRow++);
+				for (int col = 0; col < headerRowData.size(); col++) {
+					Cell cell = headerRow.createCell(col);
+					cell.setCellValue(headerRowData.get(col));
+					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+				}
+			}
+			for (List<Object> rowData : rows) {
+				
+				 
+				Row row = sheet.createRow(currentRow++);
+				for (int col = 0; col < rowData.size(); col++) {
+					Cell cell = row.createCell(col);
+					Object value = rowData.get(col);
+
+					if (value instanceof Number) {
+						cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
+					} else if (value instanceof Boolean) {
+						cell.setCellValue((Boolean) value);
+					} else if (value != null) {
+						cell.setCellValue(value.toString());
+					} else {
+						cell.setCellValue("");
+					}
+				}
+			}
+			sheet.setColumnHidden(15, true);
+			sheet.setColumnHidden(16, true);
+			sheet.setColumnHidden(17, true); // LineId
+
+			//sheet.setColumnHidden(18, true);
+			try {// (FileOutputStream fileOut = new FileOutputStream("output/generated.xlsx")) {
+
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+				workbook.write(outputStream);
+				workbook.close();
+				return outputStream.toByteArray();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+
+	}
+
+
 		
 	public String getMonth(String year, int month) {
 	    
@@ -630,6 +848,43 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 		}
 		return null;
 	}
+
+
+@Override
+public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFile file) {
+	// TODO Auto-generated method stub
+
+	Plants plant = plantsRepository.findById(plantFKId).get();
+	Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+	Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+	
+	try {
+		List<BusinessDemandDataDTO> data = readBusinessDemand(file.getInputStream(), plantFKId, year);
+		List<BusinessDemandDataDTO> failedRecords = saveBusinessDemandLineData(data);
+
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		if (failedRecords != null && failedRecords.size() > 0) {
+			byte[] fileByteArray = exportBusinessDemand(year, plantFKId.toString(), true, failedRecords);
+			String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+			aopMessageVM.setData(base64File);
+			aopMessageVM.setCode(400);
+			aopMessageVM.setMessage("Partial data has been saved");
+		} else {
+			// aopMessageVM.setData();
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("All data has been saved");
+		}
+
+		return aopMessageVM;
+		// return ResponseEntity.ok(data);
+	} catch (Exception e) {
+		e.printStackTrace();
+		// return ResponseEntity.internalServerError().build();
+	}
+	return null;
+}
+
 	
 	public List<BusinessDemandDataDTO> readBusinessDemand(InputStream inputStream, UUID plantFKId, String year) {
 	    List<BusinessDemandDataDTO> configList = new ArrayList<>();
@@ -639,6 +894,8 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 	    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+
+		boolean pvcDmd = vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("DMD");
 	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 	        Sheet sheet = workbook.getSheetAt(0);
 	        Iterator<Row> rowIterator = sheet.iterator();
@@ -682,8 +939,11 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 	                dto.setRemark(getStringCellValue(row.getCell(14), dto));
 	               
 	                dto.setId(getStringCellValue(row.getCell(15), dto));
-	                dto.setId(getStringCellValue(row.getCell(15), dto));
 
+					if(pvcDmd) { 
+						dto.setLineId(getStringCellValue(row.getCell(17), dto));
+					}
+	               
 	             // Check if id is null AND all month values are zero or null
 	             boolean allMonthsZero = (dto.getApril() == null || dto.getApril() == 0.0)
 	                     && (dto.getMay() == null || dto.getMay() == 0.0)
@@ -959,6 +1219,112 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 					}
 				}
 			}
+			List<ScreenMapping> screenMappingList= screenMappingRepository.findByDependentScreen("business-demand");
+			for(ScreenMapping screenMapping:screenMappingList) {
+				AopCalculation aopCalculation=new AopCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(plantId);
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
+			return failedList;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to save data", ex);
+		}
+
+	}
+
+
+	@Override
+	public List<BusinessDemandDataDTO> saveBusinessDemandLineData(List<BusinessDemandDataDTO> businessDemandDataDTOList) {
+		String year=null;
+		UUID plantId=null;
+		List<BusinessDemandDataDTO> failedList = new ArrayList<>();
+		try {
+			for (BusinessDemandDataDTO businessDemandDataDTO : businessDemandDataDTOList) {
+				plantId=UUID.fromString(businessDemandDataDTO.getPlantId());
+				if (businessDemandDataDTO.getSaveStatus() != null
+						&& businessDemandDataDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(businessDemandDataDTO);
+					continue;
+				}
+
+
+
+				BusinessDemand businessDemand = new BusinessDemand();
+				businessDemand.setApril(businessDemandDataDTO.getApril());
+				businessDemand.setAug(businessDemandDataDTO.getAug());
+				businessDemand.setAvgTph(businessDemandDataDTO.getAvgTph());
+				businessDemand.setDec(businessDemandDataDTO.getDec());
+				businessDemand.setFeb(businessDemandDataDTO.getFeb());
+				businessDemand.setLineId(UUID.fromString(businessDemandDataDTO.getLineId()));
+
+				if (businessDemandDataDTO.getId() == null || businessDemandDataDTO.getId().contains("#")) {
+					businessDemand.setId(null);
+					businessDemand.setCreatedOn(new Date());
+				} else {
+					businessDemand.setId(UUID.fromString(businessDemandDataDTO.getId()));
+					businessDemand.setModifiedOn(new Date());
+
+					//remark validation
+				BusinessDemand existingBusinessDemand = businessDemandDataRepository.findById(businessDemand.getId()).get();
+				   if(existingBusinessDemand == null) { 
+					throw new RuntimeException("Business demand data not found");
+				   }
+    
+				 Double  existingAprilValue = existingBusinessDemand.getApril() != null ? existingBusinessDemand.getApril() : 0.0;
+				 String existingRemark = existingBusinessDemand.getRemark();
+
+				 Double newAprilValue = businessDemandDataDTO.getApril();
+				 String newRemark = businessDemandDataDTO.getRemark();
+
+				     if(!Objects.equals(existingAprilValue, newAprilValue) && Objects.equals(existingRemark, newRemark)) {  
+  
+						 businessDemandDataDTO.setSaveStatus("Failed");
+						 businessDemandDataDTO.setErrDescription("Please update remark");
+						 failedList.add(businessDemandDataDTO);
+						 continue;
+					 }
+				}
+
+				businessDemand.setJan(businessDemandDataDTO.getJan());
+				businessDemand.setJuly(businessDemandDataDTO.getJuly());
+				businessDemand.setJune(businessDemandDataDTO.getJune());
+				businessDemand.setMarch(businessDemandDataDTO.getMarch());
+				businessDemand.setMay(businessDemandDataDTO.getMay());
+				businessDemand.setUpdatedBy(Utility.getUserName());
+				if (businessDemandDataDTO.getNormParameterId() != null
+						&& !businessDemandDataDTO.getNormParameterId().isEmpty()) {
+					businessDemand.setNormParameterId(UUID.fromString(businessDemandDataDTO.getNormParameterId()));
+				}
+
+				businessDemand.setNov(businessDemandDataDTO.getNov());
+				businessDemand.setOct(businessDemandDataDTO.getOct());
+				
+				if (businessDemandDataDTO.getPlantId() != null && !businessDemandDataDTO.getPlantId().isEmpty()) {
+					businessDemand.setPlantId(UUID.fromString(businessDemandDataDTO.getPlantId()));
+					businessDemand.setRemark(businessDemandDataDTO.getRemark());
+					businessDemand.setSep(businessDemandDataDTO.getSep());
+					businessDemand.setYear(businessDemandDataDTO.getYear());
+					year=businessDemandDataDTO.getYear();
+					
+					if (businessDemandDataDTO.getSiteFKId() != null) {
+						businessDemand.setSiteFKId(UUID.fromString(businessDemandDataDTO.getSiteFKId()));
+					}
+					if (businessDemandDataDTO.getVerticalFKId() != null) {
+						businessDemand.setVerticalFKId(UUID.fromString(businessDemandDataDTO.getVerticalFKId()));
+					}
+					
+					businessDemandDataRepository.save(businessDemand);
+
+				}
+			} 
+			
+			
+		
 			List<ScreenMapping> screenMappingList= screenMappingRepository.findByDependentScreen("business-demand");
 			for(ScreenMapping screenMapping:screenMappingList) {
 				AopCalculation aopCalculation=new AopCalculation();

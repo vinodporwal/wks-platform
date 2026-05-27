@@ -112,6 +112,7 @@ public class ExcelServiceImpl implements ExcelService {
                             columnCount = headers.size();
                         }
                         List<List<Object>> rows = new ArrayList<>();
+                        List<List<Object>> titles = new ArrayList<>();
                         if (sheetName.equalsIgnoreCase("AnnualAOPCost")) {
                             if (tableId.equalsIgnoreCase("ProductionData")) {
                                 // title = "Production Data";
@@ -166,7 +167,7 @@ public class ExcelServiceImpl implements ExcelService {
                             }
                         }else if (sheetName.equalsIgnoreCase("ShutdownBreakupForLast4Years")) {
                             if (tableId.equalsIgnoreCase("ShutdownBreakupForLast4Years")) {
-                                // title = "Plant Production Summary (T-16)";
+                                // title = "Plant Production Summary (T-16)";d
                                 Map<String, Object> map = excelDataService.getShutdownSummaryLastFourYear(plantId, year,
                                         headers);
 
@@ -206,6 +207,21 @@ public class ExcelServiceImpl implements ExcelService {
                                 
                             
                             
+                        }
+                         else if (sheetName.equalsIgnoreCase("NormsEntrySheet")) {
+                            
+                            if (tableId.contains("gradewise")) {
+
+
+                               Map<String, Object> map = excelDataService.getGradewiseConsumptionNorms(dataInput, plantId, year,
+                                        headers);
+                                        rows = (List<List<Object>>) map.get("rows");
+                                        headersTitles = (List<List<String>>) map.get("titles");
+
+                            }else{
+                                rows = excelDataService.getSpecificConsumptionNormsReport(dataInput, plantId, year,
+                                        headers);
+                            }
                         }
                         
                         else if (sheetName.equalsIgnoreCase("MonthwiseRawData")) {

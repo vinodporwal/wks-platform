@@ -1904,6 +1904,8 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			boolean crackerC2 = vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("C2");
 			Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
 					.findByExcelIdAndVerticalFkIdAndSiteFkId("spyroOutput", plant.getVerticalFKId(),plant.getSiteFkId());
 
@@ -1978,7 +1980,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 							}
 						} else {
 							AOPMessageVM vm = new AOPMessageVM();
-							if(site.getName().equalsIgnoreCase("HMD"))  {  
+							if(site.getName().equalsIgnoreCase("HMD") || crackerC2)  {  
 								vm = getSpyroOutputData(year, plantId, dataInput, "output");
 							}
 							else {

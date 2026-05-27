@@ -2,6 +2,7 @@ package com.wks.caseengine.service;
 
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -54,6 +55,8 @@ public class ExcelDataServiceImpl implements ExcelDataService {
 
     @Autowired
     private PlantShutdownSlowdownNormsDurationService plantShutdownSlowdownNormsDurationService;
+
+    
 
 
     
@@ -885,6 +888,7 @@ public class ExcelDataServiceImpl implements ExcelDataService {
         map.put("rows", dataList);
         return map;
     }
+    
 
     @Override
     public Map<String, Object> getSpecificConsumptionNormsT17Report(String reportType,String plantId, String year, List<String> headers) {
@@ -916,5 +920,86 @@ public class ExcelDataServiceImpl implements ExcelDataService {
         return map;
     }
 
+    @Override
+    public List<List<Object>> getSpecificConsumptionNormsReport(String reportType,String plantId, String year, List<String> headers) {
+        AOPMessageVM aopMessageVM  = aopReportService.getSpecificConsumptionNormsReport(reportType,plantId, year);
+        
+        Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+        List<Map<String, Object>> furnaceListList = (List<Map<String, Object>>) responseMap
+                .get("plantProductionData");
 
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        System.out.println("furnaceList"+furnaceListList);
+        if (furnaceListList != null) {
+            for (Map<String, Object> map : furnaceListList) {
+                List<Object> list = new ArrayList<>();
+                for (String header : headers) {
+                    list.add(map.get(header));
+                }
+                dataList.add(list);
+            }
+        }
+
+        return dataList;
+    }
+    
+    
+
+    @Override
+    public Map<String, Object> getGradewiseConsumptionNorms(String reportType,String plantId, String year, List<String> headers) {
+          
+         
+     AOPMessageVM aopMessageVM =
+        aopReportService.getGradewiseConsumptionNorms(
+                plantId, year, reportType);
+
+Map<String, Object> responseMap =
+        (Map<String, Object>) aopMessageVM.getData();
+
+List<Map<String, Object>> furnaceListList =
+        (List<Map<String, Object>>) responseMap.get("data");
+List<String> titles = new ArrayList<>();
+Map<String, Object> outMap = new HashMap<>();        
+
+if(headers == null || headers.size() == 0){
+
+    List<Map<String, Object>> columnsListList =
+            (List<Map<String, Object>>) responseMap.get("columns");
+
+    headers = columnsListList.stream()
+            .map(m -> (String) m.get("field"))
+            .collect(Collectors.toList());
+
+titles  = columnsListList.stream()
+            .map(m -> (String) m.get("title"))
+            .collect(Collectors.toList());
+            List<List<String>> outertitleList = new ArrayList<>();
+            outertitleList.add(titles);
+            outMap.put("titles",outertitleList);
+        }
+
+System.out.println("gradewise headers " + headers);
+System.out.println("furnaceList2 " + furnaceListList);
+
+
+
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        if (furnaceListList != null) {
+            for (Map<String, Object> map : furnaceListList) {
+                List<Object> list = new ArrayList<>();
+                for (String header : headers) {
+                    list.add(map.get(header));
+                }
+                dataList.add(list);
+            }
+        }
+
+        outMap.put("rows",dataList);
+    
+        return outMap;
+
+        
+    }
 }
