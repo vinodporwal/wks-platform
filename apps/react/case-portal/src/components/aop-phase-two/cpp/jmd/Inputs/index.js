@@ -3,7 +3,6 @@ import { Box, Stack } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import ImportPower from './ImportPower'
-import AssetAvailability from './AssetAvailability'
 import AssetCapacity from './AssetCapacity'
 import ShutdownAndOperational from './ShutdownAndOperational/index'
 import { generateMockData } from './InputUtility'
@@ -14,6 +13,7 @@ import Fuel from './Fuel/index'
 import AopDesignBasis from './AopDesignBasis'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AopTabs from 'components/AopTabs'
+import AssetAvailability from './AssetAvailability/index'
 
 const InputsJMD = () => {
   const keycloak = useSession()

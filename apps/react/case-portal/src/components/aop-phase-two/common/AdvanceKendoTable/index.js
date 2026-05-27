@@ -946,7 +946,7 @@ const AdvanceKendoTable = ({
           whiteSpace: 'nowrap',
           opacity: isRowEditable ? 1 : 0.6,
         }}
-        className={`${tdProps?.className || ''} remark-cell`.trim()}
+        className={`${tdProps?.className || ''} remark-cell ${isEdited ? 'edited-cell' : ''}`.trim()}
         onClick={(e) => {
           e.preventDefault()
           e.stopPropagation()

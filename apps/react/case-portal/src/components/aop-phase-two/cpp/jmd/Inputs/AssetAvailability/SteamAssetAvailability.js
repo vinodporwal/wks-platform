@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
-import { InputApiService } from 'components/aop-phase-two/services/cpp/inputApiService'
+import { AssetPriorityApiService } from 'components/aop-phase-two/services/cpp/jmd/assetPriorityApiService'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { useDebounce } from 'hooks/useDebounce'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const AssetAvailability = () => {
+const SteamAssetAvailability = () => {
   const keycloak = useSession()
   // State management
 
@@ -31,12 +33,19 @@ const AssetAvailability = () => {
     verticalObject,
     year,
     screenTitle,
+    jmdSelectedPlants,
   } = dataGridStore
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
   const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Asset_Priority')
+
+  const PLANT_ID_LIST = useMemo(
+    () => jmdSelectedPlants?.map((plant) => plant.id) || [],
+    [jmdSelectedPlants],
+  )
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
 
@@ -60,7 +69,7 @@ const AssetAvailability = () => {
     // Apr
     {
       title: headerMap[4],
-      field: 'april',
+      field: 'apr',
       widthT: 100,
       type: 'wholeNumber',
       editable: true,
@@ -78,7 +87,7 @@ const AssetAvailability = () => {
     // Jun
     {
       title: headerMap[6],
-      field: 'june',
+      field: 'jun',
       widthT: 100,
       type: 'wholeNumber',
       editable: true,
@@ -87,7 +96,7 @@ const AssetAvailability = () => {
     // Jul
     {
       title: headerMap[7],
-      field: 'july',
+      field: 'jul',
       widthT: 100,
       type: 'wholeNumber',
       editable: true,
@@ -159,7 +168,7 @@ const AssetAvailability = () => {
     //mar
     {
       title: headerMap[3],
-      field: 'march',
+      field: 'mar',
       widthT: 100,
       type: 'wholeNumber',
       editable: true,
@@ -178,28 +187,25 @@ const AssetAvailability = () => {
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
 
-  useEffect(() => {
-    if (PLANT_ID) {
-      fetchAssetPriorityData()
-    }
-  }, [PLANT_ID, AOP_YEAR])
-
-  const fetchAssetPriorityData = async () => {
+  const fetchAssetPriorityData = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await InputApiService.getAssetPriority(
+      const res = await AssetPriorityApiService.getAssetPriority(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
 
-      if (res?.length === 0) {
+      const steamAssetPriorities = res?.data?.SteamAssetPriorities
+
+      if (steamAssetPriorities?.length === 0) {
         setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
+        setLoading(false)
         return
       }
-      const rowsWithEditableFlag = res?.map((row, index) => ({
+      const rowsWithEditableFlag = steamAssetPriorities?.map((row, index) => ({
         ...row,
         id: row.id || index + 1,
         remarks: row.remarks || '',
@@ -213,7 +219,18 @@ const AssetAvailability = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+
+  useDebounce(
+    () => {
+      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+        fetchAssetPriorityData()
+        setModifiedCells({})
+      }
+    },
+    1000,
+    [PLANT_ID_LIST, AOP_YEAR, fetchAssetPriorityData],
+  )
 
   // Permissions (adjust as needed)
   const permissions = {
@@ -227,7 +244,7 @@ const AssetAvailability = () => {
     titleName: screenTitle?.title,
     showImport: true,
     showExport: true,
-    ExcelName: `Asset Priority - ${AOP_YEAR}`,
+    ExcelName: EXCEL_NAME,
     showTitle: true,
   }
 
@@ -260,10 +277,10 @@ const AssetAvailability = () => {
 
     // Custom validation: If any row data is updated, remarks must be filled and different from original
     const fieldsToCheck = [
-      'april',
+      'apr',
       'may',
-      'june',
-      'july',
+      'jun',
+      'jul',
       'aug',
       'sep',
       'oct',
@@ -271,7 +288,7 @@ const AssetAvailability = () => {
       'dec',
       'jan',
       'feb',
-      'march',
+      'mar',
     ]
     const validationError = validateRowDataWithRemarks(
       data,
@@ -292,18 +309,16 @@ const AssetAvailability = () => {
 
     try {
       const payload = modifiedData.map((item) => {
-        const { id, inEdit, ...rest } = item
+        const { inEdit, ...rest } = item
         return rest
       })
 
-      console.log('payload', payload)
-
       // Call the API to save changes
-      const response = await InputApiService.saveAssetPriority(
+      const response = await AssetPriorityApiService.saveAssetPriority(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
-        payload,
+        { steamResponse: payload },
       )
 
       setModifiedCells({})
@@ -312,6 +327,7 @@ const AssetAvailability = () => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+      fetchAssetPriorityData()
     } catch (error) {
       console.error('Error saving plant requirement data:', error)
       setSnackbarOpen(true)
@@ -329,10 +345,10 @@ const AssetAvailability = () => {
 
     setLoading(true)
     try {
-      const response = await InputApiService.saveAssetPriorityExcel(
+      const response = await AssetPriorityApiService.saveAssetPriorityExcel(
         file,
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
 
@@ -396,10 +412,11 @@ const AssetAvailability = () => {
     })
 
     try {
-      await InputApiService.exportAssetPriorityExcel(
+      await AssetPriorityApiService.exportAssetPriorityExcel(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
+        EXCEL_NAME,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -430,7 +447,7 @@ const AssetAvailability = () => {
         setRows={setRows}
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
-        title='Asset Priority'
+        title='Steam Asset Priority'
         permissions={permissions}
         handleRemarkCellClick={handleRemarkCellClick}
         remarkDialogOpen={remarkDialogOpen}
@@ -446,9 +463,10 @@ const AssetAvailability = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
+        groupBy={['plantName', 'assetType']}
       />
     </Box>
   )
 }
 
-export default AssetAvailability
+export default SteamAssetAvailability
