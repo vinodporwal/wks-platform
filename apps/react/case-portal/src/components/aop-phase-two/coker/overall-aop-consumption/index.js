@@ -1,14 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { useState, useEffect } from 'react'
+import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
-import ValueFormatterPhaseTwo, {
-  customValueFormatterPhaseTwo,
-} from '../../common/ValueFormatterPhaseTwo'
+import { customValueFormatterPhaseTwo } from '../../common/ValueFormatterPhaseTwo'
 import { OverallAopConsumptionApiService } from '../../services/coker/overallAopConsumptionApiService'
-import { overAllAOpResponse } from '../dummyData'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const OverallAopConsumptionCoker = () => {
@@ -283,6 +280,7 @@ const OverallAopConsumptionCoker = () => {
     showTitle: true,
     titleName: 'Overall AOP Consumption (Norm/Quantity)',
     showDropdown: false,
+    dropdownCell: true,
   }
 
   return (
