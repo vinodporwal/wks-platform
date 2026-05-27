@@ -6,6 +6,9 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -56,5 +59,59 @@ public class JMDAssetsController {
                 response.getCode(), response.getMessage(), response.getData());
         
         return response;
+    }
+
+    // ========================================
+    // EXCEL EXPORT ENDPOINTS
+    // ========================================
+
+    @GetMapping("/jmd/assets/power-operational-hours/export")
+    public ResponseEntity<byte[]> exportPowerOperationalHours(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String financialYear) {
+
+        logger.info("[GET /jmd/assets/power-operational-hours/export] Request received - plantIds: {}, financialYear: {}", plantIds, financialYear);
+        
+        byte[] excelData = jmdAssetsService.exportPowerOperationalHours(plantIds, financialYear);
+
+        if (excelData == null) {
+            logger.error("[GET /jmd/assets/power-operational-hours/export] Failed to generate Excel file");
+            return ResponseEntity.internalServerError().build();
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", "JMD_Power_Operational_Hours_" + financialYear + ".xlsx");
+
+        logger.info("[GET /jmd/assets/power-operational-hours/export] Successfully generated Excel file");
+        
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(excelData);
+    }
+
+    @GetMapping("/jmd/assets/steam-operational-hours/export")
+    public ResponseEntity<byte[]> exportSteamOperationalHours(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String financialYear) {
+
+        logger.info("[GET /jmd/assets/steam-operational-hours/export] Request received - plantIds: {}, financialYear: {}", plantIds, financialYear);
+        
+        byte[] excelData = jmdAssetsService.exportSteamOperationalHours(plantIds, financialYear);
+
+        if (excelData == null) {
+            logger.error("[GET /jmd/assets/steam-operational-hours/export] Failed to generate Excel file");
+            return ResponseEntity.internalServerError().build();
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", "JMD_Steam_Operational_Hours_" + financialYear + ".xlsx");
+
+        logger.info("[GET /jmd/assets/steam-operational-hours/export] Successfully generated Excel file");
+        
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(excelData);
     }
 }
