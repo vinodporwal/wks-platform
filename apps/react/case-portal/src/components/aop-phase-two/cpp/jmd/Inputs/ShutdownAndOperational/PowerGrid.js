@@ -14,13 +14,22 @@ import {
   transformApiResponseToGridFormat,
   transformGridFormatToApiFormat,
 } from './utils'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 const PowerGrid = ({ hoursRows = [] }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year, screenTitle, jmdSelectedPlants } = dataGridStore
+  const {
+    plantObject,
+    year,
+    screenTitle,
+    jmdSelectedPlants,
+    verticalObject,
+    siteObject,
+  } = dataGridStore
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Power_Operational_HRS')
 
   const PLANT_ID_LIST = useMemo(
     () => jmdSelectedPlants?.map((plant) => plant.id) || [],
@@ -423,7 +432,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, hoursRows])
 
   useDebounce(
     () => {
@@ -445,7 +454,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
     allAction: true,
     showImport: true,
     showExport: true,
-    ExcelName: `Shutdown and Operational - ${AOP_YEAR}`,
+    ExcelName: EXCEL_NAME,
     showTitleNameBusiness: true,
     showTitle: true,
     titleName: screenTitle?.title,
@@ -533,7 +542,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
       const response = await InputApiService.savePowerResponseExcel(
         file,
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
       if (response?.code === 200) {
@@ -591,8 +600,9 @@ const PowerGrid = ({ hoursRows = [] }) => {
     try {
       await InputApiService.exportPowerResponseExcel(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
+        EXCEL_NAME,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',

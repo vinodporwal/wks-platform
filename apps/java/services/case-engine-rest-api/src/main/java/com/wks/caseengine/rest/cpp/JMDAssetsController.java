@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -113,5 +114,39 @@ public class JMDAssetsController {
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(excelData);
+    }
+
+    // ========================================
+    // EXCEL IMPORT ENDPOINTS
+    // ========================================
+
+    @PostMapping("/jmd/assets/power-operational-hours/import")
+    public ResponseEntity<AOPMessageVM> importPowerOperationalHours(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String financialYear,
+            @RequestParam("file") MultipartFile file) {
+
+        logger.info("[POST /jmd/assets/power-operational-hours/import] Request received - plantIds: {}, financialYear: {}", plantIds, financialYear);
+        
+        AOPMessageVM response = jmdAssetsService.importPowerOperationalHours(plantIds, financialYear, file);
+        
+        logger.info("[POST /jmd/assets/power-operational-hours/import] Response - code: {}, message: {}", response.getCode(), response.getMessage());
+        
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/jmd/assets/steam-operational-hours/import")
+    public ResponseEntity<AOPMessageVM> importSteamOperationalHours(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String financialYear,
+            @RequestParam("file") MultipartFile file) {
+
+        logger.info("[POST /jmd/assets/steam-operational-hours/import] Request received - plantIds: {}, financialYear: {}", plantIds, financialYear);
+        
+        AOPMessageVM response = jmdAssetsService.importSteamOperationalHours(plantIds, financialYear, file);
+        
+        logger.info("[POST /jmd/assets/steam-operational-hours/import] Response - code: {}, message: {}", response.getCode(), response.getMessage());
+        
+        return ResponseEntity.ok(response);
     }
 }
