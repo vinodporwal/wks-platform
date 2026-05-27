@@ -14,6 +14,7 @@ import {
   transformApiResponseToGridFormat,
   transformGridFormatToApiFormat,
 } from './utils'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 const STGGrid = ({ hoursRows = [] }) => {
   const keycloak = useSession()
@@ -21,7 +22,7 @@ const STGGrid = ({ hoursRows = [] }) => {
   const { plantObject, year, screenTitle, jmdSelectedPlants } = dataGridStore
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
-
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Steam_Operational_HRS')
   const PLANT_ID_LIST = useMemo(
     () => jmdSelectedPlants?.map((plant) => plant.id) || [],
     [jmdSelectedPlants],
@@ -416,7 +417,7 @@ const STGGrid = ({ hoursRows = [] }) => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, hoursRows])
 
   useDebounce(
     () => {
@@ -438,7 +439,7 @@ const STGGrid = ({ hoursRows = [] }) => {
     allAction: true,
     showImport: true,
     showExport: true,
-    ExcelName: `STG Shutdown and Operational - ${AOP_YEAR}`,
+    ExcelName: EXCEL_NAME,
     showTitleNameBusiness: true,
     showTitle: false,
   }
@@ -488,7 +489,7 @@ const STGGrid = ({ hoursRows = [] }) => {
       return
     }
 
-    const gridFormatData = modifiedData.map(({ id, inEdit, ...rest }) => rest)
+    const gridFormatData = modifiedData.map(({ inEdit, ...rest }) => rest)
     const apiFormatData = transformGridFormatToApiFormat(gridFormatData)
     try {
       await InputApiService.saveOperationHours(
@@ -525,7 +526,7 @@ const STGGrid = ({ hoursRows = [] }) => {
       const response = await InputApiService.saveSteamResponseExcel(
         file,
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
       if (response?.code === 200) {
@@ -583,8 +584,9 @@ const STGGrid = ({ hoursRows = [] }) => {
     try {
       await InputApiService.exportSteamResponseExcel(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
+        EXCEL_NAME,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -630,7 +632,7 @@ const STGGrid = ({ hoursRows = [] }) => {
           snackbarOpen={snackbarOpen}
           setSnackbarOpen={setSnackbarOpen}
           setSnackbarData={setSnackbarData}
-          groupBy={['assetType']}
+          groupBy={['plantName', 'assetType']}
           hoursRows={hoursRows}
         />
       </Stack>

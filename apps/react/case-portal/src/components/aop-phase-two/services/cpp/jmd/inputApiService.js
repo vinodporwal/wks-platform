@@ -6,6 +6,7 @@ export const InputApiService = {
   saveOperationHours,
   saveOperationHoursExcel,
   saveSTGOperationHoursExcel,
+
   exportPowerResponseExcel,
   savePowerResponseExcel,
   exportSteamResponseExcel,
@@ -174,43 +175,59 @@ async function saveOperationHours(keycloak, plantIds, AOP_YEAR, payload) {
 }
 
 // Power Response Excel Import
-async function savePowerResponseExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
+async function savePowerResponseExcel(file, keycloak, PLANT_ID_LIST, AOP_YEAR) {
   return saveExcelData(
     file,
     keycloak,
-    'assets/power-response/import',
-    PLANT_ID,
+    'jmd/assets/power-operational-hours/import',
+    PLANT_ID_LIST,
     AOP_YEAR,
   )
 }
 
 // Power Response Excel Export
-async function exportPowerResponseExcel(keycloak, PLANT_ID, AOP_YEAR) {
+async function exportPowerResponseExcel(
+  keycloak,
+  PLANT_ID_LIST,
+  AOP_YEAR,
+  EXCEL_NAME,
+) {
   return exportExcelData(keycloak, {
-    endpoint: `assets/power-response/export/${PLANT_ID}/${AOP_YEAR}`,
-    queryParams: {},
-    fileName: `Power_Generation_${AOP_YEAR}.xlsx`,
+    endpoint: `jmd/assets/power-operational-hours/export`,
+    queryParams: {
+      plantIds: PLANT_ID_LIST,
+      financialYear: AOP_YEAR,
+    },
+    fileName: EXCEL_NAME,
     method: 'GET',
   })
 }
 
 // Steam Response Excel Import
-async function saveSteamResponseExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
+async function saveSteamResponseExcel(file, keycloak, PLANT_ID_LIST, AOP_YEAR) {
   return saveExcelData(
     file,
     keycloak,
-    'assets/steam-response/import',
-    PLANT_ID,
+    'jmd/assets/steam-operational-hours/import',
+    PLANT_ID_LIST,
     AOP_YEAR,
   )
 }
 
 // Steam Response Excel Export
-async function exportSteamResponseExcel(keycloak, PLANT_ID, AOP_YEAR) {
+async function exportSteamResponseExcel(
+  keycloak,
+  PLANT_ID_LIST,
+  AOP_YEAR,
+  EXCEL_NAME,
+) {
   return exportExcelData(keycloak, {
-    endpoint: `assets/steam-response/export/${PLANT_ID}/${AOP_YEAR}`,
-    queryParams: {},
-    fileName: `Steam_Generation_${AOP_YEAR}.xlsx`,
+    endpoint: `jmd/assets/steam-operational-hours/export`,
+    queryParams: {
+      plantIds: PLANT_ID_LIST,
+      financialYear: AOP_YEAR,
+    },
+    fileName: EXCEL_NAME,
     method: 'GET',
   })
 }
@@ -741,12 +758,15 @@ async function saveNormsData(keycloak, payload, AOP_YEAR) {
  * @param {File} file - The Excel file to upload
  * @param {Object} keycloak - Keycloak session object
  * @param {string} endpoint - The API endpoint path (e.g., 'import-power/import')
- * @param {string} PLANT_ID - Plant ID
+ * @param {string|Array} plantIds - Single Plant ID or array of Plant IDs
  * @param {string} AOP_YEAR - Financial year
  * @returns {Promise} API response
  */
-async function saveExcelData(file, keycloak, endpoint, PLANT_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/${endpoint}/${PLANT_ID}/${AOP_YEAR}`
+async function saveExcelData(file, keycloak, endpoint, plantIds, AOP_YEAR) {
+  // Support both single plantId (string/UUID) and multiple plantIds (array)
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.map((id) => id).join(',')
+  const url = `${Config.CaseEngineUrl}/task/${endpoint}?plantIds=${queryParams}&financialYear=${AOP_YEAR}`
   const formData = new FormData()
   formData.append('file', file)
   const headers = {
@@ -788,6 +808,8 @@ async function saveExcelData(file, keycloak, endpoint, PLANT_ID, AOP_YEAR) {
  * @param {Object} params - Export parameters
  * @param {string} params.endpoint - The API endpoint path (e.g., 'export-excel')
  * @param {Object} params.queryParams - Query parameters (e.g., { year: '2024', plantId: '123', type: 'Production' })
+ * @param {string|Array} params.plantIds - Single Plant ID or array of Plant IDs (optional, for JMD endpoints)
+ * @param {string} params.financialYear - Financial year (optional, for JMD endpoints)
  * @param {Object|null} params.payload - Optional POST body payload
  * @param {string} params.fileName - Downloaded file name (e.g., 'plant_production_plan.xlsx')
  * @param {string} params.method - HTTP method ('GET' or 'POST'), defaults to 'GET'
@@ -797,12 +819,28 @@ async function exportExcelData(keycloak, params) {
   const {
     endpoint,
     queryParams = {},
+    plantIds = null,
+    financialYear = null,
     payload = null,
     fileName,
     method = 'GET',
   } = params
 
-  const queryString = new URLSearchParams(queryParams).toString()
+  // Build query parameters
+  let finalQueryParams = { ...queryParams }
+
+  // If plantIds is provided (for JMD endpoints), add it to query params
+  if (plantIds) {
+    const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+    finalQueryParams.plantIds = plantIdArray.join(',')
+  }
+
+  // If financialYear is provided (for JMD endpoints), add it to query params
+  if (financialYear) {
+    finalQueryParams.financialYear = financialYear
+  }
+
+  const queryString = new URLSearchParams(finalQueryParams).toString()
   const url = `${Config.CaseEngineUrl}/task/${endpoint}${queryString ? `?${queryString}` : ''}`
 
   const headers = {
