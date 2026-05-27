@@ -12,8 +12,12 @@ export const SelectCellEditor = ({
 }) => {
   const storedValue = dataItem[field] ?? ''
   // Find the matching option object based on the stored value
+  // Convert both to number then to string to handle 4 vs 4.0 mismatches
+  const normalizeValue = (val) => String(parseFloat(val))
   const selectedOption =
-    options.find((opt) => opt[valueField] === storedValue) || null
+    options.find(
+      (opt) => normalizeValue(opt[valueField]) === normalizeValue(storedValue),
+    ) || null
   const [localValue, setLocalValue] = useState(selectedOption)
   const inputRef = useRef(null)
 

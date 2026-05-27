@@ -81,6 +81,7 @@ const ProductionNormsCracker = ({ permissions }) => {
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [selectedUnit, setSelectedUnit] = useState('')
+  const [selectedUnitC2C3R, setSelectedUnitC2C3R] = useState('')
   const [rows, setRows] = useState([])
   const [rowsC2C3R, setRowsC2C3R] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
@@ -628,23 +629,23 @@ const ProductionNormsCracker = ({ permissions }) => {
 
       if (IS_CRACKER_C2) {
         formattedData = data.map((item) => {
-          const TPH = selectedUnit == 'TPH'
+          const TPH = selectedUnitC2C3R == 'TPH'
 
           return {
             ...item,
             ...(TPH && {
-              apr: item.april
-                ? item.april / 24 / 30
-                : item.april?.toFixed(2) ?? '0.00',
+              apr: item.apr
+                ? item.apr / 24 / 30
+                : item.apr?.toFixed(2) ?? '0.00',
               may: item.may
                 ? item.may / 24 / 31
                 : item.may?.toFixed(2) ?? '0.00',
-              jun: item.june
-                ? item.june / 24 / 30
-                : item.june?.toFixed(2) ?? '0.00',
-              jul: item.july
-                ? item.july / 24 / 31
-                : item.july?.toFixed(2) ?? '0.00',
+              jun: item.jun
+                ? item.jun / 24 / 30
+                : item.jun?.toFixed(2) ?? '0.00',
+              jul: item.jul
+                ? item.jul / 24 / 31
+                : item.jul?.toFixed(2) ?? '0.00',
               aug: item.aug
                 ? item.aug / 24 / 31
                 : item.aug?.toFixed(2) ?? '0.00',
@@ -687,8 +688,11 @@ const ProductionNormsCracker = ({ permissions }) => {
 
   useEffect(() => {
     fetchData()
-    fetchDataC2C3R()
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, selectedUnit])
+
+  useEffect(() => {
+    fetchDataC2C3R()
+  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, selectedUnitC2C3R])
 
   const productionColumns = getEnhancedColDefs({
     headerMap,
@@ -702,6 +706,9 @@ const ProductionNormsCracker = ({ permissions }) => {
 
   const handleUnitChange = (unit) => {
     setSelectedUnit(unit)
+  }
+  const handleUnitChangeC2C3R = (unit) => {
+    setSelectedUnitC2C3R(unit)
   }
   const isCellEditable = (params) => params.row.id !== 'total'
 
@@ -840,7 +847,7 @@ const ProductionNormsCracker = ({ permissions }) => {
           setCurrentRemark={setCurrentRemarkC2C3R}
           currentRowId={currentRowIdC2C3R}
           permissions={adjustedPermissionsForC2C3R}
-          handleUnitChange={handleUnitChange}
+          handleUnitChange={handleUnitChangeC2C3R}
           selectedUOM={'UOM'}
           note={''}
           handleRemarkCellClick={handleRemarkCellClick}
