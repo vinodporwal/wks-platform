@@ -58,7 +58,7 @@ public class ReliabilityController {
 	
 	@PostMapping(value="/reliability-performance")
 	public AOPMessageVM updateReliabilityPerformance(@RequestBody List<ReliabilityPerformanceDto> reliabilityPerformanceDtos){
-		 return  reliabilityService.updateReliabilityPerformance(reliabilityPerformanceDtos);
+		 return  reliabilityService.updateReliabilityPerformance(reliabilityPerformanceDtos,null);
 	}
 	
 	@PostMapping(value = "/reliability-performance-import-excel", consumes = "multipart/form-data")
