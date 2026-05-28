@@ -338,16 +338,21 @@ const KendoDataTables = ({
   // Close inline edit mode when user clicks outside the grid container
   useEffect(() => {
     const handleOutsideClick = (e) => {
-      // Check if click is on Kendo popup/portal elements (dropdown, date picker, etc.)
+      // Expanded: cover all Kendo popup/portal/overlay elements
       const isKendoPopup = e.target.closest(
-        '.k-animation-container, .k-popup, .k-list-container, .k-calendar-container',
+        '.k-animation-container, .k-popup, .k-list-container, .k-calendar-container, ' +
+          '.k-overlay, .k-popup-editor, .k-dropdownlist-popup, .k-combobox-popup, ' +
+          '.k-datepicker-popup, .k-datetimepicker-popup, .k-timepicker-popup',
       )
 
-      if (
-        gridContainerRef.current &&
-        !gridContainerRef.current.contains(e.target) &&
-        !isKendoPopup // Don't close if clicking on Kendo popup elements
-      ) {
+      // Also treat any click that lands inside the Kendo grid DOM as "inside"
+      const isInsideGrid =
+        gridContainerRef.current && gridContainerRef.current.contains(e.target)
+
+      // Also guard against Kendo body-level grid wrappers (e.g. virtual scrolling cells)
+      const isInsideKendoGrid = e.target.closest('.k-grid')
+
+      if (!isInsideGrid && !isKendoPopup && !isInsideKendoGrid) {
         setRows((prev) =>
           prev && Array.isArray(prev)
             ? prev.map((r) => (r.inEdit ? { ...r, inEdit: false } : r))
@@ -356,8 +361,10 @@ const KendoDataTables = ({
         setEdit({})
       }
     }
-    document.addEventListener('mousedown', handleOutsideClick)
-    return () => document.removeEventListener('mousedown', handleOutsideClick)
+    // Use mouseup instead of mousedown so the row's own onClick/handleRowClick
+    // fires FIRST (on mousedown) and sets inEdit before this handler can clear it.
+    document.addEventListener('mouseup', handleOutsideClick)
+    return () => document.removeEventListener('mouseup', handleOutsideClick)
   }, [setRows])
 
   // ...inside columns?.map((col) => { ... })...
@@ -1987,7 +1994,7 @@ const KendoDataTables = ({
         </Box>
       )}
 
-      {(permissions?.showNote && (note?.trim()?.length > 0)) && (
+      {permissions?.showNote && note?.trim()?.length > 0 && (
         <Box sx={{ pt: 1, pl: 1 }}>
           <Typography component='div' className='text-note'>
             {note}

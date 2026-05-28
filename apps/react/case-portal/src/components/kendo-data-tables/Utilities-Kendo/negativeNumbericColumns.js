@@ -48,20 +48,19 @@ export const NoSpinnerNumericEditorNegative = ({
   }, [])
 
   return (
-    <td style={{ textAlign: 'end' }}>
-      <InputBase
-        inputRef={inputRef}
-        value={localValue}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        className='input-editor'
-        style={{
-          fontSize: '15px',
-          padding: '2px 2px',
-          height: '40px',
-          lineHeight: '1rem',
-        }}
-      />
-    </td>
+    <InputBase
+      inputRef={inputRef}
+      value={localValue}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      className='input-editor'
+      style={{
+        fontSize: '15px',
+        padding: '2px 2px',
+        height: '40px',
+        lineHeight: '1rem',
+        textAlign: 'right',
+      }}
+    />
   )
 }
