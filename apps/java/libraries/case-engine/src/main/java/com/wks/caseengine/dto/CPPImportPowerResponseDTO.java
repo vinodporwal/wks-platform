@@ -10,6 +10,7 @@ public class CPPImportPowerResponseDTO {
 
     private UUID id;
     private String procurementPlant;
+    private String plantName;
     private String utility;
     private String material;
     private String uom;

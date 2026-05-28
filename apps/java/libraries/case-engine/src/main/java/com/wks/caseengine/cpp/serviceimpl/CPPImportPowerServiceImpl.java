@@ -12,13 +12,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class CPPImportPowerServiceImpl implements CPPImportPowerService {
@@ -63,6 +71,7 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
 
         dto.setId(projection.getId());
         dto.setProcurementPlant(projection.getProcurementPlant());
+        dto.setPlantName(projection.getPlantName());
         dto.setUtility(projection.getUtility());
         dto.setMaterial(projection.getMaterial());
         dto.setUom(projection.getUom());
@@ -236,5 +245,598 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
         CPPImportPower saved = repository.save(entity);
         logger.debug("[POST Service] Successfully updated entity with ID: {}", saved.getId());
         return true;
+    }
+
+    // ========================================
+    // EXPORT IMPORTED POWER PLANS
+    // ========================================
+
+    @Override
+    public byte[] exportImportedPowerPlans(List<UUID> plantIds, String aopYear) {
+        logger.info("[Export Power Plans] Exporting for plantIds: {}, aopYear: {}", plantIds, aopYear);
+
+        try {
+            AOPMessageVM response = getImportedPowerPlans(plantIds, aopYear);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = (Map<String, Object>) response.getData();
+
+            @SuppressWarnings("unchecked")
+            List<CPPImportPowerResponseDTO> powerPlans =
+                (List<CPPImportPowerResponseDTO>) data.get("importedPowerPlans");
+
+            // Sort by plantName, then procurementPlant
+            if (powerPlans != null && !powerPlans.isEmpty()) {
+                powerPlans.sort(Comparator
+                    .comparing(CPPImportPowerResponseDTO::getPlantName,
+                        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
+                    .thenComparing(CPPImportPowerResponseDTO::getProcurementPlant,
+                        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)));
+                logger.debug("[Export Power Plans] Sorted {} records", powerPlans.size());
+            }
+
+            logger.info("[Export Power Plans] Generating Excel for {} records", powerPlans != null ? powerPlans.size() : 0);
+            return generatePowerPlanExcel(powerPlans, "Imported Power Plans", aopYear);
+
+        } catch (Exception e) {
+            logger.error("[Export Power Plans] Error exporting: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    // ========================================
+    // IMPORT IMPORTED POWER PLANS
+    // ========================================
+
+    @Override
+    public AOPMessageVM importImportedPowerPlans(List<UUID> plantIds, String aopYear, MultipartFile file) {
+        logger.info("[Import Power Plans] Importing for plantIds: {}, aopYear: {}, file: {}",
+                plantIds, aopYear, file.getOriginalFilename());
+
+        AOPMessageVM response = new AOPMessageVM();
+
+        try {
+            List<CPPImportPowerResponseDTO> excelData = readPowerPlanExcel(file.getInputStream(), aopYear);
+            logger.info("[Import Power Plans] Read {} records from Excel", excelData.size());
+
+            List<CPPImportPowerResponseDTO> validRecords = new ArrayList<>();
+            List<CPPImportPowerResponseDTO> failedRecords = new ArrayList<>();
+            List<String> failureReasons = new ArrayList<>();
+            int skippedCount = 0;
+
+            for (CPPImportPowerResponseDTO dto : excelData) {
+                if (!isPowerPlanRecordModifiedForImport(dto)) {
+                    skippedCount++;
+                    logger.debug("[Import Power Plans] Skipping unchanged record: {}", dto.getProcurementPlant());
+                    continue;
+                }
+
+                String validationError = validatePowerPlanData(dto);
+                if (validationError != null) {
+                    failedRecords.add(dto);
+                    failureReasons.add(validationError);
+                    logger.warn("[Import Power Plans] Invalid record - {}: {}", dto.getProcurementPlant(), validationError);
+                } else {
+                    validRecords.add(dto);
+                }
+            }
+
+            logger.info("[Import Power Plans] {} unchanged, {} modified to process", skippedCount, excelData.size() - skippedCount);
+
+            if (!validRecords.isEmpty()) {
+                try {
+                    AOPMessageVM saveResult = saveImportedPowerPlans(plantIds, aopYear, validRecords);
+
+                    if (saveResult.getCode() == 207) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> saveData = (Map<String, Object>) saveResult.getData();
+                        if (saveData != null && saveData.containsKey("skippedRecords")) {
+                            @SuppressWarnings("unchecked")
+                            List<Map<String, String>> skippedRecords =
+                                    (List<Map<String, String>>) saveData.get("skippedRecords");
+                            logger.warn("[Import Power Plans] {} records skipped during save", skippedRecords.size());
+                        }
+                    }
+
+                    logger.info("[Import Power Plans] Successfully processed {} records", validRecords.size());
+                } catch (Exception e) {
+                    logger.error("[Import Power Plans] Error saving records: {}", e.getMessage(), e);
+                    for (CPPImportPowerResponseDTO failedDto : validRecords) {
+                        failedRecords.add(failedDto);
+                        failureReasons.add("Save failed: " + e.getMessage());
+                    }
+                }
+            }
+
+            if (failedRecords.isEmpty()) {
+                response.setCode(200);
+                if (validRecords.isEmpty() && skippedCount > 0) {
+                    response.setMessage("No changes detected. All " + skippedCount + " records unchanged.");
+                } else {
+                    response.setMessage("All imported power plans saved successfully. "
+                            + skippedCount + " records unchanged, " + validRecords.size() + " records updated.");
+                }
+            } else {
+                byte[] failedRecordsFile = generatePowerPlanErrorExcel(failedRecords, failureReasons,
+                        "Imported Power Plans", aopYear);
+                String base64File = java.util.Base64.getEncoder().encodeToString(failedRecordsFile);
+                response.setCode(400);
+                response.setMessage("Partial import: " + validRecords.size() + " saved, " + failedRecords.size()
+                        + " failed, " + skippedCount + " unchanged. Download file for details.");
+                response.setData(base64File);
+                logger.info("[Import Power Plans] Exported {} failed records to Excel", failedRecords.size());
+            }
+
+            logger.info("[Import Power Plans] Completed - Unchanged: {}, Saved: {}, Failed: {}",
+                    skippedCount, validRecords.size(), failedRecords.size());
+        } catch (Exception e) {
+            logger.error("[Import Power Plans] Error during import: {}", e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Failed to import power plans: " + e.getMessage());
+        }
+
+        return response;
+    }
+
+    // ========================================
+    // EXCEL GENERATION HELPER
+    // ========================================
+
+    private byte[] generatePowerPlanExcel(List<CPPImportPowerResponseDTO> dataList, String sheetName, String aopYear) throws Exception {
+        logger.info("[Excel Generation] Creating workbook: {} with {} records", sheetName, dataList != null ? dataList.size() : 0);
+
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet(sheetName);
+        CellStyle headerStyle = createHeaderStyle(workbook);
+        CellStyle dataStyle = createDataStyle(workbook);
+        CellStyle remarksStyle = createRemarksStyle(workbook);
+
+        String startYearSuffix = aopYear.substring(2, 4);
+        String endYearSuffix = aopYear.substring(5, 7);
+
+        int currentRow = 0;
+        int col = 0;
+
+        // Header row
+        Row headerRow = sheet.createRow(currentRow++);
+        col = 0;
+
+        createCell(headerRow, col++, "Procurement Plant", headerStyle);
+        createCell(headerRow, col++, "Plant Name", headerStyle);
+        createCell(headerRow, col++, "Utility", headerStyle);
+        createCell(headerRow, col++, "Material", headerStyle);
+        createCell(headerRow, col++, "UOM", headerStyle);
+
+        String[] months = {"Apr-" + startYearSuffix, "May-" + startYearSuffix, "Jun-" + startYearSuffix, "Jul-" + startYearSuffix,
+                "Aug-" + startYearSuffix, "Sep-" + startYearSuffix, "Oct-" + startYearSuffix, "Nov-" + startYearSuffix,
+                "Dec-" + startYearSuffix, "Jan-" + endYearSuffix, "Feb-" + endYearSuffix, "Mar-" + endYearSuffix};
+
+        for (String month : months) {
+            createCell(headerRow, col++, month, headerStyle);
+        }
+
+        int remarksCol = col;
+        createCell(headerRow, col++, "Remarks", headerStyle);
+        createCell(headerRow, col++, "id", headerStyle);
+        int idCol = col - 1;
+        createCell(headerRow, col++, "importPlantFkId", headerStyle);
+        int importPlantFkIdCol = col - 1;
+        createCell(headerRow, col++, "cppPlantFkId", headerStyle);
+        int cppPlantFkIdCol = col - 1;
+        createCell(headerRow, col++, "normParameterFkId", headerStyle);
+        int normParameterFkIdCol = col - 1;
+
+        int totalColumns = col;
+
+        // Data rows
+        int rowCount = 0;
+        for (CPPImportPowerResponseDTO dto : dataList) {
+            rowCount++;
+            Row row = sheet.createRow(currentRow++);
+            col = 0;
+            logger.debug("[Excel Generation] Writing row {} for plant: {}", rowCount, dto.getProcurementPlant());
+
+            createCell(row, col++, dto.getProcurementPlant(), dataStyle);
+            createCell(row, col++, dto.getPlantName(), dataStyle);
+            createCell(row, col++, dto.getUtility(), dataStyle);
+            createCell(row, col++, dto.getMaterial(), dataStyle);
+            createCell(row, col++, dto.getUom(), dataStyle);
+
+            setNumericCell(row, col++, dto.getApr() != null ? dto.getApr().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getMay() != null ? dto.getMay().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getJun() != null ? dto.getJun().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getJul() != null ? dto.getJul().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getAug() != null ? dto.getAug().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getSep() != null ? dto.getSep().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getOct() != null ? dto.getOct().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getNov() != null ? dto.getNov().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getDec() != null ? dto.getDec().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getJan() != null ? dto.getJan().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getFeb() != null ? dto.getFeb().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getMar() != null ? dto.getMar().doubleValue() : null, dataStyle);
+
+            createCell(row, col++, dto.getRemarks(), remarksStyle);
+            createCell(row, col++, dto.getId() != null ? dto.getId().toString() : "", dataStyle);
+            createCell(row, col++, dto.getImportPlantFkId() != null ? dto.getImportPlantFkId().toString() : "", dataStyle);
+            createCell(row, col++, dto.getCppPlantFkId() != null ? dto.getCppPlantFkId().toString() : "", dataStyle);
+            createCell(row, col++, dto.getNormParameterFkId() != null ? dto.getNormParameterFkId().toString() : "", dataStyle);
+        }
+
+        // Hide ID columns
+        sheet.setColumnHidden(idCol, true);
+        sheet.setColumnHidden(importPlantFkIdCol, true);
+        sheet.setColumnHidden(cppPlantFkIdCol, true);
+        sheet.setColumnHidden(normParameterFkIdCol, true);
+
+        // Auto-size columns
+        for (int i = 0; i < totalColumns; i++) {
+            if (i == remarksCol) {
+                sheet.setColumnWidth(i, 8000);
+                continue;
+            }
+            sheet.autoSizeColumn(i);
+        }
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        workbook.write(outputStream);
+        workbook.close();
+
+        logger.info("[Excel Generation] Successfully generated Excel with {} data rows", rowCount);
+        return outputStream.toByteArray();
+    }
+
+    // ========================================
+    // EXCEL READ HELPER
+    // ========================================
+
+    private List<CPPImportPowerResponseDTO> readPowerPlanExcel(InputStream inputStream, String aopYear) throws Exception {
+        List<CPPImportPowerResponseDTO> records = new ArrayList<>();
+
+        try (XSSFWorkbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+
+            // Export column layout (must stay in sync with generatePowerPlanExcel):
+            // col 0  = Procurement Plant
+            // col 1  = Plant Name
+            // col 2  = Utility
+            // col 3  = Material
+            // col 4  = UOM
+            // col 5  = Apr
+            // col 6  = May
+            // col 7  = Jun
+            // col 8  = Jul
+            // col 9  = Aug
+            // col 10 = Sep
+            // col 11 = Oct
+            // col 12 = Nov
+            // col 13 = Dec
+            // col 14 = Jan
+            // col 15 = Feb
+            // col 16 = Mar
+            // col 17 = Remarks
+            // col 18 = id (hidden)
+            // col 19 = importPlantFkId (hidden)
+            // col 20 = cppPlantFkId (hidden)
+            // col 21 = normParameterFkId (hidden)
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                boolean isRowEmpty = true;
+                for (int cellIndex = 0; cellIndex < row.getLastCellNum(); cellIndex++) {
+                    Cell cell = row.getCell(cellIndex);
+                    if (cell != null && !cell.toString().trim().isEmpty()) {
+                        isRowEmpty = false;
+                        break;
+                    }
+                }
+                if (isRowEmpty) {
+                    logger.debug("[IMPORT] Skipping empty row: {}", row.getRowNum());
+                    continue;
+                }
+
+                CPPImportPowerResponseDTO dto = new CPPImportPowerResponseDTO();
+
+                dto.setProcurementPlant(getCellValue(row, 0));
+                dto.setPlantName(getCellValue(row, 1));
+                dto.setUtility(getCellValue(row, 2));
+                dto.setMaterial(getCellValue(row, 3));
+                dto.setUom(getCellValue(row, 4));
+
+                dto.setApr(getCellBigDecimalValue(row, 5));
+                dto.setMay(getCellBigDecimalValue(row, 6));
+                dto.setJun(getCellBigDecimalValue(row, 7));
+                dto.setJul(getCellBigDecimalValue(row, 8));
+                dto.setAug(getCellBigDecimalValue(row, 9));
+                dto.setSep(getCellBigDecimalValue(row, 10));
+                dto.setOct(getCellBigDecimalValue(row, 11));
+                dto.setNov(getCellBigDecimalValue(row, 12));
+                dto.setDec(getCellBigDecimalValue(row, 13));
+                dto.setJan(getCellBigDecimalValue(row, 14));
+                dto.setFeb(getCellBigDecimalValue(row, 15));
+                dto.setMar(getCellBigDecimalValue(row, 16));
+
+                dto.setRemarks(getCellValue(row, 17));
+
+                String idStr = getCellValue(row, 18);
+                if (idStr != null && !idStr.trim().isEmpty()) {
+                    try {
+                        dto.setId(UUID.fromString(idStr));
+                    } catch (IllegalArgumentException e) {
+                        logger.warn("[IMPORT] Invalid UUID format for ID: {}", idStr);
+                    }
+                }
+
+                String importPlantFkIdStr = getCellValue(row, 19);
+                if (importPlantFkIdStr != null && !importPlantFkIdStr.trim().isEmpty()) {
+                    try {
+                        dto.setImportPlantFkId(UUID.fromString(importPlantFkIdStr));
+                    } catch (IllegalArgumentException e) {
+                        logger.warn("[IMPORT] Invalid UUID format for importPlantFkId: {}", importPlantFkIdStr);
+                    }
+                }
+
+                String cppPlantFkIdStr = getCellValue(row, 20);
+                if (cppPlantFkIdStr != null && !cppPlantFkIdStr.trim().isEmpty()) {
+                    try {
+                        dto.setCppPlantFkId(UUID.fromString(cppPlantFkIdStr));
+                    } catch (IllegalArgumentException e) {
+                        logger.warn("[IMPORT] Invalid UUID format for cppPlantFkId: {}", cppPlantFkIdStr);
+                    }
+                }
+
+                String normParameterFkIdStr = getCellValue(row, 21);
+                if (normParameterFkIdStr != null && !normParameterFkIdStr.trim().isEmpty()) {
+                    try {
+                        dto.setNormParameterFkId(UUID.fromString(normParameterFkIdStr));
+                    } catch (IllegalArgumentException e) {
+                        logger.warn("[IMPORT] Invalid UUID format for normParameterFkId: {}", normParameterFkIdStr);
+                    }
+                }
+
+                records.add(dto);
+            }
+        }
+
+        return records;
+    }
+
+    // ========================================
+    // RECORD MODIFICATION CHECK
+    // ========================================
+
+    private boolean isPowerPlanRecordModifiedForImport(CPPImportPowerResponseDTO dto) {
+        if (dto.getId() == null) {
+            return true;
+        }
+
+        try {
+            var optionalEntity = repository.findById(dto.getId());
+            if (optionalEntity.isEmpty()) {
+                return true;
+            }
+            return isRecordModified(dto, optionalEntity.get());
+        } catch (Exception e) {
+            logger.error("[isPowerPlanRecordModifiedForImport] Error checking record ID {}: {}", dto.getId(), e.getMessage());
+            return true;
+        }
+    }
+
+    // ========================================
+    // VALIDATION HELPER
+    // ========================================
+
+    private String validatePowerPlanData(CPPImportPowerResponseDTO dto) {
+        if (dto.getId() == null) {
+            return "Record ID is missing";
+        }
+
+        if (dto.getProcurementPlant() == null || dto.getProcurementPlant().trim().isEmpty()) {
+            return "Procurement plant is required";
+        }
+
+        if (dto.getRemarks() == null || dto.getRemarks().trim().isEmpty()) {
+            return "Remarks field is mandatory and cannot be empty";
+        }
+
+        // Validate that at least one monthly value is set
+        if (dto.getApr() == null && dto.getMay() == null && dto.getJun() == null &&
+            dto.getJul() == null && dto.getAug() == null && dto.getSep() == null &&
+            dto.getOct() == null && dto.getNov() == null && dto.getDec() == null &&
+            dto.getJan() == null && dto.getFeb() == null && dto.getMar() == null) {
+            return "At least one monthly value is required";
+        }
+
+        try {
+            var optionalEntity = repository.findById(dto.getId());
+            if (optionalEntity.isEmpty()) {
+                return "Record with this ID does not exist in database";
+            }
+
+            String dbRemarks = optionalEntity.get().getRemarks() != null ? optionalEntity.get().getRemarks().trim() : "";
+            String importedRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
+            if (dbRemarks.equals(importedRemarks)) {
+                return "Remarks must be updated to explain the changes. Current remarks are identical to the database value.";
+            }
+        } catch (Exception e) {
+            logger.error("[Validation] Error checking remarks for ID {}: {}", dto.getId(), e.getMessage());
+        }
+
+        return null;
+    }
+
+    // ========================================
+    // ERROR EXCEL GENERATION
+    // ========================================
+
+    private byte[] generatePowerPlanErrorExcel(List<CPPImportPowerResponseDTO> failedRecords,
+            List<String> failureReasons, String sheetName, String aopYear) throws Exception {
+        try (XSSFWorkbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+
+            Sheet sheet = workbook.createSheet(sheetName);
+            CellStyle headerStyle = createHeaderStyle(workbook);
+            CellStyle dataStyle = createDataStyle(workbook);
+            CellStyle remarksStyle = createRemarksStyle(workbook);
+            CellStyle errorStyle = createErrorCellStyle(workbook);
+
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {"Procurement Plant", "Plant Name", "Utility", "Material", "UOM",
+                    "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar",
+                    "Remarks", "id", "importPlantFkId", "cppPlantFkId", "normParameterFkId", "Status", "Comment"};
+
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            int rowNum = 1;
+            for (int i = 0; i < failedRecords.size(); i++) {
+                CPPImportPowerResponseDTO dto = failedRecords.get(i);
+                String failureReason = failureReasons.get(i);
+                Row row = sheet.createRow(rowNum++);
+
+                createCell(row, 0, dto.getProcurementPlant(), dataStyle);
+                createCell(row, 1, dto.getPlantName(), dataStyle);
+                createCell(row, 2, dto.getUtility(), dataStyle);
+                createCell(row, 3, dto.getMaterial(), dataStyle);
+                createCell(row, 4, dto.getUom(), dataStyle);
+
+                setNumericCell(row, 5, dto.getApr() != null ? dto.getApr().doubleValue() : null, dataStyle);
+                setNumericCell(row, 6, dto.getMay() != null ? dto.getMay().doubleValue() : null, dataStyle);
+                setNumericCell(row, 7, dto.getJun() != null ? dto.getJun().doubleValue() : null, dataStyle);
+                setNumericCell(row, 8, dto.getJul() != null ? dto.getJul().doubleValue() : null, dataStyle);
+                setNumericCell(row, 9, dto.getAug() != null ? dto.getAug().doubleValue() : null, dataStyle);
+                setNumericCell(row, 10, dto.getSep() != null ? dto.getSep().doubleValue() : null, dataStyle);
+                setNumericCell(row, 11, dto.getOct() != null ? dto.getOct().doubleValue() : null, dataStyle);
+                setNumericCell(row, 12, dto.getNov() != null ? dto.getNov().doubleValue() : null, dataStyle);
+                setNumericCell(row, 13, dto.getDec() != null ? dto.getDec().doubleValue() : null, dataStyle);
+                setNumericCell(row, 14, dto.getJan() != null ? dto.getJan().doubleValue() : null, dataStyle);
+                setNumericCell(row, 15, dto.getFeb() != null ? dto.getFeb().doubleValue() : null, dataStyle);
+                setNumericCell(row, 16, dto.getMar() != null ? dto.getMar().doubleValue() : null, dataStyle);
+
+                createCell(row, 17, dto.getRemarks(), remarksStyle);
+                createCell(row, 18, dto.getId() != null ? dto.getId().toString() : "", dataStyle);
+                createCell(row, 19, dto.getImportPlantFkId() != null ? dto.getImportPlantFkId().toString() : "", dataStyle);
+                createCell(row, 20, dto.getCppPlantFkId() != null ? dto.getCppPlantFkId().toString() : "", dataStyle);
+                createCell(row, 21, dto.getNormParameterFkId() != null ? dto.getNormParameterFkId().toString() : "", dataStyle);
+                createCell(row, 22, "Failed", errorStyle);
+                createCell(row, 23, failureReason, errorStyle);
+            }
+
+            sheet.setColumnHidden(18, true);
+            sheet.setColumnHidden(19, true);
+            sheet.setColumnHidden(20, true);
+            sheet.setColumnHidden(21, true);
+
+            for (int i = 0; i < headers.length; i++) {
+                if (i == 17 || i == 23) {
+                    sheet.setColumnWidth(i, 8000);
+                    continue;
+                }
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(outputStream);
+            return outputStream.toByteArray();
+        }
+    }
+
+    // ========================================
+    // EXCEL STYLE HELPERS
+    // ========================================
+
+    private void createCell(Row row, int col, String value, CellStyle style) {
+        Cell cell = row.createCell(col);
+        cell.setCellValue(value != null ? value : "");
+        cell.setCellStyle(style);
+    }
+
+    private void setNumericCell(Row row, int col, Double value, CellStyle style) {
+        Cell cell = row.createCell(col);
+        if (value != null) {
+            cell.setCellValue(value);
+        } else {
+            cell.setCellValue("");
+        }
+        cell.setCellStyle(style);
+    }
+
+    private CellStyle createHeaderStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        style.setFont(font);
+        style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        return style;
+    }
+
+    private CellStyle createDataStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        return style;
+    }
+
+    private CellStyle createRemarksStyle(Workbook workbook) {
+        CellStyle style = createDataStyle(workbook);
+        style.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        return style;
+    }
+
+    private CellStyle createErrorCellStyle(Workbook workbook) {
+        CellStyle style = createDataStyle(workbook);
+        style.setFillForegroundColor(IndexedColors.ROSE.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        Font font = workbook.createFont();
+        font.setColor(IndexedColors.RED.getIndex());
+        font.setBold(true);
+        style.setFont(font);
+        style.setWrapText(true);
+        return style;
+    }
+
+    private String getCellValue(Row row, int cellIndex) {
+        Cell cell = row.getCell(cellIndex);
+        if (cell == null) return null;
+
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue();
+            case NUMERIC:
+                return String.valueOf((int) cell.getNumericCellValue());
+            default:
+                return null;
+        }
+    }
+
+    private BigDecimal getCellBigDecimalValue(Row row, int cellIndex) {
+        Cell cell = row.getCell(cellIndex);
+        if (cell == null) return null;
+
+        if (cell.getCellType() == CellType.NUMERIC) {
+            return BigDecimal.valueOf(cell.getNumericCellValue());
+        }
+        if (cell.getCellType() == CellType.STRING) {
+            try {
+                String val = cell.getStringCellValue().trim();
+                if (!val.isEmpty()) {
+                    return new BigDecimal(val);
+                }
+            } catch (NumberFormatException e) {
+                logger.warn("[IMPORT] Cannot parse BigDecimal from cell at index {}", cellIndex);
+            }
+        }
+        return null;
     }
 }

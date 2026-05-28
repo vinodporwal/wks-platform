@@ -7,6 +7,7 @@ public interface CPPImportPowerProjection {
 
     UUID getId();
     String getProcurementPlant();
+    String getPlantName();
     String getUtility();
     String getMaterial();
     String getUom();
