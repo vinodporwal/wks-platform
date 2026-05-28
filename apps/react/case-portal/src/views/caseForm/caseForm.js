@@ -721,8 +721,8 @@ console.log('*****  taskId:  ', taskId);
           //   return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
           //  })(),
        
-            assignedTo: {emailId: formData.data.container.caseAssignedTo}
-//		  assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
+          // assignedTo: {emailId: formData.data.container.caseAssignedTo}
+          assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
           }),
         )
       })
