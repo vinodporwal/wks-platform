@@ -946,7 +946,7 @@ const AdvanceKendoTable = ({
           whiteSpace: 'nowrap',
           opacity: isRowEditable ? 1 : 0.6,
         }}
-        className={`${tdProps?.className || ''} remark-cell`.trim()}
+        className={`${tdProps?.className || ''} remark-cell ${isEdited ? 'edited-cell' : ''}`.trim()}
         onClick={(e) => {
           e.preventDefault()
           e.stopPropagation()
@@ -1567,7 +1567,9 @@ const AdvanceKendoTable = ({
                 text: (cellProps) => {
                   const isPiggingStatus =
                     cellProps.dataItem?.normParameterTypeName ===
-                    'Pigging Status'
+                      'Pigging Status' ||
+                    cellProps.dataItem?.productName ==
+                      'Pigging (P)/Non-Pigging (NP)'
 
                   if (isPiggingStatus) {
                     return (
@@ -1586,7 +1588,8 @@ const AdvanceKendoTable = ({
               },
               data: (props) => {
                 const isPiggingStatus =
-                  props.dataItem?.normParameterTypeName === 'Pigging Status'
+                  props.dataItem?.normParameterTypeName === 'Pigging Status' ||
+                  props.dataItem?.productName == 'Pigging (P)/Non-Pigging (NP)'
 
                 if (isPiggingStatus) {
                   return createSelectToolTipRenderer(
