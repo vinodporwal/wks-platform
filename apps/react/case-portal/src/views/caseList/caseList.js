@@ -754,7 +754,7 @@ export const CaseList = ({ status, caseDefId }) => {
                   }}
                   rows={cases}
                   columns={makeColumns(caseDefId)}
-                  getRowId={(row) => row.caseNo}
+                  getRowId={(row) => row.caseNo || row.businessKey || row._id}
                   loading={fetching}
                   components={{ Pagination: CustomPagination }}
                 />
