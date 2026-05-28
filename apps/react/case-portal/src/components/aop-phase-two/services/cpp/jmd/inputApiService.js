@@ -320,12 +320,7 @@ async function saveImportPowerCapacity(keycloak, plantIds, aopYear, payload) {
   }
 }
 
-async function saveImportPowerCapacityExcel(
-  file,
-  keycloak,
-  plantIds,
-  aopYear,
-) {
+async function saveImportPowerCapacityExcel(file, keycloak, plantIds, aopYear) {
   const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
   const queryParams = plantIdArray.join(',')
   const url = `${Config.CaseEngineUrl}/task/jmd/imported-power-plans/import?plantIds=${queryParams}&aopYear=${aopYear}`
@@ -342,7 +337,9 @@ async function saveImportPowerCapacityExcel(
       return responseData
     }
     if (!resp.ok) {
-      throw new Error(`Failed to import data: ${resp.status} ${resp.statusText}`)
+      throw new Error(
+        `Failed to import data: ${resp.status} ${resp.statusText}`,
+      )
     }
     return responseData
   } catch (e) {

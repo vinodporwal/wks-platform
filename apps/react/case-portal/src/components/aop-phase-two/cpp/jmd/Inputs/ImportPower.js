@@ -303,7 +303,7 @@ const ImportPower = () => {
     const firstRow = dataRows.length > 0 ? dataRows[0] : {}
     return {
       id: 'TOTAL_ROW',
-      plantName: firstRow.plantName || '',   // keep same group bucket as data rows
+      plantName: firstRow.plantName || '', // keep same group bucket as data rows
       procurementPlant: 'Total',
       utility: '',
       material: '',
