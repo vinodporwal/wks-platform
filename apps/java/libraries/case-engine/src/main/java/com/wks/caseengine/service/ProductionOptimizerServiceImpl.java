@@ -27,11 +27,13 @@ import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.AopCalculationRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
@@ -62,6 +64,9 @@ public class ProductionOptimizerServiceImpl implements ProductionOptimizerServic
 	@Autowired
 	private ShutdownHistoryService shutdownHistoryService;
 
+	@Autowired
+	private AopCalculationRepository aopCalculationRepository;
+
 	@Override
 	public AOPMessageVM getProductionOptimizer(String plantId, String aopYear, String lineFkId, String type) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -83,9 +88,18 @@ System.out.println("columnNames: " + columnNames);
 				resultList.add(rowMap);
 			}
 
-			Map<String, Object> data = new HashMap<>();
+            Map<String, Object> data = new HashMap<>();
+
+			List<AopCalculation> aopCalculation = aopCalculationRepository
+					.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), aopYear, "production-optimizer");
+			
+			data.put("aopCalculation", aopCalculation);
+
 			data.put("data", resultList);
 			data.put("columns", getProductionOptimizerColumnMetadata(plantId, aopYear, lineFkId, type));
+
+
+			
 
 			aopMessageVM.setCode(200);
 			aopMessageVM.setMessage("SP Executed successfully");
