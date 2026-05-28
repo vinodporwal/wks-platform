@@ -59,6 +59,7 @@ import {
   SaveIcon,
   CalculateIcon,
 } from 'assets/images/icons'
+import { useRef } from 'react'
 
 export const particulars = [
   'normParameterId',
@@ -168,7 +169,7 @@ const KendoDataTablesReciepe = ({
 
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
-
+  const fileInputRef = useRef(null)
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { oldYear } = dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
@@ -176,44 +177,11 @@ const KendoDataTablesReciepe = ({
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const [editedCells, setEditedCells] = useState({}) // ADD THIS LINE after other useState declarations
-  const shouldShowExportImportButtons = () => {
-    const dataGridStore = useSelector((state) => state.dataGridStore)
-    const {
-      verticalChange,
-      yearChanged,
-      oldYear,
-      plantID,
-      plantObject,
-      siteObject,
-      verticalObject,
-      year,
-      screenTitle,
-    } = dataGridStore
-    const PLANT_ID = plantObject?.id
-    const SITE_ID = siteObject?.id
-    const VERTICAL_ID = verticalObject?.id
-    const VERTICAL_NAME = verticalObject?.name
-    const AOP_YEAR = year?.selectedYear
-    const isOldYear = false
-    const IS_OLD_YEAR = oldYear?.oldYear
-    const { isReleased } = dataGridStore
-    const IS_RELEASED = isReleased
-    const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-
-    const vertName = verticalChange?.selectedVertical
-    const lowerVertName = vertName?.toLowerCase()
-    const SCREEN_NAME = screenTitle?.title
-    const siteName = siteObject?.name?.toLowerCase()
-    const plantName = plantObject?.name?.toLowerCase()
-
-    // Check if conditions are met for showing export/import buttons
-    return (
-      lowerVertName === 'pe' ||
-      lowerVertName === 'pp' ||
-      lowerVertName === 'elastomer' ||
-      lowerVertName === 'pvc'
-    )
-  }
+  const vertName = dataGridStore?.verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase()
+  const showExportImport = ['pe', 'pp', 'elastomer', 'pvc'].includes(
+    lowerVertName,
+  )
   const initialGroup = groupBy
     ? [
         {
@@ -417,6 +385,18 @@ const KendoDataTablesReciepe = ({
       setIsButtonDisabled(false)
     }, 500)
   }
+  const triggerFileUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
+
+  const onFileChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    handleExcelUpload(file)
+    e.target.value = ''
+  }
 
   const CustomRow = useCallback(
     ({ dataItem, className, ...rest }) => {
@@ -450,7 +430,11 @@ const KendoDataTablesReciepe = ({
         {...restThProps}
         aria-sort={ariaSort}
         title={props.title}
-        style={{ ...restThProps?.style, padding: '0px', borderRight: '1px solid #878787' }}
+        style={{
+          ...restThProps?.style,
+          padding: '0px',
+          borderRight: '1px solid #878787',
+        }}
       >
         <Tooltip
           position='top'
@@ -468,7 +452,11 @@ const KendoDataTablesReciepe = ({
     cols.map((col, idx) => {
       if (col.children) {
         return (
-          <GridColumn key={col.title || idx} title={col.title} locked={col.locked || false}>
+          <GridColumn
+            key={col.title || idx}
+            title={col.title}
+            locked={col.locked || false}
+          >
             {renderColumns(col.children, filter, sort)}
           </GridColumn>
         )
@@ -696,60 +684,51 @@ const KendoDataTablesReciepe = ({
               )}
 
               {/* Export Button */}
-              {permissions?.downloadExcelBtn &&
-                shouldShowExportImportButtons() && (
+              {permissions?.downloadExcelBtn && showExportImport && (
+                <Button
+                  variant='contained'
+                  className='btn-export'
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={FileExportIcon}
+                      className='w16-icon'
+                    />
+                  }
+                  onClick={downloadExcelForConfiguration}
+                  disabled={isButtonDisabled}
+                >
+                  Export
+                </Button>
+              )}
+
+              {permissions?.uploadExcelBtn && showExportImport && (
+                <>
                   <Button
                     variant='contained'
-                    className='btn-export'
                     startIcon={
                       <Box
                         component='img'
-                        src={FileExportIcon}
+                        src={FileImportIcon}
                         className='w16-icon'
                       />
                     }
-                    onClick={downloadExcelForConfiguration}
-                    disabled={isButtonDisabled}
+                    className='btn-import'
+                    disabled={isButtonDisabled || READ_ONLY}
+                    onClick={triggerFileUpload}
                   >
-                    Export
+                    Import
                   </Button>
-                )}
 
-              {/* Import Button */}
-              {permissions?.uploadExcelBtn &&
-                shouldShowExportImportButtons() && (
-                  <div>
-                    <input
-                      accept='.xlsx,.xls'
-                      style={{ display: 'none' }}
-                      id='excel-upload-input'
-                      type='file'
-                      onChange={(e) => {
-                        const file = e.target.files[0]
-                        if (file) {
-                          handleExcelUpload(file)
-                          e.target.value = ''
-                        }
-                      }}
-                    />
-                    <label htmlFor='excel-upload-input'>
-                      <Button
-                        variant='contained'
-                        startIcon={
-                          <Box
-                            component='img'
-                            src={FileImportIcon}
-                            className='w16-icon'
-                          />
-                        }
-                        className='btn-import'
-                        disabled={isButtonDisabled || READ_ONLY}
-                      >
-                        Import
-                      </Button>
-                    </label>
-                  </div>
-                )}
+                  <input
+                    type='file'
+                    accept='.xlsx,.xls'
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                    onChange={onFileChange}
+                  />
+                </>
+              )}
 
               {permissions?.saveBtn && (
                 <Button
