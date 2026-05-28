@@ -72,11 +72,7 @@ public class ProductionOptimizerServiceImpl implements ProductionOptimizerServic
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
 			List<Object[]> results = getProductionOptimizerData(plantId, aopYear, lineFkId, type);
-			for(Object[] row : results) { 
-				for(Object obj : row) { 
-					System.out.println("obj: " + obj.toString());
-				}
-			}
+		
 			List<String> columnNames = getProductionOptimizerColumns(plantId, aopYear, lineFkId, type);
 System.out.println("columnNames: " + columnNames);
 			List<Map<String, Object>> resultList = new ArrayList<>();
@@ -145,6 +141,10 @@ System.out.println("columnNames: " + columnNames);
 
 	@Override
 	public AOPMessageVM calculateProductionOptimizer(String plantId, String aopYear) {
+
+		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), aopYear,
+				"production-optimizer");
+
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
 			String baseProcedure = resolveStoredProcedure(plantId);
