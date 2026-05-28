@@ -166,14 +166,6 @@ const OverallAopConsumptionFCC = () => {
       editable: false,
       format: valueFormat,
     },
-    {
-      field: 'avgNorms',
-      title: 'Avg Norms',
-      minWidth: 120,
-      type: 'number1',
-      editable: false,
-      format: valueFormat,
-    },
   ]
 
   useEffect(() => {
