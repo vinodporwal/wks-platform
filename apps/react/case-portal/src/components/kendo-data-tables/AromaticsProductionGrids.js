@@ -1240,7 +1240,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
           setModifiedCells={setModifiedCellsMaxCapacity}
           enableSaveAddBtn={enableSaveAddBtnMaxCapacity}
           setRows={setRowsMaxCapacity}
-          paginationOptions={[50, 100, 200, 300]}
+          paginationOptions={[10, 50, 100, 200, 300]}
           columns={max_achieved_capacity}
           rows={rowsMaxCapacity}
           fetchData={fetchMaxCapacityData}
@@ -1276,7 +1276,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
           setModifiedCells={setModifiedCellsDesignCapacity}
           enableSaveAddBtn={enableSaveAddBtnDesignCapacity}
           setRows={setRowsDesignCapacity}
-          paginationOptions={[50, 100, 200, 300]}
+          paginationOptions={[10, 50, 100, 200, 300]}
           columns={colDefs_design_capacity}
           rows={rowsDesignCapacity}
           saveChanges={saveChangesDesignCapacity}
@@ -1314,7 +1314,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
         setRows={setRows}
         columns={colDefs_current_operating_capacity}
         rows={rows1}
-        paginationOptions={[50, 100, 200, 300]}
+        paginationOptions={[10, 50, 100, 200, 300]}
         saveChanges={saveChanges}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
@@ -1349,7 +1349,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
             setRows={setRowsPercentageSummary}
             columns={colDefs_percentage_summary}
             rows={rowsPercentageSummary}
-            paginationOptions={[50, 100, 200, 300]}
+            paginationOptions={[10, 50, 100, 200, 300]}
             title='Production target Reference'
             fetchData={fetchData}
             permissions={adjustedPermissionsLast}

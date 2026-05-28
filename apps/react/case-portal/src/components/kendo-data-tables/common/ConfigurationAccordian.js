@@ -103,7 +103,7 @@ const ConfigurationAccordian = ({
                     setStartDate(e.value)
                     setDateEdited(true)
                   }}
-                  disabled={READ_ONLY}
+                  disabled={Boolean(READ_ONLY)}
                 />
                 <IconButton
                   style={{
@@ -140,7 +140,7 @@ const ConfigurationAccordian = ({
                     setEndDate(e.value)
                     setDateEdited(true)
                   }}
-                  disabled={READ_ONLY}
+                  disabled={Boolean(READ_ONLY)}
                 />
                 <IconButton
                   style={{
@@ -163,7 +163,7 @@ const ConfigurationAccordian = ({
                     variant='outlined'
                     className='btn-load'
                     onClick={handleOpenDialog}
-                    disabled={READ_ONLY}
+                    disabled={Boolean(READ_ONLY)}
                     sx={{
                       height: 28,
                       px: 1.5,
@@ -211,7 +211,7 @@ const ConfigurationAccordian = ({
 
                 <TextArea
                   className='vertical-resize-textarea'
-                  disabled={READ_ONLY}
+                  disabled={Boolean(READ_ONLY)}
                   value={summary}
                   rows={2}
                   onChange={(e) => {

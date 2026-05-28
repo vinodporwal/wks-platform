@@ -1474,6 +1474,7 @@ const ProductionvolumeData = ({
     })
 
     try {
+      setLoading(true)
       if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
         const selectedLine = lineDetails[tabIndex]
         const lineId = selectedLine?.id
@@ -1539,6 +1540,8 @@ const ProductionvolumeData = ({
         message: 'Failed to download Excel.',
         severity: 'error',
       })
+    } finally {
+      setLoading(false)
     }
   }
   const saveExcelFile = async (rawFile, gridType) => {
@@ -1671,7 +1674,7 @@ const ProductionvolumeData = ({
           setRows={setRowsDesignCapacity}
           columns={colDefs_design_capacity}
           rows={rowsDesignCapacity}
-          paginationOptions={[50, 100, 200, 300]}
+          paginationOptions={[10, 50, 100, 200, 300]}
           saveChanges={saveChangesDesignCapacity}
           snackbarData={snackbarData}
           snackbarOpen={snackbarOpen}
@@ -1711,7 +1714,7 @@ const ProductionvolumeData = ({
           setRows={setRowsMaxCapacity}
           columns={max_achieved_capacity}
           rows={rowsMaxCapacity}
-          paginationOptions={[50, 100, 200, 300]}
+          paginationOptions={[10, 50, 100, 200, 300]}
           fetchData={fetchMaxCapacityData}
           permissions={adjustedPermissionsGrid1}
           selectedUnit={unitDesignCapacity}
@@ -1738,7 +1741,7 @@ const ProductionvolumeData = ({
           setRows={setRows}
           columns={colDefs_current_operating_capacity}
           rows={rows1}
-          paginationOptions={[50, 100, 200, 300]}
+          paginationOptions={[10, 50, 100, 200, 300]}
           saveChanges={saveChanges}
           snackbarData={snackbarData}
           snackbarOpen={snackbarOpen}
@@ -1782,7 +1785,7 @@ const ProductionvolumeData = ({
               setRows={setRowsPercentageSummary}
               columns={colDefs_percentage_summary}
               rows={rowsPercentageSummary}
-              paginationOptions={[50, 100, 200, 300]}
+              paginationOptions={[10, 50, 100, 200, 300]}
               title='Production target Reference'
               fetchData={fetchData}
               permissions={adjustedPermissionsLast}
