@@ -539,30 +539,30 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             createCell(row, col++, dto.getUtilityGenerated(), dataStyle);
             createCell(row, col++, dto.getGeneratedUtilityCode(), dataStyle);
             
-            // Monthly hours with formulas
-            setMonthCellValuesWithFormulas(row, col, dto.getApr(), totalHoursByMonth.get("apr"), excelRowNum, unlockedStyle, lockedStyle);
+            // Monthly hours with formulas (convert operational to shutdown for export)
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getApr(), totalHoursByMonth.get("apr")), totalHoursByMonth.get("apr"), excelRowNum, unlockedStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, dto.getMay(), totalHoursByMonth.get("may"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getMay(), totalHoursByMonth.get("may")), totalHoursByMonth.get("may"), excelRowNum, unlockedStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, dto.getJun(), totalHoursByMonth.get("jun"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getJun(), totalHoursByMonth.get("jun")), totalHoursByMonth.get("jun"), excelRowNum, unlockedStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, dto.getJul(), totalHoursByMonth.get("jul"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getJul(), totalHoursByMonth.get("jul")), totalHoursByMonth.get("jul"), excelRowNum, unlockedStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, dto.getAug(), totalHoursByMonth.get("aug"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getAug(), totalHoursByMonth.get("aug")), totalHoursByMonth.get("aug"), excelRowNum, unlockedStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, dto.getSep(), totalHoursByMonth.get("sep"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getSep(), totalHoursByMonth.get("sep")), totalHoursByMonth.get("sep"), excelRowNum, unlockedStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, dto.getOct(), totalHoursByMonth.get("oct"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getOct(), totalHoursByMonth.get("oct")), totalHoursByMonth.get("oct"), excelRowNum, unlockedStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, dto.getNov(), totalHoursByMonth.get("nov"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getNov(), totalHoursByMonth.get("nov")), totalHoursByMonth.get("nov"), excelRowNum, unlockedStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, dto.getDec(), totalHoursByMonth.get("dec"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getDec(), totalHoursByMonth.get("dec")), totalHoursByMonth.get("dec"), excelRowNum, unlockedStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, dto.getJan(), totalHoursByMonth.get("jan"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getJan(), totalHoursByMonth.get("jan")), totalHoursByMonth.get("jan"), excelRowNum, unlockedStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, dto.getFeb(), totalHoursByMonth.get("feb"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getFeb(), totalHoursByMonth.get("feb")), totalHoursByMonth.get("feb"), excelRowNum, unlockedStyle, lockedStyle);
             col += 2;
-            setMonthCellValuesWithFormulas(row, col, dto.getMar(), totalHoursByMonth.get("mar"), excelRowNum, unlockedStyle, lockedStyle);
+            setMonthCellValuesWithFormulas(row, col, convertOperationalToShutdown(dto.getMar(), totalHoursByMonth.get("mar")), totalHoursByMonth.get("mar"), excelRowNum, unlockedStyle, lockedStyle);
             col += 2;
             
             createCell(row, col++, dto.getRemarks(), editableRemarksStyle);
@@ -790,7 +790,7 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         
         String[] parts = financialYear.split("-");
         int startYear = Integer.parseInt(parts[0]);
-        int endYear = Integer.parseInt(parts[1]);
+        int endYear = startYear + 1;
         
         totalHours.put("apr", (double) getDaysInMonth(4, startYear) * 24);
         totalHours.put("may", (double) getDaysInMonth(5, startYear) * 24);
@@ -918,11 +918,11 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         return style;
     }
     
-    private void setMonthCellValuesWithFormulas(Row row, int startCol, Double operationalHours, Double totalHours, int rowNum, CellStyle unlockedStyle, CellStyle lockedStyle) {
+    private void setMonthCellValuesWithFormulas(Row row, int startCol, Double shutdownHours, Double totalHours, int rowNum, CellStyle unlockedStyle, CellStyle lockedStyle) {
         // Shutdown Hrs cell - editable, with validation
         Cell shutdownCell = row.createCell(startCol);
-        if (operationalHours != null && totalHours != null) {
-            shutdownCell.setCellValue(totalHours - operationalHours);
+        if (shutdownHours != null) {
+            shutdownCell.setCellValue(shutdownHours);
         } else {
             shutdownCell.setCellValue("");
         }
@@ -997,44 +997,111 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
      * Check if the imported record has been modified compared to DB
      * Returns true if data or remarks have changed
      */
-    private boolean isRecordModified(CPPAssetOperationalHoursResponseDto dto) {
+    private boolean isRecordModified(CPPAssetOperationalHoursResponseDto dto, Map<String, Double> totalHoursByMonth) {
         try {
             if (dto.getId() == null) {
                 return true; // New record, treat as modified
             }
-            
-            var optionalEntity = repository.findById(dto.getId());
-            if (optionalEntity.isEmpty()) {
-                return true; // Record not found in DB, treat as modified
+
+            Double dbApr = null, dbMay = null, dbJun = null, dbJul = null, dbAug = null, dbSep = null,
+                   dbOct = null, dbNov = null, dbDec = null, dbJan = null, dbFeb = null, dbMar = null;
+            String dbRemarks = null;
+
+            if ("Steam".equals(dto.getAssetCategory())) {
+                var optionalEntity = steamRepository.findById(dto.getId());
+                if (optionalEntity.isEmpty()) {
+                    return true;
+                }
+                CPPSteamAssetsOperationalHours dbEntity = optionalEntity.get();
+                dbApr = dbEntity.getApr();
+                dbMay = dbEntity.getMay();
+                dbJun = dbEntity.getJun();
+                dbJul = dbEntity.getJul();
+                dbAug = dbEntity.getAug();
+                dbSep = dbEntity.getSep();
+                dbOct = dbEntity.getOct();
+                dbNov = dbEntity.getNov();
+                dbDec = dbEntity.getDec();
+                dbJan = dbEntity.getJan();
+                dbFeb = dbEntity.getFeb();
+                dbMar = dbEntity.getMar();
+                dbRemarks = dbEntity.getRemarks();
+            } else {
+                var optionalEntity = repository.findById(dto.getId());
+                if (optionalEntity.isEmpty()) {
+                    return true;
+                }
+                CPPAssetOperationalHours dbEntity = optionalEntity.get();
+                dbApr = dbEntity.getApr();
+                dbMay = dbEntity.getMay();
+                dbJun = dbEntity.getJun();
+                dbJul = dbEntity.getJul();
+                dbAug = dbEntity.getAug();
+                dbSep = dbEntity.getSep();
+                dbOct = dbEntity.getOct();
+                dbNov = dbEntity.getNov();
+                dbDec = dbEntity.getDec();
+                dbJan = dbEntity.getJan();
+                dbFeb = dbEntity.getFeb();
+                dbMar = dbEntity.getMar();
+                dbRemarks = dbEntity.getRemarks();
             }
-            
-            CPPAssetOperationalHours dbEntity = optionalEntity.get();
-            
-            // Create DTO from DB entity
+
+            // Create DTO from DB entity (DB stores operational hours)
             CPPAssetOperationalHoursResponseDto dbDto = new CPPAssetOperationalHoursResponseDto();
-            dbDto.setApr(dbEntity.getApr());
-            dbDto.setMay(dbEntity.getMay());
-            dbDto.setJun(dbEntity.getJun());
-            dbDto.setJul(dbEntity.getJul());
-            dbDto.setAug(dbEntity.getAug());
-            dbDto.setSep(dbEntity.getSep());
-            dbDto.setOct(dbEntity.getOct());
-            dbDto.setNov(dbEntity.getNov());
-            dbDto.setDec(dbEntity.getDec());
-            dbDto.setJan(dbEntity.getJan());
-            dbDto.setFeb(dbEntity.getFeb());
-            dbDto.setMar(dbEntity.getMar());
-            dbDto.setRemarks(dbEntity.getRemarks());
-            
+            dbDto.setApr(dbApr);
+            dbDto.setMay(dbMay);
+            dbDto.setJun(dbJun);
+            dbDto.setJul(dbJul);
+            dbDto.setAug(dbAug);
+            dbDto.setSep(dbSep);
+            dbDto.setOct(dbOct);
+            dbDto.setNov(dbNov);
+            dbDto.setDec(dbDec);
+            dbDto.setJan(dbJan);
+            dbDto.setFeb(dbFeb);
+            dbDto.setMar(dbMar);
+            dbDto.setRemarks(dbRemarks);
+
+            // Create a copy of imported DTO and convert shutdown hours to operational hours for fair comparison
+            // DB stores operational hours, but Excel/import DTO contains shutdown hours
+            CPPAssetOperationalHoursResponseDto importedDtoForHash = new CPPAssetOperationalHoursResponseDto();
+            importedDtoForHash.setApr(convertShutdownToOperational(dto.getApr(), totalHoursByMonth.get("apr")));
+            importedDtoForHash.setMay(convertShutdownToOperational(dto.getMay(), totalHoursByMonth.get("may")));
+            importedDtoForHash.setJun(convertShutdownToOperational(dto.getJun(), totalHoursByMonth.get("jun")));
+            importedDtoForHash.setJul(convertShutdownToOperational(dto.getJul(), totalHoursByMonth.get("jul")));
+            importedDtoForHash.setAug(convertShutdownToOperational(dto.getAug(), totalHoursByMonth.get("aug")));
+            importedDtoForHash.setSep(convertShutdownToOperational(dto.getSep(), totalHoursByMonth.get("sep")));
+            importedDtoForHash.setOct(convertShutdownToOperational(dto.getOct(), totalHoursByMonth.get("oct")));
+            importedDtoForHash.setNov(convertShutdownToOperational(dto.getNov(), totalHoursByMonth.get("nov")));
+            importedDtoForHash.setDec(convertShutdownToOperational(dto.getDec(), totalHoursByMonth.get("dec")));
+            importedDtoForHash.setJan(convertShutdownToOperational(dto.getJan(), totalHoursByMonth.get("jan")));
+            importedDtoForHash.setFeb(convertShutdownToOperational(dto.getFeb(), totalHoursByMonth.get("feb")));
+            importedDtoForHash.setMar(convertShutdownToOperational(dto.getMar(), totalHoursByMonth.get("mar")));
+            importedDtoForHash.setRemarks(dto.getRemarks());
+
             // Compare hashes
             String dbHash = generateOperationalHoursHash(dbDto);
-            String importedHash = generateOperationalHoursHash(dto);
-            
-            return !dbHash.equals(importedHash);
+            String importedHash = generateOperationalHoursHash(importedDtoForHash);
+
+            boolean modified = !dbHash.equals(importedHash);
+            if (!modified) {
+                logger.debug("[isRecordModified] Record {} unchanged - hash match", dto.getId());
+            } else {
+                logger.debug("[isRecordModified] Record {} modified - hash mismatch", dto.getId());
+            }
+            return modified;
         } catch (Exception e) {
             logger.error("[isRecordModified] Error checking if record modified for ID {}: {}", dto.getId(), e.getMessage());
             return true; // On error, assume modified to be safe
         }
+    }
+
+    private Double convertShutdownToOperational(Double shutdownHours, Double totalHours) {
+        if (shutdownHours == null || totalHours == null) {
+            return null;
+        }
+        return totalHours - shutdownHours;
     }
     
     @Override
@@ -1057,7 +1124,7 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             for (CPPAssetOperationalHoursResponseDto dto : excelData) {
                 // FIRST: Check if record was actually modified by user
                 // Skip unchanged records - they don't need validation or saving
-                if (!isRecordModified(dto)) {
+                if (!isRecordModified(dto, totalHoursByMonth)) {
                     skippedCount++;
                     logger.debug("[Import Power Operational Hours] Skipping unchanged record: {}", dto.getAssetName());
                     continue;
@@ -1070,9 +1137,10 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                     failureReasons.add(validationError);
                     logger.warn("[Import Power Operational Hours] Invalid record - {}: {}", dto.getAssetName(), validationError);
                 } else {
-                    // Calculate operational hours from shutdown hours
-                    calculateOperationalHoursFromShutdown(dto, totalHoursByMonth);
-                    validRecords.add(dto);
+                    // Clone the DTO before converting to operational hours
+                    CPPAssetOperationalHoursResponseDto recordToSave = cloneDto(dto);
+                    calculateOperationalHoursFromShutdown(recordToSave, totalHoursByMonth);
+                    validRecords.add(recordToSave);
                 }
             }
             
@@ -1099,9 +1167,22 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                     logger.info("[Import Power Operational Hours] Successfully processed {} records", validRecords.size());
                 } catch (Exception e) {
                     logger.error("[Import Power Operational Hours] Error saving records: {}", e.getMessage(), e);
-                    // Mark all valid records as failed if save fails
+                    // Mark all valid records as failed if save fails, converting operational back to shutdown hours
                     for (CPPAssetOperationalHoursResponseDto failedDto : validRecords) {
-                        failedRecords.add(failedDto);
+                        CPPAssetOperationalHoursResponseDto originalDto = cloneDto(failedDto);
+                        originalDto.setApr(convertShutdownToOperational(failedDto.getApr(), totalHoursByMonth.get("apr")));
+                        originalDto.setMay(convertShutdownToOperational(failedDto.getMay(), totalHoursByMonth.get("may")));
+                        originalDto.setJun(convertShutdownToOperational(failedDto.getJun(), totalHoursByMonth.get("jun")));
+                        originalDto.setJul(convertShutdownToOperational(failedDto.getJul(), totalHoursByMonth.get("jul")));
+                        originalDto.setAug(convertShutdownToOperational(failedDto.getAug(), totalHoursByMonth.get("aug")));
+                        originalDto.setSep(convertShutdownToOperational(failedDto.getSep(), totalHoursByMonth.get("sep")));
+                        originalDto.setOct(convertShutdownToOperational(failedDto.getOct(), totalHoursByMonth.get("oct")));
+                        originalDto.setNov(convertShutdownToOperational(failedDto.getNov(), totalHoursByMonth.get("nov")));
+                        originalDto.setDec(convertShutdownToOperational(failedDto.getDec(), totalHoursByMonth.get("dec")));
+                        originalDto.setJan(convertShutdownToOperational(failedDto.getJan(), totalHoursByMonth.get("jan")));
+                        originalDto.setFeb(convertShutdownToOperational(failedDto.getFeb(), totalHoursByMonth.get("feb")));
+                        originalDto.setMar(convertShutdownToOperational(failedDto.getMar(), totalHoursByMonth.get("mar")));
+                        failedRecords.add(originalDto);
                         failureReasons.add("Save failed: " + e.getMessage());
                     }
                 }
@@ -1155,7 +1236,7 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             for (CPPAssetOperationalHoursResponseDto dto : excelData) {
                 // FIRST: Check if record was actually modified by user
                 // Skip unchanged records - they don't need validation or saving
-                if (!isRecordModified(dto)) {
+                if (!isRecordModified(dto, totalHoursByMonth)) {
                     skippedCount++;
                     logger.debug("[Import Steam Operational Hours] Skipping unchanged record: {}", dto.getAssetName());
                     continue;
@@ -1168,9 +1249,10 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                     failureReasons.add(validationError);
                     logger.warn("[Import Steam Operational Hours] Invalid record - {}: {}", dto.getAssetName(), validationError);
                 } else {
-                    // Calculate operational hours from shutdown hours
-                    calculateOperationalHoursFromShutdown(dto, totalHoursByMonth);
-                    validRecords.add(dto);
+                    // Clone the DTO before converting to operational hours
+                    CPPAssetOperationalHoursResponseDto recordToSave = cloneDto(dto);
+                    calculateOperationalHoursFromShutdown(recordToSave, totalHoursByMonth);
+                    validRecords.add(recordToSave);
                 }
             }
             
@@ -1197,9 +1279,22 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                     logger.info("[Import Steam Operational Hours] Successfully processed {} records", validRecords.size());
                 } catch (Exception e) {
                     logger.error("[Import Steam Operational Hours] Error saving records: {}", e.getMessage(), e);
-                    // Mark all valid records as failed if save fails
+                    // Mark all valid records as failed if save fails, converting operational back to shutdown hours
                     for (CPPAssetOperationalHoursResponseDto failedDto : validRecords) {
-                        failedRecords.add(failedDto);
+                        CPPAssetOperationalHoursResponseDto originalDto = cloneDto(failedDto);
+                        originalDto.setApr(convertShutdownToOperational(failedDto.getApr(), totalHoursByMonth.get("apr")));
+                        originalDto.setMay(convertShutdownToOperational(failedDto.getMay(), totalHoursByMonth.get("may")));
+                        originalDto.setJun(convertShutdownToOperational(failedDto.getJun(), totalHoursByMonth.get("jun")));
+                        originalDto.setJul(convertShutdownToOperational(failedDto.getJul(), totalHoursByMonth.get("jul")));
+                        originalDto.setAug(convertShutdownToOperational(failedDto.getAug(), totalHoursByMonth.get("aug")));
+                        originalDto.setSep(convertShutdownToOperational(failedDto.getSep(), totalHoursByMonth.get("sep")));
+                        originalDto.setOct(convertShutdownToOperational(failedDto.getOct(), totalHoursByMonth.get("oct")));
+                        originalDto.setNov(convertShutdownToOperational(failedDto.getNov(), totalHoursByMonth.get("nov")));
+                        originalDto.setDec(convertShutdownToOperational(failedDto.getDec(), totalHoursByMonth.get("dec")));
+                        originalDto.setJan(convertShutdownToOperational(failedDto.getJan(), totalHoursByMonth.get("jan")));
+                        originalDto.setFeb(convertShutdownToOperational(failedDto.getFeb(), totalHoursByMonth.get("feb")));
+                        originalDto.setMar(convertShutdownToOperational(failedDto.getMar(), totalHoursByMonth.get("mar")));
+                        failedRecords.add(originalDto);
                         failureReasons.add("Save failed: " + e.getMessage());
                     }
                 }
@@ -1360,19 +1455,24 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         // Check if remarks have been updated - MANDATORY requirement
         // This is only called for records that isRecordModified() detected as changed
         try {
-            var optionalEntity = repository.findById(dto.getId());
-            if (optionalEntity.isPresent()) {
-                CPPAssetOperationalHours dbEntity = optionalEntity.get();
-                
-                // Get DB remarks (handle null)
-                String dbRemarks = dbEntity.getRemarks() != null ? dbEntity.getRemarks().trim() : "";
-                String importedRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
-                
-                // CRITICAL: Remarks MUST be different from DB value
-                // This ensures users document why they're making changes
-                if (dbRemarks.equals(importedRemarks)) {
-                    return "Remarks must be updated to explain the changes. Current remarks are identical to the database value.";
+            String dbRemarks = "";
+            if ("Steam".equals(dto.getAssetCategory())) {
+                var optionalEntity = steamRepository.findById(dto.getId());
+                if (optionalEntity.isPresent()) {
+                    dbRemarks = optionalEntity.get().getRemarks() != null ? optionalEntity.get().getRemarks().trim() : "";
                 }
+            } else {
+                var optionalEntity = repository.findById(dto.getId());
+                if (optionalEntity.isPresent()) {
+                    dbRemarks = optionalEntity.get().getRemarks() != null ? optionalEntity.get().getRemarks().trim() : "";
+                }
+            }
+            String importedRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
+            
+            // CRITICAL: Remarks MUST be different from DB value
+            // This ensures users document why they're making changes
+            if (dbRemarks.equals(importedRemarks)) {
+                return "Remarks must be updated to explain the changes. Current remarks are identical to the database value.";
             }
         } catch (Exception e) {
             logger.error("[Validation] Error checking remarks for ID {}: {}", dto.getId(), e.getMessage());
@@ -1493,5 +1593,54 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             logger.debug("[Excel Import] Error reading numeric cell: {}", e.getMessage());
         }
         return null;
+    }
+
+    private Double convertOperationalToShutdown(Double operationalHours, Double totalHours) {
+        if (operationalHours == null || totalHours == null) {
+            return null;
+        }
+        return totalHours - operationalHours;
+    }
+
+    private CPPAssetOperationalHoursResponseDto cloneDto(CPPAssetOperationalHoursResponseDto source) {
+        if (source == null) {
+            return null;
+        }
+        CPPAssetOperationalHoursResponseDto target = new CPPAssetOperationalHoursResponseDto();
+        target.setId(source.getId());
+        target.setAssetFkId(source.getAssetFkId());
+        target.setUtilityDistributed(source.getUtilityDistributed());
+        target.setDistributedSapCode(source.getDistributedSapCode());
+        target.setUtilityGenerated(source.getUtilityGenerated());
+        target.setGeneratedUtilityCode(source.getGeneratedUtilityCode());
+
+        target.setApr(source.getApr());
+        target.setMay(source.getMay());
+        target.setJun(source.getJun());
+        target.setJul(source.getJul());
+        target.setAug(source.getAug());
+        target.setSep(source.getSep());
+        target.setOct(source.getOct());
+        target.setNov(source.getNov());
+        target.setDec(source.getDec());
+        target.setJan(source.getJan());
+        target.setFeb(source.getFeb());
+        target.setMar(source.getMar());
+
+        target.setAopYear(source.getAopYear());
+        target.setRemarks(source.getRemarks());
+
+        target.setAssetCategory(source.getAssetCategory());
+        target.setSiteFkId(source.getSiteFkId());
+        target.setVerticalFkId(source.getVerticalFkId());
+        target.setPlantFkId(source.getPlantFkId());
+
+        target.setCreatedDate(source.getCreatedDate());
+        target.setModifiedDate(source.getModifiedDate());
+
+        target.setAssetName(source.getAssetName());
+        target.setPlantName(source.getPlantName());
+        target.setAssetType(source.getAssetType());
+        return target;
     }
 }

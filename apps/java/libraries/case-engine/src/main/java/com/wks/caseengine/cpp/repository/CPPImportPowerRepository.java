@@ -17,6 +17,7 @@ public interface CPPImportPowerRepository extends JpaRepository<CPPImportPower, 
         SELECT
             ip.Id AS id,
             importPlant.DisplayName AS procurementPlant,
+            cppPlant.DisplayName AS plantName,
             np.SAPMaterialCode AS utility,
             np.Name AS material,
             np.UOM AS uom,
@@ -44,6 +45,8 @@ public interface CPPImportPowerRepository extends JpaRepository<CPPImportPower, 
         FROM [RIL.AOP].[dbo].[CPPImportPower] ip WITH(NOLOCK)
         LEFT JOIN [RIL.AOP].[dbo].[Plants] importPlant WITH(NOLOCK)
             ON importPlant.Id = ip.ImportPlantFK_ID
+        LEFT JOIN [RIL.AOP].[dbo].[Plants] cppPlant WITH(NOLOCK)
+            ON cppPlant.Id = ip.CPPPlant_FK_ID
         LEFT JOIN [RIL.AOP].[dbo].[NormParameters] np WITH(NOLOCK)
             ON np.Id = ip.NormParameter_FK_Id
         WHERE ip.CPPPlant_FK_ID IN :plantIds
