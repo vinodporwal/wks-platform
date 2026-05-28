@@ -272,8 +272,10 @@ async function saveImportPower(keycloak, PLANT_ID, AOP_YEAR, payload) {
   }
 }
 
-async function getImportPowerCapacity(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/import-power/capacity/${plantId}/${year}`
+async function getImportPowerCapacity(keycloak, plantIds, aopYear) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
+  const url = `${Config.CaseEngineUrl}/task/jmd/imported-power-plans?plantIds=${queryParams}&aopYear=${aopYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -291,8 +293,10 @@ async function getImportPowerCapacity(keycloak, plantId, year) {
   }
 }
 
-async function saveImportPowerCapacity(keycloak, PLANT_ID, AOP_YEAR, payload) {
-  const url = `${Config.CaseEngineUrl}/task/import-power/capacity/${PLANT_ID}/${AOP_YEAR}`
+async function saveImportPowerCapacity(keycloak, plantIds, aopYear, payload) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
+  const url = `${Config.CaseEngineUrl}/task/jmd/imported-power-plans?plantIds=${queryParams}&aopYear=${aopYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -319,23 +323,61 @@ async function saveImportPowerCapacity(keycloak, PLANT_ID, AOP_YEAR, payload) {
 async function saveImportPowerCapacityExcel(
   file,
   keycloak,
-  PLANT_ID,
-  AOP_YEAR,
+  plantIds,
+  aopYear,
 ) {
-  return saveExcelData(
-    file,
-    keycloak,
-    'import-power/capacity/import',
-    PLANT_ID,
-    AOP_YEAR,
-  )
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
+  const url = `${Config.CaseEngineUrl}/task/jmd/imported-power-plans/import?plantIds=${queryParams}&aopYear=${aopYear}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body: formData })
+    const responseData = await json(keycloak, resp)
+    if (resp.status === 400 || resp.status === 200) {
+      return responseData
+    }
+    if (!resp.ok) {
+      throw new Error(`Failed to import data: ${resp.status} ${resp.statusText}`)
+    }
+    return responseData
+  } catch (e) {
+    console.error('Error importing Import Power Excel:', e)
+    return Promise.reject(e)
+  }
 }
 
-async function exportImportPowerCapacityExcel(keycloak, PLANT_ID, AOP_YEAR) {
-  return exportExcelData(keycloak, {
-    endpoint: `import-power/capacity/export/${PLANT_ID}/${AOP_YEAR}`,
-    fileName: `Import Power Capacity - ${PLANT_ID} - ${AOP_YEAR}.xlsx`,
-  })
+async function exportImportPowerCapacityExcel(keycloak, plantIds, aopYear) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
+  const url = `${Config.CaseEngineUrl}/task/jmd/imported-power-plans/export?plantIds=${queryParams}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const downloadUrl = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.setAttribute('download', `Imported_Power_Plans_${aopYear}.xlsx`)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(downloadUrl)
+    return { success: true }
+  } catch (e) {
+    console.error('Error exporting Import Power Excel:', e)
+    return Promise.reject(e)
+  }
 }
 
 async function getImportPowerOperationalHours(keycloak, plantId, year) {
