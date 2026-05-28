@@ -116,7 +116,7 @@ const UserForm = ({ keycloak }) => {
       }
       return mergeResult
     } finally {
-      setIsLoading(false)
+      // setIsLoading(false)
     }
   }
 
@@ -143,6 +143,9 @@ const UserForm = ({ keycloak }) => {
       if (missingPlantIds.length === 0) return
 
       try {
+        if(tabIndex === 1){
+          setIsLoading(true)
+        }
         const fetches = missingPlantIds.map(async (pid) => {
           try {
             const response = await DataService.getPlantScreenMapping(keycloak, pid, aopYear)
@@ -165,6 +168,8 @@ const UserForm = ({ keycloak }) => {
         })
       } catch (e) {
         console.error(e)
+      } finally {
+        setIsLoading(false)
       }
     }
 

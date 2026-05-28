@@ -450,7 +450,7 @@ const KendoDataTablesReciepe = ({
         {...restThProps}
         aria-sort={ariaSort}
         title={props.title}
-        style={{ padding: '0px', borderRight: '1px solid #878787' }}
+        style={{ ...restThProps?.style, padding: '0px', borderRight: '1px solid #878787' }}
       >
         <Tooltip
           position='top'
@@ -468,7 +468,7 @@ const KendoDataTablesReciepe = ({
     cols.map((col, idx) => {
       if (col.children) {
         return (
-          <GridColumn key={col.title || idx} title={col.title}>
+          <GridColumn key={col.title || idx} title={col.title} locked={col.locked || false}>
             {renderColumns(col.children, filter, sort)}
           </GridColumn>
         )
@@ -484,6 +484,7 @@ const KendoDataTablesReciepe = ({
             field={col.field}
             title={col.title || col.headerName}
             editable={col.editable || false}
+            locked={col.locked || false}
             format={FORMATE_DECIMAL}
             width={col.widthT ? `${col.widthT}px` : '100px'}
             cells={{
@@ -502,6 +503,7 @@ const KendoDataTablesReciepe = ({
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
+            locked={col.locked || false}
             editable={col.editable || false}
             format={FORMATE_DECIMAL}
             className={'k-number-right'}
@@ -522,6 +524,7 @@ const KendoDataTablesReciepe = ({
           field={col.field}
           title={col.title || col.headerName}
           editable={col.editable || false}
+          locked={col.locked || false}
           format={FORMATE_DECIMAL}
           width={col.widthT ? `${col.widthT}px` : '150px'}
           cells={{
@@ -557,6 +560,7 @@ const KendoDataTablesReciepe = ({
         {...props.tdProps}
         title={value}
         style={{
+          ...props.tdProps?.style,
           color: isRed ? 'orange' : undefined,
           fontWeight: isRed ? 'bold' : undefined,
         }}
@@ -873,6 +877,7 @@ const KendoDataTablesReciepe = ({
                     }
                   : false
               }
+              lockGroups={true}
               onRowClick={handleRowClick}
             >
               {renderColumns(
