@@ -6,6 +6,9 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -66,5 +69,63 @@ public class JMDAssetPriorityController {
                 response.getCode(), response.getMessage(), response.getData());
         
         return response;
+    }
+
+    // ========================================
+    // EXPORT POWER ASSET PRIORITY ENDPOINT
+    // ========================================
+
+    @GetMapping("/jmd/assets/power-priority/export")
+    public ResponseEntity<byte[]> exportPowerAssetPriority(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String aopYear) {
+
+        logger.info("[GET /jmd/assets/power-priority/export] Request received - plantIds: {}, aopYear: {}", plantIds, aopYear);
+
+        byte[] excelData = jmdAssetPriorityService.exportPowerAssetPriority(plantIds, aopYear);
+
+        if (excelData == null) {
+            logger.error("[GET /jmd/assets/power-priority/export] Failed to generate Excel file");
+            return ResponseEntity.status(500).body(null);
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", "Power_Asset_Priority_" + aopYear + ".xlsx");
+
+        logger.info("[GET /jmd/assets/power-priority/export] Successfully generated Excel file");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(excelData);
+    }
+
+    // ========================================
+    // EXPORT STEAM ASSET PRIORITY ENDPOINT
+    // ========================================
+
+    @GetMapping("/jmd/assets/steam-priority/export")
+    public ResponseEntity<byte[]> exportSteamAssetPriority(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String aopYear) {
+
+        logger.info("[GET /jmd/assets/steam-priority/export] Request received - plantIds: {}, aopYear: {}", plantIds, aopYear);
+
+        byte[] excelData = jmdAssetPriorityService.exportSteamAssetPriority(plantIds, aopYear);
+
+        if (excelData == null) {
+            logger.error("[GET /jmd/assets/steam-priority/export] Failed to generate Excel file");
+            return ResponseEntity.status(500).body(null);
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", "Steam_Asset_Priority_" + aopYear + ".xlsx");
+
+        logger.info("[GET /jmd/assets/steam-priority/export] Successfully generated Excel file");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(excelData);
     }
 }

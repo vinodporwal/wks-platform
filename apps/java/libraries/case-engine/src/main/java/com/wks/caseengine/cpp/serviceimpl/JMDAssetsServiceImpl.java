@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -495,6 +496,9 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         createMergedHeaderCell(sheet, topHeaderRow, 0, 1, col, col, "assetCategory", headerStyle);
         int assetCategoryCol = col;
         col++;
+        createMergedHeaderCell(sheet, topHeaderRow, 0, 1, col, col, "dataHash", headerStyle);
+        int dataHashCol = col;
+        col++;
         
         int totalColumns = col;
         
@@ -565,12 +569,17 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             createCell(row, col++, dto.getId() != null ? dto.getId().toString() : "", dataStyle);
             createCell(row, col++, dto.getAssetFkId() != null ? dto.getAssetFkId().toString() : "", dataStyle);
             createCell(row, col++, dto.getAssetCategory(), dataStyle);
+            
+            // Generate and store hashcode from operational hours + remarks
+            String dataHash = generateOperationalHoursHash(dto);
+            createCell(row, col++, dataHash, dataStyle);
         }
 
-        // Hide ID columns
+        // Hide ID columns and hashcode column
         sheet.setColumnHidden(idCol, true);
         sheet.setColumnHidden(assetFkIdCol, true);
         sheet.setColumnHidden(assetCategoryCol, true);
+        sheet.setColumnHidden(dataHashCol, true);
 
         // Auto-size columns
         for (int i = 0; i < totalColumns; i++) {
@@ -751,6 +760,50 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         return result.toString();
     }
     
+    /**
+     * Generate hashcode from operational hours data (Apr-Mar) and remarks
+     * This is used to detect if data has changed during import
+     */
+    private String generateOperationalHoursHash(CPPAssetOperationalHoursResponseDto dto) {
+        try {
+            StringBuilder dataToHash = new StringBuilder();
+            
+            // Append all monthly operational hours
+            dataToHash.append(dto.getApr() != null ? dto.getApr().toString() : "null").append("|");
+            dataToHash.append(dto.getMay() != null ? dto.getMay().toString() : "null").append("|");
+            dataToHash.append(dto.getJun() != null ? dto.getJun().toString() : "null").append("|");
+            dataToHash.append(dto.getJul() != null ? dto.getJul().toString() : "null").append("|");
+            dataToHash.append(dto.getAug() != null ? dto.getAug().toString() : "null").append("|");
+            dataToHash.append(dto.getSep() != null ? dto.getSep().toString() : "null").append("|");
+            dataToHash.append(dto.getOct() != null ? dto.getOct().toString() : "null").append("|");
+            dataToHash.append(dto.getNov() != null ? dto.getNov().toString() : "null").append("|");
+            dataToHash.append(dto.getDec() != null ? dto.getDec().toString() : "null").append("|");
+            dataToHash.append(dto.getJan() != null ? dto.getJan().toString() : "null").append("|");
+            dataToHash.append(dto.getFeb() != null ? dto.getFeb().toString() : "null").append("|");
+            dataToHash.append(dto.getMar() != null ? dto.getMar().toString() : "null").append("|");
+            
+            // Append remarks
+            dataToHash.append(dto.getRemarks() != null ? dto.getRemarks() : "null");
+            
+            // Generate SHA-256 hash
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = digest.digest(dataToHash.toString().getBytes("UTF-8"));
+            
+            // Convert to hex string
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hashBytes) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            
+            return hexString.toString();
+        } catch (Exception e) {
+            logger.error("[Hash Generation] Error generating hash: {}", e.getMessage(), e);
+            return "";
+        }
+    }
+    
     @Override
     public AOPMessageVM importPowerOperationalHours(List<UUID> plantIds, String financialYear, MultipartFile file) {
         logger.info("[Import Power Operational Hours] Starting import for plantIds: {}, financialYear: {}", plantIds, financialYear);
@@ -764,13 +817,13 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             // Validate and calculate operational hours
             Map<String, Double> totalHoursByMonth = calculateTotalAvailableHours(financialYear);
             List<CPPAssetOperationalHoursResponseDto> validRecords = new ArrayList<>();
-            List<String> invalidRecords = new ArrayList<>();
+            List<CPPAssetOperationalHoursResponseDto> failedRecords = new ArrayList<>();
             
             for (CPPAssetOperationalHoursResponseDto dto : excelData) {
                 String validationError = validateShutdownHoursData(dto, totalHoursByMonth);
                 if (validationError != null) {
-                    invalidRecords.add(dto.getAssetName() + ": " + validationError);
-                    logger.warn("[Import Power Operational Hours] Invalid record: {}", validationError);
+                    failedRecords.add(dto);
+                    logger.warn("[Import Power Operational Hours] Invalid record - {}: {}", dto.getAssetName(), validationError);
                 } else {
                     // Calculate operational hours from shutdown hours
                     calculateOperationalHoursFromShutdown(dto, totalHoursByMonth);
@@ -778,29 +831,47 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                 }
             }
             
-            // Save valid records
+            // Try to save valid records and track any that fail during save
             if (!validRecords.isEmpty()) {
-                JMDOperationalHoursRequestDTO payload = new JMDOperationalHoursRequestDTO();
-                payload.setPowerResponse(validRecords);
-                saveOperationalHours(plantIds, financialYear, payload);
-                logger.info("[Import Power Operational Hours] Successfully saved {} records", validRecords.size());
+                try {
+                    JMDOperationalHoursRequestDTO payload = new JMDOperationalHoursRequestDTO();
+                    payload.setPowerResponse(validRecords);
+                    AOPMessageVM saveResult = saveOperationalHours(plantIds, financialYear, payload);
+                    
+                    // Check if any records were skipped during save (missing IDs)
+                    if (saveResult.getCode() == 207) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> saveData = (Map<String, Object>) saveResult.getData();
+                        if (saveData != null && saveData.containsKey("skippedRecords")) {
+                            @SuppressWarnings("unchecked")
+                            List<String> skippedRecords = (List<String>) saveData.get("skippedRecords");
+                            logger.warn("[Import Power Operational Hours] {} records skipped during save", skippedRecords.size());
+                        }
+                    }
+                    
+                    logger.info("[Import Power Operational Hours] Successfully processed {} records", validRecords.size());
+                } catch (Exception e) {
+                    logger.error("[Import Power Operational Hours] Error saving records: {}", e.getMessage(), e);
+                    // Mark all valid records as failed if save fails
+                    failedRecords.addAll(validRecords);
+                }
             }
             
             // Prepare response
-            if (invalidRecords.isEmpty()) {
+            if (failedRecords.isEmpty()) {
                 response.setCode(200);
                 response.setMessage("All power operational hours imported successfully");
             } else {
-                // Export failed records to Excel file
-                byte[] failedRecordsFile = exportPowerOperationalHours(plantIds, financialYear);
+                // Export only failed records to Excel file
+                byte[] failedRecordsFile = generateExcel(failedRecords, "Power Operational Hours", financialYear);
                 String base64File = java.util.Base64.getEncoder().encodeToString(failedRecordsFile);
                 response.setCode(400);
-                response.setMessage("Partial import: " + validRecords.size() + " saved, " + invalidRecords.size() + " failed. Download file for details.");
+                response.setMessage("Partial import: " + (excelData.size() - failedRecords.size()) + " saved, " + failedRecords.size() + " failed. Download file for details.");
                 response.setData(base64File);
-                logger.info("[Import Power Operational Hours] Exported {} failed records to Excel", invalidRecords.size());
+                logger.info("[Import Power Operational Hours] Exported {} failed records to Excel", failedRecords.size());
             }
             
-            logger.info("[Import Power Operational Hours] Import completed - Valid: {}, Invalid: {}", validRecords.size(), invalidRecords.size());
+            logger.info("[Import Power Operational Hours] Import completed - Valid: {}, Failed: {}", validRecords.size(), failedRecords.size());
         } catch (Exception e) {
             logger.error("[Import Power Operational Hours] Error during import: {}", e.getMessage(), e);
             response.setCode(500);
@@ -822,13 +893,13 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             // Validate and calculate operational hours
             Map<String, Double> totalHoursByMonth = calculateTotalAvailableHours(financialYear);
             List<CPPAssetOperationalHoursResponseDto> validRecords = new ArrayList<>();
-            List<String> invalidRecords = new ArrayList<>();
+            List<CPPAssetOperationalHoursResponseDto> failedRecords = new ArrayList<>();
             
             for (CPPAssetOperationalHoursResponseDto dto : excelData) {
                 String validationError = validateShutdownHoursData(dto, totalHoursByMonth);
                 if (validationError != null) {
-                    invalidRecords.add(dto.getAssetName() + ": " + validationError);
-                    logger.warn("[Import Steam Operational Hours] Invalid record: {}", validationError);
+                    failedRecords.add(dto);
+                    logger.warn("[Import Steam Operational Hours] Invalid record - {}: {}", dto.getAssetName(), validationError);
                 } else {
                     // Calculate operational hours from shutdown hours
                     calculateOperationalHoursFromShutdown(dto, totalHoursByMonth);
@@ -836,29 +907,47 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                 }
             }
             
-            // Save valid records
+            // Try to save valid records and track any that fail during save
             if (!validRecords.isEmpty()) {
-                JMDOperationalHoursRequestDTO payload = new JMDOperationalHoursRequestDTO();
-                payload.setSteamResponse(validRecords);
-                saveOperationalHours(plantIds, financialYear, payload);
-                logger.info("[Import Steam Operational Hours] Successfully saved {} records", validRecords.size());
+                try {
+                    JMDOperationalHoursRequestDTO payload = new JMDOperationalHoursRequestDTO();
+                    payload.setSteamResponse(validRecords);
+                    AOPMessageVM saveResult = saveOperationalHours(plantIds, financialYear, payload);
+                    
+                    // Check if any records were skipped during save (missing IDs)
+                    if (saveResult.getCode() == 207) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> saveData = (Map<String, Object>) saveResult.getData();
+                        if (saveData != null && saveData.containsKey("skippedRecords")) {
+                            @SuppressWarnings("unchecked")
+                            List<String> skippedRecords = (List<String>) saveData.get("skippedRecords");
+                            logger.warn("[Import Steam Operational Hours] {} records skipped during save", skippedRecords.size());
+                        }
+                    }
+                    
+                    logger.info("[Import Steam Operational Hours] Successfully processed {} records", validRecords.size());
+                } catch (Exception e) {
+                    logger.error("[Import Steam Operational Hours] Error saving records: {}", e.getMessage(), e);
+                    // Mark all valid records as failed if save fails
+                    failedRecords.addAll(validRecords);
+                }
             }
             
             // Prepare response
-            if (invalidRecords.isEmpty()) {
+            if (failedRecords.isEmpty()) {
                 response.setCode(200);
                 response.setMessage("All steam operational hours imported successfully");
             } else {
-                // Export failed records to Excel file
-                byte[] failedRecordsFile = exportSteamOperationalHours(plantIds, financialYear);
+                // Export only failed records to Excel file
+                byte[] failedRecordsFile = generateExcel(failedRecords, "Steam Operational Hours", financialYear);
                 String base64File = java.util.Base64.getEncoder().encodeToString(failedRecordsFile);
                 response.setCode(400);
-                response.setMessage("Partial import: " + validRecords.size() + " saved, " + invalidRecords.size() + " failed. Download file for details.");
+                response.setMessage("Partial import: " + (excelData.size() - failedRecords.size()) + " saved, " + failedRecords.size() + " failed. Download file for details.");
                 response.setData(base64File);
-                logger.info("[Import Steam Operational Hours] Exported {} failed records to Excel", invalidRecords.size());
+                logger.info("[Import Steam Operational Hours] Exported {} failed records to Excel", failedRecords.size());
             }
             
-            logger.info("[Import Steam Operational Hours] Import completed - Valid: {}, Invalid: {}", validRecords.size(), invalidRecords.size());
+            logger.info("[Import Steam Operational Hours] Import completed - Valid: {}, Failed: {}", validRecords.size(), failedRecords.size());
         } catch (Exception e) {
             logger.error("[Import Steam Operational Hours] Error during import: {}", e.getMessage(), e);
             response.setCode(500);
@@ -965,6 +1054,11 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                     
                     dto.setAssetCategory(getStringCellValue(row.getCell(col++)));
                     
+                    // Read the stored hash from Excel
+                    String storedHash = getStringCellValue(row.getCell(col++));
+                    // Store it temporarily in a custom field (we'll use it for validation)
+                    // For now, we'll validate it in the validation method
+                    
                     dataList.add(dto);
                     logger.debug("[Excel Import] Successfully read row for asset: {}", dto.getAssetName());
                     
@@ -985,6 +1079,55 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         // Validate remarks is not empty
         if (dto.getRemarks() == null || dto.getRemarks().trim().isEmpty()) {
             return "Remarks field is mandatory and cannot be empty";
+        }
+        
+        // Check if remarks have been updated - MANDATORY requirement
+        // Fetch the original record from database to compare
+        try {
+            var optionalEntity = repository.findById(dto.getId());
+            if (optionalEntity.isPresent()) {
+                CPPAssetOperationalHours dbEntity = optionalEntity.get();
+                
+                // Get DB remarks (handle null)
+                String dbRemarks = dbEntity.getRemarks() != null ? dbEntity.getRemarks().trim() : "";
+                String importedRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
+                
+                // CRITICAL: Remarks MUST be different from DB value
+                // This ensures users document why they're making changes
+                if (dbRemarks.equals(importedRemarks)) {
+                    return "Remarks must be updated to explain the changes. Current remarks are identical to the database value.";
+                }
+                
+                // Additionally check if the entire record is unchanged (data + remarks)
+                CPPAssetOperationalHoursResponseDto dbDto = new CPPAssetOperationalHoursResponseDto();
+                dbDto.setApr(dbEntity.getApr());
+                dbDto.setMay(dbEntity.getMay());
+                dbDto.setJun(dbEntity.getJun());
+                dbDto.setJul(dbEntity.getJul());
+                dbDto.setAug(dbEntity.getAug());
+                dbDto.setSep(dbEntity.getSep());
+                dbDto.setOct(dbEntity.getOct());
+                dbDto.setNov(dbEntity.getNov());
+                dbDto.setDec(dbEntity.getDec());
+                dbDto.setJan(dbEntity.getJan());
+                dbDto.setFeb(dbEntity.getFeb());
+                dbDto.setMar(dbEntity.getMar());
+                dbDto.setRemarks(dbEntity.getRemarks());
+                
+                // Generate hash from DB data
+                String dbHash = generateOperationalHoursHash(dbDto);
+                
+                // Generate hash from imported data
+                String importedHash = generateOperationalHoursHash(dto);
+                
+                // If hashes match, absolutely nothing changed
+                if (dbHash.equals(importedHash)) {
+                    return "No changes detected. Data and remarks are identical to existing record.";
+                }
+            }
+        } catch (Exception e) {
+            logger.error("[Validation] Error checking data changes for ID {}: {}", dto.getId(), e.getMessage());
+            // Continue with other validations if DB check fails
         }
         
         // Validate each month's shutdown hours
