@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -127,5 +128,47 @@ public class JMDAssetPriorityController {
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(excelData);
+    }
+
+    // ========================================
+    // IMPORT POWER ASSET PRIORITY ENDPOINT
+    // ========================================
+
+    @PostMapping("/jmd/assets/power-priority/import")
+    public ResponseEntity<AOPMessageVM> importPowerAssetPriority(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String aopYear,
+            @RequestParam("file") MultipartFile file) {
+
+        logger.info("[POST /jmd/assets/power-priority/import] Request received - plantIds: {}, aopYear: {}, fileName: {}", 
+                plantIds, aopYear, file.getOriginalFilename());
+
+        AOPMessageVM response = jmdAssetPriorityService.importPowerAssetPriority(plantIds, aopYear, file);
+
+        logger.info("[POST /jmd/assets/power-priority/import] Response - code: {}, message: {}", 
+                response.getCode(), response.getMessage());
+
+        return ResponseEntity.ok(response);
+    }
+
+    // ========================================
+    // IMPORT STEAM ASSET PRIORITY ENDPOINT
+    // ========================================
+
+    @PostMapping("/jmd/assets/steam-priority/import")
+    public ResponseEntity<AOPMessageVM> importSteamAssetPriority(
+            @RequestParam List<UUID> plantIds,
+            @RequestParam String aopYear,
+            @RequestParam("file") MultipartFile file) {
+
+        logger.info("[POST /jmd/assets/steam-priority/import] Request received - plantIds: {}, aopYear: {}, fileName: {}", 
+                plantIds, aopYear, file.getOriginalFilename());
+
+        AOPMessageVM response = jmdAssetPriorityService.importSteamAssetPriority(plantIds, aopYear, file);
+
+        logger.info("[POST /jmd/assets/steam-priority/import] Response - code: {}, message: {}", 
+                response.getCode(), response.getMessage());
+
+        return ResponseEntity.ok(response);
     }
 }
