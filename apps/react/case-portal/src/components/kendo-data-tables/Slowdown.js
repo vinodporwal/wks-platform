@@ -19,6 +19,7 @@ import {
   SlowDownVcmColumns,
   SlowDownVcmhmdColumns,
 } from 'components/colums/VcmColums'
+import { SlowDownChemicalhmdColumns } from 'components/colums/Chemicalcolumn'
 import { SlowDownAromaticsColumns } from 'components/colums/AromaticsColumns'
 import { SlowDownMegColumns } from 'components/colums/MegColums'
 import { SlowDownPeColumns } from 'components/colums/PeColums'
@@ -146,6 +147,10 @@ const SlowDown = ({ permissions }) => {
     lowerPlantName === 'pbr3'
   const IS_PP_HMD = lowerVertName === 'pp' && lowerSiteName === 'hmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'
+  var IS_CHEMICAL_HMD_BUTADIENE =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'hmd' &&
+    lowerPlantName === 'butadiene'
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -222,7 +227,7 @@ const SlowDown = ({ permissions }) => {
     }
 
     // Call for both VCM and PTA_DMD
-    if (lowerVertName === 'vcm' || IS_PTA_DMD) {
+    if (lowerVertName === 'vcm' || IS_PTA_DMD || IS_CHEMICAL_HMD_BUTADIENE) {
       getAllDescriptionDrpdwn()
     }
   }, [
@@ -611,6 +616,12 @@ const SlowDown = ({ permissions }) => {
         'rate',
         'durationInHrs',
       ]
+      const requiredfieldISCHEMICALHMDBUTADIENE = [
+        'discription',
+        'durationInHrs',
+        'rate',
+        'remark',
+      ]
 
       const chosenFields =
         IS_ELASTOMER_HMD_SBR || IS_ELASTOMER_HMD_PBR3
@@ -623,7 +634,9 @@ const SlowDown = ({ permissions }) => {
                 ? requiredFieldsForPe
                 : IS_PTA_DMD
                   ? requiredFieldsISPTADMD
-                  : requiredFields
+                  : IS_CHEMICAL_HMD_BUTADIENE
+                    ? requiredfieldISCHEMICALHMDBUTADIENE
+                    : requiredFields
 
       // Missing required fields
       for (const record of data) {
@@ -685,7 +698,8 @@ const SlowDown = ({ permissions }) => {
         lowerVertName !== 'vcm' &&
         !IS_PTA_DMD &&
         !IS_PTA_HMD &&
-        !IS_CHEMICAL
+        !IS_CHEMICAL &&
+        !IS_CHEMICAL_HMD_BUTADIENE
       ) {
         rows.forEach((row) => {
           if ((row.discription || '').trim().toLowerCase() === duplicate) {
@@ -1288,7 +1302,7 @@ const SlowDown = ({ permissions }) => {
   }, [oldYear, yearChanged, keycloak, PLANT_ID])
   useEffect(() => {
     if (
-      (lowerVertName === 'vcm' || IS_PTA_DMD) &&
+      (lowerVertName === 'vcm' || IS_PTA_DMD || IS_CHEMICAL_HMD_BUTADIENE) &&
       allDescriptionDrpdwn?.length > 0
     ) {
       fetchData()
@@ -1387,7 +1401,9 @@ const SlowDown = ({ permissions }) => {
       case verticalEnums.PET:
         return SlowDownPeColumns
       case verticalEnums.CHEMICAL:
-        return SlowDownPtaColumns
+        return IS_CHEMICAL_HMD_BUTADIENE
+          ? SlowDownChemicalhmdColumns
+          : SlowDownPtaColumns
       default:
         return SlowDownMegColumns
     }
@@ -1702,7 +1718,7 @@ const SlowDown = ({ permissions }) => {
         IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD
           ? true
           : false,
-      deleteMultiple: true,  // IS_PP_DTA ? true : false,
+      deleteMultiple: true, // IS_PP_DTA ? true : false,
     },
     isOldYear,
   )

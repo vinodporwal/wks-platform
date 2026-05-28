@@ -142,7 +142,10 @@ const ShutdownNorms = () => {
 
   const IS_AROMATICS_PMD =
     lowerVertName === 'aromatics' && SITE_NAME_LOWERCASE === 'pmd'
-
+  const IS_CHEMICAL_HMD_MTBE_BUTADIENE_BUTENE =
+    lowerVertName === 'chemical' &&
+    SITE_NAME_LOWERCASE === 'hmd' &&
+    ['mtbe', 'butadiene', 'butene'].includes(PLANT_NAME_LOWERCASE)
   const textNote =
     ((IS_PE_PP_VERTICAL || IS_PVC_DMD || IS_ELASTOMER_JMD_HIIR) && !IS_PE_C2) ||
     IS_PVC_HMD
@@ -859,9 +862,10 @@ const ShutdownNorms = () => {
 
       //VCM(VMD) && elastomer we required to show calculate btn
       showCalculate:
-        lowerVertName == 'elastomer' &&
-        SITE_NAME_LOWERCASE != 'jmd' &&
-        !(SITE_NAME_LOWERCASE === 'hmd' && PLANT_NAME_LOWERCASE === 'sbr')
+        (lowerVertName == 'elastomer' &&
+          SITE_NAME_LOWERCASE != 'jmd' &&
+          !(SITE_NAME_LOWERCASE === 'hmd' && PLANT_NAME_LOWERCASE === 'sbr')) ||
+        IS_CHEMICAL_HMD_MTBE_BUTADIENE_BUTENE
           ? true
           : lowerVertName == 'meg' ||
               lowerVertName == 'vcm' ||
