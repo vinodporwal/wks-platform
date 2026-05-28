@@ -16,4 +16,12 @@ public interface JMDAssetPriorityService {
             List<UUID> plantIds,
             String aopYear,
             AssetPriorityRequestDTO payload);
+
+    byte[] exportPowerAssetPriority(
+            List<UUID> plantIds,
+            String aopYear);
+
+    byte[] exportSteamAssetPriority(
+            List<UUID> plantIds,
+            String aopYear);
 }

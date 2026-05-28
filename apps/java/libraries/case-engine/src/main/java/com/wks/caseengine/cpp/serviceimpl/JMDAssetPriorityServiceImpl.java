@@ -15,13 +15,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 @Service
 public class JMDAssetPriorityServiceImpl implements JMDAssetPriorityService {
@@ -248,6 +254,218 @@ public class JMDAssetPriorityServiceImpl implements JMDAssetPriorityService {
         return aopMessageVM;
     }
 
+    @Override
+    public byte[] exportPowerAssetPriority(List<UUID> plantIds, String aopYear) {
+        logger.info("[Export Power Priority] Exporting power asset priorities for plantIds: {}, aopYear: {}", plantIds, aopYear);
+        
+        try {
+            AOPMessageVM response = getAssetPrioritiesForPlants(plantIds, aopYear);
+            
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = (Map<String, Object>) response.getData();
+            
+            @SuppressWarnings("unchecked")
+            List<CPPAssetPriorityResponseDto> powerData = 
+                (List<CPPAssetPriorityResponseDto>) data.get("PowerAssetPriorities");
+            
+            // Sort by plantName first, then by assetType
+            if (powerData != null && !powerData.isEmpty()) {
+                powerData.sort(Comparator
+                    .comparing(CPPAssetPriorityResponseDto::getPlantName, 
+                        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
+                    .thenComparing(CPPAssetPriorityResponseDto::getAssetType, 
+                        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)));
+                logger.debug("[Export Power Priority] Sorted {} power assets by plantName and assetType", powerData.size());
+            }
+            
+            logger.info("[Export Power Priority] Generating Excel for {} power assets", powerData != null ? powerData.size() : 0);
+            
+            return generatePriorityExcel(powerData, "Power Asset Priority", aopYear);
+            
+        } catch (Exception e) {
+            logger.error("[Export Power Priority] Error exporting power asset priorities: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    @Override
+    public byte[] exportSteamAssetPriority(List<UUID> plantIds, String aopYear) {
+        logger.info("[Export Steam Priority] Exporting steam asset priorities for plantIds: {}, aopYear: {}", plantIds, aopYear);
+        
+        try {
+            AOPMessageVM response = getAssetPrioritiesForPlants(plantIds, aopYear);
+            
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = (Map<String, Object>) response.getData();
+            
+            @SuppressWarnings("unchecked")
+            List<CPPAssetPriorityResponseDto> steamData = 
+                (List<CPPAssetPriorityResponseDto>) data.get("SteamAssetPriorities");
+            
+            // Sort by plantName first, then by assetType
+            if (steamData != null && !steamData.isEmpty()) {
+                steamData.sort(Comparator
+                    .comparing(CPPAssetPriorityResponseDto::getPlantName, 
+                        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
+                    .thenComparing(CPPAssetPriorityResponseDto::getAssetType, 
+                        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)));
+                logger.debug("[Export Steam Priority] Sorted {} steam assets by plantName and assetType", steamData.size());
+            }
+            
+            logger.info("[Export Steam Priority] Generating Excel for {} steam assets", steamData != null ? steamData.size() : 0);
+            
+            return generatePriorityExcel(steamData, "Steam Asset Priority", aopYear);
+            
+        } catch (Exception e) {
+            logger.error("[Export Steam Priority] Error exporting steam asset priorities: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    private byte[] generatePriorityExcel(List<CPPAssetPriorityResponseDto> dataList, String sheetName, String aopYear) throws Exception {
+        logger.info("[Excel Generation] Creating workbook for sheet: {} with {} records", sheetName, dataList != null ? dataList.size() : 0);
+        
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet(sheetName);
+        CellStyle headerStyle = createHeaderStyle(workbook);
+        CellStyle dataStyle = createDataStyle(workbook);
+        CellStyle remarksStyle = createRemarksStyle(workbook);
+
+        String startYearSuffix = aopYear.substring(2, 4);
+        String endYearSuffix = aopYear.substring(5, 7);
+        
+        int currentRow = 0;
+        int col = 0;
+
+        // Create header row
+        Row headerRow = sheet.createRow(currentRow++);
+        col = 0;
+        
+        // Static columns
+        createCell(headerRow, col++, "Asset Name", headerStyle);
+        createCell(headerRow, col++, "Asset Type", headerStyle);
+        createCell(headerRow, col++, "Plant Name", headerStyle);
+        
+        // Month headers
+        String[] months = {"Apr-" + startYearSuffix, "May-" + startYearSuffix, "Jun-" + startYearSuffix, "Jul-" + startYearSuffix,
+                "Aug-" + startYearSuffix, "Sep-" + startYearSuffix, "Oct-" + startYearSuffix, "Nov-" + startYearSuffix,
+                "Dec-" + startYearSuffix, "Jan-" + endYearSuffix, "Feb-" + endYearSuffix, "Mar-" + endYearSuffix};
+        
+        for (String month : months) {
+            createCell(headerRow, col++, month, headerStyle);
+        }
+        
+        int remarksCol = col;
+        createCell(headerRow, col++, "Remarks", headerStyle);
+        createCell(headerRow, col++, "id", headerStyle);
+        int idCol = col - 1;
+        createCell(headerRow, col++, "assetFkId", headerStyle);
+        int assetFkIdCol = col - 1;
+        createCell(headerRow, col++, "assetCategory", headerStyle);
+        int assetCategoryCol = col - 1;
+        
+        int totalColumns = col;
+        
+        // Data rows
+        int rowCount = 0;
+        for (CPPAssetPriorityResponseDto dto : dataList) {
+            rowCount++;
+            Row row = sheet.createRow(currentRow++);
+            col = 0;
+            logger.debug("[Excel Generation] Writing row {} for asset: {}", rowCount, dto.getAssetName());
+
+            createCell(row, col++, dto.getAssetName(), dataStyle);
+            createCell(row, col++, dto.getAssetType(), dataStyle);
+            createCell(row, col++, dto.getPlantName(), dataStyle);
+            
+            // Monthly priority values
+            setNumericCell(row, col++, dto.getApr() != null ? dto.getApr().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getMay() != null ? dto.getMay().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getJun() != null ? dto.getJun().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getJul() != null ? dto.getJul().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getAug() != null ? dto.getAug().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getSep() != null ? dto.getSep().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getOct() != null ? dto.getOct().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getNov() != null ? dto.getNov().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getDec() != null ? dto.getDec().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getJan() != null ? dto.getJan().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getFeb() != null ? dto.getFeb().doubleValue() : null, dataStyle);
+            setNumericCell(row, col++, dto.getMar() != null ? dto.getMar().doubleValue() : null, dataStyle);
+            
+            createCell(row, col++, dto.getRemarks(), remarksStyle);
+            createCell(row, col++, dto.getId() != null ? dto.getId().toString() : "", dataStyle);
+            createCell(row, col++, dto.getAssetFkId() != null ? dto.getAssetFkId().toString() : "", dataStyle);
+            createCell(row, col++, dto.getAssetCategory(), dataStyle);
+        }
+
+        // Hide ID columns
+        sheet.setColumnHidden(idCol, true);
+        sheet.setColumnHidden(assetFkIdCol, true);
+        sheet.setColumnHidden(assetCategoryCol, true);
+
+        // Auto-size columns
+        for (int i = 0; i < totalColumns; i++) {
+            if (i == remarksCol) {
+                sheet.setColumnWidth(i, 8000);
+                continue;
+            }
+            sheet.autoSizeColumn(i);
+        }
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        workbook.write(outputStream);
+        workbook.close();
+        
+        logger.info("[Excel Generation] Successfully generated Excel with {} data rows", rowCount);
+        
+        return outputStream.toByteArray();
+    }
+
+    private void createCell(Row row, int col, String value, CellStyle style) {
+        Cell cell = row.createCell(col);
+        cell.setCellValue(value != null ? value : "");
+        cell.setCellStyle(style);
+    }
+
+    private void setNumericCell(Row row, int col, Double value, CellStyle style) {
+        Cell cell = row.createCell(col);
+        if (value != null) {
+            cell.setCellValue(value);
+        } else {
+            cell.setCellValue("");
+        }
+        cell.setCellStyle(style);
+    }
+
+    private CellStyle createHeaderStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        Font font = workbook.createFont();
+        font.setBold(true);
+        style.setFont(font);
+        return style;
+    }
+
+    private CellStyle createDataStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        return style;
+    }
+
+    private CellStyle createRemarksStyle(Workbook workbook) {
+        CellStyle style = createDataStyle(workbook);
+        style.setWrapText(true);
+        return style;
+    }
+
     private boolean savePowerAssetPriority(CPPAssetPriorityResponseDto dto) {
         logger.debug("[POST Service - Power] Updating existing record with ID: {}", dto.getId());
         
@@ -263,10 +481,7 @@ public class JMDAssetPriorityServiceImpl implements JMDAssetPriorityService {
         CPPPowerAssetPriority entity = optionalEntity.get();
         entity.setUpdatedDate(LocalDateTime.now());
 
-        // Map DTO to Entity
-        // entity.setAssetFkId(dto.getAssetFkId());
-        // entity.setPlantFkId(dto.getPlantFkId());
-
+        // Update only monthly priority values (Apr to Mar) and remarks
         entity.setApr(dto.getApr());
         entity.setMay(dto.getMay());
         entity.setJun(dto.getJun());
@@ -283,7 +498,7 @@ public class JMDAssetPriorityServiceImpl implements JMDAssetPriorityService {
         entity.setRemarks(dto.getRemarks());
 
         CPPPowerAssetPriority saved = repository.save(entity);
-        logger.debug("[POST Service - Power] Successfully updated entity with ID: {}", saved.getId());
+        logger.debug("[POST Service - Power] Successfully updated entity with ID: {} - Monthly priorities and remarks updated", saved.getId());
         return true;
     }
 
@@ -302,10 +517,7 @@ public class JMDAssetPriorityServiceImpl implements JMDAssetPriorityService {
         CPPSteamAssetPriority entity = optionalEntity.get();
         entity.setUpdatedDate(LocalDateTime.now());
 
-        // Map DTO to Entity
-        entity.setAssetFkId(dto.getAssetFkId());
-        entity.setPlantFkId(dto.getPlantFkId());
-
+        // Update only monthly priority values (Apr to Mar) and remarks
         entity.setApr(dto.getApr());
         entity.setMay(dto.getMay());
         entity.setJun(dto.getJun());
@@ -322,7 +534,7 @@ public class JMDAssetPriorityServiceImpl implements JMDAssetPriorityService {
         entity.setRemarks(dto.getRemarks());
 
         CPPSteamAssetPriority saved = steamRepository.save(entity);
-        logger.debug("[POST Service - Steam] Successfully updated entity with ID: {}", saved.getId());
+        logger.debug("[POST Service - Steam] Successfully updated entity with ID: {} - Monthly priorities and remarks updated", saved.getId());
         return true;
     }
 }
