@@ -174,8 +174,18 @@ const InputsJMD = () => {
     <Box sx={{ p: 0 }}>
       <LoaderBackdrop open={!!loading} />
 
-      {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+      {/* Tabs - sticky below StepperNav */}
+      <Box
+        sx={{
+          position: 'sticky',
+          top: -1,
+          zIndex: 10,
+          backgroundColor: '#ffffff',
+          borderBottom: 1,
+          borderColor: 'divider',
+          mb: 1,
+        }}
+      >
         <AopTabs
           tabIndex={tabIndex}
           setTabIndex={setTabIndex}

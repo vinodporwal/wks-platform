@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
-import AopTabs from '../../common/components/AopTabs'
+import AopTabs from 'components/AopTabs'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -187,8 +187,18 @@ const Inputs = () => {
       default:
         return (
           <>
-            {/* Tabs */}
-            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+            {/* Tabs - sticky below StepperNav */}
+            <Box
+              sx={{
+                position: 'sticky',
+                top: -1,
+                zIndex: 10,
+                backgroundColor: '#ffffff',
+                borderBottom: 1,
+                borderColor: 'divider',
+                mb: 1,
+              }}
+            >
               <AopTabs
                 tabIndex={tabIndex}
                 setTabIndex={setTabIndex}

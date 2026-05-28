@@ -1,16 +1,18 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { Box } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
-import { InputApiService } from 'components/aop-phase-two/services/cpp/inputApiService'
+import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/inputApiService'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { useDebounce } from 'hooks/useDebounce'
 
 const ImportPower = () => {
   const keycloak = useSession()
+
   // State management
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
@@ -19,37 +21,39 @@ const ImportPower = () => {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
-    verticalChange,
-    yearChanged,
-    oldYear,
-    plantID,
     plantObject,
     siteObject,
     verticalObject,
     year,
     screenTitle,
+    jmdSelectedPlants,
   } = dataGridStore
-  const PLANT_ID = plantObject?.id
-  const SITE_ID = siteObject?.id
-  const VERTICAL_ID = verticalObject?.id
-  const VERTICAL_NAME = verticalObject?.name
+
   const AOP_YEAR = year?.selectedYear
   const headerMap = generateHeaderNames(AOP_YEAR)
+  const valueFormat = ValueFormatterPhaseTwo()
+
+  // Multi-plant list — same pattern as PowerAssetAvailability
+  const PLANT_ID_LIST = useMemo(
+    () => jmdSelectedPlants?.map((plant) => plant.id) || [],
+    [jmdSelectedPlants],
+  )
+
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
-  const valueFormat = ValueFormatterPhaseTwo()
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
-  // Column definitions
+  // Column definitions — field names match CPPImportPowerResponseDTO
   const columns = [
     { field: 'id', title: 'ID', hidden: true },
     {
-      field: 'plantName',
+      field: 'procurementPlant',
       title: 'Plant',
       width: 150,
       minWidth: 150,
@@ -57,7 +61,7 @@ const ImportPower = () => {
       editable: false,
     },
     {
-      field: 'sourceName',
+      field: 'utility',
       title: 'Utility/Material',
       width: 150,
       minWidth: 150,
@@ -65,15 +69,7 @@ const ImportPower = () => {
       editable: false,
     },
     {
-      field: 'sapCode',
-      title: 'SAP Code',
-      width: 120,
-      minWidth: 120,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'materialCode',
+      field: 'material',
       title: 'Material Code',
       width: 120,
       minWidth: 120,
@@ -90,7 +86,7 @@ const ImportPower = () => {
       editable: false,
     },
     {
-      field: 'april',
+      field: 'apr',
       title: headerMap[4],
       editable: true,
       widthT: 100,
@@ -112,7 +108,7 @@ const ImportPower = () => {
       format: valueFormat,
     },
     {
-      field: 'june',
+      field: 'jun',
       title: headerMap[6],
       editable: true,
       widthT: 100,
@@ -123,7 +119,7 @@ const ImportPower = () => {
       format: valueFormat,
     },
     {
-      field: 'july',
+      field: 'jul',
       title: headerMap[7],
       editable: true,
       widthT: 100,
@@ -145,7 +141,7 @@ const ImportPower = () => {
       format: valueFormat,
     },
     {
-      field: 'sept',
+      field: 'sep',
       title: headerMap[9],
       editable: true,
       widthT: 100,
@@ -231,22 +227,20 @@ const ImportPower = () => {
     },
   ]
 
-  useEffect(() => {
-    if (PLANT_ID && AOP_YEAR) {
-      fetchImportConsumptionData(keycloak, PLANT_ID, AOP_YEAR)
-      // setRows(dummyRowsData);
-    }
-  }, [PLANT_ID, AOP_YEAR])
+  // ── Fetch ──────────────────────────────────────────────────────────────────
 
-  const fetchImportConsumptionData = async (keycloak, PLANT_ID, AOP_YEAR) => {
+  const fetchImportPowerData = useCallback(async () => {
     setLoading(true)
     try {
       const res = await InputApiService.getImportPowerCapacity(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
-      if (res?.length === 0) {
+
+      const importedPowerPlans = res?.data?.importedPowerPlans
+
+      if (!importedPowerPlans || importedPowerPlans.length === 0) {
         setRows([])
         setOriginalRows([])
         setSnackbarOpen(true)
@@ -254,158 +248,87 @@ const ImportPower = () => {
         return
       }
 
-      let tempRes = res.map((item, index) => {
-        const transformed = {
-          sourceId: item?.sourceId,
-          sourceName: item?.sourceName,
-          plantName: item?.plantName,
-          sapCode: item?.sapCode,
-          materialCode: item?.materialCode,
-          uom: item?.uom,
-          april: item?.april,
-          may: item?.may,
-          june: item?.june,
-          july: item?.july,
-          aug: item?.august,
-          sept: item?.september,
-          oct: item?.october,
-          nov: item?.november,
-          dec: item?.december,
-          jan: item?.january,
-          feb: item?.february,
-          mar: item?.march,
-          remarks: item?.remarks,
-          id: item?.sourceId || index + 1,
-        }
-        return transformed
-      })
+      // Calculate total row
+      const totalRow = buildTotalRow(importedPowerPlans)
+      const finalRows = [...importedPowerPlans, totalRow]
 
-      // Calculate totals for each month
-      const totalRow = {
-        sourceId: '',
-        sourceName: '',
-        plantName: 'Total',
-        sapCode: '',
-        materialCode: '',
-        uom: tempRes.length > 0 ? tempRes[0].uom : 'Unit',
-        april: tempRes.reduce(
-          (sum, row) => sum + (parseFloat(row.april) || 0),
-          0,
-        ),
-        may: tempRes.reduce((sum, row) => sum + (parseFloat(row.may) || 0), 0),
-        june: tempRes.reduce(
-          (sum, row) => sum + (parseFloat(row.june) || 0),
-          0,
-        ),
-        july: tempRes.reduce(
-          (sum, row) => sum + (parseFloat(row.july) || 0),
-          0,
-        ),
-        aug: tempRes.reduce((sum, row) => sum + (parseFloat(row.aug) || 0), 0),
-        sept: tempRes.reduce(
-          (sum, row) => sum + (parseFloat(row.sept) || 0),
-          0,
-        ),
-        oct: tempRes.reduce((sum, row) => sum + (parseFloat(row.oct) || 0), 0),
-        nov: tempRes.reduce((sum, row) => sum + (parseFloat(row.nov) || 0), 0),
-        dec: tempRes.reduce((sum, row) => sum + (parseFloat(row.dec) || 0), 0),
-        jan: tempRes.reduce((sum, row) => sum + (parseFloat(row.jan) || 0), 0),
-        feb: tempRes.reduce((sum, row) => sum + (parseFloat(row.feb) || 0), 0),
-        mar: tempRes.reduce((sum, row) => sum + (parseFloat(row.mar) || 0), 0),
-        remarks: '',
-        id: 'TOTAL_ROW',
-        isTotal: true, // Flag to identify total row
-        isEditable: false,
-      }
-
-      // Add total row at the end
-      tempRes.push(totalRow)
-
-      console.log('tempRes', tempRes)
-      setRows(tempRes)
-      setOriginalRows(tempRes)
+      setRows(finalRows)
+      setOriginalRows(finalRows)
     } catch (error) {
-      console.error('Error fetching import consumption data:', error)
+      console.error('Error fetching import power data:', error)
       setSnackbarOpen(true)
       setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
       setLoading(false)
     }
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+
+  useDebounce(
+    () => {
+      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+        fetchImportPowerData()
+        setModifiedCells({})
+      }
+    },
+    1000,
+    [PLANT_ID_LIST, AOP_YEAR, fetchImportPowerData],
+  )
+
+  // ── Total row helpers ──────────────────────────────────────────────────────
+
+  const monthFields = [
+    'apr',
+    'may',
+    'jun',
+    'jul',
+    'aug',
+    'sep',
+    'oct',
+    'nov',
+    'dec',
+    'jan',
+    'feb',
+    'mar',
+  ]
+
+  function buildTotalRow(dataRows) {
+    const totals = {}
+    monthFields.forEach((f) => {
+      totals[f] = dataRows.reduce(
+        (sum, row) => sum + (parseFloat(row[f]) || 0),
+        0,
+      )
+    })
+    // plantName must be present so groupBy logic can place this row correctly
+    const firstRow = dataRows.length > 0 ? dataRows[0] : {}
+    return {
+      id: 'TOTAL_ROW',
+      plantName: firstRow.plantName || '', // keep same group bucket as data rows
+      procurementPlant: 'Total',
+      utility: '',
+      material: '',
+      uom: firstRow.uom || '',
+      aopYear: firstRow.aopYear || '',
+      ...totals,
+      remarks: '',
+      isTotal: true,
+      isEditable: false,
+    }
   }
 
-  // Custom item change handler to recalculate totals in real-time
+  // Custom item change — recalculates totals in real-time when a month cell changes
   const customItemChange = useCallback((event, setRowsFunc) => {
     const { field } = event
+    if (!monthFields.includes(field)) return
 
-    // Only recalculate totals for month fields
-    const monthFields = [
-      'april',
-      'may',
-      'june',
-      'july',
-      'aug',
-      'sept',
-      'oct',
-      'nov',
-      'dec',
-      'jan',
-      'feb',
-      'mar',
-    ]
-
-    if (!monthFields.includes(field)) {
-      return
-    }
-
-    // Update rows with recalculated totals
     setRowsFunc((currentRows) => {
-      // Filter out the total row to calculate new totals
       const dataRows = currentRows.filter((row) => !row.isTotal)
-
-      // Recalculate totals
-      const totalRow = {
-        sourceId: '',
-        sourceName: '',
-        plantName: 'Total',
-        sapCode: '',
-        materialCode: '',
-        uom: dataRows.length > 0 ? dataRows[0].uom : 'Unit',
-        april: dataRows.reduce(
-          (sum, row) => sum + (parseFloat(row.april) || 0),
-          0,
-        ),
-        may: dataRows.reduce((sum, row) => sum + (parseFloat(row.may) || 0), 0),
-        june: dataRows.reduce(
-          (sum, row) => sum + (parseFloat(row.june) || 0),
-          0,
-        ),
-        july: dataRows.reduce(
-          (sum, row) => sum + (parseFloat(row.july) || 0),
-          0,
-        ),
-        aug: dataRows.reduce((sum, row) => sum + (parseFloat(row.aug) || 0), 0),
-        sept: dataRows.reduce(
-          (sum, row) => sum + (parseFloat(row.sept) || 0),
-          0,
-        ),
-        oct: dataRows.reduce((sum, row) => sum + (parseFloat(row.oct) || 0), 0),
-        nov: dataRows.reduce((sum, row) => sum + (parseFloat(row.nov) || 0), 0),
-        dec: dataRows.reduce((sum, row) => sum + (parseFloat(row.dec) || 0), 0),
-        jan: dataRows.reduce((sum, row) => sum + (parseFloat(row.jan) || 0), 0),
-        feb: dataRows.reduce((sum, row) => sum + (parseFloat(row.feb) || 0), 0),
-        mar: dataRows.reduce((sum, row) => sum + (parseFloat(row.mar) || 0), 0),
-        remarks: '',
-        id: 'TOTAL_ROW',
-        isTotal: true,
-        isEditable: false,
-      }
-
-      // Return updated rows with recalculated total
-      return [...dataRows, totalRow]
+      return [...dataRows, buildTotalRow(dataRows)]
     })
   }, [])
 
-  // Permissions (adjust as needed)
+  // ── Permissions ────────────────────────────────────────────────────────────
+
   const permissions = {
     showAction: true,
     addButton: false,
@@ -415,114 +338,54 @@ const ImportPower = () => {
     allAction: true,
     showImport: true,
     showExport: true,
-    ExcelName: `Import Power Capacity - ${AOP_YEAR}`,
+    ExcelName: `Import Power - ${AOP_YEAR}`,
     showTitleNameBusiness: true,
     showTitle: true,
     titleName: screenTitle?.title,
   }
 
+  // ── Save ───────────────────────────────────────────────────────────────────
+
   const saveChanges = async () => {
     setLoading(true)
-    console.log('modifiedCells', modifiedCells)
+
     const modifiedData = Object.values(modifiedCells)
-    console.log('modifiedData', modifiedData)
-    if (modifiedData.length == 0) {
+    if (modifiedData.length === 0) {
       setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'No Records to Save!',
-        severity: 'info',
-      })
+      setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
       setLoading(false)
       return
     }
-    var rawData = Object.values(modifiedCells)
-    console.log('rawData', rawData)
-    const data = rawData.filter((row) => row.inEdit)
-    if (data.length == 0) {
+
+    const data = modifiedData.filter((row) => row.inEdit)
+    if (data.length === 0) {
       setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'No Records to Save!',
-        severity: 'info',
-      })
+      setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
       setLoading(false)
       return
     }
-    // Custom validation: If any row data is updated, remarks must be filled and different from original
-    const fieldsToCheck = [
-      'april',
-      'may',
-      'june',
-      'july',
-      'aug',
-      'sept',
-      'oct',
-      'nov',
-      'dec',
-      'jan',
-      'feb',
-      'mar',
-    ]
+
+    // Validate remarks
     const validationError = validateRowDataWithRemarks(
       data,
       originalRows,
-      fieldsToCheck,
-      'sourceName',
+      monthFields,
+      'utility',
     )
-
     if (validationError) {
       setSnackbarOpen(true)
-      setSnackbarData({
-        message: validationError,
-        severity: 'error',
-      })
+      setSnackbarData({ message: validationError, severity: 'error' })
       setLoading(false)
       return
     }
 
-    const payload = modifiedData?.map(
-      ({
-        id,
-        inEdit,
-        sourceId,
-        sourceName,
-        plantName,
-        sapCode,
-        materialCode,
-        uom,
-        aug,
-        sept,
-        oct,
-        nov,
-        dec,
-        jan,
-        feb,
-        mar,
-        ...rest
-      }) => ({
-        sourceId,
-        sourceName,
-        plantName,
-        sapCode,
-        materialCode,
-        uom,
-        august: aug,
-        september: sept,
-        october: oct,
-        november: nov,
-        december: dec,
-        january: jan,
-        february: feb,
-        march: mar,
-        ...rest,
-      }),
-    )
+    // Strip UI-only fields before sending
+    const payload = data.map(({ inEdit, isTotal, isEditable, ...rest }) => rest)
 
     try {
-      console.log('payload', payload)
-
-      const response = await InputApiService.saveImportPowerCapacity(
+      await InputApiService.saveImportPowerCapacity(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
         payload,
       )
@@ -530,12 +393,12 @@ const ImportPower = () => {
       setModifiedCells({})
       setSnackbarOpen(true)
       setSnackbarData({
-        message: `Successfully saved ${modifiedData.length} rows changes!`,
+        message: `Successfully saved ${data.length} row(s)!`,
         severity: 'success',
       })
-      fetchImportConsumptionData(keycloak, PLANT_ID, AOP_YEAR)
+      fetchImportPowerData()
     } catch (error) {
-      console.error('Error saving import consumption data:', error)
+      console.error('Error saving import power data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to save changes. Please try again.',
@@ -546,15 +409,16 @@ const ImportPower = () => {
     }
   }
 
+  // ── Excel Import ───────────────────────────────────────────────────────────
+
   const handleExcelUpload = async (file) => {
     if (!file) return
-
     setLoading(true)
     try {
       const response = await InputApiService.saveImportPowerCapacityExcel(
         file,
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
 
@@ -565,18 +429,16 @@ const ImportPower = () => {
           severity: 'success',
         })
         setModifiedCells({})
-        await fetchImportConsumptionData(keycloak, PLANT_ID, AOP_YEAR)
+        await fetchImportPowerData()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = Array.from(byteCharacters, (char) =>
           char.charCodeAt(0),
         )
         const byteArray = new Uint8Array(byteNumbers)
-
         const blob = new Blob([byteArray], {
           type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         })
-
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
@@ -591,13 +453,10 @@ const ImportPower = () => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
-        await fetchImportConsumptionData(keycloak, PLANT_ID, AOP_YEAR)
+        await fetchImportPowerData()
       } else {
         setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Upload Failed!',
-          severity: 'error',
-        })
+        setSnackbarData({ message: 'Upload Failed!', severity: 'error' })
       }
     } catch (error) {
       console.error('Error uploading Excel file:', error)
@@ -611,17 +470,15 @@ const ImportPower = () => {
     }
   }
 
+  // ── Excel Export ───────────────────────────────────────────────────────────
+
   const handleExport = async () => {
     setSnackbarOpen(true)
-    setSnackbarData({
-      message: 'Excel download started!',
-      severity: 'info',
-    })
-
+    setSnackbarData({ message: 'Excel download started!', severity: 'info' })
     try {
       await InputApiService.exportImportPowerCapacityExcel(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
       setSnackbarData({
@@ -637,12 +494,15 @@ const ImportPower = () => {
     }
   }
 
-  // Handle remark cell click
+  // ── Remark dialog ──────────────────────────────────────────────────────────
+
   const handleRemarkCellClick = (row) => {
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <Box>
@@ -653,7 +513,7 @@ const ImportPower = () => {
         setRows={setRows}
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
-        title='Purchase Power Input'
+        title='Import Power'
         permissions={permissions}
         handleRemarkCellClick={handleRemarkCellClick}
         remarkDialogOpen={remarkDialogOpen}
@@ -670,7 +530,7 @@ const ImportPower = () => {
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         customItemChange={customItemChange}
-        //groupBy="plant"
+        groupBy={['plantName']}
       />
     </Box>
   )
