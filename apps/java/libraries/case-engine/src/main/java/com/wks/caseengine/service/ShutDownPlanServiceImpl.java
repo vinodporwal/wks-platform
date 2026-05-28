@@ -3895,8 +3895,21 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			List<Map<String, Object>> mapList = new ArrayList<Map<String, Object>>();
-			String viewName = vertical.getName() + site.getName() + "vwScrnShutdown";
-			List<Object[]> results = getDescriptionDropdownDataBySite(site.getId(), viewName);
+			String viewName = null;
+			if(vertical.getName().equalsIgnoreCase("Chemical")) { 
+  				viewName = "vwScrnShutdownChemical";
+			}
+			else {
+		viewName = vertical.getName() + site.getName() + "vwScrnShutdown"; 
+	}
+	List<Object[]> results = null;
+      if(vertical.getName().equalsIgnoreCase("Chemical")) { 
+		  
+		results = getDescriptionDropdownDataByPlant( UUID.fromString(plantId), viewName);
+	  }
+			else { results = getDescriptionDropdownDataBySite(site.getId(), viewName);  
+
+			}
 			for (Object[] obj : results) {
 				Map<String, Object> map = new HashMap<String, Object>();
 				map.put("DisplayName", obj[2]);
@@ -3933,6 +3946,19 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 			String sql = "SELECT * from " + viewName + " where Site_FK_Id = :siteId order by DisplayOrder";
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("siteId", siteId);
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	public List<Object[]> getDescriptionDropdownDataByPlant(UUID plantId, String viewName) {
+		try {
+			String sql = "SELECT * from " + viewName + " where Plant_FK_Id = :plantId order by DisplayOrder";
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
 			return query.getResultList();
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
