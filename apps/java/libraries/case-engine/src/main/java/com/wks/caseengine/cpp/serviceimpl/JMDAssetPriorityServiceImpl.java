@@ -26,8 +26,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class JMDAssetPriorityServiceImpl implements JMDAssetPriorityService {
@@ -536,5 +536,321 @@ public class JMDAssetPriorityServiceImpl implements JMDAssetPriorityService {
         CPPSteamAssetPriority saved = steamRepository.save(entity);
         logger.debug("[POST Service - Steam] Successfully updated entity with ID: {} - Monthly priorities and remarks updated", saved.getId());
         return true;
+    }
+
+    @Override
+    public AOPMessageVM importPowerAssetPriority(List<UUID> plantIds, String aopYear, MultipartFile file) {
+        logger.info("[IMPORT Service - Power] Importing power asset priority from Excel file: {}", file.getOriginalFilename());
+        AOPMessageVM response = new AOPMessageVM();
+        
+        try {
+            // Read Excel file and parse asset priority data
+            List<CPPAssetPriorityResponseDto> excelData = readAssetPriorityExcel(file.getInputStream(), aopYear);
+            logger.info("[IMPORT Service - Power] Read {} records from Excel", excelData.size());
+            
+            List<CPPAssetPriorityResponseDto> validRecords = new ArrayList<>();
+            List<CPPAssetPriorityResponseDto> failedRecords = new ArrayList<>();
+            Map<String, String> errorMessages = new HashMap<>();
+            
+            // Validate all records (no category filtering - this is power import endpoint)
+            for (CPPAssetPriorityResponseDto dto : excelData) {
+                String validationError = validateAssetPriorityData(dto);
+                if (validationError != null) {
+                    failedRecords.add(dto);
+                    errorMessages.put(dto.getAssetName(), validationError);
+                    logger.warn("[IMPORT Service - Power] Invalid record - {}: {}", dto.getAssetName(), validationError);
+                } else {
+                    validRecords.add(dto);
+                }
+            }
+            
+            // Try to save valid records
+            if (!validRecords.isEmpty()) {
+                try {
+                    AssetPriorityRequestDTO payload = new AssetPriorityRequestDTO();
+                    payload.setPowerResponse(validRecords);
+                    AOPMessageVM saveResult = saveAssetPriorities(plantIds, aopYear, payload);
+                    
+                    if (saveResult.getCode() != 200) {
+                        failedRecords.addAll(validRecords);
+                    }
+                    logger.info("[IMPORT Service - Power] Successfully processed {} records", validRecords.size());
+                } catch (Exception e) {
+                    logger.error("[IMPORT Service - Power] Error saving records: {}", e.getMessage(), e);
+                    failedRecords.addAll(validRecords);
+                }
+            }
+            
+            // Prepare response
+            if (failedRecords.isEmpty()) {
+                response.setCode(200);
+                response.setMessage("All power asset priorities imported successfully");
+            } else {
+                byte[] failedRecordsFile = generateExcelWithErrors(failedRecords, "Power Asset Priority", aopYear);
+                String base64File = java.util.Base64.getEncoder().encodeToString(failedRecordsFile);
+                response.setCode(400);
+                response.setMessage("Partial import: " + (excelData.size() - failedRecords.size()) + " saved, " + failedRecords.size() + " failed. Download file for details.");
+                response.setData(base64File);
+                logger.info("[IMPORT Service - Power] Exported {} failed records to Excel", failedRecords.size());
+            }
+            
+            logger.info("[IMPORT Service - Power] Import completed - Valid: {}, Failed: {}", validRecords.size(), failedRecords.size());
+        } catch (Exception e) {
+            logger.error("[IMPORT Service - Power] Error during import: {}", e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Failed to import power asset priority: " + e.getMessage());
+        }
+        
+        return response;
+    }
+
+    @Override
+    public AOPMessageVM importSteamAssetPriority(List<UUID> plantIds, String aopYear, MultipartFile file) {
+        logger.info("[IMPORT Service - Steam] Importing steam asset priority from Excel file: {}", file.getOriginalFilename());
+        AOPMessageVM response = new AOPMessageVM();
+        
+        try {
+            // Read Excel file and parse asset priority data
+            List<CPPAssetPriorityResponseDto> excelData = readAssetPriorityExcel(file.getInputStream(), aopYear);
+            logger.info("[IMPORT Service - Steam] Read {} records from Excel", excelData.size());
+            
+            List<CPPAssetPriorityResponseDto> validRecords = new ArrayList<>();
+            List<CPPAssetPriorityResponseDto> failedRecords = new ArrayList<>();
+            Map<String, String> errorMessages = new HashMap<>();
+            
+            // Validate all records (no category filtering - this is steam import endpoint)
+            for (CPPAssetPriorityResponseDto dto : excelData) {
+                String validationError = validateAssetPriorityData(dto);
+                if (validationError != null) {
+                    failedRecords.add(dto);
+                    errorMessages.put(dto.getAssetName(), validationError);
+                    logger.warn("[IMPORT Service - Steam] Invalid record - {}: {}", dto.getAssetName(), validationError);
+                } else {
+                    validRecords.add(dto);
+                }
+            }
+            
+            // Try to save valid records
+            if (!validRecords.isEmpty()) {
+                try {
+                    AssetPriorityRequestDTO payload = new AssetPriorityRequestDTO();
+                    payload.setSteamResponse(validRecords);
+                    AOPMessageVM saveResult = saveAssetPriorities(plantIds, aopYear, payload);
+                    
+                    if (saveResult.getCode() != 200) {
+                        failedRecords.addAll(validRecords);
+                    }
+                    logger.info("[IMPORT Service - Steam] Successfully processed {} records", validRecords.size());
+                } catch (Exception e) {
+                    logger.error("[IMPORT Service - Steam] Error saving records: {}", e.getMessage(), e);
+                    failedRecords.addAll(validRecords);
+                }
+            }
+            
+            // Prepare response
+            if (failedRecords.isEmpty()) {
+                response.setCode(200);
+                response.setMessage("All steam asset priorities imported successfully");
+            } else {
+                byte[] failedRecordsFile = generateExcelWithErrors(failedRecords, "Steam Asset Priority", aopYear);
+                String base64File = java.util.Base64.getEncoder().encodeToString(failedRecordsFile);
+                response.setCode(400);
+                response.setMessage("Partial import: " + (excelData.size() - failedRecords.size()) + " saved, " + failedRecords.size() + " failed. Download file for details.");
+                response.setData(base64File);
+                logger.info("[IMPORT Service - Steam] Exported {} failed records to Excel", failedRecords.size());
+            }
+            
+            logger.info("[IMPORT Service - Steam] Import completed - Valid: {}, Failed: {}", validRecords.size(), failedRecords.size());
+        } catch (Exception e) {
+            logger.error("[IMPORT Service - Steam] Error during import: {}", e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Failed to import steam asset priority: " + e.getMessage());
+        }
+        
+        return response;
+    }
+
+    // ========================================
+    // HELPER METHODS FOR IMPORT
+    // ========================================
+
+    private List<CPPAssetPriorityResponseDto> readAssetPriorityExcel(java.io.InputStream inputStream, String aopYear) throws Exception {
+        List<CPPAssetPriorityResponseDto> records = new ArrayList<>();
+        
+        try (XSSFWorkbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            
+            // Export column layout (must stay in sync with generatePriorityExcel):
+            // col 0  = Asset Name
+            // col 1  = Asset Type
+            // col 2  = Plant Name
+            // col 3  = Apr
+            // col 4  = May
+            // col 5  = Jun
+            // col 6  = Jul
+            // col 7  = Aug
+            // col 8  = Sep
+            // col 9  = Oct
+            // col 10 = Nov
+            // col 11 = Dec
+            // col 12 = Jan
+            // col 13 = Feb
+            // col 14 = Mar
+            // col 15 = Remarks
+            // col 16 = id        (hidden)
+            // col 17 = assetFkId (hidden)
+            // col 18 = assetCategory (hidden)
+            
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+                
+                CPPAssetPriorityResponseDto dto = new CPPAssetPriorityResponseDto();
+                
+                // Parse basic fields from Excel
+                dto.setAssetName(getCellValue(row, 0));
+                // col 1 = Asset Type, col 2 = Plant Name (read-only display fields, not mapped to DTO)
+                
+                // Parse monthly priority values (Apr to Mar) - columns 3-14
+                dto.setApr(getCellIntValue(row, 3));
+                dto.setMay(getCellIntValue(row, 4));
+                dto.setJun(getCellIntValue(row, 5));
+                dto.setJul(getCellIntValue(row, 6));
+                dto.setAug(getCellIntValue(row, 7));
+                dto.setSep(getCellIntValue(row, 8));
+                dto.setOct(getCellIntValue(row, 9));
+                dto.setNov(getCellIntValue(row, 10));
+                dto.setDec(getCellIntValue(row, 11));
+                dto.setJan(getCellIntValue(row, 12));
+                dto.setFeb(getCellIntValue(row, 13));
+                dto.setMar(getCellIntValue(row, 14));
+                
+                // Parse remarks - column 15
+                dto.setRemarks(getCellValue(row, 15));
+                
+                // Parse ID (column 16) and assetFkId (column 17) - both hidden in exported Excel
+                String idStr = getCellValue(row, 16);
+                if (idStr != null && !idStr.trim().isEmpty()) {
+                    try {
+                        dto.setId(UUID.fromString(idStr));
+                    } catch (IllegalArgumentException e) {
+                        logger.warn("[IMPORT] Invalid UUID format for ID: {}", idStr);
+                    }
+                }
+                
+                String assetFkIdStr = getCellValue(row, 17);
+                if (assetFkIdStr != null && !assetFkIdStr.trim().isEmpty()) {
+                    try {
+                        dto.setAssetFkId(UUID.fromString(assetFkIdStr));
+                    } catch (IllegalArgumentException e) {
+                        logger.warn("[IMPORT] Invalid UUID format for assetFkId: {}", assetFkIdStr);
+                    }
+                }
+                
+                // Parse assetCategory from column 18 (hidden)
+                String assetCategory = getCellValue(row, 18);
+                if (assetCategory != null && !assetCategory.trim().isEmpty()) {
+                    dto.setAssetCategory(assetCategory);
+                }
+                
+                records.add(dto);
+            }
+        }
+        
+        return records;
+    }
+
+    private String validateAssetPriorityData(CPPAssetPriorityResponseDto dto) {
+        if (dto.getAssetName() == null || dto.getAssetName().trim().isEmpty()) {
+            return "Asset name is required";
+        }
+        
+        // Validate that at least one monthly priority is set
+        if (dto.getApr() == null && dto.getMay() == null && dto.getJun() == null && 
+            dto.getJul() == null && dto.getAug() == null && dto.getSep() == null &&
+            dto.getOct() == null && dto.getNov() == null && dto.getDec() == null &&
+            dto.getJan() == null && dto.getFeb() == null && dto.getMar() == null) {
+            return "At least one monthly priority value is required";
+        }
+        
+        return null;
+    }
+
+    private byte[] generateExcelWithErrors(List<CPPAssetPriorityResponseDto> failedRecords, String sheetName, String aopYear) throws Exception {
+        try (XSSFWorkbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            
+            Sheet sheet = workbook.createSheet(sheetName);
+            
+            // Create header row with Status and Error Message columns
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {"Asset Name", "Asset Category", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Remarks", "Status", "Error Message"};
+            
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(createHeaderStyle(workbook));
+            }
+            
+            // Add failed records
+            int rowNum = 1;
+            for (CPPAssetPriorityResponseDto dto : failedRecords) {
+                Row row = sheet.createRow(rowNum++);
+                
+                row.createCell(0).setCellValue(dto.getAssetName() != null ? dto.getAssetName() : "");
+                row.createCell(1).setCellValue(dto.getAssetCategory() != null ? dto.getAssetCategory() : "");
+                row.createCell(2).setCellValue(dto.getApr() != null ? dto.getApr() : 0);
+                row.createCell(3).setCellValue(dto.getMay() != null ? dto.getMay() : 0);
+                row.createCell(4).setCellValue(dto.getJun() != null ? dto.getJun() : 0);
+                row.createCell(5).setCellValue(dto.getJul() != null ? dto.getJul() : 0);
+                row.createCell(6).setCellValue(dto.getAug() != null ? dto.getAug() : 0);
+                row.createCell(7).setCellValue(dto.getSep() != null ? dto.getSep() : 0);
+                row.createCell(8).setCellValue(dto.getOct() != null ? dto.getOct() : 0);
+                row.createCell(9).setCellValue(dto.getNov() != null ? dto.getNov() : 0);
+                row.createCell(10).setCellValue(dto.getDec() != null ? dto.getDec() : 0);
+                row.createCell(11).setCellValue(dto.getJan() != null ? dto.getJan() : 0);
+                row.createCell(12).setCellValue(dto.getFeb() != null ? dto.getFeb() : 0);
+                row.createCell(13).setCellValue(dto.getMar() != null ? dto.getMar() : 0);
+                row.createCell(14).setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
+                row.createCell(15).setCellValue("FAILED");
+            }
+            
+            workbook.write(outputStream);
+            return outputStream.toByteArray();
+        }
+    }
+
+    private CellStyle createHeaderStyle(XSSFWorkbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        style.setFont(font);
+        style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        return style;
+    }
+
+    private String getCellValue(Row row, int cellIndex) {
+        Cell cell = row.getCell(cellIndex);
+        if (cell == null) return null;
+        
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue();
+            case NUMERIC:
+                return String.valueOf((int) cell.getNumericCellValue());
+            default:
+                return null;
+        }
+    }
+
+    private Integer getCellIntValue(Row row, int cellIndex) {
+        Cell cell = row.getCell(cellIndex);
+        if (cell == null) return null;
+        
+        if (cell.getCellType() == CellType.NUMERIC) {
+            return (int) cell.getNumericCellValue();
+        }
+        return null;
     }
 }

@@ -344,7 +344,7 @@ const PowerAssetAvailability = () => {
 
     setLoading(true)
     try {
-      const response = await AssetPriorityApiService.saveAssetPriorityExcel(
+      const response = await AssetPriorityApiService.importPowerAssetPriority(
         file,
         keycloak,
         PLANT_ID_LIST,
@@ -411,7 +411,7 @@ const PowerAssetAvailability = () => {
     })
 
     try {
-      await AssetPriorityApiService.exportAssetPriorityExcel(
+      await AssetPriorityApiService.exportPowerAssetPriority(
         keycloak,
         PLANT_ID_LIST,
         AOP_YEAR,
@@ -422,7 +422,7 @@ const PowerAssetAvailability = () => {
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error exporting Asset Priority data:', error)
+      console.error('Error exporting Power Asset Priority data:', error)
       setSnackbarData({
         message: 'Excel download failed. Please try again.',
         severity: 'error',
