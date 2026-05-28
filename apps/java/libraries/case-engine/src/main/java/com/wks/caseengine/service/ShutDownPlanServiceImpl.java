@@ -2561,7 +2561,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 				}
 			}
 			if (("ELASTOMER".equalsIgnoreCase(verticalName)) || ("AROMATICS".equalsIgnoreCase(verticalName))
-					|| ("PTA".equalsIgnoreCase(verticalName))) {
+					|| ("PTA".equalsIgnoreCase(verticalName)) || ("Chemical".equalsIgnoreCase(verticalName))) {
 				int month = plantMaintenanceTransaction.getMaintForMonth();
 				Long count = plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId, month, "Slowdown",
 						year);
@@ -2684,7 +2684,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 			String verticalName = plantsService.findVerticalNameByPlantId(plantId);
 
 			if (("ELASTOMER".equalsIgnoreCase(verticalName)) || ("AROMATICS".equalsIgnoreCase(verticalName))
-					|| ("PTA".equalsIgnoreCase(verticalName))) {
+					|| ("PTA".equalsIgnoreCase(verticalName)) || ("Chemical".equalsIgnoreCase(verticalName))) {
 				int month = plantMaintenanceTransaction.getMaintForMonth();
 				Long count = plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId, month, "Shutdown",
 						year);
@@ -3897,7 +3897,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 			List<Map<String, Object>> mapList = new ArrayList<Map<String, Object>>();
 			String viewName = null;
 			if(vertical.getName().equalsIgnoreCase("Chemical")) { 
-  				viewName = "vwScrnShutdownChemical";
+  				viewName = "vwScrnShutdown" + vertical.getName();
 			}
 			else {
 		viewName = vertical.getName() + site.getName() + "vwScrnShutdown"; 
