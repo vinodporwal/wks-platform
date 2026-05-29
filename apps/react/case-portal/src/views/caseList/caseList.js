@@ -1,4 +1,14 @@
 /* eslint-disable no-unused-vars */
+
+import {
+  GridToolbarContainer,
+  GridToolbarFilterButton,
+  GridToolbarExport,
+  GridToolbarQuickFilter,
+  GridFilterPanel,
+} from '@mui/x-data-grid'
+
+
 import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material'
 import CloseIcon from '@mui/icons-material/Close'
 import ViewKanbanIcon from '@mui/icons-material/ViewKanban'
@@ -14,6 +24,10 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import { useSession } from 'SessionStoreContext'
 import MainCard from 'components/MainCard'
 import Config from 'consts/index'
+
+import CircularProgress from '@mui/material/CircularProgress'
+
+
 import React, {
   Suspense,
   createContext,
@@ -58,6 +72,31 @@ const CaseNewFormPage = lazy(() =>
   })),
 )
 
+function CustomToolbar() {
+  return (
+    <GridToolbarContainer sx={{ p: 1 }}>
+      <GridToolbarQuickFilter
+        placeholder="Search..."
+        sx={{
+          width: 300,
+          border: '1px solid #e0e0e0',
+          borderRadius: '4px',
+          px: 1,
+          '& .MuiInputBase-root': {
+            '&:before': { display: 'none' },
+            '&:after': { display: 'none' },
+          },
+        }}
+      />
+
+      <GridToolbarFilterButton />
+
+      <GridToolbarExport
+        printOptions={{ disableToolbarButton: true }}
+      />
+    </GridToolbarContainer>
+  )
+}
 export const CaseList = ({ status, caseDefId }) => {
   const PaginationContext = createContext()
   const { t } = useTranslation()
@@ -307,6 +346,8 @@ export const CaseList = ({ status, caseDefId }) => {
       {
         field: 'action',
         headerName: 'Action',
+        disableExport: true,
+        filterable: false,
         sortable: false,
         renderCell: (data) => {
           const onClick = (e) => {
@@ -616,7 +657,16 @@ export const CaseList = ({ status, caseDefId }) => {
                   columns={makeColumns()}
                   getRowId={(row) => row.caseNo}
                   loading={fetching}
-                  components={{ Pagination: CustomPagination }}
+                  slots={{
+                    toolbar: CustomToolbar,
+                    pagination: CustomPagination,
+                  }}
+                  slotProps={{
+                    toolbar: {
+                      showQuickFilter: true,
+                      quickFilterProps: { debounceMs: 300 },
+                    },
+                  }}
                 />
               </Suspense>
             </div>
