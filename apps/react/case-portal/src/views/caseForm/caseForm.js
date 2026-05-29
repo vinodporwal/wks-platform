@@ -243,10 +243,30 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         const caseAssignedToEmail = caseData?.assignedTo?.emailId;
         userEmailIds.push(caseData?.owner?.email);
         userEmailIds.push(parsedAttributeValue.caseAssignedTo);
-        const userEmailIdsIncludingAnalysisTeam = userEmailIds.concat(parsedAttributeValue.analysisTeam);
+        
 
-        let shouldDisable = !userEmailIds.some(email => email.startsWith(currentUserName + '@'));
-        let shouldDisableAnalysis = !userEmailIdsIncludingAnalysisTeam.some(email => email.startsWith(currentUserName + '@'));
+        const analysisTeamEmails = Array.isArray(parsedAttributeValue.analysisTeam) ? parsedAttributeValue.analysisTeam : (parsedAttributeValue.analysisTeam ? [parsedAttributeValue.analysisTeam] : []);
+        const userEmailIdsIncludingAnalysisTeam = userEmailIds.concat(analysisTeamEmails);
+
+        const currentUserEmail = keycloak.idTokenParsed.email;
+        const checkEmailMatch = (email) => {
+          if (!email) return false;
+          const emailLower = email.toLowerCase();
+          return (
+            emailLower.startsWith(currentUserName.toLowerCase() + '@') ||
+            emailLower === currentUserName.toLowerCase() ||
+            emailLower === currentUserName.toLowerCase() + '@' ||
+            (currentUserEmail && emailLower === currentUserEmail.toLowerCase())
+          );
+        };
+        let shouldDisable = !userEmailIds.some(checkEmailMatch);
+        let shouldDisableAnalysis = !userEmailIdsIncludingAnalysisTeam.some(checkEmailMatch);
+
+        console.log('--- Permissions Check ---');
+        console.log('Current Logged-in Username:', currentUserName);
+        console.log('Analysis Team Emails on Case:', analysisTeamEmails);
+        console.log('All Authorized Emails (Including Analysis Team):', userEmailIdsIncludingAnalysisTeam);
+        console.log('Is User an Analysis Team Member? (!shouldDisableAnalysis):', !shouldDisableAnalysis);
 
         const recommendations = parsedAttributeValue.dataGrid1;
         const recommendationAssignees = recommendations?.map((item) => item.recommendationAssignedTo2).filter((assignee) => assignee !== "");
@@ -341,8 +361,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             caseDetails1?.columns?.forEach((column) => {
               column?.components?.forEach((component) => {
                 if (component.id !== caseStatus?.id) {
-                  // (component.id === analysisTeam?.id && (parsedAttributeValue.dataGrid1.length > 1 || shouldDisable))) {
-                  component.disabled = true;
+                  if (component.id === analysisTeam?.id && !shouldDisableAnalysis) {
+                    console.log('Unlocking Analysis Team dropdown for Analysis Team member.');
+                    component.disabled = false;
+                  } else {
+                    component.disabled = true;
+                  }
                 }
               });
             });
