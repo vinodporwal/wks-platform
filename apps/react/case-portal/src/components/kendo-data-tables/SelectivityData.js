@@ -636,7 +636,6 @@ const SelectivityData = (props) => {
     })
 
     try {
-      setLoading(true)
       if (props?.configType === 'grades') {
         await DataService.getRecipeExcel(
           keycloak,
@@ -728,7 +727,7 @@ const SelectivityData = (props) => {
         severity: 'error',
       })
     } finally {
-      setLoading(false)
+      // optional cleanup or logging
     }
   }
 

@@ -770,7 +770,7 @@ const ProductionvolumeData = ({
     : getColDefsPercentageSummary(headerMap, valueFormat)
 
   const colDefs_design_capacity =
-    IS_PE_PP || IS_PET || IS_PVC_VMD 
+    IS_PE_PP || IS_PET || IS_PVC_VMD
       ? getColDefsDesignCapacityPEPP(headerMap, valueFormat)
       : IS_PTA_DMD
         ? getColDefsDesignCapacityPTADMD(headerMap, valueFormat)
@@ -1219,7 +1219,6 @@ const ProductionvolumeData = ({
           ? false
           : true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Max Achieved Capacity`,
-      makePagable: true,
     },
     isOldYear,
   )
@@ -1361,7 +1360,6 @@ const ProductionvolumeData = ({
       showCalculate: VERTICAL_NAME === 'aromatics' && SITE_NAME === 'sez',
       showCalculateVisibility:
         VERTICAL_NAME === 'aromatics' && SITE_NAME === 'sez',
-      makePagable: true,
     },
     isOldYear,
   )
@@ -1426,7 +1424,6 @@ const ProductionvolumeData = ({
             ? 'Steady State Operating Capacity'
             : 'Proposed Operating Capacity',
       showNoteWhileSaving: IS_PP_SEZ ? true : false,
-      makePagable: true,
     },
     isOldYear,
   )
@@ -1450,7 +1447,6 @@ const ProductionvolumeData = ({
           : !IS_PE_PP && !IS_PET && !IS_PVC_VMD
             ? 'Percentage Summary'
             : '% Summary of Proposed Operating Capacity',
-      makePagable: true,
     },
     isOldYear,
   )
@@ -1474,7 +1470,6 @@ const ProductionvolumeData = ({
     })
 
     try {
-      setLoading(true)
       if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
         const selectedLine = lineDetails[tabIndex]
         const lineId = selectedLine?.id
@@ -1540,8 +1535,6 @@ const ProductionvolumeData = ({
         message: 'Failed to download Excel.',
         severity: 'error',
       })
-    } finally {
-      setLoading(false)
     }
   }
   const saveExcelFile = async (rawFile, gridType) => {
@@ -1674,7 +1667,7 @@ const ProductionvolumeData = ({
           setRows={setRowsDesignCapacity}
           columns={colDefs_design_capacity}
           rows={rowsDesignCapacity}
-          paginationOptions={[10, 50, 100, 200, 300]}
+          paginationOptions={[100, 200, 300]}
           saveChanges={saveChangesDesignCapacity}
           snackbarData={snackbarData}
           snackbarOpen={snackbarOpen}
@@ -1694,7 +1687,7 @@ const ProductionvolumeData = ({
           permissions={adjustedPermissionsGrid2}
           selectedUnit={unitDesignCapacity}
           setSelectedUnit={setUnitDesignCapacity}
-          supressGridHeight={true}
+          supressGridHeight={!IS_PP_HMD}
           downloadExcelForConfiguration={() =>
             downloadExcelForConfiguration('design')
           }
@@ -1714,13 +1707,12 @@ const ProductionvolumeData = ({
           setRows={setRowsMaxCapacity}
           columns={max_achieved_capacity}
           rows={rowsMaxCapacity}
-          paginationOptions={[10, 50, 100, 200, 300]}
           fetchData={fetchMaxCapacityData}
           permissions={adjustedPermissionsGrid1}
           selectedUnit={unitDesignCapacity}
           setSelectedUnit={setUnitDesignCapacity}
           handleUnitChange={handleUnitChangeMaxCapacity}
-          supressGridHeight={true}
+          supressGridHeight={!IS_PP_HMD}
           downloadExcelForConfiguration={() =>
             downloadExcelForConfiguration('max')
           }
@@ -1741,7 +1733,7 @@ const ProductionvolumeData = ({
           setRows={setRows}
           columns={colDefs_current_operating_capacity}
           rows={rows1}
-          paginationOptions={[10, 50, 100, 200, 300]}
+          paginationOptions={[100, 200, 300]}
           saveChanges={saveChanges}
           snackbarData={snackbarData}
           snackbarOpen={snackbarOpen}
@@ -1762,7 +1754,7 @@ const ProductionvolumeData = ({
           selectedUnit={unitDesignCapacity}
           setSelectedUnit={setUnitDesignCapacity}
           handleExcelUpload={handleExcelUpload}
-          supressGridHeight={true}
+          supressGridHeight={!IS_PP_HMD}
           downloadExcelForConfiguration={() =>
             downloadExcelForConfiguration('main')
           }
@@ -1785,11 +1777,10 @@ const ProductionvolumeData = ({
               setRows={setRowsPercentageSummary}
               columns={colDefs_percentage_summary}
               rows={rowsPercentageSummary}
-              paginationOptions={[10, 50, 100, 200, 300]}
               title='Production target Reference'
               fetchData={fetchData}
               permissions={adjustedPermissionsLast}
-              supressGridHeight={true}
+              supressGridHeight={!IS_PP_HMD}
               resetEditSignal={editResetKey}
               setEditResetKey={setEditResetKey}
             />

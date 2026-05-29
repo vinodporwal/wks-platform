@@ -492,7 +492,7 @@ const BusinessDemand = ({ permissions }) => {
           normParameterId: row.normParameterId,
           id: row.idFromApi || null,
           inEdit: row.inEdit || false,
-          lineId: lineId || null,
+          ...(IS_PVC_DMD && { lineId: lineId || null }),
         }
       })
       var response
