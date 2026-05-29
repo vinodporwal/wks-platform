@@ -103,8 +103,8 @@ public class BusinessDemandDataController {
 	        ) {
 	    try {
 			
-	        byte[] excelBytes = businessDemandDataService.exportBusinessDemandLine(year,plantId, lineId, false,null); 
-
+	  //      byte[] excelBytes = businessDemandDataService.exportBusinessDemandLine(year,plantId, lineId, false,null); 
+		byte[] excelBytes = businessDemandDataService.exportBusinessDemandAllLine(year,plantId);
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(
 	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));

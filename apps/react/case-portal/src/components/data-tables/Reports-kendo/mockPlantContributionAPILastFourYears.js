@@ -29,7 +29,7 @@ export const MockPlantContributionAPILastFourYears = {
             {
               field: 'rowNo',
               title: 'S.no',
-              widthT: 58,
+              widthT: 40,
               editable: false,
               format: '{0:#.#}',
               align: 'right',
@@ -38,6 +38,7 @@ export const MockPlantContributionAPILastFourYears = {
               field: 'material',
               title: 'Product name',
               editable: false,
+              minWidth:200
             },
             {
               field: 'uom',
@@ -144,7 +145,7 @@ export const MockPlantContributionAPILastFourYears = {
             {
               field: 'rowNo',
               title: 'S.no',
-              widthT: 58,
+              widthT: 40,
               format: '{0:#.#}',
               editable: false,
               align: 'right',
@@ -153,6 +154,7 @@ export const MockPlantContributionAPILastFourYears = {
               field: 'material',
               title: 'Product Name',
               editable: false,
+              minWidth: 200,
             },
             {
               field: 'uom',
@@ -329,7 +331,7 @@ export const MockPlantContributionAPILastFourYears = {
             {
               field: 'rowNo',
               title: 'S.no',
-              widthT: 58,
+              widthT: 40,
               format: '{0:#.#}',
 
               editable: false,
@@ -339,6 +341,7 @@ export const MockPlantContributionAPILastFourYears = {
               field: 'material',
               title: 'Product Name',
               editable: false,
+              minWidth: 200,
             },
             {
               field: 'uom',
@@ -520,7 +523,7 @@ export const MockPlantContributionAPILastFourYears = {
             {
               field: 'rowNo',
               title: 'S.no',
-              widthT: 58,
+              widthT: 40,
               format: '{0:#.#}',
 
               editable: false,
@@ -530,6 +533,7 @@ export const MockPlantContributionAPILastFourYears = {
               field: 'material',
               title: 'Product Name',
               editable: false,
+              minWidth: 200,
             },
             {
               field: 'uom',
@@ -711,7 +715,7 @@ export const MockPlantContributionAPILastFourYears = {
             {
               field: 'rowNo',
               title: 'S.no',
-              widthT: 58,
+              widthT: 40,
               format: '{0:#.#}',
 
               editable: false,
@@ -721,6 +725,7 @@ export const MockPlantContributionAPILastFourYears = {
               field: 'material',
               title: 'Product Name',
               editable: false,
+              minWidth: 200,
             },
             {
               field: 'uom',
@@ -902,7 +907,7 @@ export const MockPlantContributionAPILastFourYears = {
             {
               field: 'rowNo',
               title: 'S.no',
-              widthT: 58,
+              widthT: 40,
               align: 'right',
               editable: false,
               format: '{0:#.#}',
@@ -915,6 +920,7 @@ export const MockPlantContributionAPILastFourYears = {
               field: 'material',
               title: 'Other cost',
               editable: false,
+              minWidth: 200,
             },
             {
               field: 'uom',
@@ -997,7 +1003,7 @@ export const MockPlantContributionAPILastFourYears = {
             {
               field: 'rowNo',
               title: 'S.no',
-              widthT: 58,
+              widthT: 40,
               format: '{0:#.#}',
               align: 'right',
               editable: false,
@@ -1005,7 +1011,7 @@ export const MockPlantContributionAPILastFourYears = {
             {
               field: 'material',
               title: 'Production cost calculations',
-              widthT: 220,
+              minWidth: 220,
               editable: false,
             },
             {

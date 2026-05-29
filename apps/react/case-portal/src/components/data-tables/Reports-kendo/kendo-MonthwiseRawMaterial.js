@@ -59,7 +59,7 @@ const MonthwiseRawMaterial = () => {
       headerName: 'Particulars',
       flex: 2,
       editable: false,
-      widthT: 100,
+      widthT: 200,
     },
     {
       field: 'UOM',
@@ -234,7 +234,7 @@ const MonthwiseRawMaterial = () => {
       editable: false,
       flex: 2,
 
-      widthT: 100,
+      widthT: 200,
     },
     {
       field: 'april',
