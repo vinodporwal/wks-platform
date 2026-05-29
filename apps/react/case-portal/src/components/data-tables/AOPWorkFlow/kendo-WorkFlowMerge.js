@@ -427,7 +427,7 @@ const WorkFlowMerge = () => {
         field,
         headerName: header,
         // minWidth: i === 0 ? 300 : 150,
-        minWidth: 110,
+        minWidth: 120,
         flex: 1,
         ...(i === 0 && {
           renderHeader: (p) => <div>{p.colDef.headerName}</div>,

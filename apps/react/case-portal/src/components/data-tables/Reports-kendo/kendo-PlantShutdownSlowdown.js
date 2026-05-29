@@ -53,7 +53,7 @@ const PlantShutdownSlowdown = () => {
     {
       field: 'criticalActivity',
       title: 'Critical Routine Activity',
-      widthT: 100,
+      widthT: 150,
       type: 'text',
       editable: true,
     },
@@ -138,6 +138,7 @@ const PlantShutdownSlowdown = () => {
       title: 'Activities that can be clubbed with the critical activity',
       type: 'text',
       editable: true,
+      widthT: 120,
     },
     {
       field: 'explanationNotBest',
@@ -145,18 +146,21 @@ const PlantShutdownSlowdown = () => {
         'Explanation for not proposing the best achieved frequency / duration',
       type: 'text',
       editable: true,
+      widthT: 120,
     },
     {
       field: 'throughputReduction',
       title: 'Throughput reduction during the period',
       type: 'numberNonGrey',
       editable: true,
+      widthT: 120,
     },
     {
       field: 'lossRecoverable',
       title: 'Is the production Loss recoverable',
       type: 'text',
       editable: true,
+      widthT: 120,
     },
     // {
     //   field: 'remarks',

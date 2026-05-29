@@ -69,6 +69,7 @@ export default function MonthWiseRawData() {
     const filteredCols = backendCols.filter((col) => col.field !== 'GRID_TYPE')
     const applyFixedWidth = filteredCols.length < 7
     const fixedWidth = applyFixedWidth ? 150 : 121
+    const fixedFields = ['Particular', 'Sap Material Code', 'SAPMaterialCode', 'MaterialDisplayName']
     return backendCols.map((col) => {
       const isTextCol = col.type === 'string'
       const isNumberCol = col.type === 'number'
@@ -81,7 +82,7 @@ export default function MonthWiseRawData() {
         ...(isNumberCol ? { format: '{0:0.0000}' } : {}),
         editable: false,
         isRightAlligned: isNumberCol ? 'numeric' : undefined,
-        ...(fixedWidth ? { widthT: fixedWidth } : {}),
+        ...(fixedFields.includes(col.field) ? { widthT: 220 } : fixedWidth ? { widthT: fixedWidth } : { widthT: 100 }),
       }
     })
   }, [])
