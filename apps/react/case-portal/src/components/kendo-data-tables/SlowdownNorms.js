@@ -511,7 +511,7 @@ const SlowdownNorms = () => {
         lowerVertName === 'vcm' ||
         IS_PTA ||
         IS_CHEMICAL ||
-        IS_AROMATICS_SEZ_PX4
+        lowerVertName === 'aromatics'
       ) {
         // Use slowdownconsumptionExportVCM for VCM
         response = await DataService.slowdownconsumptionExportVCM(
@@ -575,7 +575,7 @@ const SlowdownNorms = () => {
       } else if (
         lowerVertName === 'vcm' ||
         IS_PTA ||
-        IS_AROMATICS_SEZ_PX4 ||
+        lowerVertName === 'aromatics' ||
         IS_CHEMICAL ||
         (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD_HIIR) ||
         !IS_PE_PP
@@ -697,7 +697,7 @@ const SlowdownNorms = () => {
         lowerVertName === 'vcm' ||
         IS_PTA ||
         IS_CHEMICAL ||
-        IS_AROMATICS_SEZ_PX4 ||
+        lowerVertName === 'aromatics' ||
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR
           ? false
@@ -708,7 +708,7 @@ const SlowdownNorms = () => {
         lowerVertName === 'vcm' ||
         IS_PTA ||
         IS_CHEMICAL ||
-        IS_AROMATICS_SEZ_PX4 ||
+        lowerVertName === 'aromatics' ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_ELASTOMER_HMD_SBR
           ? true
