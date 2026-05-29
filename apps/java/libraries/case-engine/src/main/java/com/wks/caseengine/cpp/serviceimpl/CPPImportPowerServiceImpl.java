@@ -15,14 +15,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -47,7 +48,7 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
 
             List<CPPImportPowerResponseDTO> results = projections.stream()
                     .map(this::mapToDto)
-                    .toList();
+                    .collect(Collectors.toList());
 
             Map<String, Object> data = new HashMap<>();
             data.put("importedPowerPlans", results);
@@ -193,22 +194,84 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
         return aopMessageVM;
     }
 
+    private String generatePowerPlanHash(CPPImportPowerResponseDTO dto) {
+        try {
+            StringBuilder dataToHash = new StringBuilder();
+            dataToHash.append(dto.getApr() != null ? dto.getApr().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(dto.getMay() != null ? dto.getMay().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(dto.getJun() != null ? dto.getJun().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(dto.getJul() != null ? dto.getJul().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(dto.getAug() != null ? dto.getAug().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(dto.getSep() != null ? dto.getSep().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(dto.getOct() != null ? dto.getOct().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(dto.getNov() != null ? dto.getNov().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(dto.getDec() != null ? dto.getDec().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(dto.getJan() != null ? dto.getJan().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(dto.getFeb() != null ? dto.getFeb().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(dto.getMar() != null ? dto.getMar().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(dto.getRemarks() != null ? dto.getRemarks() : "null");
+
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = digest.digest(dataToHash.toString().getBytes("UTF-8"));
+
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hashBytes) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            logger.error("[Hash Generation] Error generating hash: {}", e.getMessage(), e);
+            return "";
+        }
+    }
+
+    private String generatePowerPlanHash(CPPImportPower entity) {
+        try {
+            StringBuilder dataToHash = new StringBuilder();
+            dataToHash.append(entity.getApr() != null ? entity.getApr().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(entity.getMay() != null ? entity.getMay().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(entity.getJun() != null ? entity.getJun().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(entity.getJul() != null ? entity.getJul().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(entity.getAug() != null ? entity.getAug().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(entity.getSep() != null ? entity.getSep().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(entity.getOct() != null ? entity.getOct().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(entity.getNov() != null ? entity.getNov().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(entity.getDec() != null ? entity.getDec().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(entity.getJan() != null ? entity.getJan().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(entity.getFeb() != null ? entity.getFeb().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(entity.getMar() != null ? entity.getMar().stripTrailingZeros().toPlainString() : "null").append("|");
+            dataToHash.append(entity.getRemarks() != null ? entity.getRemarks() : "null");
+
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = digest.digest(dataToHash.toString().getBytes("UTF-8"));
+
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hashBytes) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            logger.error("[Hash Generation] Error generating hash: {}", e.getMessage(), e);
+            return "";
+        }
+    }
+
     private boolean isRecordModified(CPPImportPowerResponseDTO dto, CPPImportPower entity) {
         try {
-            if (!Objects.equals(dto.getApr(), entity.getApr())) return true;
-            if (!Objects.equals(dto.getMay(), entity.getMay())) return true;
-            if (!Objects.equals(dto.getJun(), entity.getJun())) return true;
-            if (!Objects.equals(dto.getJul(), entity.getJul())) return true;
-            if (!Objects.equals(dto.getAug(), entity.getAug())) return true;
-            if (!Objects.equals(dto.getSep(), entity.getSep())) return true;
-            if (!Objects.equals(dto.getOct(), entity.getOct())) return true;
-            if (!Objects.equals(dto.getNov(), entity.getNov())) return true;
-            if (!Objects.equals(dto.getDec(), entity.getDec())) return true;
-            if (!Objects.equals(dto.getJan(), entity.getJan())) return true;
-            if (!Objects.equals(dto.getFeb(), entity.getFeb())) return true;
-            if (!Objects.equals(dto.getMar(), entity.getMar())) return true;
-            if (!Objects.equals(dto.getRemarks(), entity.getRemarks())) return true;
-            return false;
+            String dbHash = generatePowerPlanHash(entity);
+            String importedHash = generatePowerPlanHash(dto);
+
+            boolean modified = !dbHash.equals(importedHash);
+            if (!modified) {
+                logger.debug("[isRecordModified] Record {} unchanged - hash match", dto.getId());
+            } else {
+                logger.debug("[isRecordModified] Record {} modified - hash mismatch", dto.getId());
+            }
+            return modified;
         } catch (Exception e) {
             logger.error("[isRecordModified] Error comparing record ID {}: {}", dto.getId(), e.getMessage());
             return true;
@@ -789,15 +852,11 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
 
     private CellStyle createRemarksStyle(Workbook workbook) {
         CellStyle style = createDataStyle(workbook);
-        style.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
-        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         return style;
     }
 
     private CellStyle createErrorCellStyle(Workbook workbook) {
         CellStyle style = createDataStyle(workbook);
-        style.setFillForegroundColor(IndexedColors.ROSE.getIndex());
-        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         Font font = workbook.createFont();
         font.setColor(IndexedColors.RED.getIndex());
         font.setBold(true);

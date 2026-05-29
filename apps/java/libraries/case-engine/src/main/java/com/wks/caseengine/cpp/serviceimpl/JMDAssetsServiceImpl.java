@@ -908,8 +908,6 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
     
     private CellStyle createErrorCellStyle(Workbook workbook) {
         CellStyle style = createDataStyle(workbook);
-        style.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
-        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         Font font = workbook.createFont();
         font.setColor(IndexedColors.RED.getIndex());
         font.setBold(true);

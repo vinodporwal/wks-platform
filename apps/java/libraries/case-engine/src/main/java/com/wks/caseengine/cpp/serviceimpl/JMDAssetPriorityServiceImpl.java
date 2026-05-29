@@ -962,8 +962,6 @@ public class JMDAssetPriorityServiceImpl implements JMDAssetPriorityService {
 
     private CellStyle createErrorCellStyle(Workbook workbook) {
         CellStyle style = createDataStyle(workbook);
-        style.setFillForegroundColor(IndexedColors.ROSE.getIndex());
-        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         style.setWrapText(true);
         return style;
     }
