@@ -55,6 +55,7 @@ const getNormalOpNormColDef = ({
       title: headerMap[col.title],
       align: 'right',
       format: valueFormat || '{0:#.###}',
+      type: (lowerVertName === 'pe' && lowerSiteName === 'hmd') ? 'negativeNumber' : 'number',
     }
   })
 
