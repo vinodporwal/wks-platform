@@ -141,9 +141,7 @@ console.log('*****  taskId:  ', taskId);
     if(taskId && isBlocked) return;
     if(!aCase || !aCase.businessKey) return;
     console.log("useEffect isBlocked: ", isBlocked)
-    localStorage.setItem('aCaseOwnerEmail', JSON.stringify(aCase.owner?.email))
-
- 
+    localStorage.setItem('aCaseOwnerEmail', JSON.stringify(aCase.owner?.name)) 
 
     // taskAssignedTo = taskId ? ProcessDefService.getTaskByTaskId(keycloak, taskId).assignee : null;
     // console.log('*****  taskAssignedTo:  ', taskAssignedTo);
@@ -729,8 +727,8 @@ console.log('*****  taskId:  ', taskId);
           //   return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
           //  })(),
        
-            assignedTo: {emailId: formData.data.container.caseAssignedTo}
-//		  assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
+          // assignedTo: {emailId: formData.data.container.caseAssignedTo}
+          assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
           }),
         )
       })
@@ -1422,7 +1420,7 @@ console.log('*****  taskId:  ', taskId);
     let content = `
     <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #333;">
       <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
-        <h2 style="text-align: center; margin: 0;">XOM Case Management System</h2>
+        <h2 style="text-align: center; margin: 0;">Case Management System</h2>
       </div>
 
       <!-- Case Information Panel -->
