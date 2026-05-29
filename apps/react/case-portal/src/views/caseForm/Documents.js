@@ -20,6 +20,8 @@ import Files from 'react-files'
 import { FileService } from '../../services'
 import CaseStore from './store'
 
+import Button from '@mui/material/Button'
+
 function Documents({ aCase, initialValue, getCaseInfo, isAttachmentEnabled }) {
   const keycloak = useSession()
   const [fetching, setFetching] = useState(false)
@@ -163,7 +165,21 @@ function Documents({ aCase, initialValue, getCaseInfo, isAttachmentEnabled }) {
             </Avatar>
 
             <br />
-            <Typography variant='h4' color='textSecondary' sx={{ pr: 0.5, opacity: isAttachmentEnabled ? 1 : 0.5 }}>
+            {/* ADD THIS BUTTON */}
+            <Button
+              variant="contained"
+              disabled={!isAttachmentEnabled}
+              sx={{
+                mt: 2,
+                backgroundColor: '#27CDF2',
+                color: '#fff',
+                '&:hover': { backgroundColor: '#1ab3d8' },
+                borderRadius: '6px',
+                textTransform: 'none',
+                fontSize: '14px',
+                padding: '8px 24px',
+              }}
+            >
               Drop files here or click to upload
             </Typography>
             <br />
