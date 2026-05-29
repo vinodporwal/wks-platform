@@ -87,6 +87,8 @@ public interface CaseDefinitionService {
 
 	List<Case> getCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName);
 
+	List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus);
+
 	Case savePICase(Case caseData);
 	
 	Case saveValueRealization(Case caseData);
@@ -98,4 +100,10 @@ public interface CaseDefinitionService {
 	Case updateCase(Case caseData);
 
 	List<Case> updateCaseStatus() throws Exception;
+
+	
+
+	byte[] exportCasesToExcel(String caseDefinitionId,String assetName,String hierarchyName);
+
+
 }

@@ -25,7 +25,10 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -94,11 +97,15 @@ import com.wks.caseengine.rest.model.Users;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	
 	private final JavaMailSender mailSender;
+
+	private static final Logger log =LoggerFactory.getLogger(CaseDefinitionServiceImpl.class);
 
     @Autowired
     public CaseDefinitionServiceImpl(JavaMailSender mailSender) {
@@ -918,18 +925,13 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	
 	@Override
 	public List<FunctionalLocation> getFunctionalLocations(String assetName) {
-		List<FunctionalLocation> locations = new ArrayList<FunctionalLocation>();
-		System.out.println("IN Functiona location record fetching block");
-		// if(assetName!=null && assetName.length()!=0) {
-		// 	List<FunctionalLocation> flList = fetchRecords.getParentFunctionalLocation(assetName); 
-	    //     if (flList != null && !flList.isEmpty()) {
-	    //         FunctionalLocation firstFL = flList.get(0);
-	    //         if (firstFL.getParentFLName() != null && !firstFL.getParentFLName().isEmpty()) {
-	    //             return fetchRecords.getFunctionaLocationsByFLName(firstFL.getParentFLName());
-	    //         }
-		// 	}
-		// }
-		// return fetchRecords.getAllFunctionalLocations(); 
+
+		System.out.println("IN Functional location record fetching block");
+
+		if (assetName == null || assetName.trim().isEmpty()) {
+			return new ArrayList<>();
+		}
+
 		return fetchRecords.getFunctionalLocations(db1Name, assetName);
 	}
 	
@@ -1228,6 +1230,48 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 		List<Case> cases = nativeQuery.getResultList();
 		return cases;
+	}
+
+	@Override
+	public List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus) {
+		StringBuilder query = new StringBuilder(
+			"SELECT c.* FROM [CaseManagement].[dbo].[Cases] c " +
+			"WHERE c.caseDefinitionId = :caseDefinitionId " +
+			"AND TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
+				"SELECT hn.HierarchyNode_PK_ID " +
+				"FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
+				"JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
+				"ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
+				"WHERE hn.IsDeleted = 0 " +
+				"AND hn.Path LIKE CONCAT('%', :assetName, '%') " +
+				"AND ht.HierarchyType = :hierarchyName" +
+			")"
+		);
+
+		boolean hasSearch = search != null && !search.isBlank();
+		boolean hasCaseStatus = caseStatus != null && !caseStatus.isBlank();
+
+		if (hasSearch) {
+			query.append(" AND (c.case_no LIKE :search OR c.path LIKE :search OR c.asset_name LIKE :search OR c.attributes LIKE :search)");
+		}
+		if (hasCaseStatus) {
+			query.append(" AND c.status_id = :caseStatus");
+		}
+
+		query.append(" ORDER BY c.case_no DESC");
+
+		Query nativeQuery = entityManager.createNativeQuery(query.toString(), Case.class);
+		nativeQuery.setParameter("caseDefinitionId", caseDefinitionId);
+		nativeQuery.setParameter("assetName", assetName);
+		nativeQuery.setParameter("hierarchyName", hierarchyName);
+		if (hasSearch) {
+			nativeQuery.setParameter("search", "%" + search + "%");
+		}
+		if (hasCaseStatus) {
+			nativeQuery.setParameter("caseStatus", Long.parseLong(caseStatus));
+		}
+
+		return nativeQuery.getResultList();
 	}
 	
 	@Override
@@ -1813,4 +1857,158 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		// Replace "@text." with "@"
 		return email.replaceFirst("@in\\.", "@");
 	}
+
+//Implementation For Excel Export 
+
+
+	private void validateExportInputs(String caseDefinitionId,
+			String assetName,
+			String hierarchyName) {
+
+		if (caseDefinitionId == null || caseDefinitionId.isBlank()) {
+			throw new IllegalArgumentException("caseDefinitionId is required");
+		}
+
+		if (assetName == null || assetName.isBlank()) {
+			throw new IllegalArgumentException("assetName is required");
+		}
+
+		if (hierarchyName == null || hierarchyName.isBlank()) {
+			throw new IllegalArgumentException("hierarchyName is required");
+		}
+	}
+
+
+@Override
+public byte[] exportCasesToExcel(String caseDefinitionId,
+                                 String assetName,
+                                 String hierarchyName) {
+
+    validateExportInputs(caseDefinitionId, assetName, hierarchyName);
+
+    List<Case> cases = getCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName);
+
+    if (cases.isEmpty()) {
+        throw new IllegalArgumentException("No records found for export");
+    }
+
+    if (cases.size() > 100000) {
+        throw new IllegalStateException("Export limit exceeded (100,000 max)");
+    }
+
+    return generateExcel(cases);
+}
+
+private byte[] generateExcel(List<Case> cases) {
+
+    try (Workbook workbook = new XSSFWorkbook()) {
+
+        Sheet sheet = workbook.createSheet("Cases");
+
+        String[] headers = {
+                "Case No",
+                "Case Title",
+                "Path",
+                "Main Asset",
+                "Case Status",
+                "Status",
+                "Case Assigned To",
+                "Created On"
+        };
+
+        Row headerRow = sheet.createRow(0);
+        for (int i = 0; i < headers.length; i++) {
+            headerRow.createCell(i).setCellValue(headers[i]);
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        int rowNum = 1;
+
+        for (Case c : cases) {
+
+            Row row = sheet.createRow(rowNum++);
+
+            
+            row.createCell(0).setCellValue(
+                    c.getCaseNo() == null ? "" : c.getCaseNo()
+            );
+
+            
+            String caseTitle = "";
+            String mainAsset = "";
+
+            try {
+                if (c.getAttributes() != null && !c.getAttributes().isEmpty()) {
+
+                    String attr = c.getAttributes().get(0)
+                            .getValue()
+                            .replace("\\\"", "\"");
+
+                    JsonNode root = mapper.readTree(attr);
+
+                    caseTitle = root.path("caseTitle").asText("");
+
+                    // If Main Asset stored inside JSON
+                    mainAsset = root.path("textField1").asText("");
+                }
+
+            } catch (Exception e) {
+                log.error("JSON parse error for case: {}", c.getCaseNo(), e);
+            }
+
+            row.createCell(1).setCellValue(caseTitle);
+
+            
+            row.createCell(2).setCellValue(
+                    c.getPath() == null ? "" : c.getPath()
+            );
+
+            
+            
+            String finalAsset = mainAsset.isEmpty()
+                    ? (c.getAssetName() == null ? "" : c.getAssetName())
+                    : mainAsset;
+
+            row.createCell(3).setCellValue(finalAsset);
+
+            
+            row.createCell(4).setCellValue(
+                    c.getStatus() != null && c.getStatus().getName() != null
+                            ? c.getStatus().getName()
+                            : ""
+            );
+
+            
+            row.createCell(5).setCellValue(
+                    "y".equalsIgnoreCase(c.getIsDraft())
+                            ? "Draft"
+                            : "Submitted"
+            );
+
+            
+            row.createCell(6).setCellValue(
+                    c.getAssignedTo() != null && c.getAssignedTo().getUserId() != null
+                            ? c.getAssignedTo().getUserId()
+                            : ""
+            );
+
+            
+            row.createCell(7).setCellValue(
+                    c.getCreationDate() == null ? "" : c.getCreationDate()
+            );
+        }
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        workbook.write(outputStream);
+        return outputStream.toByteArray();
+
+    } catch (Exception e) {
+        throw new RuntimeException("Error generating Excel file", e);
+    }
+}
+
+
+
+
+
 }

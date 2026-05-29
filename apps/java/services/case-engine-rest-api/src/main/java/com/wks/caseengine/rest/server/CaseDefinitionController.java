@@ -55,6 +55,8 @@ import com.wks.caseengine.rest.model.Recommendations;
 import com.wks.caseengine.rest.model.UserDTO;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 @RestController
 @RequestMapping("case-definition")
@@ -164,6 +166,18 @@ public class CaseDefinitionController {
 		System.out.println("AssetName: "+assetName);
 		System.out.println("HierarchyName: "+hierarchyName);
 		List<Case> cases = caseDefinitionService.getCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName);
+		return ResponseEntity.ok(cases);
+	}
+
+	//Controller API For Search and Filtering on case list page
+	@GetMapping("/cases/{caseDefinitionId}/filter")
+	public ResponseEntity<List<Case>> filterCasesByCaseDefinition(
+			@PathVariable("caseDefinitionId") String caseDefinitionId,
+			@RequestParam String assetName,
+			@RequestParam String hierarchyName,
+			@RequestParam(required = false) String search,
+			@RequestParam(required = false) String caseStatus) {
+		List<Case> cases = caseDefinitionService.filterCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName, search, caseStatus);
 		return ResponseEntity.ok(cases);
 	}
 	
@@ -323,6 +337,24 @@ public class CaseDefinitionController {
 		}
 		
 		return caseData;
+	}
+
+	//Controller For Export Excel
+	@GetMapping("/case/export")
+	public ResponseEntity<byte[]> exportCases(
+			@RequestParam String caseDefinitionId,
+			@RequestParam String assetName,
+			@RequestParam String hierarchyName) {
+
+		byte[] excel = caseDefinitionService.exportCasesToExcel(
+				caseDefinitionId, assetName, hierarchyName);
+
+		return ResponseEntity.ok()
+				.header(HttpHeaders.CONTENT_DISPOSITION,
+						"attachment; filename=cases.xlsx")
+				.contentType(MediaType.parseMediaType(
+						"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+				.body(excel);
 	}
 	
 }

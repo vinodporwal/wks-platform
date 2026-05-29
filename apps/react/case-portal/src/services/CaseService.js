@@ -8,6 +8,7 @@ export const CaseService = {
   getCaseDefinitionsById,
   getCaseById,
   filterCase,
+  filterCasesByCaseDefinitionId,
   createCase,
   patch,
   addDocuments,
@@ -23,7 +24,8 @@ export const CaseService = {
   saveValueRealization,
   submitFinalRecommendation,
   updateCase,
-  dispatchCommentNotification
+  dispatchCommentNotification,
+  exportCasesCsv
 }
 
 async function getAllByStatus(keycloak, status, limit) {
@@ -506,3 +508,60 @@ function capitalizeWords(str) {
               .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
               .join(' ');
 }
+
+async function filterCasesByCaseDefinitionId(keycloak, caseDefId, assetName, hierarchyName, search, caseStatus) {
+  const params = new URLSearchParams()
+  params.append('assetName', assetName || '')
+  params.append('hierarchyName', hierarchyName || '')
+  if (search) params.append('search', search)
+  if (caseStatus) params.append('caseStatus', caseStatus)
+
+  const url = `${Config.CaseEngineUrl}/case-definition/cases/${caseDefId}/filter?${params.toString()}`
+
+  const headers = { Authorization: `Bearer ${keycloak.token}` }
+
+  try {
+    const resp = await fetch(url, { headers })
+    const data = await json(keycloak, resp)
+    return Array.isArray(data) ? data : []
+  } catch (e) {
+    console.error(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function exportCasesCsv(keycloak, caseDefId = '', assetName = '', hierarchyName = '') {
+
+  const queryParams = new URLSearchParams();
+
+  queryParams.append('caseDefinitionId', caseDefId);
+  if (assetName) queryParams.append('assetName', assetName);
+  if (hierarchyName) queryParams.append('hierarchyName', hierarchyName);
+
+  const url = `${Config.CaseEngineUrl}/case-definition/case/export?${queryParams.toString()}`;
+
+  const headers = {
+    Authorization: `Bearer ${keycloak.token}`,
+  };
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers
+    });
+
+    if (!resp.ok) {
+      throw new Error("Export failed");
+    }
+
+  
+    const blob = await resp.blob();
+
+    return blob;
+
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+}
+

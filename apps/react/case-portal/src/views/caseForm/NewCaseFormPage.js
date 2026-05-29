@@ -175,7 +175,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
           }
 
           //Hide analysis save and edit button on case create page.
-          const analysisSection = level1.components.length > 4 ? level1.components[4] : null
+          const analysisSection = level1.components.find(comp => comp.title === 'Analysis') || null
 
           if(analysisSection){
             const analysisSubmitButton = analysisSection.components[0].columns.length > 2 ? analysisSection.components[0].columns[2].components[3]: null;
@@ -190,9 +190,13 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
             }
           }
 
-           const level6 = level1.components[6] ?? null;
-            if (level6) {
-              const recommendationFinalSubmit = level6.components[1]?.columns[1]?.components[0] ?? null;
+          //  const level6 = level1.components[6] ?? null;
+          //   if (level6) {
+          //    const recommendationFinalSubmit = level6.components[1]?.columns[1]?.components[0] ?? null;
+          //     recommendationFinalSubmit.disabled = true;
+            // }  
+            const recommendations = level1.components.find(comp => comp.label === '"Recommendations"') || null;
+            if (recommendations) {
               recommendationFinalSubmit.disabled = true;
             }  
         }

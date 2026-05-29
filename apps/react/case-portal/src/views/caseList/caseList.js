@@ -1,4 +1,14 @@
 /* eslint-disable no-unused-vars */
+
+import {
+  GridToolbarContainer,
+  GridToolbarFilterButton,
+  GridToolbarExport,
+  GridToolbarQuickFilter,
+  GridFilterPanel,
+} from '@mui/x-data-grid'
+
+
 import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material'
 import CloseIcon from '@mui/icons-material/Close'
 import ViewKanbanIcon from '@mui/icons-material/ViewKanban'
@@ -14,6 +24,10 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import { useSession } from 'SessionStoreContext'
 import MainCard from 'components/MainCard'
 import Config from 'consts/index'
+
+import CircularProgress from '@mui/material/CircularProgress'
+
+
 import React, {
   Suspense,
   createContext,
@@ -47,17 +61,91 @@ const PICaseForm = lazy(() =>
     default: module.PICaseFormPage,
   })),
 )
-// const NewCaseForm = lazy(() =>
-//   import('../caseForm/newCaseForm').then((module) => ({
-//     default: module.NewCaseForm,
-//   })),
-// )
 const CaseNewFormPage = lazy(() =>
   import('../caseForm/NewCaseFormPage').then((module) => ({
     default: module.NewCaseFormPage,
   })),
 )
 
+// const NewCaseForm = lazy(() =>
+//   import('../caseForm/newCaseForm').then((module) => ({
+//     default: module.NewCaseForm,
+//   })),
+// )
+
+function CustomToolbar({ searchText, onSearchChange, caseStatusFilter, onCaseStatusChange, onExport, exportLoading, onClear }) {
+  const caseStatusOptions = JSON.parse(localStorage.getItem('caseStatusOptions')) || [
+    { label: 'Assigned', value: 1 },
+    { label: 'Under Analysis', value: 2 },
+    { label: 'Closed', value: 3 },
+    { label: 'Rejected', value: 10002 },
+  ]
+
+  const hasFilters = searchText || caseStatusFilter
+
+  return (
+    <GridToolbarContainer sx={{ p: 1, gap: 1, flexWrap: 'wrap' }}>
+      {/* Search */}
+      <input
+        value={searchText}
+        onChange={(e) => onSearchChange(e.target.value)}
+        placeholder="Search..."
+        style={{
+          width: 300,
+          border: '1px solid #e0e0e0',
+          borderRadius: '4px',
+          padding: '6px 10px',
+          fontSize: '14px',
+          outline: 'none',
+        }}
+      />
+
+      {/* Case Status Filter */}
+      <select
+        value={caseStatusFilter}
+        onChange={(e) => onCaseStatusChange(e.target.value)}
+        style={{
+          border: '1px solid #e0e0e0',
+          borderRadius: '4px',
+          padding: '6px 10px',
+          fontSize: '14px',
+          outline: 'none',
+          backgroundColor: '#fff',
+          cursor: 'pointer',
+        }}
+      >
+        <option value="">All Statuses</option>
+        {caseStatusOptions.map((opt) => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+
+      {/* Clear button — only shown when filters are active */}
+      {hasFilters && (
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={onClear}
+          sx={{ borderColor: '#e0e0e0', color: '#666' }}
+        >
+          Clear
+        </Button>
+      )}
+
+      {/* Server-side Export */}
+      <Button
+        variant="contained"
+        size="small"
+        onClick={onExport}
+        disabled={exportLoading}
+        sx={{ ml: 'auto' }}
+      >
+        {exportLoading && <CircularProgress size={14} color="inherit" sx={{ mr: 1 }} />}
+        Export
+      </Button>
+    </GridToolbarContainer>
+  )
+}
 export const CaseList = ({ status, caseDefId }) => {
   const PaginationContext = createContext()
   const { t } = useTranslation()
@@ -83,6 +171,11 @@ export const CaseList = ({ status, caseDefId }) => {
     hasNext: false,
   })
   // const location = useLocation();
+  const [exportLoading, setExportLoading] = useState(false)
+  const [searchText, setSearchText] = useState('')
+  const [caseStatusFilter, setCaseStatusFilter] = useState('')
+  const searchDebounceRef = React.useRef(null)
+
 
   useEffect(() => {
     if (Config.WebsocketsEnabled) {
@@ -372,6 +465,70 @@ export const CaseList = ({ status, caseDefId }) => {
     }
   }
 
+
+  const handleSearchChange = (value) => {
+    setSearchText(value)
+    clearTimeout(searchDebounceRef.current)
+    searchDebounceRef.current = setTimeout(() => {
+      const searchParams = new URLSearchParams(window.location.search)
+      const assetName = searchParams.get('assetName') || ''
+      const hierarchyName = searchParams.get('hierarchyName') || ''
+      fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, value, caseStatusFilter)
+    }, 400)
+  }
+
+  const handleCaseStatusChange = (value) => {
+    setCaseStatusFilter(value)
+    const searchParams = new URLSearchParams(window.location.search)
+    const assetName = searchParams.get('assetName') || ''
+    const hierarchyName = searchParams.get('hierarchyName') || ''
+    fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, searchText, value)
+  }
+
+  const handleClear = () => {
+    setSearchText('')
+    setCaseStatusFilter('')
+    fetchCases(setFetching, keycloak, caseDefId, setStages, status, filter, setCases, setFilter)
+  }
+
+  const handleExportCsv = async () => {
+  try {
+    setExportLoading(true);
+    const searchParams = new URLSearchParams(window.location.search);
+    const assetName = searchParams.get('assetName') || '';
+    const hierarchyName = searchParams.get('hierarchyName') || '';
+
+    const blob = await CaseService.exportCasesCsv(
+      keycloak,
+      caseDefId,
+      assetName,
+      hierarchyName
+    );
+
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = downloadUrl;
+    link.download = `cases_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    window.URL.revokeObjectURL(downloadUrl);
+
+  } catch (error) {
+    console.error("Export error:", error);
+  }
+  finally {
+    setExportLoading(false)   
+  }
+};
+
+
+
+
+
   const fetchKanbanConfig = () => {
     return caseDefs.find((o) => o.id === caseDefId).kanbanConfig
   }
@@ -596,6 +753,7 @@ export const CaseList = ({ status, caseDefId }) => {
 
       <MainCard sx={{ mt: 2 }} content={false}>
         <Box>
+
           {view === 'list' && (
             <div>
               <Suspense fallback={<div>Loading...</div>}>
@@ -606,17 +764,31 @@ export const CaseList = ({ status, caseDefId }) => {
                     backgroundColor: '#ffffff',
                     mt: 1,
                     '& .MuiDataGrid-cell': {
-                      borderRight: '1px solid #e0e0e0', // Light gray border for column separation in cells
+                      borderRight: '1px solid #e0e0e0',
                     },
                     '& .MuiDataGrid-columnHeader': {
-                      borderRight: '1px solid #e0e0e0', // Light gray border for column separation in header
+                      borderRight: '1px solid #e0e0e0',
                     },
                   }}
                   rows={cases}
                   columns={makeColumns()}
-                  getRowId={(row) => row.caseNo}
+                  getRowId={(row) => row.caseNo || row._id}
                   loading={fetching}
-                  components={{ Pagination: CustomPagination }}
+                  slots={{
+                    toolbar: CustomToolbar,
+                    pagination: CustomPagination,
+                  }}
+                  slotProps={{
+                    toolbar: {
+                      searchText,
+                      onSearchChange: handleSearchChange,
+                      caseStatusFilter,
+                      onCaseStatusChange: handleCaseStatusChange,
+                      onExport: handleExportCsv,
+                      exportLoading,
+                      onClear: handleClear,
+                    },
+                  }}
                 />
               </Suspense>
             </div>
@@ -854,4 +1026,29 @@ function fetchCases(
     .finally(() => {
       setFetching(false)
     })
+}
+
+function fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, search, caseStatus) {
+  setFetching(true)
+  CaseService.filterCasesByCaseDefinitionId(keycloak, caseDefId, assetName, hierarchyName, search, caseStatus)
+    .then((data) => {
+      const updatedCases = data.map((singleCase) => {
+        let caseTitle = ''
+        let caseNumber = ''
+        try {
+          const containerValue = singleCase.attributes?.find((attr) => attr.name === 'container')?.value
+          if (containerValue) {
+            const parsed = JSON.parse(containerValue)
+            caseTitle = parsed?.textField5 || parsed?.caseTitle || ''
+            caseNumber = parsed?.textField || parsed?.caseNo || ''
+          }
+        } catch (e) {
+          console.error('Error parsing container value:', e)
+        }
+        return { ...singleCase, caseTitle, caseNumber }
+      })
+      setCases(updatedCases)
+    })
+    .catch((e) => console.error('Filter error:', e))
+    .finally(() => setFetching(false))
 }

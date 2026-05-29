@@ -42,6 +42,8 @@ import { DialogActions, DialogContent, DialogContentText } from '@mui/material'
 import Config from '../../consts'
 import { buildCreateUrl } from 'utils/util'
 import { accountStore } from './../../store'
+import html2pdf from "html2pdf.js/dist/html2pdf"
+
 
 export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [caseDef, setCaseDef] = useState(null)
@@ -243,10 +245,30 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         const caseAssignedToEmail = caseData?.assignedTo?.emailId;
         userEmailIds.push(caseData?.owner?.email);
         userEmailIds.push(parsedAttributeValue.caseAssignedTo);
-        const userEmailIdsIncludingAnalysisTeam = userEmailIds.concat(parsedAttributeValue.analysisTeam);
+        
 
-        let shouldDisable = !userEmailIds.some(email => email.startsWith(currentUserName + '@'));
-        let shouldDisableAnalysis = !userEmailIdsIncludingAnalysisTeam.some(email => email.startsWith(currentUserName + '@'));
+        const analysisTeamEmails = Array.isArray(parsedAttributeValue.analysisTeam) ? parsedAttributeValue.analysisTeam : (parsedAttributeValue.analysisTeam ? [parsedAttributeValue.analysisTeam] : []);
+        const userEmailIdsIncludingAnalysisTeam = userEmailIds.concat(analysisTeamEmails);
+
+        const currentUserEmail = keycloak.idTokenParsed.email;
+        const checkEmailMatch = (email) => {
+          if (!email) return false;
+          const emailLower = email.toLowerCase();
+          return (
+            emailLower.startsWith(currentUserName.toLowerCase() + '@') ||
+            emailLower === currentUserName.toLowerCase() ||
+            emailLower === currentUserName.toLowerCase() + '@' ||
+            (currentUserEmail && emailLower === currentUserEmail.toLowerCase())
+          );
+        };
+        let shouldDisable = !userEmailIds.some(checkEmailMatch);
+        let shouldDisableAnalysis = !userEmailIdsIncludingAnalysisTeam.some(checkEmailMatch);
+
+        console.log('--- Permissions Check ---');
+        console.log('Current Logged-in Username:', currentUserName);
+        console.log('Analysis Team Emails on Case:', analysisTeamEmails);
+        console.log('All Authorized Emails (Including Analysis Team):', userEmailIdsIncludingAnalysisTeam);
+        console.log('Is User an Analysis Team Member? (!shouldDisableAnalysis):', !shouldDisableAnalysis);
 
         const recommendations = parsedAttributeValue.dataGrid1;
         const recommendationAssignees = recommendations?.map((item) => item.recommendationAssignedTo2).filter((assignee) => assignee !== "");
@@ -341,8 +363,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             caseDetails1?.columns?.forEach((column) => {
               column?.components?.forEach((component) => {
                 if (component.id !== caseStatus?.id) {
-                  // (component.id === analysisTeam?.id && (parsedAttributeValue.dataGrid1.length > 1 || shouldDisable))) {
-                  component.disabled = true;
+                  if (component.id === analysisTeam?.id && !shouldDisableAnalysis) {
+                    console.log('Unlocking Analysis Team dropdown for Analysis Team member.');
+                    component.disabled = false;
+                  } else {
+                    component.disabled = true;
+                  }
                 }
               });
             });
@@ -417,7 +443,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               }
 
               //Hide analysis save and edit button conditionally.
-              const analysisSection = level1.components.length > 4 ? level1.components[4] : null
+              const analysisSection = level1.components.find(comp => comp.title === 'Analysis') || null
 
               if (analysisSection) {
                 const analysisSubmitButton = analysisSection.components[0].columns.length > 2 ? analysisSection.components[0].columns[2].components[3] : null;
@@ -1475,7 +1501,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             (file, index) => `
                   <li style="margin-bottom: 16px;">
                     <img 
-                      src="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
+              src="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(
+                file.name
+              )}?content-type=${encodeURIComponent(file.type)}"
                       alt="${file.name}"
                       style="max-width: 100%; height: auto;"
                     />
@@ -1524,8 +1552,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             (file, index) => `
                   <li style="margin-bottom: 16px;">
                     <a 
-                      href="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
-                      alt="${file.name}"
+                href="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(
+                  file.name
+                )}?content-type=${encodeURIComponent(file.type)}"
                       target="_blank"
                     >${file.name}</a>
               </li>
@@ -1546,65 +1575,84 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const printCaseDetails = () => {
     const printContent = generatePrintContent(aCase, formStructure);
 
-    // Open a new window and print the generated content
-    // const printWindow = window.open('', '_blank');
-    // if (printWindow) {
-    //   printWindow.document.write(`
-    // <html>
-    //   <head>
-    //     <title>Print Case Details</title>
-    //   </head>
-    //   <body>
-    //     ${printContent}
-    //   </body>
-    // </html>
-    //   `);
-    //   printWindow.document.close();
-    //   setTimeout(() => {
-    //     printWindow.print();
-    //   }, 500); // 500ms delay (you can adjust this if needed)
-    // } else {
-    //   console.error('Failed to open the print window.');
-    // }
+    const ssetName =
+      formData?.data?.container?.textField1 || "Asset";
+    const safeAssetName = ssetName.replace(/[^a-zA-Z0-9]/g, '_');  const fileName = `${aCase.caseNo}_${safeAssetName}.pdf`;  const element = document.createElement("div");
+    element.innerHTML = printContent;
 
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
+    html2pdf()
+      .set({
+        filename: fileName,
+        margin: 10,
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+      })
+      .from(element)
+      .save();
+  };
 
-    const doc = iframe.contentWindow.document;
-    doc.open();
-    doc.write(`
+  // const printCaseDetails = () => {
+  //   const printContent = generatePrintContent(aCase, formStructure);
 
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Case Details - ${aCase.caseNo}</title>
-      <style>
-        @media print {
-          body { 
-            margin: 0; 
-          }
+  //   // Open a new window and print the generated content
+  //   // const printWindow = window.open('', '_blank');
+  //   // if (printWindow) {
+  //   //   printWindow.document.write(`
+  //   // <html>
+  //   //   <head>
+  //   //     <title>Print Case Details</title>
+  //   //   </head>
+  //   //   <body>
+  //   //     ${printContent}
+  //   //   </body>
+  //   // </html>
+  //   //   `);
+  //   //   printWindow.document.close();
+  //   //   setTimeout(() => {
+  //   //     printWindow.print();
+  //   //   }, 500); // 500ms delay (you can adjust this if needed)
+  //   // } else {
+  //   //   console.error('Failed to open the print window.');
+  //   // }
+
+  //   const iframe = document.createElement('iframe');
+  //   iframe.style.display = 'none';
+  //   document.body.appendChild(iframe);
+
+  //   const doc = iframe.contentWindow.document;
+  //   doc.open();
+  //   doc.write(`
+
+  //   <!DOCTYPE html>
+  //   <html>
+  //   <head>
+  //     <title>Case Details - ${aCase.caseNo}</title>
+  //     <style>
+  //       @media print {
+  //         body { 
+  //           margin: 0; 
+  //         }
           
-          .no-break {
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-        }
-      </style>
-    </head>
-    <body>
-      ${printContent}
-    </body>
-    </html>
-    `);
-    doc.close();
+  //         .no-break {
+  //           break-inside: avoid;
+  //           page-break-inside: avoid;
+  //         }
+  //       }
+  //     </style>
+  //   </head>
+  //   <body>
+  //     ${printContent}
+  //   </body>
+  //   </html>
+  //   `);
+  //   doc.close();
 
-    iframe.onload = function () {
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
-      setTimeout(() => document.body.removeChild(iframe), 1000);
-    };  
-  }
+  //   iframe.onload = function () {
+  //     iframe.contentWindow.focus();
+  //     iframe.contentWindow.print();
+  //     setTimeout(() => document.body.removeChild(iframe), 1000);
+  //   };  
+  // }
 
   const close = () => {
     if (hasUnsavedChanges) {
