@@ -1186,115 +1186,116 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 
 		boolean pvcDmd = vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("DMD");
 	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
-	        Sheet sheet = workbook.getSheetAt(0);
-	        Iterator<Row> rowIterator = sheet.iterator();
+	        int numberOfSheets = workbook.getNumberOfSheets();
+	        for (int sheetIndex = 0; sheetIndex < numberOfSheets; sheetIndex++) {
+	            Sheet sheet = workbook.getSheetAt(sheetIndex);
+	            Iterator<Row> rowIterator = sheet.iterator();
 
-	        if (rowIterator.hasNext())
-	            rowIterator.next(); 
-	        List<BusinessDemandDataDTO> productionDtos = new ArrayList<>();
+	            if (rowIterator.hasNext())
+	                rowIterator.next();
+	            List<BusinessDemandDataDTO> productionDtos = new ArrayList<>();
 
-	        while (rowIterator.hasNext()) {
-	            Row row = rowIterator.next();
-	            BusinessDemandDataDTO dto = new BusinessDemandDataDTO();
-	            try {
-	                dto.setDisplayName(getStringCellValue(row.getCell(0), dto));
-	                dto.setUOM(getStringCellValue(row.getCell(1), dto));
-	                dto.setApril(getNumericCellValue(row.getCell(2), dto));
-	                dto.setMay(getNumericCellValue(row.getCell(3), dto));
-	                dto.setJune(getNumericCellValue(row.getCell(4), dto));
-	                dto.setJuly(getNumericCellValue(row.getCell(5), dto));
-	                dto.setAug(getNumericCellValue(row.getCell(6), dto));
-	                dto.setSep(getNumericCellValue(row.getCell(7), dto));
-	                dto.setOct(getNumericCellValue(row.getCell(8), dto));
-	                dto.setNov(getNumericCellValue(row.getCell(9), dto));
-	                dto.setDec(getNumericCellValue(row.getCell(10), dto));
-	                dto.setJan(getNumericCellValue(row.getCell(11), dto));
-	                dto.setFeb(getNumericCellValue(row.getCell(12), dto));
-	                dto.setMarch(getNumericCellValue(row.getCell(13), dto));
-	                dto.setPlantId(plantFKId.toString());
-	                String normParameterId = getStringCellValue(row.getCell(16), dto);
-	                dto.setNormParameterId(normParameterId); 
-	                boolean isProduction = false;
-	                if (verticalName != null
-	                        && (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || pvc) 
-	                        && normParameterId != null) {
-	                    
-	                    isProduction = isProductionType(normParameterId, normParametersRepository, normParameterTypeRepository);
+	            while (rowIterator.hasNext()) {
+	                Row row = rowIterator.next();
+	                BusinessDemandDataDTO dto = new BusinessDemandDataDTO();
+	                try {
+	                    dto.setDisplayName(getStringCellValue(row.getCell(0), dto));
+	                    dto.setUOM(getStringCellValue(row.getCell(1), dto));
+	                    dto.setApril(getNumericCellValue(row.getCell(2), dto));
+	                    dto.setMay(getNumericCellValue(row.getCell(3), dto));
+	                    dto.setJune(getNumericCellValue(row.getCell(4), dto));
+	                    dto.setJuly(getNumericCellValue(row.getCell(5), dto));
+	                    dto.setAug(getNumericCellValue(row.getCell(6), dto));
+	                    dto.setSep(getNumericCellValue(row.getCell(7), dto));
+	                    dto.setOct(getNumericCellValue(row.getCell(8), dto));
+	                    dto.setNov(getNumericCellValue(row.getCell(9), dto));
+	                    dto.setDec(getNumericCellValue(row.getCell(10), dto));
+	                    dto.setJan(getNumericCellValue(row.getCell(11), dto));
+	                    dto.setFeb(getNumericCellValue(row.getCell(12), dto));
+	                    dto.setMarch(getNumericCellValue(row.getCell(13), dto));
+	                    dto.setPlantId(plantFKId.toString());
+	                    String normParameterId = getStringCellValue(row.getCell(16), dto);
+	                    dto.setNormParameterId(normParameterId);
+	                    boolean isProduction = false;
+	                    if (verticalName != null
+	                            && (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || pvc)
+	                            && normParameterId != null) {
+
+	                        isProduction = isProductionType(normParameterId, normParametersRepository, normParameterTypeRepository);
+	                    }
+
+	                    if (isProduction) {
+	                        productionDtos.add(dto);
+	                    }
+	                    dto.setRemark(getStringCellValue(row.getCell(14), dto));
+
+	                    dto.setId(getStringCellValue(row.getCell(15), dto));
+
+	                    if (pvcDmd) {
+	                        dto.setLineId(getStringCellValue(row.getCell(17), dto));
+	                    }
+
+	                    // Check if id is null AND all month values are zero or null
+	                    boolean allMonthsZero = (dto.getApril() == null || dto.getApril() == 0.0)
+	                            && (dto.getMay() == null || dto.getMay() == 0.0)
+	                            && (dto.getJune() == null || dto.getJune() == 0.0)
+	                            && (dto.getJuly() == null || dto.getJuly() == 0.0)
+	                            && (dto.getAug() == null || dto.getAug() == 0.0)
+	                            && (dto.getSep() == null || dto.getSep() == 0.0)
+	                            && (dto.getOct() == null || dto.getOct() == 0.0)
+	                            && (dto.getNov() == null || dto.getNov() == 0.0)
+	                            && (dto.getDec() == null || dto.getDec() == 0.0)
+	                            && (dto.getJan() == null || dto.getJan() == 0.0)
+	                            && (dto.getFeb() == null || dto.getFeb() == 0.0)
+	                            && (dto.getMarch() == null || dto.getMarch() == 0.0);
+
+	                    if (dto.getId() == null && allMonthsZero) {
+	                        continue;
+	                    }
+
+	                    dto.setVerticalFKId(vertical.getId().toString());
+	                    dto.setSiteFKId(site.getId().toString());
+	                    dto.setYear(year);
+
+	                } catch (Exception e) {
+	                    e.printStackTrace();
+	                    dto.setErrDescription(e.getMessage());
+	                    dto.setSaveStatus("Failed");
 	                }
-	                
-	                if (isProduction) {
-	                    productionDtos.add(dto); 
-	                }
-	                dto.setRemark(getStringCellValue(row.getCell(14), dto));
-	               
-	                dto.setId(getStringCellValue(row.getCell(15), dto));
-
-					if(pvcDmd) { 
-						dto.setLineId(getStringCellValue(row.getCell(17), dto));
-					}
-	               
-	             // Check if id is null AND all month values are zero or null
-	             boolean allMonthsZero = (dto.getApril() == null || dto.getApril() == 0.0)
-	                     && (dto.getMay() == null || dto.getMay() == 0.0)
-	                     && (dto.getJune() == null || dto.getJune() == 0.0)
-	                     && (dto.getJuly() == null || dto.getJuly() == 0.0)
-	                     && (dto.getAug() == null || dto.getAug() == 0.0)
-	                     && (dto.getSep() == null || dto.getSep() == 0.0)
-	                     && (dto.getOct() == null || dto.getOct() == 0.0)
-	                     && (dto.getNov() == null || dto.getNov() == 0.0)
-	                     && (dto.getDec() == null || dto.getDec() == 0.0)
-	                     && (dto.getJan() == null || dto.getJan() == 0.0)
-	                     && (dto.getFeb() == null || dto.getFeb() == 0.0)
-	                     && (dto.getMarch() == null || dto.getMarch() == 0.0);
-
-	             if (dto.getId() == null && allMonthsZero) {
-	                 
-	                 continue;
-	             }
-
-	             
-	                dto.setVerticalFKId(vertical.getId().toString());
-	                dto.setSiteFKId(site.getId().toString());
-	                dto.setYear(year);
-	                
-	            } catch (Exception e) {
-	                e.printStackTrace();
-	                dto.setErrDescription(e.getMessage());
-	                dto.setSaveStatus("Failed");
-	            }
-	            configList.add(dto);
-	        }
-	        
-	        if (!productionDtos.isEmpty() && (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || pvc)) {
-	            
-	            Map<String, Double> monthlyProductionSums = new HashMap<>();
-	            String[] months = {"April", "May", "June", "July", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "March"};
-	            
-	            for (BusinessDemandDataDTO dto : productionDtos) {
-	                monthlyProductionSums.merge("April", dto.getApril() != null ? dto.getApril() : 0.0, Double::sum);
-	                monthlyProductionSums.merge("May", dto.getMay() != null ? dto.getMay() : 0.0, Double::sum);
-	                monthlyProductionSums.merge("June", dto.getJune() != null ? dto.getJune() : 0.0, Double::sum);
-	                monthlyProductionSums.merge("July", dto.getJuly() != null ? dto.getJuly() : 0.0, Double::sum);
-	                monthlyProductionSums.merge("Aug", dto.getAug() != null ? dto.getAug() : 0.0, Double::sum);
-	                monthlyProductionSums.merge("Sep", dto.getSep() != null ? dto.getSep() : 0.0, Double::sum);
-	                monthlyProductionSums.merge("Oct", dto.getOct() != null ? dto.getOct() : 0.0, Double::sum);
-	                monthlyProductionSums.merge("Nov", dto.getNov() != null ? dto.getNov() : 0.0, Double::sum);
-	                monthlyProductionSums.merge("Dec", dto.getDec() != null ? dto.getDec() : 0.0, Double::sum);
-	                monthlyProductionSums.merge("Jan", dto.getJan() != null ? dto.getJan() : 0.0, Double::sum);
-	                monthlyProductionSums.merge("Feb", dto.getFeb() != null ? dto.getFeb() : 0.0, Double::sum);
-	                monthlyProductionSums.merge("March", dto.getMarch() != null ? dto.getMarch() : 0.0, Double::sum);
+	                configList.add(dto);
 	            }
 
-	            for (String month : months) {
-	                Double sum = monthlyProductionSums.getOrDefault(month, 0.0);
-	                if (Math.abs(sum - 100.0) > 0.001) { 
-	                    for (BusinessDemandDataDTO dto : productionDtos) {
-	                        if (!"Failed".equalsIgnoreCase(dto.getSaveStatus())) {
-	                            dto.setSaveStatus("Failed");
-	                            dto.setErrDescription(month + " Production sum is " + String.format("%.2f", sum) + ", but must be 100.");
-	                        } else {
-	                            String existingError = dto.getErrDescription() != null ? dto.getErrDescription() : "";
-	                            dto.setErrDescription(existingError + "; " + month + " Production sum is " + String.format("%.2f", sum) + ", but must be 100.");
+	            if (!productionDtos.isEmpty() && (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || pvc)) {
+
+	                Map<String, Double> monthlyProductionSums = new HashMap<>();
+	                String[] months = {"April", "May", "June", "July", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "March"};
+
+	                for (BusinessDemandDataDTO dto : productionDtos) {
+	                    monthlyProductionSums.merge("April", dto.getApril() != null ? dto.getApril() : 0.0, Double::sum);
+	                    monthlyProductionSums.merge("May", dto.getMay() != null ? dto.getMay() : 0.0, Double::sum);
+	                    monthlyProductionSums.merge("June", dto.getJune() != null ? dto.getJune() : 0.0, Double::sum);
+	                    monthlyProductionSums.merge("July", dto.getJuly() != null ? dto.getJuly() : 0.0, Double::sum);
+	                    monthlyProductionSums.merge("Aug", dto.getAug() != null ? dto.getAug() : 0.0, Double::sum);
+	                    monthlyProductionSums.merge("Sep", dto.getSep() != null ? dto.getSep() : 0.0, Double::sum);
+	                    monthlyProductionSums.merge("Oct", dto.getOct() != null ? dto.getOct() : 0.0, Double::sum);
+	                    monthlyProductionSums.merge("Nov", dto.getNov() != null ? dto.getNov() : 0.0, Double::sum);
+	                    monthlyProductionSums.merge("Dec", dto.getDec() != null ? dto.getDec() : 0.0, Double::sum);
+	                    monthlyProductionSums.merge("Jan", dto.getJan() != null ? dto.getJan() : 0.0, Double::sum);
+	                    monthlyProductionSums.merge("Feb", dto.getFeb() != null ? dto.getFeb() : 0.0, Double::sum);
+	                    monthlyProductionSums.merge("March", dto.getMarch() != null ? dto.getMarch() : 0.0, Double::sum);
+	                }
+
+	                for (String month : months) {
+	                    Double sum = monthlyProductionSums.getOrDefault(month, 0.0);
+	                    if (Math.abs(sum - 100.0) > 0.001) {
+	                        for (BusinessDemandDataDTO dto : productionDtos) {
+	                            if (!"Failed".equalsIgnoreCase(dto.getSaveStatus())) {
+	                                dto.setSaveStatus("Failed");
+	                                dto.setErrDescription(month + " Production sum is " + String.format("%.2f", sum) + ", but must be 100.");
+	                            } else {
+	                                String existingError = dto.getErrDescription() != null ? dto.getErrDescription() : "";
+	                                dto.setErrDescription(existingError + "; " + month + " Production sum is " + String.format("%.2f", sum) + ", but must be 100.");
+	                            }
 	                        }
 	                    }
 	                }
