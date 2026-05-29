@@ -770,7 +770,7 @@ const ProductionvolumeData = ({
     : getColDefsPercentageSummary(headerMap, valueFormat)
 
   const colDefs_design_capacity =
-    IS_PE_PP || IS_PET || IS_PVC_VMD 
+    IS_PE_PP || IS_PET || IS_PVC_VMD
       ? getColDefsDesignCapacityPEPP(headerMap, valueFormat)
       : IS_PTA_DMD
         ? getColDefsDesignCapacityPTADMD(headerMap, valueFormat)
@@ -1687,7 +1687,7 @@ const ProductionvolumeData = ({
           permissions={adjustedPermissionsGrid2}
           selectedUnit={unitDesignCapacity}
           setSelectedUnit={setUnitDesignCapacity}
-          supressGridHeight={true}
+          supressGridHeight={!IS_PP_HMD}
           downloadExcelForConfiguration={() =>
             downloadExcelForConfiguration('design')
           }
@@ -1712,7 +1712,7 @@ const ProductionvolumeData = ({
           selectedUnit={unitDesignCapacity}
           setSelectedUnit={setUnitDesignCapacity}
           handleUnitChange={handleUnitChangeMaxCapacity}
-          supressGridHeight={true}
+          supressGridHeight={!IS_PP_HMD}
           downloadExcelForConfiguration={() =>
             downloadExcelForConfiguration('max')
           }
@@ -1754,7 +1754,7 @@ const ProductionvolumeData = ({
           selectedUnit={unitDesignCapacity}
           setSelectedUnit={setUnitDesignCapacity}
           handleExcelUpload={handleExcelUpload}
-          supressGridHeight={true}
+          supressGridHeight={!IS_PP_HMD}
           downloadExcelForConfiguration={() =>
             downloadExcelForConfiguration('main')
           }
@@ -1780,7 +1780,7 @@ const ProductionvolumeData = ({
               title='Production target Reference'
               fetchData={fetchData}
               permissions={adjustedPermissionsLast}
-              supressGridHeight={true}
+              supressGridHeight={!IS_PP_HMD}
               resetEditSignal={editResetKey}
               setEditResetKey={setEditResetKey}
             />

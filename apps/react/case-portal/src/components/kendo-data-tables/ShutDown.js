@@ -30,6 +30,7 @@ import {
   ShutDownPTADMDColumns,
   ShutDownChemicalColumns,
 } from 'components/colums/ShutdownColumn'
+import { ShutDownChemicalDropdownColumns } from 'components/colums/Chemicalcolumn'
 import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
 import { getRoleName } from 'services/role-service'
 import { calculateMonthDuration } from './Utilities-Kendo/durationHelpers'
@@ -117,6 +118,12 @@ const ShutDown = ({ permissions }) => {
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_AROMATICS = lowerVertName === 'aromatics'
   const IS_PE_C2 = lowerVertName === 'pe' && lowerSiteName === 'c2'
+  const IS_CHEMICAL_HMD_DROPDOWNDESC =
+    IS_CHEMICAL &&
+    lowerSiteName === 'hmd' &&
+    (lowerPlantName === 'butadiene' ||
+      lowerPlantName === 'mtbe' ||
+      lowerPlantName === 'butene')
   const DELETE_NOTE =
     'Warning: Please verify the shutdown consumption quantity before deleting the shutdown activity.'
 
@@ -1023,7 +1030,7 @@ const ShutDown = ({ permissions }) => {
       try {
         let data = []
 
-        if (IS_PTA) {
+        if (IS_PTA || IS_CHEMICAL_HMD_DROPDOWNDESC) {
           data = await DataService.dropdownValuesDMD(
             keycloak,
             PLANT_ID,
@@ -1070,7 +1077,8 @@ const ShutDown = ({ permissions }) => {
       }
     }
 
-    if (lowerVertName == 'pta') getAllDescriptionDrpdwn()
+    if (lowerVertName == 'pta' || IS_CHEMICAL_HMD_DROPDOWNDESC)
+      getAllDescriptionDrpdwn()
   }, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
 
   useEffect(() => {
@@ -1173,7 +1181,9 @@ const ShutDown = ({ permissions }) => {
       case verticalEnums.PTA:
         return IS_PTA ? ShutDownPTADMDColumns : ShutDownPTAColumns
       case verticalEnums.CHEMICAL:
-        return IS_CHEMICAL ? ShutDownChemicalColumns : ShutDownAllColumns
+        return IS_CHEMICAL_HMD_DROPDOWNDESC
+          ? ShutDownChemicalDropdownColumns
+          : ShutDownChemicalColumns
       case verticalEnums.PVC:
         return IS_PVC_DMD || IS_PVC_HMD
           ? ShutDownPVCDMDColumns
@@ -1494,7 +1504,7 @@ const ShutDown = ({ permissions }) => {
         IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD
           ? true
           : false,
-      deleteMultiple: true,  // IS_PP_DTA ? true : false,
+      deleteMultiple: true, // IS_PP_DTA ? true : false,
     },
     isOldYear,
   )

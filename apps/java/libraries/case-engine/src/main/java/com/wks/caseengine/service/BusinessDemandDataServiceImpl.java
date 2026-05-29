@@ -733,30 +733,63 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 				}
 			}
-			for (List<Object> rowData : rows) {
-				
-				 
-				Row row = sheet.createRow(currentRow++);
-				for (int col = 0; col < rowData.size(); col++) {
-					Cell cell = row.createCell(col);
-					Object value = rowData.get(col);
+		final int REMARK_COL_INDEX = 14;
+		final int REMARK_COL_WIDTH_CHARS = 50;
+		final short DEFAULT_ROW_HEIGHT_TWIPS = 300; // 15pt * 20 twips/pt
+		final short LINE_HEIGHT_TWIPS = 300;
 
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
-					} else if (value != null) {
-						cell.setCellValue(value.toString());
-					} else {
-						cell.setCellValue("");
-					}
+		CellStyle wrapStyle = workbook.createCellStyle();
+		wrapStyle.setWrapText(true);
+
+		for (List<Object> rowData : rows) {
+				
+			Row row = sheet.createRow(currentRow++);
+			for (int col = 0; col < rowData.size(); col++) {
+				Cell cell = row.createCell(col);
+				Object value = rowData.get(col);
+
+				if (value instanceof Number) {
+					cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
+				} else if (value instanceof Boolean) {
+					cell.setCellValue((Boolean) value);
+				} else if (value != null) {
+					cell.setCellValue(value.toString());
+				} else {
+					cell.setCellValue("");
+				}
+
+				if (col == REMARK_COL_INDEX) {
+					cell.setCellStyle(wrapStyle);
 				}
 			}
-			sheet.setColumnHidden(15, true);
-			sheet.setColumnHidden(16, true);
-			sheet.setColumnHidden(17, true); // LineId
 
-			//sheet.setColumnHidden(18, true);
+			// Adjust row height to fit wrapped Remark content
+			String remarkText = (rowData.size() > REMARK_COL_INDEX && rowData.get(REMARK_COL_INDEX) != null)
+					? rowData.get(REMARK_COL_INDEX).toString() : "";
+			if (!remarkText.isEmpty()) {
+				int numLines = (int) Math.ceil((double) remarkText.length() / REMARK_COL_WIDTH_CHARS);
+				numLines = Math.max(1, numLines);
+				row.setHeight((short) (numLines * LINE_HEIGHT_TWIPS));
+			} else {
+				row.setHeight(DEFAULT_ROW_HEIGHT_TWIPS);
+			}
+		}
+
+		// Auto-size all visible non-Remark columns based on content
+		int totalCols = isAfterSave ? 20 : 18;
+		for (int col = 0; col < totalCols; col++) {
+			if (col == REMARK_COL_INDEX || col == 15 || col == 16 || col == 17) continue;
+			sheet.autoSizeColumn(col);
+		}
+
+		// Set a fixed wide width for the Remark column (50 chars * 256 units per char)
+		sheet.setColumnWidth(REMARK_COL_INDEX, REMARK_COL_WIDTH_CHARS * 256);
+
+		sheet.setColumnHidden(15, true);
+		sheet.setColumnHidden(16, true);
+		sheet.setColumnHidden(17, true); // LineId
+
+		//sheet.setColumnHidden(18, true);
 			try {// (FileOutputStream fileOut = new FileOutputStream("output/generated.xlsx")) {
 
 				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

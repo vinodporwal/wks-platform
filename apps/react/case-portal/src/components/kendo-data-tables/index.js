@@ -94,6 +94,7 @@ import {
 } from 'assets/images/icons'
 import { DashboardColors } from 'themes/colors'
 import SwitchEditor from './Utilities-Kendo/SwitchEditor'
+import { NoSpinnerNumericIntegerEditor } from './Utilities-Kendo/numbericIntegerColumns'
 
 // the input on every parent re-render and the user loses focus mid-typing.
 const ON_OFF_CONDITION = (dataItem) => dataItem?.UOM === 'ON/OFF'
@@ -4079,6 +4080,47 @@ const KendoDataTables = ({
                         columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
+                      />
+                    )
+                  }
+                  if (col?.type === 'number' && col?.integerOnly) {
+                    return (
+                      <GridColumn
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
+                        className={`
+        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+        ${col?.isBold ? 'bold-text' : ''}
+      `}
+                        editable={col?.editable ? true : false}
+                        headerClassName={numericHeaderClass(isActive, col)}
+                        cells={{
+                          edit: { text: NoSpinnerNumericIntegerEditor },
+                          data: (props) =>
+                            showThreeColors ? (
+                              <RedHighlightCell2
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                allRedCell2={allRedCell2}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ) : (
+                              <RedHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col?.format}
                       />
                     )
                   }

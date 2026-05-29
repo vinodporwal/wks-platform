@@ -124,8 +124,10 @@ public class AOPMCCalculatedDataController {
 	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 	        Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			boolean ppDta = vertical.getName().equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("DTA");
+			boolean ppHmd = vertical.getName().equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("HMD");
 	        byte[] excelBytes=null;
-	        if(vertical.getName().equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("DTA")) {
+	        if(ppDta || ppHmd) {
 	        	excelBytes = aOPMCCalculatedDataService.exportLineWiseProductionTargetDTA(year, plantId, false, null,lineId);
 	        }else {
 	        	 excelBytes = aOPMCCalculatedDataService.exportLineWiseProductionTarget(year, plantId, false, null,lineId);
