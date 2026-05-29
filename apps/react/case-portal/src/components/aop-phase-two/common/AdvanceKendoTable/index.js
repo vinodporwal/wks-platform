@@ -1497,6 +1497,18 @@ const AdvanceKendoTable = ({
       }
 
       if (col.type === 'number') {
+        // Determine which numeric editor to use based on min/max constraints
+        const hasMinMaxConstraints =
+          col.minValue !== undefined || col.maxValue !== undefined
+
+        // Resolve minValue and maxValue from dataItem if they are string references
+        const getResolvedValue = (value, dataItem) => {
+          if (typeof value === 'string') {
+            return dataItem[value]
+          }
+          return value
+        }
+
         return (
           <GridColumn
             key={col.field}
@@ -1510,7 +1522,17 @@ const AdvanceKendoTable = ({
             editable={isEditable}
             headerClassName={isActive ? 'active-column' : ''}
             cells={{
-              edit: { text: NoSpinnerNumericEditor },
+              edit: hasMinMaxConstraints
+                ? {
+                    text: (cellProps) => (
+                      <NumericEditorWithMinMax
+                        {...cellProps}
+                        min={getResolvedValue(col.minValue, cellProps.dataItem)}
+                        max={getResolvedValue(col.maxValue, cellProps.dataItem)}
+                      />
+                    ),
+                  }
+                : { text: NoSpinnerNumericEditor },
               data: (props) =>
                 showThreeColors ? (
                   <RedHighlightCell2
@@ -1614,9 +1636,14 @@ const AdvanceKendoTable = ({
         // Determine which numeric editor to use based on min/max constraints
         const hasMinMaxConstraints =
           col.minValue !== undefined || col.maxValue !== undefined
-        const NumericEditorComponent = hasMinMaxConstraints
-          ? NumericEditorWithMinMax
-          : NoSpinnerNumericEditor
+
+        // Resolve minValue and maxValue from dataItem if they are string references
+        const getResolvedValue = (value, dataItem) => {
+          if (typeof value === 'string') {
+            return dataItem[value]
+          }
+          return value
+        }
 
         return (
           <GridColumn
@@ -1636,8 +1663,8 @@ const AdvanceKendoTable = ({
                     text: (cellProps) => (
                       <NumericEditorWithMinMax
                         {...cellProps}
-                        min={col.minValue}
-                        max={col.maxValue}
+                        min={getResolvedValue(col.minValue, cellProps.dataItem)}
+                        max={getResolvedValue(col.maxValue, cellProps.dataItem)}
                       />
                     ),
                   }

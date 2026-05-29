@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
+import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/jmd/utilityPlantApiServiceV2'
 import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'

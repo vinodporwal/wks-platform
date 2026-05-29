@@ -864,6 +864,26 @@ public class JMDAssetPriorityServiceImpl implements JMDAssetPriorityService {
             return "At least one monthly priority value is required";
         }
 
+        // Validate that no monthly priority value is negative
+        java.util.Map<String, Integer> monthValues = new java.util.LinkedHashMap<>();
+        monthValues.put("Apr", dto.getApr());
+        monthValues.put("May", dto.getMay());
+        monthValues.put("Jun", dto.getJun());
+        monthValues.put("Jul", dto.getJul());
+        monthValues.put("Aug", dto.getAug());
+        monthValues.put("Sep", dto.getSep());
+        monthValues.put("Oct", dto.getOct());
+        monthValues.put("Nov", dto.getNov());
+        monthValues.put("Dec", dto.getDec());
+        monthValues.put("Jan", dto.getJan());
+        monthValues.put("Feb", dto.getFeb());
+        monthValues.put("Mar", dto.getMar());
+        for (java.util.Map.Entry<String, Integer> entry : monthValues.entrySet()) {
+            if (entry.getValue() != null && entry.getValue() < 0) {
+                return "Priority value for " + entry.getKey() + " cannot be less than 0";
+            }
+        }
+
         try {
             if (isPower) {
                 var optionalEntity = repository.findById(dto.getId());

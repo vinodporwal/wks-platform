@@ -6,7 +6,7 @@ import { eyeIcon, fileExcelIcon } from '@progress/kendo-svg-icons'
 import { Tooltip } from '@progress/kendo-react-tooltip'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import { SummaryApiService } from 'components/aop-phase-two/services/cpp/summaryApiService'
+import { SummaryApiService } from 'components/aop-phase-two/services/cpp/jmd/summaryApiService'
 
 const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
   const keycloak = useSession()

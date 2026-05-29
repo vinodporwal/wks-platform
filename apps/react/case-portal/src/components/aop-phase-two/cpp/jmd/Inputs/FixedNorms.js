@@ -8,7 +8,7 @@ import ValueFormatterPhaseTwo, {
 } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import NestedKendoTable from 'components/aop-phase-two/common/NestedKendoTable/index'
-import { InputApiService } from 'components/aop-phase-two/services/cpp/inputApiService'
+import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/inputApiService'
 import useConfigurationDates from 'components/aop-phase-two/common/hooks/useConfigurationDates'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
