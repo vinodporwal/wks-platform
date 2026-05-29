@@ -872,7 +872,6 @@ const ProductionTarget = ({ permissions }) => {
       downloadExcelBtnFromUI:
         permissions?.hideDownloadExcel || IS_ELASTOMER_JMD ? false : true,
       ExcelName: `${VERTICAL_NAME}_Max Achieved Capacity`,
-      makePagable: true,
     },
     isOldYear,
   )
@@ -905,7 +904,6 @@ const ProductionTarget = ({ permissions }) => {
         VERTICAL_NAME === 'cracker'
           ? 'Design Capacity (Ethylene)'
           : 'Design Capacity',
-      makePagable: true,
     },
     isOldYear,
   )
@@ -941,7 +939,6 @@ const ProductionTarget = ({ permissions }) => {
         VERTICAL_NAME === 'cracker'
           ? 'Current Operating Capacity (Ethylene)'
           : 'Current Operating Capacity',
-          makePagable: true,
     },
     isOldYear,
   )
@@ -956,7 +953,6 @@ const ProductionTarget = ({ permissions }) => {
         VERTICAL_NAME === 'cracker'
           ? 'Percentage Summary (Ethylene)'
           : 'Percentage Summary',
-      makePagable: true,
     },
     isOldYear,
   )
@@ -1110,7 +1106,7 @@ const ProductionTarget = ({ permissions }) => {
           setRows={setRowsDesignCapacity}
           columns={colDefs_design_capacity}
           rows={rowsDesignCapacity}
-          paginationOptions={[10, 50, 100, 200, 300]}
+          paginationOptions={[100, 200, 300]}
           saveChanges={saveChangesDesignCapacity}
           snackbarData={snackbarData}
           snackbarOpen={snackbarOpen}
@@ -1147,7 +1143,6 @@ const ProductionTarget = ({ permissions }) => {
           fetchData={fetchMaxCapacityData}
           permissions={adjustedPermissionsGrid1}
           selectedUnit={selectedUnit}
-          paginationOptions={[10, 50, 100, 200, 300]}
           setSelectedUnit={setSelectedUnit}
           handleUnitChange={handleUnitChangeMaxCapacity}
           downloadExcelForConfiguration={() =>
@@ -1166,7 +1161,7 @@ const ProductionTarget = ({ permissions }) => {
         setRows={setRows}
         columns={colDefs_current_operating_capacity}
         rows={rows1}
-        paginationOptions={[10, 50, 100, 200, 300]}
+        paginationOptions={[100, 200, 300]}
         saveChanges={saveChanges}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
@@ -1201,7 +1196,6 @@ const ProductionTarget = ({ permissions }) => {
             setRows={setRowsPercentageSummary}
             columns={colDefs_percentage_summary}
             rows={rowsPercentageSummary}
-            paginationOptions={[10, 50, 100, 200, 300]}
             title='Production target Reference'
             fetchData={fetchData}
             permissions={adjustedPermissionsLast}
