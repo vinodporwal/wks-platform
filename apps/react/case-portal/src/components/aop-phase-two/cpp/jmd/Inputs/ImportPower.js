@@ -64,7 +64,7 @@ const ImportPower = () => {
     },
     {
       field: 'utility',
-      title: 'Utility/Material',
+      title: 'Utility',
       width: 150,
       minWidth: 150,
       type: 'text',
@@ -72,12 +72,12 @@ const ImportPower = () => {
     },
     {
       field: 'material',
-      title: 'Material Code',
+      title: 'Material',
       width: 120,
       minWidth: 120,
       type: 'text',
       editable: false,
-      hidden: true,
+      hidden: false,
     },
     {
       field: 'uom',
@@ -312,7 +312,7 @@ const ImportPower = () => {
       uom: lastRow.uom || '',
       aopYear: lastRow.aopYear || '',
       ...totals,
-      remarks: '',
+      remarks: 'Total Import Power',
       isTotal: true,
       isEditable: false,
     }
