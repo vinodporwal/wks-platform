@@ -1550,6 +1550,7 @@ const NormalOpNormsScreenCracker = () => {
                 gridName='main'
                 allRedCell2={allRedCell2}
                 showThreeColors={true}
+                showCatChemUtilityCheckbox2={IS_CRACKER_C2}
               />
 
               {/* expression below */}

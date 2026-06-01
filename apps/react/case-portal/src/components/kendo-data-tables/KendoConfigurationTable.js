@@ -334,6 +334,99 @@ const ConfigurationTable = () => {
         setOtherLossRows(otherLossRows)
         setContiniousGradeData(continiousGradeRows)
         setDiscontiniousGradeData(discontiniousGradeRows)
+        // Distribute values from Constant to Configuration for DeH-15 and DeH-201
+        const monthsForDist = [
+          'apr',
+          'may',
+          'jun',
+          'jul',
+          'aug',
+          'sep',
+          'oct',
+          'nov',
+          'dec',
+          'jan',
+          'feb',
+          'mar',
+        ]
+
+        const getDaysInMonth = (monthName, aopYear) => {
+          const [startYearStr, endYearStr] = (aopYear || '').split('-')
+          const startYear = parseInt(startYearStr, 10)
+          let endYear = startYear + 1
+          if (endYearStr) {
+            const fullEndYearStr = startYearStr.substring(0, 2) + endYearStr
+            const parsedEndYear = parseInt(fullEndYearStr, 10)
+            if (!isNaN(parsedEndYear)) {
+              endYear = parsedEndYear
+            }
+          }
+
+          const month = monthName.toLowerCase()
+          if (month === 'january' || month === 'jan') return 31
+          if (month === 'february' || month === 'feb') {
+            const isLeap = (endYear % 4 === 0 && endYear % 100 !== 0) || (endYear % 400 === 0)
+            return isLeap ? 29 : 28
+          }
+          if (month === 'march' || month === 'mar') return 31
+          if (month === 'april' || month === 'apr') return 30
+          if (month === 'may') return 31
+          if (month === 'june' || month === 'jun') return 30
+          if (month === 'july' || month === 'jul') return 31
+          if (month === 'august' || month === 'aug') return 31
+          if (month === 'september' || month === 'sep') return 30
+          if (month === 'october' || month === 'oct') return 31
+          if (month === 'november' || month === 'nov') return 30
+          if (month === 'december' || month === 'dec') return 31
+          return 30
+        }
+
+        configurationRows.forEach((r) => {
+          const isDistributionProduct =
+            (r.ConfigTypeName === 'Configuration' || r.ConfigTypeDisplayName === 'Configuration') &&
+            r.TypeDisplayName === 'Configuration' &&
+            r.UOM === 'YES/NO' &&
+            ['deh-15', 'deh-201'].includes((r.productName || '').trim().toLowerCase())
+
+          if (isDistributionProduct) {
+            const prodNameLower = (r.productName || '').trim().toLowerCase()
+            let constantProductName = ''
+            if (prodNameLower === 'deh-15') {
+              constantProductName = 'deh-15 batch length'
+            } else if (prodNameLower === 'deh-201') {
+              constantProductName = 'deh-201 batch length'
+            }
+
+            const constantRow = (constantsRows || []).find((cr) =>
+              (cr.ConfigTypeName === 'Constant' || cr.ConfigTypeDisplayName === 'Constant') &&
+              cr.TypeDisplayName === 'Constant' &&
+              cr.UOM === 'Day' &&
+              (cr.productName || '').trim().toLowerCase() === constantProductName
+            )
+
+            const totalValue = constantRow ? (Number(constantRow.apr) || 0) : 0
+
+            // Sequential fill: pour days into each month in order until totalValue is used up
+            // e.g. totalValue=110: apr=30, may=31, jun=30, jul=19 (remaining), aug...=0
+            let remaining = totalValue
+
+            monthsForDist.forEach((m) => {
+              const daysInThisMonth = getDaysInMonth(m, AOP_YEAR)
+              if (remaining >= daysInThisMonth) {
+                r[m] = true
+                remaining -= daysInThisMonth
+              } else if (remaining > 0) {
+                r[m] = false
+                remaining = 0
+              } else {
+                // No days left - assign 0, switch is NOT disabled
+                r[m] = 0
+              }
+            })
+            r.isDisabled = true
+          }
+        })
+
         setConstantsRows(constantsRows)
         setConfigurationRows(configurationRows)
         setReportManualEntry(reportManualEntryRows)
