@@ -6,8 +6,8 @@ export const buildCreateUrl = (url, caseDefId = 'create') => {
   } else {
     if(caseDefId === 'create'){
     newUrl = cleanedUrl.replace(
-    'create?assetName',
-    'case-list/create?assetName',
+    'create?',
+    'case-list/create?',
     );
     } else if (caseDefId === 'picreate'){
       newUrl = cleanedUrl.replace(
