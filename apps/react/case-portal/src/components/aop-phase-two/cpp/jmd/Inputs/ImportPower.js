@@ -9,6 +9,7 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { useDebounce } from 'hooks/useDebounce'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 const ImportPower = () => {
   const keycloak = useSession()
@@ -35,6 +36,7 @@ const ImportPower = () => {
   const AOP_YEAR = year?.selectedYear
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Import_Power')
 
   // Multi-plant list — same pattern as PowerAssetAvailability
   const PLANT_ID_LIST = useMemo(
@@ -480,6 +482,7 @@ const ImportPower = () => {
         keycloak,
         PLANT_ID_LIST,
         AOP_YEAR,
+        EXCEL_NAME,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',

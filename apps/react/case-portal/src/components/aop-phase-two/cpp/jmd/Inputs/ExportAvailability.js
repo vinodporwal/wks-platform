@@ -4,7 +4,7 @@ import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/g
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
-import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
+import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/jmd/utilityPlantApiServiceV2'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
@@ -235,41 +235,6 @@ const ExportAvailability = () => {
       setRows(rowsWithEditableFlag)
     }
   }, [PLANT_ID, AOP_YEAR])
-
-  const fetchPlantRequirementData = async () => {
-    setLoading(true)
-    try {
-      const res = await UtilityPlantApiServiceV2.getNormBasedUtilityBudget(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
-
-      if (res?.data?.length === 0) {
-        setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
-        return
-      }
-      console.log('res', res)
-      const rowsWithEditableFlag = res?.data?.map((row) => ({
-        ...row,
-        isEditable: !nonEditableRows.includes(row.assetName),
-      }))
-      setRows(rowsWithEditableFlag)
-      setSnackbarOpen(true)
-      // setSnackbarData({
-      //   message: 'Data fetched successfully!',
-      //   severity: 'success',
-      // })
-    } catch (error) {
-      console.error('Error fetching fixed consumption data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
-    } finally {
-      setLoading(false)
-    }
-  }
 
   // Permissions (adjust as needed)
   const permissions = {

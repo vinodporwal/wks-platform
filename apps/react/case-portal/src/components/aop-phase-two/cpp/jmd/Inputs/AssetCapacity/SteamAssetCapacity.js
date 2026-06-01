@@ -1,15 +1,17 @@
-import { useEffect, useState, useRef } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { useState, useRef, useMemo, useCallback } from 'react'
+import { Box } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
-import { InputApiService } from 'components/aop-phase-two/services/cpp/inputApiService'
-import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
-import NestedKendoTable from 'components/aop-phase-two/common/NestedKendoTable/index'
+import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/inputApiService'
+import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
+import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
+import { useDebounce } from 'hooks/useDebounce'
 
-const AssetCapacity = () => {
+const SteamAssetCapacity = () => {
   const keycloak = useSession()
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
@@ -20,21 +22,22 @@ const AssetCapacity = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
-    verticalChange,
-    yearChanged,
-    oldYear,
-    plantID,
     plantObject,
     siteObject,
     verticalObject,
     year,
     screenTitle,
+    jmdSelectedPlants,
   } = dataGridStore
-  const PLANT_ID = plantObject?.id
-  const SITE_ID = siteObject?.id
-  const VERTICAL_ID = verticalObject?.id
-  const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Steam_Asset_Capacity')
+
+  // Multi-plant list
+  const PLANT_ID_LIST = useMemo(
+    () => jmdSelectedPlants?.map((plant) => plant.id) || [],
+    [jmdSelectedPlants],
+  )
+
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
@@ -71,7 +74,6 @@ const AssetCapacity = () => {
       minWidth: 180,
       type: 'text',
       editable: false,
-      // locked: true,
     },
     {
       field: 'utilityDistributed.sapCode',
@@ -80,7 +82,6 @@ const AssetCapacity = () => {
       minWidth: 200,
       type: 'text',
       editable: false,
-      // locked: true,
     },
     {
       field: 'utilityGenerated.name',
@@ -89,7 +90,6 @@ const AssetCapacity = () => {
       minWidth: 180,
       type: 'text',
       editable: false,
-      // locked: true,
     },
     {
       field: 'utilityGenerated.sapCode',
@@ -98,7 +98,6 @@ const AssetCapacity = () => {
       minWidth: 200,
       type: 'text',
       editable: false,
-      // locked: true,
     },
     {
       field: 'uom',
@@ -130,7 +129,7 @@ const AssetCapacity = () => {
       title: headerMap[4],
       children: [
         {
-          field: 'april.min',
+          field: 'aprMin',
           title: 'Min Capacity',
           widthT: 140,
           minWidth: 140,
@@ -141,7 +140,7 @@ const AssetCapacity = () => {
           maxValue: 'fixedMax',
         },
         {
-          field: 'april.max',
+          field: 'aprMax',
           title: 'Max Capacity',
           widthT: 140,
           minWidth: 140,
@@ -157,7 +156,7 @@ const AssetCapacity = () => {
       title: headerMap[5],
       children: [
         {
-          field: 'may.min',
+          field: 'mayMin',
           title: 'Min Capacity',
           widthT: 140,
           minWidth: 140,
@@ -168,7 +167,7 @@ const AssetCapacity = () => {
           maxValue: 'fixedMax',
         },
         {
-          field: 'may.max',
+          field: 'mayMax',
           title: 'Max Capacity',
           widthT: 140,
           minWidth: 140,
@@ -184,7 +183,7 @@ const AssetCapacity = () => {
       title: headerMap[6],
       children: [
         {
-          field: 'june.min',
+          field: 'junMin',
           title: 'Min Capacity',
           widthT: 140,
           minWidth: 140,
@@ -195,7 +194,7 @@ const AssetCapacity = () => {
           maxValue: 'fixedMax',
         },
         {
-          field: 'june.max',
+          field: 'junMax',
           title: 'Max Capacity',
           widthT: 140,
           minWidth: 140,
@@ -211,7 +210,7 @@ const AssetCapacity = () => {
       title: headerMap[7],
       children: [
         {
-          field: 'july.min',
+          field: 'julMin',
           title: 'Min Capacity',
           widthT: 140,
           minWidth: 140,
@@ -222,7 +221,7 @@ const AssetCapacity = () => {
           maxValue: 'fixedMax',
         },
         {
-          field: 'july.max',
+          field: 'julMax',
           title: 'Max Capacity',
           widthT: 140,
           minWidth: 140,
@@ -238,7 +237,7 @@ const AssetCapacity = () => {
       title: headerMap[8],
       children: [
         {
-          field: 'aug.min',
+          field: 'augMin',
           title: 'Min Capacity',
           widthT: 140,
           minWidth: 140,
@@ -249,7 +248,7 @@ const AssetCapacity = () => {
           maxValue: 'fixedMax',
         },
         {
-          field: 'aug.max',
+          field: 'augMax',
           title: 'Max Capacity',
           widthT: 140,
           minWidth: 140,
@@ -265,7 +264,7 @@ const AssetCapacity = () => {
       title: headerMap[9],
       children: [
         {
-          field: 'sep.min',
+          field: 'sepMin',
           title: 'Min Capacity',
           widthT: 140,
           minWidth: 140,
@@ -276,7 +275,7 @@ const AssetCapacity = () => {
           maxValue: 'fixedMax',
         },
         {
-          field: 'sep.max',
+          field: 'sepMax',
           title: 'Max Capacity',
           widthT: 140,
           minWidth: 140,
@@ -292,7 +291,7 @@ const AssetCapacity = () => {
       title: headerMap[10],
       children: [
         {
-          field: 'oct.min',
+          field: 'octMin',
           title: 'Min Capacity',
           widthT: 140,
           minWidth: 140,
@@ -303,7 +302,7 @@ const AssetCapacity = () => {
           maxValue: 'fixedMax',
         },
         {
-          field: 'oct.max',
+          field: 'octMax',
           title: 'Max Capacity',
           widthT: 140,
           minWidth: 140,
@@ -319,7 +318,7 @@ const AssetCapacity = () => {
       title: headerMap[11],
       children: [
         {
-          field: 'nov.min',
+          field: 'novMin',
           title: 'Min Capacity',
           widthT: 140,
           minWidth: 140,
@@ -330,7 +329,7 @@ const AssetCapacity = () => {
           maxValue: 'fixedMax',
         },
         {
-          field: 'nov.max',
+          field: 'novMax',
           title: 'Max Capacity',
           widthT: 140,
           minWidth: 140,
@@ -346,7 +345,7 @@ const AssetCapacity = () => {
       title: headerMap[12],
       children: [
         {
-          field: 'dec.min',
+          field: 'decMin',
           title: 'Min Capacity',
           widthT: 140,
           minWidth: 140,
@@ -357,7 +356,7 @@ const AssetCapacity = () => {
           maxValue: 'fixedMax',
         },
         {
-          field: 'dec.max',
+          field: 'decMax',
           title: 'Max Capacity',
           widthT: 140,
           minWidth: 140,
@@ -373,7 +372,7 @@ const AssetCapacity = () => {
       title: headerMap[1],
       children: [
         {
-          field: 'jan.min',
+          field: 'janMin',
           title: 'Min Capacity',
           widthT: 140,
           minWidth: 140,
@@ -384,7 +383,7 @@ const AssetCapacity = () => {
           maxValue: 'fixedMax',
         },
         {
-          field: 'jan.max',
+          field: 'janMax',
           title: 'Max Capacity',
           widthT: 140,
           minWidth: 140,
@@ -400,7 +399,7 @@ const AssetCapacity = () => {
       title: headerMap[2],
       children: [
         {
-          field: 'feb.min',
+          field: 'febMin',
           title: 'Min Capacity',
           widthT: 140,
           minWidth: 140,
@@ -411,7 +410,7 @@ const AssetCapacity = () => {
           maxValue: 'fixedMax',
         },
         {
-          field: 'feb.max',
+          field: 'febMax',
           title: 'Max Capacity',
           widthT: 140,
           minWidth: 140,
@@ -427,7 +426,7 @@ const AssetCapacity = () => {
       title: headerMap[3],
       children: [
         {
-          field: 'march.min',
+          field: 'marMin',
           title: 'Min Capacity',
           widthT: 140,
           minWidth: 140,
@@ -438,7 +437,7 @@ const AssetCapacity = () => {
           maxValue: 'fixedMax',
         },
         {
-          field: 'march.max',
+          field: 'marMax',
           title: 'Max Capacity',
           widthT: 140,
           minWidth: 140,
@@ -460,103 +459,102 @@ const AssetCapacity = () => {
     },
   ]
 
-  useEffect(() => {
-    if (AOP_YEAR) {
-      fetchAssetCapacityData(keycloak, AOP_YEAR)
-    }
-  }, [AOP_YEAR])
-
-  const fetchAssetCapacityData = async (keycloak, AOP_YEAR) => {
+  const fetchAssetCapacityData = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await InputApiService.getAssetCapacity(
+      const res = await InputApiService.getAssetCapacities(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
-      if (res?.length === 0) {
+      // Response: res.data.SteamAssetCapacities (flat array)
+      const rawList = res?.data?.SteamAssetCapacities ?? res?.data ?? res
+      if (!rawList || (Array.isArray(rawList) && rawList.length === 0)) {
         setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
-      let tempRes = res?.map((item, index) => {
-        return {
+      const tempRes = (Array.isArray(rawList) ? rawList : []).map(
+        (item, index) => ({
           ...item,
           id: item.id || index + 1,
           remarks: item.remarks || '',
-        }
-      })
+        }),
+      )
       setRows(tempRes)
       setOriginalRows(tempRes)
     } catch (error) {
-      console.error('Error fetching asset capacity data:', error)
+      console.error('Error fetching steam asset capacity data:', error)
       setSnackbarOpen(true)
       setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
       setLoading(false)
     }
-  }
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+
+  useDebounce(
+    () => {
+      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+        fetchAssetCapacityData()
+        setModifiedCells({})
+      }
+    },
+    1000,
+    [PLANT_ID_LIST, AOP_YEAR, fetchAssetCapacityData],
+  )
 
   const debounceTimerRef = useRef(null)
 
   const customItemChange = (e, setRows) => {
     const { dataItem, field, value } = e
 
-    // Clear previous debounce timer
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current)
     }
 
-    // Only validate min vs max for monthly fields
-    // Check if field ends with '.min' or '.max'
-    const isMonthlyField = field.includes('.')
-    const fieldParts = field.split('.')
-    const fieldType = fieldParts[fieldParts.length - 1] // 'min' or 'max'
-    const monthName = fieldParts[0] // 'april', 'may', etc.
+    // Flat field naming: e.g. 'aprMin', 'aprMax', 'mayMin', 'mayMax', ...
+    const isMin = field.endsWith('Min')
+    const isMax = field.endsWith('Max')
 
-    if (!isMonthlyField || (fieldType !== 'min' && fieldType !== 'max')) {
+    if (!isMin && !isMax) {
       return true
     }
 
     const numValue = parseFloat(value)
 
-    // Skip validation if value is empty or NaN
     if (value === '' || isNaN(numValue)) {
       return true
     }
 
-    // Get the corresponding min or max field
-    const correspondingValue =
-      dataItem[monthName]?.[fieldType === 'min' ? 'max' : 'min']
+    // Derive the corresponding paired field (e.g. 'aprMin' <-> 'aprMax')
+    const prefix = field.slice(0, -3) // e.g. 'apr'
+    const correspondingField = isMin ? `${prefix}Max` : `${prefix}Min`
+    const correspondingValue = dataItem[correspondingField]
 
-    // Validate: min should not be greater than max
     if (
-      fieldType === 'min' &&
+      isMin &&
       correspondingValue !== undefined &&
       numValue > correspondingValue
     ) {
-      const monthCapitalized =
-        monthName.charAt(0).toUpperCase() + monthName.slice(1)
+      const label = prefix.charAt(0).toUpperCase() + prefix.slice(1)
       setSnackbarOpen(true)
       setSnackbarData({
-        message: `${monthCapitalized} min capacity cannot be greater than ${monthCapitalized} max capacity`,
+        message: `${label} min capacity cannot be greater than ${label} max capacity`,
         severity: 'error',
       })
       return false
     }
 
-    // Validate: max should not be less than min
     if (
-      fieldType === 'max' &&
+      isMax &&
       correspondingValue !== undefined &&
       numValue < correspondingValue
     ) {
-      const monthCapitalized =
-        monthName.charAt(0).toUpperCase() + monthName.slice(1)
+      const label = prefix.charAt(0).toUpperCase() + prefix.slice(1)
       setSnackbarOpen(true)
       setSnackbarData({
-        message: `${monthCapitalized} max capacity cannot be less than ${monthCapitalized} min capacity`,
+        message: `${label} max capacity cannot be less than ${label} min capacity`,
         severity: 'error',
       })
       return false
@@ -567,14 +565,14 @@ const AssetCapacity = () => {
 
   const permissions = {
     showAction: true,
-    addButton: true,
+    addButton: false,
     deleteButton: false,
     editButton: true,
     saveBtn: true,
     allAction: true,
     showImport: true,
     showExport: true,
-    ExcelName: `Asset Capacity - ${AOP_YEAR}`,
+    ExcelName: EXCEL_NAME,
     showTitleNameBusiness: true,
     showTitle: true,
     titleName: screenTitle?.title,
@@ -584,7 +582,7 @@ const AssetCapacity = () => {
     setLoading(true)
     console.log('modifiedCells', modifiedCells)
     const modifiedData = Object.values(modifiedCells)
-    if (modifiedData.length == 0) {
+    if (modifiedData.length === 0) {
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'No Records to Save!',
@@ -594,9 +592,9 @@ const AssetCapacity = () => {
       return
     }
 
-    var rawData = Object.values(modifiedCells)
+    const rawData = Object.values(modifiedCells)
     const data = rawData.filter((row) => row.inEdit)
-    if (data.length == 0) {
+    if (data.length === 0) {
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'No Records to Save!',
@@ -606,36 +604,36 @@ const AssetCapacity = () => {
       return
     }
 
-    // Custom validation: If any row data is updated, remarks must be filled and different from original
+    // Custom validation: remarks must be filled when any monthly/fixed field changes
     const fieldsToCheck = [
-      'april.min',
-      'april.max',
-      'may.min',
-      'may.max',
-      'june.min',
-      'june.max',
-      'july.min',
-      'july.max',
-      'aug.min',
-      'aug.max',
-      'sep.min',
-      'sep.max',
-      'oct.min',
-      'oct.max',
-      'nov.min',
-      'nov.max',
-      'dec.min',
-      'dec.max',
-      'jan.min',
-      'jan.max',
-      'feb.min',
-      'feb.max',
-      'march.min',
-      'march.max',
+      'aprMin',
+      'aprMax',
+      'mayMin',
+      'mayMax',
+      'junMin',
+      'junMax',
+      'julMin',
+      'julMax',
+      'augMin',
+      'augMax',
+      'sepMin',
+      'sepMax',
+      'octMin',
+      'octMax',
+      'novMin',
+      'novMax',
+      'decMin',
+      'decMax',
+      'janMin',
+      'janMax',
+      'febMin',
+      'febMax',
+      'marMin',
+      'marMax',
       'fixedMin',
       'fixedMax',
     ]
-    const validationError = validateNestedRowDataWithRemarks(
+    const validationError = validateRowDataWithRemarks(
       data,
       originalRows,
       fieldsToCheck,
@@ -652,14 +650,15 @@ const AssetCapacity = () => {
       return
     }
 
-    const payload = modifiedData
+    // Backend expects AssetCapacityRequestDTO: { steamResponse: [...] }
+    const payload = { steamResponse: modifiedData }
 
     try {
       console.log('payload', payload)
 
-      const response = await InputApiService.saveAssetCapacity(
+      const response = await InputApiService.saveAssetCapacities(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
         payload,
       )
@@ -671,7 +670,7 @@ const AssetCapacity = () => {
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error saving asset capacity data:', error)
+      console.error('Error saving steam asset capacity data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to save changes. Please try again.',
@@ -687,10 +686,10 @@ const AssetCapacity = () => {
 
     setLoading(true)
     try {
-      const response = await InputApiService.saveAssetCapacityExcel(
+      const response = await InputApiService.importSteamAssetCapacityExcel(
         file,
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
 
@@ -701,7 +700,7 @@ const AssetCapacity = () => {
           severity: 'success',
         })
         setModifiedCells({})
-        await fetchAssetCapacityData(keycloak, AOP_YEAR)
+        await fetchAssetCapacityData()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = Array.from(byteCharacters, (char) =>
@@ -716,7 +715,7 @@ const AssetCapacity = () => {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute('download', `Error File - Asset Capacity.xlsx`)
+        link.setAttribute('download', `Error File - Steam Asset Capacity.xlsx`)
         document.body.appendChild(link)
         link.click()
         link.remove()
@@ -727,7 +726,7 @@ const AssetCapacity = () => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
-        await fetchAssetCapacityData(keycloak, AOP_YEAR)
+        await fetchAssetCapacityData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -755,17 +754,18 @@ const AssetCapacity = () => {
     })
 
     try {
-      await InputApiService.exportAssetCapacityExcel(
+      await InputApiService.exportSteamAssetCapacityExcel(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
+        EXCEL_NAME,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error exporting Asset Capacity data:', error)
+      console.error('Error exporting Steam Asset Capacity data:', error)
       setSnackbarData({
         message: 'Excel download failed. Please try again.',
         severity: 'error',
@@ -783,13 +783,13 @@ const AssetCapacity = () => {
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
-      <NestedKendoTable
+      <AdvanceKendoTable
         columns={columns}
         rows={rows}
         setRows={setRows}
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
-        title='Asset Capacity Input'
+        title='Steam Asset Capacity Input'
         permissions={permissions}
         handleRemarkCellClick={handleRemarkCellClick}
         remarkDialogOpen={remarkDialogOpen}
@@ -806,9 +806,10 @@ const AssetCapacity = () => {
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         customItemChange={customItemChange}
+        groupBy={['plantName', 'assetType']}
       />
     </Box>
   )
 }
 
-export default AssetCapacity
+export default SteamAssetCapacity

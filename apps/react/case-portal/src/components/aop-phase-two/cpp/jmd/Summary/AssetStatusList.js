@@ -3,7 +3,7 @@ import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSession } from 'SessionStoreContext'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import NestedKendoTable from 'components/aop-phase-two/common/NestedKendoTable/index'
-import { SummaryApiService } from 'components/aop-phase-two/services/cpp/summaryApiService'
+import { SummaryApiService } from 'components/aop-phase-two/services/cpp/jmd/summaryApiService'
 
 const AssetStatusList = ({ executionId, month, financialYear }) => {
   const keycloak = useSession()
