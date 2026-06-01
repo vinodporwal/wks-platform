@@ -52,12 +52,17 @@ public interface CPPPowerAssetCapacityRepository extends JpaRepository<CPPPowerA
                 a.AssetName AS assetName,
                 a.AssetType AS assetType,
                 pl.DisplayName AS plantName,
+                pl.Name AS plantCode,
                 'Power' AS assetCategory,
                 pl.Site_FK_Id AS siteFkId,
                 pl.Vertical_FK_Id AS verticalFkId,
                 pl.Id AS plantFkId,
                 0 AS categoryOrder,
                 a.DisplayName AS sortDisplayName,
+                npd.Name AS utilityDistributed,
+                npd.SAPMaterialCode AS distributedSapCode,
+                npg.Name AS utilityGenerated,
+                npg.SAPMaterialCode AS generatedUtilityCode,
                 CASE
                     WHEN CHARINDEX('-', a.DisplayName) > 0
                     THEN LEFT(a.DisplayName, CHARINDEX('-', a.DisplayName) - 1)
@@ -71,6 +76,8 @@ public interface CPPPowerAssetCapacityRepository extends JpaRepository<CPPPowerA
             FROM [RIL.AOP].[dbo].[CPPPowerAssetCapacity] c WITH(NOLOCK)
             LEFT JOIN PowerGenerationAssets a WITH(NOLOCK) ON c.Asset_FK_Id = a.AssetId
             LEFT JOIN Plants pl WITH(NOLOCK) ON a.CPPPLANT_FK_Id = pl.Id
+            LEFT JOIN NormParameters npg WITH(NOLOCK) ON npg.Id = a.UtilityGeneration_FK_Id
+            LEFT JOIN NormParameters npd WITH(NOLOCK) ON npd.Id = a.UtilityDistributed_FK_Id
             WHERE a.CPPPLANT_FK_Id IN :plantIds
               AND c.AOPYear = :aopYear
 
@@ -113,12 +120,17 @@ public interface CPPPowerAssetCapacityRepository extends JpaRepository<CPPPowerA
                 sa.AssetName AS assetName,
                 sa.AssetType AS assetType,
                 pl2.DisplayName AS plantName,
+                pl2.Name AS plantCode,
                 'Steam' AS assetCategory,
                 pl2.Site_FK_Id AS siteFkId,
                 pl2.Vertical_FK_Id AS verticalFkId,
                 pl2.Id AS plantFkId,
                 1 AS categoryOrder,
                 sa.DisplayName AS sortDisplayName,
+                npd2.Name AS utilityDistributed,
+                npd2.SAPMaterialCode AS distributedSapCode,
+                npg2.Name AS utilityGenerated,
+                npg2.SAPMaterialCode AS generatedUtilityCode,
                 CASE
                     WHEN CHARINDEX('-', sa.DisplayName) > 0
                     THEN LEFT(sa.DisplayName, CHARINDEX('-', sa.DisplayName) - 1)
@@ -132,6 +144,8 @@ public interface CPPPowerAssetCapacityRepository extends JpaRepository<CPPPowerA
             FROM [RIL.AOP].[dbo].[CPPSteamAssetCapacity] s WITH(NOLOCK)
             LEFT JOIN [RIL.AOP].[dbo].[CPPSteamGenerationAsset] sa WITH(NOLOCK) ON s.Asset_FK_Id = sa.AssetId
             LEFT JOIN Plants pl2 WITH(NOLOCK) ON sa.CPPPLANT_FK_Id = pl2.Id
+            LEFT JOIN NormParameters npg2 WITH(NOLOCK) ON npg2.Id = sa.UtilityGeneration_FK_Id
+            LEFT JOIN NormParameters npd2 WITH(NOLOCK) ON npd2.Id = sa.UtilityDistributed_FK_Id
             WHERE sa.CPPPLANT_FK_Id IN :plantIds
               AND s.AOPYear = :aopYear
         )
@@ -141,7 +155,9 @@ public interface CPPPowerAssetCapacityRepository extends JpaRepository<CPPPowerA
             augMin, augMax, sepMin, sepMax, octMin, octMax, novMin, novMax,
             decMin, decMax, janMin, janMax, febMin, febMax, marMin, marMax,
             aopYear, remarks, uom, createdDate, modifiedDate,
-            assetName, assetType, plantName, assetCategory, siteFkId, verticalFkId
+            assetName, assetType, plantName, plantCode, assetCategory,
+            utilityDistributed, distributedSapCode, utilityGenerated, generatedUtilityCode,
+            siteFkId, verticalFkId
         FROM Combined
         ORDER BY categoryOrder, plantName, namePrefix, nameNumber, sortDisplayName
         """, nativeQuery = true)

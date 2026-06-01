@@ -14,6 +14,22 @@ import java.util.UUID;
 public interface CPPImportPowerRepository extends JpaRepository<CPPImportPower, UUID> {
 
     @Query(value = """
+        WITH InputPlants AS (
+            SELECT DISTINCT
+                Site_FK_Id,
+                Vertical_FK_ID,
+                PlantGroup = LEFT(DisplayName, CHARINDEX('-', DisplayName + '-') - 1)
+            FROM [RIL.AOP].[dbo].[Plants]
+            WHERE Id IN :plantIds
+        ),
+        AllMatchingPlants AS (
+            SELECT DISTINCT p.Id
+            FROM [RIL.AOP].[dbo].[Plants] p
+            INNER JOIN InputPlants ip
+                ON p.Site_FK_Id = ip.Site_FK_Id
+               AND p.Vertical_FK_ID = ip.Vertical_FK_ID
+               AND LEFT(p.DisplayName, CHARINDEX('-', p.DisplayName + '-') - 1) = ip.PlantGroup
+        )
         SELECT
             ip.Id AS id,
             importPlant.DisplayName AS procurementPlant,
@@ -43,14 +59,15 @@ public interface CPPImportPowerRepository extends JpaRepository<CPPImportPower, 
             ip.CPPPlant_FK_ID AS cppPlantFkId,
             ip.NormParameter_FK_Id AS normParameterFkId
         FROM [RIL.AOP].[dbo].[CPPImportPower] ip WITH(NOLOCK)
+        INNER JOIN AllMatchingPlants m
+            ON ip.CPPPlant_FK_ID = m.Id
         LEFT JOIN [RIL.AOP].[dbo].[Plants] importPlant WITH(NOLOCK)
             ON importPlant.Id = ip.ImportPlantFK_ID
         LEFT JOIN [RIL.AOP].[dbo].[Plants] cppPlant WITH(NOLOCK)
             ON cppPlant.Id = ip.CPPPlant_FK_ID
         LEFT JOIN [RIL.AOP].[dbo].[NormParameters] np WITH(NOLOCK)
             ON np.Id = ip.NormParameter_FK_Id
-        WHERE ip.CPPPlant_FK_ID IN :plantIds
-          AND ip.AOPYear = :aopYear
+        WHERE ip.AOPYear = :aopYear
         ORDER BY importPlant.DisplayName, np.SAPMaterialCode
         """, nativeQuery = true)
     List<CPPImportPowerProjection> findImportedPowerPlans(

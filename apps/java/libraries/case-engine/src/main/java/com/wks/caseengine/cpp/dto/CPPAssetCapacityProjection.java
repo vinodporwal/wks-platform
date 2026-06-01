@@ -46,7 +46,13 @@ public interface CPPAssetCapacityProjection {
     String getAssetName();
     String getAssetType();
     String getPlantName();
+    String getPlantCode();
     String getAssetCategory();
+
+    String getUtilityDistributed();
+    String getDistributedSapCode();
+    String getUtilityGenerated();
+    String getGeneratedUtilityCode();
 
     UUID getSiteFkId();
     UUID getVerticalFkId();

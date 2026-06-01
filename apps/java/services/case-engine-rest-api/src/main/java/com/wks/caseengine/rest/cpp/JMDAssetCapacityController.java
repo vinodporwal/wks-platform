@@ -115,7 +115,7 @@ public class JMDAssetCapacityController {
         }
         try {
             AOPMessageVM response = jmdAssetCapacityService.importPowerAssetCapacity(plantIds, aopYear, file);
-            return ResponseEntity.status(response.getCode()).body(response);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("[POST] Error importing power asset capacities: {}", e.getMessage(), e);
             AOPMessageVM errorResponse = new AOPMessageVM();
@@ -141,7 +141,7 @@ public class JMDAssetCapacityController {
         }
         try {
             AOPMessageVM response = jmdAssetCapacityService.importSteamAssetCapacity(plantIds, aopYear, file);
-            return ResponseEntity.status(response.getCode()).body(response);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("[POST] Error importing steam asset capacities: {}", e.getMessage(), e);
             AOPMessageVM errorResponse = new AOPMessageVM();

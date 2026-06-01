@@ -132,7 +132,13 @@ public class JMDAssetCapacityServiceImpl implements JMDAssetCapacityService {
 
         dto.setAssetName(projection.getAssetName());
         dto.setPlantName(projection.getPlantName());
+        dto.setPlantCode(projection.getPlantCode());
         dto.setAssetType(projection.getAssetType());
+
+        dto.setUtilityDistributed(projection.getUtilityDistributed());
+        dto.setDistributedSapCode(projection.getDistributedSapCode());
+        dto.setUtilityGenerated(projection.getUtilityGenerated());
+        dto.setGeneratedUtilityCode(projection.getGeneratedUtilityCode());
 
         return dto;
     }

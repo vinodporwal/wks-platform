@@ -49,7 +49,13 @@ public class CPPAssetCapacityResponseDto {
     private String assetName;
     private String assetType;
     private String plantName;
+    private String plantCode;
     private String assetCategory;
+
+    private String utilityDistributed;
+    private String distributedSapCode;
+    private String utilityGenerated;
+    private String generatedUtilityCode;
 
     private UUID siteFkId;
     private UUID verticalFkId;

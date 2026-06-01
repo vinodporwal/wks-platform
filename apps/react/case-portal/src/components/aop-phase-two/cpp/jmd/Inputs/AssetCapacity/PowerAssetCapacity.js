@@ -68,7 +68,7 @@ const PowerAssetCapacity = () => {
       locked: true,
     },
     {
-      field: 'utilityDistributed.name',
+      field: 'utilityDistributed',
       title: 'Utility Distributed',
       widthT: 180,
       minWidth: 180,
@@ -77,7 +77,7 @@ const PowerAssetCapacity = () => {
       // locked: true,
     },
     {
-      field: 'utilityDistributed.sapCode',
+      field: 'distributedSapCode',
       title: 'Utility Distributed Code',
       widthT: 200,
       minWidth: 200,
@@ -86,7 +86,7 @@ const PowerAssetCapacity = () => {
       // locked: true,
     },
     {
-      field: 'utilityGenerated.name',
+      field: 'utilityGenerated',
       title: 'Utility Generated',
       widthT: 180,
       minWidth: 180,
@@ -95,7 +95,7 @@ const PowerAssetCapacity = () => {
       // locked: true,
     },
     {
-      field: 'utilityGenerated.sapCode',
+      field: 'generatedUtilityCode',
       title: 'Utility Generated Code',
       widthT: 200,
       minWidth: 200,
