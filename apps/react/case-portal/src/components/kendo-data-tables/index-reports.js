@@ -589,7 +589,7 @@ const KendoDataTablesReports = ({
             field={col.field}
             title={col.title || col.headerName}
             // width={col.fixedWidth || undefined}
-            width={setWidth(col?.fixedWidth || col?.minWidth || 200)}
+            width={setWidth(col?.fixedWidth || col?.minWidth || col?.widthT || 200)}
             cells={{
               data: (cellProps) => (
                 <RemarkCell
@@ -693,7 +693,7 @@ const KendoDataTablesReports = ({
             field={col.field}
             title={col.title || col.headerName}
             width={setWidth(
-              col?.fixedWidth || col?.width || col?.minWidth || 130,
+              col?.fixedWidth || col?.width || col?.widthT || col?.minWidth || 130,
             )}
             hidden={col.hidden}
             className={'k-number-right-disabled'}

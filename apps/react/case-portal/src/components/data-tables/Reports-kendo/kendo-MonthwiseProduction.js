@@ -84,7 +84,7 @@ const MonthwiseProduction = () => {
     {
       field: 'RowNo',
       title: 'SL.No',
-      fixedWidth: 50,
+      fixedWidth: 40,
       format: '{0:#.#}',
       editable: false,
     },
@@ -223,7 +223,7 @@ const MonthwiseProduction = () => {
     {
       field: 'RowNo',
       title: 'SL.No',
-      fixedWidth: 50,
+      fixedWidth: 40,
       editable: false,
       format: '{0:#.#}',
     },

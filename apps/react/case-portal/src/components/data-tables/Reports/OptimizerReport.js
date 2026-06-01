@@ -93,7 +93,7 @@ const OptimizerReport = () => {
         ...(isNumberCol ? { format: '{0:0.0000}' } : {}),
         editable: false,
         isRightAlligned: isNumberCol ? 'numeric' : undefined,
-        ...(fixedWidth ? { widthT: fixedWidth } : {}),
+        ...(col.field === 'Particulars' ? { widthT: 220 } : fixedWidth ? { widthT: fixedWidth } : { widthT: 100 }),
       }
     })
   }, [])

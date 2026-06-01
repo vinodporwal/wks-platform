@@ -25,7 +25,7 @@ export const MockReportService = {
               field: 'SrNo',
               title: 'SL.No',
               editable: false,
-              widthT: 70,
+              widthT: 40,
               align: 'right',
               format: '{0:#.#}',
             },
@@ -39,7 +39,7 @@ export const MockReportService = {
               field: 'Unit',
               title: verticalName === 'meg' ? 'UOM' : 'Unit',
               editable: false,
-              widthT: 100,
+              widthT: 80,
             },
             {
               title: 'Price',
@@ -49,7 +49,7 @@ export const MockReportService = {
                   title: verticalName === 'meg' ? 'Rs/UOM' : 'Rs/MT',
                   editable: false,
                   align: 'right',
-                  width: 120,
+                  widthT: 80,
                   format: FORMAT_VALUES_PRICE,
                   type: 'number',
                 },
@@ -66,7 +66,7 @@ export const MockReportService = {
                       title: 'Budget',
                       editable: false,
                       align: 'right',
-                      width: 120,
+                      widthT: 80,
                       format: FORMAT_VALUES_2_DECIMAL,
                       type: 'number',
                     },
@@ -75,7 +75,7 @@ export const MockReportService = {
                       title: 'Actual',
                       editable: false,
                       align: 'right',
-                      width: 120,
+                      widthT: 80,
                       format: FORMAT_VALUES_2_DECIMAL,
                       type: 'number',
                     },
@@ -89,7 +89,7 @@ export const MockReportService = {
                       title: 'Budget',
                       editable: false,
                       align: 'right',
-                      width: 120,
+                      widthT: 80,
                       format: FORMAT_VALUES_2_DECIMAL,
                       type: 'number',
                     },
@@ -107,7 +107,7 @@ export const MockReportService = {
             {
               field: 'SrNo',
               title: 'SL.No',
-              widthT: 70,
+              widthT: 40,
               format: '{0:#.#}',
               editable: false,
               align: 'right',
@@ -122,7 +122,7 @@ export const MockReportService = {
               field: 'Unit',
               title: verticalName === 'meg' ? 'UOM' : 'Unit',
               editable: false,
-              widthT: 100,
+              widthT: 80,
             },
             {
               title: 'Price',
@@ -149,7 +149,7 @@ export const MockReportService = {
                       field: 'PrevYearNormBudget',
                       title: 'Budget',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_NORMS,
 
@@ -159,7 +159,7 @@ export const MockReportService = {
                       field: 'PrevYearNormActual',
                       title: 'Actual',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_NORMS,
 
@@ -174,7 +174,7 @@ export const MockReportService = {
                       field: 'NextYearNormActual',
                       title: 'Budget',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_NORMS,
 
@@ -194,7 +194,7 @@ export const MockReportService = {
                       field: 'PrevYearCostBudget',
                       title: 'Budget',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_COST,
 
@@ -204,7 +204,7 @@ export const MockReportService = {
                       field: 'PrevYearCostActual',
                       title: 'Actual',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_COST,
 
@@ -219,7 +219,7 @@ export const MockReportService = {
                       field: 'NextYearCostActual',
                       title: 'Budget',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_COST,
 
@@ -239,7 +239,7 @@ export const MockReportService = {
             {
               field: 'SrNo',
               title: 'SL.No',
-              widthT: 70,
+              widthT: 40,
               format: '{0:#.#}',
               editable: false,
               align: 'right',
@@ -254,7 +254,7 @@ export const MockReportService = {
               field: 'Unit',
               title: verticalName === 'meg' ? 'UOM' : 'Unit',
               editable: false,
-              widthT: 100,
+              widthT: 80,
             },
             {
               title: 'Price',
@@ -263,7 +263,7 @@ export const MockReportService = {
                   field: 'Price',
                   title: verticalName === 'meg' ? 'Rs/UOM' : 'Rs/MT',
                   editable: false,
-                  width: 120,
+                  widthT: 80,
                   align: 'right',
                   format: FORMAT_VALUES_PRICE,
                   type: 'number',
@@ -280,7 +280,7 @@ export const MockReportService = {
                       field: 'PrevYearNormBudget',
                       title: 'Budget',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_NORMS,
 
@@ -290,7 +290,7 @@ export const MockReportService = {
                       field: 'PrevYearNormActual',
                       title: 'Actual',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_NORMS,
 
@@ -305,7 +305,7 @@ export const MockReportService = {
                       field: 'NextYearNormActual',
                       title: 'Budget',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_NORMS,
 
@@ -325,7 +325,7 @@ export const MockReportService = {
                       field: 'PrevYearCostBudget',
                       title: 'Budget',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_COST,
 
@@ -335,7 +335,7 @@ export const MockReportService = {
                       field: 'PrevYearCostActual',
                       title: 'Actual',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_COST,
 
@@ -350,7 +350,7 @@ export const MockReportService = {
                       field: 'NextYearCostActual',
                       title: 'Budget',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_COST,
 
@@ -370,7 +370,7 @@ export const MockReportService = {
             {
               field: 'SrNo',
               title: 'SL.No',
-              widthT: 70,
+              widthT: 40,
               format: '{0:#.#}',
               editable: false,
               align: 'right',
@@ -385,7 +385,7 @@ export const MockReportService = {
               field: 'Unit',
               title: verticalName === 'meg' ? 'UOM' : 'Unit',
               editable: false,
-              widthT: 100,
+              widthT: 80,
             },
             {
               title: 'Price',
@@ -394,7 +394,7 @@ export const MockReportService = {
                   field: 'Price',
                   title: verticalName === 'meg' ? 'Rs/UOM' : 'Rs/MT',
                   editable: false,
-                  width: 120,
+                  widthT: 80,
                   align: 'right',
                   format: FORMAT_VALUES_PRICE,
 
@@ -412,7 +412,7 @@ export const MockReportService = {
                       field: 'PrevYearNormBudget',
                       title: 'Budget',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_NORMS,
 
@@ -422,7 +422,7 @@ export const MockReportService = {
                       field: 'PrevYearNormActual',
                       title: 'Actual',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_NORMS,
                       type: 'number',
@@ -436,7 +436,7 @@ export const MockReportService = {
                       field: 'NextYearNormActual',
                       title: 'Budget',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_NORMS,
 
@@ -456,7 +456,7 @@ export const MockReportService = {
                       field: 'PrevYearCostBudget',
                       title: 'Budget',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_COST,
 
@@ -466,7 +466,7 @@ export const MockReportService = {
                       field: 'PrevYearCostActual',
                       title: 'Actual',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_COST,
 
@@ -481,7 +481,7 @@ export const MockReportService = {
                       field: 'NextYearCostActual',
                       title: 'Budget',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_COST,
 
@@ -501,7 +501,7 @@ export const MockReportService = {
             {
               field: 'SrNo',
               title: 'SL.No',
-              widthT: 70,
+              widthT: 40,
               format: '{0:#.#}',
               editable: false,
               align: 'right',
@@ -516,7 +516,7 @@ export const MockReportService = {
               field: 'Unit',
               title: verticalName === 'meg' ? 'UOM' : 'Unit',
               editable: false,
-              widthT: 100,
+              widthT: 80,
             },
             {
               title: 'Price',
@@ -525,7 +525,7 @@ export const MockReportService = {
                   field: 'Price',
                   title: verticalName === 'meg' ? 'Rs/UOM' : 'Rs/MT',
                   editable: false,
-                  width: 120,
+                  widthT: 80,
                   align: 'right',
                   format: FORMAT_VALUES_PRICE,
 
@@ -543,7 +543,7 @@ export const MockReportService = {
                       field: 'PrevYearNormBudget',
                       title: 'Budget',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_NORMS,
 
@@ -553,7 +553,7 @@ export const MockReportService = {
                       field: 'PrevYearNormActual',
                       title: 'Actual',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_NORMS,
 
@@ -568,7 +568,7 @@ export const MockReportService = {
                       field: 'NextYearNormActual',
                       title: 'Budget',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_NORMS,
 
@@ -588,7 +588,7 @@ export const MockReportService = {
                       field: 'PrevYearCostBudget',
                       title: 'Budget',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_COST,
 
@@ -598,7 +598,7 @@ export const MockReportService = {
                       field: 'PrevYearCostActual',
                       title: 'Actual',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_COST,
 
@@ -613,7 +613,7 @@ export const MockReportService = {
                       field: 'NextYearCostActual',
                       title: 'Budget',
                       editable: false,
-                      width: 120,
+                      widthT: 80,
                       align: 'right',
                       format: FORMAT_VALUES_COST,
 
@@ -633,7 +633,7 @@ export const MockReportService = {
             {
               field: 'SrNo',
               title: 'S.No',
-              widthT: 70,
+              widthT: 40,
               align: 'right',
               editable: false,
               format: '{0:#.#}',
@@ -645,13 +645,13 @@ export const MockReportService = {
             {
               field: 'OtherCost',
               title: 'Other cost',
-              width: 200,
+              widthT: 200,
               editable: false,
             },
             {
               field: 'Unit',
               title: verticalName === 'meg' ? 'UOM' : 'Unit',
-              widthT: 100,
+              widthT: 80,
               editable: false,
             },
             {
@@ -701,7 +701,7 @@ export const MockReportService = {
             {
               field: 'SrNo',
               title: 'SL.No',
-              widthT: 70,
+              widthT: 40,
               format: '{0:#.#}',
               align: 'right',
               editable: false,

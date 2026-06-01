@@ -1391,8 +1391,7 @@ const KendoDataTables = ({
   const MaterialDisplayNameCell = (props) => {
     const { dataItem, field, tdProps, children } = props
     const value = dataItem[field]
-    const method = dataItem.Method
-
+    const method = dataItem.Method || dataItem.method
     let color = 'inherit'
 
     switch (method) {
@@ -1411,16 +1410,17 @@ const KendoDataTables = ({
     }
 
     return (
-      <td
-        {...tdProps}
-        title={value}
-        style={{
-          color,
-          //  fontWeight: method ? 'bold' : 'normal',
-          ...tdProps.style,
-        }}
-      >
-        {children}
+      <td {...tdProps} title={value}>
+        <span
+          ref={(el) => {
+            if (el && color) {
+              el.style.setProperty('color', color, 'important')
+              // el.style.setProperty('font-weight', 'bold', 'important')
+            }
+          }}
+        >
+          {value}
+        </span>
       </td>
     )
   }

@@ -88,7 +88,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: false,
-      widthT: 40,
+      minWidth: 40,
       align: 'right',
     },
     {
@@ -96,6 +96,7 @@ const AnnualProductionPlan = () => {
       headerName: 'Assumptions & remarks',
       editable: true,
       flex: 1,
+      minWidth: 350,
     },
     {
       field: 'idFromApi',
@@ -109,7 +110,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: false,
-      widthT: 40,
+      minWidth: 40,
       align: 'right',
     },
     {
@@ -117,6 +118,7 @@ const AnnualProductionPlan = () => {
       headerName: 'Max hourly rate achieved',
       editable: true,
       flex: 1,
+      minWidth: 350,
     },
     {
       field: 'id',
@@ -141,7 +143,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: false,
-      widthT: 40,
+      minWidth: 40,
       align: 'right',
     },
     {
@@ -149,6 +151,7 @@ const AnnualProductionPlan = () => {
       headerName: 'Calculation of Operating hours',
       editable: true,
       flex: 1,
+      minWidth: 350,
     },
     {
       field: 'id',
@@ -180,7 +183,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: false,
-      widthT: 40,
+      minWidth: 40,
       align: 'right',
     },
     {
@@ -188,6 +191,7 @@ const AnnualProductionPlan = () => {
       headerName: 'Throughput  limiting causes',
       editable: true,
       flex: 1,
+      minWidth: 300,
     },
     {
       field: 'id',
@@ -200,7 +204,7 @@ const AnnualProductionPlan = () => {
       editable: true,
       flex: 1,
       align: 'right',
-      widthT: 150,
+      minWidth: 100,
       type: 'number',
       format: '{0:#.##}',
     },
@@ -210,7 +214,7 @@ const AnnualProductionPlan = () => {
       editable: true,
       flex: 1,
       align: 'right',
-      widthT: 150,
+      minWidth: 100,
       type: 'number',
     },
     {
@@ -759,7 +763,6 @@ const AnnualProductionPlan = () => {
         currentRowId={currentRowId}
         setCurrentRowId={setCurrentRowId}
         saveChanges={saveChanges}
-        loading={loading}
         fetchData={() => fetchData('assumptions')}
         deleteRowData={handleDeleteAssumptionRow}
         permissions={{

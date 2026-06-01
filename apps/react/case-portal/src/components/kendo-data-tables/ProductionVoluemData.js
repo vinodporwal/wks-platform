@@ -1687,7 +1687,8 @@ const ProductionvolumeData = ({
           permissions={adjustedPermissionsGrid2}
           selectedUnit={unitDesignCapacity}
           setSelectedUnit={setUnitDesignCapacity}
-          supressGridHeight={!IS_PP_HMD}
+          // supressGridHeight={!IS_PP_HMD}
+          supressGridHeight={!(rows?.length > 10)}
           downloadExcelForConfiguration={() =>
             downloadExcelForConfiguration('design')
           }
@@ -1712,7 +1713,8 @@ const ProductionvolumeData = ({
           selectedUnit={unitDesignCapacity}
           setSelectedUnit={setUnitDesignCapacity}
           handleUnitChange={handleUnitChangeMaxCapacity}
-          supressGridHeight={!IS_PP_HMD}
+          // supressGridHeight={!IS_PP_HMD}
+          supressGridHeight={!(rows?.length > 10)}
           downloadExcelForConfiguration={() =>
             downloadExcelForConfiguration('max')
           }
@@ -1754,7 +1756,8 @@ const ProductionvolumeData = ({
           selectedUnit={unitDesignCapacity}
           setSelectedUnit={setUnitDesignCapacity}
           handleExcelUpload={handleExcelUpload}
-          supressGridHeight={!IS_PP_HMD}
+          // supressGridHeight={!IS_PP_HMD}
+          supressGridHeight={!(rows?.length > 10)}
           downloadExcelForConfiguration={() =>
             downloadExcelForConfiguration('main')
           }
@@ -1780,7 +1783,8 @@ const ProductionvolumeData = ({
               title='Production target Reference'
               fetchData={fetchData}
               permissions={adjustedPermissionsLast}
-              supressGridHeight={!IS_PP_HMD}
+              // supressGridHeight={!IS_PP_HMD}
+              supressGridHeight={!(rows?.length > 10)}
               resetEditSignal={editResetKey}
               setEditResetKey={setEditResetKey}
             />
