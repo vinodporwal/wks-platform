@@ -302,15 +302,15 @@ const ImportPower = () => {
       )
     })
     // plantName must be present so groupBy logic can place this row correctly
-    const firstRow = dataRows.length > 0 ? dataRows[0] : {}
+    const lastRow = dataRows.length > 0 ? dataRows[dataRows.length - 1] : {}
     return {
       id: 'TOTAL_ROW',
-      plantName: firstRow.plantName || '', // keep same group bucket as data rows
+      plantName: lastRow.plantName || '', // keep same group bucket as data rows
       procurementPlant: 'Total',
       utility: '',
       material: '',
-      uom: firstRow.uom || '',
-      aopYear: firstRow.aopYear || '',
+      uom: lastRow.uom || '',
+      aopYear: lastRow.aopYear || '',
       ...totals,
       remarks: '',
       isTotal: true,

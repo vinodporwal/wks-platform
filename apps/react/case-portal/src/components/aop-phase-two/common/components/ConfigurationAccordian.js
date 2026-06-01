@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
-import { Box, Button, Stack, Tooltip, Typography } from '@mui/material'
+import { Box, Button, IconButton, Stack, Tooltip, Typography } from '@mui/material'
+import { CalenderIcon } from 'assets/images/icons'
 import { DatePicker } from '@progress/kendo-react-dateinputs'
 import { TextArea } from '@progress/kendo-react-inputs'
 import {
@@ -51,6 +52,8 @@ const ConfigurationAccordian = ({
   // State management
   const [startDate, setStartDate] = useState()
   const [endDate, setEndDate] = useState()
+  const [startShow, setStartShow] = useState(false)
+  const [endShow, setEndShow] = useState(false)
   const [summary, setSummary] = useState('')
   const [lastModifiedBy, setLastModifiedBy] = useState('')
   const [dateEdited, setDateEdited] = useState(false)
@@ -450,33 +453,79 @@ const ConfigurationAccordian = ({
                 flexWrap='wrap'
               >
                 {/* START */}
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                <Box className='date-pill-wrapper'>
+                  <Box
+                    component='img'
+                    src={CalenderIcon}
+                    className='w16-icon'
+                    style={{ cursor: READ_ONLY ? 'not-allowed' : 'pointer' }}
+                    onClick={() => !READ_ONLY && setStartShow((v) => !v)}
+                  />
+                  <Box component='span' className='header-dropdown-label'>
+                    Start Date:
+                  </Box>
                   <DatePicker
                     id='start-date'
                     format='dd-MM-yyyy'
                     value={startDate}
+                    show={startShow}
+                    onClose={() => setStartShow(false)}
                     onChange={(e) => {
                       setStartDate(e.value)
                       setDateEdited(true)
                     }}
-                    style={{ width: '130px', height: '28px' }}
                     disabled={READ_ONLY}
                   />
+                  <IconButton
+                    style={{
+                      cursor: READ_ONLY ? 'not-allowed' : 'pointer',
+                      p: 0,
+                      width: 0,
+                      height: 0,
+                    }}
+                    onClick={() => !READ_ONLY && setStartShow((v) => !v)}
+                    size='small'
+                  >
+                    <ExpandMoreIcon sx={{ fontSize: '1rem', color: '#606060' }} />
+                  </IconButton>
                 </Box>
 
                 {/* END */}
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                <Box className='date-pill-wrapper'>
+                  <Box
+                    component='img'
+                    src={CalenderIcon}
+                    className='w16-icon'
+                    style={{ cursor: READ_ONLY ? 'not-allowed' : 'pointer' }}
+                    onClick={() => !READ_ONLY && setEndShow((v) => !v)}
+                  />
+                  <Box component='span' className='header-dropdown-label'>
+                    End Date:
+                  </Box>
                   <DatePicker
                     id='end-date'
                     format='dd-MM-yyyy'
                     value={endDate}
+                    show={endShow}
+                    onClose={() => setEndShow(false)}
                     onChange={(e) => {
                       setEndDate(e.value)
                       setDateEdited(true)
                     }}
-                    style={{ width: '130px', height: '28px' }}
                     disabled={READ_ONLY}
                   />
+                  <IconButton
+                    style={{
+                      cursor: READ_ONLY ? 'not-allowed' : 'pointer',
+                      p: 0,
+                      width: 0,
+                      height: 0,
+                    }}
+                    onClick={() => !READ_ONLY && setEndShow((v) => !v)}
+                    size='small'
+                  >
+                    <ExpandMoreIcon sx={{ fontSize: '1rem', color: '#606060' }} />
+                  </IconButton>
                 </Box>
 
                 {/* LOAD BUTTON */}
@@ -502,7 +551,7 @@ const ConfigurationAccordian = ({
               {/* LAST REFRESHED */}
               {configurationExecutionDetails[0]?.ModifiedOn && (
                 <Tooltip
-                  title={`Last Refreshed: ${formatDateForText(
+                  title={`Last loaded data : ${formatDateForText(
                     configurationExecutionDetails[0]?.ModifiedOn,
                     true,
                   )}`}
@@ -511,20 +560,7 @@ const ConfigurationAccordian = ({
                     direction='row'
                     spacing={0.5}
                     alignItems='center'
-                    sx={{
-                      color: '#303030',
-                      backgroundColor: '#F6FAFC',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      fontFamily:
-                        "'Honeywell Sans Web', 'Inter', sans-serif !important",
-                      whiteSpace: 'nowrap',
-                      mt: '10px',
-                      height: 40,
-                      borderRadius: '6px',
-                      border: '1px solid #00688C',
-                      padding: '10px',
-                    }}
+                    className='last-refreshed-container'
                   >
                     <InfoIcon sx={{ fontSize: '0.9rem', color: '#00688C' }} />
                     <Typography className='last-refreshed-text'>
@@ -538,13 +574,7 @@ const ConfigurationAccordian = ({
               <Box sx={{ width: '100%' }}>
                 <Typography
                   variant='caption'
-                  sx={{
-                    fontSize: '14px',
-                    fontWeight: 700,
-                    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                    color: '#303030',
-                    letterSpacing: '0.3px',
-                  }}
+                  className='aop-design-basis-label'
                 >
                   AOP DESIGN BASIS
                 </Typography>
@@ -567,6 +597,8 @@ const ConfigurationAccordian = ({
   }, [
     startDate,
     endDate,
+    startShow,
+    endShow,
     summary,
     configurationExecutionDetails,
     isOldYear,
