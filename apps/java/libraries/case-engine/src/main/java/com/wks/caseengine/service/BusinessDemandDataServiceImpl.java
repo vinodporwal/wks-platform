@@ -1542,7 +1542,7 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 					continue;
 				}
 
-
+			    
 
 				BusinessDemand businessDemand = new BusinessDemand();
 				businessDemand.setApril(businessDemandDataDTO.getApril());
@@ -1564,7 +1564,7 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 				   if(existingBusinessDemand == null) { 
 					throw new RuntimeException("Business demand data not found");
 				   }
-    
+
 				 Double  existingAprilValue = existingBusinessDemand.getApril() != null ? existingBusinessDemand.getApril() : 0.0;
 				 String existingRemark = existingBusinessDemand.getRemark();
 
@@ -1572,7 +1572,7 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 				 String newRemark = businessDemandDataDTO.getRemark();
 
 				     if(!Objects.equals(existingAprilValue, newAprilValue) && Objects.equals(existingRemark, newRemark)) {  
-  
+		
 						 businessDemandDataDTO.setSaveStatus("Failed");
 						 businessDemandDataDTO.setErrDescription("Please update remark");
 						 failedList.add(businessDemandDataDTO);
@@ -1612,7 +1612,7 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 
 				}
 			} 
-			
+
 			
 		
 			List<ScreenMapping> screenMappingList= screenMappingRepository.findByDependentScreen("business-demand");
@@ -1631,6 +1631,117 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 			throw new RuntimeException("Failed to save data", ex);
 		}
 
+	}
+
+	
+
+	void validateRemark(BusinessDemandDataDTO businessDemandDataDTO) {
+
+		if(businessDemandDataDTO.getId() == null || businessDemandDataDTO.getId().contains("#")) {
+			return;
+		}
+		BusinessDemand existingBusinessDemand = businessDemandDataRepository.findById(UUID.fromString(businessDemandDataDTO.getId())).get();
+		String existingRemark = existingBusinessDemand.getRemark();
+		String newRemark = businessDemandDataDTO.getRemark();
+
+		Double existingAprilValue = existingBusinessDemand.getApril() != null ? existingBusinessDemand.getApril() : 0.0;
+		Double newAprilValue = businessDemandDataDTO.getApril();
+
+	
+		if(!Objects.equals(existingAprilValue, newAprilValue) && Objects.equals(existingRemark, newRemark)) {  
+			businessDemandDataDTO.setSaveStatus("Failed");
+			businessDemandDataDTO.setErrDescription("Please update remark");
+		}
+
+		Double existingMayValue = existingBusinessDemand.getMay() != null ? existingBusinessDemand.getMay() : 0.0;
+		Double newMayValue = businessDemandDataDTO.getMay();
+		if(!Objects.equals(existingMayValue, newMayValue) && Objects.equals(existingRemark, newRemark)) {  
+			businessDemandDataDTO.setSaveStatus("Failed");
+			businessDemandDataDTO.setErrDescription("Please update remark");
+		}
+		
+		Double existingJuneValue = existingBusinessDemand.getJune() != null ? existingBusinessDemand.getJune() : 0.0;
+		Double newJuneValue = businessDemandDataDTO.getJune();
+		if(!Objects.equals(existingJuneValue, newJuneValue) && Objects.equals(existingRemark, newRemark)) {  
+			businessDemandDataDTO.setSaveStatus("Failed");
+			businessDemandDataDTO.setErrDescription("Please update remark");
+		}
+		
+		
+		
+		double existingJulyValue = existingBusinessDemand.getJuly() != null ? existingBusinessDemand.getJuly() : 0.0;
+		Double newJulyValue = businessDemandDataDTO.getJuly();
+		if(!Objects.equals(existingJulyValue, newJulyValue) && Objects.equals(existingRemark, newRemark)) {  
+			businessDemandDataDTO.setSaveStatus("Failed");
+			businessDemandDataDTO.setErrDescription("Please update remark");
+		}
+		
+		
+		
+		double existingAugustValue = existingBusinessDemand.getAug() != null ? existingBusinessDemand.getAug() : 0.0;
+		Double newAugustValue = businessDemandDataDTO.getAug();
+		if(!Objects.equals(existingAugustValue, newAugustValue) && Objects.equals(existingRemark, newRemark)) {  
+			businessDemandDataDTO.setSaveStatus("Failed");
+			businessDemandDataDTO.setErrDescription("Please update remark");
+		}
+		
+		
+		double existingSeptemberValue = existingBusinessDemand.getSep() != null ? existingBusinessDemand.getSep() : 0.0;
+		Double newSeptemberValue = businessDemandDataDTO.getSep();
+		if(!Objects.equals(existingSeptemberValue, newSeptemberValue) && Objects.equals(existingRemark, newRemark)) {  
+			businessDemandDataDTO.setSaveStatus("Failed");
+			businessDemandDataDTO.setErrDescription("Please update remark");
+		}
+		
+		
+		double existingOctoberValue = existingBusinessDemand.getOct() != null ? existingBusinessDemand.getOct() : 0.0;
+		Double newOctoberValue = businessDemandDataDTO.getOct();
+		if(!Objects.equals(existingOctoberValue, newOctoberValue) && Objects.equals(existingRemark, newRemark)) {  
+			businessDemandDataDTO.setSaveStatus("Failed");
+			businessDemandDataDTO.setErrDescription("Please update remark");
+		}
+		
+		
+		double existingNovemberValue = existingBusinessDemand.getNov() != null ? existingBusinessDemand.getNov() : 0.0;
+		Double newNovemberValue = businessDemandDataDTO.getNov();
+		if(!Objects.equals(existingNovemberValue, newNovemberValue) && Objects.equals(existingRemark, newRemark)) {  
+			businessDemandDataDTO.setSaveStatus("Failed");
+			businessDemandDataDTO.setErrDescription("Please update remark");
+		}
+		
+		
+		double existingDecemberValue = existingBusinessDemand.getDec() != null ? existingBusinessDemand.getDec() : 0.0;
+		Double newDecemberValue = businessDemandDataDTO.getDec();
+		if(!Objects.equals(existingDecemberValue, newDecemberValue) && Objects.equals(existingRemark, newRemark)) {  
+			businessDemandDataDTO.setSaveStatus("Failed");
+			businessDemandDataDTO.setErrDescription("Please update remark");
+		}
+		
+		double existingJanuaryValue = existingBusinessDemand.getJan() != null ? existingBusinessDemand.getJan() : 0.0;
+		Double newJanuaryValue = businessDemandDataDTO.getJan();
+		if(!Objects.equals(existingJanuaryValue, newJanuaryValue) && Objects.equals(existingRemark, newRemark)) {  
+			businessDemandDataDTO.setSaveStatus("Failed");
+			businessDemandDataDTO.setErrDescription("Please update remark");
+		}
+		
+		
+		double existingFebruaryValue = existingBusinessDemand.getFeb() != null ? existingBusinessDemand.getFeb() : 0.0;
+		Double newFebruaryValue = businessDemandDataDTO.getFeb();
+		if(!Objects.equals(existingFebruaryValue, newFebruaryValue) && Objects.equals(existingRemark, newRemark)) {  
+			businessDemandDataDTO.setSaveStatus("Failed");
+			businessDemandDataDTO.setErrDescription("Please update remark");
+		}
+		
+		
+		
+		double existingMarchValue = existingBusinessDemand.getMarch() != null ? existingBusinessDemand.getMarch() : 0.0;
+		Double newMarchValue = businessDemandDataDTO.getMarch();
+		if(!Objects.equals(existingMarchValue, newMarchValue) && Objects.equals(existingRemark, newRemark)) {  
+			businessDemandDataDTO.setSaveStatus("Failed");
+			businessDemandDataDTO.setErrDescription("Please update remark");
+		}
+		
+		
 	}
 	
 	void saveData(UUID normParameterFKId, Integer i, Double attributeValue, String remark, String plantId,
