@@ -106,7 +106,7 @@ const NormalOpNormsScreenCracker = () => {
   const lowerPlantName = (plantObject?.name || '').toLowerCase()
   const IS_CRACKER_C2 = lowerVertName === 'cracker' && lowerSiteName === 'c2'
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
-  const IS_CRACKER_NMD= lowerVertName === 'cracker' && lowerSiteName === 'nmd'
+  const IS_CRACKER_NMD = lowerVertName === 'cracker' && lowerSiteName === 'nmd'
   const dispatch = useDispatch()
   const keycloak = useSession()
 
@@ -506,7 +506,9 @@ const NormalOpNormsScreenCracker = () => {
       showAction: false,
       allAction: true,
       showTitleNameBusiness: true,
-      titleName: 'Best Achieved (Individual)',
+      titleName: IS_CRACKER_C2
+        ? 'Best Achieved (Min CC)'
+        : 'Best Achieved (Individual)',
       showCheckbox: true,
       downloadExcelBtnFromUI: true,
       ExcelName: `${lowerVertName}_Best Achieved (Norms)`,
@@ -1521,7 +1523,7 @@ const NormalOpNormsScreenCracker = () => {
               <KendoDataTables
                 modifiedCells={modifiedCells}
                 setModifiedCells={setModifiedCells}
-                columns={colDefs}
+                columns={IS_CRACKER_C2 ? colDefsIndividual : colDefs}
                 setRows={setRows}
                 rows={rows}
                 grades={grades}
