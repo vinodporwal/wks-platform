@@ -3520,7 +3520,7 @@ const KendoDataTables = ({
                             <RemarkCell
                               {...cellProps}
                               allRedCell={allRedCell}
-                              onRemarkClick={handleRemarkCellClick}
+                              onRemarkClick={col?.editable ? handleRemarkCellClick : () => {}}
                               customModifiedCells={customModifiedCells}
                             />
                           ),
