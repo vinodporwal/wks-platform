@@ -235,7 +235,7 @@ public class FetchRecordsServiceImpl {
 	
 	public List<FunctionalLocation> getFunctionalLocations(String dbName, String assetName) {
 		try {
-			System.out.println("ASEET_NAME ====>> " + assetName )
+			System.out.println("ASEET_NAME ====>> " + assetName );
 			String sql = "SELECT DISTINCT e.Description " +
 					"FROM [" + dbName + "].[dbo].Equipments e " +
 					"WHERE e.DisplayName LIKE  CONCAT('%', ?, '%')" +
