@@ -237,7 +237,7 @@ public class FetchRecordsServiceImpl {
 		try {
 			String sql = "SELECT DISTINCT e.Description " +
 					"FROM [" + dbName + "].[dbo].Equipments e " +
-					"WHERE e.Description LIKE  CONCAT('%', ?, '%')" +
+					"WHERE e.DisplayName LIKE  CONCAT('%', ?, '%')" +
 					"  AND e.IsDeleted = 0 " +
 					"  AND e.Description IS NOT NULL " +
 					"  AND e.Description NOT IN ('', 'FL Not Available') " +

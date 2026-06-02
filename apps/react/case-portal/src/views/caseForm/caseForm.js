@@ -84,8 +84,47 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [isAttachmentEnabled, setIsAttachmentEnabled] = useState(true);
   const [isDraft, setIsDraft] = useState(true);
 
+const initialDataRef = useRef(null);
+const isFormReadyRef = useRef(false);
+const hasUnsavedChangesRef = useRef(false); 
+
+useEffect(() => {
+  hasUnsavedChangesRef.current = hasUnsavedChanges;
+}, [hasUnsavedChanges]);
+
+
+
+const handleFormChange = (submission) => {
+  if (!submission?.data?.container) return;
+  if (!isFormReadyRef.current) return;
+
+  // If initialDataRef is somehow null, capture and wait
+  if (!initialDataRef.current) {
+    initialDataRef.current = JSON.parse(JSON.stringify(submission.data.container));
+    return;
+  }
+
+  const excludedKeys = [
+    'caseNo', 'textField1', 'saveAsDraft1', 'onSave', 'saveAsDraft',
+    'analysisSubmit', 'analysisEdit', 'valueRealizationSubmit',
+    'recommendationFinalSubmit'
+  ];
+
+  const clean = (obj) => {
+    const clone = JSON.parse(JSON.stringify(obj));
+    excludedKeys.forEach(key => delete clone[key]);
+    return clone;
+  };
+
+  const isEqual =
+    JSON.stringify(clean(initialDataRef.current)) ===
+    JSON.stringify(clean(submission.data.container));
+
+  setHasUnsavedChanges(!isEqual);
+};
+  
   const handleBeforeUnload = (event) => {
-    if (hasUnsavedChanges) {
+    if (hasUnsavedChangesRef.current) {
       const message = "You have unsaved changes. Are you sure you want to leave?";
       event.preventDefault();
       event.returnValue = message; 
@@ -111,22 +150,22 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     return true; 
   };
 
-  const handleFormChange = (submission) => {
-    if (initialRender.current) {
-      initialRender.current = false;
-      return; // Skip handling changes on the initial render
-    }
+  // const handleFormChange = (submission) => {
+  //   if (initialRender.current) {
+  //     initialRender.current = false;
+  //     return; // Skip handling changes on the initial render
+  //   }
 
-    // Specify which keys to exclude from the key-value comparison
-    const excludedKeys = [ 'caseNo', 'textField1', 'saveAsDraft1', 'onSave', 'saveAsDraft', 'analysisSubmit', 'analysisEdit', 'valueRealizationSubmit', 'recommendationFinalSubmit', 'valueRealizationCategory', 'valueRealizationConclusion'];
+  //   // Specify which keys to exclude from the key-value comparison
+  //   const excludedKeys = [ 'caseNo', 'textField1', 'saveAsDraft1', 'onSave', 'saveAsDraft', 'analysisSubmit', 'analysisEdit', 'valueRealizationSubmit', 'recommendationFinalSubmit', 'valueRealizationCategory', 'valueRealizationConclusion'];
 
-    // Custom comparison logic
-    if (!areObjectsEqualExcludingKeys(currentData, submission.data.container, excludedKeys)) {
-      setHasUnsavedChanges(true);
-    } else {
-      setHasUnsavedChanges(false);
-    }
-  };
+  //   // Custom comparison logic
+  //   if (!areObjectsEqualExcludingKeys(currentData, submission.data.container, excludedKeys)) {
+  //     setHasUnsavedChanges(true);
+  //   } else {
+  //     setHasUnsavedChanges(false);
+  //   }
+  // };
   
   useEffect(() => {
     // Add the event listener for beforeunload
@@ -197,6 +236,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   )
 
   const getCaseInfo = async (aCase) => {
+    isFormReadyRef.current = false;
+    initialDataRef.current = null;
+    setHasUnsavedChanges(false);
     await loadOptions(keycloak);
     console.log('Fetching EED case data of ', aCase)
     // setLoading(true)
@@ -240,6 +282,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         const parsedAttributeValue = JSON.parse(attributeValue);
         parsedAttributeValue.caseNo = aCase.caseNo;
         setCurrentData(parsedAttributeValue)
+        initialDataRef.current = JSON.parse(JSON.stringify(parsedAttributeValue));
         const userEmailIds = [];
         const currentUserName = keycloak.idTokenParsed.preferred_username;
         const caseAssignedToEmail = caseData?.assignedTo?.emailId;
@@ -543,6 +586,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         })
 
         // setIsDraft(caseData?.isDraft === 'y')
+        isFormReadyRef.current = false;
+        setHasUnsavedChanges(false);
+        setTimeout(() => {
+          isFormReadyRef.current = true;
+        }, 2000);
+
         setComments(
           caseData?.comments?.sort(
             (a, b) =>
@@ -574,7 +623,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   }
 
   const onSave = () => {
-    setHasUnsavedChanges(false);
+   // setHasUnsavedChanges(false);
     setLoading(true)
     const {
       caseDescription,
@@ -659,6 +708,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         )
       })
       .then((data) => {
+        initialDataRef.current = JSON.parse(JSON.stringify(formData.data.container));
+        setHasUnsavedChanges(false);
         setLastCreatedCase(data)
         setSnackOpen(true)
         setTimeout(() => {
@@ -752,6 +803,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         )
       })
       .then((data) => {
+        initialDataRef.current = JSON.parse(JSON.stringify(formData.data.container));
+        setHasUnsavedChanges(false);
         setLastCreatedCase(data)
         setSnackOpen(true)
         setTimeout(() => {
@@ -818,6 +871,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         )
       })
       .then((data) => {
+        initialDataRef.current = JSON.parse(JSON.stringify(formData.data.container));
+        setHasUnsavedChanges(false);
         setLastCreatedCase(data)
         setSnackOpen(true)
         setTimeout(() => {
@@ -887,6 +942,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         )
       })
       .then((data) => {
+        initialDataRef.current = JSON.parse(JSON.stringify(formData.data.container));
+        setHasUnsavedChanges(false);
         setLastCreatedCase(data)
         setSnackOpen(true)
         setTimeout(() => {
@@ -1134,7 +1191,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       .then((data) => {
         const businessKey = data.businessKey // Extract businessKey from the response
         // setLastCreatedCase(data);
-
+        initialDataRef.current = JSON.parse(JSON.stringify(formData.data.container));
+        setHasUnsavedChanges(false);
         // Second API call to saveCase with the businessKey
         return CaseService.updateCase(
           keycloak,
@@ -1155,6 +1213,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         )
       })
       .then((data) => {
+        initialDataRef.current = JSON.parse(JSON.stringify(formData.data.container));
+        setHasUnsavedChanges(false);
         setLastCreatedCase(data)
         setSnackOpen(true) // Show success notification
         setTimeout(() => {
@@ -1930,27 +1990,20 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                         onCustomEvent={(event) => {
                           console.log('Form event:', event)
                           if (event.component.key === 'saveAsDraft') {
-                            setHasUnsavedChanges(false);
                             onSubmitForm()
                           } else if (
                             event.component.key === 'RecommendationSubmit3'
                           ) {
-                            setHasUnsavedChanges(false);
                             onSubmitRecommendation(event)
                           } else if (event.component.key === 'onSave') {
-                            setHasUnsavedChanges(false);
                             onSave()
                           } else if (event.component.key === 'analysisSubmit') {
-                            setHasUnsavedChanges(false);
                             onAnalysisSave()
                           } else if (event.component.key === 'valueRealizationSubmit') {
-                            setHasUnsavedChanges(false);
                             onValueRealizationSubmit()
                           } else if (event.component.key === 'analysisEdit') {
-                            setHasUnsavedChanges(false);
                             onAnalysisSave()
                           } else if (event.component.key === 'recommendationFinalSubmit') {
-                            setHasUnsavedChanges(false);
                             setIsFinalRecommendationConfirmationOpen(true)
                           }
                         }}
