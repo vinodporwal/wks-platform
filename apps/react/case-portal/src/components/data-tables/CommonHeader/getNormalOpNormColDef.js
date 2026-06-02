@@ -59,6 +59,16 @@ const getNormalOpNormColDef = ({
     }
   })
 
+  if (lowerVertName === 'cracker' && lowerSiteName === 'c2') {
+    enhancedColDefs.unshift({
+      field: 'isChecked',
+      type: 'switch2',
+      widthT: 30,
+      filter: false,
+      minWidth: 60,
+    })
+  }
+
   colDefsCache.set(cacheKey, enhancedColDefs)
   return enhancedColDefs
 }

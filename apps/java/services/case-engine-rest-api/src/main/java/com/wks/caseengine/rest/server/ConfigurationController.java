@@ -395,4 +395,9 @@ public class ConfigurationController {
 		return configurationService.getSeasonMonths(UUID.fromString(plantId), aopYear);
 	}
 
+	@GetMapping(value = "/load-configuration")
+	public AOPMessageVM LoadConfigurationValues(@RequestParam String year,@RequestParam String plantId) {
+		return configurationService.LoadConfigurationValues(year,plantId);
+	}
+
 }

@@ -260,6 +260,7 @@ const ProductionOptimizer = () => {
   const fetchData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR || !selectedMode) return
     setRows([])
+    setCalculationObject([])
     setLoading(true)
     try {
       const selectedLine = lineDetails[tabIndex]
@@ -520,7 +521,7 @@ const ProductionOptimizer = () => {
         },
         isOldYear,
       ),
-    [isOldYear, AOP_YEAR, PLANT_ID, SCREEN_NAME, dropdownOptions],
+    [isOldYear, AOP_YEAR, PLANT_ID, SCREEN_NAME, dropdownOptions, calculationObject],
   )
 
   const adjustedPermissionsCombined = useMemo(

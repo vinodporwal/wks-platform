@@ -106,6 +106,7 @@ const NormalOpNormsScreenCracker = () => {
   const lowerPlantName = (plantObject?.name || '').toLowerCase()
   const IS_CRACKER_C2 = lowerVertName === 'cracker' && lowerSiteName === 'c2'
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
+  const IS_CRACKER_NMD = lowerVertName === 'cracker' && lowerSiteName === 'nmd'
   const dispatch = useDispatch()
   const keycloak = useSession()
 
@@ -330,13 +331,13 @@ const NormalOpNormsScreenCracker = () => {
         hidden: true,
         isVisible: false,
       },
-      // { field: 'remark', title: 'Remark', widthT: 140, editable: true },
     ],
     [headerMap, valueFormat],
   )
-  const colDefsFinalNorms = (IS_CRACKER_C2 || IS_CRACKER_HMD)
-    ? colDefsFinalNormsC2
-    : colDefsFinalNormsDefault
+  const colDefsFinalNorms =
+    IS_CRACKER_C2 || IS_CRACKER_HMD
+      ? colDefsFinalNormsC2
+      : colDefsFinalNormsDefault
 
   const colDefsFinalNorms1 = useMemo(
     () => [
@@ -505,7 +506,9 @@ const NormalOpNormsScreenCracker = () => {
       showAction: false,
       allAction: true,
       showTitleNameBusiness: true,
-      titleName: 'Best Achieved (Individual)',
+      titleName: IS_CRACKER_C2
+        ? 'Best Achieved (Min CC)'
+        : 'Best Achieved (Individual)',
       showCheckbox: true,
       downloadExcelBtnFromUI: true,
       ExcelName: `${lowerVertName}_Best Achieved (Norms)`,
@@ -1334,73 +1337,79 @@ const NormalOpNormsScreenCracker = () => {
           <Box
             sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2, mb: 2 }}
           >
-            <TextField
-              select
-              value={gradeId ?? ''}
-              onChange={onModeSelect}
-              variant='outlined'
-              size='small'
-              sx={{
-                minWidth: 140,
-                '& .MuiOutlinedInput-root': {
-                  height: '30px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.85)',
-                  borderRadius: '7px',
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                  '& fieldset': {
-                    border: 'none',
+            {!IS_CRACKER_C2 && (
+              <TextField
+                select
+                value={gradeId ?? ''}
+                onChange={onModeSelect}
+                variant='outlined'
+                size='small'
+                sx={{
+                  minWidth: 140,
+                  '& .MuiOutlinedInput-root': {
+                    height: '30px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                    borderRadius: '7px',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                    '& fieldset': {
+                      border: 'none',
+                    },
+                    '&:hover fieldset': {
+                      border: 'none',
+                    },
+                    '&.Mui-focused fieldset': {
+                      border: 'none',
+                    },
                   },
-                  '&:hover fieldset': {
-                    border: 'none',
+                  '& .MuiSelect-select': {
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '2px 6px !important',
                   },
-                  '&.Mui-focused fieldset': {
-                    border: 'none',
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <Typography
+                      variant='caption'
+                      sx={{
+                        mr: 0.5,
+                        color: '#606060',
+                        fontWeight: 500,
+                        fontSize: '14px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.4px',
+                        lineHeight: 1,
+                        fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                      }}
+                    >
+                      Mode:
+                    </Typography>
+                  ),
+                }}
+                SelectProps={{
+                  MenuProps: {
+                    disableScrollLock: true,
                   },
-                },
-                '& .MuiSelect-select': {
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '2px 6px !important',
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <Typography
-                    variant='caption'
-                    sx={{
-                      mr: 0.5,
-                      color: '#606060',
-                      fontWeight: 500,
-                      fontSize: '14px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.4px',
-                      lineHeight: 1,
-                      fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                    }}
-                  >
-                    Mode:
-                  </Typography>
-                ),
-              }}
-              SelectProps={{
-                MenuProps: {
-                  disableScrollLock: true,
-                },
-              }}
-              MenuProps={{ disableScrollLock: true }}
-            >
-              <MenuItem value='' disabled sx={menuItemStyle}>
-                Select Mode
-              </MenuItem>
-
-              {grades.map((m) => (
-                <MenuItem key={m.gradeId} value={m.gradeId} sx={menuItemStyle}>
-                  {m.displayName}
+                }}
+                MenuProps={{ disableScrollLock: true }}
+              >
+                <MenuItem value='' disabled sx={menuItemStyle}>
+                  Select Mode
                 </MenuItem>
-              ))}
-            </TextField>
+
+                {grades.map((m) => (
+                  <MenuItem
+                    key={m.gradeId}
+                    value={m.gradeId}
+                    sx={menuItemStyle}
+                  >
+                    {m.displayName}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
 
             <Typography component='div' className='grid-title'>
               <span style={{ color: 'orange', fontWeight: 'bold' }}>
@@ -1408,20 +1417,24 @@ const NormalOpNormsScreenCracker = () => {
               </span>{' '}
               - Overridden&nbsp;&nbsp;
               {/* Only show the following if SITE_NAME is NOT 'vmd' */}
-              {lowerSiteName !== 'vmd' && lowerSiteName !== 'hmd' && lowerSiteName !== 'c2' && (
-                <>
-                  <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span>{' '}
-                  - Propane (1Z)&nbsp;&nbsp;
-                  <span style={{ color: 'green', fontWeight: 'bold' }}>
-                    Green
-                  </span>{' '}
-                  - Propane (2Z)&nbsp;&nbsp;
-                  <span style={{ color: 'purple', fontWeight: 'bold' }}>
-                    Purple
-                  </span>{' '}
-                  - Copied From Other Season
-                </>
-              )}
+              {lowerSiteName !== 'vmd' &&
+                lowerSiteName !== 'hmd' &&
+                lowerSiteName !== 'c2' && (
+                  <>
+                    <span style={{ color: 'red', fontWeight: 'bold' }}>
+                      Red
+                    </span>{' '}
+                    - Propane (1Z)&nbsp;&nbsp;
+                    <span style={{ color: 'green', fontWeight: 'bold' }}>
+                      Green
+                    </span>{' '}
+                    - Propane (2Z)&nbsp;&nbsp;
+                    <span style={{ color: 'purple', fontWeight: 'bold' }}>
+                      Purple
+                    </span>{' '}
+                    - Copied From Other Season
+                  </>
+                )}
             </Typography>
           </Box>
 
@@ -1510,7 +1523,7 @@ const NormalOpNormsScreenCracker = () => {
               <KendoDataTables
                 modifiedCells={modifiedCells}
                 setModifiedCells={setModifiedCells}
-                columns={colDefs}
+                columns={IS_CRACKER_C2 ? colDefsIndividual : colDefs}
                 setRows={setRows}
                 rows={rows}
                 grades={grades}

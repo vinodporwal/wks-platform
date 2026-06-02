@@ -541,7 +541,7 @@ const MaintenanceProcessTable = ({ viewOnly, permissions }) => {
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
         note='*Unit of Measurement - Days'
-        supressGridHeight={true}
+        // supressGridHeight={true}
         handleExcelUpload={handleExcelUpload}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
       />

@@ -96,20 +96,17 @@ import { DashboardColors } from 'themes/colors'
 import SwitchEditor from './Utilities-Kendo/SwitchEditor'
 import { NoSpinnerNumericIntegerEditor } from './Utilities-Kendo/numbericIntegerColumns'
 
-// the input on every parent re-render and the user loses focus mid-typing.
+// A stable editor component to prevent focus loss during table re-renders.
 const ON_OFF_CONDITION = (dataItem) => dataItem?.UOM === 'ON/OFF'
-function makeOnOffSwitchEditCell(itemChange, editable, isDisabled) {
-  return function OnOffSwitchEditCell(props) {
-    return (
-      <SwitchEditor
-        {...props}
-        onChange={(e) => itemChange(e)}
-        condition={ON_OFF_CONDITION}
-        editable={editable}
-        isDisabled={isDisabled}
-      />
-    )
-  }
+const OnOffSwitchEditCell = (props) => {
+  return (
+    <SwitchEditor
+      {...props}
+      condition={ON_OFF_CONDITION}
+      editable={props.column?.editable}
+      isDisabled={props.column?.isDisabled}
+    />
+  )
 }
 
 export const dateFields = [
@@ -1116,20 +1113,6 @@ const KendoDataTables = ({
     )
   }, [columns])
 
-  const onOffSwitchEditCells = useMemo(() => {
-    const map = {}
-    columns?.forEach((col) => {
-      if (col?.type === 'number' && col?.field) {
-        map[col.field] = makeOnOffSwitchEditCell(
-          itemChange,
-          col?.editable,
-          col?.isDisabled,
-        )
-      }
-    })
-    return map
-  }, [columns, itemChange])
-
   const handleAddRow = () => {
     setEdit({})
     if (isButtonDisabled) return
@@ -1391,8 +1374,7 @@ const KendoDataTables = ({
   const MaterialDisplayNameCell = (props) => {
     const { dataItem, field, tdProps, children } = props
     const value = dataItem[field]
-    const method = dataItem.Method
-
+    const method = dataItem.Method || dataItem.method
     let color = 'inherit'
 
     switch (method) {
@@ -1411,16 +1393,17 @@ const KendoDataTables = ({
     }
 
     return (
-      <td
-        {...tdProps}
-        title={value}
-        style={{
-          color,
-          //  fontWeight: method ? 'bold' : 'normal',
-          ...tdProps.style,
-        }}
-      >
-        {children}
+      <td {...tdProps} title={value}>
+        <span
+          ref={(el) => {
+            if (el && color) {
+              el.style.setProperty('color', color, 'important')
+              // el.style.setProperty('font-weight', 'bold', 'important')
+            }
+          }}
+        >
+          {value}
+        </span>
       </td>
     )
   }
@@ -3283,7 +3266,7 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.width}
+                        width={setWidth(col?.minWidth || 150)}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}
@@ -4036,14 +4019,16 @@ const KendoDataTables = ({
                         ${col?.isBold ? 'bold-text' : ''}
                       `}
                         editable={col?.editable ? true : false}
+                        isDisabled={col?.isDisabled}
                         headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: {
-                            text: onOffSwitchEditCells[col.field],
+                            text: OnOffSwitchEditCell,
                           },
                           data: (props) => {
                             // ON/OFF rows: show switch with direct edit mode
-                            if (props.dataItem?.UOM === 'ON/OFF') {
+                            const uomTypes = ['ON/OFF','YES/NO']
+                            if (uomTypes.includes(props.dataItem?.UOM)) {
                               return (
                                 <SwitchEditor
                                   {...props}
@@ -4052,8 +4037,8 @@ const KendoDataTables = ({
                                   customModifiedCells={customModifiedCells}
                                   rowId={props.dataItem.id}
                                   setRows={setRows}
-                                  editable={col?.editable}
-                                  isDisabled={col?.isDisabled}
+                                  editable={props.dataItem?.[`${col.field}_editable`] === false ? false : col?.editable}
+                                  isDisabled={props.dataItem?.[`${col.field}_isDisabled`] ? true : col?.isDisabled}
                                 />
                               )
                             }

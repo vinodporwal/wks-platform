@@ -499,10 +499,10 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
                     if (col >= MONTH_COL_START && col <= MONTH_COL_END) {
                         int monthNumber = ACADEMIC_MONTH_ORDER[col - MONTH_COL_START];
                         if (editableMonths != null && !editableMonths.contains(monthNumber)) {
-                            // Month is not in the allowed list ? always locked
+                            // Month is not in the allowed list  always locked
                             cellStyle = lockedStyle;
                         } else {
-                            // No restriction or month is allowed ? follow row editability
+                            // No restriction or month is allowed  follow row editability
                             cellStyle = rowStyle;
                         }
                     } else {
@@ -1075,22 +1075,47 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 				dtoList = (List<SlowdownNormsValueDTO>) responseMap.get("slowdownNormsValueDTO");
 			}
 
-			Workbook workbook = new XSSFWorkbook();
+		// Fetch allowed months from getSlowdownMonths to control month-column editability
+		Set<Integer> allowedMonths = new HashSet<>();
+		List<?> slowdownMonthsList = getSlowdownMonths(plantFKId, "Slowdown", year, gradeId);
+		if (slowdownMonthsList != null) {
+			for (Object m : slowdownMonthsList) {
+				if (m instanceof Integer) allowedMonths.add((Integer) m);
+			}
+		}
 
-			Sheet sheet = workbook.createSheet("Sheet1");
-			int currentRow = 0;
-			// List<List<Object>> rows = new ArrayList<>();
+		// Column index (0-based)  month number mapping for the 12 month columns
+		// Cols 3-11: Apr(4)-Dec(12); Cols 12-14: Jan(1)-Mar(3)
+		Map<Integer, Integer> colToMonth = new HashMap<>();
+		colToMonth.put(3,  4);  // April
+		colToMonth.put(4,  5);  // May
+		colToMonth.put(5,  6);  // June
+		colToMonth.put(6,  7);  // July
+		colToMonth.put(7,  8);  // August
+		colToMonth.put(8,  9);  // September
+		colToMonth.put(9,  10); // October
+		colToMonth.put(10, 11); // November
+		colToMonth.put(11, 12); // December
+		colToMonth.put(12, 1);  // January
+		colToMonth.put(13, 2);  // February
+		colToMonth.put(14, 3);  // March
 
-			List<List<Object>> rows = new ArrayList<>();
-			
-			// Create styles for locking/unlocking cells
-			CellStyle lockedStyle = workbook.createCellStyle();
-			lockedStyle.setLocked(true);
-			lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-			lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+		Workbook workbook = new XSSFWorkbook();
 
-			CellStyle unlockedStyle = workbook.createCellStyle();
-			unlockedStyle.setLocked(false);
+		Sheet sheet = workbook.createSheet("Sheet1");
+		int currentRow = 0;
+		// List<List<Object>> rows = new ArrayList<>();
+
+		List<List<Object>> rows = new ArrayList<>();
+		
+		// Create styles for locking/unlocking cells
+		CellStyle lockedStyle = workbook.createCellStyle();
+		lockedStyle.setLocked(true);
+		lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+		lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+		CellStyle unlockedStyle = workbook.createCellStyle();
+		unlockedStyle.setLocked(false);
 			// Data rows
 			for (SlowdownNormsValueDTO dto : dtoList) {
 				//if (isAfterSave) {
@@ -1170,11 +1195,16 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 					} else {
 						cell.setCellValue("");
 					}
-					if (isRowEditable) {
-                        cell.setCellStyle(unlockedStyle);
-                    } else {
-                        cell.setCellStyle(lockedStyle);
-                    }
+					// Month columns are editable only when the row is editable AND
+				// the month is in the allowed months list returned by getSlowdownMonths.
+				// Non-month columns follow row-level editability only.
+				boolean cellEditable;
+				if (colToMonth.containsKey(col)) {
+					cellEditable = isRowEditable && allowedMonths.contains(colToMonth.get(col));
+				} else {
+					cellEditable = isRowEditable;
+				}
+				cell.setCellStyle(cellEditable ? unlockedStyle : lockedStyle);
 
 				}
 			}

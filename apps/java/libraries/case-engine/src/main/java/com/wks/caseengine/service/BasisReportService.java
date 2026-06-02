@@ -15,5 +15,5 @@ public interface BasisReportService {
 	public AOPMessageVM calculateBestAchieved( String year, String plantId,String periodTo, String periodFrom);
 	public AOPMessageVM calculateBestAchievedIndividual(String year, String plantId, String periodTo,
 			String periodFrom);
-
+	public AOPMessageVM getOptimizerInputOutputReport(String plantId, String aopYear);
 }

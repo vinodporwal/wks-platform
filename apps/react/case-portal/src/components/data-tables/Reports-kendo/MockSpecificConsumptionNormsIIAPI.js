@@ -1331,7 +1331,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     editable: true,
                     align: 'right',
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'designRsMt',
@@ -1385,7 +1385,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     editable: true,
                     align: 'right',
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'globalBenchmarkRsMT',
@@ -1510,7 +1510,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'designRsMt',
@@ -1560,7 +1560,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'globalBenchmarkRsMT',
@@ -1684,7 +1684,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'designRsMt',
@@ -1734,7 +1734,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'globalBenchmarkRsMT',
@@ -1858,7 +1858,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'designRsMt',
@@ -1908,7 +1908,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'globalBenchmarkRsMT',
@@ -2032,7 +2032,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'designRsMt',
@@ -2082,7 +2082,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'globalBenchmarkRsMT',
@@ -2205,7 +2205,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'designRsMt',
@@ -2255,7 +2255,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'globalBenchmarkRsMT',
@@ -2378,7 +2378,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'designRsMt',
@@ -2428,7 +2428,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'globalBenchmarkRsMT',
