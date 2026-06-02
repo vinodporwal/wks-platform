@@ -214,6 +214,7 @@ export const DataService = {
   getConfigurationExcelConstantsIsCatChem,
   saveConfigurationExcelConstantsIscatCam,
   getCatChemConsumptionExcel,
+  calculateChemicalVMDConfiguration,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -4890,7 +4891,12 @@ async function saveConfigurationExcelConstantsIscatCam(
     return await Promise.reject(e)
   }
 }
-async function getCatChemConsumptionExcel(keycloak, PLANT_ID, AOP_YEAR, EXCEL_EXPORT_TITLE) {
+async function getCatChemConsumptionExcel(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_EXPORT_TITLE,
+) {
   const url = `${Config.CaseEngineUrl}/task/cat-chem-export-all-grades?year=${AOP_YEAR}&plantId=${PLANT_ID}`
 
   const headers = {
@@ -4920,5 +4926,24 @@ async function getCatChemConsumptionExcel(keycloak, PLANT_ID, AOP_YEAR, EXCEL_EX
   } catch (e) {
     console.error('Error exporting data:', e)
     return Promise.reject(e)
+  }
+}
+async function calculateChemicalVMDConfiguration(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url = `${Config.CaseEngineUrl}/task/load-configuration?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }

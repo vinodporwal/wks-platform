@@ -51,6 +51,8 @@ const SelectivityData = (props) => {
   const lowerVertName = vertName?.toLowerCase()
   const SiteName = siteObject?.name
   const lowerSiteName = SiteName?.toLowerCase()
+  const PlantName = plantObject?.name
+  const lowerPlantName = PlantName?.toLowerCase()
   const keycloak = useSession()
 
   const { isReleased } = dataGridStore
@@ -61,6 +63,12 @@ const SelectivityData = (props) => {
   const IS_AROMATICS_PMD =
     lowerVertName === 'aromatics' && lowerSiteName === 'pmd'
 
+  const IS_CHEMICAL_VMD_BENEZENEFPUBTA =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'vmd' &&
+    (lowerPlantName === 'benzene' ||
+      lowerPlantName === 'fpu' ||
+      lowerPlantName === 'butadiene')
   const [loading, setLoading] = useState(false)
   const apiRef = useGridApiRef()
   const [open1, setOpen1] = useState(false)
@@ -615,7 +623,13 @@ const SelectivityData = (props) => {
       marginTop: false,
       isHeight: lowerVertName !== 'meg' && props?.rows?.length > 10,
       titleNameExtra: props?.configType === 'ContineGradeChange' ? true : false,
-      enableOnOffDropdown: IS_AROMATICS_PMD
+      enableOnOffDropdown: IS_AROMATICS_PMD,
+      showCalculateVisibility: true,
+      showCalculate:
+        props?.currentTabDisplayName === 'Configuration' &&
+        IS_CHEMICAL_VMD_BENEZENEFPUBTA
+          ? true
+          : false,
     },
     isOldYear,
   )
@@ -847,7 +861,7 @@ const SelectivityData = (props) => {
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Data Saved Falied!',
+          message: 'Data Saved Failed!',
           severity: 'error',
         })
       }
@@ -861,6 +875,45 @@ const SelectivityData = (props) => {
       setLoading(false)
     } finally {
       // fetchData()
+      setLoading(false)
+    }
+  }
+  const handleCalculate = async () => {
+    props?.setRows([]) // ? use props.setRows
+    setLoading(true)
+    try {
+      let data
+      if (
+        IS_CHEMICAL_VMD_BENEZENEFPUBTA &&
+        props?.currentTabDisplayName === 'Configuration'
+      ) {
+        data = await DataService.calculateChemicalVMDConfiguration(
+          // use correct API
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
+      if (data == 0 || data) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        props?.fetchData(gradeId) // ? use props.fetchData
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'Data Refresh Failed!', severity: 'error' })
+      }
+      return data
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+      console.error('Error!', error)
+    } finally {
       setLoading(false)
     }
   }
@@ -996,6 +1049,7 @@ const SelectivityData = (props) => {
           downloadExcelForConfiguration={downloadExcelForConfiguration}
           handleGradeChange={handleGradeChange}
           deleteRowData={deleteRowData}
+          handleCalculate={handleCalculate}
           note={
             adjustedPermissions?.showNote
               ? '*Please load the data again whenever a constant is changed and saved.'
