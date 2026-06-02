@@ -99,7 +99,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
     }
 
     // Specify which keys to exclude from the key-value comparison
-    const excludedKeys = [ 'caseNo', 'textField1', 'saveAsDraft1', 'onSave', 'saveAsDraft', 'analysisSubmit', 'analysisEdit', 'valueRealizationSubmit', 'recommendationFinalSubmit'];
+    const excludedKeys = [ 'caseNo', 'textField1', 'saveAsDraft1', 'onSave', 'saveAsDraft', 'analysisSubmit', 'analysisEdit', 'valueRealizationSubmit', 'recommendationFinalSubmit', 'createdBy'];
 
     if(currentData){
       // Custom comparison logic

@@ -93,7 +93,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     }
   };
   
-  const areObjectsEqualExcludingKeys = (obj1, obj2, keysToExclude) => {
+  const areObjectsEqualExcludingKeys = (obj1, obj2, keysToExclude = []) => {
     const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
     keysToExclude.forEach(key => allKeys.delete(key));
 
@@ -118,7 +118,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     }
 
     // Specify which keys to exclude from the key-value comparison
-    const excludedKeys = [ 'caseNo', 'textField1', 'saveAsDraft1', 'onSave', 'saveAsDraft', 'analysisSubmit', 'analysisEdit', 'valueRealizationSubmit', 'recommendationFinalSubmit'];
+    const excludedKeys = [ 'caseNo', 'textField1', 'saveAsDraft1', 'onSave', 'saveAsDraft', 'analysisSubmit', 'analysisEdit', 'valueRealizationSubmit', 'recommendationFinalSubmit', 'valueRealizationCategory', 'valueRealizationConclusion'];
 
     // Custom comparison logic
     if (!areObjectsEqualExcludingKeys(currentData, submission.data.container, excludedKeys)) {
