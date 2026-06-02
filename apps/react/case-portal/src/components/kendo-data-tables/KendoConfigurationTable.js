@@ -1331,11 +1331,11 @@ const ConfigurationTable = () => {
   ) {
     // const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
     const megTabs = IS_CHEMICAL_VMD_BUTADIENE
-      ? ['Configuration', 'Constants']
+      ? ['Configuration', 'Constants', 'Report Manual Entry']
       : IS_CHEMICAL_DMD ||
           (IS_CHEMICAL_VMD &&
             !(plantObject?.name?.toUpperCase() === 'BUTADIENE'))
-        ? ['Configuration', 'Constants']
+        ? ['Configuration', 'Constants', 'Report Manual Entry']
         : [
             'Configuration',
             'Constants',
