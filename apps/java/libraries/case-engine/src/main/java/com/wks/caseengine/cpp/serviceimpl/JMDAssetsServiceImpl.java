@@ -19,6 +19,7 @@ import org.apache.poi.ss.usermodel.DataValidationConstraint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,10 +30,13 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -46,6 +50,9 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
 
     @Autowired
     private com.wks.caseengine.cpp.repository.CPPSteamAssetsOperationalHoursRepository steamRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Override
     public AOPMessageVM getOperationalHoursForPlants(
@@ -233,6 +240,12 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                 logger.info("[POST Service] No steam operational hours to process");
             }
 
+            // Sync linked GT/HRSG operational hours
+            int cascadeSynced = syncLinkedOperationalHours(payload, financialYear);
+            if (cascadeSynced > 0) {
+                logger.info("[POST Service] Cascade-synced {} linked operational hours records", cascadeSynced);
+            }
+
             Map<String, Object> data = new HashMap<>();
             data.put("powerAssetsSaved", powerSaved);
             data.put("steamAssetsSaved", steamSaved);
@@ -240,6 +253,7 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
             data.put("powerAssetsSkipped", powerSkipped);
             data.put("steamAssetsSkipped", steamSkipped);
             data.put("totalSkipped", powerSkipped + steamSkipped);
+            data.put("cascadeSynced", cascadeSynced);
             
             if (!missingIdRecords.isEmpty()) {
                 data.put("skippedRecords", missingIdRecords);
@@ -336,6 +350,143 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         CPPSteamAssetsOperationalHours saved = steamRepository.save(entity);
         logger.debug("[POST Service - Steam] Successfully updated entity with ID: {} - Monthly hours and remarks updated", saved.getId());
         return true;
+    }
+
+    /**
+     * Sync operational hours between linked GT (Power) and HRSG (Steam) assets.
+     * If a GT is modified, all linked HRSGs get the same values.
+     * If an HRSG is modified (without its GT), the GT and all sibling HRSGs get the same values.
+     * Requires CPPSteamGenerationAsset.LinkedPowerAsset_FK_ID column.
+     */
+    private int syncLinkedOperationalHours(JMDOperationalHoursRequestDTO payload, String financialYear) {
+        int cascadeCount = 0;
+        Set<String> processedGroups = new HashSet<>();
+
+        // Index modified power records by plantId:assetFkId
+        Map<String, CPPAssetOperationalHoursResponseDto> modifiedPowerByKey = new HashMap<>();
+        if (payload.getPowerResponse() != null) {
+            for (CPPAssetOperationalHoursResponseDto dto : payload.getPowerResponse()) {
+                if (dto.getAssetFkId() != null && dto.getPlantFkId() != null) {
+                    modifiedPowerByKey.put(dto.getPlantFkId() + ":" + dto.getAssetFkId(), dto);
+                }
+            }
+        }
+
+        // Index modified steam records by plantId:assetFkId
+        Map<String, CPPAssetOperationalHoursResponseDto> modifiedSteamByKey = new HashMap<>();
+        if (payload.getSteamResponse() != null) {
+            for (CPPAssetOperationalHoursResponseDto dto : payload.getSteamResponse()) {
+                if (dto.getAssetFkId() != null && dto.getPlantFkId() != null) {
+                    modifiedSteamByKey.put(dto.getPlantFkId() + ":" + dto.getAssetFkId(), dto);
+                }
+            }
+        }
+
+        // Gather all plantIds involved
+        Set<UUID> plantIds = new HashSet<>();
+        modifiedPowerByKey.values().forEach(d -> plantIds.add(d.getPlantFkId()));
+        modifiedSteamByKey.values().forEach(d -> plantIds.add(d.getPlantFkId()));
+
+        for (UUID plantId : plantIds) {
+            // Load all GT operational hour records for this plant+year
+            List<CPPAssetOperationalHours> gtRecords;
+            try {
+                gtRecords = repository.findByPlantFkIdAndAopYear(plantId, financialYear);
+            } catch (Exception e) {
+                logger.warn("[Sync] Could not load GT records for plant {} year {}: {}", plantId, financialYear, e.getMessage());
+                continue;
+            }
+
+            for (CPPAssetOperationalHours gtRecord : gtRecords) {
+                UUID gtAssetId = gtRecord.getAssetFkId();
+                if (gtAssetId == null) continue;
+
+                String groupKey = plantId + ":" + gtAssetId;
+                if (processedGroups.contains(groupKey)) continue;
+
+                // Find HRSGs linked to this GT via CPPSteamGenerationAsset.LinkedPowerAsset_FK_ID
+                List<UUID> linkedHrsgIds;
+                try {
+                    linkedHrsgIds = jdbcTemplate.queryForList(
+                            "SELECT AssetId FROM [RIL.AOP].[dbo].[CPPSteamGenerationAsset] WITH(NOLOCK) " +
+                            "WHERE LinkedPowerAsset_FK_ID = ? AND CPPPLANT_FK_Id = ?",
+                            UUID.class, gtAssetId, plantId);
+                } catch (Exception ex) {
+                    logger.warn("[Sync] Could not query linked HRSGs for GT {} plant {}: {}", gtAssetId, plantId, ex.getMessage());
+                    continue;
+                }
+
+                if (linkedHrsgIds == null || linkedHrsgIds.isEmpty()) continue;
+
+                boolean gtModified = modifiedPowerByKey.containsKey(groupKey);
+                boolean anyHrsgModified = linkedHrsgIds.stream()
+                        .anyMatch(id -> modifiedSteamByKey.containsKey(plantId + ":" + id));
+
+                // Skip this group if nothing in it was modified
+                if (!gtModified && !anyHrsgModified) continue;
+                processedGroups.add(groupKey);
+
+                // Determine source-of-truth monthly values
+                Double sourceApr, sourceMay, sourceJun, sourceJul, sourceAug, sourceSep;
+                Double sourceOct, sourceNov, sourceDec, sourceJan, sourceFeb, sourceMar;
+                String sourceRemarks;
+
+                if (gtModified) {
+                    CPPAssetOperationalHoursResponseDto src = modifiedPowerByKey.get(groupKey);
+                    sourceApr = src.getApr(); sourceMay = src.getMay(); sourceJun = src.getJun();
+                    sourceJul = src.getJul(); sourceAug = src.getAug(); sourceSep = src.getSep();
+                    sourceOct = src.getOct(); sourceNov = src.getNov(); sourceDec = src.getDec();
+                    sourceJan = src.getJan(); sourceFeb = src.getFeb(); sourceMar = src.getMar();
+                    sourceRemarks = src.getRemarks();
+                } else {
+                    UUID srcHrsgId = linkedHrsgIds.stream()
+                            .filter(id -> modifiedSteamByKey.containsKey(plantId + ":" + id))
+                            .findFirst().orElse(null);
+                    CPPAssetOperationalHoursResponseDto src = modifiedSteamByKey.get(plantId + ":" + srcHrsgId);
+                    sourceApr = src.getApr(); sourceMay = src.getMay(); sourceJun = src.getJun();
+                    sourceJul = src.getJul(); sourceAug = src.getAug(); sourceSep = src.getSep();
+                    sourceOct = src.getOct(); sourceNov = src.getNov(); sourceDec = src.getDec();
+                    sourceJan = src.getJan(); sourceFeb = src.getFeb(); sourceMar = src.getMar();
+                    sourceRemarks = src.getRemarks();
+                }
+
+                // Update GT if it wasn't the source of truth
+                if (!gtModified) {
+                    gtRecord.setApr(sourceApr); gtRecord.setMay(sourceMay); gtRecord.setJun(sourceJun);
+                    gtRecord.setJul(sourceJul); gtRecord.setAug(sourceAug); gtRecord.setSep(sourceSep);
+                    gtRecord.setOct(sourceOct); gtRecord.setNov(sourceNov); gtRecord.setDec(sourceDec);
+                    gtRecord.setJan(sourceJan); gtRecord.setFeb(sourceFeb); gtRecord.setMar(sourceMar);
+                    gtRecord.setRemarks(sourceRemarks);
+                    gtRecord.setModifiedDate(LocalDateTime.now());
+                    repository.save(gtRecord);
+                    cascadeCount++;
+                    logger.info("[Sync] Updated GT {} to match linked HRSG values", gtAssetId);
+                }
+
+                // Update all linked HRSGs
+                for (UUID hrsgId : linkedHrsgIds) {
+                    Optional<CPPSteamAssetsOperationalHours> hrsgOpt =
+                            steamRepository.findBySteamAssetFkIdAndPlantFkIdAndAopYear(hrsgId, plantId, financialYear);
+                    if (hrsgOpt.isPresent()) {
+                        CPPSteamAssetsOperationalHours hrsg = hrsgOpt.get();
+                        hrsg.setApr(sourceApr); hrsg.setMay(sourceMay); hrsg.setJun(sourceJun);
+                        hrsg.setJul(sourceJul); hrsg.setAug(sourceAug); hrsg.setSep(sourceSep);
+                        hrsg.setOct(sourceOct); hrsg.setNov(sourceNov); hrsg.setDec(sourceDec);
+                        hrsg.setJan(sourceJan); hrsg.setFeb(sourceFeb); hrsg.setMar(sourceMar);
+                        hrsg.setRemarks(sourceRemarks);
+                        hrsg.setUpdatedDate(LocalDateTime.now());
+                        steamRepository.save(hrsg);
+                        cascadeCount++;
+                        logger.info("[Sync] Updated HRSG {} to match GT {} values", hrsgId, gtAssetId);
+                    } else {
+                        logger.warn("[Sync] No operational hours record found for HRSG {} plant {} year {}",
+                                hrsgId, plantId, financialYear);
+                    }
+                }
+            }
+        }
+
+        return cascadeCount;
     }
 
     @Override

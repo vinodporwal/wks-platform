@@ -8,10 +8,15 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface CPPAssetOperationalHoursRepository extends JpaRepository<CPPAssetOperationalHours, UUID> {
+
+    Optional<CPPAssetOperationalHours> findByAssetFkIdAndPlantFkIdAndAopYear(UUID assetFkId, UUID plantFkId, String aopYear);
+
+    List<CPPAssetOperationalHours> findByPlantFkIdAndAopYear(UUID plantFkId, String aopYear);
 
     @Query(value = """
         WITH Combined AS (
