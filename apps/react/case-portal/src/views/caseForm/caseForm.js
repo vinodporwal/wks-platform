@@ -1425,7 +1425,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       .join('')
   }
 
-  const generatePrintContent = (aCase, structure) => {
+  const generatePrintContent = (aCase, structure, uploadedDocuments, base64Map = {}) => {
     const containerData = JSON.parse(
       aCase.attributes.find((attr) => attr.name === 'container').value,
     )
@@ -1499,17 +1499,17 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           <ul style="list-style: none; padding: 0; margin: 0;">
             ${files
           .map(
-            (file, index) => `
+            (file, index) => {
+              const src = base64Map[file.name] || `${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}`
+              return `
                   <li style="margin-bottom: 16px;">
                     <img 
-              src="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(
-                file.name
-              )}?content-type=${encodeURIComponent(file.type)}"
+                      src="${src}"
                       alt="${file.name}"
                       style="max-width: 100%; height: auto;"
                     />
-                  </li>
-    `
+                  </li>`
+            }
           )
           .join('')}
           </ul>
@@ -1549,18 +1549,21 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       <h3 style="margin-bottom: 10px;">Uploaded Files</h3>
       <ul style="list-style: none; padding: 0; margin: 0;">
         ${uploadedFiles
-          .map(
-            (file, index) => `
-                  <li style="margin-bottom: 16px;">
-                    <a 
-                href="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(
-                  file.name
-                )}?content-type=${encodeURIComponent(file.type)}"
-                      target="_blank"
-                    >${file.name}</a>
-              </li>
-                `
-          )
+          .map((file) => {
+            const fileUrl = `${Config.StorageUrl}/storage/files1/${file.dir || 'cases'}/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}`
+            const isImage = file.type && file.type.startsWith('image/')
+            const src = isImage ? (base64Map[file.name] || fileUrl) : fileUrl
+            return `
+              <li style="margin-bottom: 16px;">
+                ${isImage
+                  ? `<div>
+                      <p style="margin: 0 0 6px 0; font-size: 13px; color: #555;">${file.name}</p>
+                      <img src="${src}" alt="${file.name}" style="max-width: 100%; height: auto; border: 1px solid #e0e0e0;" />
+                    </div>`
+                  : `<a href="${fileUrl}" target="_blank">${file.name}</a>`
+                }
+              </li>`
+          })
           .join('')}
       </ul>
       </div>
@@ -1572,9 +1575,49 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     return content
   }
 
+  // Fetch an image with auth and return a base64 data URL
+  const fetchImageAsBase64 = async (url) => {
+    try {
+      const resp = await fetch(url, {
+        headers: { Authorization: `Bearer ${keycloak.token}` },
+      })
+      if (!resp.ok) return null
+      const blob = await resp.blob()
+      return new Promise((resolve) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result)
+        reader.onerror = () => resolve(null)
+        reader.readAsDataURL(blob)
+      })
+    } catch {
+      return null
+    }
+  }
+
   // Print function
-  const printCaseDetails = () => {
-    const printContent = generatePrintContent(aCase, formStructure, documents);
+  const printCaseDetails = async () => {
+    const containerData = JSON.parse(
+      aCase.attributes.find((attr) => attr.name === 'container').value,
+    )
+
+    // Collect all image files from both Analysis and Uploaded Files sections
+    const analysisFiles = Array.isArray(containerData.file) ? containerData.file : []
+    const uploadedFiles = Array.isArray(containerData.file) ? containerData.file : []
+    const allImageFiles = [...analysisFiles, ...uploadedFiles].filter(
+      (f, i, arr) => f.type && f.type.startsWith('image/') && arr.findIndex(x => x.name === f.name) === i
+    )
+
+    // Pre-fetch all images as base64
+    const base64Map = {}
+    await Promise.all(
+      allImageFiles.map(async (file) => {
+        const url = `${Config.StorageUrl}/storage/files1/${file.dir || 'cases'}/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}`
+        const b64 = await fetchImageAsBase64(url)
+        if (b64) base64Map[file.name] = b64
+      })
+    )
+
+    const printContent = generatePrintContent(aCase, formStructure, documents, base64Map);
 
     const ssetName =
       formData?.data?.container?.textField1 || "Asset";

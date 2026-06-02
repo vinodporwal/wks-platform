@@ -132,7 +132,7 @@ function CustomToolbar({ searchText, onSearchChange, caseStatusFilter, onCaseSta
           variant="outlined"
           size="small"
           onClick={onClear}
-          sx={{ borderColor: '#e0e0e0', color: '#666' }}
+          sx={{ borderColor: '#e0e0e0', color: '#666', marginTop:'20px' }}
         >
           Clear
         </Button>
