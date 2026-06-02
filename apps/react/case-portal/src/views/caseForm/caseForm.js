@@ -1433,7 +1433,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     console.log('labelMap', labelMap)
     const getLabel = (key) => labelMap[key] || key || ''
 
-    const uploadedFiles = aCase.documents || []
+    // Files are stored inside the container attribute JSON by formio — same source as the detail page
+    const uploadedFiles = Array.isArray(containerData.file) ? containerData.file : []
 
     let content = `
     <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #333;">
@@ -1573,7 +1574,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
   // Print function
   const printCaseDetails = () => {
-    const printContent = generatePrintContent(aCase, formStructure);
+    const printContent = generatePrintContent(aCase, formStructure, documents);
 
     const ssetName =
       formData?.data?.container?.textField1 || "Asset";

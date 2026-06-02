@@ -176,9 +176,23 @@ public class CaseDefinitionController {
 			@RequestParam String assetName,
 			@RequestParam String hierarchyName,
 			@RequestParam(required = false) String search,
-			@RequestParam(required = false) String caseStatus) {
-		List<Case> cases = caseDefinitionService.filterCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName, search, caseStatus);
+			@RequestParam(required = false) String caseStatus,
+			@RequestParam(defaultValue = "10") int limit,
+			@RequestParam(defaultValue = "0") int offset) {
+		List<Case> cases = caseDefinitionService
+				.filterCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName, search, caseStatus, limit, offset);
 		return ResponseEntity.ok(cases);
+	}
+
+	@GetMapping("/cases/{caseDefinitionId}/count")
+	public ResponseEntity<Long> countCasesByCaseDefinition(
+			@PathVariable("caseDefinitionId") String caseDefinitionId,
+			@RequestParam String assetName,
+			@RequestParam String hierarchyName,
+			@RequestParam(required = false) String search,
+			@RequestParam(required = false) String caseStatus) {
+		long count = caseDefinitionService.countCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName, search, caseStatus);
+		return ResponseEntity.ok(count);
 	}
 	
 	@GetMapping("/cases")

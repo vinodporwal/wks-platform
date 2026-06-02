@@ -86,39 +86,45 @@ function CustomToolbar({ searchText, onSearchChange, caseStatusFilter, onCaseSta
   return (
     <GridToolbarContainer sx={{ p: 1, gap: 1, flexWrap: 'wrap' }}>
       {/* Search */}
-      <input
-        value={searchText}
-        onChange={(e) => onSearchChange(e.target.value)}
-        placeholder="Search..."
-        style={{
-          width: 300,
-          border: '1px solid #e0e0e0',
-          borderRadius: '4px',
-          padding: '6px 10px',
-          fontSize: '14px',
-          outline: 'none',
-        }}
-      />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <label style={{ fontSize: '12px', fontWeight: 600, color: '#666', marginBottom: '2px' }}>Search Case Details</label>
+        <input
+          value={searchText}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Search..."
+          style={{
+            width: 300,
+            border: '1px solid #e0e0e0',
+            borderRadius: '4px',
+            padding: '6px 10px',
+            fontSize: '14px',
+            outline: 'none',
+          }}
+        />
+      </div>
 
       {/* Case Status Filter */}
-      <select
-        value={caseStatusFilter}
-        onChange={(e) => onCaseStatusChange(e.target.value)}
-        style={{
-          border: '1px solid #e0e0e0',
-          borderRadius: '4px',
-          padding: '6px 10px',
-          fontSize: '14px',
-          outline: 'none',
-          backgroundColor: '#fff',
-          cursor: 'pointer',
-        }}
-      >
-        <option value="">All Statuses</option>
-        {caseStatusOptions.map((opt) => (
-          <option key={opt.value} value={opt.value}>{opt.label}</option>
-        ))}
-      </select>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <label style={{ fontSize: '12px', fontWeight: 600, color: '#666', marginBottom: '2px' }}>Filter by Case Status</label>
+        <select
+          value={caseStatusFilter}
+          onChange={(e) => onCaseStatusChange(e.target.value)}
+          style={{
+            border: '1px solid #e0e0e0',
+            borderRadius: '4px',
+            padding: '6px 10px',
+            fontSize: '14px',
+            outline: 'none',
+            backgroundColor: '#fff',
+            cursor: 'pointer',
+          }}
+        >
+          <option value="">All Status</option>
+          {caseStatusOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
 
       {/* Clear button — only shown when filters are active */}
       {hasFilters && (
@@ -175,6 +181,17 @@ export const CaseList = ({ status, caseDefId }) => {
   const [searchText, setSearchText] = useState('')
   const [caseStatusFilter, setCaseStatusFilter] = useState('')
   const searchDebounceRef = React.useRef(null)
+  const [totalCount, setTotalCount] = useState(0)
+  const [page, setPage] = useState(0)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+
+  const getUrlParams = () => {
+    const searchParams = new URLSearchParams(window.location.search)
+    return {
+      assetName: searchParams.get('assetName') || '',
+      hierarchyName: searchParams.get('hierarchyName') || '',
+    }
+  }
 
 
   useEffect(() => {
@@ -183,38 +200,21 @@ export const CaseList = ({ status, caseDefId }) => {
       const topic = Config.WebsocketsTopicCaseCreated
       const ws = new WebSocket(`${websocketUrl}/${topic}`)
       ws.onmessage = () => {
-        fetchCases(
-          setFetching,
-          keycloak,
-          caseDefId,
-          setStages,
-          status,
-          filter,
-          setCases,
-          setFilter,
-          setACase,
-          setOpenCaseForm,
-        )
+        const { assetName, hierarchyName } = getUrlParams()
+        fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, searchText, caseStatusFilter, rowsPerPage, page * rowsPerPage, setTotalCount)
       }
       return () => {
-        ws.close() // Close WebSocket connection when component unmounts
+        ws.close()
       }
     }
   }, [])
 
   useEffect(() => {
-    fetchCases(
-      setFetching,
-      keycloak,
-      caseDefId,
-      setStages,
-      status,
-      filter,
-      setCases,
-      setFilter,
-      setACase,
-      setOpenCaseForm,
-    )
+    const { assetName, hierarchyName } = getUrlParams()
+    fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, '', '', rowsPerPage, 0, setTotalCount)
+    setPage(0)
+    setSearchText('')
+    setCaseStatusFilter('')
   }, [caseDefId, status, openNewCaseForm])
 
   useEffect(() => {
@@ -434,18 +434,8 @@ export const CaseList = ({ status, caseDefId }) => {
 
   const handleCloseCaseForm = () => {
     setOpenCaseForm(false)
-    fetchCases(
-      setFetching,
-      keycloak,
-      caseDefId,
-      setStages,
-      status,
-      filter,
-      setCases,
-      setFilter,
-      setACase,
-      setOpenCaseForm,
-    )
+    const { assetName, hierarchyName } = getUrlParams()
+    fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, searchText, caseStatusFilter, rowsPerPage, page * rowsPerPage, setTotalCount)
   }
 
   const handleCloseNewCaseForm = () => {
@@ -470,25 +460,25 @@ export const CaseList = ({ status, caseDefId }) => {
     setSearchText(value)
     clearTimeout(searchDebounceRef.current)
     searchDebounceRef.current = setTimeout(() => {
-      const searchParams = new URLSearchParams(window.location.search)
-      const assetName = searchParams.get('assetName') || ''
-      const hierarchyName = searchParams.get('hierarchyName') || ''
-      fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, value, caseStatusFilter)
+      const { assetName, hierarchyName } = getUrlParams()
+      setPage(0)
+      fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, value, caseStatusFilter, rowsPerPage, 0, setTotalCount)
     }, 400)
   }
 
   const handleCaseStatusChange = (value) => {
     setCaseStatusFilter(value)
-    const searchParams = new URLSearchParams(window.location.search)
-    const assetName = searchParams.get('assetName') || ''
-    const hierarchyName = searchParams.get('hierarchyName') || ''
-    fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, searchText, value)
+    const { assetName, hierarchyName } = getUrlParams()
+    setPage(0)
+    fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, searchText, value, rowsPerPage, 0, setTotalCount)
   }
 
   const handleClear = () => {
     setSearchText('')
     setCaseStatusFilter('')
-    fetchCases(setFetching, keycloak, caseDefId, setStages, status, filter, setCases, setFilter)
+    setPage(0)
+    const { assetName, hierarchyName } = getUrlParams()
+    fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, '', '', rowsPerPage, 0, setTotalCount)
   }
 
   const handleExportCsv = async () => {
@@ -667,57 +657,27 @@ export const CaseList = ({ status, caseDefId }) => {
 
   const CustomPagination = () => {
     return (
-      <PaginationContext.Provider value={filter}>
-        <TablePagination
-          component='div'
-          count={-1}
-          page={0}
-          labelRowsPerPage={
-            <div style={{ paddingTop: 15 }}>Rows per page:</div>
-          }
-          rowsPerPage={filter.limit}
-          rowsPerPageOptions={[5, 10, 25, 50]}
-          getItemAriaLabel={() => ''}
-          labelDisplayedRows={() => ''}
-          onPageChange={(e, type) => {
-            const action = {
-              next: handlerNextPage,
-              back: handlerPriorPage,
-            }
-            action[type]()
-          }}
-          onRowsPerPageChange={(e) => {
-            setFetching(true)
-
-            CaseService.filterCase(keycloak, caseDefId, status, {
-              limit: e.target.value,
-            })
-              .then((resp) => {
-                const { data, paging } = resp
-
-                console.log('Setting case 333')
-                setCases(data)
-                setFilter({
-                  ...filter,
-                  limit: e.target.value,
-                  cursors: paging.cursors,
-                  hasPrevious: paging.hasPrevious,
-                  hasNext: paging.hasNext,
-                })
-              })
-              .finally(() => {
-                setFetching(false)
-              })
-          }}
-          SelectProps={{
-            inputProps: {
-              'aria-label': 'rows per page',
-            },
-            native: true,
-          }}
-          ActionsComponent={TablePaginationActions}
-        />
-      </PaginationContext.Provider>
+      <TablePagination
+        component='div'
+        count={totalCount}
+        page={page}
+        labelRowsPerPage={<div style={{ paddingTop: 15 }}>Rows per page:</div>}
+        rowsPerPage={rowsPerPage}
+        rowsPerPageOptions={[5, 10, 25, 50]}
+        onPageChange={(e, newPage) => {
+          setPage(newPage)
+          const { assetName, hierarchyName } = getUrlParams()
+          fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, searchText, caseStatusFilter, rowsPerPage, newPage * rowsPerPage, setTotalCount)
+        }}
+        onRowsPerPageChange={(e) => {
+          const newLimit = parseInt(e.target.value, 10)
+          setRowsPerPage(newLimit)
+          setPage(0)
+          const { assetName, hierarchyName } = getUrlParams()
+          fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, searchText, caseStatusFilter, newLimit, 0, setTotalCount)
+        }}
+        SelectProps={{ inputProps: { 'aria-label': 'rows per page' }, native: true }}
+      />
     )
   }
 
@@ -1028,10 +988,13 @@ function fetchCases(
     })
 }
 
-function fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, search, caseStatus) {
+function fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, search, caseStatus, limit, offset, setTotalCount) {
   setFetching(true)
-  CaseService.filterCasesByCaseDefinitionId(keycloak, caseDefId, assetName, hierarchyName, search, caseStatus)
-    .then((data) => {
+  Promise.all([
+    CaseService.filterCasesByCaseDefinitionId(keycloak, caseDefId, assetName, hierarchyName, search, caseStatus, limit, offset),
+    CaseService.countCasesByCaseDefinitionId(keycloak, caseDefId, assetName, hierarchyName, search, caseStatus),
+  ])
+    .then(([data, total]) => {
       const updatedCases = data.map((singleCase) => {
         let caseTitle = ''
         let caseNumber = ''
@@ -1048,6 +1011,7 @@ function fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName
         return { ...singleCase, caseTitle, caseNumber }
       })
       setCases(updatedCases)
+      if (setTotalCount) setTotalCount(total)
     })
     .catch((e) => console.error('Filter error:', e))
     .finally(() => setFetching(false))

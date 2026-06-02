@@ -1234,6 +1234,10 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 	@Override
 	public List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus) {
+		return filterCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName, search, caseStatus, 10, 0);
+	}
+
+	public List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus, int limit, int offset) {
 		StringBuilder query = new StringBuilder(
 			"SELECT c.* FROM [CaseManagement].[dbo].[Cases] c " +
 			"WHERE c.caseDefinitionId = :caseDefinitionId " +
@@ -1259,8 +1263,51 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		}
 
 		query.append(" ORDER BY c.case_no DESC");
+		query.append(" OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY");
 
 		Query nativeQuery = entityManager.createNativeQuery(query.toString(), Case.class);
+		nativeQuery.setParameter("caseDefinitionId", caseDefinitionId);
+		nativeQuery.setParameter("assetName", assetName);
+		nativeQuery.setParameter("hierarchyName", hierarchyName);
+		nativeQuery.setParameter("offset", offset);
+		nativeQuery.setParameter("limit", limit);
+		if (hasSearch) {
+			nativeQuery.setParameter("search", "%" + search + "%");
+		}
+		if (hasCaseStatus) {
+			nativeQuery.setParameter("caseStatus", Long.parseLong(caseStatus));
+		}
+
+		return nativeQuery.getResultList();
+	}
+
+	@Override
+	public long countCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus) {
+		StringBuilder query = new StringBuilder(
+			"SELECT COUNT(*) FROM [CaseManagement].[dbo].[Cases] c " +
+			"WHERE c.caseDefinitionId = :caseDefinitionId " +
+			"AND TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
+				"SELECT hn.HierarchyNode_PK_ID " +
+				"FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
+				"JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
+				"ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
+				"WHERE hn.IsDeleted = 0 " +
+				"AND hn.Path LIKE CONCAT('%', :assetName, '%') " +
+				"AND ht.HierarchyType = :hierarchyName" +
+			")"
+		);
+
+		boolean hasSearch = search != null && !search.isBlank();
+		boolean hasCaseStatus = caseStatus != null && !caseStatus.isBlank();
+
+		if (hasSearch) {
+			query.append(" AND (c.case_no LIKE :search OR c.path LIKE :search OR c.asset_name LIKE :search OR c.attributes LIKE :search)");
+		}
+		if (hasCaseStatus) {
+			query.append(" AND c.status_id = :caseStatus");
+		}
+
+		Query nativeQuery = entityManager.createNativeQuery(query.toString());
 		nativeQuery.setParameter("caseDefinitionId", caseDefinitionId);
 		nativeQuery.setParameter("assetName", assetName);
 		nativeQuery.setParameter("hierarchyName", hierarchyName);
@@ -1271,7 +1318,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			nativeQuery.setParameter("caseStatus", Long.parseLong(caseStatus));
 		}
 
-		return nativeQuery.getResultList();
+		Object result = nativeQuery.getSingleResult();
+		return ((Number) result).longValue();
 	}
 	
 	@Override
@@ -1905,6 +1953,11 @@ private byte[] generateExcel(List<Case> cases) {
 
         Sheet sheet = workbook.createSheet("Cases");
 
+        // Create a date cell style
+        CellStyle dateCellStyle = workbook.createCellStyle();
+        CreationHelper createHelper = workbook.getCreationHelper();
+        dateCellStyle.setDataFormat(createHelper.createDataFormat().getFormat("dd-mm-yyyy hh:mm"));
+
         String[] headers = {
                 "Case No",
                 "Case Title",
@@ -1928,12 +1981,10 @@ private byte[] generateExcel(List<Case> cases) {
 
             Row row = sheet.createRow(rowNum++);
 
-            
             row.createCell(0).setCellValue(
                     c.getCaseNo() == null ? "" : c.getCaseNo()
             );
 
-            
             String caseTitle = "";
             String mainAsset = "";
 
@@ -1947,8 +1998,6 @@ private byte[] generateExcel(List<Case> cases) {
                     JsonNode root = mapper.readTree(attr);
 
                     caseTitle = root.path("caseTitle").asText("");
-
-                    // If Main Asset stored inside JSON
                     mainAsset = root.path("textField1").asText("");
                 }
 
@@ -1958,44 +2007,51 @@ private byte[] generateExcel(List<Case> cases) {
 
             row.createCell(1).setCellValue(caseTitle);
 
-            
             row.createCell(2).setCellValue(
                     c.getPath() == null ? "" : c.getPath()
             );
 
-            
-            
             String finalAsset = mainAsset.isEmpty()
                     ? (c.getAssetName() == null ? "" : c.getAssetName())
                     : mainAsset;
 
             row.createCell(3).setCellValue(finalAsset);
 
-            
             row.createCell(4).setCellValue(
                     c.getStatus() != null && c.getStatus().getName() != null
                             ? c.getStatus().getName()
                             : ""
             );
 
-            
             row.createCell(5).setCellValue(
                     "y".equalsIgnoreCase(c.getIsDraft())
                             ? "Draft"
                             : "Submitted"
             );
 
-            
             row.createCell(6).setCellValue(
                     c.getAssignedTo() != null && c.getAssignedTo().getUserId() != null
                             ? c.getAssignedTo().getUserId()
                             : ""
             );
 
-            
-            row.createCell(7).setCellValue(
-                    c.getCreationDate() == null ? "" : c.getCreationDate()
-            );
+            // Write Created On as a proper Excel date cell
+            Cell dateCell = row.createCell(7);
+            if (c.getCreationDate() != null && !c.getCreationDate().isEmpty()) {
+                try {
+                    java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(
+                            c.getCreationDate(),
+                            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+                    );
+                    dateCell.setCellValue(java.util.Date.from(
+                            ldt.atZone(java.time.ZoneId.systemDefault()).toInstant()
+                    ));
+                    dateCell.setCellStyle(dateCellStyle);
+                } catch (Exception e) {
+                    // Fallback to string if parsing fails
+                    dateCell.setCellValue(c.getCreationDate());
+                }
+            }
         }
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

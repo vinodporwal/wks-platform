@@ -236,10 +236,8 @@ public class FetchRecordsServiceImpl {
 	public List<FunctionalLocation> getFunctionalLocations(String dbName, String assetName) {
 		try {
 			String sql = "SELECT DISTINCT e.Description " +
-					"FROM [" + dbName + "].[dbo].EquipmentTypes et " +
-					"JOIN [" + dbName + "].[dbo].Equipments e " +
-					"  ON e.EquipmentType_PK_ID = et.EquipmentType_PK_ID " +
-					"WHERE LOWER(REPLACE(et.DisplayName, ' ', '')) = LOWER(REPLACE(?, ' ', '')) " +
+					"FROM [" + dbName + "].[dbo].Equipments e " +
+					"WHERE e.Description LIKE  CONCAT('%', ?, '%')" +
 					"  AND e.IsDeleted = 0 " +
 					"  AND e.Description IS NOT NULL " +
 					"  AND e.Description NOT IN ('', 'FL Not Available') " +

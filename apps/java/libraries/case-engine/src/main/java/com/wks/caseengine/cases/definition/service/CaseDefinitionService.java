@@ -89,6 +89,10 @@ public interface CaseDefinitionService {
 
 	List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus);
 
+	List<Case> filterCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus, int limit, int offset);
+
+	long countCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName, String search, String caseStatus);
+
 	Case savePICase(Case caseData);
 	
 	Case saveValueRealization(Case caseData);

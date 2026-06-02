@@ -9,6 +9,7 @@ export const CaseService = {
   getCaseById,
   filterCase,
   filterCasesByCaseDefinitionId,
+  countCasesByCaseDefinitionId,
   createCase,
   patch,
   addDocuments,
@@ -509,15 +510,16 @@ function capitalizeWords(str) {
               .join(' ');
 }
 
-async function filterCasesByCaseDefinitionId(keycloak, caseDefId, assetName, hierarchyName, search, caseStatus) {
+async function filterCasesByCaseDefinitionId(keycloak, caseDefId, assetName, hierarchyName, search, caseStatus, limit = 10, offset = 0) {
   const params = new URLSearchParams()
   params.append('assetName', assetName || '')
   params.append('hierarchyName', hierarchyName || '')
   if (search) params.append('search', search)
   if (caseStatus) params.append('caseStatus', caseStatus)
+  params.append('limit', limit)
+  params.append('offset', offset)
 
   const url = `${Config.CaseEngineUrl}/case-definition/cases/${caseDefId}/filter?${params.toString()}`
-
   const headers = { Authorization: `Bearer ${keycloak.token}` }
 
   try {
@@ -527,6 +529,25 @@ async function filterCasesByCaseDefinitionId(keycloak, caseDefId, assetName, hie
   } catch (e) {
     console.error(e)
     return await Promise.reject(e)
+  }
+}
+
+async function countCasesByCaseDefinitionId(keycloak, caseDefId, assetName, hierarchyName, search, caseStatus) {
+  const params = new URLSearchParams()
+  params.append('assetName', assetName || '')
+  params.append('hierarchyName', hierarchyName || '')
+  if (search) params.append('search', search)
+  if (caseStatus) params.append('caseStatus', caseStatus)
+
+  const url = `${Config.CaseEngineUrl}/case-definition/cases/${caseDefId}/count?${params.toString()}`
+  const headers = { Authorization: `Bearer ${keycloak.token}` }
+
+  try {
+    const resp = await fetch(url, { headers })
+    return await resp.json()
+  } catch (e) {
+    console.error(e)
+    return 0
   }
 }
 
