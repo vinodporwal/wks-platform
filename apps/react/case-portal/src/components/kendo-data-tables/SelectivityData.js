@@ -58,6 +58,8 @@ const SelectivityData = (props) => {
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
+  const IS_AROMATICS_PMD =
+    lowerVertName === 'aromatics' && lowerSiteName === 'pmd'
 
   const [loading, setLoading] = useState(false)
   const apiRef = useGridApiRef()
@@ -554,7 +556,7 @@ const SelectivityData = (props) => {
 
   const productionColumns = getEnhancedAOPColDefs({
     allGradesReciepes,
-    allProducts,
+    allProducts: props?.rows,
     headerMap: selectedHeaderMap,
     handleRemarkCellClick,
     configType: props?.configType,
@@ -613,6 +615,7 @@ const SelectivityData = (props) => {
       marginTop: false,
       isHeight: lowerVertName !== 'meg' && props?.rows?.length > 10,
       titleNameExtra: props?.configType === 'ContineGradeChange' ? true : false,
+      enableOnOffDropdown: IS_AROMATICS_PMD
     },
     isOldYear,
   )

@@ -4043,7 +4043,8 @@ const KendoDataTables = ({
                           },
                           data: (props) => {
                             // ON/OFF rows: show switch with direct edit mode
-                            if (props.dataItem?.UOM === 'ON/OFF') {
+                            const uomTypes = ['ON/OFF','YES/NO']
+                            if (uomTypes.includes(props.dataItem?.UOM)) {
                               return (
                                 <SwitchEditor
                                   {...props}
@@ -4052,8 +4053,8 @@ const KendoDataTables = ({
                                   customModifiedCells={customModifiedCells}
                                   rowId={props.dataItem.id}
                                   setRows={setRows}
-                                  editable={col?.editable}
-                                  isDisabled={col?.isDisabled}
+                                  editable={props.dataItem?.[`${col.field}_editable`] === false ? false : col?.editable}
+                                  isDisabled={props.dataItem?.[`${col.field}_isDisabled`] ? true : col?.isDisabled}
                                 />
                               )
                             }
