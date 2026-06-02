@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -749,6 +750,32 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			ex.printStackTrace();
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
+	}
+
+	@Override
+	public AOPMessageVM LoadConfigurationValues(String year, String plantId) { 
+  
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		String procedureName = vertical.getName() + "_" + site.getName() + "_LoadConfigurationValues";
+		String sql = "EXEC " + procedureName + " ?, ?";
+
+		Session session = entityManager.unwrap(Session.class);
+		session.doWork(connection -> {
+			PreparedStatement ps = connection.prepareStatement(sql);
+			ps.setObject(1, UUID.fromString(plantId));
+			ps.setObject(2, year);
+			
+			boolean hasResultSet = ps.execute();
+		});
+
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data calculated successfully");
+		aopMessageVM.setData(0);
+		return aopMessageVM;
+
 	}
 
 	public List<ConfigurationDTO> getConfigurationDataForExcel(String year, UUID plantFKId,List<String> reportTypes,String version) {
