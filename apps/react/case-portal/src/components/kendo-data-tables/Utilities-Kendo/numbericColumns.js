@@ -10,19 +10,7 @@ export const NoSpinnerNumericEditor = ({
 }) => {
   const initialValue = dataItem[field] ?? ''
   const [localValue, setLocalValue] = useState(initialValue)
-
-  const onChangeRef = useRef(onChange)
-  const dataItemRef = useRef(dataItem)
-  const fieldRef = useRef(field)
-  const initialValueRef = useRef(initialValue)
   const isFirstRender = useRef(true)
-
-  useEffect(() => {
-    onChangeRef.current = onChange
-    dataItemRef.current = dataItem
-    fieldRef.current = field
-    initialValueRef.current = initialValue
-  })
 
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -50,19 +38,18 @@ export const NoSpinnerNumericEditor = ({
       return
     }
     const handler = setTimeout(() => {
-      if (localValue !== initialValueRef.current) {
-        onChangeRef.current({ dataItem: dataItemRef.current, field: fieldRef.current, value: localValue })
+      if (localValue !== initialValue) {
+        onChange({ dataItem, field, value: localValue })
       }
     }, 300)
     return () => clearTimeout(handler)
-  }, [localValue]) // only re-run when the user actually types
+  }, [localValue, dataItem, field, onChange, initialValue])
 
   return (
     <>
       <InputBase
         value={localValue}
         onChange={handleChange}
-        autoFocus
         autoComplete='off'
         maxLength={maxLength}
         className='input-editor'
@@ -76,4 +63,3 @@ export const NoSpinnerNumericEditor = ({
     </>
   )
 }
-

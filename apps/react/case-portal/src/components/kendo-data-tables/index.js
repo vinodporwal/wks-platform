@@ -96,20 +96,17 @@ import { DashboardColors } from 'themes/colors'
 import SwitchEditor from './Utilities-Kendo/SwitchEditor'
 import { NoSpinnerNumericIntegerEditor } from './Utilities-Kendo/numbericIntegerColumns'
 
-// the input on every parent re-render and the user loses focus mid-typing.
+// A stable editor component to prevent focus loss during table re-renders.
 const ON_OFF_CONDITION = (dataItem) => dataItem?.UOM === 'ON/OFF'
-function makeOnOffSwitchEditCell(itemChange, editable, isDisabled) {
-  return function OnOffSwitchEditCell(props) {
-    return (
-      <SwitchEditor
-        {...props}
-        onChange={(e) => itemChange(e)}
-        condition={ON_OFF_CONDITION}
-        editable={editable}
-        isDisabled={isDisabled}
-      />
-    )
-  }
+const OnOffSwitchEditCell = (props) => {
+  return (
+    <SwitchEditor
+      {...props}
+      condition={ON_OFF_CONDITION}
+      editable={props.column?.editable}
+      isDisabled={props.column?.isDisabled}
+    />
+  )
 }
 
 export const dateFields = [
@@ -1115,20 +1112,6 @@ const KendoDataTables = ({
       )?.length || 0
     )
   }, [columns])
-
-  const onOffSwitchEditCells = useMemo(() => {
-    const map = {}
-    columns?.forEach((col) => {
-      if (col?.type === 'number' && col?.field) {
-        map[col.field] = makeOnOffSwitchEditCell(
-          itemChange,
-          col?.editable,
-          col?.isDisabled,
-        )
-      }
-    })
-    return map
-  }, [columns, itemChange])
 
   const handleAddRow = () => {
     setEdit({})
@@ -3283,7 +3266,7 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.width}
+                        width={setWidth(col?.minWidth || 150)}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}
@@ -3520,7 +3503,7 @@ const KendoDataTables = ({
                             <RemarkCell
                               {...cellProps}
                               allRedCell={allRedCell}
-                              onRemarkClick={col?.editable ? handleRemarkCellClick : () => {}}
+                              onRemarkClick={handleRemarkCellClick}
                               customModifiedCells={customModifiedCells}
                             />
                           ),
@@ -4036,10 +4019,11 @@ const KendoDataTables = ({
                         ${col?.isBold ? 'bold-text' : ''}
                       `}
                         editable={col?.editable ? true : false}
+                        isDisabled={col?.isDisabled}
                         headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: {
-                            text: onOffSwitchEditCells[col.field],
+                            text: OnOffSwitchEditCell,
                           },
                           data: (props) => {
                             // ON/OFF rows: show switch with direct edit mode

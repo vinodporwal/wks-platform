@@ -173,15 +173,16 @@ const CrackerConfig = () => {
       modes: modes,
       uploadExcelBtn:
         currentTabDisplay == 'Constant' ||
-        currentTabDisplay == 'External Streams'
+          currentTabDisplay == 'External Streams'
           ? false
           : true,
       downloadExcelBtn:
         currentTabDisplay == 'Constant' ||
-        currentTabDisplay == 'External Streams'
+          currentTabDisplay == 'External Streams'
           ? false
           : true,
       hideRemarkForNonEditableRows: true,
+      makePagable: currentTabDisplay !== 'Composition',
     },
     isOldYear,
   )

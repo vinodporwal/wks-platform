@@ -628,7 +628,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        supressGridHeight={true}
+        // supressGridHeight={true}
         handleExcelUpload={handleExcelUpload}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         groupBy='Particulars'
