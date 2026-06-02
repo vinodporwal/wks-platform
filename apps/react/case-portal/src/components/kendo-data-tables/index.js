@@ -4053,8 +4053,8 @@ const KendoDataTables = ({
                                   customModifiedCells={customModifiedCells}
                                   rowId={props.dataItem.id}
                                   setRows={setRows}
-                                  editable={col?.editable}
-                                  isDisabled={col?.isDisabled}
+                                  editable={props.dataItem?.[`${col.field}_editable`] === false ? false : col?.editable}
+                                  isDisabled={props.dataItem?.[`${col.field}_isDisabled`] ? true : col?.isDisabled}
                                 />
                               )
                             }

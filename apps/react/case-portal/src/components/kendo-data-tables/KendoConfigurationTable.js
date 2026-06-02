@@ -415,25 +415,33 @@ const ConfigurationTable = () => {
                 const daysInThisMonth = getDaysInMonth(m, AOP_YEAR)
                 if (remaining >= daysInThisMonth) {
                   r[m] = 1
+                  r[`${m}_isDisabled`] = true
+                  r[`${m}_editable`] = false
                   remaining -= daysInThisMonth
                 } else if (remaining > 0) {
                   if (r[m] === 1) {
                     r[m] = 1
+                    r[`${m}_isDisabled`] = true
+                    r[`${m}_editable`] = false
                   } else {
                     r[m] = 0
+                    r[`${m}_isDisabled`] = false
+                    r[`${m}_editable`] = true
                   }
                   remaining = 0
                 } else {
                   // No days left - assign 0, switch is NOT disabled
                   if (r[m] === 1) {
                     r[m] = 1
+                    r[`${m}_isDisabled`] = true
+                    r[`${m}_editable`] = false
                   } else {
                     r[m] = 0
+                    r[`${m}_isDisabled`] = false
+                    r[`${m}_editable`] = true
                   }
                 }
               })
-              r.isDisabled = true
-              r.editable = false
             }
           })
         }
