@@ -5,7 +5,7 @@ import MuiAccordionDetails from '@mui/material/AccordionDetails'
 import MuiAccordionSummary from '@mui/material/AccordionSummary'
 import { styled } from '@mui/material/styles'
 import Notification from 'components/Utilities/Notification'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 // import { CaseService } from 'services/CaseService'
 import { DataService } from 'services/DataService'
@@ -106,9 +106,13 @@ const WorkFlowMerge = () => {
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
-
+  const VERTICAL_NAME = verticalObject?.name
+  const SITE_NAME = siteObject?.name
+  const PLANT_NAME = plantObject?.name
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
+
+  const IS_CRACKER_HMD = VERTICAL_NAME?.toLowerCase() === 'cracker' && SITE_NAME?.toLowerCase() === 'hmd'
 
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
@@ -333,13 +337,14 @@ const WorkFlowMerge = () => {
       }
 
       const payload = postmanData
-
+      const EXCEL_NAME = `ANNUAL_AOP_REPORT_${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}`
       // Await the API call here to ensure completion
       const data = await AOPWorkFlowService.getExcel(
         keycloak,
         payload,
         PLANT_ID,
         AOP_YEAR,
+        EXCEL_NAME
       )
 
       setSnackbarOpen(true)
@@ -776,14 +781,17 @@ const WorkFlowMerge = () => {
 
   const gridVerticals = ['pp', 'pe', 'pet']
 
-  let activeTabs = defaultTabs
-  if (lowerVertName === 'cracker') {
-    activeTabs = crackerTabs
-  } else if (gridVerticals?.includes(lowerVertName)) {
-    activeTabs = customPETabs
-  } else {
-    activeTabs = customMegTabs
-  }
+  const activeTabs = useMemo(() => {
+    if (lowerVertName === 'cracker') {
+      return IS_CRACKER_HMD
+        ? crackerTabs.filter((tab) => tab !== 'Furnace Data')
+        : crackerTabs
+    } else if (gridVerticals?.includes(lowerVertName)) {
+      return customPETabs
+    } else {
+      return customMegTabs
+    }
+  }, [lowerVertName, crackerTabs, customPETabs, customMegTabs, IS_CRACKER_HMD])
   return (
     <div
       style={{
@@ -995,14 +1003,14 @@ const WorkFlowMerge = () => {
                 )}
               </>
             )}
-            {tabIndex === 1 && <OptimizerReport />}
-            {tabIndex === 2 && <BestAchievedReport />}
-            {tabIndex === 3 && <MonthWiseRawData />}
-            {tabIndex === 4 && <FurnaceRawData />}
-            {tabIndex === 5 && <TurnaroundReportCracker />}
+            {activeTabs[tabIndex] === 'Optimizer Input / Output' && <OptimizerReport />}
+            {activeTabs[tabIndex] === 'Month Wise Production Plan (T-16)' && <BestAchievedReport />}
+            {activeTabs[tabIndex] === 'Month Wise Norms' && <MonthWiseRawData />}
+            {activeTabs[tabIndex] === 'Furnace Data' && <FurnaceRawData />}
+            {activeTabs[tabIndex] === 'Turnaround (T-19A)' && <TurnaroundReportCracker />}
 
-            {tabIndex === 6 && <PlantContribution />}
-            {tabIndex === 7 && <PlantContributionLastFourYears />}
+            {activeTabs[tabIndex] === 'Plant Contribution (T-21)' && <PlantContribution />}
+            {activeTabs[tabIndex] === 'Plant Contribution Summary (T-22)' && <PlantContributionLastFourYears />}
           </>
         ) : gridVerticals.includes(lowerVertName) ? (
           <>
