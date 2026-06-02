@@ -933,7 +933,6 @@ const KendoDataTablesReports = ({
                 <Button
                   variant='contained'
                   onClick={handleExport}
-                  disabled={isButtonDisabled || READ_ONLY}
                   className='btn-export'
                   startIcon={
                     <Box
