@@ -75,4 +75,6 @@ public interface ConfigurationService {
 
         public AOPMessageVM deleteCatalystChangeOver(String Id);
 
+        public AOPMessageVM getTankConfiguration(String year, String plantId);
+
 }

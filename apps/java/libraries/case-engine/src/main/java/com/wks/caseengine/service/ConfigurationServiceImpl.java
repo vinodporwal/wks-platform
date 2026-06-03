@@ -66,6 +66,7 @@ import com.wks.caseengine.dto.ExecutionDetailDto;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeDTO;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeRequestDTO;
 import com.wks.caseengine.dto.NormLineRequestDTO;
+import com.wks.caseengine.dto.TankConfigurationDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.NormAttributeTransactionLine;
 import com.wks.caseengine.entity.NormAttributeTransactionReceipe;
@@ -647,6 +648,58 @@ public AOPMessageVM deleteCatalystChangeOver(String Id) {
 		return aopMessageVM;
 	}
 }
+
+@Override	
+public AOPMessageVM getTankConfiguration(String year, String plantId) { 
+
+AOPMessageVM aopMessageVM = new AOPMessageVM();
+
+try {
+	Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+	Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+	Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+	String procedureName = vertical.getName() + "_" + site.getName() + "_GetTankConfiguration";
+	List<Object[]> obj = getTankConfigurationData(year, UUID.fromString(plantId), procedureName);
+
+	List<TankConfigurationDTO> tankConfigurationDTOList = new ArrayList<>();
+	for (Object[] row : obj) {
+		TankConfigurationDTO tankConfigurationDTO = new TankConfigurationDTO();
+		tankConfigurationDTO.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
+		tankConfigurationDTO.setJan(row[1] != null ? Double.parseDouble(row[1].toString()) : 0.0);
+		tankConfigurationDTO.setFeb(row[2] != null ? Double.parseDouble(row[2].toString()) : 0.0);
+		tankConfigurationDTO.setMar(row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0);
+		tankConfigurationDTO.setApr(row[4] != null ? Double.parseDouble(row[4].toString()) : 0.0);
+		tankConfigurationDTO.setMay(row[5] != null ? Double.parseDouble(row[5].toString()) : 0.0);
+		tankConfigurationDTO.setJun(row[6] != null ? Double.parseDouble(row[6].toString()) : 0.0);
+		tankConfigurationDTO.setJul(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
+		tankConfigurationDTO.setAug(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
+		tankConfigurationDTO.setSep(row[9] != null ? Double.parseDouble(row[9].toString()) : 0.0);
+		tankConfigurationDTO.setOct(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
+		tankConfigurationDTO.setNov(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
+		tankConfigurationDTO.setDec(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
+		tankConfigurationDTO.setRemarks(row[13] != null ? row[13].toString() : "");
+		tankConfigurationDTO.setAuditYear(row[14] != null ? row[14].toString() : "");
+		tankConfigurationDTO.setUom(row[15] != null ? row[15].toString() : "");
+		tankConfigurationDTO.setNormTypeName(row[16] != null ? row[16].toString() : "");
+		tankConfigurationDTO.setIsEditable(row[17] != null ? ((Boolean) row[17]).booleanValue() : null);
+		tankConfigurationDTO.setDisplayName(row[18] != null ? row[18].toString() : "");
+		tankConfigurationDTOList.add(tankConfigurationDTO);
+	}
+	aopMessageVM.setCode(200);
+	aopMessageVM.setMessage("Data fetched successfully");
+	aopMessageVM.setData(tankConfigurationDTOList);
+	return aopMessageVM;
+	
+	
+} catch (Exception e) {
+	e.printStackTrace();
+	aopMessageVM.setCode(500);
+	aopMessageVM.setMessage("Failed to fetch data");
+	return aopMessageVM;
+}
+}
+
+
 	
 	public List<ConfigurationDTO> getMonthlyProductionData(String year, UUID plantFKId) {
 		try {
@@ -2572,6 +2625,25 @@ continue;
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+
+	public List<Object[]> getTankConfigurationData(String aopYear, UUID plantId, String procedureName) {
+		try {
+
+			String sql = "EXEC " + procedureName
+					+ " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
 
 
 	public List<Object[]> findConstantsByYearAndPlantFkId(String aopYear, String plantId, String procedureName) {

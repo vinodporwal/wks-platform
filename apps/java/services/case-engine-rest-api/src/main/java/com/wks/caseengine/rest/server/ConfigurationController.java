@@ -418,4 +418,9 @@ public class ConfigurationController {
 		return configurationService.deleteCatalystChangeOver(id);
 	}
 
+	@GetMapping(value = "/tank-config")
+	public AOPMessageVM getTankConfiguration(@RequestParam String year,@RequestParam String plantId) {
+		return configurationService.getTankConfiguration(year,plantId);
+	}
+
 }
