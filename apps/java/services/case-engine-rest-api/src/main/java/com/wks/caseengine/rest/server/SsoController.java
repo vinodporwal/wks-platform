@@ -20,7 +20,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
-import com.wks.api.security.SsoSessionStore;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import com.wks.caseengine.cases.definition.service.KeycloakService;
+import org.keycloak.representations.idm.UserRepresentation;
 
 @RestController
 @RequestMapping("/sso")
@@ -32,6 +35,9 @@ public class SsoController {
 
     @Value("${keycloak.realm:${KEYCLOAK_REALM_NAME:localhost}}")
     private String defaultRealm;
+
+    @Autowired
+    private KeycloakService keycloakService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> body,
@@ -86,6 +92,36 @@ public class SsoController {
 
         log.info("SSO session created for user: {}, org: {}", userId, org);
         return ResponseEntity.ok(Map.of("status", "created", "userId", userId));
+    }
+
+    @GetMapping("/userinfo")
+    public ResponseEntity<?> userinfo(HttpServletRequest request) {
+        String ssoSessionId = getCookieValue(request, "WKS_SSO_SESSION");
+        if (ssoSessionId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No SSO session");
+        }
+
+        Map<String, String> sessionData = SsoSessionStore.STORE.get(ssoSessionId);
+        if (sessionData == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("SSO session not found");
+        }
+
+        String userId = sessionData.get("userId");
+        try {
+            UserRepresentation user = keycloakService.getUserById(userId);
+            Map<String, Object> info = new java.util.HashMap<>();
+            info.put("sub", user.getId());
+            info.put("name", (user.getFirstName() != null ? user.getFirstName() : "") + " " +
+                             (user.getLastName() != null ? user.getLastName() : ""));
+            info.put("given_name", user.getFirstName());
+            info.put("family_name", user.getLastName());
+            info.put("email", user.getEmail());
+            info.put("preferred_username", user.getUsername());
+            return ResponseEntity.ok(info);
+        } catch (Exception e) {
+            log.warn("SSO userinfo lookup failed for userId {}: {}", userId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to fetch user info");
+        }
     }
 
     @PostMapping("/logout")

@@ -32,17 +32,16 @@ const App = () => {
     onSuccess: async (token) => {
       const payload = JSON.parse(atob(token.split('.')[1]))
 
-      // The APM token may not carry OIDC profile claims (name, email, etc.)
-      // Fetch them from Keycloak's /userinfo endpoint using the token
+      // The APM token is not a Keycloak token — call our backend /sso/userinfo
+      // which uses the Keycloak admin client to look up the user profile
       let userInfo = {}
       try {
-        const res = await fetch(
-          `${Config.LoginUrl}/realms/localhost/protocol/openid-connect/userinfo`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        )
+        const res = await fetch(`${Config.CaseEngineUrl}/sso/userinfo`, {
+          credentials: 'include', // send the WKS_SSO_SESSION cookie set by /sso/login
+        })
         if (res.ok) {
           userInfo = await res.json()
-          console.log('SSO userinfo fetched:', userInfo)
+          console.log('SSO userinfo fetched from backend:', userInfo)
         } else {
           console.warn('SSO userinfo fetch failed, status:', res.status)
         }

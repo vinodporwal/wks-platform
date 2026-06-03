@@ -60,6 +60,15 @@ public class KeycloakService {
         
    }
 
+   public UserRepresentation getUserById(String userId) {
+       try {
+           Keycloak keycloak = getKeycloakInstance();
+           return keycloak.realm(keycloakRealm).users().get(userId).toRepresentation();
+       } catch (Exception e) {
+           throw new RuntimeException(" ************* KeycloakService: Failed to get user by id: " + userId, e);
+       }
+   }
+
    public List<UserRepresentation> getGroupMembers(String groupName) {
    
      
