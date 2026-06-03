@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import com.wks.caseengine.cases.definition.service.KeycloakService;
+import com.wks.api.security.SsoSessionStore;
 import org.keycloak.representations.idm.UserRepresentation;
 
 @RestController
