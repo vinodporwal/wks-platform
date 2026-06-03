@@ -37,7 +37,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
   const [loading, setLoading] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [currentData, setCurrentData] = useState(null);
-  const initialRender = useRef(true); // Track initial render
+  const initialRender = useRef(true);
+  const skipChangesCount = useRef(3); // formio fires multiple onChange on init, skip them
 
   const handleBeforeUnload = (event) => {
     if (hasUnsavedChanges) {
@@ -93,16 +94,14 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
 
 
   const handleFormChange = (submission) => {
-    if (initialRender.current) {
-      initialRender.current = false;
-      return; // Skip handling changes on the initial render
+    if (skipChangesCount.current > 0) {
+      skipChangesCount.current -= 1
+      return
     }
 
-    // Specify which keys to exclude from the key-value comparison
     const excludedKeys = [ 'caseNo', 'textField1', 'saveAsDraft1', 'onSave', 'saveAsDraft', 'analysisSubmit', 'analysisEdit', 'valueRealizationSubmit', 'recommendationFinalSubmit', 'createdBy'];
 
     if(currentData){
-      // Custom comparison logic
       if (!areObjectsEqualExcludingKeys(currentData, submission.data.container, excludedKeys)) {
         setHasUnsavedChanges(true);
       } else {
