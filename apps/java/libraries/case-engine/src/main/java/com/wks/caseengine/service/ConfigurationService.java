@@ -73,4 +73,6 @@ public interface ConfigurationService {
 
         public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystChangeOverDTOList);
 
+        public AOPMessageVM deleteCatalystChangeOver(String Id);
+
 }

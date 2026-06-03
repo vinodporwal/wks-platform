@@ -624,6 +624,28 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 		ex.printStackTrace();
 		throw new RuntimeException("Failed to save CatalystChangeOver data", ex);
 	}
+
+}
+
+@Override
+@Transactional
+public AOPMessageVM deleteCatalystChangeOver(String Id) {
+	AOPMessageVM aopMessageVM = new AOPMessageVM();
+	try {
+		String sql = "DELETE FROM CatalystChangeOver WHERE id = :id";
+		Query query = entityManager.createNativeQuery(sql);
+		query.setParameter("id", Id);
+		query.executeUpdate();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data deleted successfully");
+		return aopMessageVM;
+	} catch (Exception e) {
+		e.printStackTrace();
+		
+		aopMessageVM.setCode(500);
+		aopMessageVM.setMessage("Failed to delete data");
+		return aopMessageVM;
+	}
 }
 	
 	public List<ConfigurationDTO> getMonthlyProductionData(String year, UUID plantFKId) {
