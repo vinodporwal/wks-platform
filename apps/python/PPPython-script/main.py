@@ -381,11 +381,11 @@ if __name__ == "__main__":
                 gross_mwh = asset.get("GrossMWh", 0)
                 gross_kwh = gross_mwh * 1000
                 
-                if "GT1" in name or "POWER PLANT 3" in name:
+                if "GT1" in name or "POWER PLANT 1" in name:
                     power_dispatch["gt1_gross_kwh"] = gross_kwh
                 elif "GT2" in name or "POWER PLANT 2" in name:
                     power_dispatch["gt2_gross_kwh"] = gross_kwh
-                elif "GT3" in name or "POWER PLANT 1" in name:
+                elif "GT3" in name or "POWER PLANT 3" in name:
                     power_dispatch["gt3_gross_kwh"] = gross_kwh
                 elif "STG" in name:
                     power_dispatch["stg_gross_kwh"] = gross_kwh
@@ -400,9 +400,9 @@ if __name__ == "__main__":
             save_result = save_model_quantities(month, year, utilities, power_dispatch)
             
             if save_result["success_count"] > 0:
-                print(f"\n✓ Successfully saved {save_result['success_count']} records to database")
+                print(f"\n[OK] Successfully saved {save_result['success_count']} records to database")
             if save_result["failed_count"] > 0:
-                print(f"✗ Failed to save {save_result['failed_count']} records")
+                print(f"[FAIL] Failed to save {save_result['failed_count']} records")
     
     # -----------------------------------------------------------
     # STEP 6: GENERATE EXCEL BALANCE REPORT

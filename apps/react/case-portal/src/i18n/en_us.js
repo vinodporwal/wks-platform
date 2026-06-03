@@ -59,6 +59,7 @@ const defs = {
     plantRequirement: 'Plant Requirement',
     fixedConsumption: 'Fixed Consumption',
     norms: 'Norms',
+    norms_qty_cost_report: 'Norms Quantity Cost Report',
     inputs: 'Inputs',
     summary: 'Summary',
     senderReceiverMapping: 'Sender Receiver Mapping',

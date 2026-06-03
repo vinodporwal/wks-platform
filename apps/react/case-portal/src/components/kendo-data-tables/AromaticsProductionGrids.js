@@ -585,33 +585,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
         },
       )
 
-      // Fetch Max Achieved Capacity data for Percentage Summary
-      const maxCapacityResponse =
-        await ProductionVolumeDataApiService.getMaxAchievedCapacityData(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-      let maxCapacityData = maxCapacityResponse?.data?.aopMCCalculatedDataDTOList
-      if (maxCapacityData && !Array.isArray(maxCapacityData)) {
-        maxCapacityData = [maxCapacityData]
-      }
-      const isTPD = selectedUnit === 'TPD'
-      const formattedMaxCapacity = (maxCapacityData || []).map((item) => {
-        const april = isTPD && item.april ? item.april * 24 : item.april || null
-        const may = isTPD && item.may ? item.may * 24 : item.may || null
-        const june = isTPD && item.june ? item.june * 24 : item.june || null
-        return {
-          ...item,
-          idFromApi: item?.id || null,
-          productName: item?.materialDisplayName,
-          april,
-          may,
-          june,
-        }
-      })
-
-      const formulatedData = normalizeAllRows(formattedData, formattedMaxCapacity)
+      const formulatedData = normalizeAllRows(formattedData)
 
       const nonEditableRows = formulatedData.map((item) => ({
         ...item,
@@ -742,7 +716,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
     }
   }
 
-  function normalizeAllRows(grid, maxCapacityGrid) {
+  function normalizeAllRows(grid) {
     const monthKeys = [
       'april',
       'may',
@@ -758,29 +732,18 @@ const AromaticsProductionGrids = ({ permissions }) => {
       'march',
     ]
 
-    return grid?.map((row, index) => {
-      // Find matching row in maxCapacityGrid
-      const matchedMaxRow = maxCapacityGrid?.find(
-        (maxRow) =>
-          (maxRow.materialFKId && row.materialFKId && maxRow.materialFKId.toLowerCase() === row.materialFKId.toLowerCase()) ||
-          (maxRow.normParametersFKId && row.normParametersFKId && maxRow.normParametersFKId.toLowerCase() === row.normParametersFKId.toLowerCase()) ||
-          (maxRow.productName && row.productName && maxRow.productName === row.productName)
-      ) || maxCapacityGrid?.[index]
+    return grid?.map((row) => {
+      // 1. Find this row?s max month value
+      const vals = monthKeys?.map((k) => Number(row[k]))
+      const maxVal = Math.max(...vals)
 
+      // 2. Shallow-clone the entire row (carries over id, remarks, all FKs, etc.)
       const newRow = { ...row }
 
+      // 3. Overwrite only the month fields:
       monthKeys.forEach((key) => {
         const orig = Number(row[key] || 0)
-        let pct = 0
-        if (matchedMaxRow) {
-          const maxVal = Number(matchedMaxRow[key] || 0)
-          pct = maxVal ? (orig / maxVal) * 100 : 0
-        } else {
-          // fallback to self-normalization if no match
-          const vals = monthKeys?.map((k) => Number(row[k]))
-          const selfMax = Math.max(...vals)
-          pct = selfMax ? (orig / selfMax) * 100 : 0
-        }
+        const pct = maxVal ? (orig / maxVal) * 100 : 0
         newRow[key] = Number(pct.toFixed(2))
       })
 

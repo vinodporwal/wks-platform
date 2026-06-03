@@ -15,36 +15,14 @@ FLOWCHART STEPS:
 9. If NO -> Use Supplementary Firing -> If still insufficient -> Reduce STG
 10. ITERATE until converged (0.1% tolerance)
 
-NORMS FROM TABLE (Per Unit):
-============================
-Power Plants (GT1, GT2, GT3):
-- Natural Gas: 0.0094-0.0101 MMBTU per KWH
-- Compressed Air: 30,960-31,992 NM3 (fixed per month)
-- Cooling Water: 108-112 KM3 (fixed per month)
-- Power Distribution: 0.0140 KWH per KWH (aux consumption = 1.4%)
-
-STG Power Plant:
-- Compressed Air: 41,040-42,408 NM3 (fixed per month)
-- Cooling Water: 2,376-2,455 KM3 (fixed per month)
-- Power Distribution: 0.0020 KWH per KWH (aux consumption = 0.2%)
-- SHP Steam: 0.0036 MT per KWH generated
-
-HRSG (SHP Steam Generation):
-- Natural Gas: 2.8064-2.8209 MMBTU per MT SHP
-- BFW: 1.0240 M3 per MT SHP
-- Compressed Air: 453,600-468,720 NM3 (fixed per month)
-- LP Steam Credit: -0.0504 MT per MT SHP (byproduct)
-
-Utility Norms:
-- BFW Power: 9.5 KWH per M3
-- DM Water Power: 1.21 KWH per M3
-- Cooling Water Power: 250 KWH per KM3
-- Compressed Air Power: 0.165 KWH per NM3
-- Effluent Treatment Power: 3.54 KWH per M3
-- Oxygen Power: 936-968 KWH per MT
+NORMS SOURCE:
+=============
+All utility and power norms are fetched month-wise from DB
+(NormsMonthDetail + NormsHeader + Plant + Account + Issuing Plant as applicable).
+No calculation path in this service should rely on hardcoded norm multipliers.
 """
 
-from services.power_service import distribute_by_priority, NORM_STG_SHP_PER_KWH
+from services.power_service import distribute_by_priority
 from services.steam_service import (
     calculate_steam_balance,
     calculate_lp_balance,
@@ -64,11 +42,16 @@ from services.steam_service import (
 )
 from services.demand_service import (
     calculate_all_demands,
+    calculate_u4u_air,
+    calculate_u4u_bfw,
+    calculate_u4u_cw2,
+    calculate_u4u_dm,
     calculate_u4u_power,
     calculate_u4u_lp_steam,
     calculate_u4u_mp_steam,
     print_demand_summary,
 )
+from services.norm_lookup_service import get_month_norm
 from database.connection import get_connection
 from database.import_queries import (
     fetch_import_power_availability,
@@ -87,52 +70,49 @@ from database.power_asset_queries import (
 # NORMS CONSTANTS (From Norms Table)
 # ============================================================
 
-# Power Plant Auxiliary Consumption (KWH per KWH generated)
-NORM_GT_AUX_PER_KWH = 0.0140      # GT1, GT2, GT3: 1.4% aux consumption
-NORM_STG_AUX_PER_KWH = 0.0020     # STG: 0.2% aux consumption
-
-# STG Steam Requirement (MT SHP per KWH generated)
-NORM_STG_SHP_PER_KWH = 0.0035600  # 0.00356 MT SHP per KWH
-
-# HRSG Norms (per MT SHP generated)
-NORM_HRSG_BFW_PER_MT_SHP = 1.0240           # 1.024 M3 BFW per MT SHP
-NORM_HRSG_NG_PER_MT_SHP = 2.8115696         # Average of HRSG2 (2.8063807) and HRSG3 (2.8167584)
-NORM_HRSG_LP_CREDIT_PER_MT_SHP = -0.0503520 # -0.050352 MT LP credit per MT SHP
-
-# Utility Power Consumption Norms (KWH per unit)
-NORM_BFW_POWER_PER_M3 = 9.5000              # 9.5 KWH per M3 BFW
-NORM_DM_POWER_PER_M3 = 1.2100               # 1.21 KWH per M3 DM Water
-NORM_CW1_POWER_PER_KM3 = 245.0000           # 245 KWH per KM3 Cooling Water 1
-NORM_CW2_POWER_PER_KM3 = 250.0000           # 250 KWH per KM3 Cooling Water 2
-NORM_AIR_POWER_PER_NM3 = 0.1650             # 0.165 KWH per NM3 Compressed Air
-NORM_EFFLUENT_POWER_PER_M3 = 3.5400         # 3.54 KWH per M3 Effluent
-NORM_OXYGEN_POWER_PER_MT = 936.0400         # 936 KWH per MT Oxygen
-
-# BFW Consumption Norms (M3 per unit)
-NORM_BFW_PER_MT_SHP = 1.0240                # 1.024 M3 BFW per MT SHP (HRSG)
-NORM_BFW_PER_MT_HP_PRDS = 0.0768            # 0.0768 M3 BFW per MT HP PRDS
-NORM_BFW_PER_MT_MP_PRDS = 0.0900            # 0.09 M3 BFW per MT MP PRDS
-NORM_BFW_PER_MT_LP_PRDS = 0.2500            # 0.25 M3 BFW per MT LP PRDS
-
-# DM Water Consumption Norms (M3 per M3 BFW)
-NORM_DM_PER_M3_BFW = 0.8600                 # 0.86 M3 DM per M3 BFW
-
-# Cooling Water Consumption Norms (KM3 per unit)
-NORM_CW_PER_MT_SHP_STG = 2.4550             # 2.455 KM3 per 1000 MT SHP for STG (scaled)
-NORM_CW_PER_KWH_GT = 0.000112               # 112 KM3 per ~1000 MWH GT (scaled)
-
-# Compressed Air Consumption Norms (NM3 per unit)
-NORM_AIR_PER_MT_SHP_HRSG = 9.7440           # ~468720 NM3 per ~48000 MT SHP (scaled)
-
 # Iteration Constants
 USD_ITERATION_LIMIT = 50
-USD_TOLERANCE = 0.001  # MWh tolerance for aux power convergence
+USD_TOLERANCE = 0.02  # MWh tolerance for aux power convergence (relaxed to handle rounding steps)
 EXCESS_STEAM_ACTION_THRESHOLD_MT = 1.0
 EXCESS_STEAM_PRACTICAL_TOLERANCE_MT = 0.1
 STALL_ITERATION_LIMIT = 3
 STALL_EXCESS_STEAM_DELTA_MT = 1.1
-STALL_POWER_AUX_DELTA_MWH = 0.001
-STALL_STG_DELTA_MWH = 0.001
+STALL_POWER_AUX_DELTA_MWH = 0.02
+STALL_STG_DELTA_MWH = 0.02
+
+
+def _month_norm(
+    month: int,
+    year: int,
+    plant_name: str,
+    utility_name: str,
+    material_name: str,
+    account_name: str = "Utilities",
+    issuing_plant_name: str = None,
+) -> float:
+    return get_month_norm(
+        month=month,
+        year=year,
+        plant_name=plant_name,
+        utility_name=utility_name,
+        material_name=material_name,
+        account_name=account_name,
+        issuing_plant_name=issuing_plant_name,
+        required=False,
+    )
+
+
+def _stg_shp_norm(month: int, year: int) -> float:
+    return get_month_norm(
+        month=month,
+        year=year,
+        plant_name="NMD - STG Power Plant",
+        utility_name="POWERGEN",
+        material_name="SHP Steam_Dis",
+        account_name="Utilities",
+        issuing_plant_name="NMD - Utility/Power Dist",
+        required=True,
+    )
 
 
 # ============================================================
@@ -140,14 +120,26 @@ STALL_STG_DELTA_MWH = 0.001
 # ============================================================
 
 def calculate_utility_consumption(
+    month: int,
+    year: int,
     stg_gross_kwh: float,
-    gt_gross_kwh: float,
+    gt1_gross_kwh: float,
+    gt2_gross_kwh: float,
+    gt3_gross_kwh: float,
     shp_from_hrsg_mt: float,
     hp_from_prds_mt: float,
     mp_from_prds_mt: float,
     lp_from_prds_mt: float,
+    lp_from_stg_mt: float = 0.0,
+    mp_from_stg_mt: float = 0.0,
+    dm_process_m3: float = 54779.0,
+    dm_fixed_m3: float = 0.0,
     cw1_process_km3: float = 15194.0,
     cw2_process_km3: float = 9016.0,
+    air_process_nm3: float = 6095102.0,
+    air_fixed_nm3: float = 0.0,
+    oxygen_mt: float = 5786.0,
+    effluent_m3: float = 243000.0,
 ) -> dict:
     """
     Calculate utility consumption based on power and steam generation.
@@ -165,57 +157,84 @@ def calculate_utility_consumption(
     Returns:
         dict with utility quantities and power consumption
     """
-    # BFW Consumption (M3)
-    bfw_for_hrsg = shp_from_hrsg_mt * NORM_BFW_PER_MT_SHP
-    bfw_for_hp_prds = hp_from_prds_mt * NORM_BFW_PER_MT_HP_PRDS
-    bfw_for_mp_prds = mp_from_prds_mt * NORM_BFW_PER_MT_MP_PRDS
-    bfw_for_lp_prds = lp_from_prds_mt * NORM_BFW_PER_MT_LP_PRDS
-    total_bfw_m3 = bfw_for_hrsg + bfw_for_hp_prds + bfw_for_mp_prds + bfw_for_lp_prds
-    
-    # DM Water Consumption (M3)
-    total_dm_m3 = total_bfw_m3 * NORM_DM_PER_M3_BFW
-    
-    # Cooling Water 1 Consumption (KM3) - Process demand
-    # CW1 is primarily for process plants
+    stg_gross_mwh = stg_gross_kwh / 1000.0
+    gt1_gross_mwh = gt1_gross_kwh / 1000.0
+    gt2_gross_mwh = gt2_gross_kwh / 1000.0
+    gt3_gross_mwh = gt3_gross_kwh / 1000.0
+
+    u4u_bfw = calculate_u4u_bfw(
+        month=month,
+        year=year,
+        shp_from_hrsg_mt=shp_from_hrsg_mt,
+        hp_from_prds_mt=hp_from_prds_mt,
+        mp_from_prds_mt=mp_from_prds_mt,
+        lp_from_prds_mt=lp_from_prds_mt,
+    )
+    total_bfw_m3 = u4u_bfw.get("total_m3", 0.0)
+
+    u4u_dm = calculate_u4u_dm(month=month, year=year, bfw_total_m3=total_bfw_m3)
+    total_dm_m3 = dm_process_m3 + dm_fixed_m3 + u4u_dm.get("total_m3", 0.0)
+
     total_cw1_km3 = cw1_process_km3
-    
-    # Cooling Water 2 Consumption (KM3) - Power plants + Utility plants + Process
-    # STG uses significant cooling water (CW2)
-    cw2_for_stg = (stg_gross_kwh / 1000000) * 2.455  # ~2.455 KM3 per 1000 MWH
-    cw2_for_gt = (gt_gross_kwh / 1000000) * 0.112    # ~0.112 KM3 per 1000 MWH
-    cw2_for_bfw = (total_bfw_m3 / 100000) * 0.112    # Cooling for BFW system
-    cw2_for_process = cw2_process_km3               # Process demand
-    total_cw2_km3 = cw2_for_stg + cw2_for_gt + cw2_for_bfw + cw2_for_process
-    
-    # Total Cooling Water (for backward compatibility)
+    stg_shp_mt = calculate_stg_shp_demand(stg_gross_mwh, 0.0, month=month, year=year)
+    u4u_cw2 = calculate_u4u_cw2(
+        month=month,
+        year=year,
+        stg_gross_mwh=stg_gross_mwh,
+        gt1_gross_mwh=gt1_gross_mwh,
+        gt2_gross_mwh=gt2_gross_mwh,
+        gt3_gross_mwh=gt3_gross_mwh,
+        shp_from_stg_mt=stg_shp_mt,
+    )
+    total_cw2_km3 = cw2_process_km3 + u4u_cw2.get("total_km3", 0.0)
     total_cw_km3 = total_cw1_km3 + total_cw2_km3
-    
-    # Compressed Air Consumption (NM3)
-    air_for_stg = 42408.0  # Fixed monthly for STG
-    air_for_gt = 31992.0 * 3  # Fixed monthly for 3 GTs (if all running)
-    air_for_hrsg = shp_from_hrsg_mt * NORM_AIR_PER_MT_SHP_HRSG
-    total_air_nm3 = air_for_stg + air_for_gt + air_for_hrsg
-    
-    # Utility Power Consumption (KWH) - Separate CW1 and CW2
-    power_for_bfw = total_bfw_m3 * NORM_BFW_POWER_PER_M3
-    power_for_dm = total_dm_m3 * NORM_DM_POWER_PER_M3
-    power_for_cw1 = total_cw1_km3 * NORM_CW1_POWER_PER_KM3
-    power_for_cw2 = total_cw2_km3 * NORM_CW2_POWER_PER_KM3
+
+    u4u_air = calculate_u4u_air(
+        month=month,
+        year=year,
+        gt1_gross_mwh=gt1_gross_mwh,
+        gt2_gross_mwh=gt2_gross_mwh,
+        gt3_gross_mwh=gt3_gross_mwh,
+        stg_gross_mwh=stg_gross_mwh,
+        shp_from_hrsg_mt=shp_from_hrsg_mt,
+    )
+    total_air_nm3 = air_process_nm3 + air_fixed_nm3 + u4u_air.get("total_nm3", 0.0)
+
+    u4u_power = calculate_u4u_power(
+        month=month,
+        year=year,
+        gt1_gross_mwh=gt1_gross_mwh,
+        gt2_gross_mwh=gt2_gross_mwh,
+        gt3_gross_mwh=gt3_gross_mwh,
+        stg_gross_mwh=stg_gross_mwh,
+        bfw_total_m3=total_bfw_m3,
+        dm_total_m3=total_dm_m3,
+        cw1_total_km3=total_cw1_km3,
+        cw2_total_km3=total_cw2_km3,
+        air_total_nm3=total_air_nm3,
+        oxygen_total_mt=oxygen_mt,
+        effluent_total_m3=effluent_m3,
+    )
+    utility_power = u4u_power.get("utility_power", {})
+    power_for_bfw = utility_power.get("bfw_kwh", 0.0)
+    power_for_dm = utility_power.get("dm_kwh", 0.0)
+    power_for_cw1 = utility_power.get("cw1_kwh", 0.0)
+    power_for_cw2 = utility_power.get("cw2_kwh", 0.0)
     power_for_cw = power_for_cw1 + power_for_cw2
-    power_for_air = total_air_nm3 * NORM_AIR_POWER_PER_NM3
-    
-    total_utility_power_kwh = power_for_bfw + power_for_dm + power_for_cw + power_for_air
-    total_utility_power_mwh = total_utility_power_kwh / 1000
+    power_for_air = utility_power.get("air_kwh", 0.0)
+    total_utility_power_kwh = utility_power.get("total_kwh", 0.0)
+    total_utility_power_mwh = utility_power.get("total_mwh", 0.0)
     
     return {
         "bfw": {
-            "for_hrsg_m3": round(bfw_for_hrsg, 2),
-            "for_hp_prds_m3": round(bfw_for_hp_prds, 2),
-            "for_mp_prds_m3": round(bfw_for_mp_prds, 2),
-            "for_lp_prds_m3": round(bfw_for_lp_prds, 2),
+            "for_hrsg_m3": round(u4u_bfw.get("hrsg_m3", 0.0), 2),
+            "for_hp_prds_m3": round(u4u_bfw.get("hp_prds_m3", 0.0), 2),
+            "for_mp_prds_m3": round(u4u_bfw.get("mp_prds_m3", 0.0), 2),
+            "for_lp_prds_m3": round(u4u_bfw.get("lp_prds_m3", 0.0), 2),
             "total_m3": round(total_bfw_m3, 2),
         },
         "dm_water": {
+            "for_bfw_m3": round(u4u_dm.get("for_bfw_m3", 0.0), 2),
             "total_m3": round(total_dm_m3, 2),
         },
         "cooling_water_1": {
@@ -223,10 +242,10 @@ def calculate_utility_consumption(
             "total_km3": round(total_cw1_km3, 2),
         },
         "cooling_water_2": {
-            "for_stg_km3": round(cw2_for_stg, 2),
-            "for_gt_km3": round(cw2_for_gt, 2),
-            "for_bfw_km3": round(cw2_for_bfw, 2),
-            "process_km3": round(cw2_for_process, 2),
+            "for_stg_km3": round(u4u_cw2.get("stg_km3", 0.0), 2),
+            "for_gt_km3": round(u4u_cw2.get("gt_km3", 0.0), 2),
+            "for_bfw_km3": 0.0,
+            "process_km3": round(cw2_process_km3, 2),
             "total_km3": round(total_cw2_km3, 2),
         },
         "cooling_water": {
@@ -235,9 +254,11 @@ def calculate_utility_consumption(
             "total_km3": round(total_cw_km3, 2),
         },
         "compressed_air": {
-            "for_stg_nm3": round(air_for_stg, 2),
-            "for_gt_nm3": round(air_for_gt, 2),
-            "for_hrsg_nm3": round(air_for_hrsg, 2),
+            "for_stg_nm3": round(0.0, 2),
+            "for_gt_nm3": round(0.0, 2),
+            "for_hrsg_nm3": round(u4u_air.get("hrsg_nm3", 0.0), 2),
+            "for_lp_extraction_nm3": round(0.0, 2),
+            "for_mp_extraction_nm3": round(0.0, 2),
             "total_nm3": round(total_air_nm3, 2),
         },
         "utility_power": {
@@ -253,7 +274,12 @@ def calculate_utility_consumption(
     }
 
 
-def calculate_stg_shp_demand(stg_gross_mwh: float, sp_steam_power: float = 0.0) -> float:
+def calculate_stg_shp_demand(
+    stg_gross_mwh: float,
+    sp_steam_power: float = 0.0,
+    month: int = None,
+    year: int = None,
+) -> float:
     """
     Calculate SHP steam demand for STG power generation.
     
@@ -267,7 +293,12 @@ def calculate_stg_shp_demand(stg_gross_mwh: float, sp_steam_power: float = 0.0) 
         SHP steam required in MT
     """
     stg_gross_kwh = stg_gross_mwh * 1000
-    norm_per_kwh = (sp_steam_power / 1000) if sp_steam_power > 0 else NORM_STG_SHP_PER_KWH
+    if sp_steam_power > 0:
+        norm_per_kwh = sp_steam_power / 1000
+    elif month is not None and year is not None:
+        norm_per_kwh = _stg_shp_norm(month, year)
+    else:
+        raise ValueError("month/year required to resolve STG SHP norm from DB")
     return stg_gross_kwh * norm_per_kwh
 
 
@@ -371,9 +402,11 @@ def calculate_stg_extraction_requirements_load_based(
     lp_stg_ratio = lp_from_stg / lp_total if lp_total > 0 else 0
     mp_stg_ratio = mp_from_stg / mp_total if mp_total > 0 else 0
     
-    # SHP requirements for extraction
-    shp_for_lp_extraction = lp_from_stg * NORM_SHP_PER_LP_STG
-    shp_for_mp_extraction = mp_from_stg * NORM_SHP_PER_MP_STG
+    # SHP requirements for extraction (Option C: Physical mass flow, 1:1)
+    # The SHP entering the turbine either condenses (power) or gets extracted (LP/MP)
+    # So SHP for LP extraction = lp_from_stg (same mass, different pressure)
+    shp_for_lp_extraction = lp_from_stg
+    shp_for_mp_extraction = mp_from_stg
     total_shp_for_extraction = shp_for_lp_extraction + shp_for_mp_extraction
     
     # ============================================================
@@ -557,13 +590,14 @@ def usd_iterate(
     export_available: bool = False,
     dm_process: float = 54779.0,       # DM Water process consumption (M3)
     dm_fixed: float = 0.0,             # DM Water fixed consumption (M3)
+    hrsg_full_load: bool = False,      # If true, load HRSG without subtracting free steam
 ) -> dict:
     """
     Execute USD iteration loop to balance power and steam.
     
     POWER-STEAM INTERDEPENDENCY (from Flowchart):
     =============================================
-    1. STG generates power BUT needs SHP steam (0.0036 MT/KWh)
+    1. STG generates power BUT needs SHP steam (month-wise DB norm)
     2. More STG power → More SHP demand
     3. SHP is generated by HRSG (linked to GT)
     4. More GT → More Free Steam → Less Supplementary Firing needed
@@ -602,6 +636,7 @@ def usd_iterate(
     # Fetch STG extraction lookup table (cached for all iterations)
     stg_extraction_lookup_df = fetch_stg_extraction_lookup()
     stg_op_hours = get_stg_operating_hours(month, year)
+    stg_shp_norm_current = _stg_shp_norm(month, year)
     
     if stg_extraction_lookup_df.empty:
         print("  [WARNING] STG Extraction Lookup table is empty - using legacy fixed ratios")
@@ -619,8 +654,8 @@ def usd_iterate(
     print("STEP 0b: HRSG HEAT RATE LOOKUP (For Natural Gas Reverse Calculation)")
     print("-"*100)
     
-    # Fetch HRSG heat rate lookup table (cached for all iterations)
-    hrsg_heat_rate_lookup_df = fetch_hrsg_heat_rate_lookup()
+    # Fetch HRSG heat rate lookup table (cached for all iterations, FY-filtered)
+    hrsg_heat_rate_lookup_df = fetch_hrsg_heat_rate_lookup(month=month, year=year)
     
     if hrsg_heat_rate_lookup_df.empty:
         print("  [WARNING] HRSG Heat Rate Lookup table is empty - using legacy fixed norms")
@@ -678,46 +713,69 @@ def usd_iterate(
     print("\n" + "-"*100)
     print("NORMS REFERENCE (Values used in calculations)")
     print("-"*100)
+
+    gt1_aux_norm = _month_norm(month, year, "NMD - Power Plant 1", "POWERGEN", "Power_Dis", issuing_plant_name="NMD - Utility/Power Dist")
+    gt2_aux_norm = _month_norm(month, year, "NMD - Power Plant 2", "POWERGEN", "Power_Dis", issuing_plant_name="NMD - Utility/Power Dist")
+    gt3_aux_norm = _month_norm(month, year, "NMD - Power Plant 3", "POWERGEN", "Power_Dis", issuing_plant_name="NMD - Utility/Power Dist")
+    stg_aux_norm = _month_norm(month, year, "NMD - STG Power Plant", "POWERGEN", "Power_Dis", issuing_plant_name="NMD - Utility/Power Dist")
+    stg_shp_norm = _month_norm(month, year, "NMD - STG Power Plant", "POWERGEN", "SHP Steam_Dis", issuing_plant_name="NMD - Utility/Power Dist")
+    bfw_power_norm = _month_norm(month, year, "NMD - Utility Plant", "Boiler Feed Water", "Power_Dis")
+    dm_power_norm = _month_norm(month, year, "NMD - Utility Plant", "D M Water", "Power_Dis")
+    cw1_power_norm = _month_norm(month, year, "NMD - Utility Plant", "Cooling Water 1", "Power_Dis")
+    cw2_power_norm = _month_norm(month, year, "NMD - Utility Plant", "Cooling Water 2", "Power_Dis")
+    air_power_norm = _month_norm(month, year, "NMD - Utility Plant", "COMPRESSED AIR", "Power_Dis")
+    effluent_power_norm = _month_norm(month, year, "NMD - Utility Plant", "Effluent Treated", "Power_Dis")
+    oxygen_power_norm = _month_norm(month, year, "NMD - Utility Plant", "Oxygen", "Power_Dis")
+    bfw_hrsg_norm = _month_norm(month, year, "NMD - Utility Plant", "HRSG2_SHP STEAM", "Boiler Feed Water")
+    hrsg_ng_norm = _month_norm(month, year, "NMD - Utility Plant", "HRSG2_SHP STEAM", "NATURAL GAS")
+    hrsg_lp_credit_norm = _month_norm(month, year, "NMD - Utility Plant", "HRSG2_SHP STEAM", "LP Steam_Dis")
+    bfw_hp_prds_norm = _month_norm(month, year, "NMD - Utility Plant", "HP Steam PRDS", "Boiler Feed Water")
+    bfw_mp_prds_norm = _month_norm(month, year, "NMD - Utility Plant", "MP Steam PRDS SHP", "Boiler Feed Water")
+    bfw_lp_prds_norm = _month_norm(month, year, "NMD - Utility Plant", "LP Steam PRDS", "Boiler Feed Water")
+    dm_per_bfw_norm = _month_norm(month, year, "NMD - Utility Plant", "Boiler Feed Water", "D M Water")
+    stg_cw2_norm = _month_norm(month, year, "NMD - STG Power Plant", "POWERGEN", "Cooling Water 2", issuing_plant_name="NMD - Utility Plant")
     
     print("\n  [POWER PLANT NORMS]")
     print(f"  +----------------------------------------+----------------+----------------+")
     print(f"  | Norm Description                       | Value          | Unit           |")
     print(f"  +----------------------------------------+----------------+----------------+")
-    print(f"  | GT Auxiliary Consumption               | {NORM_GT_AUX_PER_KWH:>14.4f} | KWH/KWH        |")
-    print(f"  | STG Auxiliary Consumption              | {NORM_STG_AUX_PER_KWH:>14.4f} | KWH/KWH        |")
-    print(f"  | STG SHP Steam Requirement              | {NORM_STG_SHP_PER_KWH:>14.4f} | MT/KWH         |")
+    print(f"  | GT1 Auxiliary Consumption              | {gt1_aux_norm:>14.4f} | KWH/KWH        |")
+    print(f"  | GT2 Auxiliary Consumption              | {gt2_aux_norm:>14.4f} | KWH/KWH        |")
+    print(f"  | GT3 Auxiliary Consumption              | {gt3_aux_norm:>14.4f} | KWH/KWH        |")
+    print(f"  | STG Auxiliary Consumption              | {stg_aux_norm:>14.4f} | KWH/KWH        |")
+    print(f"  | STG SHP Steam Requirement              | {stg_shp_norm:>14.4f} | MT/KWH         |")
     print(f"  +----------------------------------------+----------------+----------------+")
     
     print("\n  [HRSG NORMS (per MT SHP generated)]")
     print(f"  +----------------------------------------+----------------+----------------+")
-    print(f"  | HRSG BFW Consumption                   | {NORM_HRSG_BFW_PER_MT_SHP:>14.4f} | M3/MT SHP      |")
-    print(f"  | HRSG Natural Gas                       | {NORM_HRSG_NG_PER_MT_SHP:>14.4f} | MMBTU/MT SHP   |")
-    print(f"  | HRSG LP Steam Credit (byproduct)       | {NORM_HRSG_LP_CREDIT_PER_MT_SHP:>14.4f} | MT LP/MT SHP   |")
+    print(f"  | HRSG BFW Consumption                   | {bfw_hrsg_norm:>14.4f} | M3/MT SHP      |")
+    print(f"  | HRSG Natural Gas                       | {hrsg_ng_norm:>14.4f} | MMBTU/MT SHP   |")
+    print(f"  | HRSG LP Steam Credit (byproduct)       | {hrsg_lp_credit_norm:>14.4f} | MT LP/MT SHP   |")
     print(f"  +----------------------------------------+----------------+----------------+")
     
     print("\n  [UTILITY POWER CONSUMPTION NORMS]")
     print(f"  +----------------------------------------+----------------+----------------+")
-    print(f"  | BFW Power                              | {NORM_BFW_POWER_PER_M3:>14.4f} | KWH/M3         |")
-    print(f"  | DM Water Power                         | {NORM_DM_POWER_PER_M3:>14.4f} | KWH/M3         |")
-    print(f"  | Cooling Water 1 Power                  | {NORM_CW1_POWER_PER_KM3:>14.4f} | KWH/KM3        |")
-    print(f"  | Cooling Water 2 Power                  | {NORM_CW2_POWER_PER_KM3:>14.4f} | KWH/KM3        |")
-    print(f"  | Compressed Air Power                   | {NORM_AIR_POWER_PER_NM3:>14.4f} | KWH/NM3        |")
-    print(f"  | Effluent Treatment Power               | {NORM_EFFLUENT_POWER_PER_M3:>14.4f} | KWH/M3         |")
-    print(f"  | Oxygen Power                           | {NORM_OXYGEN_POWER_PER_MT:>14.4f} | KWH/MT         |")
+    print(f"  | BFW Power                              | {bfw_power_norm:>14.4f} | KWH/M3         |")
+    print(f"  | DM Water Power                         | {dm_power_norm:>14.4f} | KWH/M3         |")
+    print(f"  | Cooling Water 1 Power                  | {cw1_power_norm:>14.4f} | KWH/KM3        |")
+    print(f"  | Cooling Water 2 Power                  | {cw2_power_norm:>14.4f} | KWH/KM3        |")
+    print(f"  | Compressed Air Power                   | {air_power_norm:>14.4f} | KWH/NM3        |")
+    print(f"  | Effluent Treatment Power               | {effluent_power_norm:>14.4f} | KWH/M3         |")
+    print(f"  | Oxygen Power                           | {oxygen_power_norm:>14.4f} | KWH/MT         |")
     print(f"  +----------------------------------------+----------------+----------------+")
     
     print("\n  [BFW CONSUMPTION NORMS]")
     print(f"  +----------------------------------------+----------------+----------------+")
-    print(f"  | BFW per MT SHP (HRSG)                  | {NORM_BFW_PER_MT_SHP:>14.4f} | M3/MT SHP      |")
-    print(f"  | BFW per MT HP PRDS                     | {NORM_BFW_PER_MT_HP_PRDS:>14.4f} | M3/MT HP       |")
-    print(f"  | BFW per MT MP PRDS                     | {NORM_BFW_PER_MT_MP_PRDS:>14.4f} | M3/MT MP       |")
-    print(f"  | BFW per MT LP PRDS                     | {NORM_BFW_PER_MT_LP_PRDS:>14.4f} | M3/MT LP       |")
+    print(f"  | BFW per MT SHP (HRSG)                  | {bfw_hrsg_norm:>14.4f} | M3/MT SHP      |")
+    print(f"  | BFW per MT HP PRDS                     | {bfw_hp_prds_norm:>14.4f} | M3/MT HP       |")
+    print(f"  | BFW per MT MP PRDS                     | {bfw_mp_prds_norm:>14.4f} | M3/MT MP       |")
+    print(f"  | BFW per MT LP PRDS                     | {bfw_lp_prds_norm:>14.4f} | M3/MT LP       |")
     print(f"  +----------------------------------------+----------------+----------------+")
     
     print("\n  [OTHER NORMS]")
     print(f"  +----------------------------------------+----------------+----------------+")
-    print(f"  | DM Water per M3 BFW                    | {NORM_DM_PER_M3_BFW:>14.4f} | M3/M3 BFW      |")
-    print(f"  | Cooling Water per MT SHP (STG)         | {NORM_CW_PER_MT_SHP_STG:>14.4f} | KM3/1000 MT    |")
+    print(f"  | DM Water per M3 BFW                    | {dm_per_bfw_norm:>14.4f} | M3/M3 BFW      |")
+    print(f"  | STG Cooling Water 2                    | {stg_cw2_norm:>14.6f} | KM3/KWH        |")
     print(f"  +----------------------------------------+----------------+----------------+")
     
     print("\n  [ITERATION PARAMETERS]")
@@ -759,7 +817,7 @@ def usd_iterate(
     cw2_process = 9016.0
     air_process = 6095102.0
     oxygen_process = 5786.0
-    effluent_process = 243000.0
+    effluent_process = db_demands.get('effluent', {}).get('process', 243000.0) if db_demands and isinstance(db_demands, dict) else 243000.0
     
     print(f"  | BFW                  | M3     | {0:>13,.2f} | {bfw_process:>13,.2f} | {'(calc)':>13} | {'(calc)':>13} |")
     print(f"  | DM Water             | M3     | {dm_fixed:>13,.2f} | {dm_process:>13,.2f} | {'(calc)':>13} | {'(calc)':>13} |")
@@ -975,14 +1033,20 @@ def usd_iterate(
                 stg_aux_mwh = aux
                 stg_net_mwh = net
                 
-                # Fetch sp_steam_power for the dispatched load
+                # Fetch total SHP inlet for the dispatched STG load
+                # STG Power Generation = SVHInletTPH × Hours (TOTAL steam into turbine)
+                # Condensing is derived: STG Power Gen - LP Extraction - MP Extraction
                 stg_load_mw = asset.get("LoadMW", 0)
-                sp_steam_power_val = 0.0
                 if use_stg_load_based and stg_load_mw > 0:
                     ext_data = get_stg_extraction_for_load(stg_load_mw, stg_extraction_lookup_df)
-                    sp_steam_power_val = ext_data.get("sp_steam_power", 0.0)
-                    
-                stg_shp_required = calculate_stg_shp_demand(stg_gross_mwh, sp_steam_power_val)
+                    shp_inlet_tph = ext_data.get("shp_inlet_tph", 0.0)
+                    if shp_inlet_tph > 0:
+                        stg_shp_required = shp_inlet_tph * hours
+                    else:
+                        # Fallback to legacy norm
+                        stg_shp_required = calculate_stg_shp_demand(stg_gross_mwh, 0.0, month=month, year=year)
+                else:
+                    stg_shp_required = calculate_stg_shp_demand(stg_gross_mwh, 0.0, month=month, year=year)
             elif "GT" in asset_upper or "POWER PLANT" in asset_upper:
                 gt_details.append({
                     "name": asset_name,
@@ -1031,8 +1095,11 @@ def usd_iterate(
             extraction_data = get_stg_extraction_for_load(stg_load_mw, stg_extraction_lookup_df)
             stg_lp_ext_tph = extraction_data["lp_extraction_tph"]
             stg_mp_ext_tph = extraction_data["mp_extraction_tph"]
-            stg_eq_svh_lp_tph = extraction_data["eq_svh_lp_tph"]
-            stg_eq_svh_mp_tph = extraction_data["eq_svh_mp_tph"]
+            # STG Power Gen = SVHInletTPH × hours (TOTAL inlet, includes extraction)
+            # So eq_svh = 0 to avoid double-counting in SHP balance
+            # LP/MP extraction is an INFORMATIONAL breakdown of STG Power Gen
+            stg_eq_svh_lp_tph = 0.0
+            stg_eq_svh_mp_tph = 0.0
             
             lp_balance = calculate_lp_balance_stg_based(
                 lp_process=lp_process,
@@ -1076,7 +1143,10 @@ def usd_iterate(
         # (Linked to GT dispatch - HRSG available when GT is running)
         # ---------------------------------------------------------
         hrsg_availability = get_hrsg_availability_from_dispatch(current_dispatch)
-        shp_capacity = calculate_shp_generation_capacity(hrsg_availability)
+        shp_capacity = calculate_shp_generation_capacity(
+            hrsg_availability=hrsg_availability,
+            hrsg_full_load=hrsg_full_load
+        )
         
         print("\n" + "="*90)
         print("HRSG AVAILABILITY & SHP CAPACITY")
@@ -1160,7 +1230,7 @@ def usd_iterate(
         print(f"  +----------------------------------+----------------+")
         print(f"  | SHP Process Demand               | {shp_process:>14.2f} |")
         print(f"  | SHP Fixed Demand                 | {shp_fixed:>14.2f} |")
-        print(f"  | SHP for STG Power (0.0036/KWh)   | {stg_shp_required:>14.2f} |")
+        print(f"  | SHP for STG Power ({stg_shp_norm_current:.4f}/KWh) | {stg_shp_required:>14.2f} |")
         print(f"  | SHP for LP Extraction (STG)      | {steam_balance['lp_balance']['shp_for_stg_lp']:>14.2f} |")
         print(f"  | SHP for MP Extraction (STG)      | {steam_balance['mp_balance']['shp_for_stg_mp']:>14.2f} |")
         print(f"  | SHP for HP PRDS                  | {steam_balance['hp_balance']['shp_for_hp_prds']:>14.2f} |")
@@ -1209,7 +1279,8 @@ def usd_iterate(
         # Also calculate MIN load result for backward compatibility
         hrsg_min_load_result = calculate_hrsg_min_load_and_excess_steam(
             power_dispatch=current_dispatch,
-            shp_demand=shp_demand
+            shp_demand=shp_demand,
+            hrsg_full_load=hrsg_full_load
         )
         final_hrsg_min_load = hrsg_min_load_result
         
@@ -1224,7 +1295,7 @@ def usd_iterate(
             print("\n" + "-"*90)
             print("HRSG NATURAL GAS REVERSE CALCULATION (From Heat Rate Lookup)")
             print("-"*90)
-            print(f"  {'HRSG':<10} {'Supp Fire':<14} {'Hours':<10} {'Flow TPH':<12} {'Heat Rate':<12} {'NG Norm':<14} {'NG Qty':<14}")
+            print(f"  {'HRSG':<10} {'SHP Total':<14} {'Hours':<10} {'Flow TPH':<12} {'Heat Rate':<12} {'NG Norm':<14} {'NG Qty':<14}")
             print(f"  {'Name':<10} {'(MT)':<14} {'(hrs)':<10} {'(MT/hr)':<12} {'(BTU/lb)':<12} {'(MMBTU/MT)':<14} {'(MMBTU)':<14}")
             print("  " + "-"*88)
             
@@ -1233,21 +1304,25 @@ def usd_iterate(
             for hrsg_data in hrsg_dispatch_list:
                 hrsg_name = hrsg_data.get("name", "")
                 dispatched_supp = hrsg_data.get("dispatched_supp_mt", 0.0)
+                free_steam = hrsg_data.get("free_steam_mt", 0.0)
+                total_shp = dispatched_supp + free_steam
                 hours = hrsg_data.get("hours", 0.0)
                 
-                if dispatched_supp > 0:
-                    # Calculate NG using heat rate lookup based on dispatched supp firing
+                if total_shp > 0:
+                    # Calculate NG using heat rate lookup based on total SHP production (Fired + Free)
                     ng_result = calculate_hrsg_ng_from_heat_rate(
                         hrsg_name=hrsg_name,
-                        shp_production_mt=dispatched_supp,
+                        shp_production_mt=total_shp,
                         operational_hours=hours,
-                        lookup_df=hrsg_heat_rate_lookup_df
+                        lookup_df=hrsg_heat_rate_lookup_df,
+                        month=month,
+                        year=year,
                     )
                     
                     hrsg_ng_results.append(ng_result)
                     total_ng_from_hrsg += ng_result.get("ng_quantity_mmbtu", 0.0)
                     
-                    print(f"  {hrsg_name:<10} {dispatched_supp:>12.2f}   {hours:>8.0f}   {ng_result['steam_flow_tph']:>10.4f}   {ng_result['heat_rate_btu_lb']:>10.2f}   {ng_result['ng_norm_mmbtu_mt']:>12.7f}   {ng_result['ng_quantity_mmbtu']:>12.2f}")
+                    print(f"  {hrsg_name:<10} {total_shp:>12.2f}   {hours:>8.0f}   {ng_result['steam_flow_tph']:>10.4f}   {ng_result['heat_rate_btu_lb']:>10.2f}   {ng_result['ng_norm_mmbtu_mt']:>12.7f}   {ng_result['ng_quantity_mmbtu']:>12.2f}")
                 else:
                     hrsg_ng_results.append({
                         "hrsg_name": hrsg_name,
@@ -1301,7 +1376,7 @@ def usd_iterate(
         print(f"  " + "="*90)
         print(f"  | STG SHP Calculation:")
         print(f"  |   STG Gross = {stg_gross_mwh:,.2f} MWh = {stg_gross_mwh * 1000:,.2f} KWh")
-        print(f"  |   STG SHP = {stg_gross_mwh * 1000:,.2f} KWh x {NORM_STG_SHP_PER_KWH} MT/KWh = {stg_shp_required:,.2f} MT")
+        print(f"  |   STG SHP = {stg_gross_mwh * 1000:,.2f} KWh x {stg_shp_norm_current} MT/KWh = {stg_shp_required:,.2f} MT")
         print(f"  " + "-"*90)
         print(f"  | Free Steam Calculation (per GT):")
         print(f"  |   Formula: Free Steam = GT_Gross_MWh x FreeSteamFactor (from CPP_GTHeatRate)")
@@ -1348,57 +1423,67 @@ def usd_iterate(
             elif "3" in name_upper or "PP3" in name_upper:
                 gt3_gross = gt["gross_mwh"]
         
-        # Count available assets for air calculation
-        gt_count = len([gt for gt in gt_details if gt["gross_mwh"] > 0])
-        stg_available = stg_gross_mwh > 0
-        hrsg_count = sum(1 for h in hrsg_details_list if h.get("is_available", False))
-        
-        # Calculate utility quantities for U4U power
-        # These must match the NMD output calculations
-        
-        # BFW = HRSG BFW + PRDS BFW + Fixed (300 M3)
-        # HRSG BFW based on total HRSG SHP supply (free steam + supplementary firing)
-        total_shp_from_hrsg = hrsg_dispatch_result.get("total_shp_supply_mt", supplementary_firing_needed)
-        bfw_hrsg = total_shp_from_hrsg * NORM_BFW_PER_MT_SHP
-        bfw_hp_prds = hp_process * 0.0768
-        bfw_mp_prds = mp_total * 0.09
-        bfw_lp_prds = lp_total * 0.25
-        bfw_fixed = 300.0  # Fixed BFW consumption
-        bfw_total_estimate = bfw_hrsg + bfw_hp_prds + bfw_mp_prds + bfw_lp_prds + bfw_fixed
-        
-        # DM = 0.86 * BFW + Process DM + Fixed DM
-        dm_for_bfw = bfw_total_estimate * NORM_DM_PER_M3_BFW
-        dm_total_estimate = dm_for_bfw + dm_process + dm_fixed
-        
-        # CW1 = Process (fixed)
-        cw1_total_estimate = 15194.0  # Process demand
-        
-        # CW2 = Fixed (Power Plants) + Variable (STG/GT) + Process
-        # Fixed CW2: GT = 108 KM3 each when running, STG = 2376 KM3 when running
-        cw2_gt_fixed = gt_count * 108.0  # 108 KM3 per GT
-        cw2_stg_fixed = 2376.0 if stg_available else 0.0  # 2376 KM3 for STG
-        cw2_bfw_fixed = 108.0  # BFW plant CW2
-        cw2_air_fixed = 175.0  # Compressed Air plant CW2
-        # Variable CW2 based on oxygen production
-        cw2_oxygen = 5786.0 * 0.2610  # Oxygen CW2 (0.261 KM3/MT)
-        cw2_process = 9016.0  # Process CW2
-        cw2_total_estimate = cw2_gt_fixed + cw2_stg_fixed + cw2_bfw_fixed + cw2_air_fixed + cw2_oxygen + cw2_process
-        
-        # Compressed Air = GT + STG + HRSG + CW1 + CW2 + Process
-        air_gt = gt_count * 30960.0
-        air_stg = 41040.0 if stg_available else 0.0
-        air_hrsg = hrsg_count * 453600.0
-        air_cw1 = 1650.0  # CW1 air
-        air_cw2 = 1650.0  # CW2 air
-        air_process = 6095102.0  # Process air
-        air_total_estimate = air_gt + air_stg + air_hrsg + air_cw1 + air_cw2 + air_process
-        
-        # Oxygen and Effluent (fixed process values)
+        # Calculate utility quantities for U4U power using month-wise DB norms
+        total_shp_from_hrsg = hrsg_dispatch_result.get("actual_total_shp_output_mt", supplementary_firing_needed)
+        hp_from_prds_mt = steam_balance.get("hp_balance", {}).get("hp_from_prds", 0.0)
+        mp_from_prds_mt = steam_balance.get("mp_balance", {}).get("mp_from_prds", 0.0)
+        lp_from_prds_mt = steam_balance.get("lp_balance", {}).get("lp_from_prds", 0.0)
+        lp_from_stg_mt = steam_balance.get("lp_balance", {}).get("lp_from_stg", 0.0)
+        mp_from_stg_mt = steam_balance.get("mp_balance", {}).get("mp_from_stg", 0.0)
+
+        bfw_process = 0.0
+        bfw_fixed = 300.0
+        u4u_bfw = calculate_u4u_bfw(
+            month=month,
+            year=year,
+            shp_from_hrsg_mt=total_shp_from_hrsg,
+            hp_from_prds_mt=hp_from_prds_mt,
+            mp_from_prds_mt=mp_from_prds_mt,
+            lp_from_prds_mt=lp_from_prds_mt,
+        )
+        bfw_total_estimate = bfw_fixed + bfw_process + u4u_bfw.get("total_m3", 0.0)
+
+        u4u_dm = calculate_u4u_dm(month=month, year=year, bfw_total_m3=bfw_total_estimate)
+        dm_total_estimate = dm_process + dm_fixed + u4u_dm.get("total_m3", 0.0)
+
+        cw1_process = 15194.0
+        cw1_fixed = 0.0
+        cw1_total_estimate = cw1_fixed + cw1_process
+
+        cw2_process = 9016.0
+        cw2_fixed = 0.0
+        u4u_cw2 = calculate_u4u_cw2(
+            month=month,
+            year=year,
+            stg_gross_mwh=stg_gross_mwh,
+            gt1_gross_mwh=gt1_gross,
+            gt2_gross_mwh=gt2_gross,
+            gt3_gross_mwh=gt3_gross,
+            shp_from_stg_mt=stg_shp_required,
+        )
+        cw2_total_estimate = cw2_fixed + cw2_process + u4u_cw2.get("total_km3", 0.0)
+
+        air_process = 6095102.0
+        air_fixed = 0.0
+        u4u_air = calculate_u4u_air(
+            month=month,
+            year=year,
+            gt1_gross_mwh=gt1_gross,
+            gt2_gross_mwh=gt2_gross,
+            gt3_gross_mwh=gt3_gross,
+            stg_gross_mwh=stg_gross_mwh,
+            shp_from_hrsg_mt=total_shp_from_hrsg,
+        )
+        air_total_estimate = air_fixed + air_process + u4u_air.get("total_nm3", 0.0)
+
+        # Oxygen and Effluent (process values)
         oxygen_total = 5786.0
-        effluent_total = 243000.0
+        effluent_total = effluent_process  # Use DB-fetched value instead of hardcoded
         
         # Calculate U4U Power from utilities
         u4u_power = calculate_u4u_power(
+            month=month,
+            year=year,
             gt1_gross_mwh=gt1_gross,
             gt2_gross_mwh=gt2_gross,
             gt3_gross_mwh=gt3_gross,
@@ -1568,19 +1653,27 @@ def usd_iterate(
         # 2. Reduce GT dispatch to maintain power balance
         # IMPORTANT: Only start balancing AFTER power has initially converged
         # ---------------------------------------------------------
+        # ---------------------------------------------------------
+        # STEP 3g.1: EXCESS STEAM BALANCING (PROPORTIONAL CONTROLLER)
+        # If HRSG MIN load produces excess steam, increase STG to absorb it.
+        # If we overshot (deficit), decrease STG override.
+        # ---------------------------------------------------------
         stg_increased = False
         excess_steam_adjustment_mwh = 0.0
         
         # Check if power has initially converged (aux error is small enough)
         if aux_power_error < 10.0:  # Power is close to converged
             power_initially_converged = True
-        
-        if excess_steam_mt > 0 and power_initially_converged:
-            # Calculate how much STG can increase to absorb excess steam
-            # Excess power from steam = excess_steam_mt / 3.56 MT/MWh
-            potential_stg_increase = excess_power_from_steam_mwh
             
-            # Check STG capacity limits
+        true_excess_steam_mt = total_supp_min - net_shp_demand
+        if power_initially_converged and (true_excess_steam_mt > EXCESS_STEAM_PRACTICAL_TOLERANCE_MT or excess_steam_controller_mode == "HRSG_MIN_EXCESS"):
+            # Use dynamic conversion factor if available
+            conversion_rate = stg_extraction.get("sp_steam_power", STEAM_TO_POWER_MT_PER_MWH) if stg_extraction else STEAM_TO_POWER_MT_PER_MWH
+            if conversion_rate <= 0:
+                conversion_rate = STEAM_TO_POWER_MT_PER_MWH
+                
+            desired_stg_adj_mwh = true_excess_steam_mt / conversion_rate
+            
             stg_db_min_mwh = 0.0
             stg_db_max_mwh = 0.0
             stg_current_mwh = stg_gross_mwh
@@ -1591,114 +1684,50 @@ def usd_iterate(
                     stg_db_min_mwh = asset.get("MinMW", 5.0) * asset.get("Hours", 720)
                     stg_db_max_mwh = asset.get("CapacityMW", 25) * asset.get("Hours", 720)
                     break
+                    
+            target_stg_mwh = stg_current_mwh + desired_stg_adj_mwh
+            # Clamp to limits
+            target_stg_mwh = max(stg_db_min_mwh, min(target_stg_mwh, stg_db_max_mwh))
             
-            # Calculate how much STG can actually increase
-            stg_available_increase = stg_db_max_mwh - stg_current_mwh
-            actual_stg_increase = min(potential_stg_increase, stg_available_increase)
+            actual_stg_adj = target_stg_mwh - stg_current_mwh
+            action_threshold_mwh = EXCESS_STEAM_ACTION_THRESHOLD_MT / conversion_rate
             
-            # Check if GTs can be reduced further (not below MIN)
-            gt_available_reduction = 0.0
-            for asset in current_dispatch:
-                asset_name = str(asset.get("AssetName", "")).upper()
-                if "GT" in asset_name or "PLANT" in asset_name:
-                    gt_current = asset.get("GrossMWh", 0)
-                    gt_min = asset.get("MinMW", 5.0) * asset.get("Hours", 720)
-                    gt_available_reduction += max(0, gt_current - gt_min)
-            
-            # Actual increase is limited by both STG capacity AND GT reduction available
-            actual_stg_increase = min(actual_stg_increase, gt_available_reduction)
-            damped_stg_increase = actual_stg_increase * 0.5
-            actual_stg_increase = min(actual_stg_increase, damped_stg_increase if damped_stg_increase > 0 else actual_stg_increase)
-            damped_stg_increase = actual_stg_increase * 0.5
-            actual_stg_increase = min(actual_stg_increase, damped_stg_increase if damped_stg_increase > 0 else actual_stg_increase)
-            
-            action_threshold_mwh = EXCESS_STEAM_ACTION_THRESHOLD_MT / STEAM_TO_POWER_MT_PER_MWH
-            if actual_stg_increase > action_threshold_mwh:
+            if abs(actual_stg_adj) > action_threshold_mwh or abs(true_excess_steam_mt) > EXCESS_STEAM_PRACTICAL_TOLERANCE_MT:
                 print("\n" + "="*90)
-                print("⚡ EXCESS STEAM BALANCING (ITERATIVE)")
+                print("⚡ EXCESS STEAM BALANCING (PROPORTIONAL CONTROLLER)")
                 print("="*90)
                 print(f"  Iteration:                          {iteration}")
-                print(f"  Excess Steam from HRSG MIN Load:    {excess_steam_mt:>12.2f} MT")
-                print(f"  Potential STG Increase:             {potential_stg_increase:>12.2f} MWh")
-                print(f"  STG Current:                        {stg_current_mwh:>12.2f} MWh")
-                print(f"  STG Max Capacity:                   {stg_db_max_mwh:>12.2f} MWh")
-                print(f"  STG Available Increase:             {stg_available_increase:>12.2f} MWh")
-                print(f"  GT Available Reduction:             {gt_available_reduction:>12.2f} MWh")
-                print(f"  Damped STG Increase (50%):          {damped_stg_increase:>12.2f} MWh")
-                print(f"  Damped STG Increase (50%):          {damped_stg_increase:>12.2f} MWh")
-                print(f"  Actual STG Increase:                {actual_stg_increase:>12.2f} MWh")
+                print(f"  True Excess Steam:                  {true_excess_steam_mt:>12.2f} MT")
+                print(f"  Desired STG Adj:                    {desired_stg_adj_mwh:>12.2f} MWh")
+                print(f"  Actual STG Adj:                     {actual_stg_adj:>12.2f} MWh")
+                print(f"  Target STG Load:                    {target_stg_mwh:>12.2f} MWh")
                 print(f"  ─────────────────────────────────────────────")
-                
-                # Calculate GT reduction needed to maintain power balance
-                gt_reduction_needed = actual_stg_increase
-                print(f"  GT Reduction Needed:                {gt_reduction_needed:>12.2f} MWh")
-                print(f"  ─────────────────────────────────────────────")
-                print(f"  ACTION: Will increase STG and reduce GT in next iteration")
+                print(f"  ACTION: Adjusting STG override for next iteration")
                 print("="*90 + "\n")
                 
-                # SET VALUES FOR NEXT ITERATION
-                # Calculate target STG (not incremental - direct target)
-                target_stg_mwh = stg_current_mwh + actual_stg_increase
-                stg_min_override_mwh = min(target_stg_mwh, stg_db_max_mwh)
-                
-                # Calculate GT reduction needed (fresh calculation, not accumulated)
-                # GT reduction = how much STG increased from its natural dispatch
-                gt_reduction_for_balance_mwh = actual_stg_increase
+                stg_min_override_mwh = target_stg_mwh
+                gt_reduction_for_balance_mwh = 0.0 # Handled naturally by power_service
                 excess_steam_balancing_active = True
                 excess_steam_controller_mode = "HRSG_MIN_EXCESS"
                 
-                # Store adjustment for next iteration
-                excess_steam_adjustment_mwh = actual_stg_increase
-                stg_increased = True
-                
-                iteration_record["action"] = f"EXCESS_STEAM_BALANCE_STG+{actual_stg_increase:.2f}_GT-{gt_reduction_needed:.2f}"
+                excess_steam_adjustment_mwh = actual_stg_adj
+                if actual_stg_adj > 0:
+                    stg_increased = True
+                    
+                iteration_record["action"] = f"EXCESS_STEAM_BALANCE_STG{actual_stg_adj:+.2f}"
                 iteration_record["status"] = "EXCESS_STEAM_BALANCING"
-            elif excess_steam_mt > EXCESS_STEAM_PRACTICAL_TOLERANCE_MT and (stg_available_increase <= action_threshold_mwh or gt_available_reduction <= action_threshold_mwh):
-                # Excess steam exists but can't be absorbed (GTs at MIN or STG at MAX)
-                print("\n" + "="*90)
-                print("⚠️ EXCESS STEAM - CANNOT BE FULLY ABSORBED")
-                print("="*90)
-                print(f"  Remaining Excess Steam:             {excess_steam_mt:>12.2f} MT")
-                print(f"  Equivalent Power:                   {excess_power_from_steam_mwh:>12.2f} MWh")
-                print(f"  STG Available Increase:             {stg_available_increase:>12.2f} MWh")
-                print(f"  GT Available Reduction:             {gt_available_reduction:>12.2f} MWh")
-                print(f"  ─────────────────────────────────────────────")
-                if stg_available_increase <= 0:
-                    print(f"  REASON: STG at MAX capacity ({stg_db_max_mwh:.2f} MWh)")
-                if gt_available_reduction <= 0:
-                    print(f"  REASON: All GTs at MIN load")
-                print(f"  ─────────────────────────────────────────────")
-                print(f"  OPTIONS:")
-                print(f"    1. Export excess power ({excess_power_from_steam_mwh:.2f} MWh)")
-                print(f"    2. Reduce HRSG supplementary firing (violates MIN rule)")
-                print(f"    3. Accept wasted steam ({excess_steam_mt:.2f} MT)")
-                print("="*90 + "\n")
-                
-                iteration_record["action"] = f"EXCESS_STEAM_UNABSORBED_{excess_steam_mt:.2f}_MT"
-                iteration_record["status"] = "EXCESS_STEAM_LIMIT_REACHED"
-                excess_steam_balancing_active = False
-                excess_steam_controller_mode = None
-                stg_min_override_mwh = None
-                gt_reduction_for_balance_mwh = 0.0
-            elif excess_steam_mt > EXCESS_STEAM_PRACTICAL_TOLERANCE_MT:
-                print(f"\n  [INFO] Excess steam ({excess_steam_mt:.2f} MT) remains solvable; preserving current STG/GT override for next iteration")
+            else:
+                print(f"\n  [INFO] True excess steam ({true_excess_steam_mt:.2f} MT) is small, maintaining override at {stg_min_override_mwh:.2f} MWh")
                 excess_steam_balancing_active = True
                 excess_steam_controller_mode = "HRSG_MIN_EXCESS"
-                iteration_record["action"] = f"HOLD_EXCESS_STEAM_OVERRIDE_{excess_steam_mt:.2f}_MT"
+                iteration_record["action"] = f"HOLD_EXCESS_STEAM_OVERRIDE_{true_excess_steam_mt:.2f}_MT"
                 iteration_record["status"] = "EXCESS_STEAM_HOLD"
-            else:
-                # Excess steam is small, no adjustment needed
-                print(f"\n  [INFO] Excess steam ({excess_steam_mt:.2f} MT) is small, no balancing needed")
-                excess_steam_balancing_active = False
-                excess_steam_controller_mode = None
-                stg_min_override_mwh = None
-                gt_reduction_for_balance_mwh = 0.0
-        elif excess_steam_mt <= 0:
+        elif not power_initially_converged:
             excess_steam_balancing_active = False
             excess_steam_controller_mode = None
             stg_min_override_mwh = None
             gt_reduction_for_balance_mwh = 0.0
-        elif not power_initially_converged:
+        else:
             excess_steam_balancing_active = False
             excess_steam_controller_mode = None
             stg_min_override_mwh = None
@@ -1715,7 +1744,7 @@ def usd_iterate(
             excess_shp = abs(shp_deficit)
             
             # Calculate how much STG we can recover
-            potential_stg_recovery = excess_shp / NORM_STG_SHP_PER_KWH / 1000  # MWh
+            potential_stg_recovery = excess_shp / stg_shp_norm_current / 1000  # MWh
             
             # Apply damping factor (50%) to prevent oscillation
             # Only recover half of what's possible to allow gradual convergence
@@ -1807,10 +1836,10 @@ def usd_iterate(
         if not can_meet_shp and shp_deficit > 0:
             # Calculate how much STG to reduce to eliminate SHP deficit
             # SHP deficit = SHP demand - SHP capacity
-            # STG SHP = STG_gross_kwh * 0.0036
-            # To reduce SHP demand by X MT, reduce STG by X / 0.0036 KWh = X / 0.0036 / 1000 MWh
+            # STG SHP = STG_gross_kwh * STG_SHP_NORM
+            # To reduce SHP demand by X MT, reduce STG by X / STG_SHP_NORM KWh
             
-            stg_reduction_for_shp = shp_deficit / NORM_STG_SHP_PER_KWH / 1000  # MWh
+            stg_reduction_for_shp = shp_deficit / stg_shp_norm_current / 1000  # MWh
             
             print(f"\n  [ACTION] SHP DEFICIT DETECTED - REDUCING STG!")
             print(f"       SHP Deficit:          {shp_deficit:>14.2f} MT")
@@ -1907,9 +1936,9 @@ def usd_iterate(
         # Available SHP for STG = Max Capacity - Base Demand
         available_shp_for_stg = max_shp_capacity - base_shp_demand
         
-        # Max STG power based on steam = Available SHP / 0.0036 MT per KWh
+        # Max STG power based on steam = Available SHP / STG_SHP_NORM (MT per KWh)
         if available_shp_for_stg > 0:
-            max_stg_kwh_from_steam = available_shp_for_stg / NORM_STG_SHP_PER_KWH
+            max_stg_kwh_from_steam = available_shp_for_stg / stg_shp_norm_current
             stg_steam_limit_mwh = max_stg_kwh_from_steam / 1000  # Convert to MWh
         else:
             stg_steam_limit_mwh = 0.0

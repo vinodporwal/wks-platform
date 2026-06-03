@@ -121,8 +121,13 @@ const createSelectToolTipRenderer = (allOptions, toolTipRenderer) => {
     let tooltipValue = value
 
     if (displayMode === 'label' && allOptions) {
-      // Normalize values to handle 4 vs 4.0 mismatches
-      const normalizeValue = (val) => String(parseFloat(val))
+      // Normalize values to handle 4 vs 4.0 mismatches for numeric options,
+      // and fall back to plain string comparison for string options (e.g. "April")
+      const normalizeValue = (val) => {
+        if (val === '' || val === null || val === undefined) return ''
+        const num = Number(val)
+        return isNaN(num) ? String(val).trim() : String(num)
+      }
       const option = allOptions.find(
         (opt) => normalizeValue(opt.value) === normalizeValue(value),
       )
@@ -1462,7 +1467,13 @@ const AdvanceKendoTable = ({
             className={!isEditable ? 'non-editable-cell' : ''}
             cells={{
               edit: { text: DurationEditor },
-              data: DurationDisplayWithTooltipCell,
+              data: (cellProps) => (
+                <DurationDisplayWithTooltipCell
+                  {...cellProps}
+                  customModifiedCells={customModifiedCells}
+                  allRedCell={allRedCell}
+                />
+              ),
             }}
             width={setWidth(col?.minWidth || col?.widthT)}
           />
@@ -1497,6 +1508,18 @@ const AdvanceKendoTable = ({
       }
 
       if (col.type === 'number') {
+        // Determine which numeric editor to use based on min/max constraints
+        const hasMinMaxConstraints =
+          col.minValue !== undefined || col.maxValue !== undefined
+
+        // Resolve minValue and maxValue from dataItem if they are string references
+        const getResolvedValue = (value, dataItem) => {
+          if (typeof value === 'string') {
+            return dataItem[value]
+          }
+          return value
+        }
+
         return (
           <GridColumn
             key={col.field}
@@ -1510,7 +1533,17 @@ const AdvanceKendoTable = ({
             editable={isEditable}
             headerClassName={isActive ? 'active-column' : ''}
             cells={{
-              edit: { text: NoSpinnerNumericEditor },
+              edit: hasMinMaxConstraints
+                ? {
+                    text: (cellProps) => (
+                      <NumericEditorWithMinMax
+                        {...cellProps}
+                        min={getResolvedValue(col.minValue, cellProps.dataItem)}
+                        max={getResolvedValue(col.maxValue, cellProps.dataItem)}
+                      />
+                    ),
+                  }
+                : { text: NoSpinnerNumericEditor },
               data: (props) =>
                 showThreeColors ? (
                   <RedHighlightCell2
@@ -1614,9 +1647,14 @@ const AdvanceKendoTable = ({
         // Determine which numeric editor to use based on min/max constraints
         const hasMinMaxConstraints =
           col.minValue !== undefined || col.maxValue !== undefined
-        const NumericEditorComponent = hasMinMaxConstraints
-          ? NumericEditorWithMinMax
-          : NoSpinnerNumericEditor
+
+        // Resolve minValue and maxValue from dataItem if they are string references
+        const getResolvedValue = (value, dataItem) => {
+          if (typeof value === 'string') {
+            return dataItem[value]
+          }
+          return value
+        }
 
         return (
           <GridColumn
@@ -1636,8 +1674,8 @@ const AdvanceKendoTable = ({
                     text: (cellProps) => (
                       <NumericEditorWithMinMax
                         {...cellProps}
-                        min={col.minValue}
-                        max={col.maxValue}
+                        min={getResolvedValue(col.minValue, cellProps.dataItem)}
+                        max={getResolvedValue(col.maxValue, cellProps.dataItem)}
                       />
                     ),
                   }
@@ -2211,6 +2249,17 @@ const AdvanceKendoTable = ({
                   {/* TITLE */}
                   {title || permissions?.titleName}
 
+                  {permissions?.showDropdown && (
+                    <GenericDropdown
+                      options={dropdownConfig?.options}
+                      value={selectedDropdownValue || ''}
+                      onChange={(value) => setSelectedDropdownValue(value)}
+                      label={dropdownConfig?.label || 'Select'}
+                      placeholder={dropdownConfig?.placeholder || 'Select'}
+                      valueKey={dropdownConfig?.valueKey || 'id'}
+                      labelKey={dropdownConfig?.labelKey || 'name'}
+                    />
+                  )}
                   {/* ROWS BADGE */}
                   <Box
                     sx={{
@@ -2383,7 +2432,11 @@ const AdvanceKendoTable = ({
                       className='w16-icon'
                     />
                   }
-                  disabled={isButtonDisabled || READ_ONLY}
+                  disabled={
+                    isButtonDisabled ||
+                    READ_ONLY ||
+                    !!permissions?.calculateDisabled
+                  }
                   className='btn-calculate'
                 >
                   Calculate
@@ -2409,18 +2462,6 @@ const AdvanceKendoTable = ({
                 >
                   Release
                 </Button>
-              )}
-
-              {permissions?.showDropdown && (
-                <GenericDropdown
-                  options={dropdownConfig?.options}
-                  value={selectedDropdownValue || ''}
-                  onChange={(value) => setSelectedDropdownValue(value)}
-                  label={dropdownConfig?.label || 'Select'}
-                  placeholder={dropdownConfig?.placeholder || 'Select'}
-                  valueKey={dropdownConfig?.valueKey || 'id'}
-                  labelKey={dropdownConfig?.labelKey || 'name'}
-                />
               )}
             </Box>
           </Box>
@@ -2481,7 +2522,12 @@ const AdvanceKendoTable = ({
                 onRowClick={handleRowClick}
               >
                 {renderColumns(
-                  columns.filter((col) => !hiddenFields.includes(col.field)),
+                  columns.filter(
+                    (col) =>
+                      !hiddenFields.includes(col.field) &&
+                      !col.hidden &&
+                      col.isVisible !== false,
+                  ),
                   filter,
                   sort,
                 )}
