@@ -13,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,6 +59,7 @@ import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.Utility;
 import com.wks.caseengine.dto.BusinessDemandDataDTO;
+import com.wks.caseengine.dto.CatalystChangeOverDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
@@ -532,7 +534,97 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		return months;
 	}
 
-	
+	@Override
+	public AOPMessageVM getCatalystChangeOver(String year, String plantFKId) { 
+
+		try {
+			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
+			Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			
+			List<Object[]> obj = new ArrayList<>();
+			
+			
+				String procedureName = verticalName  + "_" + site.getName() + "_GetCatalystChangeOver";
+
+				obj = findCatalystChangeOver(year, UUID.fromString(plantFKId), procedureName);
+				List<CatalystChangeOverDTO> catalystChangeOverDTOList = new ArrayList<>();
+				for (Object[] row : obj) {
+					CatalystChangeOverDTO catalystChangeOverDTO = new CatalystChangeOverDTO();
+					catalystChangeOverDTO.setId((String) row[0]);
+					catalystChangeOverDTO.setParameter((String) row[1]);
+					catalystChangeOverDTO.setDate((Date) row[2]);
+					catalystChangeOverDTO.setRemarks((String) row[3]);
+					catalystChangeOverDTO.setPlantId((String) row[4]);
+					catalystChangeOverDTO.setAopYear((String) row[5]);
+					catalystChangeOverDTO.setModifiedBy((String) row[6]);
+					catalystChangeOverDTO.setModifiedOn((Date) row[7]);
+					catalystChangeOverDTOList.add(catalystChangeOverDTO);
+				}
+
+				AOPMessageVM aopMessageVM = new AOPMessageVM();
+				aopMessageVM.setCode(200);
+				aopMessageVM.setData(catalystChangeOverDTOList);
+				aopMessageVM.setMessage("Data fetched successfully");
+				return aopMessageVM;
+
+
+	}  catch (IllegalArgumentException e) {
+		throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	} catch (Exception ex) {
+		ex.printStackTrace();
+		throw new RuntimeException("Failed to fetch data", ex);
+	}
+
+}
+
+@Override
+@Transactional
+public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystChangeOverDTOList) {
+	try {
+		for (CatalystChangeOverDTO dto : catalystChangeOverDTOList) {
+			String modifiedBy = Utility.getUserName();
+
+			if (dto.getId() == null || dto.getId().trim().isEmpty()) {
+				
+				String sql = "INSERT INTO CatalystChangeOver (date, remarks, plantId, aopYear, modifiedBy, modifiedOn, parameter) "
+						+ "VALUES (:date, :remarks, :plantId, :aopYear, :modifiedBy, :modifiedOn, :parameter)";
+				Query query = entityManager.createNativeQuery(sql);
+				query.setParameter("date", dto.getDate());
+				query.setParameter("remarks", dto.getRemarks());
+				query.setParameter("plantId", dto.getPlantId());
+				query.setParameter("aopYear", dto.getAopYear());
+				query.setParameter("modifiedBy", modifiedBy);
+				query.setParameter("modifiedOn", new Date());
+				query.setParameter("parameter", dto.getParameter());
+				query.executeUpdate();
+			} else {
+				String sql = "UPDATE CatalystChangeOver "
+						+ "SET date = :date, remarks = :remarks, modifiedBy = :modifiedBy, modifiedOn = :modifiedOn, parameter = :parameter "
+						+ "WHERE id = :id";
+				Query query = entityManager.createNativeQuery(sql);
+				query.setParameter("date", dto.getDate());
+				query.setParameter("remarks", dto.getRemarks());
+				query.setParameter("modifiedBy", modifiedBy);
+				query.setParameter("modifiedOn", new Date());
+				query.setParameter("parameter", dto.getParameter());
+				query.setParameter("id", dto.getId());
+				query.executeUpdate();
+			}
+		}
+
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data saved successfully");
+		aopMessageVM.setData(catalystChangeOverDTOList);
+		return aopMessageVM;
+	} catch (IllegalArgumentException e) {
+		throw new RestInvalidArgumentException("Invalid argument provided", e);
+	} catch (Exception ex) {
+		ex.printStackTrace();
+		throw new RuntimeException("Failed to save CatalystChangeOver data", ex);
+	}
+}
 	
 	public List<ConfigurationDTO> getMonthlyProductionData(String year, UUID plantFKId) {
 		try {
@@ -2440,6 +2532,25 @@ continue;
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+
+	public List<Object[]> findCatalystChangeOver(String aopYear, UUID plantId, String procedureName) {
+		try {
+
+			String sql = "EXEC " + procedureName
+					+ " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
 
 	public List<Object[]> findConstantsByYearAndPlantFkId(String aopYear, String plantId, String procedureName) {
 		try {

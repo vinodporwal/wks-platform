@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.dto.CatalystChangeOverDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
@@ -398,6 +399,16 @@ public class ConfigurationController {
 	@GetMapping(value = "/load-configuration")
 	public AOPMessageVM LoadConfigurationValues(@RequestParam String year,@RequestParam String plantId) {
 		return configurationService.LoadConfigurationValues(year,plantId);
+	}
+
+	@GetMapping(value = "/catalyst-change-over")
+	public AOPMessageVM getCatalystChangeOver(@RequestParam String year,@RequestParam String plantId) {
+		return configurationService.getCatalystChangeOver(year,plantId);
+	}
+
+	@PostMapping(value = "/catalyst-change-over")
+	public AOPMessageVM saveCatalystChangeOver(@RequestBody List<CatalystChangeOverDTO> catalystChangeOverDTOList) {
+		return configurationService.saveCatalystChangeOver(catalystChangeOverDTOList);
 	}
 
 }
