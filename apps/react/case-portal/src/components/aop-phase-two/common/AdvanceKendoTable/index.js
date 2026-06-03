@@ -2522,7 +2522,12 @@ const AdvanceKendoTable = ({
                 onRowClick={handleRowClick}
               >
                 {renderColumns(
-                  columns.filter((col) => !hiddenFields.includes(col.field) && !col.hidden && col.isVisible !== false),
+                  columns.filter(
+                    (col) =>
+                      !hiddenFields.includes(col.field) &&
+                      !col.hidden &&
+                      col.isVisible !== false,
+                  ),
                   filter,
                   sort,
                 )}

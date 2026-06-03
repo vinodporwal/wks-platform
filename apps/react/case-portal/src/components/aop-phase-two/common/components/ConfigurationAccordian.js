@@ -1,5 +1,12 @@
 import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
-import { Box, Button, IconButton, Stack, Tooltip, Typography } from '@mui/material'
+import {
+  Box,
+  Button,
+  IconButton,
+  Stack,
+  Tooltip,
+  Typography,
+} from '@mui/material'
 import { CalenderIcon } from 'assets/images/icons'
 import { DatePicker } from '@progress/kendo-react-dateinputs'
 import { TextArea } from '@progress/kendo-react-inputs'
@@ -486,7 +493,9 @@ const ConfigurationAccordian = ({
                     onClick={() => !READ_ONLY && setStartShow((v) => !v)}
                     size='small'
                   >
-                    <ExpandMoreIcon sx={{ fontSize: '1rem', color: '#606060' }} />
+                    <ExpandMoreIcon
+                      sx={{ fontSize: '1rem', color: '#606060' }}
+                    />
                   </IconButton>
                 </Box>
 
@@ -524,7 +533,9 @@ const ConfigurationAccordian = ({
                     onClick={() => !READ_ONLY && setEndShow((v) => !v)}
                     size='small'
                   >
-                    <ExpandMoreIcon sx={{ fontSize: '1rem', color: '#606060' }} />
+                    <ExpandMoreIcon
+                      sx={{ fontSize: '1rem', color: '#606060' }}
+                    />
                   </IconButton>
                 </Box>
 
