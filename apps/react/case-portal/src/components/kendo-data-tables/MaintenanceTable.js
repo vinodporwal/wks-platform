@@ -103,7 +103,6 @@ const MaintenanceTable = () => {
       IS_PVC_DMD,
       IS_PVC_HMD,
       IS_PP_HMD,
-      IS_PVC_VMD,
       tabIndex,
       lineDetails,
     ],

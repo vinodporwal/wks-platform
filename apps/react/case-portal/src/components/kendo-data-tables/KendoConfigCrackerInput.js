@@ -1038,6 +1038,7 @@ const CrackerConfig = () => {
       }
     }
   }, [currentTabDisplay, PLANT_ID, AOP_YEAR, keycloak])
+
   const resolvedTabs = tabs.map((tabId) => {
     const info = availableTabs.find(
       (t) => t.id.toLowerCase() === tabId.toLowerCase(),

@@ -2,9 +2,8 @@ import React from 'react'
 import { Box } from '@mui/material'
 import KendoDataTablesCracker from './index-cracker.js'
 const CustomRow = ({ dataItem, className, ...rest }) => {
-  const rowClassName = [className, dataItem.isError ? 'error-row' : '']
-    .filter(Boolean)
-    .join(' ')
+  let rowClassName = className || ''
+  if (dataItem.isError) rowClassName += ' error-row'
   return (
     <tr {...rest?.trProps} className={rowClassName.trim()}>
       {rest.children}

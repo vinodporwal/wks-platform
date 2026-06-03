@@ -4,7 +4,6 @@ import { useMemo } from 'react'
 // material-ui
 import { CssBaseline, StyledEngineProvider } from '@mui/material'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
-import { useSelector } from 'react-redux'
 
 // project import
 import Palette from './palette'
@@ -15,8 +14,7 @@ import componentsOverride from './overrides'
 // ==============================|| DEFAULT THEME - MAIN  ||============================== //
 
 export default function ThemeCustomization({ children }) {
-  const { mode } = useSelector((state) => state.theme)
-  const theme = Palette(mode, 'default')
+  const theme = Palette('light', 'default')
 
   const themeTypography = Typography("'Open Sans','Public Sans', sans-serif")
   const themeCustomShadows = useMemo(() => CustomShadows(theme), [theme])

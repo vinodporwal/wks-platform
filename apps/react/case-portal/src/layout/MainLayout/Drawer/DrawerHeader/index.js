@@ -45,22 +45,11 @@ const DrawerHeader = ({ open, handleDrawerToggle }) => {
           {open && (
             <Box>
               <Typography
-                sx={{
-                  fontWeight: 800,
-                  fontSize: 20,
-                  color: '#303030',
-                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                }}
+                sx={{ fontWeight: 800, fontSize: 20, color: '#303030', fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif" }}
               >
                 Reliance
               </Typography>
-              <Typography
-                sx={{
-                  fontSize: 13,
-                  color: '#606060',
-                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                }}
-              >
+              <Typography sx={{ fontSize: 13, color: '#606060', fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif" }}>
                 AOP Dashboard
               </Typography>
             </Box>
@@ -69,22 +58,22 @@ const DrawerHeader = ({ open, handleDrawerToggle }) => {
 
         {/* RIGHT COLLAPSE BUTTON */}
         {/* {open && ( */}
-        <IconButton
-          onClick={handleDrawerToggle}
-          size='small'
-          sx={{
-            color: '#6a7b92',
-            ml: open ? 0 : 0,
-            '&:hover': { color: '#6a7b92' },
-          }}
-        >
-          <Box
-            component='img'
-            src={open ? DrawerCloseIcon : DrawerOpenIcon}
-            alt='Drawer Toggle'
-            sx={{ width: 20, height: 20, cursor: 'pointer' }}
-          />
-        </IconButton>
+          <IconButton
+            onClick={handleDrawerToggle}
+            size='small'
+            sx={{
+              color: '#6a7b92',
+              ml: open ? 0 : 0,
+              '&:hover': { color: '#6a7b92' },
+            }}
+          >
+            <Box
+              component='img'
+              src={open ? DrawerCloseIcon : DrawerOpenIcon}
+              alt='Drawer Toggle'
+              sx={{ width: 20, height: 20, cursor: 'pointer' }}
+            />
+          </IconButton>
         {/* )} */}
       </Box>
     </DrawerHeaderStyled>

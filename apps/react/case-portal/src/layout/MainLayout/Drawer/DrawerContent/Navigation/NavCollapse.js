@@ -180,7 +180,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
                   letterSpacing: 0,
                   textTransform: 'capitalize',
                   color: '#606060',
-                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif"
                 }}
               >
                 {menu.title}
@@ -306,7 +306,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
                 color: '#4046CA', // Brand color header
                 textTransform: 'capitalize',
                 letterSpacing: 0,
-                fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif"
               }}
             >
               {menu.title}

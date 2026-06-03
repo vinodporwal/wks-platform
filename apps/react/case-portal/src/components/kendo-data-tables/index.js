@@ -1414,13 +1414,11 @@ const KendoDataTables = ({
         (!dataItem.isEditable && dataItem?.isEditable !== undefined)
       const hasError = dataItem?.isError
       const isTotal = dataItem?.isTotal
-      const rowClassName = [
-        className,
-        hasError ? 'error-row' : '',
-        isDisabled || isTotal ? 'custom-disabled-row' : '',
-      ]
-        .filter(Boolean)
-        .join(' ')
+      const rowClassName = hasError
+        ? 'error-row'
+        : isDisabled || isTotal
+          ? 'custom-disabled-row'
+          : className
 
       return (
         <tr {...rest?.trProps} className={rowClassName}>

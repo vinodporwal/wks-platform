@@ -849,9 +849,8 @@ async function getCatalystSelectivityDataConstants(
   keycloak,
   PLANT_ID,
   AOP_YEAR,
-  iscatchem,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/configuration-constants?year=${AOP_YEAR}&plantFKId=${PLANT_ID}&isCatChem=${iscatchem}`
+  const url = `${Config.CaseEngineUrl}/task/configuration-constants?year=${AOP_YEAR}&plantFKId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

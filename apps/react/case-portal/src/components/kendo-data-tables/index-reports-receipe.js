@@ -403,9 +403,7 @@ const KendoDataTablesReciepe = ({
       const isDisabled =
         READ_ONLY ||
         (!dataItem.isEditable && dataItem?.isEditable !== undefined)
-      const rowClassName = [className, isDisabled ? 'custom-disabled-row' : '']
-        .filter(Boolean)
-        .join(' ')
+      const rowClassName = isDisabled ? `custom-disabled-row` : className
       return (
         <tr {...rest?.trProps} className={rowClassName}>
           {rest.children}
@@ -777,7 +775,7 @@ const KendoDataTablesReciepe = ({
                   disabled={isButtonDisabled}
                   className='btn-save'
                 >
-                  Add Item
+                  Export
                 </Button>
               )}
               {permissions?.showFinalSubmit && (

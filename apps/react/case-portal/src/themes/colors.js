@@ -51,5 +51,5 @@ export const DashboardColors = {
       bg: '#fef2f2',
       color: '#b91c1c',
     },
-  },
-}
+  }
+};
