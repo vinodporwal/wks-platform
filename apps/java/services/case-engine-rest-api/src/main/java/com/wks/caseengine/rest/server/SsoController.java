@@ -120,8 +120,9 @@ public class SsoController {
             info.put("preferred_username", user.getUsername());
             return ResponseEntity.ok(info);
         } catch (Exception e) {
-            log.warn("SSO userinfo lookup failed for userId {}: {}", userId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to fetch user info");
+            log.warn("SSO userinfo lookup failed for userId {}: {} — {}", userId, e.getMessage(),
+                     e.getCause() != null ? e.getCause().getMessage() : "no cause");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to fetch user info: " + e.getMessage());
         }
     }
 
