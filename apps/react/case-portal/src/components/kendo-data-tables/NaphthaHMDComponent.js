@@ -222,7 +222,7 @@ export default function NaphthaHMDComponent() {
     {
       field: 'blendIp21',
       title: 'Blend IP21',
-      editable: true,
+      editable: false,
       width: 120,
       type: 'number',
     },
