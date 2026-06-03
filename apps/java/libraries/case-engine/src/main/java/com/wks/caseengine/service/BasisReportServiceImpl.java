@@ -65,6 +65,9 @@ public class BasisReportServiceImpl implements BasisReportService {
 
 	@PersistenceContext
 	private EntityManager entityManager;
+
+	@PersistenceContext(unitName = "db2")
+    private EntityManager entityManagerdb2;
 	
 	@Autowired
 	private AopCalculationRepository aopCalculationRepository;
@@ -485,12 +488,12 @@ public class BasisReportServiceImpl implements BasisReportService {
 	}
 
 
-	@Transactional(readOnly = true) 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true) 
 	public List<List<Object[]>> getReportDataForOptimizerInputOutput(String plantId, String aopYear, String storedProcedure) {
    
 	    String storedProcedureCall = "{ call " + storedProcedure + "(?, ?) }";
 	   
-	    Session session = entityManager.unwrap(Session.class);
+	    Session session = entityManagerdb2.unwrap(Session.class);
   
 	    return session.doReturningWork(connection -> {
 	        
@@ -638,13 +641,13 @@ public class BasisReportServiceImpl implements BasisReportService {
 	    });
 	}
 
-	@Transactional(readOnly = true)
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<List<Map<String, Object>>> getAllColumnMetadataForOptimizerInputOutput(
 	    String plantId, String aopYear, String storedProcedure) {
 
 	    String storedProcedureCall = "{ call " + storedProcedure + "(?, ?) }";
 
-	    Session session = entityManager.unwrap(Session.class);
+	    Session session = entityManagerdb2.unwrap(Session.class);
 
 	    return session.doReturningWork(connection -> {
 	        List<List<Map<String, Object>>> allMetadataGrids = new ArrayList<>();
