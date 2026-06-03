@@ -221,7 +221,6 @@ const Prices = () => {
       fetchPricesData()
       setModifiedCells({})
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [PLANT_ID, AOP_YEAR])
 
   // ── Save ──────────────────────────────────────────────────────────────────
