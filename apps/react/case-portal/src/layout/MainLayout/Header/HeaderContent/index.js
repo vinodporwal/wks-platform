@@ -877,8 +877,11 @@ export default function HeaderContent({ keycloak, navigation }) {
                   textOverflow: 'ellipsis',
                   fontFamily: "'Honeywell Sans Web',  'Inter', sans-serif",
                 }}
+                title={screenTitleName}
               >
-                {screenTitleName}
+                {screenTitleName?.length > 25
+                  ? `${screenTitleName.slice(0, 25)}...`
+                  : screenTitleName}
               </Typography>
 
               {!!currentStep && (

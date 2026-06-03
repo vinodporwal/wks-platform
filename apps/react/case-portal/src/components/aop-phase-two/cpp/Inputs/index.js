@@ -17,6 +17,7 @@ import Fuel from './Fuel/index'
 import AopDesignBasis from './AopDesignBasis'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import InputsJMD from '../jmd/Inputs/index'
+import Prices from './Prices/index'
 
 const Inputs = () => {
   const keycloak = useSession()
@@ -93,6 +94,12 @@ const Inputs = () => {
         name: 'fuelAvailability',
         displayName: 'Fuel Availability',
         displaySequence: 7,
+      },
+      {
+        id: 'prices',
+        name: 'prices',
+        displayName: 'Prices',
+        displaySequence: 8,
       },
       // { id: 'export-availability',name:'exportAvailability', displayName: 'Export Availability', displaySequence: 6 },
     ]
@@ -172,6 +179,8 @@ const Inputs = () => {
         return <FixedNorms />
       case 'fuel-availability':
         return <Fuel />
+      case 'prices':
+        return <Prices />
       default:
         return null
     }
