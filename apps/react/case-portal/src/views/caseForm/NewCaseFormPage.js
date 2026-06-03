@@ -38,7 +38,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [currentData, setCurrentData] = useState(null);
   const initialRender = useRef(true);
-  const skipChangesCount = useRef(3); // formio fires multiple onChange on init, skip them
+  const skipChangesCount = useRef(5); // formio fires multiple onChange on init, skip them
 
   const handleBeforeUnload = (event) => {
     if (hasUnsavedChanges) {
@@ -207,6 +207,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
         })
 
         setCurrentData({createdBy:keycloak.idTokenParsed.preferred_username})
+        skipChangesCount.current = 5 // reset skip counter after form fully loads
+        setHasUnsavedChanges(false)
       })
       .catch((err) => {
         console.error(err.message)
