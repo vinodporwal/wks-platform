@@ -201,7 +201,7 @@ export const CaseList = ({ status, caseDefId }) => {
       const ws = new WebSocket(`${websocketUrl}/${topic}`)
       ws.onmessage = () => {
         const { assetName, hierarchyName } = getUrlParams()
-        fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, searchText, caseStatusFilter, rowsPerPage, page * rowsPerPage, setTotalCount)
+        fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, searchText, caseStatusFilter, rowsPerPage, page * rowsPerPage, setTotalCount, setACase, setOpenCaseForm)
       }
       return () => {
         ws.close()
@@ -211,7 +211,7 @@ export const CaseList = ({ status, caseDefId }) => {
 
   useEffect(() => {
     const { assetName, hierarchyName } = getUrlParams()
-    fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, '', '', rowsPerPage, 0, setTotalCount)
+    fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, '', '', rowsPerPage, 0, setTotalCount, setACase, setOpenCaseForm)
     setPage(0)
     setSearchText('')
     setCaseStatusFilter('')
@@ -988,7 +988,7 @@ function fetchCases(
     })
 }
 
-function fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, search, caseStatus, limit, offset, setTotalCount) {
+function fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName, hierarchyName, search, caseStatus, limit, offset, setTotalCount, setACase, setOpenCaseForm) {
   setFetching(true)
   Promise.all([
     CaseService.filterCasesByCaseDefinitionId(keycloak, caseDefId, assetName, hierarchyName, search, caseStatus, limit, offset),
@@ -1012,6 +1012,20 @@ function fetchCasesFromSql(setFetching, keycloak, caseDefId, setCases, assetName
       })
       setCases(updatedCases)
       if (setTotalCount) setTotalCount(total)
+
+      // Auto-open case if caseNo is in the URL (e.g. after case creation redirect)
+      const searchParams = new URLSearchParams(window.location.search)
+      const caseNo = getQueryParamValue(window.location.href, 'caseNo')
+      if (caseNo && setACase && setOpenCaseForm) {
+        const selectedCase = updatedCases.find((c) => c.caseNo == caseNo)
+        if (selectedCase) {
+          setACase(selectedCase)
+          setOpenCaseForm(true)
+          searchParams.delete('caseNo')
+          const newUrl = `${window.location.pathname}?${searchParams.toString()}`
+          window.history.replaceState(null, '', newUrl)
+        }
+      }
     })
     .catch((e) => console.error('Filter error:', e))
     .finally(() => setFetching(false))
