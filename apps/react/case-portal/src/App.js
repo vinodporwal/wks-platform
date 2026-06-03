@@ -29,12 +29,31 @@ const App = () => {
 
   // Iframe SSO flow: receive token from APM via postMessage
   useIframeSso({
-    onSuccess: (token) => {
+    onSuccess: async (token) => {
       const payload = JSON.parse(atob(token.split('.')[1]))
+
+      // The APM token may not carry OIDC profile claims (name, email, etc.)
+      // Fetch them from Keycloak's /userinfo endpoint using the token
+      let userInfo = {}
+      try {
+        const res = await fetch(
+          `${Config.LoginUrl}/realms/localhost/protocol/openid-connect/userinfo`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+        if (res.ok) {
+          userInfo = await res.json()
+          console.log('SSO userinfo fetched:', userInfo)
+        } else {
+          console.warn('SSO userinfo fetch failed, status:', res.status)
+        }
+      } catch (e) {
+        console.warn('SSO userinfo fetch error:', e)
+      }
+
       const kcMock = {
         token,
         tokenParsed: payload,
-        idTokenParsed: payload,
+        idTokenParsed: { ...payload, ...userInfo }, // merge name, email, etc.
         isTokenExpired: () => payload.exp * 1000 < Date.now(),
         updateToken: () => Promise.resolve(false),
       }
