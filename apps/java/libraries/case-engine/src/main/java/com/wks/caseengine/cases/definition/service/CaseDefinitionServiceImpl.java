@@ -465,6 +465,19 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			caseNo = CaseNoGenerator();
 			caseData.setCaseNo(caseNo);
 			caseData.setCaseUrl(caseData.getCaseUrl() + "&caseNo=" + caseNo);
+
+			// Inject the generated caseNo back into the container attribute JSON before saving
+			try {
+				ObjectMapper injectMapper = new ObjectMapper();
+				String rawAttrValue = attribute.getValue().replace("\\\"", "\"");
+				com.fasterxml.jackson.databind.node.ObjectNode rootNode =
+					(com.fasterxml.jackson.databind.node.ObjectNode) injectMapper.readTree(rawAttrValue);
+				rootNode.put("caseNo", caseNo);
+				attribute.setValue(injectMapper.writeValueAsString(rootNode));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
 			System.out.println("Saving New Case Details....");
 			caseData.setCreationDate(currentDate);
 			caseDetails = caseRepository.save(caseData);
