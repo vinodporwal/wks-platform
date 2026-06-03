@@ -259,7 +259,6 @@ const NormsQtyCostReport = () => {
         })
 
       setRows(tempRes)
-      setCalculateBtnEnabled(true)
       setOriginalRows(tempRes)
     } catch (error) {
       console.error('Error fetching fixed consumption data:', error)
@@ -287,35 +286,6 @@ const NormsQtyCostReport = () => {
       ExcelName: EXCEL_NAME,
     }
   }, [])
-
-  const getIsReleased = async () => {
-    if (!PLANT_ID || !AOP_YEAR) return
-
-    try {
-      const response = await ReleaseAPIService.getReleaseAOPStatus(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
-
-      // If response has data, disable the button (already released)
-      // If no data, enable the button (not yet released)
-      if (response?.data && Object.keys(response.data).length > 0) {
-        setIsReleaseDisabled(true)
-      } else {
-        setIsReleaseDisabled(false)
-      }
-    } catch (error) {
-      console.error('Error fetching release status:', error)
-    }
-  }
-  useEffect(() => {
-    getIsReleased()
-  }, [keycloak, AOP_YEAR, PLANT_ID])
-
-  const handleRelease = () => {
-    setOpenReleaseDialogBox(true)
-  }
 
   // Calculate Norms data via API
   const handleCalculate = async () => {
