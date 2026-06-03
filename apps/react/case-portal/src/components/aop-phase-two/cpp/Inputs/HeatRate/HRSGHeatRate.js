@@ -46,7 +46,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       width: 150,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
       minWidth: 100,
       hidden: true,
     },
@@ -56,7 +56,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       width: 150,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
       minWidth: 150,
     },
     {

@@ -40,7 +40,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
       minWidth: 150,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
     },
     {
       field: 'assetType',
@@ -49,7 +49,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
       minWidth: 150,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
       hidden: true,
     },
     {
@@ -59,7 +59,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
       minWidth: 180,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
     },
     {
       field: 'utilityDistributed.sapCode',
@@ -68,7 +68,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
       minWidth: 200,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
     },
     {
       field: 'utilityGenerated.name',
@@ -77,7 +77,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
       minWidth: 180,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
     },
     {
       field: 'utilityGenerated.sapCode',
@@ -86,7 +86,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
       minWidth: 200,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
     },
     {
       title: headerMap[4],

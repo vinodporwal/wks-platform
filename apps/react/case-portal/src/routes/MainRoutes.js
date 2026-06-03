@@ -68,6 +68,7 @@ import Inputs from 'components/aop-phase-two/cpp/Inputs/index'
 import PlantRequirement from 'components/aop-phase-two/cpp/PlantRequirement'
 import FixedConsumption from 'components/aop-phase-two/cpp/FixedConsumption'
 import Norms from 'components/aop-phase-two/cpp/Norms'
+import NormsQtyCostReport from 'components/aop-phase-two/cpp/NormsQtyCostReport'
 
 // TCS
 
@@ -960,6 +961,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='norms'>
                 <Norms />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'norms_qty_cost_report',
+            element: (
+              <PrivateRoute routeId='norms_qty_cost_report'>
+                <NormsQtyCostReport />
               </PrivateRoute>
             ),
           },
