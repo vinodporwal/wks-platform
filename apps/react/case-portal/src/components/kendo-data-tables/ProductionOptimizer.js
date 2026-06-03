@@ -96,6 +96,7 @@ const ProductionOptimizer = () => {
   const [modifiedCells, setModifiedCells] = useState({})
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
+  const [calculationObject, setCalculationObject] = useState([])
   const [currentRowId, setCurrentRowId] = useState(null)
 
   const valueFormat = ValueFormatterProduction()
@@ -259,6 +260,7 @@ const ProductionOptimizer = () => {
   const fetchData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR || !selectedMode) return
     setRows([])
+    setCalculationObject([])
     setLoading(true)
     try {
       const selectedLine = lineDetails[tabIndex]
@@ -271,6 +273,7 @@ const ProductionOptimizer = () => {
         selectedMode,
       )
       if (res?.code === 200) {
+        setCalculationObject(res?.data?.aopCalculation)
         // Build dynamic columns from API response
         const dynamicColumns = res?.data?.columns?.map((col) => {
           const monthKey = monthKeyMap[col.field]
@@ -505,7 +508,10 @@ const ProductionOptimizer = () => {
           showTitleNameBusiness: true,
           marginBottom: true,
           showCalculate: true,
-          showCalculateVisibility: true,
+          showCalculateVisibility:
+            calculationObject && Object.keys(calculationObject || {}).length > 0
+              ? true
+              : false,
           dropdownLabel: 'Select Type',
           showModes: dropdownOptions.length > 0,
           modes: dropdownOptions.map((opt) => ({
@@ -515,7 +521,7 @@ const ProductionOptimizer = () => {
         },
         isOldYear,
       ),
-    [isOldYear, AOP_YEAR, PLANT_ID, SCREEN_NAME, dropdownOptions],
+    [isOldYear, AOP_YEAR, PLANT_ID, SCREEN_NAME, dropdownOptions, calculationObject],
   )
 
   const adjustedPermissionsCombined = useMemo(

@@ -61,19 +61,18 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
 
     const renderMenuItem = (item) => {
       const props = {
-        key: item.id,
         level: level + 1,
         onItemClick: !drawerOpen || isPopover ? handleClose : undefined,
         isPopover: !drawerOpen || isPopover,
       }
       switch (item.type) {
         case 'collapse':
-          return <NavCollapse menu={item} {...props} />
+          return <NavCollapse key={item?.id} menu={item} {...props} />
         case 'item':
-          return <NavItem item={item} {...props} />
+          return <NavItem key={item?.id} item={item} {...props} />
         default:
           return (
-            <Typography key={item.id} variant='h6' color='error' align='center'>
+            <Typography key={item?.id} variant='h6' color='error' align='center'>
               Menu Items Error
             </Typography>
           )

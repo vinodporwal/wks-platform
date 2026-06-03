@@ -66,4 +66,6 @@ public interface ConfigurationService {
 
         public List<Map<String, Object>> getSeasonMonths(UUID plantId, String aopYear);
 
+        public AOPMessageVM LoadConfigurationValues(String year, String plantId);
+
 }

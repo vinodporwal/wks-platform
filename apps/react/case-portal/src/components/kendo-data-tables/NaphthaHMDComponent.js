@@ -214,6 +214,18 @@ export default function NaphthaHMDComponent() {
       editable: true,
       hidden: true,
     },
+    {
+      field: 'blendIp21Id',
+      editable: true,
+      hidden: true,
+    },
+    {
+      field: 'blendIp21',
+      title: 'Blend IP21',
+      editable: true,
+      width: 120,
+      type: 'number',
+    },
   ]
 
   const fetchData = useCallback(async () => {

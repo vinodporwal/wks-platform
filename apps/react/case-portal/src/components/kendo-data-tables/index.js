@@ -94,21 +94,19 @@ import {
 } from 'assets/images/icons'
 import { DashboardColors } from 'themes/colors'
 import SwitchEditor from './Utilities-Kendo/SwitchEditor'
+import { NoSpinnerNumericIntegerEditor } from './Utilities-Kendo/numbericIntegerColumns'
 
-// the input on every parent re-render and the user loses focus mid-typing.
+// A stable editor component to prevent focus loss during table re-renders.
 const ON_OFF_CONDITION = (dataItem) => dataItem?.UOM === 'ON/OFF'
-function makeOnOffSwitchEditCell(itemChange, editable, isDisabled) {
-  return function OnOffSwitchEditCell(props) {
-    return (
-      <SwitchEditor
-        {...props}
-        onChange={(e) => itemChange(e)}
-        condition={ON_OFF_CONDITION}
-        editable={editable}
-        isDisabled={isDisabled}
-      />
-    )
-  }
+const OnOffSwitchEditCell = (props) => {
+  return (
+    <SwitchEditor
+      {...props}
+      condition={ON_OFF_CONDITION}
+      editable={props.column?.editable}
+      isDisabled={props.column?.isDisabled}
+    />
+  )
 }
 
 export const dateFields = [
@@ -753,14 +751,16 @@ const KendoDataTables = ({
             lowerSiteName === 'hmd' &&
             field === 'discription'
           ) {
-            const desc = (value || '').trim()
-            if (
-              desc === 'Furnace decoking - (EBA-6401A)' ||
-              desc === 'Furnace decoking - (EBA-6401B)'
-            ) {
-              updated.rate = 32.5
-            } else if (desc === 'Furnace decoking - (EBA-6401C)') {
-              updated.rate = 22.75
+            const desc = (value || '').toLowerCase().replace(/\s+/g, ' ').trim()
+
+            const rateMap = {
+              'furnace decoking - (eba-6401a)': 32.5,
+              'furnace decoking - (eba-6401b)': 32.5,
+              'furnace decoking - (eba-6401c)': 22.75,
+            }
+
+            if (rateMap[desc] !== undefined) {
+              updated.rate = rateMap[desc]
             }
           }
 
@@ -1113,20 +1113,6 @@ const KendoDataTables = ({
     )
   }, [columns])
 
-  const onOffSwitchEditCells = useMemo(() => {
-    const map = {}
-    columns?.forEach((col) => {
-      if (col?.type === 'number' && col?.field) {
-        map[col.field] = makeOnOffSwitchEditCell(
-          itemChange,
-          col?.editable,
-          col?.isDisabled,
-        )
-      }
-    })
-    return map
-  }, [columns, itemChange])
-
   const handleAddRow = () => {
     setEdit({})
     if (isButtonDisabled) return
@@ -1388,8 +1374,7 @@ const KendoDataTables = ({
   const MaterialDisplayNameCell = (props) => {
     const { dataItem, field, tdProps, children } = props
     const value = dataItem[field]
-    const method = dataItem.Method
-
+    const method = dataItem.Method || dataItem.method
     let color = 'inherit'
 
     switch (method) {
@@ -1408,16 +1393,17 @@ const KendoDataTables = ({
     }
 
     return (
-      <td
-        {...tdProps}
-        title={value}
-        style={{
-          color,
-          //  fontWeight: method ? 'bold' : 'normal',
-          ...tdProps.style,
-        }}
-      >
-        {children}
+      <td {...tdProps} title={value}>
+        <span
+          ref={(el) => {
+            if (el && color) {
+              el.style.setProperty('color', color, 'important')
+              // el.style.setProperty('font-weight', 'bold', 'important')
+            }
+          }}
+        >
+          {value}
+        </span>
       </td>
     )
   }
@@ -3282,7 +3268,7 @@ const KendoDataTables = ({
                         key={col.field}
                         field={col.field}
                         title={col.title || col.headerName}
-                        width={col.width}
+                        width={setWidth(col?.minWidth || 150)}
                         hidden={col.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}
@@ -4035,14 +4021,16 @@ const KendoDataTables = ({
                         ${col?.isBold ? 'bold-text' : ''}
                       `}
                         editable={col?.editable ? true : false}
+                        isDisabled={col?.isDisabled}
                         headerClassName={isActive ? 'active-column' : ''}
                         cells={{
                           edit: {
-                            text: onOffSwitchEditCells[col.field],
+                            text: OnOffSwitchEditCell,
                           },
                           data: (props) => {
                             // ON/OFF rows: show switch with direct edit mode
-                            if (props.dataItem?.UOM === 'ON/OFF') {
+                            const uomTypes = ['ON/OFF','YES/NO']
+                            if (uomTypes.includes(props.dataItem?.UOM)) {
                               return (
                                 <SwitchEditor
                                   {...props}
@@ -4051,8 +4039,8 @@ const KendoDataTables = ({
                                   customModifiedCells={customModifiedCells}
                                   rowId={props.dataItem.id}
                                   setRows={setRows}
-                                  editable={col?.editable}
-                                  isDisabled={col?.isDisabled}
+                                  editable={props.dataItem?.[`${col.field}_editable`] === false ? false : col?.editable}
+                                  isDisabled={props.dataItem?.[`${col.field}_isDisabled`] ? true : col?.isDisabled}
                                 />
                               )
                             }
@@ -4079,6 +4067,47 @@ const KendoDataTables = ({
                         columnMenu={ColumnMenuCheckboxFilter}
                         filter='numeric'
                         format={col.format}
+                      />
+                    )
+                  }
+                  if (col?.type === 'number' && col?.integerOnly) {
+                    return (
+                      <GridColumn
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
+                        className={`
+        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+        ${col?.isBold ? 'bold-text' : ''}
+      `}
+                        editable={col?.editable ? true : false}
+                        headerClassName={numericHeaderClass(isActive, col)}
+                        cells={{
+                          edit: { text: NoSpinnerNumericIntegerEditor },
+                          data: (props) =>
+                            showThreeColors ? (
+                              <RedHighlightCell2
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                allRedCell2={allRedCell2}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ) : (
+                              <RedHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col?.format}
                       />
                     )
                   }
@@ -4488,33 +4517,85 @@ const KendoDataTables = ({
         </DialogActions>
       </CompactDialog>
 
-      <Dialog
+      <CompactDialog
         open={deleteMultipleConfirms}
         onClose={() => setDeleteMultipleConfirms(false)}
-        aria-labelledby='alert-dialog-title'
-        aria-describedby='alert-dialog-description'
         disableScrollLock
+        slotProps={{ backdrop: { disableScrollLock: true } }}
       >
-        <DialogTitle id='alert-dialog-title'>{'Delete ?'}</DialogTitle>
-        <DialogContent>
-          <DialogContentText
-            id='alert-dialog-description'
-            sx={{ color: 'text.primary' }}
+        {/* Header */}
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#fef2f2', // soft red
+            borderBottom: '1px solid #fee2e2',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <DeleteOutlineIcon sx={{ fontSize: '1rem', color: '#dc2626' }} />
+            <Typography
+              sx={{
+                fontWeight: 800,
+                fontSize: '0.8rem',
+                color: '#7f1d1d',
+                letterSpacing: '0.4px',
+              }}
+            >
+              CONFIRM DELETE
+            </Typography>
+          </Box>
+
+          <IconButton
+            size='small'
+            onClick={() => setDeleteMultipleConfirms(false)}
+            sx={{ color: '#7f1d1d' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        {/* Content */}
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: '#7f1d1d',
+              lineHeight: 1.5,
+              fontWeight: 600,
+            }}
           >
             {'Are you sure you want to delete?'}{' '}
-          </DialogContentText>
+          </Typography>
+
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteMultipleConfirms(false)}>
+
+        {/* Actions */}
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button
+            onClick={() => setDeleteMultipleConfirms(false)}
+            className='btn-no'
+          >
             Cancel
           </Button>
-          <Button onClick={handleDeleteMultiple} autoFocus disabled={READ_ONLY}>
+
+          <Button
+            onClick={handleDeleteMultiple}
+            variant='contained'
+            size='small'
+            disabled={READ_ONLY}
+            className='btn-yes'
+          >
             Delete
           </Button>
         </DialogActions>
-      </Dialog>
+      </CompactDialog>
 
-      <Dialog
+
+      <CompactDialog
         open={openCalculateDialogeBox}
         onClose={closeCalculateDialogBox}
         aria-labelledby='alert-dialog-title'
@@ -4524,25 +4605,76 @@ const KendoDataTables = ({
           backdrop: { disableScrollLock: true },
         }}
       >
-        <DialogTitle id='alert-dialog-title'>{'Calculate ?'}</DialogTitle>
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#f6f8fa',
+            borderBottom: '1px solid #DDDEE1',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              component='img'
+              src={CalculateIcon}
+              className='w16-icon'
+            />
+            <Typography
+              sx={{
+                fontWeight: 800,
+                fontSize: '0.8rem',
+                color: 'text.primary',
+                letterSpacing: '0.4px',
+              }}
+            >
+              Confirm Calculate
+            </Typography>
+          </Box>
 
-        <DialogContent>
-          <DialogContentText
-            id='alert-dialog-description'
+          <IconButton
+            size='small'
+            onClick={closeCalculateDialogBox}
             sx={{ color: 'text.primary' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: 'text.primary',
+              lineHeight: 1.5,
+              fontWeight: 600,
+            }}
           >
             Are you sure you want to calculate? This will override the existing
             values.
-          </DialogContentText>
+          </Typography>
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={closeCalculateDialogBox}>Cancel</Button>
-          <Button onClick={handleCalculateConfirmation} autoFocus>
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button
+            onClick={closeCalculateDialogBox}
+            className='btn-no'
+          >
+            Cancel
+          </Button>
+
+          <Button
+            onClick={handleCalculateConfirmation}
+            variant='contained'
+            size='small'
+            className='btn-yes'
+          >
             Calculate
           </Button>
         </DialogActions>
-      </Dialog>
+      </CompactDialog>
 
       <CompactDialog
         open={openSaveDialogeBox}

@@ -805,12 +805,12 @@ const AopDesignBasis = () => {
                   >
                     <Info sx={{ fontSize: '0.9rem', color: '#00688C' }} />
 
-                    <Typography className='last-refreshed-text'>
-                      {`Last loaded data on ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} by ${configurationExecutionDetails[0]?.User ?? ''} for period ${formatDateForText(startDate, false)} to ${formatDateForText(endDate, false)}`}
-                    </Typography>
-                  </Stack>
-                </Tooltip>
-              )}
+                <Typography className='last-refreshed-text'>
+                  {`Last loaded data on ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} by ${configurationExecutionDetails[0]?.User ?? ''} for period ${formatDateForText(startDateFromConfig, false)} to ${formatDateForText(endDateDateFromConfig, false)}`}
+                </Typography>
+              </Stack>
+            </Tooltip>
+          )}
 
               {/* ROW 2: AOP DESIGN BASIS */}
               <Box sx={{ width: '100%' }}>

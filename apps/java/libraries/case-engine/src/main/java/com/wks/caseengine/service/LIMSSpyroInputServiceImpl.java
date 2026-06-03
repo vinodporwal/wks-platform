@@ -579,6 +579,7 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 				upsertNaphthaQualityMetric(year, dto.getHeavyId(), dto.getHeavy());
 				upsertNaphthaQualityMetric(year, dto.getOthersId(), dto.getOthers());
 				upsertNaphthaQualityMetric(year, dto.getBlendId(), dto.getBlend());
+				upsertNaphthaQualityMetric(year, dto.getBlendIp21Id(), dto.getBlendIp21());
 			}
 			aopMessageVM.setCode(200);
 			aopMessageVM.setMessage("Data updated successfully");
@@ -905,13 +906,15 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 				dto.setHeavy(row[5] != null ? toDouble(row[5]) : null);
 				dto.setOthers(row[6] != null ? toDouble(row[6]) : null);
 				dto.setBlend(row[7] != null ? toDouble(row[7]) : null);
-				dto.setJmdId(row[8] != null ? row[8].toString() : "");
-				dto.setHpnId(row[9] != null ? row[9].toString() : "");
-				dto.setHeavyId(row[10] != null ? row[10].toString() : "");
-				dto.setOthersId(row[11] != null ? row[11].toString() : "");
-				dto.setBlendId(row[12] != null ? row[12].toString() : "");
-				dto.setPlantId(row[13] != null ? row[13].toString() : "");
-				dto.setAopYear(row[14] != null ? row[14].toString() : "");
+				dto.setBlendIp21(row[8] != null ? toDouble(row[8]) : null);
+				dto.setJmdId(row[9] != null ? row[9].toString() : "");
+				dto.setHpnId(row[10] != null ? row[10].toString() : "");
+				dto.setHeavyId(row[11] != null ? row[11].toString() : "");
+				dto.setOthersId(row[12] != null ? row[12].toString() : "");
+				dto.setBlendId(row[13] != null ? row[13].toString() : "");
+				dto.setBlendIp21Id(row[14] != null ? row[14].toString() : "");
+				dto.setPlantId(row[15] != null ? row[15].toString() : "");
+				dto.setAopYear(row[16] != null ? row[16].toString() : "");
 				dtoList.add(dto);
 			}
 

@@ -71,6 +71,7 @@ const FurnaceRawData = () => {
     const filteredCols = backendCols.filter((col) => col.field !== 'GRID_TYPE')
     const applyFixedWidth = filteredCols.length < 7
     const fixedWidth = applyFixedWidth ? 150 : 121
+    const fixedFields = ['Name', 'Job_Description']
     return backendCols.map((col) => {
       const isTextCol = col.type === 'string'
       const isNumberCol = col.type === 'number'
@@ -83,7 +84,7 @@ const FurnaceRawData = () => {
         ...(isNumberCol ? { format: VALUE_FORMATOR } : {}),
         editable: false,
         isRightAlligned: isNumberCol ? 'numeric' : undefined,
-        ...(fixedWidth ? { widthT: fixedWidth } : {}),
+        ...(fixedFields.includes(col.field) ? { widthT: 220 } : fixedWidth ? { widthT: fixedWidth } : { widthT: 100 }),
       }
     })
   }, [])

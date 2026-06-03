@@ -43,6 +43,7 @@ public class ModeWiseNormsDTO {
     private String uom;
     private String sapMaterialCode;
     private String method;
+    private Double wtAverage;
    
     
 }

@@ -88,8 +88,9 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		Boolean elastomer = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 	    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") || site.getName().equalsIgnoreCase("HMD"));
+		boolean elastomerhmdsbr = vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("HMD") && plant.getName().equalsIgnoreCase("SBR");
 		Boolean withGrade=false;
-		if(plant.getName().equalsIgnoreCase("SBR") && site.getName().equalsIgnoreCase("HMD") && vertical.getName().equalsIgnoreCase("ELASTOMER") || pvc) {
+		if(elastomerhmdsbr || pvc) {
 			withGrade=true;
 		}
 		try {
@@ -101,7 +102,12 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			 if(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("Chemical")){
 				 String procedureName = vertical.getName()+"_"+site.getName()+"_"+"GetAOPConsumptionNorms";
 				 resultList= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
-			}else {
+			}
+			else if(elastomerhmdsbr) { 
+				String procedureName = vertical.getName()+"_"+site.getName()+"_"+"OverAllConsumtionGrade";
+				resultList = findByYearAndPlantIdAndGrade(year, vertical.getId(), site.getId(), UUID.fromString(plantId), procedureName);
+			}
+			else {
 				resultList = getAOPConsumptionNormDataFromView(year, UUID.fromString(plantId),gradeId);
 			}
 			 
@@ -117,7 +123,11 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 				dto.setAopStatus(row[4] != null ? row[4].toString() : null);
 				dto.setAopRemarks(row[5] != null ? row[5].toString() : null);
 				if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc || elastomer) {
-					dto.setGradeId(gradeId);
+					if(elastomerhmdsbr) { 
+						dto.setGradeId(row[6] != null ? row[6].toString() : null);
+					}
+					else {dto.setGradeId(gradeId); }
+					
 					dto.setMaterialFkId(row[7] != null ? row[7].toString() : null);
 					dto.setJan(row[8] != null ? Double.valueOf(row[8].toString()) : null);
 					dto.setFeb(row[9] != null ? Double.valueOf(row[9].toString()) : null);
@@ -137,6 +147,10 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 					dto.setUOM(row[23] != null ? row[23].toString() : null);
 					dto.setIsEditable(row[24] != null ? Boolean.valueOf(row[24].toString()) : null);
 					dto.setProductName(row[25] != null ? row[25].toString() : null);
+
+					if(elastomerhmdsbr) {
+						dto.setWtAverage(row[26] != null ? Double.parseDouble(row[26].toString()) : null);
+					}
 				}else {
 					dto.setMaterialFkId(row[6] != null ? row[6].toString() : null);
 					dto.setJan(row[7] != null ? Double.valueOf(row[7].toString()) : null);
@@ -166,6 +180,17 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 					}
 					
 				}
+
+				// apply grade filter for elastomerhmdsbr
+				if(elastomerhmdsbr) {  
+					if(gradeId==null || gradeId.isEmpty())  {
+						continue;
+					}
+					 if(!gradeId.equalsIgnoreCase(dto.getGradeId())) {
+						continue;
+					}
+				}
+					
 				
 				aOPConsumptionNormDTOList.add(dto);
 			}
@@ -204,6 +229,24 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 		}
 	}
 
+	public List<Object[]> findByYearAndPlantIdAndGrade(String aopYear,  UUID verticalId, UUID siteId, UUID plantId, String procedureName) {
+		try {
+			String sql = "EXEC " + procedureName
+					+ " @PlantId = :plantId,  @verticalId = :verticalId, @siteId = :siteId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+			query.setParameter("verticalId", verticalId);
+			query.setParameter("siteId", siteId);
+			return query.getResultList();
+		}
+		catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
 	public byte[] exportOverallConsumption(String year, UUID plantFKId, boolean isAfterSave, List<AOPConsumptionNormDTO> dtoList) {
 		try {
 			AOPMessageVM gradesVM = getConsumptionAOPGrades(year, plantFKId.toString());
@@ -700,6 +743,12 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 	}
 	
 	public AOPMessageVM getData(List<Object[]> obj,String plantId,String year){
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+		boolean crackerC2 = vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("C2");
+
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		List<AOPConsumptionNormDTO> aopConsumptionNormDTOs = new ArrayList<AOPConsumptionNormDTO>();
 		for(Object[] row:obj) {
@@ -725,6 +774,9 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			aopConsumptionNormDTO.setDec(row[20] != null ? Double.parseDouble(row[20].toString()) : 0.0);
 			aopConsumptionNormDTO.setNormParameterTypeDisplayName(row[21] != null ? row[21].toString() : null);
 			aopConsumptionNormDTO.setSapCode(row[22] != null ? row[22].toString() : null);
+			if(crackerC2) { 
+				aopConsumptionNormDTO.setWtAverage(row[25] != null ? Double.parseDouble(row[25].toString()) : 0.0);
+			}
 			aopConsumptionNormDTOs.add(aopConsumptionNormDTO);
 		}
 		Map<String, Object> map = new HashMap<>(); 

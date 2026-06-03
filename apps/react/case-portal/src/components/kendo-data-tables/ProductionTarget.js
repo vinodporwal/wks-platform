@@ -457,7 +457,37 @@ const ProductionTarget = ({ permissions }) => {
         },
       )
 
-      const formulatedData = normalizeAllRows(formattedData)
+      // Fetch Max Achieved Capacity data for Percentage Summary
+      const maxCapacityResponse =
+        await ProductionVolumeDataApiService.getMaxAchievedCapacityData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      let maxCapacityData = maxCapacityResponse?.data?.aopMCCalculatedDataDTOList
+      if (maxCapacityData && !Array.isArray(maxCapacityData)) {
+        maxCapacityData = [maxCapacityData]
+      }
+      const isTPD = selectedUnit === 'TPD'
+      const formattedMaxCapacity = (maxCapacityData || []).map((item) => ({
+        ...item,
+        idFromApi: item?.id || null,
+        productName: item?.materialDisplayName,
+        april: isTPD && item.april ? (item.april * 24).toFixed(2) : item.april || null,
+        may: isTPD && item.may ? (item.may * 24).toFixed(2) : item.may || null,
+        june: isTPD && item.june ? (item.june * 24).toFixed(2) : item.june || null,
+        july: isTPD && item.july ? (item.july * 24).toFixed(2) : item.july || null,
+        august: isTPD && item.august ? (item.august * 24).toFixed(2) : item.august || null,
+        september: isTPD && item.september ? (item.september * 24).toFixed(2) : item.september || null,
+        october: isTPD && item.october ? (item.october * 24).toFixed(2) : item.october || null,
+        november: isTPD && item.november ? (item.november * 24).toFixed(2) : item.november || null,
+        december: isTPD && item.december ? (item.december * 24).toFixed(2) : item.december || null,
+        january: isTPD && item.january ? (item.january * 24).toFixed(2) : item.january || null,
+        february: isTPD && item.february ? (item.february * 24).toFixed(2) : item.february || null,
+        march: isTPD && item.march ? (item.march * 24).toFixed(2) : item.march || null,
+      }))
+
+      const formulatedData = normalizeAllRows(formattedData, formattedMaxCapacity)
 
       const nonEditableRows = formulatedData.map((item) => ({
         ...item,
@@ -525,7 +555,7 @@ const ProductionTarget = ({ permissions }) => {
     }
   }
 
-  function normalizeAllRows(grid) {
+  function normalizeAllRows(grid, maxCapacityGrid) {
     const monthKeys = [
       'april',
       'may',
@@ -541,18 +571,29 @@ const ProductionTarget = ({ permissions }) => {
       'march',
     ]
 
-    return grid?.map((row) => {
-      // 1. Find this row?s max month value
-      const vals = monthKeys?.map((k) => Number(row[k]))
-      const maxVal = Math.max(...vals)
+    return grid?.map((row, index) => {
+      // Find matching row in maxCapacityGrid
+      const matchedMaxRow = maxCapacityGrid?.find(
+        (maxRow) =>
+          (maxRow.materialFKId && row.materialFKId && maxRow.materialFKId.toLowerCase() === row.materialFKId.toLowerCase()) ||
+          (maxRow.normParametersFKId && row.normParametersFKId && maxRow.normParametersFKId.toLowerCase() === row.normParametersFKId.toLowerCase()) ||
+          (maxRow.productName && row.productName && maxRow.productName === row.productName)
+      ) || maxCapacityGrid?.[index]
 
-      // 2. Shallow-clone the entire row (carries over id, remarks, all FKs, etc.)
       const newRow = { ...row }
 
-      // 3. Overwrite only the month fields:
       monthKeys.forEach((key) => {
         const orig = Number(row[key] || 0)
-        const pct = maxVal ? (orig / maxVal) * 100 : 0
+        let pct = 0
+        if (matchedMaxRow) {
+          const maxVal = Number(matchedMaxRow[key] || 0)
+          pct = maxVal ? (orig / maxVal) * 100 : 0
+        } else {
+          // fallback to self-normalization if no match
+          const vals = monthKeys?.map((k) => Number(row[k]))
+          const selfMax = Math.max(...vals)
+          pct = selfMax ? (orig / selfMax) * 100 : 0
+        }
         newRow[key] = Number(pct.toFixed(2))
       })
 
@@ -584,6 +625,8 @@ const ProductionTarget = ({ permissions }) => {
 
     fetchConfiguration()
   }, [oldYear, yearChanged, keycloak, selectedUnit, PLANT_ID])
+
+
 
   const colDefs_editable = getEnhancedProductionColDefs({
     headerMap,

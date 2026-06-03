@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -23,11 +24,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -646,7 +649,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				String procedureName = verticalName + "_" + site.getName() + "_GetConfiguration";
 				obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);
 			}
-			else if(verticalName.equalsIgnoreCase("AROMATICS") && !site.getName().equalsIgnoreCase("HMD")) {		
+			else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD"))) {		
 				obj = findByYearAndPlantFkIdAROMATICS(year, plantFKId, viewName,getVersion(year,plantFKId));
 			} else {
 				obj = findByYearAndPlantFkId(year, plantFKId, viewName);
@@ -749,6 +752,32 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		}
 	}
 
+	@Override
+	public AOPMessageVM LoadConfigurationValues(String year, String plantId) { 
+  
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		String procedureName = vertical.getName() + "_" + site.getName() + "_LoadConfigurationValues";
+		String sql = "EXEC " + procedureName + " ?, ?";
+
+		Session session = entityManager.unwrap(Session.class);
+		session.doWork(connection -> {
+			PreparedStatement ps = connection.prepareStatement(sql);
+			ps.setObject(1, UUID.fromString(plantId));
+			ps.setObject(2, year);
+			
+			boolean hasResultSet = ps.execute();
+		});
+
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data calculated successfully");
+		aopMessageVM.setData(0);
+		return aopMessageVM;
+
+	}
+
 	public List<ConfigurationDTO> getConfigurationDataForExcel(String year, UUID plantFKId,List<String> reportTypes,String version) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
@@ -775,7 +804,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				String procedureName = verticalName + "_" + site.getName() + "_GetConfiguration";
 				obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);
 			}
-			else if(verticalName.equalsIgnoreCase("AROMATICS"))
+//else if(verticalName.equalsIgnoreCase("AROMATICS"))
+else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD")))	
+
 			{   
 				obj = findByYearAndPlantFkIdAROMATICSExcel(year, plantFKId, viewName,getVersion(year,plantFKId),reportTypes.get(0));
 			}
@@ -846,7 +877,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					}
 				}			
 				
-				  if(verticalName.equalsIgnoreCase("AROMATICS")) {
+				  if(verticalName.equalsIgnoreCase("AROMATICS" ) && !(site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD"))) {
 					  configurationDTO.setVersion(row[22] != null ? row[22].toString() : ""); 
 			      }
 				 
@@ -2931,6 +2962,45 @@ continue;
 	    return null;
 	}
 
+	private static Integer getIntegerCellValue(Cell cell, NormLineRequestDTO dto) {
+
+		if (cell == null) {
+			return null;
+		}
+	
+		if (cell.getCellType() == CellType.NUMERIC) {
+
+			double value = cell.getNumericCellValue();
+
+			// Check if value is decimal
+			if (value % 1 != 0) {
+				dto.setSaveStatus("Failed");
+				dto.setErrDescription("Please enter integer values only");
+				return null;
+			}
+
+			return (int) value;
+		}
+
+		if (cell.getCellType() == CellType.STRING) {
+
+			String value = cell.getStringCellValue().trim();
+
+			if (value.isEmpty()) {
+				return null;
+			}
+
+			try {
+				return Integer.parseInt(value);
+			} catch (NumberFormatException e) {
+				dto.setSaveStatus("Failed");
+				dto.setErrDescription("Please enter integer values only");
+			}
+		}
+
+		return null;
+	}
+
 	@Override
 	public byte[] createConfigurationConstantsExcel(String year, UUID plantFKId, boolean iscatcam) {
 		try {
@@ -3661,13 +3731,42 @@ continue;
 		}
 
 		try {
+			List<NormAttributeTransactionReceipeRequestDTO> validationErrors = new ArrayList<>();
+
 			System.out.println("started Read line configuration in importLineConfiguration");
-			List<NormLineRequestDTO> data = readLineConfigurationData(file.getInputStream(), plantFKId, year);
+			List<NormLineRequestDTO> data = readLineConfigurationData(file.getInputStream(), plantFKId, year, validationErrors);
 			System.out.println("Ended Read line configuration in importLineConfiguration");
+
+			// Remove invalid grade-row entries from every line DTO so only valid rows are saved
+			if (!validationErrors.isEmpty()) {
+				Set<String> invalidGradeIds = validationErrors.stream()
+						.map(NormAttributeTransactionReceipeRequestDTO::getRecId)
+						.collect(Collectors.toSet());
+				for (NormLineRequestDTO dto : data) {
+					if (dto.getGrades() != null) {
+						dto.getGrades().entrySet().removeIf(e -> invalidGradeIds.contains(e.getKey()));
+					}
+				}
+			}
+
 			System.out.println("Started Save line configuration in importLineConfiguration");
-			AOPMessageVM result = updateLineConfiguration(year, plantFKId.toString(), data);
+			updateLineConfiguration(year, plantFKId.toString(), data);
 			System.out.println("Ended Save line configuration in importLineConfiguration");
-			return result;
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+
+			if (!validationErrors.isEmpty()) {
+				byte[] fileByteArray = exportLineConfigData(year, plantFKId, true, validationErrors);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved. Some rows contain decimal values where integers are expected.");
+				return aopMessageVM;
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("All data has been saved");
+			return aopMessageVM;
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format ", e);
 		} catch (Exception ex) {
@@ -3758,7 +3857,8 @@ continue;
 		return null;
 	}
 
-	private List<NormLineRequestDTO> readLineConfigurationData(InputStream inputStream, UUID plantFKId, String year) {
+	private List<NormLineRequestDTO> readLineConfigurationData(InputStream inputStream, UUID plantFKId, String year,
+			List<NormAttributeTransactionReceipeRequestDTO> validationErrors) {
 		List<NormLineRequestDTO> lineList = new ArrayList<>();
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 			Sheet sheet = workbook.getSheetAt(0);
@@ -3818,36 +3918,59 @@ continue;
 				}
 			}
 
-			// Build DTOs grouped by lineId
-			Map<String, NormLineRequestDTO> lineMap = new LinkedHashMap<>();
+		// Build DTOs grouped by lineId
+		Map<String, NormLineRequestDTO> lineMap = new LinkedHashMap<>();
+		// Track which gradeIds have already been recorded as validation errors
+		Set<String> recordedErrorGrades = new LinkedHashSet<>();
 
-			while (rowIterator.hasNext()) {
-				Row row = rowIterator.next();
-				Cell gradeIdCell = row.getCell(gradeIdColIndex);
-				String gradeId = gradeIdCell != null ? gradeIdCell.toString().trim() : null;
-				if (gradeId == null || gradeId.isEmpty()) {
-					continue;
-				}
-
-				for (Map.Entry<Integer, String> entry : colIndexToLineId.entrySet()) {
-					int colIndex = entry.getKey();
-					String lineId = entry.getValue();
-
-					Cell valueCell = row.getCell(colIndex);
-					Double numeric = getNumericCellValue(valueCell, (NormAttributeTransactionReceipeRequestDTO) null);
-					String valStr = (numeric != null ? numeric.toString() : "");
-
-					NormLineRequestDTO dto = lineMap.get(lineId);
-					if (dto == null) {
-						dto = NormLineRequestDTO.builder()
-								.lineId(lineId)
-								.grades(new LinkedHashMap<>())
-								.build();
-						lineMap.put(lineId, dto);
-					}
-					dto.getGrades().put(gradeId, valStr);
-				}
+		while (rowIterator.hasNext()) {
+			Row row = rowIterator.next();
+			Cell gradeIdCell = row.getCell(gradeIdColIndex);
+			String gradeId = gradeIdCell != null ? gradeIdCell.toString().trim() : null;
+			if (gradeId == null || gradeId.isEmpty()) {
+				continue;
 			}
+
+			for (Map.Entry<Integer, String> entry : colIndexToLineId.entrySet()) {
+				int colIndex = entry.getKey();
+				String lineId = entry.getValue();
+
+				NormLineRequestDTO dto = lineMap.get(lineId);
+				if (dto == null) {
+					dto = NormLineRequestDTO.builder()
+							.lineId(lineId)
+							.grades(new LinkedHashMap<>())
+							.build();
+					lineMap.put(lineId, dto);
+				}
+
+				// Reset per-cell error state before calling validator
+				dto.setSaveStatus(null);
+				dto.setErrDescription(null);
+
+				Cell valueCell = row.getCell(colIndex);
+				Integer numeric = getIntegerCellValue(valueCell, dto);
+				String valStr = (numeric != null ? numeric.toString() : "");
+
+				// Capture grade-level validation error (once per grade)
+				if ("Failed".equals(dto.getSaveStatus()) && !recordedErrorGrades.contains(gradeId)) {
+					recordedErrorGrades.add(gradeId);
+					NormAttributeTransactionReceipeRequestDTO errDto = new NormAttributeTransactionReceipeRequestDTO();
+					errDto.setRecId(gradeId);
+					errDto.setSaveStatus(dto.getSaveStatus());
+					errDto.setErrDescription(dto.getErrDescription());
+					if (validationErrors != null) {
+						validationErrors.add(errDto);
+					}
+				}
+
+				// Reset so the line DTO is clean for the next grade row
+				dto.setSaveStatus(null);
+				dto.setErrDescription(null);
+
+				dto.getGrades().put(gradeId, valStr);
+			}
+		}
 
 			lineList.addAll(lineMap.values());
 		} catch (Exception e) {
@@ -4300,7 +4423,7 @@ continue;
 	@Override
 	public AOPMessageVM updateLineConfiguration(String year, String plantId,
 			List<NormLineRequestDTO> dtoList) {
-
+  
 		try {
 
 			UUID plantUUID = UUID.fromString(plantId);

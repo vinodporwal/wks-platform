@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -191,6 +192,12 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		            if (financialAspectData != null) {
 		            	reliabilityPerformanceListMap.put("ReliabilityIncident", financialAspectData);
 		            }
+
+					AOPMessageVM commanParameterVm = getReliabilityPerformance(plantId, year, "Common Parameter");
+					List<ReliabilityPerformanceDto> commanParameterData = (List<ReliabilityPerformanceDto>) commanParameterVm.getData();
+					if (commanParameterData != null) {
+						reliabilityPerformanceListMap.put("CommonParameter", commanParameterData);
+					}
 		        }
 		        
 		        Map<String, Object> sheetData = (Map<String, Object>) structure.get("ReliabilityPerformance");
@@ -212,11 +219,18 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		            if (isAfterSave) {
 		                if (mapForExcel.containsKey(tableId)) {
 		                    sourceData = mapForExcel.get(tableId);
-		                    // Add saveStatus and errDescription headers for the after-save scenario
 		                    headers.add("saveStatus");
 		                    headers.add("errDescription");
-		                    headersOuterTitles.get(0).add("SaveStatus");
-		                    headersOuterTitles.get(0).add("ErrDescription");
+		                    // Align display headers with data columns (including hidden id/masterId/reportType)
+		                    headersOuterTitles.get(0).add("");
+		                    headersOuterTitles.get(0).add("");
+		                    headersOuterTitles.get(0).add("");
+		                    headersOuterTitles.get(0).add("Status");
+		                    headersOuterTitles.get(0).add("Error Description");
+		                    List<Integer> hiddenColumns = (List<Integer>) table.get("hiddenColumns");
+		                    if (hiddenColumns != null) {
+		                        hiddenColumns.remove(Integer.valueOf(13));
+		                    }
 		                }
 		            } else {
 		                sourceData = reliabilityPerformanceListMap.get(tableId);
@@ -226,6 +240,14 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		            if (sourceData == null || sourceData.isEmpty()) {
 		                table.put("hideTable", true);
 		                continue;
+		            }
+
+		            // Ensure MasterId and ReportType hidden columns are present
+		            if (!headers.contains("masterId")) {
+		                headers.add("masterId");
+		            }
+		            if (!headers.contains("reportType")) {
+		                headers.add("reportType");
 		            }
 
 		            // Populate the data rows using reflection
@@ -242,11 +264,12 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		                        }
 		                        row.add(value);
 		                    } catch (NoSuchMethodException e) {
-		                        // Handle cases where a method for a header doesn't exist, e.g., for "saveStatus" or "errDescription"
 		                        row.add(null);
 		                    }
 		                }
-		                row.add(tableId);
+		                if (!isAfterSave) {
+		                    row.add(tableId);
+		                }
 		                dataList.add(row);
 		            }
 		            
@@ -368,7 +391,7 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 				Map<String, List<ReliabilityPerformanceDto>> mapForExcel = new HashMap<>();
 				List<ReliabilityPerformanceDto> failedRecords = new ArrayList<>();
 				for (String key : map.keySet()) {
-				    AOPMessageVM vm = updateReliabilityPerformance(map.get(key));
+				    AOPMessageVM vm = updateReliabilityPerformance(map.get(key), plantFKId);
 				    Object dataObj = vm.getData();
 				    if (dataObj instanceof Map) {
 				        @SuppressWarnings("unchecked")
@@ -472,42 +495,56 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 					if (rowIterator.hasNext())
 						rowIterator.next(); // Skip header
 
-					while (rowIterator.hasNext()) {
-						Row row = rowIterator.next();
-						Cell tableIdCell = row.getCell(11, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
-	                	if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
-	                    	continue;
-	                	}
+				while (rowIterator.hasNext()) {
+					Row row = rowIterator.next();
+					Cell tableIdCell = row.getCell(13, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+                	if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
+                    	continue;
+                	}
 
-	                	ReliabilityPerformanceDto dto = new ReliabilityPerformanceDto();
+                	ReliabilityPerformanceDto dto = new ReliabilityPerformanceDto();
 
-						try {
-							dto.setRowNo(Integer.parseInt(getStringCellValue(row.getCell(0), dto)));
-							dto.setParameter(getStringCellValue(row.getCell(1), dto));
-							dto.setUom(getStringCellValue(row.getCell(2), dto));
-							dto.setBestAchieved(getNumericCellValue(row.getCell(3), dto));
-							dto.setAopYear(year);
-							dto.setAop(getNumericCellValue(row.getCell(4), dto));
-							dto.setActual(getNumericCellValue(row.getCell(5), dto));
-							dto.setPlann(getNumericCellValue(row.getCell(6), dto));
-							dto.setLimit(getStringCellValue(row.getCell(7), dto));
-							dto.setRationale(getStringCellValue(row.getCell(8), dto));
-							dto.setRemarks(getStringCellValue(row.getCell(9), dto));
-							String id=getStringCellValue(row.getCell(10), dto);
-							if(id!=null) {
-								dto.setId((id));
-							}
-							dto.setTableId(getStringCellValue(row.getCell(11), dto));
+					try {
+					String rowNoStr = getStringCellValue(row.getCell(0), dto);
 
-						} catch (Exception e) {
-							e.printStackTrace();
-							dto.setErrDescription(e.getMessage());
-							dto.setSaveStatus("Failed");
-						}
-						map.putIfAbsent(dto.getTableId(), new ArrayList<>());
-
-						map.get(dto.getTableId()).add(dto);
+					if (rowNoStr != null && !rowNoStr.trim().isEmpty()) {
+						dto.setRowNo(Integer.parseInt(rowNoStr));
+					} else {
+						dto.setRowNo(null);
 					}
+						dto.setParameter(getStringCellValue(row.getCell(1), dto));
+						dto.setUom(getStringCellValue(row.getCell(2), dto));
+						dto.setBestAchieved(getNumericCellValue(row.getCell(3), dto));
+						dto.setAopYear(year);
+						dto.setAop(getNumericCellValue(row.getCell(4), dto));
+						dto.setActual(getNumericCellValue(row.getCell(5), dto));
+						dto.setPlann(getNumericCellValue(row.getCell(6), dto));
+						dto.setLimit(getStringCellValue(row.getCell(7), dto));
+						dto.setRationale(getStringCellValue(row.getCell(8), dto));
+						dto.setRemarks(getStringCellValue(row.getCell(9), dto));
+						String id = getStringCellValue(row.getCell(10), dto);
+						if (id != null && !id.trim().isEmpty()) {
+							dto.setId(id.trim());
+						} else {
+							dto.setId(null);
+						}
+						String masterIdVal = getStringCellValue(row.getCell(11), dto);
+						dto.setMasterId((masterIdVal != null && !masterIdVal.trim().isEmpty()) ? masterIdVal.trim() : null);
+
+						String reportTypeVal = getStringCellValue(row.getCell(12), dto);
+						dto.setReportType((reportTypeVal != null && !reportTypeVal.trim().isEmpty()) ? reportTypeVal.trim() : null);
+
+						dto.setTableId(getStringCellValue(row.getCell(13), dto));
+
+					} catch (Exception e) {
+						e.printStackTrace();
+						dto.setErrDescription(e.getMessage());
+						dto.setSaveStatus("Failed");
+					}
+					map.putIfAbsent(dto.getTableId(), new ArrayList<>());
+
+					map.get(dto.getTableId()).add(dto);
+				}
 
 			} catch (Exception e) {
 				throw new RuntimeException("Failed to read Data", e);
@@ -602,6 +639,10 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 				return cell.getNumericCellValue();
 			} else if (cell.getCellType() == CellType.STRING) {
 				try {
+                  // skip empty strings
+				  if(cell.getStringCellValue().trim().isEmpty()) {
+					return null;
+				  }
 					return Double.parseDouble(cell.getStringCellValue().trim());
 				} catch (NumberFormatException e) {
 					dto.setSaveStatus("Failed");
@@ -657,7 +698,7 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		            "            {\r\n" + //
 		            "                \"startRow\": 0,\r\n" + //
 		            "                \"headers\": [\r\n" + //
-		            "\t\t\t\t\t\"rowNo\", \r\n" + // (Fixed: Removed the preceding empty line)
+		            "\t\t\t\t\t\"rowNo\", \r\n" + //
 		            "\t\t\t\t\t\"parameter\", \r\n" + //
 		            "\t\t\t\t\t\"uom\", \r\n" + //
 		            "\t\t\t\t\t\"bestAchieved\", \r\n" + //
@@ -667,7 +708,9 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		            "\t\t\t\t\t\"limit\", \r\n" + //
 		            "\t\t\t\t\t\"rationale\", \r\n" + //
 		            "\t\t\t\t\t\"remarks\", \r\n" + //
-		            "\t\t\t\t\t\"id\"\r\n" + //
+		            "\t\t\t\t\t\"id\", \r\n" + //
+		            "\t\t\t\t\t\"masterId\", \r\n" + //
+		            "\t\t\t\t\t\"reportType\"\r\n" + //
 		            "                ],\r\n" + //
 		            "                \"startingIndexOfYear\":4,\r\n" + //
 		            "                \"hideTable\":false,\r\n" + //
@@ -682,9 +725,9 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		            "                    \"Parameter\",\r\n" + //
 		            "                    \"UOM\",\r\n" + //
 		            "                    \"Best Achieved\",\r\n" + //
-		            "                    \"Limit\",\"Rationale / Reasons for Changes\",\"Remarks\"]],\r\n" + // (Fixed: Added closing ']' and comma)
+		            "                    \"Limit\",\"Rationale / Reasons for Changes\",\"Remarks\"]],\r\n" + //
 		            "                \"rows\": [],\r\n" + //
-		            "                \"hiddenColumns\":[10,11],\r\n" + //
+		            "                \"hiddenColumns\":[10,11,12,13],\r\n" + //
 		            "                \"styles\": {\r\n" + //
 		            "                    \"boldColumns\": [\r\n" + //
 		            "                        0\r\n" + //
@@ -709,7 +752,9 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		            "\t\t\t\t\t\"limit\", \r\n" + //
 		            "\t\t\t\t\t\"rationale\", \r\n" + //
 		            "\t\t\t\t\t\"remarks\", \r\n" + //
-		            "\t\t\t\t\t\"id\"\r\n" + //
+		            "\t\t\t\t\t\"id\", \r\n" + //
+		            "\t\t\t\t\t\"masterId\", \r\n" + //
+		            "\t\t\t\t\t\"reportType\"\r\n" + //
 		            "                ],\r\n" + //
 		            "                \"startingIndexOfYear\":4,\r\n" + //
 		            "                \"hideTable\":false,\r\n" + //
@@ -724,9 +769,54 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 		            "                    \"Parameter\",\r\n" + //
 		            "                    \"UOM\",\r\n" + //
 		            "                    \"Best Achieved\",\r\n" + //
-		            "                    \"Limit\",\"Rationale / Reasons for Changes\",\"Remarks\"]],\r\n" + // (Fixed: Added closing ']' and comma)
+		            "                    \"Limit\",\"Rationale / Reasons for Changes\",\"Remarks\"]],\r\n" + //
 		            "                \"rows\": [],\r\n" + //
-		            "                \"hiddenColumns\":[10,11],\r\n" + //
+		            "                \"hiddenColumns\":[10,11,12,13],\r\n" + //
+		            "                \"styles\": {\r\n" + //
+		            "                    \"boldColumns\": [\r\n" + //
+		            "                        0\r\n" + //
+		            "                    ],\r\n" + //
+		            "                    \"borders\": true\r\n" + //
+		            "                },\r\n" + //
+		            "                \"autoMerge\": {\r\n" + //
+		            "                    \"columns\": [],\r\n" + //
+		            "                    \"rows\": []\r\n" + //
+		            "                }\r\n" + //
+		            "            },\r\n" + //
+
+                    "               {\r\n" + //
+		            "                \"startRow\": 0,\r\n" + //
+		            "                \"headers\": [\r\n" + //
+		            "\t\t\t\t\t\"rowNo\", \r\n" + //
+		            "\t\t\t\t\t\"parameter\", \r\n" + //
+		            "\t\t\t\t\t\"uom\", \r\n" + //
+		            "\t\t\t\t\t\"bestAchieved\", \r\n" + //
+		            "\t\t\t\t\t\"aop\", \r\n" + //
+		            "\t\t\t\t\t\"actual\", \r\n" + //
+		            "\t\t\t\t\t\"plann\", \r\n" + //
+		            "\t\t\t\t\t\"limit\", \r\n" + //
+		            "\t\t\t\t\t\"rationale\", \r\n" + //
+		            "\t\t\t\t\t\"remarks\", \r\n" + //
+		            "\t\t\t\t\t\"id\", \r\n" + //
+		            "\t\t\t\t\t\"masterId\", \r\n" + //
+		            "\t\t\t\t\t\"reportType\"\r\n" + //
+		            "                ],\r\n" + //
+		            "                \"startingIndexOfYear\":4,\r\n" + //
+		            "                \"hideTable\":false,\r\n" + //
+		            "                \"textBeforeTitle\":\"\",\r\n" + //
+		            "                \"title\":\"Common Parameter\",\r\n" + //
+		            "                \"tableId\":\"CommonParameter\",\r\n" + //
+		            "                \"dataInput\":\"Common Parameter\",\r\n" + //
+		            "                \"isColumnMergeRequired\":false,\r\n" + //
+		            "                \"isRowMergeRequired\":false,\r\n" + //
+		            "                \"headersTitles\":[[\r\n" + //
+		            "                    \"S.No\",\r\n" + //
+		            "                    \"Parameter\",\r\n" + //
+		            "                    \"UOM\",\r\n" + //
+		            "                    \"Best Achieved\",\r\n" + //
+		            "                    \"Limit\",\"Rationale / Reasons for Changes\",\"Remarks\"]],\r\n" + //
+		            "                \"rows\": [],\r\n" + //
+		            "                \"hiddenColumns\":[10,11,12,13],\r\n" + //
 		            "                \"styles\": {\r\n" + //
 		            "                    \"boldColumns\": [\r\n" + //
 		            "                        0\r\n" + //
@@ -976,7 +1066,7 @@ public class ReliabilityServiceImpl implements ReliabilityService{
     }
 
 	@Override
-	public AOPMessageVM updateReliabilityPerformance(List<ReliabilityPerformanceDto> reliabilityPerformanceDtos) {
+	public AOPMessageVM updateReliabilityPerformance(List<ReliabilityPerformanceDto> reliabilityPerformanceDtos, String plantId) {
 		List<ReliabilityPerformance> reliabilityPerformances = new ArrayList<ReliabilityPerformance>();
 		List<ReliabilityPerformanceDto> failedList= new ArrayList<ReliabilityPerformanceDto>();
 		try {	
@@ -987,11 +1077,46 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 					continue;
 				}
 				ReliabilityPerformance reliabilityPerformance =null;
-				if(reliabilityPerformanceDto.getId()!=null) {
+				if(reliabilityPerformanceDto.getId()!=null && !reliabilityPerformanceDto.getId().isEmpty()) {
 					Optional<ReliabilityPerformance> reliabilityPerformanceOpt = reliabilityPerformanceRepository.findById(UUID.fromString(reliabilityPerformanceDto.getId()));
 					if(reliabilityPerformanceOpt.isPresent()) {
 						 reliabilityPerformance = reliabilityPerformanceOpt.get();
-						 reliabilityPerformance.setUpdatedAt(new Date());	 
+						 reliabilityPerformance.setUpdatedAt(new Date());
+						 
+						 // remark validation code 
+
+						 boolean valueChanged = false;
+						 boolean remarkChanged = false;
+						 if(!Objects.equals(reliabilityPerformance.getBestAchieved(), reliabilityPerformanceDto.getBestAchieved())) {
+							valueChanged = true;
+						 }
+						 if(!Objects.equals(reliabilityPerformance.getAop(), reliabilityPerformanceDto.getAop())) {
+							valueChanged = true;
+						 }
+						 if(!Objects.equals(reliabilityPerformance.getActual(), reliabilityPerformanceDto.getActual())) {
+							valueChanged = true;
+						 }
+						 if(!Objects.equals(reliabilityPerformance.getPlann(), reliabilityPerformanceDto.getPlann())) {
+							valueChanged = true;
+						 }
+						 if(!Objects.equals(reliabilityPerformance.getLimit(), reliabilityPerformanceDto.getLimit())) {
+							valueChanged = true;
+						 }
+						 if(!Objects.equals(reliabilityPerformance.getRationale(), reliabilityPerformanceDto.getRationale())) {
+							valueChanged = true;
+						 }
+						 if(!Objects.equals(reliabilityPerformance.getRemarks(), reliabilityPerformanceDto.getRemarks())) {
+							remarkChanged = true;
+						 }
+
+						 if(valueChanged && !remarkChanged) {
+
+							reliabilityPerformanceDto.setErrDescription("Please update remark");
+							reliabilityPerformanceDto.setSaveStatus("Failed");
+							failedList.add(reliabilityPerformanceDto);
+							continue;
+						  }
+						
 					}
 				}else {
 						reliabilityPerformance=new ReliabilityPerformance();
@@ -1000,7 +1125,12 @@ public class ReliabilityServiceImpl implements ReliabilityService{
 						reliabilityPerformance.setUom(reliabilityPerformanceDto.getUom());
 						reliabilityPerformance.setCreatedAt(new Date());
 						reliabilityPerformance.setAopYear(reliabilityPerformanceDto.getAopYear());
+						if(plantId!=null && !plantId.isEmpty()) {  
+							reliabilityPerformance.setPlantId(UUID.fromString(plantId));
+						}
+						else{
 						reliabilityPerformance.setPlantId(UUID.fromString(reliabilityPerformanceDto.getPlantId()));	
+						}
 				}
 				reliabilityPerformance.setActual(reliabilityPerformanceDto.getActual());
 				reliabilityPerformance.setAop(reliabilityPerformanceDto.getAop());

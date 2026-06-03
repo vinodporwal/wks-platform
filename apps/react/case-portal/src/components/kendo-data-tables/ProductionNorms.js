@@ -144,6 +144,7 @@ const ProductionNorms = ({ permissions }) => {
   const [rowsIIR, setRowsIIR] = useState([])
   const [rowsInKT, setRowsInKT] = useState([])
   const [rowsInMT, setRowsInMT] = useState([])
+  const [aopCombinedRows, setAOPCombinedRows] = useState([])
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
@@ -457,6 +458,9 @@ const ProductionNorms = ({ permissions }) => {
 
         if (lowerVertName === 'meg') {
           fetchDataByProducts()
+        }
+        if (IS_PVC_DMD) {
+          fetchDataAOPCombined()
         }
         setSnackbarOpen(true)
         setSnackbarData({
@@ -839,6 +843,92 @@ const ProductionNorms = ({ permissions }) => {
       setLoading(false)
     }
   }
+  const fetchDataAOPCombined = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    try {
+      setAOPCombinedRows([])
+      setLoading(true)
+      const response = await ProductionNormsApiService.getAOPCombinedData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      if (response?.code != 200) {
+        setAOPCombinedRows([])
+        setLoading(false)
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Error fetching data. Please try again.',
+          severity: 'error',
+        })
+        return
+      }
+
+      let dataSet = response?.data?.aopDTOList
+
+      var data = dataSet
+        ?.map((product) => {
+          const transformedItem = {
+            ...product,
+            normParametersFKId: product.materialFKId,
+            originalRemark: product.remark,
+            remark: product.remark,
+            isEditable: false,
+            april: product?.april,
+            may: product?.may,
+            june: product?.june,
+            july: product?.july,
+            aug: product?.aug,
+            sep: product?.sep,
+            oct: product?.oct,
+            nov: product?.nov,
+            dec: product?.dec,
+            jan: product?.jan,
+            feb: product?.feb,
+            march: product?.march,
+            Particulars: product.normParameterDisplayName,
+            ...(product.materialFKId !== undefined
+              ? { materialFKId: undefined }
+              : {}),
+          }
+          const total = monthFields.reduce(
+            (sum, month) =>
+              sum + (parseFloat(Number(transformedItem[month])) || 0),
+            0,
+          )
+          return {
+            ...transformedItem,
+            averageTPH: total,
+            _displayNameLower: String(
+              transformedItem.Particulars || '',
+            ).toLowerCase(),
+          }
+        }).map(({ materialFKId, ...rest }) => rest)
+      const totalsRow = {
+        id: data?.length,
+        displayName: 'Total',
+        isEditable: false,
+        ...monthFields.reduce((acc, field) => {
+          acc[field] = data?.reduce(
+            (sum, row) => sum + (parseFloat(row[field]) || 0),
+            0,
+          )
+          return acc
+        }, {}),
+      }
+
+      totalsRow.averageTPH = monthFields.reduce(
+        (sum, field) => sum + (parseFloat(totalsRow[field]) || 0),
+        0,
+      )
+      setAOPCombinedRows([...data, totalsRow])
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const fetchDataByProducts = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -1001,6 +1091,12 @@ const ProductionNorms = ({ permissions }) => {
       fetchLineDetails()
     } else {
       setLineDetails([])
+    }
+  }, [PLANT_ID, keycloak, yearChanged])
+
+  useEffect(() => {
+    if (IS_PVC_DMD) {
+      fetchDataAOPCombined()
     }
   }, [PLANT_ID, keycloak, yearChanged])
 
@@ -1248,6 +1344,44 @@ const ProductionNorms = ({ permissions }) => {
       IS_ELASTOMER_JMD,
     ],
   )
+  const adjustedPermissionsPVCDMD = useMemo(
+    () =>
+      getAdjustedPermissions(
+        {
+          showAction: permissions?.showAction ?? false,
+          addButton: permissions?.addButton ?? false,
+          deleteButton: permissions?.deleteButton ?? false,
+          editButton: permissions?.editButton ?? false,
+          showUnit: false,
+          saveWithRemark: permissions?.saveWithRemark ?? false,
+
+          showCalculate: permissions?.showCalculate ?? false,
+
+          allAction: permissions?.allAction ?? true,
+          showNote: false,
+
+          showTitleNameBusiness: true,
+          titleName: permissions?.title
+            ? permissions?.title
+            : 'Combined Month-Wise Production Plan',
+
+          showCalculateVisibility:false,
+          saveBtn:false,
+          customHeight: permissions?.customHeight,
+          downloadExcelBtnFromUI: true,
+          ExcelName: `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_Combined Month-Wise Production Plan`,
+        },
+        isOldYear,
+      ),
+    [
+      permissions,
+      calculationObject,
+      lowerVertName,
+      selectedUnit,
+      isOldYear,
+      IS_ELASTOMER_JMD,
+    ],
+  )
 
   const adjustedPermissionsByProducts = getAdjustedPermissions(
     {
@@ -1382,6 +1516,23 @@ const ProductionNorms = ({ permissions }) => {
             : ''
         }
       />
+
+      {IS_PVC_DMD && (<KendoDataTables
+        columns={productionColumns}
+        rows={aopCombinedRows}
+        setRows={setAOPCombinedRows}
+        title={'Combined Month-Wise Production Plan'}
+        paginationOptions={[100, 200, 300]}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        apiRef={apiRef}
+        fetchData={fetchDataAOPCombined}
+        permissions={adjustedPermissionsPVCDMD}
+        resetEditSignal={editResetKey}
+        setEditResetKey={setEditResetKey}
+      />)}
 
       {lowerVertName === 'meg' && !permissions?.hideNoteText && (
         <KendoDataTables

@@ -20,6 +20,7 @@ import {
   getColDefsDesignCapacityPEPP,
   getColDefsDesignCapacityPTA,
   getColDefsDesignCapacityPTADMD,
+  getColDefsDesignCapacityPVC,
   getColDefsMaxAchievedCapacity,
   getColDefsMaxAchievedCapacityPEPP,
   getColDefsMaxAchievedCapacityPTA,
@@ -34,7 +35,11 @@ import { getRoleName } from 'services/role-service'
 import AopTabs from 'components/AopTabs'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
+const ProductionvolumeData = ({
+  isBusinessDemand,
+  permissions,
+  setSelectedLineData,
+}) => {
   // State for tabs and line details
   const [tabIndex, setTabIndex] = useState(0)
   const [tabs, setTabs] = useState([])
@@ -100,6 +105,8 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
   const IS_VCM = verticalObject?.name?.toLowerCase() == 'vcm'
   const SITE_NAME = siteObject?.name?.toLowerCase()
   const IS_PET = verticalObject?.name?.toLowerCase() == 'pet'
+  const IS_PVC =
+    verticalObject?.name?.toLowerCase() == 'pvc'
   const IS_PVC_VMD =
     verticalObject?.name?.toLowerCase() == 'pvc' &&
     siteObject?.name?.toLowerCase() == 'vmd'
@@ -769,7 +776,9 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         ? getColDefsDesignCapacityPTADMD(headerMap, valueFormat)
         : IS_PTA || IS_CHEMICAL
           ? getColDefsDesignCapacityPTA(headerMap, valueFormat)
-          : getColDefsDesignCapacity(headerMap, valueFormat)
+          : IS_PVC
+            ? getColDefsDesignCapacityPVC(headerMap, valueFormat)
+            : getColDefsDesignCapacity(headerMap, valueFormat)
 
   const colDefs_max_achieved_capacity =
     IS_PE_PP || IS_PET || IS_PVC_VMD
@@ -789,6 +798,13 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
 
     fetchConfiguration()
   }, [oldYear, yearChanged, keycloak, selectedUnit, PLANT_ID, tabIndex])
+
+  useEffect(() => {
+    if (isBusinessDemand) {
+      const selectedLine = lineDetails[tabIndex]
+      setSelectedLineData(selectedLine)
+    }
+  }, [lineDetails, tabIndex])
 
   // Fetch line details when component mounts or plantID/year changes
   const fetchLineDetails = async () => {
@@ -917,7 +933,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
           originalRemark: item?.remarks?.trim() || null,
           remark: item.remarks?.trim() || '',
           isEditable:
-            IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD || IS_PVC_VMD
+            IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD || IS_PVC_VMD || IS_PVC
               ? false
               : true,
 
@@ -1220,13 +1236,14 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     if (IS_AROMATICS_SEZ_PX4 && unitDesignCapacity === 'TPD') {
       return false
     }
-    if (IS_CRACKER_DMD) {
+    if (IS_CRACKER_DMD || IS_CRACKER_C2) {
       return unitDesignCapacity === 'TPD' ? false : true
     }
     if (
       IS_PE_PP ||
       IS_PET ||
       IS_PVC_VMD ||
+      IS_PVC ||
       IS_PP_SEZ ||
       IS_AROMATICS_SEZ_PX4 ||
       IS_PVC_DMD ||
@@ -1239,12 +1256,14 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     IS_PE_PP,
     IS_PET,
     IS_PVC_VMD,
+    IS_PVC,
     IS_PP_SEZ,
     unitDesignCapacity,
     IS_AROMATICS_SEZ_PX4,
     IS_CRACKER_DMD,
     IS_PVC_DMD,
     IS_PVC_HMD,
+    IS_CRACKER_C2,
   ])
 
   const excelUploadBtnGrid2 = useMemo(() => {
@@ -1261,10 +1280,12 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
       IS_PE_PP ||
       IS_PET ||
       IS_PVC_VMD ||
+      IS_PVC ||
       IS_PP_SEZ ||
       IS_AROMATICS_SEZ_PX4 ||
       IS_PVC_DMD ||
-      IS_PVC_HMD
+      IS_PVC_HMD ||
+      IS_CRACKER_C2
     ) {
       return true
     }
@@ -1273,12 +1294,14 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     IS_PE_PP,
     IS_PET,
     IS_PVC_VMD,
+    IS_PVC,
     IS_PP_SEZ,
     unitDesignCapacity,
     IS_AROMATICS_SEZ_PX4,
     IS_CRACKER_DMD,
     IS_PVC_DMD,
     IS_PVC_HMD,
+    IS_CRACKER_C2,
   ])
   const adjustedPermissionsGrid2 = getAdjustedPermissions(
     {
@@ -1291,7 +1314,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
       saveWithRemark: permissions?.saveWithRemark ?? true,
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
       saveBtn:
-        IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD || IS_PVC_VMD ? false : true,
+        IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD || IS_PVC_VMD || IS_PVC ? false : true,
       units: ['TPH', 'TPD'],
 
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
@@ -1299,11 +1322,13 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         IS_PE_PP ||
         IS_PET ||
         IS_PVC_VMD ||
+        IS_PVC ||
         IS_PP_SEZ ||
         IS_AROMATICS_SEZ_PX4 ||
         IS_CRACKER_DMD ||
         IS_PVC_DMD ||
-        IS_PVC_HMD
+        IS_PVC_HMD ||
+        IS_CRACKER_C2
           ? false
           : true,
       downloadExcelBtn: excelBtnGrid2,
@@ -1466,7 +1491,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         )
       } else {
         if (gridType === 'design') {
-          if (IS_CRACKER_DMD) {
+          if (IS_CRACKER_DMD || IS_CRACKER_C2) {
             await ProductionVolumeDataApiService.getDesignCapacityExcel(
               keycloak,
               PLANT_ID,
@@ -1526,7 +1551,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
             PLANT_ID,
             AOP_YEAR,
           )
-      } else if (IS_CRACKER_DMD && gridType === 'design') {
+      } else if ((IS_CRACKER_DMD || IS_CRACKER_C2) && gridType === 'design') {
         response = await ProductionVolumeDataApiService.saveDesignCapacity(
           rawFile,
           keycloak,
@@ -1565,7 +1590,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
         // setLoading(false)
 
         fetchData()
-        if (IS_CRACKER_DMD) {
+        if (IS_CRACKER_DMD || IS_CRACKER_C2) {
           fetchDesignCapacityData(unitDesignCapacity)
         }
       } else if (response?.code === 400 && response?.data) {
@@ -1662,7 +1687,8 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
           permissions={adjustedPermissionsGrid2}
           selectedUnit={unitDesignCapacity}
           setSelectedUnit={setUnitDesignCapacity}
-          supressGridHeight={true}
+          // supressGridHeight={!IS_PP_HMD}
+          supressGridHeight={!(rows?.length > 10)}
           downloadExcelForConfiguration={() =>
             downloadExcelForConfiguration('design')
           }
@@ -1687,7 +1713,8 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
           selectedUnit={unitDesignCapacity}
           setSelectedUnit={setUnitDesignCapacity}
           handleUnitChange={handleUnitChangeMaxCapacity}
-          supressGridHeight={true}
+          // supressGridHeight={!IS_PP_HMD}
+          supressGridHeight={!(rows?.length > 10)}
           downloadExcelForConfiguration={() =>
             downloadExcelForConfiguration('max')
           }
@@ -1729,7 +1756,8 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
           selectedUnit={unitDesignCapacity}
           setSelectedUnit={setUnitDesignCapacity}
           handleExcelUpload={handleExcelUpload}
-          supressGridHeight={true}
+          // supressGridHeight={!IS_PP_HMD}
+          supressGridHeight={!(rows?.length > 10)}
           downloadExcelForConfiguration={() =>
             downloadExcelForConfiguration('main')
           }
@@ -1755,7 +1783,8 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
               title='Production target Reference'
               fetchData={fetchData}
               permissions={adjustedPermissionsLast}
-              supressGridHeight={true}
+              // supressGridHeight={!IS_PP_HMD}
+              supressGridHeight={!(rows?.length > 10)}
               resetEditSignal={editResetKey}
               setEditResetKey={setEditResetKey}
             />

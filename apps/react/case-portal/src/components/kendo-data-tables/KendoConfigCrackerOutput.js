@@ -164,7 +164,7 @@ const CrackerConfig = () => {
       deleteButton: false,
       editButton: false,
       showUnit: false,
-      showCalculate: lowerVertName === 'cracker' && SITE_NAME === 'HMD',
+      showCalculate: IS_CRACKER_HMD || IS_CRACKER_C2,
       showCalculateVisibility: true,
       showModes:
         lowerVertName === 'cracker' &&
@@ -1076,10 +1076,10 @@ const CrackerConfig = () => {
           tabs={resolvedTabs}
         />
       </Box>
-      {(IS_CRACKER_HMD || IS_CRACKER_C2) &&
+      {/* {(IS_CRACKER_HMD) &&
         currentTabDisplay !== 'Other Spyro output' && (
           <ModeSelection permissions={adjustedPermissionsReadyOnly} />
-        )}
+        )} */}
 
       <Box>
         {(() => {
