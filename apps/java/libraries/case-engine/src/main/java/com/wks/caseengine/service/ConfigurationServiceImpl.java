@@ -638,14 +638,16 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 				Object[] existing = (Object[]) selectQuery.getSingleResult();
 
 				String existingParam    = existing[0] != null ? existing[0].toString().trim() : "";
-				java.util.Date existingDateRaw = (java.util.Date) existing[1];
+				java.sql.Date existingDateRaw = (java.sql.Date) existing[1];
 				String existingRemarks  = existing[2] != null ? existing[2].toString().trim() : "";
 
 				boolean parameterChanged = !param.equals(existingParam);
 				boolean dateChanged = false;
 				if (existingDateRaw != null) {
-					LocalDate existingLocalDate = existingDateRaw.toInstant()
-							.atZone(ZoneId.systemDefault()).toLocalDate();
+					// LocalDate existingLocalDate = existingDateRaw.toInstant()
+					// 		.atZone(ZoneId.systemDefault()).toLocalDate();
+					// dateChanged = !dtoDate.equals(existingLocalDate);
+					LocalDate existingLocalDate = existingDateRaw.toLocalDate();
 					dateChanged = !dtoDate.equals(existingLocalDate);
 				} else {
 					dateChanged = true;
