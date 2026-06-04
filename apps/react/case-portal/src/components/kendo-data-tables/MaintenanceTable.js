@@ -51,6 +51,9 @@ const MaintenanceTable = () => {
   const vertName = verticalChange?.selectedVertical
   const SCREEN_NAME = screenTitle?.title
   const lowerVertName = vertName?.toLowerCase()
+  const IS_PP_PE =
+    verticalObject?.name?.toLowerCase() === 'pp' ||
+    verticalObject?.name?.toLowerCase() === 'pe'
   const IS_PP_DTA =
     verticalObject?.name?.toLowerCase() === 'pp' &&
     siteObject?.name?.toLowerCase() === 'dta'
@@ -111,6 +114,7 @@ const MaintenanceTable = () => {
   const headerMap = generateHeaderNames(AOP_YEAR)
 
   const [rows, setRows] = useState([])
+  const [allRedCell, setAllRedCell] = useState([])
   const [loading, setLoading] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -183,6 +187,31 @@ const MaintenanceTable = () => {
           allMonthsTotal,
         }
       })
+
+      // For PE/PP: highlight months where Effective Operating Hrs > Available Hours
+      if (IS_PP_PE) {
+        const ROW_KEY = 'Effective Operating Hrs'
+        const availableHrsRow = formatted.find(
+          (r) => r.Name === 'Available Hours',
+        )
+        const effectiveRow = formatted.find((r) => r.Name === ROW_KEY)
+        if (availableHrsRow && effectiveRow) {
+          // Stamp identifier so RedHighlightCell can match it
+          effectiveRow.NormParameter_FK_Id = ROW_KEY
+          const redCells = monthFields
+            .filter((month) => {
+              const effectiveVal = parseFloat(effectiveRow[month]) || 0
+              const availableVal = parseFloat(availableHrsRow[month]) || 0
+              return effectiveVal > availableVal
+            })
+            .map((month) => ({ month, NormParameter_FK_Id: ROW_KEY }))
+          setAllRedCell(redCells)
+        } else {
+          setAllRedCell([])
+        }
+      } else {
+        setAllRedCell([])
+      }
 
       setRows(formatted)
     } catch (err) {
@@ -515,6 +544,7 @@ const MaintenanceTable = () => {
           permissions={adjustedPermissions}
           currentRowId={currentRowId}
           downloadExcelForConfiguration={downloadExcelForConfiguration}
+          allRedCell={allRedCell}
         />
       </div>
     </>

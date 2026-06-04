@@ -113,7 +113,7 @@ const TankNosConfigureTable = ({ permissions }) => {
       return {
         minWidth: 100,
         field: monthShort.toLowerCase(),
-        title: monthShort,
+        title: fieldName,
         width: 120,
         type: 'number',
         format: '{0:#.###}',
