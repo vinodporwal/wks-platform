@@ -4028,7 +4028,7 @@ const KendoDataTables = ({
                           data: (props) => {
                             // ON/OFF rows: show switch with direct edit mode
                             const uomTypes = ['ON/OFF','YES/NO']
-                            if (uomTypes.includes(props.dataItem?.UOM)) {
+                            if (uomTypes.includes(props.dataItem?.UOM) || permissions?.enableSwitchToggle) {
                               return (
                                 <SwitchEditor
                                   {...props}
