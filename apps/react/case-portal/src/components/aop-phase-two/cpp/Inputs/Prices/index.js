@@ -26,6 +26,42 @@ const Prices = () => {
   const valueFormat = ValueFormatterPhaseTwo()
   const customFormatFive = customValueFormatterPhaseTwo(5)
 
+  // Custom cell renderer for dynamic decimal formatting: 4 decimals if >= 1000, else 2 decimals
+  const DynamicDecimalCell = ({
+    dataItem,
+    field,
+    tdProps,
+    customModifiedCells,
+  }) => {
+    let value = dataItem[field]
+    let displayValue = value
+    const rowId = dataItem.id
+
+    if (value !== null && value !== undefined && value !== '') {
+      const numValue = parseFloat(value)
+      if (!isNaN(numValue)) {
+        displayValue =
+          numValue >= 1000 ? numValue.toFixed(2) : numValue.toFixed(4)
+      }
+    }
+
+    const isEdited = Object.prototype.hasOwnProperty.call(
+      customModifiedCells?.[rowId] || {},
+      field,
+    )
+
+    return (
+      <td
+        {...tdProps}
+        title={value}
+        className={`${tdProps?.className || ''} ${isEdited ? 'edited-cell' : ''}`.trim()}
+        style={{ ...tdProps?.style }}
+      >
+        {displayValue}
+      </td>
+    )
+  }
+
   // Fiscal-year month order: Apr → Mar
   const MONTH_TO_INDEX = {
     apr: 4,
@@ -61,7 +97,7 @@ const Prices = () => {
     minWidth: 100,
     editable: true,
     type: 'number1',
-    format: valueFormat,
+    customCell: DynamicDecimalCell,
   }))
 
   // ── State ────────────────────────────────────────────────────────────────
