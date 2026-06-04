@@ -1545,22 +1545,24 @@ const handleFormChange = (submission) => {
     const files = Array.isArray(containerData.file) ? containerData.file : []
     content += `
       <!-- Analysis -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; padding: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Analysis</h3>
-        <div style="padding: 10px;">
-          <p><strong>${getLabel('caseCauseCategory')}</strong>: ${caseCauseCategoryLabel}</p>
-          <p><strong>${getLabel('caseCauseDescription')}</strong>: ${caseCauseDescriptionLabel}</p>
-          <p><strong>${getLabel('analysisDesc')}</strong>: <span style="white-space: pre-wrap;">${containerData.analysisDesc}</span></p>
-          <p><strong>${getLabel('diagnosis')}</strong>: <span style="white-space: pre-wrap;">${containerData.diagnosis}</span></p>
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+        <div style="page-break-inside: avoid; break-inside: avoid; padding: 20px;">
+          <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Analysis</h3>
+          <div style="padding: 10px;">
+            <p><strong>${getLabel('caseCauseCategory')}</strong>: ${caseCauseCategoryLabel}</p>
+            <p><strong>${getLabel('caseCauseDescription')}</strong>: ${caseCauseDescriptionLabel}</p>
+            <p><strong>${getLabel('analysisDesc')}</strong>: <span style="white-space: pre-wrap;">${containerData.analysisDesc}</span></p>
+            <p><strong>${getLabel('diagnosis')}</strong>: <span style="white-space: pre-wrap;">${containerData.diagnosis}</span></p>
+          </div>
         </div>
         ${files.length > 0 ? `
           <div style="padding: 10px;">
-            <p style="font-weight: bold; margin-bottom: 8px;">Trends / Attachments</p>
+            <p style="font-weight: bold; margin-bottom: 8px;">Uploaded Files</p>
             ${files.map((file) => {
               const src = base64Map[file.name] || `${Config.StorageUrl}/storage/files1/${file.dir || 'cases'}/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}`
               const isImage = file.type && file.type.startsWith('image/')
               return `
-                <div style="page-break-inside: avoid; margin-bottom: 16px; break-inside: avoid;">
+                <div style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 16px;">
                   <p style="margin: 0 0 4px 0; font-size: 12px; color: #555;">${file.name}</p>
                   ${isImage
                     ? `<img src="${src}" alt="${file.name}" style="max-width: 100%; max-height: 240mm; height: auto; display: block; object-fit: contain;" />`
