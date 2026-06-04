@@ -178,6 +178,22 @@ public class NormBasedUtilityBudgetController {
             .body(excelFile);
     }
 
+    @GetMapping(value = "/norm-based-utility-budget/detailed/export")
+    public ResponseEntity<byte[]> exportNormBasedUtilityBudgetDetailed(
+            @RequestParam UUID cppPlantId,
+            @RequestParam String financialYear) {
+
+        byte[] excelFile = normBasedUtilityBudgetService.exportNormBasedUtilityBudgetDetailed(cppPlantId, financialYear);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", "NormBasedUtilityBudget_Detailed_" + financialYear + ".xlsx");
+
+        return ResponseEntity.ok()
+            .headers(headers)
+            .body(excelFile);
+    }
+
     @GetMapping(value = "/norm-based-utility-budget/summary/export")
     public ResponseEntity<byte[]> exportNormBasedUtilityBudgetSummary(
             @RequestParam UUID cppPlantId,
