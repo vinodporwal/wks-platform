@@ -55,8 +55,8 @@ const kendoBusinessDemColDef = ({ headerMap }) => {
       title: headerMap[col.title],
       align: 'right',
       format: FORMATE_DECIMAL,
-      editable: IS_CRACKER_HMD ? col.title === 4 : col.editable,
-      isDisabled: IS_CRACKER_HMD ? col.title !== 4 : false,
+      editable: col.editable,
+      isDisabled: false,
     }
   })
 

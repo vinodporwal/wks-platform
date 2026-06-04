@@ -288,11 +288,13 @@ export default function NaphthaHMDComponent() {
           heavy: item.heavy,
           others: item.others,
           blend: item.blend,
+          blendIp21: item.blendIp21,
           jmdId: item.jmdId,
           hpnId: item.hpnId,
           heavyId: item.heavyId,
           othersId: item.othersId,
           blendId: item.blendId,
+          blendIp21Id: item.blendIp21Id,
         }))
         setRows1(mapped)
       } else {
@@ -406,11 +408,13 @@ export default function NaphthaHMDComponent() {
         heavy: item.heavy,
         others: item.others,
         blend: item.blend,
+        blendIp21: item.blendIp21,
         jmdId: item.jmdId,
         hpnId: item.hpnId,
         heavyId: item.heavyId,
         othersId: item.othersId,
         blendId: item.blendId,
+        blendIp21Id: item.blendIp21Id,
       }))
 
       // 3. Save to API

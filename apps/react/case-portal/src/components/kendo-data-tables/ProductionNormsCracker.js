@@ -791,7 +791,7 @@ const ProductionNormsCracker = ({ permissions }) => {
           showNote: true,
           showTitleNameBusiness: false,
           titleName: '',
-          saveBtn: true,
+          saveBtn: IS_CRACKER_C2 ? false : true,
           downloadExcelBtnFromUI: true,
           ExcelName: `${EXCEL_NAME_OTHER_PRODUCTION}`,
           showCalculateVisibility:
@@ -821,7 +821,7 @@ const ProductionNormsCracker = ({ permissions }) => {
       <LoaderBackdrop open={!!loading} />
 
       {/* SHOW THIS GRID TO ALL SITES */}
-      {!CRACKER_HMD && !CRACKER_DMD && (
+      {!CRACKER_HMD && !CRACKER_DMD && !IS_CRACKER_C2 && (
         <KendoDataTables
           modifiedCells={modifiedCellsC2C3R}
           setModifiedCells={setModifiedCellsC2C3R}
@@ -887,6 +887,44 @@ const ProductionNormsCracker = ({ permissions }) => {
         resetEditSignal={editResetKey}
         setEditResetKey={setEditResetKey}
       />
+
+      {IS_CRACKER_C2 && (
+        <KendoDataTables
+          modifiedCells={modifiedCellsC2C3R}
+          setModifiedCells={setModifiedCellsC2C3R}
+          columns={productionColumnsC2C3R?.filter(
+            (col) => col.field !== 'remarks',
+          )}
+          rows={rowsC2C3R}
+          setRows={setRowsC2C3R}
+          title={'Production AOP'}
+          isCellEditable={isCellEditable}
+          onAddRow={(newRow) => console.log('New Row Added:', newRow)}
+          onDeleteRow={(id) => console.log('Row Deleted:', id)}
+          onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
+          paginationOptions={[100, 200, 300]}
+          saveChanges={saveChangesC2C3R}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          apiRef={apiRefC2C3R}
+          fetchData={fetchDataC2C3R}
+          remarkDialogOpen={remarkDialogOpenC2C3R}
+          setRemarkDialogOpen={setRemarkDialogOpenC2C3R}
+          currentRemark={currentRemarkC2C3R}
+          setCurrentRemark={setCurrentRemarkC2C3R}
+          currentRowId={currentRowIdC2C3R}
+          permissions={adjustedPermissionsForC2C3R}
+          handleUnitChange={handleUnitChangeC2C3R}
+          selectedUOM={'UOM'}
+          note={''}
+          handleRemarkCellClick={handleRemarkCellClick}
+          handleCalculate={handleCalculateOtherProduction}
+          resetEditSignal={editResetKey}
+          setEditResetKey={setEditResetKey}
+        />
+      )}
     </div>
   )
 }

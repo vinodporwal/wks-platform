@@ -145,7 +145,7 @@ const OptimizerReportHMD = () => {
                         color: '#475569',
                       }}
                     >
-                      {isCollapsed ? '▶' : '▼'}
+                      {isCollapsed ? '?' : '?'}
                     </span>
                     <span
                       style={{

@@ -150,9 +150,8 @@ const getEnhancedAOPColDefs = ({
         field: line?.Id?.toUpperCase(), // use Id from API
         title: line?.DisplayName, // use DisplayName
         editable: true,
-        integerOnly: true,
         widthT: 100,
-        type: 'number',
+        type: 'integerNumberOnly',
         // format: FORMATE_VALUE,
         minWidth: 100,
       })

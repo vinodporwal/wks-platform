@@ -131,6 +131,7 @@ export const dateFields1 = [
   'shutdownDate',
   'StartDate',
   'EndDate',
+  'date',
 ]
 
 export const monthMap = {
@@ -4028,7 +4029,7 @@ const KendoDataTables = ({
                           data: (props) => {
                             // ON/OFF rows: show switch with direct edit mode
                             const uomTypes = ['ON/OFF','YES/NO']
-                            if (uomTypes.includes(props.dataItem?.UOM)) {
+                            if (uomTypes.includes(props.dataItem?.UOM) || permissions?.enableSwitchToggle) {
                               return (
                                 <SwitchEditor
                                   {...props}
@@ -4068,7 +4069,7 @@ const KendoDataTables = ({
                       />
                     )
                   }
-                  if (col?.type === 'number' && col?.integerOnly) {
+                  if (col?.type === 'integerNumberOnly') {
                     return (
                       <GridColumn
                         key={col?.field}
