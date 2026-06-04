@@ -1494,7 +1494,6 @@ const handleFormChange = (submission) => {
     const getLabel = (key) => labelMap[key] || key || ''
 
     // Files are stored inside the container attribute JSON by formio — same source as the detail page
-    const uploadedFiles = Array.isArray(containerData.file) ? containerData.file : []
 
     let content = `
     <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #333;">
@@ -1503,7 +1502,7 @@ const handleFormChange = (submission) => {
       </div>
 
       <!-- Case Information Panel -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; page-break-inside: avoid;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin-left: 1px; margin-right: 1px;">Case Information</h3>
         <div style="padding: 10px;">
           <p><strong>${getLabel('caseNo')}</strong>: ${aCase.caseNo}</p>
@@ -1515,7 +1514,7 @@ const handleFormChange = (submission) => {
       </div>
 
       <!-- Case Details -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; page-break-inside: avoid;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin-left: 1px; margin-right: 1px;">Case Details</h3>
         <div style="padding: 10px;">
           <p><strong>${getLabel('createdOn')}</strong>: ${new Date(containerData.createdOn).toLocaleDateString()}</p>
@@ -1527,7 +1526,7 @@ const handleFormChange = (submission) => {
       </div>
 
       <!-- Associated Faults -->
-      <div class="no-break" style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; page-break-inside: avoid;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin-left: 1px; margin-right: 1px;">Associated Faults</h3>
         <p style="padding: 10px; margin: 0;"><strong>${getLabel('textField1')}</strong>: ${containerData.textField1}</p>
         ${formatDataGrid(containerData.dataGrid2, getLabel)}
@@ -1543,39 +1542,35 @@ const handleFormChange = (submission) => {
       containerData.caseCauseDescription,
       containerData.caseCauseCategory,
     )
-    const files = containerData.file;
+    const files = Array.isArray(containerData.file) ? containerData.file : []
     content += `
       <!-- Analysis -->
-      <div class="no-break" style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; padding: 20px;">
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; padding: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Analysis</h3>
         <div style="padding: 10px;">
           <p><strong>${getLabel('caseCauseCategory')}</strong>: ${caseCauseCategoryLabel}</p>
           <p><strong>${getLabel('caseCauseDescription')}</strong>: ${caseCauseDescriptionLabel}</p>
           <p><strong>${getLabel('analysisDesc')}</strong>: <span style="white-space: pre-wrap;">${containerData.analysisDesc}</span></p>
           <p><strong>${getLabel('diagnosis')}</strong>: <span style="white-space: pre-wrap;">${containerData.diagnosis}</span></p>
-        </div>`
-    if (files.length > 0) {
-      content += `
-          <ul style="list-style: none; padding: 0; margin: 0;">
-            ${files
-          .map(
-            (file, index) => {
-              const src = base64Map[file.name] || `${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}`
+        </div>
+        ${files.length > 0 ? `
+          <div style="padding: 10px;">
+            <p style="font-weight: bold; margin-bottom: 8px;">Trends / Attachments</p>
+            ${files.map((file) => {
+              const src = base64Map[file.name] || `${Config.StorageUrl}/storage/files1/${file.dir || 'cases'}/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}`
+              const isImage = file.type && file.type.startsWith('image/')
               return `
-                  <li style="margin-bottom: 16px;">
-                    <img 
-                      src="${src}"
-                      alt="${file.name}"
-                      style="max-width: 100%; height: auto;"
-                    />
-                  </li>`
-            }
-          )
-          .join('')}
-          </ul>
-      `;
-    }
-    content += `</div>`
+                <div style="page-break-inside: avoid; margin-bottom: 16px; break-inside: avoid;">
+                  <p style="margin: 0 0 4px 0; font-size: 12px; color: #555;">${file.name}</p>
+                  ${isImage
+                    ? `<img src="${src}" alt="${file.name}" style="max-width: 100%; max-height: 240mm; height: auto; display: block; object-fit: contain;" />`
+                    : `<span style="font-size: 13px;">${file.name}</span>`
+                  }
+                </div>`
+            }).join('')}
+          </div>
+        ` : ''}
+      </div>`
     if (containerData.RecommendationsRadio === 'yes') {
       content += `
       <!-- Data Grid 1 -->
@@ -1589,7 +1584,7 @@ const handleFormChange = (submission) => {
     // Value Realization section
     content += `
       <!-- Value Realization -->
-      <div class="no-break" style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; padding: 20px;">
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; padding: 20px; page-break-inside: avoid;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Value Realization</h3>
         <div style="padding: 10px;">
           <p><strong>${getLabel('valueRealizationCategory')}</strong>: ${getValueRealizationCategoryLabel(containerData.valueRealizationCategory)}</p>
@@ -1601,36 +1596,6 @@ const handleFormChange = (submission) => {
         </div>
       </div>
   `
-
-    // Append uploaded files section at the bottom
-    if (uploadedFiles.length > 0) {
-      content += `
-      <div style="border: 1px solid #333; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
-      <h3 style="margin-bottom: 10px;">Uploaded Files</h3>
-      <ul style="list-style: none; padding: 0; margin: 0;">
-        ${uploadedFiles
-          .map((file) => {
-            const fileUrl = `${Config.StorageUrl}/storage/files1/${file.dir || 'cases'}/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}`
-            const isImage = file.type && file.type.startsWith('image/')
-            const src = isImage ? (base64Map[file.name] || fileUrl) : fileUrl
-            return `
-              <li style="margin-bottom: 16px;">
-                ${isImage
-                  ? `<div>
-                      <p style="margin: 0 0 6px 0; font-size: 13px; color: #555;">${file.name}</p>
-                      <img src="${src}" alt="${file.name}" style="max-width: 100%; height: auto; border: 1px solid #e0e0e0;" />
-                    </div>`
-                  : `<a href="${fileUrl}" target="_blank">${file.name}</a>`
-                }
-              </li>`
-          })
-          .join('')}
-      </ul>
-      </div>
-      `;
-    } else {
-      content += `<p>No files uploaded.</p>`;
-    }
 
     return content
   }
@@ -1688,8 +1653,9 @@ const handleFormChange = (submission) => {
       .set({
         filename: fileName,
         margin: 10,
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
       })
       .from(element)
       .save();
