@@ -495,7 +495,6 @@ const OverallAopConsumption = () => {
     showTitleNameBusiness: true,
     showTitle: true,
     titleName: `${SCREEN_NAME}`,
-    showReleaseBtn: false && showReleaseButton ? true : false,
   }
 
   const dropdownConfig = {
