@@ -408,14 +408,41 @@ public class ConfigurationController {
 		return configurationService.getCatalystChangeOver(year,plantId);
 	}
 
-	@PostMapping(value = "/catalyst-change-over")
-	public AOPMessageVM saveCatalystChangeOver(@RequestBody List<CatalystChangeOverDTO> catalystChangeOverDTOList) {
-		return configurationService.saveCatalystChangeOver(catalystChangeOverDTOList);
+	@PostMapping(value = "/catalyst-change-over/{year}")
+	public AOPMessageVM saveCatalystChangeOver(@PathVariable String year, @RequestBody List<CatalystChangeOverDTO> catalystChangeOverDTOList) {
+		return configurationService.saveCatalystChangeOver(catalystChangeOverDTOList, year);
 	}
 
 	@DeleteMapping(value = "/catalyst-change-over/{id}")
 	public AOPMessageVM deleteCatalystChangeOver(@PathVariable String id) {
 		return configurationService.deleteCatalystChangeOver(id);
+	}
+
+	@GetMapping(value = "/catalyst-change-over-export")
+	public ResponseEntity<byte[]> exportCatalystChangeOver(
+			@RequestParam("plantId") String plantId,
+			@RequestParam("year") String year) {
+		try {
+			byte[] excelBytes = configurationService.createCatalystChangeOverExcel(year, plantId, false, null);
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.parseMediaType(
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(ContentDisposition.builder("attachment")
+					.filename("catalyst_change_over.xlsx")
+					.build());
+			headers.setContentLength(excelBytes.length);
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@PostMapping(value = "/catalyst-change-over-import", consumes = "multipart/form-data")
+	public AOPMessageVM importCatalystChangeOverExcel(
+			@RequestParam("plantId") String plantId,
+			@RequestParam("year") String year,
+			@RequestParam("file") MultipartFile file) {
+		return configurationService.importCatalystChangeOverExcel(year, plantId, file);
 	}
 
 	@GetMapping(value = "/tank-config")

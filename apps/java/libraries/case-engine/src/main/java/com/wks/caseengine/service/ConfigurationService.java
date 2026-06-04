@@ -71,9 +71,13 @@ public interface ConfigurationService {
 
         public AOPMessageVM getCatalystChangeOver(String year, String plantFKId);
 
-        public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystChangeOverDTOList);
+        public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystChangeOverDTOList, String year);
 
         public AOPMessageVM deleteCatalystChangeOver(String Id);
+
+        public byte[] createCatalystChangeOverExcel(String year, String plantFKId, boolean isAfterSave, List<CatalystChangeOverDTO> dtoList);
+
+        public AOPMessageVM importCatalystChangeOverExcel(String year, String plantId, MultipartFile file);
 
         public AOPMessageVM getTankConfiguration(String year, String plantId);
 
