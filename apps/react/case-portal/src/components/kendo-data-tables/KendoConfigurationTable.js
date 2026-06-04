@@ -52,6 +52,7 @@ import LineConfiguration from './LineConfiguration'
 import ConfigurationAccordian from './common/ConfigurationAccordian'
 import SeasonMonths from './tab-components/SeasonMonths/index'
 import MaterialBalance from './MaterialBalance'
+import TankNosConfigureTable from './TankNosConfigureTable'
 
 const ConfigurationTable = () => {
   const hasExecutedRef = useRef(false)
@@ -1880,6 +1881,8 @@ const ConfigurationTable = () => {
                 )
               case getTheId('MaterialBalance'):
                 return <MaterialBalance />
+              case getTheId('TankNos'):
+                return <TankNosConfigureTable />
               default:
                 return null
             }
