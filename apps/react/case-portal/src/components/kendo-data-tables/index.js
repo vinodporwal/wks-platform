@@ -4068,7 +4068,7 @@ const KendoDataTables = ({
                       />
                     )
                   }
-                  if (col?.type === 'number' && col?.integerOnly) {
+                  if (col?.type === 'integerNumberOnly') {
                     return (
                       <GridColumn
                         key={col?.field}
