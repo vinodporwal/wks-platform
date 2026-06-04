@@ -8,10 +8,10 @@ import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/commo
 import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { setIsReleased } from 'store/reducers/dataGridStore'
-import { ReleaseAPIService } from '../services/common/releaseAPIService'
-import AdvanceKendoTable from '../common/AdvanceKendoTable/index'
-import { downloadBase64Excel } from '../common/utilities/downloadBase64Excel'
-import { generateExcelName } from '../common/utilities/excelNameUtil'
+import { ReleaseAPIService } from '../../services/common/releaseAPIService'
+import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
+import { downloadBase64Excel } from '../../common/utilities/downloadBase64Excel'
+import { generateExcelName } from '../../common/utilities/excelNameUtil'
 
 const NormsQtyCostReport = () => {
   const keycloak = useSession()
@@ -31,11 +31,10 @@ const NormsQtyCostReport = () => {
 
   const AOP_YEAR = year?.selectedYear
 
-  const EXCEL_NAME = generateExcelName(dataGridStore, 'NORMS_QTY_COST_REPORT')
-
-  const lowerVertName = verticalObject?.name?.toLowerCase()
-  const lowerSiteName = siteObject?.name?.toLowerCase()
-  const IS_CPP = lowerVertName === 'cpp'
+  const EXCEL_NAME = generateExcelName(
+    dataGridStore,
+    'NORMS_QTY_COST_REPORT_MONTHLY',
+  )
 
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
@@ -72,18 +71,18 @@ const NormsQtyCostReport = () => {
     title: headerMap[MONTH_TO_INDEX[mon]],
     children: [
       {
-        field: `${mon}.genQuantity`,
+        field: `${mon}.qty`,
         title: 'Gen. Quantity',
-        widthT: 150,
-        minWidth: 150,
+        widthT: 130,
+        minWidth: 130,
         type: 'number',
         format: valueFormat,
       },
       {
         field: `${mon}.norms`,
         title: 'Norms',
-        widthT: 150,
-        minWidth: 150,
+        widthT: 130,
+        minWidth: 130,
         editable: false,
         type: 'number1',
         format: valueFormat,
@@ -91,16 +90,16 @@ const NormsQtyCostReport = () => {
       {
         field: `${mon}.quantity`,
         title: 'Quantity',
-        widthT: 150,
-        minWidth: 150,
+        widthT: 130,
+        minWidth: 130,
         type: 'number',
         format: valueFormat,
       },
       {
         field: `${mon}.price`,
         title: 'Price',
-        widthT: 150,
-        minWidth: 150,
+        widthT: 130,
+        minWidth: 130,
         editable: false,
         type: 'number1',
         format: valueFormat,
@@ -109,8 +108,8 @@ const NormsQtyCostReport = () => {
       {
         field: `${mon}.amount`,
         title: 'Amount',
-        widthT: 150,
-        minWidth: 150,
+        widthT: 130,
+        minWidth: 130,
         type: 'number',
         format: valueFormat,
         hidden: false,
@@ -122,8 +121,8 @@ const NormsQtyCostReport = () => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
-  // Column definitions
-  const nestedColumns = [
+  // Base columns (common to all views)
+  const baseColumns = [
     //Generating Plant
     {
       field: 'generatingPlantName',
@@ -210,16 +209,13 @@ const NormsQtyCostReport = () => {
       locked: true,
       minWidth: 150,
     },
+  ]
+
+  // Column definitions for monthly view
+  const nestedColumns = [
+    ...baseColumns,
     // Monthly columns (Norms / Quantity / Amount / Price) ─ Apr → Mar
     ...MONTH_COLUMNS,
-    // {
-    //   field: 'remarks',
-    //   title: 'Remarks',
-    //   widthT: 250,
-    //   type: 'textarea',
-    //   editable: false,
-    //   minWidth: 250,
-    // },
   ]
 
   const [rows, setRows] = useState([])
@@ -227,11 +223,11 @@ const NormsQtyCostReport = () => {
   const [calculationLoading, setCaculationLoading] = useState(false)
 
   useEffect(() => {
-    if (PLANT_ID && AOP_YEAR && lowerSiteName === 'nmd') {
+    if (PLANT_ID && AOP_YEAR) {
       fetchNormsData()
       setModifiedCells({})
     }
-  }, [PLANT_ID, AOP_YEAR, lowerSiteName])
+  }, [PLANT_ID, AOP_YEAR])
 
   const fetchNormsData = async () => {
     setLoading(true)
@@ -269,8 +265,8 @@ const NormsQtyCostReport = () => {
     }
   }
 
-  // Permissions (adjust as needed)
-  const permissions = useMemo(() => {
+  // Permissions for monthly view (editable)
+  const monthlyPermissions = useMemo(() => {
     return {
       showAction: true,
       addButton: false,
@@ -494,10 +490,11 @@ const NormsQtyCostReport = () => {
     })
 
     try {
-      await UtilityPlantApiServiceV2.exportNormsExcel(
+      await UtilityPlantApiServiceV2.exportNormBasedUtilityBudgetDetailed(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        EXCEL_NAME,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -519,48 +516,39 @@ const NormsQtyCostReport = () => {
     setRemarkDialogOpen(true)
   }
 
-  const renderBySite = () => {
-    switch (lowerSiteName) {
-      case 'nmd':
-      default:
-        return (
-          <AdvanceKendoTable
-            columns={nestedColumns}
-            rows={rows}
-            setRows={setRows}
-            handleCalculate={handleCalculate}
-            modifiedCells={modifiedCells}
-            setModifiedCells={setModifiedCells}
-            title='Norms Qty. Cost Report'
-            permissions={permissions}
-            handleRemarkCellClick={handleRemarkCellClick}
-            remarkDialogOpen={remarkDialogOpen}
-            setRemarkDialogOpen={setRemarkDialogOpen}
-            currentRemark={currentRemark}
-            setCurrentRemark={setCurrentRemark}
-            currentRowId={currentRowId}
-            setCurrentRowId={() => {}}
-            saveChanges={saveChanges}
-            handleExcelUpload={handleExcelUpload}
-            handleExport={handleExport}
-            snackbarData={snackbarData}
-            snackbarOpen={snackbarOpen}
-            setSnackbarOpen={setSnackbarOpen}
-            setSnackbarData={setSnackbarData}
-            customHeight={80}
-            groupBy={['generatingPlantName', 'accountName']}
-          />
-        )
-    }
-  }
-
-  if (!IS_CPP) return null
-
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
 
-      {renderBySite()}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {/* Monthly Grid */}
+        <AdvanceKendoTable
+          columns={nestedColumns}
+          rows={rows}
+          setRows={setRows}
+          handleCalculate={handleCalculate}
+          modifiedCells={modifiedCells}
+          setModifiedCells={setModifiedCells}
+          title='Norms Qty. Cost Report - Monthly'
+          permissions={monthlyPermissions}
+          handleRemarkCellClick={handleRemarkCellClick}
+          remarkDialogOpen={remarkDialogOpen}
+          setRemarkDialogOpen={setRemarkDialogOpen}
+          currentRemark={currentRemark}
+          setCurrentRemark={setCurrentRemark}
+          currentRowId={currentRowId}
+          setCurrentRowId={() => {}}
+          saveChanges={saveChanges}
+          handleExcelUpload={handleExcelUpload}
+          handleExport={handleExport}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          customHeight={80}
+          groupBy={['generatingPlantName', 'accountName']}
+        />
+      </Box>
     </Box>
   )
 }

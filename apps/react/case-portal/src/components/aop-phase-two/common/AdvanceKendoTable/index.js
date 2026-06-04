@@ -1680,25 +1680,32 @@ const AdvanceKendoTable = ({
                     ),
                   }
                 : { text: NoSpinnerNumericEditor },
-              data: (props) =>
-                showThreeColors ? (
-                  <RedHighlightCell2
-                    {...props}
-                    customModifiedCells={customModifiedCells}
-                    allRedCell={allRedCell}
-                    allRedCell2={allRedCell2}
-                    disableRedHighlight={disableRedHighlight}
-                    format={col.format}
-                  />
-                ) : (
-                  <RedHighlightCell
-                    {...props}
-                    customModifiedCells={customModifiedCells}
-                    allRedCell={allRedCell}
-                    disableRedHighlight={disableRedHighlight}
-                    format={col.format}
-                  />
-                ),
+              data: col.customCell
+                ? (props) => (
+                    <col.customCell
+                      {...props}
+                      customModifiedCells={customModifiedCells}
+                    />
+                  )
+                : (props) =>
+                    showThreeColors ? (
+                      <RedHighlightCell2
+                        {...props}
+                        customModifiedCells={customModifiedCells}
+                        allRedCell={allRedCell}
+                        allRedCell2={allRedCell2}
+                        disableRedHighlight={disableRedHighlight}
+                        format={col.format}
+                      />
+                    ) : (
+                      <RedHighlightCell
+                        {...props}
+                        customModifiedCells={customModifiedCells}
+                        allRedCell={allRedCell}
+                        disableRedHighlight={disableRedHighlight}
+                        format={col.format}
+                      />
+                    ),
               headerCell: col.subtitle
                 ? createHeaderWithSubtitle(col.subtitle)
                 : SimpleHeaderWithTooltip,
