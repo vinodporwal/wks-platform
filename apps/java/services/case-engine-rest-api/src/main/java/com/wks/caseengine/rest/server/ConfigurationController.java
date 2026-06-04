@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.CatalystChangeOverDTO;
+import com.wks.caseengine.dto.TankConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
@@ -448,6 +449,14 @@ public class ConfigurationController {
 	@GetMapping(value = "/tank-config")
 	public AOPMessageVM getTankConfiguration(@RequestParam String year,@RequestParam String plantId) {
 		return configurationService.getTankConfiguration(year,plantId);
+	}
+
+	@PostMapping(value = "/tank-config")
+	public AOPMessageVM saveTankConfiguration(
+			@RequestParam String plantId,
+			@RequestParam String aopYear,
+			@RequestBody List<TankConfigurationDTO> tankConfigurationDTOList) {
+		return configurationService.saveTankConfiguration(tankConfigurationDTOList, plantId, aopYear);
 	}
 
 }

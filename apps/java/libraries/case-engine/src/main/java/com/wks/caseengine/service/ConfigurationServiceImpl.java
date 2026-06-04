@@ -724,24 +724,25 @@ try {
 	for (Object[] row : obj) {
 		TankConfigurationDTO tankConfigurationDTO = new TankConfigurationDTO();
 		tankConfigurationDTO.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
-		tankConfigurationDTO.setJan(row[1] != null ? Double.parseDouble(row[1].toString()) : 0.0);
-		tankConfigurationDTO.setFeb(row[2] != null ? Double.parseDouble(row[2].toString()) : 0.0);
-		tankConfigurationDTO.setMar(row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0);
-		tankConfigurationDTO.setApr(row[4] != null ? Double.parseDouble(row[4].toString()) : 0.0);
-		tankConfigurationDTO.setMay(row[5] != null ? Double.parseDouble(row[5].toString()) : 0.0);
-		tankConfigurationDTO.setJun(row[6] != null ? Double.parseDouble(row[6].toString()) : 0.0);
-		tankConfigurationDTO.setJul(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
-		tankConfigurationDTO.setAug(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
-		tankConfigurationDTO.setSep(row[9] != null ? Double.parseDouble(row[9].toString()) : 0.0);
-		tankConfigurationDTO.setOct(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
-		tankConfigurationDTO.setNov(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
-		tankConfigurationDTO.setDec(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
-		tankConfigurationDTO.setRemarks(row[13] != null ? row[13].toString() : "");
-		tankConfigurationDTO.setAuditYear(row[14] != null ? row[14].toString() : "");
-		tankConfigurationDTO.setUom(row[15] != null ? row[15].toString() : "");
-		tankConfigurationDTO.setNormTypeName(row[16] != null ? row[16].toString() : "");
-		tankConfigurationDTO.setIsEditable(row[17] != null ? ((Boolean) row[17]).booleanValue() : null);
-		tankConfigurationDTO.setDisplayName(row[18] != null ? row[18].toString() : "");
+		tankConfigurationDTO.setJan(row[1] != null ? ((Boolean) row[1]).booleanValue() : false);
+		tankConfigurationDTO.setFeb(row[2] != null ? ((Boolean) row[2]).booleanValue() : false);
+		tankConfigurationDTO.setMar(row[3] != null ? ((Boolean) row[3]).booleanValue() : false);
+		tankConfigurationDTO.setApr(row[4] != null ? ((Boolean) row[4]).booleanValue() : false);
+		tankConfigurationDTO.setMay(row[5] != null ? ((Boolean) row[5]).booleanValue() : false);
+		tankConfigurationDTO.setJun(row[6] != null ? ((Boolean) row[6]).booleanValue() : false);
+		tankConfigurationDTO.setJul(row[7] != null ? ((Boolean) row[7]).booleanValue() : false);
+		tankConfigurationDTO.setAug(row[8] != null ? ((Boolean) row[8]).booleanValue() : false);
+		tankConfigurationDTO.setSep(row[9] != null ? ((Boolean) row[9]).booleanValue() : false);
+		tankConfigurationDTO.setOct(row[10] != null ? ((Boolean) row[10]).booleanValue() : false);
+		tankConfigurationDTO.setNov(row[11] != null ? ((Boolean) row[11]).booleanValue() : false);
+		tankConfigurationDTO.setDec(row[12] != null ? ((Boolean) row[12]).booleanValue() : false);
+		tankConfigurationDTO.setVolume(row[13] != null ? Integer.parseInt(row[13].toString()) : 0);
+		tankConfigurationDTO.setRemarks(row[14] != null ? row[14].toString() : "");
+		tankConfigurationDTO.setAuditYear(row[15] != null ? row[15].toString() : "");
+		tankConfigurationDTO.setUom(row[16] != null ? row[16].toString() : "");
+		tankConfigurationDTO.setNormTypeName(row[17] != null ? row[17].toString() : "");
+		tankConfigurationDTO.setIsEditable(row[18] != null ? ((Boolean) row[18]).booleanValue() : null);
+		tankConfigurationDTO.setDisplayName(row[19] != null ? row[19].toString() : "");
 		tankConfigurationDTOList.add(tankConfigurationDTO);
 	}
 	aopMessageVM.setCode(200);
@@ -756,6 +757,101 @@ try {
 	aopMessageVM.setMessage("Failed to fetch data");
 	return aopMessageVM;
 }
+}
+
+@Override
+@Transactional
+public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigurationDTOList, String plantId, String aopYear) {
+	try {
+		String modifiedBy = Utility.getUserName();
+		Date modifiedOn = new Date();
+
+		for (TankConfigurationDTO dto : tankConfigurationDTOList) {
+
+			String checkSql = "SELECT COUNT(1) FROM TankConfiguration "
+					+ "WHERE norm_paramter_id = :normParameterId "
+					+ "AND plantId = :plantId "
+					+ "AND aopYear = :aopYear";
+			Query checkQuery = entityManager.createNativeQuery(checkSql);
+			checkQuery.setParameter("normParameterId", UUID.fromString(dto.getNormParameterFKId()));
+			checkQuery.setParameter("plantId", UUID.fromString(plantId));
+			checkQuery.setParameter("aopYear", aopYear);
+			int count = ((Number) checkQuery.getSingleResult()).intValue();
+
+			if (count > 0) {
+				String updateSql = "UPDATE TankConfiguration "
+						+ "SET volume = :volume, "
+						+ "april = :apr, may = :may, june = :jun, july = :jul, "
+						+ "august = :aug, september = :sep, october = :oct, november = :nov, "
+						+ "december = :dec, january = :jan, february = :feb, march = :mar, "
+						+ "remarks = :remarks, modifiedOn = :modifiedOn, modifiedBy = :modifiedBy "
+						+ "WHERE norm_paramter_id = :normParameterId "
+						+ "AND plantId = :plantId "
+						+ "AND aopYear = :aopYear";
+				Query updateQuery = entityManager.createNativeQuery(updateSql);
+				updateQuery.setParameter("volume", dto.getVolume());
+				updateQuery.setParameter("apr", dto.getApr());
+				updateQuery.setParameter("may", dto.getMay());
+				updateQuery.setParameter("jun", dto.getJun());
+				updateQuery.setParameter("jul", dto.getJul());
+				updateQuery.setParameter("aug", dto.getAug());
+				updateQuery.setParameter("sep", dto.getSep());
+				updateQuery.setParameter("oct", dto.getOct());
+				updateQuery.setParameter("nov", dto.getNov());
+				updateQuery.setParameter("dec", dto.getDec());
+				updateQuery.setParameter("jan", dto.getJan());
+				updateQuery.setParameter("feb", dto.getFeb());
+				updateQuery.setParameter("mar", dto.getMar());
+				updateQuery.setParameter("remarks", dto.getRemarks());
+				updateQuery.setParameter("modifiedOn", modifiedOn);
+				updateQuery.setParameter("modifiedBy", modifiedBy);
+				updateQuery.setParameter("normParameterId", UUID.fromString(dto.getNormParameterFKId()));
+				updateQuery.setParameter("plantId", UUID.fromString(plantId));
+				updateQuery.setParameter("aopYear", aopYear);
+				updateQuery.executeUpdate();
+			} else {
+				String insertSql = "INSERT INTO TankConfiguration "
+						+ "(id, norm_paramter_id, volume, "
+						+ "april, may, june, july, august, september, october, november, december, january, february, march, "
+						+ "remarks, plantId, aopYear, modifiedOn, modifiedBy) "
+						+ "VALUES (NEWID(), :normParameterId, :volume, "
+						+ ":apr, :may, :jun, :jul, :aug, :sep, :oct, :nov, :dec, :jan, :feb, :mar, "
+						+ ":remarks, :plantId, :aopYear, :modifiedOn, :modifiedBy)";
+				Query insertQuery = entityManager.createNativeQuery(insertSql);
+				insertQuery.setParameter("normParameterId", UUID.fromString(dto.getNormParameterFKId()));
+				insertQuery.setParameter("volume", dto.getVolume());
+				insertQuery.setParameter("apr", dto.getApr());
+				insertQuery.setParameter("may", dto.getMay());
+				insertQuery.setParameter("jun", dto.getJun());
+				insertQuery.setParameter("jul", dto.getJul());
+				insertQuery.setParameter("aug", dto.getAug());
+				insertQuery.setParameter("sep", dto.getSep());
+				insertQuery.setParameter("oct", dto.getOct());
+				insertQuery.setParameter("nov", dto.getNov());
+				insertQuery.setParameter("dec", dto.getDec());
+				insertQuery.setParameter("jan", dto.getJan());
+				insertQuery.setParameter("feb", dto.getFeb());
+				insertQuery.setParameter("mar", dto.getMar());
+				insertQuery.setParameter("remarks", dto.getRemarks());
+				insertQuery.setParameter("plantId", UUID.fromString(plantId));
+				insertQuery.setParameter("aopYear", aopYear);
+				insertQuery.setParameter("modifiedOn", modifiedOn);
+				insertQuery.setParameter("modifiedBy", modifiedBy);
+				insertQuery.executeUpdate();
+			}
+		}
+
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data saved successfully");
+		aopMessageVM.setData(tankConfigurationDTOList);
+		return aopMessageVM;
+	} catch (IllegalArgumentException e) {
+		throw new RestInvalidArgumentException(e.getMessage(), e);
+	} catch (Exception ex) {
+		ex.printStackTrace();
+		throw new RuntimeException("Failed to save TankConfiguration data", ex);
+	}
 }
 
 

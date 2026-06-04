@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.CatalystChangeOverDTO;
+import com.wks.caseengine.dto.TankConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
@@ -80,5 +81,7 @@ public interface ConfigurationService {
         public AOPMessageVM importCatalystChangeOverExcel(String year, String plantId, MultipartFile file);
 
         public AOPMessageVM getTankConfiguration(String year, String plantId);
+
+        public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigurationDTOList, String plantId, String aopYear);
 
 }
