@@ -174,7 +174,7 @@ const getEnhancedAOPColDefs = ({
       if (col?.title == 'Value') {
         return {
           ...col,
-          type: 'number',
+          type: col.type ?? 'number',
           format: FORMATE_VALUE,
           minWidth: 100,
         }
@@ -201,7 +201,7 @@ const getEnhancedAOPColDefs = ({
           ...col,
           title: headerMap[col.title],
           align: 'right',
-          type: 'negativeNumber',
+          type: col.type ?? 'negativeNumber',
           format: FORMATE_VALUE,
           minWidth: 100,
         }
@@ -249,7 +249,7 @@ const getEnhancedAOPColDefs = ({
           ...col,
           title: headerMap[col.title],
           align: 'right',
-          type: 'number',
+          type: col.type ?? 'number',
           format: FORMATE_VALUE,
           minWidth: 100,
         }

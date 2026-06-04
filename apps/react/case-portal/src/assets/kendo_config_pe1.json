@@ -48,7 +48,8 @@
     "align": "left",
     "width": 120,
     "headerAlign": "left",
-    "minWidth": 100
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "may",
@@ -58,7 +59,8 @@
     "align": "left",
     "width": 100,
     "headerAlign": "left",
-    "minWidth": 100
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "jun",
@@ -68,7 +70,8 @@
     "align": "left",
     "width": 100,
     "headerAlign": "left",
-    "minWidth": 100
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "jul",
@@ -78,7 +81,8 @@
     "align": "left",
     "width": 100,
     "headerAlign": "left",
-    "minWidth": 100
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "aug",
@@ -88,7 +92,8 @@
     "align": "left",
     "width": 100,
     "headerAlign": "left",
-    "minWidth": 100
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "sep",
@@ -98,7 +103,8 @@
     "align": "left",
     "width": 100,
     "headerAlign": "left",
-    "minWidth": 100
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "oct",
@@ -108,7 +114,8 @@
     "align": "left",
     "width": 100,
     "headerAlign": "left",
-    "minWidth": 100
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "nov",
@@ -118,7 +125,8 @@
     "align": "left",
     "width": 100,
     "headerAlign": "left",
-    "minWidth": 100
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "dec",
@@ -128,7 +136,8 @@
     "align": "left",
     "width": 100,
     "headerAlign": "left",
-    "minWidth": 100
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "jan",
@@ -138,7 +147,8 @@
     "align": "left",
     "width": 100,
     "headerAlign": "left",
-    "minWidth": 100
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "feb",
@@ -148,7 +158,8 @@
     "align": "left",
     "width": 100,
     "headerAlign": "left",
-    "minWidth": 100
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "mar",
@@ -158,7 +169,8 @@
     "align": "left",
     "width": 100,
     "headerAlign": "left",
-    "minWidth": 100
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "remarks",
