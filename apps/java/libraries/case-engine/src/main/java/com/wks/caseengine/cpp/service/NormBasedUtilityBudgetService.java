@@ -25,6 +25,8 @@ public interface NormBasedUtilityBudgetService {
 
     byte[] exportNormBasedUtilityBudgetSummary(UUID cppPlantId, String financialYear);
 
+    byte[] exportNormBasedUtilityBudgetDetailed(UUID cppPlantId, String financialYear);
+
     AOPMessageVM importExcel(UUID cppPlantId, String financialYear, MultipartFile file);
 }
 
