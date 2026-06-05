@@ -100,6 +100,16 @@ const Prices = () => {
     customCell: DynamicDecimalCell,
   }))
 
+  // ── Conditional editing config ────────────────────────────────────────────
+  // Month columns are editable only when valueType is 'Price' or 'Amount'
+  const monthColumnsWithConditionalEditing = MONTH_COLUMNS.map((col) => ({
+    ...col,
+    conditionalEditable: {
+      dependsOn: 'valueType',
+      editableValues: ['Price', 'Amount'],
+    },
+  }))
+
   // ── State ────────────────────────────────────────────────────────────────
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
@@ -114,9 +124,10 @@ const Prices = () => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+  const [customModifiedCells, setCustomModifiedCells] = useState({})
 
   // ── Column definitions (mirrors FixedNorms / existing Prices skeleton) ──
-  const columns = [
+  const baseColumns = [
     {
       field: 'generatingPlantName',
       title: 'Generating Plant',
@@ -193,11 +204,24 @@ const Prices = () => {
       editable: false,
       minWidth: 150,
     },
-
-    // Monthly norms ─ Apr → Mar (generated from MONTH_COLUMNS)
-    ...MONTH_COLUMNS,
     {
-      field: 'modifiedBy',
+      field: 'valueType',
+      title: 'Value Type',
+      widthT: 150,
+      type: 'select',
+      editable: true,
+      minWidth: 150,
+      options: [
+        { value: 'Price', label: 'Price' },
+        { value: 'Amount', label: 'Amount' },
+        { value: 'Calculation', label: 'Calculation' },
+      ],
+    },
+
+    // Monthly norms ─ Apr → Mar (with conditional editing)
+    ...monthColumnsWithConditionalEditing,
+    {
+      field: 'priceSource',
       title: 'Price Source',
       widthT: 250,
       type: 'text',
@@ -214,6 +238,7 @@ const Prices = () => {
       alwaysEditable: true,
     },
   ]
+  const columns = baseColumns
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
   const fetchPricesData = async () => {
@@ -228,6 +253,7 @@ const Prices = () => {
 
       if (!res?.data || res.data.length === 0) {
         setRows([])
+        setOriginalRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
         return
@@ -237,6 +263,7 @@ const Prices = () => {
         ...item,
         id: item.id || index + 1,
         remarks: item.remarks || '',
+        valueType: item.valueType || '',
         isEditable: true,
       }))
 
@@ -259,6 +286,44 @@ const Prices = () => {
     }
   }, [PLANT_ID, AOP_YEAR])
 
+  // ── Custom itemChange handler for conditional editing ─────────────────────
+  const handleItemChange = (e) => {
+    const { dataItem, field, value } = e
+    const itemId = dataItem.id
+    const updates = { [field]: value, inEdit: true }
+
+    // Handle valueType changes
+    if (field === 'valueType') {
+      const originalRow = originalRows.find((r) => r.id === itemId)
+      if (value === 'Calculation') {
+        // Set all month values to 0 when switching to Calculation
+        MONTH_COLUMNS.forEach((col) => {
+          updates[col.field] = 0
+        })
+      } else if (originalRow && (value === 'Price' || value === 'Amount')) {
+        // Restore original month values when switching back to Price or Amount
+        MONTH_COLUMNS.forEach((col) => {
+          updates[col.field] = originalRow[col.field]
+        })
+      }
+    }
+
+    // Update all state in one go
+    setModifiedCells((prev) => ({
+      ...prev,
+      [itemId]: { ...dataItem, ...prev[itemId], ...updates },
+    }))
+
+    setRows((prev) =>
+      prev.map((r) => (r.id === itemId ? { ...r, ...updates } : r)),
+    )
+
+    setCustomModifiedCells((prev) => ({
+      ...prev,
+      [itemId]: { ...(prev[itemId] || {}), ...updates },
+    }))
+  }
+
   // ── Save ──────────────────────────────────────────────────────────────────
   const saveChanges = async () => {
     setLoading(true)
@@ -280,8 +345,11 @@ const Prices = () => {
     }
 
     // Validate remarks for any changed month fields
-    // const fieldsToCheck = ['price', ...MONTH_COLUMNS.map((col) => col.field)]
-    const fieldsToCheck = ['price', 'priceSource']
+    const fieldsToCheck = [
+      'valueType',
+      ...MONTH_COLUMNS.map((col) => col.field),
+      'priceSource',
+    ]
     const validationError = validateNestedRowDataWithRemarks(
       data,
       originalRows,
@@ -430,6 +498,7 @@ const Prices = () => {
     showImport: true,
     showExport: true,
     ExcelName: EXCEL_NAME,
+    conditionalEditingByValueType: true,
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -443,6 +512,8 @@ const Prices = () => {
         setRows={setRows}
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
+        customModifiedCells={customModifiedCells}
+        setCustomModifiedCells={setCustomModifiedCells}
         title={permissions.titleName}
         permissions={permissions}
         handleRemarkCellClick={handleRemarkCellClick}
@@ -461,6 +532,7 @@ const Prices = () => {
         setSnackbarData={setSnackbarData}
         customHeight={70}
         groupBy={['generatingPlantName']}
+        customItemChange={handleItemChange}
       />
     </Box>
   )

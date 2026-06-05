@@ -193,7 +193,8 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
             headerRow.getCell(col++).setCellStyle(headerStyle);
             headerRow.createCell(col).setCellValue("AOP Year");
             headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Price Source");
+            
+            headerRow.createCell(col).setCellValue("Value Type");
             headerRow.getCell(col++).setCellStyle(headerStyle);
 
             String startYearSuffix = financialYear.substring(2, 4);
@@ -207,6 +208,9 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                 headerRow.createCell(col).setCellValue(month);
                 headerRow.getCell(col++).setCellStyle(headerStyle);
             }
+
+            headerRow.createCell(col).setCellValue("Price Source");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
 
             int remarksCol = col;
             headerRow.createCell(col).setCellValue("Remarks");
@@ -248,7 +252,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                 setStringCellValue(row.createCell(col++), dto.getIssuingPlantName(), dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getIssuingUom(), dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getAopYear(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getPriceSource(), dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getValueType(), dataStyle);
 
                 setBigDecimalCellValue(row.createCell(monthStartCol + 0), dto.getAprPrice(), numericStyle);
                 setBigDecimalCellValue(row.createCell(monthStartCol + 1), dto.getMayPrice(), numericStyle);
@@ -264,6 +268,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                 setBigDecimalCellValue(row.createCell(monthStartCol + 11), dto.getMarPrice(), numericStyle);
                 col = monthStartCol + 12;
 
+                setStringCellValue(row.createCell(col++), dto.getPriceSource(), dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getRemarks(), dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getId() != null ? dto.getId().toString() : null, dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getCppMonthWisePriceId() != null ? dto.getCppMonthWisePriceId().toString() : null, dataStyle);
@@ -456,7 +461,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                 UPDATE CPPMonthWisePrice
                 SET Apr_Price = ?, May_Price = ?, Jun_Price = ?, Jul_Price = ?, Aug_Price = ?, Sep_Price = ?,
                     Oct_Price = ?, Nov_Price = ?, Dec_Price = ?, Jan_Price = ?, Feb_Price = ?, Mar_Price = ?,
-                    Remarks = ?, ModifiedBy = ?, UpdatedDate = GETDATE()
+                    Remarks = ?, PriceSource = ?, ValueType = ?, ModifiedBy = ?, UpdatedDate = GETDATE()
                 WHERE NormsHeader_FK_Id = ? AND FinancialYear = ?
                 """;
 
@@ -480,7 +485,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
 
                 cppNormUpdates.add(new Object[] {
                         apr, may, jun, jul, aug, sep, oct, nov, dec, jan, feb, mar,
-                        dto.getRemarks(), modifiedBy, dto.getNormsHeaderFkId(), financialYear
+                        dto.getRemarks(), dto.getPriceSource(), dto.getValueType(), modifiedBy, dto.getNormsHeaderFkId(), financialYear
                 });
 
                 addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(4), apr, dto.getValueType());
@@ -508,7 +513,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                             normalizePrice(dto.getJulPrice()), normalizePrice(dto.getAugPrice()), normalizePrice(dto.getSepPrice()),
                             normalizePrice(dto.getOctPrice()), normalizePrice(dto.getNovPrice()), normalizePrice(dto.getDecPrice()),
                             normalizePrice(dto.getJanPrice()), normalizePrice(dto.getFebPrice()), normalizePrice(dto.getMarPrice()),
-                            dto.getRemarks(), dto.getPriceSource(), modifiedBy
+                            dto.getRemarks(), dto.getPriceSource(), modifiedBy, dto.getValueType()
                     });
                 }
             }
@@ -746,7 +751,8 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
             headerRow.getCell(col++).setCellStyle(headerStyle);
             headerRow.createCell(col).setCellValue("AOP Year");
             headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Price Source");
+            
+            headerRow.createCell(col).setCellValue("Value Type");
             headerRow.getCell(col++).setCellStyle(headerStyle);
 
             String startYearSuffix = financialYear.substring(2, 4);
@@ -760,6 +766,9 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                 headerRow.createCell(col).setCellValue(month);
                 headerRow.getCell(col++).setCellStyle(headerStyle);
             }
+
+            headerRow.createCell(col).setCellValue("Price Source");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
 
             int remarksCol = col;
             headerRow.createCell(col).setCellValue("Remarks");
@@ -807,7 +816,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                 setStringCellValue(row.createCell(col++), dto.getIssuingPlantName(), dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getIssuingUom(), dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getAopYear(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getPriceSource(), dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getValueType(), dataStyle);
 
                 setBigDecimalCellValue(row.createCell(monthStartCol + 0), dto.getAprPrice(), numericStyle);
                 setBigDecimalCellValue(row.createCell(monthStartCol + 1), dto.getMayPrice(), numericStyle);
@@ -823,6 +832,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                 setBigDecimalCellValue(row.createCell(monthStartCol + 11), dto.getMarPrice(), numericStyle);
                 col = monthStartCol + 12;
 
+                setStringCellValue(row.createCell(col++), dto.getPriceSource(), dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getRemarks(), dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getId() != null ? dto.getId().toString() : null, dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getCppMonthWisePriceId() != null ? dto.getCppMonthWisePriceId().toString() : null, dataStyle);
@@ -885,7 +895,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                     dto.setIssuingPlantName(getStringCellValue(row.getCell(col++)));
                     dto.setIssuingUom(getStringCellValue(row.getCell(col++)));
                     dto.setAopYear(getStringCellValue(row.getCell(col++)));
-                    dto.setPriceSource(getStringCellValue(row.getCell(col++)));
+                    dto.setValueType(getStringCellValue(row.getCell(col++)));
 
                     dto.setAprPrice(getBigDecimalCellValue(row.getCell(col++)));
                     dto.setMayPrice(getBigDecimalCellValue(row.getCell(col++)));
@@ -900,6 +910,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                     dto.setFebPrice(getBigDecimalCellValue(row.getCell(col++)));
                     dto.setMarPrice(getBigDecimalCellValue(row.getCell(col++)));
 
+                    dto.setPriceSource(getStringCellValue(row.getCell(col++)));
                     dto.setRemarks(getStringCellValue(row.getCell(col++)));
 
                     String idStr = getStringCellValue(row.getCell(col++));
@@ -961,6 +972,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
             request.setMarPrice(dto.getMarPrice());
             request.setRemarks(dto.getRemarks());
             request.setPriceSource(dto.getPriceSource());
+            request.setValueType(dto.getValueType());
             requests.add(request);
         }
         return requests;
