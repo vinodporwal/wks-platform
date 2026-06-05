@@ -780,7 +780,14 @@ public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigu
 			checkQuery.setParameter("aopYear", aopYear);
 			int count = ((Number) checkQuery.getSingleResult()).intValue();
 
-			if (count > 0) {
+			if(count > 1) {
+				throw new IllegalArgumentException("Duplicate data found for the same normParameterId, plantId and aopYear");
+			}
+
+			if(count == 0) {
+				throw new IllegalArgumentException("Data not found for the given normParameterId, plantId and aopYear");
+			  }
+
 				String updateSql = "UPDATE TankConfiguration "
 						+ "SET volume = :volume, "
 						+ "april = :apr, may = :may, june = :jun, july = :jul, "
@@ -811,36 +818,7 @@ public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigu
 				updateQuery.setParameter("plantId", UUID.fromString(plantId));
 				updateQuery.setParameter("aopYear", aopYear);
 				updateQuery.executeUpdate();
-			} else {
-				String insertSql = "INSERT INTO TankConfiguration "
-						+ "(id, norm_paramter_id, volume, "
-						+ "april, may, june, july, august, september, october, november, december, january, february, march, "
-						+ "remarks, plantId, aopYear, modifiedOn, modifiedBy) "
-						+ "VALUES (NEWID(), :normParameterId, :volume, "
-						+ ":apr, :may, :jun, :jul, :aug, :sep, :oct, :nov, :dec, :jan, :feb, :mar, "
-						+ ":remarks, :plantId, :aopYear, :modifiedOn, :modifiedBy)";
-				Query insertQuery = entityManager.createNativeQuery(insertSql);
-				insertQuery.setParameter("normParameterId", UUID.fromString(dto.getNormParameterFKId()));
-				insertQuery.setParameter("volume", dto.getVolume());
-				insertQuery.setParameter("apr", dto.getApr());
-				insertQuery.setParameter("may", dto.getMay());
-				insertQuery.setParameter("jun", dto.getJun());
-				insertQuery.setParameter("jul", dto.getJul());
-				insertQuery.setParameter("aug", dto.getAug());
-				insertQuery.setParameter("sep", dto.getSep());
-				insertQuery.setParameter("oct", dto.getOct());
-				insertQuery.setParameter("nov", dto.getNov());
-				insertQuery.setParameter("dec", dto.getDec());
-				insertQuery.setParameter("jan", dto.getJan());
-				insertQuery.setParameter("feb", dto.getFeb());
-				insertQuery.setParameter("mar", dto.getMar());
-				insertQuery.setParameter("remarks", dto.getRemarks());
-				insertQuery.setParameter("plantId", UUID.fromString(plantId));
-				insertQuery.setParameter("aopYear", aopYear);
-				insertQuery.setParameter("modifiedOn", modifiedOn);
-				insertQuery.setParameter("modifiedBy", modifiedBy);
-				insertQuery.executeUpdate();
-			}
+			
 		}
 
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
