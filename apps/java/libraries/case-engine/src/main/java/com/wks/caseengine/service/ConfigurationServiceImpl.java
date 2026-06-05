@@ -1929,6 +1929,8 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 			Plants plant = plantsRepository.findById(plantId).orElseThrow();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 
+			boolean aromaticsPmd = verticalName.equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("PMD");
+
 			String steamLatentName = "";
 
 			if (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("DMD")) {
@@ -1966,13 +1968,17 @@ continue;
 				continue;
 			}
 
+		//	DAYS validation for aromatics PMD
+			if(aromaticsPmd) {
 			String uomValidationError = validateDaysUOM(configurationDTO, year);
+
 			if (uomValidationError != null) {
 				configurationDTO.setSaveStatus("Failed");
 				configurationDTO.setErrDescription(uomValidationError);
 				failedList.add(configurationDTO);
 				continue;
 			}
+		}
 
              // apr value should not be greater than may value
 			 if(isMinMax) {
@@ -2938,10 +2944,18 @@ continue;
 
 		try {
 
+			Plants plant = plantsRepository.findById(plantFKId).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			boolean aromaticsPmd = vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("PMD");
+
 			System.out.println("started Read configuration in importExcel");
 			List<ConfigurationDTO> data = readShutdownRate(file.getInputStream(), plantFKId, year,type);
 			System.out.println("Ended Read configuration in importExcel");
+			if(aromaticsPmd) {
+				// validation for uom DAY: the value should not be decimal
 			validateShutdownRateData(data);
+			}
 			System.out.println("Started Save configuration in importExcel");
 			List<ConfigurationDTO> failedRecords = saveConfigurationData(year, plantFKId.toString(),version, data,calculation,isMinMax);
 			System.out.println("Ended Save configuration in importExcel");
