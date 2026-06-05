@@ -128,6 +128,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                 dto.setModifiedBy(getString(row[idx++]));
                 dto.setCreatedDate(getString(row[idx++]));
                 dto.setUpdatedDate(getString(row[idx++]));
+                dto.setValueType(getString(row[idx++]));
 
                 dtoList.add(dto);
             }
@@ -482,18 +483,18 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                         dto.getRemarks(), modifiedBy, dto.getNormsHeaderFkId(), financialYear
                 });
 
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(4), apr);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(5), may);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(6), jun);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(7), jul);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(8), aug);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(9), sep);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(10), oct);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(11), nov);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(12), dec);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(1), jan);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(2), feb);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(3), mar);
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(4), apr, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(5), may, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(6), jun, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(7), jul, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(8), aug, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(9), sep, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(10), oct, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(11), nov, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(12), dec, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(1), jan, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(2), feb, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(3), mar, dto.getValueType());
             }
 
             int[] updateCounts = jdbcTemplate.batchUpdate(updateNormsSql, cppNormUpdates);
@@ -518,12 +519,12 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                         Id, NormsHeader_FK_Id, FinancialYear, AOPYear,
                         Apr_Price, May_Price, Jun_Price, Jul_Price, Aug_Price, Sep_Price,
                         Oct_Price, Nov_Price, Dec_Price, Jan_Price, Feb_Price, Mar_Price,
-                        Remarks, PriceSource, ModifiedBy, CreatedDate, UpdatedDate
+                        Remarks, PriceSource, ModifiedBy, CreatedDate, UpdatedDate, ValueType
                     ) VALUES (
                         ?, ?, ?, ?,
                         ?, ?, ?, ?, ?, ?,
                         ?, ?, ?, ?, ?, ?,
-                        ?, ?, ?, GETDATE(), GETDATE()
+                        ?, ?, ?, GETDATE(), GETDATE(), ?
                     )
                     """;
                 jdbcTemplate.batchUpdate(insertSql, insertParams);
@@ -531,7 +532,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
 
             String updateMonthSql = """
                 UPDATE NormsMonthDetail
-                SET Price = ?
+                SET Price = ?, Amount = ?
                 WHERE NormsHeader_FK_Id = ? AND FinancialYearMonth_FK_Id = ?
                 """;
             jdbcTemplate.batchUpdate(updateMonthSql, monthUpdates);
@@ -556,12 +557,44 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
         return vm;
     }
 
-    private void addMonthUpdate(List<Object[]> updates, UUID normsHeaderFkId, UUID monthId, BigDecimal price) {
-        if (normsHeaderFkId == null || monthId == null) {
-            return;
+    private void addMonthUpdate(
+        List<Object[]> updates,
+        UUID normsHeaderFkId,
+        UUID monthId,
+        BigDecimal value,
+        String valueType
+        ) {
+
+            if (normsHeaderFkId == null || monthId == null) {
+                return;
+            }
+
+            BigDecimal price = BigDecimal.ZERO;
+            BigDecimal amount = BigDecimal.ZERO;
+
+            if ("Price".equalsIgnoreCase(valueType)) {
+
+                price = value != null ? value : BigDecimal.ZERO;
+                amount = BigDecimal.ZERO;
+
+            } else if ("Amount".equalsIgnoreCase(valueType)) {
+
+                price = BigDecimal.ZERO;
+                amount = value != null ? value : BigDecimal.ZERO;
+
+            } else {
+
+                price = BigDecimal.ZERO;
+                amount = BigDecimal.ZERO;
+            }
+
+            updates.add(new Object[] {
+                    price,
+                    amount,
+                    normsHeaderFkId,
+                    monthId
+            });
         }
-        updates.add(new Object[] { price, normsHeaderFkId, monthId });
-    }
 
     private Map<UUID, CPPNormPricesResponseDTO> loadExistingPrices(UUID cppPlantId, String financialYear) {
         Map<UUID, CPPNormPricesResponseDTO> existing = new LinkedHashMap<>();
