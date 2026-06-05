@@ -42,4 +42,5 @@ public class CPPNormPricesRequestDTO {
     private String materialId;
     private String issuingPlantName;
     private String issuingUom;
+    private String valueType;
 }
