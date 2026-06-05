@@ -358,31 +358,22 @@ public class QualityTransactionServiceImpl implements QualityTransactionService{
 	                dto.setUom(getStringCellValue(row.getCell(2), dto));
 	                dto.setPrevBudget(getNumericCellValue(row.getCell(3), dto));
 	                Double prevActual = getNumericCellValue(row.getCell(4), dto);
-					if(!"%".equalsIgnoreCase(dto.getUom())) { 
-                           dto.setPrevActual(prevActual);
-					}
-	               else if (prevActual != null) {
-	                    if (prevActual >= 0 && prevActual <= 100) {
-	                        dto.setPrevActual(prevActual);
-	                    } else {
-							dto.setPrevActual(prevActual);
+	                if (prevActual != null) {
+	                    if ("%".equals(dto.getUom()) && (prevActual < 0 || prevActual > 100)) {
 	                    	dto.setErrDescription("Prev. Actual value should be between 0 to 100");
 	    	                dto.setSaveStatus("Failed");
+	                    } else {
+	                        dto.setPrevActual(prevActual);
 	                    }
 	                }
 
 	                Double cellValue = getNumericCellValue(row.getCell(5), dto);
-					if(!"%".equalsIgnoreCase(dto.getUom())) { 
-                           dto.setProposedNorm(cellValue);
-					}
-					
-	              else  if (cellValue != null) {
-	                    if (cellValue >= 0 && cellValue <= 100) {
-	                        dto.setProposedNorm(cellValue);
-	                    } else {
-							dto.setProposedNorm(cellValue);
+	                if (cellValue != null) {
+	                    if ("%".equals(dto.getUom()) && (cellValue < 0 || cellValue > 100)) {
 	                    	dto.setErrDescription("Proposed Norm value should be between 0 to 100");
 	    	                dto.setSaveStatus("Failed");
+	                    } else {
+	                        dto.setProposedNorm(cellValue);
 	                    }
 	                }
 	                dto.setRemark(getStringCellValue(row.getCell(6), dto));

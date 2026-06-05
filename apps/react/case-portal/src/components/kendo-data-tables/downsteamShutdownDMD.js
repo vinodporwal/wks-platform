@@ -510,7 +510,7 @@ const DownsteamShutdownDMD = ({ viewOnly, permissions }) => {
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
         note='*Unit of Measurement - Days'
-        supressGridHeight={true}
+
         handleExcelUpload={handleExcelUpload}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
       />
