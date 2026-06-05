@@ -24,7 +24,7 @@ import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import CategoryDropdownEditor from './Utilities-Kendo/CategoryDropdown'
 import LineDropdownEditor from './Utilities-Kendo/LineDropdownEditor'
-
+import { useIntegerDaysEditor } from './Utilities-Kendo/NoSpinnerIntegerEditorForDays'
 import {
   Box,
   Button,
@@ -242,6 +242,7 @@ const KendoDataTables = ({
   isReleaseDisabled = true,
   handleRelease = () => {},
   customItemChange = null,
+  configType,
   isEditable = false,
 }) => {
   const _export = useRef(null)
@@ -283,7 +284,6 @@ const KendoDataTables = ({
 
   const ADJUST_PADDING = 4
   const COLUMN_MIN = 4
-
   const keycloak = useSession()
   const showDeleteAll =
     (permissions?.deleteAllBtn && selectedUsers.length > 1) ||
@@ -298,7 +298,7 @@ const KendoDataTables = ({
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-
+  const IntegerDaysEditor = useIntegerDaysEditor(configType, AOP_YEAR)
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
   const lowerSiteName = SiteName?.toLowerCase()
@@ -3853,6 +3853,49 @@ const KendoDataTables = ({
                       />
                     )
                   }
+                  if (col?.type === 'integerOnlyForDays') {
+                    return (
+                      <GridColumn
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
+                        className={`
+        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+        ${col?.isBold ? 'bold-text' : ''}
+      `}
+                        editable={col?.editable ? true : false}
+                        headerClassName={numericHeaderClass(isActive, col)}
+                        cells={{
+                          edit: {
+                            text: IntegerDaysEditor, // ← stable ref, no focus loss
+                          },
+                          data: (dataProps) =>
+                            showThreeColors ? (
+                              <RedHighlightCell2
+                                {...dataProps}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                allRedCell2={allRedCell2}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ) : (
+                              <RedHighlightCell
+                                {...dataProps}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col?.format}
+                      />
+                    )
+                  }
                   if (col?.field === 'rate') {
                     return (
                       <GridColumn
@@ -4068,7 +4111,7 @@ const KendoDataTables = ({
                       />
                     )
                   }
-                  if (col?.type === 'number' && col?.integerOnly) {
+                  if (col?.type === 'integerNumberOnly') {
                     return (
                       <GridColumn
                         key={col?.field}

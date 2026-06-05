@@ -28,7 +28,7 @@
     "field": "apr",
     "title": "Value",
     "editable": true,
-    "type": "number",
+    "type": "integerOnlyForDays",
     "widthT": 120,
     "minWidth": 120
   },

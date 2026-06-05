@@ -844,7 +844,7 @@ const AopDesignBasis = () => {
         />
         {ConfigurationDialog}
       </Box>
-      {SITE_NAME === 'VMD' && <CrakcerProductionConst />}
+      {(SITE_NAME === 'VMD' || SITE_NAME === 'C2') && <CrakcerProductionConst />}
     </React.Fragment>
   )
 }

@@ -113,7 +113,7 @@ const TankNosConfigureTable = ({ permissions }) => {
       return {
         minWidth: 100,
         field: monthShort.toLowerCase(),
-        title: monthShort,
+        title: fieldName,
         width: 120,
         type: 'number',
         format: '{0:#.###}',
@@ -136,9 +136,22 @@ const TankNosConfigureTable = ({ permissions }) => {
         widthT: 100,
         minWidth: 300,
       },
-      { field: 'uom', title: 'Vol(M3)', editable: false, widthT: 100, minWidth: 100 },
+      {
+        field: 'volume',
+        title: 'Vol(M3)',
+        editable: true,
+        widthT: 100,
+        minWidth: 100,
+        type: 'integerNumberOnly',
+      },
       ...monthCols,
-      { field: 'remarks', title: 'Remarks', editable: true, widthT: 150, minWidth: 150 },
+      {
+        field: 'remarks',
+        title: 'Remarks',
+        editable: true,
+        widthT: 150,
+        minWidth: 150,
+      },
     ]
   }, [monthCols])
 
