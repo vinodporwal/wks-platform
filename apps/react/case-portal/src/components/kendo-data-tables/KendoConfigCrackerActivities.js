@@ -1512,13 +1512,6 @@ const DecokingConfig = () => {
       ? ibrGridThree.filter((col) => col.field !== 'demo')
       : ibrGridThree
 
-  if (siteName === 'nmd') {
-    return <DecokingConfigNMD pid={PLANT_ID} />
-  }
-  if (siteName === 'hmd') {
-    return <SteamHourTable pid={PLANT_ID} />
-  }
-
   const [sdtaGridKey, setSdtaGridKey] = useState(0)
 
   useEffect(() => {
@@ -1528,6 +1521,13 @@ const DecokingConfig = () => {
 
     return () => clearTimeout(timer)
   }, [loading])
+
+  if (siteName === 'nmd') {
+    return <DecokingConfigNMD pid={PLANT_ID} />
+  }
+  if (siteName === 'hmd') {
+    return <SteamHourTable pid={PLANT_ID} />
+  }
 
   return (
     <Box>
