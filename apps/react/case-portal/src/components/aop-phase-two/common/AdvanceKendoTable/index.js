@@ -1307,9 +1307,30 @@ const AdvanceKendoTable = ({
     )
   }
 
+  // Helper to check if a cell is editable based on conditional rules
+  const isCellEditableByCondition = (dataItem, col) => {
+    if (!col.conditionalEditable) return true
+
+    const { dependsOn, editableValues } = col.conditionalEditable
+    const dependentValue = dataItem[dependsOn]
+
+    // Cell is editable only if dependent field value is in editableValues
+    return editableValues.includes(dependentValue)
+  }
+
   const renderColumns = (cols, filter, sort) =>
     cols.map((col, idx) => {
-      const isEditable = !READ_ONLY && col.editable === true
+      // Determine if column is editable, considering conditional editing rules
+      let isEditable = !READ_ONLY && col.editable === true
+
+      // Support conditional editing based on another field's value
+      if (isEditable && col.conditionalEditable) {
+        const { dependsOn, editableValues } = col.conditionalEditable
+        // For each row, check if the dependent field value allows editing
+        // This will be checked per-row in the cell editor
+        isEditable = true // Column is editable, but per-row logic will apply
+      }
+
       const isActive = isColumnActive(col.field, filter, sort)
 
       const headerColorClass = undefined
@@ -1669,17 +1690,33 @@ const AdvanceKendoTable = ({
             }
             headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
             cells={{
-              edit: hasMinMaxConstraints
-                ? {
-                    text: (cellProps) => (
+              edit: {
+                text: (cellProps) => {
+                  // Check if cell is editable based on conditional rules
+                  const cellEditableByCondition = isCellEditableByCondition(
+                    cellProps.dataItem,
+                    col,
+                  )
+
+                  // If not editable by condition, return empty (prevent editing)
+                  if (!cellEditableByCondition) {
+                    return null
+                  }
+
+                  // Otherwise show the appropriate editor
+                  if (hasMinMaxConstraints) {
+                    return (
                       <NumericEditorWithMinMax
                         {...cellProps}
                         min={getResolvedValue(col.minValue, cellProps.dataItem)}
                         max={getResolvedValue(col.maxValue, cellProps.dataItem)}
                       />
-                    ),
+                    )
                   }
-                : { text: NoSpinnerNumericEditor },
+
+                  return <NoSpinnerNumericEditor {...cellProps} />
+                },
+              },
               data: col.customCell
                 ? (props) => (
                     <col.customCell
