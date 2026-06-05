@@ -48,6 +48,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import { styled } from '@mui/material/styles'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import ExclusionDate from './ExclusionDate'
+import CatalystChangeOver from './CatalystChangeOver'
 import LineConfiguration from './LineConfiguration'
 import ConfigurationAccordian from './common/ConfigurationAccordian'
 import SeasonMonths from './tab-components/SeasonMonths/index'
@@ -335,7 +336,7 @@ const ConfigurationTable = () => {
         setOtherLossRows(otherLossRows)
         setContiniousGradeData(continiousGradeRows)
         setDiscontiniousGradeData(discontiniousGradeRows)
-        if(IS_AROMATICS_PMD){
+        if (IS_AROMATICS_PMD) {
           // Distribute values from Constant to Configuration for DeH-15 and DeH-201
           const monthsForDist = [
             'apr',
@@ -446,7 +447,7 @@ const ConfigurationTable = () => {
             }
           })
         }
-        
+
 
         setConstantsRows(constantsRows)
         setConfigurationRows(configurationRows)
@@ -1334,15 +1335,15 @@ const ConfigurationTable = () => {
     const megTabs = IS_CHEMICAL_VMD_BUTADIENE
       ? ['Configuration', 'Constants', 'Report Manual Entry']
       : IS_CHEMICAL_DMD ||
-          (IS_CHEMICAL_VMD &&
-            !(plantObject?.name?.toUpperCase() === 'BUTADIENE'))
+        (IS_CHEMICAL_VMD &&
+          !(plantObject?.name?.toUpperCase() === 'BUTADIENE'))
         ? ['Configuration', 'Constants', 'Report Manual Entry']
         : [
-            'Configuration',
-            'Constants',
-            'Report Manual Entry',
-            'NSR & Material Prices',
-          ]
+          'Configuration',
+          'Constants',
+          'Report Manual Entry',
+          'NSR & Material Prices',
+        ]
     const auditYear = AOP_YEAR
     let displayYear = ''
     if (auditYear) {
@@ -1811,6 +1812,17 @@ const ConfigurationTable = () => {
               case getTheId('ExclusionDate'):
                 return (
                   <ExclusionDate
+                    revision={revision}
+                    loadBtnClicked={loadBtnClicked}
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+
+              case getTheId('CatalystChangeover'):
+                return (
+                  <CatalystChangeOver
                     revision={revision}
                     loadBtnClicked={loadBtnClicked}
                     summary={debouncedSummary}

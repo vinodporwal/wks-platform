@@ -1,17 +1,17 @@
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { useGridApiRef } from '@mui/x-data-grid'
-import { ExclusionDateColumns } from 'components/colums/ShutdownColumn'
 import { useCallback, useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
+import { CatalystChangeOverApiDataService } from 'services/catalyst-changeover-api-service'
 import { DataService } from 'services/DataService'
-import { ExclusionDateApiDataService } from 'services/exclusion-date-api-service'
 import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
 import KendoDataTables from './index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { validateFields } from 'utils/validationUtils'
 
-const ExclusionDate = ({
+const CatalystChangeOver = ({
   permissions,
   revision,
   loadBtnClicked,
@@ -50,8 +50,6 @@ const ExclusionDate = ({
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
-  const [startDate, setStartDate] = useState(null)
-  const [endDate, setEndDate] = useState(null)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const keycloak = useSession()
@@ -59,11 +57,48 @@ const ExclusionDate = ({
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-  const colDefs = ExclusionDateColumns
+
+  const CatalystChangeOverColumns = [
+    {
+      field: 'id',
+      hidden: true,
+      isVisible: false,
+    },
+    {
+      field: 'parameter',
+      title: 'Parameter',
+      editable: true,
+      width: 200,
+      type: 'dynamicDropdownshared',
+      dropdownOptions: [
+        { name: 'DeH-15 ', value: 'DeH-15' },
+        { name: 'DeH-201', value: 'DeH-201' },
+      ],
+    },
+    {
+      field: 'date',
+      title: 'Date',
+      editable: true,
+      fixedWidth: '200px',
+    },
+    {
+      field: 'remarks',
+      title: 'Remarks',
+      editable: true,
+      fixedWidth: '200px',
+    },
+    {
+      field: 'originalRemarks',
+      hidden: true,
+      isVisible: false,
+    },
+  ]
+
+  const colDefs = CatalystChangeOverColumns
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
-    setCurrentRemark(row.remark || '')
+    setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
@@ -73,66 +108,61 @@ const ExclusionDate = ({
     setModifiedCells({})
     try {
       setLoading(true)
-      const data = await ExclusionDateApiDataService.getExclusionDate(
+      const data = await CatalystChangeOverApiDataService.getCatalystChangeOver(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
       )
 
-      const modifiedData = (data?.data?.Data || []).map((item, index) => ({
-        ...item,
-        idFromApi: item?.id,
-        id: index,
-        originalRemark: item.remark,
-        reason: item.remark,
-        exclusionEndDate: item?.endDate ? new Date(item.endDate) : null,
-        exclusionStartDate: item?.startDate ? new Date(item.startDate) : null,
-      }))
-
-      setRows(modifiedData)
+      if (data && data.code === 200) {
+        const modifiedData = (data?.data || []).map((item, index) => ({
+          ...item,
+          idFromApi: item?.id,
+          id: index,
+          originalRemarks: item.remarks,
+          originalRemark: item.remarks,
+          parameter: item.parameter || '',
+          remarks: item.remarks || '',
+          date: item?.date ? new Date(item.date) : null,
+        }))
+        setRows(modifiedData)
+      } else {
+        setRows([])
+        let errorMsg = 'Failed to fetch data.'
+        if (data instanceof Response) {
+          try {
+            const errJson = await data.json()
+            errorMsg = errJson?.message || `Error: ${data.status} ${data.statusText}`
+          } catch (e) {
+            errorMsg = `Error: ${data.status} ${data.statusText}`
+          }
+        } else if (data?.message) {
+          errorMsg = data.message
+        }
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: errorMsg,
+          severity: 'error',
+        })
+      }
     } catch (error) {
       console.error('Error fetching data:', error)
+      setRows([])
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error?.message || 'Error fetching data.',
+        severity: 'error',
+      })
     } finally {
       setLoading(false)
-    }
-  }
-
-  const getConfigurationExecutionDetails = async () => {
-    try {
-      const response = await DataService.getConfigurationExecutionDetails(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
-      const details = response?.data || []
-      if (details.length === 0) {
-        console.warn(
-          'getConfigurationExecutionDetails returned an empty array:',
-          response,
-        )
-      }
-      // const hasNoModifiedOn = details.length && !details[0]?.ModifiedOn
-      const hasNoModifiedOn = true
-      if (hasNoModifiedOn) {
-        const startDateObj = details.find((item) => item.Name === 'StartDate')
-        const endDateObj = details.find((item) => item.Name === 'EndDate')
-
-        setStartDate(startDateObj?.AttributeValue)
-        setEndDate(endDateObj?.AttributeValue)
-      }
-    } catch (error) {
-      console.error('Error fetching getConfigurationExecutionDetails:', error)
-    } finally {
-      // setLoading1(false)
     }
   }
 
   useEffect(() => {
     setModifiedCells({})
     fetchData()
-    getConfigurationExecutionDetails()
 
-    // console.log('ExclusionDate rendered', revision)
+    // console.log('CatalystChangeOver rendered', revision)
     // console.log('loadBtnClicked', loadBtnClicked)
   }, [
     oldYear,
@@ -154,7 +184,7 @@ const ExclusionDate = ({
           prevRows.filter((row) => row.id !== deleteIdLocal),
         )
       } else {
-        await ExclusionDateApiDataService.deleteExclusionDate(
+        await CatalystChangeOverApiDataService.deleteCatalystChangeOver(
           idFromApi,
           keycloak,
         )
@@ -171,6 +201,11 @@ const ExclusionDate = ({
       }
     } catch (error) {
       console.error('Error deleting Record', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error?.message || 'Error deleting Record.',
+        severity: 'error',
+      })
     } finally {
       setLoading(false)
     }
@@ -186,7 +221,7 @@ const ExclusionDate = ({
         severity: 'success',
       })
 
-      response = await ExclusionDateApiDataService.exportExclusionDate(
+      response = await CatalystChangeOverApiDataService.exportCatalystChangeOver(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -211,7 +246,7 @@ const ExclusionDate = ({
     try {
       let response
 
-      response = await ExclusionDateApiDataService.importExclusionDate(
+      response = await CatalystChangeOverApiDataService.importCatalystChangeOver(
         rawFile,
         keycloak,
         PLANT_ID,
@@ -240,7 +275,7 @@ const ExclusionDate = ({
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute('download', 'Error File - Exclusion Date.xlsx')
+        link.setAttribute('download', 'Error File - Catalyst Changeover.xlsx')
         document.body.appendChild(link)
         link.click()
         link.remove()
@@ -253,8 +288,19 @@ const ExclusionDate = ({
         })
         await fetchData()
       } else {
+        let errorMsg = 'Upload Failed!'
+        if (response instanceof Response) {
+          try {
+            const errJson = await response.json()
+            errorMsg = errJson?.message || `Error: ${response.status} ${response.statusText}`
+          } catch (e) {
+            errorMsg = `Error: ${response.status} ${response.statusText}`
+          }
+        } else if (response?.message) {
+          errorMsg = response.message
+        }
         setSnackbarOpen(true)
-        setSnackbarData({ message: 'Upload Failed!', severity: 'error' })
+        setSnackbarData({ message: errorMsg, severity: 'error' })
       }
 
       return response
@@ -262,7 +308,7 @@ const ExclusionDate = ({
       console.error('Error uploading excel:', error)
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Unexpected error occurred!',
+        message: error?.message || 'Unexpected error occurred!',
         severity: 'error',
       })
     } finally {
@@ -305,7 +351,7 @@ const ExclusionDate = ({
       allAction: true,
       downloadExcelBtn: true,
       showTitleNameBusiness: true,
-      titleName: 'Exclusion Date',
+      titleName: 'Catalyst Changeover',
       uploadExcelBtn: true,
       reasonText: true,
     },
@@ -330,14 +376,31 @@ const ExclusionDate = ({
         setSnackbarOpen(true)
         // setIsEdited(false)
       } else {
+        let errorMsg = 'Saved Failed!'
+        if (response instanceof Response) {
+          try {
+            const errJson = await response.json()
+            errorMsg = errJson?.message || `Error: ${response.status} ${response.statusText}`
+          } catch (e) {
+            errorMsg = `Error: ${response.status} ${response.statusText}`
+          }
+        } else if (response?.message) {
+          errorMsg = response.message
+        }
         setSnackbarData({
-          message: 'Saved Failed!',
+          message: errorMsg,
           severity: 'error',
         })
+        setSnackbarOpen(true)
       }
       return response
     } catch (error) {
       console.error('Error saving Summary!', error)
+      setSnackbarData({
+        message: error?.message || 'Error saving Summary!',
+        severity: 'error',
+      })
+      setSnackbarOpen(true)
     } finally {
       setLoading(false)
     }
@@ -348,9 +411,17 @@ const ExclusionDate = ({
 
     if (!newRows || newRows.length === 0) return
 
-    // Convert limit states to Date objects for comparison
-    const limitStart = new Date(startDate)
-    const limitEnd = new Date(endDate)
+    const requiredFields = ['parameter', 'remarks']
+    const validationMessage = validateFields(newRows, requiredFields)
+
+    if (validationMessage) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: validationMessage,
+        severity: 'error',
+      })
+      return
+    }
 
     try {
       const payloadData = []
@@ -358,38 +429,39 @@ const ExclusionDate = ({
       for (let i = 0; i < newRows.length; i++) {
         const row = newRows[i]
 
-        // --- 0. Validation: Both dates must be present ---
-        if (!row.exclusionStartDate || !row.exclusionEndDate) {
+        // --- 2. Validation: Date must be present ---
+        if (!row.date) {
           setSnackbarData({
-            message: 'Both From date and To date are required.',
+            message: 'Date is required.',
             severity: 'error',
           })
           setSnackbarOpen(true)
           return // Stop execution
         }
 
-        const rowStart = new Date(row.exclusionStartDate)
-        const rowEnd = new Date(row.exclusionEndDate)
+        const rowDate = new Date(row.date)
 
-        // --- 2. Validation: Start Date < End Date ---
-        if (rowStart > rowEnd) {
-          setSnackbarData({
-            message: `From date cannot be after To date.`,
-            severity: 'error',
-          })
-          setSnackbarOpen(true)
-          return // Stop execution
+        // --- 3. Validation: Within AOP Year Range ---
+        let limitStart, limitEnd
+        const parts = (AOP_YEAR || '').split('-')
+        if (parts.length === 2) {
+          const startYear = parseInt(parts[0], 10)
+          const endYear = startYear + 1
+          limitStart = new Date(startYear, 3, 1) // April 1st
+          limitEnd = new Date(endYear, 2, 31) // March 31st
+        } else {
+          const yearNum = parseInt(AOP_YEAR || new Date().getFullYear(), 10)
+          limitStart = new Date(yearNum, 0, 1) // Jan 1st
+          limitEnd = new Date(yearNum, 11, 31) // Dec 31st
         }
 
-        // --- 3. Validation: Within Global Range (Inclusive) ---
         const normalizeDate = (date) => {
           const d = new Date(date)
           d.setHours(0, 0, 0, 0)
           return d
         }
 
-        const rs = normalizeDate(rowStart)
-        const re = normalizeDate(rowEnd)
+        const rd = normalizeDate(rowDate)
         const ls = normalizeDate(limitStart)
         const le = normalizeDate(limitEnd)
 
@@ -402,97 +474,15 @@ const ExclusionDate = ({
           return `${day}-${month}-${year}`
         }
 
-        if (rs < ls || re > le) {
+        if (rd < ls || rd > le) {
           setSnackbarData({
-            message: `Dates must be between ${formatDDMMYYYY(startDate)} and ${formatDDMMYYYY(endDate)}.`,
+            message: `Date must be within AOP Year ${AOP_YEAR} (between ${formatDDMMYYYY(limitStart)} and ${formatDDMMYYYY(limitEnd)}).`,
             severity: 'error',
           })
           setSnackbarOpen(true)
-          return
+          return // Stop execution
         }
 
-        const allRows = [...rows, ...newRows]
-
-        const parseDateSafe = (value) => {
-          if (!value) return null
-
-          // Case 1: Already a Date object
-          if (value instanceof Date) {
-            const d = new Date(value)
-            d.setHours(0, 0, 0, 0)
-            return d
-          }
-
-          // Case 2: String in DD-MM-YYYY
-          if (typeof value === 'string' && value.includes('-')) {
-            const parts = value.split('-')
-
-            // DD-MM-YYYY
-            if (parts[0].length === 2) {
-              const [dd, mm, yyyy] = parts
-              const d = new Date(yyyy, mm - 1, dd)
-              d.setHours(0, 0, 0, 0)
-              return d
-            }
-
-            // YYYY-MM-DD
-            if (parts[0].length === 4) {
-              const [yyyy, mm, dd] = parts
-              const d = new Date(yyyy, mm - 1, dd)
-              d.setHours(0, 0, 0, 0)
-              return d
-            }
-          }
-
-          return null
-        }
-
-        // --- Validation: No overlapping with existing + new rows ---
-        for (let i = 0; i < allRows.length; i++) {
-          const rowStart = parseDateSafe(allRows[i].exclusionStartDate)
-          const rowEnd = parseDateSafe(allRows[i].exclusionEndDate)
-
-          for (let j = i + 1; j < allRows.length; j++) {
-            // Skip same row (important when editing)
-            if (allRows[i].id === allRows[j].id) continue
-
-            const otherStart = parseDateSafe(allRows[j].exclusionStartDate)
-            const otherEnd = parseDateSafe(allRows[j].exclusionEndDate)
-
-            if (rowStart <= otherEnd && rowEnd >= otherStart) {
-              setSnackbarData({
-                message: 'Overlapping dates not allowed.',
-                severity: 'error',
-              })
-              setSnackbarOpen(true)
-              return
-            }
-          }
-        }
-
-        // --- 5. Validation: reason must be non-empty and different from originalRemark ---
-        const reason = (row?.remark ?? '').trim()
-        const originalRemark = (row?.originalRemark ?? '').trim()
-
-        if (!reason) {
-          setSnackbarData({
-            message: `Please add the Reason`,
-            severity: 'error',
-          })
-          setSnackbarOpen(true)
-          return
-        }
-
-        if (reason === originalRemark) {
-          setSnackbarData({
-            message: `Please update the Reason`,
-            severity: 'error',
-          })
-          setSnackbarOpen(true)
-          return
-        }
-
-        // If valid, push to payload
         const toLocalDateOnly = (date) => {
           if (!date) return null
 
@@ -507,33 +497,51 @@ const ExclusionDate = ({
         // If valid, push to payload
         payloadData.push({
           id: row?.idFromApi || null,
-          startDate: toLocalDateOnly(row?.exclusionStartDate),
-          endDate: toLocalDateOnly(row?.exclusionEndDate),
-          remark: row?.remark || row?.remarks,
+          parameter: row?.parameter,
+          date: toLocalDateOnly(row?.date),
+          remarks: row?.remarks || '',
+          plantId: PLANT_ID,
+          aopYear: AOP_YEAR
         })
       }
 
-      // --- 5. Proceed to API Call ---
-      const response = await ExclusionDateApiDataService.postExclusionDate(
+      // --- 4. Proceed to API Call ---
+      const response = await CatalystChangeOverApiDataService.postCatalystChangeOver(
         payloadData,
         keycloak,
         PLANT_ID,
         AOP_YEAR,
       )
 
-      if (summaryEdited) {
-        await saveSummary(summary)
-        setSummaryEdited(false)
-      }
+      if (response && response.code === 200) {
+        if (summaryEdited) {
+          await saveSummary(summary)
+          setSummaryEdited(false)
+        }
 
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Saved Successfully!', severity: 'success' })
-      setModifiedCells({})
-      await fetchData()
+        setSnackbarOpen(true)
+        setSnackbarData({ message: response?.message || 'Saved Successfully!', severity: 'success' })
+        setModifiedCells({})
+        await fetchData()
+      } else {
+        let errorMsg = 'Failed to save data.'
+        if (response instanceof Response) {
+          try {
+            const errJson = await response.json()
+            errorMsg = errJson?.message || `Error: ${response.status} ${response.statusText}`
+          } catch (e) {
+            errorMsg = `Error: ${response.status} ${response.statusText}`
+          }
+        } else if (response?.message) {
+          errorMsg = response.message
+        }
+        setSnackbarOpen(true)
+        setSnackbarData({ message: errorMsg, severity: 'error' })
+      }
       return response
     } catch (error) {
       console.error('Error in saving data!', error)
-      setSnackbarData({ message: 'Failed to save data.', severity: 'error' })
+      setSnackbarData({ message: error?.message || 'Failed to save data.', severity: 'error' })
       setSnackbarOpen(true)
     }
   }
@@ -606,4 +614,4 @@ const ExclusionDate = ({
   )
 }
 
-export default ExclusionDate
+export default CatalystChangeOver

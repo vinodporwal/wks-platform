@@ -131,6 +131,7 @@ export const dateFields1 = [
   'shutdownDate',
   'StartDate',
   'EndDate',
+  'date',
 ]
 
 export const monthMap = {

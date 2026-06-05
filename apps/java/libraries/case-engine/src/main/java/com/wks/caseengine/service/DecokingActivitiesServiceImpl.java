@@ -1305,7 +1305,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			
 			Map<String, String> columnTitleMap = loadColumnTitles(connection,
-								"vwScrnCrackerKeyValueColumns", "DMD", "Sd-Ta-Activities");
+								"vwScrnCrackerKeyValueColumns", site.getName(), "Sd-Ta-Activities");
 			Map<String, String> columnIsVisibleMap = loadIsVisible(connection,
 					"vwScrnCrackerKeyValueColumns", site.getName(), "Sd-Ta-Activities");
 	        String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?";

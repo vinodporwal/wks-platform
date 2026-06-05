@@ -1,23 +1,30 @@
+import { Box, Button } from '@mui/material'
+import Backdrop from '@mui/material/Backdrop'
+import CircularProgress from '@mui/material/CircularProgress'
+import Typography from '@mui/material/Typography'
 
-
-import { Box, Button, Typography } from '@mui/material'
-import { DataGrid } from '@mui/x-data-grid'
-import { ExcelExport } from '@progress/kendo-react-excel-export'
-import { FileExportIcon } from 'assets/images/icons'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
+import Notification from 'components/Utilities/Notification'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
-import { DataService } from 'services/DataService'
+import { CrackerReportsApiDataService } from 'services/cracker-reports-api-service'
+import { AOPWorkFlowService } from 'services/AOPWorkFlowService'
 import { useSession } from 'SessionStoreContext'
 import {
   CustomAccordion,
   CustomAccordionDetails,
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
-import ConsumptionNormsHistorianBasis from './ConsumptionNormsHistorianBasis'
-import { ReportDataService } from 'services/ReportDataService'
 
-const REPORT_TYPE_FOR_ALL = 'AnnualAOPCost'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import { CalculateIcon, FileExportIcon } from 'assets/images/icons/index'
+
+import { getRoleName } from 'services/role-service.js'
+import { OptimizerDataApiService } from 'services/optimizer-api-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import OptimizerReportHMD from './OptimizerReportHMD'
+const CALL_DELAY_MS = 20
+const MONTH_GRID_NAME = 'Month wise Quantity, Tonnes / Month'
 
 const OptimizerReport = () => {
   const keycloak = useSession()
@@ -25,9 +32,9 @@ const OptimizerReport = () => {
   const [dataMap, setDataMap] = useState({})
   const [gridNames, setGridNames] = useState([])
   const [loading, setLoading] = useState(false)
-  const [tabIndex, setTabIndex] = useState(0)
-
+  const [calculating, setCalculating] = useState(false) // Add this line
   const dataGridStore = useSelector((state) => state.dataGridStore)
+
   const {
     verticalChange,
     yearChanged,
@@ -37,159 +44,27 @@ const OptimizerReport = () => {
     siteObject,
     verticalObject,
     year,
-    screenTitle,
   } = dataGridStore
+
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
-  const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
-  const isOldYear = false
+
   const IS_OLD_YEAR = oldYear?.oldYear
-  const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase()
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const timeoutIdsRef = useRef([])
+  const activeRequestsRef = useRef(0)
   const isMountedRef = useRef(true)
-  // export control (dynamic ExcelExport mount)
-  const [isExporting, setIsExporting] = useState(false)
-  const workbookRef = useRef(null)
-  const excelExportRef = useRef(null)
-
-  const [collapsedGroups, setCollapsedGroups] = useState({})
-
-  const toggleGroupCollapse = useCallback((gridName, groupName) => {
-    setCollapsedGroups((prev) => ({
-      ...prev,
-      [`${gridName}-${groupName}`]: !prev[`${gridName}-${groupName}`],
-    }))
-  }, [])
-
-  const getGroupedRowsAndColumns = useCallback(
-    (rows = [], columns = [], gridName = '') => {
-      // Check if 'ROW_GROUP' is one of the columns
-      const hasNormCol = columns.some((c) => c.field === 'ROW_GROUP')
-      if (!hasNormCol || rows.length === 0) {
-        return { rows, columns }
-      }
-
-      // Group the rows by the 'ROW_GROUP' value
-      const groups = {}
-      rows.forEach((row) => {
-        const groupVal = row.ROW_GROUP || 'Other'
-        if (!groups[groupVal]) {
-          groups[groupVal] = []
-        }
-        groups[groupVal].push(row)
-      })
-
-      const groupedRows = []
-      let idCounter = 100000
-
-      Object.keys(groups).forEach((groupName) => {
-        const isCollapsed = !!collapsedGroups[`${gridName}-${groupName}`]
-
-        // 1. Insert a Group Header row
-        groupedRows.push({
-          id: `group-header-${idCounter++}`,
-          isGroupHeader: true,
-          groupName: groupName,
-          particulars: groupName,
-        })
-
-        // 2. Insert all the rows in this group only if not collapsed
-        if (!isCollapsed) {
-          groups[groupName].forEach((row) => {
-            groupedRows.push({
-              ...row,
-              isGroupChild: true,
-            })
-          })
-        }
-      })
-
-      // Hide the 'ROW_GROUP' column
-      const filteredColumns = columns.filter((c) => c.field !== 'ROW_GROUP')
-
-      // Enhance columns
-      const finalColumns = filteredColumns.map((col, index) => {
-        if (index === 0) {
-          return {
-            ...col,
-            colSpan: (value, row) => (row.isGroupHeader ? 100 : 1),
-            renderCell: (params) => {
-              if (params.row.isGroupHeader) {
-                const isCollapsed =
-                  !!collapsedGroups[`${gridName}-${params.row.groupName}`]
-                return (
-                  <Box
-                    display='flex'
-                    alignItems='center'
-                    onClick={() =>
-                      toggleGroupCollapse(gridName, params.row.groupName)
-                    }
-                    style={{
-                      cursor: 'pointer',
-                      userSelect: 'none',
-                      width: '100%',
-                      height: '100%',
-                      paddingLeft: '4px',
-                    }}
-                  >
-                    <span
-                      style={{
-                        marginRight: '8px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        fontSize: '0.75rem',
-                        color: '#475569',
-                      }}
-                    >
-                      {isCollapsed ? '▶' : '▼'}
-                    </span>
-                    <span
-                      style={{
-                        fontWeight: '700',
-                        color: '#1e293b',
-                        textTransform: 'uppercase',
-                        fontSize: '0.8rem',
-                        letterSpacing: '0.02em',
-                      }}
-                    >
-                      {params.row.groupName}
-                    </span>
-                  </Box>
-                )
-              }
-              return <span style={{ paddingLeft: '24px' }}>{params.value}</span>
-            },
-          }
-        }
-
-        // For other columns
-        const originalRenderCell = col.renderCell
-        return {
-          ...col,
-          renderCell: (params) => {
-            if (params.row.isGroupHeader) {
-              return null
-            }
-            if (originalRenderCell) {
-              return originalRenderCell(params)
-            }
-            return params.value
-          },
-        }
-      })
-
-      return { rows: groupedRows, columns: finalColumns }
-    },
-    [collapsedGroups, toggleGroupCollapse],
-  )
+  const exportRefs = useRef({})
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase()
+  const isCracker = lowerVertName === 'cracker'
 
   useEffect(() => {
-    isMountedRef.current = true
-
     return () => {
       isMountedRef.current = false
       timeoutIdsRef.current.forEach((t) => clearTimeout(t))
@@ -197,340 +72,426 @@ const OptimizerReport = () => {
     }
   }, [])
 
-  const enrichColumns = useCallback(
-    (backendCols = []) => {
-      function countDecimals(value) {
-        if (value == null) return 0
-        const s = String(value).replace(/,/g, '').trim()
-        if (!s.includes('.')) return 0
-        const frac = s.split('.')[1] || ''
-        // remove trailing zeros from the fractional part (so 2024.0 -> 0 decimals)
-        const fracNoTrailing = frac.replace(/0+$/, '')
-        return fracNoTrailing.length
+  function parseDDMMYYYY(dateStr) {
+    if (!dateStr) return null
+    const [day, month, year] = String(dateStr).split('-')
+    return new Date(`${year}-${month}-${day}`)
+  }
+
+  const enrichColumns = useCallback((backendCols = []) => {
+    const filteredCols = backendCols.filter((col) => col.field !== 'GRID_TYPE')
+    const applyFixedWidth = filteredCols.length < 7
+    const fixedWidth = applyFixedWidth ? 150 : 121
+    return backendCols.map((col) => {
+      const isTextCol = col.type === 'string'
+      const isNumberCol = col.type === 'number'
+      return {
+        ...col,
+        title: col.title || col.field,
+        filterable: true,
+        filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
+        align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
+        ...(isNumberCol ? { format: '{0:0.0000}' } : {}),
+        editable: false,
+        isRightAlligned: isNumberCol ? 'numeric' : undefined,
+        ...(col.field === 'Particulars' ? { widthT: 220 } : fixedWidth ? { widthT: fixedWidth } : { widthT: 100 }),
       }
+    })
+  }, [])
 
-      const isManyColumns = backendCols.length > 15
+  // build columns fallback order (used when API doesn't return columns)
+  const MODE_COLUMNS_ORDER = [
+    'sapMaterialCode',
+    'normType',
+    'materialDisplayName',
+    'uom',
+    'april',
+    'may',
+    'june',
+    'july',
+    'august',
+    'september',
+    'october',
+    'november',
+    'december',
+    'january',
+    'february',
+    'march',
+  ]
 
-      return backendCols
-        .filter((col) => col.field !== 'GRID_TYPE')
-        .map((col) => {
-          const isTextCol = col.type === 'string'
-          const isNumberCol = col.type === 'number'
+  const FIELD_TITLE_MAP = {
+    sapMaterialCode: 'SAP Mat Code',
+    normType: 'Type',
+    materialDisplayName: 'Particular',
+    uom: 'UOM',
+    april: 'April',
+    may: 'May',
+    june: 'June',
+    july: 'July',
+    august: 'August',
+    september: 'September',
+    october: 'October',
+    november: 'November',
+    december: 'December',
+    january: 'January',
+    february: 'February',
+    march: 'March',
+  }
 
-          const base = {
-            ...col,
-            title: col.title || col.field,
-            filterable: true,
+  const columnsFromFirstRow = (firstRow = {}) => {
+    const first = firstRow || {}
+    return MODE_COLUMNS_ORDER.map((f) => {
+      const sample = first[f]
+      let type = 'string'
+      if (typeof sample === 'number') type = 'number'
+      else if (typeof sample === 'string' && sample.split('-').length === 3)
+        type = 'date'
+      else if (
+        sample !== undefined &&
+        sample !== null &&
+        sample !== '' &&
+        !isNaN(sample)
+      )
+        type = 'number'
+      return { field: f, title: FIELD_TITLE_MAP[f] || f, type }
+    })
+  }
 
-            flex: isManyColumns ? undefined : 1,
-            width: isManyColumns ? 150 : undefined,
-            filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
-            editable: false,
-            headerAlign: 'left',
-            align: isNumberCol ? 'right' : 'left',
-          }
+  // fetch for Optimizer Input/Output grids — NO grouping by normType any more
+  const fetchDataForGrid = useCallback(
+    async (reportType, mode) => {
+      try {
+        const lower = (reportType || '').toLowerCase()
+        let apiResponse = null
 
-          if (!isNumberCol) return base
+        if (lower.includes('input')) {
+          apiResponse = await CrackerReportsApiDataService.spyroInputReport(
+            keycloak,
+            reportType,
+            mode,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+        } else {
+          apiResponse = await CrackerReportsApiDataService.spyroOutputReport(
+            keycloak,
+            reportType,
+            mode,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+        }
 
-          return {
-            ...base,
-            renderCell: (params) => {
-              const original = params?.row?.[col.field] ?? params?.value
-              const decimals = countDecimals(original)
-              const decimalsToShow = Math.min(Math.max(decimals, 0), 3)
+        if (apiResponse?.code !== 200) {
+          return { rows: [], columns: [] }
+        }
 
-              const text =
-                params?.value == null || params?.value === ''
-                  ? ''
-                  : decimalsToShow === 0
-                    ? String(Number(params.value))
-                    : Number(params.value).toFixed(decimalsToShow)
+        const backendCols = apiResponse.data.columns || []
+        const enrichedCols = enrichColumns(backendCols)
 
-              return (
-                <div
-                  title={String(params.value)}
-                  style={{
-                    width: '100%',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    textAlign: 'right',
-                  }}
-                >
-                  {text}
-                </div>
-              )
-            },
-          }
+        const dateFields = enrichedCols
+          .filter((c) => c.type === 'date')
+          .map((c) => c.field)
+        const numberFields = enrichedCols
+          .filter((c) => c.type === 'number')
+          .map((c) => c.field)
+
+        const rawRows = apiResponse.data.data || []
+
+        const rowsWithId = rawRows.map((item, index) => {
+          const parsedItem = { ...item }
+          dateFields.forEach((f) => {
+            parsedItem[f] = item?.[f] ? parseDDMMYYYY(item[f]) : null
+          })
+          numberFields.forEach((f) => {
+            parsedItem[f] =
+              item?.[f] !== undefined && item?.[f] !== null
+                ? Number(item[f])
+                : null
+          })
+          return { ...parsedItem, id: index, isEditable: false }
         })
+
+        // NO grouping: always return a single grid payload
+        return { rows: rowsWithId, columns: enrichedCols }
+      } catch (err) {
+        console.error(`Error fetching ${reportType} (mode: ${mode}):`, err)
+        return { rows: [], columns: [] }
+      }
     },
-    [keycloak, PLANT_ID, AOP_YEAR],
+    [keycloak, enrichColumns, PLANT_ID, AOP_YEAR, siteObject, lowerVertName],
   )
 
-  function isValidDateString(str) {
-    if (typeof str !== 'string') return false
+  // scheduleAndRunFetch — supports month grids suffixed with reportType
+  const scheduleAndRunFetch = useCallback(
+    (reportKey, reportType, mode, delayMs) => {
+      const id = setTimeout(async () => {
+        activeRequestsRef.current += 1
+        if (isMountedRef.current) setLoading(true)
 
-    // Common date patterns
-    const datePatterns = [
-      /^\d{1,2}[-/]\d{1,2}[-/]\d{4}$/, // DD-MM-YYYY or DD/MM/YYYY
-      /^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/, // YYYY-MM-DD or YYYY/MM/DD
-      /^[A-Za-z]{3}\s+\d{1,2},\s+\d{4}/, // "Apr 1, 2025" format
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, // ISO format
-    ]
+        try {
+          let result = { rows: [], columns: [] }
 
-    const matchesPattern = datePatterns.some((pattern) =>
-      pattern.test(str.trim()),
-    )
+          result = await fetchDataForGrid(reportType, mode)
 
-    if (!matchesPattern && !/[-/,\s:]/.test(str)) {
-      return false
-    }
+          if (!isMountedRef.current) return
 
-    return matchesPattern
-  }
-
-  function inferColumnsFromRows(rows = []) {
-    const fieldSet = new Set()
-    rows.forEach((r) => {
-      if (!r || typeof r !== 'object') return
-      Object.keys(r).forEach((k) => fieldSet.add(k))
-    })
-
-    const fields = Array.from(fieldSet)
-
-    const cols = fields.map((f) => {
-      let detectedType = 'string'
-      for (const r of rows) {
-        if (!r) continue
-        const v = r?.[f]
-        if (v === undefined || v === null || v === '') continue
-        if (typeof v === 'number') {
-          detectedType = 'number'
-          break
+          // set as single grid (no normType-based grouping)
+          setDataMap((prev) => ({ ...prev, [reportKey]: result }))
+        } catch (err) {
+          console.error(`Scheduled fetch failed for ${reportKey}:`, err)
+        } finally {
+          activeRequestsRef.current -= 1
+          if (activeRequestsRef.current <= 0 && isMountedRef.current) {
+            activeRequestsRef.current = 0
+            setLoading(false)
+          }
         }
+      }, delayMs)
 
-        const d = new Date(v)
-        if (!isNaN(d.getTime()) && isValidDateString(v)) {
-          detectedType = 'date'
-          break
-        }
-        const numericCandidate = String(v).replace(/[,]/g, '')
-        if (!isNaN(Number(numericCandidate))) {
-          detectedType = 'number'
-          break
-        }
-      }
-      return { field: f, title: f, type: detectedType }
-    })
+      timeoutIdsRef.current.push(id)
+    },
+    [fetchDataForGrid, AOP_YEAR, PLANT_ID],
+  )
 
-    return cols
-  }
-
-  function normalizeRowValues(row = {}, columns = []) {
-    const parsed = { ...row }
-    columns.forEach((c) => {
-      const raw = row[c.field]
-      if (raw === undefined || raw === null || raw === '') {
-        parsed[c.field] = raw === 0 ? 0 : null
-        return
-      }
-      if (c.type === 'number') {
-        parsed[c.field] =
-          typeof raw === 'number'
-            ? raw
-            : Number(String(raw).replace(/[,]/g, ''))
-        if (Number.isNaN(parsed[c.field])) parsed[c.field] = null
-        return
-      }
-      if (c.type === 'date') {
-        const d = new Date(raw)
-        parsed[c.field] = !isNaN(d.getTime()) ? d : null
-        return
-      }
-    })
-    return parsed
-  }
-
+  // Main: fetch TYPE_LIST then schedule fetching each grid in order
   const fetchAllGrids = useCallback(async () => {
-    setGridNames([])
-    setDataMap({})
-    if (!PLANT_ID || !AOP_YEAR) return
-    // clear previous timers if any
+    const siteName = siteObject?.name?.toUpperCase()
+    const isCrackerHMD = lowerVertName === 'cracker' && siteName === 'HMD'
+    if (siteName === 'HMD' && !isCrackerHMD) return
+
+    // clear previous timers
     timeoutIdsRef.current.forEach((t) => clearTimeout(t))
     timeoutIdsRef.current = []
+    setDataMap({})
 
     try {
       setLoading(true)
-      const apiResponse = await ReportDataService.getOptimizerInputOutput(
+
+      // Keep your static result - replace with real TYPE_LIST call if needed
+      const typeListResult = {
+        code: 200,
+        message: 'SP Executed successfully',
+        data: {
+          data: [
+            {
+              DisplayOrder: 1,
+              TYPE: 'Output',
+            },
+            {
+              DisplayOrder: 2,
+              TYPE: 'Input',
+            },
+          ],
+          columns: [
+            {
+              field: 'DisplayOrder',
+              editable: false,
+              title: 'DisplayOrder',
+              type: 'number',
+            },
+            {
+              field: 'TYPE',
+              editable: false,
+              title: 'TYPE',
+              type: 'string',
+            },
+          ],
+        },
+      }
+
+      let types = []
+      if (typeListResult?.code == 200) {
+        types = (typeListResult?.data?.data ?? []).map((item) => item.TYPE)
+      } else {
+        return
+      }
+
+      const normalized = [...new Set(types)] // unique, preserve order as returned
+
+      // ensure Input types appear first
+      const inputFirst = []
+      const outputLater = []
+      normalized.forEach((t) => {
+        if ((t || '').toLowerCase().includes('input')) inputFirst.push(t)
+        else outputLater.push(t)
+      })
+      const orderedTypes = [...inputFirst, ...outputLater]
+
+      const responseForModes = await OptimizerDataApiService.fetchModes(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        '1',
       )
 
-      if (apiResponse?.code !== 200) {
-        setGridNames([])
-        setDataMap({})
-        setLoading(false)
-        return
+      const MODE_GRADES =
+        responseForModes?.data?.map((mode) => mode?.name).filter(Boolean) || []
+
+      // STATIC
+
+      // const modes = [
+      //   { key: '4F', label: '4F' },
+      //   { key: '5F', label: '5F' },
+      //   { key: '4F+D', label: '4F+D' },
+      // ]
+
+      //DYANAMIC
+
+      let modes = MODE_GRADES.map((grade) => ({
+        key: grade,
+        label: grade,
+      }))
+
+      if (isCrackerHMD) {
+        modes = [
+          { key: 'Input', label: 'Input' },
+          { key: 'Output', label: 'Output' },
+        ]
       }
 
-      // Support two possible shapes for convenience:
-      // 1) apiResponse.data is the array of grids
-      // 2) apiResponse.data.data is the array (older wrappers)
-      const gridsArray = Array.isArray(apiResponse.data)
-        ? apiResponse.data
-        : Array.isArray(apiResponse.data?.data)
-          ? apiResponse.data.data
-          : []
-
-      if (!Array.isArray(gridsArray) || gridsArray.length === 0) {
-        setGridNames([])
-        setDataMap({})
-        setLoading(false)
-        return
-      }
-
-      const normalizedNames = gridsArray.map((g) => g.gridName)
-      setGridNames(normalizedNames)
-
-      const newMap = {}
-      gridsArray.forEach((g) => {
-        const rawRows = Array.isArray(g.data) ? g.data : []
-        // BEFORE:
-        // const inferredCols = inferColumnsFromRows(rawRows)
-
-        // AFTER:
-        const inferredCols =
-          Array.isArray(g.columns) && g.columns.length
-            ? g.columns
-            : inferColumnsFromRows(rawRows)
-
-        const enrichedCols = enrichColumns(inferredCols)
-
-        const rowsWithId = rawRows.map((r, i) => {
-          const parsed = normalizeRowValues(r, inferredCols)
-          return { ...parsed, id: i, isEditable: false }
+      // build grid name list: "<TYPE> - <MODE_LABEL>"
+      const expandedGridNames = []
+      if (isCrackerHMD) {
+        expandedGridNames.push('Input', 'Output')
+      } else {
+        orderedTypes.forEach((type) => {
+          modes.forEach((m) => {
+            expandedGridNames.push(`${type} - ${m.label}`)
+          })
         })
+      }
 
-        newMap[g.gridName] = { rows: rowsWithId, columns: enrichedCols }
+      // NOTE: removed month-wise grids here — user requested only the 6 upper grids (2 types x 3 modes)
+      // previously we appended MONTH_REPORT_TYPES here; that code is intentionally omitted
+
+      setGridNames(expandedGridNames)
+
+      // schedule fetch for each expanded grid with small delays
+      expandedGridNames.forEach((gridName, idx) => {
+        let typePart = gridName
+        let modeKey = modes[0]?.key
+
+        if (isCrackerHMD) {
+          typePart = gridName
+          modeKey = gridName // 'Input' or 'Output'
+          scheduleAndRunFetch(gridName, typePart, modeKey, idx * CALL_DELAY_MS)
+        } else if (!gridName.startsWith(MONTH_GRID_NAME)) {
+          const [tPart, modeLabel] = gridName.split(' - ')
+          typePart = tPart
+          const modeObj = modes.find((mm) => mm.label === modeLabel)
+          modeKey = modeObj ? modeObj.key : modes[0].key
+          scheduleAndRunFetch(gridName, typePart, modeKey, idx * CALL_DELAY_MS)
+        } else {
+          // month grid includes report type after the first " - "
+          const parts = gridName.split(' - ')
+          // parts[0] === MONTH_GRID_NAME, parts.slice(1).join(' - ') === reportType (safe if reportType contains hyphens)
+          const reportTypePart = parts.slice(1).join(' - ')
+          // use default mode for month-wise call
+          scheduleAndRunFetch(
+            gridName,
+            reportTypePart,
+            modes[0].key,
+            idx * CALL_DELAY_MS,
+          )
+        }
       })
-
-      if (isMountedRef.current) setDataMap(newMap)
     } catch (err) {
-      console.error('Error fetching all grids (new shape):', err)
-    } finally {
-      if (isMountedRef.current) setLoading(false)
+      console.error('Error fetching TYPE_LIST or config:', err)
+      setLoading(false)
     }
-  }, [keycloak, PLANT_ID, AOP_YEAR, enrichColumns])
+  }, [scheduleAndRunFetch, PLANT_ID, AOP_YEAR, siteObject, lowerVertName])
 
   useEffect(() => {
-    if (tabIndex == 0) {
-      fetchAllGrids()
-      return () => {
-        timeoutIdsRef.current.forEach((t) => clearTimeout(t))
-        timeoutIdsRef.current = []
-      }
+    const siteName = siteObject?.name?.toUpperCase()
+
+
+
+    fetchAllGrids()
+    return () => {
+      timeoutIdsRef.current.forEach((t) => clearTimeout(t))
+      timeoutIdsRef.current = []
     }
-  }, [
-    fetchAllGrids,
-    keycloak,
-    PLANT_ID,
-    AOP_YEAR,
-    oldYear,
-    yearChanged,
-    tabIndex,
-  ])
+  }, [fetchAllGrids, PLANT_ID, AOP_YEAR, oldYear, yearChanged, siteObject, lowerVertName])
+
+  // Export: gather sheets from each ExcelExport instance and combine into one workbook
+
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
 
 
 
+  const currentDateTime = new Date()
+    .toISOString()
+    .replace(/T/, ' ')
+    .replace(/:/g, '-')
+    .split('.')[0]
+  const fileName = `Optimizer Report ${currentDateTime}.xlsx`
 
   const renderTitle = (t) => t
 
-  const PETabs = ['Steady State Norm Basis', 'Overall Consumption Norm Basis']
-  const defaultTabs = ['Steady State Norm Basis']
-  let activeTabs = defaultTabs
-  if (lowerVertName === 'pe') activeTabs = PETabs
+
+
+
 
   return (
-    <div>
+    <div className='configuration-accordion-wrapper'>
       <LoaderBackdrop open={!!loading} />
 
 
-
-
-
-
-
-
-
-
       <Box display='flex' flexDirection='column' gap={2}>
-        {tabIndex === 0 && (
-          <>
-            {gridNames.map((name) => {
-              const d = dataMap[name] || { rows: [], columns: [] }
-              const { rows: groupedRows, columns: groupedCols } =
-                getGroupedRowsAndColumns(d.rows, d.columns, name)
-              return (
-                <div key={name}>
-                  <CustomAccordion defaultExpanded disableGutters>
-                    <CustomAccordionSummary
-                      aria-controls={`${name}-content`}
-                      id={`${name}-header`}
-                    >
-                      <Typography component='span' className='grid-title'>
-                        {renderTitle(name)}
-                      </Typography>
-                    </CustomAccordionSummary>
-                    <CustomAccordionDetails>
-                      <Box
-                        sx={{
-                          width: '100%',
-                          margin: 0,
-                          height: groupedRows?.length > 50 ? 500 : 'auto',
-                        }}
-                      >
-                        <DataGrid
-                          rows={groupedRows}
-                          className='custom-data-grid'
-                          columns={groupedCols}
-                          disableSelectionOnClick
-                          disableColumnSelector
-                          disableDensitySelector
-                          density='standard'
-                          rowHeight={36}
-                          pagination={groupedRows?.length > 99}
-                          hideFooterPagination={groupedRows?.length <= 99}
-                          hideFooter={groupedRows?.length < 30}
-                          pageSize={100}
-                          rowsPerPageOptions={[100]}
-                          hideFooterSelectedRowCount={false}
-                          experimentalFeatures={{ newEditingApi: true }}
-                          getRowClassName={(params) =>
-                            params.row.isGroupHeader ? 'group-header-row' : ''
-                          }
-                          sx={{
-                            border: 0,
-                            '& .group-header-row': {
-                              backgroundColor: '#ffffff',
-                              borderBottom: '1px solid #e2e8f0',
-                              borderTop: '1px solid #e2e8f0',
-                              '&:hover': {
-                                backgroundColor: '#f8fafc',
-                              },
-                            },
-                          }}
-                        />
-                      </Box>
-                    </CustomAccordionDetails>
-                  </CustomAccordion>
-                </div>
+        {gridNames.map((name) => {
+          const d = dataMap[name] || { rows: [], columns: [] }
+          const isCrackerHMD = lowerVertName === 'cracker' && siteObject?.name?.toUpperCase() === 'HMD'
+          const isOutput = name === 'Output'
+          const shouldGroup = isCrackerHMD && isOutput
+          const processedColumns = shouldGroup
+            ? d.columns.map((col) =>
+                col.field === 'rowGroup' ? { ...col, hidden: true } : col
               )
-            })}
-          </>
-        )}
-
+            : d.columns
+          return (
+            <div key={name}>
+              <CustomAccordion
+                defaultExpanded
+                disableGutters
+                className='k-table-box'
+              >
+                <CustomAccordionSummary
+                  aria-controls={`${name}-content`}
+                  id={`${name}-header`}
+                  expandIcon={<ExpandMoreIcon sx={{ fontSize: '1.2rem' }} />}
+                  className='aop-report-accordion-summary'
+                >
+                  <Typography component='span' className='grid-title'>
+                    {renderTitle(name)}
+                  </Typography>
+                </CustomAccordionSummary>
+                <CustomAccordionDetails sx={{ padding: '0px 0px 1px' }}>
+                  <Box sx={{ width: '100%', margin: 0 }}>
+                    <KendoDataGrid
+                      rows={d.rows}
+                      columns={processedColumns}
+                      permissions={{ isHeight: d?.rows?.length > 15 }}
+                      groupBy={shouldGroup ? 'rowGroup' : null}
+                    />
+                  </Box>
+                </CustomAccordionDetails>
+              </CustomAccordion>
+            </div>
+          )
+        })}
       </Box>
+
+      <Notification
+        open={snackbarOpen}
+        message={snackbarData.message}
+        severity={snackbarData.severity}
+        onClose={() => setSnackbarOpen(false)}
+      />
     </div>
   )
 }
