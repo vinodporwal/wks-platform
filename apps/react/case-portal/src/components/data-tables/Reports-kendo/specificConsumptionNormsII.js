@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Box, Backdrop } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
@@ -38,6 +38,10 @@ const specificConsumptionCategories = () => [
     key: 'ProductMixAndProduction',
     title: 'Product Mix And Production',
   },
+  {
+    key: 'Utilities',
+    title: 'Utilities',
+  },
 ]
 
 export default function SpecificConsumptionNormsII() {
@@ -75,11 +79,20 @@ export default function SpecificConsumptionNormsII() {
   const [gridStates, setGridStates] = useState({})
 
   const valueFormat = ValueFormatterConsumption()
-
+  const categories = useMemo(() => {
+    const isPePpPet = ['PE', 'PP', 'PET'].some((v) =>
+      VERTICAL_NAME?.toUpperCase().includes(v),
+    )
+    return specificConsumptionCategories().filter(({ key }) => {
+      if (key === 'ProductMixAndProduction') return !isPePpPet
+      if (key === 'Utilities') return isPePpPet
+      return true
+    })
+  }, [VERTICAL_NAME])
   // Initialize grid states
   useEffect(() => {
     const initialStates = {}
-    specificConsumptionCategories().forEach(({ key }) => {
+    categories.forEach(({ key }) => {
       initialStates[key] = {
         remarkDialogOpen: false,
         currentRemark: '',
@@ -88,7 +101,7 @@ export default function SpecificConsumptionNormsII() {
       }
     })
     setGridStates(initialStates)
-  }, [])
+  }, [categories])
 
   // Helper functions to update individual grid state
   const updateGridState = (key, updates) => {
@@ -237,7 +250,7 @@ export default function SpecificConsumptionNormsII() {
     try {
       const out = {}
       await Promise.all(
-        specificConsumptionCategories().map(async ({ key }) => {
+        categories.map(async ({ key }) => {
           try {
             const { columns } =
               await MockSpecificConsumptionNormsIIAPI.getReport({
@@ -278,7 +291,7 @@ export default function SpecificConsumptionNormsII() {
     if (keycloak && PLANT_ID && AOP_YEAR) {
       loadAll()
     }
-  }, [keycloak, AOP_YEAR, PLANT_ID, VERTICAL_ID])
+  }, [keycloak, AOP_YEAR, PLANT_ID, VERTICAL_ID, VERTICAL_NAME])
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -288,7 +301,7 @@ export default function SpecificConsumptionNormsII() {
         {`Specific Consumption Norms (T-17)`}
       </Typography>
 
-      {specificConsumptionCategories().map(({ key, title }, index) => {
+      {categories.map(({ key, title }, index) => {
         const rpt = reports[key] || {}
         const gridState = gridStates[key] || {
           remarkDialogOpen: false,

@@ -780,7 +780,14 @@ public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigu
 			checkQuery.setParameter("aopYear", aopYear);
 			int count = ((Number) checkQuery.getSingleResult()).intValue();
 
-			if (count > 0) {
+			if(count > 1) {
+				throw new IllegalArgumentException("Duplicate data found for the same normParameterId, plantId and aopYear");
+			}
+
+			if(count == 0) {
+				throw new IllegalArgumentException("Data not found for the given normParameterId, plantId and aopYear");
+			  }
+
 				String updateSql = "UPDATE TankConfiguration "
 						+ "SET volume = :volume, "
 						+ "april = :apr, may = :may, june = :jun, july = :jul, "
@@ -811,36 +818,7 @@ public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigu
 				updateQuery.setParameter("plantId", UUID.fromString(plantId));
 				updateQuery.setParameter("aopYear", aopYear);
 				updateQuery.executeUpdate();
-			} else {
-				String insertSql = "INSERT INTO TankConfiguration "
-						+ "(id, norm_paramter_id, volume, "
-						+ "april, may, june, july, august, september, october, november, december, january, february, march, "
-						+ "remarks, plantId, aopYear, modifiedOn, modifiedBy) "
-						+ "VALUES (NEWID(), :normParameterId, :volume, "
-						+ ":apr, :may, :jun, :jul, :aug, :sep, :oct, :nov, :dec, :jan, :feb, :mar, "
-						+ ":remarks, :plantId, :aopYear, :modifiedOn, :modifiedBy)";
-				Query insertQuery = entityManager.createNativeQuery(insertSql);
-				insertQuery.setParameter("normParameterId", UUID.fromString(dto.getNormParameterFKId()));
-				insertQuery.setParameter("volume", dto.getVolume());
-				insertQuery.setParameter("apr", dto.getApr());
-				insertQuery.setParameter("may", dto.getMay());
-				insertQuery.setParameter("jun", dto.getJun());
-				insertQuery.setParameter("jul", dto.getJul());
-				insertQuery.setParameter("aug", dto.getAug());
-				insertQuery.setParameter("sep", dto.getSep());
-				insertQuery.setParameter("oct", dto.getOct());
-				insertQuery.setParameter("nov", dto.getNov());
-				insertQuery.setParameter("dec", dto.getDec());
-				insertQuery.setParameter("jan", dto.getJan());
-				insertQuery.setParameter("feb", dto.getFeb());
-				insertQuery.setParameter("mar", dto.getMar());
-				insertQuery.setParameter("remarks", dto.getRemarks());
-				insertQuery.setParameter("plantId", UUID.fromString(plantId));
-				insertQuery.setParameter("aopYear", aopYear);
-				insertQuery.setParameter("modifiedOn", modifiedOn);
-				insertQuery.setParameter("modifiedBy", modifiedBy);
-				insertQuery.executeUpdate();
-			}
+			
 		}
 
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -1951,6 +1929,8 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 			Plants plant = plantsRepository.findById(plantId).orElseThrow();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 
+			boolean aromaticsPmd = verticalName.equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("PMD");
+
 			String steamLatentName = "";
 
 			if (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("DMD")) {
@@ -1984,9 +1964,22 @@ continue;
 					failedList.add(configurationDTO);
 					continue;
 				}
-				if (optionNormParameters.isPresent() && (!optionNormParameters.get().getIsEditable())) {
-					continue;
-				}
+			if (optionNormParameters.isPresent() && (!optionNormParameters.get().getIsEditable())) {
+				continue;
+			}
+
+		//	DAYS validation for aromatics PMD
+			if(aromaticsPmd) {
+			String uomValidationError = validateDaysUOM(configurationDTO, year);
+
+			if (uomValidationError != null) {
+				configurationDTO.setSaveStatus("Failed");
+				configurationDTO.setErrDescription(uomValidationError);
+				failedList.add(configurationDTO);
+				continue;
+			}
+		}
+
              // apr value should not be greater than may value
 			 if(isMinMax) {
 				if(configurationDTO.getApr() != null && configurationDTO.getMay() != null && configurationDTO.getApr() > configurationDTO.getMay()) {
@@ -2342,6 +2335,52 @@ continue;
 
 		}
 		return configurationDTO.getJan();
+	}
+
+	private String validateDaysUOM(ConfigurationDTO dto, String year) {
+		if (dto.getUOM() == null || !dto.getUOM().equalsIgnoreCase("DAYS")) {
+			return null;
+		}
+
+		// Fiscal year format: "2026-27" ? Apr–Dec of start year, Jan–Mar of end year.
+		// Parse start year from the portion before "-"; end year = start year + 1.
+		int startYear;
+		try {
+			String startPart = year.contains("-") ? year.split("-")[0].trim() : year.trim();
+			startYear = Integer.parseInt(startPart);
+		} catch (NumberFormatException e) {
+			startYear = LocalDate.now().getYear();
+		}
+		int endYear = startYear + 1;
+
+		// Months Jan–Mar belong to endYear; Apr–Dec belong to startYear.
+		boolean isLeapEndYear = (endYear % 4 == 0) && (endYear % 100 != 0 || endYear % 400 == 0);
+
+		// maxDays array indexed Jan(0)…Dec(11); February uses endYear leap-year check.
+		int[] maxDays = { 31, isLeapEndYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+		String[] monthNames = { "January", "February", "March", "April", "May", "June",
+				"July", "August", "September", "October", "November", "December" };
+		Double[] values = {
+				dto.getJan(), dto.getFeb(), dto.getMar(), dto.getApr(),
+				dto.getMay(), dto.getJun(), dto.getJul(), dto.getAug(),
+				dto.getSep(), dto.getOct(), dto.getNov(), dto.getDec()
+		};
+
+		for (int i = 0; i < 12; i++) {
+			Double val = values[i];
+			if (val == null) {
+				continue;
+			}
+			if (val != Math.floor(val)) {
+				return monthNames[i] + " value must be a whole number when UOM is DAYS";
+			}
+			if (val > maxDays[i]) {
+				return monthNames[i] + " value " + val.intValue()
+						+ " exceeds the maximum allowed days (" + maxDays[i] + ")";
+			}
+		}
+
+		return null;
 	}
 
 	@Transactional
@@ -2905,9 +2944,18 @@ continue;
 
 		try {
 
+			Plants plant = plantsRepository.findById(plantFKId).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			boolean aromaticsPmd = vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("PMD");
+
 			System.out.println("started Read configuration in importExcel");
 			List<ConfigurationDTO> data = readShutdownRate(file.getInputStream(), plantFKId, year,type);
 			System.out.println("Ended Read configuration in importExcel");
+			if(aromaticsPmd) {
+				// validation for uom DAY: the value should not be decimal
+			validateShutdownRateData(data);
+			}
 			System.out.println("Started Save configuration in importExcel");
 			List<ConfigurationDTO> failedRecords = saveConfigurationData(year, plantFKId.toString(),version, data,calculation,isMinMax);
 			System.out.println("Ended Save configuration in importExcel");
@@ -3160,6 +3208,40 @@ continue;
 		return configList;
 	}
 
+	private void validateShutdownRateData(List<ConfigurationDTO> data) {
+		if (data == null) return;
+
+		List<String> monthNames = Arrays.asList(
+			"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+			"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+		);
+
+		for (ConfigurationDTO dto : data) {
+			if ("Failed".equalsIgnoreCase(dto.getSaveStatus())) continue;
+			if (dto.getUOM() == null || !dto.getUOM().equalsIgnoreCase("DAY")) continue;
+
+			List<Double> monthValues = Arrays.asList(
+				dto.getJan(), dto.getFeb(), dto.getMar(),
+				dto.getApr(), dto.getMay(), dto.getJun(),
+				dto.getJul(), dto.getAug(), dto.getSep(),
+				dto.getOct(), dto.getNov(), dto.getDec()
+			);
+
+			List<String> decimalMonths = new ArrayList<>();
+			for (int i = 0; i < monthValues.size(); i++) {
+				Double value = monthValues.get(i);
+				if (value != null && value % 1 != 0) {
+					decimalMonths.add(monthNames.get(i));
+				}
+			}
+
+			if (!decimalMonths.isEmpty()) {
+				dto.setSaveStatus("Failed");
+				dto.setErrDescription(
+					"UOM is DAY: decimal values are not allowed");
+			}
+		}
+	}
 
 	public List<ConfigurationDTO> readConfigurationConstants(InputStream inputStream, UUID plantFKId, String year) {
 		List<ConfigurationDTO> configList = new ArrayList<>();

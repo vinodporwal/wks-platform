@@ -59,6 +59,7 @@ const DownsteamShutdownDMD = ({ viewOnly, permissions }) => {
 
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [columns, setColumns] = useState([])
+  const [groupBy, setGroupBy] = useState(null)
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
@@ -251,8 +252,15 @@ const DownsteamShutdownDMD = ({ viewOnly, permissions }) => {
       const resp = await dataConfig.serviceFn(keycloak)
       const raw = resp.data?.data
       setCalculationObject(resp?.data?.aopCalculation)
-      const hiddenKeys = ['Id', 'AOPYear', 'PlantId', 'AuditYear']
-      const dynamicColumns = (resp.data?.columns || columns).map((col) => ({
+      const hiddenKeys = ['Id', 'AOPYear', 'PlantId', 'AuditYear', 'MaintenanceType']
+      const cols = resp.data?.columns || columns
+      const hasMaintenanceType = cols.some((col) => col.field === 'MaintenanceType')
+      if (hasMaintenanceType) {
+        setGroupBy('MaintenanceType')
+      } else {
+        setGroupBy(null)
+      }
+      const dynamicColumns = cols.map((col) => ({
         ...col,
         editable: false,
         hidden: hiddenKeys.includes(col.field) ? true : col.hidden,
@@ -490,6 +498,7 @@ const DownsteamShutdownDMD = ({ viewOnly, permissions }) => {
         rows={rows}
         setRows={setRows}
         fetchData={fetchData}
+        groupBy={groupBy}
         handleCalculate={handleCalculate}
         deleteId={deleteId}
         setDeleteId={setDeleteId}
@@ -510,7 +519,6 @@ const DownsteamShutdownDMD = ({ viewOnly, permissions }) => {
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
         note='*Unit of Measurement - Days'
-        supressGridHeight={true}
         handleExcelUpload={handleExcelUpload}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
       />

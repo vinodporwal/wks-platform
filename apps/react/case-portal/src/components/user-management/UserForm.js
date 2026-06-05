@@ -1494,7 +1494,18 @@ const UserForm = ({ keycloak }) => {
             )
           })}
 
-          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+          <Box
+            sx={{
+              position: 'sticky',
+              bottom: 0,
+              backgroundColor: 'white',
+              pt: 2,
+              pb: 1,
+              zIndex: 1000,
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
             <Box
               sx={{
                 mt: 'auto',
