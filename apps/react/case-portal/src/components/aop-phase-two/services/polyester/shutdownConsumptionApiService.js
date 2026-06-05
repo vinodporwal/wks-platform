@@ -20,8 +20,13 @@ export const ShutdownConsumptionApiService = {
  * @param {string} year - AOP Year
  * @returns {Promise} Shutdown consumption data
  */
-async function getShutdownConsumption(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/shutdown-consumption?year=${year}&plantId=${plantId}`
+async function getShutdownConsumption(keycloak, plantId, year, gradeId) {
+  let url = ``
+  if (gradeId) {
+    url = `${Config.CaseEngineUrl}/task/shutdown-consumption?year=${year}&plantId=${plantId}&gradeId=${gradeId}`
+  } else {
+    url = `${Config.CaseEngineUrl}/task/shutdown-consumption?year=${year}&plantId=${plantId}`
+  }
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -133,7 +138,7 @@ async function importShutdownConsumption(keycloak, plantId, year, file) {
  * @returns {Promise} List of grades
  */
 async function getGradesForShutdownNorms(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/grades-for-shutdown-norms?plantId=${plantId}&year=${year}`
+  const url = `${Config.CaseEngineUrl}/task/unique/grades?plantId=${plantId}&year=${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

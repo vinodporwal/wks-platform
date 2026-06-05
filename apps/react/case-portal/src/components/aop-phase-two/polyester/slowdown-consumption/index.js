@@ -122,7 +122,7 @@ const SlowdownConsumption = () => {
     if (!PLANT_ID || !AOP_YEAR) return
     try {
       const response =
-        await SlowdownConsumptionApiService.getSlowdownConsumption(
+        await SlowdownConsumptionApiService.getGradesForSlowdownNorms(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
@@ -157,6 +157,7 @@ const SlowdownConsumption = () => {
             keycloak,
             PLANT_ID,
             AOP_YEAR,
+            gradeId,
           )
 
         if (

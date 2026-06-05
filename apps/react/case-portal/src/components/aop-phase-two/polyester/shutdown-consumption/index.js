@@ -122,7 +122,7 @@ const ShutdownConsumption = () => {
     if (!PLANT_ID || !AOP_YEAR) return
     try {
       const response =
-        await ShutdownConsumptionApiService.getShutdownConsumption(
+        await ShutdownConsumptionApiService.getGradesForShutdownNorms(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
@@ -142,7 +142,7 @@ const ShutdownConsumption = () => {
       setGrades([])
       console.error('Error fetching shutdown consumption data:', error)
     }
-  }, [PLANT_ID, AOP_YEAR, keycloak, selectedGradeId])
+  }, [PLANT_ID, AOP_YEAR, keycloak])
 
   const fetchData = useCallback(
     async (gradeId) => {
@@ -157,6 +157,7 @@ const ShutdownConsumption = () => {
             keycloak,
             PLANT_ID,
             AOP_YEAR,
+            gradeId,
           )
 
         if (

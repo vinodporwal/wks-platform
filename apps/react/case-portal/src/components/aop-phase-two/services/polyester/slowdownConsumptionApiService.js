@@ -20,8 +20,13 @@ export const SlowdownConsumptionApiService = {
  * @param {string} year - AOP Year
  * @returns {Promise} Slowdown consumption data
  */
-async function getSlowdownConsumption(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/slowdown-consumption?year=${year}&plantId=${plantId}`
+async function getSlowdownConsumption(keycloak, plantId, year, gradeId) {
+  let url
+  if (gradeId) {
+    url = `${Config.CaseEngineUrl}/task/slowdownNorms?year=${year}&plantId=${plantId}&gradeId=${gradeId}`
+  } else {
+    url = `${Config.CaseEngineUrl}/task/slowdownNorms?year=${year}&plantId=${plantId}`
+  }
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -132,8 +137,9 @@ async function importSlowdownConsumption(keycloak, plantId, year, file) {
  * @param {string} year - AOP Year
  * @returns {Promise} List of grades
  */
+
 async function getGradesForSlowdownNorms(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/grades-for-slowdown-norms?plantId=${plantId}&year=${year}`
+  const url = `${Config.CaseEngineUrl}/task/slowdown-norms-grades?plantId=${plantId}&year=${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
