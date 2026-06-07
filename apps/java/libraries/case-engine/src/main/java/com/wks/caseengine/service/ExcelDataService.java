@@ -28,8 +28,8 @@ public interface ExcelDataService {
     List<List<Object>> getReportForPlantContributionYearWise(String plantId, String year, String reportType,
             List<String> headers);
 
-    List<List<Object>> getAOPData(String plantId, String year, String type);
-
+    List<List<Object>> getMonthwiseProductionPlanReport(String plantId, String year,List<String> headers);
+ 
     Map<String, Object> getProductionAOPWorkflowData(String plantId, String year, List<String> headers);
 
     List<List<Object>> getSpyroInputReport(String plantId, String year, String mode, List<String> headers);
