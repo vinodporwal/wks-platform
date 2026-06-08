@@ -1513,7 +1513,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 		List<BudgetMaintenance> budgetMaintenanceList=null;
 		
 		//List<Object[]> obj=findByYearAndPlantFkId( year, UUID.fromString(plantId),"vwBudgetMaintenance",budgetCategory);
-		List<Object[]> obj=findBudgetMaintenance(year, UUID.fromString(plantId),"GetBudgetMaintenance");
+		List<Object[]> obj=findBudgetMaintenance(year, UUID.fromString(plantId), budgetCategory,"spGetBudgetMaintenanceDetails");
 		List<BudgetMaintenanceDto> budgetMaintenanceDtoList = new ArrayList<BudgetMaintenanceDto>();
 		try {
 			
@@ -1545,11 +1545,12 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 			    dto.setRemark((String) row[i++]);
 			    dto.setAopYear(row[i++] != null ? row[i - 1].toString() : null);
 			    dto.setIsEditable(row[i++] != null ? Boolean.valueOf(row[i - 1].toString()) : null);
-			    dto.setUpdatedBy((String) row[i++]);
+			 //   dto.setUpdatedBy((String) row[i++]);
 			    dto.setModifiedOn((Date) row[i++]);
-			    dto.setSequence(row[i++] != null ? ((Number) row[i - 1]).intValue() : null);
+			 //   dto.setSequence(row[i++] != null ? ((Number) row[i - 1]).intValue() : null);
 			    dto.setPercentChange(row[i++] != null ? ((Number) row[i - 1]).doubleValue() : 0.0);
-			    dto.setSymbol(row[i++] != null ? row[i - 1].toString() : "");
+				dto.setMasterId(row[i++] != null ? UUID.fromString(row[i - 1].toString()) : null);
+			 //   dto.setSymbol(row[i++] != null ? row[i - 1].toString() : "");
 			   
 			    budgetMaintenanceDtoList.add(dto);
 			}
@@ -1588,15 +1589,16 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 		}
 	}
 	
-	public List<Object[]> findBudgetMaintenance(String aopYear, UUID plantId, String procedureName) {
+	public List<Object[]> findBudgetMaintenance(String aopYear, UUID plantId, String category, String procedureName) {
 		try {
 
 			String sql = "EXEC " + procedureName
-					+ " @PlantId = :plantId, @AOPYear = :aopYear";
+					+ " @PlantId = :plantId, @AOPYear = :aopYear, @Category = :category";
 
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
+			query.setParameter("category", category);
 
 			return query.getResultList();
 		} catch (IllegalArgumentException e) {
