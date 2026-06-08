@@ -14,6 +14,8 @@ public interface ConsumptionService {
 	public List<PlantRequirementDTO> getCppConsumptions(UUID plantId, String financialYear);
 
 	public List<CalculatedProcessDemandDTO> getProcessDemand(String financialYear);
+	
+	public List<CalculatedProcessDemandDTO> getProcessDemandByPlant(UUID plantId, String financialYear);
 
 	public ProcessDemandUpdateResponse updateProcessDemand(String financialYear, List<ProcessDemandUpdateRequest> requests);
 

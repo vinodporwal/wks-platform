@@ -98,12 +98,6 @@ const Prices = () => {
     editable: true,
     type: 'number1',
     customCell: DynamicDecimalCell,
-  }))
-
-  // ── Conditional editing config ────────────────────────────────────────────
-  // Month columns are editable only when valueType is 'Price' or 'Amount'
-  const monthColumnsWithConditionalEditing = MONTH_COLUMNS.map((col) => ({
-    ...col,
     conditionalEditable: {
       dependsOn: 'valueType',
       editableValues: ['Price', 'Amount'],
@@ -218,15 +212,19 @@ const Prices = () => {
       ],
     },
 
-    // Monthly norms ─ Apr → Mar (with conditional editing)
-    ...monthColumnsWithConditionalEditing,
+    // Monthly norms ─ Apr → Mar (editable only when valueType is Price or Amount)
+    ...MONTH_COLUMNS,
     {
       field: 'priceSource',
       title: 'Price Source',
       widthT: 250,
-      type: 'text',
+      type: 'long-text',
       editable: true,
       minWidth: 250,
+      conditionalEditable: {
+        dependsOn: 'valueType',
+        editableValues: ['Price', 'Amount'],
+      },
     },
     {
       field: 'remarks',
@@ -235,7 +233,6 @@ const Prices = () => {
       type: 'textarea',
       editable: true,
       minWidth: 250,
-      alwaysEditable: true,
     },
   ]
   const columns = baseColumns
@@ -264,7 +261,6 @@ const Prices = () => {
         id: item.id || index + 1,
         remarks: item.remarks || '',
         valueType: item.valueType || '',
-        isEditable: true,
       }))
 
       setRows(formatted)
@@ -286,7 +282,7 @@ const Prices = () => {
     }
   }, [PLANT_ID, AOP_YEAR])
 
-  // ── Custom itemChange handler for conditional editing ─────────────────────
+  // ── Custom itemChange handler ─────────────────────────────────────────────
   const handleItemChange = (e) => {
     const { dataItem, field, value } = e
     const itemId = dataItem.id
@@ -294,17 +290,19 @@ const Prices = () => {
 
     // Handle valueType changes
     if (field === 'valueType') {
-      const originalRow = originalRows.find((r) => r.id === itemId)
       if (value === 'Calculation') {
         // Set all month values to 0 when switching to Calculation
         MONTH_COLUMNS.forEach((col) => {
           updates[col.field] = 0
         })
-      } else if (originalRow && (value === 'Price' || value === 'Amount')) {
+      } else if (value === 'Price' || value === 'Amount') {
         // Restore original month values when switching back to Price or Amount
-        MONTH_COLUMNS.forEach((col) => {
-          updates[col.field] = originalRow[col.field]
-        })
+        const originalRow = originalRows.find((r) => r.id === itemId)
+        if (originalRow) {
+          MONTH_COLUMNS.forEach((col) => {
+            updates[col.field] = originalRow[col.field] || 0
+          })
+        }
       }
     }
 
