@@ -94,7 +94,11 @@ const OptimizerReport = () => {
         ...(isNumberCol ? { format: '{0:0.0000}' } : {}),
         editable: false,
         isRightAlligned: isNumberCol ? 'numeric' : undefined,
-        ...(col.field === 'Particulars' ? { widthT: 220 } : fixedWidth ? { widthT: fixedWidth } : { widthT: 100 }),
+        ...(col.field === 'Particulars'
+          ? { widthT: 220 }
+          : fixedWidth
+            ? { widthT: fixedWidth }
+            : { widthT: 100 }),
       }
     })
   }, [])
@@ -405,14 +409,20 @@ const OptimizerReport = () => {
   useEffect(() => {
     const siteName = siteObject?.name?.toUpperCase()
 
-
-
     fetchAllGrids()
     return () => {
       timeoutIdsRef.current.forEach((t) => clearTimeout(t))
       timeoutIdsRef.current = []
     }
-  }, [fetchAllGrids, PLANT_ID, AOP_YEAR, oldYear, yearChanged, siteObject, lowerVertName])
+  }, [
+    fetchAllGrids,
+    PLANT_ID,
+    AOP_YEAR,
+    oldYear,
+    yearChanged,
+    siteObject,
+    lowerVertName,
+  ])
 
   // Export: gather sheets from each ExcelExport instance and combine into one workbook
 
@@ -421,8 +431,6 @@ const OptimizerReport = () => {
     message: '',
     severity: 'info',
   })
-
-
 
   const currentDateTime = new Date()
     .toISOString()
@@ -433,24 +441,21 @@ const OptimizerReport = () => {
 
   const renderTitle = (t) => t
 
-
-
-
-
   return (
     <div className='configuration-accordion-wrapper'>
       <LoaderBackdrop open={!!loading} />
 
-
       <Box display='flex' flexDirection='column' gap={2}>
         {gridNames.map((name) => {
           const d = dataMap[name] || { rows: [], columns: [] }
-          const isCrackerHMD = lowerVertName === 'cracker' && siteObject?.name?.toUpperCase() === 'HMD'
+          const isCrackerHMD =
+            lowerVertName === 'cracker' &&
+            siteObject?.name?.toUpperCase() === 'HMD'
           const isOutput = name === 'Output'
           const shouldGroup = isCrackerHMD && isOutput
           const processedColumns = shouldGroup
             ? d.columns.map((col) =>
-                col.field === 'rowGroup' ? { ...col, hidden: true } : col
+                col.field === 'rowGroup' ? { ...col, hidden: true } : col,
               )
             : d.columns
           return (

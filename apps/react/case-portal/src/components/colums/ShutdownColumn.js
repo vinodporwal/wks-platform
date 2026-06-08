@@ -281,7 +281,7 @@ export const ShutDownPeC2Columns = [
     title: 'Shutdown Type',
     type: 'shutdownRateDropdown',
     editable: true,
-    minWidth: 200
+    minWidth: 200,
   },
   {
     field: 'remark',

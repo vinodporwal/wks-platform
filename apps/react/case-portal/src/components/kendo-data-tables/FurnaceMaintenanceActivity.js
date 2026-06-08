@@ -78,11 +78,12 @@ const FurnaceMaintenanceActivity = ({ permissions }) => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const data2 = await FurnaceMaintenanceActivityApiService.getFurnaceMaintenanceActivity(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      const data2 =
+        await FurnaceMaintenanceActivityApiService.getFurnaceMaintenanceActivity(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
       const toDateObject = (value) =>
         value ? moment(value, 'MMM D, YYYY').toDate() : null
@@ -135,7 +136,12 @@ const FurnaceMaintenanceActivity = ({ permissions }) => {
         // Fetch furnace dropdown options from backend API
         let dropdownOptions = []
         try {
-          const response = await FurnaceMaintenanceActivityApiService.getFurnaceDropdownData(keycloak, PLANT_ID, AOP_YEAR)
+          const response =
+            await FurnaceMaintenanceActivityApiService.getFurnaceDropdownData(
+              keycloak,
+              PLANT_ID,
+              AOP_YEAR,
+            )
           if (response && response.code === 200) {
             const dataList = response.data || []
             dropdownOptions = dataList.map((item) => {
@@ -143,7 +149,10 @@ const FurnaceMaintenanceActivity = ({ permissions }) => {
                 return { value: item, name: item }
               }
               const val = item.value !== undefined ? item.value : item.name
-              const name = item.name !== undefined ? item.name : (item.displayName || item.name)
+              const name =
+                item.name !== undefined
+                  ? item.name
+                  : item.displayName || item.name
               return { value: val, name: name }
             })
           }
@@ -173,7 +182,10 @@ const FurnaceMaintenanceActivity = ({ permissions }) => {
             } else if (col.field === 'Name') {
               columnConfig.type = 'dynamicDropdownshared'
               columnConfig.dropdownOptions = dropdownOptions
-            } else if (col.field === 'DisplayName' || col.field === 'displayName') {
+            } else if (
+              col.field === 'DisplayName' ||
+              col.field === 'displayName'
+            ) {
               columnConfig.hidden = true
             }
 
@@ -446,7 +458,10 @@ const FurnaceMaintenanceActivity = ({ permissions }) => {
           return newModifiedCells
         })
       } else {
-        await FurnaceMaintenanceActivityApiService.deleteFurnaceMaintenanceActivity(Id, keycloak)
+        await FurnaceMaintenanceActivityApiService.deleteFurnaceMaintenanceActivity(
+          Id,
+          keycloak,
+        )
         setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
         setSnackbarOpen(true)
         setSnackbarData({

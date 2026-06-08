@@ -92,7 +92,11 @@ const BestAchievedReport = () => {
         ...(isNumberCol ? { format: '{0:0.0000}' } : {}),
         editable: false,
         isRightAlligned: isNumberCol ? 'numeric' : undefined,
-        ...((col.field === 'Particular' || col.field === 'SAP MATERIAL CODE') ? { widthT: 220 } : fixedWidth ? { widthT: fixedWidth } : { widthT: 100 }),
+        ...(col.field === 'Particular' || col.field === 'SAP MATERIAL CODE'
+          ? { widthT: 220 }
+          : fixedWidth
+            ? { widthT: fixedWidth }
+            : { widthT: 100 }),
       }
     })
   }, [])

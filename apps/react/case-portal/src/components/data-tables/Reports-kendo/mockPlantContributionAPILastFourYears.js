@@ -38,7 +38,7 @@ export const MockPlantContributionAPILastFourYears = {
               field: 'material',
               title: 'Product name',
               editable: false,
-              minWidth:200
+              minWidth: 200,
             },
             {
               field: 'uom',

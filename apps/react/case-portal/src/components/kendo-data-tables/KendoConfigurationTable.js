@@ -368,7 +368,9 @@ const ConfigurationTable = () => {
             const month = monthName.toLowerCase()
             if (month === 'january' || month === 'jan') return 31
             if (month === 'february' || month === 'feb') {
-              const isLeap = (endYear % 4 === 0 && endYear % 100 !== 0) || (endYear % 400 === 0)
+              const isLeap =
+                (endYear % 4 === 0 && endYear % 100 !== 0) ||
+                endYear % 400 === 0
               return isLeap ? 29 : 28
             }
             if (month === 'march' || month === 'mar') return 31
@@ -386,10 +388,13 @@ const ConfigurationTable = () => {
 
           configurationRows.forEach((r) => {
             const isDistributionProduct =
-              (r.ConfigTypeName === 'Configuration' || r.ConfigTypeDisplayName === 'Configuration') &&
+              (r.ConfigTypeName === 'Configuration' ||
+                r.ConfigTypeDisplayName === 'Configuration') &&
               r.TypeDisplayName === 'Configuration' &&
               r.UOM === 'YES/NO' &&
-              ['deh-15', 'deh-201'].includes((r.productName || '').trim().toLowerCase())
+              ['deh-15', 'deh-201'].includes(
+                (r.productName || '').trim().toLowerCase(),
+              )
 
             if (isDistributionProduct) {
               const prodNameLower = (r.productName || '').trim().toLowerCase()
@@ -400,14 +405,17 @@ const ConfigurationTable = () => {
                 constantProductName = 'deh-201 batch length'
               }
 
-              const constantRow = (constantsRows || []).find((cr) =>
-                (cr.ConfigTypeName === 'Constant' || cr.ConfigTypeDisplayName === 'Constant') &&
-                cr.TypeDisplayName === 'Constant' &&
-                cr.UOM === 'Day' &&
-                (cr.productName || '').trim().toLowerCase() === constantProductName
+              const constantRow = (constantsRows || []).find(
+                (cr) =>
+                  (cr.ConfigTypeName === 'Constant' ||
+                    cr.ConfigTypeDisplayName === 'Constant') &&
+                  cr.TypeDisplayName === 'Constant' &&
+                  cr.UOM === 'Day' &&
+                  (cr.productName || '').trim().toLowerCase() ===
+                    constantProductName,
               )
 
-              const totalValue = constantRow ? (Number(constantRow.apr) || 0) : 0
+              const totalValue = constantRow ? Number(constantRow.apr) || 0 : 0
 
               // Sequential fill: pour days into each month in order until totalValue is used up
               // e.g. totalValue=110: apr=30, may=31, jun=30, jul=19 (remaining), aug...=0
@@ -447,7 +455,6 @@ const ConfigurationTable = () => {
             }
           })
         }
-
 
         setConstantsRows(constantsRows)
         setConfigurationRows(configurationRows)
@@ -1335,15 +1342,15 @@ const ConfigurationTable = () => {
     const megTabs = IS_CHEMICAL_VMD_BUTADIENE
       ? ['Configuration', 'Constants', 'Report Manual Entry']
       : IS_CHEMICAL_DMD ||
-        (IS_CHEMICAL_VMD &&
-          !(plantObject?.name?.toUpperCase() === 'BUTADIENE'))
+          (IS_CHEMICAL_VMD &&
+            !(plantObject?.name?.toUpperCase() === 'BUTADIENE'))
         ? ['Configuration', 'Constants', 'Report Manual Entry']
         : [
-          'Configuration',
-          'Constants',
-          'Report Manual Entry',
-          'NSR & Material Prices',
-        ]
+            'Configuration',
+            'Constants',
+            'Report Manual Entry',
+            'NSR & Material Prices',
+          ]
     const auditYear = AOP_YEAR
     let displayYear = ''
     if (auditYear) {

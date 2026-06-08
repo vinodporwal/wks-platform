@@ -105,8 +105,7 @@ const ProductionvolumeData = ({
   const IS_VCM = verticalObject?.name?.toLowerCase() == 'vcm'
   const SITE_NAME = siteObject?.name?.toLowerCase()
   const IS_PET = verticalObject?.name?.toLowerCase() == 'pet'
-  const IS_PVC =
-    verticalObject?.name?.toLowerCase() == 'pvc'
+  const IS_PVC = verticalObject?.name?.toLowerCase() == 'pvc'
   const IS_PVC_VMD =
     verticalObject?.name?.toLowerCase() == 'pvc' &&
     siteObject?.name?.toLowerCase() == 'vmd'
@@ -1314,7 +1313,9 @@ const ProductionvolumeData = ({
       saveWithRemark: permissions?.saveWithRemark ?? true,
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
       saveBtn:
-        IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD || IS_PVC_VMD || IS_PVC ? false : true,
+        IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD || IS_PVC_VMD || IS_PVC
+          ? false
+          : true,
       units: ['TPH', 'TPD'],
 
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,

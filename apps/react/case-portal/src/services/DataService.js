@@ -212,7 +212,7 @@ export const DataService = {
   getCatChemConsumptionExcel,
   calculateChemicalVMDConfiguration,
   getTankNosData,
-  saveTankNosData
+  saveTankNosData,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -4388,7 +4388,6 @@ export async function getShutdownSummary(keycloak, PLANT_ID, AOP_YEAR) {
   }
 }
 
-
 export async function getMaintenanceActivityData(keycloak) {
   const url = `${Config.CaseEngineUrl}/task/maintenance-activity-data`
   const headers = {
@@ -4850,11 +4849,7 @@ async function getCatChemConsumptionExcel(
     return Promise.reject(e)
   }
 }
-async function calculateChemicalVMDConfiguration(
-  keycloak,
-  PLANT_ID,
-  AOP_YEAR,
-) {
+async function calculateChemicalVMDConfiguration(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/load-configuration?year=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',
@@ -4887,12 +4882,7 @@ async function getTankNosData(keycloak, PLANT_ID, AOP_YEAR) {
   }
 }
 
-async function saveTankNosData(
-  keycloak,
-  PLANT_ID,
-  AOP_YEAR,
-  data,
-) {
+async function saveTankNosData(keycloak, PLANT_ID, AOP_YEAR, data) {
   const url = `${Config.CaseEngineUrl}/task/tank-config?plantId=${PLANT_ID}&aopYear=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
@@ -4911,4 +4901,3 @@ async function saveTankNosData(
     return Promise.reject(e)
   }
 }
-

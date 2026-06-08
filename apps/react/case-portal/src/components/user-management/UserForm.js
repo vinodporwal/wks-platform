@@ -139,16 +139,22 @@ const UserForm = ({ keycloak }) => {
         }
       })
 
-      const missingPlantIds = Array.from(uniquePlantIds).filter((pid) => !screensByPlant[pid])
+      const missingPlantIds = Array.from(uniquePlantIds).filter(
+        (pid) => !screensByPlant[pid],
+      )
       if (missingPlantIds.length === 0) return
 
       try {
-        if(tabIndex === 1){
+        if (tabIndex === 1) {
           setIsLoading(true)
         }
         const fetches = missingPlantIds.map(async (pid) => {
           try {
-            const response = await DataService.getPlantScreenMapping(keycloak, pid, aopYear)
+            const response = await DataService.getPlantScreenMapping(
+              keycloak,
+              pid,
+              aopYear,
+            )
             const groups = response?.data || []
             const screens = extractScreens(groups).map((s) => s.title)
             return { pid, screens }
@@ -479,7 +485,7 @@ const UserForm = ({ keycloak }) => {
     //   return screenOptions
 
     const plantId = currentPlantBlock.plantId[0]
-    const plantScreens = plantId ? (screensByPlant[plantId] || []) : []
+    const plantScreens = plantId ? screensByPlant[plantId] || [] : []
 
     // Prevent duplicates within the same plant block
     const duplicateScreens = siteEntry.plants
@@ -494,7 +500,8 @@ const UserForm = ({ keycloak }) => {
 
     const currentSelected = currentPlantBlock.screens || []
 
-    const availableBase = plantScreens.length > 0 ? plantScreens : currentSelected
+    const availableBase =
+      plantScreens.length > 0 ? plantScreens : currentSelected
 
     return availableBase.filter(
       (screen) =>
@@ -554,7 +561,7 @@ const UserForm = ({ keycloak }) => {
     }
     setVerticalSites((prev) => {
       const updated = { ...prev }
-      
+
       // Delete any verticals that are no longer selected
       Object.keys(updated).forEach((verticalId) => {
         if (!newValue.includes(verticalId)) {

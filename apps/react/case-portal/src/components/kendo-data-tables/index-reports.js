@@ -134,27 +134,27 @@ const KendoDataTablesReports = ({
   columns,
   loading = false,
   permissions = {},
-  setSnackbarOpen = () => { },
+  setSnackbarOpen = () => {},
   snackbarData = { message: '', severity: 'info' },
   snackbarOpen = false,
-  setRemarkDialogOpen = () => { },
+  setRemarkDialogOpen = () => {},
   currentRemark = '',
-  setCurrentRemark = () => { },
+  setCurrentRemark = () => {},
   currentRowId = null,
-  setModifiedCells = () => { },
+  setModifiedCells = () => {},
   remarkDialogOpen = false,
-  saveChanges = () => { },
-  fetchData = () => { },
-  deleteRowData = () => { },
-  handleCalculate = () => { },
-  handleUnitChange = () => { },
-  handleRemarkCellClick = () => { },
-  handleExport = () => { },
-  handleExcelUpload = () => { },
+  saveChanges = () => {},
+  fetchData = () => {},
+  deleteRowData = () => {},
+  handleCalculate = () => {},
+  handleUnitChange = () => {},
+  handleRemarkCellClick = () => {},
+  handleExport = () => {},
+  handleExcelUpload = () => {},
   groupBy = null,
   grades = [],
-  handleGradeChange = () => { },
-  handleRelease = () => { },
+  handleGradeChange = () => {},
+  handleRelease = () => {},
   isReleaseDisabled = true,
   supressGridHeight = false,
 }) => {
@@ -258,11 +258,11 @@ const KendoDataTablesReports = ({
   )
   const initialGroup = groupBy
     ? [
-      {
-        field: groupBy,
-        dir: undefined,
-      },
-    ]
+        {
+          field: groupBy,
+          dir: undefined,
+        },
+      ]
     : []
 
   const handleEditChange = useCallback((e) => {
@@ -590,7 +590,9 @@ const KendoDataTablesReports = ({
             field={col.field}
             title={col.title || col.headerName}
             // width={col.fixedWidth || undefined}
-            width={setWidth(col?.fixedWidth || col?.minWidth || col?.widthT || 200)}
+            width={setWidth(
+              col?.fixedWidth || col?.minWidth || col?.widthT || 200,
+            )}
             cells={{
               data: (cellProps) => (
                 <RemarkCell
@@ -694,7 +696,11 @@ const KendoDataTablesReports = ({
             field={col.field}
             title={col.title || col.headerName}
             width={setWidth(
-              col?.fixedWidth || col?.width || col?.widthT || col?.minWidth || 130,
+              col?.fixedWidth ||
+                col?.width ||
+                col?.widthT ||
+                col?.minWidth ||
+                130,
             )}
             hidden={col.hidden}
             className={'k-number-right-disabled'}
@@ -784,7 +790,6 @@ const KendoDataTablesReports = ({
   const headerVH = 10 // grid’s own header/filter area
   const pageHeaderVH = 20 // top app bar + stepper + controls
   const maxVH = 60 // cap grid height
-
 
   const calculatedVH = React.useMemo(() => {
     if (!rows || rows?.length === 0) return 20
@@ -1037,7 +1042,7 @@ const KendoDataTablesReports = ({
                     (rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                      !permissions?.showCalculateVisibility)
+                        !permissions?.showCalculateVisibility)
                   }
                 >
                   Calculate
@@ -1083,15 +1088,10 @@ const KendoDataTablesReports = ({
         </Box>
       )}
 
-
-
-
       <Collapse in={gridExpanded}>
         <div className='kendo-data-grid'>
           <Tooltip openDelay={50} position='auto' anchorElement='target'>
             <Grid
-
-
               style={{
                 flex: 1,
                 overflow: 'auto',
@@ -1104,7 +1104,6 @@ const KendoDataTablesReports = ({
               }}
               modifiedCells={modifiedCells}
               data={rows}
-
               rows={{ data: CustomRow }}
               sortable={{
                 mode: 'multiple',
@@ -1130,9 +1129,9 @@ const KendoDataTablesReports = ({
               pageable={
                 rows?.length > 100
                   ? {
-                    buttonCount: 4,
-                    pageSizes: [10, 50, 100],
-                  }
+                      buttonCount: 4,
+                      pageSizes: [10, 50, 100],
+                    }
                   : false
               }
               onRowClick={handleRowClick}

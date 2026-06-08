@@ -52,28 +52,26 @@ const TankNosConfigureTable = ({ permissions }) => {
         AOP_YEAR,
       )
       if (response?.code === 200) {
-        const formattedData = (response?.data || []).map(
-          (item, index) => ({
-            ...item,
-            idFromApi: item?.id,
-            id: index,
-            remarks: item?.remarks || '',
-            originalRemark: item?.remarks || '',
-            isEditable: item?.isEditable,
-            apr: item.apr === true ? 1 : 0,
-            may: item.may === true ? 1 : 0,
-            jun: item.jun === true ? 1 : 0,
-            jul: item.jul === true ? 1 : 0,
-            aug: item.aug === true ? 1 : 0,
-            sep: item.sep === true ? 1 : 0,
-            oct: item.oct === true ? 1 : 0,
-            nov: item.nov === true ? 1 : 0,
-            dec: item.dec === true ? 1 : 0,
-            jan: item.jan === true ? 1 : 0,
-            feb: item.feb === true ? 1 : 0,
-            mar: item.mar === true ? 1 : 0,
-          }),
-        )
+        const formattedData = (response?.data || []).map((item, index) => ({
+          ...item,
+          idFromApi: item?.id,
+          id: index,
+          remarks: item?.remarks || '',
+          originalRemark: item?.remarks || '',
+          isEditable: item?.isEditable,
+          apr: item.apr === true ? 1 : 0,
+          may: item.may === true ? 1 : 0,
+          jun: item.jun === true ? 1 : 0,
+          jul: item.jul === true ? 1 : 0,
+          aug: item.aug === true ? 1 : 0,
+          sep: item.sep === true ? 1 : 0,
+          oct: item.oct === true ? 1 : 0,
+          nov: item.nov === true ? 1 : 0,
+          dec: item.dec === true ? 1 : 0,
+          jan: item.jan === true ? 1 : 0,
+          feb: item.feb === true ? 1 : 0,
+          mar: item.mar === true ? 1 : 0,
+        }))
         setRows(formattedData)
       } else {
         setRows([])
@@ -299,7 +297,6 @@ const TankNosConfigureTable = ({ permissions }) => {
     }
   }
 
-
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -332,7 +329,6 @@ const TankNosConfigureTable = ({ permissions }) => {
     },
     isOldYear,
   )
-
 
   return (
     <Box>

@@ -132,7 +132,8 @@ const CatalystChangeOver = ({
         if (data instanceof Response) {
           try {
             const errJson = await data.json()
-            errorMsg = errJson?.message || `Error: ${data.status} ${data.statusText}`
+            errorMsg =
+              errJson?.message || `Error: ${data.status} ${data.statusText}`
           } catch (e) {
             errorMsg = `Error: ${data.status} ${data.statusText}`
           }
@@ -221,12 +222,13 @@ const CatalystChangeOver = ({
         severity: 'success',
       })
 
-      response = await CatalystChangeOverApiDataService.exportCatalystChangeOver(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        EXCEL_EXPORT_TITLE,
-      )
+      response =
+        await CatalystChangeOverApiDataService.exportCatalystChangeOver(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
 
       return response
     } catch (error) {
@@ -246,12 +248,13 @@ const CatalystChangeOver = ({
     try {
       let response
 
-      response = await CatalystChangeOverApiDataService.importCatalystChangeOver(
-        rawFile,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      response =
+        await CatalystChangeOverApiDataService.importCatalystChangeOver(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -292,7 +295,9 @@ const CatalystChangeOver = ({
         if (response instanceof Response) {
           try {
             const errJson = await response.json()
-            errorMsg = errJson?.message || `Error: ${response.status} ${response.statusText}`
+            errorMsg =
+              errJson?.message ||
+              `Error: ${response.status} ${response.statusText}`
           } catch (e) {
             errorMsg = `Error: ${response.status} ${response.statusText}`
           }
@@ -380,7 +385,9 @@ const CatalystChangeOver = ({
         if (response instanceof Response) {
           try {
             const errJson = await response.json()
-            errorMsg = errJson?.message || `Error: ${response.status} ${response.statusText}`
+            errorMsg =
+              errJson?.message ||
+              `Error: ${response.status} ${response.statusText}`
           } catch (e) {
             errorMsg = `Error: ${response.status} ${response.statusText}`
           }
@@ -501,17 +508,18 @@ const CatalystChangeOver = ({
           date: toLocalDateOnly(row?.date),
           remarks: row?.remarks || '',
           plantId: PLANT_ID,
-          aopYear: AOP_YEAR
+          aopYear: AOP_YEAR,
         })
       }
 
       // --- 4. Proceed to API Call ---
-      const response = await CatalystChangeOverApiDataService.postCatalystChangeOver(
-        payloadData,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      const response =
+        await CatalystChangeOverApiDataService.postCatalystChangeOver(
+          payloadData,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
       if (response && response.code === 200) {
         if (summaryEdited) {
@@ -520,7 +528,10 @@ const CatalystChangeOver = ({
         }
 
         setSnackbarOpen(true)
-        setSnackbarData({ message: response?.message || 'Saved Successfully!', severity: 'success' })
+        setSnackbarData({
+          message: response?.message || 'Saved Successfully!',
+          severity: 'success',
+        })
         setModifiedCells({})
         await fetchData()
       } else {
@@ -528,7 +539,9 @@ const CatalystChangeOver = ({
         if (response instanceof Response) {
           try {
             const errJson = await response.json()
-            errorMsg = errJson?.message || `Error: ${response.status} ${response.statusText}`
+            errorMsg =
+              errJson?.message ||
+              `Error: ${response.status} ${response.statusText}`
           } catch (e) {
             errorMsg = `Error: ${response.status} ${response.statusText}`
           }
@@ -541,7 +554,10 @@ const CatalystChangeOver = ({
       return response
     } catch (error) {
       console.error('Error in saving data!', error)
-      setSnackbarData({ message: error?.message || 'Failed to save data.', severity: 'error' })
+      setSnackbarData({
+        message: error?.message || 'Failed to save data.',
+        severity: 'error',
+      })
       setSnackbarOpen(true)
     }
   }

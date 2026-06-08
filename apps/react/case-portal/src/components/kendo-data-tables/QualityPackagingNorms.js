@@ -117,7 +117,6 @@ export default function QualityPackagingNorms() {
   const { items: menuItems } = useMenuContext()
   const showReleaseButton = shouldShowReleaseButton(menuItems)
 
-
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remark || '')
@@ -228,7 +227,7 @@ export default function QualityPackagingNorms() {
       title: 'Remark',
       editable: true,
     },
-  ].map((col) => IS_PE_NMD_LLDPE1 ? { ...col, editable: false } : col)
+  ].map((col) => (IS_PE_NMD_LLDPE1 ? { ...col, editable: false } : col))
 
   const fetchQualityParameters = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) {
@@ -524,7 +523,7 @@ export default function QualityPackagingNorms() {
       editable: true,
       minWidth: 100,
     },
-  ].map((col) => IS_PE_NMD_LLDPE1 ? { ...col, editable: false } : col)
+  ].map((col) => (IS_PE_NMD_LLDPE1 ? { ...col, editable: false } : col))
 
   const packagingColumns = [
     {
@@ -600,7 +599,7 @@ export default function QualityPackagingNorms() {
       editable: true,
       minWidth: 100,
     },
-  ].map((col) => IS_PE_NMD_LLDPE1 ? { ...col, editable: false } : col)
+  ].map((col) => (IS_PE_NMD_LLDPE1 ? { ...col, editable: false } : col))
 
   const columnsOtherCosts = [
     {
@@ -674,7 +673,7 @@ export default function QualityPackagingNorms() {
       editable: true,
       minWidth: 100,
     },
-  ].map((col) => IS_PE_NMD_LLDPE1 ? { ...col, editable: false } : col)
+  ].map((col) => (IS_PE_NMD_LLDPE1 ? { ...col, editable: false } : col))
   const saveChanges = React.useCallback(async () => {
     try {
       var data = Object.values(modifiedCells)
@@ -1584,7 +1583,7 @@ export default function QualityPackagingNorms() {
             }
             handleExcelUpload={handleExcelUpload('othercost')}
             groupBy='Particulars'
-          // Add other props as needed
+            // Add other props as needed
           />
         </Box>
       )}
