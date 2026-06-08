@@ -59,7 +59,11 @@ const mapApiRowToGrid = (list = [], prefix = '') =>
     Particulars: item.normType || item.normParameterTypeDisplayName,
   }))
 
-const mapGridRowToPayload = (rows = [], savingMonthlyBestAchieved = false, isCrackerC2 = false) =>
+const mapGridRowToPayload = (
+  rows = [],
+  savingMonthlyBestAchieved = false,
+  isCrackerC2 = false,
+) =>
   (rows || []).map((row) => {
     const payload = {}
     let shouldSaveAllMonthsWithApril = savingMonthlyBestAchieved
@@ -968,22 +972,26 @@ const NormalOpNormsScreenCracker = () => {
       // }
       setLoading(true)
       try {
-        const payload = mapGridRowToPayload(rowsToSave, savingAllMonthValues, IS_CRACKER_C2)
+        const payload = mapGridRowToPayload(
+          rowsToSave,
+          savingAllMonthValues,
+          IS_CRACKER_C2,
+        )
         const response = isFinal
           ? await NormalOperationNormsApiService.updateFinalNormsData(
-            keycloak,
-            gradeId,
-            payload,
-            PLANT_ID,
-            AOP_YEAR,
-          )
+              keycloak,
+              gradeId,
+              payload,
+              PLANT_ID,
+              AOP_YEAR,
+            )
           : await NormalOperationNormsApiService.updateModeWiseNormsData(
-            keycloak,
-            gradeId,
-            payload,
-            PLANT_ID,
-            AOP_YEAR,
-          )
+              keycloak,
+              gradeId,
+              payload,
+              PLANT_ID,
+              AOP_YEAR,
+            )
 
         if (response?.code === 200) {
           dispatch(setIsBlocked(false))
@@ -1175,23 +1183,23 @@ const NormalOpNormsScreenCracker = () => {
 
       // 2) Collect unchecked rows from those new arrays (except the one we just checked)
       const uncheckedRows = []
-        ;[
-          { arr: newMainRows, gridName: 'main' },
-          { arr: newExpressionRows, gridName: 'expression' },
-          { arr: newBestRows, gridName: 'best' },
-        ].forEach(({ arr, gridName: gName }) => {
-          arr.forEach((r) => {
-            // If this row belongs to the same material and is unchecked, and it's NOT the row we clicked,
-            // then it's one of the rows that was implicitly unchecked
-            if (
-              r.materialName === materialName &&
-              !(gName === gridName && r.id === id) &&
-              !r[field]
-            ) {
-              uncheckedRows.push({ ...r, gridName: gName })
-            }
-          })
+      ;[
+        { arr: newMainRows, gridName: 'main' },
+        { arr: newExpressionRows, gridName: 'expression' },
+        { arr: newBestRows, gridName: 'best' },
+      ].forEach(({ arr, gridName: gName }) => {
+        arr.forEach((r) => {
+          // If this row belongs to the same material and is unchecked, and it's NOT the row we clicked,
+          // then it's one of the rows that was implicitly unchecked
+          if (
+            r.materialName === materialName &&
+            !(gName === gridName && r.id === id) &&
+            !r[field]
+          ) {
+            uncheckedRows.push({ ...r, gridName: gName })
+          }
         })
+      })
 
       // 3) Apply the new arrays to state (this updates UI)
       setRows(newMainRows)
@@ -1453,7 +1461,9 @@ const NormalOpNormsScreenCracker = () => {
               <KendoDataTables
                 modifiedCells={modifiedCells}
                 setModifiedCells={setModifiedCells}
-                columns={colDefsIndividual.filter(col => col.field !== 'isChecked')}
+                columns={colDefsIndividual.filter(
+                  (col) => col.field !== 'isChecked',
+                )}
                 setRows={setRows}
                 rows={rows}
                 grades={grades}

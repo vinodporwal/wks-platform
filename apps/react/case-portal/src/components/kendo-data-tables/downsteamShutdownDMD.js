@@ -252,9 +252,17 @@ const DownsteamShutdownDMD = ({ viewOnly, permissions }) => {
       const resp = await dataConfig.serviceFn(keycloak)
       const raw = resp.data?.data
       setCalculationObject(resp?.data?.aopCalculation)
-      const hiddenKeys = ['Id', 'AOPYear', 'PlantId', 'AuditYear', 'MaintenanceType']
+      const hiddenKeys = [
+        'Id',
+        'AOPYear',
+        'PlantId',
+        'AuditYear',
+        'MaintenanceType',
+      ]
       const cols = resp.data?.columns || columns
-      const hasMaintenanceType = cols.some((col) => col.field === 'MaintenanceType')
+      const hasMaintenanceType = cols.some(
+        (col) => col.field === 'MaintenanceType',
+      )
       if (hasMaintenanceType) {
         setGroupBy('MaintenanceType')
       } else {

@@ -4073,7 +4073,10 @@ const KendoDataTables = ({
                           data: (props) => {
                             // ON/OFF rows: show switch with direct edit mode
                             const uomTypes = ['ON/OFF', 'YES/NO']
-                            if (uomTypes.includes(props.dataItem?.UOM) || permissions?.enableSwitchToggle) {
+                            if (
+                              uomTypes.includes(props.dataItem?.UOM) ||
+                              permissions?.enableSwitchToggle
+                            ) {
                               return (
                                 <SwitchEditor
                                   {...props}
@@ -4082,8 +4085,18 @@ const KendoDataTables = ({
                                   customModifiedCells={customModifiedCells}
                                   rowId={props.dataItem.id}
                                   setRows={setRows}
-                                  editable={props.dataItem?.[`${col.field}_editable`] === false ? false : col?.editable}
-                                  isDisabled={props.dataItem?.[`${col.field}_isDisabled`] ? true : col?.isDisabled}
+                                  editable={
+                                    props.dataItem?.[
+                                      `${col.field}_editable`
+                                    ] === false
+                                      ? false
+                                      : col?.editable
+                                  }
+                                  isDisabled={
+                                    props.dataItem?.[`${col.field}_isDisabled`]
+                                      ? true
+                                      : col?.isDisabled
+                                  }
                                 />
                               )
                             }
@@ -4613,7 +4626,6 @@ const KendoDataTables = ({
           >
             {'Are you sure you want to delete?'}{' '}
           </Typography>
-
         </DialogContent>
 
         {/* Actions */}
@@ -4637,7 +4649,6 @@ const KendoDataTables = ({
         </DialogActions>
       </CompactDialog>
 
-
       <CompactDialog
         open={openCalculateDialogeBox}
         onClose={closeCalculateDialogBox}
@@ -4660,11 +4671,7 @@ const KendoDataTables = ({
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box
-              component='img'
-              src={CalculateIcon}
-              className='w16-icon'
-            />
+            <Box component='img' src={CalculateIcon} className='w16-icon' />
             <Typography
               sx={{
                 fontWeight: 800,
@@ -4701,10 +4708,7 @@ const KendoDataTables = ({
         </DialogContent>
 
         <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
-          <Button
-            onClick={closeCalculateDialogBox}
-            className='btn-no'
-          >
+          <Button onClick={closeCalculateDialogBox} className='btn-no'>
             Cancel
           </Button>
 

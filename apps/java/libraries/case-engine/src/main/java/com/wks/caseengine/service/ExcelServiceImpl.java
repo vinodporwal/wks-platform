@@ -144,7 +144,7 @@ public class ExcelServiceImpl implements ExcelService {
                             }
                             if (tableId.equalsIgnoreCase("MainProductsProductionforthebudgetyear")) {
                                 // title = "Main Products - Production for the budget year";
-                                rows = excelDataService.getAOPData(plantId, year, type);
+                                rows = excelDataService.getMonthwiseProductionPlanReport(plantId, year, headers);
                             }
                         }else if (sheetName.equalsIgnoreCase("ShutdownReport")) {
                             if (tableId.equalsIgnoreCase("otherThanTurnarounds")) {
