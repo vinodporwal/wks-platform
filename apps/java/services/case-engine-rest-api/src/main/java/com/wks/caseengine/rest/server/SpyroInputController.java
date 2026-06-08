@@ -75,6 +75,11 @@ public class SpyroInputController {
 	public AOPMessageVM getModes(@RequestParam String year,@RequestParam String plantId,@RequestParam String type){
 		return	spyroInputService.getModes(year, plantId, type);
 	}
+
+	@GetMapping(value="/furnace-dropdown")
+	public AOPMessageVM getFurnaceDropdown(@RequestParam String plantId, @RequestParam String type){
+		return spyroInputService.getFurnaceDropdown(plantId, type);
+	}
 		
 
 	@GetMapping(value = "/spyro-input/calculate")

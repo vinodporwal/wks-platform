@@ -1374,6 +1374,46 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 	}
 
 	@Override
+	public AOPMessageVM getFurnaceDropdown(String plantId, String type) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<Map<String, Object>> furnaces = new ArrayList<>();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+		try {
+			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+			String viewName = "vw" + verticalName + site.getName() + "FurnaceDropdown";
+
+			String sql = "SELECT Id, VerticalId, SiteId, PlantId, DisplayOrder, Name, DisplayName "
+					+ "FROM " + viewName
+					+ " WHERE PlantId = :plantId"
+					+ " AND Type = :type"
+					+ " ORDER BY DisplayOrder";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", UUID.fromString(plantId));
+
+			List<Object[]> results = query.getResultList();
+			for (Object[] row : results) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("name", (row[5] != null ? row[5].toString() : ""));
+				map.put("displayName", (row[6] != null ? row[6].toString() : ""));
+				furnaces.add(map);
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(furnaces);
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch furnace dropdown data", ex);
+		}
+		return aopMessageVM;
+	}
+
+	@Override
 	public AOPMessageVM calculateSpyroInputData(String year, String plantId, String Mode, String type) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();		
 		try {
