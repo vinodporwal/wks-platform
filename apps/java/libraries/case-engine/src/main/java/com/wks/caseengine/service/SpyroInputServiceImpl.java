@@ -1374,7 +1374,7 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 	}
 
 	@Override
-	public AOPMessageVM getFurnaceDropdown(String plantId, String type) {
+	public AOPMessageVM getFurnaceDropdown(String plantId) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		List<Map<String, Object>> furnaces = new ArrayList<>();
 		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
@@ -1388,7 +1388,6 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 			String sql = "SELECT Id, VerticalId, SiteId, PlantId, DisplayOrder, Name, DisplayName "
 					+ "FROM " + viewName
 					+ " WHERE PlantId = :plantId"
-					+ " AND Type = :type"
 					+ " ORDER BY DisplayOrder";
 
 			Query query = entityManager.createNativeQuery(sql);
