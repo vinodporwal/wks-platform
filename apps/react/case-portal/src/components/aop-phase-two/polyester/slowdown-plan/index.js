@@ -205,11 +205,7 @@ const SlowdownPlan = () => {
       setRows(formatted)
     } catch (error) {
       console.error('Error fetching slowdown plan data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Error fetching slowdown data',
-        severity: 'error',
-      })
+      setRows([])
     } finally {
       setLoading(false)
     }

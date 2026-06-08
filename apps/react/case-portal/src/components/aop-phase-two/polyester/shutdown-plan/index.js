@@ -218,11 +218,7 @@ const ShutdownPlan = () => {
       setRows(formatted)
     } catch (error) {
       console.error('Error fetching shutdown plan data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Error fetching shutdown data',
-        severity: 'error',
-      })
+      setRows([])
     } finally {
       setLoading(false)
     }

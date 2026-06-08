@@ -108,8 +108,8 @@ const PercentageSummaryGrid = ({
         PLANT_ID,
         AOP_YEAR,
       )
-      if (response?.code === 200 && response?.data?.aopMCCalculatedDataDTOList) {
-        const formattedData = response.data.map((item, index) => ({
+      if (response?.code === 200 && Array.isArray(response?.data?.aopMCCalculatedDataDTOList)) {
+        const formattedData = response.data?.aopMCCalculatedDataDTOList.map((item, index) => ({
           ...item,
           idFromApi: item.id || null,
           normParametersFKId: item.materialFKId?.toLowerCase(),

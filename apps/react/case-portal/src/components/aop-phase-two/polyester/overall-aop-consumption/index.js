@@ -253,11 +253,6 @@ const OverallAopConsumption = () => {
           setRows(formattedData || [])
         } else {
           setRows([])
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Error fetching data. Please try again.',
-            severity: 'error',
-          })
         }
       } catch (error) {
         console.error('Error fetching overall AOP consumption data:', error)

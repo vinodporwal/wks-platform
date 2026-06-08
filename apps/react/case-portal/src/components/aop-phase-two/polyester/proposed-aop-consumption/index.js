@@ -219,11 +219,6 @@ const ProposedAopConsumption = () => {
           setRows(formattedData || [])
         } else {
           setRows([])
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Error fetching data. Please try again.',
-            severity: 'error',
-          })
         }
       } catch (error) {
         console.error('Error fetching proposed norms data:', error)

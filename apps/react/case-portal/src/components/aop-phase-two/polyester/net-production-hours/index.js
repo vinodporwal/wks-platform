@@ -120,11 +120,6 @@ const NetProductionHours = () => {
     } catch (error) {
       console.error('Error fetching net production hours data:', error)
       setRows([])
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Error fetching data',
-        severity: 'error',
-      })
     } finally {
       setLoading(false)
     }

@@ -171,11 +171,6 @@ const MonthwiseProductionPlan = () => {
       if (response?.code !== 200) {
         setRows([])
         setRawRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Error fetching data. Please try again.',
-          severity: 'error',
-        })
         return
       }
 
@@ -204,8 +199,6 @@ const MonthwiseProductionPlan = () => {
       console.error('Error fetching monthwise production plan:', error)
       setRows([])
       setRawRows([])
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
       setLoading(false)
     }
