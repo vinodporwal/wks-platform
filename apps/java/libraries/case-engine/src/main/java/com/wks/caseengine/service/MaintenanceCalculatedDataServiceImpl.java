@@ -239,7 +239,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	public List<Object[]> executeDynamicStoredProcedure(String procedureName, String plantId, String siteId,
 			String verticalId, String aopYear) {
 		try {
-			String sql = "EXEC " + procedureName
+			String sql = "EXEC [" + procedureName + "] "
 					+ " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @aopYear = :aopYear";
 			Query query = entityManager.createNativeQuery(sql);
 

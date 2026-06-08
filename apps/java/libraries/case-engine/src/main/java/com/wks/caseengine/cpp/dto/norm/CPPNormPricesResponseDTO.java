@@ -50,4 +50,5 @@ public class CPPNormPricesResponseDTO {
 
     private String saveStatus;
     private String errDescription;
+    private String valueType;
 }

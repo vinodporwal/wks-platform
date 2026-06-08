@@ -128,6 +128,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                 dto.setModifiedBy(getString(row[idx++]));
                 dto.setCreatedDate(getString(row[idx++]));
                 dto.setUpdatedDate(getString(row[idx++]));
+                dto.setValueType(getString(row[idx++]));
 
                 dtoList.add(dto);
             }
@@ -192,7 +193,8 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
             headerRow.getCell(col++).setCellStyle(headerStyle);
             headerRow.createCell(col).setCellValue("AOP Year");
             headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Price Source");
+            
+            headerRow.createCell(col).setCellValue("Value Type");
             headerRow.getCell(col++).setCellStyle(headerStyle);
 
             String startYearSuffix = financialYear.substring(2, 4);
@@ -206,6 +208,9 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                 headerRow.createCell(col).setCellValue(month);
                 headerRow.getCell(col++).setCellStyle(headerStyle);
             }
+
+            headerRow.createCell(col).setCellValue("Price Source");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
 
             int remarksCol = col;
             headerRow.createCell(col).setCellValue("Remarks");
@@ -247,7 +252,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                 setStringCellValue(row.createCell(col++), dto.getIssuingPlantName(), dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getIssuingUom(), dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getAopYear(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getPriceSource(), dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getValueType(), dataStyle);
 
                 setBigDecimalCellValue(row.createCell(monthStartCol + 0), dto.getAprPrice(), numericStyle);
                 setBigDecimalCellValue(row.createCell(monthStartCol + 1), dto.getMayPrice(), numericStyle);
@@ -263,6 +268,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                 setBigDecimalCellValue(row.createCell(monthStartCol + 11), dto.getMarPrice(), numericStyle);
                 col = monthStartCol + 12;
 
+                setStringCellValue(row.createCell(col++), dto.getPriceSource(), dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getRemarks(), dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getId() != null ? dto.getId().toString() : null, dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getCppMonthWisePriceId() != null ? dto.getCppMonthWisePriceId().toString() : null, dataStyle);
@@ -455,7 +461,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                 UPDATE CPPMonthWisePrice
                 SET Apr_Price = ?, May_Price = ?, Jun_Price = ?, Jul_Price = ?, Aug_Price = ?, Sep_Price = ?,
                     Oct_Price = ?, Nov_Price = ?, Dec_Price = ?, Jan_Price = ?, Feb_Price = ?, Mar_Price = ?,
-                    Remarks = ?, ModifiedBy = ?, UpdatedDate = GETDATE()
+                    Remarks = ?, PriceSource = ?, ValueType = ?, ModifiedBy = ?, UpdatedDate = GETDATE()
                 WHERE NormsHeader_FK_Id = ? AND FinancialYear = ?
                 """;
 
@@ -479,21 +485,21 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
 
                 cppNormUpdates.add(new Object[] {
                         apr, may, jun, jul, aug, sep, oct, nov, dec, jan, feb, mar,
-                        dto.getRemarks(), modifiedBy, dto.getNormsHeaderFkId(), financialYear
+                        dto.getRemarks(), dto.getPriceSource(), dto.getValueType(), modifiedBy, dto.getNormsHeaderFkId(), financialYear
                 });
 
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(4), apr);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(5), may);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(6), jun);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(7), jul);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(8), aug);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(9), sep);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(10), oct);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(11), nov);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(12), dec);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(1), jan);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(2), feb);
-                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(3), mar);
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(4), apr, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(5), may, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(6), jun, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(7), jul, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(8), aug, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(9), sep, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(10), oct, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(11), nov, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(12), dec, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(1), jan, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(2), feb, dto.getValueType());
+                addMonthUpdate(monthUpdates, dto.getNormsHeaderFkId(), monthIdMap.get(3), mar, dto.getValueType());
             }
 
             int[] updateCounts = jdbcTemplate.batchUpdate(updateNormsSql, cppNormUpdates);
@@ -507,7 +513,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                             normalizePrice(dto.getJulPrice()), normalizePrice(dto.getAugPrice()), normalizePrice(dto.getSepPrice()),
                             normalizePrice(dto.getOctPrice()), normalizePrice(dto.getNovPrice()), normalizePrice(dto.getDecPrice()),
                             normalizePrice(dto.getJanPrice()), normalizePrice(dto.getFebPrice()), normalizePrice(dto.getMarPrice()),
-                            dto.getRemarks(), dto.getPriceSource(), modifiedBy
+                            dto.getRemarks(), dto.getPriceSource(), modifiedBy, dto.getValueType()
                     });
                 }
             }
@@ -518,12 +524,12 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                         Id, NormsHeader_FK_Id, FinancialYear, AOPYear,
                         Apr_Price, May_Price, Jun_Price, Jul_Price, Aug_Price, Sep_Price,
                         Oct_Price, Nov_Price, Dec_Price, Jan_Price, Feb_Price, Mar_Price,
-                        Remarks, PriceSource, ModifiedBy, CreatedDate, UpdatedDate
+                        Remarks, PriceSource, ModifiedBy, CreatedDate, UpdatedDate, ValueType
                     ) VALUES (
                         ?, ?, ?, ?,
                         ?, ?, ?, ?, ?, ?,
                         ?, ?, ?, ?, ?, ?,
-                        ?, ?, ?, GETDATE(), GETDATE()
+                        ?, ?, ?, GETDATE(), GETDATE(), ?
                     )
                     """;
                 jdbcTemplate.batchUpdate(insertSql, insertParams);
@@ -531,7 +537,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
 
             String updateMonthSql = """
                 UPDATE NormsMonthDetail
-                SET Price = ?
+                SET Price = ?, Amount = ?
                 WHERE NormsHeader_FK_Id = ? AND FinancialYearMonth_FK_Id = ?
                 """;
             jdbcTemplate.batchUpdate(updateMonthSql, monthUpdates);
@@ -556,12 +562,44 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
         return vm;
     }
 
-    private void addMonthUpdate(List<Object[]> updates, UUID normsHeaderFkId, UUID monthId, BigDecimal price) {
-        if (normsHeaderFkId == null || monthId == null) {
-            return;
+    private void addMonthUpdate(
+        List<Object[]> updates,
+        UUID normsHeaderFkId,
+        UUID monthId,
+        BigDecimal value,
+        String valueType
+        ) {
+
+            if (normsHeaderFkId == null || monthId == null) {
+                return;
+            }
+
+            BigDecimal price = BigDecimal.ZERO;
+            BigDecimal amount = BigDecimal.ZERO;
+
+            if ("Price".equalsIgnoreCase(valueType)) {
+
+                price = value != null ? value : BigDecimal.ZERO;
+                amount = BigDecimal.ZERO;
+
+            } else if ("Amount".equalsIgnoreCase(valueType)) {
+
+                price = BigDecimal.ZERO;
+                amount = value != null ? value : BigDecimal.ZERO;
+
+            } else {
+
+                price = BigDecimal.ZERO;
+                amount = BigDecimal.ZERO;
+            }
+
+            updates.add(new Object[] {
+                    price,
+                    amount,
+                    normsHeaderFkId,
+                    monthId
+            });
         }
-        updates.add(new Object[] { price, normsHeaderFkId, monthId });
-    }
 
     private Map<UUID, CPPNormPricesResponseDTO> loadExistingPrices(UUID cppPlantId, String financialYear) {
         Map<UUID, CPPNormPricesResponseDTO> existing = new LinkedHashMap<>();
@@ -713,7 +751,8 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
             headerRow.getCell(col++).setCellStyle(headerStyle);
             headerRow.createCell(col).setCellValue("AOP Year");
             headerRow.getCell(col++).setCellStyle(headerStyle);
-            headerRow.createCell(col).setCellValue("Price Source");
+            
+            headerRow.createCell(col).setCellValue("Value Type");
             headerRow.getCell(col++).setCellStyle(headerStyle);
 
             String startYearSuffix = financialYear.substring(2, 4);
@@ -727,6 +766,9 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                 headerRow.createCell(col).setCellValue(month);
                 headerRow.getCell(col++).setCellStyle(headerStyle);
             }
+
+            headerRow.createCell(col).setCellValue("Price Source");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
 
             int remarksCol = col;
             headerRow.createCell(col).setCellValue("Remarks");
@@ -774,7 +816,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                 setStringCellValue(row.createCell(col++), dto.getIssuingPlantName(), dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getIssuingUom(), dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getAopYear(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getPriceSource(), dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getValueType(), dataStyle);
 
                 setBigDecimalCellValue(row.createCell(monthStartCol + 0), dto.getAprPrice(), numericStyle);
                 setBigDecimalCellValue(row.createCell(monthStartCol + 1), dto.getMayPrice(), numericStyle);
@@ -790,6 +832,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                 setBigDecimalCellValue(row.createCell(monthStartCol + 11), dto.getMarPrice(), numericStyle);
                 col = monthStartCol + 12;
 
+                setStringCellValue(row.createCell(col++), dto.getPriceSource(), dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getRemarks(), dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getId() != null ? dto.getId().toString() : null, dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getCppMonthWisePriceId() != null ? dto.getCppMonthWisePriceId().toString() : null, dataStyle);
@@ -852,7 +895,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                     dto.setIssuingPlantName(getStringCellValue(row.getCell(col++)));
                     dto.setIssuingUom(getStringCellValue(row.getCell(col++)));
                     dto.setAopYear(getStringCellValue(row.getCell(col++)));
-                    dto.setPriceSource(getStringCellValue(row.getCell(col++)));
+                    dto.setValueType(getStringCellValue(row.getCell(col++)));
 
                     dto.setAprPrice(getBigDecimalCellValue(row.getCell(col++)));
                     dto.setMayPrice(getBigDecimalCellValue(row.getCell(col++)));
@@ -867,6 +910,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
                     dto.setFebPrice(getBigDecimalCellValue(row.getCell(col++)));
                     dto.setMarPrice(getBigDecimalCellValue(row.getCell(col++)));
 
+                    dto.setPriceSource(getStringCellValue(row.getCell(col++)));
                     dto.setRemarks(getStringCellValue(row.getCell(col++)));
 
                     String idStr = getStringCellValue(row.getCell(col++));
@@ -928,6 +972,7 @@ public class CPPNormPricesServiceImpl implements CPPNormPricesService {
             request.setMarPrice(dto.getMarPrice());
             request.setRemarks(dto.getRemarks());
             request.setPriceSource(dto.getPriceSource());
+            request.setValueType(dto.getValueType());
             requests.add(request);
         }
         return requests;

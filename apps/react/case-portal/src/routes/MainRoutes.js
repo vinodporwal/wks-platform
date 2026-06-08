@@ -68,8 +68,8 @@ import Inputs from 'components/aop-phase-two/cpp/Inputs/index'
 import PlantRequirement from 'components/aop-phase-two/cpp/PlantRequirement'
 import FixedConsumption from 'components/aop-phase-two/cpp/FixedConsumption'
 import Norms from 'components/aop-phase-two/cpp/Norms'
-import NormsQtyCostReport from 'components/aop-phase-two/cpp/NormsQtyCostReport'
-
+import QtyCostReport from 'components/aop-phase-two/cpp/qty-cost-report/index'
+import UtilityRate from 'components/aop-phase-two/cpp/utility-rate/index'
 // TCS
 
 import TcsOutput from 'components/aop-phase-two/tcs/TcsOutput/index'
@@ -120,6 +120,21 @@ import OverallAopConsumptionCoker from 'components/aop-phase-two/coker/overall-a
 import SteadyStateConsumptionCoker from 'components/aop-phase-two/coker/steady-state-consumption/index'
 import MonthwiseProductionPlanCoker from 'components/aop-phase-two/coker/monthwise-production-plan/index'
 import NetProductionHoursCoker from 'components/aop-phase-two/coker/net-production-hours/index'
+
+//staple (polyester)
+import BusinessDemandPolyester from 'components/aop-phase-two/polyester/business-demand/index'
+import MonthwiseProductionPlanPolyester from 'components/aop-phase-two/polyester/monthwise-production-plan/index'
+import NetProductionHoursPolyester from 'components/aop-phase-two/polyester/net-production-hours/index'
+import OverallAopConsumptionPolyester from 'components/aop-phase-two/polyester/overall-aop-consumption/index'
+import ProductionNormsBasisPolyester from 'components/aop-phase-two/polyester/production-norms-basis/index'
+import ProductionTargetPolyester from 'components/aop-phase-two/polyester/production-target/index'
+import ProposedAopConsumptionPolyester from 'components/aop-phase-two/polyester/proposed-aop-consumption/index'
+import QualityPackagingNormsPolyester from 'components/aop-phase-two/polyester/quality-packaging-norms/index'
+import ShutdownConsumptionPolyester from 'components/aop-phase-two/polyester/shutdown-consumption/index'
+import ShutdownPlanPolyester from 'components/aop-phase-two/polyester/shutdown-plan/index'
+import SlowdownPlanPolyester from 'components/aop-phase-two/polyester/slowdown-plan/index'
+import SlowdownConsumptionPolyester from 'components/aop-phase-two/polyester/slowdown-consumption/index'
+import SteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/steady-state-consumption/index'
 
 import OtherProduction from 'components/kendo-data-tables/other-production/index'
 import SapBasedRefNorms from 'components/data-tables/Reports-kendo/SapBasedRefNorms'
@@ -770,6 +785,113 @@ export const MainRoutes = (
             ),
           },
           //Vertical Coker Ended ****************************
+
+          //Vertical STAPLE (Polyester) Start******************************************************************
+          {
+            path: 'production-norms-basis-polyester',
+            element: (
+              <PrivateRoute routeId='production-norms-basis-polyester'>
+                <ProductionNormsBasisPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'net-production-hrs-polyester',
+            element: (
+              <PrivateRoute routeId='net-production-hrs-polyester'>
+                <NetProductionHoursPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'monthwise-production-plan-polyester',
+            element: (
+              <PrivateRoute routeId='monthwise-production-plan-polyester'>
+                <MonthwiseProductionPlanPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption-polyester',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption-polyester'>
+                <SteadyStateConsumptionPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'overall-aop-consumption-polyester',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption-polyester'>
+                <OverallAopConsumptionPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'production-target-polyester',
+            element: (
+              <PrivateRoute routeId='production-target-polyester'>
+                <ProductionTargetPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'business-demand-polyester',
+            element: (
+              <PrivateRoute routeId='business-demand-polyester'>
+                <BusinessDemandPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'proposed-aop-consumption-polyester',
+            element: (
+              <PrivateRoute routeId='proposed-aop-consumption-polyester'>
+                <ProposedAopConsumptionPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown-plan-polyester',
+            element: (
+              <PrivateRoute routeId='shutdown-plan-polyester'>
+                <ShutdownPlanPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown-consumption-polyester',
+            element: (
+              <PrivateRoute routeId='shutdown-consumption-polyester'>
+                <ShutdownConsumptionPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'slowdown-plan-polyester',
+            element: (
+              <PrivateRoute routeId='slowdown-plan-polyester'>
+                <SlowdownPlanPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'slowdown-consumption-polyester',
+            element: (
+              <PrivateRoute routeId='slowdown-consumption-polyester'>
+                <SlowdownConsumptionPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'quality-packaging-norms-polyester',
+            element: (
+              <PrivateRoute routeId='quality-packaging-norms-polyester'>
+                <QualityPackagingNormsPolyester />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical STAPLE (Polyester) Ended ****************************
         ],
       },
 
@@ -965,10 +1087,18 @@ export const MainRoutes = (
             ),
           },
           {
-            path: 'norms_qty_cost_report',
+            path: 'qty-cost-report',
             element: (
-              <PrivateRoute routeId='norms_qty_cost_report'>
-                <NormsQtyCostReport />
+              <PrivateRoute routeId='qty-cost-report'>
+                <QtyCostReport />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'utility-rate',
+            element: (
+              <PrivateRoute routeId='utility-rate'>
+                <UtilityRate />
               </PrivateRoute>
             ),
           },
