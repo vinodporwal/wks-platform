@@ -170,6 +170,21 @@ System.out.println("total results: " + results.size());
 		
 		return dtoList;
 	}
+	@Override
+	public List<CalculatedProcessDemandDTO> getProcessDemandByPlant(UUID plantId, String financialYear) {
+		logger.info("Fetching process demand for financial year: {} and plant: {}", financialYear, plantId);
+		
+		List<Object[]> results = calculatedProcessDemandRepository.getProcessDemandByYearAndPlant(financialYear, plantId);
+		logger.info("Found {} records for financial year: {} and plant: {}", results.size(), financialYear, plantId);
+		
+		List<CalculatedProcessDemandDTO> dtoList = new ArrayList<>();
+		for (Object[] row : results) {
+			CalculatedProcessDemandDTO dto = mapRowToDTO(row);
+			dtoList.add(dto);
+		}
+		
+		return dtoList;
+	}
 
 	/**
 	 * Maps SP result row to DTO.
@@ -326,7 +341,7 @@ System.out.println("total results: " + results.size());
 	public byte[] exportConsumption(UUID plantId, String financialYear, boolean isAfterSave, List<CalculatedProcessDemandDTO> dtoList) {
 		try {
 			if (!isAfterSave) {
-				dtoList = getProcessDemand(financialYear);
+				dtoList = getProcessDemandByPlant(plantId,financialYear);
 			}
 
 			System.out.println("exportConsumption dtoList: " + dtoList);

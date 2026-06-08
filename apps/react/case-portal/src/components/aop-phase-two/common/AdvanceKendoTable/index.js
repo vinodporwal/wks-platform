@@ -1698,9 +1698,20 @@ const AdvanceKendoTable = ({
                     col,
                   )
 
-                  // If not editable by condition, return empty (prevent editing)
+                  // If not editable by condition, show disabled display cell
                   if (!cellEditableByCondition) {
-                    return null
+                    return (
+                      <td
+                        style={{
+                          backgroundColor: '#f5f5f5',
+                          color: '#999',
+                          padding: '3px 6px',
+                          cursor: 'not-allowed',
+                        }}
+                      >
+                        {cellProps.dataItem[col.field]}
+                      </td>
+                    )
                   }
 
                   // Otherwise show the appropriate editor
@@ -1819,6 +1830,58 @@ const AdvanceKendoTable = ({
             headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
             cells={{
               edit: { text: TextCellEditorUpdated },
+              data: toolTipRenderer,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            // filter='numeric'
+            format={col.format}
+            width={setWidth(col?.minWidth || col?.widthT || col?.width)}
+          />
+        )
+      }
+      //New Creted Code for Text Type
+      if (col.type == 'long-text') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={isEditable}
+            className={!isEditable ? 'k-left-disabled' : undefined}
+            headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
+            cells={{
+              edit: {
+                text: (cellProps) => {
+                  // Check if cell is editable based on conditional rules
+                  const cellEditableByCondition = isCellEditableByCondition(
+                    cellProps.dataItem,
+                    col,
+                  )
+
+                  // If not editable by condition, show disabled display cell
+                  if (!cellEditableByCondition) {
+                    return (
+                      <td
+                        style={{
+                          backgroundColor: '#f5f5f5',
+                          color: '#999',
+                          padding: '3px 6px',
+                          cursor: 'not-allowed',
+                        }}
+                      >
+                        {cellProps.dataItem[col.field]}
+                      </td>
+                    )
+                  }
+
+                  return <TextCellEditorUpdated {...cellProps} />
+                },
+              },
               data: toolTipRenderer,
               headerCell: col.subtitle
                 ? createHeaderWithSubtitle(col.subtitle)
