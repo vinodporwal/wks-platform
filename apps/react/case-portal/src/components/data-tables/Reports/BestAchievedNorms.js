@@ -629,7 +629,7 @@ export default function BestAchievedNorms() {
     <div>
       <LoaderBackdrop open={!!loading || !!isExporting} />
 
-      {SITE_NAME !== 'VMD' && (
+      {SITE_NAME !== 'VMD' && SITE_NAME !== 'C2' && (
         <Typography component='div' className='grid-title' sx={{ mb: 0 }}>
           <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span> -
           Propane (1Z)&nbsp;&nbsp;
