@@ -80,9 +80,10 @@ async function saveFixedConsumptionData(keycloak, PLANT_ID, payload, AOP_YEAR) {
 }
 
 // ===================== || Plant Requirement APIs || ===================== //
-async function getPlantRequirementData(keycloak, PLANT_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/plant-requirement/${AOP_YEAR}`
-  // const url = `${Config.CaseEngineUrl}/task/plant-requirement/${PLANT_ID}/${AOP_YEAR}`
+async function getPlantRequirementData(keycloak, plantIds, financialYear) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
+  const url = `${Config.CaseEngineUrl}/task/jmd-process-demand?plantIds=${queryParams}&financialYear=${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -99,8 +100,9 @@ async function getPlantRequirementData(keycloak, PLANT_ID, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
-async function savePlantRequirementData(keycloak, AOP_YEAR, payload) {
-  const url = `${Config.CaseEngineUrl}/task/plant-requirement/${AOP_YEAR}`
+
+async function savePlantRequirementData(keycloak, financialYear, payload) {
+  const url = `${Config.CaseEngineUrl}/task/jmd-process-demand/${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -116,7 +118,8 @@ async function savePlantRequirementData(keycloak, AOP_YEAR, payload) {
     if (!resp.ok) {
       throw new Error(`HTTP error! Status: ${resp.status}`)
     }
-    return json(keycloak, resp)
+    const result = await json(keycloak, resp)
+    return result || { success: true }
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)
@@ -239,13 +242,30 @@ async function saveNormsData(keycloak, payload, AOP_YEAR) {
  * Generic function to upload Excel file to any CPP endpoint
  * @param {File} file - The Excel file to upload
  * @param {Object} keycloak - Keycloak session object
- * @param {string} endpoint - The API endpoint path (e.g., 'fixed-consumption/import')
- * @param {string} PLANT_ID - Plant ID
- * @param {string} AOP_YEAR - Financial year
+ * @param {string} endpoint - The API endpoint path (e.g., 'jmd-consumption/import')
+ * @param {string|null} PLANT_ID - Plant ID (optional, for backward compatibility)
+ * @param {string|null} AOP_YEAR - Financial year (optional, for backward compatibility)
+ * @param {Object|null} customQueryParams - Custom query parameters (e.g., { plantIds: '...', financialYear: '...' })
  * @returns {Promise} API response
  */
-async function saveExcelData(file, keycloak, endpoint, PLANT_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/${endpoint}`
+async function saveExcelData(
+  file,
+  keycloak,
+  endpoint,
+  PLANT_ID,
+  AOP_YEAR,
+  customQueryParams = null,
+) {
+  let url
+  if (customQueryParams) {
+    // Use custom query params (e.g., { plantIds: '...', financialYear: '...' })
+    const qs = new URLSearchParams(customQueryParams).toString()
+    url = `${Config.CaseEngineUrl}/task/${endpoint}${qs ? `?${qs}` : ''}`
+  } else {
+    // Legacy: use PLANT_ID and AOP_YEAR
+    url = `${Config.CaseEngineUrl}/task/${endpoint}`
+  }
+
   const formData = new FormData()
   formData.append('file', file)
   const headers = {
@@ -292,7 +312,7 @@ async function exportExcelData(keycloak, params) {
   } = params
 
   const queryString = new URLSearchParams(queryParams).toString()
-  const url = `${Config.CaseEngineUrl}/task/${endpoint}`
+  const url = `${Config.CaseEngineUrl}/task/${endpoint}?${queryString}`
 
   const headers = {
     'Content-Type': 'application/json',
@@ -370,22 +390,31 @@ async function exportFixedConsumptionExcel(keycloak, PLANT_ID, AOP_YEAR) {
 }
 
 // Plant Requirement Excel Import
-async function savePlantRequirementExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
-  return saveExcelData(
-    file,
-    keycloak,
-    `plant-requirement/import/${PLANT_ID}/${AOP_YEAR}`,
-    PLANT_ID,
-    AOP_YEAR,
-  )
+async function savePlantRequirementExcel(
+  file,
+  keycloak,
+  plantIds,
+  financialYear,
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  return saveExcelData(file, keycloak, 'jmd-consumption/import', null, null, {
+    plantIds: plantIdArray.join(','),
+    financialYear,
+  })
 }
 
 // Plant Requirement Excel Export
-async function exportPlantRequirementExcel(keycloak, PLANT_ID, AOP_YEAR) {
+async function exportPlantRequirementExcel(
+  keycloak,
+  plantIds,
+  financialYear,
+  EXCEL_NAME,
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
   return exportExcelData(keycloak, {
-    endpoint: `plant-requirement/export/${PLANT_ID}/${AOP_YEAR}`,
-    queryParams: { plantId: PLANT_ID, year: AOP_YEAR },
-    fileName: `Plant_requirement_${AOP_YEAR}.xlsx`,
+    endpoint: 'jmd-consumption/export',
+    queryParams: { plantIds: plantIdArray.join(','), financialYear },
+    fileName: EXCEL_NAME,
     method: 'GET',
   })
 }
