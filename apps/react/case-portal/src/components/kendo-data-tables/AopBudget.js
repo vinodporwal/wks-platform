@@ -223,6 +223,7 @@ export default function AopBudget() {
   ]
 
   const columns = [
+    { field: 'idFromApi', title: 'ID', widthT: 50, minWidth: 50, hidden: true },
     { field: 'plantName', title: 'Plant', widthT: 100, minWidth: 100 },
     { field: 'costName', title: 'Cost', widthT: 100, minWidth: 100 },
     {
@@ -302,7 +303,7 @@ export default function AopBudget() {
         AOP_YEAR,
       )
 
-      const mapped = (resConsumption?.data || []).map((item) => {
+      const mapped = (resConsumption?.data || []).map((item, index) => {
         const allMonthsTotal = monthTotal?.reduce((sum, month) => {
           const value = parseFloat(item[month]) || 0
           return sum + value
@@ -310,6 +311,8 @@ export default function AopBudget() {
 
         return {
           ...item,
+          id: item.id || index, // Ensure there's an id for React key
+          idFromApi: item.id || null, // Keep original API id for reference
           plantName: item.plantName || '',
           IsEditable: item.isEditable,
           originalRemark: item.remark?.trim() || '',
@@ -336,6 +339,8 @@ export default function AopBudget() {
 
         return {
           ...item,
+          idFromApi: item.id || null,
+          id: index,
           plantName: item.plantName || item.plantName || '',
           IsEditable: item.isEditable,
           originalRemark: item.remark?.trim() || '',
@@ -581,11 +586,17 @@ export default function AopBudget() {
         return
       }
 
-      const fieldsToOmit = ['isEditable', 'IsEditable']
+      const fieldsToOmit = ['isEditable', 'IsEditable', 'idFromApi']
 
       const allRows = [
-        ...consumptionData.map((row) => omitFields(row, fieldsToOmit)),
-        ...procurementData.map((row) => omitFields(row, fieldsToOmit)),
+        ...consumptionData.map((row) => ({
+          ...omitFields(row, fieldsToOmit),
+          id: row.idFromApi,
+        })),
+        ...procurementData.map((row) => ({
+          ...omitFields(row, fieldsToOmit),
+          id: row.idFromApi,
+        })),
       ]
 
       const prefixPlusForNumericPercent = (row) => {
