@@ -42,6 +42,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Objects;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
@@ -1694,11 +1695,15 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	            if (isAfterSave) {
 	                if (mapForExcel.containsKey(tableId)) {
 	                    sourceData = mapForExcel.get(tableId);
-	                    // Add saveStatus and errDescription headers for the after-save scenario
 	                    headers.add("saveStatus");
 	                    headers.add("errDescription");
 	                    headersOuterTitles.get(0).add("SaveStatus");
 	                    headersOuterTitles.get(0).add("ErrDescription");
+	                    // Column 20 is SaveStatus in the error file; remove it from the hidden list so the column is visible
+	                    List<Integer> currentHidden = (List<Integer>) table.get("hiddenColumns");
+	                    List<Integer> updatedHidden = new ArrayList<>(currentHidden);
+	                    updatedHidden.remove(Integer.valueOf(20));
+	                    table.put("hiddenColumns", updatedHidden);
 	                }
 	            } else {
 	                sourceData = budgetMaintenanceListMap.get(tableId);
@@ -1727,7 +1732,9 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	                        row.add(null);
 	                    }
 	                }
-	                row.add(tableId);
+	                if (!isAfterSave) {
+	                    row.add(tableId);
+	                }
 	                dataList.add(row);
 	            }
 	            
@@ -1847,12 +1854,16 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 					String createdby=Utility.getUserName();
 				    inserts.add(new Object[]{ budgetMaintenanceDto.getApr(), budgetMaintenanceDto.getMay(), budgetMaintenanceDto.getJun(), budgetMaintenanceDto.getJul(), budgetMaintenanceDto.getAug(), budgetMaintenanceDto.getSep(), budgetMaintenanceDto.getOct(), budgetMaintenanceDto.getNov(), budgetMaintenanceDto.getDec(), budgetMaintenanceDto.getJan(), budgetMaintenanceDto.getFeb(), budgetMaintenanceDto.getMar(),
 						 budgetMaintenanceDto.getRemark(), budgetMaintenanceDto.getPercentChange(), budgetMaintenanceDto.getMasterId(), plantId, year, createdby});
-				}else {
-
+			} else {
+				String validationError = validateRemarkForUpdate(budgetMaintenanceDto);
+				if (validationError != null) {
+					budgetMaintenanceDto.setSaveStatus("Failed");
+					budgetMaintenanceDto.setErrDescription(validationError);
+					failedList.add(budgetMaintenanceDto);
+				} else {
 					updates.add(new Object[]{ budgetMaintenanceDto.getApr(), budgetMaintenanceDto.getMay(), budgetMaintenanceDto.getJun(), budgetMaintenanceDto.getJul(), budgetMaintenanceDto.getAug(), budgetMaintenanceDto.getSep(), budgetMaintenanceDto.getOct(), budgetMaintenanceDto.getNov(), budgetMaintenanceDto.getDec(), budgetMaintenanceDto.getJan(), budgetMaintenanceDto.getFeb(), budgetMaintenanceDto.getMar(), budgetMaintenanceDto.getRemark(), budgetMaintenanceDto.getPercentChange(), budgetMaintenanceDto.getId()});
-				                
-					
 				}
+			}
 					
 			}
 
@@ -1872,13 +1883,51 @@ if(inserts.size() > 0) {
 			throw new RuntimeException("Failed to update data", e);
 		}
 		
+		Map<String, Object> responseData = new HashMap<>();
+		responseData.put("Failed", failedList);
 		aopMessageVM.setCode(200);
-		aopMessageVM.setData(null);
+		aopMessageVM.setData(responseData);
 		aopMessageVM.setMessage("Data updated successfully");
-		// TODO Auto-generated method stub
 		return aopMessageVM;
 	}
-	
+
+	private String validateRemarkForUpdate(BudgetMaintenanceDto dto) {
+		String selectQuery = "SELECT Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec, Jan, Feb, Mar, Remarks, PercentageChange"
+				+ " FROM MaintenanceDetailsTransaction WHERE id = ?";
+		List<Map<String, Object>> rows = jdbcTemplate.queryForList(selectQuery, dto.getId().toString());
+		if (rows.isEmpty()) {
+			return null;
+		}
+		Map<String, Object> existing = rows.get(0);
+		boolean valuesChanged = isDoubleChanged(existing.get("Apr"), dto.getApr())
+				|| isDoubleChanged(existing.get("May"), dto.getMay())
+				|| isDoubleChanged(existing.get("Jun"), dto.getJun())
+				|| isDoubleChanged(existing.get("Jul"), dto.getJul())
+				|| isDoubleChanged(existing.get("Aug"), dto.getAug())
+				|| isDoubleChanged(existing.get("Sep"), dto.getSep())
+				|| isDoubleChanged(existing.get("Oct"), dto.getOct())
+				|| isDoubleChanged(existing.get("Nov"), dto.getNov())
+				|| isDoubleChanged(existing.get("Dec"), dto.getDec())
+				|| isDoubleChanged(existing.get("Jan"), dto.getJan())
+				|| isDoubleChanged(existing.get("Feb"), dto.getFeb())
+				|| isDoubleChanged(existing.get("Mar"), dto.getMar())
+				|| isDoubleChanged(existing.get("PercentageChange"), dto.getPercentChange());
+		if (valuesChanged) {
+			String existingRemark = existing.get("Remarks") != null ? existing.get("Remarks").toString().trim() : null;
+			String incomingRemark = dto.getRemark() != null ? dto.getRemark().trim() : null;
+			if (Objects.equals(existingRemark, incomingRemark)) {
+				return "Please update the Remark";
+			}
+		}
+		return null;
+	}
+
+	private boolean isDoubleChanged(Object dbValue, Double dtoValue) {
+		double db = dbValue != null ? ((Number) dbValue).doubleValue() : 0.0;
+		double dto = dtoValue != null ? dtoValue : 0.0;
+		return Double.compare(db, dto) != 0;
+	}
+
 	public BudgetMaintenance saveData(BudgetMaintenance budgetMaintenance,BudgetMaintenanceDto budgetMaintenanceDto) {
 		budgetMaintenance.setApr(budgetMaintenanceDto.getApr());
 		budgetMaintenance.setMay(budgetMaintenanceDto.getMay());
