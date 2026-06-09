@@ -75,6 +75,7 @@ export default function AopBudget() {
   const lowerVertName = vertName?.toLowerCase()
   const headerMap = generateHeaderNames(AOP_YEAR)
   const thisYear = AOP_YEAR
+  const SiteName = siteObject?.name
 
   // second grid states
   const [rowsP, setRowsP] = useState([])
@@ -414,18 +415,18 @@ export default function AopBudget() {
     keycloak,
   ])
   const anyGridEdited = useMemo(
-  () =>
-    Object.keys(modifiedCells).length > 0 ||
-    Object.keys(modifiedCellsP).length > 0 ||
-    designBasisAndDesignRemarksEdited ||
-    designBasisAndDesignRemarksEdited2,
-  [
-    modifiedCells,
-    modifiedCellsP,
-    designBasisAndDesignRemarksEdited,
-    designBasisAndDesignRemarksEdited2,
-  ],
-)
+    () =>
+      Object.keys(modifiedCells).length > 0 ||
+      Object.keys(modifiedCellsP).length > 0 ||
+      designBasisAndDesignRemarksEdited ||
+      designBasisAndDesignRemarksEdited2,
+    [
+      modifiedCells,
+      modifiedCellsP,
+      designBasisAndDesignRemarksEdited,
+      designBasisAndDesignRemarksEdited2,
+    ],
+  )
   const handleCalculate = () => {}
   const handleCalculateP = () => {}
 
@@ -647,11 +648,13 @@ export default function AopBudget() {
   }
   const downloadExcelForConfiguration = async () => {
     setLoading(true)
+    const EXCEL_NAME = `${vertName}_${SiteName}_${PLANT_NAME}_${AOP_YEAR}_Maintenance Budget_Export.xlsx`
     try {
       await AOPMaintenanceApiService.maintenaceExportdata(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        EXCEL_NAME,
       )
 
       setSnackbarData({ message: 'Export started!', severity: 'success' })
