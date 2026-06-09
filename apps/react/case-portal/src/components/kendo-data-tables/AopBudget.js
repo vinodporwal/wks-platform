@@ -413,6 +413,19 @@ export default function AopBudget() {
     plantID,
     keycloak,
   ])
+  const anyGridEdited = useMemo(
+  () =>
+    Object.keys(modifiedCells).length > 0 ||
+    Object.keys(modifiedCellsP).length > 0 ||
+    designBasisAndDesignRemarksEdited ||
+    designBasisAndDesignRemarksEdited2,
+  [
+    modifiedCells,
+    modifiedCellsP,
+    designBasisAndDesignRemarksEdited,
+    designBasisAndDesignRemarksEdited2,
+  ],
+)
   const handleCalculate = () => {}
   const handleCalculateP = () => {}
 
@@ -837,7 +850,7 @@ export default function AopBudget() {
         permissions={adjustedPermissionsC}
         groupBy='budgetType'
         resetRowData={resetRowData1}
-        summaryEdited={designBasisAndDesignRemarksEdited}
+        summaryEdited={anyGridEdited}
         resetDataChanges={resetDataChanges}
         // setEditMode={setEditMode}
       />
@@ -863,7 +876,7 @@ export default function AopBudget() {
         permissions={adjustedPermissionsP}
         groupBy='budgetType'
         resetRowData={resetRowData2}
-        summaryEdited={designBasisAndDesignRemarksEdited2}
+        summaryEdited={anyGridEdited}
         // setEditMode={setEditMode}
         resetDataChanges={resetDataChanges}
       />

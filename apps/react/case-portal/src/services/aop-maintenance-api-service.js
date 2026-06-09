@@ -126,7 +126,7 @@ async function savemaintenacegetdata(
   AOP_YEAR,
 ) {
   // Only encode plantId and year, leave budgetCategory as-is
-  const url = `${Config.CaseEngineUrl}/task/budget-maintenance`
+  const url = `${Config.CaseEngineUrl}/task/budget-maintenance?plantId=${encodeURIComponent(PLANT_ID)}&year=${encodeURIComponent(AOP_YEAR)}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
