@@ -63,6 +63,8 @@ public class BudgetMaintenanceDto {
 	private String updatedBy;
 	
 	private Date modifiedOn;
+
+    private Double total;
 	
 	private String saveStatus;
 	private String errDescription;

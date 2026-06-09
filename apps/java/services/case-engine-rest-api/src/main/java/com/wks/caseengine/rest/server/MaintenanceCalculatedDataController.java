@@ -174,8 +174,9 @@ public class MaintenanceCalculatedDataController {
 	}
 	
 	@PostMapping(value="/budget-maintenance")
-	public AOPMessageVM updateBudgetMaintenance(@RequestBody List<BudgetMaintenanceDto> budgetMaintenanceDtos){
-		return maintenanceCalculatedDataService.updateBudgetMaintenance(budgetMaintenanceDtos);		
+	public AOPMessageVM updateBudgetMaintenance(@RequestBody List<BudgetMaintenanceDto> budgetMaintenanceDtos, @RequestParam String plantId, @RequestParam String year){
+		//return maintenanceCalculatedDataService.updateBudgetMaintenance(budgetMaintenanceDtos);		
+		return maintenanceCalculatedDataService.updateMaintenance(budgetMaintenanceDtos, plantId, year);		
 	}
 	
 	@GetMapping(value = "/budget-maintenance-export-excel")
