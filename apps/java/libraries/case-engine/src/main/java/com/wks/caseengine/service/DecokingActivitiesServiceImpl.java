@@ -1050,7 +1050,25 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 				stmt.setString(1, plantId); 
 				stmt.setString(2, aopYear); 
 
-				int rowsAffected = stmt.executeUpdate();
+			//	int rowsAffected = stmt.executeUpdate();
+			int rowsAffected = 0;
+			boolean hasResultSet = stmt.execute();
+			if (hasResultSet) {
+				ResultSet rs = stmt.getResultSet();
+			
+				while (rs.next()) {
+					List<Map<String, Object>> data = new ArrayList<>();
+					Map<String, Object> row = new HashMap<>();
+					row.put("Status", rs.getString("Status"));
+					row.put("Task", rs.getString("Task"));
+					data.add(row);
+					aopMessageVM.setData(data);
+				}
+			} else {
+				 rowsAffected = stmt.getUpdateCount();
+				 aopMessageVM.setData(rowsAffected);
+				System.out.println("Rows affected: " + rowsAffected);
+			}
 
 				if (!connection.getAutoCommit()) {
 					connection.commit();
@@ -1073,7 +1091,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 
 				aopMessageVM.setCode(200);
 				aopMessageVM.setMessage("SP Executed successfully");
-				aopMessageVM.setData(rowsAffected);
+			//	aopMessageVM.setData(rowsAffected);
 				return aopMessageVM;
 
 			} catch (SQLException e) {
