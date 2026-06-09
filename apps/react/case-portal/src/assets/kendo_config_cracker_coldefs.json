@@ -100,6 +100,15 @@
     "type": "number"
   },
   {
+    "field": "weightAverage",
+    "title": "Weight Average",
+    "editable": true,
+    "width": 120,
+    "align": "left",
+    "headerAlign": "left",
+    "type": "number"
+  },
+  {
     "field": "remarks",
     "title": "Remark",
     "editable": false,
