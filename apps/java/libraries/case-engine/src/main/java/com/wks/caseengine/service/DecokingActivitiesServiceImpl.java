@@ -1055,15 +1055,34 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 			boolean hasResultSet = stmt.execute();
 			if (hasResultSet) {
 				ResultSet rs = stmt.getResultSet();
-			
-				while (rs.next()) {
-					List<Map<String, Object>> data = new ArrayList<>();
-					Map<String, Object> row = new HashMap<>();
-					row.put("Status", rs.getString("Status"));
-					row.put("Task", rs.getString("Task"));
-					data.add(row);
-					aopMessageVM.setData(data);
+				ResultSetMetaData rsmd = rs.getMetaData();
+				int columnCount = rsmd.getColumnCount();
+
+				List<Map<String, Object>> columns = new ArrayList<>();
+				for (int i = 1; i <= columnCount; i++) {
+					String columnName = rsmd.getColumnLabel(i);
+					Map<String, Object> meta = new HashMap<>();
+					meta.put("field", columnName);
+					meta.put("title", columnName);
+					meta.put("type", getFrontendType(rsmd.getColumnTypeName(i)));
+					columns.add(meta);
 				}
+
+				List<Map<String, Object>> data = new ArrayList<>();
+				while (rs.next()) {
+					Map<String, Object> row = new LinkedHashMap<>();
+					for (int i = 1; i <= columnCount; i++) {
+						String colName = rsmd.getColumnLabel(i);
+						Object value = rs.getObject(i);
+						row.put(colName, value != null ? value : "");
+					}
+					data.add(row);
+				}
+
+				Map<String, Object> finalData = new HashMap<>();
+				finalData.put("data", data);
+				finalData.put("columns", columns);
+				aopMessageVM.setData(finalData);
 			} else {
 				 rowsAffected = stmt.getUpdateCount();
 				 aopMessageVM.setData(rowsAffected);
