@@ -818,7 +818,7 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
           count={-1}
           page={0}
           labelRowsPerPage={
-            <div style={{ paddingTop: 15 }}>Rows per page:</div>
+            <span style={{ paddingTop: 15 }}>Rows per page:</span>
           }
           rowsPerPage={filter.limit}
           rowsPerPageOptions={[5, 10, 25, 50]}
