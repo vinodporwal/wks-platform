@@ -615,10 +615,17 @@ const KendoDataTables = ({
 
   const itemChange = useCallback(
     (e) => {
-      setIsRowEdited(true)
 
       const { dataItem, field } = e
       let { value } = e
+
+      // Ignore group header expand/collapse events — they are not real edits
+      if (!field || dataItem?.items) {
+        return
+      }
+
+      setIsRowEdited(true)
+
       if (dataItem?.isTotal) {
         return
       }

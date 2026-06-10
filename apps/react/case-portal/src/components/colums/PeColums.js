@@ -222,7 +222,7 @@ export const SlowDownPeColumns = [
     title: 'Reduced Rate (TPH)',
     editable: true,
     type: 'number',
-    minWidth: 100,
+    minWidth: 120,
   },
 
   {
@@ -231,7 +231,7 @@ export const SlowDownPeColumns = [
     editable: true,
     widthT: 250,
     autoAdjust: false,
-    minWidth: 100,
+    minWidth: 150,
   },
 ]
 
