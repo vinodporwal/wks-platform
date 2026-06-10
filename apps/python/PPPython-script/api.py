@@ -82,10 +82,11 @@ def calculate_budget_api():
         
         # Check if we should fetch demands from DB (default: True)
         use_db_demands = data.get('use_db_demands', True)
+        cpp_plant_id = data.get('cpp_plant_id')
         
         if use_db_demands:
             # Fetch process demands from DB
-            process_demands = get_process_demand_for_month(month, year)
+            process_demands = get_process_demand_for_month(month, year, cpp_plant_id)
             # Fetch fixed demands from DB
             fixed_demands = get_fixed_consumption_for_month(month, year)
             
@@ -194,10 +195,11 @@ def calculate_budget_with_iteration_api():
         
         # Check if we should fetch demands from DB (default: True)
         use_db_demands = data.get('use_db_demands', True)
+        cpp_plant_id = data.get('cpp_plant_id')
         
         if use_db_demands:
             # Fetch process demands from DB
-            process_demands = get_process_demand_for_month(month, year)
+            process_demands = get_process_demand_for_month(month, year, cpp_plant_id)
             # Fetch fixed demands from DB
             fixed_demands = get_fixed_consumption_for_month(month, year)
             

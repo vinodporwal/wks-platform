@@ -797,7 +797,7 @@ def usd_iterate(
     
     # Power (from database)
     from services.demand_service import fetch_fixed_process_demands
-    db_demands = fetch_fixed_process_demands(month, year)
+    db_demands = fetch_fixed_process_demands(month, year, cpp_plant_id)
     power_fixed = db_demands.get("power", {}).get("fixed", 0.0) if db_demands and isinstance(db_demands, dict) else 0.0
     power_process = db_demands.get("power", {}).get("process", 0.0) if db_demands and isinstance(db_demands, dict) else 0.0
     power_u4u_est = 15850.0  # Rough estimate for initial display

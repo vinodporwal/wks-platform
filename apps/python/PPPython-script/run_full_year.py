@@ -132,6 +132,7 @@ DEFAULT_FIXED_DEMANDS = {
 
 
 def get_demands_for_month(month: int, year: int, 
+                          cpp_plant_id: str = None,
                           process_demands: dict = None,
                           use_db_process: bool = True,
                           use_db_fixed: bool = True) -> dict:
@@ -142,6 +143,7 @@ def get_demands_for_month(month: int, year: int,
     Args:
         month: Month number (1-12)
         year: Year (e.g., 2025)
+        cpp_plant_id: CPP Plant ID (UUID string) to filter by specific plant
         process_demands: Override process demands dict (uses DB values if None)
         use_db_process: If True, fetch process demands from DB; else use defaults/override
         use_db_fixed: If True, fetch fixed demands from DB; else use defaults
@@ -155,7 +157,7 @@ def get_demands_for_month(month: int, year: int,
         base_process = process_demands.copy()
     elif use_db_process:
         # Fetch from database
-        base_process = get_process_demand_for_month(month, year)
+        base_process = get_process_demand_for_month(month, year, cpp_plant_id)
         # Add non-steam parameters that may not be in DB
         base_process.setdefault("bfw_ufu", 0.0)
         base_process.setdefault("export_available", False)
@@ -568,6 +570,7 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
         try:
             month_demands = get_demands_for_month(
                 month, year,
+                cpp_plant_id=cpp_plant_id,
                 process_demands=process_demands,
                 use_db_process=use_dynamic_process,
                 use_db_fixed=use_db_fixed
@@ -579,7 +582,7 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
             )
 
             success = result.get("overall_success", False)
-            usd_result = result.get("usd_result", {})
+            usd_result = result.get("usd_result") or {}
             iterations_used = result.get("iterations_used", 0) or usd_result.get("iterations_used", 0)
 
             month_result = {
@@ -600,14 +603,14 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
             total_power = sum(asset.get("GrossMWh", 0) * 1000 for asset in final_dispatch)
             month_result["total_power_kwh"] = total_power
 
-            final_steam = usd_result.get("final_steam_balance", {}) or result.get("steam_result", {})
-            shp_balance = final_steam.get("shp_balance", {})
+            final_steam = usd_result.get("final_steam_balance") or result.get("steam_result") or {}
+            shp_balance = final_steam.get("shp_balance") or {}
             total_shp = (shp_balance.get("total_shp_supply", 0)
                          or final_steam.get("summary", {}).get("total_shp_demand", 0)
                          or shp_balance.get("shp_total", 0))
             month_result["total_shp_mt"] = total_shp
 
-            save_result = result.get("save_result", {})
+            save_result = result.get("save_result") or {}
             month_result["records_saved"] = (save_result.get("updated", 0)
                                              + save_result.get("unchanged", 0))
 

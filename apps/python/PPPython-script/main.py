@@ -112,7 +112,7 @@ if __name__ == "__main__":
     if use_db_demands:
         # Fetch from database
         print("\n--- FETCHING DEMANDS FROM DATABASE ---")
-        process_demands = get_process_demand_for_month(month, year)
+        process_demands = get_process_demand_for_month(month, year, cpp_plant_id)
         fixed_demands = get_fixed_consumption_for_month(month, year)
         
         # Extract values

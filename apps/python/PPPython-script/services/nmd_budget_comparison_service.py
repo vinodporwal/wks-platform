@@ -52,6 +52,7 @@ class BPCReferenceBook:
         self.headers = []
         self.month_columns = {}
         self.rows = []
+        self.amount_map = {}   # (month, plant, utility, material) -> total BPC amount
         self.is_ods = file_path.endswith('.ods')
         
         # Determine file type and load accordingly
@@ -197,6 +198,20 @@ class BPCReferenceBook:
                             self.quantity_map[(month_name, plant, utility, material)] = quantity
                         if norm is not None and norm != 0:
                             self.norm_map[(month_name, utility, material)] = norm
+
+                        # Extract BPC amount from the 4th column of each month block (ODS only).
+                        # Standard BPC Excel layout per month: [Norm, Price, Quantity, Amount]
+                        if self.is_ods:
+                            amount_col = col_idx + 3
+                            if amount_col < len(row):
+                                try:
+                                    bpc_amt = self._parse_number(row[amount_col])
+                                    if bpc_amt is not None and bpc_amt != 0:
+                                        ak = (month_name, plant, utility, material)
+                                        self.amount_map[ak] = self.amount_map.get(ak, 0.0) + float(bpc_amt)
+                                except Exception:
+                                    pass
+
                     except (ValueError, IndexError):
                         continue
     
@@ -251,6 +266,19 @@ class BPCReferenceBook:
             return norm
         
         return 0.0
+
+    def get_total_amount_for_utility(
+        self,
+        month_name: str,
+        generating_plant: str,
+        utility: str,
+    ) -> float:
+        """Sum BPC amounts for all material rows belonging to a plant/utility in a given month."""
+        total = 0.0
+        for (m, p, u, _mat), amt in self.amount_map.items():
+            if m == month_name and p == generating_plant and u == utility:
+                total += float(amt)
+        return total
 
     def infer_base_qty(self, month_name: str, quantity: float, norm: float) -> float:
         if norm:
@@ -399,6 +427,45 @@ def _fmt_norm(value: float, norm_fmt: str) -> str:
 
 
 _CPP_NORM_CACHE = None
+
+
+def _fetch_nmd_total_amounts(month: int, year: int) -> dict:
+    """
+    Fetch NormsMonthDetail total amounts per (plant, utility) for one month.
+
+    Returns
+    -------
+    dict  : (plant_name, utility_name) -> float (sum of NMD.Amount)
+
+    Used to populate the CPP Model Amount column in the full-year summary.
+    Requires that save_calculated_prices() has already run for this month so that
+    NMD.Amount reflects the converged calculated prices, not zeros.
+    """
+    conn = get_connection()
+    result: dict = {}
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            '''
+            SELECT p.Name, nh.UtilityName, SUM(nmd.Amount)
+            FROM NormsMonthDetail nmd
+            INNER JOIN NormsHeader nh ON nh.Id  = nmd.NormsHeader_FK_Id
+            INNER JOIN Plants      p  ON p.Id   = nh.Plant_FK_Id
+            INNER JOIN FinancialYearMonth fym ON fym.Id = nmd.FinancialYearMonth_FK_Id
+            WHERE fym.Month = ? AND fym.Year = ?
+              AND nh.IsActive = 1
+            GROUP BY p.Name, nh.UtilityName
+            ''',
+            (month, year),
+        )
+        for plant_name, utility_name, total in cur.fetchall():
+            key = (plant_name or '', utility_name or '')
+            result[key] = float(total or 0)
+    except Exception as exc:
+        print(f'  [NMD AMOUNT FETCH] Error: {exc}')
+    finally:
+        conn.close()
+    return result
 
 def _preload_cpp_norms(month: int, year: int):
     """
@@ -652,7 +719,7 @@ def build_nmd_budget_comparison_text(
     NORM_CW2_OXYGEN = _fetch_cpp_norm(month, year, 'NMD - Utility Plant', 'Oxygen', 'Cooling Water 2', 0.2610)
     NORM_POWER_OXYGEN = _fetch_cpp_norm(month, year, 'NMD - Utility Plant', 'Oxygen', 'Power_Dis', 968.6500)
     # Option C: Physical flow norms = 0.0 for SHP consumption 
-    # STG Power Generation (SVHInletTPH × hours) accounts for ALL inlet steam. 
+    # STG Power Generation (SVHInletTPH  hours) accounts for ALL inlet steam. 
     # Extraction rows are informational and consume 0 additional SHP.
     NORM_SHP_STG_LP = 0.0
     NORM_SHP_STG_MP = 0.0
@@ -994,7 +1061,7 @@ def build_nmd_budget_comparison_text(
 
     # Use direct sum of all NATURAL GAS entries found in Excel for this month
     bpc_ng = sum(qty for (m, p, u, mat), qty in book.quantity_map.items() if m == month_name and mat == "NATURAL GAS")
-    
+
     cpp_totals = {
         "power": total_demand_kwh,
         # Include GT gas + HRSG gas (HRSG1/2/3) to get total natural gas consumed
@@ -1011,7 +1078,7 @@ def build_nmd_budget_comparison_text(
         "effluent": effluent_m3,
         "oxygen": oxygen_mt,
     }
-    
+
     bpc_totals = {
         "power": power_dis_ref_qty,
         "ng": bpc_ng,
@@ -1027,6 +1094,63 @@ def build_nmd_budget_comparison_text(
         "effluent": effluent_ref_qty,
         "oxygen": oxygen_ref_qty,
     }
+
+    # ── Amount columns ───────────────────────────────────────────────────────────
+    # CPP Model Amounts: read from NormsMonthDetail (populated by save_calculated_prices).
+    nmd_amounts = _fetch_nmd_total_amounts(month, year)
+
+    _G = lambda plant, util: nmd_amounts.get((plant, util), 0.0)
+    _B = lambda plant, util: book.get_total_amount_for_utility(month_name, plant, util)
+
+    # Natural-gas-producing plants: POWERGEN (GT1/2/3/STG) + all HRSGs
+    _powergen_plants = [
+        ('NMD - Power Plant 1',   'POWERGEN'),
+        ('NMD - Power Plant 2',   'POWERGEN'),
+        ('NMD - Power Plant 3',   'POWERGEN'),
+        ('NMD - STG Power Plant', 'POWERGEN'),
+        ('NMD - Utility Plant',   'HRSG1_SHP STEAM'),
+        ('NMD - Utility Plant',   'HRSG2_SHP STEAM'),
+        ('NMD - Utility Plant',   'HRSG3_SHP STEAM'),
+    ]
+
+    cpp_amount_totals = {
+        "power":    _G('NMD - Utility/Power Dist', 'Power_Dis'),
+        "ng":       sum(_G(p, u) for p, u in _powergen_plants),
+        "air":      _G('NMD - Utility Plant', 'COMPRESSED AIR'),
+        "cw1":      _G('NMD - Utility Plant', 'Cooling Water 1'),
+        "cw2":      _G('NMD - Utility Plant', 'Cooling Water 2'),
+        "bfw":      _G('NMD - Utility Plant', 'Boiler Feed Water'),
+        "dm":       _G('NMD - Utility Plant', 'D M Water'),
+        "hp_steam": _G('NMD - Utility Plant', 'HP Steam PRDS'),
+        "shp_steam":sum(_G('NMD - Utility Plant', u) for _, u in _powergen_plants[-3:]),
+        "lp_steam": _G('NMD - Utility Plant', 'LP Steam PRDS'),
+        "mp_steam": _G('NMD - Utility Plant', 'MP Steam PRDS SHP'),
+        "effluent": _G('NMD - Utility Plant', 'Effluent Treated'),
+        "oxygen":   _G('NMD - Utility Plant', 'Oxygen'),
+    }
+
+    bpc_amount_totals = {
+        "power":    _B('NMD - Utility/Power Dist', 'Power_Dis'),
+        "ng":       sum(_B(p, u) for p, u in _powergen_plants),
+        "air":      _B('NMD - Utility Plant', 'COMPRESSED AIR'),
+        "cw1":      _B('NMD - Utility Plant', 'Cooling Water 1'),
+        "cw2":      _B('NMD - Utility Plant', 'Cooling Water 2'),
+        "bfw":      _B('NMD - Utility Plant', 'Boiler Feed Water'),
+        "dm":       _B('NMD - Utility Plant', 'D M Water'),
+        "hp_steam": _B('NMD - Utility Plant', 'HP Steam PRDS'),
+        "shp_steam":sum(_B('NMD - Utility Plant', u) for _, u in _powergen_plants[-3:]),
+        "lp_steam": _B('NMD - Utility Plant', 'LP Steam PRDS'),
+        "mp_steam": _B('NMD - Utility Plant', 'MP Steam PRDS SHP'),
+        "effluent": _B('NMD - Utility Plant', 'Effluent Treated'),
+        "oxygen":   _B('NMD - Utility Plant', 'Oxygen'),
+    }
+
+    # Embed into the qty-totals dicts so write_full_year_comparison_file
+    # can read them in one place via 'key_amt' convention.
+    for k, v in cpp_amount_totals.items():
+        cpp_totals[k + '_amt'] = v
+    for k, v in bpc_amount_totals.items():
+        bpc_totals[k + '_amt'] = v
 
     return "\n".join(lines), cpp_totals, bpc_totals
 
@@ -1074,12 +1198,16 @@ def write_full_year_comparison_file(
             "bpc": bpc_totals,
         })
     
-    # Add month-wise utility totals section
-    sections.append("=" * 220)
+    W = 220
+    sections.append("=" * W)
     sections.append(f"MONTH-WISE UTILITY TOTALS | FY {financial_year}-{str(financial_year + 1)[-2:]}")
-    sections.append("=" * 220)
-    sections.append(f"{'Month':<12} {'Utility':<20} {'UOM':<8} {'CPP Total':>18} {'BPC Total':>18} {'Difference':>18} {'% Diff':>10}")
-    sections.append("-" * 220)
+    sections.append("=" * W)
+    sections.append(
+        f"{'Month':<12} {'Utility':<20} {'UOM':<6} "
+        f"{'CPP Total':>18} {'BPC Total':>18} {'Difference':>18} {'% Diff':>10}  "
+        f"{'BPC Amount (₹)':>20} {'CPP Amt (₹)':>20} {'Amt Diff (₹)':>20}"
+    )
+    sections.append("-" * W)
     
     utilities = [
         ("power", "Power", "KWH"),
@@ -1100,35 +1228,95 @@ def write_full_year_comparison_file(
     for month_data in monthly_totals:
         month_label = f"{month_data['month_name']} {month_data['year']}"
         for key, label, uom in utilities:
-            cpp_val = float(month_data['cpp'][key] or 0)
-            bpc_val = float(month_data['bpc'][key] or 0)
-            diff = cpp_val - bpc_val
+            cpp_val  = float(month_data['cpp'].get(key, 0) or 0)
+            bpc_val  = float(month_data['bpc'].get(key, 0) or 0)
+            cpp_amt  = float(month_data['cpp'].get(key + '_amt', 0) or 0)
+            bpc_amt  = float(month_data['bpc'].get(key + '_amt', 0) or 0)
+            diff     = cpp_val - bpc_val
+            amt_diff = cpp_amt - bpc_amt
             pct_diff = _calc_pct(cpp_val, bpc_val)
-            sections.append(f"{month_label:<12} {label:<20} {uom:<8} {cpp_val:>18,.2f} {bpc_val:>18,.2f} {diff:>18,.2f} {pct_diff:>10}")
+            sections.append(
+                f"{month_label:<12} {label:<20} {uom:<6} "
+                f"{cpp_val:>18,.2f} {bpc_val:>18,.2f} {diff:>18,.2f} {pct_diff:>10}  "
+                f"{bpc_amt:>20,.2f} {cpp_amt:>20,.2f} {amt_diff:>20,.2f}"
+            )
         sections.append("")
 
-    # Add Grand Total for the Full Year
-    sections.append("-" * 220)
-    sections.append(f"{'GRAND TOTAL':<12} {'Utility':<20} {'UOM':<8} {'CPP Total':>18} {'BPC Total':>18} {'Difference':>18} {'% Diff':>10}")
-    sections.append("-" * 220)
+    sections.append("-" * W)
+    sections.append(
+        f"{'GRAND TOTAL':<12} {'Utility':<20} {'UOM':<6} "
+        f"{'CPP Total':>18} {'BPC Total':>18} {'Difference':>18} {'% Diff':>10}  "
+        f"{'BPC Amount (₹)':>20} {'CPP Amt (₹)':>20} {'Amt Diff (₹)':>20}"
+    )
+    sections.append("-" * W)
     
-    grand_totals = {key: {"cpp": 0.0, "bpc": 0.0} for key, _, _ in utilities}
+    grand_totals = {key: {"cpp": 0.0, "bpc": 0.0, "cpp_amt": 0.0, "bpc_amt": 0.0} for key, _, _ in utilities}
     for month_data in monthly_totals:
         for key, _, _ in utilities:
-            grand_totals[key]["cpp"] += float(month_data['cpp'][key] or 0)
-            grand_totals[key]["bpc"] += float(month_data['bpc'][key] or 0)
+            grand_totals[key]["cpp"] += float(month_data['cpp'].get(key, 0) or 0)
+            grand_totals[key]["bpc"] += float(month_data['bpc'].get(key, 0) or 0)
+            grand_totals[key]["cpp_amt"] += float(month_data['cpp'].get(key + '_amt', 0) or 0)
+            grand_totals[key]["bpc_amt"] += float(month_data['bpc'].get(key + '_amt', 0) or 0)
             
+
     for key, label, uom in utilities:
-        cpp_val = grand_totals[key]["cpp"]
-        bpc_val = grand_totals[key]["bpc"]
-        diff = cpp_val - bpc_val
+        cpp_val  = grand_totals[key]["cpp"]
+        bpc_val  = grand_totals[key]["bpc"]
+        cpp_amt  = grand_totals[key]["cpp_amt"]
+        bpc_amt  = grand_totals[key]["bpc_amt"]
+        diff     = cpp_val - bpc_val
+        amt_diff = cpp_amt - bpc_amt
         pct_diff = _calc_pct(cpp_val, bpc_val)
-        sections.append(f"{'FULL YEAR':<12} {label:<20} {uom:<8} {cpp_val:>18,.2f} {bpc_val:>18,.2f} {diff:>18,.2f} {pct_diff:>10}")
-    
-    sections.append("=" * 220)
+        sections.append(
+            f"{'FULL YEAR':<12} {label:<20} {uom:<6} "
+            f"{cpp_val:>18,.2f} {bpc_val:>18,.2f} {diff:>18,.2f} {pct_diff:>10}  "
+            f"{bpc_amt:>20,.2f} {cpp_amt:>20,.2f} {amt_diff:>20,.2f}"
+        )
+
+    sections.append("=" * W)
     sections.append("END OF FULL YEAR BUDGET SUMMARY")
-    
-    file_path = os.path.join(output_folder, f"nmd_budget_comparison_full_year_FY_{financial_year}_{str(financial_year + 1)[-2:]}.txt")
+
+    # ── MONTHLY AMOUNT TOTALS (all utilities combined, one row per month) ─────
+    sections.append("")
+    sections.append("-" * W)
+    sections.append(
+        f"MONTHLY AMOUNT TOTALS (sum of all utilities) | "
+        f"FY {financial_year}-{str(financial_year + 1)[-2:]}"
+    )
+    sections.append("-" * W)
+    sections.append(
+        f"{'Month':<20} {'BPC Total Amount (INR)':>25} {'CPP Model Amount (INR)':>25} "
+        f"{'Difference (INR)':>22} {'% Diff':>10}"
+    )
+    sections.append("-" * W)
+
+    fy_bpc_total = 0.0
+    fy_cpp_total = 0.0
+    for month_data in monthly_totals:
+        month_label = f"{month_data['month_name']} {month_data['year']}"
+        m_bpc_amt = sum(float(month_data['bpc'].get(k + '_amt', 0) or 0) for k, _, _ in utilities)
+        m_cpp_amt = sum(float(month_data['cpp'].get(k + '_amt', 0) or 0) for k, _, _ in utilities)
+        m_diff    = m_cpp_amt - m_bpc_amt
+        m_pct     = _calc_pct(m_cpp_amt, m_bpc_amt)
+        fy_bpc_total += m_bpc_amt
+        fy_cpp_total += m_cpp_amt
+        sections.append(
+            f"{month_label:<20} {m_bpc_amt:>25,.2f} {m_cpp_amt:>25,.2f} "
+            f"{m_diff:>22,.2f} {m_pct:>10}"
+        )
+
+    sections.append("-" * W)
+    fy_diff = fy_cpp_total - fy_bpc_total
+    sections.append(
+        f"{'FULL YEAR TOTAL':<20} {fy_bpc_total:>25,.2f} {fy_cpp_total:>25,.2f} "
+        f"{fy_diff:>22,.2f} {_calc_pct(fy_cpp_total, fy_bpc_total):>10}"
+    )
+    sections.append("=" * W)
+
+    file_path = os.path.join(
+        output_folder,
+        f"nmd_budget_comparison_full_year_FY_{financial_year}_{str(financial_year + 1)[-2:]}.txt",
+    )
     with open(file_path, "w", encoding="utf-8") as handle:
         handle.write("\n".join(sections).rstrip() + "\n")
     return file_path
