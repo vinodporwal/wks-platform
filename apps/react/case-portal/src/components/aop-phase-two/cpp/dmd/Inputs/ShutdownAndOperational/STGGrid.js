@@ -20,13 +20,13 @@ const STGGrid = ({ hoursRows = [] }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year, screenTitle, jmdSelectedPlants } = dataGridStore
-  const PLANT_ID = plantObject?.id
+  const PLANT_ID = plantObject?.id;
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Steam_Operational_HRS')
-  const PLANT_ID_LIST = useMemo(
-    () => jmdSelectedPlants?.map((plant) => plant.id) || [],
-    [jmdSelectedPlants],
-  )
+  // const PLANT_ID_LIST = useMemo(
+  //   () => jmdSelectedPlants?.map((plant) => plant.id) || [],
+  //   [jmdSelectedPlants],
+  // )
 
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterProduction()
@@ -387,7 +387,7 @@ const STGGrid = ({ hoursRows = [] }) => {
     try {
       const res = await InputApiService.getOperationHoursData(
         keycloak,
-        PLANT_ID_LIST,
+        PLANT_ID,
         AOP_YEAR,
       )
 
@@ -417,17 +417,17 @@ const STGGrid = ({ hoursRows = [] }) => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR, hoursRows])
+  }, [keycloak, PLANT_ID, AOP_YEAR, hoursRows])
 
   useDebounce(
     () => {
-      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+      if (PLANT_ID?.length && AOP_YEAR) {
         fetchData()
         setModifiedCells({})
       }
     },
     1000,
-    [PLANT_ID_LIST, AOP_YEAR, fetchData],
+    [PLANT_ID, AOP_YEAR, fetchData],
   )
 
   const permissions = {
@@ -494,7 +494,7 @@ const STGGrid = ({ hoursRows = [] }) => {
     try {
       await InputApiService.saveOperationHours(
         keycloak,
-        PLANT_ID_LIST,
+        PLANT_ID,
         AOP_YEAR,
         {
           steamResponse: apiFormatData,
@@ -526,7 +526,7 @@ const STGGrid = ({ hoursRows = [] }) => {
       const response = await InputApiService.saveSteamResponseExcel(
         file,
         keycloak,
-        PLANT_ID_LIST,
+        PLANT_ID,
         AOP_YEAR,
       )
       if (response?.code === 200) {
@@ -584,7 +584,7 @@ const STGGrid = ({ hoursRows = [] }) => {
     try {
       await InputApiService.exportSteamResponseExcel(
         keycloak,
-        PLANT_ID_LIST,
+        PLANT_ID,
         AOP_YEAR,
         EXCEL_NAME,
       )
@@ -624,7 +624,7 @@ const STGGrid = ({ hoursRows = [] }) => {
           currentRemark={currentRemark}
           setCurrentRemark={setCurrentRemark}
           currentRowId={currentRowId}
-          setCurrentRowId={() => {}}
+          setCurrentRowId={() => { }}
           saveChanges={saveChanges}
           handleExcelUpload={handleExcelUpload}
           handleExport={handleExport}

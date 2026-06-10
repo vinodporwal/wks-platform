@@ -27,7 +27,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
     verticalObject,
     siteObject,
   } = dataGridStore
-  const PLANT_ID = plantObject?.id
+ const PLANT_ID =  plantObject?.id;
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Power_Operational_HRS')
 
@@ -641,7 +641,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
           currentRemark={currentRemark}
           setCurrentRemark={setCurrentRemark}
           currentRowId={currentRowId}
-          setCurrentRowId={() => {}}
+          setCurrentRowId={() => { }}
           saveChanges={saveChanges}
           handleExcelUpload={handleExcelUpload}
           handleExport={handleExport}

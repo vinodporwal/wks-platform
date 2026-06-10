@@ -42,10 +42,7 @@ const PowerAssetAvailability = () => {
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Asset_Priority')
 
-  const PLANT_ID_LIST = useMemo(
-    () => jmdSelectedPlants?.map((plant) => plant.id) || [],
-    [jmdSelectedPlants],
-  )
+  const PLANT_ID_LIST =  plantObject?.id;
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
 

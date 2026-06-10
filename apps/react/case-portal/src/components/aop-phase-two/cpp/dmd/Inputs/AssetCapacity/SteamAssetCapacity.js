@@ -33,10 +33,7 @@ const SteamAssetCapacity = () => {
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Steam_Asset_Capacity')
 
   // Multi-plant list
-  const PLANT_ID_LIST = useMemo(
-    () => jmdSelectedPlants?.map((plant) => plant.id) || [],
-    [jmdSelectedPlants],
-  )
+ const PLANT_ID_LIST =  plantObject?.id;
 
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [rows, setRows] = useState([])
