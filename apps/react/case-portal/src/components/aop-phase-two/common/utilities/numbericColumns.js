@@ -3,7 +3,12 @@ import NotificationTST from 'components/Utilities/NotificationTST'
 import { useState, useEffect, useRef } from 'react'
 import { InputBase } from '../../../../../node_modules/@mui/material/index'
 
-export const NoSpinnerNumericEditor = ({ dataItem, field, onChange }) => {
+export const NoSpinnerNumericEditor = ({
+  dataItem,
+  field,
+  onChange,
+  allowNegative = false,
+}) => {
   // Handle nested field paths (e.g., "apr.shutdownHrs")
   const getNestedValue = (obj, path) => {
     if (!path || !obj) return undefined
@@ -24,7 +29,8 @@ export const NoSpinnerNumericEditor = ({ dataItem, field, onChange }) => {
 
   const handleChange = (e) => {
     const val = e.target.value
-    if (val === '' || /^\d*(\.\d*)?$/.test(val)) {
+    const pattern = allowNegative ? /^-?\d*(\.\d*)?$/ : /^\d*(\.\d*)?$/
+    if (val === '' || pattern.test(val)) {
       if (dataItem?.productName?.trim().toLowerCase() === 'tst') {
         setSnackbarOpen(true)
         setSnackbarData({
