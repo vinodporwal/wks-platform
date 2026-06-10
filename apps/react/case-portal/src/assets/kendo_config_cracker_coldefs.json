@@ -100,7 +100,7 @@
     "type": "number"
   },
   {
-    "field": "weightAverage",
+    "field": "Weight Average",
     "title": "Weight Average",
     "editable": true,
     "width": 120,
