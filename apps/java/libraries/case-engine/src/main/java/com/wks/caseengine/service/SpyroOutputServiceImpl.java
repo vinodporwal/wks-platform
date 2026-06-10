@@ -147,7 +147,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 					map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 					map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 				map.put("isEditable", row[22]);
-				map.put("Weight Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
+				map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
 				spyroOutputDataList.add(map); // Add the map to the list here
 			}else {
 					
@@ -172,7 +172,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 							map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 							map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 						map.put("isEditable", row[22]);
-						map.put("Weight Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
+						map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
 						spyroOutputDataList.add(map);
 					}}
 				
@@ -197,7 +197,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 							map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 							map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 						map.put("isEditable", row[22]);
-						map.put("Weight Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
+						map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
 						spyroOutputDataList.add(map);
 					}
 				}
@@ -458,7 +458,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 				if(spyroOutputDTO.getNormParameterFKID() == null || spyroOutputDTO.getNormParameterFKID().isBlank()) { 
 					continue;
 				}
-				
+
 				UUID normParameterFKId = UUID.fromString(spyroOutputDTO.getNormParameterFKID());
 				Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
 				if (!optionNormParameters.isPresent()) {

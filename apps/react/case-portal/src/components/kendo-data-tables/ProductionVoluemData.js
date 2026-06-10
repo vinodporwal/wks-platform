@@ -653,6 +653,7 @@ const ProductionvolumeData = ({
                 ? item.february * 24
                 : item.february || null,
               march: item.march ? item.march * 24 : item.march || null,
+              isEditable:item.isEditable?? true,
             }),
           }
         },
