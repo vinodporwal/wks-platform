@@ -105,7 +105,7 @@ const getEnhancedAOPColDefs = ({
         title: 'Recipe',
         editable: false,
         widthT: 250,
-        locked:true,
+        locked: true,
         minWidth: 250,
       },
       {
@@ -113,7 +113,7 @@ const getEnhancedAOPColDefs = ({
         title: 'UOM',
         editable: false,
         widthT: 85,
-        locked:true,
+        locked: true,
         minWidth: 85,
       },
     ]
@@ -244,18 +244,20 @@ const getEnhancedAOPColDefs = ({
     })
   } else {
     enhancedColDefs = config.map((col) => {
-      if (headerMap && headerMap[col.title]) {
-        return {
-          ...col,
-          title: headerMap[col.title],
-          align: 'right',
-          type: col.type ?? 'number',
-          format: FORMATE_VALUE,
-          minWidth: 100,
-        }
+      const updated = {
+        ...col,
+        title:
+          headerMap && headerMap[col.title] ? headerMap[col.title] : col.title,
+        align: 'right',
+        type: col.type ?? 'number',
+        minWidth: 100,
       }
 
-      return col
+      if (col.type === 'number' || col.type === 'negativeNumber') {
+        updated.format = FORMATE_VALUE
+      }
+
+      return updated
     })
   }
 
