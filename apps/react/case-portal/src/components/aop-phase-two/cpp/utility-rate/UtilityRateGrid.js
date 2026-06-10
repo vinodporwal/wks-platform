@@ -22,7 +22,7 @@ const UtilityRateGrid = () => {
 
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
-  const customFormatFive = customValueFormatterPhaseTwo(5)
+  const customFormatTwo = customValueFormatterPhaseTwo(2)
 
   // Custom cell renderer for dynamic decimal formatting: 4 decimals if >= 1000, else 2 decimals
   const DynamicDecimalCell = ({
@@ -95,7 +95,7 @@ const UtilityRateGrid = () => {
     minWidth: 100,
     editable: true,
     type: 'number1',
-    customCell: DynamicDecimalCell,
+    format: customFormatTwo,
   }))
 
   // ── State ────────────────────────────────────────────────────────────────
@@ -170,7 +170,7 @@ const UtilityRateGrid = () => {
       type: 'number1',
       editable: false,
       minWidth: 180,
-      customCell: DynamicDecimalCell,
+      format: customFormatTwo,
     },
 
     // Monthly prices ─ Apr → Mar (generated from MONTH_COLUMNS)

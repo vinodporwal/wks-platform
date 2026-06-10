@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import ValueFormatterPhaseTwo, {
+  customValueFormatterPhaseTwo,
+} from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
@@ -31,6 +33,7 @@ const NormsQtyCostReportAnnual = () => {
   )
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
+  const valueFormatTwo = customValueFormatterPhaseTwo(2)
 
   // Quarterly and Annual columns
   const QUARTERLY_COLUMNS = [
@@ -48,7 +51,7 @@ const NormsQtyCostReportAnnual = () => {
           widthT: 130,
           minWidth: 130,
           type: 'number1',
-          format: valueFormat,
+          format: valueFormatTwo,
           editable: false,
         },
         {
@@ -66,7 +69,7 @@ const NormsQtyCostReportAnnual = () => {
           widthT: 130,
           minWidth: 130,
           type: 'number1',
-          format: valueFormat,
+          format: valueFormatTwo,
           editable: false,
         },
         {
@@ -76,7 +79,7 @@ const NormsQtyCostReportAnnual = () => {
           minWidth: 130,
           editable: false,
           type: 'number1',
-          format: valueFormat,
+          format: valueFormatTwo,
         },
         {
           field: `${q.quarter}.amount`,
@@ -84,7 +87,7 @@ const NormsQtyCostReportAnnual = () => {
           widthT: 130,
           minWidth: 130,
           type: 'number1',
-          format: valueFormat,
+          format: valueFormatTwo,
           editable: false,
         },
       ],

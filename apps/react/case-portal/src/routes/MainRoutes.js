@@ -144,6 +144,11 @@ import CausticSodaLyeBasis from 'components/data-tables/Reports/CausticSodaLyeBa
 import MaterialBalance from 'components/kendo-data-tables/MaterialBalance'
 import CatalystChecmicalsCalculation from 'components/kendo-data-tables/CatalystChecmicalsCalculation'
 import CausticSodaLyeBasisCatChem from 'components/data-tables/Reports/CausticSodaLyeBasisCatChem'
+// Vertical MEROX
+import SteadyStateConsumptionMerox from 'components/aop-phase-two/merox/steady-state-consumption'
+import OverallAopConsumptionMerox from 'components/aop-phase-two/merox/overall-aop-consumption'
+import ProductionNormsBasisMerox from 'components/aop-phase-two/merox/production-norms-basis'
+// Vertical MEROX Ended
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -892,6 +897,33 @@ export const MainRoutes = (
             ),
           },
           //Vertical STAPLE (Polyester) Ended ****************************
+
+          //Vertical MEROX Started
+          {
+            path: 'production-norms-basis-merox',
+            element: (
+              <PrivateRoute routeId='production-norms-basis-merox'>
+                <ProductionNormsBasisMerox />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption-merox',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption-merox'>
+                <SteadyStateConsumptionMerox />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'overall-aop-consumption-merox',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption-merox'>
+                <OverallAopConsumptionMerox />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical MEROX Ended
         ],
       },
 
