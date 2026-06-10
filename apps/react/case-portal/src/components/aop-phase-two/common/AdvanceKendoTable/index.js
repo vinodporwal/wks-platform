@@ -1725,7 +1725,12 @@ const AdvanceKendoTable = ({
                     )
                   }
 
-                  return <NoSpinnerNumericEditor {...cellProps} />
+                  return (
+                    <NoSpinnerNumericEditor
+                      {...cellProps}
+                      allowNegative={col.allowNegative === true}
+                    />
+                  )
                 },
               },
               data: col.customCell

@@ -549,7 +549,7 @@ const NormsQtyCostReport = () => {
           setSnackbarOpen={setSnackbarOpen}
           setSnackbarData={setSnackbarData}
           customHeight={80}
-          groupBy={['generatingPlantName', 'accountName']}
+          groupBy={['generatingPlantName']}
         />
       </Box>
     </Box>

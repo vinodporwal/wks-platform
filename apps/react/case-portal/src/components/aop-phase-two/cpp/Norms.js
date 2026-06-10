@@ -1078,7 +1078,7 @@ const Norms = () => {
             setSnackbarOpen={setSnackbarOpen}
             setSnackbarData={setSnackbarData}
             customHeight={80}
-            groupBy={['generatingPlantName', 'accountName']}
+            groupBy={['generatingPlantName']}
             handleRelease={handleRelease}
             isReleaseDisabled={isReleaseDisabled}
           />

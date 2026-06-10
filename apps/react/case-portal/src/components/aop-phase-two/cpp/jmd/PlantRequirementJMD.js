@@ -4,7 +4,9 @@ import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/g
 import { useSelector } from 'react-redux'
 import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/jmd/utilityPlantApiServiceV2'
 import { useSession } from 'SessionStoreContext'
-import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import ValueFormatterPhaseTwo, {
+  customValueFormatterPhaseTwo,
+} from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
@@ -54,11 +56,63 @@ const PlantRequirementJMD = () => {
 
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
+  const customFormatTwo = customValueFormatterPhaseTwo(2)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+
+  // Fiscal-year month order: Apr → Mar
+  const MONTH_TO_INDEX = {
+    apr: 4,
+    may: 5,
+    jun: 6,
+    jul: 7,
+    aug: 8,
+    sep: 9,
+    oct: 10,
+    nov: 11,
+    dec: 12,
+    jan: 1,
+    feb: 2,
+    mar: 3,
+  }
+
+  // Base column configuration for month columns
+  const monthBaseColumnConfig = {
+    editable: true,
+    widthT: 100,
+    minWidth: 100,
+    align: 'left',
+    headerAlign: 'left',
+    type: 'number1',
+    allowNegative: true,
+    format: customFormatTwo,
+  }
+
+  // Month field names in fiscal year order
+  const MONTH_FIELDS = [
+    'apr',
+    'may',
+    'jun',
+    'jul',
+    'aug',
+    'sep',
+    'oct',
+    'nov',
+    'dec',
+    'jan',
+    'feb',
+    'mar',
+  ]
+
+  // Generate month columns by duplicating base config
+  const MONTH_COLUMNS = MONTH_FIELDS.map((mon) => ({
+    ...monthBaseColumnConfig,
+    field: mon,
+    title: headerMap[MONTH_TO_INDEX[mon]],
+  }))
 
   // Column definitions
   const columns = [
@@ -121,139 +175,19 @@ const PlantRequirementJMD = () => {
       type: 'text',
       editable: false,
     },
-    {
-      field: 'apr',
-      title: headerMap[4], // will be 'Apr-25' if AOP_YEAR is 2025-26
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'may',
-      title: headerMap[5],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'jun',
-      title: headerMap[6],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'jul',
-      title: headerMap[7],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'aug',
-      title: headerMap[8],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'sep',
-      title: headerMap[9],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'oct',
-      title: headerMap[10],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'nov',
-      title: headerMap[11],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'dec',
-      title: headerMap[12],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'jan',
-      title: headerMap[1],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'feb',
-      title: headerMap[2],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'mar',
-      title: headerMap[3],
-      editable: true,
-      widthT: 100,
-      minWidth: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
 
+    // Monthly columns - Apr → Mar (editable)
+    ...MONTH_COLUMNS,
+
+    {
+      field: 'total',
+      title: 'Total',
+      widthT: 130,
+      minWidth: 130,
+      type: 'number1',
+      editable: false,
+      format: customFormatTwo,
+    },
     {
       field: 'remarks',
       title: 'Remarks',
@@ -285,6 +219,7 @@ const PlantRequirementJMD = () => {
         ...item,
         remarks: item.remarks || '',
         id: item?.id || index + 1,
+        total: MONTH_FIELDS.reduce((sum, key) => sum + (item[key] || 0), 0),
       }))
       setRows(formattedData)
       setOriginalRows(formattedData)
