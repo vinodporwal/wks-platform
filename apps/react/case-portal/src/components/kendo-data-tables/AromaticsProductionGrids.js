@@ -1070,7 +1070,9 @@ const AromaticsProductionGrids = ({ permissions }) => {
       showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
       titleName:
         VERTICAL_NAME === 'cracker'
-          ? 'Proposed Operating Capacity (Ethylene)'
+          ? SITE_NAME === 'c2'
+            ? 'Proposed Operating Capacity (Ethylene+Propylene)'
+            : 'Proposed Operating Capacity (Ethylene)'
           : 'Proposed Operating Capacity',
     },
     isOldYear,

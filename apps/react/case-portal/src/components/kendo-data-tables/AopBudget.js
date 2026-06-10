@@ -76,6 +76,14 @@ export default function AopBudget() {
   const headerMap = generateHeaderNames(AOP_YEAR)
   const thisYear = AOP_YEAR
 
+
+  const VERTICAL_NAME_U = verticalObject?.name?.toUpperCase()
+  const SITE_NAME_U = siteObject?.name?.toUpperCase()
+  const PLANT_NAME_U = plantObject?.name?.toUpperCase()
+  const EXCEL_NAME = `${VERTICAL_NAME_U}_${SITE_NAME_U}_${AOP_YEAR}_Budget_Maintenance`
+
+
+
   // second grid states
   const [rowsP, setRowsP] = useState([])
   const [remarkDialogOpenP, setRemarkDialogOpenP] = useState(false)
@@ -408,8 +416,8 @@ export default function AopBudget() {
     plantID,
     keycloak,
   ])
-  const handleCalculate = () => {}
-  const handleCalculateP = () => {}
+  const handleCalculate = () => { }
+  const handleCalculateP = () => { }
 
   const handleRemarkCellClick = useCallback((row) => {
     if (!row?.IsEditable || READ_ONLY) return
@@ -453,7 +461,7 @@ export default function AopBudget() {
       // downloadExcelBtnFromUI: true,
       downloadExcelBtn: false,
       uploadExcelBtn: false,
-      ExcelName: `${lowerVertName}_Monthly Procurement Budget`,
+      ExcelName: `${vertName}_${siteObject?.name}_${AOP_YEAR}_Budget_Maintenance`,
       constarins: ['+', '-'],
       resetButton: false,
       percentChangeLogic: true,
@@ -488,7 +496,7 @@ export default function AopBudget() {
       downloadExcelBtnFromUI: false,
       downloadExcelBtn: true,
       uploadExcelBtn: true,
-      ExcelName: `${lowerVertName}_Monthly Consumption Budget`,
+      ExcelName: `${vertName}_${siteObject?.name}_${AOP_YEAR}_Budget_Maintenance`,
       constarins: ['+', '-'],
       resetButton: false,
       percentChangeLogic: true,
@@ -621,6 +629,8 @@ export default function AopBudget() {
       setLoading(false)
     }
   }
+
+
   const downloadExcelForConfiguration = async () => {
     setLoading(true)
     try {
@@ -628,6 +638,7 @@ export default function AopBudget() {
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        EXCEL_NAME
       )
 
       setSnackbarData({ message: 'Export started!', severity: 'success' })
@@ -713,9 +724,9 @@ export default function AopBudget() {
     budgetMaintenanceExcelFile(rawFile)
   }
 
-  const resetRowData1 = async (paramsForDelete) => {}
+  const resetRowData1 = async (paramsForDelete) => { }
 
-  const resetRowData2 = async (paramsForDelete) => {}
+  const resetRowData2 = async (paramsForDelete) => { }
 
   return (
     <Box>
@@ -740,7 +751,7 @@ export default function AopBudget() {
               container
               alignItems='center'
               justifyContent='space-between'
-              // sx={{ marginBottom: 0.5 }}
+            // sx={{ marginBottom: 0.5 }}
             >
               <Grid item>
                 <div
@@ -773,7 +784,7 @@ export default function AopBudget() {
               container
               alignItems='center'
               justifyContent='space-between'
-              // sx={{ marginBottom: 0.5 }}
+            // sx={{ marginBottom: 0.5 }}
             >
               <Grid item>
                 <div
@@ -828,7 +839,7 @@ export default function AopBudget() {
         resetRowData={resetRowData1}
         summaryEdited={designBasisAndDesignRemarksEdited}
         resetDataChanges={resetDataChanges}
-        // setEditMode={setEditMode}
+      // setEditMode={setEditMode}
       />
 
       <KendoDataTables
