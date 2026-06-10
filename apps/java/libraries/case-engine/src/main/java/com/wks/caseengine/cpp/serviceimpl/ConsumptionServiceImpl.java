@@ -5,8 +5,11 @@ import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -476,20 +479,42 @@ System.out.println("total results: " + results.size());
 	@Override
 	public AOPMessageVM importExcel(UUID plantId, String financialYear, MultipartFile file) {
 		try {
+			// Load existing records for comparison to skip unchanged rows
+			List<CalculatedProcessDemandDTO> existingDtos = getProcessDemandByPlant(plantId, financialYear);
+			Map<String, CalculatedProcessDemandDTO> existingByKey = new HashMap<>();
+			for (CalculatedProcessDemandDTO rec : existingDtos) {
+				String key = rec.getProcessPlantId() + ":" + rec.getCppUtilityId();
+				existingByKey.put(key, rec);
+			}
+			logger.info("[Import] Loaded {} existing records for plant {} year {} for comparison", existingByKey.size(), plantId, financialYear);
+
 			List<CalculatedProcessDemandDTO> data = readConsumption(file.getInputStream(), plantId, financialYear);
-			
-			
-			// Separate failed records from successful ones
+
+			// Separate failed records from successful ones; skip unchanged records
 			List<CalculatedProcessDemandDTO> validRecords = new ArrayList<>();
 			List<CalculatedProcessDemandDTO> failedRecords = new ArrayList<>();
-			
+			int skippedCount = 0;
+
 			for (CalculatedProcessDemandDTO dto : data) {
 				if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) {
 					failedRecords.add(dto);
-				} else {
-					validRecords.add(dto);
+					continue;
 				}
+
+				// Skip unchanged records (compare with existing DB data)
+				String key = dto.getProcessPlantId() + ":" + dto.getCppUtilityId();
+				CalculatedProcessDemandDTO existing = existingByKey.get(key);
+				if (existing != null && !isConsumptionModified(dto, existing)) {
+					skippedCount++;
+					logger.debug("[Import] Skipping unchanged record: {}", key);
+					continue;
+				}
+
+				validRecords.add(dto);
 			}
+
+			logger.info("[Import] Total: {}, Skipped (unchanged): {}, To save: {}, Pre-failed: {}",
+					data.size(), skippedCount, validRecords.size(), failedRecords.size());
 
 			// Try to save valid records
 			if (!validRecords.isEmpty()) {
@@ -497,7 +522,7 @@ System.out.println("total results: " + results.size());
 					// Convert to update request DTOs and save
 					List<ProcessDemandUpdateRequest> updateRequests = convertToUpdateRequests(validRecords);
 					ProcessDemandUpdateResponse response = updateProcessDemand(financialYear, updateRequests);
-					
+
 					// Check if there were any errors during save
 					if (response.getFailureCount() > 0) {
 						// Mark failed records
@@ -528,12 +553,12 @@ System.out.println("total results: " + results.size());
 				aopMessageVM.setMessage("Partial data has been saved");
 			} else {
 				aopMessageVM.setCode(200);
-				aopMessageVM.setMessage("All data has been saved");
+				aopMessageVM.setMessage("All data has been saved. Skipped " + skippedCount + " unchanged records, saved " + validRecords.size() + " records.");
 			}
 
 			return aopMessageVM;
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error("[Import] Error importing file: {}", e.getMessage(), e);
 			AOPMessageVM errorVM = new AOPMessageVM();
 			errorVM.setCode(500);
 			errorVM.setMessage("Error importing file: " + e.getMessage());
@@ -644,6 +669,38 @@ System.out.println("total results: " + results.size());
 		}
 		
 		return requests;
+	}
+
+	/**
+	 * Check if imported consumption record is modified compared to existing DB record.
+	 * Treats null and 0.0 as equal for numeric fields.
+	 */
+	private boolean isConsumptionModified(CalculatedProcessDemandDTO imported, CalculatedProcessDemandDTO existing) {
+		if (existing == null) {
+			return true;
+		}
+		return !valuesEqual(imported.getApr(), existing.getApr())
+			|| !valuesEqual(imported.getMay(), existing.getMay())
+			|| !valuesEqual(imported.getJun(), existing.getJun())
+			|| !valuesEqual(imported.getJul(), existing.getJul())
+			|| !valuesEqual(imported.getAug(), existing.getAug())
+			|| !valuesEqual(imported.getSep(), existing.getSep())
+			|| !valuesEqual(imported.getOct(), existing.getOct())
+			|| !valuesEqual(imported.getNov(), existing.getNov())
+			|| !valuesEqual(imported.getDec(), existing.getDec())
+			|| !valuesEqual(imported.getJan(), existing.getJan())
+			|| !valuesEqual(imported.getFeb(), existing.getFeb())
+			|| !valuesEqual(imported.getMar(), existing.getMar())
+			|| !Objects.equals(imported.getRemarks(), existing.getRemarks());
+	}
+
+	/**
+	 * Compare two Double values treating null and 0.0 as equal.
+	 */
+	private boolean valuesEqual(Double a, Double b) {
+		double valA = a != null ? a : 0.0;
+		double valB = b != null ? b : 0.0;
+		return Double.compare(valA, valB) == 0;
 	}
 
 	private void setDoubleCellValue(Cell cell, Double value, CellStyle style) {

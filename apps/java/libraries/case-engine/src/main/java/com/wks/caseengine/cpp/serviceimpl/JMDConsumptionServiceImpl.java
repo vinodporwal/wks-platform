@@ -281,7 +281,7 @@ public class JMDConsumptionServiceImpl implements JMDConsumptionService {
 	 */
 	private CellStyle createHeaderStyle(Workbook workbook) {
 		CellStyle style = workbook.createCellStyle();
-		style.setFillForegroundColor(IndexedColors.LIGHT_BLUE.getIndex());
+		style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
 		style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 		Font font = workbook.createFont();
 		font.setBold(true);
