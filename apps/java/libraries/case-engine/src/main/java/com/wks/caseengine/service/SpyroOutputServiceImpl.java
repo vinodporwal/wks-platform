@@ -147,7 +147,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 					map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 					map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 				map.put("isEditable", row[22]);
-				map.put("weightAverage",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
+				map.put("Weight Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
 				spyroOutputDataList.add(map); // Add the map to the list here
 			}else {
 					
@@ -172,7 +172,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 							map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 							map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 						map.put("isEditable", row[22]);
-						map.put("weightAverage",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
+						map.put("Weight Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
 						spyroOutputDataList.add(map);
 					}}
 				
@@ -197,7 +197,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 							map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 							map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 						map.put("isEditable", row[22]);
-						map.put("weightAverage",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
+						map.put("Weight Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
 						spyroOutputDataList.add(map);
 					}
 				}
@@ -2126,9 +2126,10 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Output")) {
 					dto.setJan(getNumericCellValue(row.getCell(11), dto));
 					dto.setFeb(getNumericCellValue(row.getCell(12), dto));
 					dto.setMar(getNumericCellValue(row.getCell(13), dto));
-					dto.setRemarks(getStringCellValue(row.getCell(14), dto));
-					dto.setNormParameterFKID(getStringCellValue(row.getCell(15), dto));
-					// col 16 = weightAverage — display/export only, not imported
+					// col 14 = weightAverage — display/export only, not imported
+					dto.setRemarks(getStringCellValue(row.getCell(15), dto));
+					dto.setNormParameterFKID(getStringCellValue(row.getCell(16), dto));
+					
 					dto.setTableId(getStringCellValue(row.getCell(17), dto));
 
 					} catch (Exception e) {
