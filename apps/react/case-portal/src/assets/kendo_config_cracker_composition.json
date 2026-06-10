@@ -129,7 +129,7 @@
     "type": "number"
   },
   {
-    "field": "Weight Average",
+    "field": "Weighted Average",
     "title": "Weighted Average",
     "editable": true,
     "width": 120,
