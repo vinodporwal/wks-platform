@@ -134,27 +134,27 @@ const KendoDataTablesReports = ({
   columns,
   loading = false,
   permissions = {},
-  setSnackbarOpen = () => {},
+  setSnackbarOpen = () => { },
   snackbarData = { message: '', severity: 'info' },
   snackbarOpen = false,
-  setRemarkDialogOpen = () => {},
+  setRemarkDialogOpen = () => { },
   currentRemark = '',
-  setCurrentRemark = () => {},
+  setCurrentRemark = () => { },
   currentRowId = null,
-  setModifiedCells = () => {},
+  setModifiedCells = () => { },
   remarkDialogOpen = false,
-  saveChanges = () => {},
-  fetchData = () => {},
-  deleteRowData = () => {},
-  handleCalculate = () => {},
-  handleUnitChange = () => {},
-  handleRemarkCellClick = () => {},
-  handleExport = () => {},
-  handleExcelUpload = () => {},
+  saveChanges = () => { },
+  fetchData = () => { },
+  deleteRowData = () => { },
+  handleCalculate = () => { },
+  handleUnitChange = () => { },
+  handleRemarkCellClick = () => { },
+  handleExport = () => { },
+  handleExcelUpload = () => { },
   groupBy = null,
   grades = [],
-  handleGradeChange = () => {},
-  handleRelease = () => {},
+  handleGradeChange = () => { },
+  handleRelease = () => { },
   isReleaseDisabled = true,
   supressGridHeight = false,
 }) => {
@@ -258,11 +258,11 @@ const KendoDataTablesReports = ({
   )
   const initialGroup = groupBy
     ? [
-        {
-          field: groupBy,
-          dir: undefined,
-        },
-      ]
+      {
+        field: groupBy,
+        dir: undefined,
+      },
+    ]
     : []
 
   const handleEditChange = useCallback((e) => {
@@ -285,10 +285,20 @@ const KendoDataTablesReports = ({
   }
   const itemChange = useCallback(
     (e) => {
-      setIsRowEdited(true)
+
 
       const { dataItem, field, value } = e
       const itemId = dataItem.id
+
+
+      // Ignore group header expand/collapse events — they are not real edits
+      if (!field || dataItem?.items) {
+        return
+      }
+
+      setIsRowEdited(true)
+
+
       setRows((prev) =>
         prev.map((r) => {
           if (r.id !== itemId) return r
@@ -697,10 +707,10 @@ const KendoDataTablesReports = ({
             title={col.title || col.headerName}
             width={setWidth(
               col?.fixedWidth ||
-                col?.width ||
-                col?.widthT ||
-                col?.minWidth ||
-                130,
+              col?.width ||
+              col?.widthT ||
+              col?.minWidth ||
+              130,
             )}
             hidden={col.hidden}
             className={'k-number-right-disabled'}
@@ -1042,7 +1052,7 @@ const KendoDataTablesReports = ({
                     (rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility)
+                      !permissions?.showCalculateVisibility)
                   }
                 >
                   Calculate
@@ -1129,9 +1139,9 @@ const KendoDataTablesReports = ({
               pageable={
                 rows?.length > 100
                   ? {
-                      buttonCount: 4,
-                      pageSizes: [10, 50, 100],
-                    }
+                    buttonCount: 4,
+                    pageSizes: [10, 50, 100],
+                  }
                   : false
               }
               onRowClick={handleRowClick}
