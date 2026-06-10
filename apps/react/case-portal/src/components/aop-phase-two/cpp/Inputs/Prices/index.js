@@ -24,7 +24,7 @@ const Prices = () => {
 
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
-  const customFormatFive = customValueFormatterPhaseTwo(5)
+  const customFormat = customValueFormatterPhaseTwo(2)
 
   // Custom cell renderer for dynamic decimal formatting: 4 decimals if >= 1000, else 2 decimals
   const DynamicDecimalCell = ({
@@ -97,7 +97,7 @@ const Prices = () => {
     minWidth: 100,
     editable: true,
     type: 'number1',
-    customCell: DynamicDecimalCell,
+    format: customFormat,
     conditionalEditable: {
       dependsOn: 'valueType',
       editableValues: ['Price', 'Amount'],
@@ -171,6 +171,7 @@ const Prices = () => {
       widthT: 130,
       type: 'text',
       editable: false,
+      locked: true,
       minWidth: 130,
     },
     {
@@ -197,6 +198,7 @@ const Prices = () => {
       type: 'text',
       editable: false,
       minWidth: 150,
+      locked: true,
     },
     {
       field: 'valueType',
@@ -205,6 +207,7 @@ const Prices = () => {
       type: 'select',
       editable: true,
       minWidth: 150,
+      locked: true,
       options: [
         { value: 'Price', label: 'Price' },
         { value: 'Amount', label: 'Amount' },
@@ -214,6 +217,14 @@ const Prices = () => {
 
     // Monthly norms ─ Apr → Mar (editable only when valueType is Price or Amount)
     ...MONTH_COLUMNS,
+    // {
+    //   field: 'total',
+    //   title: 'Total',
+    //   widthT: 150,
+    //   type: 'text',
+    //   editable: false,
+    //   format: customFormat,
+    // },
     {
       field: 'priceSource',
       title: 'Price Source',
@@ -256,12 +267,21 @@ const Prices = () => {
         return
       }
 
-      const formatted = res.data.map((item, index) => ({
-        ...item,
-        id: item.id || index + 1,
-        remarks: item.remarks || '',
-        valueType: item.valueType || '',
-      }))
+      const formatted = res.data.map((item, index) => {
+        const monthFields = MONTH_COLUMNS.map((col) => col.field)
+        const total = monthFields.reduce((sum, field) => {
+          const value = parseFloat(item[field]) || 0
+          return sum + value
+        }, 0)
+
+        return {
+          ...item,
+          id: item.id || index + 1,
+          remarks: item.remarks || '',
+          valueType: item.valueType || '',
+          total,
+        }
+      })
 
       setRows(formatted)
       setOriginalRows(formatted)
