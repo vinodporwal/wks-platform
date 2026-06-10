@@ -3,14 +3,12 @@
     "field": "material",
     "headerName": "Particulars",
     "flex": 2,
-    "widthT": 120,
     "editable": false
   },
   {
     "field": "financialYear",
     "headerName": "Financial Year",
     "flex": 2,
-    "widthT": 100,
     "editable": false
   },
   {

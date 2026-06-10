@@ -1,6 +1,6 @@
 import HelpIcon from '@mui/icons-material/Help'
 import InfoIcon from '@mui/icons-material/Info'
-import { Tooltip as MuiTooltip, Divider } from '@mui/material'
+import { Divider, Tooltip as MuiTooltip } from '@mui/material'
 import '@progress/kendo-font-icons/dist/index.css'
 import { Grid, GridColumn } from '@progress/kendo-react-grid'
 import { Tooltip } from '@progress/kendo-react-tooltip'
@@ -24,7 +24,7 @@ import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import CategoryDropdownEditor from './Utilities-Kendo/CategoryDropdown'
 import LineDropdownEditor from './Utilities-Kendo/LineDropdownEditor'
-
+import { useIntegerDaysEditor } from './Utilities-Kendo/NoSpinnerIntegerEditorForDays'
 import {
   Box,
   Button,
@@ -56,7 +56,6 @@ import BudgetConstrainsCellEditor from './Utilities-Kendo/BudgetConstrainsCellEd
 import DateOnlyPicker from './Utilities-Kendo/DatePicker'
 import DateTimePickerEditor from './Utilities-Kendo/DatePickeronSelectedYr'
 import DatePickerNoLimit from './Utilities-Kendo/DatePickerNoLimit'
-import DynamicDropdown from './Utilities-Kendo/DynamicDropdown'
 
 import { descLimit } from './Utilities-Kendo/descLimit'
 import {
@@ -81,22 +80,34 @@ import { getRoleName } from 'services/role-service'
 import { getColumnMenuDateFilter } from 'components/data-tables/Reports-kendo/ColumnMenuDateFilter'
 import DateTimePickerEditor24HourFormat from './Utilities-Kendo/DatePickeronSelectedYr24HourFomat'
 import { NoSpinnerNumericEditorCrackerValidation } from './Utilities-Kendo/numbericColumnsCrackerValidation'
+import DynamicDropdown from './Utilities-Kendo/DynamicDropdown'
 import ShutdownRateDropdown from './Utilities-Kendo/ShutdownRateDropdown'
 import MonthDropdownPEPP1 from './Utilities-Kendo/MonthDropdownPEPP1'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
-import { keyframes } from '@mui/material/styles'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import Collapse from '@mui/material/Collapse'
-import { FileExportIcon, FileImportIcon, SaveIcon, CalculateIcon } from 'assets/images/icons'
+import {
+  FileExportIcon,
+  FileImportIcon,
+  SaveIcon,
+  CalculateIcon,
+} from 'assets/images/icons'
 import { DashboardColors } from 'themes/colors'
+import SwitchEditor from './Utilities-Kendo/SwitchEditor'
+import { NoSpinnerNumericIntegerEditor } from './Utilities-Kendo/numbericIntegerColumns'
 
-// Subtle pulse for the info icon on load
-const softPulse = keyframes`
-  0% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(1.15); opacity: 1; }
-  100% { transform: scale(1); opacity: 0.6; }
-`
+// A stable editor component to prevent focus loss during table re-renders.
+const ON_OFF_CONDITION = (dataItem) => dataItem?.UOM === 'ON/OFF'
+const OnOffSwitchEditCell = (props) => {
+  return (
+    <SwitchEditor
+      {...props}
+      condition={ON_OFF_CONDITION}
+      editable={props.column?.editable}
+      isDisabled={props.column?.isDisabled}
+    />
+  )
+}
 
 export const dateFields = [
   'maintStartDateTime',
@@ -120,6 +131,7 @@ export const dateFields1 = [
   'shutdownDate',
   'StartDate',
   'EndDate',
+  'date',
 ]
 
 export const monthMap = {
@@ -177,7 +189,7 @@ const KendoDataTables = ({
   permissions = {},
   errorRows = new Set(),
   setSnackbarOpen = () => {},
-  snackbarData = { message: '', severity: 'info' },
+  snackbarData = { message: '', severity: 'info', duration: 3000 },
   snackbarOpen = false,
   setRemarkDialogOpen = () => {},
   currentRemark = '',
@@ -186,7 +198,7 @@ const KendoDataTables = ({
   NormParameterIdCell = () => {},
   setModifiedCells = () => {},
   remarkDialogOpen = false,
-  handleDeleteSelected = () => {},
+  handleDeleteSelected = (selectedItems) => {},
   saveChanges = () => {},
   deleteRowData = () => {},
   handleAddPlantSite = () => {},
@@ -228,19 +240,28 @@ const KendoDataTables = ({
   endDate,
   mcuMaxCapValues = [],
   key = [],
+  isReleaseDisabled = true,
+  handleRelease = () => {},
+  customItemChange = null,
+  configType,
   isEditable = false,
 }) => {
   const _export = useRef(null)
 
   const _grid = React.useRef(undefined)
   const minGridWidth = useRef(0)
+  // Always-current rows ref — lets itemChange read the latest rows without
+  // adding rows to its useCallback deps (avoids recreating the handler on every edit).
+  const rowsRef = useRef(rows)
+  useEffect(() => {
+    rowsRef.current = rows
+  }, [rows])
   const grid = React.useRef(null)
   const gridRef = useRef(null)
   const [gridExpanded, setGridExpanded] = useState(true)
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [openResetDialogeBox, setOpenResetDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
-  const showDeleteAll = permissions?.deleteAllBtn && selectedUsers.length > 1
   const [selectedUnit, setSelectedUnit] = useState(permissions?.units?.[0])
   const [selectedGrade, setSelectedGrade] = useState()
   const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
@@ -256,6 +277,8 @@ const KendoDataTables = ({
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
   const ColumnMenuCheckboxFilterDate = getColumnMenuDateFilter(rows)
   const [customModifiedCells, setCustomModifiedCells] = useState({})
+  const [selectedRows, setSelectedRows] = useState([])
+  const [deleteMultipleConfirms, setDeleteMultipleConfirms] = useState(false)
   const [applyMinWidth, setApplyMinWidth] = useState(false)
   const [gridCurrent, setGridCurrent] = useState(0)
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -264,7 +287,9 @@ const KendoDataTables = ({
   const COLUMN_MIN = 4
 
   const keycloak = useSession()
-
+  const showDeleteAll =
+    (permissions?.deleteAllBtn && selectedUsers.length > 1) ||
+    (permissions?.deleteMultiple && selectedRows.length > 0)
   const { verticalChange, oldYear, year, plantObject, siteObject } =
     dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
@@ -275,18 +300,18 @@ const KendoDataTables = ({
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-
+  const IntegerDaysEditor = useIntegerDaysEditor(configType, AOP_YEAR)
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
   const lowerSiteName = SiteName?.toLowerCase()
   const isPEPP = ['pe', 'pp'].includes(lowerVertName)
   const IS_VCM_VERTICAL = ['vcm'].includes(lowerVertName)
 
-  const menuItemStyle = { fontSize: 14, fontWeight: 500, color: '#303030', fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif", letterSpacing: "0px", verticalAlign: "middle" }
-
   const toggleGrid = () => {
     setGridExpanded((prev) => !prev)
   }
+
+  // console.log('columns', columns)
 
   // ...inside columns?.map((col) => { ... })...
   const fieldToMonthNumber = {
@@ -317,7 +342,7 @@ const KendoDataTables = ({
     const isShutdown = shutdownMonths.includes(monthNumber)
     const isSlowdown = slowdownMonths.includes(monthNumber)
     let color = ''
-    if (isShutdown || isSlowdown) color = 'rgb(240, 235, 235)'
+    if (isShutdown || isSlowdown) color = '#E3E3E3'
 
     return (
       <td
@@ -463,9 +488,15 @@ const KendoDataTables = ({
     )
   }
 
-  const fileInputRef = useRef(null)
+  const handleEditChange = useCallback((e) => {
+    setEdit(e.edit)
+  }, [])
 
-  console.log(columns)
+  const fileInputRef = useRef(null)
+  const onSelectionChange = (event) => {
+    const newSelectedRows = event?.dataItems?.map((item) => item?.idFromApi)
+    setSelectedRows(newSelectedRows)
+  }
 
   const numericHeaderClass = (isActive, col) =>
     [isActive ? 'active-column' : '', 'k-number-right']
@@ -488,6 +519,15 @@ const KendoDataTables = ({
     } else if (grid.current.offsetWidth > minGridWidth.current) {
       setGridCurrent(grid.current.offsetWidth)
       setApplyMinWidth(false)
+    }
+  }
+  const onHeaderSelectionChange = (event) => {
+    const checked = event?.syntheticEvent?.target?.checked
+    if (checked) {
+      const allRowIds = rows.map((item) => item?.idFromApi)
+      setSelectedRows(allRowIds)
+    } else {
+      setSelectedRows([])
     }
   }
 
@@ -524,10 +564,20 @@ const KendoDataTables = ({
 
     return Math.max(minWidth, width)
   }
+  const handleDeleteMultiple = () => {
+    if (permissions?.deleteMultiple && selectedRows?.length > 0) {
+      handleDeleteSelected(selectedRows)
+      setSelectedRows([])
+      setDeleteMultipleConfirms(false)
+    } else {
+      handleDeleteSelected()
+      setDeleteMultipleConfirms(false)
+    }
+  }
 
-  const handleEditChange = useCallback((e) => {
-    setEdit(e.edit)
-  }, [])
+  const handleOpenDeleteMultipleDialog = () => {
+    setDeleteMultipleConfirms(true)
+  }
 
   const excelExport = () => {
     if (_export.current !== null) {
@@ -565,10 +615,17 @@ const KendoDataTables = ({
 
   const itemChange = useCallback(
     (e) => {
-      setIsRowEdited(true)
 
       const { dataItem, field } = e
       let { value } = e
+
+      // Ignore group header expand/collapse events — they are not real edits
+      if (!field || dataItem?.items) {
+        return
+      }
+
+      setIsRowEdited(true)
+
       if (dataItem?.isTotal) {
         return
       }
@@ -697,6 +754,24 @@ const KendoDataTables = ({
               updated.rate = ''
             }
           }
+          if (
+            screenType === 'slowdown' &&
+            lowerVertName === 'vcm' &&
+            lowerSiteName === 'hmd' &&
+            field === 'discription'
+          ) {
+            const desc = (value || '').toLowerCase().replace(/\s+/g, ' ').trim()
+
+            const rateMap = {
+              'furnace decoking - (eba-6401a)': 32.5,
+              'furnace decoking - (eba-6401b)': 32.5,
+              'furnace decoking - (eba-6401c)': 22.75,
+            }
+
+            if (rateMap[desc] !== undefined) {
+              updated.rate = rateMap[desc]
+            }
+          }
 
           if (
             screenType === 'shutdown' &&
@@ -711,6 +786,16 @@ const KendoDataTables = ({
               updated.durationInHrs = '16.00'
             } else if (desc === 'Annual Turn Around') {
               updated.durationInHrs = '684.00'
+            } else if (
+              desc ===
+              'FSD (Catalyst full replacement/Partial Preheater cleaning)'
+            ) {
+              updated.durationInHrs = '168.00'
+            } else if (
+              desc ===
+              'FSD (Catalyst partial replacement/Partial Preheater cleaning)'
+            ) {
+              updated.durationInHrs = '158.00'
             }
           }
           if (lowerVertName === 'cracker' && lowerSiteName === 'vmd') {
@@ -940,11 +1025,20 @@ const KendoDataTables = ({
           [itemId]: base,
         }
       })
+
+      if (customItemChange) {
+        customItemChange(e, {
+          setModifiedCells,
+          setCustomModifiedCells,
+          rows: rowsRef.current,
+        })
+      }
     },
     [
       setRows,
       setModifiedCells,
       setCustomModifiedCells,
+      customItemChange,
       lowerVertName,
       lowerSiteName,
       plantName,
@@ -1002,6 +1096,15 @@ const KendoDataTables = ({
             [updatedRow.id]: updatedRow,
           }))
         }
+
+        // Mark the remark field as edited in customModifiedCells so RemarkCell highlights orange
+        setCustomModifiedCells((prev) => ({
+          ...prev,
+          [updatedRow.id]: {
+            ...(prev[updatedRow.id] || {}),
+            [keyToUpdate]: currentRemark,
+          },
+        }))
       }
 
       return updatedRows
@@ -1187,15 +1290,14 @@ const KendoDataTables = ({
     const isEdited = !!(
       customModifiedCells?.[rowId] && checkField in customModifiedCells[rowId]
     )
-    const lineObj = props.allLines?.find((l) => l.id === dataItem[field])
+    const lineObj = props.allLines?.find(
+      (l) => l.id === dataItem[field] || l.displayName === dataItem[field],
+    )
     const displayLabel = lineObj ? lineObj.displayName : ''
     return (
       <td
         {...tdProps}
-        style={{
-          color: highlight && isEdited ? 'orange' : undefined,
-          fontWeight: highlight && isEdited ? 'bold' : undefined,
-        }}
+        className={`${tdProps?.className || ''} ${highlight && isEdited ? 'edited-cell' : ''}`.trim()}
         title={displayLabel}
       >
         {displayLabel || ''}
@@ -1209,6 +1311,7 @@ const KendoDataTables = ({
       </td>
     )
   }
+
   const ElastomerSDDaysDisplayCell = (props) => {
     const { dataItem, field, tdProps, sdDaysValues = [] } = props
     const value = dataItem[field]
@@ -1280,8 +1383,7 @@ const KendoDataTables = ({
   const MaterialDisplayNameCell = (props) => {
     const { dataItem, field, tdProps, children } = props
     const value = dataItem[field]
-    const method = dataItem.Method
-
+    const method = dataItem.Method || dataItem.method
     let color = 'inherit'
 
     switch (method) {
@@ -1300,16 +1402,17 @@ const KendoDataTables = ({
     }
 
     return (
-      <td
-        {...tdProps}
-        title={value}
-        style={{
-          color,
-          //  fontWeight: method ? 'bold' : 'normal',
-          ...tdProps.style,
-        }}
-      >
-        {children}
+      <td {...tdProps} title={value}>
+        <span
+          ref={(el) => {
+            if (el && color) {
+              el.style.setProperty('color', color, 'important')
+              // el.style.setProperty('font-weight', 'bold', 'important')
+            }
+          }}
+        >
+          {value}
+        </span>
       </td>
     )
   }
@@ -1383,10 +1486,10 @@ const KendoDataTables = ({
       <td
         {...tdProps}
         title={value}
+        className={`${tdProps?.className || ''} ${highlight && isEdited ? 'edited-cell' : ''}`.trim()}
         style={{
-          color: highlight && isEdited ? 'orange' : undefined,
           fontWeight:
-            (highlight && isEdited) || isBoldFromCells ? 'bold' : undefined,
+            !(highlight && isEdited) && isBoldFromCells ? 'bold' : undefined,
         }}
       >
         {children}
@@ -1438,9 +1541,9 @@ const KendoDataTables = ({
       <td
         {...tdProps}
         title={value}
+        className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
-          color: shouldHighlight ? 'orange' : undefined,
-          fontWeight: shouldHighlight || isBoldFromCells ? 'bold' : undefined,
+          fontWeight: !shouldHighlight && isBoldFromCells ? 'bold' : undefined,
         }}
       >
         {children}
@@ -1539,9 +1642,13 @@ const KendoDataTables = ({
       <td
         {...tdProps}
         title={value}
+        className={`${tdProps?.className || ''} ${highlightColor ? 'edited-cell' : ''}`.trim()}
         style={{
-          color: highlightColor,
-          fontWeight: highlightColor || isBoldFromCells ? 'bold' : undefined,
+          color:
+            highlightColor && highlightColor !== 'orange'
+              ? highlightColor
+              : undefined,
+          fontWeight: !highlightColor && isBoldFromCells ? 'bold' : undefined,
           // backgroundColor: highlightColorFullCell ? 'lightGrey' : undefined,
         }}
       >
@@ -1568,10 +1675,7 @@ const KendoDataTables = ({
       <td
         {...props.tdProps}
         title={value}
-        style={{
-          color: isRed ? 'orange' : undefined,
-          fontWeight: isRed ? 'bold' : undefined,
-        }}
+        className={`${props.tdProps?.className || ''} ${isRed ? 'edited-cell' : ''}`.trim()}
       >
         {props.children}
       </td>
@@ -1586,7 +1690,9 @@ const KendoDataTables = ({
         {...restThProps}
         aria-sort={ariaSort}
         title={props.title}
-        style={{ fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif" }}
+        style={{
+          fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
+        }}
       >
         <Tooltip
           position='top'
@@ -1657,10 +1763,7 @@ const KendoDataTables = ({
       <td
         {...tdProps}
         title={display}
-        style={{
-          color: highlight && isEdited ? 'orange' : undefined,
-          fontWeight: highlight && isEdited ? 'bold' : undefined,
-        }}
+        className={`${tdProps?.className || ''} ${highlight && isEdited ? 'edited-cell' : ''}`.trim()}
       >
         {display}
       </td>
@@ -1698,14 +1801,22 @@ const KendoDataTables = ({
       <td
         {...props.tdProps}
         title={display}
-        style={{
-          color: isRed ? 'orange' : undefined,
-        }}
+        className={`${props.tdProps?.className || ''} ${isRed ? 'edited-cell' : ''}`.trim()}
       >
         {display}
       </td>
     )
   }
+
+  // useEffect(() => {
+  //   console.log(selectedGrade)
+
+  //   if (permissions?.showG && grades?.length > 0 && !selectedGrade) {
+  //     const firstGrade = grades[0]
+  //     setSelectedGrade(firstGrade.gradeId)
+  //     handleGradeChange(firstGrade.gradeId, firstGrade?.displayName)
+  //   }
+  // }, [grades, permissions?.showG, selectedGrade])
 
   useEffect(() => {
     if (!permissions?.showG || !grades?.length) return
@@ -1777,7 +1888,7 @@ const KendoDataTables = ({
   const CHECK_TYPES2 = ['raw material', 'by products']
 
   return (
-    <div className="k-table-box">
+    <div className='k-table-box'>
       {loading && (
         <div className='k-loading-mask'>
           <span className='k-loading-text'>Loading...</span>
@@ -1787,9 +1898,19 @@ const KendoDataTables = ({
       )}
 
       {permissions?.showReportTitleMain && (
-        <Typography component='div' className='grid-title'>
-          {permissions?.titleNameMain}
-        </Typography>
+        <Box sx={{ pt: 1, pl: 1 }}>
+          <Typography component='div' className='grid-title'>
+            {permissions?.titleNameMain}
+          </Typography>
+        </Box>
+      )}
+
+      {permissions?.showNote && (
+        <Box sx={{ pt: 1, pl: 1 }}>
+          <Typography component='div' className='text-note'>
+            {note}
+          </Typography>
+        </Box>
       )}
 
       {(permissions?.allAction ?? false) && (
@@ -1804,89 +1925,14 @@ const KendoDataTables = ({
             }}
           >
             {/* Left side - Note */}
-            <Box>
-              {permissions?.showNote && (
-                <Typography component='div' className='text-note'>
-                  {note}
-                </Typography>
-              )}
-
-              {permissions?.showReportTitle && (
-                <Typography component='div' className='grid-title'>
-                  {titleName}
-                </Typography>
-              )}
-              {permissions?.showTitleName && (
-                <Typography component='div' className='grid-title'>
-                  {titleName}
-                </Typography>
-              )}
-
-              {permissions?.showTitleAndInformation && (
-                <Box
-                  display='flex'
-                  alignItems='center'
-                  sx={{
-                    mb: permissions?.marginBottom ? '10px' : '2px',
-                    gap: 0.5, // Tight gap for density
-                  }}
-                >
-                  <Typography
-                    component='div'
-                    sx={{
-                      fontSize: '0.85rem',
-                      fontWeight: 800,
-                      color: '#1e293b', // Slate 800
-                      letterSpacing: '0.2px',
-                      position: 'relative',
-                    }}
-                  >
-                    {permissions?.titleName}
-                  </Typography>
-
-                  <MuiTooltip
-                    arrow
-                    placement='top'
-                    title={
-                      permissions?.titleAndInformation ||
-                      'No information available'
-                    }
-                    slotProps={{
-                      popper: {
-                        sx: {
-                          [`& .MuiTooltip-tooltip`]: {
-                            bgcolor: 'rgba(15, 23, 42, 0.95)',
-                            backdropFilter: 'blur(4px)',
-                            padding: '8px 12px',
-                            borderRadius: '8px',
-                            fontSize: '0.75rem',
-                            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.2)',
-                          },
-                        },
-                      },
-                    }}
-                  >
-                    <IconButton
-                      size='small'
-                      sx={{
-                        padding: '2px',
-                        color: '#94a3b8', // Slate 400 (Quiet until hovered)
-                        transition: 'all 0.2s ease-in-out',
-                        animation: `${softPulse} 3s ease-in-out infinite`,
-                        '&:hover': {
-                          backgroundColor: 'rgba(1, 0, 203, 0.08)',
-                          color: '#0100cb', // Turns brand blue on hover
-                          animation: 'none', // Stop pulse on interaction
-                          transform: 'rotate(10deg)',
-                        },
-                      }}
-                    >
-                      <InfoOutlinedIcon sx={{ fontSize: '1rem' }} />
-                    </IconButton>
-                  </MuiTooltip>
-                </Box>
-              )}
-
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                paddingBottom: 0.25,
+              }}
+            >
               {/* CASE 1: Permission TRUE → Full Header UI */}
               {permissions?.showTitleNameBusiness ? (
                 <Typography
@@ -1899,7 +1945,8 @@ const KendoDataTables = ({
                     alignItems: 'center',
                     gap: 1.5,
                     mb: permissions?.marginBottom ? '12px' : '4px',
-                    fontFamily: '"Honeywell Sans Web", "Inter", sans-serif !important',
+                    fontFamily:
+                      '"Honeywell Sans Web", "Inter", sans-serif !important',
                   }}
                 >
                   {/* TOGGLE ICON */}
@@ -1932,64 +1979,22 @@ const KendoDataTables = ({
 
                   {/* TITLE */}
                   {permissions?.titleName}
-
-                  {/* ITEMS BADGE */}
-                  <Box
-                    sx={{
-                      p: '4px 8px',
-                      borderRadius: '100px',
-                      backgroundColor: '#ECEEFF',
-                      border: '1px solid #41424D',
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        color: '#41424D',
-                        fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
-                      }}
-                    >
-                      {rows?.length || 0} {rows?.length === 1 ? 'Row' : 'Rows'}
-                    </Typography>
-                  </Box>
-                  {isEditable && (
-                    <Box
-                      sx={{
-                        p: '4px 8px',
-                        borderRadius: '100px',
-                        backgroundColor: '#F3EEE7',
-                        border: '1px solid #934403',
-                      }}
-                    >
-                      <Typography
-                        sx={{
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        color: '#934403',
-                        fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
-                      }}
-                    >
-                      Editable
-                    </Typography>
-                  </Box>
-                  )}
                 </Typography>
               ) : (
                 /* CASE 2: Permission FALSE → ONLY ICON */
                 <Box
                   sx={{
-                     display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 32,
-                      height: 32,
-                      borderRadius: '6px',
-                      backgroundColor: '#ECEEFF',
-                      color: '#1e293b',
-                      ml: 1,
-                      cursor: 'pointer',
-                      padding: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 32,
+                    height: 32,
+                    borderRadius: '6px',
+                    backgroundColor: '#ECEEFF',
+                    color: '#1e293b',
+                    ml: 1,
+                    cursor: 'pointer',
+                    padding: '8px',
                   }}
                   onClick={toggleGrid}
                 >
@@ -2005,16 +2010,86 @@ const KendoDataTables = ({
                 </Box>
               )}
 
+              {permissions?.showReportTitle && (
+                <Typography component='div' className='grid-title'>
+                  {titleName}
+                </Typography>
+              )}
+              {permissions?.showTitleName && (
+                <Typography component='div' className='grid-title'>
+                  {titleName}
+                </Typography>
+              )}
+
+              {permissions?.showTitleAndInformation && (
+                <Box
+                  display='flex'
+                  alignItems='center'
+                  sx={{
+                    mb: permissions?.marginBottom ? '10px' : '2px',
+                    gap: 0.5, // Tight gap for density
+                  }}
+                >
+                  <Typography
+                    component='div'
+                    sx={{
+                      // fontSize: '0.85rem',
+                      color: '#252525', // Slate 800
+                      letterSpacing: '0.2px',
+                      position: 'relative',
+                      fontFamily:
+                        '"Honeywell Sans Web", "Inter", sans-serif !important',
+                      fontSize: '16px',
+                      fontWeight: 700,
+                    }}
+                  >
+                    {permissions?.titleName}
+                  </Typography>
+
+                  <MuiTooltip
+                    arrow
+                    placement='top'
+                    title={
+                      permissions?.titleAndInformation ||
+                      'No information available'
+                    }
+                    slotProps={{
+                      popper: {
+                        sx: {
+                          [`& .MuiTooltip-tooltip`]: {
+                            bgcolor: 'rgba(15, 23, 42, 0.95)',
+                            backdropFilter: 'blur(4px)',
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            fontSize: '0.75rem',
+                            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.2)',
+                            fontFamily:
+                              '"Honeywell Sans Web", "Inter", sans-serif !important',
+                            fontWeight: 700,
+                          },
+                        },
+                      },
+                    }}
+                  >
+                    <IconButton size='small' className='info-icon-pulse'>
+                      <InfoOutlinedIcon sx={{ fontSize: '1rem' }} />
+                    </IconButton>
+                  </MuiTooltip>
+                </Box>
+              )}
+
               {permissions?.titleNameExtra && (
                 <Typography
                   component='div'
                   className='grid-title-extra'
                   sx={{
                     fontSize: '0.60rem', // little smaller
-                    fontWeight: 800,
+                    fontWeight: 700,
                     color: '#336063', // very light grey
                     fontStyle: 'italic',
                     lineHeight: 1.4,
+                    fontFamily:
+                      '"Honeywell Sans Web", "Inter", sans-serif !important',
                   }}
                 >
                   *Enter Number of Continious / Discontinious GCOs per grade for
@@ -2040,32 +2115,11 @@ const KendoDataTables = ({
                   }}
                   variant='outlined'
                   size='small'
+                  className='custom-select-textfield'
                   sx={{
-                    display: permissions?.IS_PE_C2_HIDE !== false ? 'block' : 'none',
+                    display:
+                      permissions?.IS_PE_C2_HIDE !== false ? 'block' : 'none',
                     minWidth: 140,
-                    '& .MuiOutlinedInput-root': {
-                      height: '30px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.85)',
-                      borderRadius: '7px',
-                      fontSize: '14px',
-                      fontWeight: 700,
-                      fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                      color: '#252525',
-                      '& fieldset': {
-                        border: 'none',
-                      },
-                      '&:hover fieldset': {
-                        border: 'none',
-                      },
-                      '&.Mui-focused fieldset': {
-                        border: 'none',
-                      },
-                    },
-                    '& .MuiSelect-select': {
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '2px 6px !important',
-                    },
                   }}
                   InputProps={{
                     startAdornment: (
@@ -2079,7 +2133,8 @@ const KendoDataTables = ({
                           textTransform: 'uppercase',
                           letterSpacing: '0.4px',
                           lineHeight: 1,
-                          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                          fontFamily:
+                            "'Honeywell Sans Web', 'Inter', sans-serif",
                         }}
                       >
                         {permissions?.dropdownLabel || 'Grade'}:
@@ -2092,12 +2147,16 @@ const KendoDataTables = ({
                     },
                   }}
                 >
-                  <MenuItem value='' disabled style={menuItemStyle}>
+                  <MenuItem value='' disabled className='menu-item-style'>
                     {'Select'}
                   </MenuItem>
 
                   {grades?.map((unit) => (
-                    <MenuItem key={unit.gradeId} value={unit.gradeId} style={menuItemStyle}>
+                    <MenuItem
+                      key={unit.gradeId}
+                      value={unit.gradeId}
+                      className='menu-item-style'
+                    >
                       {unit.displayName}
                     </MenuItem>
                   ))}
@@ -2115,30 +2174,9 @@ const KendoDataTables = ({
                   }}
                   variant='outlined'
                   size='small'
+                  className='custom-select-textfield'
                   sx={{
                     minWidth: 120,
-                    '& .MuiOutlinedInput-root': {
-                      height: '30px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.85)',
-                      borderRadius: '7px',
-                      fontSize: '0.7rem',
-                      fontWeight: 600,
-                      '& fieldset': {
-                        borderColor: 'rgba(0, 0, 0, 0.08)',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: '#0100cb',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#0100cb',
-                        borderWidth: '1.2px',
-                      },
-                    },
-                    '& .MuiSelect-select': {
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '2px 6px !important',
-                    },
                   }}
                   InputProps={{
                     startAdornment: (
@@ -2164,16 +2202,62 @@ const KendoDataTables = ({
                     },
                   }}
                 >
-                  <MenuItem value='' disabled style={menuItemStyle}>
+                  <MenuItem value='' disabled className='menu-item-style'>
                     Select
                   </MenuItem>
 
                   {permissions?.packagingYears?.map((year) => (
-                    <MenuItem key={year} value={year} style={menuItemStyle}>
+                    <MenuItem
+                      key={year}
+                      value={year}
+                      className='menu-item-style'
+                    >
                       {year}
                     </MenuItem>
                   ))}
                 </TextField>
+              )}
+
+              {/* ITEMS BADGE */}
+              <Box
+                sx={{
+                  p: '4px 8px',
+                  borderRadius: '100px',
+                  backgroundColor: '#ECEEFF',
+                  border: '1px solid #41424D',
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: '#41424D',
+                    fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
+                  }}
+                >
+                  {rows?.length || 0} {rows?.length === 1 ? 'Row' : 'Rows'}
+                </Typography>
+              </Box>
+              {isEditable && (
+                <Box
+                  sx={{
+                    p: '4px 8px',
+                    borderRadius: '100px',
+                    backgroundColor: '#F3EEE7',
+                    border: '1px solid #934403',
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      color: '#934403',
+                      fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
+                    }}
+                  >
+                    Editable
+                  </Typography>
+                </Box>
               )}
             </Box>
 
@@ -2212,38 +2296,17 @@ const KendoDataTables = ({
                             textTransform: 'uppercase',
                             letterSpacing: '0.4px',
                             lineHeight: 1,
-                            fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif"
+                            fontFamily:
+                              "'Honeywell Sans Web', 'Inter', sans-serif",
                           }}
                         >
                           Unit:
                         </Typography>
                       ),
                     }}
+                    className='custom-select-textfield'
                     sx={{
                       minWidth: 120,
-                      '& .MuiOutlinedInput-root': {
-                        height: '30px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.85)',
-                        borderRadius: '7px',
-                        fontSize: '14px',
-                        fontWeight: 700,
-                        color: '#252525',
-                        fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                        '& fieldset': {
-                          border: 'none',
-                        },
-                        '&:hover fieldset': {
-                          border: 'none',
-                        },
-                        '&.Mui-focused fieldset': {
-                          border: 'none',
-                        },
-                      },
-                      '& .MuiSelect-select': {
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '2px 6px !important',
-                      },
                     }}
                     SelectProps={{
                       MenuProps: {
@@ -2258,7 +2321,8 @@ const KendoDataTables = ({
                               fontWeight: 700,
                               minHeight: '26px',
                               margin: '1px 4px',
-                              fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                              fontFamily:
+                                "'Honeywell Sans Web', 'Inter', sans-serif",
                               borderRadius: '7px',
                               '&.Mui-selected': {
                                 bgcolor: 'rgba(1, 0, 203, 0.08)',
@@ -2275,18 +2339,31 @@ const KendoDataTables = ({
                     }}
                     // disabled={rows?.length === 0}
                   >
-                    <MenuItem value='' disabled sx={menuItemStyle}>
-                      Select UOM
+                    <MenuItem value='' disabled className='menu-item-style'>
+                      UOM
                     </MenuItem>
 
                     {/* Render the correct unit options dynamically */}
                     {permissions?.units?.map((unit) => (
-                      <MenuItem key={unit} value={unit} sx={menuItemStyle}>
+                      <MenuItem
+                        key={unit}
+                        value={unit}
+                        className='menu-item-style'
+                      >
                         {unit}
                       </MenuItem>
                     ))}
                   </TextField>
-                  <Divider sx={{ my: '4px !important', borderColor: `${DashboardColors.divider} !important`, width: 2, borderWidth: 1.5 }} orientation="vertical" flexItem={{ mx: 2}} />
+                  <Divider
+                    sx={{
+                      my: '4px !important',
+                      borderColor: `${DashboardColors.divider} !important`,
+                      width: 2,
+                      borderWidth: 1.5,
+                    }}
+                    orientation='vertical'
+                    flexItem={{ mx: 2 }}
+                  />
                 </React.Fragment>
               )}
 
@@ -2297,30 +2374,9 @@ const KendoDataTables = ({
                   onChange={(e) => setSelectMode(e.target.value)}
                   variant='outlined'
                   size='small'
+                  className='custom-select-textfield'
                   sx={{
                     minWidth: 140,
-                    '& .MuiOutlinedInput-root': {
-                      height: '30px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.85)',
-                      borderRadius: '7px',
-                      fontSize: '14px',
-                      fontWeight: 700,
-                      fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                      '& fieldset': {
-                        border: 'none',
-                      },
-                      '&:hover fieldset': {
-                        border: 'none',
-                      },
-                      '&.Mui-focused fieldset': {
-                        border: 'none',
-                      },
-                    },
-                    '& .MuiSelect-select': {
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '2px 6px !important',
-                    },
                   }}
                   InputProps={{
                     startAdornment: (
@@ -2334,7 +2390,8 @@ const KendoDataTables = ({
                           textTransform: 'uppercase',
                           letterSpacing: '0.4px',
                           lineHeight: 1,
-                          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                          fontFamily:
+                            "'Honeywell Sans Web', 'Inter', sans-serif",
                         }}
                       >
                         Mode:
@@ -2347,12 +2404,16 @@ const KendoDataTables = ({
                     },
                   }}
                 >
-                  <MenuItem value='' disabled sx={menuItemStyle}>
-                    Select Mode
+                  <MenuItem value='' disabled className='menu-item-style'>
+                    Mode
                   </MenuItem>
 
                   {permissions.modes.map((m) => (
-                    <MenuItem key={m.name} value={m.name} sx={menuItemStyle}>
+                    <MenuItem
+                      key={m.name}
+                      value={m.name}
+                      className='menu-item-style'
+                    >
                       {m.displayName}
                     </MenuItem>
                   ))}
@@ -2362,7 +2423,7 @@ const KendoDataTables = ({
                 <Button
                   variant='contained'
                   className='btn-add'
-                  startIcon={<AddIcon sx={{ color: '#4A4DDA !important'}}/>}
+                  startIcon={<AddIcon sx={{ color: '#4A4DDA !important' }} />}
                   onClick={handleAddRow}
                   disabled={isButtonDisabled || READ_ONLY}
                 >
@@ -2416,16 +2477,14 @@ const KendoDataTables = ({
                     onClick={triggerFileUpload}
                     variant='contained'
                     startIcon={
-                    <Box
-                      component='img'
-                      src={FileImportIcon}
-                      className='w16-icon'
-                    />
-                  }
-                    className='btn-import'
-                    disabled={
-                      isButtonDisabled || READ_ONLY || rows?.length === 0
+                      <Box
+                        component='img'
+                        src={FileImportIcon}
+                        className='w16-icon'
+                      />
                     }
+                    className='btn-import'
+                    disabled={isButtonDisabled || READ_ONLY}
                   >
                     Import
                   </Button>
@@ -2445,11 +2504,7 @@ const KendoDataTables = ({
                   variant='contained'
                   className='btn-save'
                   startIcon={
-                    <Box
-                      component='img'
-                      src={SaveIcon}
-                      className='w16-icon'
-                    />
+                    <Box component='img' src={SaveIcon} className='w16-icon' />
                   }
                   onClick={saveModalOpen}
                   disabled={
@@ -2487,6 +2542,30 @@ const KendoDataTables = ({
                 </Button>
               )}
 
+              {(permissions?.deleteAllBtn || permissions?.deleteMultiple) && (
+                <Button
+                  variant='contained'
+                  className='btn-calculate'
+                  onClick={handleOpenDeleteMultipleDialog}
+                  disabled={isButtonDisabled || READ_ONLY || !showDeleteAll}
+                >
+                  Delete
+                </Button>
+              )}
+
+              {/* {showDeleteAll && (
+              <Button
+                variant='contained'
+                className='btn-save'
+                onClick={handleDeleteSelected}
+                disabled={isButtonDisabled || READ_ONLY}
+                loading={loading} // Use the loading prop to trigger loading state
+                loadingposition='start' // Use loadingPosition to control where the spinner appears
+              >
+                Delete
+              </Button>
+            )} */}
+
               {permissions?.showResetButton && (
                 <Button
                   variant='contained'
@@ -2497,7 +2576,7 @@ const KendoDataTables = ({
                     READ_ONLY ||
                     (!summaryEdited && Object.keys(modifiedCells).length === 0)
                   }
-                  startIcon={<RestartAltIcon sx={{ color: '#4A4DDA'}}/>}
+                  startIcon={<RestartAltIcon sx={{ color: '#4A4DDA' }} />}
                 >
                   Reset
                 </Button>
@@ -2522,6 +2601,17 @@ const KendoDataTables = ({
                   disabled={isButtonDisabled || READ_ONLY}
                 >
                   Refresh
+                </Button>
+              )}
+
+              {permissions?.showReleaseBtn && (
+                <Button
+                  variant='contained'
+                  className='btn-save'
+                  disabled={isReleaseDisabled || READ_ONLY}
+                  onClick={handleRelease}
+                >
+                  Release
                 </Button>
               )}
             </Box>
@@ -2568,6 +2658,8 @@ const KendoDataTables = ({
                 contextMenu={true}
                 grade={grades}
                 onRowClick={handleRowClick}
+                onHeaderSelectionChange={onHeaderSelectionChange}
+                onSelectionChange={onSelectionChange}
                 groupable={
                   permissions?.isTotalFooterActive
                     ? {
@@ -2602,6 +2694,61 @@ const KendoDataTables = ({
                       : false
                 }
               >
+                {permissions?.deleteMultiple && (
+                  <GridColumn
+                    field='selected'
+                    width='50px'
+                    headerSelectionValue={
+                      selectedRows?.length > 0 &&
+                      selectedRows?.length === rows?.length
+                    }
+                    cells={{
+                      data: (props) => (
+                        <td style={{ textAlign: 'center' }}>
+                          <Checkbox
+                            checked={selectedRows?.includes(
+                              props.dataItem?.idFromApi,
+                            )}
+                            onChange={() => {
+                              const id = props.dataItem?.idFromApi
+                              if (selectedRows?.includes(id)) {
+                                setSelectedRows(
+                                  selectedRows?.filter((r) => r !== id),
+                                )
+                              } else {
+                                setSelectedRows([...selectedRows, id])
+                              }
+                            }}
+                          />
+                        </td>
+                      ),
+                      headerCell: () => (
+                        <th
+                          style={{
+                            textAlign: 'center',
+                            padding: '0px !important',
+                          }}
+                        >
+                          <Checkbox
+                            checked={
+                              selectedRows?.length > 0 &&
+                              selectedRows?.length === rows?.length
+                            }
+                            onChange={(e) => {
+                              const checked =
+                                e?.value ?? e?.target?.checked ?? false
+                              if (checked) {
+                                setSelectedRows(rows.map((r) => r?.idFromApi))
+                              } else {
+                                setSelectedRows([])
+                              }
+                            }}
+                          />
+                        </th>
+                      ),
+                    }}
+                  />
+                )}
                 {groupBy && <ExcelExportColumn field={groupBy} title='Type' />}
 
                 {columns?.map((col) => {
@@ -2775,6 +2922,8 @@ const KendoDataTables = ({
                               'sdED',
                               'sdSD',
                               'targetDate',
+                              'StartDate',
+                              'EndDate',
                             ].includes(col?.field)
                               ? DateOnlyPicker
                               : DateOnlyPicker,
@@ -2798,6 +2947,8 @@ const KendoDataTables = ({
                             'sdED',
                             'sdSD',
                             'targetDate',
+                            'StartDate',
+                            'EndDate',
                           ].includes(col?.field)
                             ? '{0:dd-MM-yyyy}'
                             : '{0:dd-MM-yyyy}'
@@ -2978,7 +3129,10 @@ const KendoDataTables = ({
                     )
                   }
 
-                  if (['discription', 'Name'].includes(col?.field)) {
+                  if (
+                    ['discription', 'Name'].includes(col?.field) &&
+                    col?.type !== 'dynamicDropdownshared'
+                  ) {
                     return (
                       <GridColumn
                         key={col?.field}
@@ -3109,6 +3263,48 @@ const KendoDataTables = ({
                       />
                     )
                   }
+
+                  //NEW
+
+                  if (
+                    col?.field === 'shutdownRate' &&
+                    col?.type === 'shutdownRateDropdown'
+                  ) {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col.hidden}
+                        editable={col?.editable ? true : false}
+                        headerClassName={isActive ? 'active-column' : ''}
+                        cells={{
+                          edit: {
+                            text: (props) => (
+                              <MonthDropdownPEPP1
+                                {...props}
+                                options={allDescriptionDrpdwn}
+                              />
+                            ),
+                          },
+                          data: (props) =>
+                            permissions?.MonthDropdownPEPPHighlight ? (
+                              <SimpleHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                highlight={true}
+                              />
+                            ) : (
+                              MonthDropdownPEPPDisplayCell(props)
+                            ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
+
                   // ...existing code...
                   if (col?.type === 'monthDropdownPEPP') {
                     return (
@@ -3309,12 +3505,15 @@ const KendoDataTables = ({
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
+                        // editor={true}
+                        // editable={{ mode: 'popup' }}
                         cells={{
                           data: (cellProps, allRedCell) => (
                             <RemarkCell
                               {...cellProps}
                               allRedCell={allRedCell}
                               onRemarkClick={handleRemarkCellClick}
+                              customModifiedCells={customModifiedCells}
                             />
                           ),
                           headerCell: SimpleHeaderWithTooltip,
@@ -3357,6 +3556,37 @@ const KendoDataTables = ({
                           headerCell: SimpleHeaderWithTooltip,
                         }}
                         headerClassName={isActive ? 'active-column' : ''}
+                      />
+                    )
+                  }
+
+                  if (
+                    col.field === 'Duration' &&
+                    lowerVertName === 'cracker' &&
+                    lowerSiteName === 'vmd'
+                  ) {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={setWidth(col?.widthT || col?.minWidth || 100)}
+                        hidden={col.hidden}
+                        editable={false}
+                        headerClassName={isActive ? 'active-column' : ''}
+                        cells={{
+                          data: (props) => (
+                            <td
+                              {...props.tdProps}
+                              title={props.dataItem[props.field]}
+                              style={{ textAlign: 'right' }}
+                            >
+                              {props.dataItem[props.field]}
+                            </td>
+                          ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
                       />
                     )
                   }
@@ -3439,13 +3669,73 @@ const KendoDataTables = ({
                   if (col?.type === 'dynamicDropdown') {
                     const dropdownOptions =
                       permissions?.dynamicDropdownOptions || []
+
+                    const DynamicDisplayCell = (props) => {
+                      const { dataItem, field, tdProps } = props
+                      const value = dataItem[field]
+                      const rowId = dataItem.id
+
+                      const isEdited = Object.prototype.hasOwnProperty.call(
+                        customModifiedCells?.[rowId] || {},
+                        field,
+                      )
+
+                      const shouldHighlight = isEdited
+
+                      return (
+                        <td
+                          {...tdProps}
+                          title={value}
+                          className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
+                        >
+                          {value}
+                        </td>
+                      )
+                    }
+
                     return (
                       <GridColumn
                         key={col?.field}
                         field={col?.field}
                         title={col?.title || col?.headerName}
-                        width={setWidth(col?.minWidth || 150)}
+                        width={setWidth(col?.minWidth || 100)}
                         hidden={col?.hidden}
+                        editable={col?.editable ? true : false}
+                        headerClassName={isActive ? 'active-column' : ''}
+                        cells={{
+                          edit: {
+                            text: (props) => (
+                              <DynamicDropdown
+                                {...props}
+                                options={
+                                  col?.getDropdownOptions
+                                    ? col.getDropdownOptions(props.dataItem)
+                                    : dropdownOptions
+                                }
+                                getDropdownOptions={col?.getDropdownOptions}
+                              />
+                            ),
+                          },
+                          data: DynamicDisplayCell,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
+
+                  if (col.type === 'dynamicDropdownshared') {
+                    const dropdownOptions =
+                      col.dropdownOptions ||
+                      permissions?.dynamicDropdownOptions?.[col.field] ||
+                      []
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.width}
+                        hidden={col.hidden}
                         editable={col?.editable ? true : false}
                         headerClassName={isActive ? 'active-column' : ''}
                         cells={{
@@ -3464,7 +3754,6 @@ const KendoDataTables = ({
                       />
                     )
                   }
-
                   if (col?.type === 'percentChange') {
                     return (
                       <GridColumn
@@ -3573,6 +3862,49 @@ const KendoDataTables = ({
                       />
                     )
                   }
+                  if (col?.type === 'integerOnlyForDays') {
+                    return (
+                      <GridColumn
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
+                        className={`
+        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+        ${col?.isBold ? 'bold-text' : ''}
+      `}
+                        editable={col?.editable ? true : false}
+                        headerClassName={numericHeaderClass(isActive, col)}
+                        cells={{
+                          edit: {
+                            text: IntegerDaysEditor, // ← stable ref, no focus loss
+                          },
+                          data: (dataProps) =>
+                            showThreeColors ? (
+                              <RedHighlightCell2
+                                {...dataProps}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                allRedCell2={allRedCell2}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ) : (
+                              <RedHighlightCell
+                                {...dataProps}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col?.format}
+                      />
+                    )
+                  }
                   if (col?.field === 'rate') {
                     return (
                       <GridColumn
@@ -3582,7 +3914,7 @@ const KendoDataTables = ({
                           col?.title || col?.headerName || 'Rate Reduced (TPH)'
                         }
                         width={setWidth(col?.minWidth || 150)}
-                        editable={true}
+                        editable={col?.editable ?? true}
                         columnMenu={ColumnMenuCheckboxFilter}
                         hidden={col?.hidden}
                         format={'{0:n2}'}
@@ -3721,6 +4053,127 @@ const KendoDataTables = ({
                     )
                   }
 
+                  // Dedicated block for ON/OFF dropdown rows (e.g. Business Demand UOM: 'ON/OFF')
+                  // Enable via permissions.enableOnOffDropdown = true
+                  if (
+                    col.type === 'number' &&
+                    permissions?.enableOnOffDropdown
+                  ) {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col.hidden}
+                        className={`
+                        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+                        ${col?.isBold ? 'bold-text' : ''}
+                      `}
+                        editable={col?.editable ? true : false}
+                        isDisabled={col?.isDisabled}
+                        headerClassName={isActive ? 'active-column' : ''}
+                        cells={{
+                          edit: {
+                            text: OnOffSwitchEditCell,
+                          },
+                          data: (props) => {
+                            // ON/OFF rows: show switch with direct edit mode
+                            const uomTypes = ['ON/OFF', 'YES/NO']
+                            if (
+                              uomTypes.includes(props.dataItem?.UOM) ||
+                              permissions?.enableSwitchToggle
+                            ) {
+                              return (
+                                <SwitchEditor
+                                  {...props}
+                                  directEditMode={true}
+                                  onChange={(e) => itemChange(e)}
+                                  customModifiedCells={customModifiedCells}
+                                  rowId={props.dataItem.id}
+                                  setRows={setRows}
+                                  editable={
+                                    props.dataItem?.[
+                                      `${col.field}_editable`
+                                    ] === false
+                                      ? false
+                                      : col?.editable
+                                  }
+                                  isDisabled={
+                                    props.dataItem?.[`${col.field}_isDisabled`]
+                                      ? true
+                                      : col?.isDisabled
+                                  }
+                                />
+                              )
+                            }
+                            // Regular rows
+                            return showThreeColors ? (
+                              <RedHighlightCell2
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                allRedCell2={allRedCell2}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ) : (
+                              <RedHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            )
+                          },
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col.format}
+                      />
+                    )
+                  }
+                  if (col?.type === 'integerNumberOnly') {
+                    return (
+                      <GridColumn
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
+                        className={`
+        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+        ${col?.isBold ? 'bold-text' : ''}
+      `}
+                        editable={col?.editable ? true : false}
+                        headerClassName={numericHeaderClass(isActive, col)}
+                        cells={{
+                          edit: { text: NoSpinnerNumericIntegerEditor },
+                          data: (props) =>
+                            showThreeColors ? (
+                              <RedHighlightCell2
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                allRedCell2={allRedCell2}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ) : (
+                              <RedHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col?.format}
+                      />
+                    )
+                  }
                   if (col?.type === 'number') {
                     return (
                       <GridColumn
@@ -3969,15 +4422,9 @@ const KendoDataTables = ({
         </div>
       </Collapse>
 
-      {gridExpanded && (permissions?.approveBtn ||permissions?.nextBtn || showDeleteAll) && (
-      <Box
-        sx={{
-          marginTop: 2,
-          display: 'flex',
-          gap: 2,
-        }}
-      >
-        {/* {permissions?.showCreateCasebutton && (
+      {gridExpanded && (permissions?.approveBtn || permissions?.nextBtn) && (
+        <Box className='action-box'>
+          {/* {permissions?.showCreateCasebutton && (
             <Button
               variant='contained'
               onClick={createCase}
@@ -3988,55 +4435,44 @@ const KendoDataTables = ({
             </Button>
           )} */}
 
-        {permissions?.approveBtn && (
-          <Button
-            variant='contained'
-            className='btn-save'
-            onClick={saveModalOpen}
-            disabled={isButtonDisabled || READ_ONLY}
-            // loading={loading}
-            // loadingposition='start'
-            {...(loading ? {} : {})}
-          >
-            Approve
-          </Button>
-        )}
-        {permissions?.nextBtn && (
-          <Button
-            variant='contained'
-            className='btn-save'
-            onClick={() => {
-              // Write any additional logic here before navigating.
-              // console.log('Navigating to dashboard')
-              // navigate('/user-form')
-              handleAddPlantSite()
-            }}
-            disabled={isButtonDisabled || READ_ONLY}
-            loading={loading} // Use the loading prop to trigger loading state
-            loadingposition='start' // Use loadingPosition to control where the spinner appears
-          >
-            Next
-          </Button>
-        )}
-        {showDeleteAll && (
-          <Button
-            variant='contained'
-            className='btn-save'
-            onClick={handleDeleteSelected}
-            disabled={isButtonDisabled || READ_ONLY}
-            loading={loading} // Use the loading prop to trigger loading state
-            loadingposition='start' // Use loadingPosition to control where the spinner appears
-          >
-            Delete
-          </Button>
-        )}
-      </Box>
+          {permissions?.approveBtn && (
+            <Button
+              variant='contained'
+              className='btn-save'
+              onClick={saveModalOpen}
+              disabled={isButtonDisabled || READ_ONLY}
+              // loading={loading}
+              // loadingposition='start'
+              {...(loading ? {} : {})}
+            >
+              Approve
+            </Button>
+          )}
+          {permissions?.nextBtn && (
+            <Button
+              variant='contained'
+              className='btn-save'
+              onClick={() => {
+                // Write any additional logic here before navigating.
+                // console.log('Navigating to dashboard')
+                // navigate('/user-form')
+                handleAddPlantSite()
+              }}
+              disabled={isButtonDisabled || READ_ONLY}
+              loading={loading} // Use the loading prop to trigger loading state
+              loadingposition='start' // Use loadingPosition to control where the spinner appears
+            >
+              Next
+            </Button>
+          )}
+        </Box>
       )}
       <Notification
         open={snackbarOpen}
         message={snackbarData?.message || ''}
         severity={snackbarData?.severity || 'info'}
         onClose={() => setSnackbarOpen(false)}
+        autoHide={snackbarData?.autoHide ?? true}
       />
       <CompactDialog
         open={openDeleteDialogeBox}
@@ -4140,6 +4576,156 @@ const KendoDataTables = ({
             className='btn-yes'
           >
             Delete
+          </Button>
+        </DialogActions>
+      </CompactDialog>
+
+      <CompactDialog
+        open={deleteMultipleConfirms}
+        onClose={() => setDeleteMultipleConfirms(false)}
+        disableScrollLock
+        slotProps={{ backdrop: { disableScrollLock: true } }}
+      >
+        {/* Header */}
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#fef2f2', // soft red
+            borderBottom: '1px solid #fee2e2',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <DeleteOutlineIcon sx={{ fontSize: '1rem', color: '#dc2626' }} />
+            <Typography
+              sx={{
+                fontWeight: 800,
+                fontSize: '0.8rem',
+                color: '#7f1d1d',
+                letterSpacing: '0.4px',
+              }}
+            >
+              CONFIRM DELETE
+            </Typography>
+          </Box>
+
+          <IconButton
+            size='small'
+            onClick={() => setDeleteMultipleConfirms(false)}
+            sx={{ color: '#7f1d1d' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        {/* Content */}
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: '#7f1d1d',
+              lineHeight: 1.5,
+              fontWeight: 600,
+            }}
+          >
+            {'Are you sure you want to delete?'}{' '}
+          </Typography>
+        </DialogContent>
+
+        {/* Actions */}
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button
+            onClick={() => setDeleteMultipleConfirms(false)}
+            className='btn-no'
+          >
+            Cancel
+          </Button>
+
+          <Button
+            onClick={handleDeleteMultiple}
+            variant='contained'
+            size='small'
+            disabled={READ_ONLY}
+            className='btn-yes'
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </CompactDialog>
+
+      <CompactDialog
+        open={openCalculateDialogeBox}
+        onClose={closeCalculateDialogBox}
+        aria-labelledby='alert-dialog-title'
+        aria-describedby='alert-dialog-description'
+        disableScrollLock
+        slotProps={{
+          backdrop: { disableScrollLock: true },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#f6f8fa',
+            borderBottom: '1px solid #DDDEE1',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box component='img' src={CalculateIcon} className='w16-icon' />
+            <Typography
+              sx={{
+                fontWeight: 800,
+                fontSize: '0.8rem',
+                color: 'text.primary',
+                letterSpacing: '0.4px',
+              }}
+            >
+              Confirm Calculate
+            </Typography>
+          </Box>
+
+          <IconButton
+            size='small'
+            onClick={closeCalculateDialogBox}
+            sx={{ color: 'text.primary' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: 'text.primary',
+              lineHeight: 1.5,
+              fontWeight: 600,
+            }}
+          >
+            Are you sure you want to calculate? This will override the existing
+            values.
+          </Typography>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button onClick={closeCalculateDialogBox} className='btn-no'>
+            Cancel
+          </Button>
+
+          <Button
+            onClick={handleCalculateConfirmation}
+            variant='contained'
+            size='small'
+            className='btn-yes'
+          >
+            Calculate
           </Button>
         </DialogActions>
       </CompactDialog>
@@ -4329,7 +4915,7 @@ const KendoDataTables = ({
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+        <DialogActions className='compact-dialog-actions'>
           <Button onClick={() => setRemarkDialogOpen(false)} className='btn-no'>
             Cancel
           </Button>

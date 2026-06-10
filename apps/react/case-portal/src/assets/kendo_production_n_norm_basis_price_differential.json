@@ -3,15 +3,14 @@
     "field": "productName",
     "title": "Quality Type",
     "editable": false,
-    "widthT": 300,
-    "autoAdjust": false
+    "minWidth": 220
   },
 
   {
     "field": "UOM",
     "title": "UOM",
     "editable": false,
-    "widthT": 90
+    "minWidth": 90
   },
 
   {
@@ -19,13 +18,12 @@
     "title": "Value (%)",
     "editable": true,
     "type": "number",
-    "widthT": 110
+    "minWidth": 150
   },
 
   {
     "field": "remarks",
     "title": "Remarks",
-    "widthT": 250,
-    "autoAdjust": false
+    "minWidth": 150
   }
 ]

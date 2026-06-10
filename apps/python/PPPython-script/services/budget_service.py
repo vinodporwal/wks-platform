@@ -20,6 +20,8 @@ FLOW:
 4. OUTPUT: Combined Power + Steam Result
 """
 
+import calendar
+
 from services.power_service import distribute_by_priority
 from services.steam_service import (
     calculate_steam_balance,
@@ -29,6 +31,201 @@ from services.steam_service import (
     HRSG_ASSETS
 )
 from services.norms_save_service import save_calculated_norms, print_save_summary
+
+
+POWER_FAILURE_THRESHOLD_MW = 50.0
+STEAM_FAILURE_THRESHOLD_MT = 100.0
+
+
+def _get_month_hours(month: int, year: int) -> int:
+    return calendar.monthrange(year, month)[1] * 24
+
+
+def _build_power_balance_suggestion(power_dispatch: list, power_diff_mw: float) -> str:
+    headroom_suggestions = []
+    for asset in power_dispatch:
+        asset_name = asset.get("AssetName", "Asset")
+        current_load = float(asset.get("LoadMW", 0) or 0)
+        max_capacity = float(asset.get("CapacityMW", 0) or 0)
+        headroom = max_capacity - current_load
+        if headroom > 0.5:
+            headroom_suggestions.append((asset_name, headroom, max_capacity))
+
+    headroom_suggestions.sort(key=lambda item: item[1], reverse=True)
+
+    if power_diff_mw > 0 and headroom_suggestions:
+        top_assets = ", ".join(
+            f"{name} by up to {headroom:.2f} MW (max {max_capacity:.2f} MW)"
+            for name, headroom, max_capacity in headroom_suggestions[:3]
+        )
+        return f"Increase generation/import headroom, especially {top_assets}."
+
+    if power_diff_mw > 0:
+        return "Increase available generation or import capacity to close the power shortfall."
+
+    if headroom_suggestions:
+        top_assets = ", ".join(
+            f"{name} by up to {headroom:.2f} MW"
+            for name, headroom, _ in headroom_suggestions[:3]
+        )
+        return f"Reduce generation/import allocation, especially {top_assets}, to remove excess power."
+
+    return "Reduce generation or import allocation to align power supply with demand."
+
+
+def _build_steam_balance_suggestion(steam_type: str, imbalance_mt: float, utility_consumption: dict, steam_result: dict) -> str:
+    steam_type_upper = steam_type.upper()
+
+    if steam_type_upper == "SHP":
+        hrsg_sources = []
+        for index in [1, 2, 3]:
+            generated_mt = float(utility_consumption.get(f"shp_from_hrsg{index}", 0) or 0)
+            hrsg_name = f"HRSG{index}"
+            max_capacity = float(HRSG_ASSETS.get(hrsg_name, {}).get("max_capacity_mt", 0) or 0)
+            if max_capacity > 0:
+                hrsg_sources.append((hrsg_name, generated_mt, max_capacity))
+
+        if imbalance_mt > 0 and hrsg_sources:
+            suggestions = []
+            month_hours = _get_month_hours(steam_result.get("month", 1) or 1, steam_result.get("year", 2000) or 2000)
+            for hrsg_name, generated_mt, max_capacity in hrsg_sources:
+                avg_generation_mt_hr = generated_mt / month_hours if month_hours > 0 else 0
+                headroom = max_capacity - avg_generation_mt_hr
+                if headroom > 0.5:
+                    suggestions.append(f"{hrsg_name} by up to {headroom:.2f} MT/hr")
+            if suggestions:
+                return f"Increase SHP generation from {', '.join(suggestions[:3])} or reduce SHP consumers like STG/PRDS demand."
+            return "Increase SHP generation from available HRSG capacity or reduce SHP-consuming loads."
+
+        return "Reduce SHP generation or supplementary firing from HRSGs to align with SHP demand."
+
+    if steam_type_upper == "HP":
+        return "Adjust HP PRDS output from SHP to match HP demand more closely."
+
+    if steam_type_upper == "MP":
+        if imbalance_mt > 0:
+            return "Increase MP from PRDS or STG extraction, or reduce MP demand, to close the MP shortfall."
+        return "Reduce MP PRDS output or STG extraction to remove excess MP steam."
+
+    if steam_type_upper == "LP":
+        if imbalance_mt > 0:
+            return "Increase LP from PRDS or STG extraction, or reduce LP demand, to close the LP shortfall."
+        return "Reduce LP PRDS output or STG extraction to remove excess LP steam."
+
+    return f"Adjust {steam_type_upper} steam generation sources to align with demand."
+
+
+def _get_power_balance_totals(usd_result: dict) -> dict:
+    power_result = usd_result.get("power_result", {}) or {}
+    total_demand_mwh = float(power_result.get("totalDemandUnits", 0) or 0)
+    total_supply_mwh = float(power_result.get("totalNetGeneration", 0) or 0) + float(power_result.get("importUnits", 0) or 0)
+
+    return {
+        "demand_mwh": total_demand_mwh,
+        "generation_mwh": total_supply_mwh,
+        "difference_mwh": total_demand_mwh - total_supply_mwh,
+    }
+
+
+def _get_steam_balance_totals(usd_result: dict, steam_type: str) -> dict:
+    final_steam_balance = usd_result.get("final_steam_balance", {}) or {}
+    steam_type_lower = steam_type.lower()
+    steam_balance = final_steam_balance.get(f"{steam_type_lower}_balance", {}) or {}
+
+    if steam_type == "SHP":
+        hrsg_dispatch = usd_result.get("hrsg_dispatch", {}) or {}
+        free_steam_offset = float(hrsg_dispatch.get("total_free_steam_mt", 0) or 0)
+        demand_mt = max(0.0, float(steam_balance.get("shp_total_demand", 0) or 0) - free_steam_offset)
+
+        generation_mt = 0.0
+        for hrsg_data in hrsg_dispatch.get("hrsg_dispatch", []) or []:
+            generation_mt += float(hrsg_data.get("dispatched_supp_mt", 0) or 0)
+
+        return {
+            "demand_mt": demand_mt,
+            "generation_mt": generation_mt,
+            "difference_mt": demand_mt - generation_mt,
+        }
+
+    if steam_type == "HP":
+        demand_mt = float(steam_balance.get("hp_total", 0) or 0)
+        generation_mt = float(steam_balance.get("hp_from_prds", 0) or 0)
+    elif steam_type == "MP":
+        demand_mt = float(steam_balance.get("mp_total", 0) or 0)
+        generation_mt = float(steam_balance.get("mp_from_prds", 0) or 0) + float(steam_balance.get("mp_from_stg", 0) or 0)
+    else:
+        demand_mt = float(steam_balance.get("lp_total", 0) or 0)
+        generation_mt = float(steam_balance.get("lp_from_prds", 0) or 0) + float(steam_balance.get("lp_from_stg", 0) or 0)
+
+    return {
+        "demand_mt": demand_mt,
+        "generation_mt": generation_mt,
+        "difference_mt": demand_mt - generation_mt,
+    }
+
+
+def _evaluate_balance_failure(result: dict) -> dict | None:
+    usd_result = result.get("usd_result", {}) or {}
+    utility_consumption = result.get("utility_consumption", {}) or {}
+    power_dispatch = usd_result.get("final_dispatch", []) or []
+    month = result.get("month")
+    year = result.get("year")
+    month_hours = _get_month_hours(month, year) if month and year else 1
+
+    failures = []
+
+    power_totals = _get_power_balance_totals(usd_result)
+    power_difference_mwh = power_totals["difference_mwh"]
+    power_difference_mw = power_difference_mwh / month_hours if month_hours > 0 else power_difference_mwh
+
+    if abs(power_difference_mw) > POWER_FAILURE_THRESHOLD_MW:
+        if power_difference_mw > 0:
+            reason = (
+                f"Power balance failed: demand exceeds supply by {power_difference_mw:.2f} MW average "
+                f"({power_difference_mwh:.2f} MWh over the month)."
+            )
+        else:
+            reason = (
+                f"Power balance failed: supply exceeds demand by {abs(power_difference_mw):.2f} MW average "
+                f"({abs(power_difference_mwh):.2f} MWh over the month)."
+            )
+        failures.append({
+            "type": "POWER_BALANCE_FAILURE",
+            "message": reason,
+            "suggestion": _build_power_balance_suggestion(power_dispatch, power_difference_mw),
+            "difference": round(power_difference_mw, 2),
+            "unit": "MW"
+        })
+
+    for steam_type in ["SHP", "HP", "MP", "LP"]:
+        steam_totals = _get_steam_balance_totals(usd_result, steam_type)
+        difference_mt = steam_totals["difference_mt"]
+        if abs(difference_mt) > STEAM_FAILURE_THRESHOLD_MT:
+            if difference_mt > 0:
+                reason = f"{steam_type} steam balance failed: demand exceeds supply by {difference_mt:.2f} MT."
+            else:
+                reason = f"{steam_type} steam balance failed: supply exceeds demand by {abs(difference_mt):.2f} MT."
+            failures.append({
+                "type": f"{steam_type}_STEAM_BALANCE_FAILURE",
+                "message": reason,
+                "suggestion": _build_steam_balance_suggestion(steam_type, difference_mt, utility_consumption, {"month": month, "year": year}),
+                "difference": round(difference_mt, 2),
+                "unit": "MT"
+            })
+
+    if not failures:
+        return None
+
+    primary_failure = failures[0]
+    combined_message = " | ".join(failure["message"] for failure in failures)
+    combined_suggestion = " | ".join(failure["suggestion"] for failure in failures)
+
+    return {
+        "error_type": primary_failure["type"],
+        "message": combined_message,
+        "suggestion": combined_suggestion,
+        "failures": failures
+    }
 
 
 # ============================================================
@@ -476,7 +673,9 @@ def calculate_budget_with_iteration(
     raw_water_process: float = 0.0,    # Raw Water consumed by process plants (M3)
     raw_water_fixed: float = 0.0,      # Raw Water fixed consumption (M3)
     oxygen_mt: float = 0.0,            # Oxygen consumed by process plants (MT)
+    effluent_m3: float = 0.0,          # Effluent treated by process plants (M3)
     save_to_db: bool = False,          # Auto-save calculated values to NormsMonthDetail
+    hrsg_full_load: bool = False,      # If true, load HRSG without subtracting free steam
 ) -> dict:
     """
     Complete budget calculation with USD iteration following the flowchart.
@@ -532,6 +731,7 @@ def calculate_budget_with_iteration(
         export_available=export_available,
         dm_process=dm_process,
         dm_fixed=dm_fixed,
+        hrsg_full_load=hrsg_full_load
     )
     
     # Print summary if verbose
@@ -655,13 +855,13 @@ def calculate_budget_with_iteration(
             is_available = (free_steam > 0 or dispatched_supp > 0)
             
             if 'HRSG1' in hrsg_name_normalized:
-                shp_from_hrsg1 = dispatched_supp
+                shp_from_hrsg1 = dispatched_supp + free_steam
                 hrsg1_available = is_available
             elif 'HRSG2' in hrsg_name_normalized:
-                shp_from_hrsg2 = dispatched_supp
+                shp_from_hrsg2 = dispatched_supp + free_steam
                 hrsg2_available = is_available
             elif 'HRSG3' in hrsg_name_normalized:
-                shp_from_hrsg3 = dispatched_supp
+                shp_from_hrsg3 = dispatched_supp + free_steam
                 hrsg3_available = is_available
     else:
         # Fallback to old logic if hrsg_dispatch not available
@@ -677,18 +877,17 @@ def calculate_budget_with_iteration(
                     total_free_steam += free_steam
                     
                     if 'HRSG1' in hrsg_name:
-                        shp_from_hrsg1 = supp_min
+                        shp_from_hrsg1 = supp_min + free_steam
                         hrsg1_available = True
                     elif 'HRSG2' in hrsg_name:
-                        shp_from_hrsg2 = supp_min
+                        shp_from_hrsg2 = supp_min + free_steam
                         hrsg2_available = True
                     elif 'HRSG3' in hrsg_name:
-                        shp_from_hrsg3 = supp_min
+                        shp_from_hrsg3 = supp_min + free_steam
                         hrsg3_available = True
     
-    # Note: shp_from_hrsg values now represent ONLY supplementary firing
-    # Free steam is tracked separately in total_free_steam
-    # Total SHP supply = total_free_steam + shp_from_hrsg1 + shp_from_hrsg2 + shp_from_hrsg3
+    # Note: shp_from_hrsg values now represent Fired + Free Steam
+    # Total SHP supply = shp_from_hrsg1 + shp_from_hrsg2 + shp_from_hrsg3
     
     # Extract power result data for utility calculation
     power_result_data = usd_result.get("power_result", {})
@@ -713,7 +912,7 @@ def calculate_budget_with_iteration(
         lp_from_stg=lp_from_stg,
         mp_from_stg=mp_from_stg,
         oxygen_mt=oxygen_mt,  # Oxygen process consumption
-        effluent_m3=243000.0,  # Default value - can be parameterized
+        effluent_m3=effluent_m3,  # Effluent process consumption (from DB or parameter)
         air_process_nm3=air_process,  # Process compressed air consumption
         cw1_process_km3=cw1_process,  # Cooling Water 1 process consumption
         cw2_process_km3=cw2_process,  # Cooling Water 2 process consumption
@@ -796,6 +995,7 @@ def calculate_budget_with_iteration(
         "final_lp_balance": usd_result.get("final_lp_balance"),  # STG load-based LP balance
         "final_mp_balance": usd_result.get("final_mp_balance"),  # STG load-based MP balance
         "utility_consumption": utilities,  # Now includes calculated utilities
+        "hrsg_full_load_mode": hrsg_full_load, # Store flag for reporting
         "adjustments": {
             "supplementary_firing_mt": usd_result.get("supplementary_firing_mt", 0),
         },
@@ -805,6 +1005,23 @@ def calculate_budget_with_iteration(
             "message": usd_result.get("message"),
         }]
     }
+
+    balance_failure = _evaluate_balance_failure(result)
+    if balance_failure:
+        result["overall_success"] = False
+        result["balance_failure"] = balance_failure
+        result["errors"].append({
+            "stage": "BALANCE_CHECK",
+            "error_type": balance_failure["error_type"],
+            "message": balance_failure["message"],
+            "suggestion": balance_failure["suggestion"],
+        })
+        print("\n" + "=" * 70)
+        print("BALANCE FAILURE DETECTED")
+        print("=" * 70)
+        print(f"Reason: {balance_failure['message']}")
+        print(f"Suggestion: {balance_failure['suggestion']}")
+        print("=" * 70)
     
     # Auto-save calculated values to database if requested
     # Note: We save even if not converged, as we have partial results that are still valid
@@ -814,6 +1031,12 @@ def calculate_budget_with_iteration(
         print_save_summary(save_result)
         result["save_result"] = save_result
     
+    # Set top-level message for easier status reporting
+    if result.get("errors"):
+        result["message"] = result["errors"][0]["message"]
+    else:
+        result["message"] = "Converged"
+
     return result
 
 

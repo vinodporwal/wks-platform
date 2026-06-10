@@ -98,21 +98,23 @@ const getEnhancedAOPColDefs = ({
 }) => {
   var config = []
 
-  if (configType == 'grades') {
+  if (configType == 'grades' || configType == 'gradesCatChem') {
     config = [
       {
         field: 'ReceipeName',
         title: 'Recipe',
         editable: false,
-        width1: 100,
-        minWidth: 100,
+        widthT: 250,
+        locked: true,
+        minWidth: 250,
       },
       {
         field: 'UOM',
         title: 'UOM',
         editable: false,
-        width1: 85,
-        minWidth: 90,
+        widthT: 85,
+        locked: true,
+        minWidth: 85,
       },
     ]
     allGradesReciepes?.forEach((field) => {
@@ -120,7 +122,7 @@ const getEnhancedAOPColDefs = ({
         field: field?.id?.toUpperCase(),
         title: field?.displayName,
         editable: true,
-        width1: 100,
+        widthT: 110,
         type: 'number',
         format: FORMATE_VALUE,
         minWidth: 100,
@@ -133,7 +135,7 @@ const getEnhancedAOPColDefs = ({
         title: 'Grade',
         editable: false,
         widthT: 100,
-        minWidth: 100,
+        minWidth: 250,
       },
       {
         field: 'UOM',
@@ -149,8 +151,8 @@ const getEnhancedAOPColDefs = ({
         title: line?.DisplayName, // use DisplayName
         editable: true,
         widthT: 100,
-        type: 'number',
-        format: FORMATE_VALUE,
+        type: 'integerNumberOnly',
+        // format: FORMATE_VALUE,
         minWidth: 100,
       })
     })
@@ -172,7 +174,7 @@ const getEnhancedAOPColDefs = ({
       if (col?.title == 'Value') {
         return {
           ...col,
-          type: 'number',
+          type: col.type ?? 'number',
           format: FORMATE_VALUE,
           minWidth: 100,
         }
@@ -199,7 +201,7 @@ const getEnhancedAOPColDefs = ({
           ...col,
           title: headerMap[col.title],
           align: 'right',
-          type: 'negativeNumber',
+          type: col.type ?? 'negativeNumber',
           format: FORMATE_VALUE,
           minWidth: 100,
         }
@@ -219,7 +221,7 @@ const getEnhancedAOPColDefs = ({
           widthT: 100,
           fixedWidth: 100,
           width: 100,
-          minWidth: 100,
+          minWidth: 70,
         }
       }
 
@@ -234,7 +236,7 @@ const getEnhancedAOPColDefs = ({
           align: 'right',
           type: 'number',
           format: FORMATE_VALUE,
-          minWidth: 100,
+          minWidth: 70,
         }
       }
 
@@ -242,18 +244,20 @@ const getEnhancedAOPColDefs = ({
     })
   } else {
     enhancedColDefs = config.map((col) => {
-      if (headerMap && headerMap[col.title]) {
-        return {
-          ...col,
-          title: headerMap[col.title],
-          align: 'right',
-          type: 'number',
-          format: FORMATE_VALUE,
-          minWidth: 100,
-        }
+      const updated = {
+        ...col,
+        title:
+          headerMap && headerMap[col.title] ? headerMap[col.title] : col.title,
+        align: 'right',
+        type: col.type ?? 'number',
+        minWidth: 100,
       }
 
-      return col
+      if (col.type === 'number' || col.type === 'negativeNumber') {
+        updated.format = FORMATE_VALUE
+      }
+
+      return updated
     })
   }
 

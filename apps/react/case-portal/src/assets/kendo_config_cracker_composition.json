@@ -13,7 +13,7 @@
     "title": "Particulars",
     "editable": false,
     "width": 150,
-    "minWidth": 150
+    "minWidth": 300
   },
   {
     "field": "uom",
@@ -122,6 +122,15 @@
   {
     "field": "mar",
     "title": 3,
+    "editable": true,
+    "width": 120,
+    "align": "left",
+    "headerAlign": "left",
+    "type": "number"
+  },
+  {
+    "field": "Weight Average",
+    "title": "Weighted Average",
     "editable": true,
     "width": 120,
     "align": "left",

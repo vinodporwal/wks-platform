@@ -21,4 +21,10 @@ public class VerticalScreenMappingController {
 			return verticalScreenMappingService.getVerticalScreenMapping(verticalId);
 	}
 
+	@GetMapping(value="/plant-screen-mapping")
+	public Map<String, Object> getPlantScreenMapping(@RequestParam String plantId,@RequestParam String aopYear) throws Exception{
+			return verticalScreenMappingService.getPlantScreenMapping(plantId, aopYear);
+	}
+
 }
+

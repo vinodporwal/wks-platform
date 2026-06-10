@@ -124,8 +124,10 @@ public class AOPMCCalculatedDataController {
 	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 	        Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			boolean ppDta = vertical.getName().equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("DTA");
+			boolean ppHmd = vertical.getName().equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("HMD");
 	        byte[] excelBytes=null;
-	        if(vertical.getName().equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("DTA")) {
+	        if(ppDta || ppHmd) {
 	        	excelBytes = aOPMCCalculatedDataService.exportLineWiseProductionTargetDTA(year, plantId, false, null,lineId);
 	        }else {
 	        	 excelBytes = aOPMCCalculatedDataService.exportLineWiseProductionTarget(year, plantId, false, null,lineId);
@@ -165,10 +167,10 @@ public class AOPMCCalculatedDataController {
 
 	@GetMapping(value = "/production-target-export")
 	public ResponseEntity<byte[]> exportProductionVolumeDataReport(@RequestParam("plantId") String plantId,
-			@RequestParam("year") String year) {
+			@RequestParam("year") String year, @RequestParam(required=false) String gridName) {
 		try {
 
-			byte[] excelBytes = aOPMCCalculatedDataService.createExcel(year, plantId, false, null); // excelService.generateFlexibleExcel(data,
+			byte[] excelBytes = aOPMCCalculatedDataService.createExcel(year, plantId, false, null, gridName); // excelService.generateFlexibleExcel(data,
 																									// plantId,
 																									// year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId,
 																									// year,
@@ -208,6 +210,12 @@ public class AOPMCCalculatedDataController {
 	public AOPMessageVM importLineWiseExcel(@RequestParam("plantId") String plantId,
 			@RequestParam("year") String year, @RequestParam("file") MultipartFile file) {
 		return aOPMCCalculatedDataService.importLineWiseExcel(year, plantId, file);
+	}
+
+	@PostMapping(value = "/design-capacity-import", consumes = "multipart/form-data")
+	public AOPMessageVM importExcelDesignCapacity(@RequestParam("plantId") String plantId,
+			@RequestParam("year") String year, @RequestParam("file") MultipartFile file) {
+		return aOPMCCalculatedDataService.importExcelDesignCapacity(year, plantId, file);
 	}
 
 }

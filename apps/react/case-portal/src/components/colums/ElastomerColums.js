@@ -21,13 +21,13 @@ export const BusinessDemandElastomerColumns = [
     field: 'displayName',
     title: 'Particulars',
     editable: false,
-    width: 125,
+    minWidth: 125,
   },
   {
     field: 'april',
     title: 4,
     editable: true,
-    width: 100,
+    minWidth: 100,
     rightAlign: true,
     headerAlign: 'left',
     type: 'number',
@@ -36,7 +36,7 @@ export const BusinessDemandElastomerColumns = [
     field: 'may',
     title: 5,
     editable: true,
-    width: 100,
+    minWidth: 100,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -45,7 +45,7 @@ export const BusinessDemandElastomerColumns = [
     field: 'june',
     title: 6,
     editable: true,
-    width: 100,
+    minWidth: 100,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -54,7 +54,7 @@ export const BusinessDemandElastomerColumns = [
     field: 'july',
     title: 7,
     editable: true,
-    width: 100,
+    minWidth: 100,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -63,7 +63,7 @@ export const BusinessDemandElastomerColumns = [
     field: 'aug',
     title: 8,
     editable: true,
-    width: 100,
+    minWidth: 100,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -72,7 +72,7 @@ export const BusinessDemandElastomerColumns = [
     field: 'sep',
     title: 9,
     editable: true,
-    width: 100,
+    minWidth: 100,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -81,7 +81,7 @@ export const BusinessDemandElastomerColumns = [
     field: 'oct',
     title: 10,
     editable: true,
-    width: 100,
+    minWidth: 100,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -90,7 +90,7 @@ export const BusinessDemandElastomerColumns = [
     field: 'nov',
     title: 11,
     editable: true,
-    width: 100,
+    minWidth: 100,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -99,7 +99,7 @@ export const BusinessDemandElastomerColumns = [
     field: 'dec',
     title: 12,
     editable: true,
-    width: 100,
+    minWidth: 100,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -108,7 +108,7 @@ export const BusinessDemandElastomerColumns = [
     field: 'jan',
     title: 1,
     editable: true,
-    width: 100,
+    minWidth: 100,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -117,7 +117,7 @@ export const BusinessDemandElastomerColumns = [
     field: 'feb',
     title: 2,
     editable: true,
-    width: 100,
+    minWidth: 100,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -126,7 +126,7 @@ export const BusinessDemandElastomerColumns = [
     field: 'march',
     title: 3,
     editable: true,
-    width: 100,
+    minWidth: 100,
     rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
@@ -294,6 +294,7 @@ export const SlowDown_Elastomer_JMD_Columns = [
     title: 'Duration (hrs)',
     editable: true,
     widthT: 150,
+    minWidth: 100,
   },
 
   {
@@ -302,6 +303,7 @@ export const SlowDown_Elastomer_JMD_Columns = [
     editable: true,
     type: 'number',
     widthT: 150,
+    minWidth: 100,
   },
 
   {
@@ -310,6 +312,7 @@ export const SlowDown_Elastomer_JMD_Columns = [
     editable: true,
     widthT: 250,
     autoAdjust: false,
+    minWidth: 100,
   },
 ]
 export const SlowDownElastomerColumnsSBR = [
@@ -319,6 +322,7 @@ export const SlowDownElastomerColumnsSBR = [
     editable: true,
     widthT: 230,
     autoAdjust: false,
+    minWidth: 100,
   },
   {
     field: 'productName1',
@@ -326,6 +330,7 @@ export const SlowDownElastomerColumnsSBR = [
     widthT: 120,
     editable: true,
     autoAdjust: false,
+    minWidth: 100,
   },
 
   {
@@ -337,20 +342,25 @@ export const SlowDownElastomerColumnsSBR = [
     minWidth: 100,
   },
 
-  {
-    field: 'maintStartDateTime',
-    title: 'SD- From',
-    type: 'dateTime',
-    editable: true,
-    widthT: 140,
-  },
+  // {
+  //   field: 'maintStartDateTime',
+  //   title: 'SD- From',
+  //   type: 'dateTime',
+  //   editable: true,
+  // },
 
+  // {
+  //   field: 'maintEndDateTime',
+  //   title: 'SD- To',
+  //   type: 'dateTime',
+  //   editable: true,
+  // },
   {
-    field: 'maintEndDateTime',
-    title: 'SD- To',
-    type: 'dateTime',
+    field: 'monthly',
+    title: 'Month',
+    type: 'monthDropdownPEPP',
     editable: true,
-    widthT: 140,
+    width: 150,
   },
 
   {
@@ -358,6 +368,7 @@ export const SlowDownElastomerColumnsSBR = [
     title: 'Duration (hrs)',
     editable: true,
     widthT: 140,
+    minWidth: 100,
   },
 
   {
@@ -366,6 +377,7 @@ export const SlowDownElastomerColumnsSBR = [
     editable: true,
     type: 'number',
     widthT: 110,
+    minWidth: 100,
   },
 
   {
@@ -374,9 +386,75 @@ export const SlowDownElastomerColumnsSBR = [
     editable: true,
     widthT: 230,
     autoAdjust: false,
+    minWidth: 100,
   },
 ]
+export const SlowDownElastomerColumnsPBR3 = [
+  {
+    field: 'discription',
+    title: 'Slowdown Desc',
+    editable: true,
+    widthT: 230,
+    autoAdjust: false,
+    minWidth: 100,
+  },
 
+  {
+    field: 'maintenanceId',
+    title: 'maintenanceId',
+    editable: false,
+    hidden: true,
+    isVisible: false,
+    minWidth: 100,
+  },
+
+  // {
+  //   field: 'maintStartDateTime',
+  //   title: 'SD- From',
+  //   type: 'dateTime',
+  //   editable: true,
+  // },
+
+  // {
+  //   field: 'maintEndDateTime',
+  //   title: 'SD- To',
+  //   type: 'dateTime',
+  //   editable: true,
+  // },
+  {
+    field: 'monthly',
+    title: 'Month',
+    type: 'monthDropdownPEPP',
+    editable: true,
+    width: 150,
+  },
+
+  {
+    field: 'durationInHrs',
+    title: 'Duration (hrs)',
+    editable: true,
+    widthT: 140,
+    minWidth: 100,
+  },
+
+  {
+    field: 'rate',
+    title: 'Rate (TPH)',
+    editable: true,
+    type: 'number',
+    widthT: 110,
+    minWidth: 100,
+  },
+
+  {
+    field: 'remark',
+    title: 'Remarks',
+    editable: true,
+    widthT: 230,
+    autoAdjust: false,
+    minWidth: 100,
+  },
+]
 export const NormalOpNormElastomerColumns = [
   {
     field: 'Particulars',

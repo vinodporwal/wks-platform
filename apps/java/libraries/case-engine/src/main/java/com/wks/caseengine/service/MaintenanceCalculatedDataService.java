@@ -18,9 +18,11 @@ public interface MaintenanceCalculatedDataService {
 	public AOPMessageVM getMaintenanceReportURLs(String plantId, String year,String type);
 	public AOPMessageVM getOtherPlants( String plantId,  String year);
 	public AOPMessageVM getMaintenanceDataForCracker( String plantId,  String year);
+	public AOPMessageVM getMaintenanceCatChem( String plantId,  String year, String gradeId);
 	public AOPMessageVM updateMaintenanceDataForCracker( String plantId,  String year, List<Map<String, Object>> payloadList);
 	public AOPMessageVM getBudgetMaintenance( String plantId,  String year,String budgetCategory);
 	public AOPMessageVM updateBudgetMaintenance( List<BudgetMaintenanceDto> budgetMaintenanceDtos);
+	public AOPMessageVM updateMaintenance( List<BudgetMaintenanceDto> budgetMaintenanceDtos, String plantId, String year);
 	public AOPMessageVM getMacroData( Double value,  String year,String plantId);
 	byte[] createExcel(String year, String plantId,  boolean isAfterSave,
 			Map<String, List<BudgetMaintenanceDto>> mapForExcel);
@@ -29,4 +31,6 @@ public interface MaintenanceCalculatedDataService {
 			 List<Map<String, Object>> dynamicData);
 	public byte[] exportMaintenanceDetails(String year, String plantFKId);
 	public AOPMessageVM maintenanceImport(String year,UUID plantId,MultipartFile file);
+	public AOPMessageVM catChemCalculation(UUID plantId, String aopYear);
+	public byte[] exportCatChemAllGrades(String plantId, String year);
 }

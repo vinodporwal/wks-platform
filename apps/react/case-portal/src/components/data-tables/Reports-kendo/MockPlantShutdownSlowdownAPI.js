@@ -14,7 +14,7 @@ export const MockPlantShutdownSlowdownAPI = {
         {
           field: 'criticalActivity',
           title: 'Critical Routine Activity',
-          widthT: 120,
+          widthT: 200,
           editable: false,
         },
         {
@@ -23,7 +23,7 @@ export const MockPlantShutdownSlowdownAPI = {
             {
               field: 'bestAchievedSiteFreq',
               title: 'Frequency',
-              widthT: 120,
+              widthT: 150,
               editable: false,
               type: 'number',
               format: valueFormat,
@@ -31,7 +31,7 @@ export const MockPlantShutdownSlowdownAPI = {
             {
               field: 'bestAchievedSiteDur',
               title: 'Duration',
-              widthT: 120,
+              widthT: 150,
               editable: false,
               type: 'number',
               format: valueFormat,
@@ -44,7 +44,7 @@ export const MockPlantShutdownSlowdownAPI = {
             {
               field: 'bestAchievedGroupFreq',
               title: 'Frequency',
-              widthT: 120,
+              widthT: 150,
               editable: false,
               type: 'number',
               format: valueFormat,
@@ -52,7 +52,7 @@ export const MockPlantShutdownSlowdownAPI = {
             {
               field: 'bestAchievedGroupDur',
               title: 'Duration',
-              widthT: 120,
+              widthT: 150,
               editable: false,
               type: 'number',
               format: valueFormat,
@@ -65,7 +65,7 @@ export const MockPlantShutdownSlowdownAPI = {
             {
               field: 'actualPrevYearFreq',
               title: 'Frequency',
-              widthT: 120,
+              widthT: 150,
               editable: false,
               type: 'number',
               format: valueFormat,
@@ -73,7 +73,7 @@ export const MockPlantShutdownSlowdownAPI = {
             {
               field: 'actualPrevYearDur',
               title: 'Duration',
-              widthT: 120,
+              widthT: 150,
               editable: false,
               type: 'number',
               format: valueFormat,

@@ -19,6 +19,10 @@ export const ProductionNormsApiService = {
   // Norm Calculation API
   loadButtonNormCalculation,
 
+  //Manual entry
+  getManualEntry,
+  saveManualEntry,
+
   // Generic Import/Export helpers
   saveExcelData,
   exportExcelData,
@@ -367,6 +371,74 @@ async function loadButtonNormCalculation(
     }
     const result = await json(keycloak, resp)
     return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+// ========================|| Manual Entry API ||=====================================//
+/**
+ * Get Manual Entry data for Production Norms
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} year - AOP Year
+ * @param {string} plantFKId - Plant ID
+ * @param {string} type - Configuration type
+ * @param {string} version - Version (optional)
+ * @returns {Promise} Manual entry data
+ */
+async function getManualEntry(keycloak, year, plantFKId, type, version = '') {
+  const url = `${Config.CaseEngineUrl}/task/production-norms-by-type?year=${year}&plantFKId=${plantFKId}&type=${type}${version ? `&version=${version}` : ''}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Save Manual Entry data for Production Norms
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} year - AOP Year
+ * @param {string} plantFKId - Plant ID
+ * @param {Array} payload - Data to save (list of ConfigurationDTO)
+ * @param {string} version - Version (optional)
+ * @returns {Promise} Save response
+ */
+async function saveManualEntry(
+  keycloak,
+  year,
+  plantFKId,
+  payload,
+  version = '',
+) {
+  const url = `${Config.CaseEngineUrl}/task/production-norms?year=${year}&plantFKId=${plantFKId}${version ? `&version=${version}` : ''}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)

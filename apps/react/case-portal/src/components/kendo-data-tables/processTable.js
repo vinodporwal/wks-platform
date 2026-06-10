@@ -13,7 +13,7 @@ import crackercolumnsDMD from '../../assets/CrackerMaintenanceColumn_DMD.json'
 import KendoDataTables from './index'
 import { getRoleName } from 'services/role-service'
 import MaintenanceProcessTableNMD from './processTableNMD'
-const MaintenanceProcessTable = ({ viewOnly }) => {
+const MaintenanceProcessTable = ({ viewOnly, permissions }) => {
   const keycloak = useSession()
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -262,7 +262,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
             ? false
             : col.type === 'number' || col.field === 'Remarks',
         hidden: hiddenKeys.includes(col.field) ? true : col.hidden,
-        widthT: 120,
+        minWidth: 120,
         crackerValidation: col.type === 'number' ? true : false,
       }))
 
@@ -483,6 +483,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
     () =>
       getAdjustedPermissions(
         {
+          ...permissions,
           showAction: false,
           addButton: false,
           deleteButton: false,
@@ -540,7 +541,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
         note='*Unit of Measurement - Days'
-        supressGridHeight={true}
+        // supressGridHeight={true}
         handleExcelUpload={handleExcelUpload}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
       />

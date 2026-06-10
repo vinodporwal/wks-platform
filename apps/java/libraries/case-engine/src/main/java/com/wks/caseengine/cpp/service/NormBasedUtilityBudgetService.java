@@ -14,12 +14,18 @@ public interface NormBasedUtilityBudgetService {
 
     AOPMessageVM getNormBasedUtilityBudget(UUID cppPlantId, String financialYear);
 
+    AOPMessageVM getNormBasedUtilityBudgetSummary(UUID cppPlantId, String financialYear);
+
     AOPMessageVM saveOrUpdate(NormsMonthUpdateRequestDTO dto, String financialYear, List<Object[]> remarkUpdates, List<NormsMonthDetail> allNormsMonthDetailsToUpdate);
 
     AOPMessageVM saveOrUpdateBulk(List<NormsMonthUpdateRequestDTO> dtoList, String financialYear);
 
     
     byte[] exportNormBasedUtilityBudget(UUID cppPlantId, String financialYear, boolean isAfterSave, List<NormBasedUtilityBudgetResponseDTO> dtoList);
+
+    byte[] exportNormBasedUtilityBudgetSummary(UUID cppPlantId, String financialYear);
+
+    byte[] exportNormBasedUtilityBudgetDetailed(UUID cppPlantId, String financialYear);
 
     AOPMessageVM importExcel(UUID cppPlantId, String financialYear, MultipartFile file);
 }

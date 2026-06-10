@@ -1,19 +1,30 @@
-import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { useGridApiRef } from '@mui/x-data-grid'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import { setIsBlocked } from 'store/reducers/dataGridStore'
+import { setIsBlocked, setIsReleased } from 'store/reducers/dataGridStore'
 import { validateFields } from 'utils/validationUtils'
 import getEnhancedColDefs from '../data-tables/CommonHeader/kendoconsumptionHeader'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
-import { Box } from '@mui/material'
+import {
+  Backdrop,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from '@mui/material'
 import KendoDataTables from './index'
 import { ConsumptionNormsApiService } from 'services/consumption-norms-api-service'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { DataService } from 'services/DataService'
+import { shouldShowReleaseButton } from 'utils/releaseButtonUtils'
+import { useMenuContext } from 'menu/menuProvider'
 
 const ConsumptionNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -37,6 +48,7 @@ const ConsumptionNorms = () => {
     verticalObject,
     year,
     screenTitle,
+    // setIsReleased,
   } = dataGridStore
 
   const PLANT_ID = plantObject?.id
@@ -82,6 +94,15 @@ const ConsumptionNorms = () => {
   const dispatch = useDispatch()
   const [gradeId, setGradeId] = useState(null)
   const [grades, setGrades] = useState([])
+  const [openReleaseDialogBox, setOpenReleaseDialogBox] = useState(false)
+  const [isReleaseDisabled, setIsReleaseDisabled] = useState(true)
+
+  const { items: menuItems } = useMenuContext()
+  const showReleaseButton = shouldShowReleaseButton(menuItems)
+
+  console.log('showReleaseButton', showReleaseButton)
+
+  // const { setIsReleased } = dataGridStore
 
   const isPEPP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const isPET = lowerVertName === 'pet'
@@ -97,6 +118,7 @@ const ConsumptionNorms = () => {
     PLANT_NAME_NO_CASE === 'HIIR'
 
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
+  const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
@@ -109,6 +131,30 @@ const ConsumptionNorms = () => {
     setRemarkDialogOpen(true)
   }
 
+  const getIsReleased = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    try {
+      const response = await DataService.getReleaseAOPStatus(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      // If response has data, disable the button (already released)
+      // If no data, enable the button (not yet released)
+      if (response?.data && Object.keys(response.data).length > 0) {
+        setIsReleaseDisabled(true)
+      } else {
+        setIsReleaseDisabled(false)
+      }
+    } catch (error) {
+      console.error('Error fetching release status:', error)
+    }
+  }
+  useEffect(() => {
+    getIsReleased()
+  }, [keycloak, AOP_YEAR, PLANT_ID])
   const saveEditedData = async (newRows) => {
     setLoading(true)
     try {
@@ -214,7 +260,8 @@ const ConsumptionNorms = () => {
         lowerVertName == 'pp' ||
         lowerVertName == 'pet' ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
       ) {
         try {
           setLoading(true)
@@ -326,7 +373,8 @@ const ConsumptionNorms = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD) &&
+        IS_PVC_DMD ||
+        IS_PVC_HMD) &&
       !gradeId
     )
       return
@@ -341,7 +389,8 @@ const ConsumptionNorms = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
       ) {
         response = await ConsumptionNormsApiService.getConsumptionNormsData(
           keycloak,
@@ -426,7 +475,8 @@ const ConsumptionNorms = () => {
       IS_ELASTOMER_HMD_SBR ||
       IS_ELASTOMER_JMD_HIIR ||
       IS_PVC_VMD ||
-      IS_PVC_DMD
+      IS_PVC_DMD ||
+      IS_PVC_HMD
     ) {
       fetchGradeDropdowns()
     } else {
@@ -441,6 +491,44 @@ const ConsumptionNorms = () => {
     lowerPlantName,
     valueFormat,
   })
+
+  const handleRelease = () => {
+    setOpenReleaseDialogBox(true)
+  }
+
+  const closeReleaseDialogBox = () => {
+    setOpenReleaseDialogBox(false)
+  }
+
+  const submitConfirmation = async () => {
+    setOpenReleaseDialogBox(false)
+    setLoading(true)
+    try {
+      const response = await DataService.releaseAOPReport(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Released Successfully!',
+        severity: 'success',
+      })
+      setIsReleaseDisabled(true)
+      let isReleased = 1
+      dispatch(setIsReleased({ isReleased }))
+    } catch (error) {
+      console.error('Error releasing report:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Release Failed!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleUnitChange = (unit) => {
     setSelectedUnit(unit)
@@ -474,7 +562,8 @@ const ConsumptionNorms = () => {
           IS_ELASTOMER_HMD_SBR ||
           IS_ELASTOMER_JMD_HIIR ||
           IS_PVC_VMD ||
-          IS_PVC_DMD
+          IS_PVC_DMD ||
+          IS_PVC_HMD
         ) {
           fetchGradeDropdownsAfterCalc()
         } else {
@@ -515,7 +604,8 @@ const ConsumptionNorms = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
       ) {
         response =
           await ConsumptionNormsApiService.OverallConsumptionPEPPExport(
@@ -577,7 +667,8 @@ const ConsumptionNorms = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       marginBottom:
@@ -587,7 +678,8 @@ const ConsumptionNorms = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       dropdownLabel: 'Grade',
@@ -598,7 +690,8 @@ const ConsumptionNorms = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? false
           : true,
       downloadExcelBtn:
@@ -608,12 +701,14 @@ const ConsumptionNorms = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
       isHeight: lowerVertName !== 'meg' && rows?.length > 10,
       showTitleNameBusiness: true,
+      showReleaseBtn: showReleaseButton ? true : false,
       titleName: `${SCREEN_NAME}`,
     },
     isOldYear,
@@ -665,9 +760,78 @@ const ConsumptionNorms = () => {
               calculatebtnClicked={calculatebtnClicked}
               downloadExcelForConfiguration={downloadExcelForConfiguration}
               plantID={PLANT_ID}
+              isReleaseDisabled={isReleaseDisabled}
+              handleRelease={handleRelease}
             />
           </Box>
         }
+        <Dialog
+          open={openReleaseDialogBox}
+          onClose={closeReleaseDialogBox}
+          disableScrollLock
+          PaperProps={{
+            sx: {
+              borderRadius: '20px',
+              p: 2,
+              width: 400,
+              backdropFilter: 'blur(8px)',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              fontWeight: 700,
+              fontSize: '1.2rem',
+
+              pb: 0.5,
+            }}
+          >
+            Confirm Release
+          </DialogTitle>
+
+          <DialogContent sx={{ pt: 1 }}>
+            <DialogContentText
+              sx={{
+                fontSize: '0.9rem',
+                color: '#4b5563',
+                lineHeight: 1.5,
+              }}
+            >
+              Please confirm that <b style={{ color: '#16a34a' }}>Production</b>
+              , <b style={{ color: '#16a34a' }}>Norms</b>, and{' '}
+              <b style={{ color: '#16a34a' }}>Reports</b> are verified before
+              releasing for review.
+            </DialogContentText>
+          </DialogContent>
+
+          <DialogActions sx={{ px: 2, pb: 1.5, gap: 1 }}>
+            <Button
+              onClick={closeReleaseDialogBox}
+              variant='text'
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                color: '#6b7280',
+                '&:hover': { background: 'rgba(0,0,0,0.04)' },
+              }}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              onClick={submitConfirmation}
+              variant='contained'
+              className='btn-save'
+              sx={{
+                textTransform: 'none',
+                px: 2.5,
+              }}
+            >
+              Confirm
+            </Button>
+          </DialogActions>
+        </Dialog>{' '}
       </div>
     </div>
   )

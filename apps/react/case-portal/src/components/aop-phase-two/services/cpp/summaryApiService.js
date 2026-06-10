@@ -5,6 +5,7 @@ export const SummaryApiService = {
   getCppModelLogs,
   getMonthlyExecutionDetails,
   getAssetStatusDetails,
+  downloadMonthlyExecutionExcel,
 }
 
 // ===================== || CPP Model Logs APIs || ===================== //
@@ -59,6 +60,24 @@ async function getAssetStatusDetails(keycloak, executionId, month) {
       throw new Error(`HTTP error! Status: ${resp.status}`)
     }
     return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+// ===================== || Download Excel APIs || ===================== //
+async function downloadMonthlyExecutionExcel(keycloak, monthId) {
+  const url = `${Config.CaseEngineUrl}/task/cpp-model-logs/month/${monthId}/download-excel`
+  const headers = {
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status} ${resp.statusText}`)
+    }
+    return resp
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)

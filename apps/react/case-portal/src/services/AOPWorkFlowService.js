@@ -32,7 +32,7 @@ export const AOPWorkFlowService = {
   saveMonthwiseOperatingHours,
   handleCalculateAll,
 }
-async function getExcel(keycloak, payload, PLANT_ID, AOP_YEAR) {
+async function getExcel(keycloak, payload, PLANT_ID, AOP_YEAR, EXCEL_NAME) {
   const url = `${Config.CaseEngineUrl}/task/export-excel?year=${AOP_YEAR}&plantId=${PLANT_ID}&type=Production`
   const headers = {
     'Content-Type': 'application/json',
@@ -52,7 +52,7 @@ async function getExcel(keycloak, payload, PLANT_ID, AOP_YEAR) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = 'plant_production_plan.xlsx' // Filename to save
+    a.download = `${EXCEL_NAME}.xlsx` // Filename to save
     document.body.appendChild(a)
     a.click()
     a.remove()

@@ -42,7 +42,8 @@ export default function RelPerf() {
   })
 
   const [snackbarOpenFinancial, setSnackbarOpenFinancial] = useState(false)
-  const [snackbarOpenCommonParameter, setSnackbarOpenCommonParameter] = useState(false)
+  const [snackbarOpenCommonParameter, setSnackbarOpenCommonParameter] =
+    useState(false)
   const [OpenFinancial, setOpenFinancial] = useState(false)
   const [OpenCommonParameter, setOpenCommonParameter] = useState(false)
 
@@ -50,10 +51,11 @@ export default function RelPerf() {
     message: '',
     severity: 'info',
   })
-  const [snackbarDataCommonParameter, setSnackbarDataCommonParameter] = useState({
-    message: '',
-    severity: 'info',
-  })
+  const [snackbarDataCommonParameter, setSnackbarDataCommonParameter] =
+    useState({
+      message: '',
+      severity: 'info',
+    })
 
   const [
     snackbarOpenReliabilityPerformance,
@@ -105,7 +107,8 @@ export default function RelPerf() {
 
   const [modifiedReliabilityCells, setModifiedReliabilityCells] = useState({})
   const [modifiedFinancialCells, setModifiedFinancialCells] = useState({})
-  const [modifiedCommonParameterCells, setModifiedCommonParameterCells] = useState({})
+  const [modifiedCommonParameterCells, setModifiedCommonParameterCells] =
+    useState({})
   const [modifiedMajorIncidentsCells, setModifiedMajorIncidentsCells] =
     useState({})
   const [
@@ -125,9 +128,11 @@ export default function RelPerf() {
   const [remarkDialogOpenCommonParameter, setRemarkDialogOpenCommonParameter] =
     useState(false)
   const [currentRemarkFinancial, setCurrentRemarkFinancial] = useState('')
-  const [currentRemarkCommonParameter, setCurrentRemarkCommonParameter] = useState('')
+  const [currentRemarkCommonParameter, setCurrentRemarkCommonParameter] =
+    useState('')
   const [currentRowIdFinancial, setCurrentRowIdFinancial] = useState(null)
-  const [currentRowIdCommonParameter, setCurrentRowIdCommonParameter] = useState(null)
+  const [currentRowIdCommonParameter, setCurrentRowIdCommonParameter] =
+    useState(null)
 
   // Major Reliability Incidents Grid
   const majorIncidentsColumns = [
@@ -135,18 +140,29 @@ export default function RelPerf() {
       field: 'incidentDescription',
       title: 'Incident Description',
       editable: true,
-      widthT: 170,
+      minWidth: 130,
     },
     {
       field: 'rootCauseAnalysis',
       title: 'Root Cause Analysis',
       editable: true,
-      widthT: 170,
+      minWidth: 130,
     },
-    { field: 'recommendation', title: 'Recommendation', editable: true, widthT: 170 },
-    { field: 'targetDate', title: 'Target Date', editable: true, type: 'date', widthT: 170 },
-    { field: 'responsible', title: 'Resp.', editable: true, widthT: 170 },
-    { field: 'remarks', title: 'Remarks', editable: true, widthT: 200 },
+    {
+      field: 'recommendation',
+      title: 'Recommendation',
+      editable: true,
+      minWidth: 130,
+    },
+    {
+      field: 'targetDate',
+      title: 'Target Date',
+      editable: true,
+      type: 'date',
+      minWidth: 130,
+    },
+    { field: 'responsible', title: 'Resp.', editable: true, minWidth: 130 },
+    { field: 'remarks', title: 'Remarks', editable: true, minWidth: 130 },
   ]
 
   const [majorIncidentsRows, setMajorIncidentsRows] = useState([])
@@ -284,16 +300,17 @@ export default function RelPerf() {
       widthT: 70,
       editable: false,
       type: 'number',
+      minWidth: 70,
     },
-    { field: 'parameter', title: 'Parameter', editable: false, widthT: 130 },
-    { field: 'uom', title: 'UOM', editable: false, widthT: 80 },
+    { field: 'parameter', title: 'Parameter', editable: false, minWidth: 100 },
+    { field: 'uom', title: 'UOM', editable: false, widthT: 70, minWidth: 100 },
     {
       field: 'bestAchieved',
       title: 'Best Achieved',
       editable: true,
       type: 'numberWithUOMValidation',
       format: FORMATE_DECIMAL,
-      widthT: 120,
+      minWidth: 100,
     },
     {
       field: 'aop',
@@ -301,7 +318,7 @@ export default function RelPerf() {
       editable: true,
       type: 'numberWithUOMValidation',
       format: FORMATE_DECIMAL,
-      widthT: 120,
+      minWidth: 100,
     },
     {
       field: 'actual',
@@ -309,7 +326,7 @@ export default function RelPerf() {
       editable: true,
       type: 'numberWithUOMValidation',
       format: FORMATE_DECIMAL,
-      widthT: 100,
+      minWidth: 100,
     },
     {
       field: 'plann',
@@ -317,20 +334,20 @@ export default function RelPerf() {
       editable: true,
       type: 'numberWithUOMValidation',
       format: FORMATE_DECIMAL,
-      widthT: 100,
+      minWidth: 100,
     },
-    { field: 'limit', title: 'Limit', editable: true, widthT: 100 },
+    { field: 'limit', title: 'Limit', editable: true, minWidth: 100 },
     {
       field: 'rationale',
       title: 'Rationale / Reasons for Changes',
       editable: true,
-      widthT: 120,
+      minWidth: 100,
     },
     {
       field: 'remarks',
       title: 'Remarks',
       editable: true,
-      widthT: 120,
+      minWidth: 100,
     },
   ]
 
@@ -477,40 +494,45 @@ export default function RelPerf() {
       widthT: 70,
       editable: false,
       type: 'number',
+      minWidth: 70,
     },
-    { field: 'parameter', title: 'Parameter', editable: false, widthT: 140 },
-    { field: 'uom', title: 'UOM', editable: false, widthT: 80 },
+    { field: 'parameter', title: 'Parameter', editable: false, minWidth: 100 },
+    { field: 'uom', title: 'UOM', editable: false, widthT: 70, minWidth: 100 },
     {
       field: 'bestAchieved',
       title: 'Best Achieved',
       editable: true,
       format: FORMATE_DECIMAL,
-      widthT: 120,
+
       type: 'numberWithUOMValidation',
+      minWidth: 100,
     },
     {
       field: 'aop',
       title: `FY${startYear.slice(-2)} AOP`,
       editable: true,
       format: FORMATE_DECIMAL,
-      widthT: 120,
+
       type: 'numberWithUOMValidation',
+      minWidth: 100,
     },
     {
       field: 'actual',
       title: `FY${startYear.slice(-2)} Actual`,
       editable: true,
       format: FORMATE_DECIMAL,
-      widthT: 120,
+
       type: 'numberWithUOMValidation',
+      minWidth: 100,
     },
     {
       field: 'plann',
       title: `FY${endYear} Plan`,
       editable: true,
       format: FORMATE_DECIMAL,
-      widthT: 120,
+
       type: 'numberWithUOMValidation',
+      minWidth: 100,
     },
     // { field: 'limit', title: 'Limit', editable: true },
 
@@ -518,19 +540,30 @@ export default function RelPerf() {
       field: 'rationale',
       title: 'Rationale / Reasons for Changes',
       editable: true,
-      widthT: 120,
+      minWidth: 100,
     },
-    { field: 'remarks', title: 'Remarks', editable: true, widthT: 160 },
+    { field: 'remarks', title: 'Remarks', minWidth: 100, editable: true },
   ]
 
   // Reliability Improvement Initiative Grid
   const reliabilityInitiativeColumns = [
-    { field: 'initiative', title: 'Initiative', editable: true, widthT: 170 },
-    { field: 'outcome', title: 'Outcome', editable: true, widthT: 170 },
-    { field: 'recommendation', title: 'Recommendation', editable: true, widthT: 170 },
-    { field: 'targetDate', title: 'Target Date', editable: true, type: 'date', widthT: 170 },
-    { field: 'responsible', title: 'Resp.', editable: true, widthT: 170 },
-    { field: 'remarks', title: 'Remarks', editable: true, widthT: 200 },
+    { field: 'initiative', title: 'Initiative', editable: true, minWidth: 100 },
+    { field: 'outcome', title: 'Outcome', editable: true, minWidth: 100 },
+    {
+      field: 'recommendation',
+      title: 'Recommendation',
+      editable: true,
+      minWidth: 100,
+    },
+    {
+      field: 'targetDate',
+      title: 'Target Date',
+      editable: true,
+      type: 'date',
+      minWidth: 100,
+    },
+    { field: 'responsible', title: 'Resp.', editable: true, minWidth: 100 },
+    { field: 'remarks', title: 'Remarks', editable: true, minWidth: 100 },
   ]
 
   // Permissions (reuse for all grids or customize per grid)
@@ -679,7 +712,7 @@ export default function RelPerf() {
           message: validationMessage,
           severity: 'error',
         })
-        setLoading(false) 
+        setLoading(false)
         return
       }
       saveCommonParameter(data)
@@ -1182,8 +1215,8 @@ export default function RelPerf() {
           ...gridPermissions,
           titleName: 'Reliability Performance',
           ExcelName: 'Reliability_Performance',
-          downloadExcelBtn: false,
-          uploadExcelBtn: false,
+          downloadExcelBtn: true,
+          uploadExcelBtn: true,
         }}
         columns={reliabilityPerformanceColumns}
         saveChanges={saveChangesReliabilityPerformance}

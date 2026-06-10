@@ -27,6 +27,11 @@ const MainLayout = ({ keycloak, authenticated }) => {
     dispatch(openDrawer({ drawerOpen: !open }))
   }, [dispatch, open])
 
+  const hideBreadcrumbs =
+    location?.pathname === '/user-management' ||
+    location?.pathname === '/user-form' ||
+    location?.pathname === '/dashboard'
+
   if (!keycloak || !authenticated) return null
 
   return (
@@ -88,8 +93,7 @@ const MainLayout = ({ keycloak, authenticated }) => {
           </Box>
         )} */}
 
-
-        <Box className='outlet-wrapper'>
+        {/* <Box className='outlet-wrapper'>
           <Box className='outlet-border-box'>
             {stepperNavRoutes.some((route) =>
               location?.pathname.startsWith(route),
@@ -97,6 +101,22 @@ const MainLayout = ({ keycloak, authenticated }) => {
                 <Box className="breadcrumbs-box">
                   <Breadcrumbs variant='dense' navigation={menu} divider={false} />
                 </Box>)}
+            <Outlet />
+          </Box>
+        </Box> */}
+
+        <Box className='outlet-wrapper'>
+          <Box className='outlet-border-box'>
+            {!hideBreadcrumbs && (
+              <Box className='breadcrumbs-box'>
+                <Breadcrumbs
+                  variant='dense'
+                  navigation={menu}
+                  divider={false}
+                />
+              </Box>
+            )}
+
             <Outlet />
           </Box>
         </Box>

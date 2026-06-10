@@ -3,63 +3,70 @@
     "field": "id",
     "title": "Id",
     "editable": false,
-    "widthT": 100,
+    "widthT": 180,
     "minWidth": 150,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "jmdNaphthaId",
     "title": "jmdNaphthaId",
     "editable": false,
-    "widthT": 100,
+    "widthT": 180,
     "minWidth": 150,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "pmdNaphthaId",
     "title": "pmdNaphthaId",
     "editable": false,
-    "widthT": 100,
+    "widthT": 180,
     "minWidth": 150,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "ioclNaphthaId",
     "title": "ioclNaphthaId",
     "editable": false,
-    "widthT": 100,
+    "widthT": 180,
     "minWidth": 150,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "gailNaphthaId",
     "title": "gailNaphthaId",
     "editable": false,
-    "widthT": 100,
+    "widthT": 180,
     "minWidth": 150,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "bpclNaphthaId",
     "title": "bpclNaphthaId",
     "editable": false,
-    "widthT": 100,
+    "widthT": 180,
     "minWidth": 150,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "ongcNaphthaId",
     "title": "ongcNaphthaId",
     "editable": false,
-    "widthT": 100,
+    "widthT": 180,
     "minWidth": 150,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "otherNaphthaId",
     "title": "otherNaphthaId",
     "editable": false,
-    "widthT": 100,
+    "widthT": 180,
     "minWidth": 150,
     "hidden": true
   },
@@ -67,23 +74,25 @@
     "field": "bcoiNaphthaId",
     "title": "bcoiNaphthaId",
     "editable": false,
-    "widthT": 100,
+    "widthT": 180,
     "minWidth": 150,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "type",
     "title": "Type",
     "editable": false,
-    "widthT": 100,
+    "widthT": 180,
     "minWidth": 150,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "limsTagName",
     "title": "LIMS Tag Name",
     "editable": false,
-    "widthT": 100,
+    "widthT": 180,
     "minWidth": 150,
     "hidden": false
   },
@@ -162,6 +171,7 @@
     "field": "normParameterFKID",
     "title": "normParameterFKID",
     "filterable": false,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   }
 ]

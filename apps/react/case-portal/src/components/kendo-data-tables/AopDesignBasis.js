@@ -1,3 +1,9 @@
+import {
+  FileExportIcon,
+  FileImportIcon,
+  SaveIcon,
+  CalculateIcon,
+} from 'assets/images/icons'
 import { Box } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { verticalEnums } from 'enums/verticalEnums'
@@ -24,9 +30,15 @@ import {
   TextField,
   Tooltip,
   Typography,
-  Stack
+  Stack,
+  Zoom,
 } from '@mui/material'
+import { styled } from '@mui/material/styles'
 import { Info, ExpandMore } from '@mui/icons-material'
+import SettingsIcon from '@mui/icons-material/Settings'
+import CloseIcon from '@mui/icons-material/Close'
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 
 import { DatePicker } from '@progress/kendo-react-dateinputs'
 import { BusinessDemandDataApiService } from 'services/business-demand-data-api-service'
@@ -37,6 +49,29 @@ import CrakcerProductionConst from './CrakcerProductionConst'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import './common/ConfigurationAccordian.css'
 import { CalenderIcon } from 'assets/images/icons/index'
+
+const StyledConfirmDialog = styled(Dialog)(() => ({
+  '& .MuiPaper-root': {
+    borderRadius: '24px',
+    padding: '12px',
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    backdropFilter: 'blur(16px)',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.2)',
+    border: '1px solid #ffffff',
+  },
+}))
+
+const DateHighlight = styled(Box)(() => ({
+  display: 'inline-flex',
+  alignItems: 'center',
+  backgroundColor: 'rgba(1, 0, 203, 0.05)',
+  color: '#0100cb',
+  padding: '4px 12px',
+  borderRadius: '8px',
+  fontWeight: 700,
+  fontSize: '0.85rem',
+  margin: '0 4px',
+}))
 
 const AopDesignBasis = () => {
   const hasExecutedRef = useRef(false)
@@ -65,6 +100,9 @@ const AopDesignBasis = () => {
   const SCREEN_NAME = screenTitle?.title
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
+
+  const lowerVertName = VERTICAL_NAME?.toLowerCase()
+  const lowerSiteName = SITE_NAME?.toLowerCase()
 
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
@@ -110,6 +148,7 @@ const AopDesignBasis = () => {
     message: '',
     severity: 'info',
   })
+  const [dateEdited, setDateEdited] = useState()
   const [startDate, setStartDate] = useState()
   const [endDate, setEndDate] = useState()
   const [startDateObj, setStartDateObj] = useState([])
@@ -121,15 +160,37 @@ const AopDesignBasis = () => {
 
   // const { isReadOnly, isReadWrite, isFullAccess, isApproveOnly } =
   //   usePermissions()
+  const IS_CRACKER_HMD = lowerVertName == 'cracker' && lowerSiteName == 'hmd'
+  const isSummaryRequired = IS_CRACKER_HMD
 
   const handleOpenDialog = () => {
+    if (isSummaryRequired) {
+      if (!summary?.trim()) {
+        setSnackbarData({
+          message: 'AOP Design Basis summary cannot be empty.',
+          severity: 'warning',
+        })
+        setSnackbarOpen(true)
+        return
+      } else if (!summaryEdited) {
+        setSnackbarData({
+          message: 'Please update aop design basis.',
+          severity: 'info',
+        })
+        setSnackbarOpen(true)
+        return
+      }
+    }
     setOpenConfirmDialog(true)
   }
   const handleCloseDialog = () => {
     setOpenConfirmDialog(false)
   }
-  const handleConfirmLoad = () => {
+  const handleConfirmLoad = async () => {
     setOpenConfirmDialog(false)
+    if (summaryEdited) {
+      await saveSummary()
+    }
     onLoad()
   }
 
@@ -458,278 +519,322 @@ const AopDesignBasis = () => {
 
   const ConfigurationDialog = useMemo(() => {
     return (
-      <Dialog
+      <StyledConfirmDialog
         open={openConfirmDialog}
         onClose={handleCloseDialog}
-        aria-labelledby='alert-dialog-title'
-        aria-describedby='alert-dialog-description'
+        TransitionComponent={Zoom}
+        transitionDuration={300}
+        disableScrollLock
       >
-        <DialogTitle id='alert-dialog-title'>{'Load?'}</DialogTitle>
-        <DialogContent>
-          <DialogContentText
-            id='alert-dialog-description'
-            sx={{ color: '#303030', fontSize: '14px', fontWeight: '500', fontFamily: '"Honeywell Sans Web", "Inter", sans-serif' }}
+        {/* Close button */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: -1 }}>
+          <IconButton onClick={handleCloseDialog} size='small'>
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </Box>
+
+        {/* Icon + Title */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            pt: 0,
+          }}
+        >
+          <Box
+            sx={{
+              p: 0.5,
+              borderRadius: '50%',
+              bgcolor: 'rgba(1, 0, 203, 0.1)',
+              color: '#2563eb',
+              mb: 0.5,
+              animation: 'pulse 2s infinite',
+            }}
           >
-            {`Are you sure you want to load data for the period from ${formatDateForText(startDate)} to ${formatDateForText(endDate)}?`}
+            <CloudDownloadIcon sx={{ fontSize: 32 }} />
+          </Box>
+
+          <DialogTitle
+            sx={{
+              textAlign: 'center',
+              fontWeight: 800,
+              fontSize: '1.15rem',
+              color: '#1e293b',
+              pb: 0,
+            }}
+          >
+            Confirm Data Refresh
+          </DialogTitle>
+        </Box>
+
+        {/* Body */}
+        <DialogContent sx={{ textAlign: 'center', pt: 1 }}>
+          <DialogContentText
+            sx={{
+              color: '#64748b',
+              fontSize: '0.85rem',
+              lineHeight: 1.45,
+            }}
+          >
+            You are about to synchronize data for the selected period:
           </DialogContentText>
+
+          {/* Date range highlight */}
+          <Box
+            sx={{
+              mt: 2,
+              mb: 1,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: 0.75,
+            }}
+          >
+            <DateHighlight>
+              <CalendarMonthIcon sx={{ fontSize: '0.9rem', mr: 0.5 }} />
+              {formatDateForText(startDate)}
+            </DateHighlight>
+
+            <Typography
+              variant='caption'
+              fontWeight={900}
+              color='text.disabled'
+            >
+              TO
+            </Typography>
+
+            <DateHighlight>
+              <CalendarMonthIcon sx={{ fontSize: '0.9rem', mr: 0.5 }} />
+              {formatDateForText(endDate)}
+            </DateHighlight>
+          </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} variant='outlined'>Cancel</Button>
-          <Button onClick={handleConfirmLoad} autoFocus variant='contained'>
-            Load
+
+        {/* Actions */}
+        <DialogActions
+          sx={{
+            justifyContent: 'center',
+            gap: 1.5,
+            pb: 0,
+            px: 0,
+          }}
+        >
+          <Button onClick={handleCloseDialog} className='btn-save'>
+            No
+          </Button>
+
+          <Button
+            onClick={handleConfirmLoad}
+            variant='contained'
+            autoFocus
+            className='btn-save'
+          >
+            Yes, Refresh Data
           </Button>
         </DialogActions>
-      </Dialog>
+      </StyledConfirmDialog>
     )
-  }, [openConfirmDialog])
+  }, [openConfirmDialog, startDate, endDate])
 
   return (
     <React.Fragment>
-      <Box className='k-table-box configuration-accordion-wrapper' sx={{ padding: '16px 20px'}}>
+      <Box className='configuration-accordion-wrapper'>
         <LoaderBackdrop open={!!loading} />
 
-        {/* Header Section */}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mb: 2,
-          }}
+        <CustomAccordion
+          defaultExpanded
+          disableGutters
+          className='k-table-box configuration-accordion-root'
         >
-          <Typography className='configuration-accordion-title'>
-            AOP Basis
-          </Typography>
-
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            {!isOldYear && (<Button
-              variant='outlined'
-              className='btn-load'
-              onClick={saveSummary}
-              disabled={READ_ONLY || !summaryEdited}
-              sx={{
-                height: 28,
-                px: 1.5,
-                mt: 'auto',
-              }}
-            >
-              Save
-            </Button>)}
-            {/* <Button
-              variant='contained'
-              onClick={() => {}} // TODO: Implement Mark as Complete logic
-              disabled={READ_ONLY}
-              sx={{
-                textTransform: 'none',
-                fontWeight: 600,
-                borderRadius: '8px',
-                px: 3,
-                bgcolor: '#6366F1',
-                boxShadow: 'none',
-                '&:hover': {
-                  bgcolor: '#4F46E5',
-                  boxShadow: 'none',
-                },
-              }}
-            >
-              Mark as Complete
-            </Button> */}
-          </Box>
-        </Box>
-
-        {/* Info Alert Section */}
-        <Box
-          className='last-refreshed-container'
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px'
-          }}
-        >
-          <Tooltip title='AOP Design Basis Blue Print'>
-            <IconButton
-              size='medium'
-              sx={{
-                backgroundColor: 'transparent',
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
-                },
-                width: 0,
-                height: 0,
-              }}
-              onClick={() => aopDesignBasisBluePrint()}
-            >
-              <Info sx={{ fontSize: '0.9rem', color: '#00688C' }} />
-            </IconButton>
-          </Tooltip>
-          <Typography className='last-refreshed-text'>
-          About AOP Design Basis. This is just the placeholder text, this will
-          be replaced by actual useful information.
-          </Typography>
-        </Box>
-
-        {/* {ConfigurationAccordian} */}
-        <Box sx={{ width: '100%',  my: 1 }}>
-          <Typography variant='caption' className='aop-design-basis-label'>
-            AOP Historical Period Basis for Production Target
-          </Typography>
-        </Box>
-        <Stack direction='column' spacing={1.5}>
-          {/* ROW 1: All in ONE straight line */}
-          <Stack
-            direction='row'
-            sx={{
-              columnGap: 1,
-              rowGap: 0,
-            }}
-            alignItems='center'
-            flexWrap='wrap'
+          <CustomAccordionSummary
+            expandIcon={<ExpandMore sx={{ fontSize: '1.2rem' }} />}
+            className='configuration-accordion-summary'
           >
-            {/* START */}
-            <Box className='date-pill-wrapper'>
-              <Box
-                component='img'
-                src={CalenderIcon}
-                className='w16-icon'
-                style={{ cursor: READ_ONLY ? 'not-allowed' : 'pointer' }}
-                onClick={() => !READ_ONLY && setStartShow((v) => !v)}
-              />
-              <Box component='span' className='header-dropdown-label'>
-                Start Date:
-              </Box>
-              <DatePicker
-                format='dd-MM-yyyy'
-                value={startDate}
-                show={startShow}
-                onClose={() => setStartShow(false)}
-                onChange={(e) => {
-                  setStartDate(e.value)
-                  setDateEdited(true)
-                }}
-                disabled={READ_ONLY}
-              />
-              <IconButton
-                style={{
-                  cursor: READ_ONLY ? 'not-allowed' : 'pointer',
-                  p: 0,
-                  width: 0,
-                  height: 0,
-                }}
-                onClick={() => !READ_ONLY && setStartShow((v) => !v)}
-                size='small'
-              >
-                <ExpandMore sx={{ fontSize: '1rem', color: '#606060' }} />
-              </IconButton>
-            </Box>
-
-            {/* END */}
-            <Box className='date-pill-wrapper'>
-              <Box
-                component='img'
-                src={CalenderIcon}
-                className='w16-icon'
-                style={{ cursor: READ_ONLY ? 'not-allowed' : 'pointer' }}
-                onClick={() => !READ_ONLY && setEndShow((v) => !v)}
-              />
-              <Box component='span' className='header-dropdown-label'>
-                End Date:
-              </Box>
-              <DatePicker
-                format='dd-MM-yyyy'
-                value={endDate}
-                show={endShow}
-                onClose={() => setEndShow(false)}
-                onChange={(e) => {
-                  setEndDate(e.value)
-                  setDateEdited(true)
-                }}
-                disabled={READ_ONLY}
-              />
-              <IconButton
-                style={{
-                  cursor: READ_ONLY ? 'not-allowed' : 'pointer',
-                  p: 0,
-                  width: 0,
-                  height: 0,
-                }}
-                onClick={() => !READ_ONLY && setEndShow((v) => !v)}
-                size='small'
-              >
-                <ExpandMore sx={{ fontSize: '1rem', color: '#606060' }} />
-              </IconButton>
-            </Box>
-
-            {/* LOAD BUTTON */}
-            {!isOldYear && (
-              <Tooltip title='Refresh Data'>
-                <Button
-                  variant='outlined'
-                  className='btn-load'
-                  onClick={handleOpenDialog}
-                  disabled={READ_ONLY}
-                  sx={{
-                    height: 28,
-                    px: 1.5,
-                    mt: 'auto',
-                  }}
-                >
-                  Load
-                </Button>
-              </Tooltip>
-            )}
-          </Stack>
-
-          {/* LAST REFRESHED */}
-          {configurationExecutionDetails[0]?.ModifiedOn && (
-            <Tooltip
-              title={`Last loaded data : ${formatDateForText(
-                configurationExecutionDetails[0]?.ModifiedOn,
-                true,
-              )}`}
+            <Stack
+              direction='row'
+              alignItems='center'
+              justifyContent='space-between'
+              sx={{ width: '100%', pr: 1 }}
             >
-              <Stack
-                direction='row'
-                spacing={0.5}
-                alignItems='center'
-                className='last-refreshed-container'
-              >
-                <Info sx={{ fontSize: '0.9rem', color: '#00688C' }} />
-
-                <Typography className='last-refreshed-text'>
-                  Last loaded data on{' '}
-                  {
-                    formatDateForText(
-                      configurationExecutionDetails[0]?.ModifiedOn,
-                    ).split(' ')[0]
-                  }
-                  {' for period '}
-                  {formatDateForText(startDate, true)}
-                  {' - '}
-                  {formatDateForText(endDate, true)}
+              <Stack direction='row' spacing={1} alignItems='center'>
+                <SettingsIcon sx={{ color: '#0100cb', fontSize: '1rem' }} />
+                <Typography className='configuration-accordion-title'>
+                  AOP Historical Period Basis for Production Target
                 </Typography>
               </Stack>
-            </Tooltip>
-          )}
 
-          {/* ROW 2: AOP DESIGN BASIS */}
-          <Box sx={{ width: '100%' }}>
-            <Typography variant='caption' className='aop-design-basis-label'>
-              AOP Design Basis
-            </Typography>
+              {!isOldYear && (
+                <Button
+                  variant='contained'
+                  className='btn-save'
+                  startIcon={
+                    <Box component='img' src={SaveIcon} className='w16-icon' />
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    saveSummary()
+                  }}
+                  disabled={READ_ONLY || !summaryEdited}
+                >
+                  Save
+                </Button>
+              )}
+            </Stack>
+          </CustomAccordionSummary>
 
-            <textarea
-              disabled={READ_ONLY}
-              value={summary}
-              rows={2}
-              onChange={(e) => {
-                setSummary(e.target.value)
-                setSummaryEdited(true)
-              }}
-              className='aop-design-basis-textarea'
-              style={{ minHeight: '30vh', marginTop: '4px' }}
-            />
-          </Box>
-        </Stack>
+          <CustomAccordionDetails sx={{ p: 0.5, pt: 1.5 }}>
+            <Stack direction='column' spacing={1.5}>
+              {/* ROW 1: All in ONE straight line */}
+              <Stack
+                direction='row'
+                sx={{
+                  columnGap: 1,
+                  rowGap: 0,
+                }}
+                alignItems='center'
+                flexWrap='wrap'
+              >
+                {/* START */}
+                <Box className='date-pill-wrapper'>
+                  <Box
+                    component='img'
+                    src={CalenderIcon}
+                    className='w16-icon'
+                    style={{ cursor: READ_ONLY ? 'not-allowed' : 'pointer' }}
+                    onClick={() => !READ_ONLY && setStartShow((v) => !v)}
+                  />
+                  <Box component='span' className='header-dropdown-label'>
+                    Start Date:
+                  </Box>
+                  <DatePicker
+                    format='dd-MM-yyyy'
+                    value={startDate}
+                    show={startShow}
+                    onClose={() => setStartShow(false)}
+                    onChange={(e) => {
+                      setStartDate(e.value)
+                      setDateEdited(true)
+                    }}
+                    disabled={READ_ONLY}
+                  />
+                  <IconButton
+                    style={{
+                      cursor: READ_ONLY ? 'not-allowed' : 'pointer',
+                      p: 0,
+                      width: 0,
+                      height: 0,
+                    }}
+                    onClick={() => !READ_ONLY && setStartShow((v) => !v)}
+                    size='small'
+                  >
+                    <ExpandMore sx={{ fontSize: '1rem', color: '#606060' }} />
+                  </IconButton>
+                </Box>
+
+                {/* END */}
+                <Box className='date-pill-wrapper'>
+                  <Box
+                    component='img'
+                    src={CalenderIcon}
+                    className='w16-icon'
+                    style={{ cursor: READ_ONLY ? 'not-allowed' : 'pointer' }}
+                    onClick={() => !READ_ONLY && setEndShow((v) => !v)}
+                  />
+                  <Box component='span' className='header-dropdown-label'>
+                    End Date:
+                  </Box>
+                  <DatePicker
+                    format='dd-MM-yyyy'
+                    value={endDate}
+                    show={endShow}
+                    onClose={() => setEndShow(false)}
+                    onChange={(e) => {
+                      setEndDate(e.value)
+                      setDateEdited(true)
+                    }}
+                    disabled={READ_ONLY}
+                  />
+                  <IconButton
+                    style={{
+                      cursor: READ_ONLY ? 'not-allowed' : 'pointer',
+                      p: 0,
+                      width: 0,
+                      height: 0,
+                    }}
+                    onClick={() => !READ_ONLY && setEndShow((v) => !v)}
+                    size='small'
+                  >
+                    <ExpandMore sx={{ fontSize: '1rem', color: '#606060' }} />
+                  </IconButton>
+                </Box>
+
+                {/* LOAD BUTTON */}
+                {!isOldYear && (
+                  <Tooltip title='Refresh Data'>
+                    <Button
+                      variant='outlined'
+                      className='btn-load'
+                      onClick={handleOpenDialog}
+                      disabled={READ_ONLY}
+                      sx={{
+                        height: 28,
+                        px: 1.5,
+                        mt: 'auto',
+                      }}
+                    >
+                      Load
+                    </Button>
+                  </Tooltip>
+                )}
+              </Stack>
+
+              {/* LAST REFRESHED */}
+              {configurationExecutionDetails[0]?.ModifiedOn && (
+                <Tooltip
+                  title={`Last loaded data : ${formatDateForText(
+                    configurationExecutionDetails[0]?.ModifiedOn,
+                    true,
+                  )}`}
+                >
+                  <Stack
+                    direction='row'
+                    spacing={0.5}
+                    alignItems='center'
+                    className='last-refreshed-container'
+                  >
+                    <Info sx={{ fontSize: '0.9rem', color: '#00688C' }} />
+
+                    <Typography className='last-refreshed-text'>
+                      {`Last loaded data on ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} by ${configurationExecutionDetails[0]?.User ?? ''} for period ${formatDateForText(startDateFromConfig, false)} to ${formatDateForText(endDateDateFromConfig, false)}`}
+                    </Typography>
+                  </Stack>
+                </Tooltip>
+              )}
+
+              {/* ROW 2: AOP DESIGN BASIS */}
+              <Box sx={{ width: '100%' }}>
+                <Typography
+                  variant='caption'
+                  className='aop-design-basis-label'
+                >
+                  AOP DESIGN BASIS
+                </Typography>
+
+                <TextArea
+                  className='vertical-resize-textarea'
+                  disabled={READ_ONLY}
+                  value={summary}
+                  rows={2}
+                  onChange={(e) => {
+                    setSummary(e.target.value)
+                    setSummaryEdited(true)
+                  }}
+                />
+              </Box>
+            </Stack>
+          </CustomAccordionDetails>
+        </CustomAccordion>
 
         <Notification
           open={snackbarOpen}
@@ -739,7 +844,9 @@ const AopDesignBasis = () => {
         />
         {ConfigurationDialog}
       </Box>
-      {SITE_NAME === 'VMD' && <CrakcerProductionConst />}
+      {(SITE_NAME === 'VMD' || SITE_NAME === 'C2') && (
+        <CrakcerProductionConst />
+      )}
     </React.Fragment>
   )
 }

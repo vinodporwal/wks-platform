@@ -98,6 +98,29 @@ const NormalOpNormsScreen = () => {
     SITE_NAME_NO_CASE === 'JMD' &&
     PLANT_NAME_NO_CASE === 'HIIR'
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
+  const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
+  const IS_CHEMICAL_JMD_MTBEANDBUATNE1 =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'jmd' &&
+    (lowerPlantName === 'mtbe' || lowerPlantName === 'butene-1')
+  const IS_CHEMICAL_VMD_BUTADIENE =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'vmd' &&
+    lowerPlantName === 'butadiene'
+  const IS_CHEMICAL_VMD_BENEZENEFPU =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'vmd' &&
+    (lowerPlantName === 'benzene' || lowerPlantName === 'fpu')
+  const IS_CHEMICAL_HMD_BUTADIENE =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'hmd' &&
+    lowerPlantName === 'butadiene'
+
+  const IS_VCM_HMD_VCM =
+    lowerVertName === 'vcm' &&
+    lowerSiteName === 'hmd' &&
+    lowerPlantName === 'vcm'
+
   const keycloak = useSession()
 
   const { isReleased } = dataGridStore
@@ -112,7 +135,8 @@ const NormalOpNormsScreen = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD) &&
+        IS_PVC_DMD ||
+        IS_PVC_HMD) &&
       !gradeId
     )
       return
@@ -259,7 +283,14 @@ const NormalOpNormsScreen = () => {
     try {
       const promises = [fetchData(gradeId), getNormTransactions()]
 
-      if (lowerVertName === 'meg') {
+      if (
+        lowerVertName === 'meg' ||
+        IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
+        IS_CHEMICAL_VMD_BUTADIENE ||
+        IS_VCM_HMD_VCM ||
+        IS_CHEMICAL_HMD_BUTADIENE ||
+        IS_CHEMICAL_VMD_BENEZENEFPU
+      ) {
         promises.push(fetchDataIntermediateValues())
       }
       if (
@@ -268,7 +299,8 @@ const NormalOpNormsScreen = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
       ) {
         promises.push(fetchGradeDropdowns())
       }
@@ -305,7 +337,7 @@ const NormalOpNormsScreen = () => {
       editable: false,
       hidden: true,
       isVisible: false,
-      minWidth: 100,
+      minWidth: 150,
     },
 
     {
@@ -320,12 +352,12 @@ const NormalOpNormsScreen = () => {
       field: 'ProductName',
       title: 'Particulars',
       widthT: 130,
-      minWidth: 120,
+      minWidth: 150,
     },
     {
       field: 'UOM',
       title: 'UOM',
-      widthT: 80,
+      widthT: 60,
       editable: false,
       minWidth: 80,
     },
@@ -456,14 +488,12 @@ const NormalOpNormsScreen = () => {
       title: 'idFromApi',
       hidden: true,
       isVisible: false,
-      minWidth: 100,
     },
     {
       field: 'isEditable',
       title: 'isEditable',
       hidden: true,
       isVisible: false,
-      minWidth: 100,
     },
   ]
 
@@ -598,7 +628,8 @@ const NormalOpNormsScreen = () => {
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
       ) {
         data =
           await NormalOperationNormsApiService.handleCalculateNormalOperationNormsPe(
@@ -631,7 +662,8 @@ const NormalOpNormsScreen = () => {
           IS_ELASTOMER_HMD_SBR ||
           IS_ELASTOMER_JMD_HIIR ||
           IS_PVC_VMD ||
-          IS_PVC_DMD
+          IS_PVC_DMD ||
+          IS_PVC_HMD
         )
           fetchGradeDropdowns()
         fetchData(gradeId)
@@ -688,36 +720,39 @@ const NormalOpNormsScreen = () => {
       showCheckbox: false,
       showG:
         isPEPP ||
-        isPET ||
-        IS_ELASTOMER_HMD_SBR ||
-        IS_ELASTOMER_JMD_HIIR ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD
+          isPET ||
+          IS_ELASTOMER_HMD_SBR ||
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD
           ? true
           : false,
       marginBottom:
         isPEPP ||
-        isPET ||
-        IS_ELASTOMER_HMD_SBR ||
-        IS_ELASTOMER_JMD_HIIR ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD
+          isPET ||
+          IS_ELASTOMER_HMD_SBR ||
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD
           ? true
           : false,
       dropdownLabel:
         isPEPP ||
-        isPET ||
-        IS_ELASTOMER_HMD_SBR ||
-        IS_ELASTOMER_JMD_HIIR ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD
-          ? 'Select Grade'
-          : 'Select Mode',
+          isPET ||
+          IS_ELASTOMER_HMD_SBR ||
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD
+          ? 'Grade'
+          : 'Mode',
       showCalculateVisibility:
         Object.keys(calculationObject || {}).length > 0 ? true : false,
       showTitleNameBusiness: true,
       titleName:
-        !isPEPP || !isPET || !IS_PVC_VMD || !IS_PVC_DMD
+        !isPEPP || !isPET || !IS_PVC_VMD || !IS_PVC_DMD || !IS_PVC_HMD
           ? SCREEN_NAME
           : 'Steady State Consumption (Norm)',
       downloadExcelBtn: true,
@@ -758,13 +793,22 @@ const NormalOpNormsScreen = () => {
     })
 
     try {
-      if (
+      if (lowerVertName === 'chemical' && lowerSiteName === 'dmd') {
+        await NormalOperationNormsApiService.getNormalOpsNormsExcelChemicalDmd(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+          SCREEN_NAME,
+        )
+      } else if (
         isPEPP ||
         isPET ||
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD
       ) {
         await NormalOperationNormsApiService.getNormalOpsNormsExcelpe(
           keycloak,
@@ -804,14 +848,25 @@ const NormalOpNormsScreen = () => {
   const saveExcelFile = async (rawFile) => {
     setLoading(true)
     try {
-      const response =
-        await NormalOperationNormsApiService.saveNormalOpsNormsExcel(
+      let response
+      if (lowerVertName === 'chemical' && lowerSiteName === 'dmd') {
+        response =
+          await NormalOperationNormsApiService.saveNormalOpsNormsExcelChemicalDmd(
+            rawFile,
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            gradeId,
+          )
+      } else {
+        response = await NormalOperationNormsApiService.saveNormalOpsNormsExcel(
           rawFile,
           keycloak,
           PLANT_ID,
           AOP_YEAR,
           gradeId,
         )
+      }
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -820,7 +875,8 @@ const NormalOpNormsScreen = () => {
           severity: 'success',
         })
         setModifiedCells({})
-        fetchAllData(gradeId)
+        await fetchData(gradeId)
+        await getNormTransactions()
       } else if (response?.code === 400 && response?.data) {
         // Partial save, error file download
         const byteCharacters = atob(response.data)
@@ -845,6 +901,8 @@ const NormalOpNormsScreen = () => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
+        await fetchData(gradeId)
+        await getNormTransactions()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -913,33 +971,38 @@ const NormalOpNormsScreen = () => {
         />
       )}
 
-      {lowerVertName === 'meg' && (
-        <Box sx={{ width: '100%', marginTop: 1 }}>
-          <CustomAccordion defaultExpanded disableGutters>
-            <CustomAccordionSummary
-              aria-controls='grid-content'
-              id='grid-header'
-            >
-              <Typography component='span' className='grid-title'>
-                Intermediate Values
-              </Typography>
-            </CustomAccordionSummary>
-            <CustomAccordionDetails>
-              <Box sx={{ width: '100%', margin: 0 }}>
-                <KendoDataTables
-                  title='Intermediate Values'
-                  columns={colDefsIntermediateValues}
-                  setRows={setRowsIntermediateValues}
-                  rows={rowsIntermediateValues}
-                  paginationOptions={[100, 200, 300]}
-                  permissions={adjustedPermissionsIV}
-                  groupBy='NormTypeName'
-                />
-              </Box>
-            </CustomAccordionDetails>
-          </CustomAccordion>
-        </Box>
-      )}
+      {(lowerVertName === 'meg' ||
+        IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
+        IS_CHEMICAL_VMD_BUTADIENE ||
+        IS_CHEMICAL_HMD_BUTADIENE ||
+        IS_CHEMICAL_VMD_BENEZENEFPU ||
+        IS_VCM_HMD_VCM) && (
+          <Box sx={{ width: '100%', marginTop: 1 }}>
+            <CustomAccordion defaultExpanded disableGutters>
+              <CustomAccordionSummary
+                aria-controls='grid-content'
+                id='grid-header'
+              >
+                <Typography component='span' className='grid-title'>
+                  Intermediate Values
+                </Typography>
+              </CustomAccordionSummary>
+              <CustomAccordionDetails>
+                <Box sx={{ width: '100%', margin: 0 }}>
+                  <KendoDataTables
+                    title='Intermediate Values'
+                    columns={colDefsIntermediateValues}
+                    setRows={setRowsIntermediateValues}
+                    rows={rowsIntermediateValues}
+                    paginationOptions={[100, 200, 300]}
+                    permissions={adjustedPermissionsIV}
+                    groupBy='NormTypeName'
+                  />
+                </Box>
+              </CustomAccordionDetails>
+            </CustomAccordion>
+          </Box>
+        )}
 
       {true && lowerVertName === 'cracker' && <NormalOpNormsScreenCracker />}
     </div>

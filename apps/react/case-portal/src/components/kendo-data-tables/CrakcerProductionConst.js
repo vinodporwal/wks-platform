@@ -1,6 +1,6 @@
 import { Box } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { NormalOperationNormsApiService } from 'services/normal-operation-norms-api-service'
@@ -122,42 +122,56 @@ const CrakcerProductionConst = () => {
 
   const FORMATE_VALUE = ValueFormatterProduction()
 
-  const colDefsConstants = [
-    {
-      field: 'DisplayName',
-      title: 'Particulars',
-      editable: false,
-      widthT: 150,
-      hidden: false,
-      minWidth: 120,
-    },
-    {
-      field: 'UOM',
-      title: 'UOM',
-      editable: false,
-      widthT: 80,
-      minWidth: 60,
-    },
-    {
-      field: 'ConstantValue',
-      title: 'Value',
-      editable: true,
-      type: 'number',
-      widthT: 120,
-      format: FORMATE_VALUE,
-      minWidth: 100,
-    },
+  const colDefsConstants = useMemo(() => {
+    const cols = [
+      {
+        field: 'DisplayName',
+        title: 'Particulars',
+        editable: false,
+        widthT: 150,
+        hidden: false,
+        minWidth: 120,
+      },
+      {
+        field: 'UOM',
+        title: 'UOM',
+        editable: false,
+        widthT: 80,
+        minWidth: 60,
+      },
+      {
+        field: 'ConstantValue',
+        title: 'Value',
+        editable: true,
+        type: 'number',
+        widthT: 120,
+        format: FORMATE_VALUE,
+        minWidth: 100,
+      },
 
-    {
-      field: 'remarks',
-      title: 'Remark',
-      editable: false,
-      widthT: 140,
-      minWidth: 80,
-      autoAdjust: false,
-      type: 'string',
-    },
-  ]
+      {
+        field: 'remarks',
+        title: 'Remark',
+        editable: false,
+        widthT: 140,
+        minWidth: 80,
+        autoAdjust: false,
+        type: 'string',
+      },
+    ]
+    if (SITE_NAME_NO_CASE === 'C2') {
+      return cols.map((col) => {
+        if (col.field === 'ConstantValue') {
+          return {
+            ...col,
+            type: 'integerNumberOnly',
+          }
+        }
+        return col
+      })
+    }
+    return cols
+  }, [FORMATE_VALUE, SITE_NAME_NO_CASE])
 
   const saveCatalystData = async (newRow) => {
     setLoading1(true)
@@ -426,7 +440,7 @@ const CrakcerProductionConst = () => {
           unsavedChangesRef={unsavedChangesRefConstants}
           handleRemarkCellClick={handleRemarkCellClickConstants}
           permissions={adjustedPermissionsConstants}
-          groupBy='Particulars'
+          {...(SITE_NAME_NO_CASE === 'VMD' && { groupBy: 'Particulars' })}
           plantID={PLANT_ID}
           handleExcelUpload={handleExcelUpload}
           downloadExcelForConfiguration={downloadExcelForConfiguration}

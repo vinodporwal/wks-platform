@@ -1,4 +1,4 @@
-import { TextField, MenuItem } from '@mui/material'
+import { DropDownList } from '@progress/kendo-react-dropdowns'
 import { useState, useEffect, useRef } from 'react'
 
 export const SelectCellEditor = ({
@@ -6,119 +6,57 @@ export const SelectCellEditor = ({
   field,
   onChange,
   options = [],
-  textField = 'text',
+  textField = 'label',
   valueField = 'value',
   placeholder = 'Select...',
 }) => {
   const storedValue = dataItem[field] ?? ''
-  const [localValue, setLocalValue] = useState(storedValue)
-  const isFirstRender = useRef(true)
+  // Find the matching option object based on the stored value
+  // Handle both string and numeric values
+  const normalizeValue = (val) => {
+    // Check if it's a numeric string or number (e.g., '4', '4.0', 4, 4.0)
+    const numVal = parseFloat(val)
+    if (!isNaN(numVal)) {
+      // It's a numeric value, normalize to string
+      return String(numVal)
+    }
+    // It's a non-numeric string (e.g., 'Price', 'Amount'), return as-is
+    return String(val)
+  }
+  const selectedOption =
+    options.find(
+      (opt) => normalizeValue(opt[valueField]) === normalizeValue(storedValue),
+    ) || null
+  const [localValue, setLocalValue] = useState(selectedOption)
   const inputRef = useRef(null)
 
   // Autofocus when cell enters edit mode
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.focus()
+      if (inputRef.current?.element) {
+        inputRef.current.element.focus()
       }
     }, 50)
     return () => clearTimeout(timer)
   }, [])
 
   const handleChange = (e) => {
-    setLocalValue(e.target.value)
+    const selectedOpt = e.value
+    const newValue = selectedOpt ? selectedOpt[valueField] : ''
+    setLocalValue(selectedOpt)
+    onChange({ dataItem, field, value: newValue })
   }
 
-  // Debounced sync to grid, skip first render
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
-    }
-
-    const handler = setTimeout(() => {
-      if (localValue !== storedValue) {
-        onChange({ dataItem, field, value: localValue })
-      }
-    }, 300)
-
-    return () => clearTimeout(handler)
-  }, [localValue, dataItem, field, onChange, storedValue])
-
   return (
-    <td>
-      <TextField
-        select
-        inputRef={inputRef}
-        value={localValue}
-        onChange={handleChange}
-        size='small'
-        variant='outlined'
-        fullWidth
-        sx={{
-          '& .MuiOutlinedInput-root': {
-            height: '30px',
-            backgroundColor: 'rgba(255, 255, 255, 0.85)',
-            borderRadius: '7px',
-            fontSize: '0.7rem',
-            fontWeight: 600,
-            color: '#1d3665',
-            '& fieldset': {
-              borderColor: 'rgba(0, 0, 0, 0.08)',
-            },
-            '&:hover fieldset': {
-              borderColor: '#0100cb',
-            },
-            '&.Mui-focused fieldset': {
-              borderColor: '#0100cb',
-              borderWidth: '1.2px',
-            },
-          },
-          '& .MuiSelect-select': {
-            display: 'flex',
-            alignItems: 'center',
-            padding: '2px 6px !important',
-          },
-        }}
-        SelectProps={{
-          MenuProps: {
-            disableScrollLock: true,
-            PaperProps: {
-              sx: {
-                borderRadius: '8px',
-                mt: 0.5,
-                boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-                '& .MuiMenuItem-root': {
-                  fontSize: '0.7rem',
-                  fontWeight: 500,
-                  minHeight: '26px',
-                  margin: '1px 4px',
-                  borderRadius: '5px',
-                  '&.Mui-selected': {
-                    bgcolor: 'rgba(1, 0, 203, 0.08)',
-                    color: '#0100cb',
-                    fontWeight: 700,
-                    '&:hover': {
-                      bgcolor: 'rgba(1, 0, 203, 0.12)',
-                    },
-                  },
-                },
-              },
-            },
-          },
-        }}
-      >
-        <MenuItem value='' disabled sx={{ fontSize: '0.65rem' }}>
-          <em>{placeholder}</em>
-        </MenuItem>
-
-        {Array.isArray(options) &&
-          options.map((option) => (
-            <MenuItem key={option[valueField]} value={option[valueField]}>
-              {option[textField]}
-            </MenuItem>
-          ))}
-      </TextField>
-    </td>
+    <DropDownList
+      ref={inputRef}
+      data={options}
+      textField={textField}
+      dataItemKey={valueField}
+      value={localValue}
+      onChange={handleChange}
+      className='dropdown-editor'
+      style={{ width: '100%' }}
+    />
   )
 }

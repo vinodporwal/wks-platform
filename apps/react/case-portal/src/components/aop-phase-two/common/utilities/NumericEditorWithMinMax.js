@@ -28,24 +28,19 @@ export const NumericEditorWithMinMax = ({
 
     // Allow only numeric (including decimal and negative)
     if (val === '' || /^-?\d*(\.\d*)?$/.test(val)) {
-      const num = parseFloat(val)
+      setLocalValue(val)
 
       // Validate against min/max if provided
+      let errorMsg = ''
       if (val !== '') {
-        let errorMsg = ''
-
+        const num = parseFloat(val)
         if (min !== undefined && num < min) {
           errorMsg = `Please enter a number between ${min} to ${max}`
         } else if (max !== undefined && num > max) {
           errorMsg = `Please enter a number between ${min} to ${max}`
         }
-
-        setError(errorMsg)
-      } else {
-        setError('')
       }
-
-      setLocalValue(val)
+      setError(errorMsg)
     }
   }
 
@@ -71,7 +66,7 @@ export const NumericEditorWithMinMax = ({
   }
 
   return (
-    <td style={{ position: 'relative' }}>
+    <td style={{ position: 'relative', overflow: 'visible' }}>
       <InputBase
         inputRef={inputRef}
         value={localValue}
@@ -79,6 +74,7 @@ export const NumericEditorWithMinMax = ({
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         autoComplete='off'
+        className='input-editor'
         sx={{
           width: '100%',
           fontSize: '0.8125rem',
@@ -116,17 +112,18 @@ export const NumericEditorWithMinMax = ({
         <div
           style={{
             position: 'absolute',
-            top: '100%',
+            top: 'calc(100% + 4px)',
             left: 0,
             backgroundColor: '#ffebee',
             color: '#d32f2f',
-            padding: '4px 8px',
+            padding: '6px 8px',
             fontSize: '0.75rem',
             borderRadius: '4px',
             whiteSpace: 'nowrap',
-            zIndex: 1000,
-            marginTop: '2px',
+            zIndex: 9999,
             border: '1px solid #d32f2f',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+            pointerEvents: 'none',
           }}
         >
           {error}

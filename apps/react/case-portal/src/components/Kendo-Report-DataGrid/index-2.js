@@ -22,8 +22,7 @@ const KendoDataGrid2 = ({ rows, columns, permissions }) => {
         aria-sort={ariaSort}
         title={props.title}
         style={{
-          fontFamily:
-            "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
+          fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
         }}
       >
         <Tooltip

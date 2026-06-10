@@ -168,9 +168,9 @@ const ShutdownRateGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
       saveWithRemark: true,
       saveBtn: true,
       allAction: true,
-      downloadExcelBtn: false,
-      uploadExcelBtn: false,
-      downloadExcelBtnFromUI: true,
+      downloadExcelBtn: true,
+      uploadExcelBtn: true,
+      downloadExcelBtnFromUI: false,
       showCalculate: false,
       showCalculateVisibility: true,
       ExcelName: `${EXCEL_EXPORT_TITLE}`,
@@ -301,16 +301,16 @@ const ShutdownRateGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
   }
 
   const handleExcelUpload = (rawFile) => {
-    uploadCrackerConstant(rawFile)
+    uploadExcel(rawFile)
   }
 
-  const uploadCrackerConstant = async (rawFile) => {
+  const uploadExcel = async (rawFile) => {
     setLoading(true)
 
     try {
       let response
 
-      response = await PtaConfigurationApiService.importExcel(
+      response = await PtaConfigurationApiService.ShutdownRateImportExcel(
         rawFile,
         keycloak,
         PLANT_ID,
@@ -342,7 +342,7 @@ const ShutdownRateGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute('download', 'Error File - Constants.xlsx')
+        link.setAttribute('download', 'Error File - Shutdown Rate.xlsx')
         document.body.appendChild(link)
         link.click()
         link.remove()
@@ -389,7 +389,8 @@ const ShutdownRateGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
 
     try {
       let response
-      response = await PtaConfigurationApiService.exportExcel(
+
+      response = await PtaConfigurationApiService.ShutdownRateExportExcel(
         keycloak,
         PLANT_ID,
         AOP_YEAR,

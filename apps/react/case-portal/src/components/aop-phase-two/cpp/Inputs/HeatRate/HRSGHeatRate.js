@@ -46,7 +46,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       width: 150,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
       minWidth: 100,
       hidden: true,
     },
@@ -56,7 +56,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
       width: 150,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
       minWidth: 150,
     },
     {
@@ -265,7 +265,7 @@ const HRSGHeatRate = ({ startDate, endDate, dateLoading }) => {
 
   const dropdownConfig = {
     options: dropdownOptions,
-    label: 'Select Plant',
+    label: 'Plant',
     placeholder: 'Select Plant',
     valueKey: 'id',
     labelKey: 'name',

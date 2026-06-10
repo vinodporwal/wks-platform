@@ -5,7 +5,7 @@ header {
   background-color: #ffffff !important;
   background-image: none !important;
   /* box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06) !important; */
-  border-bottom: 1px solid #DDDEE1 !important;
+  border-bottom: 1px solid #dddee1 !important;
   /* color: #2c3e50 !important; */
 }
 
@@ -136,7 +136,6 @@ main.MuiBox-root.css-vognfw {
   font-weight: bold;
   border-bottom: 2px solid #790000;
 }
-
 
 .non-editable-cell {
   background-color: #f1f5f9;
@@ -367,7 +366,7 @@ body {
 .outlet-wrapper {
   flex: 1;
   overflow: hidden;
-  background: #F6F7F8;
+  background: #f6f7f8;
 }
 
 .outlet-border-box {
@@ -383,7 +382,7 @@ body {
 .k-table-box {
   box-sizing: border-box;
   background-color: #ffffff;
-  border: 1px solid #DDDEE1;
+  border: 1px solid #dddee1;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   margin-bottom: 10px;
@@ -394,7 +393,7 @@ body {
 .breadcrumbs-box {
   box-sizing: border-box;
   border-radius: 8px;
-  border: 1px solid #DDDEE1;
+  border: 1px solid #dddee1;
   padding: 12px 0px 12px 8px;
   gap: 16px;
   background-color: #ffffff;
@@ -408,5 +407,240 @@ body {
   gap: 16px;
   padding: 8px 10px 5px 2px;
   border-bottom: 1px solid #e2e8f0;
-  background: #FFFFFF;
+  background: #ffffff;
+}
+
+/* =========================================================
+   HEADER CONTENT REDESIGN
+   ========================================================= */
+
+.header-content-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  padding-right: 16px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  background: #fff;
+}
+
+.header-left-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.header-screen-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: #303030;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+}
+
+.header-step-box {
+  padding: 4px 8px;
+  border-radius: 100px;
+  background-color: #eceeff;
+  border: 1px solid #41424d;
+}
+
+.header-step-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: #41424d;
+  font-family: 'Honeywell Cond Web', 'Inter', sans-serif;
+}
+
+.header-dropdown-stack {
+  justify-self: end;
+  width: 100%;
+  justify-content: flex-end;
+  margin-right: 8px;
+}
+
+.dropdown-container-header {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+}
+
+.header-select {
+  height: 34px;
+  min-width: 160px;
+}
+
+.header-select .MuiOutlinedInput-root {
+  border-radius: 6px !important;
+  background: #eef3f8;
+  height: 34px;
+}
+
+.header-select .MuiOutlinedInput-notchedOutline {
+  border: 1px solid #dddee1;
+  border-radius: 6px !important;
+}
+
+.header-select:hover .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(15, 23, 42, 0.1);
+}
+
+.header-select .MuiSelect-select {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px !important;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.header-select .MuiSvgIcon-root {
+  font-size: 18px;
+  color: #6b7786;
+}
+
+.header-render-value-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-menu-item {
+  transition: all 0.12s ease;
+  border-radius: 6px;
+  margin-left: 4px;
+  margin-right: 4px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+  color: #303030;
+  font-weight: 500;
+  font-size: 14px !important;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+}
+
+.header-menu-item:hover {
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.header-menu-item.Mui-selected {
+  background: rgba(59, 130, 246, 0.12);
+  font-weight: 600;
+}
+
+.header-menu-paper {
+  max-height: 240px;
+  border-radius: 6px !important;
+  margin-top: 6px;
+  background: #ffffff;
+  gap: 4px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  border: 1px solid #dddee1;
+  color: #0f172a;
+  padding: 6px 12px 6px 4px;
+}
+.header-profile-box {
+  justify-self: end;
+}
+
+/* =========================================================
+   STEPPER NAV
+   ========================================================= */
+
+.stepper-nav-container {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.stepper-nav-tabs {
+  min-height: 40px;
+}
+
+.stepper-nav-tabs .MuiTabs-flexContainer {
+  flex-wrap: nowrap;
+}
+
+.stepper-nav-tabs .MuiTabs-indicator {
+  top: 0;
+  height: 4px;
+  background-color: #ae4787;
+}
+
+.stepper-nav-tabs .MuiTab-root {
+  min-height: 40px;
+}
+
+.stepper-nav-tabs .MuiTabs-scrollButtons.Mui-disabled {
+  display: none;
+}
+
+.aop-tabs-tabs .MuiTabs-scrollButtons.Mui-disabled {
+  display: none;
+}
+
+.stepper-nav-tab {
+  text-transform: none !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+  min-height: 40px !important;
+  gap: 4px !important;
+  transition: all 0.2s ease !important;
+}
+
+.stepper-nav-tab:hover {
+  background-color: #eef2ff !important;
+}
+
+.stepper-nav-tab.Mui-selected {
+  background-color: #f6f7f8 !important;
+  color: #303030 !important;
+}
+
+.stepper-nav-tab .MuiTab-iconWrapper {
+  width: 16px;
+  height: 16px;
+}
+
+.stepper-nav-tab-label {
+  display: inline-block;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 400;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+  color: #303030;
+  text-transform: uppercase;
+}
+
+.aop-report-accordion-summary {
+  min-height: 36px !important;
+  padding: 10px !important;
+  background-color: #ffffff !important;
+  flex-direction: row-reverse !important;
+}
+
+.aop-report-accordion-summary .MuiAccordionSummary-content {
+  margin-left: 8px !important;
+  margin-top: 4px !important;
+  margin-bottom: 4px !important;
+}
+
+.aop-report-accordion-summary .MuiAccordionSummary-expandIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background-color: #eceeff;
+  color: #1e293b;
+  cursor: pointer;
+  padding: 8px;
 }

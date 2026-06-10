@@ -1,5 +1,23 @@
 export const BusinessDemandPeColumns = [
   {
+    field: 'Particulars',
+    title: 'Type',
+    width: 100,
+    groupable: true,
+    editable: false,
+    hidden: true,
+    isVisible: false,
+  },
+  {
+    field: 'normParameterId',
+    title: 'Particulars',
+    editable: false,
+    width: 125,
+    hidden: true,
+    isVisible: false,
+  },
+
+  {
     field: 'displayName',
     title: 'Particulars',
     editable: false,
@@ -133,6 +151,12 @@ export const BusinessDemandPeColumns = [
     editable: false,
     minWidth: 100,
   },
+  {
+    field: 'idFromApi',
+    title: 'ID from API',
+    hidden: true,
+    isVisible: false,
+  },
 ]
 
 export const SlowDownPeColumns = [
@@ -198,7 +222,7 @@ export const SlowDownPeColumns = [
     title: 'Reduced Rate (TPH)',
     editable: true,
     type: 'number',
-    minWidth: 100,
+    minWidth: 120,
   },
 
   {
@@ -207,7 +231,7 @@ export const SlowDownPeColumns = [
     editable: true,
     widthT: 250,
     autoAdjust: false,
-    minWidth: 100,
+    minWidth: 150,
   },
 ]
 

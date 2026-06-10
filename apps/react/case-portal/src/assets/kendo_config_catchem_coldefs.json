@@ -3,22 +3,24 @@
     "field": "particulars",
     "title": "Particulars",
     "editable": false,
-    "widthT": 250,
-    "autoAdjust": false,
-    "hidden": false
+    "widthT": 220,
+    "hidden": false,
+    "minWidth": 120
   },
   {
     "field": "uom",
     "title": "UOM",
     "editable": false,
-    "widthT": 80
+    "widthT": 80,
+    "minWidth": 80
   },
   {
     "field": "value",
     "title": "Value",
     "editable": true,
     "type": "number",
-    "widthT": 130
+    "widthT": 120,
+    "minWidth": 120
   },
   {
     "field": "remarks",
@@ -26,6 +28,6 @@
     "editable": false,
     "type": "string",
     "widthT": 250,
-    "autoAdjust": false
+    "minWidth": 120
   }
 ]

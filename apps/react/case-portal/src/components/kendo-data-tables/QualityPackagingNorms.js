@@ -15,7 +15,7 @@ import { useSession } from 'SessionStoreContext'
 import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
 import KendoDataTables from './index'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { Grid, TextField } from '../../../node_modules/@mui/material/index'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/index'
@@ -26,8 +26,20 @@ import { t } from '../../../node_modules/i18next/index'
 import { format } from '../../../node_modules/date-fns/format'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { validateFields } from 'utils/validationUtils'
+import { DataService } from 'services/DataService'
+import { useMenuContext } from 'menu/menuProvider'
+import { shouldShowReleaseButton } from 'utils/releaseButtonUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AopTabs from 'components/AopTabs'
+import { setIsBlocked, setIsReleased } from 'store/reducers/dataGridStore'
+
+import {
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from '@mui/material'
 export default function QualityPackagingNorms() {
   const [rows, setRows] = useState([])
   const [priceDiffRows, setPriceDiffRows] = useState([])
@@ -92,6 +104,18 @@ export default function QualityPackagingNorms() {
   const [packagingRows, setPackagingRows] = useState([])
   const [rowsOtherCosts, setRowsOtherCosts] = useState([])
   const [calculationObject, setCalculationObject] = useState([])
+  const IS_ELASTOMER_HMD_SBR =
+    lowerVertName === 'elastomer' &&
+    SITE_NAME.toLowerCase() === 'hmd' &&
+    PLANT_NAME.toLowerCase() === 'sbr'
+
+  const IS_PE_NMD_LLDPE1 =
+    lowerVertName === 'pe' &&
+    SITE_NAME.toLowerCase() === 'nmd' &&
+    PLANT_NAME.toLowerCase() === 'lldpe1'
+
+  const { items: menuItems } = useMenuContext()
+  const showReleaseButton = shouldShowReleaseButton(menuItems)
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -203,7 +227,7 @@ export default function QualityPackagingNorms() {
       title: 'Remark',
       editable: true,
     },
-  ]
+  ].map((col) => (IS_PE_NMD_LLDPE1 ? { ...col, editable: false } : col))
 
   const fetchQualityParameters = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) {
@@ -228,7 +252,7 @@ export default function QualityPackagingNorms() {
           actual: item.prevActual,
           proposedNorm: item.proposedNorm,
           normParameterTypeName: item.normParameterTypeName,
-          isEditable: item.isEditable !== false,
+          isEditable: IS_PE_NMD_LLDPE1 ? false : item.isEditable !== false,
           Particulars: item.normParameterTypeName,
           remark: item.remark,
           originalRemark: item.remark,
@@ -275,6 +299,7 @@ export default function QualityPackagingNorms() {
         remark: item.remark,
         Particulars: item.normParameterTypeName,
         unit: '%',
+        isEditable: IS_PE_NMD_LLDPE1 ? false : item.isEditable !== false,
       }))
       setPriceDiffRows(mappedPriceDiffRows)
     } catch (err) {
@@ -285,10 +310,33 @@ export default function QualityPackagingNorms() {
     }
   }, [keycloak, PLANT_ID, AOP_YEAR])
 
+  const getIsReleased = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    try {
+      const response = await DataService.getReleaseAOPStatus(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      // If response has data, disable the button (already released)
+      // If no data, enable the button (not yet released)
+      if (response?.data && Object.keys(response.data).length > 0) {
+        setIsReleaseDisabled(true)
+      } else {
+        setIsReleaseDisabled(false)
+      }
+    } catch (error) {
+      console.error('Error fetching release status:', error)
+    }
+  }
+
   useEffect(() => {
     if (tabIndex === 0) {
       fetchQualityParameters()
       fetchPriceDifferential()
+      getIsReleased()
     }
     // Add other fetches for other tabs if needed
   }, [
@@ -323,6 +371,7 @@ export default function QualityPackagingNorms() {
           Particulars: item.normParameterTypeName,
           originalRemark: item.remark,
           remark: item.remark,
+          isEditable: IS_PE_NMD_LLDPE1 ? false : item.isEditable !== false,
         }))
         setPackagingRows(mappedRows)
       } else {
@@ -337,6 +386,7 @@ export default function QualityPackagingNorms() {
   }, [keycloak, PLANT_ID, AOP_YEAR])
 
   const handleCalculate = async () => {
+    setLoading(true)
     try {
       const data = await QualityParameterService.calculatePackagingData(
         keycloak,
@@ -369,6 +419,8 @@ export default function QualityPackagingNorms() {
         severity: 'error',
       })
       console.error('Error!', error)
+    } finally {
+      setLoading(false)
     }
   }
   // // Fetch for Other Costs
@@ -396,6 +448,7 @@ export default function QualityPackagingNorms() {
           Particulars: item.normTypeName,
           originalRemark: item.remark,
           remark: item.remark,
+          isEditable: IS_PE_NMD_LLDPE1 ? false : item.isEditable !== false,
         }))
         setRowsOtherCosts(mappedRows)
       } else {
@@ -447,6 +500,7 @@ export default function QualityPackagingNorms() {
       title: 'Quality Type',
       editable: false,
       widthT: 200,
+      minWidth: 150,
     },
     {
       field: 'percentage',
@@ -455,6 +509,7 @@ export default function QualityPackagingNorms() {
       type: 'numberWithUOMValidation',
       format: valueFormat,
       widthT: 200,
+      minWidth: 120,
     },
     {
       field: 'unit',
@@ -466,8 +521,9 @@ export default function QualityPackagingNorms() {
       field: 'remark',
       title: 'Remark',
       editable: true,
+      minWidth: 100,
     },
-  ]
+  ].map((col) => (IS_PE_NMD_LLDPE1 ? { ...col, editable: false } : col))
 
   const packagingColumns = [
     {
@@ -490,17 +546,20 @@ export default function QualityPackagingNorms() {
       field: 'sapMaterialCode',
       title: 'SAP Material Code',
       editable: false,
+      minWidth: 100,
     },
     {
       field: 'name',
       title: 'Name of Item',
       editable: false,
+      minWidth: 100,
     },
     {
       field: 'unit',
       title: 'Unit',
       widthT: 70,
       editable: false,
+      minWidth: 70,
     },
     {
       field: 'packagingPrice',
@@ -508,6 +567,7 @@ export default function QualityPackagingNorms() {
       editable: true,
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'budget',
@@ -515,6 +575,7 @@ export default function QualityPackagingNorms() {
       editable: false,
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'actual',
@@ -522,6 +583,7 @@ export default function QualityPackagingNorms() {
       editable: true,
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'proposedNorm',
@@ -529,13 +591,15 @@ export default function QualityPackagingNorms() {
       editable: true,
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'remark',
       title: 'Remark',
       editable: true,
+      minWidth: 100,
     },
-  ]
+  ].map((col) => (IS_PE_NMD_LLDPE1 ? { ...col, editable: false } : col))
 
   const columnsOtherCosts = [
     {
@@ -544,6 +608,7 @@ export default function QualityPackagingNorms() {
       widthT: 70,
       type: 'number',
       format: '{0:n0}',
+      minWidth: 70,
     },
     {
       field: 'materialId',
@@ -557,6 +622,7 @@ export default function QualityPackagingNorms() {
       field: 'sapMaterialCode',
       title: 'SAP Material Code',
       editable: false,
+      minWidth: 100,
     },
     {
       field: 'normParameterTypeName ',
@@ -569,11 +635,13 @@ export default function QualityPackagingNorms() {
       field: 'name',
       title: 'Name of Item',
       editable: false,
+      minWidth: 100,
     },
     {
       field: 'unit',
       title: 'Unit',
       widthT: 80,
+      minWidth: 100,
     },
     {
       field: 'budget',
@@ -581,6 +649,7 @@ export default function QualityPackagingNorms() {
       editable: true,
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'actual',
@@ -588,6 +657,7 @@ export default function QualityPackagingNorms() {
       editable: true,
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'proposedNorm',
@@ -595,13 +665,15 @@ export default function QualityPackagingNorms() {
       editable: true,
       type: 'number',
       format: valueFormat,
+      minWidth: 100,
     },
     {
       field: 'remark',
       title: 'Remark',
       editable: true,
+      minWidth: 100,
     },
-  ]
+  ].map((col) => (IS_PE_NMD_LLDPE1 ? { ...col, editable: false } : col))
   const saveChanges = React.useCallback(async () => {
     try {
       var data = Object.values(modifiedCells)
@@ -1172,16 +1244,17 @@ export default function QualityPackagingNorms() {
   const adjustedPermissionsQuality = getAdjustedPermissionsQuality(
     {
       allAction: true,
-      saveBtn: true,
+      saveBtn: IS_PE_NMD_LLDPE1 ? false : true,
       showTitleNameBusiness: true,
       titleName: 'Quality Parameters',
       adjustedPermissions: true,
       downloadExcelBtn: true,
-      uploadExcelBtn: true,
+      uploadExcelBtn: IS_PE_NMD_LLDPE1 ? false : true,
       ExcelName: `${lowerVertName}_Quality_Parameters`,
       addButton: false,
       deleteButton: false,
       showTitle: true,
+      showReleaseBtn: !showReleaseButton ? true : false,
     },
     isOldYear,
   )
@@ -1203,13 +1276,13 @@ export default function QualityPackagingNorms() {
   const peopleInitiativePermissionDifferential =
     getAdjustedPermissionDifferential(
       {
-        saveBtn: true,
+        saveBtn: IS_PE_NMD_LLDPE1 ? false : true,
         allAction: true,
         showTitleNameBusiness: true,
         titleName: 'Price Differential As Percentage wrt Quality',
         adjustedPermissions: true,
         downloadExcelBtn: true,
-        uploadExcelBtn: true,
+        uploadExcelBtn: IS_PE_NMD_LLDPE1 ? false : true,
         ExcelName: `${lowerVertName}_Price_Differential`,
         addButton: false,
         deleteButton: false,
@@ -1235,17 +1308,21 @@ export default function QualityPackagingNorms() {
   const adjustedPermissionsPackaging = getAdjustedPermissionsPackaging(
     {
       allAction: true,
-      saveBtn: true,
+      saveBtn: IS_PE_NMD_LLDPE1 ? false : true,
       showTitleNameBusiness: true,
       titleName: 'Packagings & Consumables',
       adjustedPermissions: true,
       //downloadExcelBtnFromUI: true,
       downloadExcelBtn: true,
-      uploadExcelBtn: true,
+      uploadExcelBtn: IS_PE_NMD_LLDPE1 ? false : true,
       ExcelName: `${lowerVertName}_Packagings_Consumables`,
       addButton: false,
       deleteButton: false,
-      showCalculate: lowerVertName === 'elastomer' ? false : true,
+      showCalculate: IS_ELASTOMER_HMD_SBR
+        ? true
+        : lowerVertName === 'elastomer' && !IS_ELASTOMER_HMD_SBR
+          ? false
+          : true,
       showCalculateVisibility:
         Object.keys(calculationObject || {}).length > 0 ? true : false,
     },
@@ -1269,18 +1346,60 @@ export default function QualityPackagingNorms() {
   const adjustedPermissionsOtherCost = getAdjustedPermissionsOtherCost(
     {
       allAction: true,
-      saveBtn: true,
+      saveBtn: IS_PE_NMD_LLDPE1 ? false : true,
       showTitleNameBusiness: true,
       titleName: 'Other Costs',
       adjustedPermissions: true,
       downloadExcelBtn: true,
-      uploadExcelBtn: true,
+      uploadExcelBtn: IS_PE_NMD_LLDPE1 ? false : true,
       ExcelName: `${lowerVertName}_Other_Costs`,
       addButton: false,
       deleteButton: false,
     },
     isOldYear,
   )
+  const [openReleaseDialogBox, setOpenReleaseDialogBox] = useState(false)
+
+  const [isReleaseDisabled, setIsReleaseDisabled] = useState(true)
+
+  const handleRelease = () => {
+    setOpenReleaseDialogBox(true)
+  }
+  const closeReleaseDialogBox = () => {
+    setOpenReleaseDialogBox(false)
+  }
+
+  const dispatch = useDispatch()
+
+  const submitConfirmation = async () => {
+    setOpenReleaseDialogBox(false)
+    setLoading(true)
+    try {
+      const response = await DataService.releaseAOPReport(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Released Successfully!',
+        severity: 'success',
+      })
+      setIsReleaseDisabled(true)
+      let isReleased = 1
+      dispatch(setIsReleased({ isReleased }))
+    } catch (error) {
+      console.error('Error releasing report:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Release Failed!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <Box>
@@ -1295,6 +1414,7 @@ export default function QualityPackagingNorms() {
       {tabIndex === 0 && (
         <Box>
           <KendoDataTables
+            key={`qualit4-${IS_RELEASED}`}
             columns={columns.filter((col) => !col.hidden)}
             rows={rows}
             setRows={setRows}
@@ -1316,8 +1436,79 @@ export default function QualityPackagingNorms() {
             }
             handleExcelUpload={handleExcelUpload('Quality_Parameters')}
             groupBy='Particulars'
+            isReleaseDisabled={isReleaseDisabled}
+            handleRelease={handleRelease}
           />
+          <Dialog
+            open={openReleaseDialogBox}
+            onClose={closeReleaseDialogBox}
+            disableScrollLock
+            PaperProps={{
+              sx: {
+                borderRadius: '20px',
+                p: 2,
+                width: 400,
+                backdropFilter: 'blur(8px)',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+              },
+            }}
+          >
+            <DialogTitle
+              sx={{
+                fontWeight: 700,
+                fontSize: '1.2rem',
+
+                pb: 0.5,
+              }}
+            >
+              Confirm Release
+            </DialogTitle>
+
+            <DialogContent sx={{ pt: 1 }}>
+              <DialogContentText
+                sx={{
+                  fontSize: '0.9rem',
+                  color: '#4b5563',
+                  lineHeight: 1.5,
+                }}
+              >
+                Please confirm that{' '}
+                <b style={{ color: '#16a34a' }}>Production</b>,{' '}
+                <b style={{ color: '#16a34a' }}>Norms</b>, and{' '}
+                <b style={{ color: '#16a34a' }}>Reports</b> are verified before
+                releasing for review.
+              </DialogContentText>
+            </DialogContent>
+
+            <DialogActions sx={{ px: 2, pb: 1.5, gap: 1 }}>
+              <Button
+                onClick={closeReleaseDialogBox}
+                variant='text'
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  color: '#6b7280',
+                  '&:hover': { background: 'rgba(0,0,0,0.04)' },
+                }}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                onClick={submitConfirmation}
+                variant='contained'
+                className='btn-save'
+                sx={{
+                  textTransform: 'none',
+                  px: 2.5,
+                }}
+              >
+                Confirm
+              </Button>
+            </DialogActions>
+          </Dialog>{' '}
           <KendoDataTables
+            key={`quality3-${IS_RELEASED}`}
             columns={priceDiffColumns}
             rows={priceDiffRows}
             setRows={setPriceDiffRows}
@@ -1345,6 +1536,7 @@ export default function QualityPackagingNorms() {
       {tabIndex === 1 && (
         <Box>
           <KendoDataTables
+            key={`quality1-${IS_RELEASED}`}
             columns={packagingColumns}
             rows={packagingRows}
             setRows={setPackagingRows}
@@ -1369,6 +1561,7 @@ export default function QualityPackagingNorms() {
             groupBy='Particulars'
           />
           <KendoDataTables
+            key={`quality2-${IS_RELEASED}`}
             columns={columnsOtherCosts}
             rows={rowsOtherCosts}
             setRows={setRowsOtherCosts}

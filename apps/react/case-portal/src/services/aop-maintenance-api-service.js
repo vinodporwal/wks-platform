@@ -126,7 +126,7 @@ async function savemaintenacegetdata(
   AOP_YEAR,
 ) {
   // Only encode plantId and year, leave budgetCategory as-is
-  const url = `${Config.CaseEngineUrl}/task/budget-maintenance`
+  const url = `${Config.CaseEngineUrl}/task/budget-maintenance?plantId=${encodeURIComponent(PLANT_ID)}&year=${encodeURIComponent(AOP_YEAR)}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -145,7 +145,7 @@ async function savemaintenacegetdata(
   }
 }
 
-async function maintenaceExportdata(keycloak, PLANT_ID, AOP_YEAR) {
+async function maintenaceExportdata(keycloak, PLANT_ID, AOP_YEAR, EXCEL_NAME) {
   let url = `${Config.CaseEngineUrl}/task/budget-maintenance-export-excel?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}`
 
   const headers = {
@@ -168,7 +168,7 @@ async function maintenaceExportdata(keycloak, PLANT_ID, AOP_YEAR) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = `Maintenance Budget_Export.xlsx`
+    a.download = EXCEL_NAME
     document.body.appendChild(a)
     a.click()
     a.remove()

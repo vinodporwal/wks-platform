@@ -415,81 +415,112 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	@Override
 	@Transactional
 	public AOPMessageVM updateDecokingActivitiesIBRData(String year, String plantId, String reportType,
-	        List<Map<String, Object>> payloadList) { // Changed payload to List<Map<String, Object>>
-	    
+	        List<Map<String, Object>> payloadList) {
+
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
+	    int totalInsertedRows = 0;
 	    int totalUpdatedRows = 0;
-	    final Set<String> EXCLUDE_FIELDS = Set.of("Id", "Plant_FK_Id", "AOPYear", "TA_Duration_Days");
 
 	    try {
 	        for (Map<String, Object> payload : payloadList) {
-	            
 	            String idString = (String) payload.get("Id");
 	            if (idString == null) {
-	                continue; 
+	                totalInsertedRows += insertDecokingRecord(payload, year, plantId);
+	            } else {
+	                totalUpdatedRows += updateDecokingRecord(payload, idString, year, plantId);
 	            }
-
-	            StringBuilder setClause = new StringBuilder();
-	            Map<String, Object> parameters = new java.util.HashMap<>();
-	            for (Map.Entry<String, Object> entry : payload.entrySet()) {
-	                String columnName = entry.getKey();
-	                Object value = entry.getValue();
-	                if (EXCLUDE_FIELDS.contains(columnName)) {
-	                    continue;
-	                }
-	                
-	                if (setClause.length() > 0) {
-	                    setClause.append(", ");
-	                }
-
-	                setClause.append("[").append(columnName).append("] = :").append(columnName);
-
-	                parameters.put(columnName, value);
-	            }
-
-	            if (setClause.length() == 0) {
-	                continue; 
-	            }
-
-	            String sql = "UPDATE [dbo].[CrackerConfiguration] SET " + setClause.toString()
-	                        + " WHERE [Id] = :id AND [Plant_FK_Id] = :plantFkId AND [AOPYear] = :aopYear";
-
-	            jakarta.persistence.Query nativeQuery = entityManager.createNativeQuery(sql);
-
-	            parameters.forEach(nativeQuery::setParameter);
-	            nativeQuery.setParameter("id", UUID.fromString(idString));
-	            nativeQuery.setParameter("plantFkId", UUID.fromString(plantId));
-	            nativeQuery.setParameter("aopYear", year);
-
-	            totalUpdatedRows += nativeQuery.executeUpdate();
 	        }
 
-	        if (totalUpdatedRows > 0) {
+	        int totalAffectedRows = totalInsertedRows + totalUpdatedRows;
+	        if (totalAffectedRows > 0) {
 	            aopMessageVM.setCode(200);
-	            aopMessageVM.setMessage("CrackerConfiguration updated successfully. Total rows updated: " + totalUpdatedRows);
+	            aopMessageVM.setMessage("CrackerConfiguration processed successfully. Inserted: "
+	                    + totalInsertedRows + ", Updated: " + totalUpdatedRows);
 	        } else {
 	            aopMessageVM.setCode(404);
 	            aopMessageVM.setMessage("No CrackerConfiguration records found or no changes made.");
 	        }
 
 	        List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("sd-ta-activity");
-			for (ScreenMapping screenMapping : screenMappingList) {
-				AopCalculation aopCalculation = new AopCalculation();
-				aopCalculation.setAopYear(year);
-				aopCalculation.setIsChanged(true);
-				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
-				aopCalculation.setPlantId(UUID.fromString(plantId));
-				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
-				aopCalculationRepository.save(aopCalculation);
-			}
-			return aopMessageVM;
+	        for (ScreenMapping screenMapping : screenMappingList) {
+	            AopCalculation aopCalculation = new AopCalculation();
+	            aopCalculation.setAopYear(year);
+	            aopCalculation.setIsChanged(true);
+	            aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+	            aopCalculation.setPlantId(UUID.fromString(plantId));
+	            aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+	            aopCalculationRepository.save(aopCalculation);
+	        }
+	        return aopMessageVM;
 
 	    } catch (Exception ex) {
 	        ex.printStackTrace();
 	        aopMessageVM.setCode(500);
-	        aopMessageVM.setMessage("Failed to process updates: " + ex.getMessage());
+	        aopMessageVM.setMessage("Failed to process request: " + ex.getMessage());
 	        return aopMessageVM;
 	    }
+	}
+
+	private int insertDecokingRecord(Map<String, Object> payload, String year, String plantId) {
+	    final Set<String> SYSTEM_FIELDS = Set.of("Id", "Plant_FK_Id", "AOPYear");
+
+	    StringBuilder columns = new StringBuilder("[Id], [Plant_FK_Id], [AOPYear]");
+	    StringBuilder values = new StringBuilder(":id, :plantFkId, :aopYear");
+	    Map<String, Object> parameters = new HashMap<>();
+
+	    for (Map.Entry<String, Object> entry : payload.entrySet()) {
+	        String columnName = entry.getKey();
+	        if (SYSTEM_FIELDS.contains(columnName)) {
+	            continue;
+	        }
+	        columns.append(", [").append(columnName).append("]");
+	        values.append(", :").append(columnName);
+	        parameters.put(columnName, entry.getValue());
+	    }
+
+	    String sql = "INSERT INTO [dbo].[CrackerConfiguration] (" + columns + ") VALUES (" + values + ")";
+
+	    jakarta.persistence.Query nativeQuery = entityManager.createNativeQuery(sql);
+	    nativeQuery.setParameter("id", UUID.randomUUID());
+	    nativeQuery.setParameter("plantFkId", UUID.fromString(plantId));
+	    nativeQuery.setParameter("aopYear", year);
+	    parameters.forEach(nativeQuery::setParameter);
+
+	    return nativeQuery.executeUpdate();
+	}
+
+	private int updateDecokingRecord(Map<String, Object> payload, String idString, String year, String plantId) {
+	    final Set<String> EXCLUDE_FIELDS = Set.of("Id", "Plant_FK_Id", "AOPYear", "TA_Duration_Days");
+
+	    StringBuilder setClause = new StringBuilder();
+	    Map<String, Object> parameters = new HashMap<>();
+
+	    for (Map.Entry<String, Object> entry : payload.entrySet()) {
+	        String columnName = entry.getKey();
+	        if (EXCLUDE_FIELDS.contains(columnName)) {
+	            continue;
+	        }
+	        if (setClause.length() > 0) {
+	            setClause.append(", ");
+	        }
+	        setClause.append("[").append(columnName).append("] = :").append(columnName);
+	        parameters.put(columnName, entry.getValue());
+	    }
+
+	    if (setClause.length() == 0) {
+	        return 0;
+	    }
+
+	    String sql = "UPDATE [dbo].[CrackerConfiguration] SET " + setClause
+	            + " WHERE [Id] = :id AND [Plant_FK_Id] = :plantFkId AND [AOPYear] = :aopYear";
+
+	    jakarta.persistence.Query nativeQuery = entityManager.createNativeQuery(sql);
+	    parameters.forEach(nativeQuery::setParameter);
+	    nativeQuery.setParameter("id", UUID.fromString(idString));
+	    nativeQuery.setParameter("plantFkId", UUID.fromString(plantId));
+	    nativeQuery.setParameter("aopYear", year);
+
+	    return nativeQuery.executeUpdate();
 	}
 
 	public byte[] createExcel(String year, String plantId, String reportType, boolean isAfterSave,
@@ -764,6 +795,11 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
 	    List<Map<String, Object>> failedList = new ArrayList<>();
 
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+        boolean CrackerVmd = vertical.getName().equalsIgnoreCase("CRACKER") && site.getName().equalsIgnoreCase("VMD");
+
 	    final Set<String> EXCLUDE = Set.of("AOPYear", "aopYear", "Id", "Plant_Fk_Id", "plantId",
 	                                       "saveStatus", "errDescription", "Month", "Date","id");
 
@@ -786,7 +822,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	            }
 
 	            if (existingRecord.isPresent()) {
-	                updateExistingRecordDynamic(existingRecord.get().getId(), payload, EXCLUDE);
+	                updateExistingRecordDynamic(existingRecord.get().getId(), payload, EXCLUDE, CrackerVmd);
 	            } else {
 	                
 	                insertNewRecordWithDefaults(payload, plantUuid, year, dateString);
@@ -806,18 +842,30 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	    }
 	}
 	
-	private void updateExistingRecordDynamic(UUID id, Map<String, Object> payload, Set<String> exclude) {
+	private void updateExistingRecordDynamic(UUID id, Map<String, Object> payload, Set<String> exclude, boolean isCrackerVmd) {
 	    StringBuilder sql = new StringBuilder("UPDATE DecokeRunLength SET ");
 	    Map<String, Object> params = new HashMap<>();
 	    boolean first = true;
 
-	    for (Map.Entry<String, Object> entry : payload.entrySet()) {
+	for (Map.Entry<String, Object> entry : payload.entrySet()) {
 	        String key = entry.getKey();
-	        if (exclude.contains(key) || key.contains("Actual")) continue; 
+			
+			if(exclude.contains(key) || key.contains("Actual")) continue;
+	     
 
-	        String dbColumn = key.replace(" ", "_");
+	        String dbColumn;
+	        if (isCrackerVmd && key.matches("H10[1-6] (Actual|Proposed)")) {
+	            String[] parts = key.split(" ", 2);
+	            String hPart = parts[0]; // e.g. "H101"
+	            String type  = parts[1]; // "Actual" or "Proposed"
+	            int lastDigit = Character.getNumericValue(hPart.charAt(hPart.length() - 1));
+	            int colNum = lastDigit + 9;
+	            dbColumn = "H" + colNum + "_" + type;
+	        } else {
+	            dbColumn = key.replace(" ", "_");
+	        }
+
 	        if (!first) sql.append(", ");
-	        
 	        String paramName = "p_" + dbColumn.replaceAll("[^a-zA-Z0-9]", "");
 	        sql.append("[").append(dbColumn).append("] = :").append(paramName);
 	        params.put(paramName, entry.getValue());
@@ -1002,7 +1050,44 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 				stmt.setString(1, plantId); 
 				stmt.setString(2, aopYear); 
 
-				int rowsAffected = stmt.executeUpdate();
+			//	int rowsAffected = stmt.executeUpdate();
+			int rowsAffected = 0;
+			boolean hasResultSet = stmt.execute();
+			if (hasResultSet) {
+				ResultSet rs = stmt.getResultSet();
+				ResultSetMetaData rsmd = rs.getMetaData();
+				int columnCount = rsmd.getColumnCount();
+
+				List<Map<String, Object>> columns = new ArrayList<>();
+				for (int i = 1; i <= columnCount; i++) {
+					String columnName = rsmd.getColumnLabel(i);
+					Map<String, Object> meta = new HashMap<>();
+					meta.put("field", columnName);
+					meta.put("title", columnName);
+					meta.put("type", getFrontendType(rsmd.getColumnTypeName(i)));
+					columns.add(meta);
+				}
+
+				List<Map<String, Object>> data = new ArrayList<>();
+				while (rs.next()) {
+					Map<String, Object> row = new LinkedHashMap<>();
+					for (int i = 1; i <= columnCount; i++) {
+						String colName = rsmd.getColumnLabel(i);
+						Object value = rs.getObject(i);
+						row.put(colName, value != null ? value : "");
+					}
+					data.add(row);
+				}
+
+				Map<String, Object> finalData = new HashMap<>();
+				finalData.put("data", data);
+				finalData.put("columns", columns);
+				aopMessageVM.setData(finalData);
+			} else {
+				 rowsAffected = stmt.getUpdateCount();
+				 aopMessageVM.setData(rowsAffected);
+				System.out.println("Rows affected: " + rowsAffected);
+			}
 
 				if (!connection.getAutoCommit()) {
 					connection.commit();
@@ -1025,7 +1110,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 
 				aopMessageVM.setCode(200);
 				aopMessageVM.setMessage("SP Executed successfully");
-				aopMessageVM.setData(rowsAffected);
+			//	aopMessageVM.setData(rowsAffected);
 				return aopMessageVM;
 
 			} catch (SQLException e) {
@@ -1288,7 +1373,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			
 			Map<String, String> columnTitleMap = loadColumnTitles(connection,
-								"vwScrnCrackerKeyValueColumns", "DMD", "Sd-Ta-Activities");
+								"vwScrnCrackerKeyValueColumns", site.getName(), "Sd-Ta-Activities");
 			Map<String, String> columnIsVisibleMap = loadIsVisible(connection,
 					"vwScrnCrackerKeyValueColumns", site.getName(), "Sd-Ta-Activities");
 	        String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?";

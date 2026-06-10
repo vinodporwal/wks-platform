@@ -14,6 +14,9 @@ import AopTabs from 'components/AopTabs'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import StartAndEndPicker from './Utilities-Kendo/StartAndEndPicker'
 import NaphthaLimsDataSet from './NaphthaLimsDataSet'
+import NaphthaHMDComponent from './NaphthaHMDComponent'
+import ModeSelection from './ModeSelection'
+
 const CrackerConfig = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -83,6 +86,7 @@ const CrackerConfig = () => {
     'Constant',
     'Naphtha',
     'External Streams',
+    'OptimizerPrices',
   ]
   const [tabs, setTabs] = useState(rawTabsStatic)
   const [availableTabs, setAvailableTabs] = useState([])
@@ -96,6 +100,9 @@ const CrackerConfig = () => {
   const [optimizing, setOptimizing] = useState([])
   const [furnace, setFurnance] = useState([])
 
+  const IS_CRACKER_HMD = lowerVertName === 'cracker' && SITE_NAME === 'HMD'
+  const IS_CRACKER_C2 = lowerVertName === 'cracker' && SITE_NAME === 'C2'
+
   // const allModes = ['5F', '4F', '4F+D']
 
   const [selectMode, setSelectMode] = useState('')
@@ -106,6 +113,7 @@ const CrackerConfig = () => {
     endDate: null,
   })
   const [exsternalSteamRows, setExsternalSteamRows] = useState([])
+  const [optimizerPricesRows, setOptimizerPricesRows] = useState([])
 
   const currentTabDisplay = useMemo(() => {
     const idLower = tabs[tabIndex]?.toLowerCase() || ''
@@ -152,12 +160,16 @@ const CrackerConfig = () => {
       editButton: false,
       showUnit: false,
       showModes:
+        !IS_CRACKER_HMD &&
+        !IS_CRACKER_C2 &&
         lowerVertName === 'cracker' &&
         currentTabDisplay !== 'Naphtha' &&
         currentTabDisplay !== 'External Streams',
       saveWithRemark: true,
       saveBtn: true,
       allAction: lowerVertName === 'cracker',
+      showCalculate: IS_CRACKER_HMD || IS_CRACKER_C2,
+      showCalculateVisibility: true,
       modes: modes,
       uploadExcelBtn:
         currentTabDisplay == 'Constant' ||
@@ -170,6 +182,15 @@ const CrackerConfig = () => {
           ? false
           : true,
       hideRemarkForNonEditableRows: true,
+      makePagable: currentTabDisplay !== 'Composition',
+    },
+    isOldYear,
+  )
+
+  const adjustedPermissionsReadyOnly = getAdjustedPermissions(
+    {
+      hideRemarkForNonEditableRows: true,
+      NON_EDITABLE_GRID: true,
     },
     isOldYear,
   )
@@ -322,6 +343,8 @@ const CrackerConfig = () => {
           return naphthaRows
         case 'External Streams':
           return exsternalSteamRows
+        case 'OptimizerPrices':
+          return optimizerPricesRows
         default:
           return []
       }
@@ -336,6 +359,7 @@ const CrackerConfig = () => {
       constantsRows,
       naphthaRows,
       exsternalSteamRows,
+      optimizerPricesRows,
     ],
   )
 
@@ -371,6 +395,9 @@ const CrackerConfig = () => {
       case 'External Streams':
         setExsternalSteamRows(data)
         break
+      case 'OptimizerPrices':
+        setOptimizerPricesRows(data)
+        break
 
       default:
         console.warn('No state for tab:', tabId)
@@ -386,6 +413,9 @@ const CrackerConfig = () => {
         let transformedData1 = []
         let transformedData12 = []
         var spyroVM1 = []
+        if (IS_CRACKER_HMD || IS_CRACKER_C2) {
+          mode = currentTabDisplay
+        }
         if (currentTabDisplay == 'Constant') {
           spyroVM1 = await DataService.getSpyroInputData(
             keycloak,
@@ -529,11 +559,11 @@ const CrackerConfig = () => {
         }, 500)
       } catch (err) {
         // console.warn(`Failed to load ${tabId} data:`, err)
-        setSnackbarData({
-          message: `Failed to load ${currentTabDisplay} data. Please try again.`,
-          severity: 'error',
-        })
-        setSnackbarOpen(true)
+        // setSnackbarData({
+        //   message: `Failed to load ${currentTabDisplay} data. Please try again.`,
+        //   severity: 'error',
+        // })
+        // setSnackbarOpen(true)
         setRowsForTab(currentTabDisplay, [])
       } finally {
         setLoading(false)
@@ -724,12 +754,65 @@ const CrackerConfig = () => {
     }
   }
 
+  const handleCalculate = useCallback(async () => {
+    setLoading(true)
+    try {
+      let mode = selectMode || currentTabDisplay || 'Feed'
+      const type = currentTabDisplay || 'Feed'
+      if (IS_CRACKER_HMD || IS_CRACKER_C2) {
+        mode = currentTabDisplay
+      }
+      const response = await DataService.calculateSpyroInputData(
+        keycloak,
+        mode,
+        type,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data calculated successfully!',
+          severity: 'success',
+        })
+
+        fetchCrackerRows(currentTabDisplay, selectMode)
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Error calculating data!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error calculating spyro input data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to calculate data!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [
+    keycloak,
+    selectMode,
+    currentTabDisplay,
+    PLANT_ID,
+    AOP_YEAR,
+    IS_CRACKER_HMD,
+    IS_CRACKER_C2,
+  ])
+
   const saveSpyroInputExcelFile = async (rawFile) => {
     setLoading(true)
     try {
-      const mode = selectMode || ''
+      let mode = selectMode || ''
       let response
-
+      if (IS_CRACKER_HMD || IS_CRACKER_C2) {
+        mode = currentTabDisplay
+      }
       if (currentTabDisplay == 'Naphtha') {
         response = await DataService.importNaphthaExcel(
           rawFile,
@@ -803,7 +886,10 @@ const CrackerConfig = () => {
       severity: 'success',
     })
 
-    const mode = selectMode
+    let mode = selectMode
+    if (IS_CRACKER_HMD || IS_CRACKER_C2) {
+      mode = currentTabDisplay
+    }
     const EXCEL_NAME =
       currentTabDisplay == 'Naphtha'
         ? `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_Optimizer_Input_${AOP_YEAR}`
@@ -916,11 +1002,11 @@ const CrackerConfig = () => {
       setSnackbarData({ message: 'Naphtha data loaded!', severity: 'success' })
       setSnackbarOpen(true)
     } catch (error) {
-      setSnackbarData({
-        message: 'Failed to load Naphtha data.',
-        severity: 'error',
-      })
-      setSnackbarOpen(true)
+      // setSnackbarData({
+      //   message: 'Failed to load Naphtha data.',
+      //   severity: 'error',
+      // })
+      // setSnackbarOpen(true)
     } finally {
       setLoading(false)
     }
@@ -973,6 +1059,9 @@ const CrackerConfig = () => {
           tabs={resolvedTabs}
         />
       </Box>
+      {IS_CRACKER_HMD && (
+        <ModeSelection permissions={adjustedPermissionsReadyOnly} />
+      )}
       <Box>
         {(() => {
           const rows = getRows(currentTabDisplay)
@@ -986,6 +1075,7 @@ const CrackerConfig = () => {
             case 'Recovery':
             case 'Optimizing':
             case 'Furnace':
+            case 'OptimizerPrices':
             case 'Constant':
               return (
                 <Box key={currentTabDisplay}>
@@ -1004,6 +1094,7 @@ const CrackerConfig = () => {
                     setCurrentRemark={setCurrentRemark}
                     currentRowId={currentRowId}
                     permissions={adjustedPermissions}
+                    handleCalculate={handleCalculate}
                     selectMode={selectMode}
                     setSelectMode={setSelectMode}
                     saveChanges={saveChanges}
@@ -1022,6 +1113,13 @@ const CrackerConfig = () => {
                 </Box>
               )
             case 'Naphtha':
+              if (IS_CRACKER_HMD || IS_CRACKER_C2) {
+                return (
+                  <Box key={currentTabDisplay}>
+                    <NaphthaHMDComponent />
+                  </Box>
+                )
+              }
               return (
                 <Box key={currentTabDisplay}>
                   {/* Carbon Number Distribution Grid with Date Filter */}
@@ -1127,6 +1225,7 @@ const CrackerConfig = () => {
                     setRemarkDialogOpen={setRemarkDialogOpen}
                     currentRemark={currentRemark}
                     setCurrentRemark={setCurrentRemark}
+                    handleCalculate={handleCalculate}
                     currentRowId={currentRowId}
                     permissions={adjustedPermissions}
                     selectMode={selectMode}

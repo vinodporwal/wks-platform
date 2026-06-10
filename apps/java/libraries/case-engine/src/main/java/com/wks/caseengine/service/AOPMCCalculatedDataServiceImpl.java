@@ -1270,7 +1270,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	}
 
 	public byte[] createExcel(String year, String plantFKId, boolean isAfterSave,
-			List<AOPMCCalculatedDataDTO> dtoList) {
+			List<AOPMCCalculatedDataDTO> dtoList, String gridName) {
 		 Plants plant = plantsRepository.findById(UUID.fromString(plantFKId))
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
@@ -1286,9 +1286,17 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 			List<List<Object>> rows = new ArrayList<>();
 			if (!isAfterSave) {
 				if(vertical.getName().equalsIgnoreCase("CRACKER")) {
+					if(gridName != null && gridName.equalsIgnoreCase("design-capacity")) { 
+						String procedureName=vertical.getName()+"_GetAOPMCValuesDesignCapacity";
+					obj= findByYearAndPlantId(year, UUID.fromString(plantFKId) ,  procedureName);
+					return createExcelDesignCapacity(obj, workbook, sheet, year);
+					}
+					else {
 					String procedureName=vertical.getName()+"_GetAOPMCValues";
 		        	obj= findByYearAndPlantId(year, UUID.fromString(plantFKId) ,  procedureName);
-		        } if (vertical.getName().equalsIgnoreCase("PTA")) {
+					}
+		        } 
+				else if (vertical.getName().equalsIgnoreCase("PTA")) {
 		            String view = "vw" + vertical.getName() + "_" + site.getName() + "_AOPMCValues";
 		            obj = getDataMCUValuesAllData(year, plantFKId, view);
 		        }else {
@@ -1386,15 +1394,17 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 					Cell cell = row1.createCell(col);
 					Object value = rowData.get(col);
 
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
-					} else if (value != null) {
-						cell.setCellValue(value.toString());
-					} else {
-						cell.setCellValue("");
-					}
+				if (value instanceof Number) {
+					cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
+				} else if (value instanceof Boolean) {
+					cell.setCellValue((Boolean) value);
+				} else if (value != null) {
+					cell.setCellValue(value.toString());
+				} else if (col >= 1 && col <= 12) {
+					cell.setCellValue(0);
+				} else {
+					cell.setCellValue("");
+				}
 
 				}
 			}
@@ -1422,6 +1432,77 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 
 	}
 
+	private byte[] createExcelDesignCapacity(List<Object[]> obj, Workbook workbook, Sheet sheet, String year) {
+		try {
+			int currentRow = 0;
+			List<List<Object>> rows = new ArrayList<>();
+
+			for (Object[] row : obj) {
+				List<Object> list = new ArrayList<>();
+				list.add(row[2] != null ? row[2].toString() : null);
+				list.add(row[3] != null ? Double.parseDouble(row[3].toString()) : null);
+				list.add(row[4] != null ? Double.parseDouble(row[4].toString()) : null);
+				list.add(row[5] != null ? Double.parseDouble(row[5].toString()) : null);
+				list.add(row[6] != null ? Double.parseDouble(row[6].toString()) : null);
+				list.add(row[7] != null ? Double.parseDouble(row[7].toString()) : null);
+				list.add(row[8] != null ? Double.parseDouble(row[8].toString()) : null);
+				list.add(row[9] != null ? Double.parseDouble(row[9].toString()) : null);
+				list.add(row[10] != null ? Double.parseDouble(row[10].toString()) : null);
+				list.add(row[11] != null ? Double.parseDouble(row[11].toString()) : null);
+				list.add(row[12] != null ? Double.parseDouble(row[12].toString()) : null);
+				list.add(row[13] != null ? Double.parseDouble(row[13].toString()) : null);
+				list.add(row[14] != null ? Double.parseDouble(row[14].toString()) : null);
+				list.add(row[16] != null ? row[16].toString() : " ");
+				list.add(row[0] != null ? row[0].toString() : null);
+				list.add(row[1] != null ? row[1].toString() : null);
+				rows.add(list);
+			}
+
+			List<String> innerHeaders = new ArrayList<>();
+			innerHeaders.add("Particulars");
+			List<String> monthsList = getAcademicYearMonths(year);
+			innerHeaders.addAll(monthsList);
+			innerHeaders.add("Remarks");
+			innerHeaders.add("Id");
+			innerHeaders.add("MaterialFKId");
+
+			Row headerRow = sheet.createRow(currentRow++);
+			for (int col = 0; col < innerHeaders.size(); col++) {
+				Cell cell = headerRow.createCell(col);
+				cell.setCellValue(innerHeaders.get(col));
+				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+			}
+
+			for (List<Object> rowData : rows) {
+				Row row1 = sheet.createRow(currentRow++);
+				for (int col = 0; col < rowData.size(); col++) {
+					Cell cell = row1.createCell(col);
+					Object value = rowData.get(col);
+					if (value instanceof Number) {
+						cell.setCellValue(((Number) value).doubleValue());
+					} else if (value instanceof Boolean) {
+						cell.setCellValue((Boolean) value);
+					} else if (value != null) {
+						cell.setCellValue(value.toString());
+					} else {
+						cell.setCellValue("");
+					}
+				}
+			}
+
+			sheet.setColumnHidden(14, true);
+			sheet.setColumnHidden(15, true);
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 	@Override
 	public AOPMessageVM importExcelPE(String year, String plantFKId, MultipartFile file) {
 	    try {
@@ -1440,7 +1521,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	        AOPMessageVM aopMessageVM = new AOPMessageVM();
 	        
 	        if (!allFailedRecords.isEmpty()) {
-	            byte[] fileByteArray = createExcel(year, plantFKId, true, allFailedRecords);
+	            byte[] fileByteArray = createExcel(year, plantFKId, true, allFailedRecords, null);
 	            String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 	            
 	            aopMessageVM.setData(base64File);
@@ -1473,7 +1554,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
-				byte[] fileByteArray = createExcel(year, plantFKId, true, failedRecords);
+				byte[] fileByteArray = createExcel(year, plantFKId, true, failedRecords, null);
 				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 				aopMessageVM.setData(base64File);
 				aopMessageVM.setCode(400);
@@ -1524,6 +1605,70 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 		return null;
 	}
 	
+	public List<AOPMCCalculatedDataDTO> readDesignCapacityData(InputStream inputStream, UUID plantFKId, String year) {
+		List<AOPMCCalculatedDataDTO> prodList = new ArrayList<>();
+		Plants plant = plantsRepository.findById(plantFKId)
+				.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+				.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+		Sites site = siteRepository.findById(plant.getSiteFkId())
+				.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+			if (rowIterator.hasNext())
+				rowIterator.next();
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+				AOPMCCalculatedDataDTO dto = new AOPMCCalculatedDataDTO();
+				try {
+					dto.setProductName(getStringCellValue(row.getCell(0), dto));
+					dto.setApril(getNumericCellValue(row.getCell(1), dto));
+					dto.setMay(getNumericCellValue(row.getCell(2), dto));
+					dto.setJune(getNumericCellValue(row.getCell(3), dto));
+					dto.setJuly(getNumericCellValue(row.getCell(4), dto));
+					dto.setAugust(getNumericCellValue(row.getCell(5), dto));
+					dto.setSeptember(getNumericCellValue(row.getCell(6), dto));
+					dto.setOctober(getNumericCellValue(row.getCell(7), dto));
+					dto.setNovember(getNumericCellValue(row.getCell(8), dto));
+					dto.setDecember(getNumericCellValue(row.getCell(9), dto));
+					dto.setJanuary(getNumericCellValue(row.getCell(10), dto));
+					dto.setFebruary(getNumericCellValue(row.getCell(11), dto));
+					dto.setMarch(getNumericCellValue(row.getCell(12), dto));
+					dto.setRemarks(getStringCellValue(row.getCell(13), dto));
+					dto.setId(getStringCellValue(row.getCell(14), dto));
+					dto.setMaterialFKId(getStringCellValue(row.getCell(15), dto));
+					dto.setVerticalFKId(vertical.getId().toString());
+					dto.setSiteFKId(site.getId().toString());
+					dto.setPlantFKId(plant.getId().toString());
+					dto.setFinancialYear(year);
+				} catch (Exception e) {
+					e.printStackTrace();
+					dto.setErrDescription(e.getMessage());
+					dto.setSaveStatus("Failed");
+				}
+				prodList.add(dto);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return prodList;
+	}
+
+	@Override
+	public AOPMessageVM importExcelDesignCapacity(String year, String plantFKId, MultipartFile file) {
+		try {
+			List<AOPMCCalculatedDataDTO> data = readDesignCapacityData(file.getInputStream(), UUID.fromString(plantFKId), year);
+			return updateDesignCapacity(plantFKId, year, data);
+		} catch (Exception e) {
+			e.printStackTrace();
+			AOPMessageVM errorVM = new AOPMessageVM();
+			errorVM.setCode(500);
+			errorVM.setMessage("Error processing file: " + e.getMessage());
+			return errorVM;
+		}
+	}
+
 	public static List<String> getAcademicYearMonths(String year) {
 		List<String> months = new ArrayList<>();
 		int startYear = Integer.parseInt(year.substring(0, 4));

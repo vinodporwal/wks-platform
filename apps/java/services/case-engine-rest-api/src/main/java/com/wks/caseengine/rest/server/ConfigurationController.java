@@ -10,7 +10,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.dto.CatalystChangeOverDTO;
+import com.wks.caseengine.dto.TankConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
@@ -64,14 +68,14 @@ public class ConfigurationController {
 	}
 	
 	@PostMapping(value="/production-norms")
-	public List<ConfigurationDTO> saveConfigurationData(@RequestParam String year,@RequestParam String plantFKId,@RequestParam(required=false) String version, @RequestBody List<ConfigurationDTO> configurationDTOList,@RequestParam(required=false) Boolean calculation) {
-		configurationService.saveConfigurationData(year,plantFKId,version,configurationDTOList,calculation);
+	public List<ConfigurationDTO> saveConfigurationData(@RequestParam String year,@RequestParam String plantFKId,@RequestParam(required=false) String version, @RequestBody List<ConfigurationDTO> configurationDTOList,@RequestParam(required=false) Boolean calculation,@RequestParam(required=false) boolean isMinMax) {
+		configurationService.saveConfigurationData(year,plantFKId,version,configurationDTOList,calculation,isMinMax);
 		return configurationDTOList;
 	}
 	
 	@GetMapping(value="/getPeConfigData")
-	public  List<Map<String, Object>> getNormAttributeTransactionReceipeSp(@RequestParam String year,@RequestParam String plantId){
-		return	 configurationService.getNormAttributeTransactionReceipe(year,plantId);
+	public  List<Map<String, Object>> getNormAttributeTransactionReceipeSp(@RequestParam String year,@RequestParam String plantId, @RequestParam(required=false) boolean iscatcam){
+		return	 configurationService.getNormAttributeTransactionReceipe(year,plantId,iscatcam);
 		
 	}
 	
@@ -82,8 +86,9 @@ public class ConfigurationController {
 	
 	@GetMapping(value="/configuration-constants")
 	public AOPMessageVM getConfigurationConstants(@RequestParam String year,
-												  @RequestParam String plantFKId) {
-		return configurationService.getConfigurationConstants(year,plantFKId);
+												  @RequestParam String plantFKId,
+												@RequestParam(required = false) boolean iscatcam) {
+		return configurationService.getConfigurationConstants(year,plantFKId,iscatcam);
 	}
 
 	@GetMapping(value="/production-constraints")
@@ -103,11 +108,12 @@ public class ConfigurationController {
 	@GetMapping(value = "/configuration-constants-export-excel")
 	public ResponseEntity<byte[]> exportConfigurationConstantsReport(
 	         @RequestParam("plantFKId") String plantFKId,
-            @RequestParam("year") String year
+            @RequestParam("year") String year,
+			@RequestParam(required = false) boolean iscatcam
 	        ) {
 	    try {
 			
-	        byte[] excelBytes = configurationService.createConfigurationConstantsExcel(year,UUID.fromString(plantFKId)); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+	        byte[] excelBytes = configurationService.createConfigurationConstantsExcel(year,UUID.fromString(plantFKId), iscatcam); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
 
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(
@@ -172,11 +178,12 @@ public class ConfigurationController {
 	@GetMapping(value = "/recipe-export")
 	public ResponseEntity<byte[]> exportConfigData(
 	         @RequestParam("plantId") String plantId,
-            @RequestParam("year") String year
+            @RequestParam("year") String year,
+			@RequestParam(required=false) boolean iscatcam
 	        ) {
 	    try {
 			
-	        byte[] excelBytes = configurationService.exportConfigData(year,UUID.fromString(plantId),false,null); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+	        byte[] excelBytes = configurationService.exportConfigData(year,UUID.fromString(plantId),false,null, iscatcam); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
 
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(
@@ -219,9 +226,10 @@ public class ConfigurationController {
 	public AOPMessageVM importRecipe(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year,
-			@RequestParam("file") MultipartFile file
+			@RequestParam("file") MultipartFile file,
+			@RequestParam(required=false) boolean iscatcam
 	        ) {
-			return	configurationService.importRecipe(year,UUID.fromString(plantId), file); 
+			return	configurationService.importRecipe(year,UUID.fromString(plantId), file, iscatcam); 
 	}
 
 	@PostMapping(value = "/configuration-export-excel")
@@ -276,9 +284,9 @@ public class ConfigurationController {
 	public AOPMessageVM importExcel(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year,@RequestParam(required=false) List<String> reportTypes,@RequestParam(required=false) String version,@RequestParam(required=false) Boolean calculation,
-			@RequestParam("file") MultipartFile file
+			@RequestParam("file") MultipartFile file,@RequestParam(required=false) boolean isMinMax
 	        ) {
-			return	configurationService.importExcel(year,UUID.fromString(plantId),reportTypes,version, file,calculation); 
+			return	configurationService.importExcel(year,UUID.fromString(plantId),reportTypes,version, file,calculation,isMinMax); 
 	}
 	
 	@PostMapping(value = "/shutdown-rate-import", consumes = "multipart/form-data")
@@ -288,9 +296,9 @@ public class ConfigurationController {
             @RequestParam("type") String type,
             @RequestParam(required=false) String version,
 			@RequestParam("file") MultipartFile file,
-			@RequestParam(required=false) Boolean calculation
+			@RequestParam(required=false) Boolean calculation,@RequestParam(required=false) boolean isMinMax
 	        ) {
-			return	configurationService.importShutdownRateExcel(year,UUID.fromString(plantId),type,version, file,calculation); 
+			return	configurationService.importShutdownRateExcel(year,UUID.fromString(plantId),type,version, file,calculation,isMinMax); 
 	}
 	
 	@PostMapping(value = "/configuration-constants-import-excel", consumes = "multipart/form-data")
@@ -299,10 +307,10 @@ public class ConfigurationController {
             @RequestParam("year") String year,
             @RequestParam(required=false) String version,
             @RequestParam(required=false) Boolean calculation,
-			@RequestParam("file") MultipartFile file
+			@RequestParam("file") MultipartFile file,@RequestParam(required=false) boolean isMinMax
 	        ) {
 		
-	        return configurationService.importConfigurationConstantsExcel(year,UUID.fromString(plantFKId),version, file,calculation); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+	        return configurationService.importConfigurationConstantsExcel(year,UUID.fromString(plantFKId),version, file,calculation,isMinMax); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
 	}
 
 	@PostMapping(value = "/line-configuration-import", consumes = "multipart/form-data")
@@ -382,6 +390,73 @@ public class ConfigurationController {
 			@RequestBody List<NormLineRequestDTO> normLineRequestDTOList) {
 
 		return configurationService.updateLineConfiguration(year, plantId, normLineRequestDTOList);
+	}
+
+	@GetMapping(value = "/season-months")   
+	public List<Map<String, Object>> getSeasonMonths(
+			@RequestParam String plantId,
+			@RequestParam String aopYear) {
+		return configurationService.getSeasonMonths(UUID.fromString(plantId), aopYear);
+	}
+
+	@GetMapping(value = "/load-configuration")
+	public AOPMessageVM LoadConfigurationValues(@RequestParam String year,@RequestParam String plantId) {
+		return configurationService.LoadConfigurationValues(year,plantId);
+	}
+
+	@GetMapping(value = "/catalyst-change-over")
+	public AOPMessageVM getCatalystChangeOver(@RequestParam String year,@RequestParam String plantId) {
+		return configurationService.getCatalystChangeOver(year,plantId);
+	}
+
+	@PostMapping(value = "/catalyst-change-over/{year}")
+	public AOPMessageVM saveCatalystChangeOver(@PathVariable String year, @RequestBody List<CatalystChangeOverDTO> catalystChangeOverDTOList) {
+		return configurationService.saveCatalystChangeOver(catalystChangeOverDTOList, year);
+	}
+
+	@DeleteMapping(value = "/catalyst-change-over/{id}")
+	public AOPMessageVM deleteCatalystChangeOver(@PathVariable String id) {
+		return configurationService.deleteCatalystChangeOver(id);
+	}
+
+	@GetMapping(value = "/catalyst-change-over-export")
+	public ResponseEntity<byte[]> exportCatalystChangeOver(
+			@RequestParam("plantId") String plantId,
+			@RequestParam("year") String year) {
+		try {
+			byte[] excelBytes = configurationService.createCatalystChangeOverExcel(year, plantId, false, null);
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.parseMediaType(
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(ContentDisposition.builder("attachment")
+					.filename("catalyst_change_over.xlsx")
+					.build());
+			headers.setContentLength(excelBytes.length);
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@PostMapping(value = "/catalyst-change-over-import", consumes = "multipart/form-data")
+	public AOPMessageVM importCatalystChangeOverExcel(
+			@RequestParam("plantId") String plantId,
+			@RequestParam("year") String year,
+			@RequestParam("file") MultipartFile file) {
+		return configurationService.importCatalystChangeOverExcel(year, plantId, file);
+	}
+
+	@GetMapping(value = "/tank-config")
+	public AOPMessageVM getTankConfiguration(@RequestParam String year,@RequestParam String plantId) {
+		return configurationService.getTankConfiguration(year,plantId);
+	}
+
+	@PostMapping(value = "/tank-config")
+	public AOPMessageVM saveTankConfiguration(
+			@RequestParam String plantId,
+			@RequestParam String aopYear,
+			@RequestBody List<TankConfigurationDTO> tankConfigurationDTOList) {
+		return configurationService.saveTankConfiguration(tankConfigurationDTOList, plantId, aopYear);
 	}
 
 }

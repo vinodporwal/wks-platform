@@ -30,6 +30,8 @@ import { getRoleName } from 'services/role-service.js'
 import DecokingConfigNMD from './KendoConfigCrackerActivitiesNMD.js'
 import DownsteamShutdownDMD from './downsteamShutdownDMD.js'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop.js'
+import FurnaceMaintenanceActivity from './FurnaceMaintenanceActivity.js'
+import SteamHourTable from './steamHourTable.js'
 
 const DecokingConfig = () => {
   const keycloak = useSession()
@@ -68,6 +70,9 @@ const DecokingConfig = () => {
   const SCREEN_NAME = screenTitle?.title
   const siteName = siteObject?.name?.toLowerCase()
   const IS_DMD = siteObject?.name?.toLowerCase() == 'dmd'
+  const IS_C2 = siteObject?.name?.toLowerCase() == 'c2'
+  const IS_CRACKER_VMD = lowerVertName === 'cracker' && siteName === 'vmd'
+  const IS_CRACKER_HMD = lowerVertName === 'cracker' && siteName === 'hmd'
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -283,6 +288,8 @@ const DecokingConfig = () => {
                   )
                   .map((col) => ({
                     ...col,
+                    widthT: 150,
+                    minWidth: col.field == 'DisplayName' ? 200 : 150,
                     editable: ![
                       'Pre_CR_Days',
                       'TA_Duration_Days',
@@ -816,9 +823,6 @@ const DecokingConfig = () => {
   }, [modifiedCellsRunLength])
 
   function validatePostCrDays(newRows) {
-    console.log('?? validatePostCrDays called')
-    console.log('?? Rows:', newRows)
-
     for (let i = 0; i < newRows.length; i++) {
       const row = newRows[i]
       const rowLabel = row.DisplayName || `Row ${i + 1}`
@@ -1183,9 +1187,9 @@ const DecokingConfig = () => {
           let value = row[field]
           const colDef = runLengthColumns.find((col) => col.field === field)
           if (colDef?.type === 'date' && value instanceof Date) {
-            obj[field] = value
+            obj[field] = value?.trim()
           } else {
-            obj[field] = value ?? null
+            obj[field] = value?.trim() ?? null
           }
         })
         return obj
@@ -1288,6 +1292,7 @@ const DecokingConfig = () => {
       showTitleName: true,
       showAccordian: true,
       showCalculate: true,
+      showCalculateNextYear: false,
       // showCalculateVisibility:
       //   Object.keys(calculationObject || {}).length > 0 ? true : false,
 
@@ -1307,6 +1312,20 @@ const DecokingConfig = () => {
     },
     isOldYear,
   )
+
+  const FurnaceMaintenanceActivityPermission = {
+    titleName: 'Furnace Maintenance Activity',
+    showTitleNameBusiness: true,
+  }
+
+  const DownsteamShutdownDMDPermission = {
+    titleName: 'Downstream Plant Shutdown',
+    showTitleNameBusiness: true,
+  }
+  const MaintenanceProcessPermission = {
+    titleName: 'Maintenance Details',
+    showTitleNameBusiness: true,
+  }
 
   const handleExcelUpload = (rawFile) => {
     saveExcelFile(rawFile)
@@ -1493,16 +1512,36 @@ const DecokingConfig = () => {
       ? ibrGridThree.filter((col) => col.field !== 'demo')
       : ibrGridThree
 
+  const [sdtaGridKey, setSdtaGridKey] = useState(0)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSdtaGridKey((prev) => prev + 1)
+    }, 200)
+
+    return () => clearTimeout(timer)
+  }, [loading])
+
   if (siteName === 'nmd') {
     return <DecokingConfigNMD pid={PLANT_ID} />
+  }
+  if (siteName === 'hmd') {
+    return <SteamHourTable pid={PLANT_ID} />
   }
 
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
+      {IS_CRACKER_VMD && (
+        <FurnaceMaintenanceActivity
+          permissions={FurnaceMaintenanceActivityPermission}
+        />
+      )}
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
-        <Box sx={{ display: 'flex', gap: 1, mt: 1, alignItems: 'center' }}>
+        <Box
+          sx={{ display: 'flex', gap: 1, mb: 0, mt: 1, alignItems: 'center' }}
+        >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
               TA Start Date
@@ -1545,6 +1584,7 @@ const DecokingConfig = () => {
         columns={ibrPlanColumns.filter(
           (col) => col.field !== 'TA_SD' && col.field !== 'TA_ED',
         )}
+        gridKey={sdtaGridKey}
         rows={getRows('IBR Plan')[2]}
         setRows={(data) => setRowsForTab('IBR Plan', data, 2)}
         fetchData={fetchData}
@@ -1569,22 +1609,8 @@ const DecokingConfig = () => {
         setSummaryEdited={setSummaryEdited}
       />
 
-      {IS_DMD && (
-        <CustomAccordion defaultExpanded disableGutters>
-          <CustomAccordionSummary
-            aria-controls='meg-grid-content'
-            id='meg-grid-header'
-          >
-            <Typography component='span' className='grid-title'>
-              Downstream Plant Shutdown
-            </Typography>
-          </CustomAccordionSummary>
-          <CustomAccordionDetails>
-            <Box sx={{ width: '100%', margin: 0 }}>
-              <DownsteamShutdownDMD />
-            </Box>
-          </CustomAccordionDetails>
-        </CustomAccordion>
+      {(IS_DMD || IS_C2) && (
+        <DownsteamShutdownDMD permissions={DownsteamShutdownDMDPermission} />
       )}
 
       <FurnaceRunLengthGrid
@@ -1612,21 +1638,24 @@ const DecokingConfig = () => {
         handleCalculate={handleCalculate}
       />
 
-      <CustomAccordion defaultExpanded disableGutters>
-        <CustomAccordionSummary
-          aria-controls='meg-grid-content'
-          id='meg-grid-header'
-        >
-          <Typography component='span' className='grid-title'>
-            Maintenance Details
-          </Typography>
-        </CustomAccordionSummary>
-        <CustomAccordionDetails>
-          <Box sx={{ width: '100%', margin: 0 }}>
-            <MaintenanceProcessTable />
-          </Box>
-        </CustomAccordionDetails>
-      </CustomAccordion>
+      <MaintenanceProcessTable permissions={MaintenanceProcessPermission} />
+      {/* {IS_CRACKER_HMD && (
+        <CustomAccordion defaultExpanded disableGutters>
+          <CustomAccordionSummary
+            aria-controls='meg-grid-content'
+            id='meg-grid-header'
+          >
+            <Typography component='span' className='grid-title'>
+              Steam Hour Details
+            </Typography>
+          </CustomAccordionSummary>
+          <CustomAccordionDetails>
+            <Box sx={{ width: '100%', margin: 0 }}>
+              <SteamHourTable />
+            </Box>
+          </CustomAccordionDetails>
+        </CustomAccordion>
+      )} */}
     </Box>
   )
 }

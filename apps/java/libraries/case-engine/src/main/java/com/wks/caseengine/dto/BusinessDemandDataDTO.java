@@ -49,5 +49,6 @@ public class BusinessDemandDataDTO {
     private String displayName;
     private String saveStatus;
 	private String errDescription;
+    private String lineId;
 
 }

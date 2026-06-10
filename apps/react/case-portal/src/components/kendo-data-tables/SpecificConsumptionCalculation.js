@@ -132,6 +132,7 @@ const SpecificConsumptionCalculation = () => {
             return {
               ...col,
               title: `${col.field}-${displayYear}`,
+              minWidth: 100,
               headerAttributes: { style: { textAlign: 'center' } },
               attributes: { style: { textAlign: 'right' } },
             }
@@ -147,6 +148,7 @@ const SpecificConsumptionCalculation = () => {
           format: '{0:0.000}',
           headerAttributes: { style: { textAlign: 'center' } },
           attributes: { style: { textAlign: 'right' } },
+          minWidth: 100,
         })
 
         // const totalsRow = computeTotalsRow(data, cols, 'Name')
@@ -184,6 +186,7 @@ const SpecificConsumptionCalculation = () => {
             format: col.type === 'number' ? '{0:0.000}' : col.format,
             editable: false,
             widthT: col.field === 'Value' ? 350 : 250,
+            minWidth: 100,
           }))
 
         const data = dataSet.map((item, index) => {

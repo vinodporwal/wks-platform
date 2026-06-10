@@ -31,7 +31,7 @@ import com.wks.caseengine.repository.VerticalsRepository;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
-
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -454,31 +454,73 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 						cell.setCellValue("");
 					}
 				}
-			}
-			if(vertical.getName().equalsIgnoreCase("PTA")) {
-				sheet.setColumnHidden(4, true);
-			}else {
-				sheet.setColumnHidden(5, true);	
-			}
-			
-			// sheet.setColumnHidden(7, true);
-			try {
+		}
 
-				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-				workbook.write(outputStream);
-				workbook.close();
-				return outputStream.toByteArray();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+		// Determine remark ("Shutdown Basis") column index based on vertical
+		int remarkColIndex = vertical.getName().equalsIgnoreCase("PTA") ? 3 : 4;
+		int totalCols = innerHeaders.size();
 
+		// Wrap style for remark column — top-aligned with text wrapping enabled
+		CellStyle wrapStyle = workbook.createCellStyle();
+		wrapStyle.setWrapText(true);
+		wrapStyle.setVerticalAlignment(VerticalAlignment.TOP);
+
+		// Fixed preferred width for remark column (~50 characters × 256 units)
+		final int REMARK_CHARS = 50;
+		sheet.setColumnWidth(remarkColIndex, REMARK_CHARS * 256);
+
+		// Apply wrap style to every data cell in the remark column and adjust row height
+		for (int rowIdx = 1; rowIdx < currentRow; rowIdx++) {
+			Row row = sheet.getRow(rowIdx);
+			if (row == null) continue;
+			Cell cell = row.getCell(remarkColIndex);
+			if (cell != null) {
+				cell.setCellStyle(wrapStyle);
+				String cellValue = cell.getStringCellValue();
+				if (cellValue != null && !cellValue.isEmpty()) {
+					// Count wrapped lines: explicit newlines + lines that exceed column width
+					long explicitLines = cellValue.chars().filter(c -> c == '\n').count() + 1;
+					long wrappedLines = (long) Math.ceil((double) cellValue.length() / REMARK_CHARS);
+					int numLines = (int) Math.max(explicitLines, wrappedLines);
+					float neededHeight = numLines * 15.0f; // ~15pt per line
+					if (row.getHeightInPoints() < neededHeight) {
+						row.setHeightInPoints(neededHeight);
+					}
+				}
+			}
+		}
+
+		// Auto-size all columns based on content, skip the fixed-width remark column
+		for (int col = 0; col < totalCols; col++) {
+			if (col != remarkColIndex) {
+				sheet.autoSizeColumn(col);
+			}
+		}
+
+		if(vertical.getName().equalsIgnoreCase("PTA")) {
+			sheet.setColumnHidden(4, true);
+		}else {
+			sheet.setColumnHidden(5, true);	
+		}
+		
+		// sheet.setColumnHidden(7, true);
+		try {
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return null;
-	}
 
-	public byte[] shutdownNonProductLineExport(String year, String plantId, String maintenanceTypeName, boolean isAfterSave,
+	} catch (Exception e) {
+		e.printStackTrace();
+	}
+	return null;
+}
+
+public byte[] shutdownNonProductLineExport(String year, String plantId, String maintenanceTypeName, boolean isAfterSave,
 			List<ShutDownPlanDTO> dtoList) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
@@ -660,6 +702,11 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 			CellStyle dateTimeStyle = createDateTimeStyle(workbook, "dd-MM-yyyy HH:mm");
 			CellStyle decimalStyle = workbook.createCellStyle();
 	        decimalStyle.setDataFormat(workbook.createDataFormat().getFormat("0.00"));
+			int remarkColIndex = vertical.getName().equalsIgnoreCase("PP") ? 4 : 5;
+			int remarkColWidthChars = 60;
+			CellStyle wrapStyle = workbook.createCellStyle();
+			wrapStyle.setWrapText(true);
+			wrapStyle.setVerticalAlignment(VerticalAlignment.TOP);
 			Sheet sheet = workbook.createSheet("Sheet1");
 			int currentRow = 0;
 			List<List<Object>> rows = new ArrayList<>();
@@ -783,11 +830,42 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 						cell.setCellValue((Boolean) value);
 					} else if (value != null) {
 						cell.setCellValue(value.toString());
+						if (col == remarkColIndex) {
+							cell.setCellStyle(wrapStyle);
+						}
 					} else {
 						cell.setCellValue("");
 					}
 				}
 			}
+
+			// Auto-size all columns based on content; give the Remark column a fixed wide width
+			int totalCols = innerHeaders.size();
+			for (int col = 0; col < totalCols; col++) {
+				if (col != remarkColIndex) {
+					sheet.autoSizeColumn(col);
+				}
+			}
+			sheet.setColumnWidth(remarkColIndex, remarkColWidthChars * 256);
+
+			// Adjust row heights so wrapped remark text is fully visible
+			int dataStartRow = headers.size();
+			float defaultRowHeight = sheet.getDefaultRowHeightInPoints();
+			for (int rowIdx = dataStartRow; rowIdx < currentRow; rowIdx++) {
+				Row dataRow = sheet.getRow(rowIdx);
+				if (dataRow != null) {
+					Cell remarkCell = dataRow.getCell(remarkColIndex);
+					if (remarkCell != null && remarkCell.getCellType() == CellType.STRING) {
+						String text = remarkCell.getStringCellValue();
+						if (text != null && !text.isEmpty()) {
+							int lineCount = (int) Math.ceil((double) text.length() / remarkColWidthChars);
+							lineCount = Math.max(lineCount, 1);
+							dataRow.setHeightInPoints(lineCount * defaultRowHeight);
+						}
+					}
+				}
+			}
+
 			if(vertical.getName().equalsIgnoreCase("PP")) {
 				sheet.setColumnHidden(5, true);
 			}else {
@@ -2483,7 +2561,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 				}
 			}
 			if (("ELASTOMER".equalsIgnoreCase(verticalName)) || ("AROMATICS".equalsIgnoreCase(verticalName))
-					|| ("PTA".equalsIgnoreCase(verticalName))) {
+					|| ("PTA".equalsIgnoreCase(verticalName)) || ("Chemical".equalsIgnoreCase(verticalName))) {
 				int month = plantMaintenanceTransaction.getMaintForMonth();
 				Long count = plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId, month, "Slowdown",
 						year);
@@ -2494,6 +2572,25 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 						setMonth(month, slowdownNormsValue);
 					}
 				}
+			}
+
+			if("PVC".equalsIgnoreCase(verticalName)) { 
+				int month = plantMaintenanceTransaction.getMaintForMonth();
+				Long shutdownCount = plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId, month, "Shutdown",
+						year);
+				Long slowdownCount = plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId, month, "Slowdown",
+						year);
+				
+						Long count = shutdownCount + slowdownCount;
+
+						if (count == 1) {
+							List<GradeShutdownNormsValue> shutdownNormsValues = gradeShutdownNormsValueRepository
+									.findByPlantFkIdAndFinancialYear(plantId, plantMaintenanceTransaction.getAuditYear());
+							for (GradeShutdownNormsValue shutdownNormsValue : shutdownNormsValues) {
+								setMonthShutdown(month, shutdownNormsValue);
+							}
+						}	
+				
 			}
 			
 			if ("VCM".equalsIgnoreCase(verticalName))  {
@@ -2587,7 +2684,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 			String verticalName = plantsService.findVerticalNameByPlantId(plantId);
 
 			if (("ELASTOMER".equalsIgnoreCase(verticalName)) || ("AROMATICS".equalsIgnoreCase(verticalName))
-					|| ("PTA".equalsIgnoreCase(verticalName))) {
+					|| ("PTA".equalsIgnoreCase(verticalName)) || ("Chemical".equalsIgnoreCase(verticalName))) {
 				int month = plantMaintenanceTransaction.getMaintForMonth();
 				Long count = plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId, month, "Shutdown",
 						year);
@@ -2644,6 +2741,25 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 						setMonthShutdown(month, shutdownNormsValue);
 					}
 				}
+			}
+
+			if("PVC".equalsIgnoreCase(verticalName)) { 
+				int month = plantMaintenanceTransaction.getMaintForMonth();
+				Long shutdownCount = plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId, month, "Shutdown",
+						year);
+				Long slowdownCount = plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId, month, "Slowdown",
+						year);
+				
+						Long count = shutdownCount + slowdownCount;
+
+						if (count == 1) {
+							List<GradeShutdownNormsValue> shutdownNormsValues = gradeShutdownNormsValueRepository
+									.findByPlantFkIdAndFinancialYear(plantId, plantMaintenanceTransaction.getAuditYear());
+							for (GradeShutdownNormsValue shutdownNormsValue : shutdownNormsValues) {
+								setMonthShutdown(month, shutdownNormsValue);
+							}
+						}	
+				
 			}
 
 			if ("MEG".equalsIgnoreCase(verticalName)) {
@@ -2951,7 +3067,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		
 		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 		
-		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
+		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD");
 		boolean monthDropdown= (verticalName.equalsIgnoreCase("PP") && (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("SEZ") || site.getName().equalsIgnoreCase("DTA")));
 		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
 		List<String> items = List.of(
@@ -2974,23 +3090,161 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 				plantMaintenance.setPlantFkId(plantId);
 				plantMaintenance.setMaintenanceTypeFkId(maintenanceTypesId);
 				plantMaintenanceRepository.save(plantMaintenance);
-				plantMaintenanceId = findIdByPlantIdAndMaintenanceTypeName(plantId, "Shutdown");
-			}
+			plantMaintenanceId = findIdByPlantIdAndMaintenanceTypeName(plantId, "Shutdown");
+		}
+  // remark validation
+		if(site.getName().equalsIgnoreCase("JMD") && verticalName.equalsIgnoreCase("Elastomer")) {
+         
+			for (ShutDownPlanDTO dto : shutDownPlanDTOList) { 
+				if(dto.getId() == null || dto.getId().isEmpty()) continue;
+				List<Object[]> plantMaintenance = shutDownPlanRepository
+				.findPlantMaintenanceById(UUID.fromString(dto.getId()));
+		
+		if (plantMaintenance.isEmpty()) 
+			throw new RestInvalidArgumentException("Invalid plant maintenance id", null);
 
-			for (ShutDownPlanDTO shutDownPlanDTO : shutDownPlanDTOList) {
-				if (shutDownPlanDTO.getSaveStatus() != null
-						&& shutDownPlanDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
-					failedList.add(shutDownPlanDTO);
+			Object[] row = plantMaintenance.get(0);
+		
+			String description = (String) row[0];
+		//	Double durationInMins = row[1] != null ? (Double) row[1] : null;
+		 Double durationInMins = row[1] != null ? ((Number) row[1]).doubleValue() : null;
+			Integer maintForMonth = row[2] != null ? (Integer) row[2] : null;
+
+		int totaldurationInMins = (Integer) row[1] != null ? ((Number) row[1]).intValue() : null;
+					int hours = totaldurationInMins / 60;
+					int minutes = totaldurationInMins % 60;
+					double durationInHrs = hours + (minutes / 100.0);
+			
+			String monthName = Month.of(maintForMonth).name();
+	
+					
+	
+				String incomingRemark = dto.getRemark();
+
+				String existingRemark = shutDownPlanRepository.findRemarksById(UUID.fromString(dto.getId()));
+				
+
+				if (incomingRemark != null 
+					&& incomingRemark.trim().equals(existingRemark)
+					&& (
+						!description.equals(dto.getDiscription()) 
+						// || !Objects.equals(durationInHrs, dto.getDurationInHrs())
+						|| !Objects.equals( Math.round(durationInHrs * 100.0) / 100.0,
+						Math.round(dto.getDurationInHrs() * 100.0) / 100.0)
+						|| ( !elastomer && !monthName.equalsIgnoreCase(dto.getMonth()))
+					)) {
+    
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription("Please update remark");
+					dto.setOldDurationInHrs(durationInHrs);
+				//	failedList.add(dto);
 					continue;
 				}
-				year = shutDownPlanDTO.getAudityear();
+			}
+		}
+		// Validate: sum of durationInHrs per month must not exceed total hours in that month
+		if(site.getName().equalsIgnoreCase("JMD") && verticalName.equalsIgnoreCase("Elastomer")) {
 
-				if (shutDownPlanDTO.getId() == null || shutDownPlanDTO.getId().isEmpty()) {
-					// Creating a new record
-					PlantMaintenanceTransaction plantMaintenanceTransaction = new PlantMaintenanceTransaction();
-					plantMaintenanceTransaction.setId(UUID.randomUUID());
-					plantMaintenanceTransaction.setPlantId(plantId);
-					if(verticalName.equalsIgnoreCase("PTA") || elastomer || monthDropdown) {
+		
+
+		Map<String, List<ShutDownPlanDTO>> dtosByMonth = new HashMap<>();
+		for (ShutDownPlanDTO dto : shutDownPlanDTOList) {
+		//	if(dto.getId() == null || dto.getId().isEmpty()) continue;
+			// if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) continue;
+			if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed") && !dto.getErrDescription().equalsIgnoreCase("Please update remark")) continue;
+
+			if (dto.getMonth() == null || dto.getDurationInHrs() == null) continue;
+			String monthKey = dto.getMonth().toUpperCase();
+			dtosByMonth.computeIfAbsent(monthKey, k -> new ArrayList<>()).add(dto);
+		}
+		for (Map.Entry<String, List<ShutDownPlanDTO>> entry : dtosByMonth.entrySet()) {
+			String monthKey = entry.getKey();
+			List<ShutDownPlanDTO> monthDtos = entry.getValue();
+			// String monthYear = null;
+			// for (ShutDownPlanDTO dto : monthDtos) {
+			// 	if (dto.getAudityear() != null) { monthYear = dto.getAudityear(); break; }
+			// }
+			// if (monthYear == null) continue;
+			// YearMonth yearMonth = YearMonth.of(Integer.parseInt(monthYear), Month.valueOf(monthKey));
+
+
+
+    String auditYear = null;
+    for (ShutDownPlanDTO dto : monthDtos) {
+        if (dto.getAudityear() != null) {
+            auditYear = dto.getAudityear(); // e.g., "2026-27"
+            break;
+        }
+    }
+
+    if (auditYear == null) continue;
+
+    // Split financial year
+    String[] years = auditYear.split("-");
+    int startYear = Integer.parseInt(years[0]);     // 2026
+    int endYear = Integer.parseInt("20" + years[1]); // 2027
+
+    Month month = Month.valueOf(monthKey);
+
+    int actualYear;
+    if (month.getValue() >= Month.APRIL.getValue()) {
+        actualYear = startYear; // Apr–Dec ? 2026
+    } else {
+        actualYear = endYear;   // Jan–Mar ? 2027
+    }
+
+    YearMonth yearMonth = YearMonth.of(actualYear, month);
+
+
+
+			double totalHrsInMonth = yearMonth.lengthOfMonth() * 24.0;
+			double totalDurationInHrs = 0.0;
+			for (ShutDownPlanDTO dto : monthDtos) {
+      // if the save status is failed, then use the old duration in hrs
+				Double durationInHrs = dto.getDurationInHrs();
+
+				if(dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) {
+					durationInHrs = dto.getOldDurationInHrs();
+				}
+
+				
+				totalDurationInHrs += durationInHrs;
+			}
+			if (totalDurationInHrs > totalHrsInMonth) {
+		
+				
+				for (ShutDownPlanDTO dto : monthDtos) {
+				
+					dto.setSaveStatus("Failed");
+					if(dto.getOldDurationInHrs() != null) {
+						dto.setErrDescription("Please update remark");
+					}
+					else {
+					dto.setErrDescription("Total shutdown duration for " + monthKey + " (" + totalDurationInHrs
+							+ " hrs) exceeds total available hours in the month (" + (int) totalHrsInMonth + " hrs)");
+					}
+				//	failedList.add(dto);
+				}
+			}
+		}
+	}
+
+		for (ShutDownPlanDTO shutDownPlanDTO : shutDownPlanDTOList) {
+			if (shutDownPlanDTO.getSaveStatus() != null
+					&& shutDownPlanDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+
+			
+				failedList.add(shutDownPlanDTO);
+				continue;
+			}
+			year = shutDownPlanDTO.getAudityear();
+
+			if (shutDownPlanDTO.getId() == null || shutDownPlanDTO.getId().isEmpty()) {
+				// Creating a new record
+				PlantMaintenanceTransaction plantMaintenanceTransaction = new PlantMaintenanceTransaction();
+				plantMaintenanceTransaction.setId(UUID.randomUUID());
+				plantMaintenanceTransaction.setPlantId(plantId);
+				if(verticalName.equalsIgnoreCase("PTA") || elastomer || monthDropdown) {
 		            	if(shutDownPlanDTO.getMonth()!=null) {
 		            		shutDownPlanDTO.setMaintStartDateTime(getStartOfMonthDate(shutDownPlanDTO.getMonth(), year));
 		            		shutDownPlanDTO.setMaintEndDateTime(getEndOfMonthDate(shutDownPlanDTO.getMonth(), year));
@@ -3641,8 +3895,21 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			List<Map<String, Object>> mapList = new ArrayList<Map<String, Object>>();
-			String viewName = vertical.getName() + site.getName() + "vwScrnShutdown";
-			List<Object[]> results = getDescriptionDropdownDataBySite(site.getId(), viewName);
+			String viewName = null;
+			if(vertical.getName().equalsIgnoreCase("Chemical")) { 
+  				viewName = "vwScrnShutdown" + vertical.getName();
+			}
+			else {
+		viewName = vertical.getName() + site.getName() + "vwScrnShutdown"; 
+	}
+	List<Object[]> results = null;
+      if(vertical.getName().equalsIgnoreCase("Chemical")) { 
+		  
+		results = getDescriptionDropdownDataByPlant( UUID.fromString(plantId), viewName);
+	  }
+			else { results = getDescriptionDropdownDataBySite(site.getId(), viewName);  
+
+			}
 			for (Object[] obj : results) {
 				Map<String, Object> map = new HashMap<String, Object>();
 				map.put("DisplayName", obj[2]);
@@ -3679,6 +3946,19 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 			String sql = "SELECT * from " + viewName + " where Site_FK_Id = :siteId order by DisplayOrder";
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("siteId", siteId);
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	public List<Object[]> getDescriptionDropdownDataByPlant(UUID plantId, String viewName) {
+		try {
+			String sql = "SELECT * from " + viewName + " where Plant_FK_Id = :plantId order by DisplayOrder";
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
 			return query.getResultList();
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);

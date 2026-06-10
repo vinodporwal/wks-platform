@@ -51,6 +51,9 @@ const MaintenanceTable = () => {
   const vertName = verticalChange?.selectedVertical
   const SCREEN_NAME = screenTitle?.title
   const lowerVertName = vertName?.toLowerCase()
+  const IS_PP_PE =
+    verticalObject?.name?.toLowerCase() === 'pp' ||
+    verticalObject?.name?.toLowerCase() === 'pe'
   const IS_PP_DTA =
     verticalObject?.name?.toLowerCase() === 'pp' &&
     siteObject?.name?.toLowerCase() === 'dta'
@@ -63,6 +66,12 @@ const MaintenanceTable = () => {
   const IS_PVC_DMD =
     verticalObject?.name?.toLowerCase() === 'pvc' &&
     siteObject?.name?.toLowerCase() === 'dmd'
+  const IS_PVC_HMD =
+    verticalObject?.name?.toLowerCase() === 'pvc' &&
+    siteObject?.name?.toLowerCase() === 'hmd'
+  const IS_PVC_VMD =
+    verticalObject?.name?.toLowerCase() === 'pvc' &&
+    siteObject?.name?.toLowerCase() === 'vmd'
   const IS_ELASTOMER_JMD =
     verticalObject?.name?.toLowerCase() === 'elastomer' &&
     siteObject?.name?.toLowerCase() === 'jmd'
@@ -70,7 +79,10 @@ const MaintenanceTable = () => {
   const dataConfig = useMemo(
     () => ({
       serviceFn: (keycloak, PLANT_ID, AOP_YEAR, lineId) => {
-        if ((IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) && lineId) {
+        if (
+          (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) &&
+          lineId
+        ) {
           return MaintenanceDetailsApiService.getMaintenanceDataLineWise(
             keycloak,
             PLANT_ID,
@@ -92,6 +104,7 @@ const MaintenanceTable = () => {
       IS_PP_DTA,
       IS_PP_SEZ,
       IS_PVC_DMD,
+      IS_PVC_HMD,
       IS_PP_HMD,
       tabIndex,
       lineDetails,
@@ -101,6 +114,7 @@ const MaintenanceTable = () => {
   const headerMap = generateHeaderNames(AOP_YEAR)
 
   const [rows, setRows] = useState([])
+  const [allRedCell, setAllRedCell] = useState([])
   const [loading, setLoading] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -174,6 +188,28 @@ const MaintenanceTable = () => {
         }
       })
 
+      // For PE/PP/PVC/PET: highlight months where Slowdown Hrs Equivalent to Shutdown < 0
+      const IS_SLOWDOWN_VERTICAL = ['pp', 'pe', 'pvc', 'pet'].includes(lowerVertName)
+      if (IS_SLOWDOWN_VERTICAL) {
+        const ROW_KEY = 'Slowdown Hrs Equivalent to Shutdown'
+        const slowdownRow = formatted.find((r) => r.Name === ROW_KEY)
+        if (slowdownRow) {
+          // Stamp identifier so RedHighlightCell can match it
+          slowdownRow.NormParameter_FK_Id = ROW_KEY
+          const redCells = monthFields
+            .filter((month) => {
+              const val = parseFloat(slowdownRow[month])
+              return !isNaN(val) && val < 0
+            })
+            .map((month) => ({ month, NormParameter_FK_Id: ROW_KEY }))
+          setAllRedCell(redCells)
+        } else {
+          setAllRedCell([])
+        }
+      } else {
+        setAllRedCell([])
+      }
+
       setRows(formatted)
     } catch (err) {
       console.error('Error fetching data:', err)
@@ -216,7 +252,7 @@ const MaintenanceTable = () => {
   }
 
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
       fetchLineDetails()
     }
   }, [PLANT_ID, keycloak, yearChanged])
@@ -246,7 +282,7 @@ const MaintenanceTable = () => {
       editable: false,
       align: 'right',
       headerAlign: 'left',
-      minWidth: 85,
+      minWidth: 120,
     }))
   }
 
@@ -268,7 +304,7 @@ const MaintenanceTable = () => {
       widthT: nameWidthT,
       editable: false,
       isEditable: false,
-      minWidth: 200,
+      minWidth: 300,
     },
     ...getMonthlyColumns(),
     isEditableField,
@@ -420,11 +456,29 @@ const MaintenanceTable = () => {
           saveWithRemark: false,
           saveBtn: dataConfig.isCracker,
           allAction: true,
-          downloadExcelBtnFromUI: true,
+          downloadExcelBtnFromUI:
+            IS_PP_DTA ||
+              IS_PP_SEZ ||
+              IS_PVC_DMD ||
+              IS_PP_HMD ||
+              IS_PVC_HMD ||
+              IS_PVC_VMD
+              ? false
+              : true,
           ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
           showRefresh: false,
           showTitleNameBusiness: true,
           titleName: SCREEN_NAME,
+
+          downloadExcelBtn:
+            IS_PP_DTA ||
+              IS_PP_SEZ ||
+              IS_PVC_DMD ||
+              IS_PP_HMD ||
+              IS_PVC_HMD ||
+              IS_PVC_VMD
+              ? true
+              : false,
         },
         isOldYear,
       ),
@@ -434,10 +488,36 @@ const MaintenanceTable = () => {
   //   return <ElastomerMaintenanceTable />
   // }
 
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      let response
+      response = await MaintenanceDetailsApiService.MaintenanceExportLineWise(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
+      )
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
+
   return (
     <>
       {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
-      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) && (
+      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) && (
         <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>
@@ -460,6 +540,8 @@ const MaintenanceTable = () => {
           setSnackbarData={setSnackbarData}
           permissions={adjustedPermissions}
           currentRowId={currentRowId}
+          downloadExcelForConfiguration={downloadExcelForConfiguration}
+          allRedCell={allRedCell}
         />
       </div>
     </>

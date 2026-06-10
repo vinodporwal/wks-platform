@@ -16,17 +16,13 @@ import {
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
 
-import AddIcon from '@mui/icons-material/Add'
-import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
-import DownloadIcon from '@mui/icons-material/Download'
-import UploadIcon from '@mui/icons-material/Upload'
-import CalculateIcon from '@mui/icons-material/Calculate'
-import SaveIcon from '@mui/icons-material/Save'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import { CalculateIcon, FileExportIcon } from 'assets/images/icons/index'
 
 import { getRoleName } from 'services/role-service.js'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import OptimizerReportHMD from './OptimizerReportHMD'
 const CALL_DELAY_MS = 20
 const MONTH_GRID_NAME = 'Month wise Quantity, Tonnes / Month'
 
@@ -98,7 +94,11 @@ const OptimizerReport = () => {
         ...(isNumberCol ? { format: '{0:0.0000}' } : {}),
         editable: false,
         isRightAlligned: isNumberCol ? 'numeric' : undefined,
-        ...(fixedWidth ? { widthT: fixedWidth } : {}),
+        ...(col.field === 'Particulars'
+          ? { widthT: 220 }
+          : fixedWidth
+            ? { widthT: fixedWidth }
+            : { widthT: 100 }),
       }
     })
   }, [])
@@ -223,7 +223,7 @@ const OptimizerReport = () => {
         return { rows: [], columns: [] }
       }
     },
-    [keycloak, enrichColumns, PLANT_ID, AOP_YEAR],
+    [keycloak, enrichColumns, PLANT_ID, AOP_YEAR, siteObject, lowerVertName],
   )
 
   // scheduleAndRunFetch — supports month grids suffixed with reportType
@@ -260,6 +260,10 @@ const OptimizerReport = () => {
 
   // Main: fetch TYPE_LIST then schedule fetching each grid in order
   const fetchAllGrids = useCallback(async () => {
+    const siteName = siteObject?.name?.toUpperCase()
+    const isCrackerHMD = lowerVertName === 'cracker' && siteName === 'HMD'
+    if (siteName === 'HMD' && !isCrackerHMD) return
+
     // clear previous timers
     timeoutIdsRef.current.forEach((t) => clearTimeout(t))
     timeoutIdsRef.current = []
@@ -338,18 +342,29 @@ const OptimizerReport = () => {
 
       //DYANAMIC
 
-      const modes = MODE_GRADES.map((grade) => ({
+      let modes = MODE_GRADES.map((grade) => ({
         key: grade,
         label: grade,
       }))
 
+      if (isCrackerHMD) {
+        modes = [
+          { key: 'Input', label: 'Input' },
+          { key: 'Output', label: 'Output' },
+        ]
+      }
+
       // build grid name list: "<TYPE> - <MODE_LABEL>"
       const expandedGridNames = []
-      orderedTypes.forEach((type) => {
-        modes.forEach((m) => {
-          expandedGridNames.push(`${type} - ${m.label}`)
+      if (isCrackerHMD) {
+        expandedGridNames.push('Input', 'Output')
+      } else {
+        orderedTypes.forEach((type) => {
+          modes.forEach((m) => {
+            expandedGridNames.push(`${type} - ${m.label}`)
+          })
         })
-      })
+      }
 
       // NOTE: removed month-wise grids here — user requested only the 6 upper grids (2 types x 3 modes)
       // previously we appended MONTH_REPORT_TYPES here; that code is intentionally omitted
@@ -359,9 +374,13 @@ const OptimizerReport = () => {
       // schedule fetch for each expanded grid with small delays
       expandedGridNames.forEach((gridName, idx) => {
         let typePart = gridName
-        let modeKey = modes[0].key
+        let modeKey = modes[0]?.key
 
-        if (!gridName.startsWith(MONTH_GRID_NAME)) {
+        if (isCrackerHMD) {
+          typePart = gridName
+          modeKey = gridName // 'Input' or 'Output'
+          scheduleAndRunFetch(gridName, typePart, modeKey, idx * CALL_DELAY_MS)
+        } else if (!gridName.startsWith(MONTH_GRID_NAME)) {
           const [tPart, modeLabel] = gridName.split(' - ')
           typePart = tPart
           const modeObj = modes.find((mm) => mm.label === modeLabel)
@@ -385,15 +404,25 @@ const OptimizerReport = () => {
       console.error('Error fetching TYPE_LIST or config:', err)
       setLoading(false)
     }
-  }, [scheduleAndRunFetch, PLANT_ID, AOP_YEAR])
+  }, [scheduleAndRunFetch, PLANT_ID, AOP_YEAR, siteObject, lowerVertName])
 
   useEffect(() => {
+    const siteName = siteObject?.name?.toUpperCase()
+
     fetchAllGrids()
     return () => {
       timeoutIdsRef.current.forEach((t) => clearTimeout(t))
       timeoutIdsRef.current = []
     }
-  }, [fetchAllGrids, PLANT_ID, AOP_YEAR, oldYear, yearChanged])
+  }, [
+    fetchAllGrids,
+    PLANT_ID,
+    AOP_YEAR,
+    oldYear,
+    yearChanged,
+    siteObject,
+    lowerVertName,
+  ])
 
   // Export: gather sheets from each ExcelExport instance and combine into one workbook
 
@@ -402,43 +431,6 @@ const OptimizerReport = () => {
     message: '',
     severity: 'info',
   })
-
-  const exportAllGrids = async () => {
-    try {
-      setLoading(true)
-
-      if (!PLANT_ID || !AOP_YEAR) {
-        throw new Error('Plant ID or year not found ')
-      }
-
-      const payload = []
-
-      // Await the API call here to ensure completion
-      const data = await AOPWorkFlowService.getExcel(
-        keycloak,
-        payload,
-        PLANT_ID,
-        AOP_YEAR,
-      )
-
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Report downloaded successfully!',
-        severity: 'success',
-      })
-
-      return data
-    } catch (error) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: error.message || 'An error occurred',
-        severity: 'error',
-      })
-      console.error('Error!', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const currentDateTime = new Date()
     .toISOString()
@@ -449,93 +441,47 @@ const OptimizerReport = () => {
 
   const renderTitle = (t) => t
 
-  const calculateMonthWiseData = async () => {
-    try {
-      setCalculating(true)
-
-      if (!PLANT_ID || !AOP_YEAR) {
-        throw new Error('Plant ID or year not found ')
-      }
-
-      // Call the calculate API
-      const calculateResult =
-        await CrackerReportsApiDataService.calculateMonthWiseRawData(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-
-      if (calculateResult?.code === 200) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Calculation completed successfully!',
-          severity: 'success',
-        })
-
-        // Refresh all grids after calculation
-        await fetchAllGrids()
-      } else {
-        throw new Error(calculateResult?.message || 'Calculation failed')
-      }
-    } catch (error) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: error.message || 'Calculation failed',
-        severity: 'error',
-      })
-      console.error('Calculation Error:', error)
-    } finally {
-      setCalculating(false)
-    }
-  }
-
   return (
-    <div>
+    <div className='configuration-accordion-wrapper'>
       <LoaderBackdrop open={!!loading} />
-
-      <Box display='flex' justifyContent='flex-end' mb='2px' gap={1}>
-        {isCracker && (
-          <Button
-            variant='contained'
-            onClick={calculateMonthWiseData}
-            disabled={READ_ONLY || calculating || loading}
-            className='btn-calculate'
-            color='primary'
-          >
-            {calculating ? 'Calculating...' : 'Calculate'}
-          </Button>
-        )}
-        <Button
-          variant='contained'
-          onClick={exportAllGrids}
-          className='btn-export'
-          // disabled={READ_ONLY}
-          startIcon={<DownloadIcon fontSize='small' />}
-        >
-          Export
-        </Button>
-      </Box>
 
       <Box display='flex' flexDirection='column' gap={2}>
         {gridNames.map((name) => {
           const d = dataMap[name] || { rows: [], columns: [] }
+          const isCrackerHMD =
+            lowerVertName === 'cracker' &&
+            siteObject?.name?.toUpperCase() === 'HMD'
+          const isOutput = name === 'Output'
+          const shouldGroup = isCrackerHMD && isOutput
+          const processedColumns = shouldGroup
+            ? d.columns.map((col) =>
+                col.field === 'rowGroup' ? { ...col, hidden: true } : col,
+              )
+            : d.columns
           return (
             <div key={name}>
-              <CustomAccordion defaultExpanded disableGutters>
+              <CustomAccordion
+                defaultExpanded
+                disableGutters
+                className='k-table-box'
+              >
                 <CustomAccordionSummary
                   aria-controls={`${name}-content`}
                   id={`${name}-header`}
+                  expandIcon={<ExpandMoreIcon sx={{ fontSize: '1.2rem' }} />}
+                  className='aop-report-accordion-summary'
                 >
                   <Typography component='span' className='grid-title'>
                     {renderTitle(name)}
                   </Typography>
                 </CustomAccordionSummary>
-                <CustomAccordionDetails>
+                <CustomAccordionDetails sx={{ padding: '0px 0px 1px' }}>
                   <Box sx={{ width: '100%', margin: 0 }}>
                     <KendoDataGrid
                       rows={d.rows}
-                      columns={d.columns}
+                      columns={processedColumns}
                       permissions={{ isHeight: d?.rows?.length > 15 }}
+                      groupBy={shouldGroup ? 'rowGroup' : null}
                     />
                   </Box>
                 </CustomAccordionDetails>

@@ -1,5 +1,24 @@
 export const BusinessDemandMegColumns = [
   {
+    field: 'Particulars',
+    title: 'Type',
+    width: 100,
+    groupable: true,
+    headerClass: 'bold-header',
+    filterable: 'false',
+    editable: false,
+    hidden: true,
+    isVisible: false,
+  },
+  {
+    field: 'normParameterId',
+    title: 'Particulars',
+    editable: false,
+    width: 150,
+    hidden: true,
+    isVisible: false,
+  },
+  {
     field: 'displayName',
     title: 'Particulars',
     editable: false,
@@ -142,6 +161,14 @@ export const BusinessDemandMegColumns = [
     type: 'string',
     minWidth: 100,
   },
+  {
+    field: 'idFromApi',
+    title: 'idFromApi',
+    filterable: 'false',
+    hidden: true,
+    isVisible: false,
+    minWidth: 100,
+  },
 ]
 
 export const SlowDownMegColumns = [
@@ -245,7 +272,7 @@ export const NormalOpNormMegColumns = [
 
   {
     field: 'UOM',
-    title: 'UOM/ MT',
+    title: 'UOM/MT',
     widthT: 80,
     editable: false,
     minWidth: 100,

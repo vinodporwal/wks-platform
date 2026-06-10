@@ -6,26 +6,29 @@
     "groupable": true,
     "renderCell": "renderStrongCell",
     "editable": false,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "normParameterFKId",
     "title": "Particulars",
     "editable": false,
-    "width": 120,
+    "width": 160,
     "valueGetter": "defaultValueGetter",
     "valueFormatter": "productDisplayNameFormatter",
     "renderEditCell": "renderNormParameterSelectCell",
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "productName",
     "title": "Particulars",
     "editable": false,
-    "widthT": 120,
+    "widthT": 130,
     "valueGetter": "defaultValueGetter",
     "valueFormatter": "productDisplayNameFormatter",
-    "renderEditCell": "renderNormParameterSelectCell"
+    "renderEditCell": "renderNormParameterSelectCell",
+    "minWidth": 300
   },
 
   {
@@ -34,7 +37,8 @@
     "editable": false,
     "align": "left",
     "headerAlign": "left",
-    "widthT": 80
+    "widthT": 60,
+    "minWidth": 80
   },
   {
     "field": "apr",
@@ -42,8 +46,10 @@
     "editable": true,
     "renderEditCell": "NumericInputOnly",
     "align": "left",
-    "width": 100,
-    "headerAlign": "left"
+    "width": 120,
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "may",
@@ -52,7 +58,9 @@
     "renderEditCell": "NumericInputOnly",
     "align": "left",
     "width": 100,
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "jun",
@@ -61,7 +69,9 @@
     "renderEditCell": "NumericInputOnly",
     "align": "left",
     "width": 100,
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "jul",
@@ -70,7 +80,9 @@
     "renderEditCell": "NumericInputOnly",
     "align": "left",
     "width": 100,
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "aug",
@@ -79,7 +91,9 @@
     "renderEditCell": "NumericInputOnly",
     "align": "left",
     "width": 100,
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "sep",
@@ -88,7 +102,9 @@
     "renderEditCell": "NumericInputOnly",
     "align": "left",
     "width": 100,
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "oct",
@@ -97,7 +113,9 @@
     "renderEditCell": "NumericInputOnly",
     "align": "left",
     "width": 100,
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "nov",
@@ -106,7 +124,9 @@
     "renderEditCell": "NumericInputOnly",
     "align": "left",
     "width": 100,
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "dec",
@@ -115,7 +135,9 @@
     "renderEditCell": "NumericInputOnly",
     "align": "left",
     "width": 100,
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "jan",
@@ -124,7 +146,9 @@
     "renderEditCell": "NumericInputOnly",
     "align": "left",
     "width": 100,
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "feb",
@@ -133,7 +157,9 @@
     "renderEditCell": "NumericInputOnly",
     "align": "left",
     "width": 100,
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "mar",
@@ -142,7 +168,9 @@
     "renderEditCell": "NumericInputOnly",
     "align": "left",
     "width": 100,
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100,
+    "type": "integerOnlyForDays"
   },
   {
     "field": "remarks",
@@ -150,6 +178,7 @@
 
     "editable": true,
     "renderCell": "renderRemarkCell",
-    "widthT": 100
+    "widthT": 80,
+    "minWidth": 200
   }
 ]

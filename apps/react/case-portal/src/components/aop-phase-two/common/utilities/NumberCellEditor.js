@@ -84,33 +84,7 @@ export const NumberCellEditor = ({
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         autoComplete='off'
-        sx={{
-          width: '100%',
-          fontSize: '15px',
-          fontWeight: 600,
-          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif !important",
-          color: '#1d3665',
-          px: 1,
-          height: 40,
-          borderRadius: '6px',
-          backgroundColor: '#FFFFFF',
-          border: '1px solid #E0E4EC',
-          boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)',
-          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-          '&:hover': {
-            borderColor: '#B0B8C4',
-            backgroundColor: '#F9FAFB',
-          },
-          '&.Mui-focused': {
-            borderColor: '#00F5E1',
-            boxShadow: '0 0 0 3px rgba(0, 245, 225, 0.12)',
-            backgroundColor: '#FFFFFF',
-          },
-          '& input': {
-            textAlign: 'right',
-            padding: '0 !important',
-          },
-        }}
+        className='input-editor'
       />
       <NotificationTST
         open={snackbarOpen}

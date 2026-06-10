@@ -17,6 +17,8 @@ export const ReportDataService = {
   saveShutdownSummaryLastFourYearData,
   deleteShutdownLastFourYears,
   deleteRoutineShutdownsMonthwiseData,
+  getMonthlyProductionReportData,
+  getOptimizerInputOutput,
 }
 
 async function getShutdownData(keycloak, PLANT_ID, AOP_YEAR, type) {
@@ -346,5 +348,36 @@ async function deleteRoutineShutdownsMonthwiseData(Id, keycloak, PLANT_ID) {
   } catch (e) {
     console.error('Error deleting routine shutdown data:', e)
     return Promise.reject(e)
+  }
+}
+async function getMonthlyProductionReportData(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/monthly-production-report?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getOptimizerInputOutput(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/data-set-optimizer?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }

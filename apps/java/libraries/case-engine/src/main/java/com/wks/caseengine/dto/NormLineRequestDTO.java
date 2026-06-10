@@ -14,4 +14,6 @@ public class NormLineRequestDTO {
 
     private String lineId;
     private Map<String, String> grades;
+    private String saveStatus;
+    private String errDescription;
 }

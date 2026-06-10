@@ -123,7 +123,7 @@ const CrackerConfiguration = (props) => {
       title: 'Particulars',
       widthT: 140,
       editable: false,
-      minWidth: 120,
+      minWidth: 300,
     },
     {
       field: 'UOM',

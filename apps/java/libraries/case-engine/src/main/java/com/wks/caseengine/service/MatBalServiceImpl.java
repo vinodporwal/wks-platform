@@ -238,7 +238,7 @@ public class MatBalServiceImpl implements MatBalService {
 				String[] monthAbbrevs = { "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb",
 						"Mar" };
 
-				// Build ordered visible columns: display header ? data key
+				// Build ordered visible columns: display header → data key
 				LinkedHashMap<String, String> visibleColumns = new LinkedHashMap<>();
 
 				String particularsKey = findKey(allDataKeys, "Particulars");
@@ -361,7 +361,7 @@ public class MatBalServiceImpl implements MatBalService {
 	public AOPMessageVM importMatBal(String year, UUID plantId, MultipartFile file) {
 		try {
 			List<ConfigurationDTO> data = readMatBal(file.getInputStream(), plantId, year);
-			List<ConfigurationDTO> result = configurationService.saveConfigurationData(year, plantId.toString(), null, data, false);
+			List<ConfigurationDTO> result = configurationService.saveConfigurationData(year, plantId.toString(), null, data, false,false);
 			
 			List<ConfigurationDTO> failedList = new ArrayList<>();
 			for(ConfigurationDTO dto : result) {
@@ -424,29 +424,34 @@ public class MatBalServiceImpl implements MatBalService {
 					headerMap.put(cell.getStringCellValue(), cell.getColumnIndex());
 				}
 
+				// Dynamic month headers for the financial year (e.g. Apr-26, Jan-27)
+				List<String> monthHeaders = generateMonthHeaders(year);
+				// monthHeaders order: Apr(0), May(1), Jun(2), Jul(3), Aug(4), Sep(5),
+				//                     Oct(6), Nov(7), Dec(8), Jan(9), Feb(10), Mar(11)
+
 				while (rowIterator.hasNext()) {
 					Row row = rowIterator.next();
 					ConfigurationDTO dto = new ConfigurationDTO();
 					dto.setAuditYear(year);
-					dto.setNormParameterFKId(getStringCellValue(row.getCell(headerMap.getOrDefault("normParameterFKId", -1))));
+					dto.setNormParameterFKId(getStringCellValue(row.getCell(headerMap.getOrDefault("NormParameterId", -1))));
 					if (dto.getNormParameterFKId() == null) {
 						dto.setNormParameterFKId(getStringCellValue(row.getCell(headerMap.getOrDefault("NormParameterType_FK_Id", -1))));
 					}
-					
-					dto.setJan(getNumericCellValue(row.getCell(headerMap.getOrDefault("Jan", -1))));
-					dto.setFeb(getNumericCellValue(row.getCell(headerMap.getOrDefault("Feb", -1))));
-					dto.setMar(getNumericCellValue(row.getCell(headerMap.getOrDefault("Mar", -1))));
-					dto.setApr(getNumericCellValue(row.getCell(headerMap.getOrDefault("Apr", -1))));
-					dto.setMay(getNumericCellValue(row.getCell(headerMap.getOrDefault("May", -1))));
-					dto.setJun(getNumericCellValue(row.getCell(headerMap.getOrDefault("Jun", -1))));
-					dto.setJul(getNumericCellValue(row.getCell(headerMap.getOrDefault("Jul", -1))));
-					dto.setAug(getNumericCellValue(row.getCell(headerMap.getOrDefault("Aug", -1))));
-					dto.setSep(getNumericCellValue(row.getCell(headerMap.getOrDefault("Sep", -1))));
-					dto.setOct(getNumericCellValue(row.getCell(headerMap.getOrDefault("Oct", -1))));
-					dto.setNov(getNumericCellValue(row.getCell(headerMap.getOrDefault("Nov", -1))));
-					dto.setDec(getNumericCellValue(row.getCell(headerMap.getOrDefault("Dec", -1))));
-					dto.setRemarks(getStringCellValue(row.getCell(headerMap.getOrDefault("Remarks", -1))));
-					dto.setId(getStringCellValue(row.getCell(headerMap.getOrDefault("idFromApi", -1))));
+
+					dto.setApr(getNumericCellValue(row.getCell(resolveHeaderIndex(headerMap, monthHeaders.get(0), "Apr"))));
+					dto.setMay(getNumericCellValue(row.getCell(resolveHeaderIndex(headerMap, monthHeaders.get(1), "May"))));
+					dto.setJun(getNumericCellValue(row.getCell(resolveHeaderIndex(headerMap, monthHeaders.get(2), "Jun"))));
+					dto.setJul(getNumericCellValue(row.getCell(resolveHeaderIndex(headerMap, monthHeaders.get(3), "Jul"))));
+					dto.setAug(getNumericCellValue(row.getCell(resolveHeaderIndex(headerMap, monthHeaders.get(4), "Aug"))));
+					dto.setSep(getNumericCellValue(row.getCell(resolveHeaderIndex(headerMap, monthHeaders.get(5), "Sep"))));
+					dto.setOct(getNumericCellValue(row.getCell(resolveHeaderIndex(headerMap, monthHeaders.get(6), "Oct"))));
+					dto.setNov(getNumericCellValue(row.getCell(resolveHeaderIndex(headerMap, monthHeaders.get(7), "Nov"))));
+					dto.setDec(getNumericCellValue(row.getCell(resolveHeaderIndex(headerMap, monthHeaders.get(8), "Dec"))));
+					dto.setJan(getNumericCellValue(row.getCell(resolveHeaderIndex(headerMap, monthHeaders.get(9), "Jan"))));
+					dto.setFeb(getNumericCellValue(row.getCell(resolveHeaderIndex(headerMap, monthHeaders.get(10), "Feb"))));
+					dto.setMar(getNumericCellValue(row.getCell(resolveHeaderIndex(headerMap, monthHeaders.get(11), "Mar"))));
+					dto.setRemarks(getStringCellValue(row.getCell(headerMap.getOrDefault("Remark", -1))));
+				//	dto.setId(getStringCellValue(row.getCell(headerMap.getOrDefault("idFromApi", -1))));
 					
 					dataList.add(dto);
 				}
@@ -455,6 +460,18 @@ public class MatBalServiceImpl implements MatBalService {
 			e.printStackTrace();
 		}
 		return dataList;
+	}
+
+	/**
+	 * Resolves a column index from the header map by first trying the dynamic
+	 * year-suffixed header (e.g. "Apr-26") and falling back to the plain month
+	 * abbreviation (e.g. "Apr") for backward compatibility.
+	 */
+	private int resolveHeaderIndex(Map<String, Integer> headerMap, String dynamicHeader, String fallbackAbbrev) {
+		if (headerMap.containsKey(dynamicHeader)) {
+			return headerMap.get(dynamicHeader);
+		}
+		return headerMap.getOrDefault(fallbackAbbrev, -1);
 	}
 
 	private String getStringCellValue(Cell cell) {
@@ -486,5 +503,52 @@ public class MatBalServiceImpl implements MatBalService {
 		}
 		return null;
 	}
+
+	@Override
+	public AOPMessageVM calculateMaterialBalance(String plantId, String year) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			
+			// Create dynamic stored procedure name: {VerticalName}_{SiteName}_LoadSpyroOutput
+			String procedureName = vertical.getName() + "_" + site.getName() + "_LoadMATBAL";
+			
+			// Call the stored procedure dynamically
+		//	String sql = "EXEC " + procedureName + " @plantId = :plantId, @AopYear = :AopYear";
+			// Query query = entityManager.createNativeQuery(sql);
+			// query.setParameter("plantId", plantId);
+			// query.setParameter("AopYear", year);
+			
+			// List<Object[]> results = query.getResultList();
+
+			String sql = "EXEC " + procedureName + " ?, ?";
+
+			Session session = entityManager.unwrap(Session.class);
+			session.doWork(connection -> {
+				PreparedStatement ps = connection.prepareStatement(sql);
+				ps.setObject(1, plantId);
+				ps.setObject(2, year);
+				
+				boolean hasResultSet = ps.execute();
+			});
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data calculated successfully");
+			aopMessageVM.setData(0);
+			return aopMessageVM;
+			
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to calculate spyro output data", ex);
+		}
+	}
+
 }
 

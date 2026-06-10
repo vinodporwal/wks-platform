@@ -183,6 +183,7 @@ const LineConfiguration = ({
 
   const downloadExcelForConfiguration = async () => {
     try {
+      setLoading(true)
       let response
 
       setSnackbarOpen(true)
@@ -207,6 +208,7 @@ const LineConfiguration = ({
       })
     } finally {
       setSnackbarOpen(true)
+      setLoading(false)
     }
   }
 

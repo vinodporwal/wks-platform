@@ -3,7 +3,9 @@ import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import ValueFormatterPhaseTwo, {
+  customValueFormatterPhaseTwo,
+} from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import NestedKendoTable from 'components/aop-phase-two/common/NestedKendoTable/index'
 import { InputApiService } from 'components/aop-phase-two/services/cpp/inputApiService'
@@ -47,6 +49,7 @@ const FixedNorms = () => {
   const AOP_YEAR = year?.selectedYear
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
+  const customFormatFive = customValueFormatterPhaseTwo(5)
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -61,7 +64,7 @@ const FixedNorms = () => {
       widthT: 180,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
       minWidth: 180,
     },
     //Utility
@@ -71,7 +74,7 @@ const FixedNorms = () => {
       widthT: 120,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
       minWidth: 120,
     },
     // Utility ID
@@ -81,17 +84,17 @@ const FixedNorms = () => {
       widthT: 120,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
       minWidth: 120,
     },
     //UOM
     {
       field: 'uom',
       title: 'Generation UOM',
-      widthT: 150,
+      widthT: 180,
       type: 'text',
       editable: false,
-      minWidth: 150,
+      minWidth: 180,
     },
     // Account
     {
@@ -144,7 +147,7 @@ const FixedNorms = () => {
       type: 'numberWithCheckbox',
       editable: true,
       isNumberEditable: false,
-      format: valueFormat,
+      format: customFormatFive,
       minWidth: 150,
       alwaysEditable: true,
     },
@@ -153,6 +156,7 @@ const FixedNorms = () => {
       field: 'aprNorms',
       title: headerMap[4],
       widthT: 100,
+      minWidth: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -162,6 +166,7 @@ const FixedNorms = () => {
       field: 'mayNorms',
       title: headerMap[5],
       widthT: 100,
+      minWidth: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -171,6 +176,7 @@ const FixedNorms = () => {
       field: 'junNorms',
       title: headerMap[6],
       widthT: 100,
+      minWidth: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -180,6 +186,7 @@ const FixedNorms = () => {
       field: 'julNorms',
       title: headerMap[7],
       widthT: 100,
+      minWidth: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -189,6 +196,7 @@ const FixedNorms = () => {
       field: 'augNorms',
       title: headerMap[8],
       widthT: 100,
+      minWidth: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -198,6 +206,7 @@ const FixedNorms = () => {
       field: 'sepNorms',
       title: headerMap[9],
       widthT: 100,
+      minWidth: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -207,6 +216,7 @@ const FixedNorms = () => {
       field: 'octNorms',
       title: headerMap[10],
       widthT: 100,
+      minWidth: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -216,6 +226,7 @@ const FixedNorms = () => {
       field: 'novNorms',
       title: headerMap[11],
       widthT: 100,
+      minWidth: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -225,6 +236,7 @@ const FixedNorms = () => {
       field: 'decNorms',
       title: headerMap[12],
       widthT: 100,
+      minWidth: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -234,6 +246,7 @@ const FixedNorms = () => {
       field: 'janNorms',
       title: headerMap[1],
       widthT: 100,
+      minWidth: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -243,6 +256,7 @@ const FixedNorms = () => {
       field: 'febNorms',
       title: headerMap[2],
       widthT: 100,
+      minWidth: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,
@@ -252,6 +266,7 @@ const FixedNorms = () => {
       field: 'marNorms',
       title: headerMap[3],
       widthT: 100,
+      minWidth: 100,
       editable: true,
       type: 'number1',
       format: valueFormat,

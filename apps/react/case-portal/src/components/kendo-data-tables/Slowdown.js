@@ -12,11 +12,14 @@ import {
   SlowDownElastomerColumns,
   SlowDownElastomerColumnsSBR,
   SlowDown_Elastomer_JMD_Columns,
+  SlowDownElastomerColumnsPBR3,
 } from 'components/colums/ElastomerColums'
 import {
   SlowDownDmdVcmColumns,
   SlowDownVcmColumns,
+  SlowDownVcmhmdColumns,
 } from 'components/colums/VcmColums'
+import { SlowDownChemicalhmdColumns } from 'components/colums/Chemicalcolumn'
 import { SlowDownAromaticsColumns } from 'components/colums/AromaticsColumns'
 import { SlowDownMegColumns } from 'components/colums/MegColums'
 import { SlowDownPeColumns } from 'components/colums/PeColums'
@@ -82,7 +85,7 @@ const SlowDown = ({ permissions }) => {
   const [rowModesModel, setRowModesModel] = useState({})
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [modifiedCells2, setModifiedCells2] = React.useState({})
-  const [colDefs2, setColDefs2] = React.useState([])
+  const [colDefs2, setColDefs2] = React.useState({})
   const [allProducts, setAllProducts] = useState([])
   const apiRef = useGridApiRef()
   const [open1, setOpen1] = useState(false)
@@ -106,23 +109,27 @@ const SlowDown = ({ permissions }) => {
   const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
+  const IS_AROMATICS = lowerVertName === 'aromatics'
   const IS_AROMATICS_SEZ_PX4 =
     lowerVertName === 'aromatics' &&
     lowerSiteName === 'sez' &&
     lowerPlantName === 'px4'
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
+  const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
   const SHOW_EXCEL_UPLOAD_BUTTON =
     lowerVertName === 'pe' ||
     lowerVertName === 'pp' ||
     lowerVertName === 'pet' ||
-    (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD) ||
+    lowerVertName === 'elastomer' ||
     lowerVertName == 'vcm' ||
     lowerVertName == 'pta' ||
     lowerVertName == 'chemical' ||
     lowerVertName == 'meg' ||
+    lowerVertName == 'aromatics' ||
     IS_AROMATICS_SEZ_PX4 ||
-    IS_PVC_VMD ||
-    IS_PVC_DMD
+    IS_PVC_HMD ||
+    IS_PVC_DMD ||
+    IS_PVC_VMD
 
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_PET = lowerVertName === 'pet'
@@ -134,8 +141,16 @@ const SlowDown = ({ permissions }) => {
     lowerVertName === 'elastomer' &&
     lowerSiteName === 'hmd' &&
     lowerPlantName === 'sbr'
+  const IS_ELASTOMER_HMD_PBR3 =
+    lowerVertName === 'elastomer' &&
+    lowerSiteName === 'hmd' &&
+    lowerPlantName === 'pbr3'
   const IS_PP_HMD = lowerVertName === 'pp' && lowerSiteName === 'hmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'
+  var IS_CHEMICAL_HMD_BUTADIENE =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'hmd' &&
+    lowerPlantName === 'butadiene'
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -147,6 +162,7 @@ const SlowDown = ({ permissions }) => {
   })
 
   const [selectedTab, setSelectedTab] = useState(0)
+  const [tabIndex, setTabIndex] = useState(0)
 
   const handleTabChange = (event, newValue) => {
     setModifiedCells2({})
@@ -211,7 +227,7 @@ const SlowDown = ({ permissions }) => {
     }
 
     // Call for both VCM and PTA_DMD
-    if (lowerVertName === 'vcm' || IS_PTA_DMD) {
+    if (lowerVertName === 'vcm' || IS_PTA_DMD || IS_CHEMICAL_HMD_BUTADIENE) {
       getAllDescriptionDrpdwn()
     }
   }, [
@@ -278,6 +294,29 @@ const SlowDown = ({ permissions }) => {
         rateEO: row.rateEO,
         rateEOE: row.rateEOE,
       }))
+      const slowDownDetailsElastomerHmdSbr = newRow.map((row) => ({
+        productId: (() => {
+          const matched = allProducts.find(
+            (p) => p.displayName === row.productName1,
+          )
+          return matched?.realId || null
+        })(),
+        productName: row.productName1,
+        discription: row.discription,
+        durationInHrs: (() => {
+          const v = findDuration('1', row)
+          if (!v) return null
+          const [h = '00', m = '00'] = String(v).split('.')
+          return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
+        })(),
+        month: row.monthly,
+        remark: row.remark,
+        rate: row.rate,
+        audityear: AOP_YEAR,
+        id: row.idFromApi || null,
+        rateEO: null,
+        rateEOE: null,
+      }))
       const slowDownDetailsElastomer = newRow.map((row) => ({
         productId: (() => {
           const matched = allProducts.find(
@@ -329,7 +368,7 @@ const SlowDown = ({ permissions }) => {
         id: row.idFromApi || null,
         rateEO: null,
         rateEOE: null,
-        ...(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD
+        ...(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD
           ? { lineId: row.lineId }
           : {}),
       }))
@@ -365,17 +404,22 @@ const SlowDown = ({ permissions }) => {
       }))
       const response = await DataService.saveSlowdownData(
         plantId,
-        lowerVertName === 'elastomer'
-          ? slowDownDetailsElastomer
-          : IS_PTA_DMD
-            ? slowDownDetailsPTADMD
-            : lowerVertName === 'pe' ||
-                lowerVertName === 'pp' ||
-                lowerVertName === 'pet' ||
-                IS_PVC_VMD ||
-                IS_PVC_DMD
-              ? slowDownDetailsPEPP
-              : slowDownDetailsMEG,
+        IS_ELASTOMER_HMD_SBR || IS_ELASTOMER_HMD_PBR3
+          ? slowDownDetailsElastomerHmdSbr
+          : lowerVertName === 'elastomer' &&
+              !IS_ELASTOMER_HMD_SBR &&
+              !IS_ELASTOMER_HMD_PBR3
+            ? slowDownDetailsElastomer
+            : IS_PTA_DMD
+              ? slowDownDetailsPTADMD
+              : lowerVertName === 'pe' ||
+                  lowerVertName === 'pp' ||
+                  lowerVertName === 'pet' ||
+                  IS_PVC_VMD ||
+                  IS_PVC_DMD ||
+                  IS_PVC_HMD
+                ? slowDownDetailsPEPP
+                : slowDownDetailsMEG,
         keycloak,
       )
 
@@ -495,7 +539,10 @@ const SlowDown = ({ permissions }) => {
         !IS_PTA_DMD &&
         !IS_PVC_VMD &&
         !IS_PVC_DMD &&
-        !IS_ELASTOMER_JMD
+        !IS_PVC_HMD &&
+        !IS_ELASTOMER_JMD &&
+        !IS_ELASTOMER_HMD_SBR &&
+        !IS_ELASTOMER_HMD_PBR3
       ) {
         for (const record of data) {
           const startDate =
@@ -539,6 +586,13 @@ const SlowDown = ({ permissions }) => {
         'rate',
         'durationInHrs',
       ]
+      const requiredFieldsForElastomerHMD = [
+        'discription',
+        'monthly',
+        'remark',
+        'rate',
+        'durationInHrs',
+      ]
       const requiredFieldsForPe = [
         'discription',
         'remark',
@@ -562,17 +616,27 @@ const SlowDown = ({ permissions }) => {
         'rate',
         'durationInHrs',
       ]
+      const requiredfieldISCHEMICALHMDBUTADIENE = [
+        'discription',
+        'durationInHrs',
+        'rate',
+        'remark',
+      ]
 
       const chosenFields =
-        lowerVertName === 'elastomer'
-          ? requiredFieldsForElastomer
-          : lowerVertName === 'meg'
-            ? requiredFieldsForMeg
-            : IS_PE_PP || IS_PET || IS_PVC_VMD
-              ? requiredFieldsForPe
-              : IS_PTA_DMD
-                ? requiredFieldsISPTADMD
-                : requiredFields
+        IS_ELASTOMER_HMD_SBR || IS_ELASTOMER_HMD_PBR3
+          ? requiredFieldsForElastomerHMD
+          : lowerVertName === 'elastomer'
+            ? requiredFieldsForElastomer
+            : lowerVertName === 'meg'
+              ? requiredFieldsForMeg
+              : IS_PE_PP || IS_PET || IS_PVC_VMD
+                ? requiredFieldsForPe
+                : IS_PTA_DMD
+                  ? requiredFieldsISPTADMD
+                  : IS_CHEMICAL_HMD_BUTADIENE
+                    ? requiredfieldISCHEMICALHMDBUTADIENE
+                    : requiredFields
 
       // Missing required fields
       for (const record of data) {
@@ -634,7 +698,8 @@ const SlowDown = ({ permissions }) => {
         lowerVertName !== 'vcm' &&
         !IS_PTA_DMD &&
         !IS_PTA_HMD &&
-        !IS_CHEMICAL
+        !IS_CHEMICAL &&
+        !IS_CHEMICAL_HMD_BUTADIENE
       ) {
         rows.forEach((row) => {
           if ((row.discription || '').trim().toLowerCase() === duplicate) {
@@ -657,7 +722,10 @@ const SlowDown = ({ permissions }) => {
         lowerVertName !== 'pet' &&
         !IS_PVC_VMD &&
         !IS_PVC_DMD &&
-        !IS_ELASTOMER_JMD
+        !IS_PVC_HMD &&
+        !IS_ELASTOMER_JMD &&
+        !IS_ELASTOMER_HMD_SBR &&
+        !IS_ELASTOMER_HMD_PBR3
       ) {
         for (const record of data) {
           const startMissing = !record.maintStartDateTime
@@ -759,7 +827,8 @@ const SlowDown = ({ permissions }) => {
         lowerVertName === 'pet' ||
         lowerVertName === 'vcm' ||
         IS_PVC_VMD ||
-        IS_CHEMICAL
+        IS_CHEMICAL ||
+        IS_AROMATICS
       ) {
         // Month span check
         //check timeframe Multiple month spilt into single
@@ -839,7 +908,10 @@ const SlowDown = ({ permissions }) => {
           !IS_PTA_HMD &&
           !IS_PVC_VMD &&
           !IS_CHEMICAL &&
-          !IS_PP_SEZ
+          !IS_PP_SEZ &&
+          !IS_PP_DTA &&
+          !IS_PE_PP &&
+          !IS_AROMATICS
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
@@ -1143,8 +1215,9 @@ const SlowDown = ({ permissions }) => {
         const dynamicColDefs = data1.data.map((item) => ({
           field: item.field,
           title: item.title,
-          widthT: item.field.toLowerCase() === 'uom' ? 90 : 150,
-          autoAdjust: false,
+          isVisible: removedCols.includes(item.field) ? false : true,
+
+          minWidth: item.field.toLowerCase() === 'uom' ? 90 : 100,
           editable:
             item.field === 'particulars' || item.field.toLowerCase() === 'uom'
               ? false
@@ -1154,6 +1227,7 @@ const SlowDown = ({ permissions }) => {
             item.field.toLowerCase() !== 'uom' && {
               format: FORMATE_DECIMAL,
               type: 'number',
+              minWidth: 100,
             }),
         }))
 
@@ -1228,7 +1302,7 @@ const SlowDown = ({ permissions }) => {
   }, [oldYear, yearChanged, keycloak, PLANT_ID])
   useEffect(() => {
     if (
-      (lowerVertName === 'vcm' || IS_PTA_DMD) &&
+      (lowerVertName === 'vcm' || IS_PTA_DMD || IS_CHEMICAL_HMD_BUTADIENE) &&
       allDescriptionDrpdwn?.length > 0
     ) {
       fetchData()
@@ -1261,7 +1335,7 @@ const SlowDown = ({ permissions }) => {
     }
   }
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
       fetchLineDetails()
     }
   }, [lowerVertName, lowerSiteName, keycloak, PLANT_ID, AOP_YEAR])
@@ -1282,6 +1356,11 @@ const SlowDown = ({ permissions }) => {
       PLANT_NAME_LOWER === 'vcm' &&
       SITE_NAME_LOWER === 'dmd'
 
+    var IS_VCM_HMD_VCM =
+      lowerVertName === 'vcm' &&
+      PLANT_NAME_LOWER === 'vcm' &&
+      SITE_NAME_LOWER === 'hmd'
+
     var IS_ELASTOMER_HMD_SBR =
       lowerVertName === 'elastomer' &&
       PLANT_NAME_LOWER === 'sbr' &&
@@ -1294,7 +1373,7 @@ const SlowDown = ({ permissions }) => {
       case verticalEnums.PE:
         return SlowDownPeColumns
       case verticalEnums.PP:
-        return IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD
+        return IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD
           ? SlowDownPpDtaColumns
           : SlowDownPpColumns
       case verticalEnums.PTA:
@@ -1304,7 +1383,9 @@ const SlowDown = ({ permissions }) => {
           ? SlowDown_Elastomer_JMD_Columns
           : IS_ELASTOMER_HMD_SBR
             ? SlowDownElastomerColumnsSBR
-            : SlowDownElastomerColumns
+            : IS_ELASTOMER_HMD_PBR3
+              ? SlowDownElastomerColumnsPBR3
+              : SlowDownElastomerColumns
       case verticalEnums.MEG:
         return SlowDownMegColumns
       case verticalEnums.AROMATICS:
@@ -1312,11 +1393,17 @@ const SlowDown = ({ permissions }) => {
       case verticalEnums.PVC:
         return IS_PVC_VMD ? SlowDownPeColumns : SlowDownPpDtaColumns
       case verticalEnums.VCM:
-        return IS_VCM_DMD_VCM ? SlowDownVcmColumns : SlowDownDmdVcmColumns
+        return IS_VCM_DMD_VCM
+          ? SlowDownVcmColumns
+          : IS_VCM_HMD_VCM
+            ? SlowDownVcmhmdColumns
+            : SlowDownDmdVcmColumns
       case verticalEnums.PET:
         return SlowDownPeColumns
       case verticalEnums.CHEMICAL:
-        return SlowDownPtaColumns
+        return IS_CHEMICAL_HMD_BUTADIENE
+          ? SlowDownChemicalhmdColumns
+          : SlowDownPtaColumns
       default:
         return SlowDownMegColumns
     }
@@ -1356,6 +1443,36 @@ const SlowDown = ({ permissions }) => {
     }
   }
 
+  const handleDeleteSelected = async (deleteIds) => {
+    if (!deleteIds || deleteIds?.length === 0) return
+    setLoading(true)
+
+    try {
+      await DataService.deleteMultipleSlowdown(deleteIds, keycloak, PLANT_ID)
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Records Deleted successfully!',
+        severity: 'success',
+      })
+      fetchData()
+
+      await MaintenanceDetailsApiService.getMaintenanceData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+    } catch (error) {
+      console.error('Error deleting Records', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error deleting records!',
+        severity: 'error',
+      })
+      setLoading(false)
+    }
+  }
+
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)
     setSnackbarData({
@@ -1365,7 +1482,21 @@ const SlowDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+
+      if (IS_ELASTOMER_JMD) {
+        response = await DtaDataService.exportSlowdownElastomerJmd(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
+      } else if (
+        IS_PP_DTA ||
+        IS_PP_SEZ ||
+        IS_PVC_DMD ||
+        IS_PP_HMD ||
+        IS_PVC_HMD
+      ) {
         response = await DtaDataService.exportSlowdownLineWise(
           keycloak,
           PLANT_ID,
@@ -1380,7 +1511,9 @@ const SlowDown = ({ permissions }) => {
           EXCEL_EXPORT_TITLE,
         )
       } else if (
-        (lowerVertName == 'elastomer' && !IS_ELASTOMER_HMD_SBR) ||
+        (lowerVertName == 'elastomer' &&
+          !IS_ELASTOMER_HMD_SBR &&
+          !IS_ELASTOMER_HMD_PBR3) ||
         lowerVertName == 'vcm' ||
         lowerVertName === 'aromatics' ||
         lowerVertName === 'pta' ||
@@ -1423,7 +1556,20 @@ const SlowDown = ({ permissions }) => {
     try {
       let response
 
-      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      if (IS_ELASTOMER_JMD) {
+        response = await DtaDataService.ImportSlowdownElastomerJmd(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (
+        IS_PP_DTA ||
+        IS_PP_SEZ ||
+        IS_PVC_DMD ||
+        IS_PP_HMD ||
+        IS_PVC_HMD
+      ) {
         response = await DtaDataService.ImportSlowdownLineWise(
           rawFile,
           keycloak,
@@ -1438,10 +1584,13 @@ const SlowDown = ({ permissions }) => {
           AOP_YEAR,
         )
       } else if (
-        (lowerVertName == 'elastomer' && !IS_ELASTOMER_HMD_SBR) ||
+        (lowerVertName == 'elastomer' &&
+          !IS_ELASTOMER_HMD_SBR &&
+          !IS_ELASTOMER_HMD_PBR3) ||
         lowerVertName == 'vcm' ||
         lowerVertName == 'pta' ||
         IS_AROMATICS_SEZ_PX4 ||
+        IS_AROMATICS ||
         IS_CHEMICAL
       ) {
         response = await DataService.ImportSlowdownElastomerDetails(
@@ -1551,7 +1700,7 @@ const SlowDown = ({ permissions }) => {
       saveBtn: permissions?.saveBtn ?? true,
       customHeight: permissions?.customHeight,
       allAction: true,
-      downloadExcelBtn: IS_ELASTOMER_JMD ? false : true,
+      downloadExcelBtn: true,
       showTitleNameBusiness: true,
       titleName: SCREEN_NAME,
       uploadExcelBtn: SHOW_EXCEL_UPLOAD_BUTTON,
@@ -1566,7 +1715,10 @@ const SlowDown = ({ permissions }) => {
       highlightProductName1:
         lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
       highlightLine:
-        IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD ? true : false,
+        IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD
+          ? true
+          : false,
+      deleteMultiple: true, // IS_PP_DTA ? true : false,
     },
     isOldYear,
   )
@@ -1582,9 +1734,33 @@ const SlowDown = ({ permissions }) => {
         <Box style={{ margin: 0, padding: 0 }}>
           <AopTabs
             tabIndex={selectedTab}
-            setTabIndex={(newValue) => handleTabChange(null, newValue)}
-            tabs={['Slowdown Details', 'Slowdown History Config']}
-          />
+            setTabIndex={(index) => handleTabChange(null, index)}
+            tabs={[
+              'Slowdown Details',
+              lowerVertName === 'meg'
+                ? 'Slowdown Configuration'
+                : 'Slowdown History Config',
+            ]}
+          >
+            {[
+              'Slowdown Details',
+              lowerVertName === 'meg'
+                ? 'Slowdown Configuration'
+                : 'Slowdown History Config',
+            ].map((label, idx) => (
+              <Tab
+                key={idx}
+                label={label}
+                sx={{
+                  border: '1px solid #ADD8E6',
+                  borderBottom: '1px solid #ADD8E6',
+                  fontSize: '0.75rem',
+                  padding: '9px',
+                  minHeight: '12px',
+                }}
+              />
+            ))}
+          </AopTabs>
         </Box>
       )}
 
@@ -1618,6 +1794,7 @@ const SlowDown = ({ permissions }) => {
           currentRowId={currentRowId}
           unsavedChangesRef={unsavedChangesRef}
           deleteRowData={deleteRowData}
+          handleDeleteSelected={handleDeleteSelected}
           permissions={adjustedPermissions}
           handleCancelClick={handleCancelClick}
           focusFirstField={focusFirstField}

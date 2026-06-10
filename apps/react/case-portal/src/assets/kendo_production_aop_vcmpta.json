@@ -1,5 +1,11 @@
 [
-  { "field": "idFromApi", "title": "ID", "hidden": true, "minWidth": 100 },
+  {
+    "field": "idFromApi",
+    "title": "ID",
+    "hidden": true,
+    "minWidth": 100,
+    "isVisible": false
+  },
   {
     "field": "aopCaseId",
     "title": "Case ID",

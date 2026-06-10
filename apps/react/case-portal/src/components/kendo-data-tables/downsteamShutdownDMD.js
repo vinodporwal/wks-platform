@@ -10,7 +10,7 @@ import { useSession } from 'SessionStoreContext'
 import { validateFields } from 'utils/validationUtils'
 import KendoDataTables from './index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-const DownsteamShutdownDMD = ({ viewOnly }) => {
+const DownsteamShutdownDMD = ({ viewOnly, permissions }) => {
   const keycloak = useSession()
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -59,6 +59,7 @@ const DownsteamShutdownDMD = ({ viewOnly }) => {
 
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [columns, setColumns] = useState([])
+  const [groupBy, setGroupBy] = useState(null)
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
@@ -251,8 +252,23 @@ const DownsteamShutdownDMD = ({ viewOnly }) => {
       const resp = await dataConfig.serviceFn(keycloak)
       const raw = resp.data?.data
       setCalculationObject(resp?.data?.aopCalculation)
-      const hiddenKeys = ['Id', 'AOPYear', 'PlantId', 'AuditYear']
-      const dynamicColumns = (resp.data?.columns || columns).map((col) => ({
+      const hiddenKeys = [
+        'Id',
+        'AOPYear',
+        'PlantId',
+        'AuditYear',
+        'MaintenanceType',
+      ]
+      const cols = resp.data?.columns || columns
+      const hasMaintenanceType = cols.some(
+        (col) => col.field === 'MaintenanceType',
+      )
+      if (hasMaintenanceType) {
+        setGroupBy('MaintenanceType')
+      } else {
+        setGroupBy(null)
+      }
+      const dynamicColumns = cols.map((col) => ({
         ...col,
         editable: false,
         hidden: hiddenKeys.includes(col.field) ? true : col.hidden,
@@ -462,6 +478,7 @@ const DownsteamShutdownDMD = ({ viewOnly }) => {
     () =>
       getAdjustedPermissions(
         {
+          ...permissions,
           showAction: false,
           addButton: false,
           deleteButton: false,
@@ -489,6 +506,7 @@ const DownsteamShutdownDMD = ({ viewOnly }) => {
         rows={rows}
         setRows={setRows}
         fetchData={fetchData}
+        groupBy={groupBy}
         handleCalculate={handleCalculate}
         deleteId={deleteId}
         setDeleteId={setDeleteId}
@@ -509,7 +527,6 @@ const DownsteamShutdownDMD = ({ viewOnly }) => {
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
         note='*Unit of Measurement - Days'
-        supressGridHeight={true}
         handleExcelUpload={handleExcelUpload}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
       />

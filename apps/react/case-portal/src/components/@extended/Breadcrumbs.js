@@ -30,6 +30,14 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { verticalChange, plantObject, verticalObject, siteObject, year } =
     dataGridStore
+  //=====================================================
+  const jmdSelectedPlants = useSelector(
+    (s) => s.dataGridStore.jmdSelectedPlants,
+  )
+  const IS_CPP_JMD =
+    verticalObject?.name?.toLowerCase() === 'cpp' &&
+    siteObject?.name?.toLowerCase() === 'jmd'
+  //=====================================================
 
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -135,6 +143,23 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
     //PP NMD
     if (
       title == 'configuration' &&
+      PLANT_NAME?.toLowerCase() == 'hdpe' &&
+      SITE_NAME?.toLowerCase() == 'dmd' &&
+      VERTICAL_NAME?.toLowerCase() == 'pe'
+    )
+      url = `${window.location.origin}/files/Digital AOP Automation for DMD HDPE_Rev1.pdf`
+    //PE HMD PE1
+    if (
+      title == 'configuration' &&
+      PLANT_NAME?.toLowerCase() == 'pe1' &&
+      SITE_NAME?.toLowerCase() == 'hmd' &&
+      VERTICAL_NAME?.toLowerCase() == 'pe'
+    )
+      url = `${window.location.origin}/files/Digital AOP Automation for HMD PE_Rev1.pdf`
+
+    //PP NMD
+    if (
+      title == 'configuration' &&
       SITE_NAME?.toLowerCase() == 'nmd' &&
       VERTICAL_NAME?.toLowerCase() == 'pp'
     )
@@ -154,6 +179,22 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
     )
       url = `${window.location.origin}/files/Digital AOP Automation for DMD VCM_Rev0.pdf`
 
+    // Elastomer HIIR
+    if (
+      title == 'configuration' &&
+      VERTICAL_NAME?.toLowerCase() == 'elastomer' &&
+      SITE_NAME?.toLowerCase() == 'jmd' &&
+      PLANT_NAME?.toLowerCase() == 'hiir'
+    )
+      url = `${window.location.origin}/files/Blue Print RIL AOP Automation Elastomer JMD HIIR_Rev.pdf`
+    // Elastomer IIR
+    if (
+      title == 'configuration' &&
+      VERTICAL_NAME?.toLowerCase() == 'elastomer' &&
+      SITE_NAME?.toLowerCase() == 'jmd' &&
+      PLANT_NAME?.toLowerCase() == 'iir'
+    )
+      url = `${window.location.origin}/files/Blue Print RIL AOP Automation Elastomer JMD IIR_Rev0.pdf`
     try {
       const resp = await fetch(url, {
         method: 'GET',
@@ -301,7 +342,17 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
         (VERTICAL_NAME?.toLowerCase() === 'pe' &&
           SITE_NAME?.toLowerCase() === 'nmd') ||
         (VERTICAL_NAME?.toLowerCase() === 'pp' &&
-          SITE_NAME?.toLowerCase() === 'nmd'))
+          SITE_NAME?.toLowerCase() === 'nmd') ||
+        (VERTICAL_NAME?.toLowerCase() === 'pe' &&
+          SITE_NAME?.toLowerCase() === 'dmd' &&
+          PLANT_NAME?.toLowerCase() === 'hdpe') ||
+        (PLANT_NAME?.toLowerCase() == 'pe1' &&
+          SITE_NAME?.toLowerCase() == 'hmd' &&
+          VERTICAL_NAME?.toLowerCase() == 'pe') ||
+        ((PLANT_NAME?.toLowerCase() == 'iir' ||
+          PLANT_NAME?.toLowerCase() == 'hiir') &&
+          SITE_NAME?.toLowerCase() == 'jmd' &&
+          VERTICAL_NAME?.toLowerCase() == 'elastomer'))
     ) {
       itemContent = (
         <Typography
@@ -460,9 +511,44 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
                       <Box component='span' sx={{ mx: 0.7 }}>
                         |
                       </Box>
-                      <Box component='span' sx={{ mx: 0.7 }}>
-                        {PLANT_NAME}
-                      </Box>
+                      {/*===================================================== */}
+                      {IS_CPP_JMD && jmdSelectedPlants.length > 0 ? (
+                        // CPP-JMD: show all selected plants as chips
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                            flexWrap: 'wrap',
+                          }}
+                        >
+                          {jmdSelectedPlants.map((p, i) => (
+                            <Box
+                              key={p.id}
+                              component='span'
+                              sx={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                px: 1,
+                                py: '2px',
+                                borderRadius: '4px',
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                border: '1px solid #848282',
+                                lineHeight: 1.5,
+                              }}
+                            >
+                              {p.name}
+                            </Box>
+                          ))}
+                        </Box>
+                      ) : (
+                        // All other cases: single plant name
+                        <Box component='span' sx={{ mx: 0.7 }}>
+                          {PLANT_NAME}
+                        </Box>
+                      )}
+                      {/*===================================================== */}
                     </Typography>
 
                     {/* Status/Item Pill */}

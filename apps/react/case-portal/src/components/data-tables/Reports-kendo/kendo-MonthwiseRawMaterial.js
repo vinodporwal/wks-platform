@@ -52,14 +52,14 @@ const MonthwiseRawMaterial = () => {
   const valueFormat = useValueFormatterConsumption()
 
   const columnDefs = [
-    { field: 'id', headerName: 'ID', editable: false },
+    { field: 'id', headerName: 'ID', editable: false, isVisible: false },
 
     {
       field: 'material',
       headerName: 'Particulars',
       flex: 2,
       editable: false,
-      widthT: 100,
+      widthT: 200,
     },
     {
       field: 'UOM',
@@ -93,133 +93,6 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
-    },
-    {
-      field: 'april',
-      headerName: headerMap[4],
-      editable: false,
-      align: 'right',
-      headerAlign: 'left',
-      flex: 1,
-      format: valueFormat,
-      type: 'number',
-    },
-    {
-      field: 'may',
-      headerName: headerMap[5],
-      align: 'right',
-      headerAlign: 'left',
-      editable: false,
-      format: valueFormat,
-      type: 'number',
-    },
-    {
-      field: 'june',
-      headerName: headerMap[6],
-      editable: false,
-      align: 'right',
-      headerAlign: 'left',
-      format: valueFormat,
-      type: 'number',
-    },
-    {
-      field: 'july',
-      headerName: headerMap[7],
-      editable: false,
-      align: 'right',
-      headerAlign: 'left',
-      format: valueFormat,
-      type: 'number',
-    },
-    {
-      field: 'aug',
-      headerName: headerMap[8],
-      align: 'right',
-      headerAlign: 'left',
-      editable: false,
-      format: valueFormat,
-      type: 'number',
-    },
-    {
-      field: 'sep',
-      headerName: headerMap[9],
-      align: 'right',
-      headerAlign: 'left',
-      editable: false,
-      format: valueFormat,
-      type: 'number',
-    },
-    {
-      field: 'oct',
-      headerName: headerMap[10],
-      align: 'right',
-      headerAlign: 'left',
-      editable: false,
-      format: valueFormat,
-      type: 'number',
-    },
-    {
-      field: 'nov',
-      headerName: headerMap[11],
-      align: 'right',
-      headerAlign: 'left',
-      editable: false,
-      format: valueFormat,
-      type: 'number',
-    },
-    {
-      field: 'dec',
-      headerName: headerMap[12],
-      align: 'right',
-      headerAlign: 'left',
-      editable: false,
-      format: valueFormat,
-      type: 'number',
-    },
-    {
-      field: 'jan',
-      headerName: headerMap[1],
-      align: 'right',
-      headerAlign: 'left',
-      editable: false,
-      format: valueFormat,
-      type: 'number',
-    },
-    {
-      field: 'feb',
-      headerName: headerMap[2],
-      align: 'right',
-      headerAlign: 'left',
-      editable: false,
-      format: valueFormat,
-      type: 'number',
-    },
-    {
-      field: 'march',
-      headerName: headerMap[3],
-      align: 'right',
-      headerAlign: 'left',
-      editable: false,
-      format: valueFormat,
-      type: 'number',
-    },
-    {
-      field: 'total',
-      headerName: 'Total',
-      align: 'right',
-      editable: false,
-      format: valueFormat,
-      type: 'number',
-    },
-  ]
-  const columns = [
-    { field: 'id', headerName: 'ID' },
-    {
-      field: 'material',
-      headerName: 'Parameters',
-      editable: false,
-      flex: 2,
-
       widthT: 100,
     },
     {
@@ -231,6 +104,148 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
+    },
+    {
+      field: 'may',
+      headerName: headerMap[5],
+      align: 'right',
+      headerAlign: 'left',
+      editable: false,
+      format: valueFormat,
+      type: 'number',
+      widthT: 100,
+    },
+    {
+      field: 'june',
+      headerName: headerMap[6],
+      editable: false,
+      align: 'right',
+      headerAlign: 'left',
+      format: valueFormat,
+      type: 'number',
+      widthT: 100,
+    },
+    {
+      field: 'july',
+      headerName: headerMap[7],
+      editable: false,
+      align: 'right',
+      headerAlign: 'left',
+      format: valueFormat,
+      type: 'number',
+      widthT: 100,
+    },
+    {
+      field: 'aug',
+      headerName: headerMap[8],
+      align: 'right',
+      headerAlign: 'left',
+      editable: false,
+      format: valueFormat,
+      type: 'number',
+      widthT: 100,
+    },
+    {
+      field: 'sep',
+      headerName: headerMap[9],
+      align: 'right',
+      headerAlign: 'left',
+      editable: false,
+      format: valueFormat,
+      type: 'number',
+      widthT: 100,
+    },
+    {
+      field: 'oct',
+      headerName: headerMap[10],
+      align: 'right',
+      headerAlign: 'left',
+      editable: false,
+      format: valueFormat,
+      type: 'number',
+      widthT: 100,
+    },
+    {
+      field: 'nov',
+      headerName: headerMap[11],
+      align: 'right',
+      headerAlign: 'left',
+      editable: false,
+      format: valueFormat,
+      type: 'number',
+      widthT: 100,
+    },
+    {
+      field: 'dec',
+      headerName: headerMap[12],
+      align: 'right',
+      headerAlign: 'left',
+      editable: false,
+      format: valueFormat,
+      type: 'number',
+      widthT: 100,
+    },
+    {
+      field: 'jan',
+      headerName: headerMap[1],
+      align: 'right',
+      headerAlign: 'left',
+      editable: false,
+      format: valueFormat,
+      type: 'number',
+      widthT: 100,
+    },
+    {
+      field: 'feb',
+      headerName: headerMap[2],
+      align: 'right',
+      headerAlign: 'left',
+      editable: false,
+      format: valueFormat,
+      type: 'number',
+      widthT: 100,
+    },
+    {
+      field: 'march',
+      headerName: headerMap[3],
+      align: 'right',
+      headerAlign: 'left',
+      editable: false,
+      format: valueFormat,
+      type: 'number',
+      widthT: 100,
+    },
+    {
+      field: 'total',
+      headerName: 'Total',
+      align: 'right',
+      editable: false,
+      format: valueFormat,
+      type: 'number',
+      widthT: 100,
+    },
+  ]
+  const columns = [
+    { field: 'id', headerName: 'ID', widthT: 100, isVisible: false },
+    {
+      field: 'material',
+      headerName: 'Parameters',
+      editable: false,
+      flex: 2,
+
+      widthT: 200,
+    },
+    {
+      field: 'april',
+      headerName: headerMap[4],
+      editable: false,
+      align: 'right',
+      headerAlign: 'left',
+      flex: 1,
+      format: valueFormat,
+      type: 'number',
+      widthT: 100,
     },
     {
       field: 'may',
@@ -241,6 +256,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'june',
@@ -251,6 +267,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'july',
@@ -261,6 +278,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'aug',
@@ -271,6 +289,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'sep',
@@ -281,6 +300,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'oct',
@@ -291,6 +311,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'nov',
@@ -301,6 +322,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'dec',
@@ -311,6 +333,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'jan',
@@ -321,6 +344,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'feb',
@@ -331,6 +355,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'march',
@@ -341,6 +366,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       format: valueFormat,
       type: 'number',
+      widthT: 100,
     },
     // {
     //   field: 'Remark',
@@ -653,13 +679,16 @@ const MonthwiseRawMaterial = () => {
 
       {Object.entries(normRows).map(([normName, rows]) => (
         <div key={normName}>
-          <Typography component='div' className='grid-title' sx={{ mt: 1 }}>
+          {/* <Typography component='div' className='grid-title' sx={{ mt: 1 }}>
             {normName}
-          </Typography>
+          </Typography> */}
           <KendoDataTablesReports
             rows={rows}
             setRows={setRows}
-            title='Monthwise Production Summary'
+            title={normName}
+            permissions={{
+              showTitle: true,
+            }}
             columns={columnDefs}
             handleRemarkCellClick={handleRemarkCellClick}
           />
