@@ -244,20 +244,24 @@ const getEnhancedAOPColDefs = ({
     })
   } else {
     enhancedColDefs = config.map((col) => {
-      const updated = {
-        ...col,
-        title:
-          headerMap && headerMap[col.title] ? headerMap[col.title] : col.title,
-        align: 'right',
-        type: col.type ?? 'number',
-        minWidth: 100,
+      if (headerMap && headerMap[col.title]) {
+        return {
+          ...col,
+          title: headerMap[col.title],
+          align: 'right',
+          type: col.type ?? 'number',
+          format: FORMATE_VALUE,
+          minWidth: 100,
+        }
       }
-
-      if (col.type === 'number' || col.type === 'negativeNumber') {
-        updated.format = FORMATE_VALUE
+      if (col.type === 'number') {
+        return {
+          ...col,
+          format: FORMATE_VALUE,
+          minWidth: col.minWidth ?? 100,
+        }
       }
-
-      return updated
+      return col
     })
   }
 

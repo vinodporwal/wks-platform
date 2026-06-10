@@ -180,6 +180,10 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	            dto.setVerticalFKId(row[22] != null ? row[22].toString() : null);
 	            dto.setProductName(row[24] != null ? row[24].toString() : null);
 	            dto.setMaterialDisplayName(row[24] != null ? row[24].toString() : null);
+				if(row.length > 28) {
+					dto.setIsEditable(row[28] != null ? Boolean.parseBoolean(row[28].toString()) : false);
+				}
+
 	            
 	            aOPMCCalculatedDataDTOList.add(dto);
 	        }

@@ -139,7 +139,8 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 					map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 					map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 					map.put("isEditable", row[22]);
-					map.put("Weight Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
+					
+					map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
 					spyroInputDataList.add(map);
 				} else {
 					
@@ -164,7 +165,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 							map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 							map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 							map.put("isEditable", row[22]);
-							map.put("Weight Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
+							map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
 							spyroInputDataList.add(map); // Add the map to the list here
 						}
 					}
@@ -275,6 +276,10 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 
 			for (SpyroInputDTO spyroInputDTO : spyroInputDTOList) {
 				if ("Failed".equalsIgnoreCase(spyroInputDTO.getSaveStatus())) {
+					continue;
+				}
+
+				if(spyroInputDTO.getNormParameterFKID() == null || spyroInputDTO.getNormParameterFKID().isBlank()) { 
 					continue;
 				}
 				String rawId = spyroInputDTO.getNormParameterFKID();
@@ -460,8 +465,12 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 				Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
 				Map<String, List<Map<String, Object>>> spyroInputDataListMap = new HashMap<>();
 				if (!isAfterSave) {
-				//	AOPMessageVM vm = getSpyroInputData(year, plantId, "Composition", "Composition");
-				AOPMessageVM vm = getSpyroInputData(year, plantId, mode, "Composition");
+					AOPMessageVM vm = null;
+					if(site.getName().equalsIgnoreCase("HMD") || crackerC2)  {
+						vm = getSpyroInputData(year, plantId, "Composition", "Composition");  
+					} else {
+						vm = getSpyroInputData(year, plantId, mode, "Composition");
+					}
 
 					List<Map<String, Object>> spyroInputDataList = (List<Map<String, Object>>) vm.getData();
 					spyroInputDataListMap = Utility.groupByNormParameterTypeName(spyroInputDataList);
