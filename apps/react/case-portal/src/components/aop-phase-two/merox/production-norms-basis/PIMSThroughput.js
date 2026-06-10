@@ -98,12 +98,9 @@ const PIMSThroughput = ({ startDate, endDate }) => {
 
       if (res?.length === 0) {
         setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
 
-      console.log('Configuration data:', res)
       const formattedData = res?.map((item, index) => ({
         ...item,
         remarks: item.remarks || '',
@@ -113,8 +110,6 @@ const PIMSThroughput = ({ startDate, endDate }) => {
       setOriginalRows(formattedData)
     } catch (error) {
       console.error('Error fetching configuration data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
       setLoading(false)
       setRevisionUpdated(false)
