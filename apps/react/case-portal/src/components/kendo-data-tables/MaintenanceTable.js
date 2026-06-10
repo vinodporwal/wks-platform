@@ -282,7 +282,7 @@ const MaintenanceTable = () => {
       editable: false,
       align: 'right',
       headerAlign: 'left',
-      minWidth: 85,
+      minWidth: 120,
     }))
   }
 
@@ -304,7 +304,7 @@ const MaintenanceTable = () => {
       widthT: nameWidthT,
       editable: false,
       isEditable: false,
-      minWidth: 200,
+      minWidth: 300,
     },
     ...getMonthlyColumns(),
     isEditableField,

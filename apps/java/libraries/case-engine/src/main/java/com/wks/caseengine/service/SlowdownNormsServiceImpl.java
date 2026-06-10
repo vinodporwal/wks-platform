@@ -499,10 +499,10 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
                     if (col >= MONTH_COL_START && col <= MONTH_COL_END) {
                         int monthNumber = ACADEMIC_MONTH_ORDER[col - MONTH_COL_START];
                         if (editableMonths != null && !editableMonths.contains(monthNumber)) {
-                            // Month is not in the allowed list  always locked
+                            // Month is not in the allowed list ? always locked
                             cellStyle = lockedStyle;
                         } else {
-                            // No restriction or month is allowed  follow row editability
+                            // No restriction or month is allowed ? follow row editability
                             cellStyle = rowStyle;
                         }
                     } else {
@@ -1084,8 +1084,8 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 			}
 		}
 
-		// Column index (0-based)  month number mapping for the 12 month columns
-		// Cols 3-11: Apr(4)-Dec(12); Cols 12-14: Jan(1)-Mar(3)
+		// Column index (0-based) ? month number mapping for the 12 month columns
+		// Cols 3–11: Apr(4)–Dec(12); Cols 12–14: Jan(1)–Mar(3)
 		Map<Integer, Integer> colToMonth = new HashMap<>();
 		colToMonth.put(3,  4);  // April
 		colToMonth.put(4,  5);  // May
@@ -1570,7 +1570,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 		int result = executeDynamicUpdateProcedure(storedProcedure, plantId, site.getId().toString(),
 				vertical.getId().toString(), year);
 		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year,
-				"slowdown-norms-configuration");
+				"slowdown-norms-configuration-calculate");
 		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("slowdown-norms-configuration-calculate");
 		for (ScreenMapping screenMapping : screenMappingList) {
 			AopCalculation aopCalculation = new AopCalculation();
@@ -1743,7 +1743,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
             Map<String, Object> map = new HashMap<>();
 
 			List<AopCalculation> aopCalculation = aopCalculationRepository
-					.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "slowdown-norms-configuration");
+					.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "slowdown-norms-configuration-calculate");
 			map.put("resultList", resultList);
 			map.put("aopCalculation", aopCalculation);
             aopMessageVM.setCode(200);

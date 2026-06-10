@@ -379,7 +379,7 @@ const CrakcerProductionConst = () => {
       showAction: false,
       allAction: true,
       showTitleNameBusiness: true,
-      titleName: 'Production Target Constraints',
+      titleName: siteObject?.name?.toLowerCase() === 'c2' ? 'Production Basis' : 'Production Target Constraints',
       saveWithRemark: true,
       saveBtn: true,
       showCalculate: false,
@@ -440,7 +440,7 @@ const CrakcerProductionConst = () => {
           unsavedChangesRef={unsavedChangesRefConstants}
           handleRemarkCellClick={handleRemarkCellClickConstants}
           permissions={adjustedPermissionsConstants}
-          {...(SITE_NAME_NO_CASE === 'VMD' && {groupBy:'Particulars'})}
+          {...(SITE_NAME_NO_CASE === 'VMD' && { groupBy: 'Particulars' })}
           plantID={PLANT_ID}
           handleExcelUpload={handleExcelUpload}
           downloadExcelForConfiguration={downloadExcelForConfiguration}

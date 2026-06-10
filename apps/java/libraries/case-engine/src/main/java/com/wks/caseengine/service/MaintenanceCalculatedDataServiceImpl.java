@@ -2429,6 +2429,87 @@ response.setMessage("CatChemCalculation executed successfully");
 		}
 	}
 
+	@Override
+	public AOPMessageVM getPercentageDeviations(final String plantId, final String aopYear) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+
+		try {
+			UUID plantUUID = UUID.fromString(plantId);
+			Optional<Plants> plantOpt = plantsRepository.findById(plantUUID);
+
+			if (!plantOpt.isPresent()) {
+				throw new RuntimeException("Plant not found for ID: " + plantId);
+			}
+
+			Plants plant = plantOpt.get();
+			Optional<Verticals> verticalOpt = verticalRepository.findById(plant.getVerticalFKId());
+			Optional<Sites> siteOpt = siteRepository.findById(plant.getSiteFkId());
+
+			if (verticalOpt.isPresent() && siteOpt.isPresent()) {
+				String spName = verticalOpt.get().getName() + "_" + siteOpt.get().getName() + "_GetPercentageDeviations";
+
+				Map<String, Object> results = entityManager.unwrap(Session.class)
+						.doReturningWork(new ReturningWork<Map<String, Object>>() {
+							@Override
+							public Map<String, Object> execute(Connection connection) throws SQLException {
+								Map<String, Object> resultMap = new HashMap<>();
+								List<Map<String, Object>> dataList = new ArrayList<>();
+								List<Map<String, Object>> metadataList = new ArrayList<>();
+
+								String sql = "EXEC " + spName + " @plantId = ?, @aopYear = ?";
+								try (PreparedStatement ps = connection.prepareStatement(sql)) {
+									ps.setString(1, plantId);
+									ps.setString(2, aopYear);
+
+									try (ResultSet rs = ps.executeQuery()) {
+										ResultSetMetaData rsmd = rs.getMetaData();
+										int columnCount = rsmd.getColumnCount();
+
+										for (int i = 1; i <= columnCount; i++) {
+											Map<String, Object> col = new LinkedHashMap<>();
+											col.put("field", rsmd.getColumnLabel(i));
+											col.put("title", rsmd.getColumnLabel(i));
+											col.put("type", getFrontendType(rsmd.getColumnTypeName(i)));
+											col.put("isVisible", "true");
+											metadataList.add(col);
+										}
+
+										while (rs.next()) {
+											Map<String, Object> row = new LinkedHashMap<>();
+											for (int i = 1; i <= columnCount; i++) {
+												String colName = rsmd.getColumnLabel(i);
+												int sqlType = rsmd.getColumnType(i);
+												Object value = rs.getObject(i);
+												row.put(colName, (value == null) ? (isNumericType(sqlType) ? 0 : "") : value);
+											}
+											dataList.add(row);
+										}
+									}
+								}
+
+								resultMap.put("data", dataList);
+								resultMap.put("columns", metadataList);
+								return resultMap;
+							}
+						});
+
+				Map<String, Object> finalData = new HashMap<>();
+				finalData.put("data", results.get("data"));
+				finalData.put("columns", results.get("columns"));
+
+				aopMessageVM.setData(finalData);
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("Data fetched successfully");
+			}
+
+			return aopMessageVM;
+
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Error fetching percentage deviations data", ex);
+		}
+	}
+
 	private Map<String, Object> fetchOtherPlantsFromView(
 			final String plantId,
 			final String year,

@@ -32,6 +32,7 @@ export const MaintenanceDetailsApiService = {
   MaintenanceExportLineWise,
   StreamHoursExport,
   saveStreamHoursImport,
+  getPercentageDeviation,
 }
 
 async function getCrackerMaintenanceData(keycloak, PLANT_ID, AOP_YEAR) {
@@ -692,6 +693,22 @@ async function saveStreamHoursImport(file, keycloak, PLANT_ID, AOP_YEAR) {
     return json(keycloak, resp) // assuming `json()` handles response properly
   } catch (e) {
     console.error('Error importing Stream Hours Excel:', e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getPercentageDeviation(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/percentage-deviations?plantId=${PLANT_ID}&aopYear=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
     return await Promise.reject(e)
   }
 }

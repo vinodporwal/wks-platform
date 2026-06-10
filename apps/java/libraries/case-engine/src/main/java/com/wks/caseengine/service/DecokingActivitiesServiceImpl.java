@@ -127,7 +127,8 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	        String sql = "";
 	        Map<String, Object> params = new LinkedHashMap<>();
 
-	       
+			Map<String, String> columnTitleMap = null;
+			
 	        if (reportType.equalsIgnoreCase("RunningDuration")) {
 	            sql = "SELECT * FROM vwScrn" + vertical.getName() + "_" + site.getName() + "_DecokingPlanning WHERE Plant_FK_Id = :plantId";
 	            params.put("plantId", plantId);
@@ -138,10 +139,12 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	            sql = "SELECT * FROM vwScrn" + vertical.getName() + "_" + site.getName() + "_Decoke_RunLength WHERE Plant_FK_Id = :plantId AND AOPYear = :aopYear ORDER BY date";
 	            params.put("plantId", plantId);
 	            params.put("aopYear", year);
+				columnTitleMap = loadColumnTitles(null,
+					"vwScrnCrackerKeyValueColumns", site.getName(), "DecokeRunLength");
 	        }
 
-	       
-	        Map<String, Object> dynamicResult = fetchDataWithMetadata(sql, params);
+
+	        Map<String, Object> dynamicResult = fetchDataWithMetadata(sql, params, columnTitleMap);
 	        List<Map<String, Object>> resultList = (List<Map<String, Object>>) dynamicResult.get("data");
 	        List<Map<String, Object>> columns = (List<Map<String, Object>>) dynamicResult.get("columns");
 
@@ -179,7 +182,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	        throw new RuntimeException("Failed to fetch dynamic data", ex);
 	    }
 	}
-	private Map<String, Object> fetchDataWithMetadata(String sql, Map<String, Object> params) {
+	private Map<String, Object> fetchDataWithMetadata(String sql, Map<String, Object> params, Map<String, String> columnTitleMap) {
 	    return entityManager.unwrap(Session.class).doReturningWork(connection -> {
 	        List<Map<String, Object>> data = new ArrayList<>();
 	        List<Map<String, Object>> columns = new ArrayList<>();
@@ -205,7 +208,13 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	                    Map<String, Object> col = new HashMap<>();
 	                    String colName = md.getColumnLabel(i);
 	                    col.put("field", colName);
-	                    col.put("title", formatTitle(colName)); // Helper to make column names pretty
+						// columnTitleMap is not null for RunLength report type only
+						if(columnTitleMap == null) { 
+							col.put("title", formatTitle(colName));
+						}
+	                  else {
+					 col.put("title", columnTitleMap.getOrDefault(colName, colName));  
+					}
 	                    col.put("type", getFrontendType(md.getColumnTypeName(i)));
 	                    col.put("editable", false);
 	                    columns.add(col);
@@ -1213,6 +1222,12 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 			String viewName,
 			String siteName,
 			String tableName) throws SQLException {
+
+				if(connection == null) { 
+					connection = entityManager.unwrap(Session.class).doReturningWork(connection1 -> {
+						return connection1;
+					});
+				}
 
 		Map<String, String> titleMap = new HashMap<>();
 
