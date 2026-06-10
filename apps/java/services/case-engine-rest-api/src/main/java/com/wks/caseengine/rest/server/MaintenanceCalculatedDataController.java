@@ -74,6 +74,11 @@ public class MaintenanceCalculatedDataController {
 	public AOPMessageVM getOtherPlants(@RequestParam String plantId, @RequestParam String year){
 		return maintenanceCalculatedDataService.getOtherPlants(plantId,year);		
 	}
+
+	@GetMapping(value="/percentage-deviations")
+	public AOPMessageVM getPercentageDeviations(@RequestParam String plantId, @RequestParam String aopYear){
+		return maintenanceCalculatedDataService.getPercentageDeviations(plantId, aopYear);
+	}
 	
 	@GetMapping(value = "/maintenance-export")
 	public ResponseEntity<byte[]> maintenanceExport(
