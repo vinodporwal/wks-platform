@@ -5,33 +5,38 @@
     "editable": false,
     "widthT": 250,
     "autoAdjust": false,
-    "hidden": false
+    "hidden": false,
+    "minWidth": 120
   },
   {
     "field": "uom",
     "title": "UOM",
     "editable": false,
-    "widthT": 80
+    "widthT": 80,
+    "minWidth": 120
   },
   {
     "field": "IIR",
     "title": "IIR",
     "editable": true,
     "type": "number",
-    "widthT": 120
+    "widthT": 120,
+    "minWidth": 120
   },
   {
     "field": "CIIR",
     "title": "CIIR",
     "editable": true,
     "type": "number",
-    "widthT": 120
+    "widthT": 120,
+    "minWidth": 120
   },
   {
     "field": "BIIR",
     "title": "BIIR",
     "editable": true,
     "type": "number",
-    "widthT": 120
+    "widthT": 120,
+    "minWidth": 120
   }
 ]

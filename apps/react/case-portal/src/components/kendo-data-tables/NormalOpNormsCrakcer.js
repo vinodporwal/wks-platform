@@ -59,11 +59,24 @@ const mapApiRowToGrid = (list = [], prefix = '') =>
     Particulars: item.normType || item.normParameterTypeDisplayName,
   }))
 
-const mapGridRowToPayload = (rows = [], savingMonthlyBestAchieved = false) =>
+const mapGridRowToPayload = (
+  rows = [],
+  savingMonthlyBestAchieved = false,
+  isCrackerC2 = false,
+) =>
   (rows || []).map((row) => {
     const payload = {}
+    let shouldSaveAllMonthsWithApril = savingMonthlyBestAchieved
+    if (isCrackerC2) {
+      const idStr = String(row.id || '')
+      if (idStr.startsWith('main-') || idStr.startsWith('best-')) {
+        shouldSaveAllMonthsWithApril = true
+      } else if (idStr.startsWith('expression-')) {
+        shouldSaveAllMonthsWithApril = false
+      }
+    }
     MONTHS.forEach((m) => {
-      if (savingMonthlyBestAchieved) {
+      if (shouldSaveAllMonthsWithApril) {
         payload[m] = row.april || 0
       } else {
         payload[m] = row[m] || 0
@@ -104,7 +117,9 @@ const NormalOpNormsScreenCracker = () => {
   const lowerVertName = (vertName || '').toLowerCase()
   const lowerSiteName = (siteObject?.name || '').toLowerCase()
   const lowerPlantName = (plantObject?.name || '').toLowerCase()
-
+  const IS_CRACKER_C2 = lowerVertName === 'cracker' && lowerSiteName === 'c2'
+  const IS_CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
+  const IS_CRACKER_NMD = lowerVertName === 'cracker' && lowerSiteName === 'nmd'
   const dispatch = useDispatch()
   const keycloak = useSession()
 
@@ -195,9 +210,9 @@ const NormalOpNormsScreenCracker = () => {
         title: 'SAP MAT Code',
         widthT: 120,
         editable: false,
-        minWidth: 100,
+        minWidth: 150,
       },
-      { field: 'materialDisplayName', title: 'Particulars', minWidth: 100 },
+      { field: 'materialDisplayName', title: 'Particulars', minWidth: 300 },
       {
         field: 'uom',
         title: 'UOM',
@@ -241,7 +256,7 @@ const NormalOpNormsScreenCracker = () => {
     march: 3,
   }
 
-  const colDefsFinalNorms = useMemo(
+  const colDefsFinalNormsC2 = useMemo(
     () => [
       {
         field: 'sapMaterialCode',
@@ -249,14 +264,64 @@ const NormalOpNormsScreenCracker = () => {
         widthT: 120,
         editable: false,
         useMethodColors: true,
-        minWidth: 120,
+        minWidth: 150,
       },
       {
         field: 'materialDisplayName',
         title: 'Particulars',
         widthT: 130,
         editable: false,
+        minWidth: 300,
+      },
+      {
+        field: 'uom',
+        title: 'UOM',
+        widthT: 80,
+        editable: false,
+        minWidth: 100,
+      },
+      ...MONTHS.map((m, i) => ({
+        field: m,
+        title: headerMap[monthIndexMap[m]] || m,
+        editable: true,
+        type: 'number',
+        format: valueFormat,
         minWidth: 120,
+      })),
+      {
+        field: 'wtAverage',
+        title: 'Weighted Average',
+        editable: false,
+        type: 'number',
+        format: valueFormat,
+        minWidth: 120,
+      },
+      {
+        field: 'isEditable',
+        title: 'isEditable',
+        hidden: true,
+        isVisible: false,
+      },
+    ],
+    [headerMap, valueFormat],
+  )
+
+  const colDefsFinalNormsDefault = useMemo(
+    () => [
+      {
+        field: 'sapMaterialCode',
+        title: 'SAP MAT Code',
+        widthT: 120,
+        editable: false,
+        useMethodColors: true,
+        minWidth: 150,
+      },
+      {
+        field: 'materialDisplayName',
+        title: 'Particulars',
+        widthT: 130,
+        editable: false,
+        minWidth: 300,
       },
       {
         field: 'uom',
@@ -279,10 +344,13 @@ const NormalOpNormsScreenCracker = () => {
         hidden: true,
         isVisible: false,
       },
-      // { field: 'remark', title: 'Remark', widthT: 140, editable: true },
     ],
     [headerMap, valueFormat],
   )
+  const colDefsFinalNorms =
+    IS_CRACKER_C2 || IS_CRACKER_HMD
+      ? colDefsFinalNormsC2
+      : colDefsFinalNormsDefault
 
   const colDefsFinalNorms1 = useMemo(
     () => [
@@ -298,14 +366,14 @@ const NormalOpNormsScreenCracker = () => {
         title: 'SAP MAT Code',
         widthT: 120,
         editable: false,
-        minWidth: 100,
+        minWidth: 150,
       },
       {
         field: 'materialDisplayName',
         title: 'Particulars',
         widthT: 130,
         editable: false,
-        minWidth: 100,
+        minWidth: 300,
       },
       { field: 'uom', title: 'UOM', widthT: 80, editable: false, minWidth: 80 },
       ...MONTHS.map((m, i) => ({
@@ -350,14 +418,14 @@ const NormalOpNormsScreenCracker = () => {
         title: 'SAP MAT Code',
         widthT: 120,
         editable: false,
-        minWidth: 100,
+        minWidth: 150,
       },
       {
         field: 'materialDisplayName',
         title: 'Particulars',
         widthT: 130,
         editable: false,
-        minWidth: 100,
+        minWidth: 300,
       },
       { field: 'uom', title: 'UOM', widthT: 80, editable: false, minWidth: 80 },
       ...MONTHS.map((m, i) => ({
@@ -606,7 +674,7 @@ const NormalOpNormsScreenCracker = () => {
   // --- Data fetchers ---
   const fetchFinalNorms = useCallback(async () => {
     try {
-      getCombinedNormTransactions()
+      await getCombinedNormTransactions()
 
       const response = await NormalOperationNormsApiService.getfinalNorms(
         keycloak,
@@ -780,7 +848,7 @@ const NormalOpNormsScreenCracker = () => {
         setLoading(false)
       }
     },
-    [fetchModeData, fetchFinalNorms, selectedTab, PLANT_ID, AOP_YEAR],
+    [fetchModeData, fetchFinalNorms],
   )
 
   const fetchAllDataNormsSelection = useCallback(
@@ -804,7 +872,7 @@ const NormalOpNormsScreenCracker = () => {
   )
 
   useEffect(() => {
-    fetchAllData(gradeId)
+    fetchAllData(gradeId, selectedTab)
   }, [
     fetchAllData,
     oldYear,
@@ -904,7 +972,11 @@ const NormalOpNormsScreenCracker = () => {
       // }
       setLoading(true)
       try {
-        const payload = mapGridRowToPayload(rowsToSave, savingAllMonthValues)
+        const payload = mapGridRowToPayload(
+          rowsToSave,
+          savingAllMonthValues,
+          IS_CRACKER_C2,
+        )
         const response = isFinal
           ? await NormalOperationNormsApiService.updateFinalNormsData(
               keycloak,
@@ -969,7 +1041,7 @@ const NormalOpNormsScreenCracker = () => {
         return
       }
 
-      // Enforce single checked per materialName across the 2 grids
+      // Enforce single checked per materialName across the grids
       const materialGroups = {} // key = materialName, value = array of rows
       allModified.forEach((row) => {
         if (!materialGroups[row.materialName])
@@ -994,11 +1066,12 @@ const NormalOpNormsScreenCracker = () => {
       modifiedCells,
       saveRows,
       saveChangesCrackerFinalNorms,
+      IS_CRACKER_C2,
     ],
   )
 
   const handleCalculate = useCallback(async () => {
-    setLoading(true)
+    setLoading1(true)
     try {
       const res =
         await NormalOperationNormsApiService.handleCalculateNormalOperationNorms(
@@ -1218,14 +1291,14 @@ const NormalOpNormsScreenCracker = () => {
   const [summaryEdited, setSummaryEdited] = useState(false)
 
   // tabs
-  const handleTabChange = useCallback(
-    (_, newValue) => {
-      setModifiedCells({})
-      setSelectedTab(newValue)
-      fetchAllData(gradeId, newValue)
-    },
-    [gradeId, fetchAllData, AOP_YEAR, PLANT_ID],
-  )
+  // const handleTabChange = useCallback(
+  //   (_, newValue) => {
+  //     setModifiedCells({})
+  //     setSelectedTab(newValue)
+  //     fetchAllData(gradeId, newValue)
+  //   },
+  //   [gradeId, fetchAllData, AOP_YEAR, PLANT_ID],
+  // )
 
   const tabSx = {
     border: '1px solid #ADD8E6',
@@ -1243,7 +1316,14 @@ const NormalOpNormsScreenCracker = () => {
     // 'Report Manual Entry',
   ]
 
-  const menuItemStyle = { fontSize: 14, fontWeight: 500, color: '#303030', fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif", letterSpacing: "0px", verticalAlign: "middle" }
+  const menuItemStyle = {
+    fontSize: 14,
+    fontWeight: 500,
+    color: '#303030',
+    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+    letterSpacing: '0px',
+    verticalAlign: 'middle',
+  }
 
   // UI render
   return (
@@ -1270,74 +1350,82 @@ const NormalOpNormsScreenCracker = () => {
       {selectedTab === 3 && (
         <>
           {/* EXTERNAL DROPDOWN */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2, mb: 2 }}>
-            <TextField
-              select
-              value={gradeId ?? ''}
-              onChange={onModeSelect}
-              variant='outlined'
-              size='small'
-              sx={{
-                minWidth: 140,
-                '& .MuiOutlinedInput-root': {
-                  height: '30px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.85)',
-                  borderRadius: '7px',
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                  '& fieldset': {
-                    border: 'none',
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2, mb: 2 }}
+          >
+            {!IS_CRACKER_C2 && (
+              <TextField
+                select
+                value={gradeId ?? ''}
+                onChange={onModeSelect}
+                variant='outlined'
+                size='small'
+                sx={{
+                  minWidth: 140,
+                  '& .MuiOutlinedInput-root': {
+                    height: '30px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                    borderRadius: '7px',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                    '& fieldset': {
+                      border: 'none',
+                    },
+                    '&:hover fieldset': {
+                      border: 'none',
+                    },
+                    '&.Mui-focused fieldset': {
+                      border: 'none',
+                    },
                   },
-                  '&:hover fieldset': {
-                    border: 'none',
+                  '& .MuiSelect-select': {
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '2px 6px !important',
                   },
-                  '&.Mui-focused fieldset': {
-                    border: 'none',
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <Typography
+                      variant='caption'
+                      sx={{
+                        mr: 0.5,
+                        color: '#606060',
+                        fontWeight: 500,
+                        fontSize: '14px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.4px',
+                        lineHeight: 1,
+                        fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+                      }}
+                    >
+                      Mode:
+                    </Typography>
+                  ),
+                }}
+                SelectProps={{
+                  MenuProps: {
+                    disableScrollLock: true,
                   },
-                },
-                '& .MuiSelect-select': {
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '2px 6px !important',
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <Typography
-                    variant='caption'
-                    sx={{
-                      mr: 0.5,
-                      color: '#606060',
-                      fontWeight: 500,
-                      fontSize: '14px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.4px',
-                      lineHeight: 1,
-                      fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                    }}
-                  >
-                    Mode:
-                  </Typography>
-                ),
-              }}
-              SelectProps={{
-                MenuProps: {
-                  disableScrollLock: true,
-                },
-              }}
-              MenuProps={{ disableScrollLock: true }}
-            >
-              <MenuItem value='' disabled sx={menuItemStyle}>
-                Select Mode
-              </MenuItem>
-
-              {grades.map((m) => (
-                <MenuItem key={m.gradeId} value={m.gradeId} sx={menuItemStyle}>
-                  {m.displayName}
+                }}
+                MenuProps={{ disableScrollLock: true }}
+              >
+                <MenuItem value='' disabled sx={menuItemStyle}>
+                  Select Mode
                 </MenuItem>
-              ))}
-            </TextField>
+
+                {grades.map((m) => (
+                  <MenuItem
+                    key={m.gradeId}
+                    value={m.gradeId}
+                    sx={menuItemStyle}
+                  >
+                    {m.displayName}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
 
             <Typography component='div' className='grid-title'>
               <span style={{ color: 'orange', fontWeight: 'bold' }}>
@@ -1345,25 +1433,140 @@ const NormalOpNormsScreenCracker = () => {
               </span>{' '}
               - Overridden&nbsp;&nbsp;
               {/* Only show the following if SITE_NAME is NOT 'vmd' */}
-              {lowerSiteName !== 'vmd' && (
-                <>
-                  <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span>{' '}
-                  - Propane (1Z)&nbsp;&nbsp;
-                  <span style={{ color: 'green', fontWeight: 'bold' }}>
-                    Green
-                  </span>{' '}
-                  - Propane (2Z)&nbsp;&nbsp;
-                  <span style={{ color: 'purple', fontWeight: 'bold' }}>
-                    Purple
-                  </span>{' '}
-                  - Copied From Other Season
-                </>
-              )}
+              {lowerSiteName !== 'vmd' &&
+                lowerSiteName !== 'hmd' &&
+                lowerSiteName !== 'c2' && (
+                  <>
+                    <span style={{ color: 'red', fontWeight: 'bold' }}>
+                      Red
+                    </span>{' '}
+                    - Propane (1Z)&nbsp;&nbsp;
+                    <span style={{ color: 'green', fontWeight: 'bold' }}>
+                      Green
+                    </span>{' '}
+                    - Propane (2Z)&nbsp;&nbsp;
+                    <span style={{ color: 'purple', fontWeight: 'bold' }}>
+                      Purple
+                    </span>{' '}
+                    - Copied From Other Season
+                  </>
+                )}
             </Typography>
           </Box>
 
           {/* MODE TAB: render TOP grid first depending on Monthly vs non-Monthly */}
-          {gradeDisplayName === 'Monthly' ? (
+          {IS_CRACKER_C2 ? (
+            <>
+              {/* 1) Best Achieved (Min CC) */}
+              <KendoDataTables
+                modifiedCells={modifiedCells}
+                setModifiedCells={setModifiedCells}
+                columns={colDefsIndividual.filter(
+                  (col) => col.field !== 'isChecked',
+                )}
+                setRows={setRows}
+                rows={rows}
+                grades={grades}
+                paginationOptions={[100, 200, 300]}
+                saveChanges={() => saveChangesUnified(true)}
+                isCellEditable={isCellEditable}
+                snackbarData={snackbarData}
+                handleCalculate={handleCalculateUnified}
+                snackbarOpen={snackbarOpen}
+                apiRef={apiRef}
+                setSnackbarOpen={setSnackbarOpen}
+                setSnackbarData={setSnackbarData}
+                remarkDialogOpen={remarkDialogOpen3}
+                setRemarkDialogOpen={setRemarkDialogOpen3}
+                currentRemark={currentRemark3}
+                setCurrentRemark={setCurrentRemark3}
+                currentRowId={currentRowId3}
+                handleRemarkCellClick={handleRemarkCellClick3}
+                permissions={mainPermissions}
+                allRedCell={allRedCell}
+                groupBy='Particulars'
+                downloadExcelForConfiguration={downloadExcelForConfiguration}
+                handleGradeChange={handleGradeChange}
+                onGlobalCheckboxChange={handleGlobalCheckboxChange}
+                plantID={PLANT_ID}
+                gridName='main'
+                allRedCell2={allRedCell2}
+                showThreeColors={true}
+              />
+
+              {/* 2) Best Achieved (Individual) */}
+              <KendoDataTables
+                modifiedCells={modifiedCells}
+                setModifiedCells={setModifiedCells}
+                title='Normal Operations Norms'
+                columns={colDefsIndividual}
+                setRows={setRowsBestAchivedIndividual}
+                rows={rowsBestAchivedIndividual}
+                grades={grades}
+                paginationOptions={[100, 200, 300]}
+                saveChanges={() => saveChangesUnified(true)}
+                isCellEditable={isCellEditable}
+                snackbarData={snackbarData}
+                handleCalculate={handleCalculateUnified}
+                snackbarOpen={snackbarOpen}
+                apiRef={apiRef}
+                setSnackbarOpen={setSnackbarOpen}
+                setSnackbarData={setSnackbarData}
+                remarkDialogOpen={remarkDialogOpen1}
+                setRemarkDialogOpen={setRemarkDialogOpen1}
+                currentRemark={currentRemark1}
+                setCurrentRemark={setCurrentRemark1}
+                currentRowId={currentRowId1}
+                handleRemarkCellClick={handleRemarkCellClick1}
+                permissions={monthlyPermissions}
+                groupBy='Particulars'
+                downloadExcelForConfiguration={downloadExcelForConfiguration}
+                handleGradeChange={handleGradeChange}
+                onGlobalCheckboxChange={handleGlobalCheckboxChange}
+                plantID={PLANT_ID}
+                gridName='best'
+                showCatChemUtilityCheckbox2={true}
+                showThreeColors={true}
+                allRedCell2={allRedCell2}
+              />
+
+              {/* 3) Expression (Norms) */}
+              <KendoDataTables
+                modifiedCells={modifiedCells}
+                setModifiedCells={setModifiedCells}
+                title='Normal Operations Norms'
+                columns={colDefsExpressionCatChem}
+                setRows={setRowsExpression}
+                rows={rowsExpression}
+                grades={grades}
+                paginationOptions={[100, 200, 300]}
+                saveChanges={saveChangesUnified}
+                isCellEditable={isCellEditable}
+                snackbarData={snackbarData}
+                handleCalculate={handleCalculateUnified}
+                snackbarOpen={snackbarOpen}
+                apiRef={apiRef}
+                setSnackbarOpen={setSnackbarOpen}
+                setSnackbarData={setSnackbarData}
+                remarkDialogOpen={remarkDialogOpen4}
+                setRemarkDialogOpen={setRemarkDialogOpen4}
+                currentRemark={currentRemark4}
+                setCurrentRemark={setCurrentRemark4}
+                currentRowId={currentRowId4}
+                handleRemarkCellClick={handleRemarkCellClick4}
+                permissions={expressionPermissions}
+                groupBy='Particulars'
+                downloadExcelForConfiguration={downloadExcelForConfiguration}
+                handleGradeChange={handleGradeChange}
+                plantID={PLANT_ID}
+                onGlobalCheckboxChange={handleGlobalCheckboxChange}
+                gridName='expression'
+                showCatChemUtilityCheckbox={true}
+                allRedCell2={allRedCell2}
+                showThreeColors={true}
+              />
+            </>
+          ) : gradeDisplayName === 'Monthly' ? (
             <>
               {/* Monthly is top when Monthly selected -> monthly gets save/calc */}
               <KendoDataTables
@@ -1479,7 +1682,7 @@ const NormalOpNormsScreenCracker = () => {
               />
 
               {/* expression below */}
-              {lowerSiteName !== 'vmd' && (
+              {lowerSiteName !== 'vmd' && lowerSiteName !== 'hmd' && (
                 <KendoDataTables
                   modifiedCells={modifiedCells}
                   setModifiedCells={setModifiedCells}

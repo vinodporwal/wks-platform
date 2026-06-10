@@ -19,6 +19,7 @@ import {
 } from 'utils/CustomAccrodian'
 
 import './ConfigurationAccordian.css'
+import { TextArea } from '../../../../node_modules/@progress/kendo-react-inputs/index'
 
 const ConfigurationAccordian = ({
   startDate,
@@ -39,6 +40,17 @@ const ConfigurationAccordian = ({
   const [startShow, setStartShow] = useState(false)
   const [endShow, setEndShow] = useState(false)
 
+  const startDateConfig = configurationExecutionDetails.find(
+    (item) => item.Name === 'StartDateNorms' || item.Name === 'StartDate',
+  )
+
+  const endDateConfig = configurationExecutionDetails.find(
+    (item) => item.Name === 'EndDateNorms' || item.Name === 'EndDate',
+  )
+ 
+  const startDateFromConfig = new Date(startDateConfig?.AttributeValue)
+  const endDateDateFromConfig = new Date(endDateConfig?.AttributeValue)
+
   return (
     <Box className='configuration-accordion-wrapper'>
       <CustomAccordion
@@ -47,7 +59,7 @@ const ConfigurationAccordian = ({
         className='k-table-box configuration-accordion-root'
       >
         <CustomAccordionSummary
-          expandIcon={<ExpandMoreIcon sx={{ fontSize: '1rem' }} />}
+          expandIcon={<ExpandMoreIcon sx={{ fontSize: '1.2rem' }} />}
           className='configuration-accordion-summary'
         >
           <Stack direction='row' spacing={1} alignItems='center'>
@@ -91,7 +103,7 @@ const ConfigurationAccordian = ({
                     setStartDate(e.value)
                     setDateEdited(true)
                   }}
-                  disabled={READ_ONLY}
+                  disabled={Boolean(READ_ONLY)}
                 />
                 <IconButton
                   style={{
@@ -128,7 +140,7 @@ const ConfigurationAccordian = ({
                     setEndDate(e.value)
                     setDateEdited(true)
                   }}
-                  disabled={READ_ONLY}
+                  disabled={Boolean(READ_ONLY)}
                 />
                 <IconButton
                   style={{
@@ -151,7 +163,7 @@ const ConfigurationAccordian = ({
                     variant='outlined'
                     className='btn-load'
                     onClick={handleOpenDialog}
-                    disabled={READ_ONLY}
+                    disabled={Boolean(READ_ONLY)}
                     sx={{
                       height: 28,
                       px: 1.5,
@@ -181,38 +193,34 @@ const ConfigurationAccordian = ({
                   <InfoIcon sx={{ fontSize: '0.9rem', color: '#00688C' }} />
 
                   <Typography className='last-refreshed-text'>
-                    Last loaded data on{' '}
-                    {
-                      formatDateForText(
-                        configurationExecutionDetails[0]?.ModifiedOn,
-                      ).split(' ')[0]
-                    }
-                    {' for period '}
-                    {formatDateForText(startDate, true)}
-                    {' - '}
-                    {formatDateForText(endDate, true)}
+                    {`Last loaded data on ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} by ${configurationExecutionDetails[0]?.User ?? ''} for period ${formatDateForText(startDateFromConfig, false)} to ${formatDateForText(endDateDateFromConfig, false)}`}
                   </Typography>
                 </Stack>
               </Tooltip>
             )}
 
             {/* ROW 2: AOP DESIGN BASIS */}
-            {summaryEnabled && (<Box sx={{ width: '100%' }}>
-              <Typography variant='caption' className='aop-design-basis-label'>
-                AOP DESIGN BASIS
-              </Typography>
+            {summaryEnabled && (
+              <Box sx={{ width: '100%' }}>
+                <Typography
+                  variant='caption'
+                  className='aop-design-basis-label'
+                >
+                  AOP DESIGN BASIS
+                </Typography>
 
-              <textarea
-                disabled={READ_ONLY}
-                value={summary}
-                rows={2}
-                onChange={(e) => {
-                  setSummary(e.target.value)
-                  setSummaryEdited(true)
-                }}
-                className='aop-design-basis-textarea'
-              />
-            </Box>)}
+                <TextArea
+                  className='vertical-resize-textarea'
+                  disabled={Boolean(READ_ONLY)}
+                  value={summary}
+                  rows={2}
+                  onChange={(e) => {
+                    setSummary(e.target.value)
+                    setSummaryEdited(true)
+                  }}
+                />
+              </Box>
+            )}
           </Stack>
         </CustomAccordionDetails>
       </CustomAccordion>

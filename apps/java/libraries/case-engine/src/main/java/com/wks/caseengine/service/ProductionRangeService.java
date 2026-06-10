@@ -14,7 +14,7 @@ public interface ProductionRangeService {
     AOPMessageVM getProductionRangeLimit(String plantId, String aopYear);
     public byte[] exportProductionRange(String year, String plantFKId,boolean isAfterSave,List<NormConfigurationDTO> dtoList);
     public byte[] exportProductionRangeLimit(String year, String plantFKId,boolean isAfterSave,List<NormConfigurationDTO> dtoList);
-    public AOPMessageVM importProductionRange(String year,UUID plantId,MultipartFile file);
+    public AOPMessageVM importProductionRange(String year,UUID plantId,MultipartFile file,boolean isMinMax);
     public AOPMessageVM importProductionRangeLimit(String year,UUID plantId,MultipartFile file);
 }
 

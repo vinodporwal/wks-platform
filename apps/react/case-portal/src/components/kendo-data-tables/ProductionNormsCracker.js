@@ -76,9 +76,12 @@ const ProductionNormsCracker = ({ permissions }) => {
     severity: 'info',
   })
   const CRACKER_DMD = lowerVertName === 'cracker' && lowerSiteName === 'dmd'
+  const CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
+  const IS_CRACKER_C2 = lowerVertName === 'cracker' && lowerSiteName === 'c2'
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [selectedUnit, setSelectedUnit] = useState('')
+  const [selectedUnitC2C3R, setSelectedUnitC2C3R] = useState('')
   const [rows, setRows] = useState([])
   const [rowsC2C3R, setRowsC2C3R] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
@@ -616,7 +619,66 @@ const ProductionNormsCracker = ({ permissions }) => {
       //   handleCalculateOtherProduction()
       // }
 
-      setRowsC2C3R(data)
+      let formattedData = []
+
+      const fiscalYear = AOP_YEAR
+      const startYear = parseInt(fiscalYear.split('-')[0], 10)
+      const nextYear = startYear + 1
+
+      const isLeap = (year) => new Date(year, 1, 29).getDate() === 29
+
+      if (IS_CRACKER_C2) {
+        formattedData = data.map((item) => {
+          const TPH = selectedUnitC2C3R == 'TPH'
+
+          return {
+            ...item,
+            UOM: selectedUnitC2C3R ? selectedUnitC2C3R : 'MT/Month',
+            ...(TPH && {
+              apr: item.apr
+                ? item.apr / 24 / 30
+                : item.apr?.toFixed(2) ?? '0.00',
+              may: item.may
+                ? item.may / 24 / 31
+                : item.may?.toFixed(2) ?? '0.00',
+              jun: item.jun
+                ? item.jun / 24 / 30
+                : item.jun?.toFixed(2) ?? '0.00',
+              jul: item.jul
+                ? item.jul / 24 / 31
+                : item.jul?.toFixed(2) ?? '0.00',
+              aug: item.aug
+                ? item.aug / 24 / 31
+                : item.aug?.toFixed(2) ?? '0.00',
+              sep: item.sep
+                ? item.sep / 24 / 30
+                : item.sep?.toFixed(2) ?? '0.00',
+              oct: item.oct
+                ? item.oct / 24 / 31
+                : item.oct?.toFixed(2) ?? '0.00',
+              nov: item.nov
+                ? item.nov / 24 / 30
+                : item.nov?.toFixed(2) ?? '0.00',
+              dec: item.dec
+                ? item.dec / 24 / 31
+                : item.dec?.toFixed(2) ?? '0.00',
+              jan: item.jan
+                ? item.jan / 24 / 31
+                : item.jan?.toFixed(2) ?? '0.00',
+              feb: item.feb
+                ? item.feb / 24 / (isLeap(nextYear) ? 29 : 28)
+                : item.feb?.toFixed(2) ?? '0.00',
+              mar: item.mar
+                ? item.mar / 24 / 31
+                : item.mar?.toFixed(2) ?? '0.00',
+            }),
+          }
+        })
+      } else {
+        formattedData = data
+      }
+
+      setRowsC2C3R(formattedData)
       setLoading(false)
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -627,8 +689,11 @@ const ProductionNormsCracker = ({ permissions }) => {
 
   useEffect(() => {
     fetchData()
-    fetchDataC2C3R()
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, selectedUnit])
+
+  useEffect(() => {
+    fetchDataC2C3R()
+  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, selectedUnitC2C3R])
 
   const productionColumns = getEnhancedColDefs({
     headerMap,
@@ -642,6 +707,9 @@ const ProductionNormsCracker = ({ permissions }) => {
 
   const handleUnitChange = (unit) => {
     setSelectedUnit(unit)
+  }
+  const handleUnitChangeC2C3R = (unit) => {
+    setSelectedUnitC2C3R(unit)
   }
   const isCellEditable = (params) => params.row.id !== 'total'
 
@@ -716,14 +784,15 @@ const ProductionNormsCracker = ({ permissions }) => {
           addButton: false,
           deleteButton: false,
           editButton: false,
-          showUnit: false,
+          showUnit: IS_CRACKER_C2 ? true : false,
+          units: ['MT/Month', 'TPH'],
           saveWithRemark: true,
           showCalculate: IS_NMD || IS_VMD ? false : true,
           allAction: true,
           showNote: true,
           showTitleNameBusiness: false,
           titleName: '',
-          saveBtn: true,
+          saveBtn: IS_CRACKER_C2 ? false : true,
           downloadExcelBtnFromUI: true,
           ExcelName: `${EXCEL_NAME_OTHER_PRODUCTION}`,
           showCalculateVisibility:
@@ -753,7 +822,7 @@ const ProductionNormsCracker = ({ permissions }) => {
       <LoaderBackdrop open={!!loading} />
 
       {/* SHOW THIS GRID TO ALL SITES */}
-      {!CRACKER_DMD && (
+      {!CRACKER_HMD && !CRACKER_DMD && !IS_CRACKER_C2 && (
         <KendoDataTables
           modifiedCells={modifiedCellsC2C3R}
           setModifiedCells={setModifiedCellsC2C3R}
@@ -779,6 +848,7 @@ const ProductionNormsCracker = ({ permissions }) => {
           setCurrentRemark={setCurrentRemarkC2C3R}
           currentRowId={currentRowIdC2C3R}
           permissions={adjustedPermissionsForC2C3R}
+          handleUnitChange={handleUnitChangeC2C3R}
           selectedUOM={'UOM'}
           note={''}
           handleRemarkCellClick={handleRemarkCellClick}
@@ -818,6 +888,44 @@ const ProductionNormsCracker = ({ permissions }) => {
         resetEditSignal={editResetKey}
         setEditResetKey={setEditResetKey}
       />
+
+      {IS_CRACKER_C2 && (
+        <KendoDataTables
+          modifiedCells={modifiedCellsC2C3R}
+          setModifiedCells={setModifiedCellsC2C3R}
+          columns={productionColumnsC2C3R?.filter(
+            (col) => col.field !== 'remarks',
+          )}
+          rows={rowsC2C3R}
+          setRows={setRowsC2C3R}
+          title={'Production AOP'}
+          isCellEditable={isCellEditable}
+          onAddRow={(newRow) => console.log('New Row Added:', newRow)}
+          onDeleteRow={(id) => console.log('Row Deleted:', id)}
+          onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
+          paginationOptions={[100, 200, 300]}
+          saveChanges={saveChangesC2C3R}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          apiRef={apiRefC2C3R}
+          fetchData={fetchDataC2C3R}
+          remarkDialogOpen={remarkDialogOpenC2C3R}
+          setRemarkDialogOpen={setRemarkDialogOpenC2C3R}
+          currentRemark={currentRemarkC2C3R}
+          setCurrentRemark={setCurrentRemarkC2C3R}
+          currentRowId={currentRowIdC2C3R}
+          permissions={adjustedPermissionsForC2C3R}
+          handleUnitChange={handleUnitChangeC2C3R}
+          selectedUOM={'UOM'}
+          note={''}
+          handleRemarkCellClick={handleRemarkCellClick}
+          handleCalculate={handleCalculateOtherProduction}
+          resetEditSignal={editResetKey}
+          setEditResetKey={setEditResetKey}
+        />
+      )}
     </div>
   )
 }

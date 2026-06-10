@@ -88,6 +88,10 @@ const ModeSelection = ({ permissions }) => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const [modes, setModes] = useState([])
+  const [fuelModes, setFuelModes] = useState([])
+
+  // Extract only the permission value we need to avoid unnecessary API calls
+  const NON_EDITABLE_GRID = permissions?.NON_EDITABLE_GRID
 
   const unsavedChangesRef = useRef({ unsavedRows: {}, rowsBeforeChange: {} })
   const monthTitles = getMonthYearTitles(
@@ -96,38 +100,6 @@ const ModeSelection = ({ permissions }) => {
   const yearRange =
     year?.selectedYearRange || `${AOP_YEAR}-${Number(AOP_YEAR) + 1}` // e.g. "2026-27"
   const headerMap = generateHeaderNames(yearRange)
-  const dynamicYearMonthColumns = MONTHS.map((month, idx) => {
-    const headerIdx = ((idx + 4 - 1) % 12) + 1
-    return {
-      field: month,
-      title: headerMap[headerIdx],
-      editable: true,
-      type: 'dynamicDropdown',
-      minWidth: 100,
-    }
-  })
-
-  // Choose which columns to use:
-  // To use dynamic year headers:
-  const columns = [
-    {
-      field: 'productName',
-      title: 'Particulars',
-      editable: false,
-      widthT: 120,
-      minWidth: 120,
-    },
-    { field: 'uom', title: 'UOM', editable: false, widthT: 55, minWidth: 100 },
-    {
-      field: 'normType',
-      title: 'Norm Type',
-      editable: false,
-      hidden: true,
-      isVisible: false,
-    },
-    ...dynamicYearMonthColumns,
-    { field: 'remarks', title: 'Remarks', editable: true, minWidth: 100 },
-  ]
 
   const fetchModes = useCallback(async () => {
     try {
@@ -149,13 +121,37 @@ const ModeSelection = ({ permissions }) => {
     }
   }, [keycloak, PLANT_ID, AOP_YEAR])
 
+  const fetchModesForFuel = useCallback(async () => {
+    try {
+      const resp = await OptimizerDataApiService.fetchModes(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        'fuel',
+      )
+
+      if (resp?.code === 200 && Array.isArray(resp.data)) {
+        setFuelModes(resp.data)
+      } else {
+        setFuelModes([])
+      }
+    } catch (err) {
+      console.error('Error fetching fuel modes:', err)
+      setFuelModes([])
+    }
+  }, [keycloak, PLANT_ID, AOP_YEAR])
+
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
       fetchModes()
+      fetchModesForFuel()
     }
-  }, [keycloak, fetchModes, AOP_YEAR, PLANT_ID])
+  }, [keycloak, fetchModes, fetchModesForFuel, AOP_YEAR, PLANT_ID])
+
+  // console.log('permissions?.NON_EDITABLE_GRID', permissions?.NON_EDITABLE_GRID)
+
   // Fetch data
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
     setLoading(true)
     try {
@@ -170,18 +166,29 @@ const ModeSelection = ({ permissions }) => {
         inEdit: false,
         originalRemark: item.remarks || '', // Store original
         remarks: item.remarks || '', // Editable field
-        Particulars: 'Mode Selection',
+        Particulars: ' ',
+        isEditable: NON_EDITABLE_GRID ? false : true,
       }))
       setRows(formattedData)
     } catch (error) {
       setRows([])
     }
     setLoading(false)
-  }
+  }, [PLANT_ID, SITE_ID, VERTICAL_ID, AOP_YEAR, keycloak, NON_EDITABLE_GRID])
 
   useEffect(() => {
     fetchData()
-  }, [PLANT_ID, SITE_ID, VERTICAL_ID, AOP_YEAR, keycloak])
+  }, [fetchData])
+
+  // Update isEditable when permissions change without refetching
+  useEffect(() => {
+    setRows((prevRows) =>
+      prevRows.map((row) => ({
+        ...row,
+        isEditable: permissions?.NON_EDITABLE_GRID ? false : true,
+      })),
+    )
+  }, [permissions?.NON_EDITABLE_GRID])
 
   const savePropaneBusiness = async () => {
     setLoading(true)
@@ -298,6 +305,63 @@ const ModeSelection = ({ permissions }) => {
     [modes],
   )
 
+  const fuelDropdownOptions = useMemo(
+    () =>
+      fuelModes.map((mode) => ({
+        name: mode.displayName,
+        value: mode.displayName,
+      })),
+    [fuelModes],
+  )
+
+  // Function to get dropdown options based on UOM
+  const getDropdownOptionsForRow = (dataItem) => {
+    const uom = dataItem?.uom?.toLowerCase()
+    if (uom === 'fuel') {
+      return fuelDropdownOptions
+    } else {
+      return dynamicDropdownOptions
+    }
+  }
+
+  const dynamicYearMonthColumns = MONTHS.map((month, idx) => {
+    const headerIdx = ((idx + 4 - 1) % 12) + 1
+    return {
+      field: month,
+      title: headerMap[headerIdx],
+      editable: true,
+      type: 'dynamicDropdown',
+      minWidth: 100,
+      getDropdownOptions: getDropdownOptionsForRow,
+    }
+  })
+
+  // Choose which columns to use:
+  // To use dynamic year headers:
+  const columns = [
+    {
+      field: 'productName',
+      title: 'Particulars',
+      editable: false,
+      widthT: 120,
+      minWidth: 120,
+    },
+    //UOM NOT REQUIRED HERE
+    // { field: 'uom', title: 'UOM', editable: false, widthT: 55, minWidth: 100 },
+    {
+      field: 'normType',
+      title: 'Norm Type',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
+    ...dynamicYearMonthColumns,
+    // Only include the remarks column if NON_EDITABLE_GRID is false/undefined
+    ...(!permissions?.hideRemarkForNonEditableRows
+      ? [{ field: 'remarks', title: 'Remarks', editable: true, minWidth: 100 }]
+      : []),
+  ]
+
   const adjustedPermissions = useMemo(
     () =>
       getAdjustedPermissions(
@@ -307,6 +371,7 @@ const ModeSelection = ({ permissions }) => {
           uploadExcelBtn: false,
           titleName: 'Mode Selection',
           dynamicDropdownOptions: dynamicDropdownOptions,
+          NON_EDITABLE_GRID: true,
         },
         isOldYear,
       ),
@@ -336,7 +401,7 @@ const ModeSelection = ({ permissions }) => {
         setCurrentRowId={setCurrentRowId}
         handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissions}
-        groupBy='Particulars'
+        // groupBy={permissions?.NON_EDITABLE_GRID ? undefined : 'Particulars'}
         // Add other props as needed
       />
     </div>

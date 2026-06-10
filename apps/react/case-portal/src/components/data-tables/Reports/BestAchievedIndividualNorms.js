@@ -227,17 +227,13 @@ const BestAchievedIndividualNorms = () => {
           Array.isArray(g.columns) && g.columns.length
             ? g.columns
             : inferColumnsFromRows(rawRows)
-        let enrichedCols = enrichColumns(inferredCols)
+        const enrichedCols = enrichColumns(inferredCols)
 
         const rowsWithId = rawRows.map((r, i) => {
           const parsed = normalizeRowValues(r, inferredCols)
           return { ...parsed, id: i, isEditable: false }
         })
-        if (g.gridName === 'Final Norms Values') {
-          enrichedCols = enrichedCols.map((col) => {
-            return { ...col, widthT: 120 }
-          })
-        }
+
         newMap[g.gridName] = { rows: rowsWithId, columns: enrichedCols }
       })
 

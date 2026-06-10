@@ -11,6 +11,7 @@ import { validateFields } from 'utils/validationUtils'
 import moment from '../../../../node_modules/moment/moment'
 import { useSelector } from 'react-redux'
 import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const TurnaroundReport = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -77,7 +78,7 @@ const TurnaroundReport = () => {
     {
       field: 'sno',
       title: 'SL.No',
-      widthT: 70,
+      minWidth: 40,
       format: '{0:#.#}',
       editable: false,
     },
@@ -128,7 +129,7 @@ const TurnaroundReport = () => {
   ]
 
   const columnsGrid2 = [
-    { field: 'sno', title: 'SL.No', widthT: 70, editable: false },
+    { field: 'sno', title: 'SL.No', minWidth: 40, editable: false },
 
     {
       field: 'activity',
@@ -476,6 +477,7 @@ const TurnaroundReport = () => {
 
   return (
     <Box>
+      <LoaderBackdrop open={!!loading} />
       <KendoDataTables
         modifiedCells={modifiedCells}
         enableSaveAddBtn={enableSaveAddBtn}

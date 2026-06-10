@@ -384,7 +384,7 @@ export const ShutdownConsumptionPtaColumns = [
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
-    const monthField = new Date(1000, monthIndex - 1)
+    const monthField = new Date(2000, monthIndex - 1)
       .toLocaleString('en-US', { month: 'long' })
       .toLowerCase()
 
@@ -437,7 +437,7 @@ export const SlowdownNormsPtaColumns = [
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
-    const monthField = new Date(1000, monthIndex - 1)
+    const monthField = new Date(2000, monthIndex - 1)
       .toLocaleString('en-US', { month: 'long' })
       .toLowerCase()
 

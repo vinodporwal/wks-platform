@@ -17,6 +17,8 @@ import {
 } from 'utils/CustomAccrodian'
 import ConsumptionNormsHistorianBasis from './ConsumptionNormsHistorianBasis'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { FileExportIcon } from 'assets/images/icons'
+
 const REPORT_TYPE_FOR_ALL = 'AnnualAOPCost'
 
 const AnnualAOPCostDynamic = () => {
@@ -51,7 +53,10 @@ const AnnualAOPCostDynamic = () => {
 
   const timeoutIdsRef = useRef([])
   const isMountedRef = useRef(true)
-  const exportRefs = useRef({})
+  // export control (dynamic ExcelExport mount)
+  const [isExporting, setIsExporting] = useState(false)
+  const workbookRef = useRef(null)
+  const excelExportRef = useRef(null)
 
   useEffect(() => {
     isMountedRef.current = true
@@ -250,7 +255,7 @@ const AnnualAOPCostDynamic = () => {
         return
       }
 
-      const phaseTwoVertical = ['crude', 'vgoht']
+      const phaseTwoVertical = ['crude', 'vgoht', 'hydrotreater']
       // Call the API that returns combined grids. Change REPORT_TYPE_FOR_ALL if needed.
       const apiResponse = await DataService.getProductionVolDataBasisPe(
         keycloak,
@@ -362,13 +367,9 @@ const AnnualAOPCostDynamic = () => {
     return v
   }
 
-  const exportAllGrids = useCallback(() => {
-    const keys = Object.keys(exportRefs.current || {})
-    const firstKey = keys.find((k) => exportRefs.current[k])
-    if (!firstKey) return
-    const baseRef = exportRefs.current[firstKey]
-    if (!baseRef || typeof baseRef.save !== 'function') return
+  const fileName = `${VERTICAL_NAME}-AnnualAOPCost.xlsx`
 
+  const exportAllGrids = useCallback(() => {
     const sheets = gridNames
       .map((gridName, idx) => {
         const d = dataMap[gridName] || { rows: [], columns: [] }
@@ -402,15 +403,65 @@ const AnnualAOPCostDynamic = () => {
     if (!sheets.length) return
 
     const workbookOptions = { sheets }
-
-    try {
-      baseRef.save(workbookOptions)
-    } catch (err) {
-      console.error('Export save failed:', err)
-    }
+    workbookRef.current = workbookOptions
+    setIsExporting(true)
   }, [gridNames, dataMap])
 
-  const fileName = `${VERTICAL_NAME}-AnnualAOPCost.xlsx`
+  useEffect(() => {
+    if (!isExporting) return
+
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        if (excelExportRef.current && workbookRef.current) {
+          // Prefer toDataURL (returns a Promise<string>) so we know when the file was generated.
+          if (typeof excelExportRef.current.toDataURL === 'function') {
+            const dataUrl = await excelExportRef.current.toDataURL(
+              workbookRef.current,
+            )
+            if (cancelled) return
+
+            // Convert data URL to blob then trigger download programmatically.
+            const base64 = dataUrl.split(',')[1]
+            const byteString = atob(base64)
+            const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0]
+            const ab = new ArrayBuffer(byteString.length)
+            const ia = new Uint8Array(ab)
+            for (let i = 0; i < byteString.length; i++)
+              ia[i] = byteString.charCodeAt(i)
+            const blob = new Blob([ab], { type: mimeString })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = fileName
+            document.body.appendChild(a)
+            a.click()
+            a.remove()
+            URL.revokeObjectURL(url)
+          } else if (typeof excelExportRef.current.save === 'function') {
+            // Fallback to save() if toDataURL is not available in this kendo version
+            excelExportRef.current.save(workbookRef.current)
+          } else {
+            console.error(
+              'ExcelExport ref method missing: toDataURL or save not found',
+            )
+          }
+        } else {
+          console.error('ExcelExport ref or workbookOptions missing')
+        }
+      } catch (err) {
+        console.error('Export save failed:', err)
+      } finally {
+        workbookRef.current = null
+        if (!cancelled) setIsExporting(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [isExporting, fileName])
 
   const renderTitle = (t) => t
 
@@ -421,38 +472,18 @@ const AnnualAOPCostDynamic = () => {
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <LoaderBackdrop open={!!loading || !!isExporting} />
 
-      {/* Hidden ExcelExport instances for each grid */}
-      <div style={{ display: 'none' }}>
-        {gridNames.map((name) => {
-          const data = dataMap[name] || { rows: [], columns: [] }
-          const setRef = (ref) => {
-            if (ref) exportRefs.current[name] = ref
-          }
-          return (
-            <ExcelExport
-              key={`excel-${name}`}
-              data={data.rows}
-              ref={setRef}
-              fileName={fileName}
-            >
-              {(data.columns || []).map((col) => (
-                <ExcelExportColumn
-                  key={col.field}
-                  field={col.field}
-                  title={col.title || col.field}
-                  headerCellOptions={{
-                    background: '#d9e1f2', // light blue header
-                    color: '#000',
-                    bold: true,
-                  }}
-                />
-              ))}
-            </ExcelExport>
-          )
-        })}
-      </div>
+      {/* transient ExcelExport: only mounted during actual export */}
+      {isExporting && (
+        <div style={{ display: 'none' }}>
+          <ExcelExport
+            data={[]}
+            ref={(r) => (excelExportRef.current = r)}
+            fileName={fileName}
+          />
+        </div>
+      )}
 
       {/* {activeTabs?.length > 1 && (
         <Tabs
@@ -489,8 +520,11 @@ const AnnualAOPCostDynamic = () => {
         <Box display='flex' justifyContent='flex-end' mb='2px'>
           <Button
             variant='contained'
+            className='btn-export'
+            startIcon={
+              <Box component='img' src={FileExportIcon} className='w16-icon' />
+            }
             onClick={exportAllGrids}
-            className='btn-save'
           >
             Export
           </Button>

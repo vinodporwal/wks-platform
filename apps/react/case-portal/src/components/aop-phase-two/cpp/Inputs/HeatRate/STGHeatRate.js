@@ -44,7 +44,7 @@ const STGHeatRate = ({ startDate, endDate, dateLoading }) => {
       minWidth: 150,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
     },
     {
       field: 'cppUtility',

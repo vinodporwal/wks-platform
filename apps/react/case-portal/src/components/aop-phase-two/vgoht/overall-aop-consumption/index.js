@@ -9,6 +9,7 @@ import ValueFormatterPhaseTwo, {
 } from '../../common/ValueFormatterPhaseTwo'
 import { OverallAopConsumptionApiService } from '../../services/vgoht/overallAopConsumptionApiService'
 import { overAllAOpResponse } from '../dummyData'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const OverallAopConsumption = () => {
   const keycloak = useSession()
@@ -165,14 +166,6 @@ const OverallAopConsumption = () => {
       editable: false,
       format: valueFormat,
     },
-    {
-      field: 'avgNorms',
-      title: 'Avg Norms',
-      minWidth: 120,
-      type: 'number1',
-      editable: false,
-      format: valueFormat,
-    },
   ]
 
   useEffect(() => {
@@ -286,12 +279,7 @@ const OverallAopConsumption = () => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <AdvanceKendoTable
         columns={columns}

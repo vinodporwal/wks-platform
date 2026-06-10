@@ -26,6 +26,8 @@ public class CrackerHMDLoadLIMSSpyroInputDTO {
     private String heavyId;
     private String othersId;
     private String blendId;
+    private String blendIp21Id;
+    private Double blendIp21;
 
     private String plantId;
     private String aopYear;

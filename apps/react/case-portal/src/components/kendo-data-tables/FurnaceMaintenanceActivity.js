@@ -2,6 +2,7 @@ import { useSession } from 'SessionStoreContext'
 import Notification from 'components/Utilities/Notification'
 import React, { useEffect, useState } from 'react'
 import { DataService } from 'services/DataService'
+import { FurnaceMaintenanceActivityApiService } from 'services/FurnaceMaintenanceActivityApiService'
 import KendoDataTables from 'components/kendo-data-tables/index'
 import { validateFields } from 'utils/validationUtils'
 import moment from 'moment'
@@ -9,7 +10,7 @@ import { DropDownList } from '@progress/kendo-react-dropdowns'
 import { DatePicker } from '@progress/kendo-react-dateinputs'
 import { useSelector } from 'react-redux'
 import { getRoleName } from 'services/role-service'
-const FurnaceMaintenanceActivity = () => {
+const FurnaceMaintenanceActivity = ({ permissions }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -42,15 +43,16 @@ const FurnaceMaintenanceActivity = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
   const [rows, setRows] = useState()
-  const [furnaceDropdownData, setFurnaceDropdownData] = useState([])
-  const [maintenanceActivityData, setMaintenanceActivityData] = useState([])
+  const [runLengthColumns, setRunLengthColumns] = useState([])
+  const [MaintActivityDropdownData, setMaintActivityDropdownData] = useState([])
+  const [uniqueFurnaceNames, setUniqueFurnaceNames] = useState([])
 
   const [loading, setLoading] = useState(false)
   const keycloak = useSession()
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
-    setCurrentRemark(row.remarks || '')
+    setCurrentRemark(row.Remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
@@ -61,92 +63,13 @@ const FurnaceMaintenanceActivity = () => {
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
-  const columnsGrid = [
-    {
-      field: 'furnace',
-      title: 'Furnace',
-      width: 150,
-      editable: true,
-      type: 'dynamicDropdown',
-    },
-    {
-      field: 'maintenanceActivity',
-      title: 'Maintenance Activity',
-      width: 150,
-      editable: true,
-      type: 'dynamicDropdown',
-    },
-    {
-      field: 'maintStartDateTime',
-      title: 'Start Date',
-      widthT: 200,
-      editable: true,
-    },
-    {
-      field: 'maintEndDateTime',
-      title: 'End Date',
-      widthT: 200,
-      editable: true,
-    },
-    {
-      field: 'duration',
-      title: 'Duration (Days)',
-      widthT: 150,
-      type: 'number',
-      editable: false,
-      align: 'right',
-      headerAlign: 'right',
-    },
-    {
-      field: 'remarks',
-      title: 'Remark',
-      widthT: 300,
-      editable: true,
-    },
-  ]
-
-  const mapData = (data, tag) =>
-    (data?.data?.furnaceMaintenanceActivity || []).map((item, i) => ({
-      ...item,
-      idFromApi: item?.Id,
-      id: i,
-      idRow: `${tag}-${i}`,
-      originalRemark: item?.remarks ?? '',
-      isEditable: true,
-    }))
-
-  const fetchFurnaceDropdownData = async () => {
+  const fetchMaintActivityDropdownData = async () => {
     try {
-      // const response = await DataService.getFurnaceDropdownData(keycloak)
-      // if (response?.code === 200) {
-      //   setFurnaceDropdownData(response?.data)
-      // }
-      const furnaceOptions = [
-        { value: 'H101-SF', name: 'H101-SF' },
-        { value: 'H102-SF', name: 'H102-SF' },
-        { value: 'H103-SF', name: 'H103-SF' },
-        { value: 'H104-SF', name: 'H104-SF' },
-        { value: 'H105-SF', name: 'H105-SF' },
-      ]
-      setFurnaceDropdownData(furnaceOptions)
-    } catch (e) {
-      console.error('Error loading dropdown data:', e)
-    }
-  }
-
-  const fetchMaintenanceActivityData = async () => {
-    try {
-      // const response = await DataService.getMaintenanceActivityData(keycloak)
-      // if (response?.code === 200) {
-      //   setMaintenanceActivityData(response?.data)
-      // }
       const maintenanceActivityOptions = [
         { value: 'TLE', name: 'TLE' },
-        { value: 'Coile Replacement', name: 'Coile Replacement' },
-        { value: 'IBR', name: 'IBR' },
         { value: 'Plan Shutdown', name: 'Plan Shutdown' },
       ]
-      setMaintenanceActivityData(maintenanceActivityOptions)
+      setMaintActivityDropdownData(maintenanceActivityOptions)
     } catch (e) {
       console.error('Error loading dropdown data:', e)
     }
@@ -155,46 +78,148 @@ const FurnaceMaintenanceActivity = () => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      // const response = await DataService.getFurnaceMaintenanceActivity(
-      //   keycloak,
-      //   PLANT_ID,
-      //   AOP_YEAR,
-      // )
-      // MOCK DATA FETCH
-      const mockResult = {
-        code: 200,
-        data: {
-          furnaceMaintenanceActivity: [
-            {
-              Id: 1,
-              furnace: 'H101-SF',
-              maintenanceActivity: 'TLE',
-              maintStartDateTime: new Date('2024-04-01').toISOString(),
-              maintEndDateTime: new Date('2024-04-05').toISOString(),
-              duration: 5,
-              remarks: 'Mock data 1',
-            },
-            {
-              Id: 2,
-              furnace: 'H103-SF',
-              maintenanceActivity: 'IBR',
-              maintStartDateTime: new Date('2024-05-10').toISOString(),
-              maintEndDateTime: new Date('2024-05-20').toISOString(),
-              duration: 11,
-              remarks: 'Mock data 2',
-            },
-          ],
-        },
-      }
+      const data2 =
+        await FurnaceMaintenanceActivityApiService.getFurnaceMaintenanceActivity(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
-      await new Promise((resolve) => setTimeout(resolve, 800)) // delay to simulate network
+      const toDateObject = (value) =>
+        value ? moment(value, 'MMM D, YYYY').toDate() : null
 
-      if (mockResult?.code === 200) {
-        setRows(mapData(mockResult, 'VMD'))
+      if (data2?.code === 200) {
+        const dateColumns =
+          data2?.data?.columns
+            ?.filter((col) => col.type === 'date')
+            ?.map((col) => col.field) || []
+
+        const processedData = data2.data?.data.map((item, index) => {
+          let Duration = null
+          if (item.StartDate && item.EndDate) {
+            const start = moment(item.StartDate)
+            const end = moment(item.EndDate)
+            const days = end.diff(start, 'days')
+            Duration = days >= 0 ? `${days}` : 'Invalid'
+          }
+          const converted = {}
+          dateColumns.forEach((field) => {
+            // FIX: only convert non-empty strings
+            if (
+              item[field] &&
+              typeof item[field] === 'string' &&
+              item[field].trim() !== ''
+            ) {
+              const parsed = moment(
+                item[field],
+                ['YYYY-MM-DD', 'MMM D, YYYY', moment.ISO_8601],
+                true,
+              )
+              item[field] = parsed.isValid() ? parsed.toDate() : null
+            } else {
+              item[field] = null // FIX: set null instead of leaving empty string
+            }
+          })
+          return {
+            ...item,
+            ...converted,
+            Id: item.Id,
+            id: index,
+            Duration,
+            DisplayName: item.DisplayName || item.displayName || item.Name,
+            originalRemark: item?.Remarks?.trim(),
+            Remarks: item?.Remarks?.trim(),
+            isEditable: true,
+          }
+        })
+
+        // Fetch furnace dropdown options from backend API
+        let dropdownOptions = []
+        try {
+          const response =
+            await FurnaceMaintenanceActivityApiService.getFurnaceDropdownData(
+              keycloak,
+              PLANT_ID,
+              AOP_YEAR,
+            )
+          if (response && response.code === 200) {
+            const dataList = response.data || []
+            dropdownOptions = dataList.map((item) => {
+              if (typeof item === 'string') {
+                return { value: item, name: item }
+              }
+              const val = item.value !== undefined ? item.value : item.name
+              const name =
+                item.name !== undefined
+                  ? item.name
+                  : item.displayName || item.name
+              return { value: val, name: name }
+            })
+          }
+        } catch (e) {
+          console.error('Error loading furnace dropdown data:', e)
+        }
+
+        const uniqueNames = dropdownOptions.map((opt) => opt.value)
+        setUniqueFurnaceNames(uniqueNames)
+
+        const mappedCols = (data2?.data?.columns || [])
+          .filter((col) => !['Id', 'isEditable', 'Remarks'].includes(col.field))
+          .map((col) => {
+            let columnConfig = {
+              ...col,
+              editable: [
+                'MaintActivity',
+                'StartDate',
+                'EndDate',
+                'Name',
+              ].includes(col.field),
+            }
+
+            // Set type for specific columns
+            if (col.field === 'MaintActivity') {
+              columnConfig.type = 'dynamicDropdownshared'
+            } else if (col.field === 'Name') {
+              columnConfig.type = 'dynamicDropdownshared'
+              columnConfig.dropdownOptions = dropdownOptions
+            } else if (
+              col.field === 'DisplayName' ||
+              col.field === 'displayName'
+            ) {
+              columnConfig.hidden = true
+            }
+
+            return columnConfig
+          })
+
+        const remarksCol = (data2?.data?.columns || [])
+          .filter((col) => col.field === 'Remarks')
+          .map((col) => ({
+            ...col,
+            editable: true,
+          }))
+
+        setRunLengthColumns([
+          ...mappedCols,
+          // ? Duration before Remarks
+          {
+            field: 'Duration',
+            title: 'Duration',
+            type: 'text',
+            align: 'right',
+            editable: false,
+            width: 120,
+            hidden: false,
+          },
+          ...remarksCol,
+        ])
+
+        setRows(processedData)
       } else {
         setRows([])
       }
     } catch (e) {
+      // ? fixed, no extra brace
       console.error('Error loading previous year:', e)
     } finally {
       setLoading(false)
@@ -202,18 +227,24 @@ const FurnaceMaintenanceActivity = () => {
   }
 
   useEffect(() => {
-    fetchFurnaceDropdownData()
-    fetchMaintenanceActivityData()
+    fetchMaintActivityDropdownData()
   }, [])
 
   useEffect(() => {
     fetchData()
   }, [keycloak, AOP_YEAR, PLANT_ID])
 
-  const saveChanges = async () => {
+  const toLocalDateString = (value) => {
+    if (!value) return null
+    return moment(value).format('YYYY-MM-DD')
+  }
+  const saveCrackerRunLength = async (newRow) => {
+    setLoading(true)
     try {
-      const data = Object.values(modifiedCells)
-      if (data.length == 0) {
+      //const referenceRows = getRows('IBR Plan')[2]
+
+      // build payload like you already do
+      if (newRow.length === 0) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'No Records to Save!',
@@ -223,29 +254,9 @@ const FurnaceMaintenanceActivity = () => {
         return
       }
 
-      const formatIfDate = (value) => {
-        if (!value) return ''
-        const parsed = moment.utc(
-          value,
-          ['MMM D, YYYY', 'MMM D, YYYY, h:mm:ss A'],
-          true,
-        )
-        return parsed.isValid()
-          ? new Date(parsed.add(1, 'day').format('YYYY-MM-DD'))
-          : value
-      }
-
-      const rowsToUpdate = data.map((row) => ({
-        id: row.Id || null,
-        startDate: formatIfDate(row.fromDate),
-        endDate: formatIfDate(row.toDate),
-        maintenanceActivity: row.maintenanceActivity,
-        furnace: row.furnace,
-        duration: row.duration,
-        remark: row.remarks,
-      }))
-      const requiredFields = ['remarks']
-      const validationMessage = validateFields(data, requiredFields)
+      // ? Remarks validation
+      const requiredFields = ['Remarks']
+      const validationMessage = validateFields(newRow, requiredFields)
       if (validationMessage) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -256,69 +267,202 @@ const FurnaceMaintenanceActivity = () => {
         return
       }
 
-      // Date Validation for Save Action
-      const invalidDateRow = rowsToUpdate.find(
-        (r) =>
-          r.startDate &&
-          r.endDate &&
-          moment(r.endDate).isBefore(moment(r.startDate), 'day'),
-      )
-      if (invalidDateRow) {
+      // ? Duplicate Name validation - check against all rows in the grid
+      const duplicateNamesList = []
+
+      // Second pass: count all names from all rows (including newRow)
+      const allRows = rows || []
+      const nameCount = {}
+
+      for (const record of allRows) {
+        const name = record.Name?.trim()
+        if (name) {
+          nameCount[name] = (nameCount[name] || 0) + 1
+        }
+      }
+
+      // Third pass: mark records in newRow that have duplicates in the entire grid
+      for (const record of newRow) {
+        const name = record.Name?.trim()
+        if (name && nameCount[name] > 1) {
+          record.isError = true
+          if (!duplicateNamesList.includes(name)) {
+            duplicateNamesList.push(name)
+          }
+        }
+      }
+
+      if (duplicateNamesList.length > 0) {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'End Date cannot be before Start Date for some records',
+          message: `Duplicate furnace name(s) found: ${duplicateNamesList.join(', ')}. Each furnace name must be unique. Available: ${uniqueFurnaceNames.join(', ')}`,
           severity: 'error',
         })
         setLoading(false)
         return
       }
 
-      // const response = await DataService.saveFurnaceMaintenanceActivity(
-      //   keycloak,
-      //   PLANT_ID,
-      //   AOP_YEAR,
-      //   rowsToUpdate,
-      // )
-      // MOCK SAVE API
-      await new Promise((resolve) => setTimeout(resolve, 800))
-      const res = { code: 200 }
+      // ? 1. StartDate and EndDate mandatory validation
+      const dateRequiredRows = new Set()
+      for (const record of newRow) {
+        const startMissing = !record.StartDate
+        const endMissing = !record.EndDate
+        if (startMissing || endMissing) {
+          record.isError = true
+          dateRequiredRows.add(record.id)
+        }
+      }
+      if (dateRequiredRows.size > 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Start Date and End Date are required for all records.',
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
 
-      if (res?.code == 200) {
+      // ? 2. StartDate must be before EndDate validation
+      for (const record of newRow) {
+        const start = new Date(record.StartDate).getTime()
+        const end = new Date(record.EndDate).getTime()
+        if (start >= end) {
+          record.isError = true
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: `Start date must be before end date for "${record.DisplayName || 'this record'}".`,
+            severity: 'error',
+          })
+          setLoading(false)
+          return
+        }
+      }
+
+      // ? 3. Dates must be within AOP Year range validation
+      const yearStr = AOP_YEAR
+      let startLimit, endLimit
+      if (yearStr) {
+        const [startYear, endYear] = yearStr
+          .split('-')
+          .map((y) => parseInt(y.trim(), 10))
+        if (!isNaN(startYear) && !isNaN(endYear)) {
+          startLimit = new Date(`${startYear}-04-01T00:00:00`)
+          endLimit = new Date(`20${endYear}-03-31T23:59:59`)
+        }
+      }
+
+      const formatDateDDMMYYYY = (date) => {
+        if (!(date instanceof Date) || isNaN(date)) return ''
+        const d = date.getDate().toString().padStart(2, '0')
+        const m = (date.getMonth() + 1).toString().padStart(2, '0')
+        const y = date.getFullYear()
+        return `${d}/${m}/${y}`
+      }
+
+      for (const record of newRow) {
+        const startDate =
+          record.StartDate instanceof Date
+            ? record.StartDate
+            : new Date(record.StartDate)
+        const endDate =
+          record.EndDate instanceof Date
+            ? record.EndDate
+            : new Date(record.EndDate)
+
+        if (
+          startLimit &&
+          endLimit &&
+          (isNaN(startDate) ||
+            isNaN(endDate) ||
+            startDate < startLimit ||
+            startDate > endLimit ||
+            endDate < startLimit ||
+            endDate > endLimit)
+        ) {
+          record.isError = true
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: `Dates must be between ${formatDateDDMMYYYY(startLimit)} and ${formatDateDDMMYYYY(endLimit)} for the selected year.`,
+            severity: 'error',
+          })
+          setLoading(false)
+          return
+        }
+      }
+
+      const apiFields = runLengthColumns
+        .map((col) => col.field)
+        .filter((field) => field !== 'Duration')
+
+      const payload = newRow.map((row, idx) => {
+        const obj = {
+          Id: row.Id,
+          Plant_FK_Id: PLANT_ID,
+          AOPYear: AOP_YEAR,
+        }
+        apiFields.forEach((field) => {
+          let value = row[field]
+          const colDef = runLengthColumns.find((col) => col.field === field)
+          if (colDef?.type === 'date') {
+            obj[field] = toLocalDateString(value)
+          } else {
+            obj[field] = value ?? null
+          }
+        })
+        if (!obj.Id) {
+          obj.DisplayName = obj.Name
+        }
+        return obj
+      })
+
+      const response = await DataService.postIbr(
+        PLANT_ID,
+        payload,
+        keycloak,
+        AOP_YEAR,
+      )
+
+      if (response?.code == 200) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Data Saved Successfully!',
           severity: 'success',
         })
-        fetchData()
         setModifiedCells({})
+        fetchData()
       } else {
         setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Data Saved Failed!',
-          severity: 'error',
-        })
+        setSnackbarData({ message: 'Data Save Failed!', severity: 'error' })
       }
-    } catch (err) {
-      console.error('Error while save', err)
+      return response
+    } catch (error) {
+      console.error('Error saving data:', error)
       setSnackbarOpen(true)
-      setSnackbarData({ message: err.message, severity: 'error' })
+      setSnackbarData({ message: 'Error saving data', severity: 'error' })
     } finally {
-      setSnackbarOpen(true)
+      setLoading(false)
     }
   }
 
   const deleteRowData = async (paramsForDelete) => {
+    setLoading(true)
     try {
-      const { idFromApi, id } = paramsForDelete
+      const { Id, id } = paramsForDelete
       const deleteId = id
 
-      if (!idFromApi) {
-        setRows2((prevRows) => prevRows.filter((row) => row.id !== deleteId))
-      }
-
-      if (idFromApi) {
-        await DataService.deleteFurnaceMaintenanceActivity(idFromApi, keycloak)
-        setRows2((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+      if (!Id) {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setModifiedCells((prev) => {
+          const newModifiedCells = { ...prev }
+          delete newModifiedCells[deleteId]
+          return newModifiedCells
+        })
+      } else {
+        await FurnaceMaintenanceActivityApiService.deleteFurnaceMaintenanceActivity(
+          Id,
+          keycloak,
+        )
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Record Deleted successfully!',
@@ -327,9 +471,24 @@ const FurnaceMaintenanceActivity = () => {
         fetchData()
       }
     } catch (error) {
-      console.error('Error deleting Record!', error)
+      console.error('Error deleting Record', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error deleting record!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
     }
   }
+
+  const saveChangesRunLength = React.useCallback(async () => {
+    try {
+      saveCrackerRunLength(Object.values(modifiedCells))
+    } catch (error) {
+      console.log('Error saving changes:', error)
+    }
+  }, [modifiedCells])
 
   return (
     <React.Fragment>
@@ -337,29 +496,28 @@ const FurnaceMaintenanceActivity = () => {
         modifiedCells={modifiedCells}
         rows={rows}
         setRows={setRows}
-        columns={columnsGrid}
+        columns={runLengthColumns}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
         setCurrentRowId={setCurrentRowId}
-        saveChanges={saveChanges}
+        saveChanges={saveChangesRunLength}
         handleRemarkCellClick={handleRemarkCellClick}
-        loading={loading}
         fetchData={fetchData}
         setModifiedCells={setModifiedCells}
         deleteRowData={deleteRowData}
         permissions={{
+          ...permissions,
           remarksEditable: true,
-          saveBtn: !isOldYear,
+          saveBtn: true,
           saveBtnForRemark: true,
-          addButton: !isOldYear,
+          addButton: true,
           allAction: true,
           deleteButton: true,
           dynamicDropdownOptions: {
-            furnace: furnaceDropdownData,
-            maintenanceActivity: maintenanceActivityData,
+            MaintActivity: MaintActivityDropdownData,
           },
         }}
       />

@@ -32,7 +32,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               {
                 field: 'sno',
                 title: 'S.no',
-                widthT: 58,
+                widthT: 30,
                 editable: false,
                 align: 'right',
                 format: '{0:0}',
@@ -42,11 +42,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 200,
               },
               {
                 field: 'price',
@@ -56,7 +58,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: FORMAT_VALUES_PRICE,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -210,7 +212,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               {
                 field: 'sno',
                 title: 'S.no',
-                widthT: 58,
+                widthT: 30,
                 editable: false,
                 align: 'right',
                 format: '{0:0}',
@@ -220,11 +222,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 200,
               },
               {
                 field: 'price',
@@ -234,7 +238,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: FORMAT_VALUES_PRICE,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -382,7 +386,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               {
                 field: 'sno',
                 title: 'S.no',
-                widthT: 58,
+                widthT: 30,
                 editable: false,
                 align: 'right',
                 format: '{0:0}',
@@ -392,11 +396,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 200,
               },
               {
                 field: 'price',
@@ -406,7 +412,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: FORMAT_VALUES_PRICE,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -554,7 +560,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               {
                 field: 'sno',
                 title: 'S.no',
-                widthT: 58,
+                widthT: 30,
                 editable: false,
                 align: 'right',
                 format: '{0:0}',
@@ -564,11 +570,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 200,
               },
               {
                 field: 'price',
@@ -578,7 +586,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: FORMAT_VALUES_PRICE,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -726,7 +734,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               {
                 field: 'sno',
                 title: 'S.no',
-                widthT: 58,
+                widthT: 30,
                 editable: false,
                 align: 'right',
                 format: '{0:0}',
@@ -736,11 +744,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 200,
               },
               {
                 field: 'price',
@@ -750,7 +760,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: FORMAT_VALUES_PRICE,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -897,7 +907,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               {
                 field: 'sno',
                 title: 'S.no',
-                widthT: 58,
+                widthT: 30,
                 editable: false,
                 align: 'right',
                 format: '{0:0}',
@@ -907,11 +917,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 200,
               },
               {
                 field: 'price',
@@ -921,7 +933,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: FORMAT_VALUES_PRICE,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -1068,7 +1080,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               {
                 field: 'sno',
                 title: 'S.no',
-                widthT: 58,
+                widthT: 30,
                 editable: false,
                 align: 'right',
                 format: '{0:0}',
@@ -1078,10 +1090,12 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
+                widthT: 200,
                 editable: false,
               },
               {
@@ -1092,7 +1106,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: FORMAT_VALUES_PRICE,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -1239,7 +1253,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               {
                 field: 'sno',
                 title: 'S.no',
-                widthT: 58,
+                widthT: 30,
                 editable: false,
                 align: 'right',
                 format: '{0:0}',
@@ -1249,6 +1263,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
@@ -1279,7 +1294,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               {
                 field: 'sno',
                 title: 'S.no',
-                widthT: 58,
+                widthT: 30,
                 editable: false,
                 align: 'right',
                 format: '{0:0}',
@@ -1289,11 +1304,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 200,
               },
               {
                 field: 'price',
@@ -1303,7 +1320,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: valueFormat,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -1314,7 +1331,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     editable: true,
                     align: 'right',
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'designRsMt',
@@ -1368,7 +1385,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     editable: true,
                     align: 'right',
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'globalBenchmarkRsMT',
@@ -1457,7 +1474,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               {
                 field: 'sno',
                 title: 'S.no',
-                widthT: 58,
+                widthT: 30,
                 editable: false,
                 align: 'right',
                 format: '{0:0}',
@@ -1467,11 +1484,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 200,
               },
               {
                 field: 'price',
@@ -1481,7 +1500,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: valueFormat,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -1491,7 +1510,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'designRsMt',
@@ -1541,7 +1560,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'globalBenchmarkRsMT',
@@ -1629,7 +1648,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               {
                 field: 'sno',
                 title: 'S.no',
-                widthT: 58,
+                widthT: 30,
                 editable: false,
                 align: 'right',
                 format: '{0:0}',
@@ -1639,11 +1658,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 200,
               },
               {
                 field: 'price',
@@ -1653,7 +1674,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: valueFormat,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -1663,7 +1684,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'designRsMt',
@@ -1713,7 +1734,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'globalBenchmarkRsMT',
@@ -1801,7 +1822,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               {
                 field: 'sno',
                 title: 'S.no',
-                widthT: 58,
+                widthT: 30,
                 editable: false,
                 align: 'right',
                 format: '{0:0}',
@@ -1811,11 +1832,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 200,
               },
               {
                 field: 'price',
@@ -1825,7 +1848,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: valueFormat,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -1835,7 +1858,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'designRsMt',
@@ -1885,7 +1908,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'globalBenchmarkRsMT',
@@ -1973,7 +1996,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               {
                 field: 'sno',
                 title: 'S.no',
-                widthT: 58,
+                widthT: 30,
                 editable: false,
                 align: 'right',
                 format: '{0:0}',
@@ -1983,11 +2006,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 200,
               },
               {
                 field: 'price',
@@ -1997,7 +2022,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: valueFormat,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -2007,7 +2032,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'designRsMt',
@@ -2057,7 +2082,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'globalBenchmarkRsMT',
@@ -2144,7 +2169,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               {
                 field: 'sno',
                 title: 'S.no',
-                widthT: 58,
+                widthT: 30,
                 editable: false,
                 align: 'right',
                 format: '{0:0}',
@@ -2154,11 +2179,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 200,
               },
               {
                 field: 'price',
@@ -2168,7 +2195,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: valueFormat,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -2178,7 +2205,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'designRsMt',
@@ -2228,7 +2255,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'globalBenchmarkRsMT',
@@ -2315,7 +2342,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               {
                 field: 'sno',
                 title: 'S.no',
-                widthT: 58,
+                widthT: 30,
                 editable: false,
                 align: 'right',
                 format: '{0:0}',
@@ -2325,11 +2352,13 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',
                 title: 'Raw material',
                 editable: false,
+                widthT: 200,
               },
               {
                 field: 'price',
@@ -2339,7 +2368,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 format: valueFormat,
                 type: 'number',
               },
-              { field: 'uom', title: 'Unit', widthT: 80, editable: false },
+              { field: 'uom', title: 'Unit', widthT: 60, editable: false },
               // { field: 'design', title: 'Design', editable: false },
               {
                 title: 'Design',
@@ -2349,7 +2378,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'designRsMt',
@@ -2399,7 +2428,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     title: 'Norms',
                     editable: true,
                     format: valueFormat,
-                    type: 'number',
+                    type: 'numberNonGrey',
                   },
                   {
                     field: 'globalBenchmarkRsMT',
@@ -2486,7 +2515,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               {
                 field: 'sno',
                 title: 'S.no',
-                widthT: 58,
+                widthT: 30,
                 editable: false,
                 align: 'right',
                 format: '{0:0}',
@@ -2496,6 +2525,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                 title: 'Id',
                 editable: false,
                 hidden: true,
+                isVisible: false,
               },
               {
                 field: 'material',

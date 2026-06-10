@@ -28,6 +28,7 @@ const kendoBusinessDemColDef = ({ headerMap }) => {
   const lowerVertName = vertName?.toLowerCase() || verticalEnums.MEG
   const siteName = dataGridStore.siteObject?.name?.toLowerCase() // get site
   const IS_ELASTOMER_JMD = lowerVertName === 'elastomer' && siteName === 'jmd'
+  const IS_CRACKER_HMD = lowerVertName === 'cracker' && siteName === 'hmd'
   const FORMATE_DECIMAL = ValueFormatterProduction()
 
   const cacheKey = `${lowerVertName}_${siteName}_${headerMap ? JSON.stringify(headerMap) : 'no_map'}`
@@ -54,9 +55,29 @@ const kendoBusinessDemColDef = ({ headerMap }) => {
       title: headerMap[col.title],
       align: 'right',
       format: FORMATE_DECIMAL,
-      minWidth: 100,
+      editable: col.editable,
+      isDisabled: false,
     }
   })
+
+  // For Cracker HMD � inject a read-only Avg column just before Remark
+  if (IS_CRACKER_HMD) {
+    const remarkIndex = enhancedColDefs.findIndex(
+      (col) => col.field === 'remark',
+    )
+    const insertAt = remarkIndex >= 0 ? remarkIndex : enhancedColDefs.length
+    enhancedColDefs.splice(insertAt, 0, {
+      field: 'avg',
+      title: 'Avg',
+      editable: false,
+      align: 'right',
+      format: FORMATE_DECIMAL,
+      type: 'number',
+      widthT: 100,
+      minWidth: 100,
+      isDisabled: true,
+    })
+  }
 
   colDefsCache.set(cacheKey, enhancedColDefs)
   return enhancedColDefs

@@ -1,7 +1,9 @@
 // HeaderContent.jsx
 import {
   Box,
+  Checkbox,
   FormControl,
+  ListItemText,
   MenuItem,
   Select,
   Stack,
@@ -10,16 +12,19 @@ import {
   SvgIcon,
 } from '@mui/material'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import {
   setAopYear,
   setCurrentYear,
   setIsReleased,
+  setJmdSelectedPlants,
+  setVerticalChangeFromDashboard,
   setOldYear,
   setPlantID,
   setPlantObject,
+  setScreenTitle,
   setSiteID,
   setSiteObject,
   setSitePlantChange,
@@ -40,7 +45,12 @@ import Business from '@mui/icons-material/Business'
 import Domain from '@mui/icons-material/Domain'
 import Factory from '@mui/icons-material/Factory'
 import CorporateFare from '@mui/icons-material/CorporateFare'
-import { BusinessBlueIcon, CalenderIcon, PlantIcon, SiteIcon } from 'assets/images/icons/index'
+import {
+  BusinessBlueIcon,
+  CalenderIcon,
+  PlantIcon,
+  SiteIcon,
+} from 'assets/images/icons/index'
 
 function parseAllowed(raw) {
   const map = {}
@@ -55,7 +65,7 @@ function parseAllowed(raw) {
   return map
 }
 
-export default function HeaderContent({ keycloak }) {
+export default function HeaderContent({ keycloak, navigation }) {
   const [headerLoading, setHeaderLoading] = useState(false)
   const getSelectedVerticalStorage = localStorage.getItem('selectedVertical')
     ? JSON.parse(localStorage.getItem('selectedVertical'))
@@ -83,10 +93,83 @@ export default function HeaderContent({ keycloak }) {
   )
   const [selectedSite, setSelectedSite] = useState('')
   const [selectedPlant, setSelectedPlant] = useState('')
-
+  //=====================================================
+  // CPP-JMD multi-select state
+  // selectedPlantsJMD: array of plant IDs; index 0 mirrors selectedPlant
+  const [selectedPlantsJMD, setSelectedPlantsJMD] = useState([])
+  //=====================================================
   const verticalFromDashboard = useSelector(
     (state) => state.dataGridStore.verticalChangeFromDashboard,
   )
+  //=====================================================
+  // Derive CPP-JMD flag from Redux (verticalObject/siteObject set by header itself)
+  const verticalObject = useSelector((s) => s.dataGridStore.verticalObject)
+  const siteObject = useSelector((s) => s.dataGridStore.siteObject)
+  const IS_CPP_JMD =
+    verticalObject?.name?.toLowerCase() === 'cpp' &&
+    siteObject?.name?.toLowerCase() === 'jmd'
+  //=====================================================
+  const [currentStep, setCurrentStep] = useState(null)
+  const [totalSteps, setTotalSteps] = useState(0)
+
+  const PRODUCTION_NORMS_PLAN_PREFIX = '/production-norms-plan/'
+
+  useEffect(() => {
+    if (!navigation?.items) {
+      setCurrentStep(null)
+      setTotalSteps(0)
+      return
+    }
+
+    const collectItems = (menu, out = []) => {
+      if (!menu?.children) return out
+      for (const c of menu.children) {
+        if (c.type === 'collapse') collectItems(c, out)
+        else if (c.type === 'item') out.push(c)
+      }
+      return out
+    }
+
+    let matchedStepIndex = -1
+    let matchedTitle = ''
+
+    for (const g of navigation.items || []) {
+      if (g.type !== 'group') continue
+
+      const allItems = collectItems(g, [])
+
+      // Title should work for ALL routes
+      const titleIndex = allItems.findIndex(
+        (it) => it.url === location.pathname,
+      )
+      if (titleIndex !== -1) {
+        matchedTitle = allItems[titleIndex]?.title || ''
+      }
+
+      // Step should work ONLY for /production-norms-plan/
+      const productionItems = allItems.filter((it) =>
+        it.url?.startsWith(PRODUCTION_NORMS_PLAN_PREFIX),
+      )
+
+      matchedStepIndex = productionItems.findIndex(
+        (it) => it.url === location.pathname,
+      )
+
+      if (matchedStepIndex !== -1) {
+        setCurrentStep(matchedStepIndex + 1)
+        setTotalSteps(productionItems.length)
+      } else {
+        setCurrentStep(null)
+        setTotalSteps(0)
+      }
+
+      break
+    }
+
+    if (matchedTitle && matchedTitle !== screenTitleName) {
+      dispatch(setScreenTitle({ title: matchedTitle }))
+    }
+  }, [navigation, location.pathname, screenTitleName, dispatch])
 
   const HIDE_VERTICAL_DROPDOWN =
     keycloak?.realmAccess?.roles?.includes('maintenance_users')
@@ -299,6 +382,58 @@ export default function HeaderContent({ keycloak }) {
       dispatch(setPlantID({ plantId: defP.id, plantName: defP.name }))
     }
   }, [selectedSite, selectedVertical, fullDetails, allowedMap, dispatch])
+  //=====================================================
+  // When plants list changes and we are in CPP-JMD, restore or init multi-select from Redux
+  const jmdSelectedPlantsFromRedux = useSelector(
+    (s) => s.dataGridStore.jmdSelectedPlants,
+  )
+
+  useEffect(() => {
+    if (!IS_CPP_JMD || !plants.length) return
+
+    // Skip initialization if coming from dashboard navigation
+    if (verticalFromDashboard?.pid) return
+
+    // Keep only IDs that still exist in current plants list
+    const validRestored = jmdSelectedPlantsFromRedux
+      .map((p) => p.id)
+      .filter((id) => plants.some((p) => p.id === id))
+
+    if (validRestored.length) {
+      setSelectedPlantsJMD(validRestored)
+      setSelectedPlant(validRestored[0])
+
+      const primaryPlant = plants.find((p) => p.id === validRestored[0])
+      if (primaryPlant) {
+        dispatch(
+          setPlantID({
+            plantId: primaryPlant.id,
+            plantName: primaryPlant.name,
+          }),
+        )
+        dispatch(
+          setPlantObject({ id: primaryPlant.id, name: primaryPlant.name }),
+        )
+      }
+
+      const plantObjects = validRestored
+        .map((id) => plants.find((p) => p.id === id))
+        .filter(Boolean)
+        .map((p) => ({ id: p.id, name: p.name }))
+      dispatch(setJmdSelectedPlants(plantObjects))
+    } else {
+      // Default: select first plant only
+      const defP = plants[0]
+      setSelectedPlantsJMD([defP.id])
+      setSelectedPlant(defP.id)
+      dispatch(setPlantID({ plantId: defP.id, plantName: defP.name }))
+      dispatch(setPlantObject({ id: defP.id, name: defP.name }))
+      dispatch(setJmdSelectedPlants([{ id: defP.id, name: defP.name }]))
+    }
+
+    dispatch(setSitePlantChange({ sitePlantChange: true }))
+  }, [IS_CPP_JMD, plants, verticalFromDashboard?.pid, dispatch])
+  //=====================================================
 
   useEffect(() => {
     async function fetchYears() {
@@ -372,6 +507,61 @@ export default function HeaderContent({ keycloak }) {
       dispatch(setPlantID({ plantId: plantObj.id, plantName: plantObj.name }))
     }
   }
+
+  //=====================================================
+  // CPP-JMD multi-select handler
+  const handleJmdPlantChange = (e) => {
+    const newValues = e.target.value // array of IDs (MUI passes all currently-selected values)
+
+    // Handle "All" sentinel
+    if (newValues.includes('__all__')) {
+      const allIds = plants.map((p) => p.id)
+      const isAllSelected = selectedPlantsJMD.length === allIds.length
+
+      const nextIds = isAllSelected
+        ? [plants[0].id] // deselect all ? keep first
+        : allIds // select all
+
+      const nextObjs = nextIds
+        .map((id) => plants.find((p) => p.id === id))
+        .filter(Boolean)
+        .map((p) => ({ id: p.id, name: p.name }))
+
+      setSelectedPlantsJMD(nextIds)
+      setSelectedPlant(nextIds[0])
+      dispatch(
+        setPlantID({ plantId: nextObjs[0].id, plantName: nextObjs[0].name }),
+      )
+      dispatch(setPlantObject({ id: nextObjs[0].id, name: nextObjs[0].name }))
+      dispatch(setJmdSelectedPlants(nextObjs))
+      dispatch(setSitePlantChange({ sitePlantChange: true }))
+      return
+    }
+
+    // Normal individual plant toggle
+    if (!newValues.length) return // keep at least one
+
+    setSelectedPlantsJMD(newValues)
+    const primaryId = newValues[0]
+    setSelectedPlant(primaryId)
+
+    const primaryPlant = plants.find((p) => p.id === primaryId)
+    if (primaryPlant) {
+      dispatch(
+        setPlantID({ plantId: primaryPlant.id, plantName: primaryPlant.name }),
+      )
+      dispatch(setPlantObject({ id: primaryPlant.id, name: primaryPlant.name }))
+    }
+
+    const plantObjects = newValues
+      .map((id) => plants.find((p) => p.id === id))
+      .filter(Boolean)
+      .map((p) => ({ id: p.id, name: p.name }))
+
+    dispatch(setJmdSelectedPlants(plantObjects))
+    dispatch(setSitePlantChange({ sitePlantChange: true }))
+  }
+  //=====================================================
 
   const handleVertChange = (e) => {
     const newVId = e.target.value
@@ -544,8 +734,21 @@ export default function HeaderContent({ keycloak }) {
       }),
     )
 
+    // For CPP-JMD: reset multiselect to only this plant when coming from dashboard
+    if (IS_CPP_JMD) {
+      setSelectedPlantsJMD([plant.id])
+      dispatch(
+        setJmdSelectedPlants([
+          { id: plant.id, name: plant.displayName ?? plant.name },
+        ]),
+      )
+    }
+
+    // Clear dashboard navigation after handling
+    dispatch(setVerticalChangeFromDashboard(null))
+
     // console.log('?? Dispatched plant to Redux')
-  }, [verticalFromDashboard?.pid, plants, dispatch])
+  }, [verticalFromDashboard?.pid, plants, IS_CPP_JMD, dispatch])
   // 4. Navigation Effect (Existing)
   useEffect(() => {
     if (!verticalFromDashboard?.v_id || !verticalFromDashboard?.sid) {
@@ -662,19 +865,47 @@ export default function HeaderContent({ keycloak }) {
           }}
         >
           {!HIDE_DASHBOARD_DROPDOWN && (
-            <Typography
-              variant='h6'
-              sx={{
-                fontWeight: 700,
-                fontSize: '1.05rem',
-                color: '#0f172a',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {screenTitleName}
-            </Typography>
+            <React.Fragment>
+              <Typography
+                variant='h6'
+                sx={{
+                  fontWeight: 700,
+                  fontSize: '16px',
+                  color: '#303030',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  fontFamily: "'Honeywell Sans Web',  'Inter', sans-serif",
+                }}
+                title={screenTitleName}
+              >
+                {screenTitleName?.length > 25
+                  ? `${screenTitleName.slice(0, 25)}...`
+                  : screenTitleName}
+              </Typography>
+
+              {!!currentStep && (
+                <Box
+                  sx={{
+                    p: '4px 8px',
+                    borderRadius: '100px',
+                    backgroundColor: '#ECEEFF',
+                    border: '1px solid #41424D',
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      color: '#41424D',
+                      fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
+                    }}
+                  >
+                    {`${currentStep} Step`}
+                  </Typography>
+                </Box>
+              )}
+            </React.Fragment>
           )}
         </Box>
 
@@ -713,17 +944,18 @@ export default function HeaderContent({ keycloak }) {
                           gap: 1,
                         }}
                       >
-                        <Box component="img" src={CalenderIcon} className="w16-icon" />
-
                         <Box
-                          component='span'
-                          className="header-dropdown-label"
-                        >
+                          component='img'
+                          src={CalenderIcon}
+                          className='w16-icon'
+                        />
+
+                        <Box component='span' className='header-dropdown-label'>
                           Year:
                         </Box>
                         <Box
                           component='strong'
-                          className="header-dropdown-value"
+                          className='header-dropdown-value'
                         >
                           {yearObj?.AOPDisplayYear}
                         </Box>
@@ -769,16 +1001,20 @@ export default function HeaderContent({ keycloak }) {
                             gap: 1,
                           }}
                         >
-                          <Box component="img" src={BusinessBlueIcon} className="w16-icon" />
+                          <Box
+                            component='img'
+                            src={BusinessBlueIcon}
+                            className='w16-icon'
+                          />
                           <Box
                             component='span'
-                            className="header-dropdown-label"
+                            className='header-dropdown-label'
                           >
                             Vertical:
                           </Box>
                           <Box
                             component='strong'
-                            className="header-dropdown-value"
+                            className='header-dropdown-value'
                           >
                             {vert?.name}
                           </Box>
@@ -822,16 +1058,20 @@ export default function HeaderContent({ keycloak }) {
                             gap: 1,
                           }}
                         >
-                          <Box component="img" src={SiteIcon} className="w16-icon" />
+                          <Box
+                            component='img'
+                            src={SiteIcon}
+                            className='w16-icon'
+                          />
                           <Box
                             component='span'
-                            className="header-dropdown-label"
+                            className='header-dropdown-label'
                           >
                             Site:
                           </Box>
                           <Box
                             component='strong'
-                            className="header-dropdown-value"
+                            className='header-dropdown-value'
                           >
                             {site?.name}
                           </Box>
@@ -855,7 +1095,127 @@ export default function HeaderContent({ keycloak }) {
             <Box sx={dropdownContainerStyle}>
               {headerLoading ? (
                 <DropdownSkeleton />
+              ) : IS_CPP_JMD ? (
+                /* -- CPP-JMD: multi-select -- */
+                <FormControl size='small' variant='outlined'>
+                  <Select
+                    multiple
+                    IconComponent={ArrowDropDownIcon}
+                    value={selectedPlantsJMD}
+                    onChange={handleJmdPlantChange}
+                    disabled={!plants.length}
+                    sx={{ ...selectStyle, minWidth: 180 }}
+                    MenuProps={menuPropsStyle}
+                    renderValue={(selected) => {
+                      const isAll =
+                        plants.length > 0 && selected.length === plants.length
+                      const primaryPlant = plants.find(
+                        (p) => p.id === selected[0],
+                      )
+                      return (
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
+                        >
+                          <Box
+                            component='img'
+                            src={PlantIcon}
+                            className='w16-icon'
+                          />
+                          <Box
+                            component='span'
+                            className='header-dropdown-label'
+                          >
+                            Plant:
+                          </Box>
+                          <Box
+                            component='strong'
+                            className='header-dropdown-value'
+                          >
+                            {isAll
+                              ? 'All'
+                              : selected.length === 1
+                                ? primaryPlant?.name
+                                : `${primaryPlant?.name} +${selected.length - 1}`}
+                          </Box>
+                        </Box>
+                      )
+                    }}
+                  >
+                    {/* Select All item */}
+                    <MenuItem
+                      value='__all__'
+                      sx={{
+                        ...menuItemStyle,
+                        px: 0.5,
+                        borderBottom: '1px solid #DDDEE1',
+                        mb: 0.5,
+                      }}
+                    >
+                      <Checkbox
+                        checked={
+                          plants.length > 0 &&
+                          selectedPlantsJMD.length === plants.length
+                        }
+                        indeterminate={
+                          selectedPlantsJMD.length > 0 &&
+                          selectedPlantsJMD.length < plants.length
+                        }
+                        size='small'
+                        sx={{
+                          p: 0.5,
+                          mr: 0.5,
+                          color: '#6b7786',
+                          '&.Mui-checked': { color: '#3b82f6' },
+                          '&.MuiCheckbox-indeterminate': { color: '#3b82f6' },
+                        }}
+                      />
+                      <ListItemText
+                        primary='All'
+                        primaryTypographyProps={{
+                          fontSize: '14px',
+                          fontWeight: 600,
+                          fontFamily:
+                            "'Honeywell Sans Web', 'Inter', sans-serif",
+                        }}
+                      />
+                    </MenuItem>
+                    {plants.map((p) => (
+                      <MenuItem
+                        key={p.id}
+                        value={p.id}
+                        sx={{ ...menuItemStyle, px: 0.5 }}
+                      >
+                        <Checkbox
+                          checked={selectedPlantsJMD.includes(p.id)}
+                          size='small'
+                          sx={{
+                            p: 0.5,
+                            mr: 0.5,
+                            color: '#6b7786',
+                            '&.Mui-checked': { color: '#3b82f6' },
+                          }}
+                        />
+                        <ListItemText
+                          primary={p.name}
+                          primaryTypographyProps={{
+                            fontSize: '14px',
+                            fontWeight: selectedPlantsJMD.includes(p.id)
+                              ? 600
+                              : 500,
+                            fontFamily:
+                              "'Honeywell Sans Web', 'Inter', sans-serif",
+                          }}
+                        />
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               ) : (
+                /* -- All other sites: single-select (unchanged) -- */
                 <FormControl size='small'>
                   <Select
                     IconComponent={ArrowDropDownIcon}
@@ -874,16 +1234,20 @@ export default function HeaderContent({ keycloak }) {
                             gap: 1,
                           }}
                         >
-                          <Box component="img" src={PlantIcon} className="w16-icon" />
+                          <Box
+                            component='img'
+                            src={PlantIcon}
+                            className='w16-icon'
+                          />
                           <Box
                             component='span'
-                            className="header-dropdown-label"
+                            className='header-dropdown-label'
                           >
                             Plant:
                           </Box>
                           <Box
                             component='strong'
-                            className="header-dropdown-value"
+                            className='header-dropdown-value'
                           >
                             {plant?.name}
                           </Box>
@@ -904,9 +1268,9 @@ export default function HeaderContent({ keycloak }) {
         </Stack>
 
         {/* RIGHT: Profile */}
-        {HIDE_DASHBOARD_DROPDOWN && (<Box sx={{ justifySelf: 'end' }}>
+        <Box sx={{ justifySelf: 'end' }}>
           {!matchesXs ? <Profile keycloak={keycloak} /> : <MobileSection />}
-        </Box>)}
+        </Box>
       </Box>
     </>
   )

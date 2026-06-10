@@ -646,6 +646,8 @@ const PtaShutDown = ({ permissions }) => {
           field: col.field,
           title: col.title,
           widthT: col.field.toLowerCase() === 'uom' ? 90 : 150,
+          minWidth: col.field.toLowerCase() === 'uom' ? 90 : 150,
+          isVisible: hiddenFields.includes(col.field) ? false : true,
           editable:
             col.field === 'Particulars' || col.field.toLowerCase() === 'uom'
               ? false
@@ -655,6 +657,7 @@ const PtaShutDown = ({ permissions }) => {
           ...(col.field !== 'Particulars' &&
             col.field.toLowerCase() !== 'uom' && {
               format: '{0:0.000}',
+              minWidth: 120,
               type: 'negativeNumber', // Changed from 'negativeNumber' to 'numeric' for better compatibility
             }),
         })) || []

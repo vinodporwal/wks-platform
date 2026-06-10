@@ -16,33 +16,38 @@ const MainDrawer = ({ open, handleDrawerToggle, isDashboard, keycloak }) => {
     [open, handleDrawerToggle],
   )
 
-  function stringToColor(string) {
-    let hash = 0;
-    let i;
+  function stringToColor(str = 'User') {
+    let hash = 0
 
     /* eslint-disable no-bitwise */
-    for (i = 0; i < string.length; i += 1) {
-      hash = string.charCodeAt(i) + ((hash << 5) - hash);
+    for (let i = 0; i < str.length; i += 1) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash)
     }
 
-    let color = '#';
+    let color = '#'
 
-    for (i = 0; i < 3; i += 1) {
-      const value = (hash >> (i * 8)) & 0xff;
-      color += `00${value.toString(16)}`.slice(-2);
+    for (let i = 0; i < 3; i += 1) {
+      const value = (hash >> (i * 8)) & 0xff
+      color += `00${value.toString(16)}`.slice(-2)
     }
     /* eslint-enable no-bitwise */
 
-    return color;
+    return color
   }
 
-  function stringAvatar(name) {
+  function stringAvatar(name = 'User') {
+    const safeName = name?.trim() || 'User'
+    const nameParts = safeName.split(' ').filter(Boolean)
+
+    const firstLetter = nameParts?.[0]?.[0] || 'U'
+    const secondLetter = nameParts?.[1]?.[0] || ''
+
     return {
       sx: {
-        bgcolor: stringToColor(name),
+        bgcolor: stringToColor(safeName),
       },
-      children: `${name.split(' ')[0][0]}${name.split(' ')[1][0]}`,
-    };
+      children: `${firstLetter}${secondLetter}`.toUpperCase(),
+    }
   }
 
   return (
@@ -105,7 +110,7 @@ const MainDrawer = ({ open, handleDrawerToggle, isDashboard, keycloak }) => {
               alt={keycloak?.idTokenParsed?.name}
               // src={keycloak?.idTokenParsed?.picture}
               {...stringAvatar(keycloak?.idTokenParsed?.name)}
-              variant="square"
+              variant='square'
               sx={{
                 width: 28,
                 height: 28,
@@ -116,7 +121,7 @@ const MainDrawer = ({ open, handleDrawerToggle, isDashboard, keycloak }) => {
                 boxShadow: '0 2px 8px rgba(174, 71, 135, 0.25)',
                 fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
                 borderRadius: '4px',
-                textTransform: 'uppercase'
+                textTransform: 'uppercase',
               }}
             >
               {/* {keycloak?.idTokenParsed?.name?.charAt(0) || 'U'} */}

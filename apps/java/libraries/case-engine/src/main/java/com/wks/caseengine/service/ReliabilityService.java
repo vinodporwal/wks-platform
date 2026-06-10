@@ -20,6 +20,6 @@ public interface ReliabilityService {
 	AOPMessageVM importExcel(String year, String plantFKId, MultipartFile file);
 	AOPMessageVM importReliabilityRecords(String year, String plantFKId, MultipartFile file);
 	public AOPMessageVM getReliabilityRecords(String plantId, String year,String type);
-	public AOPMessageVM updateReliabilityPerformance(List<ReliabilityPerformanceDto> reliabilityPerformanceDtos);
+	public AOPMessageVM updateReliabilityPerformance(List<ReliabilityPerformanceDto> reliabilityPerformanceDtos, String plantId);
 	public AOPMessageVM updateReliabilityRecords(List<ReliabilityRecordDto> reliabilityRecordDtos);
 }

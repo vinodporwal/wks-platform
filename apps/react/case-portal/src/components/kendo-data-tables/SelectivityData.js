@@ -51,12 +51,24 @@ const SelectivityData = (props) => {
   const lowerVertName = vertName?.toLowerCase()
   const SiteName = siteObject?.name
   const lowerSiteName = SiteName?.toLowerCase()
+  const PlantName = plantObject?.name
+  const lowerPlantName = PlantName?.toLowerCase()
   const keycloak = useSession()
 
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
+  const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
+  const IS_AROMATICS_PMD =
+    lowerVertName === 'aromatics' && lowerSiteName === 'pmd'
+
+  const IS_CHEMICAL_VMD_BENEZENEFPUBTA =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'vmd' &&
+    (lowerPlantName === 'benzene' ||
+      lowerPlantName === 'fpu' ||
+      lowerPlantName === 'butadiene')
   const [loading, setLoading] = useState(false)
   const apiRef = useGridApiRef()
   const [open1, setOpen1] = useState(false)
@@ -132,7 +144,11 @@ const SelectivityData = (props) => {
 
       if (props?.configType !== 'grades') {
         //TST VALIDATION SEPERATED
-        if (lowerVertName == 'meg') {
+        if (
+          lowerVertName == 'meg' ||
+          (lowerVertName == 'chemical' && lowerSiteName == 'dmd') ||
+          (lowerVertName === 'chemical' && lowerSiteName === 'vmd')
+        ) {
           const monthNameMap = {
             jan: 'January',
             feb: 'February',
@@ -521,7 +537,16 @@ const SelectivityData = (props) => {
     FORMATE_VALUE = '{0:0.000}'
   }
   if (
-    (props?.configType == 'Constant' ||
+    (props?.configType === 'Constant' ||
+      props?.configType === 'PIO Impact' ||
+      props?.configType === 'Configuration') &&
+    lowerVertName === 'pta' &&
+    lowerSiteName === 'dmd'
+  ) {
+    FORMATE_VALUE = '{0:0.0000}'
+  }
+  if (
+    (props?.configType === 'Constant' ||
       props?.configType == 'PIO Impact' ||
       props?.configType == 'Configuration') &&
     lowerVertName == 'aromatics' &&
@@ -529,10 +554,17 @@ const SelectivityData = (props) => {
   ) {
     FORMATE_VALUE = '{0:0.00000}'
   }
+  if (
+    props?.configType === 'megConstants' &&
+    lowerVertName == 'chemical' &&
+    lowerSiteName == 'dmd'
+  ) {
+    FORMATE_VALUE = '{0:0.0000}'
+  }
 
   const productionColumns = getEnhancedAOPColDefs({
     allGradesReciepes,
-    allProducts,
+    allProducts: props?.rows,
     headerMap: selectedHeaderMap,
     handleRemarkCellClick,
     configType: props?.configType,
@@ -569,6 +601,11 @@ const SelectivityData = (props) => {
       uploadExcelBtn: true,
       showLoad: true,
       allAction: true,
+      showNote:
+        (IS_PE_PP || lowerVertName === 'pvc' || lowerVertName === 'pet') &&
+        props?.currentTabDisplayName === 'Constant'
+          ? true
+          : false,
 
       showTitleNameBusiness: true,
       titleName:
@@ -581,11 +618,18 @@ const SelectivityData = (props) => {
 
       // showG: props?.configType === 'cracker_configuration' ? true : false,
       showG: false,
-      dropdownLabel: 'Mode',
+      dropdownLabel: 'Select Mode',
       // marginTop: props?.configType === 'cracker_configuration' ? true : false,
       marginTop: false,
       isHeight: lowerVertName !== 'meg' && props?.rows?.length > 10,
       titleNameExtra: props?.configType === 'ContineGradeChange' ? true : false,
+      enableOnOffDropdown: IS_AROMATICS_PMD,
+      showCalculateVisibility: true,
+      showCalculate:
+        props?.currentTabDisplayName === 'Configuration' &&
+        IS_CHEMICAL_VMD_BENEZENEFPUBTA
+          ? true
+          : false,
     },
     isOldYear,
   )
@@ -628,7 +672,7 @@ const SelectivityData = (props) => {
           props?.configType,
           PLANT_ID,
           AOP_YEAR,
-          `${EXCEL_EXPORT_TITLE}${revisionName}`,
+          `${EXCEL_EXPORT_TITLE}${revisionName}_Production & Norms Basis ${props?.configType}`,
         )
       } else if (props?.tabIndex != 1) {
         if (
@@ -637,8 +681,7 @@ const SelectivityData = (props) => {
           lowerVertName == 'pta' ||
           lowerVertName == 'aromatics' ||
           lowerVertName == 'vcm' ||
-          lowerVertName == 'elastomer' ||
-          lowerVertName == 'chemical'
+          lowerVertName == 'elastomer'
         ) {
           await DataService.getConfigurationExcelType(
             keycloak,
@@ -796,10 +839,29 @@ const SelectivityData = (props) => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
+
+        // Fetching data after partial data also so we get updated records
+        if (props?.configType === 'cracker_configuration') {
+          props?.fetchData(null)
+        }
+        if (props?.configType === 'cracker_constants') {
+          if (typeof props.fetchData === 'function') {
+            props.fetchData()
+          }
+        }
+
+        if (props?.configType === 'grades') {
+          fetchConfigData() // This was missing!
+        } else if (
+          props?.configType !== 'grades' &&
+          lowerVertName !== 'cracker'
+        ) {
+          props?.fetchData(gradeId)
+        }
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Data Saved Falied!',
+          message: 'Data Saved Failed!',
           severity: 'error',
         })
       }
@@ -813,6 +875,45 @@ const SelectivityData = (props) => {
       setLoading(false)
     } finally {
       // fetchData()
+      setLoading(false)
+    }
+  }
+  const handleCalculate = async () => {
+    props?.setRows([]) // ? use props.setRows
+    setLoading(true)
+    try {
+      let data
+      if (
+        IS_CHEMICAL_VMD_BENEZENEFPUBTA &&
+        props?.currentTabDisplayName === 'Configuration'
+      ) {
+        data = await DataService.calculateChemicalVMDConfiguration(
+          // use correct API
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
+      if (data == 0 || data) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        props?.fetchData(gradeId) // ? use props.fetchData
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'Data Refresh Failed!', severity: 'error' })
+      }
+      return data
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+      console.error('Error!', error)
+    } finally {
       setLoading(false)
     }
   }
@@ -942,12 +1043,19 @@ const SelectivityData = (props) => {
           currentRemark={currentRemark}
           setCurrentRemark={setCurrentRemark}
           currentRowId={currentRowId}
+          configType={props?.configType}
           permissions={adjustedPermissions}
           groupBy={props?.groupBy}
           handleExcelUpload={handleExcelUpload}
           downloadExcelForConfiguration={downloadExcelForConfiguration}
           handleGradeChange={handleGradeChange}
           deleteRowData={deleteRowData}
+          handleCalculate={handleCalculate}
+          note={
+            adjustedPermissions?.showNote
+              ? '*Please load the data again whenever a constant is changed and saved.'
+              : ''
+          }
         />
       </Box>
     </div>

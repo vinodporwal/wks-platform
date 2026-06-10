@@ -3,35 +3,40 @@
     "field": "DisplayName",
     "title": "Particular",
     "editable": false,
-    "widthT": 125
+    "widthT": 125,
+    "minWidth": 250
   },
 
   {
     "field": "UOM",
     "title": "UOM",
     "editable": false,
-    "widthT": 90
+    "widthT": 80,
+    "minWidth": 80
   },
 
   {
     "field": "MajorShutdown",
     "title": "Major Shutdown",
     "editable": true,
-    "type": "number",
-    "widthT": 125
+    "type": "negativeNumber",
+    "widthT": 125,
+    "minWidth": 125
   },
   {
     "field": "OneDayShutdown",
     "title": "One Day Shutdown",
-    "type": "number",
+    "type": "negativeNumber",
     "editable": true,
     "align": "left",
-    "widthT": 125
+    "widthT": 125,
+    "minWidth": 125
   },
 
   {
     "field": "remarks",
     "title": "Remarks",
-    "widthT": 125
+    "widthT": 125,
+    "minWidth": 200
   }
 ]

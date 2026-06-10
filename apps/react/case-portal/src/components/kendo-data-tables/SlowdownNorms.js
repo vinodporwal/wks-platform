@@ -113,6 +113,7 @@ const SlowdownNorms = () => {
   const IS_PTA = lowerVertName === 'pta'
   const IS_CHEMICAL = lowerVertName === 'chemical'
   const IS_EDC_PLANT = lowerVertName === 'vcm' && plantName === 'edc'
+  const IS_HMD_SITE = lowerVertName === 'vcm' && siteName === 'hmd'
   const IS_ELASTOMER_JMD_HIIR =
     lowerVertName === 'elastomer' &&
     SITE_NAME_LOWERCASE === 'jmd' &&
@@ -125,6 +126,7 @@ const SlowdownNorms = () => {
     lowerVertName === 'elastomer' &&
     SITE_NAME_LOWERCASE === 'hmd' &&
     PLANT_NAME_LOWERCASE === 'sbr'
+  const IS_VCM_HMD = lowerVertName === 'vcm' && siteName === 'hmd'
   const saveChanges = React.useCallback(async () => {
     try {
       var data = Object.values(modifiedCells)
@@ -505,7 +507,12 @@ const SlowdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL || IS_AROMATICS_SEZ_PX4) {
+      if (
+        lowerVertName === 'vcm' ||
+        IS_PTA ||
+        IS_CHEMICAL ||
+        lowerVertName === 'aromatics'
+      ) {
         // Use slowdownconsumptionExportVCM for VCM
         response = await DataService.slowdownconsumptionExportVCM(
           keycloak,
@@ -524,6 +531,7 @@ const SlowdownNorms = () => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+          IS_ELASTOMER_JMD_HIIR ? 'Slowdown' : undefined,
         )
       }
       // else if (lowerVertName === 'pp' || lowerVertName === 'pe') {
@@ -556,17 +564,18 @@ const SlowdownNorms = () => {
     setLoading(true)
     try {
       let response
-       if ((IS_PE_PP && !IS_PE_NMD) || IS_ELASTOMER_JMD_HIIR) {
+      if ((IS_PE_PP && !IS_PE_NMD) || IS_ELASTOMER_JMD_HIIR) {
         response = await DataService.saveSlowdownNormsExcelAllGrade(
           rawFile,
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+          IS_ELASTOMER_JMD_HIIR ? 'Slowdown' : undefined,
         )
       } else if (
         lowerVertName === 'vcm' ||
         IS_PTA ||
-        IS_AROMATICS_SEZ_PX4 ||
+        lowerVertName === 'aromatics' ||
         IS_CHEMICAL ||
         (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD_HIIR) ||
         !IS_PE_PP
@@ -676,7 +685,8 @@ const SlowdownNorms = () => {
         IS_CHEMICAL ||
         IS_PE_PP ||
         IS_ELASTOMER_JMD_HIIR ||
-        IS_EDC_PLANT
+        IS_EDC_PLANT ||
+        (IS_HMD_SITE && !IS_VCM_HMD)
           ? false
           : true,
 
@@ -687,17 +697,18 @@ const SlowdownNorms = () => {
         lowerVertName === 'vcm' ||
         IS_PTA ||
         IS_CHEMICAL ||
-        IS_AROMATICS_SEZ_PX4 ||
-        IS_ELASTOMER_HMD_SBR
+        lowerVertName === 'aromatics' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR
           ? false
           : true,
-      uploadExcelBtn:true,
+      uploadExcelBtn: true,
       downloadExcelBtn:
         IS_PE_PP ||
         lowerVertName === 'vcm' ||
         IS_PTA ||
         IS_CHEMICAL ||
-        IS_AROMATICS_SEZ_PX4 ||
+        lowerVertName === 'aromatics' ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_ELASTOMER_HMD_SBR
           ? true

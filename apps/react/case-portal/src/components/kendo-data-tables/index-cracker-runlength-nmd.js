@@ -13,6 +13,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  IconButton,
   TextField,
   Typography,
 } from '../../../node_modules/@mui/material/index'
@@ -46,36 +47,36 @@ import { ExcelExport } from '../../../node_modules/@progress/kendo-react-excel-e
 import { useSelector } from 'react-redux'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-
-const CustomAccordion = styled((props) => (
-  <MuiAccordion disableGutters elevation={0} square {...props} />
-))(() => ({
-  position: 'unset',
-  border: 'none',
-  boxShadow: 'none',
-  margin: '0px',
-  '&:before': {
-    display: 'none',
-  },
-}))
-
-const CustomAccordionSummary = styled((props) => (
-  <MuiAccordionSummary expandIcon={<ExpandMoreIcon />} {...props} />
-))(() => ({
-  backgroundColor: '#fff',
-  padding: '0px 12px',
-  minHeight: '40px',
-  '& .MuiAccordionSummary-content': {
-    margin: '8px 0',
-  },
-}))
-const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
-  padding: '0px 0px 12px',
-  backgroundColor: '#F2F3F8',
-}))
-
+import {
+  CalculateIcon,
+  FileExportIcon,
+  FileImportIcon,
+  SaveIcon,
+} from 'assets/images/icons/index'
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import CloseIcon from '@mui/icons-material/Close'
+import Collapse from '@mui/material/Collapse'
 export const dateFields1 = ['ibrSD', 'ibrED', 'taSD', 'taED', 'sdED', 'sdSD']
 export const dateFieldsRunLength = ['date']
+
+const CompactDialog = styled(Dialog)(({ theme }) => ({
+  '& .MuiPaper-root': {
+    borderRadius: '12px',
+    width: '600px',
+    boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+  },
+}))
+
+const CompactTextField = styled(TextField)({
+  '& .MuiOutlinedInput-root': {
+    fontSize: '0.85rem',
+    backgroundColor: '#fff',
+    '& fieldset': { borderColor: '#e2e8f0' },
+    '&:hover fieldset': { borderColor: '#cbd5e1' },
+    '&.Mui-focused fieldset': { borderColor: '#0100cb' },
+  },
+})
 
 const KendoDataTablesCrackerRunLengthNMD = ({
   rows = [],
@@ -85,21 +86,21 @@ const KendoDataTablesCrackerRunLengthNMD = ({
   columns,
   loading = false,
   permissions = {},
-  setRemarkDialogOpen = () => {},
+  setRemarkDialogOpen = () => { },
   currentRemark = '',
-  setCurrentRemark = () => {},
+  setCurrentRemark = () => { },
   currentRowId = null,
-  setModifiedCells = () => {},
+  setModifiedCells = () => { },
   remarkDialogOpen = false,
-  handleDeleteSelected = () => {},
-  saveChanges = () => {},
-  deleteRowData = () => {},
-  handleCalculate = () => {},
+  handleDeleteSelected = () => { },
+  saveChanges = () => { },
+  deleteRowData = () => { },
+  handleCalculate = () => { },
   selectedUsers = [],
   note = '',
   titleName = '',
-  handleExcelUpload = () => {},
-  downloadExcelForConfiguration = () => {},
+  handleExcelUpload = () => { },
+  downloadExcelForConfiguration = () => { },
 }) => {
   const fileInputRef = useRef(null)
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -179,6 +180,9 @@ const KendoDataTablesCrackerRunLengthNMD = ({
 
   const [lowerLimitDate, setLowerLimitDate] = useState(null)
   const [upperLimitDate, setUpperLimitDate] = useState(null)
+  const [gridExpanded, setGridExpanded] = useState(true)
+  const [gridCurrent, setGridCurrent] = useState(0)
+  const [applyMinWidth, setApplyMinWidth] = useState(false)
 
   useEffect(() => {
     setHValues({})
@@ -189,6 +193,14 @@ const KendoDataTablesCrackerRunLengthNMD = ({
   }, [yearChanged])
 
   useEffect(() => {
+    minGridWidth.current = columns
+      .filter((col) => col?.isVisible !== false)
+      .reduce((sum, col) => sum + (col?.minWidth || 100), 0)
+    setGridCurrent(grid.current?.offsetWidth || 0)
+    setApplyMinWidth((grid.current?.offsetWidth || 0) < minGridWidth.current)
+  }, [])
+
+  useEffect(() => {
     const startYear = parseInt(AOP_YEAR?.split('-')[0], 10)
     const lowerLimit = new Date(startYear, 3, 1)
     const upperLimit = new Date(startYear + 1, 2, 31)
@@ -196,12 +208,59 @@ const KendoDataTablesCrackerRunLengthNMD = ({
     setUpperLimitDate(upperLimit)
   }, [PLANT_ID, AOP_YEAR])
 
+  const grid = useRef(null)
+  const minGridWidth = useRef(0)
+
+  const ADJUST_PADDING = 4
+  const COLUMN_MIN = 4
+
+  const setWidth = (minWidth = 0) => {
+    const visibleCols = columns.filter((col) => col?.isVisible !== false)
+
+    const totalMinWidth = visibleCols.reduce(
+      (sum, col) => sum + (col.minWidth || 0),
+      0,
+    )
+
+    // ?? Decide behavior based on available space
+    const hasExtraSpace = gridCurrent > totalMinWidth
+
+    let width
+
+    if (!hasExtraSpace) {
+      // ? Not enough space ? respect minWidth ? enable scroll
+      width = minWidth
+    } else {
+      // ? Extra space ? distribute nicely (but controlled)
+      const extraPerCol = (gridCurrent - totalMinWidth) / visibleCols.length
+
+      // ?? limit expansion so it doesn't look ugly
+      const MAX_GROWTH = 80 // tweak if needed
+
+      width = minWidth + Math.min(extraPerCol, MAX_GROWTH)
+    }
+
+    // optional padding adjustment
+    if (width >= COLUMN_MIN) {
+      width -= ADJUST_PADDING
+    }
+
+    return Math.max(minWidth, width)
+  }
+
+  const toggleGrid = () => setGridExpanded(!gridExpanded)
+
   const itemChange = useCallback(
     (e) => {
       const { dataItem, field, value } = e
       const itemId = dataItem.id
 
-      // console.log('e', e)
+      // Ignore group header expand/collapse events — they are not real edits
+      if (!field || dataItem?.items) {
+        return
+      }
+
+      setIsRowEdited(true)
 
       setRows((prevRows) =>
         prevRows.map((row) =>
@@ -722,8 +781,8 @@ const KendoDataTablesCrackerRunLengthNMD = ({
   }
   const renderGrid = () => (
     <Grid
+      ref={grid}
       style={{ height: 600 }}
-      scrollable={'virtual'}
       rowHeight={40}
       data={rows}
       total={rows.length}
@@ -761,6 +820,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
               editor='date'
               hidden={col.hidden}
               sortable={false}
+              width={setWidth(col.minWidth || col.widthT || 130)}
               cells={{
                 headerCell: SimpleHeaderWithTooltip,
               }}
@@ -787,6 +847,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
               cells={{
                 headerCell: SimpleHeaderWithTooltip,
               }}
+              width={setWidth(col.minWidth || col.widthT || 130)}
             />
           )
         }
@@ -807,6 +868,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                 ? { data: CellWithState, headerCell: SimpleHeaderWithTooltip }
                 : { headerCell: SimpleHeaderWithTooltip }
             }
+            width={setWidth(col.minWidth || col.widthT || 130)}
           />
         )
       })}
@@ -816,7 +878,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
           key='actions'
           field='actions'
           title='Action'
-          width={80}
+          width={setWidth(80)}
           className='k-text-center'
           filterable={false}
           editable={false}
@@ -837,7 +899,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
       >
         <Grid
           style={{ height: 630 }}
-          scrollable={'virtual'}
+          // scrollable={'virtual'}
           rowHeight={40}
           data={rowsPopUp}
           total={rowsPopUp?.length}
@@ -883,6 +945,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                       ? 'k-right-disabled'
                       : ''
                   }
+                  width={setWidth(col.minWidth || col.widthT || 130)}
                 />
               )
             }
@@ -903,6 +966,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                   cells={{
                     headerCell: SimpleHeaderWithTooltip,
                   }}
+                  width={setWidth(col.minWidth || col.widthT || 130)}
                 />
               )
             }
@@ -921,11 +985,12 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                 cells={
                   col.editable
                     ? {
-                        data: CellWithState,
-                        headerCell: SimpleHeaderWithTooltip,
-                      }
+                      data: CellWithState,
+                      headerCell: SimpleHeaderWithTooltip,
+                    }
                     : { headerCell: SimpleHeaderWithTooltip }
                 }
+                width={setWidth(col.minWidth || col.widthT || 130)}
               />
             )
           })}
@@ -935,7 +1000,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
               key='actions'
               field='actions'
               title='Action'
-              width={80}
+              width={setWidth(80)}
               className='k-text-center'
               filterable={false}
               editable={false}
@@ -951,6 +1016,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
 
   const renderGridSingleRow = () => (
     <Grid
+      ref={grid}
       scrollable={'virtual'}
       rowHeight={40}
       data={singleRow}
@@ -985,6 +1051,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                   ? 'k-right-disabled'
                   : ''
               }
+              width={setWidth(col.minWidth || col.widthT || 130)}
             />
           )
         }
@@ -1001,6 +1068,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
               cells={{
                 headerCell: SimpleHeaderWithTooltip,
               }}
+              width={setWidth(col.minWidth || col.widthT || 130)}
             />
           )
         }
@@ -1020,6 +1088,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                 ? { data: CellWithState, headerCell: SimpleHeaderWithTooltip }
                 : { headerCell: SimpleHeaderWithTooltip }
             }
+            width={setWidth(col.minWidth || col.widthT || 130)}
           />
         )
       })}
@@ -1029,7 +1098,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
           key='actions'
           field='actions'
           title='Action'
-          width={80}
+          width={setWidth(80)}
           className='k-text-center'
           filterable={false}
           editable={false}
@@ -1290,16 +1359,15 @@ const KendoDataTablesCrackerRunLengthNMD = ({
     }
   }
 
-  ;<Box>
-    {permissions?.showNote && (
-      <Typography component='div' className='text-note'>
-        {note}
-      </Typography>
-    )}
-  </Box>
-
   return (
-    <Box>
+    <Box className='k-table-box'>
+      {permissions?.showNote && (
+        <Box sx={{ pt: 1, pl: 1 }}>
+          <Typography component='div' className='text-note'>
+            {note}
+          </Typography>
+        </Box>
+      )}
       {(permissions?.allAction ?? false) && (
         <Box className='action-box'>
           <Box
@@ -1311,18 +1379,116 @@ const KendoDataTablesCrackerRunLengthNMD = ({
             }}
           >
             {/* Left side - Note */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                paddingBottom: 0.25,
+              }}
+            >
+              {/* CASE 1: Permission TRUE ? Full Header UI */}
+              {permissions?.showTitleNameBusiness ||
+                permissions?.showTitleName ? (
+                <Typography
+                  component='div'
+                  sx={{
+                    fontSize: '16px',
+                    fontWeight: 700,
+                    color: '#252525',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    mb: permissions?.marginBottom ? '12px' : '4px',
+                    fontFamily:
+                      '"Honeywell Sans Web", "Inter", sans-serif !important',
+                  }}
+                >
+                  {/* TOGGLE ICON */}
+                  {permissions?.showAccordian && (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 32,
+                        height: 32,
+                        borderRadius: '6px',
+                        backgroundColor: '#ECEEFF',
+                        color: '#1e293b',
+                        ml: 1,
+                        cursor: 'pointer',
+                        padding: '8px',
+                      }}
+                      onClick={toggleGrid}
+                    >
+                      <KeyboardArrowUpIcon
+                        sx={{
+                          fontSize: 20,
+                          transition: '0.2s',
+                          transform: gridExpanded
+                            ? 'rotate(0deg)'
+                            : 'rotate(180deg)',
+                        }}
+                      />
+                    </Box>
+                  )}
 
-            {permissions?.showTitleNameBusiness && (
-              <Typography
-                component='div'
-                className='grid-title'
+                  {/* TITLE */}
+                  {permissions?.titleName || titleName}
+                </Typography>
+              ) : (
+                permissions?.showAccordian && (
+                  /* CASE 2: Permission FALSE ? ONLY ICON */
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 32,
+                      height: 32,
+                      borderRadius: '6px',
+                      backgroundColor: '#ECEEFF',
+                      color: '#1e293b',
+                      ml: 1,
+                      cursor: 'pointer',
+                      padding: '8px',
+                    }}
+                    onClick={toggleGrid}
+                  >
+                    <KeyboardArrowUpIcon
+                      sx={{
+                        fontSize: 20,
+                        transition: '0.2s',
+                        transform: gridExpanded
+                          ? 'rotate(0deg)'
+                          : 'rotate(180deg)',
+                      }}
+                    />
+                  </Box>
+                )
+              )}
+              {/* ITEMS BADGE */}
+              <Box
                 sx={{
-                  ...(permissions?.marginBottom && { marginBottom: '10px' }),
+                  p: '4px 8px',
+                  borderRadius: '100px',
+                  backgroundColor: '#ECEEFF',
+                  border: '1px solid #41424D',
                 }}
               >
-                {permissions?.titleName}
-              </Typography>
-            )}
+                <Typography
+                  sx={{
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: '#41424D',
+                    fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
+                  }}
+                >
+                  {rows?.length || 0} {rows?.length === 1 ? 'Row' : 'Rows'}
+                </Typography>
+              </Box>
+            </Box>
 
             {/* Right side - All other actions */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1332,6 +1498,13 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                   className='btn-save'
                   onClick={downloadExcelForConfiguration}
                   disabled={isButtonDisabled || READ_ONLY}
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={FileExportIcon}
+                      className='w16-icon'
+                    />
+                  }
                 >
                   Export
                 </Button>
@@ -1345,6 +1518,13 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                       className='btn-save'
                       onClick={triggerFileUpload}
                       disabled={isButtonDisabled || READ_ONLY}
+                      startIcon={
+                        <Box
+                          component='img'
+                          src={FileImportIcon}
+                          className='w16-icon'
+                        />
+                      }
                     >
                       Import
                     </Button>
@@ -1370,6 +1550,9 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                     READ_ONLY
                   }
                   {...(loading ? {} : {})}
+                  startIcon={
+                    <Box component='img' src={SaveIcon} className='w16-icon' />
+                  }
                 >
                   Save
                 </Button>
@@ -1383,19 +1566,33 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                     (rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility)
+                      !permissions?.showCalculateVisibility)
                   }
                   className='btn-save'
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={CalculateIcon}
+                      className='w16-icon'
+                    />
+                  }
                 >
                   Calculate
                 </Button>
               )}
-              {permissions?.showCalculate && (
+              {permissions?.showCalculateNextYear && (
                 <Button
                   variant='contained'
                   onClick={handleOpen}
                   className='btn-save'
                   disabled={READ_ONLY}
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={CalculateIcon}
+                      className='w16-icon'
+                    />
+                  }
                 >
                   Calculate For Next Year
                 </Button>
@@ -1404,42 +1601,22 @@ const KendoDataTablesCrackerRunLengthNMD = ({
           </Box>
         </Box>
       )}
-
-      <Box className='kendo-data-grid'>
-        {permissions?.showAccordian ? (
-          <CustomAccordion
-            defaultExpanded={!permissions?.byDefCollaps}
-            disableGutters
-          >
-            <CustomAccordionSummary
-              aria-controls='meg-grid-content'
-              id='meg-grid-header'
-            >
-              <Typography component='span' className='grid-title'>
-                {titleName}
-              </Typography>
-            </CustomAccordionSummary>
-            <CustomAccordionDetails>
-              <Tooltip openDelay={50} position='auto' anchorElement='target'>
-                {renderGrid()}
-              </Tooltip>
-            </CustomAccordionDetails>
-          </CustomAccordion>
-        ) : (
+      <Collapse in={gridExpanded}>
+        <Box className='kendo-data-grid'>
           <Tooltip openDelay={50} position='auto' anchorElement='target'>
             {renderGrid()}
           </Tooltip>
-        )}
-      </Box>
+        </Box>
+      </Collapse>
 
-      <Box
-        sx={{
-          marginTop: 2,
-          display: 'flex',
-          gap: 2,
-        }}
-      >
-        {showDeleteAll && (
+      {showDeleteAll && (
+        <Box
+          sx={{
+            marginTop: 2,
+            display: 'flex',
+            gap: 2,
+          }}
+        >
           <Button
             variant='contained'
             className='btn-save'
@@ -1450,8 +1627,8 @@ const KendoDataTablesCrackerRunLengthNMD = ({
           >
             Delete
           </Button>
-        )}
-      </Box>
+        </Box>
+      )}
 
       <Notification
         open={snackbarOpen1}
@@ -1460,86 +1637,272 @@ const KendoDataTablesCrackerRunLengthNMD = ({
         onClose={() => setSnackbarOpen1(false)}
       />
 
-      <Dialog
+      <CompactDialog
         open={openDeleteDialogeBox}
         onClose={() => setOpenDeleteDialogeBox(false)}
-        aria-labelledby='alert-dialog-title'
-        aria-describedby='alert-dialog-description'
+        disableScrollLock
+        slotProps={{ backdrop: { disableScrollLock: true } }}
       >
-        <DialogTitle id='alert-dialog-title'>{'Delete ?'}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
+        {/* Header */}
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#fef2f2', // soft red
+            borderBottom: '1px solid #fee2e2',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <DeleteOutlineIcon sx={{ fontSize: '1rem', color: '#dc2626' }} />
+            <Typography
+              sx={{
+                fontWeight: 800,
+                fontSize: '0.8rem',
+                color: '#7f1d1d',
+                letterSpacing: '0.4px',
+              }}
+            >
+              CONFIRM DELETE
+            </Typography>
+          </Box>
+
+          <IconButton
+            size='small'
+            onClick={() => setOpenDeleteDialogeBox(false)}
+            sx={{ color: '#7f1d1d' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        {/* Content */}
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: '#7f1d1d',
+              lineHeight: 1.5,
+              fontWeight: 600,
+            }}
+          >
             Are you sure you want to delete this row?
-          </DialogContentText>
+          </Typography>
+
+          <Typography
+            sx={{
+              mt: 1,
+              fontSize: '0.7rem',
+              color: '#991b1b',
+              fontWeight: 600,
+            }}
+          >
+            This action cannot be undone.
+          </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDeleteDialogeBox(false)}>Cancel</Button>
-          <Button onClick={deleteTheRecord} autoFocus>
+
+        {/* Actions */}
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button
+            onClick={() => setOpenDeleteDialogeBox(false)}
+            className='btn-no'
+          >
+            Cancel
+          </Button>
+
+          <Button
+            onClick={deleteTheRecord}
+            variant='contained'
+            size='small'
+            className='btn-yes'
+          >
             Delete
           </Button>
         </DialogActions>
-      </Dialog>
+      </CompactDialog>
 
-      <Dialog
+      <CompactDialog
         open={openSaveDialogeBox}
         onClose={closeSaveDialogeBox}
-        aria-labelledby='alert-dialog-title'
-        aria-describedby='alert-dialog-description'
         disableScrollLock
-        slotProps={{
-          backdrop: { disableScrollLock: true },
-        }}
+        slotProps={{ backdrop: { disableScrollLock: true } }}
       >
-        <DialogTitle id='alert-dialog-title'>{'Save ?'}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
+        {/* Header */}
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#f8fafc',
+            borderBottom: '1px solid #e2e8f0',
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              color: '#334155',
+              letterSpacing: '0.5px',
+            }}
+          >
+            CONFIRM SAVE
+          </Typography>
+
+          <IconButton
+            size='small'
+            onClick={closeSaveDialogeBox}
+            sx={{ color: '#64748b' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        {/* Content */}
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: '#475569',
+              lineHeight: 1.5,
+              fontWeight: 500,
+            }}
+          >
             Are you sure you want to save these changes?
-          </DialogContentText>
+          </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={closeSaveDialogeBox}>Cancel</Button>
-          <Button onClick={saveConfirmation} autoFocus>
+
+        {/* Actions */}
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button onClick={closeSaveDialogeBox} className='btn-no'>
+            Cancel
+          </Button>
+
+          <Button
+            onClick={saveConfirmation}
+            variant='contained'
+            size='small'
+            autoFocus
+            className='btn-yes'
+          >
             Save
           </Button>
         </DialogActions>
-      </Dialog>
+      </CompactDialog>
 
-      <Dialog
+      <CompactDialog
         open={openSaveDialogeBoxSingleRow}
         onClose={closeSaveDialogeBoxSingleRow}
-        aria-labelledby='alert-dialog-title'
-        aria-describedby='alert-dialog-description'
-        sx={{ zIndex: 2000 }} // Works in most cases disableScrollLock
         disableScrollLock
-        slotProps={{
-          backdrop: { disableScrollLock: true },
-        }}
+        slotProps={{ backdrop: { disableScrollLock: true } }}
+        sx={{ zIndex: 2000 }}
       >
-        <DialogTitle id='alert-dialog-title'>{'Save ?'}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
+        {/* Header */}
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#f8fafc',
+            borderBottom: '1px solid #e2e8f0',
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              color: '#334155',
+              letterSpacing: '0.5px',
+            }}
+          >
+            CONFIRM SAVE
+          </Typography>
+
+          <IconButton
+            size='small'
+            onClick={closeSaveDialogeBoxSingleRow}
+            sx={{ color: '#64748b' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        {/* Content */}
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: '#475569',
+              lineHeight: 1.5,
+              fontWeight: 500,
+            }}
+          >
             Are you sure you want to save these changes?
-          </DialogContentText>
+          </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={closeSaveDialogeBoxSingleRow}>Cancel</Button>
-          <Button onClick={saveConfirmationSingleRow} autoFocus>
+
+        {/* Actions */}
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button onClick={closeSaveDialogeBoxSingleRow} className='btn-no'>
+            Cancel
+          </Button>
+
+          <Button
+            onClick={saveConfirmationSingleRow}
+            variant='contained'
+            size='small'
+            autoFocus
+            className='btn-yes'
+          >
             Save
           </Button>
         </DialogActions>
-      </Dialog>
+      </CompactDialog>
 
-      <Dialog
+      <CompactDialog
         open={!!remarkDialogOpen}
         onClose={() => setRemarkDialogOpen(false)}
         disableScrollLock
-        slotProps={{
-          backdrop: { disableScrollLock: true },
-        }}
+        slotProps={{ backdrop: { disableScrollLock: true } }}
       >
-        <DialogTitle>Add Remark</DialogTitle>
-        <DialogContent>
-          <TextField
+        {/* Compact Header */}
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#f8fafc',
+            borderBottom: '1px solid #e2e8f0',
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              color: '#334155',
+              letterSpacing: '0.5px',
+            }}
+          >
+            ADD REMARK
+          </Typography>
+          <IconButton
+            size='small'
+            onClick={() => setRemarkDialogOpen(false)}
+            sx={{ color: '#64748b' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <CompactTextField
             autoFocus
             margin='dense'
             id='remark'
@@ -1547,22 +1910,28 @@ const KendoDataTablesCrackerRunLengthNMD = ({
             type='text'
             fullWidth
             variant='outlined'
-            sx={{ width: '100%', minWidth: '600px' }}
             value={currentRemark || ''}
-            // value={remark}
             onChange={(e) => setCurrentRemark(e.target.value)}
             multiline
             rows={8}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRemarkDialogOpen(false)}>Cancel</Button>
-          {/* <Button onClick={handleCloseRemark}>Cancel</Button> */}
-          <Button onClick={handleRemarkSave} disabled={!currentRemark?.trim()}>
+
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button onClick={() => setRemarkDialogOpen(false)} className='btn-no'>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleRemarkSave}
+            variant='contained'
+            size='small'
+            disabled={!currentRemark?.trim()}
+            className='btn-yes'
+          >
             Add
           </Button>
         </DialogActions>
-      </Dialog>
+      </CompactDialog>
 
       <Dialog
         open={open}

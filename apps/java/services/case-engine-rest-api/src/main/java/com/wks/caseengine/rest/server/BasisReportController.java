@@ -33,6 +33,13 @@ public class BasisReportController {
 		AOPMessageVM response=basisReportService.getNormhistorian(plantId,year,periodFrom,periodTo,type);
 		return ResponseEntity.status(response.getCode()).body(response);
 	}
+
+	@GetMapping(value="/data-set-optimizer")
+	public ResponseEntity<AOPMessageVM> getOptimizerInputOutputReport(@RequestParam String plantId,@RequestParam String year){
+		AOPMessageVM response=basisReportService.getOptimizerInputOutputReport(plantId,year);
+		return ResponseEntity.status(response.getCode()).body(response);
+	}
+	
 	
 	@GetMapping(value = "/data-set-norms-historian-export")
 	public ResponseEntity<byte[]> exportNormhistorian(
@@ -109,3 +116,4 @@ public class BasisReportController {
 	
 	
 }
+

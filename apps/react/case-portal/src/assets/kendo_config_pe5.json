@@ -4,20 +4,22 @@
     "title": "Type",
     "groupable": true,
     "editable": false,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "normParameterFKId",
     "title": "Particulars",
     "editable": false,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false
   },
   {
     "field": "productName",
     "title": "Particulars",
     "editable": false,
-    "autoAdjust": false,
-    "widthT": 250
+    "widthT": 300,
+    "minWidth": 120
   },
   {
     "field": "apr",
@@ -26,14 +28,15 @@
     "align": "left",
     "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}"
+    "format": "{0:#.##}",
+    "minWidth": 120
   },
   {
     "field": "remarks",
     "title": "Remark",
     "editable": true,
     "renderCell": "renderRemarkCell",
-    "widthT": 250,
-    "autoAdjust": false
+    "widthT": 300,
+    "minWidth": 120
   }
 ]

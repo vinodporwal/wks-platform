@@ -59,6 +59,11 @@ public class MaintenanceCalculatedDataController {
 	public AOPMessageVM getMaintenanceDataForCracker(@RequestParam String plantId, @RequestParam String year){
 		return maintenanceCalculatedDataService.getMaintenanceDataForCracker(plantId,year);		
 	}
+
+	@GetMapping(value="/cat-chem-calculation")
+	public AOPMessageVM getMaintenanceCatChem(@RequestParam String plantId, @RequestParam String year, @RequestParam String gradeId){
+		return maintenanceCalculatedDataService.getMaintenanceCatChem(plantId, year, gradeId);		
+	}
 	
 	@GetMapping(value="/maintenance-nmd")
 	public AOPMessageVM getMaintenanceDataNMDForCracker(@RequestParam String plantId, @RequestParam String year){
@@ -169,8 +174,9 @@ public class MaintenanceCalculatedDataController {
 	}
 	
 	@PostMapping(value="/budget-maintenance")
-	public AOPMessageVM updateBudgetMaintenance(@RequestBody List<BudgetMaintenanceDto> budgetMaintenanceDtos){
-		return maintenanceCalculatedDataService.updateBudgetMaintenance(budgetMaintenanceDtos);		
+	public AOPMessageVM updateBudgetMaintenance(@RequestBody List<BudgetMaintenanceDto> budgetMaintenanceDtos, @RequestParam String plantId, @RequestParam String year){
+		//return maintenanceCalculatedDataService.updateBudgetMaintenance(budgetMaintenanceDtos);		
+		return maintenanceCalculatedDataService.updateMaintenance(budgetMaintenanceDtos, plantId, year);		
 	}
 	
 	@GetMapping(value = "/budget-maintenance-export-excel")
@@ -208,5 +214,35 @@ public class MaintenanceCalculatedDataController {
 	@GetMapping(value="/macro")
 	public AOPMessageVM getMacroData(@RequestParam Double value, @RequestParam String year,@RequestParam String plantId){
 		return maintenanceCalculatedDataService.getMacroData(value,year,plantId);		
+	}
+
+	@PostMapping(value="/cat-chem-calculation")
+	public AOPMessageVM catChemCalculation(@RequestParam String plantId, @RequestParam String aopYear){
+		return maintenanceCalculatedDataService.catChemCalculation(UUID.fromString(plantId), aopYear);
+	}
+
+	@GetMapping(value = "/cat-chem-export-all-grades")
+	public ResponseEntity<byte[]> exportCatChemAllGrades(
+			@RequestParam String plantId,
+			@RequestParam String year) {
+		try {
+			byte[] excelBytes = maintenanceCalculatedDataService.exportCatChemAllGrades(plantId, year);
+
+			if (excelBytes == null || excelBytes.length == 0) {
+				return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+			}
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.parseMediaType(
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(ContentDisposition.builder("attachment")
+					.filename("cat-chem-all-grades.xlsx")
+					.build());
+			headers.setContentLength(excelBytes.length);
+
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 }

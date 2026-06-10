@@ -4,14 +4,14 @@
     "headerName": "Type",
     "editable": false,
     "flex": 1,
-    "widthT": 200
+    "minWidth": 250
   },
   {
     "field": "particulars",
     "headerName": "Particulars",
     "editable": false,
     "flex": 2,
-    "widthT": 200
+    "minWidth": 250
   },
   {
     "field": "cost",
@@ -20,6 +20,7 @@
     "align": "left",
     "headerAlign": "left",
     "flex": 1,
-    "type": "number"
+    "type": "number",
+    "minWidth": 250
   }
 ]

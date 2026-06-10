@@ -1,18 +1,22 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { Box } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
 import NestedKendoTable from '../common/NestedKendoTable/index'
-import { Stack, Typography } from '../../../../node_modules/@mui/material/index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { setIsReleased } from 'store/reducers/dataGridStore'
+import ReleaseDialog from '../common/components/ReleaseDialog'
+import { ReleaseAPIService } from '../services/common/releaseAPIService'
+import NormsJMD from './jmd/NormsJMD'
 
 const Norms = () => {
   const keycloak = useSession()
   // State management
-
+  const dispatch = useDispatch()
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -37,6 +41,11 @@ const Norms = () => {
   const VERTICAL_ID = verticalObject?.id
   const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
+
+  const lowerVertName = verticalObject?.name?.toLowerCase()
+  const lowerSiteName = siteObject?.name?.toLowerCase()
+  const IS_CPP = lowerVertName === 'cpp'
+
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
 
@@ -45,18 +54,19 @@ const Norms = () => {
   const [currentRowId, setCurrentRowId] = useState(null)
 
   const [calculateBtnEnabled, setCalculateBtnEnabled] = useState(false)
-
+  const [openReleaseDialogBox, setOpenReleaseDialogBox] = useState(false)
+  const [isReleaseDisabled, setIsReleaseDisabled] = useState(true)
   // Column definitions
   const nestedColumns = [
     //Generating Plant
     {
       field: 'generatingPlantName',
       title: 'Generating Plant',
-      widthT: 150,
+      widthT: 180,
       type: 'text',
       editable: false,
       locked: true,
-      minWidth: 150,
+      minWidth: 180,
     },
     //Utility
     {
@@ -82,54 +92,54 @@ const Norms = () => {
     {
       field: 'uom',
       title: 'Generation UOM',
-      widthT: 130,
+      widthT: 180,
       type: 'text',
       editable: false,
-      minWidth: 130,
+      minWidth: 180,
     },
     // Account
     {
       field: 'accountName',
       title: 'Account',
-      widthT: 100,
+      widthT: 120,
       type: 'text',
       editable: false,
-      minWidth: 100,
+      minWidth: 120,
     },
     // Material
     {
       field: 'materialName',
       title: 'Material',
-      widthT: 100,
+      widthT: 120,
       type: 'text',
       editable: false,
-      minWidth: 100,
+      minWidth: 120,
     },
     // SAP Code
     {
       field: 'materialId',
       title: 'SAP Code',
-      widthT: 100,
+      widthT: 120,
       type: 'text',
       editable: false,
-      minWidth: 100,
+      minWidth: 120,
     },
     // Issuing Plant
     {
       field: 'issuingPlantName',
       title: 'Issuing Plant',
-      widthT: 120,
+      widthT: 150,
       type: 'text',
       editable: false,
-      minWidth: 120,
+      minWidth: 150,
     },
     {
       field: 'issuingUom',
       title: 'Issuing UOM',
-      widthT: 120,
+      widthT: 150,
       type: 'text',
       editable: false,
-      minWidth: 120,
+      minWidth: 150,
     },
     // Apr
     {
@@ -138,8 +148,8 @@ const Norms = () => {
         {
           field: 'apr.norms',
           title: 'Norms',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: false,
           type: 'number1',
           format: valueFormat,
@@ -147,16 +157,16 @@ const Norms = () => {
         {
           field: 'apr.quantity',
           title: 'Quantity',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
         },
         {
           field: 'apr.amount',
           title: 'Amount',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
           hidden: true,
@@ -164,8 +174,8 @@ const Norms = () => {
         {
           field: 'apr.price',
           title: 'Price',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: true,
           type: 'number1',
           format: valueFormat,
@@ -180,8 +190,8 @@ const Norms = () => {
         {
           field: 'may.norms',
           title: 'Norms',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: false,
           type: 'number1',
           format: valueFormat,
@@ -189,16 +199,16 @@ const Norms = () => {
         {
           field: 'may.quantity',
           title: 'Quantity',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
         },
         {
           field: 'may.amount',
           title: 'Amount',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
           hidden: true,
@@ -206,8 +216,8 @@ const Norms = () => {
         {
           field: 'may.price',
           title: 'Price',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: true,
           type: 'number1',
           format: valueFormat,
@@ -222,8 +232,8 @@ const Norms = () => {
         {
           field: 'jun.norms',
           title: 'Norms',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: false,
           type: 'number1',
           format: valueFormat,
@@ -231,16 +241,16 @@ const Norms = () => {
         {
           field: 'jun.quantity',
           title: 'Quantity',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
         },
         {
           field: 'jun.amount',
           title: 'Amount',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
           hidden: true,
@@ -248,8 +258,8 @@ const Norms = () => {
         {
           field: 'jun.price',
           title: 'Price',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: true,
           type: 'number1',
           format: valueFormat,
@@ -264,8 +274,8 @@ const Norms = () => {
         {
           field: 'jul.norms',
           title: 'Norms',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: false,
           type: 'number1',
           format: valueFormat,
@@ -273,16 +283,16 @@ const Norms = () => {
         {
           field: 'jul.quantity',
           title: 'Quantity',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
         },
         {
           field: 'jul.amount',
           title: 'Amount',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
           hidden: true,
@@ -290,8 +300,8 @@ const Norms = () => {
         {
           field: 'jul.price',
           title: 'Price',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: true,
           type: 'number1',
           format: valueFormat,
@@ -306,8 +316,8 @@ const Norms = () => {
         {
           field: 'aug.norms',
           title: 'Norms',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: false,
           type: 'number1',
           format: valueFormat,
@@ -315,16 +325,16 @@ const Norms = () => {
         {
           field: 'aug.quantity',
           title: 'Quantity',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
         },
         {
           field: 'aug.amount',
           title: 'Amount',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
           hidden: true,
@@ -332,8 +342,8 @@ const Norms = () => {
         {
           field: 'aug.price',
           title: 'Price',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: true,
           type: 'number1',
           format: valueFormat,
@@ -348,8 +358,8 @@ const Norms = () => {
         {
           field: 'sep.norms',
           title: 'Norms',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: false,
           type: 'number1',
           format: valueFormat,
@@ -357,16 +367,16 @@ const Norms = () => {
         {
           field: 'sep.quantity',
           title: 'Quantity',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
         },
         {
           field: 'sep.amount',
           title: 'Amount',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
           hidden: true,
@@ -374,8 +384,8 @@ const Norms = () => {
         {
           field: 'sep.price',
           title: 'Price',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: true,
           type: 'number1',
           format: valueFormat,
@@ -390,8 +400,8 @@ const Norms = () => {
         {
           field: 'oct.norms',
           title: 'Norms',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: false,
           type: 'number1',
           format: valueFormat,
@@ -399,16 +409,16 @@ const Norms = () => {
         {
           field: 'oct.quantity',
           title: 'Quantity',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
         },
         {
           field: 'oct.amount',
           title: 'Amount',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
           hidden: true,
@@ -416,8 +426,8 @@ const Norms = () => {
         {
           field: 'oct.price',
           title: 'Price',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: true,
           type: 'number1',
           format: valueFormat,
@@ -432,8 +442,8 @@ const Norms = () => {
         {
           field: 'nov.norms',
           title: 'Norms',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: false,
           type: 'number1',
           format: valueFormat,
@@ -441,16 +451,16 @@ const Norms = () => {
         {
           field: 'nov.quantity',
           title: 'Quantity',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
         },
         {
           field: 'nov.amount',
           title: 'Amount',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
           hidden: true,
@@ -458,8 +468,8 @@ const Norms = () => {
         {
           field: 'nov.price',
           title: 'Price',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: true,
           type: 'number1',
           format: valueFormat,
@@ -474,8 +484,8 @@ const Norms = () => {
         {
           field: 'dec.norms',
           title: 'Norms',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: false,
           type: 'number1',
           format: valueFormat,
@@ -483,16 +493,16 @@ const Norms = () => {
         {
           field: 'dec.quantity',
           title: 'Quantity',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
         },
         {
           field: 'dec.amount',
           title: 'Amount',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
           hidden: true,
@@ -500,8 +510,8 @@ const Norms = () => {
         {
           field: 'dec.price',
           title: 'Price',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: true,
           type: 'number1',
           format: valueFormat,
@@ -516,8 +526,8 @@ const Norms = () => {
         {
           field: 'jan.norms',
           title: 'Norms',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: false,
           type: 'number1',
           format: valueFormat,
@@ -525,16 +535,16 @@ const Norms = () => {
         {
           field: 'jan.quantity',
           title: 'Quantity',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
         },
         {
           field: 'jan.amount',
           title: 'Amount',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
           hidden: true,
@@ -542,8 +552,8 @@ const Norms = () => {
         {
           field: 'jan.price',
           title: 'Price',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: true,
           type: 'number1',
           format: valueFormat,
@@ -558,8 +568,8 @@ const Norms = () => {
         {
           field: 'feb.norms',
           title: 'Norms',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: false,
           type: 'number1',
           format: valueFormat,
@@ -567,16 +577,16 @@ const Norms = () => {
         {
           field: 'feb.quantity',
           title: 'Quantity',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
         },
         {
           field: 'feb.amount',
           title: 'Amount',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
           hidden: true,
@@ -584,8 +594,8 @@ const Norms = () => {
         {
           field: 'feb.price',
           title: 'Price',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: true,
           type: 'number1',
           format: valueFormat,
@@ -600,8 +610,8 @@ const Norms = () => {
         {
           field: 'mar.norms',
           title: 'Norms',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: false,
           type: 'number1',
           format: valueFormat,
@@ -609,16 +619,16 @@ const Norms = () => {
         {
           field: 'mar.quantity',
           title: 'Quantity',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
         },
         {
           field: 'mar.amount',
           title: 'Amount',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           type: 'number',
           format: valueFormat,
           hidden: true,
@@ -626,8 +636,8 @@ const Norms = () => {
         {
           field: 'mar.price',
           title: 'Price',
-          widthT: 100,
-          minWidth: 100,
+          widthT: 120,
+          minWidth: 120,
           editable: true,
           type: 'number1',
           format: valueFormat,
@@ -650,11 +660,11 @@ const Norms = () => {
   const [calculationLoading, setCaculationLoading] = useState(false)
 
   useEffect(() => {
-    if (PLANT_ID && AOP_YEAR) {
+    if (PLANT_ID && AOP_YEAR && lowerSiteName === 'nmd') {
       fetchNormsData()
       setModifiedCells({})
     }
-  }, [PLANT_ID, AOP_YEAR])
+  }, [PLANT_ID, AOP_YEAR, lowerSiteName])
 
   const fetchNormsData = async () => {
     setLoading(true)
@@ -710,8 +720,73 @@ const Norms = () => {
       enableCalculate: calculateBtnEnabled,
       showExport: true,
       ExcelName: `Norms - ${AOP_YEAR}`,
+      showReleaseBtn: true,
+      isReleaseDisabled: isReleaseDisabled,
     }
-  }, [calculateBtnEnabled])
+  }, [calculateBtnEnabled, isReleaseDisabled])
+
+  const getIsReleased = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    try {
+      const response = await ReleaseAPIService.getReleaseAOPStatus(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      // If response has data, disable the button (already released)
+      // If no data, enable the button (not yet released)
+      if (response?.data && Object.keys(response.data).length > 0) {
+        setIsReleaseDisabled(true)
+      } else {
+        setIsReleaseDisabled(false)
+      }
+    } catch (error) {
+      console.error('Error fetching release status:', error)
+    }
+  }
+  useEffect(() => {
+    getIsReleased()
+  }, [keycloak, AOP_YEAR, PLANT_ID])
+
+  const handleRelease = () => {
+    setOpenReleaseDialogBox(true)
+  }
+
+  const closeReleaseDialogBox = () => {
+    setOpenReleaseDialogBox(false)
+  }
+
+  const submitConfirmation = async () => {
+    setOpenReleaseDialogBox(false)
+    setLoading(true)
+    try {
+      const response = await ReleaseAPIService.releaseAOPReport(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Released Successfully!',
+        severity: 'success',
+      })
+      setIsReleaseDisabled(true)
+      let isReleased = 1
+      dispatch(setIsReleased({ isReleased }))
+    } catch (error) {
+      console.error('Error releasing report:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Release Failed!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Calculate Norms data via API
   const handleCalculate = async () => {
@@ -966,52 +1041,63 @@ const Norms = () => {
     setRemarkDialogOpen(true)
   }
 
+  const renderBySite = () => {
+    switch (lowerSiteName) {
+      case 'jmd':
+        return <NormsJMD />
+      // case 'hmd':
+      //   return <NormsHMD />
+      case 'nmd':
+      default:
+        return (
+          <NestedKendoTable
+            columns={nestedColumns}
+            rows={rows}
+            setRows={setRows}
+            handleCalculate={handleCalculate}
+            modifiedCells={modifiedCells}
+            setModifiedCells={setModifiedCells}
+            title='Norms'
+            permissions={permissions}
+            handleRemarkCellClick={handleRemarkCellClick}
+            remarkDialogOpen={remarkDialogOpen}
+            setRemarkDialogOpen={setRemarkDialogOpen}
+            currentRemark={currentRemark}
+            setCurrentRemark={setCurrentRemark}
+            currentRowId={currentRowId}
+            setCurrentRowId={() => {}}
+            saveChanges={saveChanges}
+            handleExcelUpload={handleExcelUpload}
+            handleExport={handleExport}
+            snackbarData={snackbarData}
+            snackbarOpen={snackbarOpen}
+            setSnackbarOpen={setSnackbarOpen}
+            setSnackbarData={setSnackbarData}
+            customHeight={80}
+            groupBy={['generatingPlantName', 'accountName']}
+            handleRelease={handleRelease}
+            isReleaseDisabled={isReleaseDisabled}
+          />
+        )
+    }
+  }
+
+  if (!IS_CPP) return null
+
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+      <LoaderBackdrop
         open={!!loading || calculationLoading}
-      >
-        <Stack
-          display='flex'
-          flexDirection='column'
-          alignItems='center'
-          justifyContent='center'
-        >
-          <CircularProgress color='inherit' />
-          {calculationLoading && (
-            <Typography variant='h5' sx={{ mt: 2 }}>
-              Your data is being processed. This may take a few moments—thank
-              you for your patience.
-            </Typography>
-          )}
-        </Stack>
-      </Backdrop>
-      <NestedKendoTable
-        columns={nestedColumns}
-        rows={rows}
-        setRows={setRows}
-        handleCalculate={handleCalculate}
-        modifiedCells={modifiedCells}
-        setModifiedCells={setModifiedCells}
-        title='Norms'
-        permissions={permissions}
-        handleRemarkCellClick={handleRemarkCellClick}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
-        saveChanges={saveChanges}
-        handleExcelUpload={handleExcelUpload}
-        handleExport={handleExport}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
-        customHeight={80}
-        groupBy={['generatingPlantName', 'accountName']}
+        showMessage={calculationLoading}
+        message='Your data is being processed. This may take a few moments—thank you for your patience.'
+      />
+
+      {renderBySite()}
+
+      <ReleaseDialog
+        openReleaseDialogBox={openReleaseDialogBox}
+        closeReleaseDialogBox={closeReleaseDialogBox}
+        submitConfirmation={submitConfirmation}
       />
     </Box>
   )

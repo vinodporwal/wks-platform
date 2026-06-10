@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.lang.reflect.Method;
+import java.sql.PreparedStatement;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
@@ -20,11 +21,14 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wks.caseengine.dto.BusinessDemandMonthlyDTO;
+import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.SpyroInputDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.ExcelConfigurations;
@@ -84,6 +88,9 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 	@Autowired
 	private ExcelConfigurationsRepository excelConfigurationsRepository;
 
+	@Autowired
+	private BusinessDemandDataService businessDemandDataService;
+
 	private static final Pattern UUID_PATTERN = 
 		    Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
 	
@@ -132,6 +139,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 					map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 					map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 					map.put("isEditable", row[22]);
+					map.put("Weight Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
 					spyroInputDataList.add(map);
 				} else {
 					
@@ -156,10 +164,16 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 							map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 							map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 							map.put("isEditable", row[22]);
+							map.put("Weight Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
 							spyroInputDataList.add(map); // Add the map to the list here
 						}
 					}
 				}
+			}
+
+			if(type.equalsIgnoreCase("Optimizer Input") || type.equalsIgnoreCase("Optimizer Output")) {   
+
+				spyroInputDataList = getBusinessDemandData(plantId, year);
 			}
 			aopMessageVM.setCode(200);
 			aopMessageVM.setMessage("Data fetched successfully");
@@ -172,6 +186,40 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 
+	}
+
+	public List<Map<String, Object>> getBusinessDemandData(String plantId, String year) {
+
+		AOPMessageVM aopMessageVM = businessDemandDataService.getBusinessDemandMode(year, UUID.fromString(plantId));
+
+		List<BusinessDemandMonthlyDTO> configurationDTOList = (List<BusinessDemandMonthlyDTO>) aopMessageVM.getData();
+
+		List<Map<String, Object>> spyroInputDataList = new ArrayList<>();
+
+		for (BusinessDemandMonthlyDTO dto : configurationDTOList) {
+			Map<String, Object> map = new HashMap<>();
+			map.put("normParameterFKID", dto.getNormParameterFKId());
+			map.put("particulars", dto.getProductName());
+			map.put("normParameterTypeName", null);
+			map.put("uom", dto.getUom());
+			map.put("remarks", "");
+			map.put("jan", (dto.getJan() == null || dto.getJan().isEmpty()) ? "" : dto.getJan());
+			map.put("feb", (dto.getFeb() == null || dto.getFeb().isEmpty()) ? "" : dto.getFeb());
+			map.put("mar", (dto.getMar() == null || dto.getMar().isEmpty()) ? "" : dto.getMar());
+			map.put("apr", (dto.getApr() == null || dto.getApr().isEmpty()) ? "" : dto.getApr());
+			map.put("may", (dto.getMay() == null || dto.getMay().isEmpty()) ? "" : dto.getMay());
+			map.put("jun", (dto.getJun() == null || dto.getJun().isEmpty()) ? "" : dto.getJun());
+			map.put("jul", (dto.getJul() == null || dto.getJul().isEmpty()) ? "" : dto.getJul());
+			map.put("aug", (dto.getAug() == null || dto.getAug().isEmpty()) ? "" : dto.getAug());
+			map.put("sep", (dto.getSep() == null || dto.getSep().isEmpty()) ? "" : dto.getSep());
+			map.put("oct", (dto.getOct() == null || dto.getOct().isEmpty()) ? "" : dto.getOct());
+			map.put("nov", (dto.getNov() == null || dto.getNov().isEmpty()) ? "" : dto.getNov());
+			map.put("dec", (dto.getDec() == null || dto.getDec().isEmpty()) ? "" : dto.getDec());
+			map.put("isEditable", dto.getIsEditable());
+			spyroInputDataList.add(map);
+		}
+
+		return spyroInputDataList;
 	}
 
 	public List<Object[]> getData(String plantId, String AopYear, String siteId,
@@ -396,6 +444,10 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			boolean crackerC2 = vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("C2");
+
 			Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
 					.findByExcelIdAndVerticalFkIdAndSiteFkId("spyroInput", plant.getVerticalFKId(),plant.getSiteFkId());
 
@@ -408,7 +460,9 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 				Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
 				Map<String, List<Map<String, Object>>> spyroInputDataListMap = new HashMap<>();
 				if (!isAfterSave) {
-					AOPMessageVM vm = getSpyroInputData(year, plantId, "Composition", "Composition");
+				//	AOPMessageVM vm = getSpyroInputData(year, plantId, "Composition", "Composition");
+				AOPMessageVM vm = getSpyroInputData(year, plantId, mode, "Composition");
+
 					List<Map<String, Object>> spyroInputDataList = (List<Map<String, Object>>) vm.getData();
 					spyroInputDataListMap = Utility.groupByNormParameterTypeName(spyroInputDataList);
 				}
@@ -471,7 +525,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 								}
 							} else {
 								AOPMessageVM vm = new AOPMessageVM();
-								if(site.getName().equalsIgnoreCase("HMD"))  {
+								if(site.getName().equalsIgnoreCase("HMD") || crackerC2)  {
                                         vm = getSpyroInputData(year, plantId, dataInput, dataInput);
 								}
 								else
@@ -540,10 +594,14 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 
 		
 			Map<String, List<SpyroInputDTO>> map = readSpyroInputsExcel(file.getInputStream(), year);
+
+			// remove Optimizer Input from map
+		
 			
 			Map<String, List<SpyroInputDTO>> mapForExcel = new HashMap<>();
 			List<SpyroInputDTO> failedRecords = new ArrayList<>();
 			for (String key : map.keySet()) {
+			
 				AOPMessageVM vm = updateSpyroInputData(map.get(key), plantFKId, year);
 				List<SpyroInputDTO> failedList = (List<SpyroInputDTO>) vm.getData();
 				failedRecords.addAll(failedList);
@@ -585,7 +643,28 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 
 			while (rowIterator.hasNext()) {
 				Row row = rowIterator.next();
-				Cell tableIdCell = row.getCell(16, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+
+				// if tableId is Optimizer Input, then skip the row
+
+Cell tableId = row.getCell(17);
+String tableIdValue = null;
+if (tableId != null) {
+	try {
+	tableId.setCellType(CellType.STRING);
+	 tableIdValue = tableId.getStringCellValue().trim(); }
+	 catch (Exception e) {
+		e.printStackTrace();
+	 }
+}
+
+if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
+	continue;
+}
+
+
+
+
+				Cell tableIdCell = row.getCell(17, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
 				if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
 					continue;
 				}
@@ -609,9 +688,10 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 					dto.setJan(getNumericCellValue(row.getCell(11), dto));
 					dto.setFeb(getNumericCellValue(row.getCell(12), dto));
 					dto.setMar(getNumericCellValue(row.getCell(13), dto));
-					dto.setRemarks(getStringCellValue(row.getCell(14), dto));
-					dto.setNormParameterFKID(getStringCellValue(row.getCell(15), dto));
-					dto.setTableId(getStringCellValue(row.getCell(16), dto));
+					// col 14 = weightAverage — display/export only, not imported
+					dto.setRemarks(getStringCellValue(row.getCell(15), dto));
+					dto.setNormParameterFKID(getStringCellValue(row.getCell(16), dto));
+					dto.setTableId(getStringCellValue(row.getCell(17), dto));
 
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -1205,6 +1285,13 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 	@Override
 	public AOPMessageVM getModes(String year, String plantId, String type) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		
+		// Handle fuel type separately
+		if ("fuel".equalsIgnoreCase(type)) {
+			return getModesForFuel(plantId);
+		}
+		
+		// Handle non-fuel types (original logic)
 		String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 		String viewName = "vw" + verticalName + "Modes";
 		List<Map<String, Object>> modes = new ArrayList<>();
@@ -1249,5 +1336,139 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 		}
 	}
 
+	private AOPMessageVM getModesForFuel(String plantId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<Map<String, Object>> modes = new ArrayList<>();
+		try {
+			List<Object[]> obj = findByYearAndPlantIdForFuel(UUID.fromString(plantId));
+			for(Object[] row:obj) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("name", (row[6] != null ? row[6].toString() : ""));
+				map.put("displayName", (row[7] != null ? row[7].toString() : ""));
+				modes.add(map);
+			}
+			
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(modes);
+		}catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+		
+		return aopMessageVM;
+	}
+	
+	public List<Object[]> findByYearAndPlantIdForFuel(UUID plantId) {
+		try {
+			// Columns: Id(0), VerticalId(1), SiteId(2), PlantId(3), DisplayOrder(4), Name(5), DisplayName(6)
+			// We add a dummy column at index 5 to shift Name to index 6 and DisplayName to index 7
+			String sql = "SELECT " + "Id, VerticalId, SiteId, PlantId, DisplayOrder, NULL as DummyType, Name, DisplayName "
+					 + "FROM vwCrackerFuelDropdown "
+					+ " ORDER BY DisplayOrder";
+
+			Query query = entityManager.createNativeQuery(sql);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Override
+	public AOPMessageVM getFurnaceDropdown(String plantId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<Map<String, Object>> furnaces = new ArrayList<>();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+		try {
+			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+			String viewName = "vw" + verticalName + site.getName() + "FurnaceDropdown";
+
+			String sql = "SELECT Id, VerticalId, SiteId, PlantId, DisplayOrder, Name, DisplayName "
+					+ "FROM " + viewName
+					+ " WHERE PlantId = :plantId"
+					+ " ORDER BY DisplayOrder";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", UUID.fromString(plantId));
+
+			List<Object[]> results = query.getResultList();
+			for (Object[] row : results) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("name", (row[5] != null ? row[5].toString() : ""));
+				map.put("displayName", (row[6] != null ? row[6].toString() : ""));
+				furnaces.add(map);
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(furnaces);
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch furnace dropdown data", ex);
+		}
+		return aopMessageVM;
+	}
+
+	@Override
+	public AOPMessageVM calculateSpyroInputData(String year, String plantId, String Mode, String type) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();		
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			
+			String siteId = site.getId().toString();
+			String verticalId = vertical.getId().toString();
+			String procedureName = vertical.getName() + "_" + site.getName() + "_LoadSpyroInput";
+			
+			// Call the stored procedure dynamically
+			//String sql = "EXEC " + procedureName + " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @AopYear = :AopYear, @Mode = :Mode";
+			
+			// Query query = entityManager.createNativeQuery(sql);
+			// query.setParameter("plantId", plantId);
+			// query.setParameter("siteId", siteId);
+			// query.setParameter("verticalId", verticalId);
+			// query.setParameter("AopYear", year);
+			// query.setParameter("Mode", Mode);
+			// List<Object[]> results = query.getResultList();
+			
+
+String sql = "EXEC " + procedureName + " ?, ?, ?, ?, ?";
+			Session session = entityManager.unwrap(Session.class);
+session.doWork(connection -> {
+    try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        ps.setObject(1, plantId);
+        ps.setObject(2, siteId);
+        ps.setObject(3, verticalId);
+        ps.setObject(4, year);
+        ps.setObject(5, Mode);
+
+        boolean hasResultSet = ps.execute();
+	}
+});
+			
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data calculated successfully");
+			aopMessageVM.setData(0);
+			return aopMessageVM;
+			
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to calculate spyro input data", ex);
+		}
+	}
 
 }

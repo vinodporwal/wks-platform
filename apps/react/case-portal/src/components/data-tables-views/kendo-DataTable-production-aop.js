@@ -165,6 +165,7 @@ const ProductionAopView = ({
             field: key,
             headerName: header,
             editable: isRemark,
+            minWidth: 120,
             flex: 1,
             ...(idx === 0 && {
               renderHeader: (params) => <div>{params.colDef.headerName}</div>,
@@ -272,6 +273,7 @@ const ProductionAopView = ({
           allAction: !isOldYear,
           showCalculate: !isOldYear,
           showTitle: true,
+          showExport: true,
           showCalculateVisibility:
             Object.keys(calculationObject || {}).length > 0 ? true : false,
         }}

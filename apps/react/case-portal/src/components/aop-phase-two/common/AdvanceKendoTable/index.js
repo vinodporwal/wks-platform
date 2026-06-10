@@ -65,7 +65,6 @@ import { NoSpinnerNumericEditor } from '../utilities/numbericColumns'
 import { getColumnMenuDateFilter } from '../utilities/ColumnMenuDateFilter'
 import { getColumnMenuCheckboxFilter } from '../utilities/ColumnMenu1'
 import DateTimePickerEditor from '../utilities/DatePickeronSelectedYr'
-import dataGridStore from 'store/reducers/dataGridStore'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import Notification from 'components/Utilities/Notification'
 
@@ -80,6 +79,7 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import Collapse from '@mui/material/Collapse'
+import { useSelector } from 'react-redux'
 
 // Helper function to get nested value from object
 const getNestedValue = (obj, path) => {
@@ -109,6 +109,40 @@ const extractFlatRowsFromGrouped = (data) => {
   }
   traverse(data)
   return flatRows
+}
+
+// Helper function to create select tooltip renderer with label display
+const createSelectToolTipRenderer = (allOptions, toolTipRenderer) => {
+  return (props) => {
+    const value = props.dataItem[props.field]
+    const displayMode = props.displayMode || 'label'
+
+    let displayChildren = props.children
+    let tooltipValue = value
+
+    if (displayMode === 'label' && allOptions) {
+      // Normalize values to handle 4 vs 4.0 mismatches for numeric options,
+      // and fall back to plain string comparison for string options (e.g. "April")
+      const normalizeValue = (val) => {
+        if (val === '' || val === null || val === undefined) return ''
+        const num = Number(val)
+        return isNaN(num) ? String(val).trim() : String(num)
+      }
+      const option = allOptions.find(
+        (opt) => normalizeValue(opt.value) === normalizeValue(value),
+      )
+      if (option) {
+        displayChildren = option.label
+        tooltipValue = option.label
+      }
+    }
+
+    return toolTipRenderer({
+      ...props,
+      children: displayChildren,
+      dataItem: { ...props.dataItem, [props.field]: tooltipValue },
+    })
+  }
 }
 
 // Helper function to apply Kendo number format
@@ -223,7 +257,10 @@ const AdvanceKendoTable = ({
   externalCustomModifiedCells = null,
   externalSetCustomModifiedCells = null,
   customHandleRemarkSave = null,
+  isReleaseDisabled = true,
+  handleRelease = () => {},
 }) => {
+  const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     plantObject,
     year,
@@ -811,15 +848,31 @@ const AdvanceKendoTable = ({
     deleteRowData(paramsForDelete)
     setOpenDeleteDialogeBox(false)
   }
-  const ActionsCell = ({ dataItem }) => {
+  const ActionsCell = ({ dataItem, tdProps }) => {
     const isNonDeletable =
       (!dataItem.isEditable && dataItem?.isEditable !== undefined) ||
       dataItem?.hideDelete === true
     if (isNonDeletable) {
-      return <td style={{ textAlign: 'center', verticalAlign: 'middle' }} />
+      return (
+        <td
+          {...tdProps}
+          style={{
+            ...tdProps?.style,
+            textAlign: 'center',
+            verticalAlign: 'middle',
+          }}
+        />
+      )
     }
     return (
-      <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+      <td
+        {...tdProps}
+        style={{
+          ...tdProps?.style,
+          textAlign: 'center',
+          verticalAlign: 'middle',
+        }}
+      >
         <SvgIcon
           onClick={() => !READ_ONLY && handleDeleteClick(dataItem)}
           icon={trashIcon}
@@ -883,18 +936,22 @@ const AdvanceKendoTable = ({
 
     return (
       <td
-        {...restProps}
+        {...tdProps}
         title={displayText}
         style={{
+          ...tdProps?.style,
           cursor: isRowEditable ? 'pointer' : 'not-allowed',
           color:
             isEdited && displayText ? 'orange' : rawValue ? 'inherit' : 'gray',
-          fontWeight: isEdited && displayText ? 'bold' : undefined,
+          fontWeight: isEdited && displayText ? 700 : 500,
+          fontFamily: 'Honeywell Sans Web, Inter, sans-serif',
+          fontSize: '15px',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
           opacity: isRowEditable ? 1 : 0.6,
         }}
+        className={`${tdProps?.className || ''} remark-cell ${isEdited ? 'edited-cell' : ''}`.trim()}
         onClick={(e) => {
           e.preventDefault()
           e.stopPropagation()
@@ -976,8 +1033,14 @@ const AdvanceKendoTable = ({
 
     if (disableRedHighlight) {
       return (
-        <td {...tdProps} title={value}>
-          {formattedValue}
+        <td
+          {...tdProps}
+          title={value}
+          style={{
+            ...tdProps?.style,
+          }}
+        >
+          {children}
         </td>
       )
     }
@@ -1002,9 +1065,9 @@ const AdvanceKendoTable = ({
       <td
         {...tdProps}
         title={value}
+        className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
-          color: shouldHighlight ? 'orange' : undefined,
-          fontWeight: shouldHighlight ? 'bold' : undefined,
+          ...tdProps?.style,
         }}
       >
         {formattedValue}
@@ -1110,10 +1173,13 @@ const AdvanceKendoTable = ({
       <td
         {...tdProps}
         title={value}
+        className={`${tdProps?.className || ''} ${highlightColor ? 'edited-cell' : ''}`.trim()}
         style={{
-          color: highlightColor,
-          fontWeight: highlightColor ? 'bold' : undefined,
-          // backgroundColor: highlightColorFullCell ? 'lightGrey' : undefined,
+          color:
+            highlightColor && highlightColor !== 'orange'
+              ? highlightColor
+              : undefined,
+          ...tdProps?.style,
         }}
       >
         {children}
@@ -1138,7 +1204,11 @@ const AdvanceKendoTable = ({
 
     if (disableRedHighlight) {
       return (
-        <td {...tdProps} title={displayValue} style={{ textAlign: 'center' }}>
+        <td
+          {...tdProps}
+          title={displayValue}
+          style={{ textAlign: 'center', ...tdProps?.style }}
+        >
           {displayValue}
         </td>
       )
@@ -1166,9 +1236,9 @@ const AdvanceKendoTable = ({
       <td
         {...tdProps}
         title={displayValue}
+        className={`${tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
-          color: shouldHighlight ? 'orange' : undefined,
-          fontWeight: shouldHighlight ? 'bold' : undefined,
+          ...tdProps?.style,
           textAlign: 'center',
         }}
       >
@@ -1187,6 +1257,7 @@ const AdvanceKendoTable = ({
         aria-sort={ariaSort}
         title={props.title}
         style={{
+          ...restThProps?.style,
           padding: '0px',
           // borderRight: '1px solid #878787',
           textAlign: 'start',
@@ -1236,9 +1307,30 @@ const AdvanceKendoTable = ({
     )
   }
 
+  // Helper to check if a cell is editable based on conditional rules
+  const isCellEditableByCondition = (dataItem, col) => {
+    if (!col.conditionalEditable) return true
+
+    const { dependsOn, editableValues } = col.conditionalEditable
+    const dependentValue = dataItem[dependsOn]
+
+    // Cell is editable only if dependent field value is in editableValues
+    return editableValues.includes(dependentValue)
+  }
+
   const renderColumns = (cols, filter, sort) =>
     cols.map((col, idx) => {
-      const isEditable = !READ_ONLY && col.editable === true
+      // Determine if column is editable, considering conditional editing rules
+      let isEditable = !READ_ONLY && col.editable === true
+
+      // Support conditional editing based on another field's value
+      if (isEditable && col.conditionalEditable) {
+        const { dependsOn, editableValues } = col.conditionalEditable
+        // For each row, check if the dependent field value allows editing
+        // This will be checked per-row in the cell editor
+        isEditable = true // Column is editable, but per-row logic will apply
+      }
+
       const isActive = isColumnActive(col.field, filter, sort)
 
       const headerColorClass = undefined
@@ -1249,6 +1341,7 @@ const AdvanceKendoTable = ({
             key={col.title || idx}
             title={col.title}
             headerClassName='center-group-header'
+            locked={col?.locked || false}
           >
             {renderColumns(col.children, filter, sort)}
           </GridColumn>
@@ -1263,6 +1356,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             width={setWidth(col?.minWidth || 120)}
+            locked={col?.locked || false}
             className={!isEditable ? 'non-editable-cell' : undefined}
             cells={{
               data: (cellProps) => (
@@ -1295,6 +1389,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             width={setWidth(col?.minWidth || 120)}
+            locked={col?.locked || false}
             className={!isEditable ? 'non-editable-cell' : undefined}
             cells={{
               data: (cellProps) => (
@@ -1315,6 +1410,7 @@ const AdvanceKendoTable = ({
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
+            locked={col?.locked || false}
             cells={{
               edit: { date: DateOnlyPicker },
               data: toolTipRenderer,
@@ -1337,6 +1433,7 @@ const AdvanceKendoTable = ({
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
+            locked={col?.locked || false}
             cells={{
               edit: {
                 date:
@@ -1383,6 +1480,7 @@ const AdvanceKendoTable = ({
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
+            locked={col?.locked || false}
             editable={isEditable}
             columnMenu={ColumnMenuCheckboxFilter}
             hidden={col.hidden}
@@ -1390,7 +1488,13 @@ const AdvanceKendoTable = ({
             className={!isEditable ? 'non-editable-cell' : ''}
             cells={{
               edit: { text: DurationEditor },
-              data: DurationDisplayWithTooltipCell,
+              data: (cellProps) => (
+                <DurationDisplayWithTooltipCell
+                  {...cellProps}
+                  customModifiedCells={customModifiedCells}
+                  allRedCell={allRedCell}
+                />
+              ),
             }}
             width={setWidth(col?.minWidth || col?.widthT)}
           />
@@ -1403,6 +1507,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
             }
@@ -1424,77 +1529,38 @@ const AdvanceKendoTable = ({
       }
 
       if (col.type === 'number') {
+        // Determine which numeric editor to use based on min/max constraints
+        const hasMinMaxConstraints =
+          col.minValue !== undefined || col.maxValue !== undefined
+
+        // Resolve minValue and maxValue from dataItem if they are string references
+        const getResolvedValue = (value, dataItem) => {
+          if (typeof value === 'string') {
+            return dataItem[value]
+          }
+          return value
+        }
+
         return (
           <GridColumn
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
             }
             editable={isEditable}
             headerClassName={isActive ? 'active-column' : ''}
             cells={{
-              edit: { text: NoSpinnerNumericEditor },
-              data: (props) =>
-                showThreeColors ? (
-                  <RedHighlightCell2
-                    {...props}
-                    customModifiedCells={customModifiedCells}
-                    allRedCell={allRedCell}
-                    allRedCell2={allRedCell2}
-                    disableRedHighlight={disableRedHighlight}
-                    format={col.format}
-                  />
-                ) : (
-                  <RedHighlightCell
-                    {...props}
-                    customModifiedCells={customModifiedCells}
-                    allRedCell={allRedCell}
-                    disableRedHighlight={disableRedHighlight}
-                    format={col.format}
-                  />
-                ),
-              headerCell: col.subtitle
-                ? createHeaderWithSubtitle(col.subtitle)
-                : SimpleHeaderWithTooltip,
-            }}
-            columnMenu={ColumnMenuCheckboxFilter}
-            filter='numeric'
-            format={col.format}
-            width={setWidth(col?.minWidth || col?.widthT)}
-          />
-        )
-      }
-
-      if (col.type === 'number1') {
-        // Determine which numeric editor to use based on min/max constraints
-        const hasMinMaxConstraints =
-          col.minValue !== undefined || col.maxValue !== undefined
-        const NumericEditorComponent = hasMinMaxConstraints
-          ? NumericEditorWithMinMax
-          : NoSpinnerNumericEditor
-
-        return (
-          <GridColumn
-            key={col.field}
-            field={col.field}
-            title={col.title || col.headerName}
-            hidden={col.hidden}
-            editable={isEditable}
-            className={
-              !isEditable ? 'k-number-right-disabled' : 'k-number-right'
-            }
-            headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
-            cells={{
               edit: hasMinMaxConstraints
                 ? {
                     text: (cellProps) => (
                       <NumericEditorWithMinMax
                         {...cellProps}
-                        min={col.minValue}
-                        max={col.maxValue}
+                        min={getResolvedValue(col.minValue, cellProps.dataItem)}
+                        max={getResolvedValue(col.maxValue, cellProps.dataItem)}
                       />
                     ),
                   }
@@ -1530,6 +1596,165 @@ const AdvanceKendoTable = ({
         )
       }
 
+      if (col.type === 'number1' && permissions.dropdownCell) {
+        // Special handler for Pigging Status dropdown in SteadyStateConsumption
+        const dropdownOptions = [
+          { value: '4', label: 'P-4' },
+          { value: '5', label: 'P-5' },
+          { value: '1', label: 'NP' },
+        ]
+
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={isEditable}
+            className={
+              !isEditable ? 'k-number-right-disabled' : 'k-number-right'
+            }
+            headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
+            cells={{
+              edit: {
+                text: (cellProps) => {
+                  const isPiggingStatus =
+                    cellProps.dataItem?.normParameterTypeName ===
+                      'Pigging Status' ||
+                    cellProps.dataItem?.productName ==
+                      'Pigging (P)/Non-Pigging (NP)'
+
+                  if (isPiggingStatus) {
+                    return (
+                      <SelectCellEditor
+                        {...cellProps}
+                        options={dropdownOptions}
+                        textField='label'
+                        valueField='value'
+                        placeholder='Select...'
+                      />
+                    )
+                  }
+
+                  return <NoSpinnerNumericEditor {...cellProps} />
+                },
+              },
+              data: (props) => {
+                const isPiggingStatus =
+                  props.dataItem?.normParameterTypeName === 'Pigging Status' ||
+                  props.dataItem?.productName == 'Pigging (P)/Non-Pigging (NP)'
+
+                if (isPiggingStatus) {
+                  return createSelectToolTipRenderer(
+                    dropdownOptions,
+                    toolTipRenderer,
+                  )({ ...props, displayMode: 'label' })
+                }
+
+                return toolTipRenderer(props)
+              },
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
+
+      if (col.type === 'number1') {
+        // Determine which numeric editor to use based on min/max constraints
+        const hasMinMaxConstraints =
+          col.minValue !== undefined || col.maxValue !== undefined
+
+        // Resolve minValue and maxValue from dataItem if they are string references
+        const getResolvedValue = (value, dataItem) => {
+          if (typeof value === 'string') {
+            return dataItem[value]
+          }
+          return value
+        }
+
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            locked={col?.locked || false}
+            editable={isEditable}
+            className={
+              !isEditable ? 'k-number-right-disabled' : 'k-number-right'
+            }
+            headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
+            cells={{
+              edit: {
+                text: (cellProps) => {
+                  // Check if cell is editable based on conditional rules
+                  const cellEditableByCondition = isCellEditableByCondition(
+                    cellProps.dataItem,
+                    col,
+                  )
+
+                  // If not editable by condition, return empty (prevent editing)
+                  if (!cellEditableByCondition) {
+                    return null
+                  }
+
+                  // Otherwise show the appropriate editor
+                  if (hasMinMaxConstraints) {
+                    return (
+                      <NumericEditorWithMinMax
+                        {...cellProps}
+                        min={getResolvedValue(col.minValue, cellProps.dataItem)}
+                        max={getResolvedValue(col.maxValue, cellProps.dataItem)}
+                      />
+                    )
+                  }
+
+                  return <NoSpinnerNumericEditor {...cellProps} />
+                },
+              },
+              data: col.customCell
+                ? (props) => (
+                    <col.customCell
+                      {...props}
+                      customModifiedCells={customModifiedCells}
+                    />
+                  )
+                : (props) =>
+                    showThreeColors ? (
+                      <RedHighlightCell2
+                        {...props}
+                        customModifiedCells={customModifiedCells}
+                        allRedCell={allRedCell}
+                        allRedCell2={allRedCell2}
+                        disableRedHighlight={disableRedHighlight}
+                        format={col.format}
+                      />
+                    ) : (
+                      <RedHighlightCell
+                        {...props}
+                        customModifiedCells={customModifiedCells}
+                        allRedCell={allRedCell}
+                        disableRedHighlight={disableRedHighlight}
+                        format={col.format}
+                      />
+                    ),
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            filter='numeric'
+            format={col.format}
+            width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
+
       if (col.type === 'wholeNumber') {
         return (
           <GridColumn
@@ -1537,6 +1762,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
@@ -1587,6 +1813,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             className={!isEditable ? 'k-left-disabled' : undefined}
             headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
@@ -1613,6 +1840,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
@@ -1635,6 +1863,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
@@ -1679,12 +1908,14 @@ const AdvanceKendoTable = ({
       if (col?.type === 'select') {
         // Change this to your multiselect field name
         let allOptions = col.options
+
         return (
           <GridColumn
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             cells={{
               edit: {
@@ -1698,7 +1929,11 @@ const AdvanceKendoTable = ({
                   />
                 ),
               },
-              data: toolTipRenderer,
+              data: (props) =>
+                createSelectToolTipRenderer(
+                  allOptions,
+                  toolTipRenderer,
+                )({ ...props, displayMode: col.displayMode || 'label' }),
               headerCell: col.subtitle
                 ? createHeaderWithSubtitle(col.subtitle)
                 : SimpleHeaderWithTooltip,
@@ -1718,6 +1953,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             cells={{
               edit: {
@@ -1752,6 +1988,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             className={!isEditable ? 'k-right-disabled' : undefined}
             headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
@@ -1792,6 +2029,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
@@ -1843,6 +2081,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             className={!isEditable ? 'k-right-disabled' : undefined}
             headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
@@ -1888,6 +2127,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             cells={{
               edit: {
@@ -1918,6 +2158,7 @@ const AdvanceKendoTable = ({
           key={col.field}
           field={col.field}
           title={col.title || col.headerName}
+          locked={col?.locked || false}
           editable={col.editable || false}
           format={col.format || '{0:0.000}'}
           cells={{
@@ -1965,9 +2206,9 @@ const AdvanceKendoTable = ({
       <td
         {...props.tdProps}
         title={displayValue}
+        className={`${props.tdProps?.className || ''} ${shouldHighlight ? 'edited-cell' : ''}`.trim()}
         style={{
-          color: shouldHighlight ? 'orange' : undefined,
-          fontWeight: shouldHighlight ? 'bold' : undefined,
+          ...props.tdProps?.style,
           textAlign: typeof value === 'boolean' ? 'center' : undefined,
         }}
       >
@@ -2013,6 +2254,7 @@ const AdvanceKendoTable = ({
                   sx={{
                     fontSize: '16px',
                     fontWeight: 700,
+                    fontFamily: 'Honeywell Sans Web, Inter, sans-serif',
                     color: '#252525',
                     display: 'flex',
                     alignItems: 'center',
@@ -2051,6 +2293,17 @@ const AdvanceKendoTable = ({
                   {/* TITLE */}
                   {title || permissions?.titleName}
 
+                  {permissions?.showDropdown && (
+                    <GenericDropdown
+                      options={dropdownConfig?.options}
+                      value={selectedDropdownValue || ''}
+                      onChange={(value) => setSelectedDropdownValue(value)}
+                      label={dropdownConfig?.label || 'Select'}
+                      placeholder={dropdownConfig?.placeholder || 'Select'}
+                      valueKey={dropdownConfig?.valueKey || 'id'}
+                      labelKey={dropdownConfig?.labelKey || 'name'}
+                    />
+                  )}
                   {/* ROWS BADGE */}
                   <Box
                     sx={{
@@ -2223,7 +2476,11 @@ const AdvanceKendoTable = ({
                       className='w16-icon'
                     />
                   }
-                  disabled={isButtonDisabled || READ_ONLY}
+                  disabled={
+                    isButtonDisabled ||
+                    READ_ONLY ||
+                    !!permissions?.calculateDisabled
+                  }
                   className='btn-calculate'
                 >
                   Calculate
@@ -2240,16 +2497,15 @@ const AdvanceKendoTable = ({
                 </Button>
               )}
 
-              {permissions?.showDropdown && (
-                <GenericDropdown
-                  options={dropdownConfig?.options}
-                  value={selectedDropdownValue || ''}
-                  onChange={(value) => setSelectedDropdownValue(value)}
-                  label={dropdownConfig?.label || 'Select'}
-                  placeholder={dropdownConfig?.placeholder || 'Select'}
-                  valueKey={dropdownConfig?.valueKey || 'id'}
-                  labelKey={dropdownConfig?.labelKey || 'name'}
-                />
+              {permissions?.showReleaseBtn && (
+                <Button
+                  variant='contained'
+                  className='btn-save'
+                  disabled={isReleaseDisabled || READ_ONLY}
+                  onClick={handleRelease}
+                >
+                  Release
+                </Button>
               )}
             </Box>
           </Box>
@@ -2265,6 +2521,7 @@ const AdvanceKendoTable = ({
               fileName={`${permissions?.ExcelName}.xlsx`}
             >
               <Grid
+                key={groupBy}
                 style={{
                   flex: 1,
                   overflow: 'auto',
@@ -2299,12 +2556,22 @@ const AdvanceKendoTable = ({
                   permissions.filterable &&
                   columns.some((col) => dateFields.includes(col.field))
                 }
+                groupable={{
+                  enabled: false,
+                  footer: 'none',
+                  showGroupPanel: false,
+                }}
                 size='small'
                 pageable={getPaginationConfig()}
                 onRowClick={handleRowClick}
               >
                 {renderColumns(
-                  columns.filter((col) => !hiddenFields.includes(col.field)),
+                  columns.filter(
+                    (col) =>
+                      !hiddenFields.includes(col.field) &&
+                      !col.hidden &&
+                      col.isVisible !== false,
+                  ),
                   filter,
                   sort,
                 )}

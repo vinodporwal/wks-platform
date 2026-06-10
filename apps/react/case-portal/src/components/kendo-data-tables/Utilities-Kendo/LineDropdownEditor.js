@@ -23,7 +23,10 @@ const LineDropdownEditor = (props) => {
   )
 
   const currentValueObj = useMemo(
-    () => allOptions.find((opt) => (opt.value === dataItem[field] || opt.label === dataItem[field])) || null,
+    () =>
+      allOptions.find(
+        (opt) => opt.value === dataItem[field] || opt.label === dataItem[field],
+      ) || null,
     [allOptions, dataItem, field],
   )
 
@@ -51,7 +54,7 @@ const LineDropdownEditor = (props) => {
         value: label,
         syntheticEvent: e.syntheticEvent,
       })
-      return;
+      return
     }
     if (typeof onChange === 'function') {
       onChange({
@@ -78,10 +81,8 @@ const LineDropdownEditor = (props) => {
           dataItemKey='value'
           value={currentValueObj}
           onChange={handleChange}
+          className='dropdown-editor'
           style={{
-            width: '100%',
-            border: 'none',
-            height: '100%',
             color: highlight && isEdited ? 'orange' : undefined,
             fontWeight: highlight && isEdited ? 'bold' : undefined,
           }}
@@ -95,7 +96,9 @@ const LineDropdownEditor = (props) => {
   }
 
   // Display mode (read-only cell)
-  const lineObj = allLines.find((l) => (l.id === dataItem[field] || l.displayName === dataItem[field]))
+  const lineObj = allLines.find(
+    (l) => l.id === dataItem[field] || l.displayName === dataItem[field],
+  )
   const displayLabel = lineObj ? lineObj.displayName : ''
 
   return (

@@ -6,7 +6,9 @@
     "groupable": true,
     "renderCell": "renderStrongCell",
     "editable": false,
-    "hidden": true
+    "hidden": true,
+    "isVisible": false,
+    "minWidth": 100
   },
   {
     "field": "normParameterFKId",
@@ -16,7 +18,9 @@
     "valueGetter": "defaultValueGetter",
     "valueFormatter": "productDisplayNameFormatter",
     "renderEditCell": "renderNormParameterSelectCell",
-    "hidden": true
+    "hidden": true,
+    "isVisible": false,
+    "minWidth": 100
   },
   {
     "field": "productName",
@@ -25,7 +29,8 @@
     "widthT": 130,
     "valueGetter": "defaultValueGetter",
     "valueFormatter": "productDisplayNameFormatter",
-    "renderEditCell": "renderNormParameterSelectCell"
+    "renderEditCell": "renderNormParameterSelectCell",
+    "minWidth": 120
   },
   {
     "field": "UOM",
@@ -33,7 +38,8 @@
     "editable": false,
     "align": "left",
     "headerAlign": "left",
-    "widthT": 80
+    "widthT": 60,
+    "minWidth": 100
   },
   {
     "field": "apr",
@@ -41,7 +47,8 @@
     "editable": true,
     "renderEditCell": "NumericInputOnly",
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100
   },
   {
     "field": "may",
@@ -49,7 +56,8 @@
     "editable": true,
     "renderEditCell": "NumericInputOnly",
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100
   },
   {
     "field": "jun",
@@ -57,7 +65,8 @@
     "editable": true,
     "renderEditCell": "NumericInputOnly",
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100
   },
   {
     "field": "jul",
@@ -65,7 +74,8 @@
     "editable": true,
     "renderEditCell": "NumericInputOnly",
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100
   },
   {
     "field": "aug",
@@ -81,7 +91,8 @@
     "editable": true,
     "renderEditCell": "NumericInputOnly",
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100
   },
   {
     "field": "oct",
@@ -89,7 +100,8 @@
     "editable": true,
     "renderEditCell": "NumericInputOnly",
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100
   },
   {
     "field": "nov",
@@ -97,7 +109,8 @@
     "editable": true,
     "renderEditCell": "NumericInputOnly",
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100
   },
   {
     "field": "dec",
@@ -105,7 +118,8 @@
     "editable": true,
     "renderEditCell": "NumericInputOnly",
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100
   },
   {
     "field": "jan",
@@ -113,7 +127,8 @@
     "editable": true,
     "renderEditCell": "NumericInputOnly",
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100
   },
   {
     "field": "feb",
@@ -121,7 +136,8 @@
     "editable": true,
     "renderEditCell": "NumericInputOnly",
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100
   },
   {
     "field": "mar",
@@ -129,7 +145,8 @@
     "editable": true,
     "renderEditCell": "NumericInputOnly",
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "minWidth": 100
   },
   {
     "field": "remarks",
@@ -137,6 +154,7 @@
 
     "widthT": 80,
     "editable": true,
-    "renderCell": "renderRemarkCell"
+    "renderCell": "renderRemarkCell",
+    "minWidth": 100
   }
 ]

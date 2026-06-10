@@ -1,17 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  IconMapPin,
-  IconBriefcase,
-  IconBuildingFactory,
   IconChevronDown,
   IconChevronUp,
   IconChevronRight,
-  IconCircleCheck,
-  IconCode,
-  IconSearch,
-  IconEye,
-  IconClock,
-  IconAdjustments,
   IconDots,
 } from '@tabler/icons-react'
 import {
@@ -34,7 +25,6 @@ import '../../dashboard-v2.css'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import {
   AllStatusIcon,
-  BusinessBlackIcon,
   BusinessBlueIcon,
   DevIcon,
   UatIcon,
@@ -132,12 +122,21 @@ export default function AopDashboardCompact() {
   }
 
   const buildIdMap = useCallback((details = []) => {
-    return details.reduce((acc, item) => {
-      if (!item?.name || !item?.id) return acc
-      const key = item.name.toUpperCase().replace(/\s+/g, '_')
-      acc[key] = item.id
-      return acc
-    }, {})
+    const map = {}
+
+    details.forEach((vertical) => {
+      vertical?.sites?.forEach((site) => {
+        site?.plants?.forEach((plant) => {
+          const key = `${vertical.id}_${site.displayName}_${plant.displayName}`
+            .toUpperCase()
+            .replace(/\s+/g, '_')
+
+          map[key] = plant.id
+        })
+      })
+    })
+
+    return map
   }, [])
 
   const toggleSite = (siteName) => {
@@ -204,7 +203,7 @@ export default function AopDashboardCompact() {
 
       if (!vertical) {
         showSnackbar(
-          'Access restricted. You don’t have permission for this selection.',
+          'Access restricted. You dont have permission for this selection.',
           'error',
         )
         setLoading(false)
@@ -213,7 +212,7 @@ export default function AopDashboardCompact() {
 
       if (sid && !vertical.sids.includes(sid)) {
         showSnackbar(
-          'Access restricted. You don’t have permission for this selection.',
+          'Access restricted. You dont have permission for this selection.',
           'error',
         )
         setLoading(false)
@@ -223,9 +222,20 @@ export default function AopDashboardCompact() {
       if (sid && pid) {
         const allowedPids = vertical.pids?.[sid] || []
 
-        if (!allowedPids.includes(pid)) {
+        const hasPermission = allowedPids.some(
+          (p) => p?.toUpperCase() === pid?.toUpperCase(),
+        )
+
+        if (!hasPermission) {
+          console.log('Permission Failed =>', {
+            pid,
+            sid,
+            v_id,
+            allowedPids,
+          })
+
           showSnackbar(
-            'Access restricted. You don’t have permission for this selection.',
+            'Access restricted. You dont have permission for this selection.',
             'error',
           )
           setLoading(false)
@@ -381,7 +391,8 @@ export default function AopDashboardCompact() {
           (row.site_name && row.site_name.toLowerCase().includes(q)) ||
           (row.business_category &&
             row.business_category.toLowerCase().includes(q)) ||
-          (row.verticalName && row.verticalName.toLowerCase().includes(q)),
+          (row.verticalName && row.verticalName.toLowerCase().includes(q)) ||
+          (row.vertical_name && row.vertical_name.toLowerCase().includes(q)),
       )
     }
 
@@ -397,11 +408,16 @@ export default function AopDashboardCompact() {
           if (!acc[site])
             acc[site] = { site, rows: [], businessCategories: new Set() }
           const verticalName = item.vertical_name || 'N/A'
+          const key = `${item.v_id}_${item.site_name}_${verticalName}`
+            .toUpperCase()
+            .replace(/\s+/g, '_')
+
           acc[site].rows.push({
             idx: idx++,
-            id:
-              idMap[verticalName.toUpperCase().replace(/\s+/g, '_')] ??
-              item.vertical_id,
+
+            id: (() => {
+              return idMap[key] ?? item.vertical_id
+            })(),
             sId: item.site_id,
             verticalName: verticalName,
             status: item.status,
@@ -424,6 +440,7 @@ export default function AopDashboardCompact() {
       const grouped = Object.values(
         filteredData.reduce((acc, item) => {
           const business = item.business_category || 'Other'
+
           if (!acc[business])
             acc[business] = {
               site: business,
@@ -431,11 +448,15 @@ export default function AopDashboardCompact() {
               businessCategories: new Set(),
             }
           const verticalName = item.vertical_name || 'N/A'
+          const key = `${item.v_id}_${item.site_name}_${verticalName}`
+            .toUpperCase()
+            .replace(/\s+/g, '_')
+
           acc[business].rows.push({
             idx: idx++,
-            id:
-              idMap[verticalName.toUpperCase().replace(/\s+/g, '_')] ??
-              item.vertical_id,
+            id: (() => {
+              return idMap[key] ?? item.vertical_id
+            })(),
             sId: item.site_id,
             verticalName: verticalName,
             status: item.status,
@@ -469,27 +490,53 @@ export default function AopDashboardCompact() {
     ]?.length || 0
   const totalPlants = filteredData?.length || 0
 
-  const menuItemStyle = { fontSize: 14, fontWeight: 500, color: '#303030', fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif", letterSpacing: "0px", verticalAlign: "middle" }
+  const menuItemStyle = {
+    fontSize: 14,
+    fontWeight: 500,
+    color: '#303030',
+    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+    letterSpacing: '0px',
+    verticalAlign: 'middle',
+  }
 
   return (
     <Box className='dashboard-root-v3'>
       <LoaderBackdrop open={!!loading} />
-      <Typography variant='h4' sx={{ marginBottom: '16px', fontWeight: 800, color: DashboardColors.text.heading, fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif", fontSize: '20px' }}>
+      <Typography
+        variant='h4'
+        sx={{
+          marginBottom: '16px',
+          fontWeight: 800,
+          color: DashboardColors.text.heading,
+          fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
+          fontSize: '20px',
+        }}
+      >
         Digital AOP Dashboard
       </Typography>
       <Box className='dashboard-top-section'>
         <Box className='top-left-summaries'>
           <Box className='top-summary-card-small'>
             <Box className='icon-text-group'>
-              <Box component='img' src={SiteIcon} alt='Site Icon' className='summary-card-icon' />
+              <Box
+                component='img'
+                src={SiteIcon}
+                alt='Site Icon'
+                className='summary-card-icon'
+              />
               <Typography className='label'>Total Sites</Typography>
             </Box>
             <Typography className='value'>{totalSites}</Typography>
           </Box>
           <Box className='top-summary-card-small'>
             <Box className='icon-text-group'>
-              <Box component='img' src={BusinessBlueIcon} alt='Business Icon' className='summary-card-icon' />
-                  <Typography className='label'>Total Businesses</Typography>
+              <Box
+                component='img'
+                src={BusinessBlueIcon}
+                alt='Business Icon'
+                className='summary-card-icon'
+              />
+              <Typography className='label'>Total Businesses</Typography>
             </Box>
             <Typography className='value'>{totalBusinesses}</Typography>
           </Box>
@@ -498,7 +545,12 @@ export default function AopDashboardCompact() {
         <Box className='top-right-summaries'>
           <Box className='top-total-plants-section'>
             <Box className='plants-icon-box'>
-              <Box component='img' src={PlantIcon} alt='Plant Icon' className='summary-card-icon-large' />
+              <Box
+                component='img'
+                src={PlantIcon}
+                alt='Plant Icon'
+                className='summary-card-icon-large'
+              />
             </Box>
             <Box className='plants-text-col'>
               <Typography className='label'>Total Plants</Typography>
@@ -524,7 +576,12 @@ export default function AopDashboardCompact() {
                   className={`top-status-box ${getStatusClass(status)}`}
                 >
                   <Box className='top-status-header'>
-                    <Box component='img' src={statusIconSrc} alt={status} className='top-status-icon' />
+                    <Box
+                      component='img'
+                      src={statusIconSrc}
+                      alt={status}
+                      className='top-status-icon'
+                    />
                     <Typography className='status-label-text'>
                       {status.replace('-', ' ')}
                     </Typography>
@@ -543,28 +600,50 @@ export default function AopDashboardCompact() {
             className={`view-toggle-btn ${viewMode === 'sites' ? 'active' : ''}`}
             onClick={() => setViewMode('sites')}
           >
-            <Box component='img' src={SiteIcon} alt='Site Icon' className='toggle-btn-icon' /> View by Sites
+            <Box
+              component='img'
+              src={SiteIcon}
+              alt='Site Icon'
+              className='toggle-btn-icon'
+            />{' '}
+            View by Sites
           </Box>
           <Box
             className={`view-toggle-btn ${viewMode === 'businesses' ? 'active' : ''}`}
             onClick={() => setViewMode('businesses')}
           >
-            <Box component='img' src={BusinessBlueIcon} alt='Business Icon' className='toggle-btn-icon' /> View by Businesses
+            <Box
+              component='img'
+              src={BusinessBlueIcon}
+              alt='Business Icon'
+              className='toggle-btn-icon'
+            />{' '}
+            View by Businesses
           </Box>
         </Box>
         <Box className='filters-right'>
           <Box className='search-input-wrapper'>
-            <Box component='img' src={SearchIcon} alt='Search Icon' className='w16-icon' />
+            <Box
+              component='img'
+              src={SearchIcon}
+              alt='Search Icon'
+              className='w16-icon'
+            />
             <input
               type='text'
-              placeholder='Search for Site or Business name...'
+              placeholder='Search for Site, Plant or Business name...'
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </Box>
           <Box className='status-dropdown' onClick={handleStatusMenuOpen}>
-            <Box component='img' src={AllStatusIcon} alt='Search Icon' className='w16-icon' />
-            <Typography component='span' className="all-status-label">
+            <Box
+              component='img'
+              src={AllStatusIcon}
+              alt='Search Icon'
+              className='w16-icon'
+            />
+            <Typography component='span' className='all-status-label'>
               Status:{' '}
               <strong className='all-status-value'>
                 {selectedStatuses.length === ALL_STATUSES.length
@@ -595,7 +674,10 @@ export default function AopDashboardCompact() {
               style: { padding: '4px 0' },
             }}
           >
-            <MenuItem onClick={() => toggleStatus('all')} sx={{ minHeight: '32px', padding: '6px 10px' }}>
+            <MenuItem
+              onClick={() => toggleStatus('all')}
+              sx={{ minHeight: '32px', padding: '6px 10px' }}
+            >
               <Checkbox
                 checked={selectedStatuses.length === ALL_STATUSES.length}
                 size='small'
@@ -617,10 +699,19 @@ export default function AopDashboardCompact() {
                 primaryTypographyProps={menuItemStyle}
               />
             </MenuItem>
-            <Divider sx={{ my: '4px !important', border: `1px solid ${DashboardColors.divider} !important` }} />
+            <Divider
+              sx={{
+                my: '4px !important',
+                border: `1px solid ${DashboardColors.divider} !important`,
+              }}
+            />
 
             {ALL_STATUSES.map((status) => (
-              <MenuItem key={status} onClick={() => toggleStatus(status)} sx={{ minHeight: '32px', padding: '6px 10px' }}>
+              <MenuItem
+                key={status}
+                onClick={() => toggleStatus(status)}
+                sx={{ minHeight: '32px', padding: '6px 10px' }}
+              >
                 <Checkbox
                   checked={selectedStatuses.includes(status)}
                   size='small'
@@ -668,20 +759,18 @@ export default function AopDashboardCompact() {
               style: { padding: '4px 0' },
             }}
           >
-            <MenuItem onClick={() => handleExpandCollapseAll(true)} sx={{ minHeight: '32px', padding: '6px 10px' }}>
-              <Typography
-                sx={menuItemStyle}
-              >
-                Expand All
-              </Typography>
+            <MenuItem
+              onClick={() => handleExpandCollapseAll(true)}
+              sx={{ minHeight: '32px', padding: '6px 10px' }}
+            >
+              <Typography sx={menuItemStyle}>Expand All</Typography>
             </MenuItem>
             <Divider sx={{ margin: `4px 0px !important` }} />
-            <MenuItem onClick={() => handleExpandCollapseAll(false)} sx={{ minHeight: '32px', padding: '6px 10px' }}>
-              <Typography
-                sx={menuItemStyle}
-              >
-                Collapse All
-              </Typography>
+            <MenuItem
+              onClick={() => handleExpandCollapseAll(false)}
+              sx={{ minHeight: '32px', padding: '6px 10px' }}
+            >
+              <Typography sx={menuItemStyle}>Collapse All</Typography>
             </MenuItem>
           </Menu>
         </Box>
@@ -701,11 +790,21 @@ export default function AopDashboardCompact() {
                 onClick={() => toggleSite(site.site)}
               >
                 <Box className='summary-item summary-item-site'>
-                  <Box className={`summary-icon-box ${viewMode === 'sites' ? 'active-site' : 'active-business'}`}>
+                  <Box
+                    className={`summary-icon-box ${viewMode === 'sites' ? 'active-site' : 'active-business'}`}
+                  >
                     {viewMode === 'sites' ? (
-                      <Box component='img' src={SiteIcon} className="w16-icon" />
+                      <Box
+                        component='img'
+                        src={SiteIcon}
+                        className='w16-icon'
+                      />
                     ) : (
-                      <Box component='img' src={BusinessBlueIcon} className="w16-icon" />
+                      <Box
+                        component='img'
+                        src={BusinessBlueIcon}
+                        className='w16-icon'
+                      />
                     )}
                   </Box>
                   <Typography className='summary-label'>{site.site}</Typography>
@@ -713,12 +812,21 @@ export default function AopDashboardCompact() {
 
                 <Box className='summary-divider' />
                 <Box className='summary-item business'>
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Box
+                    sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                  >
                     {viewMode === 'sites' ? (
-                      <Box component='img' src={BusinessBlueIcon} className="w16-icon" />
+                      <Box
+                        component='img'
+                        src={BusinessBlueIcon}
+                        className='w16-icon'
+                      />
                     ) : (
-                      <Box component='img' src={SiteIcon} className="w16-icon" />
+                      <Box
+                        component='img'
+                        src={SiteIcon}
+                        className='w16-icon'
+                      />
                     )}
                     <Typography
                       component='span'
@@ -736,7 +844,7 @@ export default function AopDashboardCompact() {
 
                 <Box className='summary-item plants summary-item-plants'>
                   <Box className='summary-icon-box'>
-                    <Box component='img' src={PlantIcon} className="w16-icon" />
+                    <Box component='img' src={PlantIcon} className='w16-icon' />
                   </Box>
                   <Box>
                     <Typography
@@ -783,7 +891,11 @@ export default function AopDashboardCompact() {
               {/* Expanded Content: Sub-Accordions */}
               {isSiteExpanded && (
                 <Box className='bu-expanded-main'>
-                  <Divider className='bu-expanded-divider' orientation="vertical" flexItem={{ mx: 2}}  />
+                  <Divider
+                    className='bu-expanded-divider'
+                    orientation='vertical'
+                    flexItem={{ mx: 2 }}
+                  />
                   <Box className='bu-expanded-content'>
                     {site.businessCategories.map((catName) => {
                       const subKey = `${site.site}-${catName}`
@@ -813,9 +925,17 @@ export default function AopDashboardCompact() {
                                 )}
                                 <Box className='sub-header-plants'>
                                   {viewMode === 'sites' ? (
-                                    <Box component='img' src={BusinessBlueIcon} className="w16-icon" />
+                                    <Box
+                                      component='img'
+                                      src={BusinessBlueIcon}
+                                      className='w16-icon'
+                                    />
                                   ) : (
-                                    <Box component='img' src={SiteIcon} className="w16-icon" />
+                                    <Box
+                                      component='img'
+                                      src={SiteIcon}
+                                      className='w16-icon'
+                                    />
                                   )}
                                   <Typography className='sub-category-name'>
                                     {catName}
@@ -824,7 +944,12 @@ export default function AopDashboardCompact() {
                               </Box>
                               <Box className='summary-divider' />
                               <Box className='sub-header-plants'>
-                                <Box component='img' src={PlantIcon} alt='Plant' className="w16-icon" />
+                                <Box
+                                  component='img'
+                                  src={PlantIcon}
+                                  alt='Plant'
+                                  className='w16-icon'
+                                />
                                 <Typography className='sub-label-small'>
                                   Plants
                                 </Typography>
@@ -840,7 +965,7 @@ export default function AopDashboardCompact() {
                               <Box className='plant-grid'>
                                 {catRows?.map((plant) => (
                                   <Box
-                                    key={`${catName}-${plant.idx}`}
+                                    key={`${catName}-${plant.id}-${plant.sId}`}
                                     className='plant-item-card'
                                     onClick={(e) =>
                                       handlePlantClick(
@@ -852,7 +977,12 @@ export default function AopDashboardCompact() {
                                     }
                                   >
                                     <Box className='plant-card-left'>
-                                      <Box component='img' src={PlantIcon} alt='Plant' className="w16-icon" />
+                                      <Box
+                                        component='img'
+                                        src={PlantIcon}
+                                        alt='Plant'
+                                        className='w16-icon'
+                                      />
                                       <Typography className='plant-name'>
                                         {plant.verticalName}
                                       </Typography>

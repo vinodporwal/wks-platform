@@ -5,8 +5,8 @@
     "editable": false,
     "widthT": 250,
     "autoAdjust": false,
-    "hidden": true,
-    "isVisible": false
+    "hidden": false,
+    "minWidth": 250
   },
   {
     "field": "UOM",

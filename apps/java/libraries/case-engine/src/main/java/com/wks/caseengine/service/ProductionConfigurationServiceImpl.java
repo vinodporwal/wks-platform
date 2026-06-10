@@ -318,7 +318,7 @@ public class ProductionConfigurationServiceImpl implements ProductionConfigurati
 
 		try {
 			List<ConfigurationDTO> data = readProductionConfiguration(file.getInputStream(), plantId, year);
-			List<ConfigurationDTO> failedRecords = configurationService.saveConfigurationData(year, plantId.toString(),null, data,null);
+			List<ConfigurationDTO> failedRecords = configurationService.saveConfigurationData(year, plantId.toString(),null, data,null,false);
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
 				byte[] fileByteArray = exportProductionConfiguration(year, plantId.toString(), true, failedRecords);

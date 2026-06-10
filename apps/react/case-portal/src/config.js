@@ -1,8 +1,7 @@
 const config = {
   basename: '/',
   defaultPath: '/production-norms-plan/configuration',
-  fontFamily:
-    "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
+  fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
   i18n: 'en',
   miniDrawer: false,
   container: true,

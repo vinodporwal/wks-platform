@@ -37,6 +37,11 @@ public class BusinessDemandDataController {
 		return businessDemandDataService.getBusinessDemandData(year,plantId);	
 	}
 	
+    @GetMapping(value="/business-demand-line")
+	public	List<BusinessDemandDataDTO> getBusinessDemandLineData(@RequestParam String year,@RequestParam String plantId,@RequestParam String lineId){
+		return businessDemandDataService.getBusinessDemandLineData(year,plantId,lineId);	
+	}
+
 	@GetMapping(value="/business-demand-manual-entry")
 	public AOPMessageVM getBusinessDemand(@RequestParam String year,@RequestParam UUID plantId) {
 		return businessDemandDataService.getBusinessDemand(year,plantId);
@@ -88,6 +93,31 @@ public class BusinessDemandDataController {
 	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
 	}
+
+	@GetMapping(value = "/business-demand-export-line")
+	public ResponseEntity<byte[]> exportBusinessDemandLine(
+		     @RequestParam("year") String year,
+	         @RequestParam("plantId") String plantId,
+			@RequestParam("lineId") String lineId
+           
+	        ) {
+	    try {
+			
+	  //      byte[] excelBytes = businessDemandDataService.exportBusinessDemandLine(year,plantId, lineId, false,null); 
+		byte[] excelBytes = businessDemandDataService.exportBusinessDemandAllLine(year,plantId);
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("Business_demand.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
 	
 	@PostMapping(value = "/business-demand-import", consumes = "multipart/form-data")
 	public AOPMessageVM importExcel(
@@ -98,10 +128,23 @@ public class BusinessDemandDataController {
 			return	businessDemandDataService.importExcel(year,UUID.fromString(plantId), file); 
 	}
 
+	@PostMapping(value = "/business-demand-import-line", consumes = "multipart/form-data")
+	public AOPMessageVM importExcelLineWise(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,
+			@RequestParam("file") MultipartFile file
+	        ) {
+			return	businessDemandDataService.importExcelLineWise(year,UUID.fromString(plantId), file); 
+	}
 	
 	@PostMapping(value="/business-demand")
 	public 	List<BusinessDemandDataDTO>  saveBusinessDemandData(@RequestBody List<BusinessDemandDataDTO> businessDemandDataDTO) {
 		return businessDemandDataService.saveBusinessDemandData(businessDemandDataDTO);
+	}
+	
+	@PostMapping(value="/business-demand-line")
+	public 	List<BusinessDemandDataDTO>  saveBusinessDemandLineData(@RequestBody List<BusinessDemandDataDTO> businessDemandDataDTO) {
+		return businessDemandDataService.saveBusinessDemandLineData(businessDemandDataDTO);
 	}
 	
 	@PutMapping(value="/business-demand")

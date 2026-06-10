@@ -53,7 +53,13 @@ import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import AddIcon from '@mui/icons-material/Add'
-import { FileExportIcon, FileImportIcon, SaveIcon, CalculateIcon } from 'assets/images/icons'
+import {
+  FileExportIcon,
+  FileImportIcon,
+  SaveIcon,
+  CalculateIcon,
+} from 'assets/images/icons'
+import { useRef } from 'react'
 
 export const particulars = [
   'normParameterId',
@@ -112,30 +118,30 @@ const KendoDataTablesReciepe = ({
   loading = false,
   typeRank = {},
   permissions = {},
-  setSnackbarOpen = () => {},
+  setSnackbarOpen = () => { },
   snackbarData = { message: '', severity: 'info' },
   snackbarOpen = false,
-  setRemarkDialogOpen = () => {},
+  setRemarkDialogOpen = () => { },
   currentRemark = '',
-  setCurrentRemark = () => {},
+  setCurrentRemark = () => { },
   currentRowId = null,
-  NormParameterIdCell = () => {},
-  setModifiedCells = () => {},
+  NormParameterIdCell = () => { },
+  setModifiedCells = () => { },
   remarkDialogOpen = false,
-  handleDeleteSelected = () => {},
-  saveChanges = () => {},
-  fetchData = () => {},
-  deleteRowData = () => {},
-  handleAddPlantSite = () => {},
-  handleCalculate = () => {},
-  handleUnitChange = () => {},
-  handleRemarkCellClick = () => {},
+  handleDeleteSelected = () => { },
+  saveChanges = () => { },
+  fetchData = () => { },
+  deleteRowData = () => { },
+  handleAddPlantSite = () => { },
+  handleCalculate = () => { },
+  handleUnitChange = () => { },
+  handleRemarkCellClick = () => { },
   selectedUsers = [],
   groupBy = null,
   allProducts = [],
   selectMode,
-  setSelectMode = () => {},
-  handleExport = () => {},
+  setSelectMode = () => { },
+  handleExport = () => { },
   handleExcelUpload,
   downloadExcelForConfiguration,
   summaryEdited,
@@ -163,7 +169,7 @@ const KendoDataTablesReciepe = ({
 
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
-
+  const fileInputRef = useRef(null)
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { oldYear } = dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
@@ -171,46 +177,18 @@ const KendoDataTablesReciepe = ({
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const [editedCells, setEditedCells] = useState({}) // ADD THIS LINE after other useState declarations
-  const shouldShowExportImportButtons = () => {
-    const dataGridStore = useSelector((state) => state.dataGridStore)
-    const {
-      verticalChange,
-      yearChanged,
-      oldYear,
-      plantID,
-      plantObject,
-      siteObject,
-      verticalObject,
-      year,
-      screenTitle,
-    } = dataGridStore
-    const PLANT_ID = plantObject?.id
-    const SITE_ID = siteObject?.id
-    const VERTICAL_ID = verticalObject?.id
-    const VERTICAL_NAME = verticalObject?.name
-    const AOP_YEAR = year?.selectedYear
-    const isOldYear = false
-    const IS_OLD_YEAR = oldYear?.oldYear
-    const { isReleased } = dataGridStore
-    const IS_RELEASED = isReleased
-    const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-
-    const vertName = verticalChange?.selectedVertical
-    const lowerVertName = vertName?.toLowerCase()
-    const SCREEN_NAME = screenTitle?.title
-    const siteName = siteObject?.name?.toLowerCase()
-    const plantName = plantObject?.name?.toLowerCase()
-
-    // Check if conditions are met for showing export/import buttons
-    return lowerVertName === 'pe' || lowerVertName === 'pp'
-  }
+  const vertName = dataGridStore?.verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase()
+  const showExportImport = ['pe', 'pp', 'elastomer', 'pvc'].includes(
+    lowerVertName,
+  )
   const initialGroup = groupBy
     ? [
-        {
-          field: groupBy,
-          dir: undefined,
-        },
-      ]
+      {
+        field: groupBy,
+        dir: undefined,
+      },
+    ]
     : []
 
   const handleEditChange = useCallback((e) => {
@@ -259,10 +237,18 @@ const KendoDataTablesReciepe = ({
       //   ? originalDataItem[changedField]
       //   : undefined
 
-      setIsRowEdited(true)
+
 
       const { dataItem, field, value } = e
       const itemId = dataItem.id
+
+
+      // Ignore group header expand/collapse events — they are not real edits
+      if (!field || dataItem?.items) {
+        return
+      }
+
+      setIsRowEdited(true)
       // Track which cell was edited
       setEditedCells((prev) => ({
         ...prev,
@@ -407,6 +393,18 @@ const KendoDataTablesReciepe = ({
       setIsButtonDisabled(false)
     }, 500)
   }
+  const triggerFileUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
+
+  const onFileChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    handleExcelUpload(file)
+    e.target.value = ''
+  }
 
   const CustomRow = useCallback(
     ({ dataItem, className, ...rest }) => {
@@ -440,7 +438,11 @@ const KendoDataTablesReciepe = ({
         {...restThProps}
         aria-sort={ariaSort}
         title={props.title}
-        style={{ padding: '0px', borderRight: '1px solid #878787' }}
+        style={{
+          ...restThProps?.style,
+          padding: '0px',
+          borderRight: '1px solid #878787',
+        }}
       >
         <Tooltip
           position='top'
@@ -458,7 +460,11 @@ const KendoDataTablesReciepe = ({
     cols.map((col, idx) => {
       if (col.children) {
         return (
-          <GridColumn key={col.title || idx} title={col.title}>
+          <GridColumn
+            key={col.title || idx}
+            title={col.title}
+            locked={col.locked || false}
+          >
             {renderColumns(col.children, filter, sort)}
           </GridColumn>
         )
@@ -474,8 +480,9 @@ const KendoDataTablesReciepe = ({
             field={col.field}
             title={col.title || col.headerName}
             editable={col.editable || false}
+            locked={col.locked || false}
             format={FORMATE_DECIMAL}
-            width='80px'
+            width={col.widthT ? `${col.widthT}px` : '100px'}
             cells={{
               edit: { text: NumericEditorWithLimit },
               data: toolTipRenderer,
@@ -492,10 +499,11 @@ const KendoDataTablesReciepe = ({
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
+            locked={col.locked || false}
             editable={col.editable || false}
             format={FORMATE_DECIMAL}
             className={'k-number-right'}
-            width='150px'
+            width={col.widthT ? `${col.widthT}px` : '150px'}
             cells={{
               edit: { text: NumericEditorWithLimit },
               data: toolTipRenderer,
@@ -512,8 +520,9 @@ const KendoDataTablesReciepe = ({
           field={col.field}
           title={col.title || col.headerName}
           editable={col.editable || false}
+          locked={col.locked || false}
           format={FORMATE_DECIMAL}
-          width='150px'
+          width={col.widthT ? `${col.widthT}px` : '150px'}
           cells={{
             edit: { text: NumericEditorWithLimit },
             data: toolTipRenderer,
@@ -547,6 +556,7 @@ const KendoDataTablesReciepe = ({
         {...props.tdProps}
         title={value}
         style={{
+          ...props.tdProps?.style,
           color: isRed ? 'orange' : undefined,
           fontWeight: isRed ? 'bold' : undefined,
         }}
@@ -557,7 +567,7 @@ const KendoDataTablesReciepe = ({
   }
 
   return (
-    <div className="k-table-box">
+    <div className='k-table-box'>
       {loading && <LoaderBackdrop open={!!loading} />}
 
       {(permissions?.allAction ?? true) && (
@@ -600,9 +610,7 @@ const KendoDataTablesReciepe = ({
                   sx={{
                     fontSize: 20,
                     transition: '0.2s',
-                    transform: gridExpanded
-                      ? 'rotate(0deg)'
-                      : 'rotate(180deg)',
+                    transform: gridExpanded ? 'rotate(0deg)' : 'rotate(180deg)',
                   }}
                 />
               </Box>
@@ -684,59 +692,50 @@ const KendoDataTablesReciepe = ({
               )}
 
               {/* Export Button */}
-              {permissions?.downloadExcelBtn &&
-                shouldShowExportImportButtons() && (
+              {permissions?.downloadExcelBtn && showExportImport && (
+                <Button
+                  variant='contained'
+                  className='btn-export'
+                  startIcon={
+                    <Box
+                      component='img'
+                      src={FileExportIcon}
+                      className='w16-icon'
+                    />
+                  }
+                  onClick={downloadExcelForConfiguration}
+                  disabled={isButtonDisabled}
+                >
+                  Export
+                </Button>
+              )}
+
+              {permissions?.uploadExcelBtn && showExportImport && (
+                <>
                   <Button
                     variant='contained'
-                    className='btn-export'
                     startIcon={
                       <Box
                         component='img'
-                        src={FileExportIcon}
+                        src={FileImportIcon}
                         className='w16-icon'
                       />
                     }
-                    onClick={downloadExcelForConfiguration}
-                    disabled={isButtonDisabled}
+                    className='btn-import'
+                    disabled={isButtonDisabled || READ_ONLY}
+                    onClick={triggerFileUpload}
                   >
-                    Export
+                    Import
                   </Button>
-                )}
 
-
-              {/* Import Button */}
-              {permissions?.uploadExcelBtn && shouldShowExportImportButtons() && (
-                <div>
                   <input
-                    accept='.xlsx,.xls'
-                    style={{ display: 'none' }}
-                    id='excel-upload-input'
                     type='file'
-                    onChange={(e) => {
-                      const file = e.target.files[0]
-                      if (file) {
-                        handleExcelUpload(file)
-                        e.target.value = ''
-                      }
-                    }}
+                    accept='.xlsx,.xls'
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                    onChange={onFileChange}
                   />
-                  <label htmlFor='excel-upload-input'>
-                    <Button
-                      variant='contained'
-                      startIcon={
-                        <Box
-                          component='img'
-                          src={FileImportIcon}
-                          className='w16-icon'
-                        />
-                      }
-                      className='btn-import'
-                      disabled={isButtonDisabled || READ_ONLY}
-                    >
-                      Import
-                    </Button>
-                  </label>
-                </div>
+                </>
               )}
 
               {permissions?.saveBtn && (
@@ -744,11 +743,7 @@ const KendoDataTablesReciepe = ({
                   variant='contained'
                   className='btn-save'
                   startIcon={
-                    <Box
-                      component='img'
-                      src={SaveIcon}
-                      className='w16-icon'
-                    />
+                    <Box component='img' src={SaveIcon} className='w16-icon' />
                   }
                   onClick={saveModalOpen}
                   disabled={
@@ -781,7 +776,16 @@ const KendoDataTablesReciepe = ({
                   Calculate
                 </Button>
               )}
-
+              {permissions?.showCalculate && (
+                <Button
+                  variant='contained'
+                  onClick={handleExport}
+                  disabled={isButtonDisabled}
+                  className='btn-save'
+                >
+                  Export
+                </Button>
+              )}
               {permissions?.showFinalSubmit && (
                 <Button
                   variant='contained'
@@ -855,11 +859,12 @@ const KendoDataTablesReciepe = ({
               pageable={
                 rows?.length > 100
                   ? {
-                      buttonCount: 4,
-                      pageSizes: [10, 50, 100],
-                    }
+                    buttonCount: 4,
+                    pageSizes: [10, 50, 100],
+                  }
                   : false
               }
+              lockGroups={true}
               onRowClick={handleRowClick}
             >
               {renderColumns(

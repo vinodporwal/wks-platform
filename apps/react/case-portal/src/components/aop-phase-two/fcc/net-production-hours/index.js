@@ -6,6 +6,7 @@ import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import ValueFormatterPhaseTwo from '../../common/ValueFormatterPhaseTwo'
 import { NetProductionHoursApiService } from '../../services/vgoht/netProductionHoursApiService'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const dummyRows = [
   {
@@ -149,8 +150,8 @@ const NetProductionHoursFCC = () => {
     {
       field: 'April',
       title: headerMap[4],
-      widthT: 100,
-      minWidth: 80,
+      widthT: 120,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -158,8 +159,8 @@ const NetProductionHoursFCC = () => {
     {
       field: 'May',
       title: headerMap[5],
-      widthT: 100,
-      minWidth: 80,
+      widthT: 120,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -167,8 +168,8 @@ const NetProductionHoursFCC = () => {
     {
       field: 'June',
       title: headerMap[6],
-      widthT: 100,
-      minWidth: 80,
+      widthT: 120,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -176,8 +177,8 @@ const NetProductionHoursFCC = () => {
     {
       field: 'July',
       title: headerMap[7],
-      widthT: 100,
-      minWidth: 80,
+      widthT: 120,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -185,8 +186,8 @@ const NetProductionHoursFCC = () => {
     {
       field: 'Aug',
       title: headerMap[8],
-      widthT: 100,
-      minWidth: 80,
+      widthT: 120,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -194,8 +195,8 @@ const NetProductionHoursFCC = () => {
     {
       field: 'Sep',
       title: headerMap[9],
-      widthT: 100,
-      minWidth: 80,
+      widthT: 120,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -203,8 +204,8 @@ const NetProductionHoursFCC = () => {
     {
       field: 'Oct',
       title: headerMap[10],
-      widthT: 100,
-      minWidth: 80,
+      widthT: 120,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -212,8 +213,8 @@ const NetProductionHoursFCC = () => {
     {
       field: 'Nov',
       title: headerMap[11],
-      widthT: 100,
-      minWidth: 80,
+      widthT: 120,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -221,8 +222,8 @@ const NetProductionHoursFCC = () => {
     {
       field: 'Dec',
       title: headerMap[12],
-      widthT: 100,
-      minWidth: 80,
+      widthT: 120,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -230,8 +231,8 @@ const NetProductionHoursFCC = () => {
     {
       field: 'Jan',
       title: headerMap[1],
-      widthT: 100,
-      minWidth: 80,
+      widthT: 120,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -239,8 +240,8 @@ const NetProductionHoursFCC = () => {
     {
       field: 'Feb',
       title: headerMap[2],
-      widthT: 100,
-      minWidth: 80,
+      widthT: 120,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -248,8 +249,8 @@ const NetProductionHoursFCC = () => {
     {
       field: 'Mar',
       title: headerMap[3],
-      widthT: 100,
-      minWidth: 80,
+      widthT: 120,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -378,12 +379,7 @@ const NetProductionHoursFCC = () => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <AdvanceKendoTable
         columns={columns}

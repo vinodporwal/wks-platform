@@ -1,6 +1,15 @@
 import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
-import { Box, Button, Stack, Tooltip, Typography } from '@mui/material'
+import {
+  Box,
+  Button,
+  IconButton,
+  Stack,
+  Tooltip,
+  Typography,
+} from '@mui/material'
+import { CalenderIcon } from 'assets/images/icons'
 import { DatePicker } from '@progress/kendo-react-dateinputs'
+import { TextArea } from '@progress/kendo-react-inputs'
 import {
   CustomAccordion,
   CustomAccordionDetails,
@@ -21,6 +30,7 @@ import { styled } from '@mui/material/styles'
 import SettingsIcon from '@mui/icons-material/Settings'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import InfoIcon from '@mui/icons-material/Info'
+import { useSelector } from 'react-redux'
 
 const CompactAccordion = styled(CustomAccordion)({
   mb: 0,
@@ -40,6 +50,7 @@ const ConfigurationAccordian = ({
 }) => {
   const keycloak = useSession()
   const hasExecutedRef = useRef(false)
+  const dataGridStore = useSelector((state) => state.dataGridStore)
   const { isReleased, oldYear } = dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased
@@ -48,6 +59,8 @@ const ConfigurationAccordian = ({
   // State management
   const [startDate, setStartDate] = useState()
   const [endDate, setEndDate] = useState()
+  const [startShow, setStartShow] = useState(false)
+  const [endShow, setEndShow] = useState(false)
   const [summary, setSummary] = useState('')
   const [lastModifiedBy, setLastModifiedBy] = useState('')
   const [dateEdited, setDateEdited] = useState(false)
@@ -410,9 +423,14 @@ const ConfigurationAccordian = ({
         padding: '8px',
       },
     }
+
     return (
       <Box sx={{ mb: 1 }}>
-        <CompactAccordion defaultExpanded disableGutters className='k-table-box'>
+        <CompactAccordion
+          defaultExpanded
+          disableGutters
+          className='k-table-box'
+        >
           <CustomAccordionSummary
             expandIcon={<ExpandMoreIcon sx={{ fontSize: '1rem' }} />}
             sx={expandCollapseIconStyle}
@@ -442,33 +460,83 @@ const ConfigurationAccordian = ({
                 flexWrap='wrap'
               >
                 {/* START */}
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                <Box className='date-pill-wrapper'>
+                  <Box
+                    component='img'
+                    src={CalenderIcon}
+                    className='w16-icon'
+                    style={{ cursor: READ_ONLY ? 'not-allowed' : 'pointer' }}
+                    onClick={() => !READ_ONLY && setStartShow((v) => !v)}
+                  />
+                  <Box component='span' className='header-dropdown-label'>
+                    Start Date:
+                  </Box>
                   <DatePicker
                     id='start-date'
                     format='dd-MM-yyyy'
                     value={startDate}
+                    show={startShow}
+                    onClose={() => setStartShow(false)}
                     onChange={(e) => {
                       setStartDate(e.value)
                       setDateEdited(true)
                     }}
-                    style={{ width: '130px', height: '28px' }}
                     disabled={READ_ONLY}
                   />
+                  <IconButton
+                    style={{
+                      cursor: READ_ONLY ? 'not-allowed' : 'pointer',
+                      p: 0,
+                      width: 0,
+                      height: 0,
+                    }}
+                    onClick={() => !READ_ONLY && setStartShow((v) => !v)}
+                    size='small'
+                  >
+                    <ExpandMoreIcon
+                      sx={{ fontSize: '1rem', color: '#606060' }}
+                    />
+                  </IconButton>
                 </Box>
 
                 {/* END */}
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                <Box className='date-pill-wrapper'>
+                  <Box
+                    component='img'
+                    src={CalenderIcon}
+                    className='w16-icon'
+                    style={{ cursor: READ_ONLY ? 'not-allowed' : 'pointer' }}
+                    onClick={() => !READ_ONLY && setEndShow((v) => !v)}
+                  />
+                  <Box component='span' className='header-dropdown-label'>
+                    End Date:
+                  </Box>
                   <DatePicker
                     id='end-date'
                     format='dd-MM-yyyy'
                     value={endDate}
+                    show={endShow}
+                    onClose={() => setEndShow(false)}
                     onChange={(e) => {
                       setEndDate(e.value)
                       setDateEdited(true)
                     }}
-                    style={{ width: '130px', height: '28px' }}
                     disabled={READ_ONLY}
                   />
+                  <IconButton
+                    style={{
+                      cursor: READ_ONLY ? 'not-allowed' : 'pointer',
+                      p: 0,
+                      width: 0,
+                      height: 0,
+                    }}
+                    onClick={() => !READ_ONLY && setEndShow((v) => !v)}
+                    size='small'
+                  >
+                    <ExpandMoreIcon
+                      sx={{ fontSize: '1rem', color: '#606060' }}
+                    />
+                  </IconButton>
                 </Box>
 
                 {/* LOAD BUTTON */}
@@ -494,7 +562,7 @@ const ConfigurationAccordian = ({
               {/* LAST REFRESHED */}
               {configurationExecutionDetails[0]?.ModifiedOn && (
                 <Tooltip
-                  title={`Last Refreshed: ${formatDateForText(
+                  title={`Last loaded data : ${formatDateForText(
                     configurationExecutionDetails[0]?.ModifiedOn,
                     true,
                   )}`}
@@ -503,41 +571,11 @@ const ConfigurationAccordian = ({
                     direction='row'
                     spacing={0.5}
                     alignItems='center'
-                    sx={{
-                      color: '#303030',
-                      backgroundColor: '#F6FAFC',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif !important",
-                      whiteSpace: 'nowrap',
-                      mt: '10px',
-                      height: 40,
-                      borderRadius: '6px',
-                      border: '1px solid #00688C',
-                      padding: '10px',
-                    }}
+                    className='last-refreshed-container'
                   >
                     <InfoIcon sx={{ fontSize: '0.9rem', color: '#00688C' }} />
-                    <Typography
-                      sx={{
-                        fontSize: '14px',
-                        fontWeight: 700,
-                        color: '#303030',
-                        lineHeight: 1.2,
-                        fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                      }}
-                    >
-                      Last refreshed on{' '}
-                      {
-                        formatDateForText(
-                          configurationExecutionDetails[0]?.ModifiedOn,
-                        ).split(' ')[0]
-                      }
-                      {' | '}
-                      Period:{' '}
-                      {formatDateForText(startDate, true)}
-                      {' - '}
-                      {formatDateForText(endDate, true)}
+                    <Typography className='last-refreshed-text'>
+                      {`Last loaded data on ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} by ${configurationExecutionDetails[0]?.User ?? ''} for period ${formatDateForText(startDate, false)} to ${formatDateForText(endDate, false)}`}
                     </Typography>
                   </Stack>
                 </Tooltip>
@@ -547,35 +585,18 @@ const ConfigurationAccordian = ({
               <Box sx={{ width: '100%' }}>
                 <Typography
                   variant='caption'
-                  sx={{
-                    fontSize: '14px',
-                    fontWeight: 700,
-                    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                    color: '#303030',
-                    letterSpacing: '0.3px',
-                  }}
+                  className='aop-design-basis-label'
                 >
                   AOP DESIGN BASIS
                 </Typography>
-                <textarea
+                <TextArea
+                  className='vertical-resize-textarea'
                   disabled={READ_ONLY}
                   value={summary}
                   rows={2}
                   onChange={(e) => {
                     setSummary(e.target.value)
                     setSummaryEdited(true)
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '6px 8px',
-                    borderRadius: '6px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
-                    color: '#303030',
-                    resize: 'none',
-                    backgroundColor: READ_ONLY ? '#f8fafc' : '#fff',
                   }}
                 />
               </Box>
@@ -587,6 +608,8 @@ const ConfigurationAccordian = ({
   }, [
     startDate,
     endDate,
+    startShow,
+    endShow,
     summary,
     configurationExecutionDetails,
     isOldYear,

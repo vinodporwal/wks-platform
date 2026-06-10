@@ -34,7 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import com.wks.caseengine.dto.BusinessDemandMonthlyDTO;
 import com.wks.caseengine.dto.SpyroOutputDTO;
 import com.wks.caseengine.dto.YieldDMDDTO;
 import com.wks.caseengine.dto.YieldDTO;
@@ -101,6 +101,9 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	@Autowired
 	private ExcelConfigurationsRepository excelConfigurationsRepository;
 
+	@Autowired
+	private BusinessDemandDataService businessDemandDataService;
+
 
 	@Override
 	public AOPMessageVM getSpyroOutputData(String year, String plantId,String Mode,String type) {
@@ -143,9 +146,10 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 					map.put("oct", (row[19] == null || row[19].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[19].toString()));
 					map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 					map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
-					map.put("isEditable", row[22]);
-					spyroOutputDataList.add(map); // Add the map to the list here
-				}else {
+				map.put("isEditable", row[22]);
+				map.put("Weight Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
+				spyroOutputDataList.add(map); // Add the map to the list here
+			}else {
 					
 					if (type.equalsIgnoreCase("Feeds")) {
 						if (types.contains(row[4].toString())) {
@@ -167,12 +171,13 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 							map.put("oct", (row[19] == null || row[19].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[19].toString()));
 							map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 							map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
-							map.put("isEditable", row[22]);
-							spyroOutputDataList.add(map);
-						}}
-					
-					
-					    else if (type.equalsIgnoreCase("output")) {   
+						map.put("isEditable", row[22]);
+						map.put("Weight Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
+						spyroOutputDataList.add(map);
+					}}
+				
+				
+				    else if (type.equalsIgnoreCase("output")) {   
 							map.put("normParameterFKID", row[2]);
 							map.put("particulars", row[3]);
 							map.put("normParameterDisplayName", row[4]);
@@ -191,13 +196,19 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 							map.put("oct", (row[19] == null || row[19].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[19].toString()));
 							map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 							map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
-							map.put("isEditable", row[22]);
-							spyroOutputDataList.add(map);
-						}
+						map.put("isEditable", row[22]);
+						map.put("Weight Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
+						spyroOutputDataList.add(map);
 					}
+				}
 
-						
+					
+		}
+
+			if(Mode.equalsIgnoreCase("Optimizer Output")) {
+				spyroOutputDataList = getBusinessDemandData(plantId, year);
 			}
+			
 			aopMessageVM.setCode(200);
 			aopMessageVM.setMessage("Data fetched successfully");
 			aopMessageVM.setData(spyroOutputDataList);
@@ -209,6 +220,40 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 
+	}
+
+	public List<Map<String, Object>> getBusinessDemandData(String plantId, String year) {
+
+		AOPMessageVM aopMessageVM = businessDemandDataService.getBusinessDemandMode(year, UUID.fromString(plantId));
+
+		List<BusinessDemandMonthlyDTO> configurationDTOList = (List<BusinessDemandMonthlyDTO>) aopMessageVM.getData();
+
+		List<Map<String, Object>> spyroInputDataList = new ArrayList<>();
+
+		for (BusinessDemandMonthlyDTO dto : configurationDTOList) {
+			Map<String, Object> map = new HashMap<>();
+			map.put("normParameterFKID", dto.getNormParameterFKId());
+			map.put("particulars", dto.getProductName());
+			map.put("normParameterTypeName", null);
+			map.put("uom", dto.getUom());
+			map.put("remarks", "");
+			map.put("jan", (dto.getJan() == null || dto.getJan().isEmpty()) ? "" : dto.getJan());
+			map.put("feb", (dto.getFeb() == null || dto.getFeb().isEmpty()) ? "" : dto.getFeb());
+			map.put("mar", (dto.getMar() == null || dto.getMar().isEmpty()) ? "" : dto.getMar());
+			map.put("apr", (dto.getApr() == null || dto.getApr().isEmpty()) ? "" : dto.getApr());
+			map.put("may", (dto.getMay() == null || dto.getMay().isEmpty()) ? "" : dto.getMay());
+			map.put("jun", (dto.getJun() == null || dto.getJun().isEmpty()) ? "" : dto.getJun());
+			map.put("jul", (dto.getJul() == null || dto.getJul().isEmpty()) ? "" : dto.getJul());
+			map.put("aug", (dto.getAug() == null || dto.getAug().isEmpty()) ? "" : dto.getAug());
+			map.put("sep", (dto.getSep() == null || dto.getSep().isEmpty()) ? "" : dto.getSep());
+			map.put("oct", (dto.getOct() == null || dto.getOct().isEmpty()) ? "" : dto.getOct());
+			map.put("nov", (dto.getNov() == null || dto.getNov().isEmpty()) ? "" : dto.getNov());
+			map.put("dec", (dto.getDec() == null || dto.getDec().isEmpty()) ? "" : dto.getDec());
+			map.put("isEditable", dto.getIsEditable());
+			spyroInputDataList.add(map);
+		}
+
+		return spyroInputDataList;
 	}
 	
 	public List<String> getTypes(String plantId, String aopYear, String siteId,String procedureName) {
@@ -1862,6 +1907,8 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			boolean crackerC2 = vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("C2");
 			Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
 					.findByExcelIdAndVerticalFkIdAndSiteFkId("spyroOutput", plant.getVerticalFKId(),plant.getSiteFkId());
 
@@ -1936,7 +1983,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 							}
 						} else {
 							AOPMessageVM vm = new AOPMessageVM();
-							if(site.getName().equalsIgnoreCase("HMD"))  {  
+							if(site.getName().equalsIgnoreCase("HMD") || crackerC2)  {  
 								vm = getSpyroOutputData(year, plantId, dataInput, "output");
 							}
 							else {
@@ -2038,33 +2085,52 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 
 				while (rowIterator.hasNext()) {
 					Row row = rowIterator.next();
-					Cell tableIdCell = row.getCell(16, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+				// tableId is now at col 17 (col 16 = weightAverage, display-only, skipped on import)
+				Cell tableIdCell = row.getCell(17, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
                 	if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
                     	continue;
                 	}
 
-					SpyroOutputDTO dto = new SpyroOutputDTO();
 
-					try {
-						
-						dto.setParticulars(getStringCellValue(row.getCell(0), dto));
-						dto.setUom(getStringCellValue(row.getCell(1), dto));
-						dto.setAuditYear(year);
-						dto.setApr(getNumericCellValue(row.getCell(2), dto));
-						dto.setMay(getNumericCellValue(row.getCell(3), dto));
-						dto.setJun(getNumericCellValue(row.getCell(4), dto));
-						dto.setJul(getNumericCellValue(row.getCell(5), dto));
-						dto.setAug(getNumericCellValue(row.getCell(6), dto));
-						dto.setSep(getNumericCellValue(row.getCell(7), dto));
-						dto.setOct(getNumericCellValue(row.getCell(8), dto));
-						dto.setNov(getNumericCellValue(row.getCell(9), dto));
-						dto.setDec(getNumericCellValue(row.getCell(10), dto));
-						dto.setJan(getNumericCellValue(row.getCell(11), dto));
-						dto.setFeb(getNumericCellValue(row.getCell(12), dto));
-						dto.setMar(getNumericCellValue(row.getCell(13), dto));
-						dto.setRemarks(getStringCellValue(row.getCell(14), dto));
-						dto.setNormParameterFKID(getStringCellValue(row.getCell(15), dto));
-						dto.setTableId(getStringCellValue(row.getCell(16), dto));
+				Cell tableId = row.getCell(17);
+String tableIdValue = null;
+if (tableId != null) {
+	try {
+	tableId.setCellType(CellType.STRING);
+	 tableIdValue = tableId.getStringCellValue().trim(); }
+	 catch (Exception e) {
+		e.printStackTrace();
+	 }
+}
+
+if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Output")) {
+	continue;
+}
+
+				SpyroOutputDTO dto = new SpyroOutputDTO();
+
+				try {
+					
+					dto.setParticulars(getStringCellValue(row.getCell(0), dto));
+					dto.setUom(getStringCellValue(row.getCell(1), dto));
+					dto.setAuditYear(year);
+					dto.setApr(getNumericCellValue(row.getCell(2), dto));
+					dto.setMay(getNumericCellValue(row.getCell(3), dto));
+					dto.setJun(getNumericCellValue(row.getCell(4), dto));
+					dto.setJul(getNumericCellValue(row.getCell(5), dto));
+					dto.setAug(getNumericCellValue(row.getCell(6), dto));
+					dto.setSep(getNumericCellValue(row.getCell(7), dto));
+					dto.setOct(getNumericCellValue(row.getCell(8), dto));
+					dto.setNov(getNumericCellValue(row.getCell(9), dto));
+					dto.setDec(getNumericCellValue(row.getCell(10), dto));
+					dto.setJan(getNumericCellValue(row.getCell(11), dto));
+					dto.setFeb(getNumericCellValue(row.getCell(12), dto));
+					dto.setMar(getNumericCellValue(row.getCell(13), dto));
+					// col 14 = weightAverage — display/export only, not imported
+					dto.setRemarks(getStringCellValue(row.getCell(15), dto));
+					dto.setNormParameterFKID(getStringCellValue(row.getCell(16), dto));
+					
+					dto.setTableId(getStringCellValue(row.getCell(17), dto));
 
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -2507,5 +2573,52 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 		return true;
 	}
 
+	@Override
+	public AOPMessageVM calculateSpyroOutputData(String year, String plantId, String Mode, String type) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			
+			String siteId = site.getId().toString();
+			String verticalId = vertical.getId().toString();
+			
+
+			// Create dynamic stored procedure name: {VerticalName}_{SiteName}_LoadSpyroOutput
+			String procedureName = vertical.getName() + "_" + site.getName() + "_LoadSpyroOutput";
+			
+			// Call the stored procedure dynamically
+		//	String sql = "EXEC " + procedureName + " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @AopYear = :AopYear, @Mode = :Mode";
+		String sql = "EXEC " + procedureName + " ?, ?, ?, ?, ?";
+
+		Session session = entityManager.unwrap(Session.class);
+		session.doWork(connection -> {
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setObject(1, plantId);
+				ps.setObject(2, siteId);
+				ps.setObject(3, verticalId);
+				ps.setObject(4, year);
+				ps.setObject(5, Mode);
+
+				boolean hasResultSet = ps.execute();
+			}
+		});
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data calculated successfully");
+			aopMessageVM.setData(0);
+			return aopMessageVM;
+			
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to calculate spyro output data", ex);
+		}
+	}
 
 }

@@ -75,6 +75,7 @@ export default function AopBudget() {
   const lowerVertName = vertName?.toLowerCase()
   const headerMap = generateHeaderNames(AOP_YEAR)
   const thisYear = AOP_YEAR
+  const SiteName = siteObject?.name
 
   // second grid states
   const [rowsP, setRowsP] = useState([])
@@ -104,6 +105,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'may',
@@ -112,6 +114,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'jun',
@@ -120,6 +123,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'jul',
@@ -128,6 +132,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'aug',
@@ -136,6 +141,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'sep',
@@ -144,6 +150,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'oct',
@@ -152,6 +159,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'nov',
@@ -160,6 +168,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'dec',
@@ -168,6 +177,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'jan',
@@ -176,6 +186,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'feb',
@@ -184,6 +195,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
     {
       field: 'mar',
@@ -192,6 +204,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
       width: 120,
+      minWidth: 100,
     },
   ]
 
@@ -211,24 +224,37 @@ export default function AopBudget() {
   ]
 
   const columns = [
-    { field: 'plantName', title: 'Plant', widthT: 100 },
-    { field: 'costName', title: 'Cost', widthT: 100 },
-    { field: 'budgetType', title: 'Budget Type', widthT: 80, hidden: true },
+    { field: 'idFromApi', title: 'ID', widthT: 50, minWidth: 50, hidden: true },
+    { field: 'plantName', title: 'Plant', widthT: 100, minWidth: 100 },
+    { field: 'costName', title: 'Cost', widthT: 100, minWidth: 100 },
+    {
+      field: 'budgetType',
+      title: 'Budget Type',
+      widthT: 80,
+      hidden: true,
+      minWidth: 100,
+      isVisibe: false,
+    },
     {
       field: 'percentChange',
       title: '% Change (+/-)',
       widthT: 105,
       editable: true,
       type: 'percentChange',
+      minWidth: 100,
     },
     // { field: 'symbol', title: '+VE/-VE', width: 120 },
-    ...monthFields.map(({ field, index, editable, type, format, width }) => ({
-      field,
-      title: headerMap[index],
-      editable,
-      type,
-      format,
-    })),
+    ...monthFields.map(
+      ({ field, index, editable, type, format, width, minWidth }) => ({
+        field,
+        title: headerMap[index],
+        editable,
+        type,
+        format,
+        width,
+        minWidth,
+      }),
+    ),
     {
       field: 'allMonthsTotal',
       title: 'Total',
@@ -236,8 +262,15 @@ export default function AopBudget() {
 
       type: 'number',
       format: FORMATE_DECIMAL,
+      minWidth: 100,
     },
-    { field: 'remark', title: 'Remark', editable: true, widthT: 100 },
+    {
+      field: 'remark',
+      title: 'Remark',
+      editable: true,
+      widthT: 100,
+      minWidth: 100,
+    },
   ]
 
   const formatPercentChange = (value) => {
@@ -271,7 +304,7 @@ export default function AopBudget() {
         AOP_YEAR,
       )
 
-      const mapped = (resConsumption?.data || []).map((item) => {
+      const mapped = (resConsumption?.data || []).map((item, index) => {
         const allMonthsTotal = monthTotal?.reduce((sum, month) => {
           const value = parseFloat(item[month]) || 0
           return sum + value
@@ -279,6 +312,8 @@ export default function AopBudget() {
 
         return {
           ...item,
+          id: item.id || index, // Ensure there's an id for React key
+          idFromApi: item.id || null, // Keep original API id for reference
           plantName: item.plantName || '',
           IsEditable: item.isEditable,
           originalRemark: item.remark?.trim() || '',
@@ -305,6 +340,8 @@ export default function AopBudget() {
 
         return {
           ...item,
+          idFromApi: item.id || null,
+          id: index,
           plantName: item.plantName || item.plantName || '',
           IsEditable: item.isEditable,
           originalRemark: item.remark?.trim() || '',
@@ -377,6 +414,19 @@ export default function AopBudget() {
     plantID,
     keycloak,
   ])
+  const anyGridEdited = useMemo(
+    () =>
+      Object.keys(modifiedCells).length > 0 ||
+      Object.keys(modifiedCellsP).length > 0 ||
+      designBasisAndDesignRemarksEdited ||
+      designBasisAndDesignRemarksEdited2,
+    [
+      modifiedCells,
+      modifiedCellsP,
+      designBasisAndDesignRemarksEdited,
+      designBasisAndDesignRemarksEdited2,
+    ],
+  )
   const handleCalculate = () => {}
   const handleCalculateP = () => {}
 
@@ -550,11 +600,17 @@ export default function AopBudget() {
         return
       }
 
-      const fieldsToOmit = ['isEditable', 'IsEditable']
+      const fieldsToOmit = ['isEditable', 'IsEditable', 'idFromApi']
 
       const allRows = [
-        ...consumptionData.map((row) => omitFields(row, fieldsToOmit)),
-        ...procurementData.map((row) => omitFields(row, fieldsToOmit)),
+        ...consumptionData.map((row) => ({
+          ...omitFields(row, fieldsToOmit),
+          id: row.idFromApi,
+        })),
+        ...procurementData.map((row) => ({
+          ...omitFields(row, fieldsToOmit),
+          id: row.idFromApi,
+        })),
       ]
 
       const prefixPlusForNumericPercent = (row) => {
@@ -592,11 +648,13 @@ export default function AopBudget() {
   }
   const downloadExcelForConfiguration = async () => {
     setLoading(true)
+    const EXCEL_NAME = `${vertName}_${SiteName}_${PLANT_NAME}_${AOP_YEAR}_Maintenance Budget_Export.xlsx`
     try {
       await AOPMaintenanceApiService.maintenaceExportdata(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        EXCEL_NAME,
       )
 
       setSnackbarData({ message: 'Export started!', severity: 'success' })
@@ -795,7 +853,7 @@ export default function AopBudget() {
         permissions={adjustedPermissionsC}
         groupBy='budgetType'
         resetRowData={resetRowData1}
-        summaryEdited={designBasisAndDesignRemarksEdited}
+        summaryEdited={anyGridEdited}
         resetDataChanges={resetDataChanges}
         // setEditMode={setEditMode}
       />
@@ -821,7 +879,7 @@ export default function AopBudget() {
         permissions={adjustedPermissionsP}
         groupBy='budgetType'
         resetRowData={resetRowData2}
-        summaryEdited={designBasisAndDesignRemarksEdited2}
+        summaryEdited={anyGridEdited}
         // setEditMode={setEditMode}
         resetDataChanges={resetDataChanges}
       />

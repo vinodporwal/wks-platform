@@ -42,6 +42,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Objects;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
@@ -51,6 +52,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wks.caseengine.dto.AOPMaintenanceDesignRemarksDTO;
@@ -119,6 +121,12 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	
 	@Autowired
 	private ShutdownHistoryService shutdownHistoryService;
+
+	@Autowired
+	private NormalOperationNormsService normalOperationNormsService;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@Override
 	public List<MaintenanceDetailsDTO> getMaintenanceCalculatedData(String plantId, String year) {
@@ -236,7 +244,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	public List<Object[]> executeDynamicStoredProcedure(String procedureName, String plantId, String siteId,
 			String verticalId, String aopYear) {
 		try {
-			String sql = "EXEC " + procedureName
+			String sql = "EXEC [" + procedureName + "] "
 					+ " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @aopYear = :aopYear";
 			Query query = entityManager.createNativeQuery(sql);
 
@@ -340,6 +348,198 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	    } catch (Exception ex) {
 	        throw new RuntimeException("Error processing dynamic maintenance data", ex);
 	    }
+	}
+
+	@Override
+	public AOPMessageVM getMaintenanceCatChem(String plantId, String year, String gradeId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			UUID plantUUID = UUID.fromString(plantId);
+			Optional<Plants> plantOpt = plantsRepository.findById(plantUUID);
+
+			Plants plant = plantOpt.get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			if (!plantOpt.isPresent()) {
+				throw new RuntimeException("Plant not found for ID: " + plantId);
+			}
+
+			Map<String, Object> results = entityManager.unwrap(Session.class)
+					.doReturningWork(new ReturningWork<Map<String, Object>>() {
+						@Override
+						public Map<String, Object> execute(Connection connection) throws SQLException {
+							Map<String, Object> resultMap = new HashMap<>();
+							List<Object[]> rows = new ArrayList<>();
+							List<String> columnNames = new ArrayList<>();
+							List<String> columnTypes = new ArrayList<>();
+
+							String procedureName = vertical.getName() + "_" + site.getName() + "_GetCatChemConsumption";
+
+							String dataSql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?, @Grade_Fk_Id = ?";
+							try (PreparedStatement ps = connection.prepareStatement(dataSql)) {
+								ps.setString(1, plantId);
+								ps.setString(2, year);
+								ps.setString(3, gradeId);
+								try (ResultSet rs = ps.executeQuery()) {
+									ResultSetMetaData metaData = rs.getMetaData();
+									int colCount = metaData.getColumnCount();
+									for (int i = 1; i <= colCount; i++) {
+										columnNames.add(metaData.getColumnLabel(i));
+										columnTypes.add(metaData.getColumnTypeName(i));
+									}
+									while (rs.next()) {
+										Object[] row = new Object[colCount];
+										for (int i = 1; i <= colCount; i++) {
+											Object value = rs.getObject(i);
+											int sqlType = metaData.getColumnType(i);
+											row[i - 1] = (value == null) ? (isNumericType(sqlType) ? 0 : "") : value;
+										}
+										rows.add(row);
+									}
+								}
+							}
+
+							List<Map<String, Object>> dataList = new ArrayList<>();
+							for (Object[] row : rows) {
+								Map<String, Object> rowMap = new LinkedHashMap<>();
+								for (int i = 0; i < columnNames.size(); i++) {
+									rowMap.put(columnNames.get(i), row[i]);
+								}
+								dataList.add(rowMap);
+							}
+
+							List<Map<String, Object>> columnsList = new ArrayList<>();
+							for (int i = 0; i < columnNames.size(); i++) {
+								Map<String, Object> col = new LinkedHashMap<>();
+								col.put("field", columnNames.get(i));
+								col.put("title", columnNames.get(i));
+								col.put("type", getFrontendType(columnTypes.get(i)));
+								col.put("isVisible", "true");
+								columnsList.add(col);
+							}
+
+							resultMap.put("data", dataList);
+							resultMap.put("columns", columnsList);
+							return resultMap;
+						}
+					});
+
+			Map<String, Object> finalData = new HashMap<>();
+			finalData.put("data", results.get("data"));
+			finalData.put("columns", results.get("columns"));
+
+			aopMessageVM.setData(finalData);
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+
+			return aopMessageVM;
+
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch cat chem data", ex);
+		}
+	}
+
+	@Override
+	public byte[] exportCatChemAllGrades(String plantId, String year) {
+		try {
+			AOPMessageVM gradesVM = normalOperationNormsService.getNormalOperationNormsGrades(year, plantId);
+
+			if (gradesVM == null || gradesVM.getData() == null) {
+				return null;
+			}
+
+			List<Map<String, Object>> gradeList = (List<Map<String, Object>>) gradesVM.getData();
+
+			if (gradeList.isEmpty()) {
+				return null;
+			}
+
+			Workbook workbook = new XSSFWorkbook();
+
+			for (Map<String, Object> gradeInfo : gradeList) {
+				String gradeId = gradeInfo.get("gradeId") != null ? gradeInfo.get("gradeId").toString() : null;
+				String displayName = gradeInfo.get("displayName") != null ? gradeInfo.get("displayName").toString() : null;
+
+				if (gradeId == null) {
+					continue;
+				}
+
+				AOPMessageVM catChemVM = getMaintenanceCatChem(plantId, year, gradeId);
+
+				if (catChemVM == null || catChemVM.getData() == null) {
+					continue;
+				}
+
+				Map<String, Object> catChemData = (Map<String, Object>) catChemVM.getData();
+				List<Map<String, Object>> dataRows = (List<Map<String, Object>>) catChemData.get("data");
+				List<Map<String, Object>> columns = (List<Map<String, Object>>) catChemData.get("columns");
+
+				if (dataRows == null || dataRows.isEmpty()) {
+					continue;
+				}
+
+				String sheetName = Utility.sanitizeSheetName(displayName != null ? displayName : "Grade_" + gradeId);
+				Sheet sheet = workbook.createSheet(sheetName);
+
+				// Header row
+				if (columns != null && !columns.isEmpty()) {
+					Row headerRow = sheet.createRow(0);
+					CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+					for (int col = 0; col < columns.size(); col++) {
+						Cell cell = headerRow.createCell(col);
+						Object title = columns.get(col).get("title");
+						cell.setCellValue(title != null ? title.toString() : "");
+						cell.setCellStyle(headerStyle);
+					}
+
+					// Data rows
+					for (int rowIdx = 0; rowIdx < dataRows.size(); rowIdx++) {
+						Map<String, Object> rowData = dataRows.get(rowIdx);
+						Row row = sheet.createRow(rowIdx + 1);
+						for (int col = 0; col < columns.size(); col++) {
+							Object field = columns.get(col).get("field");
+							Object value = field != null ? rowData.get(field.toString()) : null;
+							Cell cell = row.createCell(col);
+							if (value instanceof Number) {
+								cell.setCellValue(((Number) value).doubleValue());
+							} else {
+								cell.setCellValue(value != null ? value.toString() : "");
+							}
+						}
+					}
+
+						// Auto-size first few columns for readability
+					for (int col = 0; col < Math.min(5, columns.size()); col++) {
+						sheet.autoSizeColumn(col);
+					}
+
+					// Hide Grade_FK_Id column
+					for (int col = 0; col < columns.size(); col++) {
+						Object field = columns.get(col).get("field");
+						if (field != null && "Grade_FK_Id".equalsIgnoreCase(field.toString())) {
+							sheet.setColumnHidden(col, true);
+							break;
+						}
+					}
+				}
+			}
+
+			if (workbook.getNumberOfSheets() == 0) {
+				workbook.close();
+				return null;
+			}
+
+			try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+				workbook.write(outputStream);
+				workbook.close();
+				return outputStream.toByteArray();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException("Failed to export Cat Chem data for all grades", e);
+		}
 	}
 
 	@Override
@@ -1315,10 +1515,10 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	@Override
 	public AOPMessageVM getBudgetMaintenance(String plantId, String year,String budgetCategory) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
-		List<BudgetMaintenance> budgetMaintenanceList=null;
+		
 		
 		//List<Object[]> obj=findByYearAndPlantFkId( year, UUID.fromString(plantId),"vwBudgetMaintenance",budgetCategory);
-		List<Object[]> obj=findBudgetMaintenance(year, UUID.fromString(plantId),"GetBudgetMaintenance");
+		List<Object[]> obj=findBudgetMaintenance(year, UUID.fromString(plantId), budgetCategory,"spGetBudgetMaintenanceDetails");
 		List<BudgetMaintenanceDto> budgetMaintenanceDtoList = new ArrayList<BudgetMaintenanceDto>();
 		try {
 			
@@ -1327,15 +1527,16 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 
 			    int i = 0;
 			    dto.setId(row[i++] != null ? UUID.fromString(row[i - 1].toString()) : null);
-			    dto.setPlantId(row[i++] != null ? UUID.fromString(row[i - 1].toString()) : null);
-			    dto.setPlantName((String) row[i++]);
-			    dto.setCostName((String) row[i++]);
-			    dto.setBudgetType((String) row[i++]);
-			    dto.setBudgetCategory((String) row[i++]);
-			    if(!(dto.getBudgetCategory().equalsIgnoreCase(budgetCategory))) {
-			    	continue;
-			    }
-			    dto.setApr(row[i++] != null ? ((Number) row[i - 1]).doubleValue() : 0.0);
+				dto.setMasterId(row[i++] != null ? UUID.fromString(row[i - 1].toString()) : null);
+				dto.setBudgetCategory((String) row[i++]);
+				dto.setBudgetType((String) row[i++]);
+				dto.setCostName((String) row[i++]);
+				i++; // skip material display name
+				dto.setIsEditable(row[i++] != null ? Boolean.valueOf(row[i - 1].toString()) : null);
+				i++; // skip is visible
+				i++; // skip display order
+				dto.setPercentChange(row[i++] != null ? ((Number) row[i - 1]).doubleValue() : 0.0);
+				dto.setApr(row[i++] != null ? ((Number) row[i - 1]).doubleValue() : 0.0);
 			    dto.setMay(row[i++] != null ? ((Number) row[i - 1]).doubleValue() : 0.0);
 			    dto.setJun(row[i++] != null ? ((Number) row[i - 1]).doubleValue() : 0.0);
 			    dto.setJul(row[i++] != null ? ((Number) row[i - 1]).doubleValue() : 0.0);
@@ -1347,14 +1548,28 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 			    dto.setJan(row[i++] != null ? ((Number) row[i - 1]).doubleValue() : 0.0);
 			    dto.setFeb(row[i++] != null ? ((Number) row[i - 1]).doubleValue() : 0.0);
 			    dto.setMar(row[i++] != null ? ((Number) row[i - 1]).doubleValue() : 0.0);
-			    dto.setRemark((String) row[i++]);
-			    dto.setAopYear(row[i++] != null ? row[i - 1].toString() : null);
-			    dto.setIsEditable(row[i++] != null ? Boolean.valueOf(row[i - 1].toString()) : null);
-			    dto.setUpdatedBy((String) row[i++]);
-			    dto.setModifiedOn((Date) row[i++]);
-			    dto.setSequence(row[i++] != null ? ((Number) row[i - 1]).intValue() : null);
-			    dto.setPercentChange(row[i++] != null ? ((Number) row[i - 1]).doubleValue() : 0.0);
-			    dto.setSymbol(row[i++] != null ? row[i - 1].toString() : "");
+				dto.setRemark((String) row[i++]);
+			    dto.setPlantId(row[i++] != null ? UUID.fromString(row[i - 1].toString()) : null);
+				dto.setAopYear(row[i++] != null ? row[i - 1].toString() : null);
+				i++;  // skip created on 
+				i++; // skip modified on
+				i++; // skip created by 
+			    dto.setPlantName((String) row[i++]);
+				dto.setTotal(row[i++] != null ? ((Number) row[i - 1]).doubleValue() : 0.0);
+
+			   
+			    
+			  
+			    if(!(dto.getBudgetCategory().equalsIgnoreCase(budgetCategory))) {
+			    	continue;
+			    }
+			  
+
+			  
+			   
+			   // dto.setModifiedOn((Date) row[i++]);
+			   
+				
 			   
 			    budgetMaintenanceDtoList.add(dto);
 			}
@@ -1393,15 +1608,16 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 		}
 	}
 	
-	public List<Object[]> findBudgetMaintenance(String aopYear, UUID plantId, String procedureName) {
+	public List<Object[]> findBudgetMaintenance(String aopYear, UUID plantId, String category, String procedureName) {
 		try {
 
 			String sql = "EXEC " + procedureName
-					+ " @PlantId = :plantId, @AOPYear = :aopYear";
+					+ " @PlantId = :plantId, @AOPYear = :aopYear, @Category = :category";
 
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
+			query.setParameter("category", category);
 
 			return query.getResultList();
 		} catch (IllegalArgumentException e) {
@@ -1479,11 +1695,15 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	            if (isAfterSave) {
 	                if (mapForExcel.containsKey(tableId)) {
 	                    sourceData = mapForExcel.get(tableId);
-	                    // Add saveStatus and errDescription headers for the after-save scenario
 	                    headers.add("saveStatus");
 	                    headers.add("errDescription");
 	                    headersOuterTitles.get(0).add("SaveStatus");
 	                    headersOuterTitles.get(0).add("ErrDescription");
+	                    // Column 20 is SaveStatus in the error file; remove it from the hidden list so the column is visible
+	                    List<Integer> currentHidden = (List<Integer>) table.get("hiddenColumns");
+	                    List<Integer> updatedHidden = new ArrayList<>(currentHidden);
+	                    updatedHidden.remove(Integer.valueOf(20));
+	                    table.put("hiddenColumns", updatedHidden);
 	                }
 	            } else {
 	                sourceData = budgetMaintenanceListMap.get(tableId);
@@ -1512,7 +1732,9 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	                        row.add(null);
 	                    }
 	                }
-	                row.add(tableId);
+	                if (!isAfterSave) {
+	                    row.add(tableId);
+	                }
 	                dataList.add(row);
 	            }
 	            
@@ -1609,7 +1831,103 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 		// TODO Auto-generated method stub
 		return aopMessageVM;
 	}
-	
+
+
+   @Override
+	public AOPMessageVM updateMaintenance(List<BudgetMaintenanceDto> budgetMaintenanceDtos, String plantId, String year) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<BudgetMaintenanceDto> failedList= new ArrayList<BudgetMaintenanceDto>();
+		List<Object[]> updates = new ArrayList<>();
+	    List<Object[]> inserts = new ArrayList<>();
+
+		
+		try {
+			for(BudgetMaintenanceDto budgetMaintenanceDto:budgetMaintenanceDtos) {
+				if (budgetMaintenanceDto.getSaveStatus() != null
+						&& budgetMaintenanceDto.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(budgetMaintenanceDto);
+					continue;
+				}
+				
+				
+				if(budgetMaintenanceDto.getId()==null) {
+					String createdby=Utility.getUserName();
+				    inserts.add(new Object[]{ budgetMaintenanceDto.getApr(), budgetMaintenanceDto.getMay(), budgetMaintenanceDto.getJun(), budgetMaintenanceDto.getJul(), budgetMaintenanceDto.getAug(), budgetMaintenanceDto.getSep(), budgetMaintenanceDto.getOct(), budgetMaintenanceDto.getNov(), budgetMaintenanceDto.getDec(), budgetMaintenanceDto.getJan(), budgetMaintenanceDto.getFeb(), budgetMaintenanceDto.getMar(),
+						 budgetMaintenanceDto.getRemark(), budgetMaintenanceDto.getPercentChange(), budgetMaintenanceDto.getMasterId(), plantId, year, createdby});
+			} else {
+				String validationError = validateRemarkForUpdate(budgetMaintenanceDto);
+				if (validationError != null) {
+					budgetMaintenanceDto.setSaveStatus("Failed");
+					budgetMaintenanceDto.setErrDescription(validationError);
+					failedList.add(budgetMaintenanceDto);
+				} else {
+					updates.add(new Object[]{ budgetMaintenanceDto.getApr(), budgetMaintenanceDto.getMay(), budgetMaintenanceDto.getJun(), budgetMaintenanceDto.getJul(), budgetMaintenanceDto.getAug(), budgetMaintenanceDto.getSep(), budgetMaintenanceDto.getOct(), budgetMaintenanceDto.getNov(), budgetMaintenanceDto.getDec(), budgetMaintenanceDto.getJan(), budgetMaintenanceDto.getFeb(), budgetMaintenanceDto.getMar(), budgetMaintenanceDto.getRemark(), budgetMaintenanceDto.getPercentChange(), budgetMaintenanceDto.getId()});
+				}
+			}
+					
+			}
+
+if(updates.size() > 0) {
+	String updateQuery = "UPDATE MaintenanceDetailsTransaction SET Apr = ?, May = ?, Jun = ?, Jul = ?, Aug = ?, Sep = ?, Oct = ?, Nov = ?, Dec = ?, Jan = ?, Feb = ?, Mar = ?, Remarks = ?, PercentageChange = ?, ModifiedOn = getdate() WHERE id = ?";
+
+			jdbcTemplate.batchUpdate(updateQuery, updates);
+}
+
+if(inserts.size() > 0) { 
+	String insertQuery = "INSERT INTO MaintenanceDetailsTransaction (Id,Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec, Jan, Feb, Mar, Remarks, PercentageChange, MasterId, PlantId, AOPYear, CreatedOn, CreatedBy) VALUES (newid(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, getdate(), ?)";
+	jdbcTemplate.batchUpdate(insertQuery, inserts);
+
+}
+
+		}catch(Exception e) {
+			throw new RuntimeException("Failed to update data", e);
+		}
+		
+		Map<String, Object> responseData = new HashMap<>();
+		responseData.put("Failed", failedList);
+		aopMessageVM.setCode(200);
+		aopMessageVM.setData(responseData);
+		aopMessageVM.setMessage("Data updated successfully");
+		return aopMessageVM;
+	}
+
+	private String validateRemarkForUpdate(BudgetMaintenanceDto dto) {
+		String selectQuery = "SELECT Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec, Jan, Feb, Mar, Remarks, PercentageChange"
+				+ " FROM MaintenanceDetailsTransaction WHERE id = ?";
+		List<Map<String, Object>> rows = jdbcTemplate.queryForList(selectQuery, dto.getId().toString());
+		if (rows.isEmpty()) {
+			return null;
+		}
+		Map<String, Object> existing = rows.get(0);
+		boolean valuesChanged = isDoubleChanged(existing.get("Apr"), dto.getApr())
+				|| isDoubleChanged(existing.get("May"), dto.getMay())
+				|| isDoubleChanged(existing.get("Jun"), dto.getJun())
+				|| isDoubleChanged(existing.get("Jul"), dto.getJul())
+				|| isDoubleChanged(existing.get("Aug"), dto.getAug())
+				|| isDoubleChanged(existing.get("Sep"), dto.getSep())
+				|| isDoubleChanged(existing.get("Oct"), dto.getOct())
+				|| isDoubleChanged(existing.get("Nov"), dto.getNov())
+				|| isDoubleChanged(existing.get("Dec"), dto.getDec())
+				|| isDoubleChanged(existing.get("Jan"), dto.getJan())
+				|| isDoubleChanged(existing.get("Feb"), dto.getFeb())
+				|| isDoubleChanged(existing.get("Mar"), dto.getMar())
+				|| isDoubleChanged(existing.get("PercentageChange"), dto.getPercentChange());
+		if (valuesChanged) {
+			String existingRemark = existing.get("Remarks") != null ? existing.get("Remarks").toString().trim() : null;
+			String incomingRemark = dto.getRemark() != null ? dto.getRemark().trim() : null;
+			if (Objects.equals(existingRemark, incomingRemark)) {
+				return "Please update the Remark";
+			}
+		}
+		return null;
+	}
+
+	private boolean isDoubleChanged(Object dbValue, Double dtoValue) {
+		double db = dbValue != null ? ((Number) dbValue).doubleValue() : 0.0;
+		double dto = dtoValue != null ? dtoValue : 0.0;
+		return Double.compare(db, dto) != 0;
+	}
+
 	public BudgetMaintenance saveData(BudgetMaintenance budgetMaintenance,BudgetMaintenanceDto budgetMaintenanceDto) {
 		budgetMaintenance.setApr(budgetMaintenanceDto.getApr());
 		budgetMaintenance.setMay(budgetMaintenanceDto.getMay());
@@ -1651,7 +1969,8 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 			Map<String, List<BudgetMaintenanceDto>> mapForExcel = new HashMap<>();
 			List<BudgetMaintenanceDto> failedRecords = new ArrayList<>();
 			for (String key : map.keySet()) {
-			    AOPMessageVM vm = updateBudgetMaintenance(map.get(key));
+			 //   AOPMessageVM vm = updateBudgetMaintenance(map.get(key));
+			    AOPMessageVM vm = updateMaintenance(map.get(key), plantFKId, year);
 			    Object dataObj = vm.getData();
 			    if (dataObj instanceof Map) {
 			        @SuppressWarnings("unchecked")
@@ -1731,48 +2050,51 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 		        aopMaintenanceDesignRemarksService.updateMaintenanceDesignRemarks(plantId,year,remarkSummary);
 		        aopMaintenanceDesignBasisService.updateMaintenanceDesignBasis(plantId,year,basisSummary);
 		        		
-				List<BudgetMaintenanceDto> budgetMaintenanceDto = new ArrayList<BudgetMaintenanceDto>();
 				if (rowIterator.hasNext())
 					rowIterator.next();
 
-				while (rowIterator.hasNext()) {
-					Row row = rowIterator.next();
-					Cell tableIdCell = row.getCell(19, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+				Cell tableIdCell = row.getCell(20, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
                 	if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
                     	continue;
                 	}
 
                 	BudgetMaintenanceDto dto = new BudgetMaintenanceDto();
 
-					try {
-						String cost=getStringCellValue(row.getCell(2), dto);
-						if(cost!=null && cost.trim().equalsIgnoreCase("Total Cost")) {
-							continue;
-						}
-						dto.setBudgetType(getStringCellValue(row.getCell(0), dto));
-						dto.setPlantName(getStringCellValue(row.getCell(1), dto));
-						dto.setCostName(getStringCellValue(row.getCell(2), dto));
-						dto.setPercentChange(getNumericCellValue(row.getCell(3), dto));
-						dto.setAopYear(year);
-						dto.setApr(getNumericCellValue(row.getCell(4), dto));
-						dto.setMay(getNumericCellValue(row.getCell(5), dto));
-						dto.setJun(getNumericCellValue(row.getCell(6), dto));
-						dto.setJul(getNumericCellValue(row.getCell(7), dto));
-						dto.setAug(getNumericCellValue(row.getCell(8), dto));
-						dto.setSep(getNumericCellValue(row.getCell(9), dto));
-						dto.setOct(getNumericCellValue(row.getCell(10), dto));
-						dto.setNov(getNumericCellValue(row.getCell(11), dto));
-						dto.setDec(getNumericCellValue(row.getCell(12), dto));
-						dto.setJan(getNumericCellValue(row.getCell(13), dto));
-						dto.setFeb(getNumericCellValue(row.getCell(14), dto));
-						dto.setMar(getNumericCellValue(row.getCell(15), dto));
-						dto.setRemark(getStringCellValue(row.getCell(16), dto));
-						String id=getStringCellValue(row.getCell(17), dto);
-						if(id!=null) {
-							dto.setId(UUID.fromString(id));
-						}
-						
-						dto.setTableId(getStringCellValue(row.getCell(19), dto));
+				try {
+					String cost=getStringCellValue(row.getCell(2), dto);
+					if(cost!=null && cost.trim().equalsIgnoreCase("Total Cost")) {
+						continue;
+					}
+					dto.setBudgetType(getStringCellValue(row.getCell(0), dto));
+					dto.setPlantName(getStringCellValue(row.getCell(1), dto));
+					dto.setCostName(getStringCellValue(row.getCell(2), dto));
+					dto.setPercentChange(getNumericCellValue(row.getCell(3), dto));
+					dto.setAopYear(year);
+					dto.setApr(getNumericCellValue(row.getCell(4), dto));
+					dto.setMay(getNumericCellValue(row.getCell(5), dto));
+					dto.setJun(getNumericCellValue(row.getCell(6), dto));
+					dto.setJul(getNumericCellValue(row.getCell(7), dto));
+					dto.setAug(getNumericCellValue(row.getCell(8), dto));
+					dto.setSep(getNumericCellValue(row.getCell(9), dto));
+					dto.setOct(getNumericCellValue(row.getCell(10), dto));
+					dto.setNov(getNumericCellValue(row.getCell(11), dto));
+					dto.setDec(getNumericCellValue(row.getCell(12), dto));
+					dto.setJan(getNumericCellValue(row.getCell(13), dto));
+					dto.setFeb(getNumericCellValue(row.getCell(14), dto));
+					dto.setMar(getNumericCellValue(row.getCell(15), dto));
+					dto.setRemark(getStringCellValue(row.getCell(16), dto));
+					String id=getStringCellValue(row.getCell(17), dto);
+					if(id!=null && !id.isEmpty()) {
+						dto.setId(UUID.fromString(id));
+					}
+					String masterId=getStringCellValue(row.getCell(18), dto);
+					if(masterId!=null) {
+						dto.setMasterId(UUID.fromString(masterId));
+					}
+					
+					dto.setTableId(getStringCellValue(row.getCell(20), dto));
 
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -1782,7 +2104,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 					map.putIfAbsent(dto.getTableId(), new ArrayList<>());
 
 					map.get(dto.getTableId()).add(dto);
-				}
+									}
 
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to read Data", e);
@@ -1999,11 +2321,52 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	    }
 	}
 
+	@Override
+	@Transactional
+	public AOPMessageVM catChemCalculation(UUID plantId, String aopYear) {
+		AOPMessageVM response = new AOPMessageVM();
+		try {
+			// String sql = "EXEC [dbo].[CatChemCalculation] @PlantId = :plantId, @AopYear = :aopYear";
+			// Query query = entityManager.createNativeQuery(sql);
+			// query.setParameter("plantId", plantId);
+			// query.setParameter("aopYear", aopYear);
+			// query.executeUpdate();
+			// response.setCode(200);
+			// response.setMessage("CatChemCalculation executed successfully");
+			Plants plant = plantsRepository.findById(plantId).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+  String procedureName = vertical.getName() + "_" + site.getName() + "_CatChemCalculation";
+
+	String sql = "EXEC " + procedureName + " @PlantId = :plantId, @AopYear = :aopYear";
+
+Query query = entityManager.createNativeQuery(sql);
+query.setParameter("plantId", plantId);
+query.setParameter("aopYear", aopYear);
+
+// boolean hasResultSet = query.unwrap(org.hibernate.query.NativeQuery.class)
+//                             .getHibernateFlushMode() != null;
+
+query.executeUpdate();
+
+response.setCode(200);
+response.setMessage("CatChemCalculation executed successfully");
+
+			
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to execute CatChemCalculation", ex);
+		}
+		return response;
+	}
+
+
+
 	String getJson() {
 	    return """
 	        {
 	          "BudgetMaintenance": {
-	            "columnCount": 20,
+	            "columnCount": 21,
 	            "metadataFields": [
 	              {
 	                "key": "year",
@@ -2044,6 +2407,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	                  "mar",
 	                  "remark",
 	                  "id",
+	                  "masterId",
 	                  "isEditable"
 	                ],
 	                "startingIndexOfMonths": 4,
@@ -2062,11 +2426,12 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	                    "% Change (+/-)",
 	                    "Remarks",
 	                    "Id",
+	                    "MasterId",
 	                    "Is Editable"
 	                  ]
 	                ],
 	                "rows": [],
-	                "hiddenColumns": [17, 18, 19],
+	                "hiddenColumns": [17, 18, 19, 20],
 	                "styles": {
 	                  "boldColumns": [0],
 	                  "borders": true
@@ -2097,6 +2462,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	                  "mar",
 	                  "remark",
 	                  "id",
+	                  "masterId",
 	                  "isEditable"
 	                ],
 	                "startingIndexOfMonths": 4,
@@ -2115,11 +2481,12 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	                    "% Change (+/-)",
 	                    "Remarks",
 	                    "Id",
+	                    "MasterId",
 	                    "Is Editable"
 	                  ]
 	                ],
 	                "rows": [],
-	                "hiddenColumns": [17, 18, 19],
+	                "hiddenColumns": [17, 18, 19, 20],
 	                "styles": {
 	                  "boldColumns": [0],
 	                  "borders": true
@@ -2260,5 +2627,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 					}
 				});
 	}
+
+
 
 }

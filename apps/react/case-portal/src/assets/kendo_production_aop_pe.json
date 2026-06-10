@@ -1,33 +1,43 @@
 [
-  { "field": "idFromApi", "title": "ID", "hidden": true, "minWidth": 100 },
+  {
+    "field": "idFromApi",
+    "title": "ID",
+    "hidden": true,
+    "minWidth": 100,
+    "isVisible": false
+  },
   {
     "field": "aopCaseId",
     "title": "Case ID",
 
     "editable": false,
     "hidden": true,
-    "minWidth": 100
+    "minWidth": 100,
+    "isVisible": false
   },
   {
     "field": "aopType",
     "title": "Type",
     "width": 80,
     "hidden": true,
-    "minWidth": 100
+    "minWidth": 100,
+    "isVisible": false
   },
   {
     "field": "aopYear",
     "title": "Year",
     "width": 80,
     "hidden": true,
-    "minWidth": 100
+    "minWidth": 100,
+    "isVisible": false
   },
   {
     "field": "plantFkId",
     "title": "Plant ID",
     "width": 80,
     "hidden": true,
-    "minWidth": 100
+    "minWidth": 100,
+    "isVisible": false
   },
   {
     "field": "normParametersFKId",
@@ -35,7 +45,8 @@
     "editable": false,
     "width": 125,
     "hidden": true,
-    "minWidth": 100
+    "minWidth": 100,
+    "isVisible": false
   },
 
   {
@@ -44,7 +55,8 @@
     "editable": false,
     "width": 125,
     "hidden": true,
-    "minWidth": 100
+    "minWidth": 100,
+    "isVisible": false
   },
 
   {
@@ -201,7 +213,8 @@
     "field": "isEditable",
     "title": "isEditable",
     "hidden": true,
-    "minWidth": 100
+    "minWidth": 100,
+    "isVisible": false
   },
 
   {
@@ -209,6 +222,7 @@
     "title": "aopStatus",
     "editable": false,
     "hidden": true,
-    "minWidth": 100
+    "minWidth": 100,
+    "isVisible": false
   }
 ]

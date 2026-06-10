@@ -7,7 +7,6 @@ import { useSession } from 'SessionStoreContext'
 import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
-import { configurationAndReportManualEntryResponse } from '../dummyData'
 import RevButtonSection from 'components/aop-phase-two/common/components/RevButtonSection'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 

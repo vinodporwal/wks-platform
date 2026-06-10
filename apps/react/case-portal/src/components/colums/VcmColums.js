@@ -51,7 +51,63 @@ export const SlowDownVcmColumns = [
     field: 'remark',
     title: 'Remarks',
     editable: true,
-    minWidth: 100,
+  },
+]
+export const SlowDownVcmhmdColumns = [
+  {
+    field: 'discription',
+    title: 'Slowdown Desc',
+    editable: true,
+    type: 'discriptionDrpdwn',
+    minWidth: 200,
+  },
+
+  {
+    field: 'maintenanceId',
+    title: 'maintenanceId',
+    editable: false,
+    hidden: true,
+    minWidth: 200,
+    isVisible: false,
+  },
+
+  {
+    field: 'maintStartDateTime',
+    title: 'SD- From',
+    type: 'dateTime',
+    editable: true,
+    minWidth: 200,
+  },
+
+  {
+    field: 'maintEndDateTime',
+    title: 'SD- To',
+    type: 'dateTime',
+    editable: true,
+    minWidth: 200,
+  },
+
+  {
+    field: 'durationInHrs',
+    title: 'Duration (hrs)',
+    editable: true,
+    minWidth: 200,
+  },
+
+  {
+    field: 'rate',
+    title: 'Rate (TPH)',
+    editable: false,
+    isDisabled: true,
+    type: 'number',
+    minWidth: 200,
+  },
+
+  {
+    field: 'remark',
+    title: 'Remarks',
+    editable: true,
+    minWidth: 200,
   },
 ]
 
@@ -129,11 +185,11 @@ export const ShutdownConsumptionVcmColumns = [
   {
     field: 'productName',
     headerName: 'Particulars',
-    width: 180,
+    minWidth: 180,
     editable: false,
   },
   // { field: 'UOM/MT', headerName: 'UOM', width: 150, editable: false },
-  { field: 'UOM', headerName: 'UOM/MT', width: 150, editable: false },
+  { field: 'UOM', headerName: 'UOM/MT', minWidth: 80, editable: false },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12

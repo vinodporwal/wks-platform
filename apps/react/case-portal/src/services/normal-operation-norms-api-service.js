@@ -388,7 +388,7 @@ async function saveNormalOperationNormsData(
   if (
     lowerVertName === 'pe' ||
     lowerVertName === 'pp' ||
-    (lowerVertName === 'pvc' && lowerSiteName === 'vmd')
+    lowerVertName === 'pvc'
   ) {
     queryParams.append('gradeId', gradeId)
   }

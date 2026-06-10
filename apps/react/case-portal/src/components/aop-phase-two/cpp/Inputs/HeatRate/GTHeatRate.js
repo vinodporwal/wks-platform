@@ -39,7 +39,7 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
       widthT: 150,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
       minWidth: 150,
     },
     {
@@ -262,7 +262,7 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
 
   const dropdownConfig = {
     options: dropdownOptions,
-    label: 'Select Plant',
+    label: 'Plant',
     placeholder: 'Select Plant',
     valueKey: 'id',
     labelKey: 'name',

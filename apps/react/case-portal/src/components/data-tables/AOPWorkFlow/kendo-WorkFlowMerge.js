@@ -5,7 +5,7 @@ import MuiAccordionDetails from '@mui/material/AccordionDetails'
 import MuiAccordionSummary from '@mui/material/AccordionSummary'
 import { styled } from '@mui/material/styles'
 import Notification from 'components/Utilities/Notification'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 // import { CaseService } from 'services/CaseService'
 import { DataService } from 'services/DataService'
@@ -106,9 +106,15 @@ const WorkFlowMerge = () => {
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
-
+  const VERTICAL_NAME = verticalObject?.name
+  const SITE_NAME = siteObject?.name
+  const PLANT_NAME = plantObject?.name
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
+
+  const IS_CRACKER_HMD =
+    VERTICAL_NAME?.toLowerCase() === 'cracker' &&
+    SITE_NAME?.toLowerCase() === 'hmd'
 
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
@@ -333,13 +339,14 @@ const WorkFlowMerge = () => {
       }
 
       const payload = postmanData
-
+      const EXCEL_NAME = `ANNUAL_AOP_REPORT_${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}`
       // Await the API call here to ensure completion
       const data = await AOPWorkFlowService.getExcel(
         keycloak,
         payload,
         PLANT_ID,
         AOP_YEAR,
+        EXCEL_NAME,
       )
 
       setSnackbarOpen(true)
@@ -420,13 +427,14 @@ const WorkFlowMerge = () => {
   const VALUE_FORMATOR = ValueFormatterProduction()
 
   const generateColumns = (data, numericKeys, handleRemarkCellClick) => {
-    const cols = data.headers.map((header, i) => {
+    const cols = data.headers?.map((header, i) => {
       const field = data.keys[i]
       const isNumeric = numericKeys.includes(field)
       return {
         field,
         headerName: header,
         // minWidth: i === 0 ? 300 : 150,
+        minWidth: 120,
         flex: 1,
         ...(i === 0 && {
           renderHeader: (p) => <div>{p.colDef.headerName}</div>,
@@ -454,7 +462,7 @@ const WorkFlowMerge = () => {
       const { headers, keys, results } =
         await AOPWorkFlowService.getWorkflowData(keycloak, PLANT_ID, AOP_YEAR)
       const numericKeys = getNumericKeysInAllRows(results)
-      const formatted = results.map((row, idx) => ({
+      const formatted = results?.map((row, idx) => ({
         id: idx,
         ...row,
         ...Object.fromEntries(
@@ -505,12 +513,14 @@ const WorkFlowMerge = () => {
       // auto-pick the in-progress or next step
       // setSteps(cases?.workflowMasterDTO?.steps.map((i) => i.displayName))
 
-      const activeIdx = master.steps.findIndex((s) => s.status === 'inprogress')
+      const activeIdx = master?.steps?.findIndex(
+        (s) => s.status === 'inprogress',
+      )
       // console.log(activeIdx, 'activeIdx')
       setActiveStep(
         activeIdx > -1
           ? activeIdx
-          : master.steps.findIndex((s) => s.status !== 'completed'),
+          : master?.steps?.findIndex((s) => s.status !== 'completed'),
       )
     } catch (err) {
       console.error('Error fetching case', err)
@@ -644,9 +654,7 @@ const WorkFlowMerge = () => {
       setSnackbarData({ message: err.message, severity: 'error' })
       setActionDisabled(false)
     } finally {
-      setSnackbarOpen(true)
-      setOpenRejectDialog(false)
-      setText('')
+      setSnackbarOpen(true) // ✅ THIS was the only missing piece
     }
   }
 
@@ -773,24 +781,19 @@ const WorkFlowMerge = () => {
   // Pick tabs based on vertical
   // Pick tabs based on vertical
 
-  let activeTabs = defaultTabs
-  if (lowerVertName === 'cracker') {
-    activeTabs = crackerTabs
-  } else if (lowerVertName === 'vcm') {
-    activeTabs = vcmTabs
-  } else if (lowerVertName === 'elastomer' || lowerVertName === 'aromatics') {
-    activeTabs = elastomerTabs
-  } else if (lowerVertName === 'pet') {
-    activeTabs = customPETTabs
-  } else if (lowerVertName === 'pe') {
-    activeTabs = customPETabs
-  } else if (lowerVertName === 'pp') {
-    activeTabs = customPETabs
-  } else if (lowerVertName === 'pta') {
-    activeTabs = ptaTabs
-  } else if (lowerVertName === 'meg') {
-    activeTabs = customMegTabs
-  }
+  const gridVerticals = ['pp', 'pe', 'pet']
+
+  const activeTabs = useMemo(() => {
+    if (lowerVertName === 'cracker') {
+      return IS_CRACKER_HMD
+        ? crackerTabs.filter((tab) => tab !== 'Furnace Data')
+        : crackerTabs
+    } else if (gridVerticals?.includes(lowerVertName)) {
+      return customPETabs
+    } else {
+      return customMegTabs
+    }
+  }, [lowerVertName, crackerTabs, customPETabs, customMegTabs, IS_CRACKER_HMD])
   return (
     <div
       style={{
@@ -844,10 +847,43 @@ const WorkFlowMerge = () => {
           ))}
         </Stepper>
 
-        <Typography component='div' className='info-note' sx={{ mb: 1 }}>
-          <span className='info-note__asterisk'>*</span>
-          Prices -MIIS BPC (Last Budget Year), Actual Values -MIIS Contribution
-          (YTD).
+        <Typography
+          component='div'
+          // className='info-note'
+          sx={{
+            mb: 1.5,
+            px: 1.5,
+            py: 1,
+            fontSize: '14px',
+            fontWeight: 500,
+            letterSpacing: '0.2px',
+            lineHeight: 1.7,
+            borderRadius: '10px',
+            background:
+              'linear-gradient(90deg, rgba(25,118,210,0.08) 0%, rgba(25,118,210,0.02) 100%)',
+            borderLeft: '4px solid #1976d2',
+            color: '#1f2937',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          }}
+        >
+          <span
+            className='info-note__asterisk'
+            style={{
+              color: '#d32f2f',
+              fontSize: '18px',
+              fontWeight: 700,
+            }}
+          >
+            *
+          </span>
+
+          <span>
+            Prices - <strong>MIIS BPC</strong> (Last Budget Year), Actual Values
+            -<strong> MIIS Contribution</strong> (YTD).
+          </span>
         </Typography>
 
         <Stack
@@ -908,10 +944,89 @@ const WorkFlowMerge = () => {
           </Stack>
         </Stack>
 
-        {/* For OTHER verticals */}
-        {(lowerVertName === 'pe' ||
-          lowerVertName === 'pp' ||
-          lowerVertName === 'pet') && (
+        {/* For CRACKER */}
+        {lowerVertName === 'cracker' ? (
+          <>
+            {tabIndex === 0 && (
+              <>
+                <ProductionAopView
+                  handleCalculate={handleCalculate}
+                  handleExport={handleExport}
+                  fetchSecondGridData={fetchData}
+                />
+                {tabIndex === 0 && (
+                  <KendoDataTablesReports
+                    title='Annual AOP Cost'
+                    modifiedCells={modifiedCells}
+                    autoHeight={true}
+                    rows={rows}
+                    setRows={setRows}
+                    onRowUpdate={(updatedRow) =>
+                      console.log('Row Updated:', updatedRow)
+                    }
+                    columns={columns}
+                    loading={loadingCalculate}
+                    remarkDialogOpen={remarkDialogOpen}
+                    unsavedChangesRef={unsavedChangesRef}
+                    setRemarkDialogOpen={setRemarkDialogOpen}
+                    currentRemark={currentRemark}
+                    setCurrentRemark={setCurrentRemark}
+                    currentRowId={currentRowId}
+                    setCurrentRowId={setCurrentRowId}
+                    rowModesModel={rowModesModel}
+                    onRowModesModelChange={onRowModesModelChange}
+                    handleCalculate={handleCalculate}
+                    handleExport={handleExport}
+                    isCreatingCase={isCreatingCase}
+                    createCase={createCase}
+                    saveChanges={saveChanges}
+                    showCreateCasebutton={showCreateCasebutton}
+                    permissions={{
+                      saveBtn: !isOldYear,
+                      saveBtnForWorkflow: true,
+                      remarksEditable: true,
+                      showCreateCasebutton: showCreateCasebutton,
+                      showTitle: true,
+                      showWorkFlowBtns: true,
+                      // approveBtn: false,
+                    }}
+                    openAuditPopup={openAuditPopup}
+                    handleAuditOpen={handleAuditOpen}
+                    handleAuditClose={handleAuditClose}
+                    handleRejectClick={handleRejectClick}
+                    openRejectDialog={openRejectDialog}
+                    handleRejectCancel={handleRejectCancel}
+                    handleRemarkCellClick={handleRemarkCellClick}
+                    handleSubmit={handleSubmit}
+                    taskId={taskId}
+                    text={text}
+                    setText={setText}
+                  />
+                )}
+              </>
+            )}
+            {activeTabs[tabIndex] === 'Optimizer Input / Output' && (
+              <OptimizerReport />
+            )}
+            {activeTabs[tabIndex] === 'Month Wise Production Plan (T-16)' && (
+              <BestAchievedReport />
+            )}
+            {activeTabs[tabIndex] === 'Month Wise Norms' && (
+              <MonthWiseRawData />
+            )}
+            {activeTabs[tabIndex] === 'Furnace Data' && <FurnaceRawData />}
+            {activeTabs[tabIndex] === 'Turnaround (T-19A)' && (
+              <TurnaroundReportCracker />
+            )}
+
+            {activeTabs[tabIndex] === 'Plant Contribution (T-21)' && (
+              <PlantContribution />
+            )}
+            {activeTabs[tabIndex] === 'Plant Contribution Summary (T-22)' && (
+              <PlantContributionLastFourYears />
+            )}
+          </>
+        ) : gridVerticals.includes(lowerVertName) ? (
           <>
             {tabIndex === 0 && (
               <ProductionAopView
@@ -976,42 +1091,15 @@ const WorkFlowMerge = () => {
             {tabIndex === 5 && <AnnualProductionPlan />}
             {tabIndex === 6 && <PlantContribution />}
             {tabIndex === 7 && <PlantContributionLastFourYears />}
-            {tabIndex === 8 && lowerVertName === 'meg' && <ShutdownReport />}
-            {tabIndex === 9 && lowerVertName === 'meg' && (
-              <ShutdownSummaryReport />
-            )}
-            {tabIndex === 10 && lowerVertName === 'meg' && (
-              <MonthwiseOperatingHours />
-            )}
-
-            {tabIndex === 11 && lowerVertName === 'meg' && (
-              <PlantShutdownSlowdown />
-            )}
-
-            {(lowerVertName === 'pe' || lowerVertName === 'pp') && (
-              <>{tabIndex === 8 && <SpecificConsumptionNormsII />}</>
-            )}
-            {(lowerVertName === 'pe' ||
-              lowerVertName === 'pp' ||
-              lowerVertName === 'pet') && (
-              <>{tabIndex === 9 && <SpecificConsumptionNorm />}</>
-            )}
+            {tabIndex === 8 && <SpecificConsumptionNormsII />}
+            {tabIndex === 9 && <SpecificConsumptionNorm />}
             {tabIndex === 10 && <ShutdownReport />} {/* T-19B */}
             {tabIndex === 11 && <ShutdownSummaryReport />} {/* T-19C */}
             {tabIndex === 12 && <PlantShutdownSlowdown />} {/* T-19D */}
             {/* Remaining Reports */}
             {tabIndex === 13 && <MonthwiseOperatingHours />} {/* T-20 */}
-            <Notification
-              open={snackbarOpen}
-              message={snackbarData.message}
-              severity={snackbarData.severity}
-              onClose={() => setSnackbarOpen(false)}
-            />
           </>
-        )}
-
-        {/* --- MEG SPECIFIC TABS --- */}
-        {lowerVertName === 'meg' && (
+        ) : (
           <>
             {tabIndex === 0 && (
               <>
@@ -1089,165 +1177,12 @@ const WorkFlowMerge = () => {
             {/* T-22 */}
           </>
         )}
-
-        {/* For CRACKER */}
-        {lowerVertName === 'cracker' && (
-          <>
-            {tabIndex === 0 && (
-              <>
-                <ProductionAopView
-                  handleCalculate={handleCalculate}
-                  handleExport={handleExport}
-                  fetchSecondGridData={fetchData}
-                />
-                {tabIndex === 0 && (
-                  <KendoDataTablesReports
-                    title='Annual AOP Cost'
-                    modifiedCells={modifiedCells}
-                    autoHeight={true}
-                    rows={rows}
-                    setRows={setRows}
-                    onRowUpdate={(updatedRow) =>
-                      console.log('Row Updated:', updatedRow)
-                    }
-                    columns={columns}
-                    loading={loadingCalculate}
-                    remarkDialogOpen={remarkDialogOpen}
-                    unsavedChangesRef={unsavedChangesRef}
-                    setRemarkDialogOpen={setRemarkDialogOpen}
-                    currentRemark={currentRemark}
-                    setCurrentRemark={setCurrentRemark}
-                    currentRowId={currentRowId}
-                    setCurrentRowId={setCurrentRowId}
-                    rowModesModel={rowModesModel}
-                    onRowModesModelChange={onRowModesModelChange}
-                    handleCalculate={handleCalculate}
-                    handleExport={handleExport}
-                    isCreatingCase={isCreatingCase}
-                    createCase={createCase}
-                    saveChanges={saveChanges}
-                    showCreateCasebutton={showCreateCasebutton}
-                    permissions={{
-                      saveBtn: !isOldYear,
-                      saveBtnForWorkflow: true,
-                      remarksEditable: true,
-                      showCreateCasebutton: showCreateCasebutton,
-                      showTitle: true,
-                      showWorkFlowBtns: true,
-                      // approveBtn: false,
-                    }}
-                    openAuditPopup={openAuditPopup}
-                    handleAuditOpen={handleAuditOpen}
-                    handleAuditClose={handleAuditClose}
-                    handleRejectClick={handleRejectClick}
-                    openRejectDialog={openRejectDialog}
-                    handleRejectCancel={handleRejectCancel}
-                    handleRemarkCellClick={handleRemarkCellClick}
-                    handleSubmit={handleSubmit}
-                    taskId={taskId}
-                    text={text}
-                    setText={setText}
-                  />
-                )}
-              </>
-            )}
-            {tabIndex === 1 && <OptimizerReport />}
-            {tabIndex === 2 && <BestAchievedReport />}
-            {tabIndex === 3 && <MonthWiseRawData />}
-            {tabIndex === 4 && <FurnaceRawData />}
-            {tabIndex === 5 && <TurnaroundReportCracker />}
-
-            {tabIndex === 6 && <PlantContribution />}
-            {tabIndex === 7 && <PlantContributionLastFourYears />}
-
-            <Notification
-              open={snackbarOpen}
-              message={snackbarData.message}
-              severity={snackbarData.severity}
-              onClose={() => setSnackbarOpen(false)}
-            />
-          </>
-        )}
-
-        {/* For ELASTOMER */}
-        {(lowerVertName === 'elastomer' ||
-          lowerVertName === 'aromatics' ||
-          lowerVertName === 'pta' ||
-          lowerVertName === 'vcm') && (
-          <>
-            {tabIndex === 0 && (
-              <ProductionAopView
-                handleCalculate={handleCalculate}
-                handleExport={handleExport}
-                fetchSecondGridData={fetchData}
-              />
-            )}
-            {tabIndex === 0 && (
-              <KendoDataTablesReports
-                title='Annual AOP Cost'
-                modifiedCells={modifiedCells}
-                autoHeight={true}
-                rows={rows}
-                setRows={setRows}
-                onRowUpdate={(updatedRow) =>
-                  console.log('Row Updated:', updatedRow)
-                }
-                columns={columns}
-                loading={loadingCalculate}
-                remarkDialogOpen={remarkDialogOpen}
-                unsavedChangesRef={unsavedChangesRef}
-                setRemarkDialogOpen={setRemarkDialogOpen}
-                currentRemark={currentRemark}
-                setCurrentRemark={setCurrentRemark}
-                currentRowId={currentRowId}
-                setCurrentRowId={setCurrentRowId}
-                rowModesModel={rowModesModel}
-                onRowModesModelChange={onRowModesModelChange}
-                handleCalculate={handleCalculate}
-                handleExport={handleExport}
-                isCreatingCase={isCreatingCase}
-                createCase={createCase}
-                saveChanges={saveChanges}
-                showCreateCasebutton={showCreateCasebutton}
-                permissions={{
-                  saveBtn: !isOldYear,
-                  saveBtnForWorkflow: true,
-                  remarksEditable: true,
-                  showCreateCasebutton: showCreateCasebutton,
-                  showTitle: true,
-                  showWorkFlowBtns: true,
-                  // approveBtn: false,
-                }}
-                openAuditPopup={openAuditPopup}
-                handleAuditOpen={handleAuditOpen}
-                handleAuditClose={handleAuditClose}
-                handleRejectClick={handleRejectClick}
-                openRejectDialog={openRejectDialog}
-                handleRejectCancel={handleRejectCancel}
-                handleRemarkCellClick={handleRemarkCellClick}
-                handleSubmit={handleSubmit}
-                taskId={taskId}
-                text={text}
-                setText={setText}
-              />
-            )}
-
-            {tabIndex === 1 && <PlantsProductionSummary />}
-            {tabIndex === 2 && <MonthwiseProduction />}
-            {tabIndex === 3 && <MonthwiseRawMaterial />}
-            {tabIndex === 4 && <TurnaroundReport />}
-            {tabIndex === 5 && <AnnualProductionPlan />}
-            {tabIndex === 6 && <PlantContribution />}
-            {tabIndex === 7 && <PlantContributionLastFourYears />}
-
-            <Notification
-              open={snackbarOpen}
-              message={snackbarData.message}
-              severity={snackbarData.severity}
-              onClose={() => setSnackbarOpen(false)}
-            />
-          </>
-        )}
+        <Notification
+          open={snackbarOpen}
+          message={snackbarData.message}
+          severity={snackbarData.severity}
+          onClose={() => setSnackbarOpen(false)}
+        />
       </Box>
     </div>
   )

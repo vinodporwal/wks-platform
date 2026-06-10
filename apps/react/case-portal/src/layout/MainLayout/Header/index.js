@@ -8,7 +8,13 @@ import AppBarStyled from './AppBarStyled'
 import HeaderContent from './HeaderContent/index'
 import { DashboardColors } from 'themes/colors'
 
-const Header = ({ open, handleDrawerToggle, keycloak, isDashboard, navigation }) => {
+const Header = ({
+  open,
+  handleDrawerToggle,
+  keycloak,
+  isDashboard,
+  navigation,
+}) => {
   const theme = useTheme()
   const matchDownMD = useMediaQuery(theme.breakpoints.down('lg'))
 
@@ -23,34 +29,40 @@ const Header = ({ open, handleDrawerToggle, keycloak, isDashboard, navigation })
     >
       {/* Show icon ONLY when drawer is closed */}
       {!open && isDashboard && (
-          <IconButton
-            disableRipple
-            aria-label='open drawer'
-            onClick={handleDrawerToggle}
-            edge='start'
+        <IconButton
+          disableRipple
+          aria-label='open drawer'
+          onClick={handleDrawerToggle}
+          edge='start'
+          sx={{
+            p: 0,
+            mr: 1,
+            width: 40,
+            height: 40,
+            color: '#6a7b92',
+            pr: 1,
+            '&:hover': { color: '#6a7b92' },
+          }}
+        >
+          <MenuIcon
             sx={{
-              p: 0,
-              mr: 1,
-              width: 40,
-              height: 40,
+              // fontSize: '1.8rem',
               color: '#6a7b92',
-              pr: 1,
-              '&:hover': { color: '#6a7b92' },
+              transition: 'all 0.25s ease',
             }}
-          >
-            <MenuIcon
-              sx={{
-                // fontSize: '1.8rem',
-                color: '#6a7b92',
-                transition: 'all 0.25s ease',
-              }}
-            />
-          </IconButton>
+          />
+        </IconButton>
       )}
 
       {!open && isDashboard && (
         <Typography
-          sx={{ fontWeight: 800, fontSize: 14, color: DashboardColors.text.heading, fontFamily: "'Hiragino Sans', 'Honeywell Sans Web', 'Inter', sans-serif" }}
+          sx={{
+            fontWeight: 800,
+            fontSize: 14,
+            color: DashboardColors.text.heading,
+            fontFamily:
+              "'Hiragino Sans', 'Honeywell Sans Web', 'Inter', sans-serif",
+          }}
         >
           Reliance
         </Typography>

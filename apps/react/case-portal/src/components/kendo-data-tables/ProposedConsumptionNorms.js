@@ -535,16 +535,7 @@ const ProposedConsumptionNorms = () => {
 
       <div>
         {
-          <Box
-            sx={{
-              width: '100%',
-              padding: '0px ',
-              margin: '0px',
-              backgroundColor: '#F2F3F8',
-              borderRadius: 0,
-              borderBottom: 'none',
-            }}
-          >
+          <Box>
             <KendoDataTablesReports
               modifiedCells={modifiedCells}
               setModifiedCells={setModifiedCells}

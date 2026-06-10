@@ -63,18 +63,34 @@ const BusinessDemand = ({ permissions }) => {
   const IS_PE_PP_VERTICAL = lowerVertName === 'pp' || lowerVertName === 'pe'
   const IS_PTA_VERTICAL = lowerVertName === 'pta'
   const IS_PET_VERTICAL = lowerVertName === 'pet'
+  const IS_PVC_VERTICAL = lowerVertName === 'pvc'
   const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
+  const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
   const IS_VCM_VERTICAL = lowerVertName === 'vcm'
   const IS_CRACKER_VERTICAL = lowerVertName == 'cracker'
   const IS_CARCKER_VMD = lowerVertName === 'cracker' && lowerSiteName === 'vmd'
   const IS_CRACKER_DMD = lowerVertName === 'cracker' && lowerSiteName === 'dmd'
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
-  const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
+  const IS_CRACKER_C2 = lowerVertName === 'cracker' && lowerSiteName === 'c2'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
-  const IS_CHEMICAL_JMD = lowerVertName === 'chemical' && lowerSiteName === 'jmd'
+
+  const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
+
+  const IS_ELASTOMER_HMD =
+    lowerVertName === 'elastomer' && lowerSiteName === 'hmd'
+  const IS_ELASTOMER_HMD_SBR =
+    lowerVertName === 'elastomer' &&
+    lowerSiteName === 'hmd' &&
+    plantObject?.name?.toLowerCase() === 'sbr'
+  const IS_CHEMICAL_JMD =
+    lowerVertName === 'chemical' && lowerSiteName === 'jmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'
+  const IS_CHEMICAL_VMD_BENZEN =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'vmd' &&
+    plantObject?.name?.toLowerCase() === 'benzene'
   const PRODUCTION_TARGET_LABEL = IS_VCM_VERTICAL
     ? 'Production Target (This is a reference for entering the Business Demand value)'
     : 'Production Target (MT) (This is a reference for entering the Business Demand value)'
@@ -104,6 +120,7 @@ const BusinessDemand = ({ permissions }) => {
   const [gridExpanded, setGridExpanded] = useState(true)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+  const [selectedLine, setSelectedLine] = useState(null)
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
@@ -117,6 +134,7 @@ const BusinessDemand = ({ permissions }) => {
       field: 'idFromApi',
       title: 'ID',
       hidden: true,
+      isVisible: false,
     },
     {
       field: 'aopCaseId',
@@ -124,6 +142,7 @@ const BusinessDemand = ({ permissions }) => {
       width: 120,
       editable: false,
       hidden: true,
+      isVisible: false,
     },
     {
       field: 'normParametersFKId',
@@ -131,45 +150,59 @@ const BusinessDemand = ({ permissions }) => {
       editable: false,
       widthT: 100,
       hidden: true,
+      isVisible: false,
     },
 
     {
       field: 'materialDisplayName',
       title: 'Particulars',
       editable: false,
-      widthT: 220,
-      autoAdjust: false
+      widthT: 200,
+      minWidth: 200,
     },
     {
       field: 'april',
       title: 'Value',
       editable: false,
-      widthT: 220,
+      widthT: 200,
       align: 'left',
       headerAlign: 'left',
       type: 'number',
       format: '{0:n2}',
-      autoAdjust: false
+      minWidth: 200,
     },
 
     {
       field: 'isEditable',
       title: 'isEditable',
       hidden: true,
+      isVisible: false,
     },
   ]
   const fetchData = async () => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
+    if (IS_PVC_DMD && !selectedLine?.id) return
 
     setModifiedCells({})
 
     setLoading(true)
     try {
-      var data = await BusinessDemandDataApiService.getBDData(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      let data
+      if (IS_PVC_DMD) {
+        const lineId = selectedLine?.id
+        data = await BusinessDemandDataApiService.getBDLineData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          lineId,
+        )
+      } else {
+        data = await BusinessDemandDataApiService.getBDData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
 
       const formattedData = data
         .filter((item) => {
@@ -178,17 +211,50 @@ const BusinessDemand = ({ permissions }) => {
           }
           return true // all items when not IS_CRACKER_DMD
         })
-        .map((item, index) => ({
-          ...item,
-          idFromApi: item.id,
-          id: index,
-          originalRemark: item.remark,
-          inEdit: false,
-          Particulars: item.normParameterTypeDisplayName,
-          expanded: false,
-          UOM:
-            IS_VCM_VERTICAL || lowerVertName === 'chemical' ? '%' : item?.UOM,
-        }))
+        .map((item, index) => {
+          // For Cracker HMD compute avg of the 12 month values
+          let avg = null
+          if (IS_CRACKER_HMD) {
+            const MONTH_FIELDS = [
+              'april',
+              'may',
+              'june',
+              'july',
+              'aug',
+              'sep',
+              'oct',
+              'nov',
+              'dec',
+              'jan',
+              'feb',
+              'march',
+            ]
+            const values = MONTH_FIELDS.map((m) => item[m]).filter(
+              (v) =>
+                v !== null && v !== undefined && v !== '' && !isNaN(Number(v)),
+            )
+            avg =
+              values.length > 0
+                ? values.reduce((sum, v) => sum + Number(v), 0) / values.length
+                : null
+          }
+
+          return {
+            ...item,
+            idFromApi: item.id,
+            id: index,
+            originalRemark: item.remark,
+            inEdit: false,
+            Particulars: item.normParameterTypeDisplayName,
+            expanded: false,
+            UOM:
+              IS_VCM_VERTICAL ||
+              (lowerVertName === 'chemical' && !IS_CHEMICAL_VMD_BENZEN)
+                ? '%'
+                : item?.UOM,
+            ...(IS_CRACKER_HMD && { avg }),
+          }
+        })
 
       setRows(formattedData)
 
@@ -201,7 +267,7 @@ const BusinessDemand = ({ permissions }) => {
 
   useEffect(() => {
     fetchData()
-  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
+  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, selectedLine])
 
   const handleUnitChangeMain = (unit) => {
     setSelectedUnit(unit)
@@ -296,11 +362,13 @@ const BusinessDemand = ({ permissions }) => {
       if (
         IS_VCM_VERTICAL ||
         IS_PE_PP_VERTICAL ||
+        IS_PVC_DMD ||
+        IS_PVC_VMD ||
         // FOR PTA THIS CONDITION IS REMOVED
         // IS_PTA_VERTICAL ||
         IS_PET_VERTICAL ||
-        IS_ELASTOMER_VERTICAL ||
-        (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD)
+        (IS_ELASTOMER_VERTICAL && !IS_ELASTOMER_HMD) ||
+        (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD && !IS_ELASTOMER_HMD)
       ) {
         const productionRows = (rows || []).filter(
           (row) => row.Particulars?.toLowerCase() === 'production',
@@ -399,35 +467,46 @@ const BusinessDemand = ({ permissions }) => {
 
   const saveBusinessDemandData = async (newRows) => {
     try {
-      const payloadData = newRows.map((row) => ({
-        april: row.april || null,
-        may: row.may || null,
-        june: row.june || null,
-        july: row.july || null,
-        aug: row.aug || null,
-        sep: row.sep || null,
-        oct: row.oct || null,
-        nov: row.nov || null,
-        dec: row.dec || null,
-        jan: row.jan || null,
-        feb: row.feb || null,
-        march: row.march || null,
-        remark: row.remark || null,
-        avgTph: row.avgTph || null,
-        year: AOP_YEAR,
-        plantId: PLANT_ID,
-        siteFKId: SITE_ID,
-        verticalFKId: VERTICAL_ID,
-        normParameterId: row.normParameterId,
-        id: row.idFromApi || null,
-        inEdit: row.inEdit || false,
-      }))
-
-      const response =
-        await BusinessDemandDataApiService.saveBusinessDemandData(
+      const lineId = selectedLine?.id
+      const payloadData = newRows.map((row) => {
+        const aprilVal = row.april ?? null
+        return {
+          april: aprilVal,
+          may: row.may ?? null,
+          june: row.june ?? null,
+          july: row.july ?? null,
+          aug: row.aug ?? null,
+          sep: row.sep ?? null,
+          oct: row.oct ?? null,
+          nov: row.nov ?? null,
+          dec: row.dec ?? null,
+          jan: row.jan ?? null,
+          feb: row.feb ?? null,
+          march: row.march ?? null,
+          remark: row.remark || null,
+          avgTph: row.avgTph || null,
+          year: AOP_YEAR,
+          plantId: PLANT_ID,
+          siteFKId: SITE_ID,
+          verticalFKId: VERTICAL_ID,
+          normParameterId: row.normParameterId,
+          id: row.idFromApi || null,
+          inEdit: row.inEdit || false,
+          ...(IS_PVC_DMD && { lineId: lineId || null }),
+        }
+      })
+      var response
+      if (IS_PVC_DMD) {
+        response = await BusinessDemandDataApiService.saveBDLineData(
           payloadData,
           keycloak,
         )
+      } else {
+        response = await BusinessDemandDataApiService.saveBusinessDemandData(
+          payloadData,
+          keycloak,
+        )
+      }
 
       setSnackbarOpen(true)
       setSnackbarData({
@@ -445,7 +524,7 @@ const BusinessDemand = ({ permissions }) => {
     } catch (error) {
       console.error('Error in saving data!', error)
     } finally {
-      // fetchData()
+      setLoading(false)
     }
   }
   const deleteRowData = async (paramsForDelete) => {
@@ -494,7 +573,9 @@ const BusinessDemand = ({ permissions }) => {
   const percentageTitle =
     IS_PE_PP_VERTICAL || IS_PET_VERTICAL || IS_PVC_VMD || IS_PVC_DMD
       ? `${SCREEN_NAME} (%)`
-      : `${SCREEN_NAME}`
+      : IS_ELASTOMER_HMD_SBR
+        ? `${SCREEN_NAME} (MT)`
+        : `${SCREEN_NAME}`
 
   const adjustedPermissions = getAdjustedPermissions(
     {
@@ -517,10 +598,10 @@ const BusinessDemand = ({ permissions }) => {
         // FOR PTA IT IS NOT REQUIRED
         // IS_PTA_VERTICAL ||
         IS_PET_VERTICAL ||
+        IS_PVC_VERTICAL ||
         IS_PVC_VMD ||
         IS_PVC_DMD ||
         IS_ELASTOMER_VERTICAL ||
-
         (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD)
           ? true
           : false,
@@ -530,7 +611,9 @@ const BusinessDemand = ({ permissions }) => {
         IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD ||
+        IS_ELASTOMER_HMD
           ? true
           : false,
       uploadExcelBtn:
@@ -538,7 +621,9 @@ const BusinessDemand = ({ permissions }) => {
         IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_PVC_HMD ||
+        IS_ELASTOMER_HMD
           ? true
           : false,
 
@@ -548,9 +633,14 @@ const BusinessDemand = ({ permissions }) => {
         IS_PET_VERTICAL ||
         IS_PVC_VMD ||
         IS_PVC_DMD ||
-        IS_ELASTOMER_JMD
+        IS_PVC_HMD ||
+        IS_ELASTOMER_JMD ||
+        IS_ELASTOMER_HMD
           ? false
           : true,
+
+      // Enables ON/OFF dropdown for rows where UOM === 'ON/OFF'
+      enableOnOffDropdown: IS_CRACKER_HMD,
     },
     isOldYear,
   )
@@ -575,13 +665,23 @@ const BusinessDemand = ({ permissions }) => {
 
     try {
       let response
-
-      response = await BusinessDemandDataApiService.businessDemandImport(
-        rawFile,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      if (IS_PVC_DMD) {
+        const lineId = selectedLine?.id
+        response = await BusinessDemandDataApiService.businessDemandLineImport(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          lineId,
+        )
+      } else {
+        response = await BusinessDemandDataApiService.businessDemandImport(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -666,12 +766,23 @@ const BusinessDemand = ({ permissions }) => {
 
     try {
       let response
-      response = await BusinessDemandDataApiService.businessDemandExport(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        EXCEL_NAME,
-      )
+      if (IS_PVC_DMD) {
+        const lineId = selectedLine?.id
+        response = await BusinessDemandDataApiService.businessDemandLineExport(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          lineId,
+          EXCEL_NAME,
+        )
+      } else {
+        response = await BusinessDemandDataApiService.businessDemandExport(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_NAME,
+        )
+      }
     } catch (error) {
       console.error('Error downloading Excel:', error)
       setSnackbarData({
@@ -699,20 +810,24 @@ const BusinessDemand = ({ permissions }) => {
 
       <LoaderBackdrop open={!!loading} />
 
-      {lowerVertName !== 'cracker' && !IS_ELASTOMER_JMD && (
-        <>
-          <Box sx={{
-            pb: IS_PP_SEZ ? 0 : 1,
-            background: 'transparent'
-          }}>
+      {lowerVertName !== 'cracker' &&
+        !IS_ELASTOMER_JMD &&
+        !IS_CHEMICAL_VMD_BENZEN && (
+          <>
             <Box
               sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-              }}>
-
-              {/* <Box
+                pb: IS_PP_SEZ ? 0 : 1,
+                background: 'transparent',
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
+              >
+                {/* <Box
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
@@ -737,36 +852,41 @@ const BusinessDemand = ({ permissions }) => {
                   }}
                 />
               </Box> */}
-              <Typography component='span' className='accordian-title'>
-                {PRODUCTION_TARGET_LABEL}
-              </Typography>
+                <Typography component='span' className='accordian-title'>
+                  {PRODUCTION_TARGET_LABEL}
+                </Typography>
+              </Box>
             </Box>
-          </Box>
-          {gridExpanded && (<Box sx={{
-            transition: '0.3s',
-            overflow: 'hidden',
-            background: 'transparent',
-          }}>
-            <ProductionvolumeData
-              isBusinessDemand={true}
-              permissions={{
-                allAction: true,
-                showAction: false,
-                addButton: false,
-                deleteButton: false,
-                editButton: false,
-                showUnit: true,
-                saveWithRemark: false,
-                showCalculate: false,
-                saveBtn: false,
-                hideSummary: true,
-                hideUploadExcel: true,
-                hideDownloadExcel: true,
-              }}
-            />
-          </Box>)}
-        </>
-      )}
+            {gridExpanded && (
+              <Box
+                sx={{
+                  transition: '0.3s',
+                  overflow: 'hidden',
+                  background: 'transparent',
+                }}
+              >
+                <ProductionvolumeData
+                  isBusinessDemand={true}
+                  setSelectedLineData={setSelectedLine}
+                  permissions={{
+                    allAction: true,
+                    showAction: false,
+                    addButton: false,
+                    deleteButton: false,
+                    editButton: false,
+                    showUnit: true,
+                    saveWithRemark: false,
+                    showCalculate: false,
+                    saveBtn: false,
+                    hideSummary: true,
+                    hideUploadExcel: true,
+                    hideDownloadExcel: true,
+                  }}
+                />
+              </Box>
+            )}
+          </>
+        )}
       {IS_ELASTOMER_JMD && (
         <KendoDataTables
           setRows={setRowRate}
@@ -851,13 +971,16 @@ const BusinessDemand = ({ permissions }) => {
 
       {IS_CRACKER_DMD && <ManualEntryForFeedStreams />}
 
-      {!IS_CARCKER_VMD && !IS_CRACKER_HMD && IS_CRACKER_VERTICAL && (
-        <>
-          <Box sx={{ width: '100%', margin: 0 }}>
-            <PropaneBusiness permissions={adjustedPermissions} />
-          </Box>
-        </>
-      )}
+      {!IS_CARCKER_VMD &&
+        !IS_CRACKER_HMD &&
+        !IS_CRACKER_C2 &&
+        IS_CRACKER_VERTICAL && (
+          <>
+            <Box sx={{ width: '100%', margin: 0 }}>
+              <PropaneBusiness permissions={adjustedPermissions} />
+            </Box>
+          </>
+        )}
 
       {IS_CRACKER_HMD && <ModeSelection permissions={adjustedPermissions} />}
     </div>

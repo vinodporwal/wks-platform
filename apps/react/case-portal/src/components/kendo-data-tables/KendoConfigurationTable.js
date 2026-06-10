@@ -5,25 +5,42 @@ import { verticalEnums } from 'enums/verticalEnums'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
+import { PIOImpactApiService } from 'services/Pio-Impact-api-service'
 import { useSession } from 'SessionStoreContext'
 import {
+  CustomAccordion,
+  CustomAccordionDetails,
+  CustomAccordionSummary,
+} from 'utils/CustomAccrodian'
+import {
+  Backdrop,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '../../../node_modules/@mui/material/index'
+import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
 import SelectivityData from './SelectivityData'
+import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/index'
+import { getRoleName } from 'services/role-service'
+import { ButtonGroup } from '../../../node_modules/@progress/kendo-react-buttons/index'
+import QualityParameters from './QualityParameters'
 import RawMaterialNormsBasis from './tab-components/RawMaterialNormsBasis'
+import CatChemNormsBasis from './tab-components/CatChemNormsBasis'
 import ProductionRange from './tab-components/ProductionRange'
 import PtaConfiguration from './tab-components/PtaConfiguration'
 import NSRAndMaterialPrices from './tab-components/NSRAndMaterialPrices/index'
-import CatChemNormsBasis from './tab-components/CatChemNormsBasis'
-import { getRoleName } from 'services/role-service'
 
 import { Zoom, IconButton } from '@mui/material'
+import ShutdownRateGrid from './tab-components/ShutdownRate/ShutdownRateGrid'
+import ShutdownRate from './tab-components/ShutdownRate'
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import PublishedWithChangesIcon from '@mui/icons-material/PublishedWithChanges'
@@ -31,8 +48,12 @@ import CloseIcon from '@mui/icons-material/Close'
 import { styled } from '@mui/material/styles'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import ExclusionDate from './ExclusionDate'
+import CatalystChangeOver from './CatalystChangeOver'
 import LineConfiguration from './LineConfiguration'
 import ConfigurationAccordian from './common/ConfigurationAccordian'
+import SeasonMonths from './tab-components/SeasonMonths/index'
+import MaterialBalance from './MaterialBalance'
+import TankNosConfigureTable from './TankNosConfigureTable'
 
 const ConfigurationTable = () => {
   const hasExecutedRef = useRef(false)
@@ -73,6 +94,16 @@ const ConfigurationTable = () => {
   const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
   const IS_AROMATICS_HMD =
     lowerVertName === 'aromatics' && lowerSiteName === 'hmd'
+  const IS_AROMATICS_PMD =
+    lowerVertName === 'aromatics' && lowerSiteName === 'pmd'
+  const IS_CHEMICAL_DMD =
+    lowerVertName === 'chemical' && lowerSiteName === 'dmd'
+  const IS_CHEMICAL_VMD =
+    lowerVertName === 'chemical' && lowerSiteName === 'vmd'
+  const IS_CHEMICAL_VMD_BUTADIENE =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'vmd' &&
+    plantObject?.name?.toUpperCase() === 'BUTADIENE'
   const [tabIndex, setTabIndex] = useState(0)
   const [loadBtnClicked, setLoadBtnClicked] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -219,7 +250,9 @@ const ConfigurationTable = () => {
 
       if (
         lowerVertName == verticalEnums.MEG ||
-        lowerVertName == verticalEnums.CRACKER
+        lowerVertName == verticalEnums.CRACKER ||
+        IS_CHEMICAL_DMD ||
+        IS_CHEMICAL_VMD
       ) {
         data = data?.filter(
           (item) =>
@@ -303,6 +336,126 @@ const ConfigurationTable = () => {
         setOtherLossRows(otherLossRows)
         setContiniousGradeData(continiousGradeRows)
         setDiscontiniousGradeData(discontiniousGradeRows)
+        if (IS_AROMATICS_PMD) {
+          // Distribute values from Constant to Configuration for DeH-15 and DeH-201
+          const monthsForDist = [
+            'apr',
+            'may',
+            'jun',
+            'jul',
+            'aug',
+            'sep',
+            'oct',
+            'nov',
+            'dec',
+            'jan',
+            'feb',
+            'mar',
+          ]
+
+          const getDaysInMonth = (monthName, aopYear) => {
+            const [startYearStr, endYearStr] = (aopYear || '').split('-')
+            const startYear = parseInt(startYearStr, 10)
+            let endYear = startYear + 1
+            if (endYearStr) {
+              const fullEndYearStr = startYearStr.substring(0, 2) + endYearStr
+              const parsedEndYear = parseInt(fullEndYearStr, 10)
+              if (!isNaN(parsedEndYear)) {
+                endYear = parsedEndYear
+              }
+            }
+
+            const month = monthName.toLowerCase()
+            if (month === 'january' || month === 'jan') return 31
+            if (month === 'february' || month === 'feb') {
+              const isLeap =
+                (endYear % 4 === 0 && endYear % 100 !== 0) ||
+                endYear % 400 === 0
+              return isLeap ? 29 : 28
+            }
+            if (month === 'march' || month === 'mar') return 31
+            if (month === 'april' || month === 'apr') return 30
+            if (month === 'may') return 31
+            if (month === 'june' || month === 'jun') return 30
+            if (month === 'july' || month === 'jul') return 31
+            if (month === 'august' || month === 'aug') return 31
+            if (month === 'september' || month === 'sep') return 30
+            if (month === 'october' || month === 'oct') return 31
+            if (month === 'november' || month === 'nov') return 30
+            if (month === 'december' || month === 'dec') return 31
+            return 30
+          }
+
+          configurationRows.forEach((r) => {
+            const isDistributionProduct =
+              (r.ConfigTypeName === 'Configuration' ||
+                r.ConfigTypeDisplayName === 'Configuration') &&
+              r.TypeDisplayName === 'Configuration' &&
+              r.UOM === 'YES/NO' &&
+              ['deh-15', 'deh-201'].includes(
+                (r.productName || '').trim().toLowerCase(),
+              )
+
+            if (isDistributionProduct) {
+              const prodNameLower = (r.productName || '').trim().toLowerCase()
+              let constantProductName = ''
+              if (prodNameLower === 'deh-15') {
+                constantProductName = 'deh-15 batch length'
+              } else if (prodNameLower === 'deh-201') {
+                constantProductName = 'deh-201 batch length'
+              }
+
+              const constantRow = (constantsRows || []).find(
+                (cr) =>
+                  (cr.ConfigTypeName === 'Constant' ||
+                    cr.ConfigTypeDisplayName === 'Constant') &&
+                  cr.TypeDisplayName === 'Constant' &&
+                  cr.UOM === 'Day' &&
+                  (cr.productName || '').trim().toLowerCase() ===
+                    constantProductName,
+              )
+
+              const totalValue = constantRow ? Number(constantRow.apr) || 0 : 0
+
+              // Sequential fill: pour days into each month in order until totalValue is used up
+              // e.g. totalValue=110: apr=30, may=31, jun=30, jul=19 (remaining), aug...=0
+              let remaining = totalValue
+
+              monthsForDist.forEach((m) => {
+                const daysInThisMonth = getDaysInMonth(m, AOP_YEAR)
+                if (remaining >= daysInThisMonth) {
+                  r[m] = 1
+                  r[`${m}_isDisabled`] = true
+                  r[`${m}_editable`] = false
+                  remaining -= daysInThisMonth
+                } else if (remaining > 0) {
+                  if (r[m] === 1) {
+                    r[m] = 1
+                    r[`${m}_isDisabled`] = true
+                    r[`${m}_editable`] = false
+                  } else {
+                    r[m] = 0
+                    r[`${m}_isDisabled`] = false
+                    r[`${m}_editable`] = true
+                  }
+                  remaining = 0
+                } else {
+                  // No days left - assign 0, switch is NOT disabled
+                  if (r[m] === 1) {
+                    r[m] = 1
+                    r[`${m}_isDisabled`] = true
+                    r[`${m}_editable`] = false
+                  } else {
+                    r[m] = 0
+                    r[`${m}_isDisabled`] = false
+                    r[`${m}_editable`] = true
+                  }
+                }
+              })
+            }
+          })
+        }
+
         setConstantsRows(constantsRows)
         setConfigurationRows(configurationRows)
         setReportManualEntry(reportManualEntryRows)
@@ -589,7 +742,12 @@ const ConfigurationTable = () => {
     getAopSummary()
 
     setTimeout(() => {
-      if (lowerVertName != 'cracker' && lowerVertName != 'meg') {
+      if (
+        lowerVertName != 'cracker' &&
+        lowerVertName != 'meg' &&
+        !IS_CHEMICAL_DMD &&
+        !IS_CHEMICAL_VMD
+      ) {
         if (lowerVertName === 'aromatics') {
           getRevision()
         }
@@ -1176,14 +1334,23 @@ const ConfigurationTable = () => {
     )
   }, [openConfirmDialogRev])
 
-  if (lowerVertName == 'meg' && lowerVertName !== 'cracker') {
+  if (
+    (lowerVertName == 'meg' || IS_CHEMICAL_DMD || IS_CHEMICAL_VMD) &&
+    lowerVertName !== 'cracker'
+  ) {
     // const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
-    const megTabs = [
-      'Configuration',
-      'Constants',
-      'Report Manual Entry',
-      'NSR & Material Prices',
-    ]
+    const megTabs = IS_CHEMICAL_VMD_BUTADIENE
+      ? ['Configuration', 'Constants', 'Report Manual Entry']
+      : IS_CHEMICAL_DMD ||
+          (IS_CHEMICAL_VMD &&
+            !(plantObject?.name?.toUpperCase() === 'BUTADIENE'))
+        ? ['Configuration', 'Constants', 'Report Manual Entry']
+        : [
+            'Configuration',
+            'Constants',
+            'Report Manual Entry',
+            'NSR & Material Prices',
+          ]
     const auditYear = AOP_YEAR
     let displayYear = ''
     if (auditYear) {
@@ -1312,6 +1479,8 @@ const ConfigurationTable = () => {
                     currentTabDisplayName={currentTabDisplayName}
                   />
                 )
+              case 'materialbalance':
+                return <MaterialBalance />
               default:
                 return null
             }
@@ -1384,6 +1553,7 @@ const ConfigurationTable = () => {
 
         {lowerVertName === 'aromatics' &&
           !IS_AROMATICS_HMD &&
+          !IS_AROMATICS_PMD &&
           tabs?.length > 0 && (
             <Box
               mb={1}
@@ -1404,7 +1574,7 @@ const ConfigurationTable = () => {
                   color: '#252525',
                   fontSize: '14px',
                   textTransform: 'uppercase',
-                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif"
+                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
                 }}
               >
                 Revision
@@ -1657,6 +1827,17 @@ const ConfigurationTable = () => {
                   />
                 )
 
+              case getTheId('CatalystChangeover'):
+                return (
+                  <CatalystChangeOver
+                    revision={revision}
+                    loadBtnClicked={loadBtnClicked}
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+
               case getTheId('LineConfiguration'):
                 return (
                   <LineConfiguration
@@ -1701,6 +1882,26 @@ const ConfigurationTable = () => {
                   />
                 )
 
+              case getTheId('ShutdownRate'):
+                return (
+                  <ShutdownRate
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+              case getTheId('SeasonMonths'):
+                return (
+                  <SeasonMonths
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+              case getTheId('MaterialBalance'):
+                return <MaterialBalance />
+              case getTheId('TankNos'):
+                return <TankNosConfigureTable />
               default:
                 return null
             }

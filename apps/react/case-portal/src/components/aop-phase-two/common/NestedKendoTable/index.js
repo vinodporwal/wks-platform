@@ -45,7 +45,6 @@ import {
   NumberWithCheckboxCellEditor,
   NumberWithCheckboxDisplayCell,
 } from '../utilities/NumberWithCheckboxCellEditor'
-import dataGridStore from 'store/reducers/dataGridStore'
 import Notification from 'components/Utilities/Notification'
 
 import AddIcon from '@mui/icons-material/Add'
@@ -59,6 +58,7 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import Collapse from '@mui/material/Collapse'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { useSelector } from 'react-redux'
 
 // Helper function to extract flat row sequence from grouped data
 const extractFlatRowsFromGrouped = (data) => {
@@ -151,6 +151,8 @@ const NestedKendoTable = ({
   dateCalculationConfig = {},
   customHeight = null,
   customItemChange = null,
+  isReleaseDisabled = true,
+  handleRelease = () => {},
 }) => {
   const fileInputRef = useRef(null)
   const minGridWidth = useRef(0)
@@ -171,6 +173,7 @@ const NestedKendoTable = ({
   const [customModifiedCells, setCustomModifiedCells] = useState({})
   const keycloak = useSession()
 
+  const dataGridStore = useSelector((state) => state.dataGridStore)
   const { isReleased, oldYear } = dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased
@@ -864,7 +867,9 @@ const NestedKendoTable = ({
       <td
         {...tdProps}
         title={value}
+        className={`${tdProps?.className || ''} ${isEdited ? 'edited-cell' : ''}`.trim()}
         style={{
+          ...tdProps?.style,
           color: isEdited ? 'orange' : undefined,
           fontWeight: isEdited ? 'bold' : undefined,
         }}
@@ -897,11 +902,14 @@ const NestedKendoTable = ({
         {...tdProps}
         {...(alwaysEditable ? { 'data-always-editable': 'true' } : {})}
         title={displayText}
+        className={`${tdProps?.className || ''} ${isEdited ? 'edited-cell' : ''}`.trim()}
         style={{
           cursor: isRowEditable ? 'pointer' : 'not-allowed',
           color:
             isEdited && displayText ? 'orange' : rawValue ? 'inherit' : 'gray',
-          fontWeight: isEdited && displayText ? 'bold' : undefined,
+          fontWeight: isEdited && displayText ? 700 : 500,
+          fontFamily: 'Honeywell Sans Web, Inter, sans-serif',
+          fontSize: '15px',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
@@ -935,6 +943,7 @@ const NestedKendoTable = ({
         aria-sort={ariaSort}
         title={props.title}
         style={{
+          ...restThProps?.style,
           padding: '0px',
           // borderRight: '1px solid #878787',
           textAlign: 'center',
@@ -977,6 +986,7 @@ const NestedKendoTable = ({
             key={col.title || idx}
             title={col.title}
             headerClassName='center-group-header'
+            locked={col?.locked || false}
           >
             {renderColumns(col.children, filter, sort)}
           </GridColumn>
@@ -1003,6 +1013,7 @@ const NestedKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
             }
@@ -1044,6 +1055,7 @@ const NestedKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={!READ_ONLY} // Always editable, ignore row-level isEditable
             className={`${READ_ONLY ? 'non-editable-cell' : 'k-number-right'}`}
             headerClassName={isActive ? 'active-column' : ''}
@@ -1082,6 +1094,7 @@ const NestedKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
@@ -1133,6 +1146,7 @@ const NestedKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
+            locked={col?.locked || false}
             editable={isEditable}
             className={!isEditable ? 'k-left-disabled' : undefined}
             headerClassName={isActive ? 'active-column' : ''}
@@ -1182,6 +1196,8 @@ const NestedKendoTable = ({
           key={col.field}
           field={col.field}
           title={col.title || col.headerName}
+          hidden={col.hidden}
+          locked={col?.locked || false}
           editable={isEditable}
           format={col.format || '{0:0.000}'}
           cells={{
@@ -1217,11 +1233,20 @@ const NestedKendoTable = ({
     const cellContent =
       typeof value === 'boolean' ? displayValue : props.children
 
+    // Check if field was edited - customModifiedCells stores fields as flat keys
+    const rowId = props.dataItem?.id
+    const isEdited = Object.prototype.hasOwnProperty.call(
+      customModifiedCells?.[rowId] || {},
+      props.field,
+    )
+
     return (
       <td
         {...props.tdProps}
         title={displayValue}
+        className={`${props.tdProps?.className || ''} ${isEdited ? 'edited-cell' : ''}`.trim()}
         style={{
+          ...props.tdProps?.style,
           textAlign: typeof value === 'boolean' ? 'center' : undefined,
         }}
       >
@@ -1461,6 +1486,16 @@ const NestedKendoTable = ({
                   Calculate
                 </Button>
               )}
+              {permissions?.showReleaseBtn && (
+                <Button
+                  variant='contained'
+                  className='btn-save'
+                  disabled={isReleaseDisabled || READ_ONLY}
+                  onClick={handleRelease}
+                >
+                  Release
+                </Button>
+              )}
             </Box>
           </Box>
         </Box>
@@ -1475,6 +1510,7 @@ const NestedKendoTable = ({
               fileName={`${permissions?.ExcelName}.xlsx`}
             >
               <Grid
+                key={groupBy}
                 style={{
                   flex: 1,
                   overflow: 'auto',
@@ -1505,6 +1541,11 @@ const NestedKendoTable = ({
                 defaultTake={100}
                 contextMenu={true}
                 filterable={filterable}
+                groupable={{
+                  enabled: false,
+                  footer: 'none',
+                  showGroupPanel: false,
+                }}
                 size='small'
                 pageable={
                   rows?.length > 100
@@ -1529,6 +1570,7 @@ const NestedKendoTable = ({
                     key='actions'
                     field='actions'
                     title='Action'
+                    locked={false}
                     width={80}
                     className='k-text-center'
                     filterable={false}
