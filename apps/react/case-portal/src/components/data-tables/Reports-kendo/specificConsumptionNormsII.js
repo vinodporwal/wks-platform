@@ -266,7 +266,13 @@ export default function SpecificConsumptionNormsII() {
                 PLANT_ID,
                 AOP_YEAR,
               )
-            const rows = apiResp?.data?.plantProductionData || []
+
+            const rows = (apiResp?.data?.plantProductionData || []).map(
+              (row) =>
+                row.material?.toLowerCase() === 'total'
+                  ? { ...row, price: null }
+                  : row,
+            )
             out[key] = { columns, rows }
           } catch (error) {
             console.error(`Error loading data for ${key}:`, error)
