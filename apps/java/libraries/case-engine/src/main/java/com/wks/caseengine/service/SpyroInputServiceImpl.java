@@ -460,7 +460,9 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 				Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
 				Map<String, List<Map<String, Object>>> spyroInputDataListMap = new HashMap<>();
 				if (!isAfterSave) {
-					AOPMessageVM vm = getSpyroInputData(year, plantId, "Composition", "Composition");
+				//	AOPMessageVM vm = getSpyroInputData(year, plantId, "Composition", "Composition");
+				AOPMessageVM vm = getSpyroInputData(year, plantId, mode, "Composition");
+
 					List<Map<String, Object>> spyroInputDataList = (List<Map<String, Object>>) vm.getData();
 					spyroInputDataListMap = Utility.groupByNormParameterTypeName(spyroInputDataList);
 				}
