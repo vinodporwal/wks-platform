@@ -101,7 +101,7 @@
   },
   {
     "field": "Weight Average",
-    "title": "Weight Average",
+    "title": "Weighted Average",
     "editable": true,
     "width": 120,
     "align": "left",
