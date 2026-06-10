@@ -277,6 +277,10 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 				if ("Failed".equalsIgnoreCase(spyroInputDTO.getSaveStatus())) {
 					continue;
 				}
+
+				if(spyroInputDTO.getNormParameterFKID() == null || spyroInputDTO.getNormParameterFKID().isBlank()) { 
+					continue;
+				}
 				String rawId = spyroInputDTO.getNormParameterFKID();
 				if (rawId == null || rawId.isBlank() || !UUID_PATTERN.matcher(rawId).matches()) {
 				    continue;
