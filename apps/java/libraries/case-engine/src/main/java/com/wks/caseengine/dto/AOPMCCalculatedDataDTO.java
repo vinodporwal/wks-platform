@@ -46,4 +46,5 @@ public class AOPMCCalculatedDataDTO {
     private String tableId;
     private String lineId;
     private String normType;
+    private Boolean isEditable;
 }

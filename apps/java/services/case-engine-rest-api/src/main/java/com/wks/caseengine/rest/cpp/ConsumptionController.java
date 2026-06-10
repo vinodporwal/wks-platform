@@ -45,6 +45,12 @@ public class ConsumptionController {
 	    return ResponseEntity.ok(listOfCppConsumptions);
 	}
 
+	@GetMapping(value = "/plant-requirement-by-plant/{plantId}/{financialYear}")
+	public ResponseEntity<List<CalculatedProcessDemandDTO>> getProcessDemandByPlant(@PathVariable UUID plantId, @PathVariable String financialYear) {
+		List<CalculatedProcessDemandDTO> listOfCppConsumptions = consumptionService.getProcessDemandByPlant(plantId, financialYear);
+	    return ResponseEntity.ok(listOfCppConsumptions);
+	}
+
 	@PostMapping(value = "/plant-requirement/{financialYear}")
 	public ResponseEntity<ProcessDemandUpdateResponse> updateProcessDemand(
 			@PathVariable String financialYear,
