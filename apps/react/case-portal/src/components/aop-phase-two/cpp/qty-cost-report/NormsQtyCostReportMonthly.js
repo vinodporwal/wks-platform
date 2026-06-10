@@ -3,7 +3,9 @@ import { Box } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useDispatch, useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import ValueFormatterPhaseTwo, {
+  customValueFormatterPhaseTwo,
+} from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
@@ -38,6 +40,7 @@ const NormsQtyCostReport = () => {
 
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
+  const valueFormatTwo = customValueFormatterPhaseTwo(2)
 
   // Fiscal-year month order: Apr → Mar
   const MONTH_TO_INDEX = {
@@ -76,7 +79,7 @@ const NormsQtyCostReport = () => {
         widthT: 130,
         minWidth: 130,
         type: 'number',
-        format: valueFormat,
+        format: valueFormatTwo,
       },
       {
         field: `${mon}.norms`,
@@ -93,7 +96,7 @@ const NormsQtyCostReport = () => {
         widthT: 130,
         minWidth: 130,
         type: 'number',
-        format: valueFormat,
+        format: valueFormatTwo,
       },
       {
         field: `${mon}.price`,
@@ -102,7 +105,7 @@ const NormsQtyCostReport = () => {
         minWidth: 130,
         editable: false,
         type: 'number1',
-        format: valueFormat,
+        format: valueFormatTwo,
         hidden: false,
       },
       {
@@ -111,7 +114,7 @@ const NormsQtyCostReport = () => {
         widthT: 130,
         minWidth: 130,
         type: 'number',
-        format: valueFormat,
+        format: valueFormatTwo,
         hidden: false,
       },
     ],
@@ -546,7 +549,7 @@ const NormsQtyCostReport = () => {
           setSnackbarOpen={setSnackbarOpen}
           setSnackbarData={setSnackbarData}
           customHeight={80}
-          groupBy={['generatingPlantName', 'accountName']}
+          groupBy={['generatingPlantName']}
         />
       </Box>
     </Box>

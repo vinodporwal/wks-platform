@@ -151,14 +151,14 @@ public class CPPUtilityRateServiceImpl implements CPPUtilityRateService {
                 "Mar-" + endYearSuffix
             };
 
+            headerRow.createCell(col).setCellValue("Weighted Avg Price");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+
             int monthStartCol = col;
             for (String month : months) {
                 headerRow.createCell(col).setCellValue(month);
                 headerRow.getCell(col++).setCellStyle(headerStyle);
             }
-
-            headerRow.createCell(col).setCellValue("Weighted Avg Price");
-            headerRow.getCell(col++).setCellStyle(headerStyle);
 
             int totalColumns = col;
 
@@ -173,6 +173,8 @@ public class CPPUtilityRateServiceImpl implements CPPUtilityRateService {
                 setStringCellValue(row.createCell(col++), dto.getUtilityId(), dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getUom(), dataStyle);
 
+                setBigDecimalCellValue(row.createCell(col++), dto.getWeightedAvgPrice(), numericStyle);
+
                 setBigDecimalCellValue(row.createCell(monthStartCol + 0), dto.getApr(), numericStyle);
                 setBigDecimalCellValue(row.createCell(monthStartCol + 1), dto.getMay(), numericStyle);
                 setBigDecimalCellValue(row.createCell(monthStartCol + 2), dto.getJun(), numericStyle);
@@ -185,9 +187,6 @@ public class CPPUtilityRateServiceImpl implements CPPUtilityRateService {
                 setBigDecimalCellValue(row.createCell(monthStartCol + 9), dto.getJan(), numericStyle);
                 setBigDecimalCellValue(row.createCell(monthStartCol + 10), dto.getFeb(), numericStyle);
                 setBigDecimalCellValue(row.createCell(monthStartCol + 11), dto.getMar(), numericStyle);
-
-                col = monthStartCol + 12;
-                setBigDecimalCellValue(row.createCell(col), dto.getWeightedAvgPrice(), numericStyle);
             }
 
             for (int i = 0; i < totalColumns; i++) {
