@@ -26,14 +26,14 @@ const specificConsumptionCategories = () => [
     key: 'CatChem',
     title: 'Catalysts & Chemicals',
   },
-  {
-    key: 'ProductionCostCalculations',
-    title: 'Production Cost Calculations',
-  },
-  {
-    key: 'OtherVariableCost',
-    title: 'Other Variable Cost',
-  },
+  // {
+  //   key: 'ProductionCostCalculations',
+  //   title: 'Production Cost Calculations',
+  // },
+  // {
+  //   key: 'OtherVariableCost',
+  //   title: 'Other Variable Cost',
+  // },
   {
     key: 'ProductMixAndProduction',
     title: 'Product Mix And Production',
