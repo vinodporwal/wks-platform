@@ -698,7 +698,7 @@ async function saveStreamHoursImport(file, keycloak, PLANT_ID, AOP_YEAR) {
 }
 
 async function getPercentageDeviation(keycloak, PLANT_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/percentage-deviation?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const url = `${Config.CaseEngineUrl}/task/percentage-deviations?plantId=${PLANT_ID}&aopYear=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

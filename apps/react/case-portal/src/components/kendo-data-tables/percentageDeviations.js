@@ -489,6 +489,8 @@ const percentageDeviations = ({ viewOnly, permissions }) => {
           showRefresh: false,
           showCalculate: false,
           showNote: false,
+          showTitleNameBusiness: true,
+          titleName: 'Percentage Deviation'
         },
         isOldYear,
       ),

@@ -654,7 +654,7 @@ const ProductionvolumeData = ({
                 ? item.february * 24
                 : item.february || null,
               march: item.march ? item.march * 24 : item.march || null,
-              isEditable:item.isEditable?? true,
+              isEditable: item.isEditable ?? true,
             }),
           }
         },
@@ -1801,7 +1801,7 @@ const ProductionvolumeData = ({
       {IS_CRACKER_C2 && (
         <PercentageDeviations
           viewOnly={READ_ONLY}
-          permissions={permissions}
+
         />
       )}
     </div>
