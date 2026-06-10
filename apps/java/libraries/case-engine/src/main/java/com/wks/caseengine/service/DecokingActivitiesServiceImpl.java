@@ -128,16 +128,13 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	        Map<String, Object> params = new LinkedHashMap<>();
 
 			Map<String, String> columnTitleMap = null;
+			
 	        if (reportType.equalsIgnoreCase("RunningDuration")) {
 	            sql = "SELECT * FROM vwScrn" + vertical.getName() + "_" + site.getName() + "_DecokingPlanning WHERE Plant_FK_Id = :plantId";
 	            params.put("plantId", plantId);
-			columnTitleMap = loadColumnTitles(null,
-			"vwScrnCrackerKeyValueColumns", site.getName(), "CrackerConfiguration");
 	        } else if (reportType.equalsIgnoreCase("ibr")) {
 	            sql = "SELECT * FROM vwScrn" + vertical.getName() + "_" + site.getName() + "_DecokePlanningDates WHERE PlantId = :plantId ORDER BY DisplaySeq";
 	            params.put("plantId", plantId);
-				columnTitleMap = loadColumnTitles(null,
-					"vwScrnCrackerKeyValueColumns", site.getName(), "CrackerConfiguration");
 	        } else if (reportType.equalsIgnoreCase("RunLength")) {
 	            sql = "SELECT * FROM vwScrn" + vertical.getName() + "_" + site.getName() + "_Decoke_RunLength WHERE Plant_FK_Id = :plantId AND AOPYear = :aopYear ORDER BY date";
 	            params.put("plantId", plantId);
@@ -214,8 +211,13 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	                    Map<String, Object> col = new HashMap<>();
 	                    String colName = md.getColumnLabel(i);
 	                    col.put("field", colName);
-	                 //   col.put("title", formatTitle(colName)); 
-					 col.put("title", columnTitleMap.getOrDefault(colName, colName));
+						// columnTitleMap is not null for RunLength report type only
+						if(columnTitleMap == null) { 
+							col.put("title", formatTitle(colName));
+						}
+	                  else {
+					 col.put("title", columnTitleMap.getOrDefault(colName, colName));  
+					}
 	                    col.put("type", getFrontendType(md.getColumnTypeName(i)));
 	                    col.put("editable", false);
 	                    columns.add(col);
