@@ -633,6 +633,7 @@ const ProductionNormsCracker = ({ permissions }) => {
 
           return {
             ...item,
+            UOM: selectedUnitC2C3R ? selectedUnitC2C3R : 'MT/Month',
             ...(TPH && {
               apr: item.apr
                 ? item.apr / 24 / 30
