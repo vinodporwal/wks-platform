@@ -2693,6 +2693,9 @@ const KendoDataTables = ({
                         }
                       : false
                 }
+                sortable={true}
+                sort={sort}
+                onSortChange={(e) => setSort(e.sort)}
               >
                 {permissions?.deleteMultiple && (
                   <GridColumn
