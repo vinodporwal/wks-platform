@@ -517,6 +517,35 @@ const AopDesignBasis = () => {
     }
   }
 
+  const handleOpenPdf = async () => {
+    const url = `${window.location.origin}/files/BluePrintCracker.pdf`
+    try {
+      const resp = await fetch(url, {
+        method: 'GET',
+      })
+
+      if (!resp.ok) {
+        setSnackbarData({
+          message: 'Blueprint file not found! Please try again later.',
+          severity: 'info',
+        })
+        setSnackbarOpen(true)
+        return
+      }
+
+      const blob = await resp.blob()
+      const fileURL = window.URL.createObjectURL(blob)
+      window.open(fileURL, '_blank')
+    } catch (e) {
+      console.error('Error fetching file:', e)
+      setSnackbarData({
+        message: 'Error opening blueprint PDF.',
+        severity: 'error',
+      })
+      setSnackbarOpen(true)
+    }
+  }
+
   const ConfigurationDialog = useMemo(() => {
     return (
       <StyledConfirmDialog
@@ -814,12 +843,27 @@ const AopDesignBasis = () => {
 
               {/* ROW 2: AOP DESIGN BASIS */}
               <Box sx={{ width: '100%' }}>
-                <Typography
-                  variant='caption'
-                  className='aop-design-basis-label'
-                >
-                  AOP DESIGN BASIS
-                </Typography>
+                <Stack direction='row' alignItems='center' spacing={0.5} sx={{ mb: 0.5 }}>
+                  <Typography
+                    variant='caption'
+                    className='aop-design-basis-label'
+                  >
+                    AOP DESIGN BASIS
+                  </Typography>
+                  <Tooltip title="Blueprint">
+                    <IconButton
+                      size='small'
+                      sx={{
+                        p: '1px',
+                        width: 18,
+                        height: 18,
+                      }}
+                      onClick={handleOpenPdf}
+                    >
+                      <Info sx={{ fontSize: 14, color: '#0100cb' }} />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
 
                 <TextArea
                   className='vertical-resize-textarea'

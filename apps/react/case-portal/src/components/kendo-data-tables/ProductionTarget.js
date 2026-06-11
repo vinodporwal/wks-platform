@@ -984,9 +984,11 @@ const ProductionTarget = ({ permissions }) => {
       showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
 
       titleName:
-        VERTICAL_NAME === 'cracker'
-          ? 'Design Capacity (Ethylene)'
-          : 'Design Capacity',
+        VERTICAL_NAME === 'cracker' && SITE_NAME === 'c2'
+          ? 'Design Capacity (Ethylene+Propylene)'
+          : VERTICAL_NAME === 'cracker'
+            ? 'Design Capacity (Ethylene)'
+            : 'Design Capacity',
     },
     isOldYear,
   )

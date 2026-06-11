@@ -34,6 +34,7 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import AopTabs from 'components/AopTabs'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import PercentageDeviations from './percentageDeviations'
 
 const ProductionvolumeData = ({
   isBusinessDemand,
@@ -653,7 +654,7 @@ const ProductionvolumeData = ({
                 ? item.february * 24
                 : item.february || null,
               march: item.march ? item.march * 24 : item.march || null,
-              isEditable:item.isEditable?? true,
+              isEditable: item.isEditable ?? true,
             }),
           }
         },
@@ -1355,11 +1356,13 @@ const ProductionvolumeData = ({
           ? 'Design Capacity (Naphtha Quality - 75 %)'
           : VERTICAL_NAME === 'cracker' && SITE_NAME === 'hmd' // New condition
             ? 'Design Capacity'
-            : VERTICAL_NAME === 'cracker'
-              ? 'Design Capacity (Ethylene)'
-              : VERTICAL_NAME === 'pp' && SITE_NAME === 'nmd'
-                ? 'Design Capacity (MCU from MCU Portal)'
-                : 'Design Capacity',
+            : VERTICAL_NAME === 'cracker' && SITE_NAME === 'c2'
+              ? 'Design Capacity (Ethylene+Propylene)'
+              : VERTICAL_NAME === 'cracker'
+                ? 'Design Capacity (Ethylene)'
+                : VERTICAL_NAME === 'pp' && SITE_NAME === 'nmd'
+                  ? 'Design Capacity (MCU from MCU Portal)'
+                  : 'Design Capacity',
       showCalculate: VERTICAL_NAME === 'aromatics' && SITE_NAME === 'sez',
       showCalculateVisibility:
         VERTICAL_NAME === 'aromatics' && SITE_NAME === 'sez',
@@ -1793,6 +1796,14 @@ const ProductionvolumeData = ({
             />
           </>
         )}
+
+      {/* PERCENTAGE_DEVIATIONS for Cracker C2 */}
+      {IS_CRACKER_C2 && (
+        <PercentageDeviations
+          viewOnly={READ_ONLY}
+
+        />
+      )}
     </div>
   )
 }
