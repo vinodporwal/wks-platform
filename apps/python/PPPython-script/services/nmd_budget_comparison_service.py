@@ -105,22 +105,27 @@ class BPCReferenceBook:
         last_account = ""
         ods_month_names = list(self.month_columns.keys())
 
-        def _resolve_ods_month_columns(month_name: str, col_idx: int) -> Tuple[int, int]:
+        def _resolve_ods_month_columns(month_name: str, col_idx: int) -> Tuple[int, int, int]:
             norm_col = col_idx
             qty_col = col_idx + 2
+            amount_col = col_idx + 3
             month_pos = ods_month_names.index(month_name)
             next_month_col = None
             if month_pos + 1 < len(ods_month_names):
                 next_month_col = self.month_columns[ods_month_names[month_pos + 1]]
 
-            search_end = min(len(self.headers), next_month_col if next_month_col is not None else col_idx + 5)
+            search_end = min(len(self.headers), next_month_col if next_month_col is not None else col_idx + 6)
             for candidate in range(col_idx + 1, search_end):
                 header_text = str(self.headers[candidate]).strip() if pd.notna(self.headers[candidate]) else ""
-                if header_text.lower() == "quantity":
+                header_lower = header_text.lower()
+                if "norm" in header_lower:
+                    norm_col = candidate
+                elif "quantity" in header_lower or header_lower == "qty" or "qty" in header_lower:
                     qty_col = candidate
-                    break
+                elif "amount" in header_lower or header_lower == "amt" or "value" in header_lower:
+                    amount_col = candidate
 
-            return norm_col, qty_col
+            return norm_col, qty_col, amount_col
         
         for row_idx, row in enumerate(self.raw_data):
             if len(row) < 15:
@@ -173,7 +178,7 @@ class BPCReferenceBook:
                     qty_col = col_idx + 1
                     norm_col = col_idx - 1
                 else:
-                    norm_col, qty_col = _resolve_ods_month_columns(month_name, col_idx)
+                    norm_col, qty_col, amount_col = _resolve_ods_month_columns(month_name, col_idx)
                 
                 if qty_col < len(row) and norm_col < len(row):
                     try:
@@ -199,18 +204,16 @@ class BPCReferenceBook:
                         if norm is not None and norm != 0:
                             self.norm_map[(month_name, utility, material)] = norm
 
-                        # Extract BPC amount from the 4th column of each month block (ODS only).
+                        # Extract BPC amount from the Amount column in each month block (ODS only).
                         # Standard BPC Excel layout per month: [Norm, Price, Quantity, Amount]
-                        if self.is_ods:
-                            amount_col = col_idx + 3
-                            if amount_col < len(row):
-                                try:
-                                    bpc_amt = self._parse_number(row[amount_col])
-                                    if bpc_amt is not None and bpc_amt != 0:
-                                        ak = (month_name, plant, utility, material)
-                                        self.amount_map[ak] = self.amount_map.get(ak, 0.0) + float(bpc_amt)
-                                except Exception:
-                                    pass
+                        if self.is_ods and amount_col < len(row):
+                            try:
+                                bpc_amt = self._parse_number(row[amount_col])
+                                if bpc_amt is not None and bpc_amt != 0:
+                                    ak = (month_name, plant, utility, material)
+                                    self.amount_map[ak] = self.amount_map.get(ak, 0.0) + float(bpc_amt)
+                            except Exception:
+                                pass
 
                     except (ValueError, IndexError):
                         continue

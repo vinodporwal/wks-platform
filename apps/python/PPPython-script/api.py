@@ -99,6 +99,8 @@ def calculate_budget_api():
             cw1_process = float(data.get('cw1_process', process_demands.get('cw1_process', 15194.0)))
             cw2_process = float(data.get('cw2_process', process_demands.get('cw2_process', 9016.0)))
             dm_process = float(data.get('dm_process', process_demands.get('dm_process', 54779.0)))
+            oxygen_process = float(data.get('oxygen_process', process_demands.get('oxygen_process', 0.0)))
+            effluent_process = float(data.get('effluent_process', process_demands.get('effluent_process', 0.0)))
             
             lp_fixed = float(data.get('lp_fixed', fixed_demands.get('lp_fixed', 5169.51)))
             mp_fixed = float(data.get('mp_fixed', fixed_demands.get('mp_fixed', 518.00)))
@@ -114,6 +116,8 @@ def calculate_budget_api():
             cw1_process = float(data.get('cw1_process', 15194.0))
             cw2_process = float(data.get('cw2_process', 9016.0))
             dm_process = float(data.get('dm_process', 54779.0))
+            oxygen_process = float(data.get('oxygen_process', 0.0))
+            effluent_process = float(data.get('effluent_process', 0.0))
             
             lp_fixed = float(data.get('lp_fixed', 5169.51))
             mp_fixed = float(data.get('mp_fixed', 518.00))
@@ -250,6 +254,8 @@ def calculate_budget_with_iteration_api():
             cw1_process=cw1_process,
             cw2_process=cw2_process,
             dm_process=dm_process,
+            oxygen_mt=oxygen_process,
+            effluent_m3=effluent_process,
             save_to_db=bool(data.get('save_to_db', False)),
         )
         

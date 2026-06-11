@@ -273,6 +273,18 @@ if __name__ == "__main__":
     print("2. With USD Iteration (Power-Steam balancing)")
     mode_input = input("Select mode [2]: ").strip()
     use_iteration = mode_input != '1'
+
+    # -----------------------------------------------------------
+    # STEP 2.5: OPTIONAL BPC COMPARISON FOR PRICE TABLE
+    # -----------------------------------------------------------
+    print("\n--- BPC PRICE COMPARISON ---")
+    bpc_compare_input = input("Enable CPP vs BPC price comparison? (y/n) [n]: ").strip().lower()
+    enable_price_bpc_comparison = bpc_compare_input == 'y'
+    price_bpc_path = None
+    if enable_price_bpc_comparison:
+        default_bpc_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "BPC.ods")
+        bpc_path_input = input(f"BPC file path [{default_bpc_path}]: ").strip()
+        price_bpc_path = bpc_path_input or default_bpc_path
     
     # -----------------------------------------------------------
     # STEP 3: EXECUTE BUDGET CALCULATION
@@ -303,6 +315,8 @@ if __name__ == "__main__":
             raw_water_process=raw_water_process,
             raw_water_fixed=raw_water_fixed,
             oxygen_mt=oxygen_process,
+            enable_price_bpc_comparison=enable_price_bpc_comparison,
+            price_bpc_path=price_bpc_path,
             save_to_db=True  # Auto-save QTY and Quantity to NormsMonthDetail
         )
     else:

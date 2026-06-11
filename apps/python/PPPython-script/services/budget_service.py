@@ -675,6 +675,8 @@ def calculate_budget_with_iteration(
     oxygen_mt: float = 0.0,            # Oxygen consumed by process plants (MT)
     effluent_m3: float = 0.0,          # Effluent treated by process plants (M3)
     save_to_db: bool = False,          # Auto-save calculated values to NormsMonthDetail
+    enable_price_bpc_comparison: bool = False,
+    price_bpc_path: str = None,
     hrsg_full_load: bool = False,      # If true, load HRSG without subtracting free steam
 ) -> dict:
     """
@@ -1043,6 +1045,8 @@ def calculate_budget_with_iteration(
             month, year,
             cpp_plant_id=cpp_plant_id,
             financial_year=_financial_year,
+            bpc_csv_path=price_bpc_path,
+            enable_bpc_comparison=enable_price_bpc_comparison,
         )
         result["utility_price_result"] = price_result
     

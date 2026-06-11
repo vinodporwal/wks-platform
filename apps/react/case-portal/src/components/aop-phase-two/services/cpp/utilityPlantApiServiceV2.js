@@ -322,7 +322,7 @@ async function exportExcelData(keycloak, params) {
   } = params
 
   const queryString = new URLSearchParams(queryParams).toString()
-  const url = `${Config.CaseEngineUrl}/task/${endpoint}`
+  const url = `${Config.CaseEngineUrl}/task/${endpoint}${queryString ? `?${queryString}` : ''}`
 
   const headers = {
     'Content-Type': 'application/json',
