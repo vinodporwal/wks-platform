@@ -1219,11 +1219,11 @@ const ProductionvolumeData = ({
 
       downloadExcelBtnFromUI:
         IS_PE_PP ||
-          IS_PET ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_AROMATICS_SEZ_PX4 ||
-          IS_PVC_HMD
+        IS_PET ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_PVC_HMD
           ? false
           : true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Max Achieved Capacity`,
@@ -1330,15 +1330,15 @@ const ProductionvolumeData = ({
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
       downloadExcelBtnFromUI:
         IS_PE_PP ||
-          IS_PET ||
-          IS_PVC_VMD ||
-          IS_PVC ||
-          IS_PP_SEZ ||
-          IS_AROMATICS_SEZ_PX4 ||
-          IS_CRACKER_DMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD ||
-          IS_CRACKER_C2
+        IS_PET ||
+        IS_PVC_VMD ||
+        IS_PVC ||
+        IS_PP_SEZ ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_CRACKER_DMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD ||
+        IS_CRACKER_C2
           ? false
           : true,
       downloadExcelBtn: excelBtnGrid2,
@@ -1392,27 +1392,27 @@ const ProductionvolumeData = ({
       showRedCellsForOroductionTarget: VERTICAL_NAME == 'pta' ? true : false,
       showCalculateVisibility:
         VERTICAL_NAME === 'meg' &&
-          Object.keys(calculationObject || {}).length > 0
+        Object.keys(calculationObject || {}).length > 0
           ? true
           : false,
       downloadExcelBtn:
         IS_PE_PP ||
-          IS_PET ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_AROMATICS_SEZ_PX4 ||
-          IS_PVC_HMD ||
-          IS_PVC_VMD
+        IS_PET ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_PVC_HMD ||
+        IS_PVC_VMD
           ? false
           : true,
       uploadExcelBtn:
         IS_PE_PP ||
-          IS_PET ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_AROMATICS_SEZ_PX4 ||
-          IS_PVC_HMD ||
-          IS_PVC_VMD
+        IS_PET ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_PVC_HMD ||
+        IS_PVC_VMD
           ? false
           : true,
 
@@ -1804,12 +1804,7 @@ const ProductionvolumeData = ({
         )}
 
       {/* PERCENTAGE_DEVIATIONS for Cracker C2 */}
-      {IS_CRACKER_C2 && (
-        <PercentageDeviations
-          viewOnly={READ_ONLY}
-
-        />
-      )}
+      {IS_CRACKER_C2 && <PercentageDeviations viewOnly={READ_ONLY} />}
     </div>
   )
 }
