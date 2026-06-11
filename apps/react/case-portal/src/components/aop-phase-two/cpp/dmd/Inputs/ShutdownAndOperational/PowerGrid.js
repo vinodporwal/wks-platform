@@ -16,7 +16,7 @@ import {
 } from './utils'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const PowerGrid = ({ hoursRows = [] }) => {
+const PowerGrid = ({ hoursRows = [], powerData = [], refreshData, snackbarOpen, snackbarData, setSnackbarOpen, setSnackbarData, loading, setLoading }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -27,7 +27,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
     verticalObject,
     siteObject,
   } = dataGridStore
- const PLANT_ID =  plantObject?.id;
+  const PLANT_ID = plantObject?.id;
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Power_Operational_HRS')
 
@@ -42,12 +42,6 @@ const PowerGrid = ({ hoursRows = [] }) => {
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [modifiedCells, setModifiedCells] = useState({})
-  const [loading, setLoading] = useState(false)
-  const [snackbarData, setSnackbarData] = useState({
-    message: '',
-    severity: 'info',
-  })
-  const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
@@ -394,56 +388,32 @@ const PowerGrid = ({ hoursRows = [] }) => {
     },
   ]
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await InputApiService.getOperationHoursData(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
-
-      if (!res || res?.data?.PowerOperationalHours?.length === 0) {
-        setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
-        setLoading(false)
-        return
-      }
-      const powerResponse = res?.data?.PowerOperationalHours
-      const filteredData = powerResponse?.filter(
-        (row) => row.assetType !== 'Power_Dis',
-      )
-      const transformedData = transformApiResponseToGridFormat(
-        filteredData,
-        hoursRows,
-      )
-      const rowsWithIds = transformedData?.map((row, index) => ({
-        ...row,
-        id: row.id || index + 1,
-      }))
-
-      setRows(rowsWithIds)
-      setOriginalRows(rowsWithIds)
-    } catch (error) {
-      console.error('Error fetching power grid data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
-    } finally {
-      setLoading(false)
-    }
-  }, [keycloak, PLANT_ID, AOP_YEAR, hoursRows])
-
-  useDebounce(
-    () => {
-      if (PLANT_ID?.length && AOP_YEAR) {
-        fetchData()
+  useEffect(() => {
+      try {
         setModifiedCells({})
+        const powerResponse = powerData
+        const filteredData = powerResponse?.filter(
+          (row) => row.assetType !== 'Power_Dis',
+        )
+        const transformedData = transformApiResponseToGridFormat(
+          filteredData,
+          hoursRows,
+        )
+        const rowsWithIds = transformedData?.map((row, index) => ({
+          ...row,
+          id: row.id || index + 1,
+        }))
+
+        setRows(rowsWithIds)
+        setOriginalRows(rowsWithIds)
+      } catch (error) {
+        console.error('Error fetching power grid data:', error)
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'Error fetching data', severity: 'error' })
+      } finally {
+        setLoading(false)
       }
-    },
-    1000,
-    [PLANT_ID, AOP_YEAR, fetchData],
-  )
+  }, [powerData, keycloak, PLANT_ID, AOP_YEAR, hoursRows])
 
   const permissions = {
     showAction: true,
@@ -522,7 +492,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
-      fetchData()
+      refreshData()
     } catch (error) {
       console.error('Error saving power grid data:', error)
       setSnackbarOpen(true)
@@ -552,7 +522,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
           severity: 'success',
         })
         setModifiedCells({})
-        await fetchData()
+        await refreshData()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteArray = new Uint8Array(
@@ -577,7 +547,7 @@ const PowerGrid = ({ hoursRows = [] }) => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
-        await fetchData()
+        await refreshData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({ message: 'Upload Failed!', severity: 'error' })

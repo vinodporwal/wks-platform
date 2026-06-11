@@ -49,7 +49,6 @@ const AssetCapacity = () => {
     1000,
     [PLANT_ID_LIST, AOP_YEAR, fetchAssetCapacityData],
   )
- console.log("calledddddd-----> ");
   return (
     <Stack>
       <Stack sx={{ mb: 2 }}>

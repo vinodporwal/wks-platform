@@ -16,7 +16,7 @@ import {
 } from './utils'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const STGGrid = ({ hoursRows = [] }) => {
+const STGGrid = ({ hoursRows = [], steamData = [], refreshData, snackbarOpen, snackbarData, setSnackbarOpen, setSnackbarData, loading, setLoading }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year, screenTitle, jmdSelectedPlants } = dataGridStore
@@ -34,12 +34,6 @@ const STGGrid = ({ hoursRows = [] }) => {
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [modifiedCells, setModifiedCells] = useState({})
-  const [loading, setLoading] = useState(false)
-  const [snackbarData, setSnackbarData] = useState({
-    message: '',
-    severity: 'info',
-  })
-  const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
@@ -382,23 +376,10 @@ const STGGrid = ({ hoursRows = [] }) => {
     },
   ]
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await InputApiService.getOperationHoursData(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
-
-      if (!res || res?.data?.SteamOperationalHours?.length === 0) {
-        setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
-        setLoading(false)
-        return
-      }
-      const steamResponse = res?.data?.SteamOperationalHours
+  useEffect(() => {
+      try {
+      setModifiedCells({})
+      const steamResponse = steamData
       const transformedData = transformApiResponseToGridFormat(
         steamResponse,
         hoursRows,
@@ -417,18 +398,7 @@ const STGGrid = ({ hoursRows = [] }) => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID, AOP_YEAR, hoursRows])
-
-  useDebounce(
-    () => {
-      if (PLANT_ID?.length && AOP_YEAR) {
-        fetchData()
-        setModifiedCells({})
-      }
-    },
-    1000,
-    [PLANT_ID, AOP_YEAR, fetchData],
-  )
+  }, [steamData, keycloak, PLANT_ID, AOP_YEAR, hoursRows])
 
   const permissions = {
     showAction: true,
@@ -506,7 +476,7 @@ const STGGrid = ({ hoursRows = [] }) => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
-      fetchData()
+      refreshData()
     } catch (error) {
       console.error('Error saving STG grid data:', error)
       setSnackbarOpen(true)
@@ -536,7 +506,7 @@ const STGGrid = ({ hoursRows = [] }) => {
           severity: 'success',
         })
         setModifiedCells({})
-        await fetchData()
+        await refreshData()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteArray = new Uint8Array(
@@ -561,7 +531,7 @@ const STGGrid = ({ hoursRows = [] }) => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
-        await fetchData()
+        await refreshData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({ message: 'Upload Failed!', severity: 'error' })
