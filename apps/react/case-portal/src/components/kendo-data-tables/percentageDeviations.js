@@ -260,8 +260,14 @@ const percentageDeviations = ({ viewOnly, permissions }) => {
         'MaintenanceType',
       ]
       const cols = resp.data?.columns || columns
-      if (resp.data?.groupBy) {
-        setGroupBy(resp.data.groupBy)
+
+      const hasGroupBy = cols.some(
+        (col) => col.field === 'groupBy',
+      )
+
+
+      if (hasGroupBy) {
+        setGroupBy('groupBy')
       } else {
         setGroupBy(null)
       }
