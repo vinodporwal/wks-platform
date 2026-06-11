@@ -935,9 +935,15 @@ const ProductionvolumeData = ({
           originalRemark: item?.remarks?.trim() || null,
           remark: item.remarks?.trim() || '',
           isEditable:
-            IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD || IS_PVC_VMD || IS_PVC
-              ? false
-              : true,
+            item.isEditable ??
+            !(
+              IS_PE_PP ||
+              IS_PET ||
+              IS_VCM ||
+              IS_PTA_DMD ||
+              IS_PVC_VMD ||
+              IS_PVC
+            ),
 
           april:
             isTPD && item.april ? item.april * 24 : item.april || item.april,
