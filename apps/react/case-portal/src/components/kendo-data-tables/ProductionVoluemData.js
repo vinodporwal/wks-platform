@@ -935,9 +935,15 @@ const ProductionvolumeData = ({
           originalRemark: item?.remarks?.trim() || null,
           remark: item.remarks?.trim() || '',
           isEditable:
-            IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD || IS_PVC_VMD || IS_PVC
-              ? false
-              : true,
+            item.isEditable ??
+            !(
+              IS_PE_PP ||
+              IS_PET ||
+              IS_VCM ||
+              IS_PTA_DMD ||
+              IS_PVC_VMD ||
+              IS_PVC
+            ),
 
           april:
             isTPD && item.april ? item.april * 24 : item.april || item.april,
@@ -1173,7 +1179,6 @@ const ProductionvolumeData = ({
     }
   }
 
-  //POINT-1 Current MCU to be rename as Max Achieved capacity.
   const percentageTitle =
     IS_PE_PP || IS_PET || IS_PVC_VMD
       ? 'Max Achieved Capacity'
@@ -1182,7 +1187,9 @@ const ProductionvolumeData = ({
           ? 'Max Achieved Capacity (Naphtha Quality - 75 %)'
           : SITE_NAME === 'hmd' // Check specifically for hmd
             ? 'Max Achieved Capacity'
-            : 'Max Achieved Capacity (Ethylene)'
+            : SITE_NAME === 'c2'
+              ? 'Max Achieved Capacity (Ethylene+Propylene)'
+              : 'Max Achieved Capacity (Ethylene)'
         : 'Max Achieved Capacity'
   const adjustedPermissionsGrid1 = getAdjustedPermissions(
     {
@@ -1425,7 +1432,9 @@ const ProductionvolumeData = ({
         VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' ? true : false,
       titleName:
         VERTICAL_NAME === 'cracker'
-          ? 'Proposed Operating Capacity (Ethylene)'
+          ? SITE_NAME === 'c2'
+            ? 'Proposed Operating Capacity (Ethylene+Propylene)'
+            : 'Proposed Operating Capacity (Ethylene)'
           : IS_VCM
             ? 'Steady State Operating Capacity'
             : 'Proposed Operating Capacity',
