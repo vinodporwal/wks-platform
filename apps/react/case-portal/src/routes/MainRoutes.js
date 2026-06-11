@@ -128,6 +128,7 @@ import CausticSodaLyeBasis from 'components/data-tables/Reports/CausticSodaLyeBa
 import MaterialBalance from 'components/kendo-data-tables/MaterialBalance'
 import CatalystChecmicalsCalculation from 'components/kendo-data-tables/CatalystChecmicalsCalculation'
 import CausticSodaLyeBasisCatChem from 'components/data-tables/Reports/CausticSodaLyeBasisCatChem'
+import EtheleneStock from 'components/data-tables/Reports/EtheleneStock'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -791,6 +792,16 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+
+          {
+            path: 'ethelene-stock',
+            element: (
+              <PrivateRoute routeId='ethelene-stock'>
+                <EtheleneStock />
+              </PrivateRoute>
+            ),
+          },
+
           {
             path: 'aop-annual-cost-report',
             element: (

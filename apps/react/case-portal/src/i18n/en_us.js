@@ -124,6 +124,7 @@ const defs = {
     causticSodaLyeBasis: 'Caustic Soda Lye Norms',
     materialBalance: 'Optimizer - Material Balance',
     catChemConsumption: 'Catalyst & Checmicals Calculation',
+    etheleneStock: 'Ethylene Stock in Cryo Tank',
 
     // causticSodaLyeBasis: 'Caustic Soda Lye Norms',
     causticSodaLyeBasisCatChem: 'Cat-Chem Calculation Dataset',
@@ -336,6 +337,7 @@ const defs = {
 
         causticSodaLyeBasis: 'Caustic Soda Lye Norms',
         materialBalance: 'Material Balance',
+        etheleneStock: 'Ethylene Stock in Cryo Tank',
       },
     },
   },

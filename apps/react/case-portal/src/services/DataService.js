@@ -130,6 +130,7 @@ export const DataService = {
   getConfigurationExecutionDetailsNorms,
   executeConfigurationNorms,
   getProductionTargetBasis,
+
   ImportShutdownProductWise,
   ImportShutdownNonProduct,
   exportShutdownNonProductWise,
@@ -213,6 +214,8 @@ export const DataService = {
   calculateChemicalVMDConfiguration,
   getTankNosData,
   saveTankNosData,
+
+  getEtheleneStock,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -4898,6 +4901,26 @@ async function saveTankNosData(keycloak, PLANT_ID, AOP_YEAR, data) {
     return json(keycloak, resp)
   } catch (e) {
     console.error(e)
+    return Promise.reject(e)
+  }
+}
+
+
+
+async function getEtheleneStock(keycloak, PLANT_ID, AOP_YEAR) {
+  let url = `${Config.CaseEngineUrl}/task/data-set-ethelene-stock?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
     return Promise.reject(e)
   }
 }
