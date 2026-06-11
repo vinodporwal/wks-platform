@@ -260,10 +260,14 @@ const percentageDeviations = ({ viewOnly, permissions }) => {
         'PlantId',
         'AuditYear',
         'MaintenanceType',
+        'groupBy'
       ]
       const cols = resp.data?.columns || columns
 
-      const hasGroupBy = cols.some((col) => col.field === 'groupBy')
+      const hasGroupBy = cols.some(
+        (col) => col.field === 'groupBy',
+      )
+
 
       if (hasGroupBy) {
         setGroupBy('groupBy')

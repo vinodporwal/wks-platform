@@ -947,6 +947,14 @@ export const MainRoutes = (
             ),
           },
           {
+            path: 'ethelene-stock',
+            element: (
+              <PrivateRoute routeId='ethelene-stock'>
+                <EtheleneStock />
+              </PrivateRoute>
+            ),
+          },
+          {
             path: 'aop-annual-cost-report',
             element: (
               <PrivateRoute routeId='aop-annual-cost-report'>
