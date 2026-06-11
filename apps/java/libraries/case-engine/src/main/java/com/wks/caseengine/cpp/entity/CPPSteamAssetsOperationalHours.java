@@ -22,17 +22,20 @@ public class CPPSteamAssetsOperationalHours {
     @Column(name = "SteamAsset_FK_Id", columnDefinition = "uniqueidentifier")
     private UUID steamAssetFkId;
 
-    @Column(name = "utility_distributed", length = 100)
-    private String utilityDistributed;
-
-    @Column(name = "distributed_sap_code", length = 50)
-    private String distributedSapCode;
-
-    @Column(name = "utility_generated", length = 100)
-    private String utilityGenerated;
-
-    @Column(name = "generated_utility_code", length = 50)
-    private String generatedUtilityCode;
+    // NOTE: These columns do NOT exist in CPPSteamAssetsOperationalHours DB table.
+    // They are derived from NormParameters JOINs in the GET query (via CPPSteamGenerationAsset).
+    // Commenting out to prevent Hibernate from trying to persist them → 'Invalid column name' error.
+//    @Column(name = "utility_distributed", length = 100)
+//    private String utilityDistributed;
+//
+//    @Column(name = "distributed_sap_code", length = 50)
+//    private String distributedSapCode;
+//
+//    @Column(name = "utility_generated", length = 100)
+//    private String utilityGenerated;
+//
+//    @Column(name = "generated_utility_code", length = 50)
+//    private String generatedUtilityCode;
 
     @Column(name = "Apr")
     private Double apr;
