@@ -29,9 +29,10 @@ import javax.sql.DataSource;
 
 
 import org.apache.poi.ss.usermodel.Cell;
-
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
-
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -1288,9 +1289,12 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 	        Sites site = siteRepository.findById(plant.getSiteFkId())
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+			boolean isCracker = vertical.getName().equalsIgnoreCase("CRACKER");
 		try {
 			Workbook workbook = new XSSFWorkbook();
 			Sheet sheet = workbook.createSheet("Sheet1");
+			sheet.protectSheet("secret_password");
 			int currentRow = 0;
 			// List<List<Object>> rows = new ArrayList<>();
 			List<Object[]> obj =null;
@@ -1300,7 +1304,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 					if(gridName != null && gridName.equalsIgnoreCase("design-capacity")) { 
 						String procedureName=vertical.getName()+"_GetAOPMCValuesDesignCapacity";
 					obj= findByYearAndPlantId(year, UUID.fromString(plantFKId) ,  procedureName);
-					return createExcelDesignCapacity(obj, workbook, sheet, year);
+					return createExcelDesignCapacity(obj, workbook, sheet, year, isCracker);
 					}
 					else {
 					String procedureName=vertical.getName()+"_GetAOPMCValues";
@@ -1340,6 +1344,10 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 					 list.add(row[3] != null ? row[3].toString() : null);
 					// list.add(row[16] != null ? row[16].toString() : null);
 					// list.add(row[22] != null ? row[22].toString() : null);
+                    if(isCracker && row.length > 28) {
+						list.add(row[28] != null ? Boolean.parseBoolean(row[28].toString()) : true);
+					}
+
 					rows.add(list);
 				}
 			} else {
@@ -1399,14 +1407,35 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 				}
 			}
-			for (List<Object> rowData : rows) {
-				Row row1 = sheet.createRow(currentRow++);
-				for (int col = 0; col < rowData.size(); col++) {
-					Cell cell = row1.createCell(col);
-					Object value = rowData.get(col);
+	// Unlocked style: month columns (1-12) and Remarks (13) in editable rows
+	CellStyle unlockedStyle = workbook.createCellStyle();
+	unlockedStyle.setLocked(false);
+
+	// Locked style (no fill): non-data columns in editable rows (Particulars, Id, MaterialFKId)
+	CellStyle lockedDefaultStyle = workbook.createCellStyle();
+	lockedDefaultStyle.setLocked(true);
+
+	// Locked style with grey fill: all columns in non-editable (disabled) rows
+	CellStyle lockedGreyStyle = workbook.createCellStyle();
+	lockedGreyStyle.setLocked(true);
+	lockedGreyStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+	lockedGreyStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+		for (List<Object> rowData : rows) {
+			Row row1 = sheet.createRow(currentRow++);
+
+			boolean isRowEditable = true;
+			if (isCracker && !isAfterSave) {
+				Object flagVal = rowData.get(rowData.size() - 1);
+				isRowEditable = !(flagVal instanceof Boolean) || (Boolean) flagVal;
+			}
+
+			for (int col = 0; col < rowData.size(); col++) {
+				Cell cell = row1.createCell(col);
+				Object value = rowData.get(col);
 
 				if (value instanceof Number) {
-					cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
+					cell.setCellValue(((Number) value).doubleValue());
 				} else if (value instanceof Boolean) {
 					cell.setCellValue((Boolean) value);
 				} else if (value != null) {
@@ -1417,15 +1446,17 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 					cell.setCellValue("");
 				}
 
+				if (isCracker && !isAfterSave) {
+					cell.setCellStyle(isRowEditable ? unlockedStyle : lockedGreyStyle);
 				}
 			}
-			sheet.setColumnHidden(14, true);
-			sheet.setColumnHidden(15, true);
-			// sheet.setColumnHidden(15, true);
-			// sheet.setColumnHidden(16, true);
-			// sheet.setColumnHidden(17, true);
-			// sheet.setColumnHidden(18, true);
-			// sheet.setColumnHidden(19, true);
+		}
+		sheet.setColumnHidden(14, true);
+		sheet.setColumnHidden(15, true);
+		if (isCracker && !isAfterSave) {
+			sheet.setColumnHidden(16, true);
+			
+		}
 			try {// (FileOutputStream fileOut = new FileOutputStream("output/generated.xlsx")) {
 
 				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -1443,7 +1474,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 
 	}
 
-	private byte[] createExcelDesignCapacity(List<Object[]> obj, Workbook workbook, Sheet sheet, String year) {
+	private byte[] createExcelDesignCapacity(List<Object[]> obj, Workbook workbook, Sheet sheet, String year, boolean isCracker) {
 		try {
 			int currentRow = 0;
 			List<List<Object>> rows = new ArrayList<>();
@@ -1466,6 +1497,10 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 				list.add(row[16] != null ? row[16].toString() : " ");
 				list.add(row[0] != null ? row[0].toString() : null);
 				list.add(row[1] != null ? row[1].toString() : null);
+
+				if(isCracker && row.length > 22) {
+					list.add(row[22] != null ? Boolean.parseBoolean(row[22].toString()) : true);
+				}
 				rows.add(list);
 			}
 
@@ -1484,25 +1519,51 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 			}
 
-			for (List<Object> rowData : rows) {
-				Row row1 = sheet.createRow(currentRow++);
-				for (int col = 0; col < rowData.size(); col++) {
-					Cell cell = row1.createCell(col);
-					Object value = rowData.get(col);
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue());
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
-					} else if (value != null) {
-						cell.setCellValue(value.toString());
-					} else {
-						cell.setCellValue("");
-					}
-				}
+		CellStyle lockedStyle = workbook.createCellStyle();
+		lockedStyle.setLocked(true);
+		CellStyle unlockedStyle = workbook.createCellStyle();
+		unlockedStyle.setLocked(false);
+
+		// Locked style with grey fill: all columns in non-editable (disabled) rows
+	CellStyle lockedGreyStyle = workbook.createCellStyle();
+	lockedGreyStyle.setLocked(true);
+	lockedGreyStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+	lockedGreyStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+		for (List<Object> rowData : rows) {
+			Row row1 = sheet.createRow(currentRow++);
+
+			boolean isRowEditable = true;
+			if (isCracker) {
+				Object flagVal = rowData.get(rowData.size() - 1);
+				isRowEditable = !(flagVal instanceof Boolean) || (Boolean) flagVal;
 			}
 
-			sheet.setColumnHidden(14, true);
-			sheet.setColumnHidden(15, true);
+			for (int col = 0; col < rowData.size(); col++) {
+				Cell cell = row1.createCell(col);
+				Object value = rowData.get(col);
+				if (value instanceof Number) {
+					cell.setCellValue(((Number) value).doubleValue());
+				} else if (value instanceof Boolean) {
+					cell.setCellValue((Boolean) value);
+				} else if (value != null) {
+					cell.setCellValue(value.toString());
+				} else {
+					cell.setCellValue("");
+				}
+
+				if (isCracker) {
+					cell.setCellStyle(isRowEditable ? unlockedStyle : lockedGreyStyle);
+				}
+			}
+		}
+
+		sheet.setColumnHidden(14, true);
+		sheet.setColumnHidden(15, true);
+		if (isCracker) {
+			sheet.setColumnHidden(16, true);
+			sheet.protectSheet("secret_password");
+		}
 
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			workbook.write(outputStream);
