@@ -10,6 +10,7 @@ import { useSession } from 'SessionStoreContext'
 import { validateFields } from 'utils/validationUtils'
 import KendoDataTables from './index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 const percentageDeviations = ({ viewOnly, permissions }) => {
   const keycloak = useSession()
 
@@ -44,6 +45,7 @@ const percentageDeviations = ({ viewOnly, permissions }) => {
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+  const valueFormat_ = ValueFormatterProduction()
 
   const dataConfig = useMemo(
     () => ({
@@ -261,10 +263,7 @@ const percentageDeviations = ({ viewOnly, permissions }) => {
       ]
       const cols = resp.data?.columns || columns
 
-      const hasGroupBy = cols.some(
-        (col) => col.field === 'groupBy',
-      )
-
+      const hasGroupBy = cols.some((col) => col.field === 'groupBy')
 
       if (hasGroupBy) {
         setGroupBy('groupBy')
@@ -275,7 +274,13 @@ const percentageDeviations = ({ viewOnly, permissions }) => {
         ...col,
         editable: false,
         hidden: hiddenKeys.includes(col.field) ? true : col.hidden,
-        widthT: 200,
+        minWidth:
+          col.type === 'number'
+            ? 80
+            : col.field === 'ParticularName'
+              ? 180
+              : 120,
+        format: col.type === 'number' ? valueFormat_ : undefined,
       }))
 
       setColumns(dynamicColumns)
@@ -496,7 +501,7 @@ const percentageDeviations = ({ viewOnly, permissions }) => {
           showCalculate: false,
           showNote: false,
           showTitleNameBusiness: true,
-          titleName: 'Percentage Deviation'
+          titleName: 'Percentage Deviation',
         },
         isOldYear,
       ),
