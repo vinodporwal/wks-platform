@@ -133,6 +133,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 	        Sites site = siteRepository.findById(plant.getSiteFkId())
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			boolean isCracker = vertical.getName().equalsIgnoreCase("CRACKER");
 	        String procedureName=null;
 	        if (vertical.getName().equalsIgnoreCase("PTA")) {
 	            view = "vw" + vertical.getName() + "_" + site.getName() + "_AOPMCValues";
@@ -180,8 +181,8 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	            dto.setVerticalFKId(row[22] != null ? row[22].toString() : null);
 	            dto.setProductName(row[24] != null ? row[24].toString() : null);
 	            dto.setMaterialDisplayName(row[24] != null ? row[24].toString() : null);
-				if(row.length > 28) {
-					dto.setIsEditable(row[28] != null ? Boolean.parseBoolean(row[28].toString()) : false);
+				if(isCracker && row.length > 28) {
+					dto.setIsEditable(row[28] != null ? Boolean.parseBoolean(row[28].toString()) : true);
 				}
 
 	            
@@ -867,6 +868,9 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
  	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
  	        Sites site = siteRepository.findById(plant.getSiteFkId())
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+			boolean isCracker = vertical.getName().equalsIgnoreCase("CRACKER");
+
         	 if(vertical.getName().equalsIgnoreCase("CRACKER")) {
         		 String procedureName=vertical.getName()+"_GetAOPMCValuesDesignCapacity";
  	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
@@ -903,6 +907,9 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                 dto.setRemarks(row[16] != null ? row[16].toString() : " ");
                 if(vertical.getName().equalsIgnoreCase("CRACKER")) {
                 	dto.setNormType(row[21] != null ? row[21].toString() : " ");
+					if(row.length > 22) {
+						dto.setIsEditable(row[22] != null ? Boolean.parseBoolean(row[22].toString()) : true);
+					}
                 }
                 aOPMCCalculatedDataDTOList.add(dto);
             }
