@@ -148,8 +148,20 @@ public class AOPMCCalculatedDataController {
 	}
 	
 	@PostMapping(value = "/design-capacity")
-	public AOPMessageVM updateDesignCapacity(@RequestParam String plantId,@RequestParam String year, @RequestBody List<AOPMCCalculatedDataDTO> aopMCCalculatedDataDTOList) {
-		return aOPMCCalculatedDataService.updateDesignCapacity(plantId,year, aopMCCalculatedDataDTOList);
+	public AOPMessageVM updateDesignCapacity(@RequestParam String plantId, @RequestParam String year,
+			@RequestBody List<AOPMCCalculatedDataDTO> aopMCCalculatedDataDTOList) {
+		List<AOPMCCalculatedDataDTO> failedRecords = aOPMCCalculatedDataService.updateDesignCapacity(plantId, year,
+				aopMCCalculatedDataDTOList);
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		if (failedRecords != null && !failedRecords.isEmpty()) {
+			aopMessageVM.setCode(400);
+			aopMessageVM.setData(failedRecords);
+			aopMessageVM.setMessage("Partial data has been saved");
+		} else {
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data Updated Successfully");
+		}
+		return aopMessageVM;
 	}
 
 	@PutMapping(value = "/production-target")

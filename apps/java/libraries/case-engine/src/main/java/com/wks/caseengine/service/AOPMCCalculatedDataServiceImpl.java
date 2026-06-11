@@ -1731,7 +1731,19 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	public AOPMessageVM importExcelDesignCapacity(String year, String plantFKId, MultipartFile file) {
 		try {
 			List<AOPMCCalculatedDataDTO> data = readDesignCapacityData(file.getInputStream(), UUID.fromString(plantFKId), year);
-			return updateDesignCapacity(plantFKId, year, data);
+			List<AOPMCCalculatedDataDTO> failedRecords = updateDesignCapacity(plantFKId, year, data);
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (failedRecords != null && !failedRecords.isEmpty()) {
+				byte[] fileByteArray = createExcel(year, plantFKId, true, failedRecords, null);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+			return aopMessageVM;
 		} catch (Exception e) {
 			e.printStackTrace();
 			AOPMessageVM errorVM = new AOPMessageVM();
@@ -1995,57 +2007,94 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	    return null;
 	}	
 	@Override
-	public AOPMessageVM updateDesignCapacity(String plantId, String year,
+	public List<AOPMCCalculatedDataDTO> updateDesignCapacity(String plantId, String year,
 			List<AOPMCCalculatedDataDTO> aopMCCalculatedDataDTOList) {
-		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<AOPMCCalculatedDataDTO> failedRecords = new ArrayList<>();
 		try {
-			List<MCUDesignCapacity> mcuValueCapacityList = new ArrayList<>();
 			for (AOPMCCalculatedDataDTO aopMCCalculatedDataDTO : aopMCCalculatedDataDTOList) {
-				Optional<MCUDesignCapacity> optMCUValueCapacity =null;
-				MCUDesignCapacity mcuValueCapacity =null;
-				if(aopMCCalculatedDataDTO.getId()==null) {
-					optMCUValueCapacity =	mcuValueCapacityRepository.findCapacityDetails(UUID.fromString(plantId),year,UUID.fromString(aopMCCalculatedDataDTO.getMaterialFKId()));
-				
-				}else {
-					optMCUValueCapacity = mcuValueCapacityRepository
-							.findById(UUID.fromString(aopMCCalculatedDataDTO.getId()));
-				}
-				
-				if (optMCUValueCapacity.isPresent()) {
-					 mcuValueCapacity = optMCUValueCapacity.get();
-				}else {
-					 mcuValueCapacity =new MCUDesignCapacity();
-					mcuValueCapacity.setMaterialFkId(UUID.fromString(aopMCCalculatedDataDTO.getMaterialFKId()));
-					mcuValueCapacity.setPlantId(UUID.fromString(plantId));
-					mcuValueCapacity.setFinancialYear(year);
+				try {
+					Optional<MCUDesignCapacity> optMCUValueCapacity = null;
+					MCUDesignCapacity mcuValueCapacity = null;
+					if (aopMCCalculatedDataDTO.getId() == null) {
+						optMCUValueCapacity = mcuValueCapacityRepository.findCapacityDetails(UUID.fromString(plantId),
+								year, UUID.fromString(aopMCCalculatedDataDTO.getMaterialFKId()));
+					} else {
+						optMCUValueCapacity = mcuValueCapacityRepository
+								.findById(UUID.fromString(aopMCCalculatedDataDTO.getId()));
 					}
-				mcuValueCapacity.setApril(aopMCCalculatedDataDTO.getApril());
-				mcuValueCapacity.setMay(aopMCCalculatedDataDTO.getMay());
-				mcuValueCapacity.setJune(aopMCCalculatedDataDTO.getJune());
-				mcuValueCapacity.setJuly(aopMCCalculatedDataDTO.getJuly());
-				mcuValueCapacity.setAugust(aopMCCalculatedDataDTO.getAugust());
-				mcuValueCapacity.setSeptember(aopMCCalculatedDataDTO.getSeptember());
-				mcuValueCapacity.setOctober(aopMCCalculatedDataDTO.getOctober());
-				mcuValueCapacity.setNovember(aopMCCalculatedDataDTO.getNovember());
-				mcuValueCapacity.setDecember(aopMCCalculatedDataDTO.getDecember());
-				mcuValueCapacity.setJanuary(aopMCCalculatedDataDTO.getJanuary());
-				mcuValueCapacity.setFebruary(aopMCCalculatedDataDTO.getFebruary());
-				mcuValueCapacity.setMarch(aopMCCalculatedDataDTO.getMarch());
-				mcuValueCapacity.setModifiedOn(new Date());
-				mcuValueCapacity.setRemarks(aopMCCalculatedDataDTO.getRemarks());
-				mcuValueCapacity.setUpdatedBy(Utility.getUserName());
-				mcuValueCapacityList.add(mcuValueCapacityRepository.save(mcuValueCapacity));
 
+					if (optMCUValueCapacity.isPresent()) {
+						mcuValueCapacity = optMCUValueCapacity.get();
+						validateRemarkForDesignCapacity(mcuValueCapacity, aopMCCalculatedDataDTO);
+					} else {
+						mcuValueCapacity = new MCUDesignCapacity();
+						mcuValueCapacity.setMaterialFkId(UUID.fromString(aopMCCalculatedDataDTO.getMaterialFKId()));
+						mcuValueCapacity.setPlantId(UUID.fromString(plantId));
+						mcuValueCapacity.setFinancialYear(year);
+					}
 
+					if ("Failed".equalsIgnoreCase(aopMCCalculatedDataDTO.getSaveStatus())) {
+						failedRecords.add(aopMCCalculatedDataDTO);
+						continue;
+					}
+
+					mcuValueCapacity.setApril(aopMCCalculatedDataDTO.getApril());
+					mcuValueCapacity.setMay(aopMCCalculatedDataDTO.getMay());
+					mcuValueCapacity.setJune(aopMCCalculatedDataDTO.getJune());
+					mcuValueCapacity.setJuly(aopMCCalculatedDataDTO.getJuly());
+					mcuValueCapacity.setAugust(aopMCCalculatedDataDTO.getAugust());
+					mcuValueCapacity.setSeptember(aopMCCalculatedDataDTO.getSeptember());
+					mcuValueCapacity.setOctober(aopMCCalculatedDataDTO.getOctober());
+					mcuValueCapacity.setNovember(aopMCCalculatedDataDTO.getNovember());
+					mcuValueCapacity.setDecember(aopMCCalculatedDataDTO.getDecember());
+					mcuValueCapacity.setJanuary(aopMCCalculatedDataDTO.getJanuary());
+					mcuValueCapacity.setFebruary(aopMCCalculatedDataDTO.getFebruary());
+					mcuValueCapacity.setMarch(aopMCCalculatedDataDTO.getMarch());
+					mcuValueCapacity.setModifiedOn(new Date());
+					mcuValueCapacity.setRemarks(aopMCCalculatedDataDTO.getRemarks());
+					mcuValueCapacity.setUpdatedBy(Utility.getUserName());
+					mcuValueCapacityRepository.save(mcuValueCapacity);
+				} catch (Exception e) {
+					e.printStackTrace();
+					aopMCCalculatedDataDTO.setSaveStatus("Failed");
+					aopMCCalculatedDataDTO.setErrDescription(e.getMessage());
+					failedRecords.add(aopMCCalculatedDataDTO);
+				}
 			}
-			aopMessageVM.setCode(200);
-			aopMessageVM.setData(mcuValueCapacityList);
-			aopMessageVM.setMessage("Data Updated Successfully");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		// TODO Auto-generated method stub
-		return aopMessageVM;
+		return failedRecords;
+	}
+
+	private void validateRemarkForDesignCapacity(MCUDesignCapacity existing, AOPMCCalculatedDataDTO incoming) {
+
+		boolean monthlyValueChanged = !Objects.equals(existing.getApril(),     incoming.getApril())
+			|| !Objects.equals(existing.getMay(),       incoming.getMay())
+			|| !Objects.equals(existing.getJune(),      incoming.getJune())
+			|| !Objects.equals(existing.getJuly(),      incoming.getJuly())
+			|| !Objects.equals(existing.getAugust(),    incoming.getAugust())
+			|| !Objects.equals(existing.getSeptember(), incoming.getSeptember())
+			|| !Objects.equals(existing.getOctober(),   incoming.getOctober())
+			|| !Objects.equals(existing.getNovember(),  incoming.getNovember())
+			|| !Objects.equals(existing.getDecember(),  incoming.getDecember())
+			|| !Objects.equals(existing.getJanuary(),   incoming.getJanuary())
+			|| !Objects.equals(existing.getFebruary(),  incoming.getFebruary())
+			|| !Objects.equals(existing.getMarch(),     incoming.getMarch());
+
+
+					if (monthlyValueChanged) {
+						String incomingRemark = incoming.getRemarks();
+						String existingRemark = existing.getRemarks();
+						boolean remarkUnchangedOrBlank = (incomingRemark == null || incomingRemark.trim().isEmpty())
+								|| (existingRemark != null && incomingRemark.trim().equalsIgnoreCase(existingRemark.trim()));
+						if (remarkUnchangedOrBlank) {
+							incoming.setSaveStatus("Failed");
+							incoming.setErrDescription(
+									"Please update the remark");
+							
+						}
+					}
 	}
 
 	@Override
