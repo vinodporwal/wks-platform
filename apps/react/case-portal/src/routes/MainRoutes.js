@@ -148,6 +148,7 @@ import CausticSodaLyeBasisCatChem from 'components/data-tables/Reports/CausticSo
 import SteadyStateConsumptionMerox from 'components/aop-phase-two/merox/steady-state-consumption'
 import OverallAopConsumptionMerox from 'components/aop-phase-two/merox/overall-aop-consumption'
 import ProductionNormsBasisMerox from 'components/aop-phase-two/merox/production-norms-basis'
+import EtheleneStock from 'components/data-tables/Reports/EtheleneStock'
 // Vertical MEROX Ended
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
