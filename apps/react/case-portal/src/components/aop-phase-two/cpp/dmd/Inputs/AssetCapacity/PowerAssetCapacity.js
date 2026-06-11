@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useCallback } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { Box } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
@@ -9,9 +9,8 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
-import { useDebounce } from 'hooks/useDebounce'
 
-const PowerAssetCapacity = () => {
+const PowerAssetCapacity = ({ initialRows = [], onRefresh, externalLoading = false }) => {
   const keycloak = useSession()
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
@@ -39,6 +38,14 @@ const PowerAssetCapacity = () => {
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const valueFormat = ValueFormatterPhaseTwo()
+
+  useEffect(() => {
+    setRows(initialRows)
+    setOriginalRows(initialRows)
+    setModifiedCells({})
+  }, [initialRows])
+
+  const combinedLoading = loading || externalLoading
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -460,51 +467,6 @@ const PowerAssetCapacity = () => {
     },
   ]
 
-  const fetchAssetCapacityData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await InputApiService.getAssetCapacities(
-        keycloak,
-        PLANT_ID_LIST,
-        AOP_YEAR,
-      )
-      // Response: res.data.PowerAssetCapacities (flat array)
-      const rawList = res?.data?.PowerAssetCapacities ?? res?.data ?? res
-      if (!rawList || (Array.isArray(rawList) && rawList.length === 0)) {
-        setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
-        return
-      }
-      const tempRes = (Array.isArray(rawList) ? rawList : []).map(
-        (item, index) => ({
-          ...item,
-          id: item.id || index + 1,
-          remarks: item.remarks || '',
-        }),
-      )
-      setRows(tempRes)
-      setOriginalRows(tempRes)
-    } catch (error) {
-      console.error('Error fetching power asset capacity data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
-    } finally {
-      setLoading(false)
-    }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
-
-  useDebounce(
-    () => {
-      if (PLANT_ID_LIST?.length && AOP_YEAR) {
-        fetchAssetCapacityData()
-        setModifiedCells({})
-      }
-    },
-    1000,
-    [PLANT_ID_LIST, AOP_YEAR, fetchAssetCapacityData],
-  )
-
   const debounceTimerRef = useRef(null)
 
   const customItemChange = (e, setRows) => {
@@ -675,6 +637,7 @@ const PowerAssetCapacity = () => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+      await onRefresh?.()
     } catch (error) {
       console.error('Error saving asset capacity data:', error)
       setSnackbarOpen(true)
@@ -700,13 +663,13 @@ const PowerAssetCapacity = () => {
       )
 
       if (response?.code === 200) {
-        setSnackbarOpen(true)
+          setSnackbarOpen(true)
         setSnackbarData({
           message: 'Excel file imported successfully!',
           severity: 'success',
         })
         setModifiedCells({})
-        await fetchAssetCapacityData()
+        await onRefresh?.()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = Array.from(byteCharacters, (char) =>
@@ -732,7 +695,7 @@ const PowerAssetCapacity = () => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
-        await fetchAssetCapacityData()
+        await onRefresh?.()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -788,7 +751,7 @@ const PowerAssetCapacity = () => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <LoaderBackdrop open={!!combinedLoading} />
       <AdvanceKendoTable
         columns={columns}
         rows={rows}

@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo, useCallback } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { useEffect, useState, useMemo } from 'react'
+import { Box } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -8,10 +8,9 @@ import { AssetPriorityApiService } from 'components/aop-phase-two/services/cpp/j
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import { useDebounce } from 'hooks/useDebounce'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const SteamAssetAvailability = () => {
+const SteamAssetAvailability = ({ initialRows = [], onRefresh, externalLoading = false }) => {
   const keycloak = useSession()
   // State management
 
@@ -184,50 +183,13 @@ const SteamAssetAvailability = () => {
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
 
-  const fetchAssetPriorityData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await AssetPriorityApiService.getAssetPriority(
-        keycloak,
-        PLANT_ID_LIST,
-        AOP_YEAR,
-      )
+  useEffect(() => {
+    setRows(initialRows)
+    setOriginalRows(initialRows)
+    setModifiedCells({})
+  }, [initialRows])
 
-      const steamAssetPriorities = res?.data?.SteamAssetPriorities
-
-      if (steamAssetPriorities?.length === 0) {
-        setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
-        setLoading(false)
-        return
-      }
-      const rowsWithEditableFlag = steamAssetPriorities?.map((row, index) => ({
-        ...row,
-        id: row.id || index + 1,
-        remarks: row.remarks || '',
-      }))
-      setRows(rowsWithEditableFlag)
-      setOriginalRows(rowsWithEditableFlag)
-    } catch (error) {
-      console.error('Error fetching asset priority data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
-    } finally {
-      setLoading(false)
-    }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
-
-  useDebounce(
-    () => {
-      if (PLANT_ID_LIST?.length && AOP_YEAR) {
-        fetchAssetPriorityData()
-        setModifiedCells({})
-      }
-    },
-    1000,
-    [PLANT_ID_LIST, AOP_YEAR, fetchAssetPriorityData],
-  )
+  const combinedLoading = loading || externalLoading
 
   // Permissions (adjust as needed)
   const permissions = {
@@ -324,7 +286,7 @@ const SteamAssetAvailability = () => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
-      fetchAssetPriorityData()
+      await onRefresh?.()
     } catch (error) {
       console.error('Error saving plant requirement data:', error)
       setSnackbarOpen(true)
@@ -356,7 +318,7 @@ const SteamAssetAvailability = () => {
           severity: 'success',
         })
         setModifiedCells({})
-        await fetchAssetPriorityData()
+        await onRefresh?.()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = Array.from(byteCharacters, (char) =>
@@ -382,7 +344,7 @@ const SteamAssetAvailability = () => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
-        await fetchAssetPriorityData()
+        await onRefresh?.()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -437,7 +399,7 @@ const SteamAssetAvailability = () => {
 
   return (
     <Box>
-      <LoaderBackdrop open={!!loading} />
+      <LoaderBackdrop open={!!combinedLoading} />
       <AdvanceKendoTable
         columns={columns}
         rows={rows}
