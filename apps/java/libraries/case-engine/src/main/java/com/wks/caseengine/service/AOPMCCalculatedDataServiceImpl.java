@@ -1650,6 +1650,14 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	@Override
 	public AOPMessageVM importLineWiseExcel(String year, String plantFKId, MultipartFile file) {
 		try {
+
+			Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+			boolean ppDta = vertical.getName().equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("DTA");
+			boolean ppHmd = vertical.getName().equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("HMD");
+
 			List<AOPMCCalculatedDataDTO> data = readLineWiseData(file.getInputStream(), UUID.fromString(plantFKId), year);
 			List<AOPMCCalculatedDataDTO> failedRecords = editAOPMCCalculatedData(data, true, year, plantFKId);
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -1661,7 +1669,13 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 							: "ProposedOperatingCapacity";
 					mapForExcel.computeIfAbsent(key, k -> new ArrayList<>()).add(dto);
 				}
-				byte[] fileByteArray = exportLineWiseProductionTarget(year, plantFKId, true, mapForExcel, null);
+
+				byte[] fileByteArray = null;
+				if(ppDta || ppHmd) { 
+					fileByteArray = exportLineWiseProductionTargetDTA(year, plantFKId, true, mapForExcel, null);
+				}else {
+					fileByteArray = exportLineWiseProductionTarget(year, plantFKId, true, mapForExcel, null);
+				}
 				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 				aopMessageVM.setData(base64File);
 				aopMessageVM.setCode(400);
@@ -1928,6 +1942,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 					try {
 						dto.setTableId(tableId);
 						dto.setProductName(getStringCellValue(row.getCell(0), dto));
+						dto.setMaterialDisplayName(getStringCellValue(row.getCell(0), dto));
 						dto.setApril(getNumericCellValue(row.getCell(1), dto));
 						dto.setMay(getNumericCellValue(row.getCell(1), dto));
 						dto.setJune(getNumericCellValue(row.getCell(1), dto));
@@ -2446,44 +2461,59 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	                    		table.put("hideTable", true);
 	                    		continue;
 	                    	}
-	                    	headers.add("saveStatus");
-	                    	headers.add("errDescription");
-	                    	headersOuterTitles.get(0).add("SaveStatus");
-	                    	headersOuterTitles.get(0).add("ErrDescription");
-	                    	populateRowsFromDTOs(failedForTable, headers, newTableId, dataList);
-	                    } else {
-	                    	List<AOPMCCalculatedDataDTO> sourceDTOs = new ArrayList<>();
-	                    	AOPMessageVM vm = null;
+                    	headers.add("saveStatus");
+                    	headers.add("errDescription");
+                    	headersOuterTitles.get(0).add("SaveStatus");
+                    	headersOuterTitles.get(0).add("ErrDescription");
+                    	// populateRowsFromDTOs appends tableId as the penultimate element of every row
+                    	// (index = headers.size() = 18 after the two additions above).
+                    	// Add a placeholder display header for that slot so it can be hidden cleanly.
+                    	headersOuterTitles.get(0).add("");
 
-	                    	if ("DesignCapacity".equalsIgnoreCase(dataInput)) {
-	                            vm = getLineWiseDesignCapacity(plantId, year, currentLineId);
-	                        } else if ("MaxAchievedCapacity".equalsIgnoreCase(dataInput)) {
-	                            vm = getLineWiseMaxAchievedCapacity(plantId, year, currentLineId);
-	                        } else if ("ProposedOperatingCapacity".equalsIgnoreCase(dataInput)) {
-	                            vm = getProductionTarget(plantId, year, currentLineId);
-	                        } else if ("SummaryProposedOperatingCapacity".equalsIgnoreCase(dataInput)) {
-	                            vm = getLineWiseSummaryOfProposedOperating(plantId, year, currentLineId);
-	                        }
+                    	// Fix hiddenColumns for error-file mode:
+                    	//   Original JSON has [14, 15, 16]. In normal export col-16 does not exist
+                    	//   (only 16 cols, 0-15) so the entry is harmless. In error mode col-16 is
+                    	//   saveStatus — it must be VISIBLE. Col-18 is the appended tableId — it must
+                    	//   be HIDDEN (unnecessary in the error report).
+                    	List<Integer> hiddenCols = new ArrayList<>((List<Integer>) table.get(ExcelConstants.HIDDEN_COLUMNS));
+                    	hiddenCols.remove(Integer.valueOf(16));
+                    	hiddenCols.add(18);
+                    	table.put(ExcelConstants.HIDDEN_COLUMNS, hiddenCols);
 
-	                    	if (vm != null && vm.getData() != null) {
-	                    		Map<String, Object> dataMap = (Map<String, Object>) vm.getData();
-	                    		sourceDTOs = (List<AOPMCCalculatedDataDTO>) dataMap.get("aopMCCalculatedDataDTOList");
-	                    	}
+                    	populateRowsFromDTOs(failedForTable, headers, newTableId, dataList);
+                    } else {
+                    	List<AOPMCCalculatedDataDTO> sourceDTOs = new ArrayList<>();
+                    	AOPMessageVM vm = null;
 
-	                    	if (sourceDTOs == null || sourceDTOs.isEmpty()) {
-	                    		table.put("hideTable", true);
-	                    		continue;
-	                    	}
-	                    	populateRowsFromDTOs(sourceDTOs, headers, newTableId, dataList);
-	                    }
+                    	if ("DesignCapacity".equalsIgnoreCase(dataInput)) {
+                            vm = getLineWiseDesignCapacity(plantId, year, currentLineId);
+                        } else if ("MaxAchievedCapacity".equalsIgnoreCase(dataInput)) {
+                            vm = getLineWiseMaxAchievedCapacity(plantId, year, currentLineId);
+                        } else if ("ProposedOperatingCapacity".equalsIgnoreCase(dataInput)) {
+                            vm = getProductionTarget(plantId, year, currentLineId);
+                        } else if ("SummaryProposedOperatingCapacity".equalsIgnoreCase(dataInput)) {
+                            vm = getLineWiseSummaryOfProposedOperating(plantId, year, currentLineId);
+                        }
 
-	                    data.put(newTableId, dataList);
-	            	}
+                    	if (vm != null && vm.getData() != null) {
+                    		Map<String, Object> dataMap = (Map<String, Object>) vm.getData();
+                    		sourceDTOs = (List<AOPMCCalculatedDataDTO>) dataMap.get("aopMCCalculatedDataDTOList");
+                    	}
 
-	            	combinedStructure.put(uniqueSheetName, clonedSheetData);
-	            }
+                    	if (sourceDTOs == null || sourceDTOs.isEmpty()) {
+                    		table.put("hideTable", true);
+                    		continue;
+                    	}
+                    	populateRowsFromDTOs(sourceDTOs, headers, newTableId, dataList);
+                    }
 
-	            return excelUtilityService.generateFlexibleExcelDTA(combinedStructure, data);
+                    data.put(newTableId, dataList);
+            	}
+
+            	combinedStructure.put(uniqueSheetName, clonedSheetData);
+            }
+
+            return excelUtilityService.generateFlexibleExcelDTA(combinedStructure, data);
 	        }
 	    } catch (Exception e) {
 	        e.printStackTrace();
