@@ -82,7 +82,10 @@ import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import Collapse from '@mui/material/Collapse'
 import { useSelector } from 'react-redux'
 import DeleteSelectedDialog from './components/DeleteSelectedDialog'
-import { calculateMonthDuration, getMonthStartEndDate } from '../utilities/durationHelpers'
+import {
+  calculateMonthDuration,
+  getMonthStartEndDate,
+} from '../utilities/durationHelpers'
 
 // Helper function to get nested value from object
 const getNestedValue = (obj, path) => {
@@ -632,10 +635,7 @@ const AdvanceKendoTable = ({
             updated[field] = value
           }
 
-          if (
-            screenType === 'shutdown' &&
-            field === 'monthly'
-          ) {
+          if (screenType === 'shutdown' && field === 'monthly') {
             const monthDur = calculateMonthDuration(value, AOP_YEAR)
             const [start, end] = getMonthStartEndDate(value, AOP_YEAR)
             if (monthDur) {
@@ -1363,22 +1363,17 @@ const AdvanceKendoTable = ({
         field='selected'
         width='50px'
         headerSelectionValue={
-          selectedRows?.length > 0 &&
-          selectedRows?.length === rows?.length
+          selectedRows?.length > 0 && selectedRows?.length === rows?.length
         }
         cells={{
           data: (props) => (
             <td style={{ textAlign: 'center' }}>
               <Checkbox
-                checked={selectedRows?.includes(
-                  props.dataItem?.idFromApi,
-                )}
+                checked={selectedRows?.includes(props.dataItem?.idFromApi)}
                 onChange={() => {
                   const id = props.dataItem?.idFromApi
                   if (selectedRows?.includes(id)) {
-                    setSelectedRows(
-                      selectedRows?.filter((r) => r !== id),
-                    )
+                    setSelectedRows(selectedRows?.filter((r) => r !== id))
                   } else {
                     setSelectedRows([...selectedRows, id])
                   }
@@ -1399,8 +1394,7 @@ const AdvanceKendoTable = ({
                   selectedRows?.length === rows?.length
                 }
                 onChange={(e) => {
-                  const checked =
-                    e?.value ?? e?.target?.checked ?? false
+                  const checked = e?.value ?? e?.target?.checked ?? false
                   if (checked) {
                     setSelectedRows(rows.map((r) => r?.idFromApi))
                   } else {
@@ -2741,7 +2735,8 @@ const AdvanceKendoTable = ({
                 pageable={getPaginationConfig()}
                 onRowClick={handleRowClick}
               >
-                {permissions?.deleteMultiple && renderMultipleSelectionCheckbox()}
+                {permissions?.deleteMultiple &&
+                  renderMultipleSelectionCheckbox()}
                 {renderColumns(
                   columns.filter(
                     (col) =>

@@ -108,7 +108,6 @@ const DeleteSelectedDialog = ({
             message || 'Are you sure you want to delete?'
           )}
         </Typography>
-
       </DialogContent>
 
       {/* Actions */}

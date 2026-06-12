@@ -93,8 +93,7 @@ const parseDurationToMinutes = (val) => {
   if (!val && val !== 0) return 0
   const [hrsPart, minPart = '0'] = String(val).split('.')
   const hrs = parseInt(hrsPart, 10) || 0
-  const mins =
-    parseInt(String(minPart).padEnd(2, '0').slice(0, 2), 10) || 0
+  const mins = parseInt(String(minPart).padEnd(2, '0').slice(0, 2), 10) || 0
   return hrs * 60 + mins
 }
 
@@ -237,21 +236,21 @@ const ShutdownPlan = () => {
 
       const formatted = arr.map((item, index) => {
         return {
-            ...item,
-            idFromApi: item?.id,
-            id: index,
-            originalRemark: item.remark,
-            inEdit: false,
-            maintStartDateTime: new Date(item?.maintStartDateTime),
-            maintEndDateTime: new Date(item?.maintEndDateTime),
-            discription: item.discription,
-            monthly:
-              item?.monthly ||
-              item?.month ||
-              (item?.maintStartDateTime
-                ? monthNames[new Date(item?.maintStartDateTime).getMonth()]
-                : ''),
-          } 
+          ...item,
+          idFromApi: item?.id,
+          id: index,
+          originalRemark: item.remark,
+          inEdit: false,
+          maintStartDateTime: new Date(item?.maintStartDateTime),
+          maintEndDateTime: new Date(item?.maintEndDateTime),
+          discription: item.discription,
+          monthly:
+            item?.monthly ||
+            item?.month ||
+            (item?.maintStartDateTime
+              ? monthNames[new Date(item?.maintStartDateTime).getMonth()]
+              : ''),
+        }
       })
 
       setRows(formatted)
@@ -277,7 +276,7 @@ const ShutdownPlan = () => {
   const saveChanges = useCallback(async () => {
     const data = Object.values(modifiedCells)
 
-    console.log("dat ", data)
+    console.log('dat ', data)
     // 1. No records
     if (data.length === 0) {
       setSnackbarOpen(true)
@@ -289,10 +288,7 @@ const ShutdownPlan = () => {
     // const fiscalLimits = parseFiscalYear(AOP_YEAR)
 
     for (const record of data) {
-      const expectedDuration = calculateMonthDuration(
-        record.monthly,
-        AOP_YEAR,
-      )
+      const expectedDuration = calculateMonthDuration(record.monthly, AOP_YEAR)
       if (!expectedDuration) continue // no valid month  skip
       const recordMins = parseDurationToMinutes(record.durationInHrs)
       const expectedMins = parseDurationToMinutes(expectedDuration)
@@ -323,19 +319,14 @@ const ShutdownPlan = () => {
       const monthKey = (row.monthly || '').toLowerCase()
       if (!monthKey) continue
       monthTotals[monthKey] =
-        (monthTotals[monthKey] || 0) +
-        parseDurationToMinutes(row.durationInHrs)
-      if (!monthDisplayName[monthKey])
-        monthDisplayName[monthKey] = row.monthly
+        (monthTotals[monthKey] || 0) + parseDurationToMinutes(row.durationInHrs)
+      if (!monthDisplayName[monthKey]) monthDisplayName[monthKey] = row.monthly
     }
 
     // Validate each month's total against its max
     for (const [monthKey, totalMins] of Object.entries(monthTotals)) {
       const displayMonth = monthDisplayName[monthKey] || monthKey
-      const expectedDuration = calculateMonthDuration(
-        displayMonth,
-        AOP_YEAR,
-      )
+      const expectedDuration = calculateMonthDuration(displayMonth, AOP_YEAR)
       const expectedMins = parseDurationToMinutes(expectedDuration)
       if (totalMins > expectedMins) {
         setSnackbarOpen(true)

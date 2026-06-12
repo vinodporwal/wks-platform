@@ -7,7 +7,7 @@ export const ShutdownPlanApiService = {
   deleteShutdownActivity,
   exportShutdownPlan,
   importShutdownPlan,
-  deleteMultipleShutdown
+  deleteMultipleShutdown,
 }
 
 // ========================|| PE Shutdown Plan APIs ||=====================================//
@@ -196,7 +196,6 @@ async function importShutdownPlan(file, keycloak, plantId, year) {
     return Promise.reject(e)
   }
 }
-
 
 // ─── Delete Selected ───────────────────────────────────────────────────────────────────
 /**

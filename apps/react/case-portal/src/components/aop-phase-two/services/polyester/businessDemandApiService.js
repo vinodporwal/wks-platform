@@ -158,7 +158,9 @@ async function deleteBusinessDemand(keycloak, id) {
       headers,
     })
     if (!resp.ok) {
-      throw new Error(`Failed to delete data: ${resp.status} ${resp.statusText}`)
+      throw new Error(
+        `Failed to delete data: ${resp.status} ${resp.statusText}`,
+      )
     }
     return await resp.text()
   } catch (e) {
@@ -192,4 +194,3 @@ async function getProductionTarget(keycloak, plantId, year) {
     return await Promise.reject(e)
   }
 }
-
