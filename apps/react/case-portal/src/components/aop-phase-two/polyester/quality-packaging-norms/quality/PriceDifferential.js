@@ -11,14 +11,8 @@ import AdvanceKendoTable from '../../../common/AdvanceKendoTable'
 const PriceDifferential = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const {
-    verticalChange,
-    oldYear,
-    plantObject,
-    siteObject,
-    year,
-    isReleased,
-  } = dataGridStore
+  const { verticalChange, oldYear, plantObject, siteObject, year, isReleased } =
+    dataGridStore
 
   const PLANT_ID = plantObject?.id
   const PLANT_NAME = plantObject?.name
@@ -186,12 +180,13 @@ const PriceDifferential = () => {
   const handleExcelUpload = async (rawFile) => {
     setPriceDiffLoading(true)
     try {
-      const response = await QualityPackagingNormsApiService.importPriceDifferential(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        rawFile,
-      )
+      const response =
+        await QualityPackagingNormsApiService.importPriceDifferential(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          rawFile,
+        )
       if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -202,7 +197,9 @@ const PriceDifferential = () => {
         fetchPriceDifferential()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
-        const byteNumbers = Array.from(byteCharacters, (char) => char.charCodeAt(0))
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
         const byteArray = new Uint8Array(byteNumbers)
         const blob = new Blob([byteArray], {
           type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -270,12 +267,15 @@ const PriceDifferential = () => {
     }
   }
 
-  const handleRemarkCellClick = useCallback((row) => {
-    if (READ_ONLY) return
-    setCurrentRemarkDiff(row.remark || '')
-    setCurrentRowIdDiff(row.id)
-    setRemarkDialogOpenDiff(true)
-  }, [READ_ONLY])
+  const handleRemarkCellClick = useCallback(
+    (row) => {
+      if (READ_ONLY) return
+      setCurrentRemarkDiff(row.remark || '')
+      setCurrentRowIdDiff(row.id)
+      setRemarkDialogOpenDiff(true)
+    },
+    [READ_ONLY],
+  )
 
   const permissions = {
     saveBtn: true,

@@ -24,14 +24,8 @@ const QualityParameters = () => {
   const dispatch = useDispatch()
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const {
-    verticalChange,
-    oldYear,
-    plantObject,
-    siteObject,
-    year,
-    isReleased,
-  } = dataGridStore
+  const { verticalChange, oldYear, plantObject, siteObject, year, isReleased } =
+    dataGridStore
 
   const PLANT_ID = plantObject?.id
   const PLANT_NAME = plantObject?.name
@@ -281,7 +275,9 @@ const QualityParameters = () => {
         fetchQualityParameters()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
-        const byteNumbers = Array.from(byteCharacters, (char) => char.charCodeAt(0))
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
         const byteArray = new Uint8Array(byteNumbers)
         const blob = new Blob([byteArray], {
           type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -349,12 +345,15 @@ const QualityParameters = () => {
     }
   }
 
-  const handleRemarkCellClick = useCallback((row) => {
-    if (READ_ONLY) return
-    setCurrentRemark(row.remark || '')
-    setCurrentRowId(row.id)
-    setRemarkDialogOpen(true)
-  }, [READ_ONLY])
+  const handleRemarkCellClick = useCallback(
+    (row) => {
+      if (READ_ONLY) return
+      setCurrentRemark(row.remark || '')
+      setCurrentRowId(row.id)
+      setRemarkDialogOpen(true)
+    },
+    [READ_ONLY],
+  )
 
   const handleRelease = () => {
     setOpenReleaseDialogBox(true)
@@ -450,10 +449,13 @@ const QualityParameters = () => {
           Confirm Release
         </DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
-          <DialogContentText sx={{ fontSize: '0.9rem', color: '#4b5563', lineHeight: 1.5 }}>
+          <DialogContentText
+            sx={{ fontSize: '0.9rem', color: '#4b5563', lineHeight: 1.5 }}
+          >
             Please confirm that <b style={{ color: '#16a34a' }}>Production</b>,{' '}
             <b style={{ color: '#16a34a' }}>Norms</b>, and{' '}
-            <b style={{ color: '#16a34a' }}>Reports</b> are verified before releasing for review.
+            <b style={{ color: '#16a34a' }}>Reports</b> are verified before
+            releasing for review.
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 1.5, gap: 1 }}>
