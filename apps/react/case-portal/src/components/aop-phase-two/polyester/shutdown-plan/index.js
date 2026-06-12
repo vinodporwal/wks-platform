@@ -230,7 +230,6 @@ const ShutdownPlan = () => {
         PLANT_ID,
         AOP_YEAR,
       )
-
       // API returns a plain array (not {code, data})
       const arr = Array.isArray(data) ? data : data?.data || []
 
@@ -248,7 +247,7 @@ const ShutdownPlan = () => {
             item?.monthly ||
             item?.month ||
             (item?.maintStartDateTime
-              ? monthNames[new Date(item?.maintStartDateTime).getMonth()]
+              ? MONTH_OPTIONS[new Date(item?.maintStartDateTime).getMonth()]
               : ''),
         }
       })
@@ -544,7 +543,6 @@ const ShutdownPlan = () => {
         severity: 'success',
       })
       await fetchData()
-      setSelectedRows([])
     } catch (error) {
       console.error('Error deleting shutdown activity:', error)
       setSnackbarOpen(true)
