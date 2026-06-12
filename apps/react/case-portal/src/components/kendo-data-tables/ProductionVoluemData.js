@@ -126,6 +126,7 @@ const ProductionvolumeData = ({
   const IS_CRACKER_HMD = VERTICAL_NAME === 'cracker' && SITE_NAME === 'hmd'
   const IS_CRACKER_C2 = VERTICAL_NAME === 'cracker' && SITE_NAME === 'c2'
   const IS_CRACKER_DMD = VERTICAL_NAME === 'cracker' && SITE_NAME === 'dmd'
+  const IS_VCM_DMD_EDC = IS_VCM && SITE_NAME === 'dmd' && PLANT_NAME === 'edc'
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [rows, setRows] = useState()
   const [rowsPercentageSummary, setRowsPercentageSummary] = useState()
@@ -654,7 +655,7 @@ const ProductionvolumeData = ({
                 ? item.february * 24
                 : item.february || null,
               march: item.march ? item.march * 24 : item.march || null,
-              isEditable: item.isEditable ?? true,
+              isEditable: IS_VCM_DMD_EDC ? false : item.isEditable ?? true,
             }),
           }
         },
@@ -1220,11 +1221,11 @@ const ProductionvolumeData = ({
 
       downloadExcelBtnFromUI:
         IS_PE_PP ||
-          IS_PET ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_AROMATICS_SEZ_PX4 ||
-          IS_PVC_HMD
+        IS_PET ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_PVC_HMD
           ? false
           : true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Max Achieved Capacity`,
@@ -1331,15 +1332,15 @@ const ProductionvolumeData = ({
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
       downloadExcelBtnFromUI:
         IS_PE_PP ||
-          IS_PET ||
-          IS_PVC_VMD ||
-          IS_PVC ||
-          IS_PP_SEZ ||
-          IS_AROMATICS_SEZ_PX4 ||
-          IS_CRACKER_DMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD ||
-          IS_CRACKER_C2
+        IS_PET ||
+        IS_PVC_VMD ||
+        IS_PVC ||
+        IS_PP_SEZ ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_CRACKER_DMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD ||
+        IS_CRACKER_C2
           ? false
           : true,
       downloadExcelBtn: excelBtnGrid2,
@@ -1387,33 +1388,34 @@ const ProductionvolumeData = ({
       showUnit: permissions?.showUnit ?? false,
       saveWithRemark: permissions?.saveWithRemark ?? true,
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
-      saveBtn: permissions?.saveBtn ?? true,
+      saveBtn: IS_VCM_DMD_EDC ? false : permissions?.saveBtn ?? true,
       units: ['TPH', 'TPD'],
       showCalculate: permissions?.hideSummary ? false : VERTICAL_NAME === 'meg',
       showRedCellsForOroductionTarget: VERTICAL_NAME == 'pta' ? true : false,
       showCalculateVisibility:
         VERTICAL_NAME === 'meg' &&
-          Object.keys(calculationObject || {}).length > 0
+        Object.keys(calculationObject || {}).length > 0
           ? true
           : false,
       downloadExcelBtn:
         IS_PE_PP ||
-          IS_PET ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_AROMATICS_SEZ_PX4 ||
-          IS_PVC_HMD ||
-          IS_PVC_VMD
+        IS_PET ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_PVC_HMD ||
+        IS_PVC_VMD
           ? false
           : true,
       uploadExcelBtn:
         IS_PE_PP ||
-          IS_PET ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_AROMATICS_SEZ_PX4 ||
-          IS_PVC_HMD ||
-          IS_PVC_VMD
+        IS_PET ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_PVC_HMD ||
+        IS_PVC_VMD ||
+        IS_VCM_DMD_EDC
           ? false
           : true,
 
@@ -1807,12 +1809,7 @@ const ProductionvolumeData = ({
         )}
 
       {/* PERCENTAGE_DEVIATIONS for Cracker C2 */}
-      {IS_CRACKER_C2 && (
-        <PercentageDeviations
-          viewOnly={READ_ONLY}
-
-        />
-      )}
+      {IS_CRACKER_C2 && <PercentageDeviations viewOnly={READ_ONLY} />}
     </div>
   )
 }
