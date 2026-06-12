@@ -36,8 +36,10 @@ export const UtilityPlantApiServiceV2 = {
 }
 
 // ===================== || Fixed Consumption APIs || ===================== //
-async function getFixedConsumptionData(keycloak, PLANT_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/fixed-consumption/${PLANT_ID}/${AOP_YEAR}`
+async function getFixedConsumptionData(keycloak, plantIds, financialYear) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
+  const url = `${Config.CaseEngineUrl}/task/jmd/fixed-consumption?plantIds=${queryParams},23BCA1B3-56DD-4C15-A3D6-3C2C9A62E653&financialYear=${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -54,8 +56,15 @@ async function getFixedConsumptionData(keycloak, PLANT_ID, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
-async function saveFixedConsumptionData(keycloak, PLANT_ID, payload, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/update-fixed-consumption/${AOP_YEAR}`
+async function saveFixedConsumptionData(
+  keycloak,
+  plantIds,
+  payload,
+  financialYear,
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
+  const url = `${Config.CaseEngineUrl}/task/jmd/fixed-consumption?plantIds=${queryParams}&financialYear=${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -369,22 +378,37 @@ async function exportExcelData(keycloak, params) {
 // ===================== || SPECIFIC EXCEL IMPORT FUNCTIONS || ===================== //
 
 // Fixed Consumption Excel Import
-async function saveFixedConsumptionExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
+async function saveFixedConsumptionExcel(
+  file,
+  keycloak,
+  plantIds,
+  financialYear,
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
   return saveExcelData(
     file,
     keycloak,
-    `fixed-consumption/import/${PLANT_ID}/${AOP_YEAR}`,
-    PLANT_ID,
-    AOP_YEAR,
+    `jmd/fixed-consumption/import`,
+    null,
+    null,
+    { plantIds: queryParams, financialYear },
   )
 }
 
 // Fixed Consumption Excel Export
-async function exportFixedConsumptionExcel(keycloak, PLANT_ID, AOP_YEAR) {
+async function exportFixedConsumptionExcel(
+  keycloak,
+  plantIds,
+  financialYear,
+  EXCEL_NAME,
+) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.join(',')
   return exportExcelData(keycloak, {
-    endpoint: `fixed-consumption/export/${PLANT_ID}/${AOP_YEAR}`,
-    queryParams: {},
-    fileName: `FixedConsumption_${AOP_YEAR}.xlsx`,
+    endpoint: `jmd/fixed-consumption/export`,
+    queryParams: { plantIds: queryParams, financialYear },
+    fileName: EXCEL_NAME || `FixedConsumption_${financialYear}.xlsx`,
     method: 'GET',
   })
 }

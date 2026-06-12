@@ -234,21 +234,34 @@ const ShutdownPlan = () => {
       // API returns a plain array (not {code, data})
       const arr = Array.isArray(data) ? data : data?.data || []
 
+      // Full month names in calendar order (Jan=0 … Dec=11)
+      const CALENDAR_MONTH_NAMES = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December',
+      ]
+
       const formatted = arr.map((item, index) => {
+        const startDate = item?.maintStartDateTime
+          ? new Date(item.maintStartDateTime)
+          : null
+        const endDate = item?.maintEndDateTime
+          ? new Date(item.maintEndDateTime)
+          : null
+
         return {
           ...item,
           idFromApi: item?.id,
           id: index,
           originalRemark: item.remark,
           inEdit: false,
-          maintStartDateTime: new Date(item?.maintStartDateTime),
-          maintEndDateTime: new Date(item?.maintEndDateTime),
+          maintStartDateTime: startDate,
+          maintEndDateTime: endDate,
           discription: item.discription,
           monthly:
             item?.monthly ||
             item?.month ||
-            (item?.maintStartDateTime
-              ? monthNames[new Date(item?.maintStartDateTime).getMonth()]
+            (startDate && !isNaN(startDate.getTime())
+              ? CALENDAR_MONTH_NAMES[startDate.getMonth()]
               : ''),
         }
       })
