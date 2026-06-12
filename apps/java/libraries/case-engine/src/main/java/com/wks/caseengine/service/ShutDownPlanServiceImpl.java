@@ -3068,6 +3068,8 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 		
 		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD");
+		boolean filament = verticalName.equalsIgnoreCase("Filament");
+		boolean staple = verticalName.equalsIgnoreCase("Staple");
 		boolean monthDropdown= (verticalName.equalsIgnoreCase("PP") && (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("SEZ") || site.getName().equalsIgnoreCase("DTA")));
 		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
 		List<String> items = List.of(
@@ -3093,7 +3095,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 			plantMaintenanceId = findIdByPlantIdAndMaintenanceTypeName(plantId, "Shutdown");
 		}
   // remark validation
-		if(site.getName().equalsIgnoreCase("JMD") && verticalName.equalsIgnoreCase("Elastomer")) {
+		if(site.getName().equalsIgnoreCase("JMD") && verticalName.equalsIgnoreCase("Elastomer") || filament || staple) {
          
 			for (ShutDownPlanDTO dto : shutDownPlanDTOList) { 
 				if(dto.getId() == null || dto.getId().isEmpty()) continue;
@@ -3131,7 +3133,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 						// || !Objects.equals(durationInHrs, dto.getDurationInHrs())
 						|| !Objects.equals( Math.round(durationInHrs * 100.0) / 100.0,
 						Math.round(dto.getDurationInHrs() * 100.0) / 100.0)
-						|| ( !elastomer && !monthName.equalsIgnoreCase(dto.getMonth()))
+						|| ( (!elastomer && !filament && !staple) && !monthName.equalsIgnoreCase(dto.getMonth()))
 					)) {
     
 					dto.setSaveStatus("Failed");
@@ -3143,7 +3145,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 			}
 		}
 		// Validate: sum of durationInHrs per month must not exceed total hours in that month
-		if(site.getName().equalsIgnoreCase("JMD") && verticalName.equalsIgnoreCase("Elastomer")) {
+		if(site.getName().equalsIgnoreCase("JMD") && verticalName.equalsIgnoreCase("Elastomer") || filament || staple) {
 
 		
 
@@ -3244,7 +3246,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 				PlantMaintenanceTransaction plantMaintenanceTransaction = new PlantMaintenanceTransaction();
 				plantMaintenanceTransaction.setId(UUID.randomUUID());
 				plantMaintenanceTransaction.setPlantId(plantId);
-				if(verticalName.equalsIgnoreCase("PTA") || elastomer || monthDropdown) {
+				if(verticalName.equalsIgnoreCase("PTA") || elastomer || monthDropdown || filament || staple) {
 		            	if(shutDownPlanDTO.getMonth()!=null) {
 		            		shutDownPlanDTO.setMaintStartDateTime(getStartOfMonthDate(shutDownPlanDTO.getMonth(), year));
 		            		shutDownPlanDTO.setMaintEndDateTime(getEndOfMonthDate(shutDownPlanDTO.getMonth(), year));
@@ -3336,7 +3338,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 						if (plantMaintenance.isPresent()) {
 							PlantMaintenanceTransaction plantMaintenanceTransaction = plantMaintenance.get();
 							plantMaintenanceTransaction.setPlantId(plantId);
-							if(verticalName.equalsIgnoreCase("PTA") || elastomer || monthDropdown) {
+							if(verticalName.equalsIgnoreCase("PTA") || elastomer || monthDropdown || filament || staple) {
 				            	if(shutDownPlanDTO.getMonth()!=null) {
 				            		shutDownPlanDTO.setMaintStartDateTime(getStartOfMonthDate(shutDownPlanDTO.getMonth(), year));
 				            		shutDownPlanDTO.setMaintEndDateTime(getEndOfMonthDate(shutDownPlanDTO.getMonth(), year));
@@ -3371,7 +3373,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 							}
 							if (("ELASTOMER".equalsIgnoreCase(verticalName))
 									|| ("AROMATICS".equalsIgnoreCase(verticalName))
-									|| ("PTA".equalsIgnoreCase(verticalName))) {
+									|| ("PTA".equalsIgnoreCase(verticalName) || filament || staple)) {
 								if (plantMaintenanceTransaction
 										.getMaintForMonth() != (shutDownPlanDTO.getMaintStartDateTime().getMonth()
 												+ 1)) {
@@ -3407,7 +3409,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 							Date dtoEndDate = shutDownPlanDTO.getMaintEndDateTime();
 							if (!(entityEndDate != null && dtoEndDate != null
 									&& entityEndDate.compareTo(dtoEndDate) == 0)) {
-								if(!elastomer) {
+								if(!elastomer || !filament || !staple) {
 									changed = true;
 								}
 							}
@@ -3416,7 +3418,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 							Date dtoStartDate = shutDownPlanDTO.getMaintStartDateTime();
 							if (!(entityStartDate != null && dtoStartDate != null
 									&& entityStartDate.compareTo(dtoStartDate) == 0)) {
-								if(!elastomer) {
+								if(!elastomer || !filament || !staple) {
 									changed = true;
 								}
 							}
