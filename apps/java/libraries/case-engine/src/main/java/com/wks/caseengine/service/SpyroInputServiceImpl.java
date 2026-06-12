@@ -139,6 +139,8 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 					map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 					map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 					map.put("isEditable", row[22]);
+					
+					map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
 					spyroInputDataList.add(map);
 				} else {
 					
@@ -163,6 +165,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 							map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 							map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 							map.put("isEditable", row[22]);
+							map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
 							spyroInputDataList.add(map); // Add the map to the list here
 						}
 					}
@@ -273,6 +276,10 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 
 			for (SpyroInputDTO spyroInputDTO : spyroInputDTOList) {
 				if ("Failed".equalsIgnoreCase(spyroInputDTO.getSaveStatus())) {
+					continue;
+				}
+
+				if(spyroInputDTO.getNormParameterFKID() == null || spyroInputDTO.getNormParameterFKID().isBlank()) { 
 					continue;
 				}
 				String rawId = spyroInputDTO.getNormParameterFKID();
@@ -458,7 +465,13 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 				Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
 				Map<String, List<Map<String, Object>>> spyroInputDataListMap = new HashMap<>();
 				if (!isAfterSave) {
-					AOPMessageVM vm = getSpyroInputData(year, plantId, "Composition", "Composition");
+					AOPMessageVM vm = null;
+					if(site.getName().equalsIgnoreCase("HMD") || crackerC2)  {
+						vm = getSpyroInputData(year, plantId, "Composition", "Composition");  
+					} else {
+						vm = getSpyroInputData(year, plantId, mode, "Composition");
+					}
+
 					List<Map<String, Object>> spyroInputDataList = (List<Map<String, Object>>) vm.getData();
 					spyroInputDataListMap = Utility.groupByNormParameterTypeName(spyroInputDataList);
 				}
@@ -642,7 +655,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 
 				// if tableId is Optimizer Input, then skip the row
 
-Cell tableId = row.getCell(16);
+Cell tableId = row.getCell(17);
 String tableIdValue = null;
 if (tableId != null) {
 	try {
@@ -660,7 +673,7 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 
 
 
-				Cell tableIdCell = row.getCell(16, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+				Cell tableIdCell = row.getCell(17, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
 				if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
 					continue;
 				}
@@ -684,9 +697,10 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 					dto.setJan(getNumericCellValue(row.getCell(11), dto));
 					dto.setFeb(getNumericCellValue(row.getCell(12), dto));
 					dto.setMar(getNumericCellValue(row.getCell(13), dto));
-					dto.setRemarks(getStringCellValue(row.getCell(14), dto));
-					dto.setNormParameterFKID(getStringCellValue(row.getCell(15), dto));
-					dto.setTableId(getStringCellValue(row.getCell(16), dto));
+					// col 14 = weightAverage — display/export only, not imported
+					dto.setRemarks(getStringCellValue(row.getCell(15), dto));
+					dto.setNormParameterFKID(getStringCellValue(row.getCell(16), dto));
+					dto.setTableId(getStringCellValue(row.getCell(17), dto));
 
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -1359,8 +1373,15 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 		try {
 			// Columns: Id(0), VerticalId(1), SiteId(2), PlantId(3), DisplayOrder(4), Name(5), DisplayName(6)
 			// We add a dummy column at index 5 to shift Name to index 6 and DisplayName to index 7
+			Plants plant = plantsRepository.findById(plantId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+            Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+            String viewName = "vw" + vertical.getName() + "FuelDropdown";
 			String sql = "SELECT " + "Id, VerticalId, SiteId, PlantId, DisplayOrder, NULL as DummyType, Name, DisplayName "
-					 + "FROM vwCrackerFuelDropdown "
+					 + "FROM " + viewName
 					+ " ORDER BY DisplayOrder";
 
 			Query query = entityManager.createNativeQuery(sql);
@@ -1371,6 +1392,45 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
+	}
+
+	@Override
+	public AOPMessageVM getFurnaceDropdown(String plantId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<Map<String, Object>> furnaces = new ArrayList<>();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+		try {
+			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+			String viewName = "vw" + verticalName + site.getName() + "FurnaceDropdown";
+
+			String sql = "SELECT Id, VerticalId, SiteId, PlantId, DisplayOrder, Name, DisplayName "
+					+ "FROM " + viewName
+					+ " WHERE PlantId = :plantId"
+					+ " ORDER BY DisplayOrder";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", UUID.fromString(plantId));
+
+			List<Object[]> results = query.getResultList();
+			for (Object[] row : results) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("name", (row[5] != null ? row[5].toString() : ""));
+				map.put("displayName", (row[6] != null ? row[6].toString() : ""));
+				furnaces.add(map);
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(furnaces);
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch furnace dropdown data", ex);
+		}
+		return aopMessageVM;
 	}
 
 	@Override

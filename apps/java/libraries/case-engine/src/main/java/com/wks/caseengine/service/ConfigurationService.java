@@ -7,6 +7,8 @@ import java.util.UUID;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.dto.CatalystChangeOverDTO;
+import com.wks.caseengine.dto.TankConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
@@ -67,5 +69,19 @@ public interface ConfigurationService {
         public List<Map<String, Object>> getSeasonMonths(UUID plantId, String aopYear);
 
         public AOPMessageVM LoadConfigurationValues(String year, String plantId);
+
+        public AOPMessageVM getCatalystChangeOver(String year, String plantFKId);
+
+        public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystChangeOverDTOList, String year);
+
+        public AOPMessageVM deleteCatalystChangeOver(String Id);
+
+        public byte[] createCatalystChangeOverExcel(String year, String plantFKId, boolean isAfterSave, List<CatalystChangeOverDTO> dtoList);
+
+        public AOPMessageVM importCatalystChangeOverExcel(String year, String plantId, MultipartFile file);
+
+        public AOPMessageVM getTankConfiguration(String year, String plantId);
+
+        public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigurationDTOList, String plantId, String aopYear);
 
 }

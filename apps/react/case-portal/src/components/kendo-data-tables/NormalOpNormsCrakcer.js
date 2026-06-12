@@ -59,11 +59,24 @@ const mapApiRowToGrid = (list = [], prefix = '') =>
     Particulars: item.normType || item.normParameterTypeDisplayName,
   }))
 
-const mapGridRowToPayload = (rows = [], savingMonthlyBestAchieved = false) =>
+const mapGridRowToPayload = (
+  rows = [],
+  savingMonthlyBestAchieved = false,
+  isCrackerC2 = false,
+) =>
   (rows || []).map((row) => {
     const payload = {}
+    let shouldSaveAllMonthsWithApril = savingMonthlyBestAchieved
+    if (isCrackerC2) {
+      const idStr = String(row.id || '')
+      if (idStr.startsWith('main-') || idStr.startsWith('best-')) {
+        shouldSaveAllMonthsWithApril = true
+      } else if (idStr.startsWith('expression-')) {
+        shouldSaveAllMonthsWithApril = false
+      }
+    }
     MONTHS.forEach((m) => {
-      if (savingMonthlyBestAchieved) {
+      if (shouldSaveAllMonthsWithApril) {
         payload[m] = row.april || 0
       } else {
         payload[m] = row[m] || 0
@@ -506,9 +519,7 @@ const NormalOpNormsScreenCracker = () => {
       showAction: false,
       allAction: true,
       showTitleNameBusiness: true,
-      titleName: IS_CRACKER_C2
-        ? 'Best Achieved (Min CC)'
-        : 'Best Achieved (Individual)',
+      titleName: 'Best Achieved (Individual)',
       showCheckbox: true,
       downloadExcelBtnFromUI: true,
       ExcelName: `${lowerVertName}_Best Achieved (Norms)`,
@@ -961,7 +972,11 @@ const NormalOpNormsScreenCracker = () => {
       // }
       setLoading(true)
       try {
-        const payload = mapGridRowToPayload(rowsToSave, savingAllMonthValues)
+        const payload = mapGridRowToPayload(
+          rowsToSave,
+          savingAllMonthValues,
+          IS_CRACKER_C2,
+        )
         const response = isFinal
           ? await NormalOperationNormsApiService.updateFinalNormsData(
               keycloak,
@@ -1026,7 +1041,7 @@ const NormalOpNormsScreenCracker = () => {
         return
       }
 
-      // Enforce single checked per materialName across the 2 grids
+      // Enforce single checked per materialName across the grids
       const materialGroups = {} // key = materialName, value = array of rows
       allModified.forEach((row) => {
         if (!materialGroups[row.materialName])
@@ -1051,11 +1066,12 @@ const NormalOpNormsScreenCracker = () => {
       modifiedCells,
       saveRows,
       saveChangesCrackerFinalNorms,
+      IS_CRACKER_C2,
     ],
   )
 
   const handleCalculate = useCallback(async () => {
-    setLoading(true)
+    setLoading1(true)
     try {
       const res =
         await NormalOperationNormsApiService.handleCalculateNormalOperationNorms(
@@ -1439,7 +1455,118 @@ const NormalOpNormsScreenCracker = () => {
           </Box>
 
           {/* MODE TAB: render TOP grid first depending on Monthly vs non-Monthly */}
-          {gradeDisplayName === 'Monthly' ? (
+          {IS_CRACKER_C2 ? (
+            <>
+              {/* 1) Best Achieved (Min CC) */}
+              <KendoDataTables
+                modifiedCells={modifiedCells}
+                setModifiedCells={setModifiedCells}
+                columns={colDefsIndividual.filter(
+                  (col) => col.field !== 'isChecked',
+                )}
+                setRows={setRows}
+                rows={rows}
+                grades={grades}
+                paginationOptions={[100, 200, 300]}
+                saveChanges={() => saveChangesUnified(true)}
+                isCellEditable={isCellEditable}
+                snackbarData={snackbarData}
+                handleCalculate={handleCalculateUnified}
+                snackbarOpen={snackbarOpen}
+                apiRef={apiRef}
+                setSnackbarOpen={setSnackbarOpen}
+                setSnackbarData={setSnackbarData}
+                remarkDialogOpen={remarkDialogOpen3}
+                setRemarkDialogOpen={setRemarkDialogOpen3}
+                currentRemark={currentRemark3}
+                setCurrentRemark={setCurrentRemark3}
+                currentRowId={currentRowId3}
+                handleRemarkCellClick={handleRemarkCellClick3}
+                permissions={mainPermissions}
+                allRedCell={allRedCell}
+                groupBy='Particulars'
+                downloadExcelForConfiguration={downloadExcelForConfiguration}
+                handleGradeChange={handleGradeChange}
+                onGlobalCheckboxChange={handleGlobalCheckboxChange}
+                plantID={PLANT_ID}
+                gridName='main'
+                allRedCell2={allRedCell2}
+                showThreeColors={true}
+              />
+
+              {/* 2) Best Achieved (Individual) */}
+              <KendoDataTables
+                modifiedCells={modifiedCells}
+                setModifiedCells={setModifiedCells}
+                title='Normal Operations Norms'
+                columns={colDefsIndividual}
+                setRows={setRowsBestAchivedIndividual}
+                rows={rowsBestAchivedIndividual}
+                grades={grades}
+                paginationOptions={[100, 200, 300]}
+                saveChanges={() => saveChangesUnified(true)}
+                isCellEditable={isCellEditable}
+                snackbarData={snackbarData}
+                handleCalculate={handleCalculateUnified}
+                snackbarOpen={snackbarOpen}
+                apiRef={apiRef}
+                setSnackbarOpen={setSnackbarOpen}
+                setSnackbarData={setSnackbarData}
+                remarkDialogOpen={remarkDialogOpen1}
+                setRemarkDialogOpen={setRemarkDialogOpen1}
+                currentRemark={currentRemark1}
+                setCurrentRemark={setCurrentRemark1}
+                currentRowId={currentRowId1}
+                handleRemarkCellClick={handleRemarkCellClick1}
+                permissions={monthlyPermissions}
+                groupBy='Particulars'
+                downloadExcelForConfiguration={downloadExcelForConfiguration}
+                handleGradeChange={handleGradeChange}
+                onGlobalCheckboxChange={handleGlobalCheckboxChange}
+                plantID={PLANT_ID}
+                gridName='best'
+                showCatChemUtilityCheckbox2={true}
+                showThreeColors={true}
+                allRedCell2={allRedCell2}
+              />
+
+              {/* 3) Expression (Norms) */}
+              <KendoDataTables
+                modifiedCells={modifiedCells}
+                setModifiedCells={setModifiedCells}
+                title='Normal Operations Norms'
+                columns={colDefsExpressionCatChem}
+                setRows={setRowsExpression}
+                rows={rowsExpression}
+                grades={grades}
+                paginationOptions={[100, 200, 300]}
+                saveChanges={saveChangesUnified}
+                isCellEditable={isCellEditable}
+                snackbarData={snackbarData}
+                handleCalculate={handleCalculateUnified}
+                snackbarOpen={snackbarOpen}
+                apiRef={apiRef}
+                setSnackbarOpen={setSnackbarOpen}
+                setSnackbarData={setSnackbarData}
+                remarkDialogOpen={remarkDialogOpen4}
+                setRemarkDialogOpen={setRemarkDialogOpen4}
+                currentRemark={currentRemark4}
+                setCurrentRemark={setCurrentRemark4}
+                currentRowId={currentRowId4}
+                handleRemarkCellClick={handleRemarkCellClick4}
+                permissions={expressionPermissions}
+                groupBy='Particulars'
+                downloadExcelForConfiguration={downloadExcelForConfiguration}
+                handleGradeChange={handleGradeChange}
+                plantID={PLANT_ID}
+                onGlobalCheckboxChange={handleGlobalCheckboxChange}
+                gridName='expression'
+                showCatChemUtilityCheckbox={true}
+                allRedCell2={allRedCell2}
+                showThreeColors={true}
+              />
+            </>
+          ) : gradeDisplayName === 'Monthly' ? (
             <>
               {/* Monthly is top when Monthly selected -> monthly gets save/calc */}
               <KendoDataTables
@@ -1523,7 +1650,7 @@ const NormalOpNormsScreenCracker = () => {
               <KendoDataTables
                 modifiedCells={modifiedCells}
                 setModifiedCells={setModifiedCells}
-                columns={IS_CRACKER_C2 ? colDefsIndividual : colDefs}
+                columns={colDefs}
                 setRows={setRows}
                 rows={rows}
                 grades={grades}

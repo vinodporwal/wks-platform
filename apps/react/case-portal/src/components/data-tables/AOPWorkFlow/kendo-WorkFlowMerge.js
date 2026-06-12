@@ -112,7 +112,9 @@ const WorkFlowMerge = () => {
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
 
-  const IS_CRACKER_HMD = VERTICAL_NAME?.toLowerCase() === 'cracker' && SITE_NAME?.toLowerCase() === 'hmd'
+  const IS_CRACKER_HMD =
+    VERTICAL_NAME?.toLowerCase() === 'cracker' &&
+    SITE_NAME?.toLowerCase() === 'hmd'
 
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
@@ -344,7 +346,7 @@ const WorkFlowMerge = () => {
         payload,
         PLANT_ID,
         AOP_YEAR,
-        EXCEL_NAME
+        EXCEL_NAME,
       )
 
       setSnackbarOpen(true)
@@ -1003,14 +1005,26 @@ const WorkFlowMerge = () => {
                 )}
               </>
             )}
-            {activeTabs[tabIndex] === 'Optimizer Input / Output' && <OptimizerReport />}
-            {activeTabs[tabIndex] === 'Month Wise Production Plan (T-16)' && <BestAchievedReport />}
-            {activeTabs[tabIndex] === 'Month Wise Norms' && <MonthWiseRawData />}
+            {activeTabs[tabIndex] === 'Optimizer Input / Output' && (
+              <OptimizerReport />
+            )}
+            {activeTabs[tabIndex] === 'Month Wise Production Plan (T-16)' && (
+              <BestAchievedReport />
+            )}
+            {activeTabs[tabIndex] === 'Month Wise Norms' && (
+              <MonthWiseRawData />
+            )}
             {activeTabs[tabIndex] === 'Furnace Data' && <FurnaceRawData />}
-            {activeTabs[tabIndex] === 'Turnaround (T-19A)' && <TurnaroundReportCracker />}
+            {activeTabs[tabIndex] === 'Turnaround (T-19A)' && (
+              <TurnaroundReportCracker />
+            )}
 
-            {activeTabs[tabIndex] === 'Plant Contribution (T-21)' && <PlantContribution />}
-            {activeTabs[tabIndex] === 'Plant Contribution Summary (T-22)' && <PlantContributionLastFourYears />}
+            {activeTabs[tabIndex] === 'Plant Contribution (T-21)' && (
+              <PlantContribution />
+            )}
+            {activeTabs[tabIndex] === 'Plant Contribution Summary (T-22)' && (
+              <PlantContributionLastFourYears />
+            )}
           </>
         ) : gridVerticals.includes(lowerVertName) ? (
           <>

@@ -18,24 +18,35 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.cpp.dto.norm.CPPUtilityRateResponseDTO;
+import com.wks.caseengine.cpp.entity.CPPUtilityRateSnapshot;
+import com.wks.caseengine.cpp.repository.CPPUtilityRateSnapshotRepository;
 import com.wks.caseengine.cpp.service.CPPUtilityRateService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.ParameterMode;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.StoredProcedureQuery;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Reads utility rates directly from the CPPUtilityRateSnapshot table.
+ *
+ * The table is populated by the Python CPP script after each monthly price
+ * calculation (save_utility_rate_snapshot in utility_price_service.py).
+ * This approach avoids the complex SQL stored procedure (CPP_NMD_utilityRates)
+ * that previously struggled to aggregate Amount-type NormsHeader rows correctly.
+ */
 @Service
 @Slf4j
 public class CPPUtilityRateServiceImpl implements CPPUtilityRateService {
 
-    @PersistenceContext
-    private EntityManager entityManager;
+    @Autowired
+    private CPPUtilityRateSnapshotRepository snapshotRepository;
+
+    // ─────────────────────────────────────────────────────────
+    // GET
+    // ─────────────────────────────────────────────────────────
 
     @Override
     public AOPMessageVM getCPPUtilityRates(UUID cppPlantId, String financialYear) {
@@ -44,41 +55,32 @@ public class CPPUtilityRateServiceImpl implements CPPUtilityRateService {
 
         AOPMessageVM vm = new AOPMessageVM();
 
+        if (cppPlantId == null) {
+            vm.setCode(400);
+            vm.setMessage("CPPPlantId cannot be null");
+            vm.setData(new ArrayList<>());
+            return vm;
+        }
+        if (financialYear == null || financialYear.isEmpty()) {
+            vm.setCode(400);
+            vm.setMessage("FinancialYear cannot be null or empty");
+            vm.setData(new ArrayList<>());
+            return vm;
+        }
+
         try {
-            if (cppPlantId == null) {
-                vm.setCode(400);
-                vm.setMessage("CPPPlantId cannot be null");
-                vm.setData(new ArrayList<>());
-                return vm;
-            }
+            // Normalise financial-year to the format Python writes: '2025-26'
+            String normalisedFy = normaliseFinancialYear(financialYear);
+            log.info("Normalised FinancialYear: '{}'", normalisedFy);
 
-            if (financialYear == null || financialYear.isEmpty()) {
-                vm.setCode(400);
-                vm.setMessage("FinancialYear cannot be null or empty");
-                vm.setData(new ArrayList<>());
-                return vm;
-            }
+            List<CPPUtilityRateSnapshot> snapshots =
+                snapshotRepository.findByCppPlantIdAndFinancialYear(cppPlantId, normalisedFy);
 
-            StoredProcedureQuery sp = entityManager
-                    .createStoredProcedureQuery("dbo.CPP_NMD_utilityRates")
-                    .registerStoredProcedureParameter(1, String.class, ParameterMode.IN)
-                    .registerStoredProcedureParameter(2, String.class, ParameterMode.IN);
-
-            sp.setParameter(1, cppPlantId.toString());
-            sp.setParameter(2, financialYear);
-
-            log.info("Executing stored procedure dbo.CPP_NMD_utilityRates ...");
-            sp.execute();
-
-            @SuppressWarnings("unchecked")
-            List<Object[]> rows = sp.getResultList();
-            log.info("Retrieved {} rows from stored procedure", rows.size());
+            log.info("Retrieved {} rows from CPPUtilityRateSnapshot", snapshots.size());
 
             List<CPPUtilityRateResponseDTO> dtoList = new ArrayList<>();
-            for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
-                Object[] row = rows.get(rowIndex);
-                CPPUtilityRateResponseDTO dto = mapRowToDto(row, rowIndex);
-                dtoList.add(dto);
+            for (int i = 0; i < snapshots.size(); i++) {
+                dtoList.add(mapToDto(snapshots.get(i), i + 1));
             }
 
             vm.setCode(200);
@@ -94,6 +96,10 @@ public class CPPUtilityRateServiceImpl implements CPPUtilityRateService {
             return vm;
         }
     }
+
+    // ─────────────────────────────────────────────────────────
+    // EXPORT (unchanged logic — delegates to getCPPUtilityRates)
+    // ─────────────────────────────────────────────────────────
 
     @Override
     public byte[] exportCPPUtilityRates(UUID cppPlantId, String financialYear) throws IOException {
@@ -112,12 +118,12 @@ public class CPPUtilityRateServiceImpl implements CPPUtilityRateService {
             Workbook workbook = new XSSFWorkbook();
             Sheet sheet = workbook.createSheet("CPP Utility Rates");
 
-            CellStyle headerStyle = createHeaderStyle(workbook);
-            CellStyle dataStyle = createDataStyle(workbook);
+            CellStyle headerStyle  = createHeaderStyle(workbook);
+            CellStyle dataStyle    = createDataStyle(workbook);
             CellStyle numericStyle = createNumericStyle(workbook);
 
             int rowNum = 0;
-            int col = 0;
+            int col    = 0;
 
             Row headerRow = sheet.createRow(rowNum++);
 
@@ -134,22 +140,19 @@ public class CPPUtilityRateServiceImpl implements CPPUtilityRateService {
             headerRow.createCell(col).setCellValue("UOM");
             headerRow.getCell(col++).setCellStyle(headerStyle);
 
-            String startYearSuffix = financialYear.substring(2, 4);
-            String endYearSuffix = financialYear.substring(5, 7);
+            // Normalise to "YYYY-YY" format (e.g. "2025-26") before extracting suffixes
+            // so any incoming format from the UI is handled safely.
+            String normFy          = normaliseFinancialYear(financialYear);  // always "YYYY-YY"
+            String startYearSuffix = normFy.length() >= 4 ? normFy.substring(2, 4) : "YY";
+            String endYearSuffix   = normFy.length() >= 7 ? normFy.substring(5, 7) : "YY";
+
             String[] months = {
-                "Apr-" + startYearSuffix,
-                "May-" + startYearSuffix,
-                "Jun-" + startYearSuffix,
-                "Jul-" + startYearSuffix,
-                "Aug-" + startYearSuffix,
-                "Sep-" + startYearSuffix,
-                "Oct-" + startYearSuffix,
-                "Nov-" + startYearSuffix,
-                "Dec-" + startYearSuffix,
-                "Jan-" + endYearSuffix,
-                "Feb-" + endYearSuffix,
-                "Mar-" + endYearSuffix
+                "Apr-" + startYearSuffix, "May-" + startYearSuffix, "Jun-" + startYearSuffix,
+                "Jul-" + startYearSuffix, "Aug-" + startYearSuffix, "Sep-" + startYearSuffix,
+                "Oct-" + startYearSuffix, "Nov-" + startYearSuffix, "Dec-" + startYearSuffix,
+                "Jan-" + endYearSuffix,   "Feb-" + endYearSuffix,   "Mar-" + endYearSuffix
             };
+
 
             headerRow.createCell(col).setCellValue("Weighted Avg Price");
             headerRow.getCell(col++).setCellStyle(headerStyle);
@@ -167,24 +170,24 @@ public class CPPUtilityRateServiceImpl implements CPPUtilityRateService {
                 col = 0;
 
                 setStringCellValue(row.createCell(col++), dto.getSiteDescription(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getUtilityPlant(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getUtilityPlantId(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getUtilityName(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getUtilityId(), dataStyle);
-                setStringCellValue(row.createCell(col++), dto.getUom(), dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getUtilityPlant(),    dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getUtilityPlantId(),  dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getUtilityName(),     dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getUtilityId(),       dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getUom(),             dataStyle);
 
                 setBigDecimalCellValue(row.createCell(col++), dto.getWeightedAvgPrice(), numericStyle);
 
-                setBigDecimalCellValue(row.createCell(monthStartCol + 0), dto.getApr(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 1), dto.getMay(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 2), dto.getJun(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 3), dto.getJul(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 4), dto.getAug(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 5), dto.getSep(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 6), dto.getOct(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 7), dto.getNov(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 8), dto.getDec(), numericStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 9), dto.getJan(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol),      dto.getApr(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 1),  dto.getMay(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 2),  dto.getJun(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 3),  dto.getJul(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 4),  dto.getAug(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 5),  dto.getSep(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 6),  dto.getOct(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 7),  dto.getNov(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 8),  dto.getDec(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 9),  dto.getJan(), numericStyle);
                 setBigDecimalCellValue(row.createCell(monthStartCol + 10), dto.getFeb(), numericStyle);
                 setBigDecimalCellValue(row.createCell(monthStartCol + 11), dto.getMar(), numericStyle);
             }
@@ -208,83 +211,76 @@ public class CPPUtilityRateServiceImpl implements CPPUtilityRateService {
         }
     }
 
-    private CPPUtilityRateResponseDTO mapRowToDto(Object[] row, int rowIndex) {
+    // ─────────────────────────────────────────────────────────
+    // HELPERS
+    // ─────────────────────────────────────────────────────────
+
+    /**
+     * Map a CPPUtilityRateSnapshot entity to the API response DTO.
+     * The sequential `id` is just the row number in the ordered result set.
+     */
+    private CPPUtilityRateResponseDTO mapToDto(CPPUtilityRateSnapshot s, int rowNumber) {
         CPPUtilityRateResponseDTO dto = new CPPUtilityRateResponseDTO();
-
-        try {
-            if (row == null) {
-                log.warn("Row {} is null, returning empty DTO", rowIndex);
-                return dto;
-            }
-
-            if (row.length < 20) {
-                log.warn("Row {} has less than 20 columns ({}), returning empty DTO", rowIndex, row.length);
-                return dto;
-            }
-
-            int i = 0;
-            dto.setId(getInteger(row[i++]));
-            dto.setSiteDescription(getString(row[i++]));
-            dto.setUtilityPlant(getString(row[i++]));
-            dto.setUtilityPlantId(getString(row[i++]));
-            dto.setUtilityName(getString(row[i++]));
-            dto.setUtilityId(getString(row[i++]));
-            dto.setUom(getString(row[i++]));
-
-            dto.setApr(getBigDecimal(row[i++]));
-            dto.setMay(getBigDecimal(row[i++]));
-            dto.setJun(getBigDecimal(row[i++]));
-            dto.setJul(getBigDecimal(row[i++]));
-            dto.setAug(getBigDecimal(row[i++]));
-            dto.setSep(getBigDecimal(row[i++]));
-            dto.setOct(getBigDecimal(row[i++]));
-            dto.setNov(getBigDecimal(row[i++]));
-            dto.setDec(getBigDecimal(row[i++]));
-            dto.setJan(getBigDecimal(row[i++]));
-            dto.setFeb(getBigDecimal(row[i++]));
-            dto.setMar(getBigDecimal(row[i++]));
-            dto.setWeightedAvgPrice(getBigDecimal(row[i++]));
-
-            return dto;
-
-        } catch (Exception e) {
-            log.error("Error mapping row {} to DTO, returning empty DTO. Error: {}", rowIndex, e.getMessage(), e);
-            return dto;
-        }
+        dto.setId(rowNumber);
+        dto.setSiteDescription(s.getSiteDescription());
+        dto.setUtilityPlant(s.getPlantName());
+        dto.setUtilityPlantId(s.getPlantCode());
+        dto.setUtilityName(s.getUtilityName());
+        dto.setUtilityId(s.getUtilityId());
+        dto.setUom(s.getUom());
+        dto.setApr(s.getAprPrice());
+        dto.setMay(s.getMayPrice());
+        dto.setJun(s.getJunPrice());
+        dto.setJul(s.getJulPrice());
+        dto.setAug(s.getAugPrice());
+        dto.setSep(s.getSepPrice());
+        dto.setOct(s.getOctPrice());
+        dto.setNov(s.getNovPrice());
+        dto.setDec(s.getDecPrice());
+        dto.setJan(s.getJanPrice());
+        dto.setFeb(s.getFebPrice());
+        dto.setMar(s.getMarPrice());
+        dto.setWeightedAvgPrice(s.getWeightedAvgPrice());
+        return dto;
     }
 
-    private Integer getInteger(Object value) {
-        if (value == null) {
-            return null;
+    /**
+     * Normalise various incoming financial-year formats to the format
+     * Python writes to CPPUtilityRateSnapshot: 'YYYY-YY' e.g. '2025-26'.
+     *
+     * Supported inputs:
+     *   '2025-26', '2025/26', '2025-2026', '2025', '25-26'
+     */
+    private String normaliseFinancialYear(String fy) {
+        if (fy == null) return "";
+        String s = fy.trim().replace("/", "-");
+
+        // Already in short form: '2025-26'
+        if (s.matches("\\d{4}-\\d{2}")) return s;
+
+        // Long form: '2025-2026'
+        if (s.matches("\\d{4}-\\d{4}")) {
+            return s.substring(0, 4) + "-" + s.substring(7, 9);
         }
-        if (value instanceof Number) {
-            return ((Number) value).intValue();
+
+        // Only start year: '2025'
+        if (s.matches("\\d{4}")) {
+            int startYear = Integer.parseInt(s);
+            return startYear + "-" + String.format("%02d", (startYear + 1) % 100);
         }
-        try {
-            return Integer.parseInt(value.toString());
-        } catch (Exception e) {
-            return null;
+
+        // Short form with 2-digit years: '25-26'
+        if (s.matches("\\d{2}-\\d{2}")) {
+            return "20" + s.substring(0, 2) + "-" + s.substring(3, 5);
         }
+
+        // Return as-is and hope for the best
+        return s;
     }
 
-    private String getString(Object value) {
-        return value == null ? null : value.toString();
-    }
-
-    private BigDecimal getBigDecimal(Object value) {
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof BigDecimal) {
-            return (BigDecimal) value;
-        }
-        try {
-            String str = value.toString();
-            return str.isEmpty() ? null : new BigDecimal(str);
-        } catch (Exception e) {
-            return null;
-        }
-    }
+    // ─────────────────────────────────────────────────────────
+    // EXCEL STYLE HELPERS
+    // ─────────────────────────────────────────────────────────
 
     private CellStyle createHeaderStyle(Workbook workbook) {
         CellStyle style = workbook.createCellStyle();
@@ -323,18 +319,13 @@ public class CPPUtilityRateServiceImpl implements CPPUtilityRateService {
     }
 
     private void setStringCellValue(Cell cell, String value, CellStyle style) {
-        if (value != null) {
-            cell.setCellValue(value);
-        }
+        if (value != null) cell.setCellValue(value);
         cell.setCellStyle(style);
     }
 
     private void setBigDecimalCellValue(Cell cell, BigDecimal value, CellStyle style) {
-        if (value != null) {
-            cell.setCellValue(value.doubleValue());
-        } else {
-            cell.setCellValue("");
-        }
+        if (value != null) cell.setCellValue(value.doubleValue());
+        else               cell.setCellValue("");
         cell.setCellStyle(style);
     }
 }

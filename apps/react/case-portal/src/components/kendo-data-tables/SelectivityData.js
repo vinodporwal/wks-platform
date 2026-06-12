@@ -1043,6 +1043,7 @@ const SelectivityData = (props) => {
           currentRemark={currentRemark}
           setCurrentRemark={setCurrentRemark}
           currentRowId={currentRowId}
+          configType={props?.configType}
           permissions={adjustedPermissions}
           groupBy={props?.groupBy}
           handleExcelUpload={handleExcelUpload}

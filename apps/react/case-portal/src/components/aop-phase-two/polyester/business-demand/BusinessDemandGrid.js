@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Box } from '@mui/material'
 import { useDispatch, useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -10,6 +10,14 @@ import { validateFields } from 'utils/validationUtils'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { BusinessDemandApiService } from '../../services/polyester/businessDemandApiService'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
+import {
+  convertRows,
+  convertRowToTPM,
+  UNIT_OPTIONS,
+  DEFAULT_UNIT,
+} from './utils'
+import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 
 const BusinessDemandGrid = () => {
   const dispatch = useDispatch()
@@ -37,7 +45,9 @@ const BusinessDemandGrid = () => {
 
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const valueFormat = ValueFormatterProduction()
+  const customFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Business Demand')
 
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -45,6 +55,8 @@ const BusinessDemandGrid = () => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+
+  const [selectedUnit, setSelectedUnit] = useState(DEFAULT_UNIT)
 
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -67,6 +79,8 @@ const BusinessDemandGrid = () => {
     { field: 'march', key: 3, title: 'March' },
   ]
 
+  const MONTH_FIELDS = monthsConfig.map((m) => m.field)
+
   const columns = [
     {
       field: 'Particulars',
@@ -86,9 +100,17 @@ const BusinessDemandGrid = () => {
       title: headerMap[m.key] || m.title,
       editable: true,
       type: 'numberNonGrey',
-      format: valueFormat,
+      format: customFormat,
       minWidth: 110,
     })),
+    {
+      field: 'total',
+      title: 'Total',
+      editable: false,
+      type: 'number1',
+      format: valueFormat,
+      minWidth: 110,
+    },
     {
       field: 'remark',
       title: 'Remark',
@@ -108,6 +130,7 @@ const BusinessDemandGrid = () => {
         AOP_YEAR,
       )
       if (response && Array.isArray(response)) {
+        const MONTH_FIELDS = monthsConfig.map((m) => m.field)
         const formattedData = response.map((item, index) => ({
           ...item,
           idFromApi: item.id,
@@ -115,8 +138,36 @@ const BusinessDemandGrid = () => {
           originalRemark: item.remark,
           inEdit: false,
           Particulars: item.normParameterTypeDisplayName,
+          total: MONTH_FIELDS.reduce(
+            (sum, f) => sum + (Number(item[f]) || 0),
+            0,
+          ),
         }))
-        setRows(formattedData)
+
+        // Vertical totals row (column-wise sum) — always built from raw TPM
+        const totals = {
+          id: '__totals__',
+          displayName: 'Total',
+          isFooter: true,
+          isEditable: false,
+        }
+        MONTH_FIELDS.forEach((f) => {
+          totals[f] = formattedData.reduce(
+            (sum, row) => sum + (Number(row[f]) || 0),
+            0,
+          )
+        })
+        totals.total = MONTH_FIELDS.reduce(
+          (sum, f) => sum + (totals[f] || 0),
+          0,
+        )
+
+        const allRows = [...formattedData, totals]
+
+        // Convert to the selected unit once — stored directly in rows state
+        // When selectedUnit changes this function re-runs via the useEffect below
+        setRows(convertRows(allRows, selectedUnit, AOP_YEAR))
+        setModifiedCells({})
       } else {
         setRows([])
       }
@@ -126,7 +177,7 @@ const BusinessDemandGrid = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID, AOP_YEAR])
+  }, [keycloak, PLANT_ID, AOP_YEAR, selectedUnit])
 
   useEffect(() => {
     fetchData()
@@ -144,70 +195,6 @@ const BusinessDemandGrid = () => {
         return
       }
 
-      // Production Sum validation
-      const productionRows = (rows || []).filter(
-        (row) => row.Particulars?.toLowerCase() === 'production',
-      )
-
-      if (productionRows.length > 0) {
-        const SCALE = 10000
-        const expected = 100 * SCALE
-        const TOLERANCE = 1
-
-        const toPreciseInt = (num) => {
-          if (num === null || num === undefined || num === '') return 0
-          const n = Number(num)
-          if (isNaN(n)) return 0
-          return Math.round(Number(n || 0) * SCALE)
-        }
-
-        const formatFromIntRobust = (intVal) => {
-          const sign = intVal < 0 ? '-' : ''
-          const abs = Math.abs(intVal)
-          const integerPart = Math.floor(abs / SCALE)
-          const remainder = abs % SCALE
-          if (remainder === 0) return sign + String(integerPart)
-          const scaleDigits = String(SCALE).length - 1
-          let fracStr = String(remainder).padStart(scaleDigits, '0')
-          fracStr = fracStr.replace(/0+$/, '')
-          return sign + `${integerPart}.${fracStr}`
-        }
-
-        const months = monthsConfig.map((m) => m.field)
-        const failures = []
-
-        for (const month of months) {
-          const sumInt = productionRows.reduce((acc, row) => {
-            const modifiedRow = modifiedCells[row.id]
-            const val =
-              modifiedRow && modifiedRow[month] !== undefined
-                ? modifiedRow[month]
-                : row[month]
-            return acc + toPreciseInt(val)
-          }, 0)
-
-          if (Math.abs(sumInt - expected) > TOLERANCE) {
-            failures.push({ month, sumInt })
-          }
-        }
-
-        if (failures.length > 0) {
-          const parts = failures.map((f) => {
-            const prettyMonth =
-              f.month.charAt(0).toUpperCase() + f.month.slice(1)
-            const prettySum = formatFromIntRobust(f.sumInt)
-            return `${prettyMonth} - ${prettySum}`
-          })
-
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: `The production Sum should be exactly 100 - Current values (${parts.join(', ')})`,
-            severity: 'error',
-          })
-          return
-        }
-      }
-
       const requiredFields = ['normParameterId', 'remark']
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
@@ -219,29 +206,33 @@ const BusinessDemandGrid = () => {
         return
       }
 
-      const payloadData = data.map((row) => ({
-        april: row.april ?? null,
-        may: row.may ?? null,
-        june: row.june ?? null,
-        july: row.july ?? null,
-        aug: row.aug ?? null,
-        sep: row.sep ?? null,
-        oct: row.oct ?? null,
-        nov: row.nov ?? null,
-        dec: row.dec ?? null,
-        jan: row.jan ?? null,
-        feb: row.feb ?? null,
-        march: row.march ?? null,
-        remark: row.remark || null,
-        avgTph: row.avgTph || null,
-        year: AOP_YEAR,
-        plantId: PLANT_ID,
-        siteFKId: siteObject?.id,
-        verticalFKId: VERTICAL_ID,
-        normParameterId: row.normParameterId,
-        id: row.idFromApi || null,
-        inEdit: row.inEdit || false,
-      }))
+      const payloadData = data.map((row) => {
+        // Convert displayed values back to TPM before saving
+        const tpmRow = convertRowToTPM(row, selectedUnit, AOP_YEAR)
+        return {
+          april: tpmRow.april ?? null,
+          may: tpmRow.may ?? null,
+          june: tpmRow.june ?? null,
+          july: tpmRow.july ?? null,
+          aug: tpmRow.aug ?? null,
+          sep: tpmRow.sep ?? null,
+          oct: tpmRow.oct ?? null,
+          nov: tpmRow.nov ?? null,
+          dec: tpmRow.dec ?? null,
+          jan: tpmRow.jan ?? null,
+          feb: tpmRow.feb ?? null,
+          march: tpmRow.march ?? null,
+          remark: row.remark || null,
+          avgTph: row.avgTph || null,
+          year: AOP_YEAR,
+          plantId: PLANT_ID,
+          siteFKId: siteObject?.id,
+          verticalFKId: VERTICAL_ID,
+          normParameterId: row.normParameterId,
+          id: row.idFromApi || null,
+          inEdit: row.inEdit || false,
+        }
+      })
 
       setLoading(true)
       const res = await BusinessDemandApiService.saveBusinessDemand(
@@ -258,6 +249,7 @@ const BusinessDemandGrid = () => {
       })
       setModifiedCells({})
       dispatch(setIsBlocked(false))
+      setSelectedUnit(DEFAULT_UNIT)
       fetchData()
     } catch (error) {
       console.error('Error saving business demand data:', error)
@@ -274,6 +266,7 @@ const BusinessDemandGrid = () => {
     dispatch,
     siteObject,
     VERTICAL_ID,
+    selectedUnit,
   ])
 
   const deleteRowData = useCallback(
@@ -312,12 +305,11 @@ const BusinessDemandGrid = () => {
       severity: 'success',
     })
     try {
-      const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME || 'PE'}_${SITE_NAME || 'NMD'}_${PLANT_NAME || ''}_Business_Demand`
       await BusinessDemandApiService.exportBusinessDemand(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
-        EXCEL_EXPORT_TITLE,
+        EXCEL_NAME,
         SCREEN_NAME,
       )
       setSnackbarOpen(true)
@@ -405,6 +397,53 @@ const BusinessDemandGrid = () => {
     [READ_ONLY],
   )
 
+  // Real-time recalculation of row total and footer totals when a month cell is edited
+  const customItemChange = useCallback(
+    (e, setRowsFn) => {
+      const { dataItem, field, value } = e
+      if (!MONTH_FIELDS.includes(field)) return
+
+      setRowsFn((prev) => {
+        // 1. Recalculate the edited row's horizontal total
+        const updated = prev.map((r) => {
+          if (r.id === dataItem.id) {
+            const newTotal = MONTH_FIELDS.reduce((sum, f) => {
+              const v = f === field ? value : r[f]
+              return sum + (Number(v) || 0)
+            }, 0)
+            return { ...r, [field]: value, total: newTotal }
+          }
+          return r
+        })
+
+        // 2. Recalculate the footer totals row
+        const dataRows = updated.filter((r) => r.id !== '__totals__')
+        const newTotals = { ...updated.find((r) => r.id === '__totals__') }
+        MONTH_FIELDS.forEach((f) => {
+          newTotals[f] = dataRows.reduce(
+            (sum, r) => sum + (Number(r[f]) || 0),
+            0,
+          )
+        })
+        newTotals.total = MONTH_FIELDS.reduce(
+          (sum, f) => sum + (newTotals[f] || 0),
+          0,
+        )
+
+        return updated.map((r) => (r.id === '__totals__' ? newTotals : r))
+      })
+    },
+    [MONTH_FIELDS],
+  )
+
+  const dropdownConfig = {
+    options: UNIT_OPTIONS,
+    label: 'Unit',
+    placeholder: 'Select Unit',
+    valueKey: 'id',
+    labelKey: 'name',
+  }
+
   const permissions = {
     showAction: false,
     addButton: false,
@@ -414,12 +453,12 @@ const BusinessDemandGrid = () => {
     saveBtn: true,
     showCalculate: false,
     allAction: true,
-    showDropdown: false,
-    showExport: true,
-    showImport: true,
+    showDropdown: true,
+    showExport: selectedUnit === 'TPM',
+    showImport: selectedUnit === 'TPM',
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: `${SCREEN_NAME}`,
+    titleName: 'Business Demand (Without SD)',
     isTotalFooterActive: true,
   }
 
@@ -446,7 +485,11 @@ const BusinessDemandGrid = () => {
         handleExport={handleExport}
         handleExcelUpload={handleExcelUpload}
         deleteRowData={deleteRowData}
-        groupBy='Particulars'
+        customItemChange={customItemChange}
+        dropdownConfig={dropdownConfig}
+        selectedDropdownValue={selectedUnit}
+        setSelectedDropdownValue={setSelectedUnit}
+        // groupBy='Particulars'
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         snackbarData={snackbarData}

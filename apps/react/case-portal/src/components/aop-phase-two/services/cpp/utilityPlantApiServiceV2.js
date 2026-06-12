@@ -322,7 +322,7 @@ async function exportExcelData(keycloak, params) {
   } = params
 
   const queryString = new URLSearchParams(queryParams).toString()
-  const url = `${Config.CaseEngineUrl}/task/${endpoint}`
+  const url = `${Config.CaseEngineUrl}/task/${endpoint}${queryString ? `?${queryString}` : ''}`
 
   const headers = {
     'Content-Type': 'application/json',
@@ -414,7 +414,7 @@ async function savePlantRequirementExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
 async function exportPlantRequirementExcel(keycloak, PLANT_ID, AOP_YEAR) {
   return exportExcelData(keycloak, {
     endpoint: `plant-requirement/export/${PLANT_ID}/${AOP_YEAR}`,
-    queryParams: { plantId: PLANT_ID, year: AOP_YEAR },
+    queryParams: {},
     fileName: `Plant_requirement_${AOP_YEAR}.xlsx`,
     method: 'GET',
   })

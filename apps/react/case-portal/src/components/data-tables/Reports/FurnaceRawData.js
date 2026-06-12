@@ -84,7 +84,11 @@ const FurnaceRawData = () => {
         ...(isNumberCol ? { format: VALUE_FORMATOR } : {}),
         editable: false,
         isRightAlligned: isNumberCol ? 'numeric' : undefined,
-        ...(fixedFields.includes(col.field) ? { widthT: 220 } : fixedWidth ? { widthT: fixedWidth } : { widthT: 100 }),
+        ...(fixedFields.includes(col.field)
+          ? { widthT: 220 }
+          : fixedWidth
+            ? { widthT: fixedWidth }
+            : { widthT: 100 }),
       }
     })
   }, [])

@@ -412,51 +412,51 @@ const AnnualAOPCostDynamic = () => {
 
     let cancelled = false
 
-      ; (async () => {
-        try {
-          if (excelExportRef.current && workbookRef.current) {
-            // Prefer toDataURL (returns a Promise<string>) so we know when the file was generated.
-            if (typeof excelExportRef.current.toDataURL === 'function') {
-              const dataUrl = await excelExportRef.current.toDataURL(
-                workbookRef.current,
-              )
-              if (cancelled) return
+    ;(async () => {
+      try {
+        if (excelExportRef.current && workbookRef.current) {
+          // Prefer toDataURL (returns a Promise<string>) so we know when the file was generated.
+          if (typeof excelExportRef.current.toDataURL === 'function') {
+            const dataUrl = await excelExportRef.current.toDataURL(
+              workbookRef.current,
+            )
+            if (cancelled) return
 
-              // Convert data URL to blob then trigger download programmatically.
-              const base64 = dataUrl.split(',')[1]
-              const byteString = atob(base64)
-              const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0]
-              const ab = new ArrayBuffer(byteString.length)
-              const ia = new Uint8Array(ab)
-              for (let i = 0; i < byteString.length; i++)
-                ia[i] = byteString.charCodeAt(i)
-              const blob = new Blob([ab], { type: mimeString })
-              const url = URL.createObjectURL(blob)
-              const a = document.createElement('a')
-              a.href = url
-              a.download = fileName
-              document.body.appendChild(a)
-              a.click()
-              a.remove()
-              URL.revokeObjectURL(url)
-            } else if (typeof excelExportRef.current.save === 'function') {
-              // Fallback to save() if toDataURL is not available in this kendo version
-              excelExportRef.current.save(workbookRef.current)
-            } else {
-              console.error(
-                'ExcelExport ref method missing: toDataURL or save not found',
-              )
-            }
+            // Convert data URL to blob then trigger download programmatically.
+            const base64 = dataUrl.split(',')[1]
+            const byteString = atob(base64)
+            const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0]
+            const ab = new ArrayBuffer(byteString.length)
+            const ia = new Uint8Array(ab)
+            for (let i = 0; i < byteString.length; i++)
+              ia[i] = byteString.charCodeAt(i)
+            const blob = new Blob([ab], { type: mimeString })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = fileName
+            document.body.appendChild(a)
+            a.click()
+            a.remove()
+            URL.revokeObjectURL(url)
+          } else if (typeof excelExportRef.current.save === 'function') {
+            // Fallback to save() if toDataURL is not available in this kendo version
+            excelExportRef.current.save(workbookRef.current)
           } else {
-            console.error('ExcelExport ref or workbookOptions missing')
+            console.error(
+              'ExcelExport ref method missing: toDataURL or save not found',
+            )
           }
-        } catch (err) {
-          console.error('Export save failed:', err)
-        } finally {
-          workbookRef.current = null
-          if (!cancelled) setIsExporting(false)
+        } else {
+          console.error('ExcelExport ref or workbookOptions missing')
         }
-      })()
+      } catch (err) {
+        console.error('Export save failed:', err)
+      } finally {
+        workbookRef.current = null
+        if (!cancelled) setIsExporting(false)
+      }
+    })()
 
     return () => {
       cancelled = true
@@ -522,11 +522,7 @@ const AnnualAOPCostDynamic = () => {
             variant='contained'
             className='btn-export'
             startIcon={
-              <Box
-                component='img'
-                src={FileExportIcon}
-                className='w16-icon'
-              />
+              <Box component='img' src={FileExportIcon} className='w16-icon' />
             }
             onClick={exportAllGrids}
           >
@@ -534,11 +530,6 @@ const AnnualAOPCostDynamic = () => {
           </Button>
         </Box>
       )}
-
-
-
-
-
 
       <Box display='flex' flexDirection='column' gap={2}>
         {tabIndex === 0 && (

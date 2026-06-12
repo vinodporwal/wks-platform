@@ -22,8 +22,6 @@ import javax.sql.DataSource;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.FillPatternType;
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -2119,11 +2117,10 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 				innerHeaders.add("Error Description");
 			}
 
-		// Styles: locked+gray for May-March (cols 3-13), unlocked for April (col 2) and Remark (col 14),
-		// locked default for all other columns
-			CellStyle lockedMonthStyle = buildLockedMonthStyle(workbook);
-			CellStyle unlockedAprilStyle = Utility.createUnlockedStyle(workbook);
-			CellStyle lockedDefaultStyle = buildLockedDefaultStyle(workbook);
+	// Styles: unlocked for all month columns (cols 2-13) and Remark (col 14),
+	// locked default for all other columns
+		CellStyle unlockedAprilStyle = Utility.createUnlockedStyle(workbook);
+		CellStyle lockedDefaultStyle = buildLockedDefaultStyle(workbook);
 
 			// Header row (locked by default when sheet protection is active)
 			Row headerRow = sheet.createRow(currentRow++);
@@ -2149,16 +2146,13 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 						cell.setCellValue("");
 					}
 
-				if (col == 2 || col == 14) {
-					// April column and Remark column: editable
-					cell.setCellStyle(unlockedAprilStyle);
-				} else if (col >= 3 && col <= 13) {
-					// May through March: locked with gray fill to indicate read-only
-					cell.setCellStyle(lockedMonthStyle);
-				} else {
-					// Remaining columns (Particulars, UOM, Id, NormParameterId, Status...)
-					cell.setCellStyle(lockedDefaultStyle);
-				}
+			if ((col >= 2 && col <= 13) || col == 14) {
+				// All month columns (April through March) and Remark column: editable
+				cell.setCellStyle(unlockedAprilStyle);
+			} else {
+				// Remaining columns (Particulars, UOM, Id, NormParameterId, Status...)
+				cell.setCellStyle(lockedDefaultStyle);
+			}
 				}
 			}
 
@@ -2181,14 +2175,6 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 			e.printStackTrace();
 		}
 		return null;
-	}
-
-	private CellStyle buildLockedMonthStyle(Workbook workbook) {
-		CellStyle style = workbook.createCellStyle();
-		style.setLocked(true);
-		style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-		style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-		return style;
 	}
 
 	private CellStyle buildLockedDefaultStyle(Workbook workbook) {
@@ -2252,37 +2238,39 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 					dto.setDisplayName(getStringCellValue(row.getCell(0), dto));
 					dto.setUOM(getStringCellValue(row.getCell(1), dto));
 
-					// Read only April from the spreadsheet
-					dto.setApril(getNumericCellValue(row.getCell(2), dto));
+				// Read each month individually from its own column
+				dto.setApril(getNumericCellValue(row.getCell(2), dto));
+				dto.setMay(getNumericCellValue(row.getCell(3), dto));
+				dto.setJune(getNumericCellValue(row.getCell(4), dto));
+				dto.setJuly(getNumericCellValue(row.getCell(5), dto));
+				dto.setAug(getNumericCellValue(row.getCell(6), dto));
+				dto.setSep(getNumericCellValue(row.getCell(7), dto));
+				dto.setOct(getNumericCellValue(row.getCell(8), dto));
+				dto.setNov(getNumericCellValue(row.getCell(9), dto));
+				dto.setDec(getNumericCellValue(row.getCell(10), dto));
+				dto.setJan(getNumericCellValue(row.getCell(11), dto));
+				dto.setFeb(getNumericCellValue(row.getCell(12), dto));
+				dto.setMarch(getNumericCellValue(row.getCell(13), dto));
 
-					// Copy April value to all remaining months (May through March);
-					// any values present in those Excel columns are intentionally ignored.
-					Double aprilValue = dto.getApril();
-					dto.setMay(aprilValue);
-					dto.setJune(aprilValue);
-					dto.setJuly(aprilValue);
-					dto.setAug(aprilValue);
-					dto.setSep(aprilValue);
-					dto.setOct(aprilValue);
-					dto.setNov(aprilValue);
-					dto.setDec(aprilValue);
-					dto.setJan(aprilValue);
-					dto.setFeb(aprilValue);
-					dto.setMarch(aprilValue);
-
-			// Validate April value when UOM is ON/OFF			
-			String uom = dto.getUOM();
-			if (uom != null && uom.equalsIgnoreCase("ON/OFF")
-					&& !"Failed".equalsIgnoreCase(dto.getSaveStatus())) {
-				Double aprilVal = dto.getApril();
-				if (aprilVal == null
-						|| (Double.compare(aprilVal, 1.0) != 0 && Double.compare(aprilVal, 0.0) != 0)) {
-					dto.setSaveStatus("Failed");
-					dto.setErrDescription(
-							"For UOM 'ON/OFF', April value must be 1 (ON) or 0 (OFF). Provided value: "
-									+ aprilVal);
+				// Validate all month values when UOM is ON/OFF
+				String uom = dto.getUOM();
+				if (uom != null && uom.equalsIgnoreCase("ON/OFF")
+						&& !"Failed".equalsIgnoreCase(dto.getSaveStatus())) {
+					Double[] monthValues = { dto.getApril(), dto.getMay(), dto.getJune(), dto.getJuly(),
+							dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(), dto.getDec(),
+							dto.getJan(), dto.getFeb(), dto.getMarch() };
+					String[] monthNames = { "April", "May", "June", "July", "Aug", "Sep", "Oct", "Nov", "Dec",
+							"Jan", "Feb", "March" };
+					for (int m = 0; m < monthValues.length; m++) {
+						Double val = monthValues[m];
+						if (val == null || (Double.compare(val, 1.0) != 0 && Double.compare(val, 0.0) != 0)) {
+							dto.setSaveStatus("Failed");
+							dto.setErrDescription("For UOM 'ON/OFF', " + monthNames[m]
+									+ " value must be 1 (ON) or 0 (OFF). Provided value: " + val);
+							break;
+						}
+					}
 				}
-			}
 
 					dto.setPlantId(plantFKId.toString());
 					String normParameterId = getStringCellValue(row.getCell(16), dto);

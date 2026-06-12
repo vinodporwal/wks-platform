@@ -23,4 +23,6 @@ public interface SpyroInputService {
 	
 	AOPMessageVM calculateSpyroInputData(String year, String plantId, String Mode, String type);
 
+	AOPMessageVM getFurnaceDropdown(String plantId);
+
 }

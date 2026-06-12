@@ -301,6 +301,7 @@ const UserManagementTable = ({ keycloak }) => {
             onClose={() => setOpen(false)}
             options={searchOptions}
             getOptionLabel={(opt) => opt.username}
+            PopperProps={{ placement: 'top-start' }}
             value={tempSelectedUsers}
             inputValue={inputValue} // controlled text :contentReference[oaicite:3]{index=3}
             onInputChange={(e, newVal, reason) => {
@@ -378,6 +379,7 @@ const UserManagementTable = ({ keycloak }) => {
             onClose={() => setOpen(false)}
             options={searchOptions}
             getOptionLabel={(opt) => opt?.username || ''}
+            PopperProps={{ placement: 'top-start' }}
             isOptionEqualToValue={(option, value) => option?.id === value?.id}
             value={selectedSingleUser}
             inputValue={singleUserInputValue}

@@ -1823,6 +1823,14 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			CellStyle lockedStyle = Utility.createLockedStyle(workbook);
 			CellStyle unlockedStyle = Utility.createUnlockedStyle(workbook);
 
+			CellStyle lockedWrappedStyle = workbook.createCellStyle();
+			lockedWrappedStyle.cloneStyleFrom(lockedStyle);
+			lockedWrappedStyle.setWrapText(true);
+
+			CellStyle unlockedWrappedStyle = workbook.createCellStyle();
+			unlockedWrappedStyle.cloneStyleFrom(unlockedStyle);
+			unlockedWrappedStyle.setWrapText(true);
+
 			for (Map<String, String> gradeInfo : gradeInfoList) {
 
 				String currentGradeId = gradeInfo.get("gradeId");
@@ -1894,6 +1902,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				List<List<String>> headers = new ArrayList<>();
 				headers.add(innerHeaders);
 
+				int remarksColIndex = innerHeaders.indexOf("Remarks");
+				int idColIndex = innerHeaders.indexOf("Id");
+
 				for (List<String> headerRowData : headers) {
 					Row headerRow = sheet.createRow(currentRow++);
 					for (int col = 0; col < headerRowData.size(); col++) {
@@ -1926,14 +1937,39 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 							cell.setCellValue("");
 						}
 
-						if (isRowEditable) {
-							cell.setCellStyle(unlockedStyle);
-						} else {
-							cell.setCellStyle(lockedStyle);
-						}
+					if (col == remarksColIndex) {
+						cell.setCellStyle(isRowEditable ? unlockedWrappedStyle : lockedWrappedStyle);
+					} else if (isRowEditable) {
+						cell.setCellStyle(unlockedStyle);
+					} else {
+						cell.setCellStyle(lockedStyle);
 					}
 				}
-				sheet.setColumnHidden(16, true);
+
+				// Auto-adjust row height to accommodate wrapped Remarks text
+				if (remarksColIndex >= 0 && remarksColIndex < rowData.size()) {
+					Object remarksValue = rowData.get(remarksColIndex);
+					if (remarksValue != null && !remarksValue.toString().isEmpty()) {
+						String remarksText = remarksValue.toString();
+						int charsPerLine = 55; // approximate characters fitting the fixed Remarks column width
+						int lines = (int) Math.ceil((double) remarksText.length() / charsPerLine);
+						lines = Math.max(1, lines);
+						row.setHeight((short) (lines * 300)); // 300 twips ≈ 15 pt per line
+					}
+				}
+			}
+
+			// Auto-size content columns; give Remarks a fixed wide width with wrapping
+			int totalCols = innerHeaders.size();
+			for (int col = 0; col < totalCols; col++) {
+				if (col == remarksColIndex) {
+					sheet.setColumnWidth(col, 15000); // ~55 characters wide
+				} else if (col == idColIndex) {
+					sheet.setColumnHidden(col, true);
+				} else {
+					sheet.autoSizeColumn(col);
+				}
+			}
 
 			}
 

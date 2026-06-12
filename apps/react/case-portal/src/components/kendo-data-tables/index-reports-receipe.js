@@ -118,30 +118,30 @@ const KendoDataTablesReciepe = ({
   loading = false,
   typeRank = {},
   permissions = {},
-  setSnackbarOpen = () => {},
+  setSnackbarOpen = () => { },
   snackbarData = { message: '', severity: 'info' },
   snackbarOpen = false,
-  setRemarkDialogOpen = () => {},
+  setRemarkDialogOpen = () => { },
   currentRemark = '',
-  setCurrentRemark = () => {},
+  setCurrentRemark = () => { },
   currentRowId = null,
-  NormParameterIdCell = () => {},
-  setModifiedCells = () => {},
+  NormParameterIdCell = () => { },
+  setModifiedCells = () => { },
   remarkDialogOpen = false,
-  handleDeleteSelected = () => {},
-  saveChanges = () => {},
-  fetchData = () => {},
-  deleteRowData = () => {},
-  handleAddPlantSite = () => {},
-  handleCalculate = () => {},
-  handleUnitChange = () => {},
-  handleRemarkCellClick = () => {},
+  handleDeleteSelected = () => { },
+  saveChanges = () => { },
+  fetchData = () => { },
+  deleteRowData = () => { },
+  handleAddPlantSite = () => { },
+  handleCalculate = () => { },
+  handleUnitChange = () => { },
+  handleRemarkCellClick = () => { },
   selectedUsers = [],
   groupBy = null,
   allProducts = [],
   selectMode,
-  setSelectMode = () => {},
-  handleExport = () => {},
+  setSelectMode = () => { },
+  handleExport = () => { },
   handleExcelUpload,
   downloadExcelForConfiguration,
   summaryEdited,
@@ -184,11 +184,11 @@ const KendoDataTablesReciepe = ({
   )
   const initialGroup = groupBy
     ? [
-        {
-          field: groupBy,
-          dir: undefined,
-        },
-      ]
+      {
+        field: groupBy,
+        dir: undefined,
+      },
+    ]
     : []
 
   const handleEditChange = useCallback((e) => {
@@ -237,10 +237,18 @@ const KendoDataTablesReciepe = ({
       //   ? originalDataItem[changedField]
       //   : undefined
 
-      setIsRowEdited(true)
+
 
       const { dataItem, field, value } = e
       const itemId = dataItem.id
+
+
+      // Ignore group header expand/collapse events — they are not real edits
+      if (!field || dataItem?.items) {
+        return
+      }
+
+      setIsRowEdited(true)
       // Track which cell was edited
       setEditedCells((prev) => ({
         ...prev,
@@ -851,9 +859,9 @@ const KendoDataTablesReciepe = ({
               pageable={
                 rows?.length > 100
                   ? {
-                      buttonCount: 4,
-                      pageSizes: [10, 50, 100],
-                    }
+                    buttonCount: 4,
+                    pageSizes: [10, 50, 100],
+                  }
                   : false
               }
               lockGroups={true}

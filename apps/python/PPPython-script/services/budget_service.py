@@ -675,6 +675,8 @@ def calculate_budget_with_iteration(
     oxygen_mt: float = 0.0,            # Oxygen consumed by process plants (MT)
     effluent_m3: float = 0.0,          # Effluent treated by process plants (M3)
     save_to_db: bool = False,          # Auto-save calculated values to NormsMonthDetail
+    enable_price_bpc_comparison: bool = False,
+    price_bpc_path: str = None,
     hrsg_full_load: bool = False,      # If true, load HRSG without subtracting free steam
 ) -> dict:
     """
@@ -1030,6 +1032,23 @@ def calculate_budget_with_iteration(
         save_result = save_calculated_norms(month, year, result, dry_run=False)
         print_save_summary(save_result)
         result["save_result"] = save_result
+
+        # ── Cost Cycle utility price calculation + snapshot save ──
+        from services.utility_price_service import calculate_and_print_utility_prices
+        # Derive financial_year string e.g. '2025-26'
+        if month >= 4:
+            _fy_start, _fy_end = year, year + 1
+        else:
+            _fy_start, _fy_end = year - 1, year
+        _financial_year = f"{_fy_start}-{str(_fy_end)[-2:]}"
+        price_result = calculate_and_print_utility_prices(
+            month, year,
+            cpp_plant_id=cpp_plant_id,
+            financial_year=_financial_year,
+            bpc_csv_path=price_bpc_path,
+            enable_bpc_comparison=enable_price_bpc_comparison,
+        )
+        result["utility_price_result"] = price_result
     
     # Set top-level message for easier status reporting
     if result.get("errors"):

@@ -65,6 +65,9 @@ public class BasisReportServiceImpl implements BasisReportService {
 
 	@PersistenceContext
 	private EntityManager entityManager;
+
+	@PersistenceContext(unitName = "db2")
+    private EntityManager entityManagerdb2;
 	
 	@Autowired
 	private AopCalculationRepository aopCalculationRepository;
@@ -405,6 +408,87 @@ public class BasisReportServiceImpl implements BasisReportService {
 	    }
 	}
 
+	@Override
+public AOPMessageVM getEtheleneStockBasis(String plantId, String aopYear) {
+    AOPMessageVM aopMessageVM = new AOPMessageVM();
+
+    Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+    Sites site = siteRepository.findById(plant.getSiteFkId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+    // Confirm stored-procedure name (adjust underscore prefix if needed)
+    String storedProcedure = vertical.getName() + "_" + site.getName() + "_EthyleneStockBasis";
+
+    try {
+        // 1. Fetch ALL column metadata
+        List<List<Map<String, Object>>> allColMetadata =
+            getProductionTargetAllColumnMeta(plantId, aopYear, storedProcedure);
+
+        // 2. Fetch ALL grid data
+        List<List<Object[]>> allGridData =
+            getProductionTargetReportData(plantId, aopYear, storedProcedure);
+
+        if (allColMetadata.size() != allGridData.size()) {
+            throw new RuntimeException("Mismatch: Stored procedure returned "
+                    + allColMetadata.size() + " metadata lists but "
+                    + allGridData.size() + " data grids.");
+        }
+
+        // 3. Combine for frontend
+        List<Map<String, Object>> combined = new ArrayList<>();
+        for (int i = 0; i < allGridData.size(); i++) {
+            List<Map<String, Object>> colMetadata = allColMetadata.get(i);
+            List<Object[]> rawRows = allGridData.get(i);
+
+            // (grid name logic identical to other methods)
+            List<String> colNames = colMetadata.stream()
+                    .map(m -> (String) m.get("field"))
+                    .collect(Collectors.toList());
+
+            String gridName = "UNKNOWN_GRID_" + (i + 1);
+            if (!colNames.isEmpty()) {
+                int lastIdx = colNames.size() - 1;
+                if (colNames.get(lastIdx).equalsIgnoreCase("GRID_TYPE") && !rawRows.isEmpty()) {
+                    Object gridVal = rawRows.get(0)[lastIdx];
+                    if (gridVal != null) gridName = gridVal.toString();
+                } else {
+                    gridName = colNames.get(0);
+                }
+            }
+
+            List<Map<String, Object>> gridDataMap = new ArrayList<>();
+            for (Object[] row : rawRows) {
+                Map<String, Object> rowMap = new LinkedHashMap<>();
+                for (int j = 0; j < colNames.size(); j++) {
+                    rowMap.put(colNames.get(j), row[j]);
+                }
+                gridDataMap.add(rowMap);
+            }
+
+            Map<String, Object> part = new LinkedHashMap<>();
+            part.put("gridName", gridName);
+            part.put("data", gridDataMap);
+            part.put("columns", colMetadata);
+            combined.add(part);
+        }
+
+        aopMessageVM.setCode(200);
+        aopMessageVM.setMessage("SP Executed successfully");
+        aopMessageVM.setData(combined);
+        return aopMessageVM;
+    } catch (Exception e) {
+        e.printStackTrace();
+        aopMessageVM.setCode(500);
+        aopMessageVM.setMessage("Error processing report data: " + e.getMessage());
+        aopMessageVM.setData(null);
+        return aopMessageVM;
+    }
+}
+
+
 		
 	public List<Object[]> getReportDataForPE(String plantId, String aopYear, String PeriodFrom,
 			String PeriodTo) {
@@ -485,12 +569,12 @@ public class BasisReportServiceImpl implements BasisReportService {
 	}
 
 
-	@Transactional(readOnly = true) 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true) 
 	public List<List<Object[]>> getReportDataForOptimizerInputOutput(String plantId, String aopYear, String storedProcedure) {
    
 	    String storedProcedureCall = "{ call " + storedProcedure + "(?, ?) }";
 	   
-	    Session session = entityManager.unwrap(Session.class);
+	    Session session = entityManagerdb2.unwrap(Session.class);
   
 	    return session.doReturningWork(connection -> {
 	        
@@ -638,13 +722,13 @@ public class BasisReportServiceImpl implements BasisReportService {
 	    });
 	}
 
-	@Transactional(readOnly = true)
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<List<Map<String, Object>>> getAllColumnMetadataForOptimizerInputOutput(
 	    String plantId, String aopYear, String storedProcedure) {
 
 	    String storedProcedureCall = "{ call " + storedProcedure + "(?, ?) }";
 
-	    Session session = entityManager.unwrap(Session.class);
+	    Session session = entityManagerdb2.unwrap(Session.class);
 
 	    return session.doReturningWork(connection -> {
 	        List<List<Map<String, Object>>> allMetadataGrids = new ArrayList<>();

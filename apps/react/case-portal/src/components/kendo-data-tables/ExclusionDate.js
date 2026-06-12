@@ -79,7 +79,7 @@ const ExclusionDate = ({
         AOP_YEAR,
       )
 
-      const modifiedData = data?.data?.Data?.map((item, index) => ({
+      const modifiedData = (data?.data?.Data || []).map((item, index) => ({
         ...item,
         idFromApi: item?.id,
         id: index,
