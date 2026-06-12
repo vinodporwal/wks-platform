@@ -1659,6 +1659,24 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 			boolean ppHmd = vertical.getName().equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("HMD");
 
 			List<AOPMCCalculatedDataDTO> data = readLineWiseData(file.getInputStream(), UUID.fromString(plantFKId), year);
+			
+			// april value carry forward logic for PP DTA
+			if(ppDta) {
+				for(AOPMCCalculatedDataDTO dto : data) { 
+					// set may to march values to april value
+					dto.setMay(dto.getApril());
+					dto.setJune(dto.getApril());
+					dto.setJuly(dto.getApril());
+					dto.setAugust(dto.getApril());
+					dto.setSeptember(dto.getApril());
+					dto.setOctober(dto.getApril());
+					dto.setNovember(dto.getApril());
+					dto.setDecember(dto.getApril());
+					dto.setJanuary(dto.getApril());
+					dto.setFebruary(dto.getApril());
+					dto.setMarch(dto.getApril());
+				}
+			}
 			List<AOPMCCalculatedDataDTO> failedRecords = editAOPMCCalculatedData(data, true, year, plantFKId);
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
@@ -1976,6 +1994,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 		}
 		return prodList;
 	}
+
 
 
 	private static String getStringCellValue(Cell cell, AOPMCCalculatedDataDTO dto) {
