@@ -77,7 +77,8 @@ const BusinessDemand = ({ permissions }) => {
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
 
   const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
-
+  const IS_CHEMICAL_HMD_PDEB =
+    lowerVertName === 'chemical' && lowerSiteName === 'hmd' && plantObject?.name?.toLowerCase() === 'pdeb'
   const IS_ELASTOMER_HMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'hmd'
   const IS_ELASTOMER_HMD_SBR =
@@ -472,17 +473,17 @@ const BusinessDemand = ({ permissions }) => {
         const aprilVal = row.april ?? null
         return {
           april: aprilVal,
-          may: IS_CRACKER_HMD ? aprilVal : row.may ?? null,
-          june: IS_CRACKER_HMD ? aprilVal : row.june ?? null,
-          july: IS_CRACKER_HMD ? aprilVal : row.july ?? null,
-          aug: IS_CRACKER_HMD ? aprilVal : row.aug ?? null,
-          sep: IS_CRACKER_HMD ? aprilVal : row.sep ?? null,
-          oct: IS_CRACKER_HMD ? aprilVal : row.oct ?? null,
-          nov: IS_CRACKER_HMD ? aprilVal : row.nov ?? null,
-          dec: IS_CRACKER_HMD ? aprilVal : row.dec ?? null,
-          jan: IS_CRACKER_HMD ? aprilVal : row.jan ?? null,
-          feb: IS_CRACKER_HMD ? aprilVal : row.feb ?? null,
-          march: IS_CRACKER_HMD ? aprilVal : row.march ?? null,
+          may: row.may ?? null,
+          june: row.june ?? null,
+          july: row.july ?? null,
+          aug: row.aug ?? null,
+          sep: row.sep ?? null,
+          oct: row.oct ?? null,
+          nov: row.nov ?? null,
+          dec: row.dec ?? null,
+          jan: row.jan ?? null,
+          feb: row.feb ?? null,
+          march: row.march ?? null,
           remark: row.remark || null,
           avgTph: row.avgTph || null,
           year: AOP_YEAR,
@@ -982,7 +983,7 @@ const BusinessDemand = ({ permissions }) => {
           </>
         )}
 
-      {IS_CRACKER_HMD && <ModeSelection permissions={adjustedPermissions} />}
+      {(IS_CRACKER_HMD  || IS_CHEMICAL_HMD_PDEB) && <ModeSelection permissions={adjustedPermissions} />}
     </div>
   )
 }

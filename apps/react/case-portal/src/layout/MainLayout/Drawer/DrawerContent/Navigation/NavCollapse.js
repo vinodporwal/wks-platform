@@ -72,7 +72,12 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
           return <NavItem key={item?.id} item={item} {...props} />
         default:
           return (
-            <Typography key={item?.id} variant='h6' color='error' align='center'>
+            <Typography
+              key={item?.id}
+              variant='h6'
+              color='error'
+              align='center'
+            >
               Menu Items Error
             </Typography>
           )
@@ -180,7 +185,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
                   letterSpacing: 0,
                   textTransform: 'capitalize',
                   color: '#606060',
-                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif"
+                  fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
                 }}
               >
                 {menu.title}
@@ -306,7 +311,7 @@ const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
                 color: '#4046CA', // Brand color header
                 textTransform: 'capitalize',
                 letterSpacing: 0,
-                fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif"
+                fontFamily: "'Honeywell Sans Web', 'Inter', sans-serif",
               }}
             >
               {menu.title}

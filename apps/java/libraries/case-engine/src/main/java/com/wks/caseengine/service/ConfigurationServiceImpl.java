@@ -12,7 +12,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,12 +61,14 @@ import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.Utility;
 import com.wks.caseengine.dto.BusinessDemandDataDTO;
+import com.wks.caseengine.dto.CatalystChangeOverDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeDTO;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeRequestDTO;
 import com.wks.caseengine.dto.NormLineRequestDTO;
+import com.wks.caseengine.dto.TankConfigurationDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.NormAttributeTransactionLine;
 import com.wks.caseengine.entity.NormAttributeTransactionReceipe;
@@ -532,7 +537,304 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		return months;
 	}
 
+	@Override
+	public AOPMessageVM getCatalystChangeOver(String year, String plantFKId) { 
+
+		try {
+			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
+			Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			
+			List<Object[]> obj = new ArrayList<>();
+			
+			
+				String procedureName = verticalName  + "_" + site.getName() + "_GetCatalystChangeOver";
+
+				obj = findCatalystChangeOver(year, UUID.fromString(plantFKId), procedureName);
+				List<CatalystChangeOverDTO> catalystChangeOverDTOList = new ArrayList<>();
+				for (Object[] row : obj) {
+					CatalystChangeOverDTO catalystChangeOverDTO = new CatalystChangeOverDTO();
+					catalystChangeOverDTO.setId((String) row[0]);
+					catalystChangeOverDTO.setParameter((String) row[1]);
+					catalystChangeOverDTO.setDate((Date) row[2]);
+					catalystChangeOverDTO.setRemarks((String) row[3]);
+					catalystChangeOverDTO.setPlantId((String) row[4]);
+					catalystChangeOverDTO.setAopYear((String) row[5]);
+					catalystChangeOverDTO.setModifiedBy((String) row[6]);
+					catalystChangeOverDTO.setModifiedOn((Date) row[7]);
+					catalystChangeOverDTOList.add(catalystChangeOverDTO);
+				}
+
+				AOPMessageVM aopMessageVM = new AOPMessageVM();
+				aopMessageVM.setCode(200);
+				aopMessageVM.setData(catalystChangeOverDTOList);
+				aopMessageVM.setMessage("Data fetched successfully");
+				return aopMessageVM;
+
+
+	}  catch (IllegalArgumentException e) {
+		throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	} catch (Exception ex) {
+		ex.printStackTrace();
+		throw new RuntimeException("Failed to fetch data", ex);
+	}
+
+}
+
+@Override
+@Transactional
+public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystChangeOverDTOList, String year) {
+	try {
+		// Parse AOP year range – format "YYYY-YY", e.g. "2024-25" → Apr 1 2024 – Mar 31 2025
+		String[] yearParts = year.split("-");
+		int startYear = Integer.parseInt(yearParts[0].trim());
+		int endYear = startYear + 1;
+		LocalDate aopStart = LocalDate.of(startYear, 4, 1);
+		LocalDate aopEnd   = LocalDate.of(endYear,   3, 31);
+
+		List<String> validParameters = Arrays.asList("DeH-15", "DeH-201");
+
+		for (CatalystChangeOverDTO dto : catalystChangeOverDTOList) {
+			String modifiedBy = Utility.getUserName();
+
+			// ── 1. Parameter Validation ─────────────────────────────────────────────
+			String param = dto.getParameter() != null ? dto.getParameter().trim() : null;
+			if (param == null || !validParameters.contains(param)) {
+				throw new IllegalArgumentException(
+					"Invalid Parameter value '" + dto.getParameter() + "'. Allowed values are: DeH-15, DeH-201.");
+			}
+
+			// ── 2. Date Validation ──────────────────────────────────────────────────
+			if (dto.getDate() == null) {
+				throw new IllegalArgumentException("Date is required.");
+			}
+			LocalDate dtoDate = dto.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+			if (dtoDate.isBefore(aopStart) || dtoDate.isAfter(aopEnd)) {
+				throw new IllegalArgumentException(
+					"Date " + dtoDate + " is outside the AOP Year range " + year
+					+ " (April " + startYear + " to March " + endYear + ").");
+			}
+
+			if (dto.getId() == null || dto.getId().trim().isEmpty()) {
+
+				String sql = "INSERT INTO CatalystChangeOver (date, remarks, plantId, aopYear, modifiedBy, modifiedOn, parameter) "
+						+ "VALUES (:date, :remarks, :plantId, :aopYear, :modifiedBy, :modifiedOn, :parameter)";
+				Query query = entityManager.createNativeQuery(sql);
+				query.setParameter("date", dto.getDate());
+				query.setParameter("remarks", dto.getRemarks());
+				query.setParameter("plantId", dto.getPlantId());
+				query.setParameter("aopYear", dto.getAopYear());
+				query.setParameter("modifiedBy", modifiedBy);
+				query.setParameter("modifiedOn", new Date());
+				query.setParameter("parameter", param);
+				query.executeUpdate();
+
+			} else {
+
+				// ── 3. Remarks Validation for Parameter / Date Changes ──────────────
+				String selectSql = "SELECT parameter, date, remarks FROM CatalystChangeOver WHERE id = :id";
+				Query selectQuery = entityManager.createNativeQuery(selectSql);
+				selectQuery.setParameter("id", dto.getId());
+				Object[] existing = (Object[]) selectQuery.getSingleResult();
+
+				String existingParam    = existing[0] != null ? existing[0].toString().trim() : "";
+				java.sql.Date existingDateRaw = (java.sql.Date) existing[1];
+				String existingRemarks  = existing[2] != null ? existing[2].toString().trim() : "";
+
+				boolean parameterChanged = !param.equals(existingParam);
+				boolean dateChanged = false;
+				if (existingDateRaw != null) {
+					// LocalDate existingLocalDate = existingDateRaw.toInstant()
+					// 		.atZone(ZoneId.systemDefault()).toLocalDate();
+					// dateChanged = !dtoDate.equals(existingLocalDate);
+					LocalDate existingLocalDate = existingDateRaw.toLocalDate();
+					dateChanged = !dtoDate.equals(existingLocalDate);
+				} else {
+					dateChanged = true;
+				}
+
+				if (parameterChanged || dateChanged) {
+					String incomingRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
+					if (incomingRemarks.equals(existingRemarks)) {
+						throw new IllegalArgumentException(
+							"Remarks must be updated when Parameter or Date is changed.");
+					}
+				}
+
+				String sql = "UPDATE CatalystChangeOver "
+						+ "SET date = :date, remarks = :remarks, modifiedBy = :modifiedBy, modifiedOn = :modifiedOn, parameter = :parameter "
+						+ "WHERE id = :id";
+				Query query = entityManager.createNativeQuery(sql);
+				query.setParameter("date", dto.getDate());
+				query.setParameter("remarks", dto.getRemarks());
+				query.setParameter("modifiedBy", modifiedBy);
+				query.setParameter("modifiedOn", new Date());
+				query.setParameter("parameter", param);
+				query.setParameter("id", dto.getId());
+				query.executeUpdate();
+			}
+		}
+
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data saved successfully");
+		aopMessageVM.setData(catalystChangeOverDTOList);
+		return aopMessageVM;
+	} catch (IllegalArgumentException e) {
+		throw new RestInvalidArgumentException(e.getMessage(), e);
+	} catch (Exception ex) {
+		ex.printStackTrace();
+		throw new RuntimeException("Failed to save CatalystChangeOver data", ex);
+	}
+
+}
+
+@Override
+@Transactional
+public AOPMessageVM deleteCatalystChangeOver(String Id) {
+	AOPMessageVM aopMessageVM = new AOPMessageVM();
+	try {
+		String sql = "DELETE FROM CatalystChangeOver WHERE id = :id";
+		Query query = entityManager.createNativeQuery(sql);
+		query.setParameter("id", Id);
+		query.executeUpdate();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data deleted successfully");
+		return aopMessageVM;
+	} catch (Exception e) {
+		e.printStackTrace();
+		
+		aopMessageVM.setCode(500);
+		aopMessageVM.setMessage("Failed to delete data");
+		return aopMessageVM;
+	}
+}
+
+@Override	
+public AOPMessageVM getTankConfiguration(String year, String plantId) { 
+
+AOPMessageVM aopMessageVM = new AOPMessageVM();
+
+try {
+	Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+	Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+	Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+	String procedureName = vertical.getName() + "_" + site.getName() + "_GetTankConfiguration";
+	List<Object[]> obj = getTankConfigurationData(year, UUID.fromString(plantId), procedureName);
+
+	List<TankConfigurationDTO> tankConfigurationDTOList = new ArrayList<>();
+	for (Object[] row : obj) {
+		TankConfigurationDTO tankConfigurationDTO = new TankConfigurationDTO();
+		tankConfigurationDTO.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
+		tankConfigurationDTO.setJan(row[1] != null ? ((Boolean) row[1]).booleanValue() : false);
+		tankConfigurationDTO.setFeb(row[2] != null ? ((Boolean) row[2]).booleanValue() : false);
+		tankConfigurationDTO.setMar(row[3] != null ? ((Boolean) row[3]).booleanValue() : false);
+		tankConfigurationDTO.setApr(row[4] != null ? ((Boolean) row[4]).booleanValue() : false);
+		tankConfigurationDTO.setMay(row[5] != null ? ((Boolean) row[5]).booleanValue() : false);
+		tankConfigurationDTO.setJun(row[6] != null ? ((Boolean) row[6]).booleanValue() : false);
+		tankConfigurationDTO.setJul(row[7] != null ? ((Boolean) row[7]).booleanValue() : false);
+		tankConfigurationDTO.setAug(row[8] != null ? ((Boolean) row[8]).booleanValue() : false);
+		tankConfigurationDTO.setSep(row[9] != null ? ((Boolean) row[9]).booleanValue() : false);
+		tankConfigurationDTO.setOct(row[10] != null ? ((Boolean) row[10]).booleanValue() : false);
+		tankConfigurationDTO.setNov(row[11] != null ? ((Boolean) row[11]).booleanValue() : false);
+		tankConfigurationDTO.setDec(row[12] != null ? ((Boolean) row[12]).booleanValue() : false);
+		tankConfigurationDTO.setVolume(row[13] != null ? Integer.parseInt(row[13].toString()) : 0);
+		tankConfigurationDTO.setRemarks(row[14] != null ? row[14].toString() : "");
+		tankConfigurationDTO.setAuditYear(row[15] != null ? row[15].toString() : "");
+		tankConfigurationDTO.setUom(row[16] != null ? row[16].toString() : "");
+		tankConfigurationDTO.setNormTypeName(row[17] != null ? row[17].toString() : "");
+		tankConfigurationDTO.setIsEditable(row[18] != null ? ((Boolean) row[18]).booleanValue() : null);
+		tankConfigurationDTO.setDisplayName(row[19] != null ? row[19].toString() : "");
+		tankConfigurationDTOList.add(tankConfigurationDTO);
+	}
+	aopMessageVM.setCode(200);
+	aopMessageVM.setMessage("Data fetched successfully");
+	aopMessageVM.setData(tankConfigurationDTOList);
+	return aopMessageVM;
 	
+	
+} catch (Exception e) {
+	e.printStackTrace();
+	aopMessageVM.setCode(500);
+	aopMessageVM.setMessage("Failed to fetch data");
+	return aopMessageVM;
+}
+}
+
+@Override
+@Transactional
+public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigurationDTOList, String plantId, String aopYear) {
+	try {
+		String modifiedBy = Utility.getUserName();
+		Date modifiedOn = new Date();
+
+		for (TankConfigurationDTO dto : tankConfigurationDTOList) {
+
+			String checkSql = "SELECT COUNT(1) FROM TankConfiguration "
+					+ "WHERE norm_paramter_id = :normParameterId "
+					+ "AND plantId = :plantId "
+					+ "AND aopYear = :aopYear";
+			Query checkQuery = entityManager.createNativeQuery(checkSql);
+			checkQuery.setParameter("normParameterId", UUID.fromString(dto.getNormParameterFKId()));
+			checkQuery.setParameter("plantId", UUID.fromString(plantId));
+			checkQuery.setParameter("aopYear", aopYear);
+			int count = ((Number) checkQuery.getSingleResult()).intValue();
+
+			if(count > 1) {
+				throw new IllegalArgumentException("Duplicate data found for the same normParameterId, plantId and aopYear");
+			}
+
+			if(count == 0) {
+				throw new IllegalArgumentException("Data not found for the given normParameterId, plantId and aopYear");
+			  }
+
+				String updateSql = "UPDATE TankConfiguration "
+						+ "SET volume = :volume, "
+						+ "april = :apr, may = :may, june = :jun, july = :jul, "
+						+ "august = :aug, september = :sep, october = :oct, november = :nov, "
+						+ "december = :dec, january = :jan, february = :feb, march = :mar, "
+						+ "remarks = :remarks, modifiedOn = :modifiedOn, modifiedBy = :modifiedBy "
+						+ "WHERE norm_paramter_id = :normParameterId "
+						+ "AND plantId = :plantId "
+						+ "AND aopYear = :aopYear";
+				Query updateQuery = entityManager.createNativeQuery(updateSql);
+				updateQuery.setParameter("volume", dto.getVolume());
+				updateQuery.setParameter("apr", dto.getApr());
+				updateQuery.setParameter("may", dto.getMay());
+				updateQuery.setParameter("jun", dto.getJun());
+				updateQuery.setParameter("jul", dto.getJul());
+				updateQuery.setParameter("aug", dto.getAug());
+				updateQuery.setParameter("sep", dto.getSep());
+				updateQuery.setParameter("oct", dto.getOct());
+				updateQuery.setParameter("nov", dto.getNov());
+				updateQuery.setParameter("dec", dto.getDec());
+				updateQuery.setParameter("jan", dto.getJan());
+				updateQuery.setParameter("feb", dto.getFeb());
+				updateQuery.setParameter("mar", dto.getMar());
+				updateQuery.setParameter("remarks", dto.getRemarks());
+				updateQuery.setParameter("modifiedOn", modifiedOn);
+				updateQuery.setParameter("modifiedBy", modifiedBy);
+				updateQuery.setParameter("normParameterId", UUID.fromString(dto.getNormParameterFKId()));
+				updateQuery.setParameter("plantId", UUID.fromString(plantId));
+				updateQuery.setParameter("aopYear", aopYear);
+				updateQuery.executeUpdate();
+			
+		}
+
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data saved successfully");
+		aopMessageVM.setData(tankConfigurationDTOList);
+		return aopMessageVM;
+	} catch (IllegalArgumentException e) {
+		throw new RestInvalidArgumentException(e.getMessage(), e);
+	} catch (Exception ex) {
+		ex.printStackTrace();
+		throw new RuntimeException("Failed to save TankConfiguration data", ex);
+	}
+}
+
+
 	
 	public List<ConfigurationDTO> getMonthlyProductionData(String year, UUID plantFKId) {
 		try {
@@ -1627,6 +1929,8 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 			Plants plant = plantsRepository.findById(plantId).orElseThrow();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 
+			boolean aromaticsPmd = verticalName.equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("PMD");
+
 			String steamLatentName = "";
 
 			if (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("DMD")) {
@@ -1660,9 +1964,22 @@ continue;
 					failedList.add(configurationDTO);
 					continue;
 				}
-				if (optionNormParameters.isPresent() && (!optionNormParameters.get().getIsEditable())) {
-					continue;
-				}
+			if (optionNormParameters.isPresent() && (!optionNormParameters.get().getIsEditable())) {
+				continue;
+			}
+
+		//	DAYS validation for aromatics PMD
+			if(aromaticsPmd) {
+			String uomValidationError = validateDaysUOM(configurationDTO, year);
+
+			if (uomValidationError != null) {
+				configurationDTO.setSaveStatus("Failed");
+				configurationDTO.setErrDescription(uomValidationError);
+				failedList.add(configurationDTO);
+				continue;
+			}
+		}
+
              // apr value should not be greater than may value
 			 if(isMinMax) {
 				if(configurationDTO.getApr() != null && configurationDTO.getMay() != null && configurationDTO.getApr() > configurationDTO.getMay()) {
@@ -2018,6 +2335,52 @@ continue;
 
 		}
 		return configurationDTO.getJan();
+	}
+
+	private String validateDaysUOM(ConfigurationDTO dto, String year) {
+		if (dto.getUOM() == null || !dto.getUOM().equalsIgnoreCase("DAYS")) {
+			return null;
+		}
+
+		// Fiscal year format: "2026-27" → Apr–Dec of start year, Jan–Mar of end year.
+		// Parse start year from the portion before "-"; end year = start year + 1.
+		int startYear;
+		try {
+			String startPart = year.contains("-") ? year.split("-")[0].trim() : year.trim();
+			startYear = Integer.parseInt(startPart);
+		} catch (NumberFormatException e) {
+			startYear = LocalDate.now().getYear();
+		}
+		int endYear = startYear + 1;
+
+		// Months Jan–Mar belong to endYear; Apr–Dec belong to startYear.
+		boolean isLeapEndYear = (endYear % 4 == 0) && (endYear % 100 != 0 || endYear % 400 == 0);
+
+		// maxDays array indexed Jan(0)…Dec(11); February uses endYear leap-year check.
+		int[] maxDays = { 31, isLeapEndYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+		String[] monthNames = { "January", "February", "March", "April", "May", "June",
+				"July", "August", "September", "October", "November", "December" };
+		Double[] values = {
+				dto.getJan(), dto.getFeb(), dto.getMar(), dto.getApr(),
+				dto.getMay(), dto.getJun(), dto.getJul(), dto.getAug(),
+				dto.getSep(), dto.getOct(), dto.getNov(), dto.getDec()
+		};
+
+		for (int i = 0; i < 12; i++) {
+			Double val = values[i];
+			if (val == null) {
+				continue;
+			}
+			if (val != Math.floor(val)) {
+				return monthNames[i] + " value must be a whole number when UOM is DAYS";
+			}
+			if (val > maxDays[i]) {
+				return monthNames[i] + " value " + val.intValue()
+						+ " exceeds the maximum allowed days (" + maxDays[i] + ")";
+			}
+		}
+
+		return null;
 	}
 
 	@Transactional
@@ -2441,6 +2804,44 @@ continue;
 		}
 	}
 
+	public List<Object[]> findCatalystChangeOver(String aopYear, UUID plantId, String procedureName) {
+		try {
+
+			String sql = "EXEC " + procedureName
+					+ " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	public List<Object[]> getTankConfigurationData(String aopYear, UUID plantId, String procedureName) {
+		try {
+
+			String sql = "EXEC " + procedureName
+					+ " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+
+
 	public List<Object[]> findConstantsByYearAndPlantFkId(String aopYear, String plantId, String procedureName) {
 		try {
 			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
@@ -2543,9 +2944,18 @@ continue;
 
 		try {
 
+			Plants plant = plantsRepository.findById(plantFKId).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			boolean aromaticsPmd = vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("PMD");
+
 			System.out.println("started Read configuration in importExcel");
 			List<ConfigurationDTO> data = readShutdownRate(file.getInputStream(), plantFKId, year,type);
 			System.out.println("Ended Read configuration in importExcel");
+			if(aromaticsPmd) {
+				// validation for uom DAY: the value should not be decimal
+			validateShutdownRateData(data);
+			}
 			System.out.println("Started Save configuration in importExcel");
 			List<ConfigurationDTO> failedRecords = saveConfigurationData(year, plantFKId.toString(),version, data,calculation,isMinMax);
 			System.out.println("Ended Save configuration in importExcel");
@@ -2798,6 +3208,40 @@ continue;
 		return configList;
 	}
 
+	private void validateShutdownRateData(List<ConfigurationDTO> data) {
+		if (data == null) return;
+
+		List<String> monthNames = Arrays.asList(
+			"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+			"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+		);
+
+		for (ConfigurationDTO dto : data) {
+			if ("Failed".equalsIgnoreCase(dto.getSaveStatus())) continue;
+			if (dto.getUOM() == null || !dto.getUOM().equalsIgnoreCase("DAY")) continue;
+
+			List<Double> monthValues = Arrays.asList(
+				dto.getJan(), dto.getFeb(), dto.getMar(),
+				dto.getApr(), dto.getMay(), dto.getJun(),
+				dto.getJul(), dto.getAug(), dto.getSep(),
+				dto.getOct(), dto.getNov(), dto.getDec()
+			);
+
+			List<String> decimalMonths = new ArrayList<>();
+			for (int i = 0; i < monthValues.size(); i++) {
+				Double value = monthValues.get(i);
+				if (value != null && value % 1 != 0) {
+					decimalMonths.add(monthNames.get(i));
+				}
+			}
+
+			if (!decimalMonths.isEmpty()) {
+				dto.setSaveStatus("Failed");
+				dto.setErrDescription(
+					"UOM is DAY: decimal values are not allowed");
+			}
+		}
+	}
 
 	public List<ConfigurationDTO> readConfigurationConstants(InputStream inputStream, UUID plantFKId, String year) {
 		List<ConfigurationDTO> configList = new ArrayList<>();
@@ -4536,6 +4980,226 @@ continue;
 					});
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to execute AROMATICS_HMD_GetSeasonMonths", ex);
+		}
+	}
+
+	// ─── Catalyst Change Over Export ────────────────────────────────────────────
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public byte[] createCatalystChangeOverExcel(String year, String plantFKId, boolean isAfterSave,
+			List<CatalystChangeOverDTO> dtoList) {
+		try {
+			if (!isAfterSave) {
+				AOPMessageVM result = getCatalystChangeOver(year, plantFKId);
+				dtoList = (List<CatalystChangeOverDTO>) result.getData();
+			}
+
+			Workbook workbook = new XSSFWorkbook();
+			Sheet sheet = workbook.createSheet("CatalystChangeOver");
+			int currentRow = 0;
+
+			// Columns: Parameter(0), Date(1), Remarks(2), Id(3-hidden)
+			List<String> headerNames = new ArrayList<>(Arrays.asList("Parameter", "Date", "Remarks", "Id"));
+			if (isAfterSave) {
+				headerNames.add("Status");
+				headerNames.add("Error Description");
+			}
+
+			Row headerRow = sheet.createRow(currentRow++);
+			for (int col = 0; col < headerNames.size(); col++) {
+				Cell cell = headerRow.createCell(col);
+				cell.setCellValue(headerNames.get(col));
+				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+			}
+
+			// Wrap style for Remarks column
+			CellStyle wrapStyle = workbook.createCellStyle();
+			wrapStyle.setWrapText(true);
+			wrapStyle.setBorderBottom(BorderStyle.THIN);
+			wrapStyle.setBorderTop(BorderStyle.THIN);
+			wrapStyle.setBorderLeft(BorderStyle.THIN);
+			wrapStyle.setBorderRight(BorderStyle.THIN);
+
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+			for (CatalystChangeOverDTO dto : dtoList) {
+				Row row = sheet.createRow(currentRow++);
+
+				// Col 0 – Parameter
+				Cell paramCell = row.createCell(0);
+				paramCell.setCellValue(dto.getParameter() != null ? dto.getParameter() : "");
+				paramCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+				// Col 1 – Date
+				Cell dateCell = row.createCell(1);
+				dateCell.setCellValue(dto.getDate() != null ? sdf.format(dto.getDate()) : "");
+				dateCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+				// Col 2 – Remarks (wrapped text, auto row height)
+				Cell remarksCell = row.createCell(2);
+				remarksCell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
+				remarksCell.setCellStyle(wrapStyle);
+
+				// Col 3 – Id (hidden, used for import/update)
+				Cell idCell = row.createCell(3);
+				idCell.setCellValue(dto.getId() != null ? dto.getId() : "");
+				idCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+				if (isAfterSave) {
+					Cell statusCell = row.createCell(4);
+					statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
+					statusCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+					Cell errCell = row.createCell(5);
+					errCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
+					errCell.setCellStyle(Utility.createBorderedStyle(workbook));
+				}
+
+				// Let POI calculate row height automatically for wrapped remarks
+				row.setHeight((short) -1);
+			}
+
+			// Dynamic column widths – fixed larger width for Remarks(2), auto-size for others
+			int totalCols = isAfterSave ? 6 : 4;
+			for (int col = 0; col < totalCols; col++) {
+				if (col == 2) {
+					sheet.setColumnWidth(col, 15000); // ~60 characters wide for Remarks
+				} else {
+					sheet.autoSizeColumn(col);
+				}
+			}
+
+			// Hide the Id column from end-users
+			sheet.setColumnHidden(3, true);
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	// ─── Catalyst Change Over Import – Excel Reader ──────────────────────────────
+
+	public List<CatalystChangeOverDTO> readCatalystChangeOverExcel(InputStream inputStream, String plantId,
+			String year) {
+		List<CatalystChangeOverDTO> resultList = new ArrayList<>();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+
+			if (rowIterator.hasNext())
+				rowIterator.next(); // Skip header row
+
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+				CatalystChangeOverDTO dto = new CatalystChangeOverDTO();
+
+				try {
+					// Col 0 – Parameter
+					Cell paramCell = row.getCell(0);
+					if (paramCell != null) {
+						paramCell.setCellType(CellType.STRING);
+						dto.setParameter(paramCell.getStringCellValue().trim());
+					}
+
+					// Col 1 – Date
+					Cell dateCell = row.getCell(1);
+					if (dateCell != null) {
+						if (dateCell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(dateCell)) {
+							dto.setDate(dateCell.getDateCellValue());
+						} else {
+							dateCell.setCellType(CellType.STRING);
+							String dateStr = dateCell.getStringCellValue().trim();
+							if (!dateStr.isEmpty()) {
+								dto.setDate(sdf.parse(dateStr));
+							}
+						}
+					}
+
+					// Col 2 – Remarks
+					Cell remarksCell = row.getCell(2);
+					if (remarksCell != null) {
+						remarksCell.setCellType(CellType.STRING);
+						dto.setRemarks(remarksCell.getStringCellValue().trim());
+					}
+
+					// Col 3 – Id (hidden; present means update, absent means insert)
+					Cell idCell = row.getCell(3);
+					if (idCell != null) {
+						idCell.setCellType(CellType.STRING);
+						String idVal = idCell.getStringCellValue().trim();
+						dto.setId(idVal.isEmpty() ? null : idVal);
+					}
+
+					dto.setPlantId(plantId);
+					dto.setAopYear(year);
+
+				} catch (Exception e) {
+					e.printStackTrace();
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Failed to read row");
+				}
+
+				resultList.add(dto);
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to read Catalyst ChangeOver Excel", e);
+		}
+		return resultList;
+	}
+
+	// ─── Catalyst Change Over Import – API ───────────────────────────────────────
+
+	@Override
+	@Transactional
+	public AOPMessageVM importCatalystChangeOverExcel(String year, String plantId, MultipartFile file) {
+		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+			throw new IllegalArgumentException("Invalid or empty Excel file.");
+		}
+		try {
+			List<CatalystChangeOverDTO> data = readCatalystChangeOverExcel(file.getInputStream(), plantId, year);
+
+			List<CatalystChangeOverDTO> failedRecords = new ArrayList<>();
+
+			for (CatalystChangeOverDTO dto : data) {
+				if ("Failed".equals(dto.getSaveStatus())) {
+					failedRecords.add(dto);
+					continue;
+				}
+				try {
+					saveCatalystChangeOver(Collections.singletonList(dto), year);
+				} catch (Exception e) {
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Save failed");
+					failedRecords.add(dto);
+				}
+			}
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (!failedRecords.isEmpty()) {
+				byte[] fileByteArray = createCatalystChangeOverExcel(year, plantId, true, failedRecords);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid argument", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to import Catalyst ChangeOver data", ex);
 		}
 	}
 

@@ -98,7 +98,13 @@ export default function SpecificConsumptionNorm() {
     if (!columnsFromBackend || columnsFromBackend.length === 0) {
       // Default columns if backend doesn't provide them
       return [
-        { field: 'NormName', title: 'Particular', editable: false, flex: 1, widthT: 250, },
+        {
+          field: 'NormName',
+          title: 'Particular',
+          editable: false,
+          flex: 1,
+          widthT: 250,
+        },
         { field: 'UOM', title: 'UOM', editable: false, widthT: 100 },
       ]
     }

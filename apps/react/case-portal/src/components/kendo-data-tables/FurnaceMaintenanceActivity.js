@@ -2,6 +2,7 @@ import { useSession } from 'SessionStoreContext'
 import Notification from 'components/Utilities/Notification'
 import React, { useEffect, useState } from 'react'
 import { DataService } from 'services/DataService'
+import { FurnaceMaintenanceActivityApiService } from 'services/FurnaceMaintenanceActivityApiService'
 import KendoDataTables from 'components/kendo-data-tables/index'
 import { validateFields } from 'utils/validationUtils'
 import moment from 'moment'
@@ -77,11 +78,12 @@ const FurnaceMaintenanceActivity = ({ permissions }) => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const data2 = await DataService.getFurnaceMaintenanceActivity(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      const data2 =
+        await FurnaceMaintenanceActivityApiService.getFurnaceMaintenanceActivity(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
       const toDateObject = (value) =>
         value ? moment(value, 'MMM D, YYYY').toDate() : null
@@ -131,12 +133,34 @@ const FurnaceMaintenanceActivity = ({ permissions }) => {
           }
         })
 
-        // Extract unique furnace names from data
-        const uniqueNames = [
-          ...new Set(
-            data2.data?.data?.map((item) => item.Name).filter(Boolean),
-          ),
-        ]
+        // Fetch furnace dropdown options from backend API
+        let dropdownOptions = []
+        try {
+          const response =
+            await FurnaceMaintenanceActivityApiService.getFurnaceDropdownData(
+              keycloak,
+              PLANT_ID,
+              AOP_YEAR,
+            )
+          if (response && response.code === 200) {
+            const dataList = response.data || []
+            dropdownOptions = dataList.map((item) => {
+              if (typeof item === 'string') {
+                return { value: item, name: item }
+              }
+              const val = item.value !== undefined ? item.value : item.name
+              const name =
+                item.name !== undefined
+                  ? item.name
+                  : item.displayName || item.name
+              return { value: val, name: name }
+            })
+          }
+        } catch (e) {
+          console.error('Error loading furnace dropdown data:', e)
+        }
+
+        const uniqueNames = dropdownOptions.map((opt) => opt.value)
         setUniqueFurnaceNames(uniqueNames)
 
         const mappedCols = (data2?.data?.columns || [])
@@ -157,10 +181,12 @@ const FurnaceMaintenanceActivity = ({ permissions }) => {
               columnConfig.type = 'dynamicDropdownshared'
             } else if (col.field === 'Name') {
               columnConfig.type = 'dynamicDropdownshared'
-              columnConfig.dropdownOptions = uniqueNames.map((name) => ({
-                value: name,
-                name: name,
-              }))
+              columnConfig.dropdownOptions = dropdownOptions
+            } else if (
+              col.field === 'DisplayName' ||
+              col.field === 'displayName'
+            ) {
+              columnConfig.hidden = true
             }
 
             return columnConfig
@@ -383,6 +409,9 @@ const FurnaceMaintenanceActivity = ({ permissions }) => {
             obj[field] = value ?? null
           }
         })
+        if (!obj.Id) {
+          obj.DisplayName = obj.Name
+        }
         return obj
       })
 
@@ -415,6 +444,44 @@ const FurnaceMaintenanceActivity = ({ permissions }) => {
     }
   }
 
+  const deleteRowData = async (paramsForDelete) => {
+    setLoading(true)
+    try {
+      const { Id, id } = paramsForDelete
+      const deleteId = id
+
+      if (!Id) {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setModifiedCells((prev) => {
+          const newModifiedCells = { ...prev }
+          delete newModifiedCells[deleteId]
+          return newModifiedCells
+        })
+      } else {
+        await FurnaceMaintenanceActivityApiService.deleteFurnaceMaintenanceActivity(
+          Id,
+          keycloak,
+        )
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Record Deleted successfully!',
+          severity: 'success',
+        })
+        fetchData()
+      }
+    } catch (error) {
+      console.error('Error deleting Record', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error deleting record!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const saveChangesRunLength = React.useCallback(async () => {
     try {
       saveCrackerRunLength(Object.values(modifiedCells))
@@ -440,14 +507,15 @@ const FurnaceMaintenanceActivity = ({ permissions }) => {
         handleRemarkCellClick={handleRemarkCellClick}
         fetchData={fetchData}
         setModifiedCells={setModifiedCells}
+        deleteRowData={deleteRowData}
         permissions={{
           ...permissions,
           remarksEditable: true,
           saveBtn: true,
           saveBtnForRemark: true,
-          addButton: false,
+          addButton: true,
           allAction: true,
-          deleteButton: false,
+          deleteButton: true,
           dynamicDropdownOptions: {
             MaintActivity: MaintActivityDropdownData,
           },

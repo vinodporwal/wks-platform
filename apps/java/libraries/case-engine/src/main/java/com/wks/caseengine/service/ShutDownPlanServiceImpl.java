@@ -3070,6 +3070,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD");
 		boolean filament = verticalName.equalsIgnoreCase("Filament");
 		boolean staple = verticalName.equalsIgnoreCase("Staple");
+		boolean chemical = verticalName.equalsIgnoreCase("Chemical");
 		boolean monthDropdown= (verticalName.equalsIgnoreCase("PP") && (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("SEZ") || site.getName().equalsIgnoreCase("DTA")));
 		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
 		List<String> items = List.of(
@@ -3231,7 +3232,22 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		}
 	}
 
+	List<Map<String, Object>> shutdownDescriptionList = new ArrayList<>();
+	// for chemical plant fetch the drop down discription list for import validation
+	if(chemical) { 
+		shutdownDescriptionList = (List<Map<String, Object>>) getShutdownDescription(String.valueOf(plantId)).getData();
+	}
 		for (ShutDownPlanDTO shutDownPlanDTO : shutDownPlanDTOList) {
+
+			// implemented desc validation for chemical
+			if(chemical) {  
+				if (!isValidShutdownDescription(shutDownPlanDTO.getDiscription(), shutdownDescriptionList)) {
+					shutDownPlanDTO.setSaveStatus("Failed");
+					shutDownPlanDTO.setErrDescription("Invalid description. Please select a valid description");
+					failedList.add(shutDownPlanDTO);
+					continue;
+				}
+			}
 			if (shutDownPlanDTO.getSaveStatus() != null
 					&& shutDownPlanDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
 
@@ -3928,6 +3944,14 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
+	}
+
+	private boolean isValidShutdownDescription(String description, List<Map<String, Object>> validDescriptions) {
+		if (description == null || description.trim().isEmpty()) {
+			return false;
+		}
+		return validDescriptions.stream()
+				.anyMatch(map -> description.equals(map.get("DisplayName")));
 	}
 
 	public List<Object[]> getDescriptionDropdownData(UUID verticalId, String viewName) {

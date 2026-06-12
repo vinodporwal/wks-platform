@@ -521,7 +521,14 @@ const ProductionOptimizer = () => {
         },
         isOldYear,
       ),
-    [isOldYear, AOP_YEAR, PLANT_ID, SCREEN_NAME, dropdownOptions, calculationObject],
+    [
+      isOldYear,
+      AOP_YEAR,
+      PLANT_ID,
+      SCREEN_NAME,
+      dropdownOptions,
+      calculationObject,
+    ],
   )
 
   const adjustedPermissionsCombined = useMemo(

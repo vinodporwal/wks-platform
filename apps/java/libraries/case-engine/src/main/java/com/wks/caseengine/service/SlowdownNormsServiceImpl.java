@@ -1570,7 +1570,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 		int result = executeDynamicUpdateProcedure(storedProcedure, plantId, site.getId().toString(),
 				vertical.getId().toString(), year);
 		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year,
-				"slowdown-norms-configuration");
+				"slowdown-norms-configuration-calculate");
 		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("slowdown-norms-configuration-calculate");
 		for (ScreenMapping screenMapping : screenMappingList) {
 			AopCalculation aopCalculation = new AopCalculation();
@@ -1743,7 +1743,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
             Map<String, Object> map = new HashMap<>();
 
 			List<AopCalculation> aopCalculation = aopCalculationRepository
-					.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "slowdown-norms-configuration");
+					.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "slowdown-norms-configuration-calculate");
 			map.put("resultList", resultList);
 			map.put("aopCalculation", aopCalculation);
             aopMessageVM.setCode(200);
