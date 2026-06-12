@@ -37,7 +37,7 @@ def _norm(
     )
 
 
-def fetch_fixed_process_demands(month: int, year: int) -> dict:
+def fetch_fixed_process_demands(month: int, year: int, cpp_plant_id: str = None) -> dict:
     """
     Fetch Fixed and Process demands from database for all utilities.
     
@@ -70,7 +70,7 @@ def fetch_fixed_process_demands(month: int, year: int) -> dict:
     
    # Fetch Power demands from CalculatedProcessDemand via process_demand_service
     from services.process_demand_service import get_process_demand_for_month
-    process_demands = get_process_demand_for_month(month, year)
+    process_demands = get_process_demand_for_month(month, year, cpp_plant_id)
     power_process_kwh = process_demands.get("power_process", 0.0)
     # Convert KWH to MWh
     power_process = power_process_kwh / 1000.0

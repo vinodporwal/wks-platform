@@ -51,6 +51,7 @@ from services.demand_service import (
     calculate_u4u_mp_steam,
     print_demand_summary,
 )
+from services.process_demand_service import get_process_demand_for_month
 from services.norm_lookup_service import get_month_norm
 from database.connection import get_connection
 from database.import_queries import (
@@ -797,7 +798,10 @@ def usd_iterate(
     
     # Power (from database)
     from services.demand_service import fetch_fixed_process_demands
-    db_demands = fetch_fixed_process_demands(month, year)
+    db_demands = fetch_fixed_process_demands(month, year, cpp_plant_id)
+    process_demands = get_process_demand_for_month(month, year, cpp_plant_id)
+    oxygen_process = process_demands.get("oxygen_process", 5786.0) if process_demands else 5786.0
+    effluent_process = process_demands.get("effluent_process", 243000.0) if process_demands else 243000.0
     power_fixed = db_demands.get("power", {}).get("fixed", 0.0) if db_demands and isinstance(db_demands, dict) else 0.0
     power_process = db_demands.get("power", {}).get("process", 0.0) if db_demands and isinstance(db_demands, dict) else 0.0
     power_u4u_est = 15850.0  # Rough estimate for initial display
@@ -816,8 +820,6 @@ def usd_iterate(
     cw1_process = 15194.0
     cw2_process = 9016.0
     air_process = 6095102.0
-    oxygen_process = 5786.0
-    effluent_process = db_demands.get('effluent', {}).get('process', 243000.0) if db_demands and isinstance(db_demands, dict) else 243000.0
     
     print(f"  | BFW                  | M3     | {0:>13,.2f} | {bfw_process:>13,.2f} | {'(calc)':>13} | {'(calc)':>13} |")
     print(f"  | DM Water             | M3     | {dm_fixed:>13,.2f} | {dm_process:>13,.2f} | {'(calc)':>13} | {'(calc)':>13} |")
@@ -1477,8 +1479,8 @@ def usd_iterate(
         air_total_estimate = air_fixed + air_process + u4u_air.get("total_nm3", 0.0)
 
         # Oxygen and Effluent (process values)
-        oxygen_total = 5786.0
-        effluent_total = effluent_process  # Use DB-fetched value instead of hardcoded
+        oxygen_total = oxygen_process
+        effluent_total = effluent_process
         
         # Calculate U4U Power from utilities
         u4u_power = calculate_u4u_power(
