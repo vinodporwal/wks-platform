@@ -406,7 +406,7 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
               ? JSON.parse(containerValue)
               : {}
 
-            return parsedContainer.textField1 || ''
+            return parsedContainer.mainAsset || ''
           } catch (error) {
             console.error('Error parsing mainAsset:', error)
             return ''
@@ -1148,7 +1148,7 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
 
         const updatedCases = data.map((singleCase) => {
           let caseTitle = "";
-          let caseNumber = "";
+        let caseNumber = singleCase.caseNo
   
           try {
             const containerValue = singleCase.attributes.find(

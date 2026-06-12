@@ -403,8 +403,6 @@ const createApmUrlBasedOnSelectedEvent = () => {
             sourceSystem: sourceSystem,
             eventIds: eventIds,
             businessKey: businessKey,
-		  caseNo: businessKey,
-			caseNumber: businessKey,
             owner: {
               id: keycloak.subject || '',
               // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
@@ -595,8 +593,8 @@ const createApmUrlBasedOnSelectedEvent = () => {
             })(),  */
 
 
-           // assignedTo: {emailId: formData.data.container.caseAssignedTo}
-           assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
+            assignedTo: {emailId: formData.data.container.caseAssignedTo}
+          // assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
 
     //     assignedTo: formData.data.container.caseAssignedTo.email.map(email => ({ emailId: email }))
 
@@ -624,7 +622,7 @@ const createApmUrlBasedOnSelectedEvent = () => {
         color='primary'
         size='small'
         onClick={() => {
-          navigate(`/case-list/cases`)
+          navigate(`/case-list/create${currentParams}`)
           handleCloseSnack()
 		 
         }}

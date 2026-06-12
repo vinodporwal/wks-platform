@@ -434,6 +434,17 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
             caseData.setCaseNo(caseNo);
             //	caseData.setCaseUrl(caseData.getCaseUrl()+"&caseNo="+caseNo);
             caseData.setCaseUrl(caseData.getCaseUrl()+"&caseNo="+ caseData.getBusinessKey());
+			// Inject the generated caseNo back into the container attribute JSON before saving
+			try {
+				ObjectMapper injectMapper = new ObjectMapper();
+				String rawAttrValue = attribute.getValue().replace("\\\"", "\"");
+				com.fasterxml.jackson.databind.node.ObjectNode rootNode =
+					(com.fasterxml.jackson.databind.node.ObjectNode) injectMapper.readTree(rawAttrValue);
+				rootNode.put("caseNo", caseNo);
+				attribute.setValue(injectMapper.writeValueAsString(rootNode));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 
             System.out.println("Saving New Case Details....");
             caseData.setCreationDate(currentDate);
@@ -485,8 +496,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
             try {
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode rootNode = objectMapper.readTree(attributeValue);
-            //    String assignedTo = rootNode.path("caseAssignedTo").asText();
-                String[] assignedTo = caseData.getAssignedTo().stream().map(ele -> ele.getEmailId()).toArray(String[]::new);
+                String assignedTo = rootNode.path("caseAssignedTo").asText();
+            //    String[] assignedTo = caseData.getAssignedTo().stream().map(ele -> ele.getEmailId()).toArray(String[]::new);
                 String caseNumber = caseData.getCaseNo();
                 String caseTitle = rootNode.path("caseTitle").asText();
                 System.out.println(rootNode.path("caseAssignedTo").asText());

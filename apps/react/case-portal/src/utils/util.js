@@ -2,10 +2,7 @@ export const buildCreateUrl = (url) => {
   const cleanedUrl = cleanUrl(url);
   let newUrl;
   if (cleanedUrl.includes('case-list')) {
-    if(cleanedUrl.includes('?'))  
     newUrl = cleanedUrl;
-  else newUrl = cleanedUrl + '?'
-
   } else {
     newUrl = cleanedUrl.replace(
     'create?',

@@ -225,29 +225,13 @@ console.log('*****  taskId:  ', taskId);
     setSnackOpen(false)
   }
 
-  // After updating an existing case, always return to the cases list
-  const navigateToCaseUrl = (_caseUrl) => {
-    navigate('/case-list/create')
-  }
-
-  // const handleConfirmSubmit = () => {
-  //   // Proceed with the submit action if confirmed
-  //   console.log('Submit confirmed');
-  //   setIsConfirmationOpen(false); // Close the dialog
-  //   // Add your submission logic here
-  // };
-
-  // const handleCancelSubmit = () => {
-  //   setIsConfirmationOpen(false); // Close the dialog if canceled
-  // };
-
   const snackAction = lastCreatedCase && (
     <React.Fragment>
       <Button
         color='primary'
         size='small'
         onClick={() => {
-          navigate(`/case-list/cases`)
+          navigate(`/case-list/create${currentParams}`)
           handleCloseSnack()
         }}
       >
@@ -499,7 +483,7 @@ console.log('*****  taskId:  ', taskId);
                   : null
 
               if (caseNo) {
-                caseNo.calculateValue = `value = ${currentCase.businessKey}`
+                caseNo.calculateValue = `value = ${currentCase.caseNo}`
               }
 
               const caseTitleField =
@@ -727,8 +711,8 @@ console.log('*****  taskId:  ', taskId);
           //   return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
           //  })(),
        
-          // assignedTo: {emailId: formData.data.container.caseAssignedTo}
-          assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
+          assignedTo: {emailId: formData.data.container.caseAssignedTo}
+         // assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
           }),
         )
       })
