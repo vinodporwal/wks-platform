@@ -1373,8 +1373,15 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 		try {
 			// Columns: Id(0), VerticalId(1), SiteId(2), PlantId(3), DisplayOrder(4), Name(5), DisplayName(6)
 			// We add a dummy column at index 5 to shift Name to index 6 and DisplayName to index 7
+			Plants plant = plantsRepository.findById(plantId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+            Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+            String viewName = "vw" + vertical.getName() + "FuelDropdown";
 			String sql = "SELECT " + "Id, VerticalId, SiteId, PlantId, DisplayOrder, NULL as DummyType, Name, DisplayName "
-					 + "FROM vwCrackerFuelDropdown "
+					 + "FROM " + viewName
 					+ " ORDER BY DisplayOrder";
 
 			Query query = entityManager.createNativeQuery(sql);
