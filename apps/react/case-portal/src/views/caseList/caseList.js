@@ -406,7 +406,7 @@ export const CaseList = ({ status, caseDefId: caseDefIdProp }) => {
               ? JSON.parse(containerValue)
               : {}
 
-            return parsedContainer.textField1 || ''
+            return parsedContainer.mainAsset || parsedContainer.textField1 || ''
           } catch (error) {
             console.error('Error parsing mainAsset:', error)
             return ''
