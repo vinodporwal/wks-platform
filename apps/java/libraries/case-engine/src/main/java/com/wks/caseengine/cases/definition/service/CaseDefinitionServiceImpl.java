@@ -496,8 +496,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
             try {
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode rootNode = objectMapper.readTree(attributeValue);
-                String assignedTo = rootNode.path("caseAssignedTo").asText();
-            //    String[] assignedTo = caseData.getAssignedTo().stream().map(ele -> ele.getEmailId()).toArray(String[]::new);
+            //    String assignedTo = rootNode.path("caseAssignedTo").asText();
+                String[] assignedTo = caseData.getAssignedTo().stream().map(ele -> ele.getEmailId()).toArray(String[]::new);
                 String caseNumber = caseData.getCaseNo();
                 String caseTitle = rootNode.path("caseTitle").asText();
                 System.out.println(rootNode.path("caseAssignedTo").asText());
