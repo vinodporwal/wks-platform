@@ -95,8 +95,10 @@ def save_calculated_norms(month: int, year: int, result: dict, dry_run: bool = F
                 fym_id = fym_row[0]
                 
                 # Get all NormsMonthDetail records for this month
+                # Also join CPPMonthWisePrice to fetch ValueType so we can
+                # skip Amount overwrite for 'Amount' type utilities.
                 cur.execute('''
-                    SELECT 
+                    SELECT
                         nmd.Id,
                         p.Name as PlantName,
                         nh.UtilityName,
@@ -105,10 +107,20 @@ def save_calculated_norms(month: int, year: int, result: dict, dry_run: bool = F
                         nmd.QTY,
                         nmd.Quantity,
                         nmd.Norms,
-                        nmd.NormsHeader_FK_Id
+                        nmd.NormsHeader_FK_Id,
+                        nmd.Price,
+                        nh.Plant_FK_Id,
+                        nmd.Amount,
+                        ISNULL(cmp.ValueType, '') AS ValueType
                     FROM NormsMonthDetail nmd
                     INNER JOIN NormsHeader nh ON nh.Id = nmd.NormsHeader_FK_Id
                     INNER JOIN Plants p ON p.Id = nh.Plant_FK_Id
+                    OUTER APPLY (
+                        SELECT TOP 1 cmp2.ValueType
+                        FROM CPPMonthWisePrice cmp2
+                        WHERE cmp2.NormsHeader_FK_Id = nmd.NormsHeader_FK_Id
+                        ORDER BY cmp2.Id DESC
+                    ) cmp
                     WHERE nmd.FinancialYearMonth_FK_Id = ? AND nh.IsActive = 1
                 ''', (fym_id,))
                 
@@ -128,7 +140,16 @@ def save_calculated_norms(month: int, year: int, result: dict, dry_run: bool = F
                     old_quantity = float(row[6]) if row[6] else 0
                     old_norms = float(row[7]) if row[7] else 0
                     norms_header_fk_id = str(row[8]) if len(row) > 8 and row[8] else None
-                    
+                    price = float(row[9]) if len(row) > 9 and row[9] else 0
+                    plant_id = str(row[10]) if len(row) > 10 and row[10] else ''
+                    old_amount = float(row[11]) if len(row) > 11 and row[11] else 0
+                    value_type = str(row[12]).strip() if len(row) > 12 and row[12] else ''
+
+                    # ── ValueType = 'Amount': user entered a direct cost amount.
+                    # We must NEVER overwrite the amount — only QTY/Quantity/Norms
+                    # may be updated (so norms stay accurate even for Amount rows).
+                    is_direct_amount = (value_type == 'Amount')
+
                     key = (plant_name, utility_name)
                     new_qty = generation_map.get(key, None)
                     
@@ -150,32 +171,87 @@ def save_calculated_norms(month: int, year: int, result: dict, dry_run: bool = F
                     norms_to_use = new_norms if new_norms is not None else old_norms
                     
                     if new_qty is None:
-                        same_count += 1
+                        # No QTY match in generation_map — handle Amount-type separately
+                        if is_direct_amount:
+                            # Amount row with no QTY match — nothing to update
+                            same_count += 1
+                        elif price > 0:
+                            # Price/Calculation row: fix Amount if Price exists
+                            expected_amount = old_quantity * price
+                            if abs(expected_amount - old_amount) > 0.01:
+                                cur.execute('''
+                                    UPDATE NormsMonthDetail
+                                    SET Amount = ?
+                                    WHERE Id = ?
+                                ''', (expected_amount, record_id))
+                                updated_count += 1
+                            else:
+                                same_count += 1
+                        else:
+                            same_count += 1
                         continue
-                    
+
                     new_quantity = new_qty * norms_to_use
-                    
+
+                    # For 'Amount' type rows: do NOT recalculate Amount from Price
+                    # (Price = 0 for these rows; amount was entered by user and is
+                    # authoritative — utility_price_service.py preserves it separately).
+                    if is_direct_amount:
+                        # Only update QTY / Quantity / Norms — never touch Amount
+                        qty_changed = abs(new_qty - old_qty) > 0.01
+                        quantity_changed = abs(new_quantity - old_quantity) > 0.01
+                        norms_changed = new_norms is not None and abs(new_norms - old_norms) > 0.0001
+                        print(f'Updating (Amount type) record {month}:{year} {record_id}: '
+                              f'PlantName={plant_name}, QTY={new_qty}, Norms={new_norms}, '
+                              f'Quantity={new_quantity}  [Amount preserved]')
+                        print('****************************')
+                        if qty_changed or quantity_changed or norms_changed:
+                            updated_count += 1
+                            if new_norms is not None:
+                                cur.execute('''
+                                    UPDATE NormsMonthDetail
+                                    SET QTY = ?, Quantity = ?, Norms = ?
+                                    WHERE Id = ?
+                                ''', (new_qty, new_quantity, new_norms, record_id))
+                                if norms_header_fk_id and _sync_to_cpp_norms(
+                                        conn, norms_header_fk_id, fym_id, new_norms, 'PythonModel'):
+                                    cpp_norms_synced += 1
+                            else:
+                                cur.execute('''
+                                    UPDATE NormsMonthDetail
+                                    SET QTY = ?, Quantity = ?
+                                    WHERE Id = ?
+                                ''', (new_qty, new_quantity, record_id))
+                        else:
+                            same_count += 1
+                        continue
+
+                    # For 'Price' and 'Calculation' type rows: calculate Amount normally
+                    new_amount = new_quantity * price
+                    print(f'Updating record {month}:{year} {record_id}: PlantName={plant_name}, PlantId={plant_id}, QTY={new_qty},  Norms={new_norms}, Quantity={new_quantity}, Price={price}, update_Amount={new_amount}')
+                    print("****************************")
                     qty_changed = abs(new_qty - old_qty) > 0.01
                     quantity_changed = abs(new_quantity - old_quantity) > 0.01
                     norms_changed = new_norms is not None and abs(new_norms - old_norms) > 0.0001
                     
-                    if qty_changed or quantity_changed or norms_changed:
+                    amount_changed = abs(new_amount - old_amount) > 0.01
+                    if qty_changed or quantity_changed or norms_changed or amount_changed:
                         updated_count += 1
                         if new_norms is not None:
                             cur.execute('''
-                                UPDATE NormsMonthDetail 
-                                SET QTY = ?, Quantity = ?, Norms = ?
+                                UPDATE NormsMonthDetail
+                                SET QTY = ?, Quantity = ?, Norms = ?, Amount = ?
                                 WHERE Id = ?
-                            ''', (new_qty, new_quantity, new_norms, record_id))
-                            
+                            ''', (new_qty, new_quantity, new_norms, new_amount, record_id))
+
                             if norms_header_fk_id and _sync_to_cpp_norms(conn, norms_header_fk_id, fym_id, new_norms, 'PythonModel'):
                                 cpp_norms_synced += 1
                         else:
                             cur.execute('''
-                                UPDATE NormsMonthDetail 
-                                SET QTY = ?, Quantity = ?
+                                UPDATE NormsMonthDetail
+                                SET QTY = ?, Quantity = ?, Amount = ?
                                 WHERE Id = ?
-                            ''', (new_qty, new_quantity, record_id))
+                            ''', (new_qty, new_quantity, new_amount, record_id))
                     else:
                         same_count += 1
                 

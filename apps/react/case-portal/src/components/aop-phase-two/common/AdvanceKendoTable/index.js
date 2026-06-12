@@ -27,6 +27,7 @@ import { NumberCellEditor } from '../utilities/NumberCellEditor'
 import { SvgIcon } from '../../../../../node_modules/@progress/kendo-react-common/index'
 import { trashIcon } from '../../../../../node_modules/@progress/kendo-svg-icons/dist/index'
 import { Tooltip } from '../../../../../node_modules/@progress/kendo-react-tooltip/index'
+import { Checkbox } from '@progress/kendo-react-inputs'
 import { BooleanCellEditor } from '../utilities/BooleanCellEditor'
 import { NumericEditorWithMinMax } from '../utilities/NumericEditorWithMinMax'
 import {
@@ -80,6 +81,11 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import Collapse from '@mui/material/Collapse'
 import { useSelector } from 'react-redux'
+import DeleteSelectedDialog from './components/DeleteSelectedDialog'
+import {
+  calculateMonthDuration,
+  getMonthStartEndDate,
+} from '../utilities/durationHelpers'
 
 // Helper function to get nested value from object
 const getNestedValue = (obj, path) => {
@@ -259,6 +265,8 @@ const AdvanceKendoTable = ({
   customHandleRemarkSave = null,
   isReleaseDisabled = true,
   handleRelease = () => {},
+  handleDeleteSelected = (selectedItems) => {},
+  screenType = null,
 }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -270,7 +278,7 @@ const AdvanceKendoTable = ({
     siteObject,
   } = dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
-
+  const AOP_YEAR = year?.selectedYear
   const fileInputRef = useRef(null)
   const minGridWidth = useRef(0)
   const gridRef = useRef(null)
@@ -292,6 +300,8 @@ const AdvanceKendoTable = ({
   const [internalCustomModifiedCells, setInternalCustomModifiedCells] =
     useState({})
   const [disableRedHighlight, setDisableRedHighlight] = useState(false)
+  const [selectedRows, setSelectedRows] = useState([])
+  const [deleteMultipleConfirms, setDeleteMultipleConfirms] = useState(false)
 
   // Use external customModifiedCells if provided, otherwise use internal
   const customModifiedCells =
@@ -333,6 +343,8 @@ const AdvanceKendoTable = ({
   const toggleGrid = () => {
     setGridExpanded((prev) => !prev)
   }
+
+  const showDeleteAll = permissions?.deleteMultiple && selectedRows.length > 0
 
   const menuItemStyle = {
     fontSize: 14,
@@ -623,6 +635,18 @@ const AdvanceKendoTable = ({
             updated[field] = value
           }
 
+          if (screenType === 'shutdown' && field === 'monthly') {
+            const monthDur = calculateMonthDuration(value, AOP_YEAR)
+            const [start, end] = getMonthStartEndDate(value, AOP_YEAR)
+            if (monthDur) {
+              updated.durationInHrs = monthDur
+            }
+            if (start && end) {
+              updated.maintStartDateTime = start
+              updated.maintEndDateTime = end
+            }
+          }
+
           // Apply date calculations using the accumulated modified data
           if (updatedModifiedCells && dateCalculationConfig) {
             const { dateField1, dateField2, daysField } = dateCalculationConfig
@@ -906,6 +930,21 @@ const AdvanceKendoTable = ({
     } catch (error) {
       console.error('Error saving refresh data:', error)
     }
+  }
+
+  const handleDeleteMultiple = () => {
+    if (permissions?.deleteMultiple && selectedRows?.length > 0) {
+      handleDeleteSelected(selectedRows)
+      setSelectedRows([])
+      setDeleteMultipleConfirms(false)
+    } else {
+      handleDeleteSelected()
+      setDeleteMultipleConfirms(false)
+    }
+  }
+
+  const handleOpenDeleteMultipleDialog = () => {
+    setDeleteMultipleConfirms(true)
   }
 
   const RemarkCell = (props) => {
@@ -1316,6 +1355,58 @@ const AdvanceKendoTable = ({
 
     // Cell is editable only if dependent field value is in editableValues
     return editableValues.includes(dependentValue)
+  }
+
+  const renderMultipleSelectionCheckbox = () => {
+    return (
+      <GridColumn
+        field='selected'
+        width='50px'
+        headerSelectionValue={
+          selectedRows?.length > 0 && selectedRows?.length === rows?.length
+        }
+        cells={{
+          data: (props) => (
+            <td style={{ textAlign: 'center' }}>
+              <Checkbox
+                checked={selectedRows?.includes(props.dataItem?.idFromApi)}
+                onChange={() => {
+                  const id = props.dataItem?.idFromApi
+                  if (selectedRows?.includes(id)) {
+                    setSelectedRows(selectedRows?.filter((r) => r !== id))
+                  } else {
+                    setSelectedRows([...selectedRows, id])
+                  }
+                }}
+              />
+            </td>
+          ),
+          headerCell: () => (
+            <th
+              style={{
+                textAlign: 'center',
+                padding: '0px !important',
+              }}
+            >
+              <Checkbox
+                checked={
+                  selectedRows?.length > 0 &&
+                  selectedRows?.length === rows?.length
+                }
+                onChange={(e) => {
+                  const checked = e?.value ?? e?.target?.checked ?? false
+                  if (checked) {
+                    setSelectedRows(rows.map((r) => r?.idFromApi))
+                  } else {
+                    setSelectedRows([])
+                  }
+                }}
+              />
+            </th>
+          ),
+        }}
+      />
+    )
   }
 
   const renderColumns = (cols, filter, sort) =>
@@ -2575,6 +2666,17 @@ const AdvanceKendoTable = ({
                   Release
                 </Button>
               )}
+
+              {permissions?.deleteMultiple && (
+                <Button
+                  variant='contained'
+                  className='btn-calculate'
+                  onClick={handleOpenDeleteMultipleDialog}
+                  disabled={isButtonDisabled || READ_ONLY || !showDeleteAll}
+                >
+                  Delete
+                </Button>
+              )}
             </Box>
           </Box>
         </Box>
@@ -2633,6 +2735,8 @@ const AdvanceKendoTable = ({
                 pageable={getPaginationConfig()}
                 onRowClick={handleRowClick}
               >
+                {permissions?.deleteMultiple &&
+                  renderMultipleSelectionCheckbox()}
                 {renderColumns(
                   columns.filter(
                     (col) =>
@@ -2708,6 +2812,13 @@ const AdvanceKendoTable = ({
         openSaveDialogeBox={openSaveDialogeBox}
         closeSaveDialogeBox={closeSaveDialogeBox}
         saveConfirmation={saveConfirmation}
+      />
+      {/* Delete Selected Dialog */}
+      <DeleteSelectedDialog
+        openDeleteDialogeBox={deleteMultipleConfirms}
+        setOpenDeleteDialogeBox={setDeleteMultipleConfirms}
+        deleteTheRecord={handleDeleteMultiple}
+        confirmButtonText={'Delete'}
       />
     </div>
   )

@@ -7,6 +7,7 @@ export const ShutdownPlanApiService = {
   deleteShutdownActivity,
   exportShutdownPlan,
   importShutdownPlan,
+  deleteMultipleShutdown,
 }
 
 // ========================|| PE Shutdown Plan APIs ||=====================================//
@@ -130,7 +131,7 @@ async function deleteShutdownActivity(keycloak, maintenanceId, plantId) {
  */
 async function exportShutdownPlan(keycloak, plantId, year, excelTitle) {
   const url =
-    `${Config.CaseEngineUrl}/task/shutdown-export-non-product` +
+    `${Config.CaseEngineUrl}/task/shutdown-export-hiir` +
     `?year=${encodeURIComponent(year)}` +
     `&plantId=${encodeURIComponent(plantId)}` +
     `&maintenanceTypeName=Shutdown`
@@ -175,7 +176,7 @@ async function exportShutdownPlan(keycloak, plantId, year, excelTitle) {
  */
 async function importShutdownPlan(file, keycloak, plantId, year) {
   const url =
-    `${Config.CaseEngineUrl}/task/shutdown-import-non-product` +
+    `${Config.CaseEngineUrl}/task/shutdown-import-hiir` +
     `?plantId=${encodeURIComponent(plantId)}` +
     `&year=${encodeURIComponent(year)}` +
     `&maintenanceTypeName=Shutdown`
@@ -192,6 +193,43 @@ async function importShutdownPlan(file, keycloak, plantId, year) {
     return resp.json()
   } catch (e) {
     console.error('Error importing shutdown plan:', e)
+    return Promise.reject(e)
+  }
+}
+
+// ─── Delete Selected ───────────────────────────────────────────────────────────────────
+/**
+ * Delete multiple shutdown activities for a PE plant
+ * DELETE /task/shutdown?plantMaintenanceTransactionIds={id1,id2,id3...}&plantId={plantId}
+ *
+ * Response shape:
+ *   { message: "Success" }        → success
+ *
+ * @param {Array}   ids  - Array of IDs to delete
+ * @param {Object} keycloak  - Keycloak session
+ * @param {string} PLANT_ID   - Plant ID
+ * @returns {Promise<string>}
+ */
+
+async function deleteMultipleShutdown(ids, keycloak, PLANT_ID) {
+  const url = `${Config.CaseEngineUrl}/task/shutdown?plantMaintenanceTransactionIds=${ids.join(',')}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to delete data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    return await resp.text() // Handle text response from the backend
+  } catch (e) {
+    console.error('Error deleting multiple shutdown data:', e)
     return Promise.reject(e)
   }
 }

@@ -1,21 +1,16 @@
-import { useState, useMemo, useCallback } from 'react'
-import { Box } from '@mui/material'
-import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
+import { useEffect, useState } from 'react'
+import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
+import { ProductionNormsApiService } from 'components/aop-phase-two/services/pcg/productionNormsApiService'
 import { useSession } from 'SessionStoreContext'
-import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/jmd/utilityPlantApiServiceV2'
-import ValueFormatterPhaseTwo, {
-  customValueFormatterPhaseTwo,
-} from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
+import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
+import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
-import { useDebounce } from 'hooks/useDebounce'
-import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const FixedConsumptionJMD = () => {
+const Constants = ({ startDate, endDate }) => {
   const keycloak = useSession()
-  // State management
+
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -24,239 +19,91 @@ const FixedConsumptionJMD = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const {
-    verticalChange,
-    yearChanged,
-    oldYear,
-    plantID,
-    plantObject,
-    siteObject,
-    verticalObject,
-    year,
-    screenTitle,
-    jmdSelectedPlants,
-  } = dataGridStore
+  const { plantObject, year, siteObject } = dataGridStore
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
-  const VERTICAL_ID = verticalObject?.id
-  const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
-  const EXCEL_NAME = generateExcelName(dataGridStore, 'Fixed_Consumption')
-
-  const PLANT_ID_LIST = useMemo(
-    () => jmdSelectedPlants?.map((plant) => plant.id) || [],
-    [jmdSelectedPlants],
-  )
-
-  const headerMap = generateHeaderNames(AOP_YEAR)
-  const valueFormat = ValueFormatterPhaseTwo()
-  const customFormatTwo = customValueFormatterPhaseTwo(2)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
-
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-
-  // Fiscal-year month order: Apr → Mar
-  const MONTH_TO_INDEX = {
-    apr: 4,
-    may: 5,
-    jun: 6,
-    jul: 7,
-    aug: 8,
-    sep: 9,
-    oct: 10,
-    nov: 11,
-    dec: 12,
-    jan: 1,
-    feb: 2,
-    mar: 3,
-  }
-
-  // Base column configuration for month columns
-  const monthBaseColumnConfig = {
-    editable: true,
-    widthT: 100,
-    minWidth: 100,
-    align: 'left',
-    headerAlign: 'left',
-    type: 'number1',
-    allowNegative: true,
-    format: customFormatTwo,
-  }
-
-  // Month field names in fiscal year order
-  const MONTH_FIELDS = [
-    'apr',
-    'may',
-    'jun',
-    'jul',
-    'aug',
-    'sep',
-    'oct',
-    'nov',
-    'dec',
-    'jan',
-    'feb',
-    'mar',
-  ]
-
-  // Generate month columns by duplicating base config
-  const MONTH_COLUMNS = MONTH_FIELDS.map((mon) => ({
-    ...monthBaseColumnConfig,
-    field: mon,
-    title: headerMap[MONTH_TO_INDEX[mon]],
-  }))
-
-  // Column definitions
+  const valueFormat = customValueFormatterPhaseTwo(5)
   const columns = [
     {
-      field: 'plant',
-      title: 'Plant',
-      widthT: 150,
-      minWidth: 150,
+      field: 'productName',
+      title: 'Particulars',
+      widthT: 300,
+      minWidth: 250,
       type: 'text',
       editable: false,
       hidden: false,
     },
     {
-      field: 'plantId',
-      title: 'Plant ID',
-      widthT: 120,
-      minWidth: 120,
-      type: 'text',
-      editable: false,
-      hidden: true,
-    },
-    {
-      field: 'costCenter',
-      title: 'Cost Center',
-      widthT: 150,
-      minWidth: 150,
-      type: 'text',
-      editable: false,
-      hidden: false,
-    },
-    {
-      field: 'costCenterId',
-      title: 'Cost Center ID',
-      widthT: 170,
-      minWidth: 170,
-      type: 'text',
-      editable: false,
-      hidden: false,
-    },
-    {
-      field: 'cppUtility',
-      title: 'CPP Utilities',
-      widthT: 150,
-      minWidth: 150,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'cppUtilityId',
-      title: 'CPP Utility IDs',
-      widthT: 170,
-      minWidth: 170,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'cppPlant',
-      title: 'CPP Plant',
-      widthT: 150,
-      minWidth: 150,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'cppPlantId',
-      title: 'CPP Plant ID',
-      widthT: 170,
-      minWidth: 170,
-      type: 'text',
-      editable: false,
-      hidden: true,
-    },
-    {
-      field: 'uom',
+      field: 'UOM',
       title: 'UOM',
-      widthT: 100,
+      widthT: 120,
       minWidth: 100,
       type: 'text',
       editable: false,
     },
-
-    // Monthly columns - Apr → Mar (editable)
-    ...MONTH_COLUMNS,
-
     {
-      field: 'total',
-      title: 'Total',
-      widthT: 130,
-      minWidth: 130,
+      field: 'value',
+      title: 'Value',
+      editable: true,
+      widthT: 150,
+      minWidth: 120,
+      align: 'left',
+      headerAlign: 'left',
       type: 'number1',
-      editable: false,
-      format: customFormatTwo,
+      format: valueFormat,
     },
     {
       field: 'remarks',
-      title: 'Remarks',
-      widthT: 250,
+      title: 'Remark',
+      widthT: 350,
       type: 'textarea',
       editable: true,
-      minWidth: 250,
+      minWidth: 300,
     },
   ]
 
-  const fetchFixedConsumptionData = useCallback(async () => {
+  useEffect(() => {
+    if (PLANT_ID && AOP_YEAR) {
+      fetchConstantsData()
+    }
+  }, [PLANT_ID, AOP_YEAR])
+
+  const fetchConstantsData = async () => {
     setLoading(true)
     try {
-      const res = await UtilityPlantApiServiceV2.getFixedConsumptionData(
+      const res = await ProductionNormsApiService.getConstantsData(
         keycloak,
-        PLANT_ID_LIST,
+        PLANT_ID,
         AOP_YEAR,
       )
+
       if (res?.data?.length === 0) {
         setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
-        setLoading(false)
         return
       }
 
-      console.log('*** fixed consumption data', res)
+      console.log('Constants data:', res)
       const formattedData = res?.data?.map((item, index) => ({
         ...item,
         remarks: item.remarks || '',
         id: item?.id || index + 1,
-        total: MONTH_FIELDS.reduce((sum, key) => sum + (item[key] || 0), 0),
       }))
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
-      console.error('Error fetching fixed consumption data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
+      console.error('Error fetching constants data:', error)
+      setRows([])
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+  }
 
-  useDebounce(
-    () => {
-      if (PLANT_ID_LIST?.length && AOP_YEAR) {
-        fetchFixedConsumptionData()
-        setModifiedCells({})
-      }
-    },
-    1000,
-    [PLANT_ID_LIST, AOP_YEAR, fetchFixedConsumptionData],
-  )
-
-  // Permissions (adjust as needed)
   const permissions = {
     showAction: true,
     addButton: false,
@@ -265,19 +112,48 @@ const FixedConsumptionJMD = () => {
     saveBtn: true,
     allAction: true,
     showExport: true,
-    ExcelName: `Fixed Consumption - ${AOP_YEAR}`,
+    ExcelName: `Production_Norms_Constants_${AOP_YEAR}`,
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: screenTitle?.title,
+    titleName: 'Constants',
   }
 
-  // Save handler with API call
+  const formatDateForAPI = (date) => {
+    if (!date) return ''
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   const saveChanges = async () => {
     setLoading(true)
 
+    // Validate required parameters
+    if (!startDate || !endDate) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message:
+          'Period dates are required. Please ensure dates are loaded from AOP Period Basis.',
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
+
+    if (!SITE_ID) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Site ID is required.',
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
+
     const modifiedData = Object.values(modifiedCells)
-    if (modifiedData.length == 0) {
+    if (modifiedData.length === 0) {
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'No Records to Save!',
@@ -287,9 +163,8 @@ const FixedConsumptionJMD = () => {
       return
     }
 
-    var rawData = Object.values(modifiedCells)
-    const data = rawData.filter((row) => row.inEdit)
-    if (data.length == 0) {
+    const data = modifiedData.filter((row) => row.inEdit)
+    if (data.length === 0) {
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'No Records to Save!',
@@ -299,26 +174,12 @@ const FixedConsumptionJMD = () => {
       return
     }
 
-    // Custom validation: If any row data is updated, remarks must be filled and different from original
-    const fieldsToCheck = [
-      'apr',
-      'may',
-      'jun',
-      'jul',
-      'aug',
-      'sep',
-      'oct',
-      'nov',
-      'dec',
-      'jan',
-      'feb',
-      'mar',
-    ]
+    const fieldsToCheck = ['value']
     const validationError = validateRowDataWithRemarks(
       data,
       originalRows,
       fieldsToCheck,
-      'plant',
+      'productName',
     )
 
     if (validationError) {
@@ -333,16 +194,21 @@ const FixedConsumptionJMD = () => {
 
     const payload = modifiedData
     try {
-      console.log('payload', payload)
+      const periodFrom = formatDateForAPI(startDate)
+      const periodTo = formatDateForAPI(endDate)
 
-      // Call the API to save changes
-      const response = await UtilityPlantApiServiceV2.saveFixedConsumptionData(
+      console.log('Saving constants data:', payload)
+
+      const response = await ProductionNormsApiService.saveConstantsData(
         keycloak,
-        PLANT_ID_LIST,
-        payload,
         AOP_YEAR,
+        PLANT_ID,
+        SITE_ID,
+        periodFrom,
+        periodTo,
+        payload,
       )
-      console.log('response', response)
+
       setModifiedCells({})
       setSnackbarOpen(true)
       setSnackbarData({
@@ -350,7 +216,7 @@ const FixedConsumptionJMD = () => {
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error saving fixed consumption data:', error)
+      console.error('Error saving constants data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to save changes. Please try again.',
@@ -364,13 +230,28 @@ const FixedConsumptionJMD = () => {
   const handleExcelUpload = async (file) => {
     if (!file) return
 
+    if (!startDate || !endDate) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message:
+          'Period dates are required. Please ensure dates are loaded from AOP Period Basis.',
+        severity: 'error',
+      })
+      return
+    }
+
     setLoading(true)
     try {
-      const response = await UtilityPlantApiServiceV2.saveFixedConsumptionExcel(
+      const periodFrom = formatDateForAPI(startDate)
+      const periodTo = formatDateForAPI(endDate)
+
+      const response = await ProductionNormsApiService.importConstantsExcel(
         file,
         keycloak,
-        PLANT_ID_LIST,
+        PLANT_ID,
         AOP_YEAR,
+        periodFrom,
+        periodTo,
       )
 
       if (response?.code === 200) {
@@ -379,10 +260,8 @@ const FixedConsumptionJMD = () => {
           message: response?.message || 'Excel file imported successfully!',
           severity: 'success',
         })
-        // Refresh data after import
-        await fetchFixedConsumptionData()
+        await fetchConstantsData()
       } else if (response?.code === 400 && response?.data) {
-        // Handle error response with Excel file download
         try {
           const base64Data = response.data
           const binaryString = window.atob(base64Data)
@@ -396,7 +275,7 @@ const FixedConsumptionJMD = () => {
           const url = window.URL.createObjectURL(blob)
           const link = document.createElement('a')
           link.href = url
-          link.download = `Fixed_Consumption_Errors_${new Date().getTime()}.xlsx`
+          link.download = `Constants_Errors_${new Date().getTime()}.xlsx`
           document.body.appendChild(link)
           link.click()
           document.body.removeChild(link)
@@ -409,8 +288,7 @@ const FixedConsumptionJMD = () => {
               'Import failed with errors. Please check the downloaded file.',
             severity: 'error',
           })
-          // Refresh data after import
-          await fetchFixedConsumptionData()
+          await fetchConstantsData()
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
@@ -446,18 +324,17 @@ const FixedConsumptionJMD = () => {
     })
 
     try {
-      await UtilityPlantApiServiceV2.exportFixedConsumptionExcel(
+      await ProductionNormsApiService.exportConstantsExcel(
         keycloak,
-        PLANT_ID_LIST,
+        PLANT_ID,
         AOP_YEAR,
-        EXCEL_NAME,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error exporting Fixed Consumption data:', error)
+      console.error('Error exporting Constants data:', error)
       setSnackbarData({
         message: 'Excel download failed. Please try again.',
         severity: 'error',
@@ -465,7 +342,6 @@ const FixedConsumptionJMD = () => {
     }
   }
 
-  // Handle remark cell click
   const handleRemarkCellClick = (row) => {
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
@@ -497,17 +373,16 @@ const FixedConsumptionJMD = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        customHeight={80}
+        groupBy={['type']}
         paginationConfig={{
-          threshold: 100, // Show pagination if > 50 rows
+          threshold: 100,
           buttonCount: 5,
           pageSizes: [10, 20, 50, 100],
           defaultPageSize: 100,
         }}
-        groupBy={'plant'}
       />
     </Box>
   )
 }
 
-export default FixedConsumptionJMD
+export default Constants
