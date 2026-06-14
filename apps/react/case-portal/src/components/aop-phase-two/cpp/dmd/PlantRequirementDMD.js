@@ -8,6 +8,7 @@ import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatt
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 const PlantRequirementDMD = () => {
   const keycloak = useSession()
@@ -42,6 +43,7 @@ const PlantRequirementDMD = () => {
   const lowerSiteName = siteObject?.name?.toLowerCase()
   const IS_CPP_JMD = lowerVertName === 'cpp' && lowerSiteName === 'jmd'
   const IS_CPP_NMD = lowerVertName === 'cpp' && lowerSiteName === 'nmd'
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Plant_Requirement')
 
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
@@ -489,6 +491,7 @@ const PlantRequirementDMD = () => {
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        EXCEL_NAME,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -527,7 +530,7 @@ const PlantRequirementDMD = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={() => { }}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}
