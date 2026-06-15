@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -8,6 +8,27 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { customValueFormatterPhaseTwo as customValueFormat } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+
+const plantListCache = new Map()
+
+const getPlantListApi = async (keycloak, PLANT_ID, AOP_YEAR) => {
+  const cacheKey = `${PLANT_ID}-${AOP_YEAR}`
+
+  if (plantListCache.has(cacheKey)) {
+    return plantListCache.get(cacheKey)
+  }
+
+  const request = InputApiService.getPlantList(keycloak, PLANT_ID, AOP_YEAR)
+  plantListCache.set(cacheKey, request)
+
+  try {
+    return await request
+  } catch (error) {
+    plantListCache.delete(cacheKey)
+    throw error
+  }
+}
+
 const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
   const keycloak = useSession()
 
@@ -151,12 +172,21 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
     }
   }, [PLANT_ID, AOP_YEAR, selectedPlant, startDate, endDate])
 
+  // Fetch plant list only when PLANT_ID and AOP_YEAR are defined and have changed
+  const prevPlantIdRef = useRef();
+  const prevYearRef = useRef();
   useEffect(() => {
-    getPlantList()
-  }, [PLANT_ID, AOP_YEAR])
+    if (PLANT_ID && AOP_YEAR && (prevPlantIdRef.current !== PLANT_ID || prevYearRef.current !== AOP_YEAR)) {
+      getPlantList();
+      prevPlantIdRef.current = PLANT_ID;
+      prevYearRef.current = AOP_YEAR;
+    }
+  }, [PLANT_ID, AOP_YEAR]);
 
   const getPlantList = async () => {
-    setLoading(true)
+    console.log("calledddd");
+    
+    setLoading(true)  
     try {
       const res = await InputApiService.getPlantList(
         keycloak,
