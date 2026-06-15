@@ -511,7 +511,8 @@ export const ShutdownConsumptionPeColumnsPeLldpe = [
     field: 'productName',
     headerName: 'Particulars',
     widthT: 120,
-    editable: false, minWidth: 130,
+    editable: false,
+    minWidth: 130,
   },
   {
     field: 'UOM',

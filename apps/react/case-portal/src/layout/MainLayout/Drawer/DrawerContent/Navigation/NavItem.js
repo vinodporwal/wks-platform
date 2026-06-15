@@ -18,7 +18,6 @@ import { useLocation } from 'react-router-dom'
 import { Tooltip } from '@mui/material'
 
 const NavItem = ({ item, level, onItemClick, isPopover }) => {
-  
   const isDashboard = item.id === 'dashboard'
 
   const dispatch = useDispatch()

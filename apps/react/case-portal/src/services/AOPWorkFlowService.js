@@ -46,7 +46,9 @@ async function getExcel(keycloak, payload, PLANT_ID, AOP_YEAR, EXCEL_NAME) {
       body: JSON.stringify(payload),
     })
     if (!resp.ok) {
-      throw new Error(`Failed to Export File: ${resp.status} ${resp.statusText}`)
+      throw new Error(
+        `Failed to Export File: ${resp.status} ${resp.statusText}`,
+      )
     }
     const blob = await resp.blob()
     const urlBlob = window.URL.createObjectURL(blob)

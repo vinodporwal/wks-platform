@@ -39,7 +39,7 @@ async function getBDData(keycloak, PLANT_ID, AOP_YEAR) {
   }
 }
 
-async function getBDLineData(keycloak, PLANT_ID, AOP_YEAR,LINE_ID) {
+async function getBDLineData(keycloak, PLANT_ID, AOP_YEAR, LINE_ID) {
   const url = `${Config.CaseEngineUrl}/task/business-demand-line?year=${AOP_YEAR}&plantId=${PLANT_ID}&lineId=${LINE_ID}`
   const headers = {
     Accept: 'application/json',

@@ -615,7 +615,6 @@ const KendoDataTables = ({
 
   const itemChange = useCallback(
     (e) => {
-
       const { dataItem, field } = e
       let { value } = e
 
