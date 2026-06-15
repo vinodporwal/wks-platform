@@ -27,7 +27,7 @@ export const ProductionNormsApiService = {
  * @returns {Promise} Configuration data
  */
 async function getConfigurationData(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/staple/norm-basis?plantId=${plantId}&aopYear=${year}`
+  const url = `${Config.CaseEngineUrl}/task/production-norms?plantFKId=${plantId}&year=${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
