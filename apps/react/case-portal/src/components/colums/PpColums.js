@@ -532,7 +532,7 @@ export const ShutdownConsumptionPpColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
-    minWidth: 100,
+    minWidth: 130,
   },
   {
     field: 'UOM',
@@ -590,7 +590,7 @@ export const SlowdownNormsPpColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
-    minWidth: 100,
+    minWidth: 130,
   },
   {
     field: 'UOM',

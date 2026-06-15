@@ -27,7 +27,9 @@ export const DurationEditor = (props) => {
         if (mins >= 60) return
       }
 
-      onChange({ dataItem, field, value: v })
+      const parsedValue =
+        v !== '' && !v.endsWith('.') && !isNaN(v) ? parseFloat(v) : v
+      onChange({ dataItem, field, value: parsedValue })
     }
   }
 

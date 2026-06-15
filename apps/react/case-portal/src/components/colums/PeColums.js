@@ -444,7 +444,7 @@ export const ShutdownConsumptionPeColumns = [
     headerName: 'Particulars',
     widthT: 120,
     editable: false,
-    minWidth: 100,
+    minWidth: 130,
   },
   {
     field: 'UOM',
@@ -512,6 +512,7 @@ export const ShutdownConsumptionPeColumnsPeLldpe = [
     headerName: 'Particulars',
     widthT: 120,
     editable: false,
+    minWidth: 130,
   },
   {
     field: 'UOM',
@@ -571,7 +572,7 @@ export const SlowdownNormsPeColumns = [
     headerName: 'Particulars',
     widthT: 120,
     editable: false,
-    minWidth: 100,
+    minWidth: 130,
   },
   {
     field: 'UOM',

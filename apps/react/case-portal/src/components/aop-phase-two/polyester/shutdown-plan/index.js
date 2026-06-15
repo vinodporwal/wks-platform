@@ -230,14 +230,23 @@ const ShutdownPlan = () => {
         PLANT_ID,
         AOP_YEAR,
       )
-
       // API returns a plain array (not {code, data})
       const arr = Array.isArray(data) ? data : data?.data || []
 
       // Full month names in calendar order (Jan=0 … Dec=11)
       const CALENDAR_MONTH_NAMES = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December',
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
       ]
 
       const formatted = arr.map((item, index) => {
@@ -557,7 +566,6 @@ const ShutdownPlan = () => {
         severity: 'success',
       })
       await fetchData()
-      setSelectedRows([])
     } catch (error) {
       console.error('Error deleting shutdown activity:', error)
       setSnackbarOpen(true)

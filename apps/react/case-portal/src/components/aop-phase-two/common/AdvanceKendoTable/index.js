@@ -593,6 +593,18 @@ const AdvanceKendoTable = ({
 
       const itemId = dataItem.id
 
+      if (screenType === 'shutdown' && field === 'monthly') {
+        const monthDur = calculateMonthDuration(value, AOP_YEAR)
+        const [start, end] = getMonthStartEndDate(value, AOP_YEAR)
+        if (monthDur) {
+          dataItem.durationInHrs = Number(monthDur)
+        }
+        if (start && end) {
+          dataItem.maintStartDateTime = start
+          dataItem.maintEndDateTime = end
+        }
+      }
+
       // First update modifiedCells to accumulate all changes
       let updatedModifiedCells
       setModifiedCells((prev) => {
@@ -635,18 +647,6 @@ const AdvanceKendoTable = ({
             updated[field] = value
           }
 
-          if (screenType === 'shutdown' && field === 'monthly') {
-            const monthDur = calculateMonthDuration(value, AOP_YEAR)
-            const [start, end] = getMonthStartEndDate(value, AOP_YEAR)
-            if (monthDur) {
-              updated.durationInHrs = monthDur
-            }
-            if (start && end) {
-              updated.maintStartDateTime = start
-              updated.maintEndDateTime = end
-            }
-          }
-
           // Apply date calculations using the accumulated modified data
           if (updatedModifiedCells && dateCalculationConfig) {
             const { dateField1, dateField2, daysField } = dateCalculationConfig
@@ -664,7 +664,6 @@ const AdvanceKendoTable = ({
               updated[daysField] = updatedModifiedCells[daysField]
             }
           }
-
           return updated
         }),
       )

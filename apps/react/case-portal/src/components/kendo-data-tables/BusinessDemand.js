@@ -78,7 +78,9 @@ const BusinessDemand = ({ permissions }) => {
 
   const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
   const IS_CHEMICAL_HMD_PDEB =
-    lowerVertName === 'chemical' && lowerSiteName === 'hmd' && plantObject?.name?.toLowerCase() === 'pdeb'
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'hmd' &&
+    plantObject?.name?.toLowerCase() === 'pdeb'
   const IS_ELASTOMER_HMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'hmd'
   const IS_ELASTOMER_HMD_SBR =
@@ -983,7 +985,9 @@ const BusinessDemand = ({ permissions }) => {
           </>
         )}
 
-      {(IS_CRACKER_HMD  || IS_CHEMICAL_HMD_PDEB) && <ModeSelection permissions={adjustedPermissions} />}
+      {(IS_CRACKER_HMD || IS_CHEMICAL_HMD_PDEB) && (
+        <ModeSelection permissions={adjustedPermissions} />
+      )}
     </div>
   )
 }

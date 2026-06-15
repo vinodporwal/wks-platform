@@ -13,6 +13,7 @@ import productionColumnsPE2 from '../../../assets/kendo_config_pe2.json'
 import colDefsShutdownRate from '../../../assets/kendo_config_pe3.json'
 import productionColumnsPE5 from '../../../assets/kendo_config_pe5.json'
 import pioImpactColumns from '../../../assets/kendo_config_pio_impact.json'
+import shutdownDataColumns from '../../../assets/kendo_config_shutdown_data.json'
 
 import reportManualEntry from '../../../assets/kendo_config_report_mannual_entry.json'
 import naphthaColumns from '../../../assets/kendo_config_cracker_naphtha_coldefs.json'
@@ -33,7 +34,7 @@ const getConfigByType = (configType) => {
     case 'PIO Impact':
       return pioImpactColumns
     case 'shutdownData':
-      return pioImpactColumns
+      return shutdownDataColumns
     case 'StartupLosses':
       return productionColumnsPE1
     case 'Configuration':
