@@ -642,7 +642,7 @@ export const ShutdownConsumptionMegColumns = [
     headerName: 'Particulars',
     widthT: 120,
     editable: false,
-    minWidth: 120,
+    minWidth: 130,
   },
   {
     field: 'UOM',

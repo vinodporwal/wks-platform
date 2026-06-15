@@ -9,6 +9,7 @@
   },
   {
     "field": "normParameterFKId",
+
     "hidden": true,
     "isVisible": false
   },
@@ -21,10 +22,10 @@
   },
   {
     "field": "UOM",
-    "title": "UOM/TPD",
+    "title": "UOM",
     "editable": false,
     "widthT": 60,
-    "minWidth": 120
+    "minWidth": 80
   },
   {
     "field": "apr",
@@ -44,6 +45,7 @@
     "field": "jun",
     "title": 6,
     "type": "negativeNumber",
+
     "editable": true,
     "minWidth": 100
   },
@@ -51,6 +53,7 @@
     "field": "jul",
     "title": 7,
     "type": "negativeNumber",
+
     "editable": true,
     "minWidth": 100
   },
@@ -58,6 +61,7 @@
     "field": "aug",
     "title": 8,
     "type": "negativeNumber",
+
     "editable": true,
     "minWidth": 100
   },
@@ -65,6 +69,7 @@
     "field": "sep",
     "title": 9,
     "type": "negativeNumber",
+
     "editable": true,
     "minWidth": 100
   },
@@ -72,6 +77,7 @@
     "field": "oct",
     "title": 10,
     "type": "negativeNumber",
+
     "editable": true,
     "minWidth": 100
   },
@@ -79,6 +85,7 @@
     "field": "nov",
     "title": 11,
     "type": "negativeNumber",
+
     "editable": true,
     "minWidth": 100
   },
@@ -86,6 +93,7 @@
     "field": "dec",
     "title": 12,
     "type": "negativeNumber",
+
     "editable": true,
     "minWidth": 100
   },
@@ -93,6 +101,7 @@
     "field": "jan",
     "title": 1,
     "type": "negativeNumber",
+
     "editable": true,
     "minWidth": 100
   },
@@ -100,6 +109,7 @@
     "field": "feb",
     "title": 2,
     "type": "negativeNumber",
+
     "editable": true,
     "minWidth": 100
   },
@@ -107,6 +117,7 @@
     "field": "mar",
     "title": 3,
     "type": "negativeNumber",
+
     "editable": true,
     "minWidth": 100
   },
@@ -117,6 +128,7 @@
     "editable": true,
     "minWidth": 200
   },
+
   {
     "field": "isEditable",
     "title": "isEditable",

@@ -848,7 +848,7 @@ export const ShutdownConsumptionElastomerColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
-    minWidth: 100,
+    minWidth: 130,
   },
   {
     field: 'UOM',
@@ -914,12 +914,12 @@ export const SlowdownNormsElastomerColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
-    minWidth: 100,
+    minWidth: 130,
   },
   {
     field: 'UOM',
     minWidth: 100,
-    headerName: 'UOM / MT',
+    headerName: 'UOM/MT',
     width: 90,
     editable: false,
   },
@@ -980,7 +980,7 @@ export const SlowdownNormsElastomerJmdColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
-    minWidth: 120,
+    minWidth: 130,
   },
   {
     field: 'UOM',

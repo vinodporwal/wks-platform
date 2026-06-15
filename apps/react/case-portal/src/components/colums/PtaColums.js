@@ -516,7 +516,7 @@ export const ShutdownConsumptionPtaColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
-    minWidth: 120,
+    minWidth: 130,
   },
   {
     field: 'UOM',
@@ -582,7 +582,7 @@ export const ShutdownConsumptionPtadmdColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
-    minWidth: 100,
+    minWidth: 130,
   },
   {
     field: 'UOM',
@@ -649,7 +649,7 @@ export const SlowdownNormsPtaColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
-    minWidth: 100,
+    minWidth: 130,
   },
   {
     field: 'UOM',
