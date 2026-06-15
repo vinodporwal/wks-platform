@@ -7,6 +7,8 @@ import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import TabAccessApiService from 'components/aop-phase-two/services/common/tabAccessApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
+import Configuration from './Configuration'
+import ProductionRange from './ProductionRange'
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
@@ -131,10 +133,6 @@ const ProductionNormsBasis = () => {
 
       const name = tabInfo.displayName
 
-      if (name === 'Configuration') {
-        return null
-      }
-
       return {
         id: tabId,
         name,
@@ -154,6 +152,16 @@ const ProductionNormsBasis = () => {
     const currentTabName = typeof tabData === 'object' ? tabData.name : tabData
 
     switch (currentTabName) {
+      case 'Configuration':
+        return (
+          <Configuration
+            startDate={startDate}
+            endDate={endDate}
+            refreshData={refreshData}
+          />
+        )
+      case 'ProductionRange':
+        return <ProductionRange />
       default:
         return null
     }
