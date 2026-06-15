@@ -161,9 +161,7 @@ const ProductionNormsBasis = () => {
           />
         )
       case 'ProductionRange':
-        return (
-          <ProductionRange />
-        )
+        return <ProductionRange />
       default:
         return null
     }

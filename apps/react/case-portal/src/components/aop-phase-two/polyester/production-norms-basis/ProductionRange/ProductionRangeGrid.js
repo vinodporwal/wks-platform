@@ -47,7 +47,6 @@ const ProductionRange = () => {
   const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
   const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_Cat_Chem`
 
-
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remarks || '')
@@ -111,7 +110,6 @@ const ProductionRange = () => {
     setModifiedCells({})
     fetchData()
   }, [oldYear, yearChanged, keycloak, PLANT_ID, AOP_YEAR])
-
 
   const adjustedPermissionsManual = {
     showAction: true,

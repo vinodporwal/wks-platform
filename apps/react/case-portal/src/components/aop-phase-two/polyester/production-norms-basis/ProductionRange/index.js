@@ -4,7 +4,6 @@ import ProductionRangeGrid from './ProductionRangeGrid'
 import ProductionRangeGridLimit from './ProductionRangeGridLimit'
 
 const ProductionRange = () => {
-
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {/* Grid 1: Catalyst */}

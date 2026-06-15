@@ -1,5 +1,5 @@
-import Config from "consts/index"
-import { json } from "services/request"
+import Config from 'consts/index'
+import { json } from 'services/request'
 
 export const ProductionRangeApiService = {
   getData,
