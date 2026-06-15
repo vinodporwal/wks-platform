@@ -21,7 +21,7 @@
   },
   {
     "field": "UOM",
-    "title": "UOM/TPD",
+    "title": "UOM",
     "editable": false,
     "widthT": 60,
     "minWidth": 120
