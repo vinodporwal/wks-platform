@@ -267,7 +267,7 @@ export const NormalOpNormMegColumns = [
     field: 'productName',
     title: 'Particulars',
     widthT: 120,
-    minWidth: 120,
+    minWidth: 130,
   },
 
   {
@@ -275,7 +275,7 @@ export const NormalOpNormMegColumns = [
     title: 'UOM/MT',
     widthT: 80,
     editable: false,
-    minWidth: 100,
+    minWidth: 110,
   },
 
   {

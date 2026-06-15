@@ -96,6 +96,7 @@ const getEnhancedAOPColDefs = ({
   configType,
   FORMATE_VALUE,
   allGradesRecipes,
+  UOM_TITLE,
 }) => {
   var config = []
 
@@ -264,6 +265,13 @@ const getEnhancedAOPColDefs = ({
       }
       return col
     })
+  }
+
+  // Apply UOM_TITLE override to any UOM column
+  if (UOM_TITLE && configType == 'PIO Impact') {
+    enhancedColDefs = enhancedColDefs.map((col) =>
+      col.field === 'UOM' ? { ...col, title: UOM_TITLE } : col,
+    )
   }
 
   return enhancedColDefs
