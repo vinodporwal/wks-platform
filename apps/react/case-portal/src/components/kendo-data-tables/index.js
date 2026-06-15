@@ -188,28 +188,28 @@ const KendoDataTables = ({
   typeRank = {},
   permissions = {},
   errorRows = new Set(),
-  setSnackbarOpen = () => { },
+  setSnackbarOpen = () => {},
   snackbarData = { message: '', severity: 'info', duration: 3000 },
   snackbarOpen = false,
-  setRemarkDialogOpen = () => { },
+  setRemarkDialogOpen = () => {},
   currentRemark = '',
-  setCurrentRemark = () => { },
+  setCurrentRemark = () => {},
   currentRowId = null,
-  NormParameterIdCell = () => { },
-  setModifiedCells = () => { },
+  NormParameterIdCell = () => {},
+  setModifiedCells = () => {},
   remarkDialogOpen = false,
-  handleDeleteSelected = (selectedItems) => { },
-  saveChanges = () => { },
-  deleteRowData = () => { },
-  handleAddPlantSite = () => { },
-  handleCalculate = () => { },
-  handleLoad = () => { },
-  fetchData = () => { },
-  handleUnitChange = () => { },
-  handleYearChange = () => { },
-  handleGradeChange = () => { },
-  handleRemarkCellClick = () => { },
-  calculatebtnClicked = () => { },
+  handleDeleteSelected = (selectedItems) => {},
+  saveChanges = () => {},
+  deleteRowData = () => {},
+  handleAddPlantSite = () => {},
+  handleCalculate = () => {},
+  handleLoad = () => {},
+  fetchData = () => {},
+  handleUnitChange = () => {},
+  handleYearChange = () => {},
+  handleGradeChange = () => {},
+  handleRemarkCellClick = () => {},
+  calculatebtnClicked = () => {},
   selectedUsers = [],
   groupBy = null,
   totalRowConfiguration = null,
@@ -223,13 +223,13 @@ const KendoDataTables = ({
   allDescriptionDrpdwn = [],
   allMonths = [],
   selectMode,
-  setSelectMode = () => { },
-  handleExcelUpload = () => { },
-  downloadExcelForConfiguration = () => { },
-  onLoad = () => { },
+  setSelectMode = () => {},
+  handleExcelUpload = () => {},
+  downloadExcelForConfiguration = () => {},
+  onLoad = () => {},
   disableRedHighlight = false,
   showThreeColors = false,
-  resetDataChanges = () => { },
+  resetDataChanges = () => {},
   noteOnSaveDialogeBox = '',
   deleteNoteOnDeleteDialogeBox = '',
   shutdownMonths = [],
@@ -241,7 +241,7 @@ const KendoDataTables = ({
   mcuMaxCapValues = [],
   key = [],
   isReleaseDisabled = true,
-  handleRelease = () => { },
+  handleRelease = () => {},
   customItemChange = null,
   configType,
   isEditable = false,
@@ -412,12 +412,12 @@ const KendoDataTables = ({
 
   const initialGroup = groupBy
     ? [
-      {
-        field: groupBy,
-        aggregates: totalRowConfiguration,
-        dir: undefined,
-      },
-    ]
+        {
+          field: groupBy,
+          aggregates: totalRowConfiguration,
+          dir: undefined,
+        },
+      ]
     : []
 
   const MyFooterCustomCell = (props) => {
@@ -615,10 +615,17 @@ const KendoDataTables = ({
 
   const itemChange = useCallback(
     (e) => {
-      setIsRowEdited(true)
 
       const { dataItem, field } = e
       let { value } = e
+
+      // Ignore group header expand/collapse events — they are not real edits
+      if (!field || dataItem?.items) {
+        return
+      }
+
+      setIsRowEdited(true)
+
       if (dataItem?.isTotal) {
         return
       }
@@ -2330,7 +2337,7 @@ const KendoDataTables = ({
                         },
                       },
                     }}
-                  // disabled={rows?.length === 0}
+                    // disabled={rows?.length === 0}
                   >
                     <MenuItem value='' disabled className='menu-item-style'>
                       UOM
@@ -2458,7 +2465,7 @@ const KendoDataTables = ({
                   onClick={excelExport}
                   // disabled={READ_ONLY || rows?.length === 0}
                   disabled={rows?.length === 0}
-                //ANY ONE CAN EXPORT
+                  //ANY ONE CAN EXPORT
                 >
                   Export
                 </Button>
@@ -2527,7 +2534,7 @@ const KendoDataTables = ({
                     (rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                      !permissions?.showCalculateVisibility)
+                        !permissions?.showCalculateVisibility)
                   }
                   className='btn-calculate'
                 >
@@ -2656,21 +2663,21 @@ const KendoDataTables = ({
                 groupable={
                   permissions?.isTotalFooterActive
                     ? {
-                      enabled: false,
-                      footer: 'visible',
-                      showGroupPanel: false,
-                    }
+                        enabled: false,
+                        footer: 'visible',
+                        showGroupPanel: false,
+                      }
                     : {
-                      enabled: false,
-                      footer: 'none',
-                      showGroupPanel: false,
-                    }
+                        enabled: false,
+                        footer: 'none',
+                        showGroupPanel: false,
+                      }
                 }
                 cells={
                   permissions?.isTotalFooterActive
                     ? {
-                      groupFooter: MyFooterCustomCell,
-                    }
+                        groupFooter: MyFooterCustomCell,
+                      }
                     : undefined
                 }
                 allRedCell={allRedCell}
@@ -2681,11 +2688,14 @@ const KendoDataTables = ({
                     ? false
                     : rows?.length > 100
                       ? {
-                        buttonCount: 4,
-                        pageSizes: [10, 50, 100],
-                      }
+                          buttonCount: 4,
+                          pageSizes: [10, 50, 100],
+                        }
                       : false
                 }
+                sortable={true}
+                sort={sort}
+                onSortChange={(e) => setSort(e.sort)}
               >
                 {permissions?.deleteMultiple && (
                   <GridColumn

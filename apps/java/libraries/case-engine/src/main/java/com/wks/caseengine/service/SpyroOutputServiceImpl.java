@@ -452,6 +452,10 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 					failedList.add(spyroOutputDTO);
 					continue;
 				}
+				if(spyroOutputDTO.getNormParameterFKID() == null || spyroOutputDTO.getNormParameterFKID().isBlank()) { 
+					continue;
+				}
+
 				UUID normParameterFKId = UUID.fromString(spyroOutputDTO.getNormParameterFKID());
 				Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
 				if (!optionNormParameters.isPresent()) {

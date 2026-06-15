@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { Box } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useDispatch, useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -7,10 +7,11 @@ import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatt
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
 import NestedKendoTable from '../common/NestedKendoTable/index'
-import { Stack, Typography } from '../../../../node_modules/@mui/material/index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { setIsReleased } from 'store/reducers/dataGridStore'
 import ReleaseDialog from '../common/components/ReleaseDialog'
 import { ReleaseAPIService } from '../services/common/releaseAPIService'
+import NormsJMD from './jmd/NormsJMD'
 
 const Norms = () => {
   const keycloak = useSession()
@@ -40,6 +41,11 @@ const Norms = () => {
   const VERTICAL_ID = verticalObject?.id
   const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
+
+  const lowerVertName = verticalObject?.name?.toLowerCase()
+  const lowerSiteName = siteObject?.name?.toLowerCase()
+  const IS_CPP = lowerVertName === 'cpp'
+
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
 
@@ -654,11 +660,11 @@ const Norms = () => {
   const [calculationLoading, setCaculationLoading] = useState(false)
 
   useEffect(() => {
-    if (PLANT_ID && AOP_YEAR) {
+    if (PLANT_ID && AOP_YEAR && lowerSiteName === 'nmd') {
       fetchNormsData()
       setModifiedCells({})
     }
-  }, [PLANT_ID, AOP_YEAR])
+  }, [PLANT_ID, AOP_YEAR, lowerSiteName])
 
   const fetchNormsData = async () => {
     setLoading(true)
@@ -1035,55 +1041,58 @@ const Norms = () => {
     setRemarkDialogOpen(true)
   }
 
+  const renderBySite = () => {
+    switch (lowerSiteName) {
+      case 'jmd':
+        return <NormsJMD />
+      // case 'hmd':
+      //   return <NormsHMD />
+      case 'nmd':
+      default:
+        return (
+          <NestedKendoTable
+            columns={nestedColumns}
+            rows={rows}
+            setRows={setRows}
+            handleCalculate={handleCalculate}
+            modifiedCells={modifiedCells}
+            setModifiedCells={setModifiedCells}
+            title='Norms'
+            permissions={permissions}
+            handleRemarkCellClick={handleRemarkCellClick}
+            remarkDialogOpen={remarkDialogOpen}
+            setRemarkDialogOpen={setRemarkDialogOpen}
+            currentRemark={currentRemark}
+            setCurrentRemark={setCurrentRemark}
+            currentRowId={currentRowId}
+            setCurrentRowId={() => {}}
+            saveChanges={saveChanges}
+            handleExcelUpload={handleExcelUpload}
+            handleExport={handleExport}
+            snackbarData={snackbarData}
+            snackbarOpen={snackbarOpen}
+            setSnackbarOpen={setSnackbarOpen}
+            setSnackbarData={setSnackbarData}
+            customHeight={80}
+            groupBy={['generatingPlantName']}
+            handleRelease={handleRelease}
+            isReleaseDisabled={isReleaseDisabled}
+          />
+        )
+    }
+  }
+
+  if (!IS_CPP) return null
+
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+      <LoaderBackdrop
         open={!!loading || calculationLoading}
-      >
-        <Stack
-          display='flex'
-          flexDirection='column'
-          alignItems='center'
-          justifyContent='center'
-        >
-          <CircularProgress color='inherit' />
-          {calculationLoading && (
-            <Typography variant='h5' sx={{ mt: 2 }}>
-              Your data is being processed. This may take a few moments—thank
-              you for your patience.
-            </Typography>
-          )}
-        </Stack>
-      </Backdrop>
-      <NestedKendoTable
-        columns={nestedColumns}
-        rows={rows}
-        setRows={setRows}
-        handleCalculate={handleCalculate}
-        modifiedCells={modifiedCells}
-        setModifiedCells={setModifiedCells}
-        title='Norms'
-        permissions={permissions}
-        handleRemarkCellClick={handleRemarkCellClick}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
-        saveChanges={saveChanges}
-        handleExcelUpload={handleExcelUpload}
-        handleExport={handleExport}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
-        customHeight={80}
-        groupBy={['generatingPlantName', 'accountName']}
-        handleRelease={handleRelease}
-        isReleaseDisabled={isReleaseDisabled}
+        showMessage={calculationLoading}
+        message='Your data is being processed. This may take a few moments—thank you for your patience.'
       />
+
+      {renderBySite()}
 
       <ReleaseDialog
         openReleaseDialogBox={openReleaseDialogBox}

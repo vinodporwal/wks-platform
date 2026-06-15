@@ -64,7 +64,7 @@ const FixedNorms = () => {
       widthT: 180,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
       minWidth: 180,
     },
     //Utility
@@ -74,7 +74,7 @@ const FixedNorms = () => {
       widthT: 120,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
       minWidth: 120,
     },
     // Utility ID
@@ -84,7 +84,7 @@ const FixedNorms = () => {
       widthT: 120,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
       minWidth: 120,
     },
     //UOM
@@ -748,7 +748,7 @@ const FixedNorms = () => {
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         customHeight={70}
-        groupBy={['generatingPlantName', 'accountName']}
+        groupBy={['generatingPlantName']}
         customItemChange={handleCustomItemChange}
       />
 

@@ -1,5 +1,6 @@
 import pandas as pd
 from database.connection import get_connection
+from services.norm_lookup_service import get_month_norm
 
 
 ITERATION_LIMIT = 100
@@ -8,10 +9,111 @@ TOLERANCE = 1.0  # MWh acceptable error
 # Logging verbosity control
 _VERBOSE_LOGGING = True  # Set to False to reduce log output
 
-# STG Power Generation Requirements (per 1 KWh generated)
-# To generate 1 KWh from STG, we need:
-NORM_STG_POWER_PER_KWH = 0.0020   # 0.0020 KWh of power (auxiliary consumption)
-NORM_STG_SHP_PER_KWH = 0.0035600  # Fallback only (= 3.56 MT/MWh ÷ 1000). Dynamic lookup used when stg_extraction_lookup_df is available.
+
+def _resolve_power_aux_plant(asset_name: str):
+    """Map dispatch asset name to POWERGEN plant for month-wise aux norm lookup."""
+    name = (asset_name or "").upper()
+    if "PLANT-1" in name or "PLANT 1" in name or "GT1" in name:
+        return "NMD - Power Plant 1"
+    if "PLANT-2" in name or "PLANT 2" in name or "GT2" in name:
+        return "NMD - Power Plant 2"
+    if "PLANT-3" in name or "PLANT 3" in name or "GT3" in name:
+        return "NMD - Power Plant 3"
+    if "STG" in name or "STEAM TURBINE" in name:
+        return "NMD - STG Power Plant"
+    return None
+
+
+def _get_month_aux_norm(month: int, year: int, asset_name: str):
+    """Fetch month-wise POWERGEN->Power_Dis norm for a dispatch asset."""
+    plant_name = _resolve_power_aux_plant(asset_name)
+    if not plant_name:
+        return None
+    try:
+        return float(
+            get_month_norm(
+                month=month,
+                year=year,
+                plant_name=plant_name,
+                utility_name="POWERGEN",
+                material_name="Power_Dis",
+                account_name="Utilities",
+                issuing_plant_name="NMD - Utility/Power Dist",
+                required=False,
+            )
+        )
+    except Exception:
+        return None
+
+
+def _build_dispatch_aux_norm_map(month: int, year: int, avail_df: pd.DataFrame, fallback_norms_map: dict, verbose: bool = False):
+    """
+    Build asset-wise aux norms for dispatch:
+    1) Prefer month-wise NormsMonthDetail values (same source used by Excel/report).
+    2) Fall back to UtilityForUtilityNorms for backward compatibility.
+    """
+    norms_map = {}
+    for _, row in avail_df.iterrows():
+        asset_id = str(row["AssetId"]).lower()
+        asset_name = str(row.get("AssetName", ""))
+        month_norm = _get_month_aux_norm(month, year, asset_name)
+        if month_norm is not None:
+            norms_map[asset_id] = month_norm
+        else:
+            norms_map[asset_id] = float(fallback_norms_map.get(asset_id, 0.0))
+
+        if verbose:
+            source = "month_norm_table" if month_norm is not None else "legacy_u4u_norms"
+            print(f"  [AUX NORM] {asset_name:<24} = {norms_map[asset_id]:.6f} ({source})")
+
+    return norms_map
+
+
+def _canonical_gt_curve_name(name: str):
+    """Normalize GT asset names to canonical curve keys: GT-1, GT-2, GT-3."""
+    n = str(name or "").upper().replace(" ", "").replace("-", "")
+    if "GT1" in n or "PLANT1" in n:
+        return "GT-1"
+    if "GT2" in n or "PLANT2" in n:
+        return "GT-2"
+    if "GT3" in n or "PLANT3" in n:
+        return "GT-3"
+    return None
+
+
+def _fetch_gt_heat_curve_map(cur, financial_year: str):
+    """
+    Fetch GT heat-rate curves from CPP_GTHeatRate for all GTs and return
+    a canonical map keyed by GT-1 / GT-2 / GT-3.
+    """
+    cur.execute(
+        """
+        SELECT AssetName AS EquipType, UtilityId AS CPPUtility, GTLoad, FinalHeatRate AS HeatRate, FreeSteamFactor
+        FROM CPP_GTHeatRate
+        WHERE FinancialYear = ?
+          AND AssetName IN ('GT-1', 'GT-2', 'GT-3', 'GT1', 'GT2', 'GT3')
+        ORDER BY AssetName, GTLoad
+        """,
+        (financial_year,),
+    )
+    rows = cur.fetchall()
+    if not rows:
+        return {}
+
+    cols = ["EquipType", "CPPUtility", "GTLoad", "HeatRate", "FreeSteamFactor"]
+    raw_df = pd.DataFrame.from_records(rows, columns=cols)
+    raw_df["GTLoad"] = raw_df["GTLoad"].astype(float)
+    raw_df["HeatRate"] = raw_df["HeatRate"].astype(float)
+    raw_df["FreeSteamFactor"] = raw_df["FreeSteamFactor"].astype(float)
+
+    curve_map = {}
+    for equip_name, grp in raw_df.groupby("EquipType"):
+        canonical = _canonical_gt_curve_name(equip_name)
+        if not canonical:
+            continue
+        curve_map[canonical] = grp.sort_values("GTLoad").reset_index(drop=True)
+
+    return curve_map
 
 
 # -------------------------------------------------------------
@@ -113,8 +215,9 @@ def _dispatch_once(
     avail_df: pd.DataFrame,
     norms_map: dict,
     demand_units: float,
-    heat_df: pd.DataFrame = None,
+    heat_df=None,
     stg_extraction_lookup_df=None,
+    stg_shp_norm_per_kwh: float = None,
 ):
     """
     Dispatch power assets based on priority and demand.
@@ -162,20 +265,28 @@ def _dispatch_once(
         stg_shp_required, stg_power_required = (None, None)
         
         if is_gt and load_mw > 0:
-            heat_rate, free_steam = get_heat_rate_for_load(heat_df, load_mw)
+            # Support per-GT curve maps: GT-1/GT-2/GT-3
+            selected_curve_df = heat_df
+            if isinstance(heat_df, dict):
+                gt_curve_key = _canonical_gt_curve_name(asset_name)
+                selected_curve_df = heat_df.get(gt_curve_key)
+            heat_rate, free_steam = get_heat_rate_for_load(selected_curve_df, load_mw)
         if is_stg and gross > 0:
             gross_kwh = gross * 1000
-            # Use dynamic sp_steam_power from lookup table (interpolated for actual load)
-            # sp_steam_power is in MT/MWh → divide by 1000 to get MT/KWh
-            shp_norm_per_kwh = NORM_STG_SHP_PER_KWH  # fallback
+            # STG Power Generation = SVHInletTPH × Hours (TOTAL steam into turbine)
+            # Condensing is derived: STG Power Gen - LP Extraction - MP Extraction
             if stg_extraction_lookup_df is not None and not stg_extraction_lookup_df.empty and load_mw > 0:
                 from database.power_asset_queries import get_stg_extraction_for_load
                 _ext = get_stg_extraction_for_load(load_mw, stg_extraction_lookup_df)
-                _sp = _ext.get('sp_steam_power', 0)
-                if _sp > 0:
-                    shp_norm_per_kwh = _sp / 1000  # MT/MWh → MT/KWh
-            stg_shp_required = gross_kwh * shp_norm_per_kwh
-            stg_power_required = gross_kwh * NORM_STG_POWER_PER_KWH / 1000
+                _inlet_tph = _ext.get('shp_inlet_tph', 0)
+                if _inlet_tph > 0:
+                    stg_shp_required = _inlet_tph * hours
+                else:
+                    # Fallback to legacy norm
+                    stg_shp_required = gross_kwh * stg_shp_norm_per_kwh
+            else:
+                stg_shp_required = gross_kwh * stg_shp_norm_per_kwh
+            stg_power_required = gross_kwh * norm / 1000
         
         return {
             "AssetName": asset_name,
@@ -183,6 +294,8 @@ def _dispatch_once(
             "Priority": r["Priority"],
             "CapacityMW": float(r["capacity"]),
             "MinMW": float(r["minMW"]),
+            "FixedMin": float(r["FixedMin"]) if pd.notna(r.get("FixedMin")) else None,
+            "FixedMax": float(r["FixedMax"]) if pd.notna(r.get("FixedMax")) else None,
             "Hours": hours,
             "GrossMWh": round(gross, 6),
             "AuxMWh": round(aux, 6),
@@ -398,49 +511,40 @@ def distribute_by_priority(
     else:
         fy_string = f"{year - 1}-{str(year)[-2:]}"
     
-    # Fetch heat rate data for the financial year
-    # Use GT-1 as the common heat rate curve for all GTs to ensure consistency
-    cur.execute("""
-        SELECT AssetName AS EquipType, UtilityId AS CPPUtility, GTLoad, FinalHeatRate AS HeatRate, FreeSteamFactor
-        FROM CPP_GTHeatRate
-        WHERE FinancialYear = ? AND AssetName = 'GT-1'
-    """, (fy_string,))
-    heat_rows = cur.fetchall()
-    
-    # Fallback: try previous year if no data for current fiscal year
-    if not heat_rows:
-        prev_fy = f"{year - 1}-{str(year)[-2:]}" if month >= 4 else f"{year - 2}-{str(year - 1)[-2:]}"
-        cur.execute("""
-            SELECT AssetName AS EquipType, UtilityId AS CPPUtility, GTLoad, FinalHeatRate AS HeatRate, FreeSteamFactor
-            FROM CPP_GTHeatRate
-            WHERE FinancialYear = ? AND AssetName = 'GT-1'
-        """, (prev_fy,))
-        heat_rows = cur.fetchall()
-        if heat_rows:
-            print(f"  [HEAT RATE] Using fallback data for FY {prev_fy} (no data for {fy_string})")
-        else:
-            print(f"  [HEAT RATE] No heat rate data found for {fy_string} or {prev_fy}")
+    # Fetch per-GT heat-rate curves for the financial year (GT-1 / GT-2 / GT-3)
+    heat_curve_map = _fetch_gt_heat_curve_map(cur, fy_string)
 
-    heat_df = None
-    if heat_rows:
-        heat_cols = ["EquipType", "CPPUtility", "GTLoad", "HeatRate", "FreeSteamFactor"]
-        heat_df = pd.DataFrame.from_records(heat_rows, columns=heat_cols)
-        print(f"  [HEAT RATE] Loaded {len(heat_rows)} rows for FY {fy_string}")
-        # Show sample data
-        if not heat_df.empty:
-            sample = heat_df.iloc[0]
-            print(f"  [HEAT RATE] Sample: Load={sample['GTLoad']} MW, HeatRate={sample['HeatRate']} KCAL/KWH, FreeSteam={sample['FreeSteamFactor']}")
+    # Fallback: fill missing GT curves from previous FY
+    prev_fy = f"{year - 1}-{str(year)[-2:]}" if month >= 4 else f"{year - 2}-{str(year - 1)[-2:]}"
+    required_keys = ("GT-1", "GT-2", "GT-3")
+    missing_curves = [k for k in required_keys if k not in heat_curve_map]
+    if missing_curves:
+        fallback_map = _fetch_gt_heat_curve_map(cur, prev_fy)
+        for key in missing_curves:
+            if key in fallback_map:
+                heat_curve_map[key] = fallback_map[key]
+        if any(k in fallback_map for k in missing_curves):
+            print(f"  [HEAT RATE] Using fallback FY {prev_fy} for missing curves: {', '.join([k for k in missing_curves if k in fallback_map])}")
 
-        # Ensure numeric and sorted
-        heat_df["GTLoad"] = heat_df["GTLoad"].astype(float)
-        heat_df["HeatRate"] = heat_df["HeatRate"].astype(float)
-        heat_df["FreeSteamFactor"] = heat_df["FreeSteamFactor"].astype(float)
-        heat_df = heat_df.sort_values("GTLoad").reset_index(drop=True)
+    if not heat_curve_map:
+        print(f"  [HEAT RATE] No heat rate data found for {fy_string} or {prev_fy}")
+    else:
+        for gt_key in required_keys:
+            gt_df = heat_curve_map.get(gt_key)
+            if gt_df is None or gt_df.empty:
+                print(f"  [HEAT RATE] {gt_key}: curve not available")
+                continue
+            sample = gt_df.iloc[0]
+            print(
+                f"  [HEAT RATE] {gt_key}: rows={len(gt_df)}, "
+                f"range={gt_df['GTLoad'].min():.2f}-{gt_df['GTLoad'].max():.2f} MW, "
+                f"sample HR={sample['HeatRate']:.2f}, FS={sample['FreeSteamFactor']:.4f}"
+            )
 
     # NET DEMAND (Plant + Fixed) - Fetch separately for logging
     # Fetch process plant demand from CalculatedProcessDemand
     from services.process_demand_service import get_process_demand_for_month
-    process_demands = get_process_demand_for_month(month, year)
+    process_demands = get_process_demand_for_month(month, year, cpp_plant_id)
     power_process_kwh = process_demands.get("power_process", 0.0) if process_demands else 0.0
     # Convert KWH to MWh
     plant_demand = power_process_kwh / 1000.0
@@ -477,7 +581,7 @@ def distribute_by_priority(
     # =========================================================
     # Fetch ALL power generation assets including IMPORT type
     cur.execute("""
-        SELECT 
+        SELECT
             p.AssetId,
             p.AssetName,
             p.AssetType,
@@ -490,24 +594,25 @@ def distribute_by_priority(
             aa.FixedMax,
             aa.Id AS AvailabilityId
         FROM PowerGenerationAssets p
-        LEFT JOIN OperationalHours oh ON p.AssetId = oh.Asset_FK_Id 
+        LEFT JOIN OperationalHours oh ON p.AssetId = oh.Asset_FK_Id
             AND oh.FinancialMonthId = ?
         OUTER APPLY (
-            SELECT TOP 1 
+            SELECT TOP 1
                 aa2.Id,
                 aa2.Priority,
                 aa2.MinOperatingCapacity,
                 aa2.MaxOperatingCapacity,
                 aa2.FixedMin,
                 aa2.FixedMax
-            FROM AssetAvailability aa2 
-            WHERE aa2.AssetId = p.AssetId 
+            FROM AssetAvailability aa2
+            WHERE aa2.AssetId = p.AssetId
                 AND aa2.FinancialYearMonthId = ?
             ORDER BY CASE WHEN aa2.Priority IS NULL THEN 1 ELSE 0 END, aa2.Priority ASC
         ) aa
         WHERE p.AssetType IN ('GT', 'STG', 'IMPORT')
+          AND p.CPPPLANT_FK_Id = ?
         ORDER BY aa.Priority ASC
-    """, (fym_id, fym_id))
+    """, (fym_id, fym_id, cpp_plant_id))
     cols = [c[0] for c in cur.description]
     rows = cur.fetchall()
 
@@ -554,10 +659,29 @@ def distribute_by_priority(
     avail["minEnergy"] = avail["minMW"] * avail["opHours"]  # Minimum energy (MWh)
     avail = avail.reset_index(drop=True)
     
-    # Fetch norms early so we can display aux % in asset table
+    # Build aux norms for dispatch:
+    # - Primary: month-wise norm table (same source as Excel report)
+    # - Fallback: UtilityForUtilityNorms (legacy compatibility)
     cur.execute("SELECT Asset_FK_ID, Norms FROM UtilityForUtilityNorms")
     norm_rows = cur.fetchall()
-    norms_map = {str(r[0]).lower(): float(r[1]) for r in norm_rows}
+    legacy_norms_map = {str(r[0]).lower(): float(r[1]) for r in norm_rows}
+    norms_map = _build_dispatch_aux_norm_map(
+        month=month,
+        year=year,
+        avail_df=avail,
+        fallback_norms_map=legacy_norms_map,
+        verbose=verbose,
+    )
+    stg_shp_norm_per_kwh = get_month_norm(
+        month=month,
+        year=year,
+        plant_name="NMD - STG Power Plant",
+        utility_name="POWERGEN",
+        material_name="SHP Steam_Dis",
+        account_name="Utilities",
+        issuing_plant_name="NMD - Utility/Power Dist",
+        required=True,
+    )
     
     # =========================================================
     # POWER GENERATION ASSETS - AVAILABILITY & CAPACITY
@@ -835,8 +959,9 @@ def distribute_by_priority(
             avail_df=avail,
             norms_map=norms_map,
             demand_units=gross_target,
-            heat_df=heat_df,
-            stg_extraction_lookup_df=stg_extraction_lookup_df
+            heat_df=heat_curve_map,
+            stg_extraction_lookup_df=stg_extraction_lookup_df,
+            stg_shp_norm_per_kwh=stg_shp_norm_per_kwh,
         )
 
         # Error is calculated against net_demand_for_dispatch (what assets need to generate NET)
@@ -1013,3 +1138,4 @@ def distribute_by_priority(
         "iterations": iteration_history,
         "iterationDispatch": iteration_dispatch_history
     }
+

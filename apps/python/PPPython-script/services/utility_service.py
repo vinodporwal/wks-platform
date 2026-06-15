@@ -773,21 +773,29 @@ def calculate_utilities_from_dispatch(
         hrsg1_ng_norm = NORM_HRSG_NATURAL_GAS_MMBTU_PER_MT  # Default
         hrsg2_ng_norm = NORM_HRSG_NATURAL_GAS_MMBTU_PER_MT
         hrsg3_ng_norm = NORM_HRSG_NATURAL_GAS_MMBTU_PER_MT
+        hrsg1_heat_rate = 0.0
+        hrsg2_heat_rate = 0.0
+        hrsg3_heat_rate = 0.0
         
         for ng_detail in hrsg_ng_details:
             hrsg_name = ng_detail.get("hrsg_name", "")
+            hrsg_name_norm = str(hrsg_name).upper().replace("-", "").replace(" ", "")
             ng_qty = ng_detail.get("ng_quantity_mmbtu", 0.0)
             ng_norm = ng_detail.get("ng_norm_mmbtu_mt", NORM_HRSG_NATURAL_GAS_MMBTU_PER_MT)
+            heat_rate = ng_detail.get("heat_rate_btu_lb", 0.0)
             
-            if "HRSG1" in hrsg_name.upper():
+            if "HRSG1" in hrsg_name_norm:
                 ng_hrsg1 = ng_qty
                 hrsg1_ng_norm = ng_norm
-            elif "HRSG2" in hrsg_name.upper():
+                hrsg1_heat_rate = heat_rate
+            elif "HRSG2" in hrsg_name_norm:
                 ng_hrsg2 = ng_qty
                 hrsg2_ng_norm = ng_norm
-            elif "HRSG3" in hrsg_name.upper():
+                hrsg2_heat_rate = heat_rate
+            elif "HRSG3" in hrsg_name_norm:
                 ng_hrsg3 = ng_qty
                 hrsg3_ng_norm = ng_norm
+                hrsg3_heat_rate = heat_rate
     else:
         # Fallback to legacy fixed norms
         ng_hrsg1 = shp_from_hrsg1 * NORM_HRSG_NATURAL_GAS_MMBTU_PER_MT if hrsg1_available else 0
@@ -796,6 +804,9 @@ def calculate_utilities_from_dispatch(
         hrsg1_ng_norm = NORM_HRSG_NATURAL_GAS_MMBTU_PER_MT
         hrsg2_ng_norm = NORM_HRSG_NATURAL_GAS_MMBTU_PER_MT
         hrsg3_ng_norm = NORM_HRSG_NATURAL_GAS_MMBTU_PER_MT
+        hrsg1_heat_rate = 0.0
+        hrsg2_heat_rate = 0.0
+        hrsg3_heat_rate = 0.0
     
     total_natural_gas = ng_gt1 + ng_gt2 + ng_gt3 + ng_hrsg1 + ng_hrsg2 + ng_hrsg3
     
@@ -952,6 +963,10 @@ def calculate_utilities_from_dispatch(
             "hrsg1_ng_norm": hrsg1_ng_norm,
             "hrsg2_ng_norm": hrsg2_ng_norm,
             "hrsg3_ng_norm": hrsg3_ng_norm,
+            # HRSG heat rates from lookup (FinalHeatRate based, asset-specific)
+            "hrsg1_heat_rate": hrsg1_heat_rate,
+            "hrsg2_heat_rate": hrsg2_heat_rate,
+            "hrsg3_heat_rate": hrsg3_heat_rate,
             "calculation_method": hrsg_ng_calculation.get("calculation_method", "legacy_fixed_norm") if hrsg_ng_calculation else "legacy_fixed_norm",
         },
         # Cooling Water (CW1 and CW2 separately)
@@ -2075,22 +2090,24 @@ def print_nmd_budget_format(
     print(f"{'':<25} {'':<20} {'Power_Dis':<25} {'KWH':<8} {fmt_qty(oxygen_mt)} {oxygen_ref_qty:>18,.2f} {NORM_POWER_OXYGEN:>10.4f} {oxygen_power:>20,.2f} {EXPECTED['oxygen_power']:>20,.2f} {oxygen_power - EXPECTED['oxygen_power']:>18,.2f} {calc_pct(oxygen_power, EXPECTED['oxygen_power'])}")
     
     # ========================================
-    # NMD - Utility Plant - STG1_LP STEAM
+    # NMD - Utility Plant - LP Extraction (STG)
     # ========================================
-    stg_lp_shp = stg_lp * NORM_SHP_STG_LP
+    # Option C: Extraction is informational, 0.0 SHP consumed (already in STG Power Gen)
+    stg_lp_shp = stg_lp * 0.0
     exp_stg_lp = EXPECTED.get('lp_stg_dis', 0)
-    print(f"\n{'NMD - Utility Plant':<25} {'STG1_LP STEAM':<20} {'':<25} {'MT':<8}")
-    stg_lp_ref_qty = calc_ref_qty(EXPECTED['stg_lp_shp'], NORM_SHP_STG_LP) if NORM_SHP_STG_LP != 0 else 0
-    print(f"{'':<25} {'':<20} {'SHP Steam_Dis':<25} {'MT':<8} {fmt_qty(stg_lp)} {stg_lp_ref_qty:>18,.2f} {NORM_SHP_STG_LP:>10.4f} {stg_lp_shp:>20,.2f} {EXPECTED['stg_lp_shp']:>20,.2f} {stg_lp_shp - EXPECTED['stg_lp_shp']:>18,.2f} {calc_pct(stg_lp_shp, EXPECTED['stg_lp_shp'])}")
+    print(f"\n{'NMD - Utility Plant':<25} {'LP Extraction (STG)':<20} {'':<25} {'MT':<8}")
+    stg_lp_ref_qty = calc_ref_qty(EXPECTED['stg_lp_shp'], 0.0) if True else 0
+    print(f"{'':<25} {'':<20} {'SHP Steam_Dis':<25} {'MT':<8} {fmt_qty(stg_lp)} {stg_lp_ref_qty:>18,.2f} {'0.0000':>10} {stg_lp_shp:>20,.2f} {EXPECTED['stg_lp_shp']:>20,.2f} {stg_lp_shp - EXPECTED['stg_lp_shp']:>18,.2f} {calc_pct(stg_lp_shp, EXPECTED['stg_lp_shp'])}")
     
     # ========================================
-    # NMD - Utility Plant - STG1_MP STEAM
+    # NMD - Utility Plant - MP Extraction (STG)
     # ========================================
-    stg_mp_shp = stg_mp * NORM_SHP_STG_MP
+    # Option C: Extraction is informational, 0.0 SHP consumed (already in STG Power Gen)
+    stg_mp_shp = stg_mp * 0.0
     exp_stg_mp = EXPECTED.get('mp_stg_dis', 0)
-    print(f"\n{'NMD - Utility Plant':<25} {'STG1_MP STEAM':<20} {'':<25} {'MT':<8}")
-    stg_mp_ref_qty = calc_ref_qty(EXPECTED['stg_mp_shp'], NORM_SHP_STG_MP) if NORM_SHP_STG_MP != 0 else 0
-    print(f"{'':<25} {'':<20} {'SHP Steam_Dis':<25} {'MT':<8} {fmt_qty(stg_mp)} {stg_mp_ref_qty:>18,.2f} {NORM_SHP_STG_MP:>10.4f} {stg_mp_shp:>20,.2f} {EXPECTED['stg_mp_shp']:>20,.2f} {stg_mp_shp - EXPECTED['stg_mp_shp']:>18,.2f} {calc_pct(stg_mp_shp, EXPECTED['stg_mp_shp'])}")
+    print(f"\n{'NMD - Utility Plant':<25} {'MP Extraction (STG)':<20} {'':<25} {'MT':<8}")
+    stg_mp_ref_qty = calc_ref_qty(EXPECTED['stg_mp_shp'], 0.0) if True else 0
+    print(f"{'':<25} {'':<20} {'SHP Steam_Dis':<25} {'MT':<8} {fmt_qty(stg_mp)} {stg_mp_ref_qty:>18,.2f} {'0.0000':>10} {stg_mp_shp:>20,.2f} {EXPECTED['stg_mp_shp']:>20,.2f} {stg_mp_shp - EXPECTED['stg_mp_shp']:>18,.2f} {calc_pct(stg_mp_shp, EXPECTED['stg_mp_shp'])}")
     
     # ========================================
     # NMD - Utility/Power Dist - HP Steam_Dis

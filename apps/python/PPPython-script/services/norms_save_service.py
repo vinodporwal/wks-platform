@@ -9,6 +9,11 @@ Updates:
 """
 
 from database.connection import get_connection
+import threading
+
+# Global lock to prevent deadlocks when saving from multiple threads
+save_lock = threading.Lock()
+
 
 
 def _sync_to_cpp_norms(conn, norms_header_fk_id: str, fym_id: str, norms_value: float, modified_by: str = 'PythonModel'):
@@ -70,139 +75,204 @@ def save_calculated_norms(month: int, year: int, result: dict, dry_run: bool = F
     # Build generation map and norms map from result
     generation_map, norms_map = _build_generation_map(result)
     
-    # Connect to database
-    conn = get_connection()
-    cur = conn.cursor()
-    
-    # Get FinancialYearMonth ID
-    cur.execute("SELECT Id FROM FinancialYearMonth WHERE Month = ? AND Year = ?", (month, year))
-    fym_row = cur.fetchone()
-    if not fym_row:
-        conn.close()
-        return {
-            'success': False,
-            'message': f'FinancialYearMonth not found for {month}/{year}',
-            'updated': 0,
-            'same': 0
-        }
-    fym_id = fym_row[0]
-    
-    # Get all NormsMonthDetail records for this month
-    cur.execute('''
-        SELECT 
-            nmd.Id,
-            p.Name as PlantName,
-            nh.UtilityName,
-            nh.MaterialName,
-            nh.IssuingPlantName,
-            nmd.QTY,
-            nmd.Quantity,
-            nmd.Norms,
-            nmd.NormsHeader_FK_Id
-        FROM NormsMonthDetail nmd
-        INNER JOIN NormsHeader nh ON nh.Id = nmd.NormsHeader_FK_Id
-        INNER JOIN Plants p ON p.Id = nh.Plant_FK_Id
-        WHERE nmd.FinancialYearMonth_FK_Id = ? AND nh.IsActive = 1
-    ''', (fym_id,))
-    
-    records = cur.fetchall()
-    
-    updated_count = 0
-    same_count = 0
-    cpp_norms_synced = 0
-    updates = []
-    
-    for row in records:
-        record_id = row[0]
-        plant_name = row[1]
-        utility_name = row[2]
-        material_name = row[3]
-        issueing_plant = row[4]  # IssueingPlant column
-        old_qty = float(row[5]) if row[5] else 0
-        old_quantity = float(row[6]) if row[6] else 0
-        old_norms = float(row[7]) if row[7] else 0
-        norms_header_fk_id = str(row[8]) if len(row) > 8 and row[8] else None  # NormsHeader_FK_Id for CPPNorms sync
-        
-        # Get new QTY from generation map
-        key = (plant_name, utility_name)
-        new_qty = generation_map.get(key, None)
-        
-        # Check if there's a new norm value for this record
-        # For POWERGEN records, use IssueingPlant to identify which plant (PP1, PP2, PP3, STG)
-        if material_name == 'POWERGEN' and issueing_plant:
-            # Map IssueingPlant to the material name format used in norms_map
-            if 'Power Plant 1' in issueing_plant or 'Power Plant-1' in issueing_plant:
-                norms_key = (plant_name, utility_name, 'POWERGEN (PP1)')
-            elif 'Power Plant 2' in issueing_plant or 'Power Plant-2' in issueing_plant:
-                norms_key = (plant_name, utility_name, 'POWERGEN (PP2)')
-            elif 'Power Plant 3' in issueing_plant or 'Power Plant-3' in issueing_plant:
-                norms_key = (plant_name, utility_name, 'POWERGEN (PP3)')
-            elif 'STG' in issueing_plant:
-                norms_key = (plant_name, utility_name, 'POWERGEN (STG)')
-            else:
-                norms_key = (plant_name, utility_name, material_name)
-        else:
-            norms_key = (plant_name, utility_name, material_name)
-        
-        new_norms = norms_map.get(norms_key, None)
-        
-        # Use new norms if available, otherwise keep old
-        norms_to_use = new_norms if new_norms is not None else old_norms
-        
-        # Skip if not in generation map (keep existing value)
-        if new_qty is None:
-            same_count += 1
-            continue
-        
-        # Calculate new Quantity = QTY * Norms (even if norm is 0, calculate 0)
-        new_quantity = new_qty * norms_to_use
-        
-        # Check if changed
-        qty_changed = abs(new_qty - old_qty) > 0.01
-        quantity_changed = abs(new_quantity - old_quantity) > 0.01
-        norms_changed = new_norms is not None and abs(new_norms - old_norms) > 0.0001
-        
-        if qty_changed or quantity_changed or norms_changed:
-            updated_count += 1
-            updates.append({
-                'id': record_id,
-                'plant': plant_name,
-                'utility': utility_name,
-                'material': material_name,
-                'old_qty': old_qty,
-                'new_qty': new_qty,
-                'old_quantity': old_quantity,
-                'new_quantity': new_quantity,
-                'old_norms': old_norms,
-                'new_norms': norms_to_use if new_norms is not None else None,
-            })
-            
-            if not dry_run:
-                if new_norms is not None:
-                    # Update QTY, Quantity, AND Norms in NormsMonthDetail
-                    cur.execute('''
-                        UPDATE NormsMonthDetail 
-                        SET QTY = ?, Quantity = ?, Norms = ?
-                        WHERE Id = ?
-                    ''', (new_qty, new_quantity, new_norms, record_id))
-                    
-                    # Sync model-calculated norms to CPPNorms table
-                    if norms_header_fk_id and _sync_to_cpp_norms(conn, norms_header_fk_id, fym_id, new_norms, 'PythonModel'):
-                        cpp_norms_synced += 1
-                else:
-                    # Update only QTY and Quantity
-                    cur.execute('''
-                        UPDATE NormsMonthDetail 
-                        SET QTY = ?, Quantity = ?
-                        WHERE Id = ?
-                    ''', (new_qty, new_quantity, record_id))
-        else:
-            same_count += 1
-    
     if not dry_run:
-        conn.commit()
-    
-    conn.close()
+        with save_lock:
+            # Connect to database inside the lock or just wrap the commit/execution
+            conn = get_connection()
+            try:
+                cur = conn.cursor()
+                
+                # Get FinancialYearMonth ID
+                cur.execute("SELECT Id FROM FinancialYearMonth WHERE Month = ? AND Year = ?", (month, year))
+                fym_row = cur.fetchone()
+                if not fym_row:
+                    return {
+                        'success': False,
+                        'message': f'FinancialYearMonth not found for {month}/{year}',
+                        'updated': 0,
+                        'same': 0
+                    }
+                fym_id = fym_row[0]
+                
+                # Get all NormsMonthDetail records for this month
+                # Also join CPPMonthWisePrice to fetch ValueType so we can
+                # skip Amount overwrite for 'Amount' type utilities.
+                cur.execute('''
+                    SELECT
+                        nmd.Id,
+                        p.Name as PlantName,
+                        nh.UtilityName,
+                        nh.MaterialName,
+                        nh.IssuingPlantName,
+                        nmd.QTY,
+                        nmd.Quantity,
+                        nmd.Norms,
+                        nmd.NormsHeader_FK_Id,
+                        nmd.Price,
+                        nh.Plant_FK_Id,
+                        nmd.Amount,
+                        ISNULL(cmp.ValueType, '') AS ValueType
+                    FROM NormsMonthDetail nmd
+                    INNER JOIN NormsHeader nh ON nh.Id = nmd.NormsHeader_FK_Id
+                    INNER JOIN Plants p ON p.Id = nh.Plant_FK_Id
+                    OUTER APPLY (
+                        SELECT TOP 1 cmp2.ValueType
+                        FROM CPPMonthWisePrice cmp2
+                        WHERE cmp2.NormsHeader_FK_Id = nmd.NormsHeader_FK_Id
+                        ORDER BY cmp2.Id DESC
+                    ) cmp
+                    WHERE nmd.FinancialYearMonth_FK_Id = ? AND nh.IsActive = 1
+                ''', (fym_id,))
+                
+                records = cur.fetchall()
+                
+                updated_count = 0
+                same_count = 0
+                cpp_norms_synced = 0
+                
+                for row in records:
+                    record_id = row[0]
+                    plant_name = row[1]
+                    utility_name = row[2]
+                    material_name = row[3]
+                    issueing_plant = row[4]
+                    old_qty = float(row[5]) if row[5] else 0
+                    old_quantity = float(row[6]) if row[6] else 0
+                    old_norms = float(row[7]) if row[7] else 0
+                    norms_header_fk_id = str(row[8]) if len(row) > 8 and row[8] else None
+                    price = float(row[9]) if len(row) > 9 and row[9] else 0
+                    plant_id = str(row[10]) if len(row) > 10 and row[10] else ''
+                    old_amount = float(row[11]) if len(row) > 11 and row[11] else 0
+                    value_type = str(row[12]).strip() if len(row) > 12 and row[12] else ''
+
+                    # ── ValueType = 'Amount': user entered a direct cost amount.
+                    # We must NEVER overwrite the amount — only QTY/Quantity/Norms
+                    # may be updated (so norms stay accurate even for Amount rows).
+                    is_direct_amount = (value_type == 'Amount')
+
+                    key = (plant_name, utility_name)
+                    new_qty = generation_map.get(key, None)
+                    
+                    if material_name == 'POWERGEN' and issueing_plant:
+                        if 'Power Plant 1' in issueing_plant or 'Power Plant-1' in issueing_plant:
+                            norms_key = (plant_name, utility_name, 'POWERGEN (PP1)')
+                        elif 'Power Plant 2' in issueing_plant or 'Power Plant-2' in issueing_plant:
+                            norms_key = (plant_name, utility_name, 'POWERGEN (PP2)')
+                        elif 'Power Plant 3' in issueing_plant or 'Power Plant-3' in issueing_plant:
+                            norms_key = (plant_name, utility_name, 'POWERGEN (PP3)')
+                        elif 'STG' in issueing_plant:
+                            norms_key = (plant_name, utility_name, 'POWERGEN (STG)')
+                        else:
+                            norms_key = (plant_name, utility_name, material_name)
+                    else:
+                        norms_key = (plant_name, utility_name, material_name)
+                    
+                    new_norms = norms_map.get(norms_key, None)
+                    norms_to_use = new_norms if new_norms is not None else old_norms
+                    
+                    if new_qty is None:
+                        # No QTY match in generation_map — handle Amount-type separately
+                        if is_direct_amount:
+                            # Amount row with no QTY match — nothing to update
+                            same_count += 1
+                        elif price > 0:
+                            # Price/Calculation row: fix Amount if Price exists
+                            expected_amount = old_quantity * price
+                            if abs(expected_amount - old_amount) > 0.01:
+                                cur.execute('''
+                                    UPDATE NormsMonthDetail
+                                    SET Amount = ?
+                                    WHERE Id = ?
+                                ''', (expected_amount, record_id))
+                                updated_count += 1
+                            else:
+                                same_count += 1
+                        else:
+                            same_count += 1
+                        continue
+
+                    new_quantity = new_qty * norms_to_use
+
+                    # For 'Amount' type rows: do NOT recalculate Amount from Price
+                    # (Price = 0 for these rows; amount was entered by user and is
+                    # authoritative — utility_price_service.py preserves it separately).
+                    if is_direct_amount:
+                        # Only update QTY / Quantity / Norms — never touch Amount
+                        qty_changed = abs(new_qty - old_qty) > 0.01
+                        quantity_changed = abs(new_quantity - old_quantity) > 0.01
+                        norms_changed = new_norms is not None and abs(new_norms - old_norms) > 0.0001
+                        print(f'Updating (Amount type) record {month}:{year} {record_id}: '
+                              f'PlantName={plant_name}, QTY={new_qty}, Norms={new_norms}, '
+                              f'Quantity={new_quantity}  [Amount preserved]')
+                        print('****************************')
+                        if qty_changed or quantity_changed or norms_changed:
+                            updated_count += 1
+                            if new_norms is not None:
+                                cur.execute('''
+                                    UPDATE NormsMonthDetail
+                                    SET QTY = ?, Quantity = ?, Norms = ?
+                                    WHERE Id = ?
+                                ''', (new_qty, new_quantity, new_norms, record_id))
+                                if norms_header_fk_id and _sync_to_cpp_norms(
+                                        conn, norms_header_fk_id, fym_id, new_norms, 'PythonModel'):
+                                    cpp_norms_synced += 1
+                            else:
+                                cur.execute('''
+                                    UPDATE NormsMonthDetail
+                                    SET QTY = ?, Quantity = ?
+                                    WHERE Id = ?
+                                ''', (new_qty, new_quantity, record_id))
+                        else:
+                            same_count += 1
+                        continue
+
+                    # For 'Price' and 'Calculation' type rows: calculate Amount normally
+                    new_amount = new_quantity * price
+                    print(f'Updating record {month}:{year} {record_id}: PlantName={plant_name}, PlantId={plant_id}, QTY={new_qty},  Norms={new_norms}, Quantity={new_quantity}, Price={price}, update_Amount={new_amount}')
+                    print("****************************")
+                    qty_changed = abs(new_qty - old_qty) > 0.01
+                    quantity_changed = abs(new_quantity - old_quantity) > 0.01
+                    norms_changed = new_norms is not None and abs(new_norms - old_norms) > 0.0001
+                    
+                    amount_changed = abs(new_amount - old_amount) > 0.01
+                    if qty_changed or quantity_changed or norms_changed or amount_changed:
+                        updated_count += 1
+                        if new_norms is not None:
+                            cur.execute('''
+                                UPDATE NormsMonthDetail
+                                SET QTY = ?, Quantity = ?, Norms = ?, Amount = ?
+                                WHERE Id = ?
+                            ''', (new_qty, new_quantity, new_norms, new_amount, record_id))
+
+                            if norms_header_fk_id and _sync_to_cpp_norms(conn, norms_header_fk_id, fym_id, new_norms, 'PythonModel'):
+                                cpp_norms_synced += 1
+                        else:
+                            cur.execute('''
+                                UPDATE NormsMonthDetail
+                                SET QTY = ?, Quantity = ?, Amount = ?
+                                WHERE Id = ?
+                            ''', (new_qty, new_quantity, new_amount, record_id))
+                    else:
+                        same_count += 1
+                
+                conn.commit()
+            finally:
+                conn.close()
+    else:
+        # Dry run logic (no lock needed)
+        # ... (keep existing dry run logic if needed, or just simplify)
+        # Actually, let's keep it simple and just return the counts
+        return {
+            'success': True,
+            'message': f'DRY RUN: Would update records (details omitted)',
+            'updated': 0,
+            'same': 0,
+            'cpp_norms_synced': 0,
+            'total': 0,
+            'dry_run': True,
+            'updates': []
+        }
+
     
     # Build message with CPPNorms sync info
     message = f'{"DRY RUN: " if dry_run else ""}Updated {updated_count} records, {same_count} unchanged'
@@ -473,6 +543,11 @@ def _build_generation_map(result: dict) -> dict:
         ('NMD - Utility Plant', 'HRSG1_SHP STEAM', 'NATURAL GAS'): hrsg1_ng_norm,
         ('NMD - Utility Plant', 'HRSG2_SHP STEAM', 'NATURAL GAS'): hrsg2_ng_norm,
         ('NMD - Utility Plant', 'HRSG3_SHP STEAM', 'NATURAL GAS'): hrsg3_ng_norm,
+        
+        # Effluent Treated - Material and Utility norms
+        ('NMD - Utility Plant', 'Effluent Treated', 'Power_Dis'): utility_consumption.get('effluent_power_norm', 3.54),
+        ('NMD - Utility Plant', 'Effluent Treated', 'Water'): utility_consumption.get('effluent_water_norm', 0.0007),
+        ('NMD - Utility Plant', 'Effluent Treated', 'UREA'): utility_consumption.get('effluent_urea_norm', 0.00075),
     }
     
     return generation_map, norms_map

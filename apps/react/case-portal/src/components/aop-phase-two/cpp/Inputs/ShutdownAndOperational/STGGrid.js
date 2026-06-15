@@ -40,7 +40,7 @@ const STGGrid = ({ hoursRows = [] }) => {
       minWidth: 150,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
     },
     {
       field: 'utilityDistributed.name',
@@ -49,7 +49,7 @@ const STGGrid = ({ hoursRows = [] }) => {
       minWidth: 180,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
     },
     {
       field: 'utilityDistributed.sapCode',
@@ -58,7 +58,7 @@ const STGGrid = ({ hoursRows = [] }) => {
       minWidth: 200,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
     },
     {
       field: 'utilityGenerated.name',
@@ -67,7 +67,7 @@ const STGGrid = ({ hoursRows = [] }) => {
       minWidth: 180,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
     },
     {
       field: 'utilityGenerated.sapCode',
@@ -76,7 +76,7 @@ const STGGrid = ({ hoursRows = [] }) => {
       minWidth: 220,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
     },
     {
       field: 'assetType',
@@ -85,7 +85,7 @@ const STGGrid = ({ hoursRows = [] }) => {
       minWidth: 180,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
       hidden: true,
     },
     {

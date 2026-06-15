@@ -19,9 +19,12 @@ export const UtilityPlantApiServiceV2 = {
 
   //Norm Based Utility Budget APIs
   getNormBasedUtilityBudget,
+  getNormBasedUtilityBudgetSummary,
   saveNormsData,
   saveNormsExcel,
   exportNormsExcel,
+  exportNormBasedUtilityBudgetSummary,
+  exportNormBasedUtilityBudgetDetailed,
   calculateNormsData,
 
   // SR Mapping APIs
@@ -29,6 +32,10 @@ export const UtilityPlantApiServiceV2 = {
   saveSRMapping,
   importSRMappingExcel,
   exportSRMappingExcel,
+
+  // Utility Rate APIs
+  getUtilityRateData,
+  exportUtilityRateExcel,
 
   // Generic Excel Import/Export
   saveExcelData,
@@ -81,8 +88,8 @@ async function saveFixedConsumptionData(keycloak, PLANT_ID, payload, AOP_YEAR) {
 
 // ===================== || Plant Requirement APIs || ===================== //
 async function getPlantRequirementData(keycloak, PLANT_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/plant-requirement/${AOP_YEAR}`
-  // const url = `${Config.CaseEngineUrl}/task/plant-requirement/${PLANT_ID}/${AOP_YEAR}`
+  // const url = `${Config.CaseEngineUrl}/task/plant-requirement/${AOP_YEAR}`
+  const url = `${Config.CaseEngineUrl}/task/plant-requirement-by-plant/${PLANT_ID}/${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -168,6 +175,29 @@ async function saveImportConsumptionData(keycloak, PLANT_ID, payload) {
 //====================|| NORM BASED UTILITY BUDGET APIs ||====================//
 async function getNormBasedUtilityBudget(keycloak, PLANT_ID, financialYear) {
   const url = `${Config.CaseEngineUrl}/task/norm-based-utility-budget?cppPlantId=${PLANT_ID}&financialYear=${financialYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getNormBasedUtilityBudgetSummary(
+  keycloak,
+  PLANT_ID,
+  financialYear,
+) {
+  const url = `${Config.CaseEngineUrl}/task/norm-based-utility-budget/summary?cppPlantId=${PLANT_ID}&financialYear=${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -292,7 +322,7 @@ async function exportExcelData(keycloak, params) {
   } = params
 
   const queryString = new URLSearchParams(queryParams).toString()
-  const url = `${Config.CaseEngineUrl}/task/${endpoint}`
+  const url = `${Config.CaseEngineUrl}/task/${endpoint}${queryString ? `?${queryString}` : ''}`
 
   const headers = {
     'Content-Type': 'application/json',
@@ -384,7 +414,7 @@ async function savePlantRequirementExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
 async function exportPlantRequirementExcel(keycloak, PLANT_ID, AOP_YEAR) {
   return exportExcelData(keycloak, {
     endpoint: `plant-requirement/export/${PLANT_ID}/${AOP_YEAR}`,
-    queryParams: { plantId: PLANT_ID, year: AOP_YEAR },
+    queryParams: {},
     fileName: `Plant_requirement_${AOP_YEAR}.xlsx`,
     method: 'GET',
   })
@@ -407,6 +437,36 @@ async function exportNormsExcel(keycloak, PLANT_ID, AOP_YEAR) {
     endpoint: `norm-based-utility-budget/export?cppPlantId=${PLANT_ID}&financialYear=${AOP_YEAR}`,
     queryParams: {},
     fileName: `Norms_${AOP_YEAR}.xlsx`,
+    method: 'GET',
+  })
+}
+
+// Norm Based Utility Budget Summary Export
+async function exportNormBasedUtilityBudgetSummary(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_NAME,
+) {
+  return exportExcelData(keycloak, {
+    endpoint: `norm-based-utility-budget/summary/export?cppPlantId=${PLANT_ID}&financialYear=${AOP_YEAR}`,
+    queryParams: {},
+    fileName: EXCEL_NAME,
+    method: 'GET',
+  })
+}
+
+// Norm Based Utility Budget Detailed (Monthly) Export
+async function exportNormBasedUtilityBudgetDetailed(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_NAME,
+) {
+  return exportExcelData(keycloak, {
+    endpoint: `norm-based-utility-budget/detailed/export?cppPlantId=${PLANT_ID}&financialYear=${AOP_YEAR}`,
+    queryParams: {},
+    fileName: EXCEL_NAME,
     method: 'GET',
   })
 }
@@ -496,4 +556,38 @@ async function importSRMappingExcel(file, keycloak) {
     console.error(`Error importing SR Mapping Excel:`, e)
     return Promise.reject(e)
   }
+}
+
+//===================== || Utility Rate APIs || =====================//
+async function getUtilityRateData(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/cpp-utility-rates?cppPlantId=${PLANT_ID}&financialYear=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function exportUtilityRateExcel(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_NAME,
+) {
+  return exportExcelData(keycloak, {
+    endpoint: `cpp-utility-rates/export`,
+    queryParams: { cppPlantId: PLANT_ID, financialYear: AOP_YEAR },
+    fileName: EXCEL_NAME,
+    method: 'GET',
+  })
 }

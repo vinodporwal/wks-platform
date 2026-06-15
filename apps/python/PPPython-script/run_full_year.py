@@ -132,6 +132,7 @@ DEFAULT_FIXED_DEMANDS = {
 
 
 def get_demands_for_month(month: int, year: int, 
+                          cpp_plant_id: str = None,
                           process_demands: dict = None,
                           use_db_process: bool = True,
                           use_db_fixed: bool = True) -> dict:
@@ -142,6 +143,7 @@ def get_demands_for_month(month: int, year: int,
     Args:
         month: Month number (1-12)
         year: Year (e.g., 2025)
+        cpp_plant_id: CPP Plant ID (UUID string) to filter by specific plant
         process_demands: Override process demands dict (uses DB values if None)
         use_db_process: If True, fetch process demands from DB; else use defaults/override
         use_db_fixed: If True, fetch fixed demands from DB; else use defaults
@@ -155,7 +157,7 @@ def get_demands_for_month(month: int, year: int,
         base_process = process_demands.copy()
     elif use_db_process:
         # Fetch from database
-        base_process = get_process_demand_for_month(month, year)
+        base_process = get_process_demand_for_month(month, year, cpp_plant_id)
         # Add non-steam parameters that may not be in DB
         base_process.setdefault("bfw_ufu", 0.0)
         base_process.setdefault("export_available", False)
@@ -251,7 +253,7 @@ def save_month_log(output_text: str, month: int, year: int, log_folder: str) -> 
     return filepath
 
 
-def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_calculation_log_enabled=True, parent_execution_id=None):
+def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_calculation_log_enabled=True, parent_execution_id=None, hrsg_full_load=False):
     """
     Run the model for a single month.
     
@@ -267,6 +269,7 @@ def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_c
         save_to_db: Save norms to database
         save_calculation_log_enabled: Save execution log to ModelCalculationLogs table
         parent_execution_id: FK to parent execution log (for full year runs)
+        hrsg_full_load: If True, do not subtract free steam from HRSG min target
     
     Returns:
         Dict with calculation result and execution time
@@ -296,8 +299,11 @@ def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_c
             air_fixed=demands.get("air_fixed", 0.0),
             cw1_fixed=demands.get("cw1_fixed", 0.0),
             cw2_fixed=demands.get("cw2_fixed", 0.0),
+            oxygen_mt=demands.get("oxygen_process", 0.0),
+            effluent_m3=demands.get("effluent_process", 0.0),
             raw_water_fixed=demands.get("raw_water_fixed", 0.0),
-            save_to_db=save_to_db
+            save_to_db=save_to_db,
+            hrsg_full_load=hrsg_full_load
         )
         
         execution_time = time.time() - start_time
@@ -376,7 +382,8 @@ def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_c
 def run_full_financial_year(financial_year: int, cpp_plant_id: str = None, 
                             process_demands=None, save_to_db=True, save_logs=True,
                             use_db_process: bool = True, use_db_fixed: bool = True,
-                            save_calculation_logs: bool = True, is_single_month: bool = False):
+                            save_calculation_logs: bool = True, is_single_month: bool = False,
+                            hrsg_full_load: bool = False):
     """
     Run the budget model for all 12 months of a financial year.
     Both process and fixed demands are fetched dynamically from DB for each month.
@@ -391,6 +398,7 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
         use_db_fixed: If True, fetch fixed demands from DB
         save_calculation_logs: If True, save execution logs to ModelCalculationLogs
         is_single_month: If True, running single month mode (don't save logs)
+        hrsg_full_load: If True, do not subtract free steam from HRSG min target
     
     Returns:
         Dict with summary of all month results
@@ -482,10 +490,16 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
     max_workers = min(4, multiprocessing.cpu_count())
     print_lock  = threading.Lock()    # For console progress lines
     db_log_lock = threading.Lock()    # Serialise DB log saves to avoid prepared-stmt collisions
+    comparison_enabled = (financial_year == 2025)
     comparison_lock = threading.Lock()
     completed_comparisons = []
-    comparison_folder = os.path.join(run_log_folder, "nmd_budget_comparisons")
-    bpc_csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "BPC.ods")
+    comparison_folder = os.path.join(run_log_folder, "nmd_budget_comparisons") if comparison_enabled else None
+    bpc_csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "BPC.ods") if comparison_enabled else None
+
+    if comparison_enabled:
+        print("NMD BPC comparison: enabled for FY 2025 only")
+    else:
+        print(f"NMD BPC comparison: skipped for FY {financial_year}-{str(financial_year + 1)[-2:]}")
 
     # Thread-local storage so each worker thread has its own stdout buffer
     _tls = threading.local()
@@ -512,11 +526,13 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
         result = run_single_month.__wrapped__(  # call the plain calculation part
             month, year, cpp_plant_id, month_demands, save_to_db,
             save_calculation_log_enabled=False,   # We'll do it below under the lock
-            parent_execution_id=parent_execution_id
+            parent_execution_id=parent_execution_id,
+            hrsg_full_load=hrsg_full_load
         ) if hasattr(run_single_month, '__wrapped__') else run_single_month(
             month, year, cpp_plant_id, month_demands, save_to_db,
             save_calculation_log_enabled=False,
-            parent_execution_id=parent_execution_id
+            parent_execution_id=parent_execution_id,
+            hrsg_full_load=hrsg_full_load
         )
         # Save calculation log serialised
         if save_calculation_logs and not is_single_month:
@@ -556,6 +572,7 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
         try:
             month_demands = get_demands_for_month(
                 month, year,
+                cpp_plant_id=cpp_plant_id,
                 process_demands=process_demands,
                 use_db_process=use_dynamic_process,
                 use_db_fixed=use_db_fixed
@@ -567,7 +584,7 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
             )
 
             success = result.get("overall_success", False)
-            usd_result = result.get("usd_result", {})
+            usd_result = result.get("usd_result") or {}
             iterations_used = result.get("iterations_used", 0) or usd_result.get("iterations_used", 0)
 
             month_result = {
@@ -588,14 +605,14 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
             total_power = sum(asset.get("GrossMWh", 0) * 1000 for asset in final_dispatch)
             month_result["total_power_kwh"] = total_power
 
-            final_steam = usd_result.get("final_steam_balance", {}) or result.get("steam_result", {})
-            shp_balance = final_steam.get("shp_balance", {})
+            final_steam = usd_result.get("final_steam_balance") or result.get("steam_result") or {}
+            shp_balance = final_steam.get("shp_balance") or {}
             total_shp = (shp_balance.get("total_shp_supply", 0)
                          or final_steam.get("summary", {}).get("total_shp_demand", 0)
                          or shp_balance.get("shp_total", 0))
             month_result["total_shp_mt"] = total_shp
 
-            save_result = result.get("save_result", {})
+            save_result = result.get("save_result") or {}
             month_result["records_saved"] = (save_result.get("updated", 0)
                                              + save_result.get("unchanged", 0))
 
@@ -652,31 +669,32 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
                 calculation_result = month_result.get("calculation_result")
                 if calculation_result:
                     try:
-                        with comparison_lock:
-                            month_comparison_path = write_month_comparison_file(
-                                output_folder=comparison_folder,
-                                month=month_result["month"],
-                                year=month_result["year"],
-                                financial_year=financial_year,
-                                calculation_result=calculation_result,
-                                bpc_csv_path=bpc_csv_path,
-                            )
-                            month_result["comparison_file"] = month_comparison_path
+                        if comparison_enabled:
+                            with comparison_lock:
+                                month_comparison_path = write_month_comparison_file(
+                                    output_folder=comparison_folder,
+                                    month=month_result["month"],
+                                    year=month_result["year"],
+                                    financial_year=financial_year,
+                                    calculation_result=calculation_result,
+                                    bpc_csv_path=bpc_csv_path,
+                                )
+                                month_result["comparison_file"] = month_comparison_path
 
-                            completed_comparisons.append((
-                                month_result["month"],
-                                month_result["year"],
-                                calculation_result,
-                            ))
+                                completed_comparisons.append((
+                                    month_result["month"],
+                                    month_result["year"],
+                                    calculation_result,
+                                ))
 
-                            full_year_comparison_path = write_full_year_comparison_file(
-                                output_folder=comparison_folder,
-                                financial_year=financial_year,
-                                completed_months=completed_comparisons,
-                                bpc_csv_path=bpc_csv_path,
-                            )
-                            results["comparison_folder"] = comparison_folder
-                            results["full_year_comparison_file"] = full_year_comparison_path
+                                full_year_comparison_path = write_full_year_comparison_file(
+                                    output_folder=comparison_folder,
+                                    financial_year=financial_year,
+                                    completed_months=completed_comparisons,
+                                    bpc_csv_path=bpc_csv_path,
+                                )
+                                results["comparison_folder"] = comparison_folder
+                                results["full_year_comparison_file"] = full_year_comparison_path
                     except Exception as comparison_error:
                         month_result["comparison_error"] = str(comparison_error)
                         import traceback
@@ -720,6 +738,85 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
         else:
             month_result.pop("log_output", None)
 
+    sorted_months = sorted(results["months"].items(),
+                            key=lambda x: (x[1]['year'], x[1]['month']) if x[1]['month'] >= 4 else (x[1]['year'], x[1]['month'] + 12))
+
+    price_comparison_log_path = None
+    if bpc_csv_path and os.path.exists(bpc_csv_path):
+        try:
+            from services.utility_price_service import (
+                build_bpc_comparison_table_text,
+                build_yearly_bpc_comparison_table_text,
+                parse_price_map,
+            )
+            from services.nmd_budget_comparison_service import BPCReferenceBook
+
+            fy_label = f"FY {financial_year}-{str(financial_year + 1)[-2:]}"
+            book = BPCReferenceBook(bpc_csv_path)
+            month_tables = []
+            yearly_rows = []
+
+            for _, month_data in sorted_months:
+                month = month_data["month"]
+                year = month_data["year"]
+                month_name = month_data["month_name"]
+                calc_result = month_data.get("calculation_result") or {}
+                price_result = calc_result.get("utility_price_result") or {}
+                price_map = price_result.get("price_map")
+                if not price_map:
+                    price_map = parse_price_map(price_result.get("prices", {}))
+
+                if not price_map:
+                    month_tables.append(
+                        "\n".join([
+                            "=" * 196,
+                            f"  CPP vs BPC — UTILITY PRICE COMPARISON ({month_name} {year})",
+                            "=" * 196,
+                            "  [BPC COMPARISON] Skipped — utility price result not available",
+                        ])
+                    )
+                    continue
+
+                table_text, rows, _ = build_bpc_comparison_table_text(
+                    month=month,
+                    year=year,
+                    utility_prices=price_map,
+                    bpc_book=book,
+                    title=f"CPP vs BPC — UTILITY PRICE COMPARISON ({month_name} {year})",
+                )
+                if table_text:
+                    month_tables.append(table_text)
+                    yearly_rows.extend(rows)
+                else:
+                    month_tables.append(
+                        "\n".join([
+                            "=" * 196,
+                            f"  CPP vs BPC — UTILITY PRICE COMPARISON ({month_name} {year})",
+                            "=" * 196,
+                            "  [BPC COMPARISON] Skipped — NMD data not available",
+                        ])
+                    )
+
+            if yearly_rows:
+                yearly_table = build_yearly_bpc_comparison_table_text(
+                    yearly_rows,
+                    title=f"CPP vs BPC — UTILITY PRICE COMPARISON ({fy_label} TOTAL)",
+                )
+                price_comparison_log_path = os.path.join(run_log_folder, "utility_price_bpc_comparison.log")
+                with open(price_comparison_log_path, "w", encoding="utf-8") as f:
+                    f.write(f"UTILITY PRICE COMPARISON LOG - {fy_label}\n")
+                    f.write("=" * 196 + "\n\n")
+                    for table in month_tables:
+                        f.write(table + "\n\n")
+                    f.write(yearly_table + "\n")
+                results["utility_price_comparison_log"] = price_comparison_log_path
+        except Exception as exc:
+            with print_lock:
+                _real_stdout.write(
+                    f"  [WARN] Utility price comparison log generation failed: {exc}\n"
+                )
+                _real_stdout.flush()
+
     total_elapsed = time.time() - run_start
     print(f"\nAll months computed in {total_elapsed:.1f}s "
           f"({total_elapsed/60:.1f} min) using {max_workers} workers.\n")
@@ -751,10 +848,12 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
                 f"FinancialYearMonthId={month_data.get('financial_year_month_id')} | "
                 f"Message={month_data.get('calculation_log_message')}"
             )
-    if results.get("comparison_folder"):
+    if comparison_enabled and results.get("comparison_folder"):
         print(f"Comparison folder: {results['comparison_folder']}")
-    if results.get("full_year_comparison_file"):
+    if comparison_enabled and results.get("full_year_comparison_file"):
         print(f"Combined comparison file: {results['full_year_comparison_file']}")
+    if price_comparison_log_path:
+        print(f"Utility price comparison log: {price_comparison_log_path}")
     
     # Save summary
     summary_path = os.path.join(run_log_folder, "summary.txt")
@@ -778,15 +877,19 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
                     f"Message={month_data.get('calculation_log_message')}\n"
                 )
             f.write("\n")
-        if results.get("comparison_folder"):
+        if comparison_enabled and results.get("comparison_folder"):
             f.write(f"Comparison folder: {results['comparison_folder']}\n")
-        if results.get("full_year_comparison_file"):
-            f.write(f"Combined comparison file: {results['full_year_comparison_file']}\n\n")
+        if comparison_enabled and results.get("full_year_comparison_file"):
+            f.write(f"Combined comparison file: {results['full_year_comparison_file']}\n")
+        if price_comparison_log_path:
+            f.write(f"Utility price comparison log: {price_comparison_log_path}\n")
+        if comparison_enabled and results.get("full_year_comparison_file") or price_comparison_log_path:
+            f.write("\n")
         
         f.write("MONTH-BY-MONTH QUICK RESULTS:\n")
         f.write("-" * 120 + "\n")
         for key, month_data in results["months"].items():
-            status = "✓" if month_data.get("success") else "✗"
+            status = "[OK]" if month_data.get("success") else "[FAIL]"
             f.write(f"{status} {month_data['month_name']} {month_data['year']}: ")
             if month_data.get("success"):
                 f.write(f"Power={month_data.get('total_power_kwh', 0):,.0f} KWH, ")
@@ -920,6 +1023,12 @@ Examples:
     )
     
     parser.add_argument(
+        "--hrsg-full-load", 
+        action="store_true",
+        help="Load HRSG directly on min load, considering free steam as negative SHP demand"
+    )
+    
+    parser.add_argument(
         "--json", 
         action="store_true",
         help="Output results as JSON (for Java/API integration)"
@@ -993,7 +1102,8 @@ Examples:
                 save_to_db=not args.no_save,
                 save_logs=not args.no_logs,
                 save_calculation_logs=True,  # Always enabled, but skipped for single month
-                is_single_month=is_single_month
+                is_single_month=is_single_month,
+                hrsg_full_load=args.hrsg_full_load
             )
             
             if args.json:

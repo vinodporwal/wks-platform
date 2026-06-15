@@ -39,7 +39,7 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
       widthT: 150,
       type: 'text',
       editable: false,
-      locked: true,
+      locked: false,
       minWidth: 150,
     },
     {

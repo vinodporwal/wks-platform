@@ -71,6 +71,12 @@ export const InputApiService = {
   // Generic Excel Import/Export
   saveExcelData,
   exportExcelData,
+
+  // Prices APIs
+  getPricesData,
+  savePricesData,
+  savePricesExcel,
+  exportPricesExcel,
 }
 
 // ===================== ||Shutdown and Operational hrs APIs || ===================== //
@@ -1267,6 +1273,94 @@ async function exportFuelAvailabilityExcelJCB(
     endpoint: `fuel-availability/export/${cppId}/${financialYear}`,
     queryParams: queryParams,
     fileName: `JCB_Fuel_Availability_${financialYear}.xlsx`,
+    method: 'GET',
+  })
+}
+
+// ========================|| Prices APIs ||=====================================//
+async function getPricesData(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/cpp-norm-prices?cppPlantId=${PLANT_ID}&financialYear=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function savePricesData(keycloak, AOP_YEAR, payload) {
+  const url = `${Config.CaseEngineUrl}/task/cpp-norm-prices/${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function savePricesExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/cpp-norm-prices/import?cppPlantId=${PLANT_ID}&financialYear=${AOP_YEAR}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+
+    const responseData = await json(keycloak, resp)
+
+    if (resp.status === 400 || resp.status === 200) {
+      return responseData
+    }
+
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to import Prices data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+
+    return responseData
+  } catch (e) {
+    console.error(`Error importing Prices Excel:`, e)
+    return Promise.reject(e)
+  }
+}
+
+async function exportPricesExcel(keycloak, PLANT_ID, AOP_YEAR, EXCEL_NAME) {
+  return exportExcelData(keycloak, {
+    endpoint: `cpp-norm-prices/export`,
+    queryParams: { cppPlantId: PLANT_ID, financialYear: AOP_YEAR },
+    fileName: EXCEL_NAME,
     method: 'GET',
   })
 }

@@ -112,7 +112,7 @@ if __name__ == "__main__":
     if use_db_demands:
         # Fetch from database
         print("\n--- FETCHING DEMANDS FROM DATABASE ---")
-        process_demands = get_process_demand_for_month(month, year)
+        process_demands = get_process_demand_for_month(month, year, cpp_plant_id)
         fixed_demands = get_fixed_consumption_for_month(month, year)
         
         # Extract values
@@ -273,6 +273,18 @@ if __name__ == "__main__":
     print("2. With USD Iteration (Power-Steam balancing)")
     mode_input = input("Select mode [2]: ").strip()
     use_iteration = mode_input != '1'
+
+    # -----------------------------------------------------------
+    # STEP 2.5: OPTIONAL BPC COMPARISON FOR PRICE TABLE
+    # -----------------------------------------------------------
+    print("\n--- BPC PRICE COMPARISON ---")
+    bpc_compare_input = input("Enable CPP vs BPC price comparison? (y/n) [n]: ").strip().lower()
+    enable_price_bpc_comparison = bpc_compare_input == 'y'
+    price_bpc_path = None
+    if enable_price_bpc_comparison:
+        default_bpc_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "BPC.ods")
+        bpc_path_input = input(f"BPC file path [{default_bpc_path}]: ").strip()
+        price_bpc_path = bpc_path_input or default_bpc_path
     
     # -----------------------------------------------------------
     # STEP 3: EXECUTE BUDGET CALCULATION
@@ -303,6 +315,8 @@ if __name__ == "__main__":
             raw_water_process=raw_water_process,
             raw_water_fixed=raw_water_fixed,
             oxygen_mt=oxygen_process,
+            enable_price_bpc_comparison=enable_price_bpc_comparison,
+            price_bpc_path=price_bpc_path,
             save_to_db=True  # Auto-save QTY and Quantity to NormsMonthDetail
         )
     else:
@@ -381,11 +395,11 @@ if __name__ == "__main__":
                 gross_mwh = asset.get("GrossMWh", 0)
                 gross_kwh = gross_mwh * 1000
                 
-                if "GT1" in name or "POWER PLANT 3" in name:
+                if "GT1" in name or "POWER PLANT 1" in name:
                     power_dispatch["gt1_gross_kwh"] = gross_kwh
                 elif "GT2" in name or "POWER PLANT 2" in name:
                     power_dispatch["gt2_gross_kwh"] = gross_kwh
-                elif "GT3" in name or "POWER PLANT 1" in name:
+                elif "GT3" in name or "POWER PLANT 3" in name:
                     power_dispatch["gt3_gross_kwh"] = gross_kwh
                 elif "STG" in name:
                     power_dispatch["stg_gross_kwh"] = gross_kwh
@@ -400,9 +414,9 @@ if __name__ == "__main__":
             save_result = save_model_quantities(month, year, utilities, power_dispatch)
             
             if save_result["success_count"] > 0:
-                print(f"\n✓ Successfully saved {save_result['success_count']} records to database")
+                print(f"\n[OK] Successfully saved {save_result['success_count']} records to database")
             if save_result["failed_count"] > 0:
-                print(f"✗ Failed to save {save_result['failed_count']} records")
+                print(f"[FAIL] Failed to save {save_result['failed_count']} records")
     
     # -----------------------------------------------------------
     # STEP 6: GENERATE EXCEL BALANCE REPORT

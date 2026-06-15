@@ -105,7 +105,7 @@ const getEnhancedAOPColDefs = ({
         title: 'Recipe',
         editable: false,
         widthT: 250,
-        locked:true,
+        locked: true,
         minWidth: 250,
       },
       {
@@ -113,7 +113,7 @@ const getEnhancedAOPColDefs = ({
         title: 'UOM',
         editable: false,
         widthT: 85,
-        locked:true,
+        locked: true,
         minWidth: 85,
       },
     ]
@@ -254,7 +254,13 @@ const getEnhancedAOPColDefs = ({
           minWidth: 100,
         }
       }
-
+      if (col.type === 'number') {
+        return {
+          ...col,
+          format: FORMATE_VALUE,
+          minWidth: col.minWidth ?? 100,
+        }
+      }
       return col
     })
   }

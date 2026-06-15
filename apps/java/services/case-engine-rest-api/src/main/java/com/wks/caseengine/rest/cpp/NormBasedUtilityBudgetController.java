@@ -72,6 +72,45 @@ public class NormBasedUtilityBudgetController {
         }
     }
 
+    @GetMapping("/norm-based-utility-budget/summary")
+    public ResponseEntity<?> getNormBasedUtilityBudgetSummary(
+            @RequestParam UUID cppPlantId,
+            @RequestParam String financialYear
+    ) {
+        try {
+            log.info("=== Controller Received Summary Request ===");
+            log.info("CPPPlantId: {}", cppPlantId);
+            log.info("FinancialYear: {}", financialYear);
+
+            AOPMessageVM result = normBasedUtilityBudgetService.getNormBasedUtilityBudgetSummary(cppPlantId, financialYear);
+
+            log.info("=== Controller Returning Summary Response ===");
+            log.info("Response Code: {}", result.getCode());
+
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            log.error("=== CONTROLLER SUMMARY EXCEPTION ===", e);
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("errorType", e.getClass().getName());
+            errorResponse.put("errorMessage", e.getMessage());
+
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            errorResponse.put("stackTrace", sw.toString());
+
+            if (e.getCause() != null) {
+                errorResponse.put("causeType", e.getCause().getClass().getName());
+                errorResponse.put("causeMessage", e.getCause().getMessage());
+            }
+
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
 
 
 
@@ -134,6 +173,38 @@ public class NormBasedUtilityBudgetController {
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.setContentDispositionFormData("attachment", "NormBasedUtilityBudget_" + financialYear + ".xlsx");
         
+        return ResponseEntity.ok()
+            .headers(headers)
+            .body(excelFile);
+    }
+
+    @GetMapping(value = "/norm-based-utility-budget/detailed/export")
+    public ResponseEntity<byte[]> exportNormBasedUtilityBudgetDetailed(
+            @RequestParam UUID cppPlantId,
+            @RequestParam String financialYear) {
+
+        byte[] excelFile = normBasedUtilityBudgetService.exportNormBasedUtilityBudgetDetailed(cppPlantId, financialYear);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", "NormBasedUtilityBudget_Detailed_" + financialYear + ".xlsx");
+
+        return ResponseEntity.ok()
+            .headers(headers)
+            .body(excelFile);
+    }
+
+    @GetMapping(value = "/norm-based-utility-budget/summary/export")
+    public ResponseEntity<byte[]> exportNormBasedUtilityBudgetSummary(
+            @RequestParam UUID cppPlantId,
+            @RequestParam String financialYear) {
+
+        byte[] excelFile = normBasedUtilityBudgetService.exportNormBasedUtilityBudgetSummary(cppPlantId, financialYear);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", "NormBasedUtilityBudget_Summary_" + financialYear + ".xlsx");
+
         return ResponseEntity.ok()
             .headers(headers)
             .body(excelFile);

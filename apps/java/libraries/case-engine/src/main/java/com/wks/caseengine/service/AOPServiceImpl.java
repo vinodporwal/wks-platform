@@ -134,10 +134,12 @@ public class AOPServiceImpl implements AOPService {
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+			boolean staple= vertical.getName().equalsIgnoreCase("Staple");
+			boolean filament= vertical.getName().equalsIgnoreCase("Filament");
 			if(vertical.getName().equalsIgnoreCase("AROMATICS")) {
 				String procedureName=vertical.getName()+"_"+site.getName()+"_"+"GetAOP";
 				obj = getData(year,plant.getId(),site.getId(),vertical.getId(),procedureName);
-			}else if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc){
+			}else if(staple || filament || vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc){
 				String view="vwScrn"+vertical.getName()+"AOP";
 				obj= findByAOPYearAndPlantFkId(year, UUID.fromString(plantId), type,view);
 			}else if(vertical.getName().equalsIgnoreCase("Chemical") || (vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD"))){

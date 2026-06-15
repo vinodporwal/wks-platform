@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
-import AopTabs from '../../common/components/AopTabs'
+import AopTabs from 'components/AopTabs'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -16,6 +16,8 @@ import FixedNorms from './FixedNorms'
 import Fuel from './Fuel/index'
 import AopDesignBasis from './AopDesignBasis'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import InputsJMD from '../jmd/Inputs/index'
+import Prices from './Prices/index'
 
 const Inputs = () => {
   const keycloak = useSession()
@@ -26,6 +28,10 @@ const Inputs = () => {
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
+
+  const lowerVertName = verticalObject?.name?.toLowerCase()
+  const lowerSiteName = siteObject?.name?.toLowerCase()
+  const IS_CPP = lowerVertName === 'cpp'
 
   // State management
   const [tabObj, setTabObj] = useState([])
@@ -88,6 +94,12 @@ const Inputs = () => {
         name: 'fuelAvailability',
         displayName: 'Fuel Availability',
         displaySequence: 7,
+      },
+      {
+        id: 'prices',
+        name: 'prices',
+        displayName: 'Prices',
+        displaySequence: 8,
       },
       // { id: 'export-availability',name:'exportAvailability', displayName: 'Export Availability', displaySequence: 6 },
     ]
@@ -167,26 +179,55 @@ const Inputs = () => {
         return <FixedNorms />
       case 'fuel-availability':
         return <Fuel />
+      case 'prices':
+        return <Prices />
       default:
         return null
     }
   }
 
+  const renderBySite = () => {
+    switch (lowerSiteName) {
+      case 'jmd':
+        return <InputsJMD />
+      // case 'hmd':
+      //   return <InputsHMD />
+      case 'nmd':
+      default:
+        return (
+          <>
+            {/* Tabs - sticky below StepperNav */}
+            <Box
+              sx={{
+                position: 'sticky',
+                top: -1,
+                zIndex: 10,
+                backgroundColor: '#ffffff',
+                borderBottom: 1,
+                borderColor: 'divider',
+                mb: 1,
+              }}
+            >
+              <AopTabs
+                tabIndex={tabIndex}
+                setTabIndex={setTabIndex}
+                tabs={tabObj?.map((tab) => tab.displayName || tab.name) || []}
+              />
+            </Box>
+
+            {/* Tab Content */}
+            <Box>{renderTabContent()}</Box>
+          </>
+        )
+    }
+  }
+
+  if (!IS_CPP) return null
+
   return (
     <Box sx={{ p: 0 }}>
       <LoaderBackdrop open={!!loading} />
-
-      {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-        <AopTabs
-          tabIndex={tabIndex}
-          setTabIndex={setTabIndex}
-          tabs={tabObj?.map((tab) => tab.displayName || tab.name) || []}
-        />
-      </Box>
-
-      {/* Tab Content */}
-      <Box>{renderTabContent()}</Box>
+      {renderBySite()}
     </Box>
   )
 }

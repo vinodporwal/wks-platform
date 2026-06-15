@@ -68,7 +68,8 @@ import Inputs from 'components/aop-phase-two/cpp/Inputs/index'
 import PlantRequirement from 'components/aop-phase-two/cpp/PlantRequirement'
 import FixedConsumption from 'components/aop-phase-two/cpp/FixedConsumption'
 import Norms from 'components/aop-phase-two/cpp/Norms'
-
+import QtyCostReport from 'components/aop-phase-two/cpp/qty-cost-report/index'
+import UtilityRate from 'components/aop-phase-two/cpp/utility-rate/index'
 // TCS
 
 import TcsOutput from 'components/aop-phase-two/tcs/TcsOutput/index'
@@ -120,6 +121,21 @@ import SteadyStateConsumptionCoker from 'components/aop-phase-two/coker/steady-s
 import MonthwiseProductionPlanCoker from 'components/aop-phase-two/coker/monthwise-production-plan/index'
 import NetProductionHoursCoker from 'components/aop-phase-two/coker/net-production-hours/index'
 
+//staple (polyester)
+import BusinessDemandPolyester from 'components/aop-phase-two/polyester/business-demand/index'
+import MonthwiseProductionPlanPolyester from 'components/aop-phase-two/polyester/monthwise-production-plan/index'
+import NetProductionHoursPolyester from 'components/aop-phase-two/polyester/net-production-hours/index'
+import OverallAopConsumptionPolyester from 'components/aop-phase-two/polyester/overall-aop-consumption/index'
+import ProductionNormsBasisPolyester from 'components/aop-phase-two/polyester/production-norms-basis/index'
+import ProductionTargetPolyester from 'components/aop-phase-two/polyester/production-target/index'
+import ProposedAopConsumptionPolyester from 'components/aop-phase-two/polyester/proposed-aop-consumption/index'
+import QualityPackagingNormsPolyester from 'components/aop-phase-two/polyester/quality-packaging-norms/index'
+import ShutdownConsumptionPolyester from 'components/aop-phase-two/polyester/shutdown-consumption/index'
+import ShutdownPlanPolyester from 'components/aop-phase-two/polyester/shutdown-plan/index'
+import SlowdownPlanPolyester from 'components/aop-phase-two/polyester/slowdown-plan/index'
+import SlowdownConsumptionPolyester from 'components/aop-phase-two/polyester/slowdown-consumption/index'
+import SteadyStateConsumptionPolyester from 'components/aop-phase-two/polyester/steady-state-consumption/index'
+
 import OtherProduction from 'components/kendo-data-tables/other-production/index'
 import SapBasedRefNorms from 'components/data-tables/Reports-kendo/SapBasedRefNorms'
 import SpecificConsumptionCalculation from 'components/kendo-data-tables/SpecificConsumptionCalculation'
@@ -128,8 +144,17 @@ import CausticSodaLyeBasis from 'components/data-tables/Reports/CausticSodaLyeBa
 import MaterialBalance from 'components/kendo-data-tables/MaterialBalance'
 import CatalystChecmicalsCalculation from 'components/kendo-data-tables/CatalystChecmicalsCalculation'
 import CausticSodaLyeBasisCatChem from 'components/data-tables/Reports/CausticSodaLyeBasisCatChem'
+// Vertical MEROX
+import SteadyStateConsumptionMerox from 'components/aop-phase-two/merox/steady-state-consumption'
+import OverallAopConsumptionMerox from 'components/aop-phase-two/merox/overall-aop-consumption'
+import ProductionNormsBasisMerox from 'components/aop-phase-two/merox/production-norms-basis'
 import EtheleneStock from 'components/data-tables/Reports/EtheleneStock'
-
+// Vertical MEROX Ended
+// PCG
+import SteadyStateConsumptionPCG from 'components/aop-phase-two/pcg/steady-state-consumption'
+import OverallAopConsumptionPCG from 'components/aop-phase-two/pcg/overall-aop-consumption'
+import ProductionNormsBasisPCG from 'components/aop-phase-two/pcg/production-norms-basis'
+// PCG Ended
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
 
@@ -770,6 +795,167 @@ export const MainRoutes = (
             ),
           },
           //Vertical Coker Ended ****************************
+
+          //Vertical STAPLE (Polyester) Start******************************************************************
+          {
+            path: 'production-norms-basis-polyester',
+            element: (
+              <PrivateRoute routeId='production-norms-basis-polyester'>
+                <ProductionNormsBasisPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'net-production-hrs-polyester',
+            element: (
+              <PrivateRoute routeId='net-production-hrs-polyester'>
+                <NetProductionHoursPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'monthwise-production-plan-polyester',
+            element: (
+              <PrivateRoute routeId='monthwise-production-plan-polyester'>
+                <MonthwiseProductionPlanPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption-polyester',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption-polyester'>
+                <SteadyStateConsumptionPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'overall-aop-consumption-polyester',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption-polyester'>
+                <OverallAopConsumptionPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'production-target-polyester',
+            element: (
+              <PrivateRoute routeId='production-target-polyester'>
+                <ProductionTargetPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'business-demand-polyester',
+            element: (
+              <PrivateRoute routeId='business-demand-polyester'>
+                <BusinessDemandPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'proposed-aop-consumption-polyester',
+            element: (
+              <PrivateRoute routeId='proposed-aop-consumption-polyester'>
+                <ProposedAopConsumptionPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown-plan-polyester',
+            element: (
+              <PrivateRoute routeId='shutdown-plan-polyester'>
+                <ShutdownPlanPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown-consumption-polyester',
+            element: (
+              <PrivateRoute routeId='shutdown-consumption-polyester'>
+                <ShutdownConsumptionPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'slowdown-plan-polyester',
+            element: (
+              <PrivateRoute routeId='slowdown-plan-polyester'>
+                <SlowdownPlanPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'slowdown-consumption-polyester',
+            element: (
+              <PrivateRoute routeId='slowdown-consumption-polyester'>
+                <SlowdownConsumptionPolyester />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'quality-packaging-norms-polyester',
+            element: (
+              <PrivateRoute routeId='quality-packaging-norms-polyester'>
+                <QualityPackagingNormsPolyester />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical STAPLE (Polyester) Ended ****************************
+
+          //Vertical MEROX Started
+          {
+            path: 'production-norms-basis-merox',
+            element: (
+              <PrivateRoute routeId='production-norms-basis-merox'>
+                <ProductionNormsBasisMerox />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption-merox',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption-merox'>
+                <SteadyStateConsumptionMerox />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'overall-aop-consumption-merox',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption-merox'>
+                <OverallAopConsumptionMerox />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical MEROX Ended
+
+          //Vertical PCG Started
+          {
+            path: 'production-norms-basis-pcg',
+            element: (
+              <PrivateRoute routeId='production-norms-basis-pcg'>
+                <ProductionNormsBasisPCG />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption-pcg',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption-pcg'>
+                <SteadyStateConsumptionPCG />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'overall-aop-consumption-pcg',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption-pcg'>
+                <OverallAopConsumptionPCG />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical PCG Ended
         ],
       },
 
@@ -792,7 +978,6 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
-
           {
             path: 'ethelene-stock',
             element: (
@@ -801,7 +986,6 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
-
           {
             path: 'aop-annual-cost-report',
             element: (
@@ -971,6 +1155,22 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='norms'>
                 <Norms />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'qty-cost-report',
+            element: (
+              <PrivateRoute routeId='qty-cost-report'>
+                <QtyCostReport />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'utility-rate',
+            element: (
+              <PrivateRoute routeId='utility-rate'>
+                <UtilityRate />
               </PrivateRoute>
             ),
           },

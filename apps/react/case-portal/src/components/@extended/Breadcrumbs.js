@@ -30,6 +30,14 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { verticalChange, plantObject, verticalObject, siteObject, year } =
     dataGridStore
+  //=====================================================
+  const jmdSelectedPlants = useSelector(
+    (s) => s.dataGridStore.jmdSelectedPlants,
+  )
+  const IS_CPP_JMD =
+    verticalObject?.name?.toLowerCase() === 'cpp' &&
+    siteObject?.name?.toLowerCase() === 'jmd'
+  //=====================================================
 
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -503,9 +511,44 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
                       <Box component='span' sx={{ mx: 0.7 }}>
                         |
                       </Box>
-                      <Box component='span' sx={{ mx: 0.7 }}>
-                        {PLANT_NAME}
-                      </Box>
+                      {/*===================================================== */}
+                      {IS_CPP_JMD && jmdSelectedPlants.length > 0 ? (
+                        // CPP-JMD: show all selected plants as chips
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                            flexWrap: 'wrap',
+                          }}
+                        >
+                          {jmdSelectedPlants.map((p, i) => (
+                            <Box
+                              key={p.id}
+                              component='span'
+                              sx={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                px: 1,
+                                py: '2px',
+                                borderRadius: '4px',
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                border: '1px solid #848282',
+                                lineHeight: 1.5,
+                              }}
+                            >
+                              {p.name}
+                            </Box>
+                          ))}
+                        </Box>
+                      ) : (
+                        // All other cases: single plant name
+                        <Box component='span' sx={{ mx: 0.7 }}>
+                          {PLANT_NAME}
+                        </Box>
+                      )}
+                      {/*===================================================== */}
                     </Typography>
 
                     {/* Status/Item Pill */}

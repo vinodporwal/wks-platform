@@ -30,12 +30,15 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.cpp.dto.AssetMonthlyOperationalProjection;
 import com.wks.caseengine.dto.AssetOperationalResponseDTO;
 import com.wks.caseengine.dto.AssetUtilityDTO;
+import com.wks.caseengine.dto.CPPAssetOperationalHoursResponseDto;
 import com.wks.caseengine.dto.MonthlyHoursDTO;
 import com.wks.caseengine.cpp.dto.PowerGenerationNormParametersProjection;
 import com.wks.caseengine.cpp.dto.PowerGenerationSteamResposeProject;
@@ -61,6 +64,90 @@ public class PowerGenerationService {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
+    public List<CPPAssetOperationalHoursResponseDto> getCppAssetOperationalHoursForPlants(
+            List<UUID> plantIds,
+            String financialYear) {
+
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("plantIds", plantIds);
+        params.addValue("financialYear", financialYear);
+
+        String sql = """
+            SELECT
+                h.Id AS id,
+                h.Asset_FK_Id AS assetFkId,
+                h.utility_distributed AS utilityDistributed,
+                h.distributed_sap_code AS distributedSapCode,
+                h.utility_generated AS utilityGenerated,
+                h.generated_utility_code AS generatedUtilityCode,
+                h.Apr AS apr,
+                h.May AS may,
+                h.Jun AS jun,
+                h.Jul AS jul,
+                h.Aug AS aug,
+                h.Sep AS sep,
+                h.Oct AS oct,
+                h.Nov AS nov,
+                h.[Dec] AS dec,
+                h.Jan AS jan,
+                h.Feb AS feb,
+                h.Mar AS mar,
+                CAST(h.AOPYear AS VARCHAR(10)) AS aopYear,
+                h.Remarks AS remarks,
+                h.Site_FK_Id AS siteFkId,
+                h.Vertical_FK_ID AS verticalFkId,
+                h.Plant_FK_Id AS plantFkId,
+                CONVERT(VARCHAR(19), h.CreatedDate, 120) AS createdDate,
+                CONVERT(VARCHAR(19), h.ModifiedDate, 120) AS modifiedDate,
+                pga.AssetName AS assetName,
+                pga.AssetType AS assetType,
+                pl.DisplayName AS plantName
+            FROM [RIL.AOP].[dbo].[CPPAssetOperationalHours] h WITH(NOLOCK)
+            LEFT JOIN PowerGenerationAssets pga WITH(NOLOCK)
+                ON pga.AssetId = h.Asset_FK_Id
+            LEFT JOIN Plants pl WITH(NOLOCK)
+                ON pl.Id = h.Plant_FK_Id
+            WHERE h.Plant_FK_Id IN (:plantIds)
+              AND h.AOPYear = :financialYear
+        """;
+
+        return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
+            CPPAssetOperationalHoursResponseDto dto = new CPPAssetOperationalHoursResponseDto();
+            dto.setId(rs.getObject("id", UUID.class));
+            dto.setAssetFkId(rs.getObject("assetFkId", UUID.class));
+            dto.setUtilityDistributed(rs.getString("utilityDistributed"));
+            dto.setDistributedSapCode(rs.getString("distributedSapCode"));
+            dto.setUtilityGenerated(rs.getString("utilityGenerated"));
+            dto.setGeneratedUtilityCode(rs.getString("generatedUtilityCode"));
+            dto.setApr(rs.getObject("apr") != null ? rs.getDouble("apr") : null);
+            dto.setMay(rs.getObject("may") != null ? rs.getDouble("may") : null);
+            dto.setJun(rs.getObject("jun") != null ? rs.getDouble("jun") : null);
+            dto.setJul(rs.getObject("jul") != null ? rs.getDouble("jul") : null);
+            dto.setAug(rs.getObject("aug") != null ? rs.getDouble("aug") : null);
+            dto.setSep(rs.getObject("sep") != null ? rs.getDouble("sep") : null);
+            dto.setOct(rs.getObject("oct") != null ? rs.getDouble("oct") : null);
+            dto.setNov(rs.getObject("nov") != null ? rs.getDouble("nov") : null);
+            dto.setDec(rs.getObject("dec") != null ? rs.getDouble("dec") : null);
+            dto.setJan(rs.getObject("jan") != null ? rs.getDouble("jan") : null);
+            dto.setFeb(rs.getObject("feb") != null ? rs.getDouble("feb") : null);
+            dto.setMar(rs.getObject("mar") != null ? rs.getDouble("mar") : null);
+            dto.setAopYear(rs.getString("aopYear"));
+            dto.setRemarks(rs.getString("remarks"));
+            dto.setSiteFkId(rs.getObject("siteFkId", UUID.class));
+            dto.setVerticalFkId(rs.getObject("verticalFkId", UUID.class));
+            dto.setPlantFkId(rs.getObject("plantFkId", UUID.class));
+            dto.setCreatedDate(rs.getString("createdDate"));
+            dto.setModifiedDate(rs.getString("modifiedDate"));
+            dto.setAssetName(rs.getString("assetName"));
+            dto.setPlantName(rs.getString("plantName"));
+            dto.setAssetType(rs.getString("assetType"));
+            return dto;
+        });
+    }
 
     public MasterAssetOperationalResponseDTO getAssetOperationalHours(
             UUID cppPlantId,

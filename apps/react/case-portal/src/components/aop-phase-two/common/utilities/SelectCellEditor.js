@@ -12,8 +12,17 @@ export const SelectCellEditor = ({
 }) => {
   const storedValue = dataItem[field] ?? ''
   // Find the matching option object based on the stored value
-  // Convert both to number then to string to handle 4 vs 4.0 mismatches
-  const normalizeValue = (val) => String(parseFloat(val))
+  // Handle both string and numeric values
+  const normalizeValue = (val) => {
+    // Check if it's a numeric string or number (e.g., '4', '4.0', 4, 4.0)
+    const numVal = parseFloat(val)
+    if (!isNaN(numVal)) {
+      // It's a numeric value, normalize to string
+      return String(numVal)
+    }
+    // It's a non-numeric string (e.g., 'Price', 'Amount'), return as-is
+    return String(val)
+  }
   const selectedOption =
     options.find(
       (opt) => normalizeValue(opt[valueField]) === normalizeValue(storedValue),
@@ -39,17 +48,15 @@ export const SelectCellEditor = ({
   }
 
   return (
-    <td>
-      <DropDownList
-        ref={inputRef}
-        data={options}
-        textField={textField}
-        dataItemKey={valueField}
-        value={localValue}
-        onChange={handleChange}
-        className='dropdown-editor'
-        style={{ width: '100%' }}
-      />
-    </td>
+    <DropDownList
+      ref={inputRef}
+      data={options}
+      textField={textField}
+      dataItemKey={valueField}
+      value={localValue}
+      onChange={handleChange}
+      className='dropdown-editor'
+      style={{ width: '100%' }}
+    />
   )
 }

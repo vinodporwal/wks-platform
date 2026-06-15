@@ -1659,6 +1659,24 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 			boolean ppHmd = vertical.getName().equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("HMD");
 
 			List<AOPMCCalculatedDataDTO> data = readLineWiseData(file.getInputStream(), UUID.fromString(plantFKId), year);
+			
+			// april value carry forward logic for PP DTA
+			if(ppDta) {
+				for(AOPMCCalculatedDataDTO dto : data) { 
+					// set may to march values to april value
+					dto.setMay(dto.getApril());
+					dto.setJune(dto.getApril());
+					dto.setJuly(dto.getApril());
+					dto.setAugust(dto.getApril());
+					dto.setSeptember(dto.getApril());
+					dto.setOctober(dto.getApril());
+					dto.setNovember(dto.getApril());
+					dto.setDecember(dto.getApril());
+					dto.setJanuary(dto.getApril());
+					dto.setFebruary(dto.getApril());
+					dto.setMarch(dto.getApril());
+				}
+			}
 			List<AOPMCCalculatedDataDTO> failedRecords = editAOPMCCalculatedData(data, true, year, plantFKId);
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
@@ -1944,17 +1962,17 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 						dto.setProductName(getStringCellValue(row.getCell(0), dto));
 						dto.setMaterialDisplayName(getStringCellValue(row.getCell(0), dto));
 						dto.setApril(getNumericCellValue(row.getCell(1), dto));
-						dto.setMay(getNumericCellValue(row.getCell(1), dto));
-						dto.setJune(getNumericCellValue(row.getCell(1), dto));
-						dto.setJuly(getNumericCellValue(row.getCell(1), dto));
-						dto.setAugust(getNumericCellValue(row.getCell(1), dto));
-						dto.setSeptember(getNumericCellValue(row.getCell(1), dto));
-						dto.setOctober(getNumericCellValue(row.getCell(1), dto));
-						dto.setNovember(getNumericCellValue(row.getCell(1), dto));
-						dto.setDecember(getNumericCellValue(row.getCell(1), dto));
-						dto.setJanuary(getNumericCellValue(row.getCell(1), dto));
-						dto.setFebruary(getNumericCellValue(row.getCell(1), dto));
-						dto.setMarch(getNumericCellValue(row.getCell(1), dto));
+						dto.setMay(getNumericCellValue(row.getCell(2), dto));
+						dto.setJune(getNumericCellValue(row.getCell(3), dto));
+						dto.setJuly(getNumericCellValue(row.getCell(4), dto));
+						dto.setAugust(getNumericCellValue(row.getCell(5), dto));
+						dto.setSeptember(getNumericCellValue(row.getCell(6), dto));
+						dto.setOctober(getNumericCellValue(row.getCell(7), dto));
+						dto.setNovember(getNumericCellValue(row.getCell(8), dto));
+						dto.setDecember(getNumericCellValue(row.getCell(9), dto));
+						dto.setJanuary(getNumericCellValue(row.getCell(10), dto));
+						dto.setFebruary(getNumericCellValue(row.getCell(11), dto));
+						dto.setMarch(getNumericCellValue(row.getCell(12), dto));
 						dto.setRemarks(getStringCellValue(row.getCell(13), dto));
 						dto.setId(getStringCellValue(row.getCell(14), dto));
 						dto.setMaterialFKId(getStringCellValue(row.getCell(15), dto));
