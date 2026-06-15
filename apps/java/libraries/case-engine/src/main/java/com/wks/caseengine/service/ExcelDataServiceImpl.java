@@ -278,45 +278,25 @@ public class ExcelDataServiceImpl implements ExcelDataService {
     }
 
     @Override
-    public List<List<Object>> getAOPData(String plantId, String year, String type) {
+    public List<List<Object>> getMonthwiseProductionPlanReport(String plantId, String year,List<String> headers) {
 
-        AOPMessageVM aopMessageVM = aopService.getAOPData(plantId, year, type);
-
+        AOPMessageVM aopMessageVM  = monthwiseOperatingHoursService.getMonthwiseProductionPlanReport(plantId, year);
+        
         Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
-        List<AOPDTO> aOPList = (List<AOPDTO>) responseMap.get("aopDTOList");
+        List<Map<String, Object>> furnaceListList = (List<Map<String, Object>>) responseMap
+                .get("data");
 
         List<List<Object>> dataList = new ArrayList<>();
         // Data rows
-        for (AOPDTO dto : aOPList) {
-            Double sum = 0.0;
-            List<Object> list = new ArrayList<>();
-            list.add(dto.getDisplayName());
-            list.add(dto.getApril());
-            list.add(dto.getMay());
-            list.add(dto.getJune());
-            list.add(dto.getJuly());
-            list.add(dto.getAug());
-            list.add(dto.getSep());
-            list.add(dto.getOct());
-            list.add(dto.getNov());
-            list.add(dto.getDec());
-            list.add(dto.getJan());
-            list.add(dto.getFeb());
-            list.add(dto.getMarch());
-            list.add(calculateSum(dto.getApril(), sum)
-                    + calculateSum(dto.getMay(), sum)
-                    + calculateSum(dto.getJune(), sum)
-                    + calculateSum(dto.getJuly(), sum)
-                    + calculateSum(dto.getAug(), sum)
-                    + calculateSum(dto.getSep(), sum)
-                    + calculateSum(dto.getOct(), sum)
-                    + calculateSum(dto.getNov(), sum)
-                    + calculateSum(dto.getDec(), sum)
-                    + calculateSum(dto.getJan(), sum)
-                    + calculateSum(dto.getFeb(), sum)
-                    + calculateSum(dto.getMarch(), sum));
-
-            dataList.add(list);
+        System.out.println("getMonthwiseProductionPlanReport" +furnaceListList);
+        if (furnaceListList != null) {
+            for (Map<String, Object> map : furnaceListList) {
+                List<Object> list = new ArrayList<>();
+                for (String header : headers) {
+                    list.add(map.get(header));
+                }
+                dataList.add(list);
+            }
         }
 
         return dataList;

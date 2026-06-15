@@ -148,8 +148,13 @@ import CausticSodaLyeBasisCatChem from 'components/data-tables/Reports/CausticSo
 import SteadyStateConsumptionMerox from 'components/aop-phase-two/merox/steady-state-consumption'
 import OverallAopConsumptionMerox from 'components/aop-phase-two/merox/overall-aop-consumption'
 import ProductionNormsBasisMerox from 'components/aop-phase-two/merox/production-norms-basis'
+import EtheleneStock from 'components/data-tables/Reports/EtheleneStock'
 // Vertical MEROX Ended
-
+// PCG
+import SteadyStateConsumptionPCG from 'components/aop-phase-two/pcg/steady-state-consumption'
+import OverallAopConsumptionPCG from 'components/aop-phase-two/pcg/overall-aop-consumption'
+import ProductionNormsBasisPCG from 'components/aop-phase-two/pcg/production-norms-basis'
+// PCG Ended
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
 
@@ -924,6 +929,33 @@ export const MainRoutes = (
             ),
           },
           //Vertical MEROX Ended
+
+          //Vertical PCG Started
+          {
+            path: 'production-norms-basis-pcg',
+            element: (
+              <PrivateRoute routeId='production-norms-basis-pcg'>
+                <ProductionNormsBasisPCG />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption-pcg',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption-pcg'>
+                <SteadyStateConsumptionPCG />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'overall-aop-consumption-pcg',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption-pcg'>
+                <OverallAopConsumptionPCG />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical PCG Ended
         ],
       },
 
@@ -943,6 +975,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='production-target-basis'>
                 <ProductionTargetBasis />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'ethelene-stock',
+            element: (
+              <PrivateRoute routeId='ethelene-stock'>
+                <EtheleneStock />
               </PrivateRoute>
             ),
           },

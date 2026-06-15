@@ -1,13 +1,17 @@
-import { useEffect, useState } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { useState, useMemo, useCallback } from 'react'
+import { Box } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/jmd/utilityPlantApiServiceV2'
-import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import ValueFormatterPhaseTwo, {
+  customValueFormatterPhaseTwo,
+} from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
+import { useDebounce } from 'hooks/useDebounce'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
 const FixedConsumptionJMD = () => {
   const keycloak = useSession()
@@ -30,27 +34,88 @@ const FixedConsumptionJMD = () => {
     verticalObject,
     year,
     screenTitle,
+    jmdSelectedPlants,
   } = dataGridStore
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
   const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Fixed_Consumption')
+
+  const PLANT_ID_LIST = useMemo(
+    () => jmdSelectedPlants?.map((plant) => plant.id) || [],
+    [jmdSelectedPlants],
+  )
+
   const headerMap = generateHeaderNames(AOP_YEAR)
+  const valueFormat = ValueFormatterPhaseTwo()
+  const customFormatTwo = customValueFormatterPhaseTwo(2)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
-  const valueFormat = ValueFormatterPhaseTwo()
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+
+  // Fiscal-year month order: Apr → Mar
+  const MONTH_TO_INDEX = {
+    apr: 4,
+    may: 5,
+    jun: 6,
+    jul: 7,
+    aug: 8,
+    sep: 9,
+    oct: 10,
+    nov: 11,
+    dec: 12,
+    jan: 1,
+    feb: 2,
+    mar: 3,
+  }
+
+  // Base column configuration for month columns
+  const monthBaseColumnConfig = {
+    editable: true,
+    widthT: 100,
+    minWidth: 100,
+    align: 'left',
+    headerAlign: 'left',
+    type: 'number1',
+    allowNegative: true,
+    format: customFormatTwo,
+  }
+
+  // Month field names in fiscal year order
+  const MONTH_FIELDS = [
+    'apr',
+    'may',
+    'jun',
+    'jul',
+    'aug',
+    'sep',
+    'oct',
+    'nov',
+    'dec',
+    'jan',
+    'feb',
+    'mar',
+  ]
+
+  // Generate month columns by duplicating base config
+  const MONTH_COLUMNS = MONTH_FIELDS.map((mon) => ({
+    ...monthBaseColumnConfig,
+    field: mon,
+    title: headerMap[MONTH_TO_INDEX[mon]],
+  }))
+
   // Column definitions
   const columns = [
-    { field: 'id', title: 'ID', hidden: true },
     {
       field: 'plant',
       title: 'Plant',
       widthT: 150,
+      minWidth: 150,
       type: 'text',
       editable: false,
       hidden: false,
@@ -59,14 +124,16 @@ const FixedConsumptionJMD = () => {
       field: 'plantId',
       title: 'Plant ID',
       widthT: 120,
+      minWidth: 120,
       type: 'text',
       editable: false,
-      hidden: false,
+      hidden: true,
     },
     {
       field: 'costCenter',
       title: 'Cost Center',
       widthT: 150,
+      minWidth: 150,
       type: 'text',
       editable: false,
       hidden: false,
@@ -75,6 +142,7 @@ const FixedConsumptionJMD = () => {
       field: 'costCenterId',
       title: 'Cost Center ID',
       widthT: 170,
+      minWidth: 170,
       type: 'text',
       editable: false,
       hidden: false,
@@ -83,13 +151,15 @@ const FixedConsumptionJMD = () => {
       field: 'cppUtility',
       title: 'CPP Utilities',
       widthT: 150,
+      minWidth: 150,
       type: 'text',
       editable: false,
     },
     {
       field: 'cppUtilityId',
       title: 'CPP Utility IDs',
-      widthT: 150,
+      widthT: 170,
+      minWidth: 170,
       type: 'text',
       editable: false,
     },
@@ -97,136 +167,39 @@ const FixedConsumptionJMD = () => {
       field: 'cppPlant',
       title: 'CPP Plant',
       widthT: 150,
+      minWidth: 150,
       type: 'text',
       editable: false,
     },
     {
       field: 'cppPlantId',
       title: 'CPP Plant ID',
-      widthT: 150,
+      widthT: 170,
+      minWidth: 170,
+      type: 'text',
+      editable: false,
+      hidden: true,
+    },
+    {
+      field: 'uom',
+      title: 'UOM',
+      widthT: 100,
+      minWidth: 100,
       type: 'text',
       editable: false,
     },
-    { field: 'uom', title: 'UOM', widthT: 100, type: 'text', editable: false },
+
+    // Monthly columns - Apr → Mar (editable)
+    ...MONTH_COLUMNS,
+
     {
-      field: 'april',
-      title: headerMap[4], // will be 'Apr-25' if AOP_YEAR is 2025-26
-      editable: true,
-      widthT: 100,
-      align: 'left',
-      headerAlign: 'left',
+      field: 'total',
+      title: 'Total',
+      widthT: 130,
+      minWidth: 130,
       type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'may',
-      title: headerMap[5],
-      editable: true,
-      widthT: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'june',
-      title: headerMap[6],
-      editable: true,
-      widthT: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'july',
-      title: headerMap[7],
-      editable: true,
-      widthT: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'aug',
-      title: headerMap[8],
-      editable: true,
-      widthT: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'sep',
-      title: headerMap[9],
-      editable: true,
-      widthT: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'oct',
-      title: headerMap[10],
-      editable: true,
-      widthT: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'nov',
-      title: headerMap[11],
-      editable: true,
-      widthT: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'dec',
-      title: headerMap[12],
-      editable: true,
-      widthT: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'jan',
-      title: headerMap[1],
-      editable: true,
-      widthT: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'feb',
-      title: headerMap[2],
-      editable: true,
-      widthT: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
-    },
-    {
-      field: 'mar',
-      title: headerMap[3],
-      editable: true,
-      widthT: 100,
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number1',
-      format: valueFormat,
+      editable: false,
+      format: customFormatTwo,
     },
     {
       field: 'remarks',
@@ -238,36 +211,29 @@ const FixedConsumptionJMD = () => {
     },
   ]
 
-  useEffect(() => {
-    if (PLANT_ID && AOP_YEAR) {
-      fetchFixedConsumptionData(keycloak, PLANT_ID, AOP_YEAR)
-      setModifiedCells({})
-    }
-  }, [PLANT_ID, AOP_YEAR])
-
-  const fetchFixedConsumptionData = async (keycloak, PLANT_ID, AOP_YEAR) => {
+  const fetchFixedConsumptionData = useCallback(async () => {
     setLoading(true)
     try {
       const res = await UtilityPlantApiServiceV2.getFixedConsumptionData(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
-      if (res?.length === 0) {
+      if (res?.data?.length === 0) {
         setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
+        setLoading(false)
         return
       }
 
-      const formattedData = res.map((item, index) => ({
+      console.log('*** fixed consumption data', res)
+      const formattedData = res?.data?.map((item, index) => ({
         ...item,
         remarks: item.remarks || '',
-        id: item.id || index + 1,
+        id: item?.id || index + 1,
+        total: MONTH_FIELDS.reduce((sum, key) => sum + (item[key] || 0), 0),
       }))
-      // Process and set the fetched data to rows
-      console.log('*** fixed consumption data', formattedData)
-
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
@@ -277,7 +243,18 @@ const FixedConsumptionJMD = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+
+  useDebounce(
+    () => {
+      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+        fetchFixedConsumptionData()
+        setModifiedCells({})
+      }
+    },
+    1000,
+    [PLANT_ID_LIST, AOP_YEAR, fetchFixedConsumptionData],
+  )
 
   // Permissions (adjust as needed)
   const permissions = {
@@ -292,9 +269,10 @@ const FixedConsumptionJMD = () => {
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
+    titleName: screenTitle?.title,
   }
 
-  // Dummy save handler
+  // Save handler with API call
   const saveChanges = async () => {
     setLoading(true)
 
@@ -323,10 +301,10 @@ const FixedConsumptionJMD = () => {
 
     // Custom validation: If any row data is updated, remarks must be filled and different from original
     const fieldsToCheck = [
-      'april',
+      'apr',
       'may',
-      'june',
-      'july',
+      'jun',
+      'jul',
       'aug',
       'sep',
       'oct',
@@ -353,31 +331,26 @@ const FixedConsumptionJMD = () => {
       return
     }
 
-    console.log('modifiedData', modifiedData)
-    // const payload = JSON.stringify(modifiedData)
     const payload = modifiedData
-
     try {
-      // Transform modifiedCells into the format expected by the API
+      console.log('payload', payload)
 
       // Call the API to save changes
       const response = await UtilityPlantApiServiceV2.saveFixedConsumptionData(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         payload,
         AOP_YEAR,
       )
       console.log('response', response)
-      // Update the local state with the saved data
-      // setRows(updatedRows)
       setModifiedCells({})
       setSnackbarOpen(true)
       setSnackbarData({
-        message: `Successfully saved ${modifiedData.length} rows changes!`,
+        message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error saving plant requirement data:', error)
+      console.error('Error saving fixed consumption data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to save changes. Please try again.',
@@ -396,7 +369,7 @@ const FixedConsumptionJMD = () => {
       const response = await UtilityPlantApiServiceV2.saveFixedConsumptionExcel(
         file,
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
 
@@ -407,7 +380,7 @@ const FixedConsumptionJMD = () => {
           severity: 'success',
         })
         // Refresh data after import
-        await fetchFixedConsumptionData(keycloak, PLANT_ID, AOP_YEAR)
+        await fetchFixedConsumptionData()
       } else if (response?.code === 400 && response?.data) {
         // Handle error response with Excel file download
         try {
@@ -437,7 +410,7 @@ const FixedConsumptionJMD = () => {
             severity: 'error',
           })
           // Refresh data after import
-          await fetchFixedConsumptionData(keycloak, PLANT_ID, AOP_YEAR)
+          await fetchFixedConsumptionData()
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
@@ -475,8 +448,9 @@ const FixedConsumptionJMD = () => {
     try {
       await UtilityPlantApiServiceV2.exportFixedConsumptionExcel(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
+        EXCEL_NAME,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -501,16 +475,13 @@ const FixedConsumptionJMD = () => {
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
-      {/* <KendoDataTables */}
-
       <AdvanceKendoTable
         columns={columns}
         rows={rows}
         setRows={setRows}
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
-        // title='Fixed Consumption'
-        title={screenTitle?.title}
+        title={permissions.showTitle ? permissions.titleName : ''}
         permissions={permissions}
         handleRemarkCellClick={handleRemarkCellClick}
         remarkDialogOpen={remarkDialogOpen}
@@ -527,8 +498,13 @@ const FixedConsumptionJMD = () => {
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         customHeight={80}
-        groupBy='plant'
-        // groupBy={['plant', 'plantId']}
+        paginationConfig={{
+          threshold: 100, // Show pagination if > 50 rows
+          buttonCount: 5,
+          pageSizes: [10, 20, 50, 100],
+          defaultPageSize: 100,
+        }}
+        groupBy={'plant'}
       />
     </Box>
   )

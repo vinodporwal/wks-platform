@@ -8,7 +8,7 @@ import {
 import '@progress/kendo-theme-default/dist/all.css'
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports/ColumnMenu1'
 import Notification from 'components/Utilities/Notification'
-import React, { useCallback, useState, useEffect, useRef } from 'react'
+import React, { useCallback, useState, useEffect, useRef, useMemo } from 'react'
 import {
   Box,
   Button,
@@ -134,28 +134,29 @@ const KendoDataTablesReports = ({
   columns,
   loading = false,
   permissions = {},
-  setSnackbarOpen = () => {},
+  setSnackbarOpen = () => { },
   snackbarData = { message: '', severity: 'info' },
   snackbarOpen = false,
-  setRemarkDialogOpen = () => {},
+  setRemarkDialogOpen = () => { },
   currentRemark = '',
-  setCurrentRemark = () => {},
+  setCurrentRemark = () => { },
   currentRowId = null,
-  setModifiedCells = () => {},
+  setModifiedCells = () => { },
   remarkDialogOpen = false,
-  saveChanges = () => {},
-  fetchData = () => {},
-  deleteRowData = () => {},
-  handleCalculate = () => {},
-  handleUnitChange = () => {},
-  handleRemarkCellClick = () => {},
-  handleExport = () => {},
-  handleExcelUpload = () => {},
+  saveChanges = () => { },
+  fetchData = () => { },
+  deleteRowData = () => { },
+  handleCalculate = () => { },
+  handleUnitChange = () => { },
+  handleRemarkCellClick = () => { },
+  handleExport = () => { },
+  handleExcelUpload = () => { },
   groupBy = null,
   grades = [],
-  handleGradeChange = () => {},
-  handleRelease = () => {},
+  handleGradeChange = () => { },
+  handleRelease = () => { },
   isReleaseDisabled = true,
+  supressGridHeight = false,
 }) => {
   const grid = React.useRef(null)
   const minGridWidth = useRef(0)
@@ -257,11 +258,11 @@ const KendoDataTablesReports = ({
   )
   const initialGroup = groupBy
     ? [
-        {
-          field: groupBy,
-          dir: undefined,
-        },
-      ]
+      {
+        field: groupBy,
+        dir: undefined,
+      },
+    ]
     : []
 
   const handleEditChange = useCallback((e) => {
@@ -284,10 +285,20 @@ const KendoDataTablesReports = ({
   }
   const itemChange = useCallback(
     (e) => {
-      setIsRowEdited(true)
+
 
       const { dataItem, field, value } = e
       const itemId = dataItem.id
+
+
+      // Ignore group header expand/collapse events — they are not real edits
+      if (!field || dataItem?.items) {
+        return
+      }
+
+      setIsRowEdited(true)
+
+
       setRows((prev) =>
         prev.map((r) => {
           if (r.id !== itemId) return r
@@ -589,7 +600,9 @@ const KendoDataTablesReports = ({
             field={col.field}
             title={col.title || col.headerName}
             // width={col.fixedWidth || undefined}
-            width={setWidth(col?.fixedWidth || col?.minWidth || col?.widthT || 200)}
+            width={setWidth(
+              col?.fixedWidth || col?.minWidth || col?.widthT || 200,
+            )}
             cells={{
               data: (cellProps) => (
                 <RemarkCell
@@ -693,7 +706,11 @@ const KendoDataTablesReports = ({
             field={col.field}
             title={col.title || col.headerName}
             width={setWidth(
-              col?.fixedWidth || col?.width || col?.widthT || col?.minWidth || 130,
+              col?.fixedWidth ||
+              col?.width ||
+              col?.widthT ||
+              col?.minWidth ||
+              130,
             )}
             hidden={col.hidden}
             className={'k-number-right-disabled'}
@@ -778,6 +795,18 @@ const KendoDataTablesReports = ({
       </td>
     )
   }
+
+  const rowHeightVH = 5 // each row ~4vh
+  const headerVH = 10 // grid’s own header/filter area
+  const pageHeaderVH = 20 // top app bar + stepper + controls
+  const maxVH = 60 // cap grid height
+
+  const calculatedVH = React.useMemo(() => {
+    if (!rows || rows?.length === 0) return 20
+    const needed = rows?.length * rowHeightVH + headerVH
+    const available = 100 - pageHeaderVH
+    return Math.round(Math.min(needed, maxVH, available))
+  }, [rows?.length])
 
   return (
     <div className='k-table-box'>
@@ -1023,7 +1052,7 @@ const KendoDataTablesReports = ({
                     (rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility)
+                      !permissions?.showCalculateVisibility)
                   }
                 >
                   Calculate
@@ -1073,6 +1102,16 @@ const KendoDataTablesReports = ({
         <div className='kendo-data-grid'>
           <Tooltip openDelay={50} position='auto' anchorElement='target'>
             <Grid
+              style={{
+                flex: 1,
+                overflow: 'auto',
+                height:
+                  supressGridHeight == true
+                    ? undefined
+                    : rows?.length > 10
+                      ? `${calculatedVH}vh`
+                      : undefined,
+              }}
               modifiedCells={modifiedCells}
               data={rows}
               rows={{ data: CustomRow }}
@@ -1100,9 +1139,9 @@ const KendoDataTablesReports = ({
               pageable={
                 rows?.length > 100
                   ? {
-                      buttonCount: 4,
-                      pageSizes: [10, 50, 100],
-                    }
+                    buttonCount: 4,
+                    pageSizes: [10, 50, 100],
+                  }
                   : false
               }
               onRowClick={handleRowClick}

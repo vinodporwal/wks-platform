@@ -86,21 +86,21 @@ const KendoDataTablesCrackerRunLengthNMD = ({
   columns,
   loading = false,
   permissions = {},
-  setRemarkDialogOpen = () => {},
+  setRemarkDialogOpen = () => { },
   currentRemark = '',
-  setCurrentRemark = () => {},
+  setCurrentRemark = () => { },
   currentRowId = null,
-  setModifiedCells = () => {},
+  setModifiedCells = () => { },
   remarkDialogOpen = false,
-  handleDeleteSelected = () => {},
-  saveChanges = () => {},
-  deleteRowData = () => {},
-  handleCalculate = () => {},
+  handleDeleteSelected = () => { },
+  saveChanges = () => { },
+  deleteRowData = () => { },
+  handleCalculate = () => { },
   selectedUsers = [],
   note = '',
   titleName = '',
-  handleExcelUpload = () => {},
-  downloadExcelForConfiguration = () => {},
+  handleExcelUpload = () => { },
+  downloadExcelForConfiguration = () => { },
 }) => {
   const fileInputRef = useRef(null)
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -255,7 +255,12 @@ const KendoDataTablesCrackerRunLengthNMD = ({
       const { dataItem, field, value } = e
       const itemId = dataItem.id
 
-      // console.log('e', e)
+      // Ignore group header expand/collapse events — they are not real edits
+      if (!field || dataItem?.items) {
+        return
+      }
+
+      setIsRowEdited(true)
 
       setRows((prevRows) =>
         prevRows.map((row) =>
@@ -980,9 +985,9 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                 cells={
                   col.editable
                     ? {
-                        data: CellWithState,
-                        headerCell: SimpleHeaderWithTooltip,
-                      }
+                      data: CellWithState,
+                      headerCell: SimpleHeaderWithTooltip,
+                    }
                     : { headerCell: SimpleHeaderWithTooltip }
                 }
                 width={setWidth(col.minWidth || col.widthT || 130)}
@@ -1384,7 +1389,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
             >
               {/* CASE 1: Permission TRUE ? Full Header UI */}
               {permissions?.showTitleNameBusiness ||
-              permissions?.showTitleName ? (
+                permissions?.showTitleName ? (
                 <Typography
                   component='div'
                   sx={{
@@ -1561,7 +1566,7 @@ const KendoDataTablesCrackerRunLengthNMD = ({
                     (rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility)
+                      !permissions?.showCalculateVisibility)
                   }
                   className='btn-save'
                   startIcon={

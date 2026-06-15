@@ -48,10 +48,12 @@ import CloseIcon from '@mui/icons-material/Close'
 import { styled } from '@mui/material/styles'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import ExclusionDate from './ExclusionDate'
+import CatalystChangeOver from './CatalystChangeOver'
 import LineConfiguration from './LineConfiguration'
 import ConfigurationAccordian from './common/ConfigurationAccordian'
 import SeasonMonths from './tab-components/SeasonMonths/index'
 import MaterialBalance from './MaterialBalance'
+import TankNosConfigureTable from './TankNosConfigureTable'
 
 const ConfigurationTable = () => {
   const hasExecutedRef = useRef(false)
@@ -334,7 +336,7 @@ const ConfigurationTable = () => {
         setOtherLossRows(otherLossRows)
         setContiniousGradeData(continiousGradeRows)
         setDiscontiniousGradeData(discontiniousGradeRows)
-        if(IS_AROMATICS_PMD){
+        if (IS_AROMATICS_PMD) {
           // Distribute values from Constant to Configuration for DeH-15 and DeH-201
           const monthsForDist = [
             'apr',
@@ -366,7 +368,9 @@ const ConfigurationTable = () => {
             const month = monthName.toLowerCase()
             if (month === 'january' || month === 'jan') return 31
             if (month === 'february' || month === 'feb') {
-              const isLeap = (endYear % 4 === 0 && endYear % 100 !== 0) || (endYear % 400 === 0)
+              const isLeap =
+                (endYear % 4 === 0 && endYear % 100 !== 0) ||
+                endYear % 400 === 0
               return isLeap ? 29 : 28
             }
             if (month === 'march' || month === 'mar') return 31
@@ -384,10 +388,13 @@ const ConfigurationTable = () => {
 
           configurationRows.forEach((r) => {
             const isDistributionProduct =
-              (r.ConfigTypeName === 'Configuration' || r.ConfigTypeDisplayName === 'Configuration') &&
+              (r.ConfigTypeName === 'Configuration' ||
+                r.ConfigTypeDisplayName === 'Configuration') &&
               r.TypeDisplayName === 'Configuration' &&
               r.UOM === 'YES/NO' &&
-              ['deh-15', 'deh-201'].includes((r.productName || '').trim().toLowerCase())
+              ['deh-15', 'deh-201'].includes(
+                (r.productName || '').trim().toLowerCase(),
+              )
 
             if (isDistributionProduct) {
               const prodNameLower = (r.productName || '').trim().toLowerCase()
@@ -398,14 +405,17 @@ const ConfigurationTable = () => {
                 constantProductName = 'deh-201 batch length'
               }
 
-              const constantRow = (constantsRows || []).find((cr) =>
-                (cr.ConfigTypeName === 'Constant' || cr.ConfigTypeDisplayName === 'Constant') &&
-                cr.TypeDisplayName === 'Constant' &&
-                cr.UOM === 'Day' &&
-                (cr.productName || '').trim().toLowerCase() === constantProductName
+              const constantRow = (constantsRows || []).find(
+                (cr) =>
+                  (cr.ConfigTypeName === 'Constant' ||
+                    cr.ConfigTypeDisplayName === 'Constant') &&
+                  cr.TypeDisplayName === 'Constant' &&
+                  cr.UOM === 'Day' &&
+                  (cr.productName || '').trim().toLowerCase() ===
+                    constantProductName,
               )
 
-              const totalValue = constantRow ? (Number(constantRow.apr) || 0) : 0
+              const totalValue = constantRow ? Number(constantRow.apr) || 0 : 0
 
               // Sequential fill: pour days into each month in order until totalValue is used up
               // e.g. totalValue=110: apr=30, may=31, jun=30, jul=19 (remaining), aug...=0
@@ -445,7 +455,6 @@ const ConfigurationTable = () => {
             }
           })
         }
-        
 
         setConstantsRows(constantsRows)
         setConfigurationRows(configurationRows)
@@ -1818,6 +1827,17 @@ const ConfigurationTable = () => {
                   />
                 )
 
+              case getTheId('CatalystChangeover'):
+                return (
+                  <CatalystChangeOver
+                    revision={revision}
+                    loadBtnClicked={loadBtnClicked}
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+
               case getTheId('LineConfiguration'):
                 return (
                   <LineConfiguration
@@ -1880,6 +1900,8 @@ const ConfigurationTable = () => {
                 )
               case getTheId('MaterialBalance'):
                 return <MaterialBalance />
+              case getTheId('TankNos'):
+                return <TankNosConfigureTable />
               default:
                 return null
             }

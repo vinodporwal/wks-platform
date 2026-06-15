@@ -130,6 +130,7 @@ export const DataService = {
   getConfigurationExecutionDetailsNorms,
   executeConfigurationNorms,
   getProductionTargetBasis,
+
   ImportShutdownProductWise,
   ImportShutdownNonProduct,
   exportShutdownNonProductWise,
@@ -188,10 +189,6 @@ export const DataService = {
   getNaphthatabDate,
   getShutdownData,
   getShutdownSummary,
-  getFurnaceMaintenanceActivity,
-  saveFurnaceMaintenanceActivity,
-  deleteFurnaceMaintenanceActivity,
-  getFurnaceDropdownData,
   getMaintenanceActivityData,
   slowdownconsumptionExportAllGrade,
   saveSlowdownNormsExcelAllGrade,
@@ -215,6 +212,10 @@ export const DataService = {
   saveConfigurationExcelConstantsIscatCam,
   getCatChemConsumptionExcel,
   calculateChemicalVMDConfiguration,
+  getTankNosData,
+  saveTankNosData,
+
+  getEtheleneStock,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -4390,83 +4391,6 @@ export async function getShutdownSummary(keycloak, PLANT_ID, AOP_YEAR) {
   }
 }
 
-export async function getFurnaceMaintenanceActivity(
-  keycloak,
-  PLANT_ID,
-  AOP_YEAR,
-) {
-  const url = `${Config.CaseEngineUrl}/task/furnace-maintenance-activities?plantId=${PLANT_ID}&aopYear=${AOP_YEAR}`
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, { method: 'GET', headers })
-    return json(keycloak, resp)
-  } catch (e) {
-    console.error(e)
-    return Promise.reject(e)
-  }
-}
-
-export async function saveFurnaceMaintenanceActivity(
-  keycloak,
-  PLANT_ID,
-  AOP_YEAR,
-  data,
-) {
-  const url = `${Config.CaseEngineUrl}/task/furnace-maintenance-activity?plantId=${PLANT_ID}&year=${AOP_YEAR}`
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(data),
-    })
-    return json(keycloak, resp)
-  } catch (e) {
-    console.error(e)
-    return Promise.reject(e)
-  }
-}
-
-export async function deleteFurnaceMaintenanceActivity(id, keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/furnace-maintenance-activity?id=${id}`
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, { method: 'DELETE', headers })
-    return json(keycloak, resp)
-  } catch (e) {
-    console.error(e)
-    return Promise.reject(e)
-  }
-}
-
-export async function getFurnaceDropdownData(keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/furnace-dropdown-data`
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, { method: 'GET', headers })
-    return json(keycloak, resp)
-  } catch (e) {
-    console.error(e)
-    return Promise.reject(e)
-  }
-}
-
 export async function getMaintenanceActivityData(keycloak) {
   const url = `${Config.CaseEngineUrl}/task/maintenance-activity-data`
   const headers = {
@@ -4928,11 +4852,7 @@ async function getCatChemConsumptionExcel(
     return Promise.reject(e)
   }
 }
-async function calculateChemicalVMDConfiguration(
-  keycloak,
-  PLANT_ID,
-  AOP_YEAR,
-) {
+async function calculateChemicalVMDConfiguration(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/load-configuration?year=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',
@@ -4945,5 +4865,62 @@ async function calculateChemicalVMDConfiguration(
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)
+  }
+}
+
+async function getTankNosData(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/tank-config?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error exporting data:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function saveTankNosData(keycloak, PLANT_ID, AOP_YEAR, data) {
+  const url = `${Config.CaseEngineUrl}/task/tank-config?plantId=${PLANT_ID}&aopYear=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(e)
+    return Promise.reject(e)
+  }
+}
+
+
+
+async function getEtheleneStock(keycloak, PLANT_ID, AOP_YEAR) {
+  let url = `${Config.CaseEngineUrl}/task/data-set-ethelene-stock?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return Promise.reject(e)
   }
 }

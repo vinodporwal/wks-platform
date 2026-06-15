@@ -10,7 +10,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.dto.CatalystChangeOverDTO;
+import com.wks.caseengine.dto.TankConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
@@ -398,6 +402,61 @@ public class ConfigurationController {
 	@GetMapping(value = "/load-configuration")
 	public AOPMessageVM LoadConfigurationValues(@RequestParam String year,@RequestParam String plantId) {
 		return configurationService.LoadConfigurationValues(year,plantId);
+	}
+
+	@GetMapping(value = "/catalyst-change-over")
+	public AOPMessageVM getCatalystChangeOver(@RequestParam String year,@RequestParam String plantId) {
+		return configurationService.getCatalystChangeOver(year,plantId);
+	}
+
+	@PostMapping(value = "/catalyst-change-over/{year}")
+	public AOPMessageVM saveCatalystChangeOver(@PathVariable String year, @RequestBody List<CatalystChangeOverDTO> catalystChangeOverDTOList) {
+		return configurationService.saveCatalystChangeOver(catalystChangeOverDTOList, year);
+	}
+
+	@DeleteMapping(value = "/catalyst-change-over/{id}")
+	public AOPMessageVM deleteCatalystChangeOver(@PathVariable String id) {
+		return configurationService.deleteCatalystChangeOver(id);
+	}
+
+	@GetMapping(value = "/catalyst-change-over-export")
+	public ResponseEntity<byte[]> exportCatalystChangeOver(
+			@RequestParam("plantId") String plantId,
+			@RequestParam("year") String year) {
+		try {
+			byte[] excelBytes = configurationService.createCatalystChangeOverExcel(year, plantId, false, null);
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.parseMediaType(
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(ContentDisposition.builder("attachment")
+					.filename("catalyst_change_over.xlsx")
+					.build());
+			headers.setContentLength(excelBytes.length);
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@PostMapping(value = "/catalyst-change-over-import", consumes = "multipart/form-data")
+	public AOPMessageVM importCatalystChangeOverExcel(
+			@RequestParam("plantId") String plantId,
+			@RequestParam("year") String year,
+			@RequestParam("file") MultipartFile file) {
+		return configurationService.importCatalystChangeOverExcel(year, plantId, file);
+	}
+
+	@GetMapping(value = "/tank-config")
+	public AOPMessageVM getTankConfiguration(@RequestParam String year,@RequestParam String plantId) {
+		return configurationService.getTankConfiguration(year,plantId);
+	}
+
+	@PostMapping(value = "/tank-config")
+	public AOPMessageVM saveTankConfiguration(
+			@RequestParam String plantId,
+			@RequestParam String aopYear,
+			@RequestBody List<TankConfigurationDTO> tankConfigurationDTOList) {
+		return configurationService.saveTankConfiguration(tankConfigurationDTOList, plantId, aopYear);
 	}
 
 }

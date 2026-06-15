@@ -109,14 +109,13 @@ export default function QualityPackagingNorms() {
     SITE_NAME.toLowerCase() === 'hmd' &&
     PLANT_NAME.toLowerCase() === 'sbr'
 
-  const IS_PE_C2_LLDPE =
+  const IS_PE_NMD_LLDPE1 =
     lowerVertName === 'pe' &&
-    SITE_NAME.toLowerCase() === 'c2' &&
-    PLANT_NAME.toLowerCase() === 'lldpe'
+    SITE_NAME.toLowerCase() === 'nmd' &&
+    PLANT_NAME.toLowerCase() === 'lldpe1'
 
   const { items: menuItems } = useMenuContext()
   const showReleaseButton = shouldShowReleaseButton(menuItems)
-
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -228,7 +227,7 @@ export default function QualityPackagingNorms() {
       title: 'Remark',
       editable: true,
     },
-  ].map((col) => IS_PE_C2_LLDPE ? { ...col, editable: false } : col)
+  ].map((col) => (IS_PE_NMD_LLDPE1 ? { ...col, editable: false } : col))
 
   const fetchQualityParameters = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) {
@@ -253,7 +252,7 @@ export default function QualityPackagingNorms() {
           actual: item.prevActual,
           proposedNorm: item.proposedNorm,
           normParameterTypeName: item.normParameterTypeName,
-          isEditable: item.isEditable !== false,
+          isEditable: IS_PE_NMD_LLDPE1 ? false : item.isEditable !== false,
           Particulars: item.normParameterTypeName,
           remark: item.remark,
           originalRemark: item.remark,
@@ -300,6 +299,7 @@ export default function QualityPackagingNorms() {
         remark: item.remark,
         Particulars: item.normParameterTypeName,
         unit: '%',
+        isEditable: IS_PE_NMD_LLDPE1 ? false : item.isEditable !== false,
       }))
       setPriceDiffRows(mappedPriceDiffRows)
     } catch (err) {
@@ -371,6 +371,7 @@ export default function QualityPackagingNorms() {
           Particulars: item.normParameterTypeName,
           originalRemark: item.remark,
           remark: item.remark,
+          isEditable: IS_PE_NMD_LLDPE1 ? false : item.isEditable !== false,
         }))
         setPackagingRows(mappedRows)
       } else {
@@ -447,6 +448,7 @@ export default function QualityPackagingNorms() {
           Particulars: item.normTypeName,
           originalRemark: item.remark,
           remark: item.remark,
+          isEditable: IS_PE_NMD_LLDPE1 ? false : item.isEditable !== false,
         }))
         setRowsOtherCosts(mappedRows)
       } else {
@@ -521,7 +523,7 @@ export default function QualityPackagingNorms() {
       editable: true,
       minWidth: 100,
     },
-  ].map((col) => IS_PE_C2_LLDPE ? { ...col, editable: false } : col)
+  ].map((col) => (IS_PE_NMD_LLDPE1 ? { ...col, editable: false } : col))
 
   const packagingColumns = [
     {
@@ -597,7 +599,7 @@ export default function QualityPackagingNorms() {
       editable: true,
       minWidth: 100,
     },
-  ].map((col) => IS_PE_C2_LLDPE ? { ...col, editable: false } : col)
+  ].map((col) => (IS_PE_NMD_LLDPE1 ? { ...col, editable: false } : col))
 
   const columnsOtherCosts = [
     {
@@ -671,7 +673,7 @@ export default function QualityPackagingNorms() {
       editable: true,
       minWidth: 100,
     },
-  ].map((col) => IS_PE_C2_LLDPE ? { ...col, editable: false } : col)
+  ].map((col) => (IS_PE_NMD_LLDPE1 ? { ...col, editable: false } : col))
   const saveChanges = React.useCallback(async () => {
     try {
       var data = Object.values(modifiedCells)
@@ -1242,12 +1244,12 @@ export default function QualityPackagingNorms() {
   const adjustedPermissionsQuality = getAdjustedPermissionsQuality(
     {
       allAction: true,
-      saveBtn: IS_PE_C2_LLDPE ? false : true,
+      saveBtn: IS_PE_NMD_LLDPE1 ? false : true,
       showTitleNameBusiness: true,
       titleName: 'Quality Parameters',
       adjustedPermissions: true,
       downloadExcelBtn: true,
-      uploadExcelBtn: IS_PE_C2_LLDPE ? false : true,
+      uploadExcelBtn: IS_PE_NMD_LLDPE1 ? false : true,
       ExcelName: `${lowerVertName}_Quality_Parameters`,
       addButton: false,
       deleteButton: false,
@@ -1274,13 +1276,13 @@ export default function QualityPackagingNorms() {
   const peopleInitiativePermissionDifferential =
     getAdjustedPermissionDifferential(
       {
-        saveBtn: IS_PE_C2_LLDPE ? false : true,
+        saveBtn: IS_PE_NMD_LLDPE1 ? false : true,
         allAction: true,
         showTitleNameBusiness: true,
         titleName: 'Price Differential As Percentage wrt Quality',
         adjustedPermissions: true,
         downloadExcelBtn: true,
-        uploadExcelBtn: IS_PE_C2_LLDPE ? false : true,
+        uploadExcelBtn: IS_PE_NMD_LLDPE1 ? false : true,
         ExcelName: `${lowerVertName}_Price_Differential`,
         addButton: false,
         deleteButton: false,
@@ -1306,13 +1308,13 @@ export default function QualityPackagingNorms() {
   const adjustedPermissionsPackaging = getAdjustedPermissionsPackaging(
     {
       allAction: true,
-      saveBtn: IS_PE_C2_LLDPE ? false : true,
+      saveBtn: IS_PE_NMD_LLDPE1 ? false : true,
       showTitleNameBusiness: true,
       titleName: 'Packagings & Consumables',
       adjustedPermissions: true,
       //downloadExcelBtnFromUI: true,
       downloadExcelBtn: true,
-      uploadExcelBtn: IS_PE_C2_LLDPE ? false : true,
+      uploadExcelBtn: IS_PE_NMD_LLDPE1 ? false : true,
       ExcelName: `${lowerVertName}_Packagings_Consumables`,
       addButton: false,
       deleteButton: false,
@@ -1344,12 +1346,12 @@ export default function QualityPackagingNorms() {
   const adjustedPermissionsOtherCost = getAdjustedPermissionsOtherCost(
     {
       allAction: true,
-      saveBtn: IS_PE_C2_LLDPE ? false : true,
+      saveBtn: IS_PE_NMD_LLDPE1 ? false : true,
       showTitleNameBusiness: true,
       titleName: 'Other Costs',
       adjustedPermissions: true,
       downloadExcelBtn: true,
-      uploadExcelBtn: IS_PE_C2_LLDPE ? false : true,
+      uploadExcelBtn: IS_PE_NMD_LLDPE1 ? false : true,
       ExcelName: `${lowerVertName}_Other_Costs`,
       addButton: false,
       deleteButton: false,

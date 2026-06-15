@@ -25,7 +25,12 @@ export const SteadyStateConsumptionApiService = {
  * Same as NormalOperationNormsApiService.getNormalOperationNormsData(keycloak, gradeId, false, PLANT_ID, AOP_YEAR)
  * Endpoint: /task/steady-state-norms?year=&plantId=&gradeId=
  */
-async function getSteadyStateConsumptionByGrade(keycloak, gradeId, PLANT_ID, AOP_YEAR) {
+async function getSteadyStateConsumptionByGrade(
+  keycloak,
+  gradeId,
+  PLANT_ID,
+  AOP_YEAR,
+) {
   const queryParams = new URLSearchParams({ year: AOP_YEAR, plantId: PLANT_ID })
   if (gradeId) queryParams.append('gradeId', gradeId)
   const url = `${Config.CaseEngineUrl}/task/steady-state-norms?${queryParams.toString()}`
@@ -90,7 +95,13 @@ async function getNormTransactions(keycloak, PLANT_ID, AOP_YEAR) {
  * Same as NormalOperationNormsApiService.saveNormalOperationNormsData(..., 'pe', ...)
  * Endpoint: POST /task/steady-state-norms?year=&plantId=&gradeId=
  */
-async function saveSteadyStateConsumptionByGrade(PLANT_ID, payload, keycloak, gradeId, AOP_YEAR) {
+async function saveSteadyStateConsumptionByGrade(
+  PLANT_ID,
+  payload,
+  keycloak,
+  gradeId,
+  AOP_YEAR,
+) {
   const queryParams = new URLSearchParams({ year: AOP_YEAR, plantId: PLANT_ID })
   queryParams.append('gradeId', gradeId)
   const url = `${Config.CaseEngineUrl}/task/steady-state-norms?${queryParams.toString()}`
@@ -117,7 +128,13 @@ async function saveSteadyStateConsumptionByGrade(PLANT_ID, payload, keycloak, gr
  * Same as NormalOperationNormsApiService.handleCalculateNormalOperationNormsPe
  * Endpoint: GET /task/calculate-normal-ops-norms?plantId=&siteId=&verticalId=&aopYear=
  */
-async function calculateSteadyStateConsumptionPE(plantId, siteId, verticalId, year, keycloak) {
+async function calculateSteadyStateConsumptionPE(
+  plantId,
+  siteId,
+  verticalId,
+  year,
+  keycloak,
+) {
   const url = `${Config.CaseEngineUrl}/task/calculate-normal-ops-norms?plantId=${plantId}&siteId=${siteId}&verticalId=${verticalId}&aopYear=${year}`
   const headers = {
     Accept: 'application/json',
@@ -138,7 +155,12 @@ async function calculateSteadyStateConsumptionPE(plantId, siteId, verticalId, ye
  * Same as NormalOperationNormsApiService.getNormalOpsNormsExcelpe
  * Endpoint: GET /task/steady-state-norms-all-grades-export?year=&plantId=
  */
-async function exportSteadyStateConsumptionPE(keycloak, PLANT_ID, AOP_YEAR, EXCEL_NAME) {
+async function exportSteadyStateConsumptionPE(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_NAME,
+) {
   const url = `${Config.CaseEngineUrl}/task/steady-state-norms-all-grades-export?year=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {
     'Content-Type': 'application/json',
@@ -147,7 +169,8 @@ async function exportSteadyStateConsumptionPE(keycloak, PLANT_ID, AOP_YEAR, EXCE
   }
   try {
     const resp = await fetch(url, { method: 'GET', headers })
-    if (!resp.ok) throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    if (!resp.ok)
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
     const blob = await resp.blob()
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -168,7 +191,13 @@ async function exportSteadyStateConsumptionPE(keycloak, PLANT_ID, AOP_YEAR, EXCE
  * Same as NormalOperationNormsApiService.saveNormalOpsNormsExcel with gradeId
  * Endpoint: POST /task/steady-state-norms-import?plantId=&year=&gradeId=
  */
-async function importSteadyStateConsumptionByGrade(file, keycloak, PLANT_ID, AOP_YEAR, gradeId) {
+async function importSteadyStateConsumptionByGrade(
+  file,
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  gradeId,
+) {
   let url = `${Config.CaseEngineUrl}/task/steady-state-norms-import?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   if (gradeId) url += `&gradeId=${gradeId}`
   const formData = new FormData()
@@ -256,7 +285,11 @@ async function importSteadyStateConsumption(keycloak, plantId, year, file) {
   formData.append('year', year)
   const headers = { Authorization: `Bearer ${keycloak.token}` }
   try {
-    const resp = await fetch(baseUrl, { method: 'POST', headers, body: formData })
+    const resp = await fetch(baseUrl, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)

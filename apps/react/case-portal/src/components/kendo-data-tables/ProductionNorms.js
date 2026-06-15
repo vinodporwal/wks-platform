@@ -903,7 +903,8 @@ const ProductionNorms = ({ permissions }) => {
               transformedItem.Particulars || '',
             ).toLowerCase(),
           }
-        }).map(({ materialFKId, ...rest }) => rest)
+        })
+        .map(({ materialFKId, ...rest }) => rest)
       const totalsRow = {
         id: data?.length,
         displayName: 'Total',
@@ -1280,12 +1281,12 @@ const ProductionNorms = ({ permissions }) => {
             lowerVertName === 'cracker' ||
             lowerVertName === 'chemical'
               ? true
-              : (permissions?.showUnit ?? true),
+              : permissions?.showUnit ?? true,
           saveWithRemark: permissions?.saveWithRemark ?? true,
 
           showCalculate: IS_ELASTOMER_JMD
             ? false
-            : (permissions?.showCalculate ?? true),
+            : permissions?.showCalculate ?? true,
 
           allAction: permissions?.allAction ?? true,
           showNote: true,
@@ -1297,14 +1298,14 @@ const ProductionNorms = ({ permissions }) => {
 
           showCalculateVisibility:
             calculationObject && Object.keys(calculationObject).length > 0
-              ? (permissions?.showCalculate ?? true)
+              ? permissions?.showCalculate ?? true
               : false,
           saveBtn:
             IS_ELASTOMER_JMD_IIR ||
             IS_CHEMICAL_VMD_ACRYLONITRILE ||
             IS_CHEMICAL_NMD
               ? true
-              : (permissions?.saveBtn ?? false),
+              : permissions?.saveBtn ?? false,
           units:
             lowerVertName === 'cracker'
               ? ['MT/Month', 'TPH']
@@ -1365,8 +1366,8 @@ const ProductionNorms = ({ permissions }) => {
             ? permissions?.title
             : 'Combined Month-Wise Production Plan',
 
-          showCalculateVisibility:false,
-          saveBtn:false,
+          showCalculateVisibility: false,
+          saveBtn: false,
           customHeight: permissions?.customHeight,
           downloadExcelBtnFromUI: true,
           ExcelName: `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_Combined Month-Wise Production Plan`,
@@ -1395,7 +1396,7 @@ const ProductionNorms = ({ permissions }) => {
       allAction: permissions?.allAction ?? true,
       showCalculateVisibility:
         calculationObject && Object.keys(calculationObject).length > 0
-          ? (permissions?.showCalculate ?? true)
+          ? permissions?.showCalculate ?? true
           : false,
       saveBtn: permissions?.saveBtn ?? false,
       units: lowerVertName == 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
@@ -1517,22 +1518,24 @@ const ProductionNorms = ({ permissions }) => {
         }
       />
 
-      {IS_PVC_DMD && (<KendoDataTables
-        columns={productionColumns}
-        rows={aopCombinedRows}
-        setRows={setAOPCombinedRows}
-        title={'Combined Month-Wise Production Plan'}
-        paginationOptions={[100, 200, 300]}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
-        apiRef={apiRef}
-        fetchData={fetchDataAOPCombined}
-        permissions={adjustedPermissionsPVCDMD}
-        resetEditSignal={editResetKey}
-        setEditResetKey={setEditResetKey}
-      />)}
+      {IS_PVC_DMD && (
+        <KendoDataTables
+          columns={productionColumns}
+          rows={aopCombinedRows}
+          setRows={setAOPCombinedRows}
+          title={'Combined Month-Wise Production Plan'}
+          paginationOptions={[100, 200, 300]}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          apiRef={apiRef}
+          fetchData={fetchDataAOPCombined}
+          permissions={adjustedPermissionsPVCDMD}
+          resetEditSignal={editResetKey}
+          setEditResetKey={setEditResetKey}
+        />
+      )}
 
       {lowerVertName === 'meg' && !permissions?.hideNoteText && (
         <KendoDataTables

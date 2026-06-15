@@ -94,13 +94,14 @@ def get_financial_year_string(month: int, year: int) -> str:
     return f"{fy_start}-{str(fy_end)[-2:]}"
 
 
-def get_process_demand_for_month(month: int, year: int) -> Dict[str, float]:
+def get_process_demand_for_month(month: int, year: int, cpp_plant_id: str = None) -> Dict[str, float]:
     """
     Fetch aggregated process demand for a specific month from CalculatedProcessDemand table.
     
     Args:
         month: Month number (1-12)
         year: Year (e.g., 2025)
+        cpp_plant_id: CPP Plant ID (UUID string) to filter by specific plant
     
     Returns:
         Dict with process demand values:
@@ -131,20 +132,36 @@ def get_process_demand_for_month(month: int, year: int) -> Dict[str, float]:
         # Fetch process demand aggregated by utility type
         # Sum across all process plants for each utility
         # Note: Column names are lowercase in the database (apr, may, jun, etc.)
-        query = f"""
-            SELECT 
-                cpp_utility,
-                SUM({month_column}) AS TotalDemand
-            FROM dbo.CalculatedProcessDemand
-            WHERE financial_year = ?
-            GROUP BY cpp_utility
-        """
+        utility_rows = []
+        if cpp_plant_id:
+            query = "EXEC dbo.CPP_NMD_GetProcessDemandByYear ?, ?"
+            print(f"  [PROCESS] Querying CPP_NMD_GetProcessDemandByYear for FY {fy_string}, plant: {cpp_plant_id}")
+            cursor.execute(query, (fy_string, cpp_plant_id))
+            columns = [col[0].lower() for col in (cursor.description or [])]
+            if "cpp_utility" not in columns or month_column.lower() not in columns:
+                print("  [PROCESS] Stored procedure output missing expected columns; using defaults")
+                return get_default_process_demands()
+            utility_idx = columns.index("cpp_utility")
+            month_idx = columns.index(month_column.lower())
+            rows = cursor.fetchall()
+            for row in rows:
+                utility_rows.append((row[utility_idx], row[month_idx]))
+        else:
+            query = f"""
+                SELECT 
+                    cpp_utility,
+                    SUM({month_column}) AS TotalDemand
+                FROM dbo.CalculatedProcessDemand
+                WHERE financial_year = ?
+                GROUP BY cpp_utility
+            """
+            print(f"  [PROCESS] Querying CalculatedProcessDemand for FY {fy_string}, month column: {month_column} (ALL PLANTS)")
+            cursor.execute(query, (fy_string,))
+            rows = cursor.fetchall()
+            for row in rows:
+                utility_rows.append((row[0], row[1]))
         
-        print(f"  [PROCESS] Querying CalculatedProcessDemand for FY {fy_string}, month column: {month_column}")
-        cursor.execute(query, (fy_string,))
-        rows = cursor.fetchall()
-        
-        if not rows:
+        if not utility_rows:
             print(f"  [PROCESS] No CalculatedProcessDemand found for FY {fy_string}, using defaults")
             return get_default_process_demands()
         
@@ -165,8 +182,8 @@ def get_process_demand_for_month(month: int, year: int) -> Dict[str, float]:
         }
         
         # Map utility names to result keys
-        print(f"  [PROCESS] Found {len(rows)} utility types for FY {fy_string}")
-        for row in rows:
+        print(f"  [PROCESS] Found {len(utility_rows)} utility types for FY {fy_string}")
+        for row in utility_rows:
             utility_name = row[0] if row[0] else ""
             value = float(row[1]) if row[1] else 0.0
             
@@ -261,6 +278,7 @@ def print_process_demands(data: Dict[str, float], month: int = None, year: int =
 
 
 def get_combined_demands_for_month(month: int, year: int, 
+                                    cpp_plant_id: str = None,
                                     use_db_process: bool = True,
                                     use_db_fixed: bool = True,
                                     override_process: Dict[str, float] = None,
@@ -286,7 +304,7 @@ def get_combined_demands_for_month(month: int, year: int,
     
     # Get process demands
     if use_db_process:
-        process_demands = get_process_demand_for_month(month, year)
+        process_demands = get_process_demand_for_month(month, year, cpp_plant_id)
     else:
         process_demands = get_default_process_demands()
     

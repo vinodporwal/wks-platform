@@ -103,20 +103,26 @@ const PercentageSummaryGrid = ({
     if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
     try {
-      const response = await ProductionTargetApiService.getProposedOperatingCapacity(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
-      if (response?.code === 200 && Array.isArray(response?.data?.aopMCCalculatedDataDTOList)) {
-        const formattedData = response.data?.aopMCCalculatedDataDTOList.map((item, index) => ({
-          ...item,
-          idFromApi: item.id || null,
-          normParametersFKId: item.materialFKId?.toLowerCase(),
-          productName: item.materialDisplayName || '',
-          id: index,
-          isEditable: false,
-        }))
+      const response =
+        await ProductionTargetApiService.getProposedOperatingCapacity(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      if (
+        response?.code === 200 &&
+        Array.isArray(response?.data?.aopMCCalculatedDataDTOList)
+      ) {
+        const formattedData = response.data?.aopMCCalculatedDataDTOList.map(
+          (item, index) => ({
+            ...item,
+            idFromApi: item.id || null,
+            normParametersFKId: item.materialFKId?.toLowerCase(),
+            productName: item.materialDisplayName || '',
+            id: index,
+            isEditable: false,
+          }),
+        )
         const normalizedData = normalizeAllRows(formattedData)
         setRows(normalizedData)
       } else {

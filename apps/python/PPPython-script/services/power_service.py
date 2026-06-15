@@ -544,7 +544,7 @@ def distribute_by_priority(
     # NET DEMAND (Plant + Fixed) - Fetch separately for logging
     # Fetch process plant demand from CalculatedProcessDemand
     from services.process_demand_service import get_process_demand_for_month
-    process_demands = get_process_demand_for_month(month, year)
+    process_demands = get_process_demand_for_month(month, year, cpp_plant_id)
     power_process_kwh = process_demands.get("power_process", 0.0) if process_demands else 0.0
     # Convert KWH to MWh
     plant_demand = power_process_kwh / 1000.0
@@ -581,7 +581,7 @@ def distribute_by_priority(
     # =========================================================
     # Fetch ALL power generation assets including IMPORT type
     cur.execute("""
-        SELECT 
+        SELECT
             p.AssetId,
             p.AssetName,
             p.AssetType,
@@ -594,24 +594,25 @@ def distribute_by_priority(
             aa.FixedMax,
             aa.Id AS AvailabilityId
         FROM PowerGenerationAssets p
-        LEFT JOIN OperationalHours oh ON p.AssetId = oh.Asset_FK_Id 
+        LEFT JOIN OperationalHours oh ON p.AssetId = oh.Asset_FK_Id
             AND oh.FinancialMonthId = ?
         OUTER APPLY (
-            SELECT TOP 1 
+            SELECT TOP 1
                 aa2.Id,
                 aa2.Priority,
                 aa2.MinOperatingCapacity,
                 aa2.MaxOperatingCapacity,
                 aa2.FixedMin,
                 aa2.FixedMax
-            FROM AssetAvailability aa2 
-            WHERE aa2.AssetId = p.AssetId 
+            FROM AssetAvailability aa2
+            WHERE aa2.AssetId = p.AssetId
                 AND aa2.FinancialYearMonthId = ?
             ORDER BY CASE WHEN aa2.Priority IS NULL THEN 1 ELSE 0 END, aa2.Priority ASC
         ) aa
         WHERE p.AssetType IN ('GT', 'STG', 'IMPORT')
+          AND p.CPPPLANT_FK_Id = ?
         ORDER BY aa.Priority ASC
-    """, (fym_id, fym_id))
+    """, (fym_id, fym_id, cpp_plant_id))
     cols = [c[0] for c in cur.description]
     rows = cur.fetchall()
 

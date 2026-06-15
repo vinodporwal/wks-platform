@@ -1337,10 +1337,6 @@ public class NormBasedUtilityBudgetServiceImpl implements NormBasedUtilityBudget
             sheet.setColumnHidden(idCol, true);
             sheet.setColumnHidden(normHeaderIdCol, true);
 
-            for (Integer fymCol : financialYearMonthFkIdColumns) {
-                sheet.setColumnHidden(fymCol, true);
-            }
-
             for (int i = 0; i < totalColumns; i++) {
                 if (i == remarksCol) {
                     sheet.setColumnWidth(i, 8000);

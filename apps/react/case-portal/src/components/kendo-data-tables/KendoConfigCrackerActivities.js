@@ -70,6 +70,7 @@ const DecokingConfig = () => {
   const SCREEN_NAME = screenTitle?.title
   const siteName = siteObject?.name?.toLowerCase()
   const IS_DMD = siteObject?.name?.toLowerCase() == 'dmd'
+  const IS_C2 = siteObject?.name?.toLowerCase() == 'c2'
   const IS_CRACKER_VMD = lowerVertName === 'cracker' && siteName === 'vmd'
   const IS_CRACKER_HMD = lowerVertName === 'cracker' && siteName === 'hmd'
   const [loading, setLoading] = useState(false)
@@ -1511,13 +1512,6 @@ const DecokingConfig = () => {
       ? ibrGridThree.filter((col) => col.field !== 'demo')
       : ibrGridThree
 
-  if (siteName === 'nmd') {
-    return <DecokingConfigNMD pid={PLANT_ID} />
-  }
-  if (siteName === 'hmd') {
-    return <SteamHourTable pid={PLANT_ID} />
-  }
-
   const [sdtaGridKey, setSdtaGridKey] = useState(0)
 
   useEffect(() => {
@@ -1527,6 +1521,13 @@ const DecokingConfig = () => {
 
     return () => clearTimeout(timer)
   }, [loading])
+
+  if (siteName === 'nmd') {
+    return <DecokingConfigNMD pid={PLANT_ID} />
+  }
+  if (siteName === 'hmd') {
+    return <SteamHourTable pid={PLANT_ID} />
+  }
 
   return (
     <Box>
@@ -1608,7 +1609,7 @@ const DecokingConfig = () => {
         setSummaryEdited={setSummaryEdited}
       />
 
-      {IS_DMD && (
+      {(IS_DMD || IS_C2) && (
         <DownsteamShutdownDMD permissions={DownsteamShutdownDMDPermission} />
       )}
 

@@ -6,7 +6,7 @@ import BusinessDemandGrid from './BusinessDemandGrid'
 const BusinessDemand = () => {
   return (
     <Box>
-      <Box sx={{ pb: 1, background: 'transparent' }}>
+      {/* <Box sx={{ pb: 1, background: 'transparent' }}>
         <Typography
           component='span'
           className='accordian-title'
@@ -18,7 +18,7 @@ const BusinessDemand = () => {
       </Box>
       <Box sx={{ mb: 4 }}>
         <ProductionVolumeReferenceGrid />
-      </Box>
+      </Box> */}
       <Box>
         <BusinessDemandGrid />
       </Box>

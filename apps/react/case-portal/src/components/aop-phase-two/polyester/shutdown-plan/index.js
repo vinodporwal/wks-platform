@@ -7,11 +7,28 @@ import { ShutdownPlanApiService } from '../../services/polyester/shutdownPlanApi
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from '../../common/utilities/excelNameUtil'
 import { downloadBase64Excel } from '../../common/utilities/downloadBase64Excel'
+import { calculateMonthDuration } from 'components/aop-phase-two/common/utilities/durationHelpers'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const MAINTENANCE_TYPE = 'Shutdown'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+// ─── Month options (April → March fiscal order) ───────────────────────────────
+const MONTH_OPTIONS = [
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+  'January',
+  'February',
+  'March',
+]
 
 /** Add IST (+5:30) offset to a Date before sending to API */
 function addTimeOffset(dateTime) {
@@ -71,6 +88,22 @@ function formatDateDDMMYYYY(date) {
   return `${d}/${m}/${date.getFullYear()}`
 }
 
+// Helper: parse "HH.MM" string ? total minutes (numeric)
+const parseDurationToMinutes = (val) => {
+  if (!val && val !== 0) return 0
+  const [hrsPart, minPart = '0'] = String(val).split('.')
+  const hrs = parseInt(hrsPart, 10) || 0
+  const mins = parseInt(String(minPart).padEnd(2, '0').slice(0, 2), 10) || 0
+  return hrs * 60 + mins
+}
+
+// Helper: format total minutes back to "HH.MM" for display
+const formatMinutesToDuration = (totalMins) => {
+  const hrs = Math.floor(totalMins / 60)
+  const mins = totalMins % 60
+  return `${hrs}.${mins.toString().padStart(2, '0')}`
+}
+
 // ─── Column definitions (mirrors ShutDownPeColumnsldpe12) ────────────────────
 const columns = [
   {
@@ -88,22 +121,12 @@ const columns = [
     editable: false,
   },
   {
-    field: 'maintStartDateTime',
-    title: 'SD - From',
-    type: 'dateTime',
+    field: 'monthly',
+    title: 'Month',
+    type: 'select',
     editable: true,
-    widthT: 170,
-    minWidth: 170,
-    isFinancialYear: true,
-  },
-  {
-    field: 'maintEndDateTime',
-    title: 'SD - To',
-    type: 'dateTime',
-    editable: true,
-    widthT: 170,
-    minWidth: 170,
-    isFinancialYear: true,
+    widthT: 150,
+    minWidth: 150,
   },
   {
     // Auto-handled by AdvanceKendoTable: field name includes 'durationInHrs'
@@ -116,7 +139,7 @@ const columns = [
   {
     // Auto-handled by AdvanceKendoTable: field name is 'remark' → RemarkCell dialog
     field: 'remark',
-    title: 'Shutdown Basis',
+    title: 'Remarks',
     editable: true,
     widthT: 250,
     minWidth: 250,
@@ -183,6 +206,18 @@ const ShutdownPlan = () => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
+  // ─── Dynamic column options (month + product) ─────────────────────────────
+
+  const columnsWithOptions = columns.map((col) => {
+    if (col.field === 'monthly') {
+      return {
+        ...col,
+        options: MONTH_OPTIONS.map((m) => ({ value: m, label: m })),
+      }
+    }
+    return col
+  })
+
   // ─── Fetch ───────────────────────────────────────────────────────────────────
 
   const fetchData = useCallback(async () => {
@@ -195,25 +230,40 @@ const ShutdownPlan = () => {
         PLANT_ID,
         AOP_YEAR,
       )
-
       // API returns a plain array (not {code, data})
       const arr = Array.isArray(data) ? data : data?.data || []
 
-      const formatted = arr.map((item, index) => ({
-        ...item,
-        idFromApi: item?.id,
-        id: `${index}`,
-        originalRemark: item.remark,
-        inEdit: false,
-        isEditable: true,
-        // Parse date strings → Date objects for DateTimePickerEditor
-        maintStartDateTime: item?.maintStartDateTime
+      // Full month names in calendar order (Jan=0 … Dec=11)
+      const CALENDAR_MONTH_NAMES = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December',
+      ]
+
+      const formatted = arr.map((item, index) => {
+        const startDate = item?.maintStartDateTime
           ? new Date(item.maintStartDateTime)
-          : null,
-        maintEndDateTime: item?.maintEndDateTime
+          : null
+        const endDate = item?.maintEndDateTime
           ? new Date(item.maintEndDateTime)
-          : null,
-      }))
+          : null
+
+        return {
+          ...item,
+          idFromApi: item?.id,
+          id: index,
+          originalRemark: item.remark,
+          inEdit: false,
+          maintStartDateTime: startDate,
+          maintEndDateTime: endDate,
+          discription: item.discription,
+          monthly:
+            item?.monthly ||
+            item?.month ||
+            (startDate && !isNaN(startDate.getTime())
+              ? CALENDAR_MONTH_NAMES[startDate.getMonth()]
+              : ''),
+        }
+      })
 
       setRows(formatted)
     } catch (error) {
@@ -238,6 +288,7 @@ const ShutdownPlan = () => {
   const saveChanges = useCallback(async () => {
     const data = Object.values(modifiedCells)
 
+    console.log('dat ', data)
     // 1. No records
     if (data.length === 0) {
       setSnackbarOpen(true)
@@ -246,96 +297,75 @@ const ShutdownPlan = () => {
     }
 
     // 2. Parse fiscal year boundary
-    const fiscalLimits = parseFiscalYear(AOP_YEAR)
+    // const fiscalLimits = parseFiscalYear(AOP_YEAR)
 
-    // 3. Date-range validation
     for (const record of data) {
-      const startDate =
-        record.maintStartDateTime instanceof Date
-          ? record.maintStartDateTime
-          : new Date(record.maintStartDateTime)
-      const endDate =
-        record.maintEndDateTime instanceof Date
-          ? record.maintEndDateTime
-          : new Date(record.maintEndDateTime)
-
-      // 3a. Dates mandatory
-      if (!record.maintStartDateTime || !record.maintEndDateTime) {
+      const expectedDuration = calculateMonthDuration(record.monthly, AOP_YEAR)
+      if (!expectedDuration) continue // no valid month  skip
+      const recordMins = parseDurationToMinutes(record.durationInHrs)
+      const expectedMins = parseDurationToMinutes(expectedDuration)
+      if (recordMins > expectedMins) {
         record.isError = true
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Start Date and End Date are required for all records.',
+          message: `Duration hrs for ${record.monthly} should not exceed ${expectedDuration}.`,
           severity: 'error',
         })
         return
-      }
-
-      // 3b. Fiscal year boundary
-      if (fiscalLimits) {
-        const { startLimit, endLimit } = fiscalLimits
-        if (
-          isNaN(startDate) ||
-          isNaN(endDate) ||
-          startDate < startLimit ||
-          startDate > endLimit ||
-          endDate < startLimit ||
-          endDate > endLimit
-        ) {
-          record.isError = true
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: `Dates must be between ${formatDateDDMMYYYY(startLimit)} and ${formatDateDDMMYYYY(endLimit)} for the selected year.`,
-            severity: 'error',
-          })
-          return
-        }
-      }
-
-      // 3c. Start must be before end
-      if (
-        !isNaN(startDate.getTime()) &&
-        !isNaN(endDate.getTime()) &&
-        startDate.getTime() >= endDate.getTime()
-      ) {
-        record.isError = true
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: `Start time must be before end time for "${record.discription || 'this record'}".`,
-          severity: 'error',
-        })
-        return
-      }
-
-      // 3d. Shutdown must not span multiple months
-      if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
-        const isSameMonth =
-          startDate.getMonth() === endDate.getMonth() &&
-          startDate.getFullYear() === endDate.getFullYear()
-        if (!isSameMonth) {
-          const fmt = (d) =>
-            d.toLocaleDateString('en-GB', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric',
-            })
-          record.isError = true
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: `The shutdown timeframe for "${record.discription}" spans multiple months (${fmt(startDate)} to ${fmt(endDate)}). Please split into separate entries per month.`,
-            severity: 'error',
-          })
-          return
-        }
       }
     }
 
-    // 4. Required fields: discription + remark
+    const modifiedById = {}
+    for (const record of data) {
+      modifiedById[record.id] = record
+    }
+    const existingRowIds = new Set(rows.map((r) => r.id))
+    const mergedExisting = rows.map((row) => modifiedById[row.id] ?? row)
+    const newRows = data.filter((record) => !existingRowIds.has(record.id))
+    const allRowsMerged = [...mergedExisting, ...newRows]
+
+    // Group by month and sum total minutes
+    const monthTotals = {}
+    const monthDisplayName = {}
+    for (const row of allRowsMerged) {
+      const monthKey = (row.monthly || '').toLowerCase()
+      if (!monthKey) continue
+      monthTotals[monthKey] =
+        (monthTotals[monthKey] || 0) + parseDurationToMinutes(row.durationInHrs)
+      if (!monthDisplayName[monthKey]) monthDisplayName[monthKey] = row.monthly
+    }
+
+    // Validate each month's total against its max
+    for (const [monthKey, totalMins] of Object.entries(monthTotals)) {
+      const displayMonth = monthDisplayName[monthKey] || monthKey
+      const expectedDuration = calculateMonthDuration(displayMonth, AOP_YEAR)
+      const expectedMins = parseDurationToMinutes(expectedDuration)
+      if (totalMins > expectedMins) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `Total shutdown hours for ${displayMonth} (${formatMinutesToDuration(totalMins)} hrs) exceeds the month limit of ${expectedDuration} hrs. Please reduce the entries for ${displayMonth}.`,
+          severity: 'error',
+        })
+        return
+      }
+    }
+
+    // 4. Required fields: discription, monthly and remark
     for (const record of data) {
       if (!record.discription || String(record.discription).trim() === '') {
         record.isError = true
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Shutdown Desc is required for all records.',
+          severity: 'error',
+        })
+        return
+      }
+      if (!record.monthly || String(record.monthly).trim() === '') {
+        record.isError = true
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Monthly is required for all records.',
           severity: 'error',
         })
         return
@@ -370,46 +400,20 @@ const ShutdownPlan = () => {
       return
     }
 
-    // 6. No overlapping date ranges between rows
-    const allRecords = [...rows]
-    for (let i = 0; i < allRecords.length; i++) {
-      const a = allRecords[i]
-      const aStart = new Date(a.maintStartDateTime).getTime()
-      const aEnd = new Date(a.maintEndDateTime).getTime()
-      if (isNaN(aStart) || isNaN(aEnd)) continue
-
-      for (let j = 0; j < allRecords.length; j++) {
-        if (i === j) continue
-        const b = allRecords[j]
-        const bStart = new Date(b.maintStartDateTime).getTime()
-        const bEnd = new Date(b.maintEndDateTime).getTime()
-        if (isNaN(bStart) || isNaN(bEnd)) continue
-
-        if (aStart < bEnd && bStart < aEnd) {
-          a.isError = true
-          b.isError = true
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: `The shutdown timeframe for "${a.discription || b.discription}" overlaps with "${b.discription}". Please ensure no overlapping timeframes.`,
-            severity: 'error',
-          })
-          return
-        }
-      }
-    }
-
-    // 7. Build payload (PE default branch — no product/grade, with IST offset)
+    // 6. Build payload
     const shutdownDetails = data.map((row) => ({
-      id: row.idFromApi || null,
-      productId: null,
-      productName: null,
-      discription: row.discription || '',
-      durationInHrs: formatDuration(row),
-      maintStartDateTime: addTimeOffset(row.maintStartDateTime),
-      maintEndDateTime: addTimeOffset(row.maintEndDateTime),
+      discription: row.discription || row.discriptionDrpdwn,
+      rate: row.rate,
+      durationInHrs: (() => {
+        const v = findDuration(row)
+        if (!v) return null
+        const [h = '00', m = '00'] = String(v).split('.')
+        return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
+      })(),
+      month: row.monthly || row.month, // Use month field
       audityear: AOP_YEAR,
+      id: row.idFromApi || null,
       remark: row.remark || 'null',
-      shutdownRate: null,
     }))
 
     setLoading(true)
@@ -535,6 +539,35 @@ const ShutdownPlan = () => {
     [keycloak, PLANT_ID, AOP_YEAR, fetchData],
   )
 
+  // ─── Delete Selected ───────────────────────────────────────────────────────────────────
+
+  const handleDeleteSelected = async (deleteIds) => {
+    if (!deleteIds || deleteIds?.length === 0) return
+    setLoading(true)
+    try {
+      await ShutdownPlanApiService.deleteMultipleShutdown(
+        deleteIds,
+        keycloak,
+        PLANT_ID,
+      )
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Record Deleted Successfully!',
+        severity: 'success',
+      })
+      await fetchData()
+    } catch (error) {
+      console.error('Error deleting shutdown activity:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error deleting record!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // ─── Export ───────────────────────────────────────────────────────────────────
 
   const handleExport = useCallback(async () => {
@@ -587,6 +620,7 @@ const ShutdownPlan = () => {
     ExcelName: EXCEL_NAME,
     remarksEditable: true,
     marginBottom: true,
+    deleteMultiple: true,
   }
 
   // ─── Render ───────────────────────────────────────────────────────────────────
@@ -596,7 +630,7 @@ const ShutdownPlan = () => {
       <LoaderBackdrop open={!!loading} />
 
       <AdvanceKendoTable
-        columns={columns}
+        columns={columnsWithOptions}
         rows={rows}
         setRows={setRows}
         modifiedCells={modifiedCells}
@@ -626,7 +660,9 @@ const ShutdownPlan = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
+        handleDeleteSelected={handleDeleteSelected}
         customHeight={70}
+        screenType='shutdown'
       />
     </Box>
   )

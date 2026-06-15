@@ -173,12 +173,12 @@ const CrackerConfig = () => {
       modes: modes,
       uploadExcelBtn:
         currentTabDisplay == 'Constant' ||
-          currentTabDisplay == 'External Streams'
+        currentTabDisplay == 'External Streams'
           ? false
           : true,
       downloadExcelBtn:
         currentTabDisplay == 'Constant' ||
-          currentTabDisplay == 'External Streams'
+        currentTabDisplay == 'External Streams'
           ? false
           : true,
       hideRemarkForNonEditableRows: true,
@@ -1059,7 +1059,7 @@ const CrackerConfig = () => {
           tabs={resolvedTabs}
         />
       </Box>
-      {IS_CRACKER_HMD && currentTabDisplay === 'Feed' && (
+      {IS_CRACKER_HMD && (
         <ModeSelection permissions={adjustedPermissionsReadyOnly} />
       )}
       <Box>

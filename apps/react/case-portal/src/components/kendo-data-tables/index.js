@@ -24,7 +24,7 @@ import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import CategoryDropdownEditor from './Utilities-Kendo/CategoryDropdown'
 import LineDropdownEditor from './Utilities-Kendo/LineDropdownEditor'
-
+import { useIntegerDaysEditor } from './Utilities-Kendo/NoSpinnerIntegerEditorForDays'
 import {
   Box,
   Button,
@@ -131,6 +131,7 @@ export const dateFields1 = [
   'shutdownDate',
   'StartDate',
   'EndDate',
+  'date',
 ]
 
 export const monthMap = {
@@ -242,6 +243,7 @@ const KendoDataTables = ({
   isReleaseDisabled = true,
   handleRelease = () => {},
   customItemChange = null,
+  configType,
   isEditable = false,
 }) => {
   const _export = useRef(null)
@@ -298,7 +300,7 @@ const KendoDataTables = ({
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-
+  const IntegerDaysEditor = useIntegerDaysEditor(configType, AOP_YEAR)
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
   const lowerSiteName = SiteName?.toLowerCase()
@@ -613,10 +615,17 @@ const KendoDataTables = ({
 
   const itemChange = useCallback(
     (e) => {
-      setIsRowEdited(true)
 
       const { dataItem, field } = e
       let { value } = e
+
+      // Ignore group header expand/collapse events — they are not real edits
+      if (!field || dataItem?.items) {
+        return
+      }
+
+      setIsRowEdited(true)
+
       if (dataItem?.isTotal) {
         return
       }
@@ -2684,6 +2693,9 @@ const KendoDataTables = ({
                         }
                       : false
                 }
+                sortable={true}
+                sort={sort}
+                onSortChange={(e) => setSort(e.sort)}
               >
                 {permissions?.deleteMultiple && (
                   <GridColumn
@@ -3853,6 +3865,49 @@ const KendoDataTables = ({
                       />
                     )
                   }
+                  if (col?.type === 'integerOnlyForDays') {
+                    return (
+                      <GridColumn
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
+                        className={`
+        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+        ${col?.isBold ? 'bold-text' : ''}
+      `}
+                        editable={col?.editable ? true : false}
+                        headerClassName={numericHeaderClass(isActive, col)}
+                        cells={{
+                          edit: {
+                            text: IntegerDaysEditor, // ← stable ref, no focus loss
+                          },
+                          data: (dataProps) =>
+                            showThreeColors ? (
+                              <RedHighlightCell2
+                                {...dataProps}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                allRedCell2={allRedCell2}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ) : (
+                              <RedHighlightCell
+                                {...dataProps}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col?.format}
+                      />
+                    )
+                  }
                   if (col?.field === 'rate') {
                     return (
                       <GridColumn
@@ -4027,8 +4082,11 @@ const KendoDataTables = ({
                           },
                           data: (props) => {
                             // ON/OFF rows: show switch with direct edit mode
-                            const uomTypes = ['ON/OFF','YES/NO']
-                            if (uomTypes.includes(props.dataItem?.UOM)) {
+                            const uomTypes = ['ON/OFF', 'YES/NO']
+                            if (
+                              uomTypes.includes(props.dataItem?.UOM) ||
+                              permissions?.enableSwitchToggle
+                            ) {
                               return (
                                 <SwitchEditor
                                   {...props}
@@ -4037,8 +4095,18 @@ const KendoDataTables = ({
                                   customModifiedCells={customModifiedCells}
                                   rowId={props.dataItem.id}
                                   setRows={setRows}
-                                  editable={props.dataItem?.[`${col.field}_editable`] === false ? false : col?.editable}
-                                  isDisabled={props.dataItem?.[`${col.field}_isDisabled`] ? true : col?.isDisabled}
+                                  editable={
+                                    props.dataItem?.[
+                                      `${col.field}_editable`
+                                    ] === false
+                                      ? false
+                                      : col?.editable
+                                  }
+                                  isDisabled={
+                                    props.dataItem?.[`${col.field}_isDisabled`]
+                                      ? true
+                                      : col?.isDisabled
+                                  }
                                 />
                               )
                             }
@@ -4068,7 +4136,7 @@ const KendoDataTables = ({
                       />
                     )
                   }
-                  if (col?.type === 'number' && col?.integerOnly) {
+                  if (col?.type === 'integerNumberOnly') {
                     return (
                       <GridColumn
                         key={col?.field}
@@ -4568,7 +4636,6 @@ const KendoDataTables = ({
           >
             {'Are you sure you want to delete?'}{' '}
           </Typography>
-
         </DialogContent>
 
         {/* Actions */}
@@ -4592,7 +4659,6 @@ const KendoDataTables = ({
         </DialogActions>
       </CompactDialog>
 
-
       <CompactDialog
         open={openCalculateDialogeBox}
         onClose={closeCalculateDialogBox}
@@ -4615,11 +4681,7 @@ const KendoDataTables = ({
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box
-              component='img'
-              src={CalculateIcon}
-              className='w16-icon'
-            />
+            <Box component='img' src={CalculateIcon} className='w16-icon' />
             <Typography
               sx={{
                 fontWeight: 800,
@@ -4656,10 +4718,7 @@ const KendoDataTables = ({
         </DialogContent>
 
         <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
-          <Button
-            onClick={closeCalculateDialogBox}
-            className='btn-no'
-          >
+          <Button onClick={closeCalculateDialogBox} className='btn-no'>
             Cancel
           </Button>
 

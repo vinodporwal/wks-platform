@@ -123,7 +123,7 @@ const ShutDown = ({ permissions }) => {
     lowerSiteName === 'hmd' &&
     (lowerPlantName === 'butadiene' ||
       lowerPlantName === 'mtbe' ||
-      lowerPlantName === 'butene')
+      lowerPlantName === 'butene'|| lowerPlantName === 'pdeb')
   const DELETE_NOTE =
     'Warning: Please verify the shutdown consumption quantity before deleting the shutdown activity.'
 
