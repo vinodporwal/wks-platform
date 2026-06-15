@@ -163,6 +163,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD") ||  site.getName().equalsIgnoreCase("HMD"));
 		    boolean isChemical= vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("DMD") && plant.getName().equalsIgnoreCase("Chlor Alkali");
 			boolean ischemicalAndVmd = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("VMD");
+			boolean aromaticsDtaAromatics = vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("DTA") && plant.getName().equalsIgnoreCase("Aromatics");
 		    String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
 			List<Boolean> isEditable = new ArrayList<>();
 
@@ -235,7 +236,14 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			}
 			innerHeaders.add("Type");
 			innerHeaders.add("Particulars");
-			innerHeaders.add("UOM");
+
+			if(aromaticsDtaAromatics) {  
+			innerHeaders.add("UOM/TPD");  
+		      }
+			  else {
+				innerHeaders.add("UOM");
+			  }
+			
 			if(reportTypes!=null && reportTypes.contains("Report Manual Entry")) {
 				year=getLastYear(year);
 			}
