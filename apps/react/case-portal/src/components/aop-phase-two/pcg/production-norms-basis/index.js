@@ -239,7 +239,7 @@ const ProductionNormsBasisPCG = () => {
             refreshData={refreshData}
           />
         )
-      case 'Constant':
+      case 'Constants':
         return <Constants startDate={startDate} endDate={endDate} />
       case 'PIMS Throughput':
         return <PIMSThroughput startDate={startDate} endDate={endDate} />
