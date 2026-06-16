@@ -43,7 +43,7 @@ public interface CaseInstanceRepository extends Repository<CaseInstance> {
 
 	 List<CaseInstance> findCasesWithDueDateGreaterThanNow();
 
-	 PageResult<CaseInstance> findByAssetName(CaseInstanceFilter filters, String assetName, List<String> eventIds);
+	PageResult<CaseInstance> findByAssetName(CaseInstanceFilter filters, String assetName, List<String> eventIds);
 
 	void updateEventIds(final List<String> businessKeys, final List<String> eventIds, List<CaseInstance.EventUrlItem> eventTrendUrls, List<CaseInstance.EventUrlItem> eventReportUrls, final CaseDefinitionService caseDefinitionService);
 

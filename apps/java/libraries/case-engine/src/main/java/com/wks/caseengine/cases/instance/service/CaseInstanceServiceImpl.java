@@ -24,7 +24,6 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wks.caseengine.cases.definition.service.CaseDefinitionService;
 import com.wks.caseengine.cases.instance.CaseComment;
 import com.wks.caseengine.cases.instance.CaseDocument;
 import com.wks.caseengine.cases.instance.CaseInstance;
@@ -43,6 +42,7 @@ import com.wks.caseengine.command.CommandExecutor;
 import com.wks.caseengine.pagination.PageResult;
 import com.wks.caseengine.cases.instance.command.findOverdueCaseInstanceCmd;
 import com.wks.caseengine.cases.instance.email.CaseEmailServiceImpl;
+import com.wks.caseengine.cases.definition.service.CaseDefinitionService;
 import com.wks.caseengine.cases.instance.command.FindCaseInstanceByAssetNameCmd;
 import com.wks.caseengine.cases.instance.command.UpdateEventIdsCmd;
 
@@ -88,26 +88,24 @@ public class CaseInstanceServiceImpl implements CaseInstanceService {
 	public CaseInstance startWithValues   (final CaseInstance caseInstance) {
 
 		// return commandExecutor.execute(new StartCaseInstanceWithValuesCmd(caseInstance));
-CaseInstance changedInstance =  commandExecutor.execute(new StartCaseInstanceWithValuesCmd(caseInstance));
+		CaseInstance changedInstance =  commandExecutor.execute(new StartCaseInstanceWithValuesCmd(caseInstance));
 
 
-    if(changedInstance.getBusinessKey().equals(caseInstance.getBusinessKey())) {
+	    if(changedInstance.getBusinessKey().equals(caseInstance.getBusinessKey())) {
 
-		System.out.println("****** case: update existingcase instance");
+			System.out.println("****** case: update existingcase instance");
 
-    try {
-        commandContext.getCaseInstanceRepository().update(changedInstance.getBusinessKey(), changedInstance);
-    } catch(Exception e) {
-        System.out.println("error while updating caseInstance");
-          throw new RuntimeException(e);
-    }
-}
-
-else {
-	  commandContext.getCaseInstanceRepository().save(changedInstance);
-}
-return changedInstance;
-
+		    try {
+		        commandContext.getCaseInstanceRepository().update(changedInstance.getBusinessKey(), changedInstance);
+		    } catch(Exception e) {
+		        System.out.println("error while updating caseInstance");
+		          throw new RuntimeException(e);
+		    }
+		}
+		else {
+			  commandContext.getCaseInstanceRepository().save(changedInstance);
+		}
+		return changedInstance;
 	}
 
 	@Override

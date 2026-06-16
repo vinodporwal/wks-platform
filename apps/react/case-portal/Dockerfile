@@ -23,7 +23,7 @@ COPY package.json yarn.lock ./
 
 # Install dependencies
 #RUN yarn install --frozen-lockfile
-RUN yarn install
+RUN yarn install --network-timeout 600000
 
 # Copy the entire application
 COPY . .

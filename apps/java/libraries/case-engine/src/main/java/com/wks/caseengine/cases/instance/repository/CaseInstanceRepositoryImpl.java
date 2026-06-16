@@ -70,8 +70,6 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 	@Autowired
 	private Paginator paginator;
 
-
-
 	@Override
 	public List<CaseInstance> find() {
 		return paginator.apply(getCollection().find()).sort(descending("_id")).into(new ArrayList<>());
@@ -91,37 +89,6 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 
 		return results;
 	}
-
-	// @Override
-	// public PageResult<CaseInstance> findByAssetName(CaseInstanceFilter filters, String assetName, List<String> eventIds) { 
-	// 	CursorPagination pagination = new MongoCursorPagination(getOperations());
-	
-	// 	Args args = Args.of(filters.getLimit())
-	// 		.key("_id")
-	// 		.cursor(filters.getCursor(), filters.getDir())
-	// 		.criteria(c -> {
-	// 			filters.getCaseDefsId()
-	// 				.ifPresent(a -> c.add(Criteria.where("caseDefinitionId").is(a)));
-	
-	// 			filters.getStatus()
-	// 				.ifPresent(a -> c.add(Criteria.where("status").is(a)));
-	
-				
-	// 			if (assetName != null && !assetName.isEmpty()) {
-	// 				c.add(Criteria.where("attributes")
-	// 					.elemMatch(
-	// 						Criteria.where("name").is("container")
-	// 							.and("value").regex("\"textField1\":\"" + assetName + "\"")
-	// 					)
-	// 				);
-	// 			}
-	// 		});
-	
-	// 	PageResult<CaseInstance> results = pagination.executeQuery(args, CaseInstance.class);
-	
-	// 	return results;
-	// }
-
 
 	public PageResult<CaseInstance> findByAssetName(CaseInstanceFilter filters, String assetName, List<String> eventIds) { 
 		CursorPagination pagination = new MongoCursorPagination(getOperations());
@@ -156,8 +123,6 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 	
 		return pagination.executeQuery(args, CaseInstance.class);
 	}
-
-
 
 	@Override
 	public List<CaseInstance> findCasesWithDueDateGreaterThanNow() {
@@ -258,24 +223,17 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 		System.out.println("Updated Cases: " + updatedCases.size() +  " " + Arrays.toString(updatedCases.toArray()));
 		System.out.println("Notified Cases: " + notifiedCases.size() + " " + Arrays.toString(notifiedCases.toArray()));
 
-		return casesToNotify;
-		
-		
-		
-		
-		
+		return casesToNotify;	
 	}
 	
 
 	@Override
 	public CaseInstance get(final String businessKey) throws DatabaseRecordNotFoundException {
 		Bson filter = Filters.eq("businessKey", businessKey);
-		System.out.println("caseInstanceRepositoryImpl: get businessKey: " + businessKey);
 		CaseInstance first = getCollection().find(filter).first();
 		if (first == null) {
 			throw new DatabaseRecordNotFoundException("CaseInstance", "businessKey", businessKey);
 		}
-		System.out.println("caseInstanceRepositoryImpl: get first: " + first);
 		return first;
 	}
 
@@ -307,206 +265,142 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 		}
 
 	}
-
-// 	@Override 
-// 	public void updateEventIds(final List<String> businessKeys, final List<String> eventIds)
-//          {
-
-//     // Filter: all matching businessKeys
-//     Bson filter = Filters.in("businessKey", businessKeys);
-
-//     // Update: add eventIds without duplicating existing ones
-//     Bson update = Updates.addEachToSet("eventIds", eventIds);
-
-//     // Execute update
-//     UpdateResult result = getCollection().updateMany(filter, update);
-
-    
-// }
-
-public void updateEventIds(final List<String> businessKeys, final List<String> eventIds,List<CaseInstance.EventUrlItem> eventTrendUrls, List<CaseInstance.EventUrlItem> eventReportUrls,  final CaseDefinitionService caseDefinitionService)
-        {
-
-			
-    // Step 1: Add eventIds (no duplicates)
-    Bson filter = Filters.in("businessKey", businessKeys);
-    Bson updateEventIds = Updates.addEachToSet("eventIds", eventIds);
-
-    UpdateResult result = getCollection().updateMany(filter, updateEventIds);
-
-   
-	DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
-	DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy, hh:mm a");
-
-    // Step 2: Update dataGrid2 for each case
-    for (String businessKey : businessKeys) {
-
-        CaseInstance caseInstance = getCollection().find(Filters.eq("businessKey", businessKey)).first();
-		
-        if (caseInstance == null) continue;
-
-		List<CaseAttribute> attributes = caseInstance.getAttributes();
 	
-        for (CaseAttribute attr : attributes) {
+	public void updateEventIds(final List<String> businessKeys, final List<String> eventIds,List<CaseInstance.EventUrlItem> eventTrendUrls, List<CaseInstance.EventUrlItem> eventReportUrls,  final CaseDefinitionService caseDefinitionService) {
+			
+    	// Step 1: Add eventIds (no duplicates)
+    	Bson filter = Filters.in("businessKey", businessKeys);
+    	Bson updateEventIds = Updates.addEachToSet("eventIds", eventIds);
 
-			if ("container".equals(attr.getName())) {
+    	UpdateResult result = getCollection().updateMany(filter, updateEventIds);
 
+		DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+		DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy, hh:mm a");
+
+    	// Step 2: Update dataGrid2 for each case
+    	for (String businessKey : businessKeys) {
+        	CaseInstance caseInstance = getCollection().find(Filters.eq("businessKey", businessKey)).first();
+			if (caseInstance == null) continue;
+			List<CaseAttribute> attributes = caseInstance.getAttributes();
+			for (CaseAttribute attr : attributes) {
+				if ("container".equals(attr.getName())) {
+					String jsonString = attr.getValue();
 				
-
-				String jsonString = attr.getValue();
-				
-                try {
-					ObjectMapper mapper = new ObjectMapper();
-					Map<String, Object> containerMap =
+                	try {
+						ObjectMapper mapper = new ObjectMapper();
+						Map<String, Object> containerMap =
 							mapper.readValue(jsonString, new TypeReference<Map<String, Object>>() {});
-  
-                    // Existing dataGrid2
-                    List<Map<String, Object>> dataGrid2 =
+                    	// Existing dataGrid2
+                    	List<Map<String, Object>> dataGrid2 =
                             (List<Map<String, Object>>) containerMap.getOrDefault("dataGrid2", new ArrayList<>());
-					
-                    // Collect existing eventPkIds
-                    Set<String> existingEventPkIds = dataGrid2.stream()
+                    	// Collect existing eventPkIds
+                    	Set<String> existingEventPkIds = dataGrid2.stream()
                             .map(e -> (String) e.get("eventPkId"))
                             .collect(Collectors.toSet());
-
-                    // Convert incoming eventIds → Long
-                    List<Long> eventIdsLong = eventIds.stream()
+                    	// Convert incoming eventIds → Long
+                    	List<Long> eventIdsLong = eventIds.stream()
                             .map(Long::valueOf)
                             .collect(Collectors.toList());
-
-                    // Fetch all events
-                    List<FaultEvents> faultEvents = caseDefinitionService.getAllEvents(eventIdsLong);
-
-                    for (FaultEvents fe : faultEvents) {
-     
-						
-                        String eventPkId = fe.getEvents().getEventPkId();
-						
-
-                        // Skip if already present
-                        if (existingEventPkIds.contains(eventPkId)) continue;
-
-
-String formattedDate = null;
-
-
-if (fe.getStartTime() != null && !fe.getStartTime().isEmpty()) {
-	try {
-		LocalDateTime dateTime = LocalDateTime.parse(fe.getStartTime(), inputFormatter);
-		formattedDate = dateTime.format(outputFormatter).toLowerCase(); // for 'am/pm'
-	} catch (Exception e) {
-		formattedDate = fe.getStartTime(); // fallback
+                    	// Fetch all events
+                    	List<FaultEvents> faultEvents = caseDefinitionService.getAllEvents(eventIdsLong);
+                    	for (FaultEvents fe : faultEvents) {
+                        	String eventPkId = fe.getEvents().getEventPkId();
+							// Skip if already present
+                        	if (existingEventPkIds.contains(eventPkId)) continue;
+								String formattedDate = null;
+								if (fe.getStartTime() != null && !fe.getStartTime().isEmpty()) {
+									try {
+										LocalDateTime dateTime = LocalDateTime.parse(fe.getStartTime(), inputFormatter);
+										formattedDate = dateTime.format(outputFormatter).toLowerCase(); // for 'am/pm'
+									} catch (Exception e) {
+										formattedDate = fe.getStartTime(); // fallback
+									}
+								}
+		                        Map<String, Object> row = new HashMap<>();
+		                        row.put("textField1", fe.getAssetDisplayName());
+		                        row.put("textField2", fe.getAssetName());
+		                        row.put("textField3", fe.getEvents().getEventName());
+		                        row.put("textField4", fe.getEventCategory().getName());
+		                        row.put("TextFaultStartTimeDate", formattedDate);
+		                        row.put("TextFaultEndTimeDate", "");
+		                        row.put("eventPkId", eventPkId);
+		                        row.put("btnEventTrend", false);
+		                        row.put("btnEventLink", false);
+                        	dataGrid2.add(row);
+                    	}
+	                    // Put back updated grid
+	                    containerMap.put("dataGrid2", dataGrid2);
+	                    // Convert back to JSON string
+	                    String updatedJson = mapper.writeValueAsString(containerMap);
+						// Update DB
+	                    getCollection().updateOne(
+	                            Filters.eq("businessKey", businessKey),
+	                            Updates.set("attributes.$[elem].value", updatedJson),
+	                            new UpdateOptions().arrayFilters(
+	                                    Arrays.asList(Filters.eq("elem.name", "container"))
+	                            )
+	                    );
+	                } catch (Exception e) {
+	                    throw new RuntimeException("Error updating dataGrid2 for businessKey: " + businessKey, e);
+	                }
+            	}
+        	}
+			updateEventTrendUrls(businessKey, eventTrendUrls, eventReportUrls);
+    	}
 	}
-}
 
+	public void updateEventTrendUrls(final String businessKey, List<CaseInstance.EventUrlItem> eventTrendUrls, List<CaseInstance.EventUrlItem> eventReportUrls )  {
 
+		// Fetch current case
+		CaseInstance caseInstance = getCollection()
+		.find(Filters.eq("businessKey", businessKey))
+		.first();
+		if (caseInstance == null) return;
+		List<CaseInstance.EventUrlItem> existingTrendUrls = 
+		        caseInstance.getEventTrendUrls() != null 
+		        ? caseInstance.getEventTrendUrls() 
+		        : new ArrayList<>();
+		List<CaseInstance.EventUrlItem> existingReportUrls = 
+		        caseInstance.getEventReportUrls() != null 
+		        ? caseInstance.getEventReportUrls() 
+		        : new ArrayList<>();
+		// Existing URLs
+		Set<String> existingTrendIds = existingTrendUrls.stream()
+		        .map(CaseInstance.EventUrlItem::getUrlId)
+		        .collect(Collectors.toSet());
+		Set<String> existingReportIds = existingReportUrls.stream()
+		        .map(CaseInstance.EventUrlItem::getUrlId)
+		        .collect(Collectors.toSet());
+		
+		// Filter new Trend URLs
+		List<CaseInstance.EventUrlItem> newTrendUrls = eventTrendUrls.stream()
+		.filter(u -> !existingTrendIds.contains(u.getUrlId()))
+		.collect(Collectors.toList());
+		
+		// Filter new Report URLs
+		List<CaseInstance.EventUrlItem> newReportUrls = eventReportUrls.stream()
+		.filter(u -> !existingReportIds.contains(u.getUrlId()))
+		.collect(Collectors.toList());
 
-                        Map<String, Object> row = new HashMap<>();
-                        row.put("textField1", fe.getAssetDisplayName());
-                        row.put("textField2", fe.getAssetName());
-                        row.put("textField3", fe.getEvents().getEventName());
-                        row.put("textField4", fe.getEventCategory().getName());
-                        row.put("TextFaultStartTimeDate", formattedDate);
-                        row.put("TextFaultEndTimeDate", "");
-                        row.put("eventPkId", eventPkId);
-                        row.put("btnEventTrend", false);
-                        row.put("btnEventLink", false);
+		// Push only new ones
+		List<Bson> updates = new ArrayList<>();
 
-                        dataGrid2.add(row);
-                    }
+		if (!newTrendUrls.isEmpty()) {
+		updates.add(Updates.pushEach("eventTrendUrls", newTrendUrls));
+		}
 
-                    // Put back updated grid
-                    containerMap.put("dataGrid2", dataGrid2);
+		if (!newReportUrls.isEmpty()) {
+		updates.add(Updates.pushEach("eventReportUrls", newReportUrls));
+		}
 
-					
-
-                    // Convert back to JSON string
-                    String updatedJson = mapper.writeValueAsString(containerMap);
-					
-                    // Update DB
-                    getCollection().updateOne(
-                            Filters.eq("businessKey", businessKey),
-                            Updates.set("attributes.$[elem].value", updatedJson),
-                            new UpdateOptions().arrayFilters(
-                                    Arrays.asList(Filters.eq("elem.name", "container"))
-                            )
-                    );
-
-					
-                } catch (Exception e) {
-                    throw new RuntimeException("Error updating dataGrid2 for businessKey: " + businessKey, e);
-                }
-            }
-        }
-
-		updateEventTrendUrls(businessKey, eventTrendUrls, eventReportUrls);
-    }
-}
-
-public void updateEventTrendUrls(final String businessKey, List<CaseInstance.EventUrlItem> eventTrendUrls, List<CaseInstance.EventUrlItem> eventReportUrls )  {
-
-	// Fetch current case
-CaseInstance caseInstance = getCollection()
-.find(Filters.eq("businessKey", businessKey))
-.first();
-
-if (caseInstance == null) return;
-
-List<CaseInstance.EventUrlItem> existingTrendUrls = 
-        caseInstance.getEventTrendUrls() != null 
-        ? caseInstance.getEventTrendUrls() 
-        : new ArrayList<>();
-
-List<CaseInstance.EventUrlItem> existingReportUrls = 
-        caseInstance.getEventReportUrls() != null 
-        ? caseInstance.getEventReportUrls() 
-        : new ArrayList<>();
-
-// Existing URLs
-Set<String> existingTrendIds = existingTrendUrls.stream()
-        .map(CaseInstance.EventUrlItem::getUrlId)
-        .collect(Collectors.toSet());
-
-Set<String> existingReportIds = existingReportUrls.stream()
-        .map(CaseInstance.EventUrlItem::getUrlId)
-        .collect(Collectors.toSet());
-
-
-
-// Filter new Trend URLs
-List<CaseInstance.EventUrlItem> newTrendUrls = eventTrendUrls.stream()
-.filter(u -> !existingTrendIds.contains(u.getUrlId()))
-.collect(Collectors.toList());
-
-// Filter new Report URLs
-List<CaseInstance.EventUrlItem> newReportUrls = eventReportUrls.stream()
-.filter(u -> !existingReportIds.contains(u.getUrlId()))
-.collect(Collectors.toList());
-
-// Push only new ones
-List<Bson> updates = new ArrayList<>();
-
-if (!newTrendUrls.isEmpty()) {
-updates.add(Updates.pushEach("eventTrendUrls", newTrendUrls));
-}
-
-if (!newReportUrls.isEmpty()) {
-updates.add(Updates.pushEach("eventReportUrls", newReportUrls));
-}
-
-System.out.println("newTrendUrls: " + newTrendUrls);
-System.out.println("newReportUrls: " + newReportUrls);
-System.out.println("updates: " + updates);
-
-// Execute update if needed
-if (!updates.isEmpty()) {
-getCollection().updateOne(
-	Filters.eq("businessKey", businessKey),
-	Updates.combine(updates)
-);
-}
-
-}
+		// Execute update if needed
+		if (!updates.isEmpty()) {
+			getCollection().updateOne(
+				Filters.eq("businessKey", businessKey),
+				Updates.combine(updates)
+			);
+		}
+	}
 
 
 	@Override

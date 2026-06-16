@@ -23,11 +23,7 @@ public interface CaseInstanceService {
 
 	PageResult<CaseInstance> find(CaseInstanceFilter filters);
 
-	PageResult<CaseInstance> findByAssetName(CaseInstanceFilter filters, String assetName, List<String> eventIds);
-
 	CaseInstance get(final String businessKey);
-
-	void updateEventIds(final List<String> businessKeys, final List<String> eventIds, List<CaseInstance.EventUrlItem> eventTrendUrls, List<CaseInstance.EventUrlItem> eventReportUrls);
 
 	CaseInstance startWithValues(final CaseInstance caseInstance);
 
@@ -47,4 +43,7 @@ public interface CaseInstanceService {
 
 	void findCasesWithDueDateGreaterThanNow();
 
+	PageResult<CaseInstance> findByAssetName(CaseInstanceFilter filters, String assetName, List<String> eventIds);
+
+	void updateEventIds(final List<String> businessKeys, final List<String> eventIds, List<CaseInstance.EventUrlItem> eventTrendUrls, List<CaseInstance.EventUrlItem> eventReportUrls);
 }
