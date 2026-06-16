@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import Configuration from './Configuration'
+import ExclusionDate from './ExclusionDate'
 import TabAccessApiService from 'components/aop-phase-two/services/common/tabAccessApiService'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/merox/productionNormsApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
@@ -221,9 +222,9 @@ const ProductionNormsBasis = () => {
 
     switch (currentTabName) {
       case 'Configuration':
-        return (
-          <Configuration />
-        )
+        return <Configuration />
+      case 'Exclusion Date':
+        return <ExclusionDate startDate={startDate} endDate={endDate} />
       default:
         return null
     }
