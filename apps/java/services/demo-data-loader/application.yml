@@ -17,26 +17,72 @@ mongo.data.import.folder: ${IMPORT_DIR_PATH:./data}/mongodb
 keycloak.data.import.enabled: true
 keycloak.data.import.url: ${KEYCLOAK_URL:http://localhost:8082/cm}
 keycloak.data.import.admin: ${KEYCLOAK_ADMIN:admin}
-keycloak.data.import.adminpass: ${KEYCLOAK_PASS:admin}
+keycloak.data.import.adminpass: ${KEYCLOAK_ADMIN_PASSWORD:${KEYCLOAK_PASS:admin}}
 keycloak.data.import.portal-clientid: wks-portal
 keycloak.data.import.externaltasks-clientid: wks-external-tasks
 keycloak.data.import.externaltasks-secret: ${KEYCLOAK_EXTERNALTASKS_SECRET:replaceme}
 keycloak.data.import.emailtocase-clientid: wks-email-to-case
 keycloak.data.import.emailtocase-secret: ${KEYCLOAK_EMAILTOCASE_SECRET:replaceme}
 keycloak.data.import.realm: ${spring.data.mongodb.database.tenant}
-# keycloak.data.import.dns: localhost
-# keycloak.data.import.port: :3001
-# keycloak.data.import.protocol: http://
-keycloak.data.import.dns: apm-cm-exxonmobil-useast.connectedplant.honeywell.com
-keycloak.data.import.port: :8901
-keycloak.data.import.protocol: https://
-keycloak.data.import.redirecturl: ${keycloak.data.import.protocol}${keycloak.data.import.dns}${keycloak.data.import.port}/cm/*
-keycloak.data.import.weborigins: ${keycloak.data.import.protocol}${keycloak.data.import.dns}${keycloak.data.import.port}
+# Portal location used to build the wks-portal client redirect URIs / web origins.
+# Env-driven so the same image works locally and in any deployment with no
+# manual Keycloak changes. Defaults target the local docker-compose portal.
+keycloak.data.import.dns: ${KEYCLOAK_PORTAL_DNS:localhost}
+keycloak.data.import.port: ${KEYCLOAK_PORTAL_PORT::3001}
+keycloak.data.import.protocol: ${KEYCLOAK_PORTAL_PROTOCOL:http://}
+keycloak.data.import.redirecturl: ${KEYCLOAK_REDIRECT_URL:${keycloak.data.import.protocol}${keycloak.data.import.dns}${keycloak.data.import.port}/cm/*}
+keycloak.data.import.weborigins: ${KEYCLOAK_WEB_ORIGINS:${keycloak.data.import.protocol}${keycloak.data.import.dns}${keycloak.data.import.port}}
 keycloak.data.import.username: ${KEYCLOAK_DEFAULT_USER:demo}
 keycloak.data.import.password: ${KEYCLOAK_DEFAULT_USER_PASSWORD:demo}
 keycloak.data.import.firstname: ${KEYCLOAK_DEFAULT_USER_FIRST_NAME:demo}
 keycloak.data.import.lastname: ${KEYCLOAK_DEFAULT_USER_LAST_NAME:demo}
 keycloak.data.import.email: ${KEYCLOAK_DEFAULT_USER_EMAIL:demo@demo.com}
+
+# =====================================================================
+# Configurable authentication mechanism.
+#   WKS_AUTH_MODE = default | oidc | adfs
+#     default -> Keycloak username/password login (no external IdP)
+#     oidc    -> broker to an external OpenID Connect provider
+#     adfs    -> broker to ADFS (SAML by default, or OIDC via ADFS_PROTOCOL)
+# When an external IdP is enabled it is provisioned automatically in the realm
+# (no manual Keycloak changes). With redirect-to-idp=true the login page
+# auto-redirects to the IdP; otherwise it is shown as a button next to the
+# local username/password form.
+# =====================================================================
+keycloak.auth.mode: ${WKS_AUTH_MODE:default}
+keycloak.auth.redirect-to-idp: ${WKS_AUTH_REDIRECT_TO_IDP:true}
+
+# ---- OIDC broker ----
+keycloak.auth.oidc.alias: ${OIDC_ALIAS:oidc}
+keycloak.auth.oidc.display-name: ${OIDC_DISPLAY_NAME:Single Sign-On}
+keycloak.auth.oidc.client-id: ${OIDC_CLIENT_ID:}
+keycloak.auth.oidc.client-secret: ${OIDC_CLIENT_SECRET:}
+keycloak.auth.oidc.authorization-url: ${OIDC_AUTHORIZATION_URL:}
+keycloak.auth.oidc.token-url: ${OIDC_TOKEN_URL:}
+keycloak.auth.oidc.user-info-url: ${OIDC_USER_INFO_URL:}
+keycloak.auth.oidc.jwks-url: ${OIDC_JWKS_URL:}
+keycloak.auth.oidc.issuer: ${OIDC_ISSUER:}
+keycloak.auth.oidc.logout-url: ${OIDC_LOGOUT_URL:}
+keycloak.auth.oidc.default-scope: ${OIDC_DEFAULT_SCOPE:openid profile email}
+
+# ---- ADFS broker (protocol: saml | oidc) ----
+keycloak.auth.adfs.alias: ${ADFS_ALIAS:adfs}
+keycloak.auth.adfs.display-name: ${ADFS_DISPLAY_NAME:ADFS}
+keycloak.auth.adfs.protocol: ${ADFS_PROTOCOL:saml}
+# SAML: import everything from ADFS federation metadata (preferred), or set the
+# entity-id / SSO URL / signing certificate explicitly.
+keycloak.auth.adfs.metadata-url: ${ADFS_METADATA_URL:}
+keycloak.auth.adfs.entity-id: ${ADFS_ENTITY_ID:}
+keycloak.auth.adfs.single-sign-on-service-url: ${ADFS_SSO_URL:}
+keycloak.auth.adfs.single-logout-service-url: ${ADFS_SLO_URL:}
+keycloak.auth.adfs.signing-certificate: ${ADFS_SIGNING_CERT:}
+# OIDC variant (ADFS 2016+): used when ADFS_PROTOCOL=oidc
+keycloak.auth.adfs.client-id: ${ADFS_CLIENT_ID:}
+keycloak.auth.adfs.client-secret: ${ADFS_CLIENT_SECRET:}
+keycloak.auth.adfs.authorization-url: ${ADFS_AUTHORIZATION_URL:}
+keycloak.auth.adfs.token-url: ${ADFS_TOKEN_URL:}
+keycloak.auth.adfs.jwks-url: ${ADFS_JWKS_URL:}
+keycloak.auth.adfs.issuer: ${ADFS_ISSUER:}
 
 camunda7.data.import.enabled: ${CAMUNDA7_DATA_IMPORT_ENABLED:true}
 camunda7.data.import.url: ${CAMUNDA_URL:http://localhost:8080/engine-rest}

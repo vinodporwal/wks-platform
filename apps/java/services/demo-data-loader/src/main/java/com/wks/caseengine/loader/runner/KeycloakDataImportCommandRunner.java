@@ -168,16 +168,46 @@ public class KeycloakDataImportCommandRunner implements CommandLineRunner {
 
 		try {
 
-			keycloak.realms().create(realm);
+			boolean realmExists = keycloak.realms().findAll().stream()
+					.anyMatch(r -> realmName.equals(r.getRealm()));
 
-			addUserToGroups(keycloak, externalTasksClientId, Arrays.asList("user", "manager", "email-to-case"));
-			addUserToGroups(keycloak, emailToCaseClientId, Arrays.asList("email-to-case"));
+			if (!realmExists) {
+				keycloak.realms().create(realm);
+
+				addUserToGroups(keycloak, externalTasksClientId, Arrays.asList("user", "manager", "email-to-case"));
+				addUserToGroups(keycloak, emailToCaseClientId, Arrays.asList("email-to-case"));
+			} else {
+				// Realm already provisioned: keep it idempotent by re-applying the
+				// (env-driven) redirect URIs / web origins so a redeploy never needs
+				// manual Keycloak changes.
+				log.info("Realm '{}' already exists; updating client redirect URIs / web origins", realmName);
+				updateClientUrls(keycloak, portalClientId);
+				updateClientUrls(keycloak, externalTasksClientId);
+				updateClientUrls(keycloak, emailToCaseClientId);
+			}
 
 		} catch (Exception e) {
 			log.error("error to create keycloack", e);
 		}
 
 		log.info("End of data importing");
+	}
+
+	private void updateClientUrls(final Keycloak keycloak, final String clientId) {
+		try {
+			List<ClientRepresentation> found = keycloak.realm(realmName).clients().findByClientId(clientId);
+			if (found == null || found.isEmpty()) {
+				log.warn("Client '{}' not found in realm '{}'; skipping URL update", clientId, realmName);
+				return;
+			}
+			ClientRepresentation client = found.get(0);
+			client.setRedirectUris(Arrays.asList(redirectUrl));
+			client.setWebOrigins(Arrays.asList(webOrigins));
+			keycloak.realm(realmName).clients().get(client.getId()).update(client);
+			log.info("Updated redirect URIs / web origins for client '{}'", clientId);
+		} catch (Exception e) {
+			log.warn("Could not update URLs for client '{}': {}", clientId, e.getMessage());
+		}
 	}
 
 	private List<String> createOptionalClientScopes() {

@@ -2,6 +2,9 @@ services:
     demo-data-loader:
         build:
             context: apps/java/services/demo-data-loader
+        # Single env file provides the auth-mode, portal URL and OIDC/ADFS vars.
+        env_file:
+            - .env
         environment:
             - CAMUNDA7_DATA_IMPORT_ENABLED=true
             - CAMUNDA8_DATA_IMPORT_ENABLED=false
