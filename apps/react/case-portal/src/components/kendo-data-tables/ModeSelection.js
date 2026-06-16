@@ -372,6 +372,7 @@ const ModeSelection = ({ permissions }) => {
           titleName: 'Mode Selection',
           dynamicDropdownOptions: dynamicDropdownOptions,
           NON_EDITABLE_GRID: true,
+          isTotalFooterActive: false,
         },
         isOldYear,
       ),

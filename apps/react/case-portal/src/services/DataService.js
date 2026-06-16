@@ -4905,8 +4905,6 @@ async function saveTankNosData(keycloak, PLANT_ID, AOP_YEAR, data) {
   }
 }
 
-
-
 async function getEtheleneStock(keycloak, PLANT_ID, AOP_YEAR) {
   let url = `${Config.CaseEngineUrl}/task/data-set-ethelene-stock?plantId=${PLANT_ID}&year=${AOP_YEAR}`
 

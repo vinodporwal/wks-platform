@@ -62,6 +62,10 @@ const SelectivityData = (props) => {
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_AROMATICS_PMD =
     lowerVertName === 'aromatics' && lowerSiteName === 'pmd'
+  const IS_AROMATICS_DTA_AROMATICS =
+    lowerVertName === 'aromatics' &&
+    lowerSiteName === 'dta' &&
+    lowerPlantName == 'aromatics'
 
   const IS_CHEMICAL_VMD_BENEZENEFPUBTA =
     lowerVertName === 'chemical' &&
@@ -569,6 +573,7 @@ const SelectivityData = (props) => {
     handleRemarkCellClick,
     configType: props?.configType,
     FORMATE_VALUE,
+    UOM_TITLE: IS_AROMATICS_DTA_AROMATICS ? 'UOM/TPD' : 'UOM',
   })
 
   const getAdjustedPermissions = (permissions, isOldYear) => {

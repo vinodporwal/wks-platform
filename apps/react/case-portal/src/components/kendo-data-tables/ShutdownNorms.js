@@ -94,6 +94,11 @@ const ShutdownNorms = () => {
     SITE_NAME_LOWERCASE === 'hmd' &&
     PLANT_NAME_LOWERCASE === 'sbr'
 
+  const IS_ELASTOMER_HMD_PBR3 =
+    lowerVertName === 'elastomer' &&
+    SITE_NAME_LOWERCASE === 'hmd' &&
+    PLANT_NAME_LOWERCASE === 'pbr3'
+
   const IS_PE_C2 = lowerVertName === 'pe' && SITE_NAME_LOWERCASE === 'c2'
 
   const IS_ELASTOMER_JMD_HIIR =
@@ -830,6 +835,14 @@ const ShutdownNorms = () => {
   const isVCMWithVMD =
     lowerVertName === 'vcm' && SITE_NAME?.toLowerCase() === 'vmd'
 
+  const getShutdownTitleName = () => {
+    if (IS_PET_VERTICAL || IS_PVC_VMD) return `Shutdown Consumption (Norms)`
+    if (IS_ELASTOMER_HMD_PBR3) return `Shutdown Consumption (Yearly Norms)`
+    if (lowerVertName === 'elastomer' || lowerVertName === 'pta' || IS_CHEMICAL)
+      return `Shutdown Consumption (Norms/Quantity)`
+    return SCREEN_NAME
+  }
+
   const adjustedPermissions = getAdjustedPermissions(
     {
       showAction: false,
@@ -973,14 +986,7 @@ const ShutdownNorms = () => {
           : false,
       showTitleNameBusiness: IS_PE_DMD_HDPE ? false : true,
 
-      titleName:
-        IS_PET_VERTICAL || IS_PVC_VMD
-          ? `Shutdown Consumption (Norms)`
-          : lowerVertName === 'elastomer' ||
-              lowerVertName === 'pta' ||
-              IS_CHEMICAL
-            ? `Shutdown Consumption (Norms/Quantity)`
-            : SCREEN_NAME,
+      titleName: getShutdownTitleName(),
       ExcelName: EXCEL_EXPORT_TITLE,
       showTitleAndInformation: IS_PE_DMD_HDPE ? true : false,
       titleAndInformation:

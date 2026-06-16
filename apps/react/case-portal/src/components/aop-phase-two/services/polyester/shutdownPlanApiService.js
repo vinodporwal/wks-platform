@@ -227,7 +227,7 @@ async function deleteMultipleShutdown(ids, keycloak, PLANT_ID) {
         `Failed to delete data: ${resp.status} ${resp.statusText}`,
       )
     }
-    return await resp.text() // Handle text response from the backend
+    return json(keycloak, resp) // Handle text response from the backend
   } catch (e) {
     console.error('Error deleting multiple shutdown data:', e)
     return Promise.reject(e)
