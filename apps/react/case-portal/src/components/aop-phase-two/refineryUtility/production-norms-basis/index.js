@@ -222,11 +222,7 @@ const ProductionNormsBasis = () => {
     switch (currentTabName) {
       case 'Configuration':
         return (
-          <Configuration
-            startDate={startDate}
-            endDate={endDate}
-            refreshData={refreshData}
-          />
+          <Configuration />
         )
       default:
         return null
