@@ -83,9 +83,7 @@ const PIMSThroughput = () => {
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      const res = [].filter(
-        (item) => item.normType === 'PIMS Throughput',
-      )
+      const res = [].filter((item) => item.normType === 'PIMS Throughput')
 
       if (res?.length === 0) {
         setRows([])
