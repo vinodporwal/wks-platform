@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import { customValueFormatterPhaseTwo } from '../../common/ValueFormatterPhaseTwo'
-import { OverallAopConsumptionApiService } from '../../services/common/overallAopConsumptionApiService'
+import { OverallAopConsumptionApiService } from 'components/aop-phase-two/services/common/overallAopConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-const OverallAopConsumptionPCG = () => {
+const OverallAopConsumption = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year } = dataGridStore
@@ -31,7 +31,7 @@ const OverallAopConsumptionPCG = () => {
     {
       field: 'productName',
       title: 'Particulars',
-      // widthT: 250,
+      widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
@@ -39,8 +39,8 @@ const OverallAopConsumptionPCG = () => {
     },
     {
       field: 'normParameterTypeDisplayName',
-      title: 'normParameterTypeDisplayName',
-      // widthT: 250,
+      title: 'Type',
+      widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
@@ -50,15 +50,15 @@ const OverallAopConsumptionPCG = () => {
     {
       field: 'UOM',
       title: 'UOM',
-      // widthT: 100,
-      minWidth: 100,
+      widthT: 120,
+      minWidth: 120,
       type: 'text',
       editable: false,
     },
     {
       field: 'april',
       title: headerMap[4],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -67,7 +67,7 @@ const OverallAopConsumptionPCG = () => {
     {
       field: 'may',
       title: headerMap[5],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -76,7 +76,7 @@ const OverallAopConsumptionPCG = () => {
     {
       field: 'june',
       title: headerMap[6],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -85,7 +85,7 @@ const OverallAopConsumptionPCG = () => {
     {
       field: 'july',
       title: headerMap[7],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -94,7 +94,7 @@ const OverallAopConsumptionPCG = () => {
     {
       field: 'aug',
       title: headerMap[8],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -103,7 +103,7 @@ const OverallAopConsumptionPCG = () => {
     {
       field: 'sep',
       title: headerMap[9],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -112,7 +112,7 @@ const OverallAopConsumptionPCG = () => {
     {
       field: 'oct',
       title: headerMap[10],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -121,7 +121,7 @@ const OverallAopConsumptionPCG = () => {
     {
       field: 'nov',
       title: headerMap[11],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -130,7 +130,7 @@ const OverallAopConsumptionPCG = () => {
     {
       field: 'dec',
       title: headerMap[12],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -139,7 +139,7 @@ const OverallAopConsumptionPCG = () => {
     {
       field: 'jan',
       title: headerMap[1],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -148,7 +148,7 @@ const OverallAopConsumptionPCG = () => {
     {
       field: 'feb',
       title: headerMap[2],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: false,
@@ -260,6 +260,7 @@ const OverallAopConsumptionPCG = () => {
     editButton: false,
     saveBtn: false,
     allAction: true,
+    // showExport: true,
     downloadExcelBtnFromUI: true,
     showCalculate: true,
     ExcelName: `Overall_AOP_Consumption_${AOP_YEAR}`,
@@ -268,7 +269,6 @@ const OverallAopConsumptionPCG = () => {
     showTitle: true,
     titleName: 'Overall AOP Consumption (Norm/Quantity)',
     showDropdown: false,
-    dropdownCell: true,
   }
 
   return (
@@ -286,8 +286,8 @@ const OverallAopConsumptionPCG = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        customHeight={70}
         groupBy={['normParameterTypeDisplayName']}
+        customHeight={70}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,
@@ -299,4 +299,4 @@ const OverallAopConsumptionPCG = () => {
   )
 }
 
-export default OverallAopConsumptionPCG
+export default OverallAopConsumption
