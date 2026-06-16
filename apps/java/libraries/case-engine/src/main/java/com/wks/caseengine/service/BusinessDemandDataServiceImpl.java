@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.Iterator;
 import javax.sql.DataSource;
 
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
@@ -738,6 +739,11 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 		// Protect the sheet so that locked PT cells become non-editable
 		if (showProductionTarget) {
 			sheet.protectSheet("");
+		}
+
+		// Auto-size all columns (0–14) based on the widest cell content in each column
+		for (int col = 0; col <= 14; col++) {
+			sheet.autoSizeColumn(col);
 		}
 
 	sheet.setColumnHidden(15, true);
@@ -2243,14 +2249,22 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 				ptList = (List<AOPMCCalculatedDataDTO>) dataMap.get("aopMCCalculatedDataDTOList");
 			}
 
-			// Locked + grey style for all PT data cells (mirrors locked columns in exportBusinessDemandV2)
-			CellStyle lockedGreyStyle = Utility.createLockedStyle(workbook);
+		// Locked + grey + bordered style for all PT data cells
+		CellStyle lockedGreyStyle = Utility.createLockedStyle(workbook);
+		lockedGreyStyle.setBorderBottom(BorderStyle.THIN);
+		lockedGreyStyle.setBorderTop(BorderStyle.THIN);
+		lockedGreyStyle.setBorderLeft(BorderStyle.THIN);
+		lockedGreyStyle.setBorderRight(BorderStyle.THIN);
 
-			// Bold variant of the locked+grey style for title and header rows
-			CellStyle boldLockedGreyStyle = Utility.createLockedStyle(workbook);
-			Font boldFont = workbook.createFont();
-			boldFont.setBold(true);
-			boldLockedGreyStyle.setFont(boldFont);
+		// Bold + locked + grey + bordered style for title and header rows
+		CellStyle boldLockedGreyStyle = Utility.createLockedStyle(workbook);
+		Font boldFont = workbook.createFont();
+		boldFont.setBold(true);
+		boldLockedGreyStyle.setFont(boldFont);
+		boldLockedGreyStyle.setBorderBottom(BorderStyle.THIN);
+		boldLockedGreyStyle.setBorderTop(BorderStyle.THIN);
+		boldLockedGreyStyle.setBorderLeft(BorderStyle.THIN);
+		boldLockedGreyStyle.setBorderRight(BorderStyle.THIN);
 
 			// Title row
 			Row titleRow = sheet.createRow(startRow++);
