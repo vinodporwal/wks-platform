@@ -724,7 +724,6 @@ const FixedNorms = () => {
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
-      <h5>Fixed Norms DMD</h5>
       <NestedKendoTable
         columns={nestedColumns}
         rows={rows}
@@ -739,7 +738,7 @@ const FixedNorms = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={() => { }}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}

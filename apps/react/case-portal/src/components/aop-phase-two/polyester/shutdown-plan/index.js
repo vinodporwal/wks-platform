@@ -235,8 +235,18 @@ const ShutdownPlan = () => {
 
       // Full month names in calendar order (Jan=0 … Dec=11)
       const CALENDAR_MONTH_NAMES = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December',
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
       ]
 
       const formatted = arr.map((item, index) => {
