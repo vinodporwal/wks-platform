@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -17,11 +16,13 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Iterator;
 import javax.sql.DataSource;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -32,6 +33,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.dto.AOPMCCalculatedDataDTO;
 import com.wks.caseengine.dto.BusinessDemandDataDTO;
 import com.wks.caseengine.dto.BusinessDemandMonthlyDTO;
 import com.wks.caseengine.entity.AopCalculation;
@@ -95,6 +97,9 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 
 	@Autowired
 	private ShutdownHistoryService shutdownHistoryService;
+
+	@Autowired
+	private AOPMCCalculatedDataService aopMCCalculatedDataService;
 
 	private DataSource dataSource;
 	
@@ -594,6 +599,7 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		boolean showProductionTarget = vertical.getName().equalsIgnoreCase("MEG");
 		 if(vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("HMD") ) {  
 			return exportBusinessDemandV2(year, plantId, isAfterSave, dtoList);
 		 }
@@ -612,8 +618,19 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 
 			Sheet sheet = workbook.createSheet("Sheet1");
 			int currentRow = 0;
-			// List<List<Object>> rows = new ArrayList<>();
 
+			if(showProductionTarget) {
+
+			// Production Target section (read-only) is written first on the same sheet
+		      currentRow = writeProductionTargetSection(sheet, workbook, year, plantId, 0);
+
+			// Business Demand title row
+			Row bdTitleRow = sheet.createRow(currentRow++);
+			Cell bdTitleCell = bdTitleRow.createCell(0);
+			bdTitleCell.setCellValue("Business Demand");
+			bdTitleCell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+
+			}
 			List<List<Object>> rows = new ArrayList<>();
 			
 			// Data rows
@@ -687,44 +704,61 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 				}
 			}
-			for (List<Object> rowData : rows) {
-				
-				 
-				Row row = sheet.createRow(currentRow++);
-				for (int col = 0; col < rowData.size(); col++) {
-					Cell cell = row.createCell(col);
-					Object value = rowData.get(col);
+		// Styles used when showProductionTarget: unlock editable BD columns, lock the rest
+		CellStyle unlockedStyle = Utility.createUnlockedStyle(workbook);
+		CellStyle lockedDefaultStyle = buildLockedDefaultStyle(workbook);
 
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
-					} else if (value != null) {
-						cell.setCellValue(value.toString());
+		for (List<Object> rowData : rows) {
+			Row row = sheet.createRow(currentRow++);
+			for (int col = 0; col < rowData.size(); col++) {
+				Cell cell = row.createCell(col);
+				Object value = rowData.get(col);
+
+				if (value instanceof Number) {
+					cell.setCellValue(((Number) value).doubleValue());
+				} else if (value instanceof Boolean) {
+					cell.setCellValue((Boolean) value);
+				} else if (value != null) {
+					cell.setCellValue(value.toString());
+				} else {
+					cell.setCellValue("");
+				}
+
+				if (showProductionTarget) {
+					// Month columns (2–13) and Remark (14) remain editable; all others locked
+					if ((col >= 2 && col <= 13) || col == 14) {
+						cell.setCellStyle(unlockedStyle);
 					} else {
-						cell.setCellValue("");
+						cell.setCellStyle(lockedDefaultStyle);
 					}
 				}
 			}
-			sheet.setColumnHidden(15, true);
-			sheet.setColumnHidden(16, true);
-			//sheet.setColumnHidden(18, true);
-			try {// (FileOutputStream fileOut = new FileOutputStream("output/generated.xlsx")) {
+		}
 
-				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-				workbook.write(outputStream);
-				workbook.close();
-				return outputStream.toByteArray();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+		// Protect the sheet so that locked PT cells become non-editable
+		if (showProductionTarget) {
+			sheet.protectSheet("");
+		}
 
+	sheet.setColumnHidden(15, true);
+	sheet.setColumnHidden(16, true);
+	//sheet.setColumnHidden(18, true);
+	try {// (FileOutputStream fileOut = new FileOutputStream("output/generated.xlsx")) {
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return null;
 
+	} catch (Exception e) {
+		e.printStackTrace();
 	}
+	return null;
+
+}
 
    @Override
 	public byte[] exportBusinessDemandLine(String year, String plantId, String lineId, boolean isAfterSave, List<BusinessDemandDataDTO> dtoList) {
@@ -1187,14 +1221,29 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 	        int numberOfSheets = workbook.getNumberOfSheets();
 	        for (int sheetIndex = 0; sheetIndex < numberOfSheets; sheetIndex++) {
 	            Sheet sheet = workbook.getSheetAt(sheetIndex);
-	            Iterator<Row> rowIterator = sheet.iterator();
+	            int lastRowNum = sheet.getLastRowNum();
 
-	            if (rowIterator.hasNext())
-	                rowIterator.next();
+	            // Locate the Business Demand section.  In the combined layout the sheet
+	            // starts with a Production Target section followed by a "Business Demand"
+	            // title row; data begins two rows after that title (title + header skipped).
+	            // Falls back to row 1 for legacy files that have only one section.
+	            int bdDataStartRow = 1;
+	            for (int r = 0; r <= lastRowNum; r++) {
+	                Row scanRow = sheet.getRow(r);
+	                if (scanRow == null) continue;
+	                Cell firstCell = scanRow.getCell(0);
+	                if (firstCell != null && firstCell.getCellType() == CellType.STRING
+	                        && "Business Demand".equalsIgnoreCase(firstCell.getStringCellValue())) {
+	                    bdDataStartRow = r + 2; // skip title row + header row
+	                    break;
+	                }
+	            }
+
 	            List<BusinessDemandDataDTO> productionDtos = new ArrayList<>();
 
-	            while (rowIterator.hasNext()) {
-	                Row row = rowIterator.next();
+	            for (int rowIdx = bdDataStartRow; rowIdx <= lastRowNum; rowIdx++) {
+	                Row row = sheet.getRow(rowIdx);
+	                if (row == null) continue;
 	                BusinessDemandDataDTO dto = new BusinessDemandDataDTO();
 	                try {
 	                    dto.setDisplayName(getStringCellValue(row.getCell(0), dto));
@@ -2159,8 +2208,8 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 			sheet.setColumnHidden(15, true);
 			sheet.setColumnHidden(16, true);
 
-			// Protect the sheet so that locked cells become non-editable
-			sheet.protectSheet("");
+		// Protect the sheet so that locked cells become non-editable
+		sheet.protectSheet("");
 
 			try {
 				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -2171,10 +2220,105 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 				e.printStackTrace();
 			}
 
+	} catch (Exception e) {
+		e.printStackTrace();
+	}
+	return null;
+}
+
+	/**
+	 * Writes a read-only Production Target section into the given sheet starting at
+	 * {@code startRow}. The section consists of a title row, a header row (13 columns:
+	 * Particulars + 12 months; no Remarks), data rows, and a blank separator row.
+	 *
+	 * @return the next available row index after the section
+	 */
+	@SuppressWarnings("unchecked")
+	private int writeProductionTargetSection(Sheet sheet, Workbook workbook, String year, String plantId, int startRow) {
+		try {
+			AOPMessageVM vm = aopMCCalculatedDataService.getAOPMCCalculatedData(plantId, year);
+			List<AOPMCCalculatedDataDTO> ptList = null;
+			if (vm != null && vm.getData() != null) {
+				Map<String, Object> dataMap = (Map<String, Object>) vm.getData();
+				ptList = (List<AOPMCCalculatedDataDTO>) dataMap.get("aopMCCalculatedDataDTOList");
+			}
+
+			// Locked + grey style for all PT data cells (mirrors locked columns in exportBusinessDemandV2)
+			CellStyle lockedGreyStyle = Utility.createLockedStyle(workbook);
+
+			// Bold variant of the locked+grey style for title and header rows
+			CellStyle boldLockedGreyStyle = Utility.createLockedStyle(workbook);
+			Font boldFont = workbook.createFont();
+			boldFont.setBold(true);
+			boldLockedGreyStyle.setFont(boldFont);
+
+			// Title row
+			Row titleRow = sheet.createRow(startRow++);
+			Cell titleCell = titleRow.createCell(0);
+			titleCell.setCellValue("Production Target");
+			titleCell.setCellStyle(boldLockedGreyStyle);
+
+			// Header row – Particulars + 12 academic-year months; NO Remarks column
+			List<String> ptHeaders = new ArrayList<>();
+			ptHeaders.add("Particulars");
+			ptHeaders.add(getMonth(year, 4));
+			ptHeaders.add(getMonth(year, 5));
+			ptHeaders.add(getMonth(year, 6));
+			ptHeaders.add(getMonth(year, 7));
+			ptHeaders.add(getMonth(year, 8));
+			ptHeaders.add(getMonth(year, 9));
+			ptHeaders.add(getMonth(year, 10));
+			ptHeaders.add(getMonth(year, 11));
+			ptHeaders.add(getMonth(year, 12));
+			ptHeaders.add(getMonth(year, 1));
+			ptHeaders.add(getMonth(year, 2));
+			ptHeaders.add(getMonth(year, 3));
+
+			Row headerRow = sheet.createRow(startRow++);
+			for (int col = 0; col < ptHeaders.size(); col++) {
+				Cell cell = headerRow.createCell(col);
+				cell.setCellValue(ptHeaders.get(col));
+				cell.setCellStyle(boldLockedGreyStyle);
+			}
+
+			// Data rows – locked and greyed out; no ID or metadata columns
+			if (ptList != null) {
+				for (AOPMCCalculatedDataDTO dto : ptList) {
+					Row row = sheet.createRow(startRow++);
+					int col = 0;
+					Object[] values = {
+						dto.getMaterialDisplayName(),
+						dto.getApril(), dto.getMay(), dto.getJune(), dto.getJuly(),
+						dto.getAugust(), dto.getSeptember(), dto.getOctober(),
+						dto.getNovember(), dto.getDecember(),
+						dto.getJanuary(), dto.getFebruary(), dto.getMarch()
+					};
+					for (Object val : values) {
+						Cell cell = row.createCell(col++);
+						setCellValue(cell, val);
+						cell.setCellStyle(lockedGreyStyle);
+					}
+				}
+			}
+
+			// Blank separator row before Business Demand section
+			sheet.createRow(startRow++);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return null;
+		return startRow;
+	}
+
+	private void setCellValue(Cell cell, Object value) {
+		if (value instanceof Number) {
+			cell.setCellValue(((Number) value).doubleValue());
+		} else if (value instanceof Boolean) {
+			cell.setCellValue((Boolean) value);
+		} else if (value != null) {
+			cell.setCellValue(value.toString());
+		} else {
+			cell.setCellValue("");
+		}
 	}
 
 	private CellStyle buildLockedDefaultStyle(Workbook workbook) {
