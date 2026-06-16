@@ -13,7 +13,7 @@ import { shouldShowReleaseButton } from 'utils/releaseButtonUtils'
 import { DataService } from 'services/DataService'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import { OverallAopConsumptionApiService } from '../../services/polyester/overallAopConsumptionApiService'
+import { OverallAopConsumptionApiService } from 'components/aop-phase-two/services/common/overallAopConsumptionApiService'
 
 const OverallAopConsumption = () => {
   const dispatch = useDispatch()
@@ -224,9 +224,9 @@ const OverallAopConsumption = () => {
         const response =
           await OverallAopConsumptionApiService.getOverallAopConsumption(
             keycloak,
-            selectedGrade,
             PLANT_ID,
             AOP_YEAR,
+            selectedGrade,
           )
         if (response?.code === 200) {
           setCalculationObject(response?.data?.aopCalculation || {})
