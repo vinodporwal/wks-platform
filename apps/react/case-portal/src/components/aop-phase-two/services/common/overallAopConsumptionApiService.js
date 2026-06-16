@@ -37,12 +37,12 @@ async function getGrades(keycloak, plantId, year) {
 /**
  * Get Overall AOP Consumption Data (grade-based)
  * @param {Object} keycloak - Keycloak session object
- * @param {string} gradeId - Selected Grade ID
  * @param {string} plantId - Plant ID
  * @param {string} year - AOP Year
+ * @param {string} gradeId - Grade ID (optional)
  * @returns {Promise} Overall AOP consumption data
  */
-async function getOverallAopConsumption(keycloak, gradeId, plantId, year) {
+async function getOverallAopConsumption(keycloak, plantId, year, gradeId) {
   const baseUrl = `${Config.CaseEngineUrl}/task/overall-consumption`
   const queryParams = new URLSearchParams({
     plantId,
@@ -59,6 +59,9 @@ async function getOverallAopConsumption(keycloak, gradeId, plantId, year) {
   }
   try {
     const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)
@@ -104,14 +107,19 @@ async function calculateOverallAopConsumption(keycloak, plantId, year) {
   const url = `${Config.CaseEngineUrl}/task/calculate-overall-consumption?year=${year}&plantId=${plantId}`
   const headers = {
     Accept: 'application/json',
+    'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
   try {
-    const resp = await fetch(url, { method: 'GET', headers })
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
     if (!resp.ok) {
       throw new Error(`HTTP error! Status: ${resp.status}`)
     }
-    return await resp.json()
+    const result = await json(keycloak, resp)
+    return result || { success: true }
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)

@@ -5,7 +5,6 @@ import { ProductionNormsApiService } from 'components/aop-phase-two/services/vgo
 import { useSession } from 'SessionStoreContext'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
-import { productionAndNormsBasisConstant } from '../dummyData'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const Constants = () => {
@@ -85,7 +84,7 @@ const Constants = () => {
       //   AOP_YEAR,
       // )
 
-      const res = productionAndNormsBasisConstant.data
+      const res = []
 
       if (res?.length === 0) {
         setRows([])
