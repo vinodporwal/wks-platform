@@ -310,5 +310,34 @@ public class SlowdownPlanController {
 	  public AOPMessageVM getSlowdownDescription(@RequestParam String plantId){
 		  return slowdownPlanService.getSlowdownDescription(plantId);
 	  }
+
+	@GetMapping(value = "/slowdown-configuration-export")
+	public ResponseEntity<byte[]> slowdownConfigurationExport(
+			@RequestParam String year, @RequestParam String plantId) {
+		try {
+			byte[] excelBytes = slowdownPlanService.slowdownConfigurationExport(year, plantId, false, null);
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.parseMediaType(
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(ContentDisposition.builder("attachment")
+					.filename("slowdown-configuration.xlsx")
+					.build());
+			headers.setContentLength(excelBytes.length);
+
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@PostMapping(value = "/slowdown-configuration-import", consumes = "multipart/form-data")
+	public AOPMessageVM importSlowdownConfigurationExcel(
+			@RequestParam String plantId,
+			@RequestParam String year,
+			@RequestParam("file") MultipartFile file) {
+		return slowdownPlanService.importSlowdownConfigurationExcel(year, plantId, file);
+	}
 	
 }

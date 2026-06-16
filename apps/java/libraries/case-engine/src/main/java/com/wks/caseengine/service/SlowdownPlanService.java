@@ -40,4 +40,6 @@ public interface SlowdownPlanService {
 	public AOPMessageVM getSlowdownDescription(String plantId);
 	public List<ShutDownPlanDTO> saveRampUpData( UUID plantId, List<ShutDownPlanDTO> shutDownPlanDTOList);
 	public List<ShutDownPlanDTO> saveRampDownData( UUID plantId, List<ShutDownPlanDTO> shutDownPlanDTOList);
+	byte[] slowdownConfigurationExport(String year, String plantId, boolean isAfterSave, List<NormAttributeTransactionsDTO> failedList);
+	AOPMessageVM importSlowdownConfigurationExcel(String year, String plantId, MultipartFile file);
 }
