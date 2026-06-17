@@ -150,11 +150,19 @@ import OverallAopConsumptionMerox from 'components/aop-phase-two/merox/overall-a
 import ProductionNormsBasisMerox from 'components/aop-phase-two/merox/production-norms-basis'
 import EtheleneStock from 'components/data-tables/Reports/EtheleneStock'
 // Vertical MEROX Ended
+
 // PCG
 import SteadyStateConsumptionPCG from 'components/aop-phase-two/pcg/steady-state-consumption'
 import OverallAopConsumptionPCG from 'components/aop-phase-two/pcg/overall-aop-consumption'
 import ProductionNormsBasisPCG from 'components/aop-phase-two/pcg/production-norms-basis'
 // PCG Ended
+
+// Vertical Refinery Utility
+import SteadyStateConsumptionRefUtil from 'components/aop-phase-two/refineryUtility/steady-state-consumption'
+import OverallAopConsumptionRefUtil from 'components/aop-phase-two/refineryUtility/overall-aop-consumption'
+import ProductionNormsBasisRefUtil from 'components/aop-phase-two/refineryUtility/production-norms-basis'
+// Vertical Refinery Utility Ended
+
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
 
@@ -956,6 +964,32 @@ export const MainRoutes = (
             ),
           },
           //Vertical PCG Ended
+          //Vertical Refinery utility Started
+          {
+            path: 'production-norms-basis-refinery',
+            element: (
+              <PrivateRoute routeId='production-norms-basis-refinery'>
+                <ProductionNormsBasisRefUtil />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption-refinery',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption-refinery'>
+                <SteadyStateConsumptionRefUtil />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'overall-aop-consumption-refinery',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption-refinery'>
+                <OverallAopConsumptionRefUtil />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical Refinery utility Ended
         ],
       },
 

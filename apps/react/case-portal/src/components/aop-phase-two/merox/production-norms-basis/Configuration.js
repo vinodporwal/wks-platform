@@ -9,7 +9,6 @@ import {
 } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import RowBasedKendoTable from '../../common/RowBasedKendoTable/index'
-import { configurationAndReportManualEntryResponse } from '../dummyData'
 import {
   handleDateDifferenceCalculation,
   handleValueMappingDependency,

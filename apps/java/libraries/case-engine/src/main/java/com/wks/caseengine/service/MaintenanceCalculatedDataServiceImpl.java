@@ -134,7 +134,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-			String storedProcedure = vertical.getName() + "_" + site.getName() + "_GETMaintenance";
+			String storedProcedure = vertical.getName() + "_" + site.getName()  + "_GETMaintenance";
 			List<Object[]> list = executeDynamicStoredProcedure(storedProcedure, plantId, site.getId().toString(),
 					vertical.getId().toString(), year);
 			List<MaintenanceDetailsDTO> maintenanceDetailsDTOList = new ArrayList<>();
@@ -209,7 +209,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-			String storedProcedure = vertical.getName() + "_" + site.getName() + "_GETMaintenance";
+			String storedProcedure = vertical.getName() + "_" + site.getName()  + "_GETMaintenance";
 			List<Object[]> list = executeLineStoredProcedure(storedProcedure, plantId, site.getId().toString(),
 					vertical.getId().toString(), year,lineId);
 			List<MaintenanceDetailsDTO> maintenanceDetailsDTOList = new ArrayList<>();
@@ -265,7 +265,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	public List<Object[]> executeLineStoredProcedure(String procedureName, String plantId, String siteId,
 			String verticalId, String aopYear, String lineId) {
 		try {
-			String sql = "EXEC " + procedureName
+			String sql = "EXEC " + "[" + procedureName + "]"
 					+ " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @aopYear = :aopYear, @lineId = :lineId";
 			Query query = entityManager.createNativeQuery(sql);
 
@@ -376,7 +376,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 
 							String procedureName = vertical.getName() + "_" + site.getName() + "_GetCatChemConsumption";
 
-							String dataSql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?, @Grade_Fk_Id = ?";
+							String dataSql = "EXEC " + "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?, @Grade_Fk_Id = ?";
 							try (PreparedStatement ps = connection.prepareStatement(dataSql)) {
 								ps.setString(1, plantId);
 								ps.setString(2, year);
@@ -1657,7 +1657,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	public List<Object[]> findBudgetMaintenance(String aopYear, UUID plantId, String category, String procedureName) {
 		try {
 
-			String sql = "EXEC " + procedureName
+			String sql = "EXEC " + "[" + procedureName + "]"
 					+ " @PlantId = :plantId, @AOPYear = :aopYear, @Category = :category";
 
 			Query query = entityManager.createNativeQuery(sql);
@@ -2341,7 +2341,7 @@ if(inserts.size() > 0) {
 	            storedProcedure = verticalName + "_" + site.getName() + "_MacroTest";
 	        }
 	        
-	        String sql = "EXEC " + storedProcedure
+	        String sql = "EXEC " + "[" + storedProcedure + "]"
 	                     + " @value = :value, @aopYear = :aopYear";
 	        
 	        Query query = entityManager.createNativeQuery(sql);
@@ -2385,7 +2385,7 @@ if(inserts.size() > 0) {
 
   String procedureName = vertical.getName() + "_" + site.getName() + "_CatChemCalculation";
 
-	String sql = "EXEC " + procedureName + " @PlantId = :plantId, @AopYear = :aopYear";
+	String sql = "EXEC " + "[" + procedureName + "]" + " @PlantId = :plantId, @AopYear = :aopYear";
 
 Query query = entityManager.createNativeQuery(sql);
 query.setParameter("plantId", plantId);

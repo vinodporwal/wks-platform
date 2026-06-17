@@ -519,7 +519,7 @@ public AOPMessageVM getEtheleneStockBasis(String plantId, String aopYear) {
 	@Transactional(readOnly = true) 
 	public List<List<Object[]>> getReportDataForPEE(String plantId, String aopYear, String periodFrom, String periodTo,String type,String storedProcedure) {
    
-	    String storedProcedureCall = "{ call " + storedProcedure + "(?, ?, ?, ?) }";
+	    String storedProcedureCall = "{ call " + "[" + storedProcedure + "]" + "(?, ?, ?, ?) }";
 	   
 	    Session session = entityManager.unwrap(Session.class);
   
@@ -674,7 +674,8 @@ public AOPMessageVM getEtheleneStockBasis(String plantId, String aopYear) {
 	public List<List<Map<String, Object>>> getAllColumnMetadataForPEE(
 	    String plantId, String aopYear, String periodFrom, String periodTo, String type, String storedProcedure) {
 
-	    String storedProcedureCall = "{ call " + storedProcedure + "(?, ?, ?, ?) }";
+	 
+			String storedProcedureCall = "{ call [" + storedProcedure + "](?, ?, ?, ?) }";
 
 	    Session session = entityManager.unwrap(Session.class);
 

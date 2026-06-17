@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
@@ -8,10 +8,10 @@ import ValueFormatterPhaseTwo, {
   customValueFormatterPhaseTwo,
 } from '../../common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
-import { SteadyStateConsumptionApiService } from '../../services/common/steadyStateConsumptionApiService'
+import { SteadyStateConsumptionApiService } from 'components/aop-phase-two/services/common/steadyStateConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-const SteadyStateConsumptionPCG = () => {
+const SteadyStateConsumption = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year } = dataGridStore
@@ -39,7 +39,7 @@ const SteadyStateConsumptionPCG = () => {
     {
       field: 'id',
       title: 'Id',
-      // widthT: 250,
+      widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
@@ -49,16 +49,16 @@ const SteadyStateConsumptionPCG = () => {
     {
       field: 'productName',
       title: 'Particulars',
-      // widthT: 250,
+      widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
       locked: true,
     },
     {
-      field: 'TypeDisplayName',
+      field: 'normParameterTypeDisplayName',
       title: 'Type',
-      // widthT: 250,
+      widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
@@ -68,15 +68,15 @@ const SteadyStateConsumptionPCG = () => {
     {
       field: 'UOM',
       title: 'UOM',
-      // widthT: 100,
-      minWidth: 100,
+      widthT: 120,
+      minWidth: 120,
       type: 'text',
       editable: false,
     },
     {
       field: 'april',
       title: headerMap[4],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -85,7 +85,7 @@ const SteadyStateConsumptionPCG = () => {
     {
       field: 'may',
       title: headerMap[5],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -94,7 +94,7 @@ const SteadyStateConsumptionPCG = () => {
     {
       field: 'june',
       title: headerMap[6],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -103,7 +103,7 @@ const SteadyStateConsumptionPCG = () => {
     {
       field: 'july',
       title: headerMap[7],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -112,7 +112,7 @@ const SteadyStateConsumptionPCG = () => {
     {
       field: 'august',
       title: headerMap[8],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -121,7 +121,7 @@ const SteadyStateConsumptionPCG = () => {
     {
       field: 'september',
       title: headerMap[9],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -130,7 +130,7 @@ const SteadyStateConsumptionPCG = () => {
     {
       field: 'october',
       title: headerMap[10],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -139,7 +139,7 @@ const SteadyStateConsumptionPCG = () => {
     {
       field: 'november',
       title: headerMap[11],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -148,7 +148,7 @@ const SteadyStateConsumptionPCG = () => {
     {
       field: 'december',
       title: headerMap[12],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -157,7 +157,7 @@ const SteadyStateConsumptionPCG = () => {
     {
       field: 'january',
       title: headerMap[1],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -166,7 +166,7 @@ const SteadyStateConsumptionPCG = () => {
     {
       field: 'february',
       title: headerMap[2],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -175,7 +175,7 @@ const SteadyStateConsumptionPCG = () => {
     {
       field: 'march',
       title: headerMap[3],
-      // widthT: 100,
+      widthT: 120,
       minWidth: 120,
       type: 'number1',
       editable: true,
@@ -184,12 +184,14 @@ const SteadyStateConsumptionPCG = () => {
     {
       field: 'remarks',
       title: 'Remark',
-      // widthT: 150,
-      minWidth: 220,
+      widthT: 150,
+      minWidth: 120,
       type: 'textarea',
       editable: true,
     },
   ]
+
+  const dummyRows = []
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
@@ -200,18 +202,25 @@ const SteadyStateConsumptionPCG = () => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const response1 =
+      const response =
         await SteadyStateConsumptionApiService.getSteadyStateConsumption(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
         )
-
-      setRows(response1.data?.mcuNormsValueDTOList || [])
-      setOriginalRows(response1.data?.mcuNormsValueDTOList || [])
+      const data = response?.data?.mcuNormsValueDTOList || []
+      const formattedData = data?.map((item, index) => ({
+        ...item,
+        remarks: item.remarks || '',
+        id: item?.id || index + 1,
+        isEditable: true,
+      }))
+      setRows(formattedData)
+      setOriginalRows(formattedData)
     } catch (error) {
       console.error('Error fetching steady state consumption data:', error)
       setRows([])
+      setOriginalRows([])
     } finally {
       setLoading(false)
     }
@@ -281,7 +290,6 @@ const SteadyStateConsumptionPCG = () => {
         data,
       )
 
-      // If we reach here, save was successful
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Data saved successfully!',
@@ -289,6 +297,7 @@ const SteadyStateConsumptionPCG = () => {
       })
       setModifiedCells({})
       setOriginalRows([])
+      setRows([])
       await fetchData()
     } catch (error) {
       console.error('Error saving steady state consumption data:', error)
@@ -352,6 +361,7 @@ const SteadyStateConsumptionPCG = () => {
       setLoading(false)
     }
   }
+
   const handleExport = async () => {
     setSnackbarOpen(true)
     setSnackbarData({
@@ -444,7 +454,6 @@ const SteadyStateConsumptionPCG = () => {
     titleName: 'Steady State Consumption (Norm/Quantity)',
     showDropdown: false,
     remarksEditable: true,
-    dropdownCell: true,
   }
 
   return (
@@ -487,4 +496,4 @@ const SteadyStateConsumptionPCG = () => {
   )
 }
 
-export default SteadyStateConsumptionPCG
+export default SteadyStateConsumption
