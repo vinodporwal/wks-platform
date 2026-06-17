@@ -640,7 +640,7 @@ public class AOPServiceImpl implements AOPService {
 			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 			String procedureName = verticalName + "_" + site.getName() + "_MaintenanceCalculation";
 
-			String callSql = "{call " + procedureName + "(?, ?, ?, ?)}";
+			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?, ?, ?)}";
 
 			try (Connection connection = dataSource.getConnection();
 					CallableStatement stmt = connection.prepareCall(callSql)) {
@@ -684,7 +684,7 @@ public class AOPServiceImpl implements AOPService {
 			String procedureName = verticalName + "_" + site.getName() + "_MaintenanceCalculation";
 
 			// Create a native query to execute the stored procedure
-			String sql = "EXEC " + procedureName
+			String sql = "EXEC " + "[" + procedureName + "]"
 					+ " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @aopYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);

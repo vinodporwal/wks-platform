@@ -153,6 +153,7 @@ public class ExclusionServiceImpl implements ExclusionService{
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 
 			boolean aromaticsHmdandPmd = vertical.getName().equalsIgnoreCase("Aromatics") && (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("PMD"));
+			boolean refineryUtility = vertical.getName().equalsIgnoreCase("RefineryUtility");
 			List<ExclusionDTO> failedList = new ArrayList<>();
 			UUID plantId = UUID.fromString(plantFKId);
 
@@ -206,7 +207,7 @@ public class ExclusionServiceImpl implements ExclusionService{
 					}
 				}
 
-				if(aromaticsHmdandPmd) { 
+				if(aromaticsHmdandPmd || refineryUtility) { 
 					exclusionDate.setRevision(1);
 				}
 				else {
