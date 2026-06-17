@@ -162,7 +162,9 @@ const ProductionvolumeData = ({
   const [mcuMaxCapValues, setMcuMaxCapValues] = useState(null)
   const [configurationExecutionDetails, setConfigurationExecutionDetails] =
     useState(null)
-
+  const textNote = IS_PVC_HMD
+    ? '*MCU listed in the page represent Grade-mix MCU for Line 1 and Line 2 combined.'
+    : ''
   const textNoteWhileSaving = IS_PP_SEZ ? 'Update MCU for All Line' : ''
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -1323,6 +1325,7 @@ const ProductionvolumeData = ({
       showUnit: permissions?.showUnit ?? true,
       saveWithRemark: permissions?.saveWithRemark ?? true,
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
+      showNote: IS_PVC_HMD ? true : false,
       saveBtn:
         IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD || IS_PVC_VMD || IS_PVC
           ? false
@@ -1716,6 +1719,7 @@ const ProductionvolumeData = ({
             VERTICAL_NAME?.toLowerCase() === 'cracker' ? 'normType' : undefined
           }
           handleCalculate={handleCalculate}
+          note={textNote}
         />
       )}
 

@@ -126,6 +126,9 @@ const NormalOpNormsScreen = () => {
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+  const textNote = IS_PVC_HMD
+    ? '*Norm listed in the page represent Grade-mix Norms for Line 1 and Line 2 combined.'
+    : ''
 
   const fetchData = async (gradeId) => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -725,6 +728,7 @@ const NormalOpNormsScreen = () => {
       saveWithRemark: true,
       saveBtn: true,
       showCalculate: true,
+      showNote: IS_PVC_HMD ? true : false,
       downloadExcelBtnFromUI: false,
       showCheckbox: false,
       showG:
@@ -977,6 +981,7 @@ const NormalOpNormsScreen = () => {
           gridName='main'
           shutdownMonths={shutdownMonths}
           slowdownMonths={slowdownMonths}
+          note={textNote}
         />
       )}
 
