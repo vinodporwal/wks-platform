@@ -1833,10 +1833,11 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	                }
 
 	            
-	                if (!isRowEditable) {
+	                // if (!isRowEditable) {
 	                    
-	                    cell.setCellStyle(lockedGrayStyle);
-	                } else if (col >= 3 && col <= 14) {
+	                //     cell.setCellStyle(lockedGrayStyle);
+	                // } else
+						 if (col >= 3 && col <= 14) {
 	                    
 	                    int monthNumber = getMonthNumberFromColumnIndex(col);
 	                    
