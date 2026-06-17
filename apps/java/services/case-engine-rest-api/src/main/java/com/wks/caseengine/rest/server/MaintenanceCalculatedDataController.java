@@ -61,7 +61,7 @@ public class MaintenanceCalculatedDataController {
 	}
 
 	@GetMapping(value="/cat-chem-calculation")
-	public AOPMessageVM getMaintenanceCatChem(@RequestParam String plantId, @RequestParam String year, @RequestParam String gradeId){
+	public AOPMessageVM getMaintenanceCatChem(@RequestParam String plantId, @RequestParam String year, @RequestParam(required=false) String gradeId){
 		return maintenanceCalculatedDataService.getMaintenanceCatChem(plantId, year, gradeId);		
 	}
 	

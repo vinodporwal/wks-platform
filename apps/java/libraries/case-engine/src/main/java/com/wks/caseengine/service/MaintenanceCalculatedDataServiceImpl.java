@@ -353,6 +353,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	@Override
 	public AOPMessageVM getMaintenanceCatChem(String plantId, String year, String gradeId) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
+
 		try {
 			UUID plantUUID = UUID.fromString(plantId);
 			Optional<Plants> plantOpt = plantsRepository.findById(plantUUID);
@@ -360,6 +361,8 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 			Plants plant = plantOpt.get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+			boolean nonGrade = vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("HMD");
 
 			if (!plantOpt.isPresent()) {
 				throw new RuntimeException("Plant not found for ID: " + plantId);
@@ -376,11 +379,19 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 
 							String procedureName = vertical.getName() + "_" + site.getName() + "_GetCatChemConsumption";
 
-							String dataSql = "EXEC " + "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?, @Grade_Fk_Id = ?";
+							String dataSql = null;
+							if (nonGrade) {
+								dataSql = "EXEC " + "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?";
+							} else {
+								dataSql = "EXEC " + "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?, @Grade_Fk_Id = ?";
+							}
+
 							try (PreparedStatement ps = connection.prepareStatement(dataSql)) {
 								ps.setString(1, plantId);
 								ps.setString(2, year);
+								if (!nonGrade) {
 								ps.setString(3, gradeId);
+								}
 								try (ResultSet rs = ps.executeQuery()) {
 									ResultSetMetaData metaData = rs.getMetaData();
 									int colCount = metaData.getColumnCount();
