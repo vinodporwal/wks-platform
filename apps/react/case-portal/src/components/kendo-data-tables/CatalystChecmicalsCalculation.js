@@ -789,6 +789,7 @@ const CatalystChecmicalsCalculation = () => {
         downloadExcelForConfiguration={() =>
           downloadExcel('consumption', 'Cat-chem Consumption')
         }
+        groupBy={groupBy} 
       />
 
       <Notification
