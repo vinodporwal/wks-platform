@@ -34,8 +34,11 @@ const App = () => {
       keycloak.token = storedToken;
     }
 
-    keycloak.init({ onLoad: 'login-required', checkLoginIframe: true }).then((authenticated) => {
-    // keycloak.init({ onLoad: 'check-sso', checkLoginIframe: true }).then((authenticated) => {
+    // checkLoginIframe is disabled: the keycloak-js client and the Keycloak
+    // server can use different login-status-iframe protocols, which makes
+    // init() hang and leaves the app on a blank page after login. PKCE is
+    // enabled for the standard (public client) authorization-code flow.
+    keycloak.init({ onLoad: 'login-required', checkLoginIframe: false, pkceMethod: 'S256' }).then((authenticated) => {
       if(!authenticated){
         keycloak.login();
       }

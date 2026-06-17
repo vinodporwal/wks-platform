@@ -90,40 +90,6 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 		return results;
 	}
 
-	public PageResult<CaseInstance> findByAssetName(CaseInstanceFilter filters, String assetName, List<String> eventIds) { 
-		CursorPagination pagination = new MongoCursorPagination(getOperations());
-	
-		Args args = Args.of(filters.getLimit())
-			.key("_id")
-			.cursor(filters.getCursor(), filters.getDir())
-			.criteria(c -> {
-				filters.getCaseDefsId()
-					.ifPresent(a -> c.add(Criteria.where("caseDefinitionId").is(a)));
-	
-				filters.getStatus()
-					.ifPresent(a -> c.add(Criteria.where("status").is(a)));
-	
-				
-				if (assetName != null && !assetName.isEmpty()) {
-					c.add(Criteria.where("attributes")
-						.elemMatch(
-							Criteria.where("name").is("container")
-								.and("value").regex("\"textField1\":\"" + assetName + "\"")
-						)
-					);
-				}
-	
-				
-				if (eventIds != null && !eventIds.isEmpty()) {
-					c.add(
-						Criteria.where("eventIds").not().all(eventIds)
-					);
-				}
-			});
-	
-		return pagination.executeQuery(args, CaseInstance.class);
-	}
-
 	@Override
 	public List<CaseInstance> findCasesWithDueDateGreaterThanNow() {
 
@@ -223,7 +189,7 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 		System.out.println("Updated Cases: " + updatedCases.size() +  " " + Arrays.toString(updatedCases.toArray()));
 		System.out.println("Notified Cases: " + notifiedCases.size() + " " + Arrays.toString(notifiedCases.toArray()));
 
-		return casesToNotify;	
+		return casesToNotify;
 	}
 	
 
@@ -264,6 +230,40 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 			throw new DatabaseRecordNotFoundException("CaseInstance", "businessKey", businessKey);
 		}
 
+	}
+	
+	public PageResult<CaseInstance> findByAssetName(CaseInstanceFilter filters, String assetName, List<String> eventIds) { 
+		CursorPagination pagination = new MongoCursorPagination(getOperations());
+	
+		Args args = Args.of(filters.getLimit())
+			.key("_id")
+			.cursor(filters.getCursor(), filters.getDir())
+			.criteria(c -> {
+				filters.getCaseDefsId()
+					.ifPresent(a -> c.add(Criteria.where("caseDefinitionId").is(a)));
+	
+				filters.getStatus()
+					.ifPresent(a -> c.add(Criteria.where("status").is(a)));
+	
+				
+				if (assetName != null && !assetName.isEmpty()) {
+					c.add(Criteria.where("attributes")
+						.elemMatch(
+							Criteria.where("name").is("container")
+								.and("value").regex("\"textField1\":\"" + assetName + "\"")
+						)
+					);
+				}
+	
+				
+				if (eventIds != null && !eventIds.isEmpty()) {
+					c.add(
+						Criteria.where("eventIds").not().all(eventIds)
+					);
+				}
+			});
+	
+		return pagination.executeQuery(args, CaseInstance.class);
 	}
 	
 	public void updateEventIds(final List<String> businessKeys, final List<String> eventIds,List<CaseInstance.EventUrlItem> eventTrendUrls, List<CaseInstance.EventUrlItem> eventReportUrls,  final CaseDefinitionService caseDefinitionService) {
@@ -440,67 +440,67 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 		}
 
 	}
-@Override
-public CaseInstance findLatestByCreatedAt(String... args) throws DatabaseRecordNotFoundException {
-List<CaseInstance> results = new ArrayList<>();
-if( args.length == 0 ) {
+	@Override
+	public CaseInstance findLatestByCreatedAt(String... args) throws DatabaseRecordNotFoundException {
+		List<CaseInstance> results = new ArrayList<>();
+		if( args.length == 0 ) {
 	
- results = getCollection()
-		.find(Filters.elemMatch("attributes", Filters.eq("name", "createdAt")))
-		.into(new ArrayList<>());
+		 results = getCollection()
+				.find(Filters.elemMatch("attributes", Filters.eq("name", "createdAt")))
+				.into(new ArrayList<>());
 
-    if (results.isEmpty()) {
-        throw new DatabaseRecordNotFoundException("CaseInstance", "createdAt", "latest");
-    }
-}
-else {
-	String caseDefinitionId = args[0];
+		    if (results.isEmpty()) {
+		        throw new DatabaseRecordNotFoundException("CaseInstance", "createdAt", "latest");
+		    }
+		}
+		else {
+			String caseDefinitionId = args[0];
 	
-	results = getCollection()
-		.find(Filters.and(
-			Filters.eq("caseDefinitionId", caseDefinitionId),
-			Filters.elemMatch("attributes", Filters.eq("name", "createdAt"))
-		))
-		.into(new ArrayList<>());
+			results = getCollection()
+				.find(Filters.and(
+					Filters.eq("caseDefinitionId", caseDefinitionId),
+					Filters.elemMatch("attributes", Filters.eq("name", "createdAt"))
+				))
+				.into(new ArrayList<>());
 
-	if (results.isEmpty()) {
-		throw new DatabaseRecordNotFoundException("CaseInstance", "caseDefinitionId and createdAt", caseDefinitionId + ", latest");
+			if (results.isEmpty()) {
+				throw new DatabaseRecordNotFoundException("CaseInstance", "caseDefinitionId and createdAt", caseDefinitionId + ", latest");
+			}
+		}
+	
+
+	    // Parse the date strings and find the latest
+	    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+		DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+	    return results.stream()
+	        .max((ci1, ci2) -> {
+	            String dateStr1 = ci1.getAttributes().stream()
+	                    .filter(attr -> "createdAt".equals(attr.getName()))
+	                    .map(attr -> attr.getValue())
+	                    .findFirst().orElse("01/01/1970 00:00:00");
+
+	            String dateStr2 = ci2.getAttributes().stream()
+	                    .filter(attr -> "createdAt".equals(attr.getName()))
+	                    .map(attr -> attr.getValue())
+	                    .findFirst().orElse("01/01/1970 00:00:00");
+
+						LocalDateTime dt1;
+						LocalDateTime dt2;
+
+	            try {   dt1 = LocalDateTime.parse(dateStr1, formatter) ;    } 
+				catch (DateTimeParseException e) {   dt1 = LocalDate.parse(dateStr1, dateFormatter).atStartOfDay();    }
+
+
+
+				try {   dt2 = LocalDateTime.parse(dateStr2, formatter) ;    }	
+				catch (DateTimeParseException e) {   dt2 = LocalDate.parse(dateStr2, dateFormatter).atStartOfDay();    }
+
+
+	            return dt1.compareTo(dt2);
+	        })
+	        .orElseThrow(() -> new DatabaseRecordNotFoundException("CaseInstance", "createdAt", "latest"));
 	}
-}
-	
-
-    // Parse the date strings and find the latest
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-	DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-
-    return results.stream()
-        .max((ci1, ci2) -> {
-            String dateStr1 = ci1.getAttributes().stream()
-                    .filter(attr -> "createdAt".equals(attr.getName()))
-                    .map(attr -> attr.getValue())
-                    .findFirst().orElse("01/01/1970 00:00:00");
-
-            String dateStr2 = ci2.getAttributes().stream()
-                    .filter(attr -> "createdAt".equals(attr.getName()))
-                    .map(attr -> attr.getValue())
-                    .findFirst().orElse("01/01/1970 00:00:00");
-
-					LocalDateTime dt1;
-					LocalDateTime dt2;
-
-            try {   dt1 = LocalDateTime.parse(dateStr1, formatter) ;    } 
-			catch (DateTimeParseException e) {   dt1 = LocalDate.parse(dateStr1, dateFormatter).atStartOfDay();    }
-
-
-
-			try {   dt2 = LocalDateTime.parse(dateStr2, formatter) ;    }	
-			catch (DateTimeParseException e) {   dt2 = LocalDate.parse(dateStr2, dateFormatter).atStartOfDay();    }
-
-
-            return dt1.compareTo(dt2);
-        })
-        .orElseThrow(() -> new DatabaseRecordNotFoundException("CaseInstance", "createdAt", "latest"));
-}
 
 
 	protected MongoOperations getOperations() {

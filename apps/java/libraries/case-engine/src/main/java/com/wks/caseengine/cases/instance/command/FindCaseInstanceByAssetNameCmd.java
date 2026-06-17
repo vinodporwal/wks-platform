@@ -11,7 +11,7 @@ import com.wks.caseengine.pagination.PageResult;
 import lombok.AllArgsConstructor;
 
 /**
- * @author victor.franca
+ * @author Mindnerves
  *
  */
 @AllArgsConstructor

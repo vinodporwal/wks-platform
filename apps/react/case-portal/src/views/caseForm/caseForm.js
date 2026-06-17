@@ -140,17 +140,14 @@ console.log('*****  taskId:  ', taskId);
    // do not execute the effect if the task does not exits
     if(taskId && isBlocked) return;
     if(!aCase || !aCase.businessKey) return;
-    console.log("useEffect isBlocked: ", isBlocked)
     localStorage.setItem('aCaseOwnerEmail', JSON.stringify(aCase.owner?.email))
 
- 
 
     // taskAssignedTo = taskId ? ProcessDefService.getTaskByTaskId(keycloak, taskId).assignee : null;
     // console.log('*****  taskAssignedTo:  ', taskAssignedTo);
     const urlParams = new URLSearchParams(window.location.search)
-
     const assetName = urlParams.get('assetName') || 'default'
-     console.log("#################3assetName : ", assetName)
+    
     getCaseInfo(aCase)
     //   FileService.downloadForPrintPreview(aCase.documents[0], keycloak),
     // )
@@ -212,10 +209,6 @@ console.log('*****  taskId:  ', taskId);
           return []
         })
       
-      // const autoStartProcesses = stageProcesses
-      //   ? stageProcesses.filter((o) => o.autoStart === false)
-      //   : undefined
-      // setManualInitProcessDefs(autoStartProcesses)
     }
   }, [activeStage, isBlocked])
 
@@ -230,17 +223,6 @@ console.log('*****  taskId:  ', taskId);
   const handleCloseSnack = () => {
     setSnackOpen(false)
   }
-
-  // const handleConfirmSubmit = () => {
-  //   // Proceed with the submit action if confirmed
-  //   console.log('Submit confirmed');
-  //   setIsConfirmationOpen(false); // Close the dialog
-  //   // Add your submission logic here
-  // };
-
-  // const handleCancelSubmit = () => {
-  //   setIsConfirmationOpen(false); // Close the dialog if canceled
-  // };
 
   const snackAction = lastCreatedCase && (
     <React.Fragment>
@@ -274,8 +256,6 @@ console.log('*****  taskId:  ', taskId);
     // Capture a stable local reference so async callbacks always see the correct value
     const currentCase = aCase;
     await loadOptions(keycloak);
-    console.log('Fetching case data of ', currentCase)
-    // setLoading(true)
     await CaseService.getCaseDefinitionsById(keycloak, currentCase.caseDefinitionId)
       .then(async (data) => {
         setCaseDef(data)
@@ -312,16 +292,13 @@ console.log('*****  taskId:  ', taskId);
             }
         }
 
-    // show only the task form if the taskId is present
+        // show only the task form if the taskId is present
         if(taskId) {
               const task = await ProcessDefService.getTaskByTaskId(keycloak, taskId)
               console.log(" ****task : ", task)
 
             if(task.taskDefinitionKey === 'aot-processengr') {
                 formData.structure.components[0].components.forEach((c) => { 
-                  // if(c.title === 'Columns') {
-                  //   return;
-                  // }
                   if(c.title != 'Process Engineer Checklist' && c.label != 'Columns') // also show the submit button
                     c.hidden = true; 
                   else 
@@ -333,9 +310,6 @@ console.log('*****  taskId:  ', taskId);
 
             if(task.taskDefinitionKey === 'aot-machineryengr')  {
               formData.structure.components[0].components.forEach((c) => { 
-                // if(c.title === 'Columns') {
-                //   return;
-                // }
                 if(c.title != 'Machinery Engineer Checklist' && c.label != 'Columns') // also show the submit button
                   c.hidden = true; 
                 else 
@@ -347,9 +321,6 @@ console.log('*****  taskId:  ', taskId);
 
             if(task.taskDefinitionKey === 'aot-modsengr') {
               formData.structure.components[0].components.forEach((c) => { 
-                // if(c.title === 'Columns') {
-                //   return;
-                // }
                 if(c.title != 'Mods Engineer Checklist' && c.label != 'Columns') // also show the submit button
                   c.hidden = true; 
                 else 
@@ -382,16 +353,9 @@ console.log('*****  taskId:  ', taskId);
       
         }
       }
-
-     
-
-
-
-
         setFormStructure(formData)
         let updatedFormStructure = null
         if (formData && formData.structure && formData.structure.components) {
-          console.log('Form data -> ', formData)
           updatedFormStructure = { ...formData }
         } else {
           console.error('Form structure or components are undefined.')
@@ -400,7 +364,6 @@ console.log('*****  taskId:  ', taskId);
         let caseData = null;
         try {
           if (currentCase && currentCase.businessKey) {
-            console.log('[DEBUG] Fetching case by businessKey:', currentCase.businessKey, '| caseDefinitionId:', currentCase.caseDefinitionId)
             const resp = await CaseService.getCaseByBusinessKey(
               keycloak,
               currentCase.caseDefinitionId,
@@ -409,8 +372,6 @@ console.log('*****  taskId:  ', taskId);
             console.log('[DEBUG] getCaseByBusinessKey raw response:', resp)
             if (resp && resp.data && resp.data.length > 0) {
               console.log("in caseForm : caseData.........", resp.data[0]);
-              console.log('[DEBUG] attributes from API:', resp.data[0]?.attributes)
-              console.log('[DEBUG] textField1 in attributes:', resp.data[0]?.attributes?.find(a => a.name === 'textField1'))
               // API returns an array in the same mapped format
               caseData = resp.data[0];
             } else {
@@ -423,18 +384,14 @@ console.log('*****  taskId:  ', taskId);
 
         if (!caseData) {
           console.log("in caseForm : caseData not found.........", caseData);
-          console.log('[DEBUG] Falling back to getCaseById with businessKey:', currentCase.businessKey)
           caseData = await CaseService.getCaseById(
             keycloak,
             currentCase.businessKey,
           )
-          console.log('[DEBUG] getCaseById result:', caseData)
         }
 
         currentCase.documents = caseData?.documents || []
         currentCase.comments = caseData?.comments || []
-        console.log('[DEBUG] caseData before return:', caseData)
-        console.log('[DEBUG] caseData.attributes:', caseData?.attributes)
         return { caseData: currentCase, updatedFormStructure }
       })
       .then(({ caseData, updatedFormStructure }) => {
@@ -511,15 +468,6 @@ console.log('*****  taskId:  ', taskId);
                 //caseTitleField.disabled = true
               }
 
-              // Commented as per client requirement
-              // const caseAssign =
-              //   level2.components[0].columns.length > 2
-              //     ? level2.components[0].columns[2].components[0]
-              //     : null
-              // if (caseAssign) {
-              //   caseAssign.disabled = true
-              // }
-
               // Disable case status if currentUser is different than case owner
               const level3 = level1.components?.[3] ?? null;
 
@@ -540,11 +488,7 @@ console.log('*****  taskId:  ', taskId);
                 //faultCategorySelect.disabled = true
               }
 
-              // const caseAssign1 = level2.components[0].columns.length > 2 ? level2.components[0].columns[3].components[0] : null;
-              // console.log('caseAssign1', caseAssign1, aCase)
-              // if (caseAssign1) {
-              //   caseAssign1.defaultValue = `1_true`;
-              // }
+              
             }
 
             if (level7 && level7.columns) {
@@ -573,16 +517,6 @@ console.log('*****  taskId:  ', taskId);
               }
             }
 
-            // if (level6) {
-            //   const recommendationDescription =
-            //     level6.components[0].components[0].columns[0].components[1]
-            //   if (recommendationDescription) {
-            //     recommendationDescription.disabled = !(
-            //       aCase.owner?.email === keycloak.idTokenParsed?.email
-            //     )
-            //   }
-            //   // console.log('saveAsDraft', recommendationDescription)
-            // }
           }
         }
 
@@ -602,8 +536,6 @@ console.log('*****  taskId:  ', taskId);
         setDocuments(caseData?.documents)
         
         if(caseData && caseData.attributes) {
-          console.log('[DEBUG] Building formData from attributes. Count:', caseData.attributes.length)
-          console.log('[DEBUG] Raw attributes array:', JSON.stringify(caseData.attributes))
           const mappedData = caseData.attributes.reduce(
             (obj, item) =>
               Object.assign(obj, {
@@ -613,9 +545,6 @@ console.log('*****  taskId:  ', taskId);
               }),
             {},
           )
-          console.log('[DEBUG] Mapped formData.data:', mappedData)
-          console.log('[DEBUG] textField1 in mapped data:', mappedData?.textField1)
-          console.log('[DEBUG] mainAsset / assetName in mapped data:', mappedData?.mainAsset ?? mappedData?.assetName ?? 'NOT FOUND')
 		  setFormData({
             data: mappedData,
             metadata: {},
@@ -628,26 +557,12 @@ console.log('*****  taskId:  ', taskId);
         setActiveStage(caseData.stage)
         console.log('CaseForm : Active Stage : ', caseData.stage)
       })
-      // .catch((err) => {
-      //   console.log(err.message)
-      // })
-    // .finally(() => {
-    //   setLoading(false)
-    // })
   }
 
   const onSave = () => {
     setLoading(true)
     const requiredFields = ['caseDescription', 'dueDate', 'faultCategory']
 
-    // const faultCategoryValue = formData.data.container.faultCategory
-    // if (faultCategoryValue && faultCategoryValue.endsWith('_false')) {
-    //   requiredFields.push(
-    //     'caseCauseCategory',
-    //     'caseCauseDescription',
-    //     'analysisDesc',
-    //   )
-    // }
     const missingFields = requiredFields.filter(
       (field) => !formData.data.container[field],
     )
@@ -690,11 +605,6 @@ console.log('*****  taskId:  ', taskId);
         },
         attributes: caseAttributes,
         caseUrl: buildCreateUrl(window.location.href),
-        // caseUrl: (() => { 
-        //   const uri = window.location.pathname;
-        //   return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
-        //  })(),
-    
 
         businessKey: aCase.businessKey,
       }),
@@ -723,10 +633,6 @@ console.log('*****  taskId:  ', taskId);
             },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
-          // caseUrl: (() => { 
-          //   const uri = window.location.pathname;
-          //   return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
-          //  })(),
        
           //  assignedTo: {emailId: formData.data.container.caseAssignedTo}
 		  assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
@@ -814,11 +720,6 @@ console.log('*****  taskId:  ', taskId);
             },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
-          // caseUrl: (() => { 
-          //   const uri = window.location.pathname;
-          //   return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
-          //  })(),
-          //  assignedTo: {emailId: formData.data.container.caseAssignedTo}
 		  assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
           }),
         )
@@ -828,7 +729,6 @@ console.log('*****  taskId:  ', taskId);
         setSnackOpen(true)
         setTimeout(() => {
           window.location.href = data.caseUrl;
-          // handleClose()
         }, 1000)
       })
       .catch((err) => {
@@ -839,103 +739,7 @@ console.log('*****  taskId:  ', taskId);
       })
   }
 
-  // const onSubmitRecommendation = async (event) => {
-  //   console.log('event onSubmitRecommendation', event)
-  //   let updatedFormData = JSON.parse(JSON.stringify(formData))
 
-  //   // Log the current formData to check its structure
-  //   console.log('Current formData:', updatedFormData)
-
-  //   // // Check if dataGrid1 exists inside the container
-  //   // if (
-  //   //   updatedFormData.data &&
-  //   //   updatedFormData.data.container &&
-  //   //   updatedFormData.data.container.dataGrid1
-  //   // ) {
-  //   //   // Iterate through dataGrid1 and update the recommendationNo1 field for each row
-  //   //   updatedFormData.data.container.dataGrid1 =
-  //   //     updatedFormData.data.container.dataGrid1.map((row, index) => {
-  //   //       console.log(`Updating row ${index}`, row)
-  //   //       // Set the recommendationNo1 field to '123'
-  //   //       return {
-  //   //         ...row,
-  //   //         recommendationNo1: '123',
-  //   //       }
-  //   //     })
-  //   // } else {
-  //   //   console.error('dataGrid1 not found in the form data.')
-  //   // }
-
-  //   // Update the formData state with the modified values
-  //   setFormData(updatedFormData)
-
-  //   // Log the updated formData to verify changes
-  //   console.log('Updated formData:', updatedFormData)
-  //   // Update the formData state with the new values
-  //   setFormData(updatedFormData)
-  //   const {
-  //     recommendationReviewer,
-  //     recommendationAssignedTo2,
-  //     recommendationHeadline,
-  //     recommendationTargetCompletionDate1,
-  //     recommendationDescription1,
-  //     equipmentFunctionLocation,
-  //     RecommendationConfirmSAP3
-  //   } = event.data
-
-  //   const missingFields = []
-  //   if (!recommendationReviewer) missingFields.push('Recommendation Reviewer')
-  //   if (!recommendationAssignedTo2)
-  //     missingFields.push('Recommendation Assigned To')
-  //   if (!recommendationHeadline) missingFields.push('Recommendation Headline')
-  //   if (!recommendationTargetCompletionDate1)
-  //     missingFields.push('Target Completion Date')
-
-  //   // New validation for RecommendationConfirm
-  //   // if (!RecommendationConfirm || !['Yes', 'No'].includes(RecommendationConfirm)) {
-  //   //   missingFields.push('Recommendation Confirm');
-  //   // }
-
-  //   if (missingFields.length > 0) {
-  //     setSnackbarMessages(missingFields)
-  //     setSnackbarOpen(true)
-  //     setTimeout(() => {
-  //       setSnackbarOpen(false)
-  //     }, 6000)
-  //     return
-  //   }
-
-  //   setSnackbarMessages([])
-  //   // event.component.disabled = true;
-
-  //   const apiBody = {
-  //     recommendationHeadline,
-  //     recommendationDescription1,
-  //     recommendationAssignedTo2,
-  //     equipmentFunctionLocation,
-  //     recommendationTargetCompletionDate1,
-  //     recommendationReviewer,
-  //     RecommendationConfirmSAP3,
-  //     deleteRowButton4: false,
-  //     RecommendationSubmit3: false,
-  //     caseNo: aCase?.caseNo,
-  //   }
-
-  //   try {
-  //     console.log('apiBody', apiBody, event.data);
-  //     const response = await CaseService.saveRecommendation(keycloak, apiBody)
-
-  //     console.log('Recommendation submitted successfully:', response)
-  //     setSnackbarMessages(['Recommendation submitted successfully'])
-  //     setSnackbarOpen(true)
-  //   } catch (error) {
-  //     console.error('Error submitting recommendation:', error)
-  //     setSnackbarMessages(['Error submitting recommendation'])
-  //     setSnackbarOpen(true)
-  //   }
-
-  //   setIsConfirmationOpen(true)
-  // }
 
   const onSubmitRecommendation = (event) => {
     console.log('event onSubmitRecommendation', event)
@@ -1022,12 +826,8 @@ console.log('*****  taskId:  ', taskId);
   const onSubmitForm = () => {
 
     
-       console.log("***** formData stringify *****   ", JSON.stringify(formData))
-       console.log("***** formData *****   ", formData)
-
      localStorage.setItem('formData1', JSON.stringify(formData))
    
-    console.log("in caseForm : onSubmitForm.........");
     const currentParams = window.location.search
     setCurrentParams(currentParams)
     const urlParams = new URLSearchParams(window.location.search)
@@ -1037,14 +837,6 @@ console.log('*****  taskId:  ', taskId);
     const eventIdsParam = urlParams.get('eventIds')
     const sourceSystem = urlParams.get('sourceSystem') || 'default'
     const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
-    // const caseAttributes = Object.keys(formData.data).map((key) => ({
-    //   name: key,
-    //   value:
-    //     typeof formData.data[key] !== 'object'
-    //       ? formData.data[key]
-    //       : JSON.stringify(formData.data[key]),
-    //   type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
-    // }))
 
     if(isLastStageofProcessRef.current === true) {
       formData.data.container = {...formData.data.container, caseStatus: 3};
@@ -1060,17 +852,8 @@ console.log('*****  taskId:  ', taskId);
         value = JSON.stringify(value);
       }
     
-      // if (isLastStageofProcessRef.current === true && key === "caseStatus") {
-      //   value = "3"; 
-      // }
-    
       return { name: key, value, type };
     });
-    
-
-
-   
-
 
     // First API call to createCase to get the businessKey
     CaseService.createCase(
@@ -1087,11 +870,6 @@ console.log('*****  taskId:  ', taskId);
         },
         attributes: caseAttributes,
         caseUrl: buildCreateUrl(window.location.href),
-        // caseUrl: (() => { 
-        //   const uri = window.location.pathname;
-        //   return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
-        //  })(),
-     
 
         businessKey: aCase.businessKey,
       }),

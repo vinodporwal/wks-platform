@@ -11,7 +11,7 @@ import lombok.AllArgsConstructor;
 import lombok.Setter;
 
 /**
- * @author victor.franca
+ * @author Mindnerves
  *
  */
 @AllArgsConstructor
