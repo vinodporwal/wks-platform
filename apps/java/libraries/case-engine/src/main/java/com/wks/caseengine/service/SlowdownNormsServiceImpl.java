@@ -1964,6 +1964,23 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 		wrapUnlockedStyle.setWrapText(true);
 		wrapUnlockedStyle.setVerticalAlignment(org.apache.poi.ss.usermodel.VerticalAlignment.TOP);
 
+		// Right-aligned variants for dynamic columns (cols 5+)
+		CellStyle lockedRightStyle = workbook.createCellStyle();
+		lockedRightStyle.cloneStyleFrom(lockedStyle);
+		lockedRightStyle.setAlignment(org.apache.poi.ss.usermodel.HorizontalAlignment.RIGHT);
+
+		CellStyle unlockedRightStyle = workbook.createCellStyle();
+		unlockedRightStyle.cloneStyleFrom(unlockedStyle);
+		unlockedRightStyle.setAlignment(org.apache.poi.ss.usermodel.HorizontalAlignment.RIGHT);
+
+		CellStyle wrapLockedRightStyle = workbook.createCellStyle();
+		wrapLockedRightStyle.cloneStyleFrom(wrapLockedStyle);
+		wrapLockedRightStyle.setAlignment(org.apache.poi.ss.usermodel.HorizontalAlignment.RIGHT);
+
+		CellStyle wrapUnlockedRightStyle = workbook.createCellStyle();
+		wrapUnlockedRightStyle.cloneStyleFrom(wrapUnlockedStyle);
+		wrapUnlockedRightStyle.setAlignment(org.apache.poi.ss.usermodel.HorizontalAlignment.RIGHT);
+
 		CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
 
 		// ── Identify the Remark column among dynamic columns ──
@@ -2034,7 +2051,6 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 		int rowIdx = 1;
 		for (Object[] spRow : spRows) {
 			boolean isEditable = resolveIsEditable(spRow, isEditableIdx);
-			CellStyle dynStyle = isEditable ? unlockedStyle : lockedStyle;
 
 			Row dataRow = sheet.createRow(rowIdx++);
 
@@ -2069,37 +2085,37 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 			c4.setCellStyle(lockedStyle);
 			maxColChars[4] = Math.max(maxColChars[4], uomVal.length());
 
-			// Col 5+ – dynamic slowdown columns
-			boolean rowHasWrappedContent = false;
-			for (int i = 0; i < dynamicCols.size(); i++) {
-				String field    = dynamicCols.get(i).get("field");
-				int    sheetCol = 5 + i;
-				boolean isRemark = (sheetCol == remarkSheetCol);
+		// Col 5+ – dynamic slowdown columns
+		boolean rowHasWrappedContent = false;
+		for (int i = 0; i < dynamicCols.size(); i++) {
+			String field    = dynamicCols.get(i).get("field");
+			int    sheetCol = 5 + i;
+			boolean isRemark = (sheetCol == remarkSheetCol);
 
-				Cell cell = dataRow.createCell(sheetCol);
-				Integer spColIdx = colIndexMap.get(field);
-				String cellText = "";
-				if (spColIdx != null && spRow[spColIdx] != null) {
-					Object val = spRow[spColIdx];
-					if (!isRemark && val instanceof Number) {
-						cell.setCellValue(((Number) val).doubleValue());
-						cellText = val.toString();
-					} else {
-						cellText = val.toString();
-						cell.setCellValue(cellText);
-					}
+			Cell cell = dataRow.createCell(sheetCol);
+			Integer spColIdx = colIndexMap.get(field);
+			String cellText = "";
+			if (spColIdx != null && spRow[spColIdx] != null) {
+				Object val = spRow[spColIdx];
+				if (!isRemark && val instanceof Number) {
+					cell.setCellValue(((Number) val).doubleValue());
+					cellText = val.toString();
 				} else {
-					cell.setCellValue("");
+					cellText = val.toString();
+					cell.setCellValue(cellText);
 				}
-
-				if (isRemark) {
-					cell.setCellStyle(isEditable ? wrapUnlockedStyle : wrapLockedStyle);
-					if (!cellText.isEmpty()) rowHasWrappedContent = true;
-				} else {
-					cell.setCellStyle(dynStyle);
-					maxColChars[sheetCol] = Math.max(maxColChars[sheetCol], cellText.length());
-				}
+			} else {
+				cell.setCellValue("");
 			}
+
+			if (isRemark) {
+				cell.setCellStyle(isEditable ? wrapUnlockedRightStyle : wrapLockedRightStyle);
+				if (!cellText.isEmpty()) rowHasWrappedContent = true;
+			} else {
+				cell.setCellStyle(isEditable ? unlockedRightStyle : lockedRightStyle);
+				maxColChars[sheetCol] = Math.max(maxColChars[sheetCol], cellText.length());
+			}
+		}
 
 			// Let Excel auto-fit the row height when wrapped content is present
 			if (rowHasWrappedContent) {

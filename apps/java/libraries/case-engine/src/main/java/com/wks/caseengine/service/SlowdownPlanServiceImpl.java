@@ -4094,41 +4094,44 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			Workbook  workbook = new XSSFWorkbook();
 			Sheet     sheet    = workbook.createSheet("Slowdown Configuration");
 
-			// Column layout in Excel:
-			// 0: NormParameter_FK_Id  (hidden)
-			// 1: IsEditable           (hidden)
-			// 2: Particulars          (DisplayName)
-			// 3: UOM
-			// 4+: dynamic slowdown columns
-			// (4+n): Status           (only when isAfterSave=true)
-			// (4+n+1): Error Description (only when isAfterSave=true)
-			final int NORM_PARAM_COL    = 0;
-			final int IS_EDITABLE_COL   = 1;
-			final int PARTICULARS_COL   = 2;
-			final int UOM_COL           = 3;
-			final int SLOWDOWN_START_COL = 4;
+		// Column layout in Excel:
+		// 0: NormParameter_FK_Id  (hidden)
+		// 1: IsEditable           (hidden)
+		// 2: Particulars          (DisplayName)
+		// 3: Type                 (NormTypeName – display only)
+		// 4: UOM
+		// 5+: dynamic slowdown columns
+		// (5+n): Status           (only when isAfterSave=true)
+		// (5+n+1): Error Description (only when isAfterSave=true)
+		final int NORM_PARAM_COL    = 0;
+		final int IS_EDITABLE_COL   = 1;
+		final int PARTICULARS_COL   = 2;
+		final int TYPE_COL          = 3;
+		final int UOM_COL           = 4;
+		final int SLOWDOWN_START_COL = 5;
 
-			sheet.setColumnHidden(NORM_PARAM_COL,  true);
-			sheet.setColumnHidden(IS_EDITABLE_COL, true);
+		sheet.setColumnHidden(NORM_PARAM_COL,  true);
+		sheet.setColumnHidden(IS_EDITABLE_COL, true);
 
-			CellStyle headerStyle   = Utility.createBoldBorderedStyle(workbook);
-			CellStyle normalStyle   = Utility.createBorderedStyle(workbook);
-			CellStyle readOnlyStyle = createSlowdownConfigReadOnlyStyle(workbook);
+		CellStyle headerStyle   = Utility.createBoldBorderedStyle(workbook);
+		CellStyle normalStyle   = Utility.createBorderedStyle(workbook);
+		CellStyle readOnlyStyle = createSlowdownConfigReadOnlyStyle(workbook);
 
-			// Build header row
-			List<String> headers = new ArrayList<>();
-			headers.add("NormParameter_FK_Id"); // col 0 – hidden
-			headers.add("IsEditable");           // col 1 – hidden
-			headers.add("Particulars");          // col 2
-			headers.add("UOM");                  // col 3
-			// Slowdown columns start at SP index 5
-			for (int i = 5; i < colNames.size(); i++) {
-				headers.add(buildSlowdownColumnTitle(colNames.get(i)));
-			}
-			if (isAfterSave) {
-				headers.add("Status");
-				headers.add("Error Description");
-			}
+		// Build header row
+		List<String> headers = new ArrayList<>();
+		headers.add("NormParameter_FK_Id"); // col 0 – hidden
+		headers.add("IsEditable");           // col 1 – hidden
+		headers.add("Particulars");          // col 2
+		headers.add("Type");                 // col 3 – display only
+		headers.add("UOM");                  // col 4
+		// Slowdown columns start at SP index 5
+		for (int i = 5; i < colNames.size(); i++) {
+			headers.add(buildSlowdownColumnTitle(colNames.get(i)));
+		}
+		if (isAfterSave) {
+			headers.add("Status");
+			headers.add("Error Description");
+		}
 
 			int currentRow = 0;
 			Row headerRow = sheet.createRow(currentRow++);
@@ -4142,30 +4145,35 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 
 			int dynamicColCount = colNames.size() - 5;
 
-			// Write data rows
-			for (Object[] row : dataRows) {
-				String normParamId   = row[1] != null ? row[1].toString() : "";
-				String displayName   = row[2] != null ? row[2].toString() : "";
-				String uom           = row[3] != null ? row[3].toString() : "";
-				String isEditableRaw = row[4] != null ? row[4].toString() : "false";
-				boolean isEditable   = "true".equalsIgnoreCase(isEditableRaw) || "1".equals(isEditableRaw);
-				CellStyle rowStyle   = isEditable ? normalStyle : readOnlyStyle;
+		// Write data rows
+		for (Object[] row : dataRows) {
+			String normTypeName  = row[0] != null ? row[0].toString() : "";
+			String normParamId   = row[1] != null ? row[1].toString() : "";
+			String displayName   = row[2] != null ? row[2].toString() : "";
+			String uom           = row[3] != null ? row[3].toString() : "";
+			String isEditableRaw = row[4] != null ? row[4].toString() : "false";
+			boolean isEditable   = "true".equalsIgnoreCase(isEditableRaw) || "1".equals(isEditableRaw);
+			CellStyle rowStyle   = isEditable ? normalStyle : readOnlyStyle;
 
-				Row excelRow = sheet.createRow(currentRow++);
+			Row excelRow = sheet.createRow(currentRow++);
 
-				Cell normParamCell = excelRow.createCell(NORM_PARAM_COL);
-				normParamCell.setCellValue(normParamId);
+			Cell normParamCell = excelRow.createCell(NORM_PARAM_COL);
+			normParamCell.setCellValue(normParamId);
 
-				Cell isEditableCell = excelRow.createCell(IS_EDITABLE_COL);
-				isEditableCell.setCellValue(isEditableRaw);
+			Cell isEditableCell = excelRow.createCell(IS_EDITABLE_COL);
+			isEditableCell.setCellValue(isEditableRaw);
 
-				Cell particularsCell = excelRow.createCell(PARTICULARS_COL);
-				particularsCell.setCellValue(displayName);
-				particularsCell.setCellStyle(rowStyle);
+			Cell particularsCell = excelRow.createCell(PARTICULARS_COL);
+			particularsCell.setCellValue(displayName);
+			particularsCell.setCellStyle(rowStyle);
 
-				Cell uomCell = excelRow.createCell(UOM_COL);
-				uomCell.setCellValue(uom);
-				uomCell.setCellStyle(rowStyle);
+			Cell typeCell = excelRow.createCell(TYPE_COL);
+			typeCell.setCellValue(normTypeName);
+			typeCell.setCellStyle(rowStyle);
+
+			Cell uomCell = excelRow.createCell(UOM_COL);
+			uomCell.setCellValue(uom);
+			uomCell.setCellStyle(rowStyle);
 
 				for (int i = 5; i < colNames.size(); i++) {
 					int excelCol = SLOWDOWN_START_COL + (i - 5);
@@ -4249,8 +4257,8 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 					throw new RuntimeException("Excel is missing a header row");
 				}
 
-				// Read Excel column headers (row 0)
-				// Excel layout: 0=NormParameter_FK_Id, 1=IsEditable, 2=Particulars, 3=UOM, 4+=slowdown titles
+			// Read Excel column headers (row 0)
+			// Excel layout: 0=NormParameter_FK_Id, 1=IsEditable, 2=Particulars, 3=Type (display only), 4=UOM, 5+=slowdown titles
 				int totalCols = headerRow.getLastCellNum();
 				List<String> excelHeaders = new ArrayList<>();
 				for (int col = 0; col < totalCols; col++) {
@@ -4281,8 +4289,8 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 					boolean isEditable = "true".equalsIgnoreCase(isEditableStr) || "1".equals(isEditableStr);
 					if (!isEditable) continue;
 
-					// Columns 4+: dynamic slowdown values
-					for (int col = 4; col < excelHeaders.size(); col++) {
+				// Columns 5+: dynamic slowdown values (col 3=Type is display-only, skipped)
+				for (int col = 5; col < excelHeaders.size(); col++) {
 						String headerTitle = excelHeaders.get(col);
 						String fieldName   = titleToField.get(headerTitle);
 						if (fieldName == null) continue;

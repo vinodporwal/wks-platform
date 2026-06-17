@@ -2004,6 +2004,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 			Sheet sheet = workbook.createSheet("Sheet1");
 			int currentRow = 0;
+
+			sheet.protectSheet("secret_password");
 			// List<List<Object>> rows = new ArrayList<>();
 
 			List<List<Object>> rows = new ArrayList<>();
