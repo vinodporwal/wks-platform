@@ -60,10 +60,10 @@ const FixedConsumptionDMD = () => {
 
   // Fiscal-year month order: Apr → Mar
   const MONTH_TO_INDEX = {
-    apr: 4,
+    april: 4,
     may: 5,
-    jun: 6,
-    jul: 7,
+    june: 6,
+    july: 7,
     aug: 8,
     sep: 9,
     oct: 10,
@@ -88,10 +88,10 @@ const FixedConsumptionDMD = () => {
 
   // Month field names in fiscal year order
   const MONTH_FIELDS = [
-    'apr',
+    'april',
     'may',
-    'jun',
-    'jul',
+    'june',
+    'july',
     'aug',
     'sep',
     'oct',
@@ -230,7 +230,7 @@ const FixedConsumptionDMD = () => {
         ...item,
         remarks: item.remarks || '',
         id: item?.id || index + 1,
-        // total: MONTH_FIELDS.reduce((sum, key) => sum + (item[key] || 0), 0),
+        total: MONTH_FIELDS.reduce((sum, key) => sum + (item[key] || 0), 0),
       }))
       setRows(formattedData)
       setOriginalRows(formattedData)
@@ -296,27 +296,13 @@ const FixedConsumptionDMD = () => {
       return
     }
 
-    // Custom validation: If any row data is updated, remarks must be filled and different from original
-    const fieldsToCheck = [
-      'apr',
-      'may',
-      'jun',
-      'jul',
-      'aug',
-      'sep',
-      'oct',
-      'nov',
-      'dec',
-      'jan',
-      'feb',
-      'mar',
-    ]
     const validationError = validateRowDataWithRemarks(
       data,
       originalRows,
-      fieldsToCheck,
+      MONTH_FIELDS,
       'plant',
     )
+
     if (validationError) {
       setSnackbarOpen(true)
       setSnackbarData({
