@@ -120,7 +120,7 @@ const MonthwiseOperatingHours = () => {
       )
       if (res?.code === 200) {
         const hasLineName = (res?.data.monthwiseOperatingHoursList || []).some(
-          (item) => item.hasOwnProperty('LineName')
+          (item) => Object.prototype.hasOwnProperty.call(item, 'LineName')
         )
         if (hasLineName) {
           setGroupBy('LineName')
