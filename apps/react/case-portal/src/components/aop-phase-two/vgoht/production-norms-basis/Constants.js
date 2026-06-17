@@ -91,8 +91,6 @@ const Constants = ({ startDate, endDate }) => {
 
       if (res?.data?.length === 0) {
         setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
 
@@ -106,8 +104,6 @@ const Constants = ({ startDate, endDate }) => {
       setOriginalRows(formattedData)
     } catch (error) {
       console.error('Error fetching constants data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
       setLoading(false)
     }
