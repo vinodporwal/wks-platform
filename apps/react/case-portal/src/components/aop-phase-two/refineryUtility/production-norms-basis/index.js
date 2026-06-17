@@ -1,19 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { Box, Stack } from '../../../../../node_modules/@mui/material/index'
+import React, { useState, useEffect } from 'react'
+import { Box, Stack } from '@mui/material'
 import TabSection from 'components/aop-phase-two/common/utilities/Tabs'
 import ConfigurationAccordian from '../../common/components/ConfigurationAccordian'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import Configuration from './Configuration'
-import Constants from './Constants'
+import ExclusionDate from './ExclusionDate'
 import TabAccessApiService from 'components/aop-phase-two/services/common/tabAccessApiService'
-import PIMSThroughput from './PIMSThroughput'
-import { ProductionNormsApiService } from 'components/aop-phase-two/services/pcg/productionNormsApiService'
+import { ProductionNormsApiService } from 'components/aop-phase-two/services/merox/productionNormsApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
-import ManualEntry from './ManualEntry'
 
-const ProductionNormsBasisPCG = () => {
+const ProductionNormsBasis = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { oldYear, plantObject, siteObject, verticalObject, year } =
@@ -42,7 +40,7 @@ const ProductionNormsBasisPCG = () => {
     autoHide: true,
   })
 
-  const getConfigurationTabsMatrix = useCallback(async () => {
+  const getConfigurationTabsMatrix = async () => {
     if (!PLANT_ID || !AOP_YEAR || !SITE_ID || !VERTICAL_ID) return
     setLoading(true)
     try {
@@ -65,9 +63,9 @@ const ProductionNormsBasisPCG = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID, AOP_YEAR, SITE_ID, VERTICAL_ID])
+  }
 
-  const getConfigurationAvailableTabs = useCallback(async () => {
+  const getConfigurationAvailableTabs = async () => {
     setLoading(true)
     try {
       const response =
@@ -83,19 +81,14 @@ const ProductionNormsBasisPCG = () => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak])
+  }
 
   useEffect(() => {
     if (!PLANT_ID || !AOP_YEAR) return
     setTabIndex(0)
     getConfigurationTabsMatrix()
     getConfigurationAvailableTabs()
-  }, [
-    PLANT_ID,
-    AOP_YEAR,
-    getConfigurationTabsMatrix,
-    getConfigurationAvailableTabs,
-  ])
+  }, [PLANT_ID, AOP_YEAR])
 
   // Callback to receive dates from ConfigurationAccordian
   const handleDatesChange = (start, end) => {
@@ -198,59 +191,45 @@ const ProductionNormsBasisPCG = () => {
   }
 
   // Dynamic tab list from API (filtered to exclude 'Report Manual Entry')
-  const filteredTabs = tabs
+  const tablist = tabs
     .map((tabId) => {
+      if (!tabId || !availableTabs.length) return ''
       const tabInfo = availableTabs.find(
         (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
       )
 
-      if (!tabInfo) return null
-
-      const name = tabInfo.displayName
-
-      if (name === 'Configuration') {
-        return null
+      if (tabInfo) {
+        const originalName = tabInfo.displayName
+        // Filter out Report Manual Entry
+        if (originalName === 'Report Manual Entry') {
+          return null
+        }
+        return originalName
       }
-
-      return {
-        id: tabId,
-        name,
-      }
+      return tabId
     })
-    .filter(Boolean)
+    .filter((tab) => tab !== null)
 
   const renderTab = () => {
-    if (!filteredTabs.length || !availableTabs.length) {
+    if (!tabs.length || !availableTabs.length) {
       return null
     }
 
-    const currentTabId = filteredTabs[tabIndex]?.id
+    const currentTabId = tabs[tabIndex]
     if (!currentTabId) return null
 
-    const tabData = getTabName(currentTabId)
-    const currentTabName = typeof tabData === 'object' ? tabData.name : tabData
+    const currentTabName = getTabName(currentTabId)
 
     switch (currentTabName) {
       case 'Configuration':
-        return (
-          <Configuration
-            startDate={startDate}
-            endDate={endDate}
-            refreshData={refreshData}
-          />
-        )
-      case 'Constants':
-        return <Constants startDate={startDate} endDate={endDate} />
-      case 'PIMS Throughput':
-        return <PIMSThroughput startDate={startDate} endDate={endDate} />
-      case 'Report Manual Entry':
-        return <ManualEntry />
+        return <Configuration />
+      case 'Exclusion Date':
+        return <ExclusionDate startDate={startDate} endDate={endDate} />
       default:
         return null
     }
   }
 
-  console.log('filteredTabs', filteredTabs)
   return (
     <div>
       <Stack sx={{ mt: 1, mb: 1 }}>
@@ -260,7 +239,7 @@ const ProductionNormsBasisPCG = () => {
           isOldYear={isOldYear}
           isSummaryRequired={false}
           onDatesChange={handleDatesChange}
-          // onLoadNormCalculation={handleLoadNormCalculation}
+          onLoadNormCalculation={handleLoadNormCalculation}
           normCalculationLoading={normCalculationLoading}
         />
       </Stack>
@@ -274,7 +253,7 @@ const ProductionNormsBasisPCG = () => {
           <TabSection
             tabIndex={tabIndex}
             setTabIndex={setTabIndex}
-            tabs={filteredTabs.map((tab) => tab.name)}
+            tabs={tablist}
           />
         </Stack>
       )}
@@ -293,4 +272,4 @@ const ProductionNormsBasisPCG = () => {
   )
 }
 
-export default ProductionNormsBasisPCG
+export default ProductionNormsBasis

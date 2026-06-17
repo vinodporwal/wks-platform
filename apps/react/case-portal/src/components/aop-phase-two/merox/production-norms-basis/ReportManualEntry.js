@@ -7,7 +7,6 @@ import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
-import { configurationAndReportManualEntryResponse } from '../dummyData'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ReportManualEntry = () => {
@@ -210,7 +209,6 @@ const ReportManualEntry = () => {
       //   PLANT_ID,
       //   AOP_YEAR,
       // )
-      const res = configurationAndReportManualEntryResponse.data
 
       if (res?.length === 0) {
         setRows([])

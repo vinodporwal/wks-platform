@@ -214,7 +214,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 	public List<Object[]> findByYearAndPlantId(String aopYear, UUID plantId, String procedureName) {
 		try {
 
-			String sql = "EXEC " + procedureName
+			String sql = "EXEC " + "[" + procedureName + "]"
 					+ " @PlantId = :plantId, @FinYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);
@@ -231,7 +231,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 
 	public List<Object[]> findByYearAndPlantIdAndGrade(String aopYear,  UUID verticalId, UUID siteId, UUID plantId, String procedureName) {
 		try {
-			String sql = "EXEC " + procedureName
+			String sql = "EXEC " + "[" + procedureName + "]"
 					+ " @PlantId = :plantId,  @verticalId = :verticalId, @siteId = :siteId, @aopYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);
@@ -529,7 +529,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			String finYear) {
 		try {
 			
-			String callSql = "{call " + procedureName + "(?, ?, ?, ?)}";
+			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?, ?, ?)}";
 
 	        try (Connection connection = dataSource.getConnection();
 	             CallableStatement stmt = connection.prepareCall(callSql)) {
@@ -724,7 +724,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			
 			 String storedProcedure = verticalName + "_" + site.getName() + "_OverAllConsumtion";
 			
-			String sql = "EXEC " + storedProcedure
+			String sql = "EXEC " +  "[" + storedProcedure + "]"
 					+ " @plantId = :plantId, @aopYear = :aopYear, @siteId = :siteId, @verticalId = :verticalId";
 
 			Query query = entityManager.createNativeQuery(sql);

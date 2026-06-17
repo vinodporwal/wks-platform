@@ -234,7 +234,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	public List<Object[]> findByYearAndPlantId(String aopYear, UUID plantId, String procedureName) {
 		try {
 
-			String sql = "EXEC " + procedureName + " @PlantId = :plantId, @FinYear = :aopYear";
+			String sql = "EXEC " + "[" + procedureName + "]" + " @PlantId = :plantId, @FinYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("plantId", plantId);
@@ -1092,7 +1092,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 	public int executeDynamicUpdateProcedure(String procedureName, String plantId, String siteId, String verticalId,
 			String finYear) {
-		String callSql = "{call " + procedureName + "(?, ?, ?, ?)}";
+		String callSql = "{call " + "[" + procedureName + "]" + "(?, ?, ?, ?)}";
 
 		try (Connection connection = dataSource.getConnection();
 				CallableStatement stmt = connection.prepareCall(callSql)) {
@@ -1120,7 +1120,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	}
 
 	public int executeDynamicUpdateProcedure(String procedureName, String plantId, String year) {
-		String callSql = "{call " + procedureName + "(?, ?)}";
+		String callSql = "{call " + "[" + procedureName + "]" + "(?, ?)}";
 
 		try (Connection connection = dataSource.getConnection();
 				CallableStatement stmt = connection.prepareCall(callSql)) {
@@ -1672,7 +1672,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 	public List<Object[]> findConstantsByYearAndPlantFkId(String aopYear, String plantId, String procedureName) {
 		try {
-			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+			String sql = "EXEC " + "[" + procedureName + "]" + " @plantId = :plantId, @aopYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("plantId", plantId);
@@ -2495,7 +2495,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			String aopYear) {
 		try {
 
-			String callSql = "{call " + procedureName + "(?, ?)}";
+			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?)}";
 
 			try (Connection connection = dataSource.getConnection();
 					CallableStatement stmt = connection.prepareCall(callSql)) {

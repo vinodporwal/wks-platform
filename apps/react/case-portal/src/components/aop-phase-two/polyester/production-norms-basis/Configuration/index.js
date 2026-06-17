@@ -124,11 +124,12 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
   const fetchConfigurationData = async () => {
     setLoading(true)
     try {
-      const res = await ProductionNormsApiService.getConfigurationData(
+      const result = await ProductionNormsApiService.getConfigurationData(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
       )
+      const res = Array.isArray(result) ? result : result?.data || []
 
       if (res?.length === 0) {
         setRows([])
