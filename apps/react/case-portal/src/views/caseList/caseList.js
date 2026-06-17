@@ -831,16 +831,16 @@ CaseDefService.getFaultEvent(keycloak, encodedEventIds).then((data) => {
 
   console.log('mapped data : ', mappedData)
 
-  const eventrendUrlArray = mappedData.map((item) => ({
-  
+  const eventTrendUrlArray = mappedData.map((item) => ({
+
      urlId : item.selectedEventId,
-     url: `https://apm-exxonmobil-useast.connectedplant.honeywell.com/Forge/APM/ShellUI/#/trends?rootNode=${item.assetName}&assetDisplayName=${item.assetDisplayName}&period=Custom+Range&startTimeStamp=${item.startTimeStamp}&endTimeStamp=${item.endTimeStamp}&selectedEventId=${item.selectedEventId}&eventName=${item.eventName}&eventId=${item.selectedEventId}&assetId=${item.assetId}&hierarchyName=Planthierarchy&hierarchyLevel=null`
-    
+     url: `${Config.ApmBaseUrl}/Forge/APM/ShellUI/#/trends?rootNode=${item.assetName}&assetDisplayName=${item.assetDisplayName}&period=Custom+Range&startTimeStamp=${item.startTimeStamp}&endTimeStamp=${item.endTimeStamp}&selectedEventId=${item.selectedEventId}&eventName=${item.eventName}&eventId=${item.selectedEventId}&assetId=${item.assetId}&hierarchyName=Planthierarchy&hierarchyLevel=null`
+
   }))
 
   const eventReportUrlArray = mappedData.map((item) => ({
     urlId : item.selectedEventId,
-    url: `https://apm-exxonmobil-useast.connectedplant.honeywell.com/ReportServer/Pages/ReportViewer.aspx?%2fDailyFaultReport_Test&rs:Command=Render&EventID=${item.selectedEventId}`
+    url: `${Config.ApmBaseUrl}/ReportServer/Pages/ReportViewer.aspx?%2fDailyFaultReport_Test&rs:Command=Render&EventID=${item.selectedEventId}`
   }))
 
  
@@ -849,7 +849,7 @@ CaseDefService.getFaultEvent(keycloak, encodedEventIds).then((data) => {
 
   
   
-  CaseService.updateEventIds(keycloak, businessKeys, eventIdsArray, eventrendUrlArray, eventReportUrlArray).then((resp) => {
+  CaseService.updateEventIds(keycloak, businessKeys, eventIdsArray, eventTrendUrlArray, eventReportUrlArray).then((resp) => {
       
     // clean url parameters
     const urlParams = new URLSearchParams(window.location.search);
@@ -1147,7 +1147,7 @@ else {
           id='basic-button'
           onClick={handleLinkCaseAction}
           variant='contained'
-          disabled={ (isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator}
+          disabled={!(isCaseCreator || isAdmin)}
         >
           Link Case
         </Button>  )  }
@@ -1158,7 +1158,7 @@ else {
             onClick={handleNewCaseAction}
 			ref={createButtonRef}
             variant='contained'
-            disabled={ (isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator}
+            disabled={!(isCaseCreator || isAdmin)}
           >
             {t('pages.caselist.action.newcase')}
           </Button>

@@ -2,6 +2,10 @@ const Config = {
   CaseEngineUrl: process.env.REACT_APP_API_URL,
   LoginUrl: process.env.REACT_APP_KEYCLOAK_URL,
   StorageUrl: process.env.REACT_APP_STORAGE_URL,
+  // Base URL of the APM/Forge instance used to build event trend & report links.
+  ApmBaseUrl:
+    process.env.REACT_APP_APM_BASE_URL ||
+    'https://apm-exxonmobil-useast.connectedplant.honeywell.com',
   WebsocketsEnabled:
     process.env.REACT_APP_WEBSOCKETS_ENABLED === 'true' || false,
   WebsocketUrl: process.env.REACT_APP_WEBSOCKETS_URL,

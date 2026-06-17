@@ -29,6 +29,7 @@ import { buildCreateUrl } from 'utils/util'
 import { Formio } from 'formiojs'
 import { Form } from '@formio/react'
 import { CaseDefService } from 'services/CaseDefService'
+import Config from 'consts/index'
 
 Formio.options = {
   vm: {
@@ -180,20 +181,20 @@ const createApmUrlBasedOnSelectedEvent = () => {
 
       console.log('mapped data : ', mappedData)
 
-      const eventrendUrlArray = mappedData.map((item) => ({
-      
+      const eventTrendUrlArray = mappedData.map((item) => ({
+
          urlId : item.selectedEventId,
-         url: `https://apm-exxonmobil-useast.connectedplant.honeywell.com/Forge/APM/ShellUI/#/trends?rootNode=${item.assetName}&assetDisplayName=${item.assetDisplayName}&period=Custom+Range&startTimeStamp=${item.startTimeStamp}&endTimeStamp=${item.endTimeStamp}&selectedEventId=${item.selectedEventId}&eventName=${item.eventName}&eventId=${item.selectedEventId}&assetId=${item.assetId}&hierarchyName=Planthierarchy&hierarchyLevel=null`
-        
+         url: `${Config.ApmBaseUrl}/Forge/APM/ShellUI/#/trends?rootNode=${item.assetName}&assetDisplayName=${item.assetDisplayName}&period=Custom+Range&startTimeStamp=${item.startTimeStamp}&endTimeStamp=${item.endTimeStamp}&selectedEventId=${item.selectedEventId}&eventName=${item.eventName}&eventId=${item.selectedEventId}&assetId=${item.assetId}&hierarchyName=Planthierarchy&hierarchyLevel=null`
+
       }))
 
       const eventReportUrlArray = mappedData.map((item) => ({
         urlId : item.selectedEventId,
-        url: `https://apm-exxonmobil-useast.connectedplant.honeywell.com/ReportServer/Pages/ReportViewer.aspx?%2fDailyFaultReport_Test&rs:Command=Render&EventID=${item.selectedEventId}`
+        url: `${Config.ApmBaseUrl}/ReportServer/Pages/ReportViewer.aspx?%2fDailyFaultReport_Test&rs:Command=Render&EventID=${item.selectedEventId}`
       }))
 
 
-      eventTrendUrlArrayRef.current = eventrendUrlArray
+      eventTrendUrlArrayRef.current = eventTrendUrlArray
       eventReportUrlArrayRef.current = eventReportUrlArray
 
   })
