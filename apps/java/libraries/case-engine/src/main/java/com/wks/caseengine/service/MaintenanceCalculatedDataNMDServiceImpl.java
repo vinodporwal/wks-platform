@@ -106,7 +106,7 @@ public class MaintenanceCalculatedDataNMDServiceImpl implements MaintenanceCalcu
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-			String storedProcedure = vertical.getName() + "_" + site.getName() + "_GETMaintenance";
+			String storedProcedure = vertical.getName() + "_" + site.getName()  + "_GETMaintenance";
 			List<Object[]> list = executeDynamicStoredProcedure(storedProcedure, plantId, site.getId().toString(),
 					vertical.getId().toString(), year);
 			List<MaintenanceDetailsDTO> maintenanceDetailsDTOList = new ArrayList<>();
@@ -140,7 +140,7 @@ public class MaintenanceCalculatedDataNMDServiceImpl implements MaintenanceCalcu
 	public List<Object[]> executeDynamicStoredProcedure(String procedureName, String plantId, String siteId,
 			String verticalId, String aopYear) {
 		try {
-			String sql = "EXEC " + procedureName
+			String sql = "EXEC " + "[" + procedureName + "]"
 					+ " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @aopYear = :aopYear";
 			Query query = entityManager.createNativeQuery(sql);
 
@@ -768,7 +768,7 @@ public class MaintenanceCalculatedDataNMDServiceImpl implements MaintenanceCalcu
 	public List<Object[]> findBudgetMaintenance(String aopYear, UUID plantId, String procedureName) {
 		try {
 
-			String sql = "EXEC " + procedureName
+			String sql = "EXEC " + "[" + procedureName + "]"
 					+ " @PlantId = :plantId, @AOPYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);
@@ -1345,7 +1345,7 @@ public class MaintenanceCalculatedDataNMDServiceImpl implements MaintenanceCalcu
 	            storedProcedure = verticalName + "_" + site.getName() + "_MacroTest";
 	        }
 	        
-	        String sql = "EXEC " + storedProcedure
+	        String sql = "EXEC " + "[" + storedProcedure + "]"
 	                     + " @value = :value, @aopYear = :aopYear";
 	        
 	        Query query = entityManager.createNativeQuery(sql);
