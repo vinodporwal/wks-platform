@@ -667,7 +667,16 @@ const NormalOpNormsScreen = () => {
         )
           fetchGradeDropdowns()
         fetchData(gradeId)
-        if (lowerVertName == 'meg') fetchDataIntermediateValues()
+        if (
+          lowerVertName === 'meg' ||
+          IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
+          IS_CHEMICAL_VMD_BUTADIENE ||
+          IS_CHEMICAL_HMD_BUTADIENE ||
+          IS_CHEMICAL_VMD_BENEZENEFPU ||
+          IS_VCM_HMD_VCM
+        ) {
+          fetchDataIntermediateValues()
+        }
         getNormTransactions()
       } else {
         setSnackbarOpen(true)

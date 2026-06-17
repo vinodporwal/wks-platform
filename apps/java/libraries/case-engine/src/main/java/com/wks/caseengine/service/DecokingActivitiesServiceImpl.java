@@ -551,13 +551,31 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	        CellStyle borderStyle = Utility.createBorderedStyle(workbook);
 
 	        List<String> allColumns = new ArrayList<>(dynamicDataList.get(0).keySet());
+	        List<String> displayHeaders = new ArrayList<>();
+	        
+	        Plants plantObj = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
+	        Sites siteObj = siteRepository.findById(plantObj.getSiteFkId()).orElseThrow();
+	        final String siteName = siteObj.getName();
+	        
+	        Map<String, String> columnTitleMap = entityManager.unwrap(Session.class)
+	                .doReturningWork(new ReturningWork<Map<String, String>>() {
+	                    @Override
+	                    public Map<String, String> execute(Connection connection) throws SQLException {
+	                        return loadColumnTitles(connection, "vwScrnCrackerKeyValueColumns", siteName, "DecokeRunLength");
+	                    }
+	                });
+
+	        for (String key : allColumns) {
+	            displayHeaders.add(columnTitleMap.getOrDefault(key, key));
+	        }
+
 	        Set<String> fieldsToHide = Set.of("AopYear", "Id", "Plant_FK_Id", "PlantId", "AOPYear");
 
 	        int currentRowNum = 0;
 	        Row headerRow = sheet.createRow(currentRowNum++);
-	        for (int i = 0; i < allColumns.size(); i++) {
+	        for (int i = 0; i < displayHeaders.size(); i++) {
 	            Cell cell = headerRow.createCell(i);
-	            cell.setCellValue(allColumns.get(i)); 
+	            cell.setCellValue(displayHeaders.get(i)); 
 	            cell.setCellStyle(headerStyle);
 	        }
 	        for (Map<String, Object> dataMap : dynamicDataList) {
@@ -674,10 +692,37 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	        Row headerRow = sheet.getRow(0);
 	        if (headerRow == null) return payloadList;
 
+	        Plants plantObj = plantsRepository.findById(plantFKId).orElseThrow();
+	        Sites siteObj = siteRepository.findById(plantObj.getSiteFkId()).orElseThrow();
+	        final String siteName = siteObj.getName();
+	        
+	        Map<String, String> columnTitleMap = entityManager.unwrap(Session.class)
+	                .doReturningWork(new ReturningWork<Map<String, String>>() {
+	                    @Override
+	                    public Map<String, String> execute(Connection connection) throws SQLException {
+	                        return loadColumnTitles(connection, "vwScrnCrackerKeyValueColumns", siteName, "DecokeRunLength");
+	                    }
+	                });
+	        
+	        Map<String, String> reverseColumnMap = new HashMap<>();
+	        for (Map.Entry<String, String> entry : columnTitleMap.entrySet()) {
+	            reverseColumnMap.put(entry.getValue().toLowerCase().trim(), entry.getKey());
+	        }
+
 	        List<String> columnNames = new ArrayList<>();
 	        for (int i = 0; i < headerRow.getLastCellNum(); i++) {
 	            String headerValue = getStringCellValue(headerRow.getCell(i));
-	            columnNames.add(headerValue != null ? headerValue.trim() : "Column_" + i);
+	            if (headerValue != null) {
+	                headerValue = headerValue.trim();
+	                String dbColumnName = reverseColumnMap.get(headerValue.toLowerCase());
+	                if (dbColumnName != null) {
+	                    columnNames.add(dbColumnName);
+	                } else {
+	                    columnNames.add(headerValue);
+	                }
+	            } else {
+	                columnNames.add("Column_" + i);
+	            }
 	        }
 
 	        for (int i = 1; i <= totalRows; i++) {

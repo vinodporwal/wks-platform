@@ -154,6 +154,17 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 				
 			}
 			
+			List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("shutdown-history-config");
+			for (ScreenMapping screenMapping : screenMappingList) {
+				AopCalculation aopCalculation = new AopCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(UUID.fromString(plantFKId));
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
+
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			aopMessageVM.setCode(200);
 			aopMessageVM.setData(list);
@@ -903,7 +914,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 					NormAttributeTransactionsDTO dto = new NormAttributeTransactionsDTO();
 					dto.setNormParameterFKId(normParameterId);
 					dto.setDescription(key);
-					// DB column AttributeValue is NOT NULL — never leave null on import
+					// DB column AttributeValue is NOT NULL ? never leave null on import
 					String attr = value != null ? value.toString() : "";
 					dto.setAttributeValue(attr);
 					dtoList.add(dto);

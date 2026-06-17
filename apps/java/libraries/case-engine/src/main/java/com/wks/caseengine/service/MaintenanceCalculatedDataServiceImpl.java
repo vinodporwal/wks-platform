@@ -1007,20 +1007,38 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	        Workbook workbook = new XSSFWorkbook();
 	        Sheet sheet = workbook.createSheet("Maintenance Data");
 	        
-	        List<String> headers = new ArrayList<>(dynamicData.get(0).keySet());
+	        List<String> rawHeaders = new ArrayList<>(dynamicData.get(0).keySet());
+	        List<String> displayHeaders = new ArrayList<>();
+	        
+	        Plants plantObj = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
+	        Sites siteObj = siteRepository.findById(plantObj.getSiteFkId()).orElseThrow();
+	        
+	        final String siteName = siteObj.getName();
+	        Map<String, String> columnTitleMap = entityManager.unwrap(Session.class)
+	                .doReturningWork(new ReturningWork<Map<String, String>>() {
+	                    @Override
+	                    public Map<String, String> execute(Connection connection) throws SQLException {
+	                        return loadColumnTitles(connection, "vwScrnCrackerKeyValueColumns", siteName, "DecokeMaintenance");
+	                    }
+	                });
+
+	        for (String key : rawHeaders) {
+	            displayHeaders.add(columnTitleMap.getOrDefault(key, key));
+	        }
+
 	        CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
 	        Row headerRow = sheet.createRow(0);
-	        for (int i = 0; i < headers.size(); i++) {
+	        for (int i = 0; i < displayHeaders.size(); i++) {
 	            Cell cell = headerRow.createCell(i);
-	            cell.setCellValue(headers.get(i));
+	            cell.setCellValue(displayHeaders.get(i));
 	            cell.setCellStyle(headerStyle);
 	        }
 	        Map<String, Double> totalsMap = new HashMap<>();
 	        int rowIdx = 1;
 	        for (Map<String, Object> rowData : dynamicData) {
 	            Row row = sheet.createRow(rowIdx++);
-	            for (int colIdx = 0; colIdx < headers.size(); colIdx++) {
-	                String key = headers.get(colIdx);
+	            for (int colIdx = 0; colIdx < rawHeaders.size(); colIdx++) {
+	                String key = rawHeaders.get(colIdx);
 	                Cell cell = row.createCell(colIdx);
 	                Object value = rowData.get(key);
 	                
@@ -1036,8 +1054,8 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	        Row totalRow = sheet.createRow(rowIdx);
 	        CellStyle totalStyle = Utility.createBoldBorderedStyle(workbook); // Reuse bold style
 	        
-	        for (int i = 0; i < headers.size(); i++) {
-	            String header = headers.get(i);
+	        for (int i = 0; i < rawHeaders.size(); i++) {
+	            String header = rawHeaders.get(i);
 	            Cell cell = totalRow.createCell(i);
 	            cell.setCellStyle(totalStyle);
 
@@ -1050,8 +1068,8 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	            }
 	        }
 	        Set<String> fieldsToHide = Set.of("ID", "PLANTID", "AOPYEAR");
-	        for (int i = 0; i < headers.size(); i++) {
-	            if (fieldsToHide.contains(headers.get(i).toUpperCase())) {
+	        for (int i = 0; i < rawHeaders.size(); i++) {
+	            if (fieldsToHide.contains(rawHeaders.get(i).toUpperCase())) {
 	                sheet.setColumnHidden(i, true);
 	            } else {
 	                sheet.autoSizeColumn(i);
@@ -1389,10 +1407,37 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	        Row headerRow = sheet.getRow(0);
 	        if (headerRow == null) return payloadList;
 
+	        Plants plantObj = plantsRepository.findById(plantFKId).orElseThrow();
+	        Sites siteObj = siteRepository.findById(plantObj.getSiteFkId()).orElseThrow();
+	        final String siteName = siteObj.getName();
+	        Map<String, String> columnTitleMap = entityManager.unwrap(Session.class)
+	                .doReturningWork(new ReturningWork<Map<String, String>>() {
+	                    @Override
+	                    public Map<String, String> execute(Connection connection) throws SQLException {
+	                        return loadColumnTitles(connection, "vwScrnCrackerKeyValueColumns", siteName, "DecokeMaintenance");
+	                    }
+	                });
+	        
+	        // Build reverse map: Display Title (case-insensitive) -> Database Key
+	        Map<String, String> reverseColumnMap = new HashMap<>();
+	        for (Map.Entry<String, String> entry : columnTitleMap.entrySet()) {
+	            reverseColumnMap.put(entry.getValue().toLowerCase().trim(), entry.getKey());
+	        }
+
 	        List<String> columnNames = new ArrayList<>();
 	        for (int i = 0; i < headerRow.getLastCellNum(); i++) {
 	            String headerValue = getStringCellValue(headerRow.getCell(i));
-	            columnNames.add(headerValue != null ? headerValue.trim() : "Column_" + i);
+	            if (headerValue != null) {
+	                headerValue = headerValue.trim();
+	                String dbColumnName = reverseColumnMap.get(headerValue.toLowerCase());
+	                if (dbColumnName != null) {
+	                    columnNames.add(dbColumnName);
+	                } else {
+	                    columnNames.add(headerValue);
+	                }
+	            } else {
+	                columnNames.add("Column_" + i);
+	            }
 	        }
 
 	        for (int i = 1; i < totalRows; i++) { 
@@ -1433,7 +1478,8 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	                        
 	                        if (numericValue < 0 || numericValue > maxDays) {
 	                            rowError = true;
-	                            rowErrorMsg.append("[").append(columnName).append("] value ").append(numericValue)
+	                            String displayColName = columnTitleMap.getOrDefault(columnName, columnName);
+	                            rowErrorMsg.append("[").append(displayColName).append("] value ").append(numericValue)
 	                                       .append(" exceeds max allowed (").append(maxDays).append(") for ").append(currentRowMonth != null ? currentRowMonth : "month").append(". ");
 	                        }
 	                    }

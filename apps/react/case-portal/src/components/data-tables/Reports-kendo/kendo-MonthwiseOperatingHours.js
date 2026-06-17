@@ -58,7 +58,6 @@ const MonthwiseOperatingHours = () => {
       editable: true,
       type: 'number',
       format: valueFormatter,
-
       isDisabled: false,
     },
     {
@@ -109,6 +108,8 @@ const MonthwiseOperatingHours = () => {
     // },
   ]
 
+  const [groupBy, setGroupBy] = useState(null)
+
   const fetchData = async () => {
     try {
       setLoading(true)
@@ -118,6 +119,14 @@ const MonthwiseOperatingHours = () => {
         AOP_YEAR,
       )
       if (res?.code === 200) {
+        const hasLineName = (res?.data.monthwiseOperatingHoursList || []).some(
+          (item) => item.hasOwnProperty('LineName')
+        )
+        if (hasLineName) {
+          setGroupBy('LineName')
+        } else {
+          setGroupBy(null)
+        }
         let formattedData
         formattedData = (res?.data.monthwiseOperatingHoursList || []).map(
           (item, index) => ({
@@ -131,6 +140,7 @@ const MonthwiseOperatingHours = () => {
         setRows(formattedData)
       } else {
         setRows([])
+        setGroupBy(null)
       }
     } catch (err) {
       console.error('Error fetching operating hours data:', err)
@@ -222,6 +232,7 @@ const MonthwiseOperatingHours = () => {
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
         columns={columns}
+        groupBy={groupBy}
         permissions={{
           allAction: true,
           textAlignment: 'center',
