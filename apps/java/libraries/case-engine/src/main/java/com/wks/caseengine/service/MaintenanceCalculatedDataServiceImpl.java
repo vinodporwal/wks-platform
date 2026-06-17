@@ -462,8 +462,68 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 
 			List<Map<String, Object>> gradeList = (List<Map<String, Object>>) gradesVM.getData();
 
+			// return single sheet for non grade verticals
 			if (gradeList.isEmpty()) {
-				return null;
+				AOPMessageVM catChemVM = getMaintenanceCatChem(plantId, year, null);
+
+				if (catChemVM == null || catChemVM.getData() == null) {
+					return null;
+				}
+
+				Map<String, Object> catChemData = (Map<String, Object>) catChemVM.getData();
+				List<Map<String, Object>> dataRows = (List<Map<String, Object>>) catChemData.get("data");
+				List<Map<String, Object>> columns = (List<Map<String, Object>>) catChemData.get("columns");
+
+				if (dataRows == null || dataRows.isEmpty()) {
+					return null;
+				}
+
+				Workbook workbook = new XSSFWorkbook();
+				Sheet sheet = workbook.createSheet("CatChem");
+
+				if (columns != null && !columns.isEmpty()) {
+					Row headerRow = sheet.createRow(0);
+					CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+					for (int col = 0; col < columns.size(); col++) {
+						Cell cell = headerRow.createCell(col);
+						Object title = columns.get(col).get("title");
+						cell.setCellValue(title != null ? title.toString() : "");
+						cell.setCellStyle(headerStyle);
+					}
+
+					for (int rowIdx = 0; rowIdx < dataRows.size(); rowIdx++) {
+						Map<String, Object> rowData = dataRows.get(rowIdx);
+						Row row = sheet.createRow(rowIdx + 1);
+						for (int col = 0; col < columns.size(); col++) {
+							Object field = columns.get(col).get("field");
+							Object value = field != null ? rowData.get(field.toString()) : null;
+							Cell cell = row.createCell(col);
+							if (value instanceof Number) {
+								cell.setCellValue(((Number) value).doubleValue());
+							} else {
+								cell.setCellValue(value != null ? value.toString() : "");
+							}
+						}
+					}
+
+					for (int col = 0; col < Math.min(5, columns.size()); col++) {
+						sheet.autoSizeColumn(col);
+					}
+
+					for (int col = 0; col < columns.size(); col++) {
+						Object field = columns.get(col).get("field");
+						if (field != null && "Grade_FK_Id".equalsIgnoreCase(field.toString())) {
+							sheet.setColumnHidden(col, true);
+							break;
+						}
+					}
+				}
+
+				try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+					workbook.write(outputStream);
+					workbook.close();
+					return outputStream.toByteArray();
+				}
 			}
 
 			Workbook workbook = new XSSFWorkbook();
