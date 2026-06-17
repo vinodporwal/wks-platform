@@ -63,9 +63,7 @@ const SelectivityData = (props) => {
   const IS_AROMATICS_PMD =
     lowerVertName === 'aromatics' && lowerSiteName === 'pmd'
   const IS_AROMATICS_DTA_AROMATICS =
-    lowerVertName === 'aromatics' &&
-    lowerSiteName === 'dta' &&
-    lowerPlantName == 'aromatics'
+    lowerVertName === 'aromatics' && lowerSiteName === 'dta' && lowerPlantName == 'aromatics'
 
   const IS_CHEMICAL_VMD_BENEZENEFPUBTA =
     lowerVertName === 'chemical' &&
@@ -608,7 +606,7 @@ const SelectivityData = (props) => {
       allAction: true,
       showNote:
         (IS_PE_PP || lowerVertName === 'pvc' || lowerVertName === 'pet') &&
-        props?.currentTabDisplayName === 'Constant'
+          props?.currentTabDisplayName === 'Constant'
           ? true
           : false,
 
@@ -617,7 +615,7 @@ const SelectivityData = (props) => {
         props?.currentTabDisplayName === 'Report Manual Entry'
           ? `${props?.currentTabDisplayName} (${prevYearFormatted})`
           : props?.currentTabDisplayName === 'Constant' &&
-              lowerVertName === 'aromatics'
+            lowerVertName === 'aromatics'
             ? 'User Input'
             : props?.currentTabDisplayName,
 
@@ -632,7 +630,7 @@ const SelectivityData = (props) => {
       showCalculateVisibility: true,
       showCalculate:
         props?.currentTabDisplayName === 'Configuration' &&
-        IS_CHEMICAL_VMD_BENEZENEFPUBTA
+          IS_CHEMICAL_VMD_BENEZENEFPUBTA
           ? true
           : false,
     },
