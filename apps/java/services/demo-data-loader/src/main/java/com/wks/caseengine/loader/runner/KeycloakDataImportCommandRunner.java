@@ -184,6 +184,9 @@ public class KeycloakDataImportCommandRunner implements CommandLineRunner {
 				updateClientUrls(keycloak, portalClientId);
 				updateClientUrls(keycloak, externalTasksClientId);
 				updateClientUrls(keycloak, emailToCaseClientId);
+				// Ensure realm roles (e.g. case_viewer/editor/creator/admin) exist
+				// even when the realm was created by an earlier deploy.
+				ensureRealmRoles(keycloak);
 			}
 
 		} catch (Exception e) {
@@ -207,6 +210,22 @@ public class KeycloakDataImportCommandRunner implements CommandLineRunner {
 			log.info("Updated redirect URIs / web origins for client '{}'", clientId);
 		} catch (Exception e) {
 			log.warn("Could not update URLs for client '{}': {}", clientId, e.getMessage());
+		}
+	}
+
+	private void ensureRealmRoles(final Keycloak keycloak) {
+		try {
+			List<RoleRepresentation> desired = createRealmRoles();
+			List<String> existing = keycloak.realm(realmName).roles().list().stream()
+					.map(RoleRepresentation::getName).collect(java.util.stream.Collectors.toList());
+			for (RoleRepresentation role : desired) {
+				if (!existing.contains(role.getName())) {
+					keycloak.realm(realmName).roles().create(role);
+					log.info("Created missing realm role '{}'", role.getName());
+				}
+			}
+		} catch (Exception e) {
+			log.warn("Could not ensure realm roles: {}", e.getMessage());
 		}
 	}
 
