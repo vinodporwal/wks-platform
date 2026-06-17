@@ -119,7 +119,8 @@ const CatalystChecmicalsCalculation = () => {
     unsavedRows: {},
     rowsBeforeChange: {},
   })
-
+  const IS_PVC_HMD =
+    VERTICAL_NAME_NO_CASE === 'PVC' && SITE_NAME_NO_CASE === 'HMD'
   const FORMATE_VALUE = '{0:0.000}'
 
   // Grid 1: Constant Columns
@@ -340,12 +341,22 @@ const CatalystChecmicalsCalculation = () => {
     // Fetch Consumption
     if (!PLANT_ID || !AOP_YEAR || !selectedGrade) return
     try {
-      const consumptionRes = await DataService.getCatChemCalculationData(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        selectedGrade,
-      )
+      let consumptionRes
+      if (IS_PVC_HMD) {
+        consumptionRes =
+          await DataService.getCatChemCalculationDataWithoutGrade(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+      } else {
+        consumptionRes = await DataService.getCatChemCalculationData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          selectedGrade,
+        )
+      }
       if (consumptionRes?.code === 200) {
         setConsumptionColumns(
           consumptionRes?.data?.columns
@@ -674,7 +685,7 @@ const CatalystChecmicalsCalculation = () => {
     titleName: 'Cat-chem Consumption',
     showCalculate: true,
     showCalculateVisibility: true,
-    showG: true,
+    showG: IS_PVC_HMD ? false : true,
     marginBottom: true,
     dropdownLabel: 'Grade',
     uploadExcelBtn: false,
@@ -719,30 +730,33 @@ const CatalystChecmicalsCalculation = () => {
       />
 
       {/* Grid 2: Recipe */}
-      <KendoDataTables
-        title='Recipe'
-        columns={recipeColumns}
-        rows={recipeRows}
-        setRows={setRecipeRows}
-        modifiedCells={modifiedRecipeCells}
-        setModifiedCells={setModifiedRecipeCells}
-        saveChanges={saveRecipeChanges}
-        permissions={adjustedPermissionsRecipe()}
-        groupBy='TypeDisplayName'
-        fetchData={fetchData}
-        downloadExcelForConfiguration={() => downloadExcel('recipe', 'Recipe')}
-        handleExcelUpload={(file) => handleExcelUpload(file, 'recipe')}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        apiRef={apiRef}
-        handleRemarkCellClick={handleRemarkClick}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-      />
-
+      {!IS_PVC_HMD && (
+        <KendoDataTables
+          title='Recipe'
+          columns={recipeColumns}
+          rows={recipeRows}
+          setRows={setRecipeRows}
+          modifiedCells={modifiedRecipeCells}
+          setModifiedCells={setModifiedRecipeCells}
+          saveChanges={saveRecipeChanges}
+          permissions={adjustedPermissionsRecipe()}
+          groupBy='TypeDisplayName'
+          fetchData={fetchData}
+          downloadExcelForConfiguration={() =>
+            downloadExcel('recipe', 'Recipe')
+          }
+          handleExcelUpload={(file) => handleExcelUpload(file, 'recipe')}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          apiRef={apiRef}
+          handleRemarkCellClick={handleRemarkClick}
+          remarkDialogOpen={remarkDialogOpen}
+          setRemarkDialogOpen={setRemarkDialogOpen}
+          currentRemark={currentRemark}
+          setCurrentRemark={setCurrentRemark}
+          currentRowId={currentRowId}
+        />
+      )}
       {/* Grid 3: Cat-chem Consumption */}
       <KendoDataTables
         title='Cat-chem Consumption'

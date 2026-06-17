@@ -216,6 +216,7 @@ export const DataService = {
   saveTankNosData,
 
   getEtheleneStock,
+  getCatChemCalculationDataWithoutGrade,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -4920,5 +4921,24 @@ async function getEtheleneStock(keycloak, PLANT_ID, AOP_YEAR) {
   } catch (e) {
     console.log(e)
     return Promise.reject(e)
+  }
+}
+async function getCatChemCalculationDataWithoutGrade(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url = `${Config.CaseEngineUrl}/task/cat-chem-calculation?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }
