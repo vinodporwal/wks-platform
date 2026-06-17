@@ -1548,7 +1548,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	                        value = getNumericCellValue(cell);
 	                    }
 
-	                    if (value instanceof Number && !columnName.equalsIgnoreCase("Id") && !columnName.equalsIgnoreCase("PlantId")) {
+	                    if (value instanceof Number && !columnName.equalsIgnoreCase("Id") && !columnName.equalsIgnoreCase("PlantId") && !columnName.equalsIgnoreCase("4FHours")) {
 	                        double numericValue = ((Number) value).doubleValue();
 	                        int maxDays = getMaxDaysInMonth(currentRowMonth, baseYearValue);
 	                        

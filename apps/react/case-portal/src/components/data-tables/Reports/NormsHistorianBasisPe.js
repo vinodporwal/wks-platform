@@ -381,6 +381,32 @@ const NormsHistorianBasisPe = () => {
   const fileName = `${VERTICAL_NAME}-Norms Historian Basis.xlsx`
 
   const exportAllGrids = useCallback(() => {
+    // Shared border style for all cells
+    const borderStyle = {
+      top: { size: 1, color: '#000000' },
+      bottom: { size: 1, color: '#000000' },
+      left: { size: 1, color: '#000000' },
+      right: { size: 1, color: '#000000' },
+    }
+
+    // Header-specific style: grey background + bold
+    const headerStyle = {
+      background: '#D9D9D9',
+      bold: true,
+      borderBottom: borderStyle.bottom,
+      borderTop: borderStyle.top,
+      borderLeft: borderStyle.left,
+      borderRight: borderStyle.right,
+    }
+
+    // Data cell style: borders only
+    const dataCellStyle = {
+      borderBottom: borderStyle.bottom,
+      borderTop: borderStyle.top,
+      borderLeft: borderStyle.left,
+      borderRight: borderStyle.right,
+    }
+
     const sheets = gridNames
       .map((gridName, idx) => {
         const d = dataMap[gridName] || { rows: [], columns: [] }
@@ -388,17 +414,38 @@ const NormsHistorianBasisPe = () => {
         const rows = d.rows || []
         if (!cols.length && !rows.length) return null
 
-        const sheetColumns = cols.map((c) => ({
-          autoWidth: true,
+        // Calculate max width per column based on content length
+        const colWidths = cols.map((c, colIdx) => {
+          const headerText = String(c.title || c.field || '')
+          let maxLen = headerText.length
+
+          rows.forEach((r) => {
+            const cellVal = normalizeCellValue(r?.[c.field])
+            const cellLen = String(cellVal ?? '').length
+            if (cellLen > maxLen) maxLen = cellLen
+          })
+
+          // Approximate pixel width: ~8px per character + 16px padding, min 60px
+          return Math.max(maxLen * 8 + 16, 60)
+        })
+
+        const sheetColumns = cols.map((c, i) => ({
+          width: colWidths[i],
           title: c.title || c.field || '',
         }))
 
         const headerRow = {
-          cells: cols.map((c) => ({ value: c.title || c.field || '' })),
+          cells: cols.map((c) => ({
+            value: c.title || c.field || '',
+            ...headerStyle,
+          })),
         }
 
         const dataRows = rows.map((r) => ({
-          cells: cols.map((c) => ({ value: normalizeCellValue(r?.[c.field]) })),
+          cells: cols.map((c) => ({
+            value: normalizeCellValue(r?.[c.field]),
+            ...dataCellStyle,
+          })),
         }))
 
         const sheetRows = [headerRow, ...dataRows]
