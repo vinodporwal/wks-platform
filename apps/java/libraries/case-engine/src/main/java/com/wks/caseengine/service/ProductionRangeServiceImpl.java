@@ -70,7 +70,7 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
                     .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
 
             String procedureName = vertical.getName() + "_" + site.getName() + "_GetProductionRange";
-            String sql = "EXEC " + procedureName + " @PlantId = :plantId, @AOPYear = :aopYear";
+            String sql = "EXEC " + "[" +  procedureName + "]" + " @PlantId = :plantId, @AOPYear = :aopYear";
 
             Query query = entityManager.createNativeQuery(sql);
             query.setParameter("plantId", UUID.fromString(plantId));
@@ -349,7 +349,7 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
                     .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
 
             String procedureName = vertical.getName() + "_" + site.getName() + "_GetProductionRangeLimit";
-            String sql = "EXEC " + procedureName + " @PlantId = :plantId, @AOPYear = :aopYear";
+            String sql = "EXEC " + "[" +  procedureName + "]" + " @PlantId = :plantId, @AOPYear = :aopYear";
 
             Query query = entityManager.createNativeQuery(sql);
             query.setParameter("plantId", UUID.fromString(plantId));

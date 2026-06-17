@@ -239,7 +239,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	public List<Object[]> executeDynamicStoredProcedure(String procedureName, String plantId, String siteId,
 			String verticalId, String aopYear) {
 		try {
-			String sql = "EXEC " + procedureName
+			String sql = "EXEC [" + procedureName + "] "
 					+ " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @aopYear = :aopYear";
 			Query query = entityManager.createNativeQuery(sql);
 
@@ -260,7 +260,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	public List<Object[]> executeLineStoredProcedure(String procedureName, String plantId, String siteId,
 			String verticalId, String aopYear, String lineId) {
 		try {
-			String sql = "EXEC " + procedureName
+			String sql = "EXEC " + "[" + procedureName + "]"
 					+ " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @aopYear = :aopYear, @lineId = :lineId";
 			Query query = entityManager.createNativeQuery(sql);
 
@@ -371,7 +371,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 
 							String procedureName = vertical.getName() + "_" + site.getName() + "_GetCatChemConsumption";
 
-							String dataSql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?, @Grade_Fk_Id = ?";
+							String dataSql = "EXEC " + "[" + procedureName + "]" + " @plantId = ?, @aopYear = ?, @Grade_Fk_Id = ?";
 							try (PreparedStatement ps = connection.prepareStatement(dataSql)) {
 								ps.setString(1, plantId);
 								ps.setString(2, year);
@@ -1637,7 +1637,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	public List<Object[]> findBudgetMaintenance(String aopYear, UUID plantId, String procedureName) {
 		try {
 
-			String sql = "EXEC " + procedureName
+			String sql = "EXEC " + "[" + procedureName + "]"
 					+ " @PlantId = :plantId, @AOPYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);
@@ -2214,7 +2214,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	            storedProcedure = verticalName + "_" + site.getName() + "_MacroTest";
 	        }
 	        
-	        String sql = "EXEC " + storedProcedure
+	        String sql = "EXEC " + "[" + storedProcedure + "]"
 	                     + " @value = :value, @aopYear = :aopYear";
 	        
 	        Query query = entityManager.createNativeQuery(sql);
@@ -2258,7 +2258,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 
   String procedureName = vertical.getName() + "_" + site.getName() + "_CatChemCalculation";
 
-	String sql = "EXEC " + procedureName + " @PlantId = :plantId, @AopYear = :aopYear";
+	String sql = "EXEC " + "[" + procedureName + "]" + " @PlantId = :plantId, @AopYear = :aopYear";
 
 Query query = entityManager.createNativeQuery(sql);
 query.setParameter("plantId", plantId);

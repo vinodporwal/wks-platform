@@ -119,11 +119,11 @@ const MonthwiseOperatingHours = () => {
         AOP_YEAR,
       )
       if (res?.code === 200) {
-        const hasLineName = (res?.data.monthwiseOperatingHoursList || []).some(
-          (item) => Object.prototype.hasOwnProperty.call(item, 'LineName')
+        const hasGroupBy = (res?.data.monthwiseOperatingHoursList || []).some(
+          (item) => Object.prototype.hasOwnProperty.call(item, 'groupBy')
         )
-        if (hasLineName) {
-          setGroupBy('LineName')
+        if (hasGroupBy) {
+          setGroupBy('groupBy')
         } else {
           setGroupBy(null)
         }

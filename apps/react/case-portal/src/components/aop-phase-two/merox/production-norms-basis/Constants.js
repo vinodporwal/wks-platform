@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/vgoht/productionNormsApiService'
 import { useSession } from 'SessionStoreContext'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
-import { productionAndNormsBasisConstant } from '../dummyData'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 
-const Constants = () => {
+const Constants = ({ startDate, endDate }) => {
   const keycloak = useSession()
 
   const [modifiedCells, setModifiedCells] = useState({})
@@ -19,18 +19,19 @@ const Constants = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year } = dataGridStore
+  const { plantObject, year, siteObject } = dataGridStore
   const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
   const AOP_YEAR = year?.selectedYear
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-
+  const valueFormat = customValueFormatterPhaseTwo(5)
   const columns = [
     {
-      field: 'Name',
+      field: 'productName',
       title: 'Particulars',
       widthT: 300,
       minWidth: 250,
@@ -47,7 +48,7 @@ const Constants = () => {
       editable: false,
     },
     {
-      field: 'ConstantValue',
+      field: 'value',
       title: 'Value',
       editable: true,
       widthT: 150,
@@ -55,10 +56,10 @@ const Constants = () => {
       align: 'left',
       headerAlign: 'left',
       type: 'number1',
-      format: '{0:0.00}',
+      format: valueFormat,
     },
     {
-      field: 'Remarks',
+      field: 'remarks',
       title: 'Remark',
       widthT: 350,
       type: 'textarea',
@@ -76,18 +77,13 @@ const Constants = () => {
   const fetchConstantsData = async () => {
     setLoading(true)
     try {
-      // Simulate API call with 1 second delay
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const res = await ProductionNormsApiService.getConstantsData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
-      // const res = await ProductionNormsApiService.getConstantsData(
-      //   keycloak,
-      //   PLANT_ID,
-      //   AOP_YEAR,
-      // )
-
-      const res = productionAndNormsBasisConstant.data
-
-      if (res?.length === 0) {
+      if (res?.data?.length === 0) {
         setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
@@ -95,7 +91,7 @@ const Constants = () => {
       }
 
       console.log('Constants data:', res)
-      const formattedData = res?.map((item, index) => ({
+      const formattedData = res?.data?.map((item, index) => ({
         ...item,
         remarks: item.remarks || '',
         id: item?.id || index + 1,
@@ -126,8 +122,38 @@ const Constants = () => {
     titleName: 'Constants',
   }
 
+  const formatDateForAPI = (date) => {
+    if (!date) return ''
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   const saveChanges = async () => {
     setLoading(true)
+
+    // Validate required parameters
+    if (!startDate || !endDate) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message:
+          'Period dates are required. Please ensure dates are loaded from AOP Period Basis.',
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
+
+    if (!SITE_ID) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Site ID is required.',
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
 
     const modifiedData = Object.values(modifiedCells)
     if (modifiedData.length === 0) {
@@ -156,7 +182,7 @@ const Constants = () => {
       data,
       originalRows,
       fieldsToCheck,
-      'particulars',
+      'productName',
     )
 
     if (validationError) {
@@ -171,11 +197,18 @@ const Constants = () => {
 
     const payload = modifiedData
     try {
+      const periodFrom = formatDateForAPI(startDate)
+      const periodTo = formatDateForAPI(endDate)
+
       console.log('Saving constants data:', payload)
 
       const response = await ProductionNormsApiService.saveConstantsData(
         keycloak,
         AOP_YEAR,
+        PLANT_ID,
+        SITE_ID,
+        periodFrom,
+        periodTo,
         payload,
       )
 
@@ -200,13 +233,28 @@ const Constants = () => {
   const handleExcelUpload = async (file) => {
     if (!file) return
 
+    if (!startDate || !endDate) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message:
+          'Period dates are required. Please ensure dates are loaded from AOP Period Basis.',
+        severity: 'error',
+      })
+      return
+    }
+
     setLoading(true)
     try {
+      const periodFrom = formatDateForAPI(startDate)
+      const periodTo = formatDateForAPI(endDate)
+
       const response = await ProductionNormsApiService.importConstantsExcel(
         file,
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        periodFrom,
+        periodTo,
       )
 
       if (response?.code === 200) {
@@ -328,6 +376,7 @@ const Constants = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
+        // groupBy={['type']}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,
