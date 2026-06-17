@@ -226,13 +226,11 @@ const FixedConsumptionDMD = () => {
         setLoading(false)
         return
       }
-
-      console.log('*** fixed consumption data', res)
       const formattedData = res?.data?.map((item, index) => ({
         ...item,
         remarks: item.remarks || '',
         id: item?.id || index + 1,
-        total: MONTH_FIELDS.reduce((sum, key) => sum + (item[key] || 0), 0),
+        // total: MONTH_FIELDS.reduce((sum, key) => sum + (item[key] || 0), 0),
       }))
       setRows(formattedData)
       setOriginalRows(formattedData)
@@ -275,7 +273,6 @@ const FixedConsumptionDMD = () => {
   // Save handler with API call
   const saveChanges = async () => {
     setLoading(true)
-
     const modifiedData = Object.values(modifiedCells)
     if (modifiedData.length == 0) {
       setSnackbarOpen(true)
@@ -320,7 +317,6 @@ const FixedConsumptionDMD = () => {
       fieldsToCheck,
       'plant',
     )
-
     if (validationError) {
       setSnackbarOpen(true)
       setSnackbarData({
@@ -333,8 +329,6 @@ const FixedConsumptionDMD = () => {
 
     const payload = modifiedData
     try {
-      console.log('payload', payload)
-
       // Call the API to save changes
       const response = await UtilityPlantApiServiceV2.saveFixedConsumptionData(
         keycloak,
@@ -342,7 +336,6 @@ const FixedConsumptionDMD = () => {
         payload,
         AOP_YEAR,
       )
-      console.log('response', response)
       setModifiedCells({})
       setSnackbarOpen(true)
       setSnackbarData({
