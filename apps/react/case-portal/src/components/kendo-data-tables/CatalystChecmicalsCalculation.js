@@ -336,7 +336,7 @@ const CatalystChecmicalsCalculation = () => {
       setLoading(false)
     }
   }
-
+  const [groupBy, setGroupBy] = useState(null)
   const getCatChemCalculationData = async () => {
     // Fetch Consumption
     if (!PLANT_ID || !AOP_YEAR || !selectedGrade) return
@@ -358,6 +358,14 @@ const CatalystChecmicalsCalculation = () => {
         )
       }
       if (consumptionRes?.code === 200) {
+        const hasGroupBy = (consumptionRes?.data?.data || []).some((item) =>
+          Object.prototype.hasOwnProperty.call(item, 'Data_source'),
+        )
+        if (hasGroupBy) {
+          setGroupBy('Data_source')
+        } else {
+          setGroupBy(null)
+        }
         setConsumptionColumns(
           consumptionRes?.data?.columns
             ?.filter((col) => col.field !== 'Grade_FK_Id')
