@@ -119,7 +119,9 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
     }
 
     @Override
-    public AOPMessageVM saveFixedConsumption(List<JMDFixedConsumptionDto> payload) {
+    public AOPMessageVM saveFixedConsumption(  List<UUID> plantIds,
+            String financialYear,
+            List<JMDFixedConsumptionDto> payload) {
         logger.info("[POST Service] Saving fixed consumption, records: {}",
                 payload != null ? payload.size() : 0);
         AOPMessageVM aopMessageVM = new AOPMessageVM();
