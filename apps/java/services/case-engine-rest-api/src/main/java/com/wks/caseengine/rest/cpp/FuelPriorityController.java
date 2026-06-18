@@ -1,0 +1,71 @@
+package com.wks.caseengine.rest.cpp;
+
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.wks.caseengine.cpp.dto.FuelMasterDto;
+import com.wks.caseengine.cpp.dto.PlantWiseFuelPriorityDto;
+import com.wks.caseengine.cpp.service.FuelPriorityService;
+import com.wks.caseengine.message.vm.AOPMessageVM;
+
+@RestController
+@RequestMapping("task")
+public class FuelPriorityController {
+
+    private static final Logger logger = LoggerFactory.getLogger(FuelPriorityController.class);
+
+    @Autowired
+    private FuelPriorityService service;
+
+    @GetMapping("/fuel-master")
+    public ResponseEntity<AOPMessageVM> getFuelMaster() {
+        logger.info("Fetching fuel master data");
+        try {
+            List<FuelMasterDto> data = service.getFuelMaster();
+            logger.info("Successfully retrieved {} fuel master records", data.size());
+            
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setMessage("Success");
+            response.setData(data);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error fetching fuel master data", e);
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(500);
+            response.setMessage("Error: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    @GetMapping("/plant-wise-fuel-priority/{plantIds}/{financialYear}")
+    public ResponseEntity<AOPMessageVM> getPlantWiseFuelPriority(@PathVariable String plantIds, @PathVariable String financialYear) {
+        logger.info("Fetching plant wise fuel priority data for plants: {}, financialYear: {}", plantIds, financialYear);
+        try {
+            List<PlantWiseFuelPriorityDto> data = service.getPlantWiseFuelPriority(plantIds, financialYear);
+            logger.info("Successfully retrieved {} plant wise fuel priority records", data.size());
+            
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setMessage("Success");
+            response.setData(data);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error fetching plant wise fuel priority data", e);
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(500);
+            response.setMessage("Error: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+}
