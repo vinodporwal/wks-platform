@@ -339,7 +339,7 @@ const CatalystChecmicalsCalculation = () => {
   const [groupBy, setGroupBy] = useState(null)
   const getCatChemCalculationData = async () => {
     // Fetch Consumption
-    if (!PLANT_ID || !AOP_YEAR || (!IS_PVC_HMD && !selectedGrade)) return
+    if (!PLANT_ID || !AOP_YEAR || !selectedGrade) return
     try {
       let consumptionRes
       if (IS_PVC_HMD) {
@@ -401,9 +401,9 @@ const CatalystChecmicalsCalculation = () => {
   }, [PLANT_ID, AOP_YEAR])
 
   useEffect(() => {
-    if (!PLANT_ID || !AOP_YEAR || (!IS_PVC_HMD && !selectedGrade)) return
+    if (!PLANT_ID || !AOP_YEAR || !selectedGrade) return
     getCatChemCalculationData()
-  }, [PLANT_ID, AOP_YEAR, selectedGrade, IS_PVC_HMD])
+  }, [PLANT_ID, AOP_YEAR, selectedGrade])
   const saveCatalystData = async (newRow) => {
     setLoading(true)
     try {
@@ -525,9 +525,7 @@ const CatalystChecmicalsCalculation = () => {
         severity: 'success',
       })
       setSnackbarOpen(true)
-      await fetchConstantsData()
-      await fetchData()
-      await getCatChemCalculationData()
+      fetchData()
     } catch (e) {
       console.error(e)
       // Simulate success for static data mode
