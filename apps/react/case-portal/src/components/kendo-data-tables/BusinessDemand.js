@@ -616,7 +616,8 @@ const BusinessDemand = ({ permissions }) => {
         IS_PVC_VMD ||
         IS_PVC_DMD ||
         IS_PVC_HMD ||
-        IS_ELASTOMER_HMD
+        IS_ELASTOMER_HMD ||
+        lowerVertName === 'meg'
           ? true
           : false,
       uploadExcelBtn:
@@ -626,7 +627,8 @@ const BusinessDemand = ({ permissions }) => {
         IS_PVC_VMD ||
         IS_PVC_DMD ||
         IS_PVC_HMD ||
-        IS_ELASTOMER_HMD
+        IS_ELASTOMER_HMD ||
+        lowerVertName === 'meg'
           ? true
           : false,
 
@@ -638,7 +640,8 @@ const BusinessDemand = ({ permissions }) => {
         IS_PVC_DMD ||
         IS_PVC_HMD ||
         IS_ELASTOMER_JMD ||
-        IS_ELASTOMER_HMD
+        IS_ELASTOMER_HMD ||
+        lowerVertName === 'meg'
           ? false
           : true,
 

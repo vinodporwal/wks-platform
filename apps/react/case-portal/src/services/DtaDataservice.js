@@ -17,6 +17,8 @@ export const DtaDataService = {
   ImportShutdownPEC2,
   exportShutdownMonthLineWise,
   ImportShutdownLineWisePP,
+  ExcelSlowdownConfiguration,
+  ImportSlowdownConfiguration,
 }
 export async function getLineDetails(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/line-details?plantId=${PLANT_ID}&year=${AOP_YEAR}`
@@ -432,6 +434,65 @@ export async function ImportShutdownLineWisePP(file, keycloak, plantId, year) {
     return await resp.json()
   } catch (e) {
     console.error('Error importing Shutdown Excel:', e)
+    return Promise.reject(e)
+  }
+}
+export async function ExcelSlowdownConfiguration(
+  keycloak,
+  plantId,
+  year,
+  EXCEL_EXPORT_TITLE,
+) {
+  const url = `${Config.CaseEngineUrl}/task/slowdown-configuration-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${EXCEL_EXPORT_TITLE}_Slowdown Activities.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Slowdown Excel:', e)
+    return Promise.reject(e)
+  }
+}
+export async function ImportSlowdownConfiguration(
+  file,
+  keycloak,
+  plantId,
+  year,
+) {
+  const url = `${Config.CaseEngineUrl}/task/slowdown-configuration-import?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(year)}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error importing Slowdown Excel:', e)
     return Promise.reject(e)
   }
 }

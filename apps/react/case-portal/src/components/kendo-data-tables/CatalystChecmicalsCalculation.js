@@ -359,16 +359,16 @@ const CatalystChecmicalsCalculation = () => {
       }
       if (consumptionRes?.code === 200) {
         const hasGroupBy = (consumptionRes?.data?.data || []).some((item) =>
-          Object.prototype.hasOwnProperty.call(item, 'Data_source'),
+          Object.prototype.hasOwnProperty.call(item, 'Data_Source'),
         )
         if (hasGroupBy) {
-          setGroupBy('Data_source')
+          setGroupBy('Data_Source')
         } else {
           setGroupBy(null)
         }
         setConsumptionColumns(
           consumptionRes?.data?.columns
-            ?.filter((col) => col.field !== 'Grade_FK_Id')
+            ?.filter((col) => col.field !== 'Grade_FK_Id' && col.field !== 'Data_Source')
             .map((col) => ({
               ...col,
               format: col.type === 'number' ? FORMATE_VALUE : undefined,
@@ -789,7 +789,7 @@ const CatalystChecmicalsCalculation = () => {
         downloadExcelForConfiguration={() =>
           downloadExcel('consumption', 'Cat-chem Consumption')
         }
-        groupBy={groupBy} 
+        groupBy={groupBy}
       />
 
       <Notification
@@ -803,3 +803,4 @@ const CatalystChecmicalsCalculation = () => {
 }
 
 export default CatalystChecmicalsCalculation
+ 
