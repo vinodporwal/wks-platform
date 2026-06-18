@@ -539,8 +539,6 @@ async function getCaseByBusinessKey(keycloak, caseDefId = '', businessKey) {
   try {
     const resp = await fetch(url, { headers })
     const data = await json(keycloak, resp)
-    console.log("getCaseByBusinessKey data before mapperToCase: ", data)
-    console.log("getCaseByBusinessKey data after mapperToCase: ", mapperToCase(data))
     return mapperToCase(data)
   } catch (e) {
     console.error('Error fetching case by businessKey:', e)

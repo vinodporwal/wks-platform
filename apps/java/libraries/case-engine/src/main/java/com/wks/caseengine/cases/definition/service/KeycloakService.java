@@ -60,6 +60,30 @@ public class KeycloakService {
         
    }
 
+   public UserRepresentation getUserById(String userId) {
+       try {
+           Keycloak keycloak = getKeycloakInstance();
+           // First try direct lookup by Keycloak UUID
+           try {
+               UserRepresentation user = keycloak.realm(keycloakRealm).users().get(userId).toRepresentation();
+               if (user != null) return user;
+           } catch (Exception e) {
+               // Not a Keycloak UUID — fall through to search by username
+           }
+           // Fallback: search by username (APM sub may be a username or email)
+           List<UserRepresentation> byUsername = keycloak.realm(keycloakRealm).users().search(userId, true);
+           if (byUsername != null && !byUsername.isEmpty()) return byUsername.get(0);
+
+           // Fallback: search by email
+           List<UserRepresentation> byEmail = keycloak.realm(keycloakRealm).users().searchByEmail(userId, true);
+           if (byEmail != null && !byEmail.isEmpty()) return byEmail.get(0);
+
+           throw new RuntimeException("User not found in Keycloak for identifier: " + userId);
+       } catch (Exception e) {
+           throw new RuntimeException(" ************* KeycloakService: Failed to get user by id: " + userId + " — " + e.getMessage(), e);
+       }
+   }
+
    public List<UserRepresentation> getGroupMembers(String groupName) {
    
      
