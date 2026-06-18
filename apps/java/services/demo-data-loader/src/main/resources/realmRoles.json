@@ -38,21 +38,5 @@
       {
         "name": "email_to_case",
         "description": ""
-      },
-      {
-        "name": "case_viewer",
-        "description": "Can view cases"
-      },
-      {
-        "name": "case_editor",
-        "description": "Can edit cases"
-      },
-      {
-        "name": "case_creator",
-        "description": "Can create cases"
-      },
-      {
-        "name": "admin",
-        "description": "Administrator"
       }
 ]

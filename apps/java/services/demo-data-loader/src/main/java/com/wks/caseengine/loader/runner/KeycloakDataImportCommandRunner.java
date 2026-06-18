@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -184,16 +185,92 @@ public class KeycloakDataImportCommandRunner implements CommandLineRunner {
 				updateClientUrls(keycloak, portalClientId);
 				updateClientUrls(keycloak, externalTasksClientId);
 				updateClientUrls(keycloak, emailToCaseClientId);
-				// Ensure realm roles (e.g. case_viewer/editor/creator/admin) exist
-				// even when the realm was created by an earlier deploy.
 				ensureRealmRoles(keycloak);
 			}
+
+			// Provision the application roles as CLIENT roles on the portal client
+			// (the portal reads them from token.resource_access[wks-portal].roles)
+			// and grant the default admin user the roles needed to use the UI.
+			// Runs for both fresh and existing realms so no manual Keycloak changes
+			// are ever required.
+			ensurePortalClientRoles(keycloak);
 
 		} catch (Exception e) {
 			log.error("error to create keycloack", e);
 		}
 
 		log.info("End of data importing");
+	}
+
+	private static final List<String> PORTAL_CLIENT_ROLES = Arrays.asList("case_viewer", "case_editor", "case_creator",
+			"admin");
+
+	private void ensurePortalClientRoles(final Keycloak keycloak) {
+		try {
+			List<ClientRepresentation> clients = keycloak.realm(realmName).clients().findByClientId(portalClientId);
+			if (clients == null || clients.isEmpty()) {
+				log.warn("Client '{}' not found in realm '{}'; skipping client-role provisioning", portalClientId,
+						realmName);
+				return;
+			}
+			String clientUuid = clients.get(0).getId();
+			ClientResource clientResource = keycloak.realm(realmName).clients().get(clientUuid);
+
+			List<String> existing = clientResource.roles().list().stream().map(RoleRepresentation::getName)
+					.collect(java.util.stream.Collectors.toList());
+			for (String roleName : PORTAL_CLIENT_ROLES) {
+				if (!existing.contains(roleName)) {
+					RoleRepresentation role = new RoleRepresentation();
+					role.setName(roleName);
+					clientResource.roles().create(role);
+					log.info("Created client role '{}' on client '{}'", roleName, portalClientId);
+				}
+			}
+
+			// Grant the default admin user the roles needed to use the portal UI.
+			assignClientRolesToUser(keycloak, clientUuid, username, Arrays.asList("admin", "case_creator"));
+
+			// Remove now-unused realm-level duplicates from earlier deploys.
+			removeStrayRealmRoles(keycloak);
+		} catch (Exception e) {
+			log.warn("Could not provision portal client roles: {}", e.getMessage());
+		}
+	}
+
+	private void assignClientRolesToUser(final Keycloak keycloak, final String clientUuid, final String userName,
+			final List<String> roleNames) {
+		try {
+			List<UserRepresentation> users = keycloak.realm(realmName).users().search(userName, true);
+			if (users == null || users.isEmpty()) {
+				log.warn("User '{}' not found; skipping client-role assignment", userName);
+				return;
+			}
+			String userId = users.get(0).getId();
+			ClientResource clientResource = keycloak.realm(realmName).clients().get(clientUuid);
+			List<RoleRepresentation> toAssign = new ArrayList<>();
+			for (String roleName : roleNames) {
+				toAssign.add(clientResource.roles().get(roleName).toRepresentation());
+			}
+			keycloak.realm(realmName).users().get(userId).roles().clientLevel(clientUuid).add(toAssign);
+			log.info("Assigned client roles {} to user '{}'", roleNames, userName);
+		} catch (Exception e) {
+			log.warn("Could not assign client roles to user '{}': {}", userName, e.getMessage());
+		}
+	}
+
+	private void removeStrayRealmRoles(final Keycloak keycloak) {
+		for (String roleName : PORTAL_CLIENT_ROLES) {
+			try {
+				boolean exists = keycloak.realm(realmName).roles().list().stream()
+						.anyMatch(r -> roleName.equals(r.getName()));
+				if (exists) {
+					keycloak.realm(realmName).roles().deleteRole(roleName);
+					log.info("Removed stray realm role '{}' (now a client role)", roleName);
+				}
+			} catch (Exception e) {
+				log.warn("Could not remove stray realm role '{}': {}", roleName, e.getMessage());
+			}
+		}
 	}
 
 	private void updateClientUrls(final Keycloak keycloak, final String clientId) {
