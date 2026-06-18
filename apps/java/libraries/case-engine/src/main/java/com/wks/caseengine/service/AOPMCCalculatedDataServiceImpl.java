@@ -1,6 +1,7 @@
 package com.wks.caseengine.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
@@ -2232,6 +2233,9 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 	        Sites site = siteRepository.findById(plant.getSiteFkId())
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+			boolean pe = vertical.getName().equalsIgnoreCase("PE");
+			boolean meg = vertical.getName().equalsIgnoreCase("MEG");
 	        
 	        Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
 	                .findByExcelIdAndVerticalFkIdAndSiteFkId("production_target", plant.getVerticalFKId(), plant.getSiteFkId());
@@ -2305,9 +2309,21 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	                    data.put(tableId, dataList);
 	                }
 	            }
-	            if(vertical.getName().equalsIgnoreCase("PE")) {
-	            	return excelUtilityService.generateFlexibleExcelPP(structure, data);
-	            }else {
+				// seperate export method to handle grid specific locking
+	            if(pe || meg) {
+					List<String> editableGrids = new ArrayList<>();
+					if(pe) {
+						editableGrids.add("proposedoperatingcapacity"); 
+					}
+
+					if(meg) {
+						editableGrids.addAll(Arrays.asList("DesignCapacity", "ProposedOperatingCapacity")); 
+					}
+	            	return excelUtilityService.generateFlexibleExcelPP(structure, data, editableGrids);
+
+	            }
+				
+				else {
 	            	return excelUtilityService.generateFlexibleExcel(structure, data);
 	            }
 	            
