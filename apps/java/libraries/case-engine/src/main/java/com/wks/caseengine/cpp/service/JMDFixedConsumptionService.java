@@ -14,6 +14,8 @@ public interface JMDFixedConsumptionService {
             String financialYear);
 
     AOPMessageVM saveFixedConsumption(
+            List<UUID> plantIds,
+            String financialYear,
             List<JMDFixedConsumptionDto> payload);
 
     byte[] exportFixedConsumption(

@@ -1,14 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { useState, useEffect } from 'react'
+import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
-import ValueFormatterPhaseTwo, {
-  customValueFormatterPhaseTwo,
-} from '../../common/ValueFormatterPhaseTwo'
-import { OverallAopConsumptionApiService } from '../../services/vgoht/overallAopConsumptionApiService'
-import { overAllAOpResponse } from '../dummyData'
+import { customValueFormatterPhaseTwo } from '../../common/ValueFormatterPhaseTwo'
+import { OverallAopConsumptionApiService } from '../../services/common/overallAopConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const OverallAopConsumption = () => {
@@ -219,6 +216,7 @@ const OverallAopConsumption = () => {
       setRows(data)
     } catch (error) {
       console.error('Error fetching overall AOP consumption data:', error)
+      setRows([])
     } finally {
       setLoading(false)
     }
@@ -270,6 +268,7 @@ const OverallAopConsumption = () => {
     showTitle: true,
     titleName: 'Overall AOP Consumption (Norm/Quantity)',
     showDropdown: false,
+    dropdownCell: true,
   }
 
   return (
