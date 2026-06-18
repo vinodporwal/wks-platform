@@ -1,6 +1,5 @@
 package com.wks.caseengine.cpp.serviceimpl;
 
-import com.wks.caseengine.cpp.dto.FixedConsumptionDto;
 import com.wks.caseengine.cpp.dto.JMDFixedConsumptionDto;
 import com.wks.caseengine.cpp.dto.FixedConsumptionProjection;
 import com.wks.caseengine.cpp.repository.JMDFixedConsumptionRepository;

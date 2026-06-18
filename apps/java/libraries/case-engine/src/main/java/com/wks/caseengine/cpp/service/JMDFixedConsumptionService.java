@@ -1,6 +1,5 @@
 package com.wks.caseengine.cpp.service;
 
-import com.wks.caseengine.cpp.dto.FixedConsumptionDto;
 import com.wks.caseengine.cpp.dto.JMDFixedConsumptionDto;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import org.springframework.web.multipart.MultipartFile;
