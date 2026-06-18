@@ -4,7 +4,8 @@ import { SlowdownNormForMegServices } from 'services/SlowdownNormForMegServices'
 import { useSession } from 'SessionStoreContext'
 import KendoDataTables from './index'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
-
+import { ConsumptionNormsApiService } from 'services/consumption-norms-api-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const SlowdownNormForMeg = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -21,7 +22,9 @@ const SlowdownNormForMeg = () => {
     screenTitle,
   } = dataGridStore
   const PLANT_ID = plantObject?.id
+  const PLANT_NAME = plantObject?.name
   const SITE_ID = siteObject?.id
+  const SITE_NAME = siteObject?.name
   const VERTICAL_ID = verticalObject?.id
   const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
@@ -34,8 +37,14 @@ const SlowdownNormForMeg = () => {
   const SCREEN_NAME = screenTitle?.title
 
   const [isLoading, setIsLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [notification, setNotification] = useState({
     open: false,
+    message: '',
+    severity: 'info',
+  })
+
+  const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
@@ -43,6 +52,7 @@ const SlowdownNormForMeg = () => {
   const [tableRows, setTableRows] = useState([])
   const [columnDefinitions, setColumnDefinitions] = useState([])
   const [modifiedCells, setModifiedCells] = useState({})
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [calculationResults, setCalculationResults] = useState([])
   const valueFormat = ValueFormatterConsumption()
   const showNotification = useCallback((message, severity = 'info') => {
@@ -258,6 +268,102 @@ const SlowdownNormForMeg = () => {
     }
   }, [keycloak, PLANT_ID, AOP_YEAR, fetchSlowdownNormsData])
 
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+    const ExcelName = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}_${SCREEN_NAME}`
+    try {
+      await ConsumptionNormsApiService.slowdownconsumptionExportMEG(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        ExcelName,
+      )
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
+
+  const uploadSlowdownConsumptionData = async (rawFile) => {
+    setLoading(true)
+
+    try {
+      let response
+      response = await ConsumptionNormsApiService.ExcelSlowdownConsumptionMEG(
+        rawFile,
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchSlowdownNormsColumns()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File - Slowdown Consumption.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        fetchSlowdownNormsColumns()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error uploading Excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleExcelUpload = (rawFile) => {
+    uploadSlowdownConsumptionData(rawFile)
+  }
+
   useEffect(() => {
     if (keycloak && PLANT_ID && AOP_YEAR) {
       fetchSlowdownNormsColumns()
@@ -273,8 +379,10 @@ const SlowdownNormForMeg = () => {
       showCalculate: isCurrentYear,
       allAction: isCurrentYear,
       showCalculateVisibility: hasCalculationResults,
-      downloadExcelBtnFromUI: true,
-      ExcelName: `${lowerVertName}_${SCREEN_NAME}`,
+      downloadExcelBtnFromUI: false,
+      downloadExcelBtn: true,
+      uploadExcelBtn: true,
+      ExcelName: `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}_${SCREEN_NAME}`,
       showTitleNameBusiness: true,
       titleName: `${SCREEN_NAME}`,
     }
@@ -282,6 +390,7 @@ const SlowdownNormForMeg = () => {
 
   return (
     <div>
+      <LoaderBackdrop open={!!loading} />
       <KendoDataTables
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
@@ -290,15 +399,15 @@ const SlowdownNormForMeg = () => {
         rows={tableRows}
         saveChanges={handleSaveChanges}
         handleCalculate={handleCalculateData}
-        snackbarData={{
-          message: notification.message,
-          severity: notification.severity,
-        }}
-        snackbarOpen={notification.open}
-        setSnackbarOpen={closeNotification}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        setSnackbarData={setSnackbarData}
+        setSnackbarOpen={setSnackbarOpen}
         fetchData={fetchSlowdownNormsColumns}
         permissions={tablePermissions}
         groupBy='Particulars'
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
+        handleExcelUpload={handleExcelUpload}
       />
     </div>
   )
