@@ -26,6 +26,7 @@ export const BusinessDemandPetColumns = [
     editable: false,
     widthT: 120,
     minWidth: 100,
+    locked: true,
   },
   {
     field: 'UOM',
@@ -33,6 +34,7 @@ export const BusinessDemandPetColumns = [
     editable: false,
     widthT: 80,
     minWidth: 80,
+    locked: true,
   },
   {
     field: 'april',

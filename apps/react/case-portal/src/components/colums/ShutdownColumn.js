@@ -40,6 +40,7 @@ export const ShutDownAllColumns = [
     widthT: 350,
     autoAdjust: false,
     minWidth: 350,
+    locked: true
   },
   {
     field: 'maintenanceId',
@@ -83,6 +84,7 @@ export const ShutDown_Elastomer_JMD_IIR_Columns = [
     widthT: 260,
     autoAdjust: false,
     minWidth: 350,
+    locked: true
   },
   {
     field: 'maintenanceId',
@@ -126,6 +128,7 @@ export const ShutDown_Elastomer_JMD_HIIR_Columns = [
     widthT: 260,
     autoAdjust: false,
     minWidth: 350,
+    locked: true
   },
   {
     field: 'maintenanceId',
@@ -162,6 +165,7 @@ export const SlowdownConfigColumns = [
     editable: true,
     minWidth: 230,
     autoAdjust: false,
+    locked: true
   },
 
   {
@@ -208,6 +212,7 @@ export const ShutDownPeColumns = [
     widthT: 250,
     autoAdjust: false,
     minWidth: 350,
+    locked: true
   },
   // {
   //   field: 'productName1',
@@ -252,6 +257,7 @@ export const ShutDownPeC2Columns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'descLimit',
+    locked: true
   },
 
   {
@@ -295,6 +301,7 @@ export const ShutDownPeColumnsldpe12 = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'descLimit',
+    locked: true
   },
 
   {
@@ -333,6 +340,7 @@ export const ShutDownPpColumns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'descLimit',
+    locked: true
   },
   // {
   //   field: 'productName1',
@@ -377,6 +385,7 @@ export const ShutDownPpDtaColumns = [
     widthT: 225,
     autoAdjust: false,
     minWidth: 350,
+    locked: true
   },
   {
     field: 'lineDisplayName',
@@ -432,6 +441,7 @@ export const ShutDownPVCDMDColumns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'descLimit',
+    locked: true
   },
   {
     field: 'lineId',
@@ -481,6 +491,7 @@ export const ShutDownPTAColumns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'discriptionDrpdwn',
+    locked: true
   },
 
   {
@@ -518,6 +529,7 @@ export const ShutDownPTADMDColumns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'discriptionDrpdwn',
+    locked: true
   },
 
   {
@@ -561,6 +573,7 @@ export const ShutDownChemicalColumns = [
     title: 'Shutdown Desc',
     editable: true,
     type: 'descLimit',
+    locked: true
   },
 
   {

@@ -5,6 +5,7 @@ import { useSession } from 'SessionStoreContext'
 import KendoDataTables from './index'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { ConsumptionNormsApiService } from 'services/consumption-norms-api-service'
+import { shouldLockColumn } from 'utils/columnLockUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const SlowdownNormForMeg = () => {
   const keycloak = useSession()
@@ -234,24 +235,30 @@ const SlowdownNormForMeg = () => {
       ]
 
       if (response?.code === 200 && Array.isArray(response.data)) {
-        const dynamicColumns = response.data.map((column) => ({
-          field: column.field,
-          title: column.title,
-          widthT: column.field.toLowerCase() === 'uom' ? 90 : 150,
+        const dynamicColumns = response.data.map((column) => {
+          const col = {
+            field: column.field,
+            title: column.title,
+            minWidth: column.field.toLowerCase() === 'uom' ? 90 : 200,
 
-          editable:
-            column.field === 'particulars' ||
-            column.field.toLowerCase() === 'uom'
-              ? false
-              : true,
+            editable:
+              column.field === 'particulars' ||
+                column.field.toLowerCase() === 'uom'
+                ? false
+                : true,
 
-          hidden: hiddenColumns.includes(column.field),
-          ...(column.field !== 'particulars' &&
-            column.field.toLowerCase() !== 'uom' && {
+            hidden: hiddenColumns.includes(column.field),
+            ...(column.field !== 'particulars' &&
+              column.field.toLowerCase() !== 'uom' && {
               format: valueFormat,
               type: 'negativeNumber',
             }),
-        }))
+          }
+          if (shouldLockColumn(col)) {
+            col.locked = true
+          }
+          return col
+        })
 
         setColumnDefinitions(dynamicColumns)
         await fetchSlowdownNormsData()

@@ -124,6 +124,7 @@ const CrackerConfiguration = (props) => {
       widthT: 140,
       editable: false,
       minWidth: 300,
+      locked: true,
     },
     {
       field: 'UOM',
@@ -131,6 +132,7 @@ const CrackerConfiguration = (props) => {
       editable: false,
       widthT: 80,
       minWidth: 80,
+      locked: true,
     },
     {
       field: 'apr',
