@@ -61,7 +61,9 @@ public class ShutdownNormsController {
 			boolean chemicalDmd = vertical.getName().equalsIgnoreCase("Chemical") && site.getName().equalsIgnoreCase("DMD");
 			boolean meg = vertical.getName().equalsIgnoreCase("MEG");
 			byte[] excelBytes=null;
+			 
 			if(vcmDmd || chemicalDmd || meg) {
+				// seperate export method to enable months as per shutdown months
 				  excelBytes = shutdownNormsService.exportDMDShutdownConsumption(year,UUID.fromString(plantId),false,null,gradeId); 
 			}else {
 				  excelBytes = shutdownNormsService.exportShutdownConsumption(year,UUID.fromString(plantId),false,null,gradeId); 

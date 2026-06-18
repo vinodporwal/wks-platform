@@ -602,6 +602,7 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		boolean showProductionTarget = vertical.getName().equalsIgnoreCase("MEG");
 		 if(vertical.getName().equalsIgnoreCase("Cracker") && site.getName().equalsIgnoreCase("HMD") ) {  
+			// seperate export method to handle ON/OFF values
 			return exportBusinessDemandV2(year, plantId, isAfterSave, dtoList);
 		 }
 
@@ -1164,7 +1165,7 @@ sheet.setColumnHidden(17, true);
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 
 		if(vertical.getName().equalsIgnoreCase("cracker") && site.getName().equalsIgnoreCase("HMD") ) {  
-
+            // seperate import method to handle ON/OFF values
                return importExcelV2(year, plantFKId, file);
 		}
 		try {

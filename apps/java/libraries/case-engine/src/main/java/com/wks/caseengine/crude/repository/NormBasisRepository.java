@@ -22,12 +22,5 @@ List<NormBasisProjection> getAllNormBasis(
 );
 
 
-@Query(value = "EXEC CRUDE_GetPIMS_Throughput @plantId = :plantId, @aopYear = :aopYear",
-nativeQuery = true)
-List<NormBasisProjection> getPIMSThroughput(
- @Param("plantId") UUID plantId,
- @Param("aopYear") String aopYear
-);
-
 }
 
