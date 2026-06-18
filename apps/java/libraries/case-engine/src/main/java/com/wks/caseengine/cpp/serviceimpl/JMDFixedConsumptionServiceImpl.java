@@ -1,6 +1,7 @@
 package com.wks.caseengine.cpp.serviceimpl;
 
 import com.wks.caseengine.cpp.dto.FixedConsumptionDto;
+import com.wks.caseengine.cpp.dto.JMDFixedConsumptionDto;
 import com.wks.caseengine.cpp.dto.FixedConsumptionProjection;
 import com.wks.caseengine.cpp.repository.JMDFixedConsumptionRepository;
 import com.wks.caseengine.cpp.service.JMDFixedConsumptionService;
@@ -49,7 +50,7 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
             List<FixedConsumptionProjection> projections =
                     repository.getFixedConsumptionForPlants(plantIdsCsv, financialYear);
 
-            List<FixedConsumptionDto> allResults = projections.stream()
+            List<JMDFixedConsumptionDto> allResults = projections.stream()
                     .map(this::mapToDto)
                     .collect(Collectors.toList());
 
@@ -69,9 +70,10 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
         return aopMessageVM;
     }
 
-    private FixedConsumptionDto mapToDto(FixedConsumptionProjection p) {
-        FixedConsumptionDto dto = new FixedConsumptionDto();
+    private JMDFixedConsumptionDto mapToDto(FixedConsumptionProjection p) {
+        JMDFixedConsumptionDto dto = new JMDFixedConsumptionDto();
 
+        dto.setId(p.getId());                              // SP-returned row Id
         dto.setPlant(p.getPlantName());
         dto.setPlantId(p.getPlantCode());
         dto.setCostCenter(p.getCostCenterName());
@@ -118,16 +120,56 @@ public class JMDFixedConsumptionServiceImpl implements JMDFixedConsumptionServic
     }
 
     @Override
-    public AOPMessageVM saveFixedConsumption(List<UUID> plantIds, String financialYear, List<FixedConsumptionDto> payload) {
-        logger.info("[POST Service] Saving fixed consumption for plantIds: {}, financialYear: {}, records: {}", 
-                plantIds, financialYear, payload != null ? payload.size() : 0);
+    public AOPMessageVM saveFixedConsumption(List<JMDFixedConsumptionDto> payload) {
+        logger.info("[POST Service] Saving fixed consumption, records: {}",
+                payload != null ? payload.size() : 0);
         AOPMessageVM aopMessageVM = new AOPMessageVM();
 
         try {
-            // TODO: Implement save logic for multiple plants
-            logger.info("[POST Service] Save operation completed");
+            if (payload == null || payload.isEmpty()) {
+                aopMessageVM.setCode(400);
+                aopMessageVM.setMessage("Payload is empty");
+                aopMessageVM.setData(null);
+                return aopMessageVM;
+            }
+
+            int updated = 0;
+            int skipped = 0;
+
+            for (JMDFixedConsumptionDto dto : payload) {
+                if (dto.getId() == null) {
+                    logger.warn("[POST Service] Skipping record with null id");
+                    skipped++;
+                    continue;
+                }
+
+                int rows = repository.updateMonthValues(
+                        dto.getId(),
+                        dto.getApril(),
+                        dto.getMay(),
+                        dto.getJune(),
+                        dto.getJuly(),
+                        dto.getAug(),
+                        dto.getSep(),
+                        dto.getOct(),
+                        dto.getNov(),
+                        dto.getDec(),
+                        dto.getJan(),
+                        dto.getFeb(),
+                        dto.getMar(),
+                        dto.getRemarks());
+
+                if (rows > 0) {
+                    updated++;
+                } else {
+                    logger.warn("[POST Service] No row found for id: {}", dto.getId());
+                    skipped++;
+                }
+            }
+
+            logger.info("[POST Service] Updated: {}, Skipped: {}", updated, skipped);
             aopMessageVM.setCode(200);
-            aopMessageVM.setMessage("Fixed consumption saved successfully");
+            aopMessageVM.setMessage("Fixed consumption saved successfully. Updated: " + updated + ", Skipped: " + skipped);
             aopMessageVM.setData(null);
         } catch (Exception e) {
             logger.error("[POST Service] Error saving fixed consumption: {}", e.getMessage(), e);

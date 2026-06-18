@@ -1,6 +1,7 @@
 package com.wks.caseengine.cpp.service;
 
 import com.wks.caseengine.cpp.dto.FixedConsumptionDto;
+import com.wks.caseengine.cpp.dto.JMDFixedConsumptionDto;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -14,9 +15,7 @@ public interface JMDFixedConsumptionService {
             String financialYear);
 
     AOPMessageVM saveFixedConsumption(
-            List<UUID> plantIds,
-            String financialYear,
-            List<FixedConsumptionDto> payload);
+            List<JMDFixedConsumptionDto> payload);
 
     byte[] exportFixedConsumption(
             List<UUID> plantIds,
