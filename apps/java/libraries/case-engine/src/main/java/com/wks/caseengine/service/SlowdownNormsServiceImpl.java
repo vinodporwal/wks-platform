@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.Iterator;
 import javax.sql.DataSource;
 
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
@@ -1942,14 +1943,26 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 		// Styles
 		CellStyle hiddenStyle = workbook.createCellStyle();
 		hiddenStyle.setLocked(true);
+		hiddenStyle.setBorderTop(BorderStyle.THIN);
+		hiddenStyle.setBorderBottom(BorderStyle.THIN);
+		hiddenStyle.setBorderLeft(BorderStyle.THIN);
+		hiddenStyle.setBorderRight(BorderStyle.THIN);
 
 		CellStyle lockedStyle = workbook.createCellStyle();
 		lockedStyle.setLocked(true);
 		lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
 		lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+		lockedStyle.setBorderTop(BorderStyle.THIN);
+		lockedStyle.setBorderBottom(BorderStyle.THIN);
+		lockedStyle.setBorderLeft(BorderStyle.THIN);
+		lockedStyle.setBorderRight(BorderStyle.THIN);
 
 		CellStyle unlockedStyle = workbook.createCellStyle();
 		unlockedStyle.setLocked(false);
+		unlockedStyle.setBorderTop(BorderStyle.THIN);
+		unlockedStyle.setBorderBottom(BorderStyle.THIN);
+		unlockedStyle.setBorderLeft(BorderStyle.THIN);
+		unlockedStyle.setBorderRight(BorderStyle.THIN);
 
 		// Wrap-text variants for the Remark column
 		CellStyle wrapLockedStyle = workbook.createCellStyle();
@@ -1958,11 +1971,19 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 		wrapLockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 		wrapLockedStyle.setWrapText(true);
 		wrapLockedStyle.setVerticalAlignment(org.apache.poi.ss.usermodel.VerticalAlignment.TOP);
+		wrapLockedStyle.setBorderTop(BorderStyle.THIN);
+		wrapLockedStyle.setBorderBottom(BorderStyle.THIN);
+		wrapLockedStyle.setBorderLeft(BorderStyle.THIN);
+		wrapLockedStyle.setBorderRight(BorderStyle.THIN);
 
 		CellStyle wrapUnlockedStyle = workbook.createCellStyle();
 		wrapUnlockedStyle.setLocked(false);
 		wrapUnlockedStyle.setWrapText(true);
 		wrapUnlockedStyle.setVerticalAlignment(org.apache.poi.ss.usermodel.VerticalAlignment.TOP);
+		wrapUnlockedStyle.setBorderTop(BorderStyle.THIN);
+		wrapUnlockedStyle.setBorderBottom(BorderStyle.THIN);
+		wrapUnlockedStyle.setBorderLeft(BorderStyle.THIN);
+		wrapUnlockedStyle.setBorderRight(BorderStyle.THIN);
 
 		// Right-aligned variants for dynamic columns (cols 5+)
 		CellStyle lockedRightStyle = workbook.createCellStyle();

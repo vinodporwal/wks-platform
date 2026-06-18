@@ -4150,9 +4150,10 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			Map<String, Map<String, NormAttributeTransactionsDTO>> failedLookup = new LinkedHashMap<>();
 			if (isAfterSave && failedList != null) {
 				for (NormAttributeTransactionsDTO dto : failedList) {
-					if (dto.getNormParameterFKId() != null) {
-						String key = dto.getNormParameterFKId().toString();
-						failedLookup.computeIfAbsent(key, k -> new LinkedHashMap<>())
+			if (dto.getNormParameterFKId() != null) {
+					// Use lowercase so it matches the normalized SP-returned UUID
+					String key = dto.getNormParameterFKId().toString().toLowerCase();
+					failedLookup.computeIfAbsent(key, k -> new LinkedHashMap<>())
 								.put(dto.getDescription(), dto);
 					}
 				}
@@ -4212,17 +4213,21 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 
 			int dynamicColCount = colNames.size() - 5;
 
-		// Write data rows
-		for (Object[] row : dataRows) {
-			String normTypeName  = row[0] != null ? row[0].toString() : "";
-			String normParamId   = row[1] != null ? row[1].toString() : "";
-			String displayName   = row[2] != null ? row[2].toString() : "";
-			String uom           = row[3] != null ? row[3].toString() : "";
-			String isEditableRaw = row[4] != null ? row[4].toString() : "false";
-			boolean isEditable   = "true".equalsIgnoreCase(isEditableRaw) || "1".equals(isEditableRaw);
-			CellStyle rowStyle   = isEditable ? normalStyle : readOnlyStyle;
+	// Write data rows
+	for (Object[] row : dataRows) {
+		String normTypeName  = row[0] != null ? row[0].toString() : "";
+		// Normalize to lowercase so UUID lookup is case-insensitive (SQL Server may return uppercase)
+		String normParamId   = row[1] != null ? row[1].toString().trim().toLowerCase() : "";
+		String displayName   = row[2] != null ? row[2].toString() : "";
+		String uom           = row[3] != null ? row[3].toString() : "";
+		String isEditableRaw = row[4] != null ? row[4].toString() : "false";
+		boolean isEditable   = "true".equalsIgnoreCase(isEditableRaw) || "1".equals(isEditableRaw);
+		CellStyle rowStyle   = isEditable ? normalStyle : readOnlyStyle;
 
-			Row excelRow = sheet.createRow(currentRow++);
+		// Error file: skip rows that have no failures — only export failed records
+		if (isAfterSave && !failedLookup.containsKey(normParamId)) continue;
+
+		Row excelRow = sheet.createRow(currentRow++);
 
 			Cell normParamCell = excelRow.createCell(NORM_PARAM_COL);
 			normParamCell.setCellValue(normParamId);
@@ -4367,6 +4372,23 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 						if (val != null && val.isEmpty()) val = null;
 
 						NormAttributeTransactionsDTO dto = new NormAttributeTransactionsDTO();
+
+						if (val != null) {
+							try {
+								Double.parseDouble(val);
+							} catch (NumberFormatException e) {
+								// skip update and add the row in error file generation
+								dto.setSaveStatus("Failed");
+								dto.setErrDescription("Invalid non-numeric value found at row " + row.getRowNum()  + ": " + val);
+								dto.setNormParameterFKId(normParamId);
+								dto.setDescription(fieldName);
+						        dto.setAttributeValue(val);
+								dtoList.add(dto);
+								continue;
+							}
+						}
+
+						
 						dto.setNormParameterFKId(normParamId);
 						dto.setDescription(fieldName);
 						dto.setAttributeValue(val);
@@ -4381,6 +4403,10 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 
 			for (NormAttributeTransactionsDTO dto : dtoList) {
 				try {
+					if(dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) { 
+						failedList.add(dto);
+						continue;
+					}
 					saveSlowdownConfigurationData(plantId, year, Collections.singletonList(dto));
 					dto.setSaveStatus("Success");
 					successList.add(dto);

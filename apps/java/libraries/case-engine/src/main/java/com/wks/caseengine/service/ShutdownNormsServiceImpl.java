@@ -1857,6 +1857,10 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	        }
 
 	        
+	        for (int i = 0; i < innerHeaders.size(); i++) {
+	            sheet.autoSizeColumn(i);
+	        }
+
 	        sheet.setColumnHidden(16, true);
 	        sheet.setColumnHidden(17, true);
 	        
