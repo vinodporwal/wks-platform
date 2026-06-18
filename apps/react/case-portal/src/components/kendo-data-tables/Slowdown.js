@@ -1140,6 +1140,7 @@ const SlowDown = ({ permissions }) => {
 
   const fetchConfigurationData = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
+    setModifiedCells2({})
     setRows2([])
     setLoading(true)
     try {
@@ -1191,7 +1192,7 @@ const SlowDown = ({ permissions }) => {
   }
   const fetchData2 = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
-
+    setModifiedCells2({})
     setLoading(true)
     setColDefs2([])
     try {
@@ -1482,8 +1483,14 @@ const SlowDown = ({ permissions }) => {
 
     try {
       let response
-
-      if (IS_ELASTOMER_JMD) {
+      if (selectedTab === 1 && lowerVertName === 'meg') {
+        response = await DtaDataService.ExcelSlowdownConfiguration(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          `${EXCEL_EXPORT_TITLE}-Slowdown Configuration`,
+        )
+      } else if (IS_ELASTOMER_JMD) {
         response = await DtaDataService.exportSlowdownElastomerJmd(
           keycloak,
           PLANT_ID,
@@ -1556,7 +1563,14 @@ const SlowDown = ({ permissions }) => {
     try {
       let response
 
-      if (IS_ELASTOMER_JMD) {
+      if (lowerVertName === 'meg' && selectedTab === 1) {
+        response = await DtaDataService.ImportSlowdownConfiguration(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (IS_ELASTOMER_JMD) {
         response = await DtaDataService.ImportSlowdownElastomerJmd(
           rawFile,
           keycloak,
@@ -1622,7 +1636,9 @@ const SlowDown = ({ permissions }) => {
           severity: 'success',
         })
         setModifiedCells({})
+        setModifiedCells2({})
         fetchData()
+        fetchData2()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = Array.from(byteCharacters, (char) =>
@@ -1649,6 +1665,7 @@ const SlowDown = ({ permissions }) => {
           severity: 'warning',
         })
         fetchData()
+        fetchData2()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -1838,7 +1855,8 @@ const SlowDown = ({ permissions }) => {
             editButton: true,
             allAction: true,
             onlyCellUpdate: true,
-            downloadExcelBtnFromUI: true,
+            downloadExcelBtn: true,
+            uploadExcelBtn: true,
             ExcelName: `${EXCEL_EXPORT_TITLE}-Slowdown Activities(Configuration)`,
             showTitleNameBusiness: true,
             titleName: 'Configuration',
@@ -1846,6 +1864,8 @@ const SlowDown = ({ permissions }) => {
           handleCancelClick={handleCancelClick}
           groupBy='Particulars'
           allRedCell={allRedCell}
+          downloadExcelForConfiguration={downloadExcelForConfiguration}
+          handleExcelUpload={handleExcelUpload}
         />
       )}
 
