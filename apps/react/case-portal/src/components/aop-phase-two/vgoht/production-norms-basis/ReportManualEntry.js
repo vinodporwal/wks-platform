@@ -217,8 +217,6 @@ const ReportManualEntry = () => {
 
       if (res?.length === 0) {
         setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
 
@@ -232,8 +230,6 @@ const ReportManualEntry = () => {
       setOriginalRows(formattedData)
     } catch (error) {
       console.error('Error fetching report manual entry data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
       setLoading(false)
     }
