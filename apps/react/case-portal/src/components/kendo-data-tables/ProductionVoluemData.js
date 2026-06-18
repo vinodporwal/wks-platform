@@ -1227,7 +1227,8 @@ const ProductionvolumeData = ({
         IS_PVC_VMD ||
         IS_PVC_DMD ||
         IS_AROMATICS_SEZ_PX4 ||
-        IS_PVC_HMD
+        IS_PVC_HMD ||
+        VERTICAL_NAME === 'meg'
           ? false
           : true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Max Achieved Capacity`,
@@ -1299,7 +1300,8 @@ const ProductionvolumeData = ({
       IS_AROMATICS_SEZ_PX4 ||
       IS_PVC_DMD ||
       IS_PVC_HMD ||
-      IS_CRACKER_C2
+      IS_CRACKER_C2 ||
+      VERTICAL_NAME === 'meg'
     ) {
       return true
     }
@@ -1316,6 +1318,7 @@ const ProductionvolumeData = ({
     IS_PVC_DMD,
     IS_PVC_HMD,
     IS_CRACKER_C2,
+    VERTICAL_NAME === 'meg',
   ])
   const adjustedPermissionsGrid2 = getAdjustedPermissions(
     {
@@ -1411,7 +1414,8 @@ const ProductionvolumeData = ({
         IS_AROMATICS_SEZ_PX4 ||
         IS_PVC_HMD ||
         IS_PVC_VMD ||
-        permissions?.hideDownloadExcel
+        permissions?.hideDownloadExcel ||
+        VERTICAL_NAME === 'meg'
           ? false
           : true,
       uploadExcelBtn:
@@ -1423,7 +1427,8 @@ const ProductionvolumeData = ({
         IS_PVC_HMD ||
         IS_PVC_VMD ||
         IS_VCM_DMD_EDC ||
-        permissions?.hideDownloadExcel
+        permissions?.hideDownloadExcel ||
+        VERTICAL_NAME === 'meg'
           ? false
           : true,
 
@@ -1574,7 +1579,7 @@ const ProductionvolumeData = ({
     setLoading(true)
     try {
       let response
-      if (IS_PP_SEZ || IS_PP_DTA || IS_PP_HMD || IS_PVC_DMD || IS_PVC_HMD) {
+      if (IS_PP_SEZ || IS_PP_DTA || IS_PP_HMD || IS_PVC_DMD || IS_PVC_HMD || VERTICAL_NAME=='meg') {
         response =
           await ProductionVolumeDataApiService.saveProductionVolDataLineExcel(
             rawFile,
