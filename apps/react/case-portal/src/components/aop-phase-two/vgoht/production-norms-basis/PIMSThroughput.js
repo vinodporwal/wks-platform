@@ -228,7 +228,7 @@ const PIMSThroughput = ({ startDate, endDate }) => {
 
     setLoading(true)
     try {
-      const response = await ProductionNormsApiService.importConfigurationExcel(
+      const response = await ProductionNormsApiService.importPIMSThroughputExcel(
         file,
         keycloak,
         PLANT_ID,
@@ -305,7 +305,7 @@ const PIMSThroughput = ({ startDate, endDate }) => {
     })
 
     try {
-      await ProductionNormsApiService.exportConfigurationExcel(
+      await ProductionNormsApiService.exportPIMSThroughputExcel(
         keycloak,
         PLANT_ID,
         AOP_YEAR,

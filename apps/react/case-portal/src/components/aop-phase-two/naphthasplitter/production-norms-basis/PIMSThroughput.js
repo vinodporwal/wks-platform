@@ -10,6 +10,14 @@ import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import RevButtonSection from 'components/aop-phase-two/common/components/RevButtonSection'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
+const formatDateForAPI = (date) => {
+  if (!date) return ''
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const PIMSThroughput = () => {
   const keycloak = useSession()
 
@@ -81,9 +89,11 @@ const PIMSThroughput = () => {
   const fetchConfigurationData = async () => {
     setLoading(true)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      const res = [].filter((item) => item.normType === 'PIMS Throughput')
+      const res = await ProductionNormsApiService.getPIMSThroughputData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
       if (res?.length === 0) {
         setRows([])
@@ -182,10 +192,16 @@ const PIMSThroughput = () => {
     try {
       console.log('Saving configuration data:', payload)
 
-      const response = await ProductionNormsApiService.saveConfigurationData(
+      const periodFrom = formatDateForAPI(startDate)
+      const periodTo = formatDateForAPI(endDate)
+      const response = await ProductionNormsApiService.savePIMSThroughputData(
         keycloak,
         AOP_YEAR,
         payload,
+        PLANT_ID,
+        SITE_ID,
+        periodFrom,
+        periodTo,
       )
 
       setModifiedCells({})
@@ -211,7 +227,7 @@ const PIMSThroughput = () => {
 
     setLoading(true)
     try {
-      const response = await ProductionNormsApiService.importConfigurationExcel(
+      const response = await ProductionNormsApiService.importPIMSThroughputExcel(
         file,
         keycloak,
         PLANT_ID,
@@ -288,7 +304,7 @@ const PIMSThroughput = () => {
     })
 
     try {
-      await ProductionNormsApiService.exportConfigurationExcel(
+      await ProductionNormsApiService.exportPIMSThroughputExcel(
         keycloak,
         PLANT_ID,
         AOP_YEAR,

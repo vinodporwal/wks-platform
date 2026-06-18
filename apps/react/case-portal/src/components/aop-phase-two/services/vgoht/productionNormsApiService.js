@@ -483,4 +483,3 @@ async function exportPIMSThroughputExcel(keycloak, plantId, year) {
     method: 'GET',
   })
 }
-
