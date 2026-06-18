@@ -8,6 +8,7 @@ import { SlowdownNormsPpColumns } from 'components/colums/PpColums'
 import { SlowdownNormsPtaColumns } from 'components/colums/PtaColums'
 import { verticalEnums } from 'enums/verticalEnums'
 import { useSelector } from 'react-redux'
+import { shouldLockColumn } from 'utils/columnLockUtils'
 
 const colDefsCache = new Map()
 
@@ -43,12 +44,17 @@ const getSlowdownNormsColDef = ({ headerMap, slowdownMonths, valueFormat }) => {
   }
 
   const enhancedColDefs = cols.map((col) => {
+    let newCol = { ...col }
+    if (shouldLockColumn(col)) {
+      newCol.locked = true
+    }
+
     if (col.monthNumber) {
       const monthNum = col.monthNumber
       const isPEorPP = ['pe', 'pp'].includes(lowerVertName)
 
       return {
-        ...col,
+        ...newCol,
         headerName: headerMap?.[monthNum] || col.field,
         editable: isPEorPP ? false : safeShutdownMonths.includes(monthNum),
         ...(!isPEorPP && {
@@ -61,7 +67,7 @@ const getSlowdownNormsColDef = ({ headerMap, slowdownMonths, valueFormat }) => {
       }
     }
 
-    return valueFormat ? { ...col, format: valueFormat } : col
+    return valueFormat ? { ...newCol, format: valueFormat } : newCol
   })
   colDefsCache.set(cacheKey, enhancedColDefs)
   return enhancedColDefs

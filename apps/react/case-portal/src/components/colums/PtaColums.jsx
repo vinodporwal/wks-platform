@@ -147,6 +147,7 @@ export const SlowDownPtaColumns = [
     field: 'discription',
     title: 'Slowdown Desc',
     editable: true,
+    locked: true
   },
 
   {

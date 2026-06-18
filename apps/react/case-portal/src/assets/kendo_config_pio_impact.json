@@ -17,12 +17,14 @@
     "title": "Particulars",
     "widthT": 250,
     "editable": false,
+    "locked": true,
     "minWidth": 250
   },
   {
     "field": "UOM",
     "title": "UOM",
     "editable": false,
+    "locked": true,
     "widthT": 60,
     "minWidth": 120
   },

@@ -11,6 +11,7 @@ import {
 import { ShutdownConsumptionVcmColumns } from 'components/colums/VcmColums'
 import { verticalEnums } from 'enums/verticalEnums'
 import { useSelector } from 'react-redux'
+import { shouldLockColumn } from 'utils/columnLockUtils'
 
 const colDefsCache = new Map()
 
@@ -47,6 +48,7 @@ const getShutdownConsumptionColDef = ({
 
   const SITE_NAME_LOWERCASE = siteObject?.name?.toLowerCase()
   const PLANT_NAME_LOWERCASE = plantObject?.name?.toLowerCase()
+  const SITE_NAME = siteObject?.name
   const IS_PTA_DMD = lowerVertName === 'pta' && SITE_NAME_LOWERCASE === 'dmd'
 
   const IS_PE_PP_VERTICAL_NMD_LLDPE =
@@ -79,6 +81,11 @@ const getShutdownConsumptionColDef = ({
   }
 
   const enhancedColDefs = cols.map((col) => {
+    let newCol = { ...col }
+    if (shouldLockColumn(col)) {
+      newCol.locked = true
+    }
+
     if (col.monthNumber) {
       const monthNum = col.monthNumber
       const isPEorPP = false
@@ -87,7 +94,7 @@ const getShutdownConsumptionColDef = ({
         : safeShutdownMonths.includes(monthNum)
 
       return {
-        ...col,
+        ...newCol,
         headerName: headerMap?.[monthNum] || col.field,
         editable: isEditable,
         // isDisabled: !safeShutdownMonths.includes(monthNum),
@@ -96,7 +103,7 @@ const getShutdownConsumptionColDef = ({
       }
     }
 
-    return valueFormat ? { ...col, format: valueFormat } : col
+    return valueFormat ? { ...newCol, format: valueFormat } : newCol
   })
 
   colDefsCache.set(cacheKey, enhancedColDefs)

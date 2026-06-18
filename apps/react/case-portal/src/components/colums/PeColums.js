@@ -23,6 +23,7 @@ export const BusinessDemandPeColumns = [
     editable: false,
     widthT: 100,
     minWidth: 100,
+    locked: true,
   },
   {
     field: 'april',
@@ -167,6 +168,7 @@ export const SlowDownPeColumns = [
     widthT: 200,
     autoAdjust: false,
     minWidth: 200,
+    locked: true
   },
 
   {

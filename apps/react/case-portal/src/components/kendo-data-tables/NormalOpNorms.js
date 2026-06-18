@@ -356,6 +356,7 @@ const NormalOpNormsScreen = () => {
       title: 'Particulars',
       widthT: 130,
       minWidth: 150,
+      locked: true,
     },
     {
       field: 'UOM',
@@ -363,6 +364,7 @@ const NormalOpNormsScreen = () => {
       widthT: 60,
       editable: false,
       minWidth: 80,
+      locked: true,
     },
     {
       field: 'Apr',

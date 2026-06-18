@@ -1,4 +1,5 @@
 import productionColDefs from '../../../assets/kendo_production_aop_meg_byproducts.json'
+import { shouldLockColumn } from 'utils/columnLockUtils'
 
 const getEnhancedColDefsByProducts = ({ headerMap, valueFormat }) => {
   let cols
@@ -22,6 +23,9 @@ const getEnhancedColDefsByProducts = ({ headerMap, valueFormat }) => {
     }
     if (col.type === 'number' && valueFormat) {
       updatedCol.format = valueFormat
+    }
+    if (shouldLockColumn(col)) {
+      updatedCol.locked = true
     }
 
     return updatedCol
