@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.TextStyle;
 
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.DataFormat;
@@ -17,6 +18,7 @@ import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import jakarta.persistence.EntityManager;
@@ -261,7 +263,23 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			String pattern = "dd-MM-yyyy HH:mm";
 			SimpleDateFormat formatter = new SimpleDateFormat(pattern);
 			Workbook workbook = new XSSFWorkbook();
+
+			// dateTimeStyle with full cell borders
 			CellStyle dateTimeStyle = createDateTimeStyle(workbook, "dd-MM-yyyy HH:mm");
+			dateTimeStyle.setBorderBottom(BorderStyle.THIN);
+			dateTimeStyle.setBorderTop(BorderStyle.THIN);
+			dateTimeStyle.setBorderLeft(BorderStyle.THIN);
+			dateTimeStyle.setBorderRight(BorderStyle.THIN);
+
+			// Standard bordered style for all other data cells
+			CellStyle borderedStyle = Utility.createBorderedStyle(workbook);
+
+			// Remarks column: bordered + wrap text + top-aligned
+			CellStyle remarkWrapStyle = workbook.createCellStyle();
+			remarkWrapStyle.cloneStyleFrom(borderedStyle);
+			remarkWrapStyle.setWrapText(true);
+			remarkWrapStyle.setVerticalAlignment(VerticalAlignment.TOP);
+
 			Sheet sheet = workbook.createSheet("Sheet1");
 			int currentRow = 0;
 			List<List<Object>> rows = new ArrayList<>();
@@ -336,6 +354,16 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			List<List<String>> headers = new ArrayList<>();
 			headers.add(innerHeaders);
 
+			// Column index of Remarks and its preferred fixed width in characters
+			final int remarkColIndex = 6;
+			final int remarksFixedWidth = 50;
+
+			// Seed max widths with header text lengths
+			int[] maxColWidths = new int[innerHeaders.size()];
+			for (int i = 0; i < innerHeaders.size(); i++) {
+				maxColWidths[i] = innerHeaders.get(i).length();
+			}
+
 			for (List<String> headerRowData : headers) {
 				Row headerRow = sheet.createRow(currentRow++);
 				for (int col = 0; col < headerRowData.size(); col++) {
@@ -344,27 +372,66 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 				}
 			}
+
 			for (List<Object> rowData : rows) {
                 Row row = sheet.createRow(currentRow++);
+                int remarkLen = 0;
                 for (int col = 0; col < rowData.size(); col++) {
                     Cell cell = row.createCell(col);
                     Object value = rowData.get(col);
+                    String strVal = "";
 
                     if (value instanceof Date) {
                         cell.setCellValue((Date) value);
                         cell.setCellStyle(dateTimeStyle);
+                        strVal = formatter.format((Date) value);
                     } else if (value instanceof Number) {
                         cell.setCellValue(((Number) value).doubleValue());
+                        cell.setCellStyle(borderedStyle);
+                        strVal = value.toString();
                     } else if (value instanceof Boolean) {
                         cell.setCellValue((Boolean) value);
+                        cell.setCellStyle(borderedStyle);
+                        strVal = value.toString();
                     } else if (value != null) {
-                        cell.setCellValue(value.toString());
+                        strVal = value.toString();
+                        if (col == remarkColIndex) {
+                            cell.setCellValue(strVal);
+                            cell.setCellStyle(remarkWrapStyle);
+                            remarkLen = strVal.length();
+                        } else {
+                            cell.setCellValue(strVal);
+                            cell.setCellStyle(borderedStyle);
+                        }
                     } else {
                         cell.setCellValue("");
+                        cell.setCellStyle(col == remarkColIndex ? remarkWrapStyle : borderedStyle);
+                    }
+
+                    if (col != remarkColIndex) {
+                        maxColWidths[col] = Math.max(maxColWidths[col], strVal.length());
+                    }
+                }
+
+                // Expand row height to accommodate wrapped remark lines
+                if (remarkLen > 0) {
+                    int lines = (int) Math.ceil((double) remarkLen / remarksFixedWidth);
+                    if (lines > 1) {
+                        row.setHeightInPoints(lines * sheet.getDefaultRowHeightInPoints());
                     }
                 }
             }
-			
+
+			// Set column widths: content-driven for all columns, fixed for Remarks
+			for (int col = 0; col < maxColWidths.length; col++) {
+				if (col == remarkColIndex) {
+					sheet.setColumnWidth(col, remarksFixedWidth * 256);
+				} else {
+					int charWidth = Math.min(Math.max(maxColWidths[col] + 4, 10), 50);
+					sheet.setColumnWidth(col, charWidth * 256);
+				}
+			}
+
 			sheet.setColumnHidden(7, true);
 			sheet.setColumnHidden(8, true);
 			try {
