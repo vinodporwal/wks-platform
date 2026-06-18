@@ -4660,6 +4660,9 @@ const KendoDataTables = ({
       </CompactDialog>
 
       <CompactDialog
+      
+      
+      
         open={openCalculateDialogeBox}
         onClose={closeCalculateDialogBox}
         aria-labelledby='alert-dialog-title'
