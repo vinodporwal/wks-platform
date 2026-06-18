@@ -11,7 +11,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "CPPFixConsuption", schema = "dbo")
+@Table(name = "CPPFixedConsumption", schema = "dbo")
 @Getter
 @Setter
 public class CPPFixedConsumption {

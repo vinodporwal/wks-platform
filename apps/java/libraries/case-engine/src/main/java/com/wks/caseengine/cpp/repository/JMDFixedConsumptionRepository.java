@@ -27,7 +27,7 @@ public interface JMDFixedConsumptionRepository extends JpaRepository<CPPFixedCon
     @Modifying
     @Transactional
     @Query(value =
-        "UPDATE dbo.CPPFixConsuption SET " +
+        "UPDATE dbo.CPPFixedConsumption SET " +
         "  Apr = :apr, May = :may, Jun = :jun, Jul = :jul, " +
         "  Aug = :aug, Sep = :sep, Oct = :oct, Nov = :nov, " +
         "  Dec = :dec, Jan = :jan, Feb = :feb, Mar = :mar, " +
