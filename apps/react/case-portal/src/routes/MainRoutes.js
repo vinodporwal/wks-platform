@@ -162,6 +162,12 @@ import OverallAopConsumptionRefUtil from 'components/aop-phase-two/refineryUtili
 import ProductionNormsBasisRefUtil from 'components/aop-phase-two/refineryUtility/production-norms-basis'
 // Vertical Refinery Utility Ended
 
+// Naphthasplitter
+import SteadyStateConsumptionNS from 'components/aop-phase-two/naphthasplitter/steady-state-consumption'
+import OverallAopConsumptionNS from 'components/aop-phase-two/naphthasplitter/overall-aop-consumption'
+import ProductionNormsBasisNS from 'components/aop-phase-two/naphthasplitter/production-norms-basis'
+// Naphthasplitter Ended
+
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
 
@@ -989,6 +995,32 @@ export const MainRoutes = (
             ),
           },
           //Vertical Refinery utility Ended
+          //Vertical Naphthasplitter Started
+          {
+            path: 'production-norms-basis-naphthasplitter',
+            element: (
+              <PrivateRoute routeId='production-norms-basis-naphthasplitter'>
+                <ProductionNormsBasisNS />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption-naphthasplitter',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption-naphthasplitter'>
+                <SteadyStateConsumptionNS />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'overall-aop-consumption-naphthasplitter',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption-naphthasplitter'>
+                <OverallAopConsumptionNS />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical Naphthasplitter Ended
         ],
       },
 

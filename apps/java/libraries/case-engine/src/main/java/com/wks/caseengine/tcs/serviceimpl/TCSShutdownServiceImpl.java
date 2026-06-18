@@ -155,7 +155,11 @@ if(plantId != null) {
     @Transactional
     public AOPMessageVM carryForwardTCSShutdown(String plantId, String year) {
         try {
-            String procedureName = "CRUDE_DTA_CarryForwardTcsShutdown";
+            Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new RuntimeException("Plant not found for ID: " + plantId));
+            String verticalName = verticalRepository.findById(plant.getVerticalFKId()).get().getName();
+            String siteName = siteRepository.findById(plant.getSiteFkId()).get().getName();
+
+            String procedureName = verticalName + "_" + siteName + "_CarryForwardTcsShutdown";
             String sql = "EXEC " + procedureName + " @plantId = :plantId, @targetYear = :year";
             Query query = entityManager.createNativeQuery(sql);
             query.setParameter("plantId", plantId);
@@ -183,8 +187,8 @@ if(plantId != null) {
             // Stored Procedure name
             String procedureName = null;
             if(plantId != null) {
-                //   procedureName = verticalName + "_" + siteName + "_GetTcsShutdown";  }
-                procedureName =  "CRUDE_DTA_GetTcsShutdown";
+                   procedureName = verticalName + "_" + siteName + "_GetTcsShutdown";  
+              
             }
             else {
                 //   procedureName = verticalName + "_" + siteName + "_GetTcsShutdown_OutPut";
@@ -232,8 +236,8 @@ if(plantId != null) {
 
         String procedureName =null;
         if(plantId != null) {
-            //  procedureName = verticalName + "_" + siteName + "_GetTcsShutdown";
-            procedureName =  "CRUDE_DTA_GetTcsShutdown";
+              procedureName = verticalName + "_" + siteName + "_GetTcsShutdown";
+            
         }
         else {
             //  procedureName = verticalName + "_" + siteName + "_GetTcsShutdown_OutPut";
