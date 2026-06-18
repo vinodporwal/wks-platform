@@ -227,12 +227,13 @@ const PIMSThroughput = () => {
 
     setLoading(true)
     try {
-      const response = await ProductionNormsApiService.importPIMSThroughputExcel(
-        file,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      const response =
+        await ProductionNormsApiService.importPIMSThroughputExcel(
+          file,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
