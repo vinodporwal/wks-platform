@@ -110,7 +110,7 @@ const FixedConsumptionDMD = () => {
   }))
 
   // Column definitions
-  const columns = [
+  const columns = useMemo(() => [
     {
       field: 'plant',
       title: 'Plant',
@@ -209,7 +209,7 @@ const FixedConsumptionDMD = () => {
       editable: true,
       minWidth: 250,
     },
-  ]
+  ], [headerMap])
 
   const fetchFixedConsumptionData = useCallback(async () => {
     setLoading(true)
