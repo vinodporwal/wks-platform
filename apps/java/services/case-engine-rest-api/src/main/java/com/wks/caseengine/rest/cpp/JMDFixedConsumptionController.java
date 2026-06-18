@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.wks.caseengine.cpp.dto.FixedConsumptionDto;
+import com.wks.caseengine.cpp.dto.JMDFixedConsumptionDto;
 import com.wks.caseengine.cpp.service.JMDFixedConsumptionService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
@@ -55,18 +55,16 @@ public class JMDFixedConsumptionController {
 
     @PostMapping("/jmd/fixed-consumption")
     public AOPMessageVM saveFixedConsumption(
-            @RequestParam List<UUID> plantIds,
-            @RequestParam String financialYear,
-            @RequestBody List<FixedConsumptionDto> payload) {
+            @RequestBody List<JMDFixedConsumptionDto> payload) {
 
-        logger.info("[POST /jmd/fixed-consumption] Request received - plantIds: {}, financialYear: {}, records: {}", 
-                plantIds, financialYear, payload != null ? payload.size() : 0);
-        
-        AOPMessageVM response = jmdFixedConsumptionService.saveFixedConsumption(plantIds, financialYear, payload);
-        
-        logger.info("[POST /jmd/fixed-consumption] Response - code: {}, message: {}", 
+        logger.info("[POST /jmd/fixed-consumption] Request received - records: {}",
+                payload != null ? payload.size() : 0);
+
+        AOPMessageVM response = jmdFixedConsumptionService.saveFixedConsumption(payload);
+
+        logger.info("[POST /jmd/fixed-consumption] Response - code: {}, message: {}",
                 response.getCode(), response.getMessage());
-        
+
         return response;
     }
 
