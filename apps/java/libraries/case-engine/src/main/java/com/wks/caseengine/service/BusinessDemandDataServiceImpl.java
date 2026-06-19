@@ -111,7 +111,7 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 
 	
 	@Override
-	public List<BusinessDemandDataDTO> getBusinessDemandData(String year, String plantId) {
+	public AOPMessageVM getBusinessDemandData(String year, String plantId) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
@@ -123,7 +123,11 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 			if(verticalName.equalsIgnoreCase("CRACKER") || verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("Elastomer")  || verticalName.equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("Staple") || vertical.getName().equalsIgnoreCase("Filament")) {
 				String procedureName=verticalName+"_GetBusinessDemand";
 				obj=findByYearAndPlantId(year,UUID.fromString(plantId),procedureName);
-				return getBusinessDemand(obj);
+				AOPMessageVM aopMessageVM = new AOPMessageVM();
+				aopMessageVM.setCode(200);
+				aopMessageVM.setData(getBusinessDemand(obj));
+				aopMessageVM.setMessage("Data fetched successfully");
+				return aopMessageVM;
 			}else {
 				obj = findByYearAndPlantFkId(year, UUID.fromString(plantId), viewName);
 			}
@@ -164,7 +168,18 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 				businessDemandDataDTOList.add(businessDemandDataDTO);
 			}
 
-			return businessDemandDataDTOList;
+			Map<String, Object> map = new HashMap<>();
+
+			List<AopCalculation> aopCalculation = aopCalculationRepository
+					.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "business-demand");
+			map.put("businessDemandDataDTOList", businessDemandDataDTOList);
+			map.put("aopCalculation", aopCalculation);
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(map);
+			aopMessageVM.setMessage("Data fetched successfully");
+			return aopMessageVM;
+			
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
 		} catch (Exception ex) {
@@ -174,7 +189,7 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 
 
 	@Override
-	public List<BusinessDemandDataDTO> getBusinessDemandLineData(String year, String plantId, String lineId) {
+	public AOPMessageVM getBusinessDemandLineData(String year, String plantId, String lineId) {
 		try {
 		
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
@@ -228,8 +243,16 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 			businessDemandDataDTO.setLineId(row[35] != null ? row[35].toString() : null);
 			businessDemandDataDTOList.add(businessDemandDataDTO);
 			}
-
-			return businessDemandDataDTOList;
+			Map<String, Object> map = new HashMap<>();
+			List<AopCalculation> aopCalculation = aopCalculationRepository
+			.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "business-demand");
+	        map.put("businessDemandDataDTOList", businessDemandDataDTOList);
+	        map.put("aopCalculation", aopCalculation);
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(map);
+			aopMessageVM.setMessage("Data fetched successfully");
+			return aopMessageVM;	
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
 		} catch (Exception ex) {
@@ -613,7 +636,7 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 			List<Boolean> isEditable = new ArrayList<>();
 
 			if (!isAfterSave) {
-				 dtoList = getBusinessDemandData(year,plantId);
+				 dtoList = (List<BusinessDemandDataDTO>) getBusinessDemandData(year,plantId).getData();
 			}
 
 			Workbook workbook = new XSSFWorkbook();
@@ -794,7 +817,7 @@ sheet.setColumnHidden(17, true);
 			List<Boolean> isEditable = new ArrayList<>();
 
 			if (!isAfterSave) {
-				 dtoList = getBusinessDemandLineData(year,plantId,lineId);
+				 dtoList = (List<BusinessDemandDataDTO>) getBusinessDemandLineData(year,plantId,lineId).getData();
 			}
 
 			Workbook workbook = new XSSFWorkbook();
@@ -982,7 +1005,7 @@ sheet.setColumnHidden(17, true);
 							usedSheetNames);
 					usedSheetNames.add(sheetName);
 
-					List<BusinessDemandDataDTO> lineDtos = getBusinessDemandLineData(year, plantId, lineId);
+					List<BusinessDemandDataDTO> lineDtos = (List<BusinessDemandDataDTO>) getBusinessDemandLineData(year, plantId, lineId).getData();
 					writeBusinessDemandLineSheet(workbook, workbook.createSheet(sheetName), year, lineDtos);
 				}
 				if (usedSheetNames.isEmpty()) {
@@ -2133,7 +2156,7 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 			List<BusinessDemandDataDTO> dtoList) {
 		try {
 			if (!isAfterSave) {
-				dtoList = getBusinessDemandData(year, plantId);
+				dtoList = (List<BusinessDemandDataDTO>) getBusinessDemandData(year, plantId).getData();
 			}
 
 			Workbook workbook = new XSSFWorkbook();
@@ -2609,6 +2632,75 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 
 		return configList;
 	}
+
+
+	@Override
+	public AOPMessageVM calculateBusinessDemand(String year, String plantId) {
+		
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		String verticalName = plantsRepository.findVerticalNameByPlantId(plant.getId());
+
+		String storedProcedure = verticalName + "_" + site.getName() + "_CalculateBusinessDemand";
+		
+		Integer result = executeBusinessDemandCalculationSP(storedProcedure, String.valueOf(plant.getId()), year);
+				
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data fetched successfully");
+		aopMessageVM.setData(result);
+		
+		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year,
+				"business-demand");
+		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("business-demand");
+		for (ScreenMapping screenMapping : screenMappingList) {
+			AopCalculation aopCalculation = new AopCalculation();
+			aopCalculation.setAopYear(year);
+			aopCalculation.setIsChanged(true);
+			aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+			aopCalculation.setPlantId(UUID.fromString(plantId));
+			aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+			aopCalculationRepository.save(aopCalculation);
+		}
+		return aopMessageVM;
+	}
+
+
+	public Integer executeBusinessDemandCalculationSP(String procedureName, String plantId,  String aopYear) {
+	try {
+
+
+
+		String callSql = "{call " + "[" + procedureName + "]" + "(?, ?)}";
+
+		try (Connection connection = dataSource.getConnection();
+				CallableStatement stmt = connection.prepareCall(callSql)) {
+
+			// Set parameters in the correct order
+			stmt.setString(1, plantId); 
+			stmt.setString(2, aopYear); 
+		
+
+			// Execute the stored procedure
+			int rowsAffected = stmt.executeUpdate();
+
+			// Optional: commit if auto-commit is off
+			if (!connection.getAutoCommit()) {
+				connection.commit();
+			}
+
+			return rowsAffected;
+
+		} catch (SQLException e) {
+			throw new RuntimeException("Failed to execute business demand calculation", e);
+		}
+
+	} catch (IllegalArgumentException e) {
+		throw new RestInvalidArgumentException("Invalid UUID format ", e);
+	} catch (Exception ex) {
+		throw new RuntimeException("Failed to fetch data", ex);
+	}
+}
 
 
 }
