@@ -252,14 +252,6 @@ const workspace = {
           breadcrumbs: true,
         },
         {
-          id: 'plant-aop-report',
-          title: i18n.t('menu.plantAOPReport'),
-          type: 'item',
-          url: '/functional-reports/plant-aop-report',
-          icon: icons.IconFileText,
-          breadcrumbs: true,
-        },
-        {
           id: 'plant-budget-summary',
           title: i18n.t('menu.plantBudgetSummary'),
           type: 'item',

@@ -163,7 +163,7 @@ const ProductionvolumeData = ({
   const [configurationExecutionDetails, setConfigurationExecutionDetails] =
     useState(null)
   const textNote = IS_PVC_HMD
-    ? '*MCU listed in the page represent Grade-mix MCU for Line 1 and Line 2 combined.'
+    ? 'K6711 MCU LISTED IN THE PAGE REPRESENT GRADE-MIX MCU FOR LINE1 and LINE2 COMBINED.'
     : ''
   const textNoteWhileSaving = IS_PP_SEZ ? 'Update MCU for All Line' : ''
   const handleRemarkCellClick = (row) => {
