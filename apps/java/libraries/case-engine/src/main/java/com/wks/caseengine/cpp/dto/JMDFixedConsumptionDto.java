@@ -47,4 +47,8 @@ public class JMDFixedConsumptionDto {
     // Fields for import/export tracking
     private String saveStatus;
     private String errDescription;
+
+    // Hash of month values + remarks, written as hidden column at export time.
+    // Used at import time to detect which rows were actually modified.
+    private String rowHash;
 }
