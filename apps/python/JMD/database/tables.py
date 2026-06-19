@@ -23,7 +23,7 @@ class T:
 
     # ── Fixed consumption ──────────────────────────────────────────────────
     FIXED_CONSUMPTION           = "CPPFixedConsumption"
-    FIXED_CONSUMPTION_LEGACY    = "CPPFixConsuption"
+    FIXED_CONSUMPTION_LEGACY    = "CPPFixedConsumption"
     FIXED_CONSUMPTION_MONTH_FK  = "FinancialYearMonthId"   # legacy FK col in older schema
     FIXED_CONSUMPTION_VALUE     = "PowerRequirement"        # legacy single-value column
 

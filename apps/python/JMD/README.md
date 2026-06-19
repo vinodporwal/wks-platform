@@ -1,4 +1,4 @@
-﻿
+
 # JMD Plant Budgeting System
 
 Python-based AOP (Annual Operating Plan) calculation engine for five JMD captive power plants. It combines process demand, fixed consumption, power dispatch, steam balance, capacity checks, and report generation.
@@ -8,14 +8,14 @@ Python-based AOP (Annual Operating Plan) calculation engine for five JMD captive
 * Problem being solved: produce monthly and full-year utility demand budgets for captive power plant operations, then compare those demands against available plant capacity.
 * Business users: plant planning teams, operations, energy management, budgeting, and finance stakeholders.
 * Expected outputs: utility-wise process demand, utility-wise fixed consumption, combined demand, capacity matching results, console summaries, text logs, and Excel reports.
-* Business workflow: fetch plant master data -> fetch process demand -> fetch fixed consumption -> aggregate by utility -> dispatch power -> balance steam -> compare against capacity -> generate reports.
+* Business workflow: fetch plant master data -> use CPP plant ID as SourceName to find sub-plants -> fetch process demand -> fetch fixed consumption -> aggregate by utility -> dispatch power -> balance steam -> compare against capacity -> generate reports.
 
 # Plant/Operational Flow
 
 * Operational process supported by this project: budgeting and operating-plan calculation for five JMD CPP plants.
-* Step-by-step plant/process flow: read SQL Server data -> apply process and fixed consumption mapping -> roll up by utility -> run power and steam calculation -> check demand against capacity -> write reports.
+* Step-by-step plant/process flow: read SQL Server data -> use CPP plant ID as SourceName for fixed-consumption lookup of sub-plants -> apply process and fixed consumption mapping -> roll up by utility -> run power and steam calculation -> check demand against capacity -> write reports.
 * Where this script fits in operations: it sits in the planning/budgeting stage, before or during monthly AOP review and FY rollup.
-* Upstream systems: SQL Server tables such as `Plants`, `CalculatedProcessDemand`, `ProcessDemandMaster`, `CPPFixedConsumption`, asset tables, norms tables, import power tables, heat-rate tables, and fallback JSON files.
+* Upstream systems: SQL Server tables such as `Plants`, `CalculatedProcessDemand`, `ProcessDemandMaster`, `CPPFixedConsumption`, asset tables, norms tables, import power tables, heat-rate tables, and fallback JSON files. Fixed consumption uses the CPP Plant ID matched against the sub-plants' `Plants.SourceName` as the plant selector, mirroring the stored procedure behavior.
 * Downstream systems: local console output, `.log` files, `.xlsx` reports, and the generated `logs/` and `output/` folders. No DB write path was found in the reviewed JMD source.
 
 # Architecture
@@ -28,9 +28,9 @@ Python-based AOP (Annual Operating Plan) calculation engine for five JMD captive
 
 1. Entry point: `apps/python/JMD/main.py` for multi-plant/interactive runs, or one of the plant wrappers such as `apps/python/JMD/dta_cpp/run.py`.
 2. Initialization: add the JMD folder to `sys.path`, configure logging, parse CLI arguments, and resolve the selected plant IDs.
-3. Data collection: fetch plant info, assets, operational hours, priorities, process demand, fixed consumption, import power, norms, HRSG availability, STG lookup, and GT/HRSG heat-rate lookups.
+3. Data collection: fetch plant info, assets, operational hours, priorities, process demand, fixed consumption, import power, norms, HRSG availability, STG lookup, and GT/HRSG heat-rate lookups. Fixed consumption matches the CPP Plant ID against the sub-plants' `Plants.SourceName`.
 4. Processing steps: merge process and fixed demand, segregate demand by utility, load asset capacity, and run the monthly or full-year calculation.
-5. Business logic: calculate utility-wise fixed plus process totals, normalize power fixed consumption from kWh to MWh, dispatch power assets, balance LP/MP/HP/SHP steam, and iterate until convergence.
+5. Business logic: calculate utility-wise fixed plus process totals, normalize power fixed consumption from kWh to MWh, dispatch power assets, balance LP/MP/HP/SHP steam, and iterate until convergence. Fixed-consumption logs now show the sub-plant lookup path via SourceName and utility-wise totals.
 6. Output generation: print console summaries, save text logs, and generate Excel workbooks for month or FY runs.
 7. Notifications/integrations: the project uses SQL Server and the local filesystem only; APIs and message queues are not determined from source code.
 
@@ -477,13 +477,13 @@ Purpose:
 * Primary read layer between SQL Server and the JMD calculation engine.
 
 Responsibilities:
-* Fetch plant metadata, process demand, fixed consumption, asset data, priorities, capacities, norms, import power, HRSG/STG lookups, and diagnostic aggregates; normalize results into dicts and DataFrames; log failures and apply fallback behavior.
+* Fetch plant metadata, process demand, fixed consumption, asset data, priorities, capacities, norms, import power, HRSG/STG lookups, and diagnostic aggregates; normalize results into dicts and DataFrames; log failures and apply fallback behavior. Fixed consumption is fetched by matching the CPP Plant ID against the sub-plants' SourceName and rolled up by utility.
 
 Key Classes:
 * `DataFetchError`: raised when a schema problem should not be silently ignored.
 
 Key Functions:
-* Plant and demand fetchers: `fetch_process_demands()`, `fetch_fixed_consumption()`, `fetch_process_demand_master()`, `fetch_plant_info()`.
+* Plant and demand fetchers: `fetch_process_demands()`, `fetch_fixed_consumption_by_plant()`, `fetch_fixed_consumption()`, `fetch_process_demand_master()`, `fetch_plant_info()`.
 * Asset and capacity fetchers: `fetch_plant_assets()`, `fetch_asset_operational_hours()`, `fetch_asset_operational_hours_all_months()`, `fetch_asset_priority()`, `fetch_asset_priority_all_months()`, `fetch_steam_asset_priority()`, `fetch_steam_asset_priority_all_months()`, `fetch_steam_generation_assets()`, `fetch_plant_power_info()`, `fetch_power_asset_capacity_all_months()`, `fetch_steam_asset_capacity_all_months()`, `fetch_power_generation_assets()`, `fetch_operational_hours()`, `fetch_asset_availability()`.
 * Power and norms fetchers: `fetch_import_power_sources()`, `fetch_import_power()`, `fetch_norms()`, `fetch_gt_heat_rate_lookup()`, `fetch_hrsg_heat_rate_lookup()`.
 * Steam/lookup helpers: `fetch_stg_extraction_lookup()`, `fetch_hrsg_availability()`, `get_stg_extraction_for_load()`, `get_hrsg_heat_rate_for_load()`, `calculate_hrsg_ng_from_heat_rate()`.
@@ -1170,7 +1170,7 @@ Dependencies:
 * The fallback logic in the JMD engine.
 
 Called By:
-* `fetch_fixed_consumption()` fallback paths, `load_consumption()`, and `power_dispatch` fallback paths.
+* `fetch_fixed_consumption_by_plant()` / `fetch_fixed_consumption()` fallback paths, `load_consumption()`, and `power_dispatch` fallback paths.
 
 Calls:
 * None.
@@ -1240,7 +1240,7 @@ Source -> Transformation -> Validation -> Storage -> Reporting
 * Logging strategy: `logging.basicConfig()` is configured in `engine.report_logger.setup_logging()`, and `LogCapture` mirrors stdout plus logging into a single text buffer.
 * Retry mechanisms: `database.connection.get_connection()` retries transient SQL Server connection failures.
 * Failure scenarios: missing schema objects are surfaced as `DataFetchError`, some fetchers log warnings and continue with partial data, and the engine falls back to JSON when DB tables are empty or absent.
-* Additional handling: `fetch_fixed_consumption()` tries `CPPFixedConsumption` first and then the legacy `CPPFixConsuption` table name; power dispatch falls back to dummy capacity when live assets are missing.
+* Additional handling: fetch_fixed_consumption_by_plant() uses the CPP Plant ID as the SourceName to find sub-plants first, then tries `CPPFixedConsumption` and falls back to the legacy `CPPFixConsuption` table name; power dispatch falls back to dummy capacity when live assets are missing.
 
 # Deployment/Execution
 
@@ -1265,8 +1265,8 @@ python sez_cpp/run.py --fy 2025 --no-save --no-excel
 * The project is a JMD-only Python budgeting engine for five captive power plants: DTA, DTA-PCG, SEZ, SEZ-PCG, and C2.
 * `main.py` is the multi-plant interactive entry point; `engine/run_plant.py` is the single-plant runner used by each plant folder.
 * `plant_mapper.py` is the plant identity registry and resolves UUIDs, names, and short codes.
-* `database/queries.py` is the main read layer and contains the fixed-consumption query, process-demand query, asset lookups, norms, import power, and HRSG/STG lookup fetchers.
-* Fixed consumption is read from `CPPFixedConsumption` when available, with a fallback to the legacy `CPPFixConsuption` name.
+* `database/queries.py` is the main read layer and contains the fixed-consumption query matching sub-plants by SourceName, process-demand query, asset lookups, norms, import power, and HRSG/STG lookup fetchers.
+* Fixed consumption is read by matching the CPP plant UUID against the sub-plants' `Plants.SourceName`, then querying `CPPFixedConsumption` with a fallback to the legacy `CPPFixConsuption` name.
 * Process demand is aggregated from `CalculatedProcessDemand` using the `ProcessDemandMaster` mapping.
 * The engine merges process and fixed demand into one dict, then logs a utility-wise rollup of process, fixed, and total values.
 * Power fixed demand is normalized from kWh to MWh before it is used in dispatch and rollup summaries.

@@ -171,6 +171,7 @@ def _empty_fixed_result() -> dict:
     return {key: 0.0 for key in _FIXED_RESULT_KEYS}
 
 
+
 # ---------------------------------------------------------------------------
 # 1. FinancialYearMonth ID lookup
 # ---------------------------------------------------------------------------
@@ -418,12 +419,15 @@ def fetch_process_demand_master(plant_id: str, financial_year: str = None) -> li
 # 3. Fixed Consumption
 # ---------------------------------------------------------------------------
 
-def fetch_fixed_consumption(plant_id: str, month: int, year: int) -> dict:
+def fetch_fixed_consumption_by_plant(plant_id: str, month: int, year: int) -> dict:
     """
     Fetch fixed consumption for a plant/month and roll it up by utility.
 
-    Queries CPPFixedConsumption joined to Plants / CPPCostCentersMaster /
-    NormParameters, filtered by plant and financial year.
+    Mirrors CPP_GetFixedConsumptionByPlant:
+      - resolves Plants.SourceName for the supplied CPP plant UUID
+      - filters fixed rows by SourceName and financial year
+      - joins CPPCostCentersMaster, NormParameters, and linked utility plant
+      - rolls the month column up into utility buckets
 
     Returns a flat dict keyed by utility bucket, ready to merge with the
     process-demand dict:
@@ -455,10 +459,47 @@ def fetch_fixed_consumption(plant_id: str, month: int, year: int) -> dict:
     try:
         rows = []
         used_table = None
+        logger.info("  [FIXED] Using CPP Plant ID as SourceName to find sub-plants: %s", plant_id)
 
         for table_name in candidate_tables:
             try:
-                logger.info("  [FIXED] Trying table: %s", table_name)
+                logger.info("  [FIXED] Trying table: %s (SourceName filter)", table_name)
+                cur.execute(
+                    f"""
+                    SELECT
+                        COALESCE(np.Name, '') AS utility_name,
+                        COALESCE(np.UOM, '') AS uom,
+                        COALESCE(cc.CostCenterName, '') AS cost_center_name,
+                        COALESCE(p.DisplayName, '') AS plant_name,
+                        SUM(ISNULL(fc.[{col}], 0)) AS total_consumption
+                    FROM dbo.{table_name} fc
+                    INNER JOIN dbo.Plants p
+                        ON p.Id = fc.Plant_FK_Id
+                    LEFT JOIN dbo.CPPCostCentersMaster cc
+                        ON cc.CostCenterId = fc.CPP_CostCenter_FK_Id
+                    LEFT JOIN dbo.NormParameters np
+                        ON np.Id = fc.NormParameter_FK_Id
+                    WHERE p.SourceName = ?
+                      AND fc.AOPYear = ?
+                    GROUP BY
+                        COALESCE(np.Name, ''),
+                        COALESCE(np.UOM, ''),
+                        COALESCE(cc.CostCenterName, ''),
+                        COALESCE(p.DisplayName, '')
+                    ORDER BY
+                        COALESCE(np.Name, ''),
+                        COALESCE(cc.CostCenterName, '')
+                    """,
+                    (plant_id, fy),
+                )
+                rows = cur.fetchall()
+                if rows:
+                    used_table = table_name
+                    logger.info("  [FIXED] Using table: %s", used_table)
+                    break
+                logger.info("  [FIXED] No rows returned for SourceName filter; trying Plant_FK_Id fallback")
+
+                logger.info("  [FIXED] Trying table: %s (Plant_FK_Id filter)", table_name)
                 cur.execute(
                     f"""
                     SELECT
@@ -488,8 +529,10 @@ def fetch_fixed_consumption(plant_id: str, month: int, year: int) -> dict:
                     (plant_id, fy),
                 )
                 rows = cur.fetchall()
-                used_table = table_name
-                break
+                if rows:
+                    used_table = table_name
+                    logger.info("  [FIXED] Using table: %s", used_table)
+                    break
             except Exception as table_error:
                 if _is_schema_error(table_error):
                     logger.warning("  [FIXED] Table %s not available: %s", table_name, table_error)
@@ -500,7 +543,6 @@ def fetch_fixed_consumption(plant_id: str, month: int, year: int) -> dict:
             logger.warning("  [FIXED] No fixed consumption table available for plant %s", plant_id)
             return result
 
-        logger.info("  [FIXED] Using table: %s", used_table)
         logger.info("  [FIXED] Power values are normalized from kWh to MWh for the model")
         logger.info("  [FIXED] %-24s  %-22s  %-18s  %14s", "Plant", "Cost Center", "Utility", "Value")
         logger.info("  [FIXED] %s  %s  %s  %14s", "-" * 24, "-" * 22, "-" * 18, "-" * 14)
@@ -550,6 +592,16 @@ def fetch_fixed_consumption(plant_id: str, month: int, year: int) -> dict:
         return result
     finally:
         conn.close()
+
+
+def fetch_fixed_consumption(plant_id: str, month: int, year: int) -> dict:
+    """
+    Backward-compatible wrapper for fetch_fixed_consumption_by_plant().
+
+    Existing callers still use this function name, but the implementation now
+    follows the stored-procedure SourceName-first plant lookup.
+    """
+    return fetch_fixed_consumption_by_plant(plant_id, month, year)
 
 
 # ---------------------------------------------------------------------------
