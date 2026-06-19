@@ -1,9 +1,7 @@
-
 import { useGridApiRef } from '@mui/x-data-grid'
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { useSelector } from 'react-redux'
-import getSiteAOPReportColumns from 'components/colums/SiteReportColums'
-import { SiteReportDataService } from 'services/SiteReportDataService'
+import { PlantAopReportApiService } from 'services/plant-aop-report-api-service'
 import { useSession } from 'SessionStoreContext'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { validateFields } from 'utils/validationUtils'
@@ -21,7 +19,6 @@ const PlantAOPReport = ({ permissions }) => {
     verticalChange,
     yearChanged,
     oldYear,
-    plantID,
     plantObject,
     siteObject,
     verticalObject,
@@ -73,7 +70,7 @@ const PlantAOPReport = ({ permissions }) => {
   const [rows, setRows] = useState()
   const [tabIndex, setTabIndex] = useState(0)
   const defaultTabs = [
-    'Site Team',
+    'Plant Safety Performance & Targets',
     'Safety Improvement Initiative',
   ]
   function getAopShortYears(aopYear) {
@@ -101,227 +98,232 @@ const PlantAOPReport = ({ permissions }) => {
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
-   const columns = [
-  {
-    field: 'id',
-    title: 'Id',
-    editable: false,
-    hidden: true,
-    isVisible: false,
-  },
-  {
-    field: 'kpiName',
-    title: 'KPI Name',
-    editable: true,
-    hidden: false,
-    isVisible: true,
-  },
-  {
-    field: 'uom',
-    title: 'UOM',
-    editable: true,
-    hidden: false,
-    isVisible: true,
-  },
-  {
-    field: 'bestAchieved',
-    title: 'Best Achieved',
-    editable: true,
-    hidden: false,
-    isVisible: true,
-  },
-  {
-    field: 'prevAOP',
-    title: 'Prev AOP',
-    editable: true,
-    hidden: false,
-    isVisible: true,
-  },
-  {
-    field: 'prevActual',
-    title: 'Prev Actual',
-    editable: true,
-    hidden: false,
-    isVisible: true,
-  },
-  {
-    field: 'currentPlan',
-    title: 'Current Plan',
-    editable: true,
-    hidden: false,
-    isVisible: true,
-  },
-  {
-    field: 'remark',
-    title: 'Remark',
-    editable: true,
-    hidden: false,
-    isVisible: true,
-  },
-  {
-    field: 'aopYear',
-    title: 'AOP Year',
-    editable: true,
-    hidden: false,
-    isVisible: true,
-  },
-  {
-    field: 'plant_FK_Id',
-    title: 'Plant',
-    editable: false,
-    hidden: true,
-    isVisible: false,
-  },
-  {
-    field: 'createdOn',
-    title: 'Created On',
-    editable: false,
-    hidden: true,
-    isVisible: false,
-  },
-  {
-    field: 'modifiedOn',
-    title: 'Modified On',
-    editable: false,
-    hidden: true,
-    isVisible: false,
-  },
-  {
-    field: 'updatedBy',
-    title: 'Updated By',
-    editable: false,
-    hidden: true,
-    isVisible: false,
-  },
-  {
-    field: 'isEditable',
-    title: 'Is Editable',
-    editable: false,
-    hidden: true,
-    isVisible: false,
-  },
-  {
-    field: 'isVisible',
-    title: 'Is Visible',
-    editable: false,
-    hidden: true,
-    isVisible: false,
-  },
-  {
-    field: 'displayOrder',
-    title: 'Display Order',
-    editable: true,
-    hidden: false,
-    isVisible: true,
-  },
-];
-  const fetchData = async () => {
-  if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
-
+  const columns = [
+    {
+      field: 'id',
+      title: 'Id',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
+    {
+      field: 'kpiName',
+      title: 'KPI Name',
+      editable: true,
+      hidden: false,
+      isVisible: true,
+    },
+    {
+      field: 'uom',
+      title: 'UOM',
+      editable: true,
+      hidden: false,
+      isVisible: true,
+    },
+    {
+      field: 'bestAchieved',
+      title: 'Best Achieved',
+      editable: true,
+      hidden: false,
+      isVisible: true,
+    },
+    {
+      field: 'prevAOP',
+      title: 'Prev AOP',
+      editable: true,
+      hidden: false,
+      isVisible: true,
+    },
+    {
+      field: 'prevActual',
+      title: 'Prev Actual',
+      editable: true,
+      hidden: false,
+      isVisible: true,
+    },
+    {
+      field: 'currentPlan',
+      title: 'Current Plan',
+      editable: true,
+      hidden: false,
+      isVisible: true,
+    },
+    {
+      field: 'remark',
+      title: 'Remark',
+      editable: true,
+      hidden: false,
+      isVisible: true,
+    },
+    {
+      field: 'aopYear',
+      title: 'AOP Year',
+      editable: true,
+      hidden: false,
+      isVisible: true,
+    },
+    {
+      field: 'plant_FK_Id',
+      title: 'Plant',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
+    {
+      field: 'createdOn',
+      title: 'Created On',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
+    {
+      field: 'modifiedOn',
+      title: 'Modified On',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
+    {
+      field: 'updatedBy',
+      title: 'Updated By',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
+    {
+      field: 'isEditable',
+      title: 'Is Editable',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
+    {
+      field: 'isVisible',
+      title: 'Is Visible',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
+    {
+      field: 'displayOrder',
+      title: 'Display Order',
+      editable: true,
+      hidden: false,
+      isVisible: true,
+    },
+  ]
+  const fetchData = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
   setModifiedCells({})
-  setLoading(true)
-  try {
-    const data = await PlantAopReportApiService.getPlantsafetyPerformance(
-      keycloak,
-      PLANT_ID,
-      AOP_YEAR,
-    )
-
-    const formattedData = (data?.data?.Data || []).map((item, idx) => ({
-      ...item,
-      sno: idx + 1,
-      originalRemark: item.remark,
-    }))
-
-    setRows(formattedData)
-  } catch (error) {
-    console.error('Error fetching data:', error)
-  } finally {
-    setLoading(false)
-  }
-}
-
- const saveChanges = React.useCallback(async () => {
-  try {
     setLoading(true)
-    const data = Object.values(modifiedCells)
+    try {
+      const res = await PlantAopReportApiService.getPlantsafetyPerformance(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
-    if (data.length === 0) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'No Records to Save!',
-        severity: 'info',
-      })
-      return
-    }
-
-    // adjust to whichever fields are actually mandatory on this grid
-    const requiredFields = ['kpiName', 'uom']
-
-    const validationMessage = validateFields(data, requiredFields)
-    if (validationMessage) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: validationMessage,
-        severity: 'error',
-      })
+      if (res?.code === 200) {
+        const mapped = (res?.data || []).map((item, index) => ({
+          ...item,
+          id: index,
+          isEditable: item?.isEditable,
+          originalRemark: item.remarks,
+        }))
+        setRows(mapped)
+      } else {
+        setRows([])
+      }
+    } catch (err) {
+    console.error('Error fetching data:', err)
+      setRows([])
+    } finally {
       setLoading(false)
-      return
     }
+  }, [keycloak, yearChanged, PLANT_ID, AOP_YEAR])
 
-    const payload = data.map((item) => ({
-      id: item.id || null,
-      kpiName: item.kpiName,
-      uom: item.uom,
-      bestAchieved: item.bestAchieved,
-      prevAOP: item.prevAOP,
-      prevActual: item.prevActual,
-      currentPlan: item.currentPlan,
-      remark: item.remark,
-      aopYear: AOP_YEAR,
-      plant_FK_Id: PLANT_ID,
-      isEditable: item.isEditable ?? true,
-      isVisible: item.isVisible ?? true,
-      displayOrder: item.displayOrder ?? null,
-    }))
+  const saveChanges = React.useCallback(async () => {
+    try {
+      setLoading(true)
+      const data = Object.values(modifiedCells)
 
-    const response = await PlantAopReportApiService.savePlantsafetyPerformance(
-      keycloak,
-      PLANT_ID,
-      AOP_YEAR,
-      payload,
-    )
+      if (data.length === 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        return
+      }
 
-    if (response?.code === 200) {
+      // adjust to whichever fields are actually mandatory on this grid
+      const requiredFields = ['kpiName', 'uom']
+
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+
+      const payload = data.map((item) => ({
+        id: item.id || null,
+        kpiName: item.kpiName,
+        uom: item.uom,
+        bestAchieved: item.bestAchieved,
+        prevAOP: item.prevAOP,
+        prevActual: item.prevActual,
+        currentPlan: item.currentPlan,
+        remark: item.remark,
+        aopYear: AOP_YEAR,
+        plant_FK_Id: PLANT_ID,
+        isEditable: item.isEditable ?? true,
+        isVisible: item.isVisible ?? true,
+        displayOrder: item.displayOrder ?? null,
+      }))
+
+      const response =
+        await PlantAopReportApiService.savePlantsafetyPerformance(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          payload,
+        )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Saved Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Save failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Saved Successfully!',
-        severity: 'success',
-      })
-      setModifiedCells({})
-      fetchData()
-    } else {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: response?.message || 'Save failed!',
+        message: 'Unexpected error occurred!',
         severity: 'error',
       })
+    } finally {
+      setLoading(false)
     }
-  } catch (error) {
-    setSnackbarOpen(true)
-    setSnackbarData({
-      message: 'Unexpected error occurred!',
-      severity: 'error',
-    })
-  } finally {
-    setLoading(false)
-  }
-}, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
+  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
 
   useEffect(() => {
     if (tabIndex === 0) {
       fetchData()
-    } 
+    }
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, tabIndex])
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
@@ -359,7 +361,6 @@ const PlantAOPReport = ({ permissions }) => {
     },
     isOldYear,
   )
-  
 
   return (
     <div>
@@ -401,7 +402,7 @@ const PlantAOPReport = ({ permissions }) => {
           screenType='shutdown'
         />
       )}
-  
+
       {tabIndex === 1 && <SafetyImprovementInitiative />}
     </div>
   )

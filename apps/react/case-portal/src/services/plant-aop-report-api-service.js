@@ -3,7 +3,6 @@ import { json } from './request'
 export const PlantAopReportApiService = {
   getPlantsafetyPerformance,
   savePlantsafetyPerformance,
- 
 }
 async function getPlantsafetyPerformance(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/plant-safety-improvement?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
