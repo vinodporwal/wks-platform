@@ -1,0 +1,65 @@
+{
+  "_comment": "Fallback data for DB tables that are missing or not yet populated. Used when the live query returns empty or raises a schema error.",
+
+  "hrsg_availability": {
+    "_comment": "Per-plant HRSG availability. Sizes tuned to ~3-4x each plant's SHP demand so the excess-steam loop does not oscillate. hours=720 = full month.",
+    "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A": [
+      {"hrsg_name": "HRSG1", "linked_gt": "GT1", "priority": 1, "is_available": true, "hours": 720, "min_capacity_mt_hr": 2.0, "max_capacity_mt_hr": 8.0},
+      {"hrsg_name": "HRSG2", "linked_gt": "GT2", "priority": 2, "is_available": true, "hours": 720, "min_capacity_mt_hr": 2.0, "max_capacity_mt_hr": 8.0}
+    ],
+    "F6D82E68-C3B6-494F-9905-48F19DC611E3": [
+      {"hrsg_name": "HRSG1", "linked_gt": "GT1", "priority": 1, "is_available": true, "hours": 720, "min_capacity_mt_hr": 1.5, "max_capacity_mt_hr": 6.0},
+      {"hrsg_name": "HRSG2", "linked_gt": "GT2", "priority": 2, "is_available": true, "hours": 720, "min_capacity_mt_hr": 1.5, "max_capacity_mt_hr": 6.0}
+    ],
+    "2DFEE33F-4CFD-4887-B9DD-53388AA95271": [
+      {"hrsg_name": "HRSG1", "linked_gt": "GT1", "priority": 1, "is_available": true, "hours": 720, "min_capacity_mt_hr": 2.5, "max_capacity_mt_hr": 10.0},
+      {"hrsg_name": "HRSG2", "linked_gt": "GT2", "priority": 2, "is_available": true, "hours": 720, "min_capacity_mt_hr": 2.5, "max_capacity_mt_hr": 10.0},
+      {"hrsg_name": "HRSG3", "linked_gt": "GT3", "priority": 3, "is_available": true, "hours": 720, "min_capacity_mt_hr": 2.5, "max_capacity_mt_hr": 10.0}
+    ],
+    "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45": [
+      {"hrsg_name": "HRSG1", "linked_gt": "GT1", "priority": 1, "is_available": true, "hours": 720, "min_capacity_mt_hr": 2.0, "max_capacity_mt_hr": 8.0},
+      {"hrsg_name": "HRSG2", "linked_gt": "GT2", "priority": 2, "is_available": true, "hours": 720, "min_capacity_mt_hr": 2.0, "max_capacity_mt_hr": 8.0}
+    ],
+    "BA558F95-8A3F-4769-9C78-FF7B6C639DDF": [
+      {"hrsg_name": "HRSG1", "linked_gt": "GT1", "priority": 1, "is_available": true, "hours": 720, "min_capacity_mt_hr": 3.5, "max_capacity_mt_hr": 14.0},
+      {"hrsg_name": "HRSG2", "linked_gt": "GT2", "priority": 2, "is_available": true, "hours": 720, "min_capacity_mt_hr": 3.5, "max_capacity_mt_hr": 14.0},
+      {"hrsg_name": "HRSG3", "linked_gt": "GT3", "priority": 3, "is_available": true, "hours": 720, "min_capacity_mt_hr": 3.5, "max_capacity_mt_hr": 14.0}
+    ]
+  },
+
+  "stg_extraction_lookup": {
+    "_comment": "STG extraction curve per plant. Columns: LoadMW, LPExtractionTPH, MPExtractionTPH, SHPInletTPH, CondensateM3hr, FreeSteamFactor. Rows ordered by LoadMW ascending.",
+    "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A": [
+      {"LoadMW": 5,  "LPExtractionTPH": 3.0,  "MPExtractionTPH": 1.5,  "SHPInletTPH": 12.0,  "CondensateM3hr": 0.5, "FreeSteamFactor": 2.0},
+      {"LoadMW": 10, "LPExtractionTPH": 6.0,  "MPExtractionTPH": 3.0,  "SHPInletTPH": 22.0,  "CondensateM3hr": 1.0, "FreeSteamFactor": 2.0},
+      {"LoadMW": 15, "LPExtractionTPH": 9.0,  "MPExtractionTPH": 4.5,  "SHPInletTPH": 32.0,  "CondensateM3hr": 1.5, "FreeSteamFactor": 2.0},
+      {"LoadMW": 20, "LPExtractionTPH": 12.0, "MPExtractionTPH": 6.0,  "SHPInletTPH": 42.0,  "CondensateM3hr": 2.0, "FreeSteamFactor": 2.0},
+      {"LoadMW": 25, "LPExtractionTPH": 15.0, "MPExtractionTPH": 7.5,  "SHPInletTPH": 52.0,  "CondensateM3hr": 2.5, "FreeSteamFactor": 2.0}
+    ],
+    "F6D82E68-C3B6-494F-9905-48F19DC611E3": [
+      {"LoadMW": 5,  "LPExtractionTPH": 2.5,  "MPExtractionTPH": 1.2,  "SHPInletTPH": 10.0,  "CondensateM3hr": 0.4, "FreeSteamFactor": 2.0},
+      {"LoadMW": 10, "LPExtractionTPH": 5.0,  "MPExtractionTPH": 2.5,  "SHPInletTPH": 18.0,  "CondensateM3hr": 0.9, "FreeSteamFactor": 2.0},
+      {"LoadMW": 15, "LPExtractionTPH": 7.5,  "MPExtractionTPH": 3.8,  "SHPInletTPH": 26.0,  "CondensateM3hr": 1.3, "FreeSteamFactor": 2.0},
+      {"LoadMW": 20, "LPExtractionTPH": 10.0, "MPExtractionTPH": 5.0,  "SHPInletTPH": 34.0,  "CondensateM3hr": 1.7, "FreeSteamFactor": 2.0}
+    ],
+    "2DFEE33F-4CFD-4887-B9DD-53388AA95271": [
+      {"LoadMW": 5,  "LPExtractionTPH": 3.5,  "MPExtractionTPH": 1.8,  "SHPInletTPH": 14.0,  "CondensateM3hr": 0.6, "FreeSteamFactor": 2.0},
+      {"LoadMW": 10, "LPExtractionTPH": 7.0,  "MPExtractionTPH": 3.5,  "SHPInletTPH": 26.0,  "CondensateM3hr": 1.2, "FreeSteamFactor": 2.0},
+      {"LoadMW": 20, "LPExtractionTPH": 14.0, "MPExtractionTPH": 7.0,  "SHPInletTPH": 50.0,  "CondensateM3hr": 2.4, "FreeSteamFactor": 2.0},
+      {"LoadMW": 30, "LPExtractionTPH": 21.0, "MPExtractionTPH": 10.5, "SHPInletTPH": 74.0,  "CondensateM3hr": 3.5, "FreeSteamFactor": 2.0}
+    ],
+    "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45": [
+      {"LoadMW": 5,  "LPExtractionTPH": 3.0,  "MPExtractionTPH": 1.5,  "SHPInletTPH": 11.0,  "CondensateM3hr": 0.5, "FreeSteamFactor": 2.0},
+      {"LoadMW": 10, "LPExtractionTPH": 6.0,  "MPExtractionTPH": 3.0,  "SHPInletTPH": 21.0,  "CondensateM3hr": 1.0, "FreeSteamFactor": 2.0},
+      {"LoadMW": 20, "LPExtractionTPH": 12.0, "MPExtractionTPH": 6.0,  "SHPInletTPH": 40.0,  "CondensateM3hr": 2.0, "FreeSteamFactor": 2.0},
+      {"LoadMW": 28, "LPExtractionTPH": 17.0, "MPExtractionTPH": 8.5,  "SHPInletTPH": 56.0,  "CondensateM3hr": 2.8, "FreeSteamFactor": 2.0}
+    ],
+    "BA558F95-8A3F-4769-9C78-FF7B6C639DDF": [
+      {"LoadMW": 10, "LPExtractionTPH": 6.0,  "MPExtractionTPH": 3.0,  "SHPInletTPH": 24.0,  "CondensateM3hr": 1.0, "FreeSteamFactor": 2.0},
+      {"LoadMW": 20, "LPExtractionTPH": 12.0, "MPExtractionTPH": 6.0,  "SHPInletTPH": 46.0,  "CondensateM3hr": 2.0, "FreeSteamFactor": 2.0},
+      {"LoadMW": 30, "LPExtractionTPH": 18.0, "MPExtractionTPH": 9.0,  "SHPInletTPH": 68.0,  "CondensateM3hr": 3.0, "FreeSteamFactor": 2.0},
+      {"LoadMW": 40, "LPExtractionTPH": 24.0, "MPExtractionTPH": 12.0, "SHPInletTPH": 90.0,  "CondensateM3hr": 4.0, "FreeSteamFactor": 2.0},
+      {"LoadMW": 50, "LPExtractionTPH": 30.0, "MPExtractionTPH": 15.0, "SHPInletTPH": 112.0, "CondensateM3hr": 5.0, "FreeSteamFactor": 2.0}
+    ]
+  }
+}

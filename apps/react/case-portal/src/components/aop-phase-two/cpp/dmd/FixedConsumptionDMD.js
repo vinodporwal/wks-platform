@@ -127,7 +127,7 @@ const FixedConsumptionDMD = () => {
       minWidth: 120,
       type: 'text',
       editable: false,
-      hidden: true,
+      hidden: false,
     },
     {
       field: 'costCenter',
@@ -178,7 +178,7 @@ const FixedConsumptionDMD = () => {
       minWidth: 170,
       type: 'text',
       editable: false,
-      hidden: true,
+      hidden: false,
     },
     {
       field: 'uom',

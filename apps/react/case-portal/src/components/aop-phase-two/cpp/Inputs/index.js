@@ -189,7 +189,6 @@ const Inputs = () => {
 
   const renderBySite = () => {
     switch (lowerSiteName) {
-      // case 'dmd':
       case 'jmd':
         return <InputsJMD />
       case 'dmd':
