@@ -1,322 +1,373 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
-import { Backdrop, Box, CircularProgress } from '@mui/material'
-import Notification from 'components/Utilities/Notification'
-import { useSession } from 'SessionStoreContext'
-import KendoDataTables from './index'
-import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import { useGridApiRef } from '@mui/x-data-grid'
+import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { useSelector } from 'react-redux'
+import { PlantAopReportApiService } from 'services/plant-aop-report-api-service'
+import { useSession } from 'SessionStoreContext'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import { validateFields } from 'utils/validationUtils'
+import KendoDataTables from './index'
+import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
+import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-export default function SafetyImprovementInitiative() {
-  const keycloak = useSession()
+const PlantAOPReport = ({ permissions }) => {
+  const [_plantID, set_PlantID] = useState('')
+  const [modifiedCells, setModifiedCells] = React.useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { year } = dataGridStore
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const PLANT_NAME = plantObject?.name
+
+  const SITE_ID = siteObject?.id
+  const SITE_NAME = siteObject?.name
+
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+
   const AOP_YEAR = year?.selectedYear
-  const thisYear = AOP_YEAR
+  const vertName = verticalChange?.selectedVertical
+  const SCREEN_NAME = screenTitle?.title
 
-  const [rows, setRows] = useState([])
-  const [loading, setLoading] = useState(false)
+  const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
+  const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
 
-  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
-  const [currentRemark, setCurrentRemark] = useState('')
-  const [currentRowId, setCurrentRowId] = useState(null)
-  const [modifiedCells, setModifiedCells] = useState({})
-  const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
-  const { verticalChange, yearChanged, oldYear, plantID } = dataGridStore
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+
+  const lowerVertName = vertName?.toLowerCase()
+  const lowerSiteName = SITE_NAME?.toLowerCase()
+  const lowerPlantName = PLANT_NAME?.toLowerCase()
+  const plantName = plantObject?.name
+  const siteName = siteObject?.name
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
-  const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase()
+  const [open1, setOpen1] = useState(false)
+  const [deleteId, setDeleteId] = useState(null)
+  const apiRef = useGridApiRef()
 
-  const headerMap = generateHeaderNames(AOP_YEAR)
-
+  const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
-
-  const unsavedChangesRef = useRef({ unsavedRows: {}, rowsBeforeChange: {} })
-
-  const oldYearLabel = useMemo(() => {
-    if (!thisYear || !thisYear.includes('-')) return ''
-    const [start, end] = thisYear.split('-').map(Number)
-    return `${start - 1}-${(end - 1).toString().slice(-2)}`
-  }, [thisYear])
-
-  const columns = useMemo(
-    () => [
-      {
-        field: 'serialNumber',
-        title: 'S.No',
-        widthT: 70,
-        editable: false,
-        minWidth: 70,
-      },
-      {
-        field: 'kpi',
-        title: 'KPI',
-        editable: true,
-        widthT: 300,
-        minWidth: 100,
-      },
-      {
-        field: 'uom',
-        title: 'UOM',
-        widthT: 80,
-        editable: true,
-        minWidth: 100,
-      },
-      {
-        field: 'bestAchived',
-        title: 'Best Achived',
-
-        editable: true,
-        minWidth: 100,
-      },
-      {
-        field: 'fyAop',
-        title: 'FY25 AOP',
-
-        editable: true,
-        minWidth: 100,
-      },
-      {
-        field: 'fyActual',
-        title: 'FY25 Actual',
-
-        editable: true,
-        minWidth: 100,
-      },
-      {
-        field: 'fyActual',
-        title: 'FY26 Plan',
-
-        editable: true,
-        minWidth: 100,
-      },
-
-      {
-        field: 'remarks',
-        title: 'Remark',
-        widthT: 60,
-        editable: false,
-        minWidth: 100,
-      },
-    ],
-    [plantID, yearChanged],
-  )
-  const columns4 = useMemo(
-    () => [
-      {
-        field: 'serialNumber',
-        title: 'S.No',
-        widthT: 70,
-        editable: false,
-        minWidth: 70,
-      },
-      {
-        field: 'initiative',
-        title: 'Initiative',
-        editable: true,
-        widthT: 250,
-        minWidth: 100,
-      },
-      {
-        field: 'outcome',
-        title: 'Outcome',
-        editable: true,
-        minWidth: 100,
-      },
-      {
-        field: 'recommendation',
-        title: 'Recommendation',
-        editable: true,
-        minWidth: 100,
-      },
-      {
-        field: 'targetDate',
-        title: 'Target Date',
-        editable: true,
-        minWidth: 100,
-      },
-      {
-        field: 'responsible',
-        title: 'Resp.',
-        editable: true,
-        widthT: 120,
-        minWidth: 100,
-      },
-    ],
-    [plantID, yearChanged],
-  )
-
-  const columns3 = useMemo(
-    () => [
-      {
-        field: 'serialNumber',
-        title: 'S.No',
-        widthT: 70,
-        editable: false,
-        minWidth: 70,
-      },
-      {
-        field: 'incidentDescription',
-        title: 'Incident Description',
-        editable: true,
-        widthT: 250,
-        minWidth: 100,
-      },
-      {
-        field: 'rootCauses',
-        title: 'Root Causes',
-        editable: true,
-        minWidth: 100,
-      },
-      {
-        field: 'recommendation',
-        title: 'Recommendation',
-        editable: true,
-      },
-      {
-        field: 'targetDate',
-        title: 'Target Date',
-        editable: true,
-        minWidth: 100,
-      },
-      {
-        field: 'responsible',
-        title: 'Resp.',
-        editable: true,
-        widthT: 120,
-        minWidth: 100,
-      },
-    ],
-    [plantID, yearChanged],
-  )
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
+  const keycloak = useSession()
+  const [rows, setRows] = useState()
+  const [tabIndex, setTabIndex] = useState(0)
+  const valueFormat = ValueFormatterConsumption()
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+  const handleRemarkCellClick = (row) => {
+    if (READ_ONLY) return
+    setCurrentRemark(row.remark || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
+  const columns = [
+    {
+      field: 'id',
+      title: 'Id',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
+    {
+      field: 'initiativeDescription',
+      title: 'Initiative Description',
+      editable: false,
+      hidden: false,
+      isVisible: true,
+    },
+    {
+      field: 'outcome',
+      title: 'Outcome',
+      editable: true,
+      hidden: false,
+      isVisible: true,
+    },
+    {
+      field: 'recommendation',
+      title: 'Recommendation',
+      editable: true,
+      hidden: false,
+      isVisible: true,
+    },
+    {
+      field: 'targetDate',
+      title: 'Target Date',
+      editable: true,
+      hidden: false,
+      isVisible: true,
+    },
+    {
+      field: 'remark',
+      title: 'Remark',
+      editable: true,
+      hidden: false,
+      isVisible: true,
+    },
+    {
+      field: 'aopYear',
+      title: 'AOP Year',
+      editable: true,
+      hidden: true,
+      isVisible: true,
+    },
+    {
+      field: 'plant_FK_Id',
+      title: 'Plant',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
+    {
+      field: 'createdOn',
+      title: 'Created On',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
+    {
+      field: 'modifiedOn',
+      title: 'Modified On',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
+    {
+      field: 'updatedBy',
+      title: 'Updated By',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
+    {
+      field: 'isEditable',
+      title: 'Is Editable',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
+    {
+      field: 'isVisible',
+      title: 'Is Visible',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
+    {
+      field: 'displayOrder',
+      title: 'Display Order',
+      editable: true,
+      hidden: true,
+      isVisible: true,
+    },
+  ]
   const fetchData = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    setModifiedCells({})
     setLoading(true)
     try {
-      // var res = await DataService.getMonthWiseSummary(keycloak)
-      
+      const res = await PlantAopReportApiService.getSafetyImprovementInitiative(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
       if (res?.code === 200) {
-        const mapped = res?.data?.map((item, index) => ({
+        const mapped = (res?.data.Data || []).map((item, index) => ({
           ...item,
-          id: index,
+          id: item.id,
           isEditable: item?.isEditable,
-          originalRemark: item.remarks,
+          remark: item.remark,
+          originalRemark: item.remark,
         }))
-       
         setRows(mapped)
       } else {
         setRows([])
       }
     } catch (err) {
-      console.error('fetchData error', err)
+      console.error('Error fetching data:', err)
       setRows([])
     } finally {
       setLoading(false)
     }
-  }, [keycloak, yearChanged, plantID])
+  }, [keycloak, yearChanged, PLANT_ID, AOP_YEAR])
 
-  useEffect(() => {
-    fetchData()
-  }, [fetchData, yearChanged, plantID])
+  function toLocalDateString(date) {
+    if (!date) return null
+    const d = new Date(date)
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}` // "2026-09-24"
+  }
 
-  const saveChanges = useCallback(async () => {
+  const saveChanges = React.useCallback(async () => {
     try {
       setLoading(true)
       const data = Object.values(modifiedCells)
-      if (!data.length) {
-        setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
+
+      if (data.length === 0) {
         setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
         return
       }
-      // save logic...
-    } finally {
+
+      // adjust to whichever fields are actually mandatory on this grid
+      const requiredFields = ['initiativeDescription', 'remark']
+
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+
+      const payload = data.map((item) => ({
+        id: item.id,
+        initiativeDescription: item.initiativeDescription,
+        outcome: item.outcome,
+        recommendation: item.recommendation,
+        targetDate: toLocalDateString(item.targetDate),
+        remark: item.remark,
+        aopYear: AOP_YEAR,
+        plant_FK_Id: PLANT_ID,
+        isEditable: item.isEditable ?? true,
+        isVisible: item.isVisible ?? true,
+        displayOrder: item.displayOrder ?? null,
+      }))
+
+      const response =
+        await PlantAopReportApiService.saveSafetyImprovementInitiative(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          payload,
+        )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Saved Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Save failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
       setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
       setLoading(false)
     }
-  }, [modifiedCells])
+  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
+  useEffect(() => {
+    if (tabIndex === 0) {
+      fetchData()
+    }
+  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, tabIndex])
 
-
-  const handleCalculate = () => {}
-
-  const handleRemarkCellClick = useCallback((row) => {
-    setCurrentRemark(row.remarks || '')
-    setCurrentRowId(row.id)
-    setRemarkDialogOpen(true)
-  }, [])
-
-
-
-
-  const getAdjustedPermissionsC = (permissions, isOldYear) => {
+  const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
       ...permissions,
       showAction: false,
       addButton: false,
       deleteButton: false,
+      downloadExcelBtn: false,
+      uploadExcelBtn: false,
       editButton: false,
       showUnit: false,
       saveWithRemark: false,
       saveBtn: false,
       isOldYear: isOldYear,
+      allAction: false,
     }
   }
 
-  const adjustedPermissionsC = getAdjustedPermissionsC(
+  const adjustedPermissions = getAdjustedPermissions(
     {
+      showAction: permissions?.showAction ?? true,
+      showUnit: permissions?.showUnit ?? false,
+      saveWithRemark: permissions?.saveWithRemark ?? true,
+      saveBtn: permissions?.saveBtn ?? true,
+      customHeight: permissions?.customHeight,
       allAction: true,
-      saveBtn: true,
+      downloadExcelBtn: false,
+      showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
       titleName: 'Safety Improvement Initiative',
-      adjustedPermissions: true,
-      // downloadExcelBtnFromUI: true,
-      downloadExcelBtn: true,
-      uploadExcelBtn: true,
-      ExcelName: `${lowerVertName}_Safety Improvement Initiative`,
+
+      uploadExcelBtn: false,
     },
     isOldYear,
   )
 
-
-
   return (
-    <Box>
+    <div>
       <LoaderBackdrop open={!!loading} />
 
-     <KendoDataTables
-  rows={rows}
-  setRows={setRows}
-  columns={columns}  
-  title='Safety Improvement Initiative'
-  modifiedCells={modifiedCells}
-  setModifiedCells={setModifiedCells}
-  remarkDialogOpen={remarkDialogOpen}
-  setRemarkDialogOpen={setRemarkDialogOpen}
-  currentRemark={currentRemark}
-  setCurrentRemark={setCurrentRemark}
-  currentRowId={currentRowId}
-  setCurrentRowId={setCurrentRowId}
-  enableSaveAddBtn={enableSaveAddBtn}
-  saveChanges={saveChanges}
-  handleCalculate={handleCalculate}
-  handleRemarkCellClick={handleRemarkCellClick}
-  permissions={adjustedPermissionsC}
-/>
-
-      
-
-      <Notification
-        open={snackbarOpen}
-        message={snackbarData.message}
-        severity={snackbarData.severity}
-        onClose={() => setSnackbarOpen(false)}
+      <KendoDataTables
+        modifiedCells={modifiedCells}
+        setModifiedCells={setModifiedCells}
+        setRows={setRows}
+        columns={columns}
+        rows={rows}
+        fetchData={fetchData}
+        saveChanges={saveChanges}
+        paginationOptions={[100, 200, 300]}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        apiRef={apiRef}
+        deleteId={deleteId}
+        open1={open1}
+        setDeleteId={setDeleteId}
+        setOpen1={setOpen1}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        handleRemarkCellClick={handleRemarkCellClick}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        permissions={adjustedPermissions}
+        disableRedHighlight={true}
+        screenType='shutdown'
       />
-    </Box>
+    </div>
   )
 }
+
+export default PlantAOPReport

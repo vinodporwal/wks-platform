@@ -11,6 +11,8 @@ import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AopTabs from 'components/AopTabs'
 import SafetyImprovementInitiative from './SafetyImprovementInitiative'
+import ProfitImprovementInitiative from './ProfitImprovementInitiative'
+import ReliabilityImprovementInitiative from './ReliabilityImprovementInitiative'
 const PlantAOPReport = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -72,6 +74,8 @@ const PlantAOPReport = ({ permissions }) => {
   const defaultTabs = [
     'Plant Safety Performance & Targets',
     'Safety Improvement Initiative',
+    'Profit Improvement Initiative',
+    'Reliability Improvement Initiative',
   ]
   function getAopShortYears(aopYear) {
     if (!aopYear) return { prev: '', next: '' }
@@ -109,14 +113,14 @@ const PlantAOPReport = ({ permissions }) => {
     {
       field: 'kpiName',
       title: 'KPI Name',
-      editable: true,
+      editable: false,
       hidden: false,
       isVisible: true,
     },
     {
       field: 'uom',
       title: 'UOM',
-      editable: true,
+      editable: false,
       hidden: false,
       isVisible: true,
     },
@@ -158,63 +162,55 @@ const PlantAOPReport = ({ permissions }) => {
     {
       field: 'aopYear',
       title: 'AOP Year',
-      editable: true,
-      hidden: false,
+      hidden: true,
       isVisible: true,
     },
     {
       field: 'plant_FK_Id',
       title: 'Plant',
-      editable: false,
       hidden: true,
       isVisible: false,
     },
     {
       field: 'createdOn',
       title: 'Created On',
-      editable: false,
       hidden: true,
       isVisible: false,
     },
     {
       field: 'modifiedOn',
       title: 'Modified On',
-      editable: false,
       hidden: true,
       isVisible: false,
     },
     {
       field: 'updatedBy',
       title: 'Updated By',
-      editable: false,
       hidden: true,
       isVisible: false,
     },
     {
       field: 'isEditable',
       title: 'Is Editable',
-      editable: false,
       hidden: true,
       isVisible: false,
     },
     {
       field: 'isVisible',
       title: 'Is Visible',
-      editable: false,
       hidden: true,
       isVisible: false,
     },
     {
       field: 'displayOrder',
       title: 'Display Order',
-      editable: true,
-      hidden: false,
+      hidden: true,
       isVisible: true,
     },
   ]
   const fetchData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
-  setModifiedCells({})
+    setModifiedCells({})
     setLoading(true)
     try {
       const res = await PlantAopReportApiService.getPlantsafetyPerformance(
@@ -224,18 +220,19 @@ const PlantAOPReport = ({ permissions }) => {
       )
 
       if (res?.code === 200) {
-        const mapped = (res?.data || []).map((item, index) => ({
+        const mapped = (res?.data.Data || []).map((item, index) => ({
           ...item,
-          id: index,
+          id: item.id,
           isEditable: item?.isEditable,
-          originalRemark: item.remarks,
+          remark: item.remark,
+          originalRemark: item.remark,
         }))
         setRows(mapped)
       } else {
         setRows([])
       }
     } catch (err) {
-    console.error('Error fetching data:', err)
+      console.error('Error fetching data:', err)
       setRows([])
     } finally {
       setLoading(false)
@@ -257,7 +254,7 @@ const PlantAOPReport = ({ permissions }) => {
       }
 
       // adjust to whichever fields are actually mandatory on this grid
-      const requiredFields = ['kpiName', 'uom']
+      const requiredFields = ['remark']
 
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
@@ -271,7 +268,7 @@ const PlantAOPReport = ({ permissions }) => {
       }
 
       const payload = data.map((item) => ({
-        id: item.id || null,
+        id: item.id,
         kpiName: item.kpiName,
         uom: item.uom,
         bestAchieved: item.bestAchieved,
@@ -289,8 +286,6 @@ const PlantAOPReport = ({ permissions }) => {
       const response =
         await PlantAopReportApiService.savePlantsafetyPerformance(
           keycloak,
-          PLANT_ID,
-          AOP_YEAR,
           payload,
         )
 
@@ -355,7 +350,7 @@ const PlantAOPReport = ({ permissions }) => {
       downloadExcelBtn: false,
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
-      titleName: 'Plant Safety Performance& Targets',
+      titleName: 'Plant Safety Performance & Targets',
 
       uploadExcelBtn: false,
     },
@@ -404,6 +399,8 @@ const PlantAOPReport = ({ permissions }) => {
       )}
 
       {tabIndex === 1 && <SafetyImprovementInitiative />}
+      {tabIndex === 2 && <ProfitImprovementInitiative />}
+      {tabIndex === 3 && <ReliabilityImprovementInitiative />}
     </div>
   )
 }
