@@ -11,6 +11,8 @@ import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AopTabs from 'components/AopTabs'
 import SafetyImprovementInitiative from './SafetyImprovementInitiative'
+import ProfitImprovementInitiative from './ProfitImprovementInitiative'
+import ReliabilityImprovementInitiative from './ReliabilityImprovementInitiative'
 const PlantAOPReport = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -72,6 +74,8 @@ const PlantAOPReport = ({ permissions }) => {
   const defaultTabs = [
     'Plant Safety Performance & Targets',
     'Safety Improvement Initiative',
+    'Profit Improvement Initiative',
+    'Reliability Improvement Initiative',
   ]
   function getAopShortYears(aopYear) {
     if (!aopYear) return { prev: '', next: '' }
@@ -346,7 +350,7 @@ const PlantAOPReport = ({ permissions }) => {
       downloadExcelBtn: false,
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
-      titleName: 'Plant Safety Performance& Targets',
+      titleName: 'Plant Safety Performance & Targets',
 
       uploadExcelBtn: false,
     },
@@ -395,6 +399,8 @@ const PlantAOPReport = ({ permissions }) => {
       )}
 
       {tabIndex === 1 && <SafetyImprovementInitiative />}
+      {tabIndex === 2 && <ProfitImprovementInitiative />}
+      {tabIndex === 3 && <ReliabilityImprovementInitiative />}
     </div>
   )
 }
