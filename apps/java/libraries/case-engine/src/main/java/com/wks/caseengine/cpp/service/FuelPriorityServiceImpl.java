@@ -11,6 +11,7 @@ import com.wks.caseengine.cpp.dto.FuelMasterProjection;
 import com.wks.caseengine.cpp.dto.PlantWiseFuelPriorityDto;
 import com.wks.caseengine.cpp.dto.PlantWiseFuelPriorityProjection;
 import com.wks.caseengine.cpp.repository.FuelPriorityRepository;
+import com.wks.caseengine.message.vm.AOPMessageVM;
 
 @Service
 public class FuelPriorityServiceImpl implements FuelPriorityService {
@@ -39,6 +40,47 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
         return dto;
     }
 
+    @Override
+    public AOPMessageVM updatePlantFuelAvailability(List<PlantWiseFuelPriorityDto> payload) {
+        AOPMessageVM response = new AOPMessageVM();
+        int updated = 0;
+        int skipped = 0;
+
+        if (payload == null || payload.isEmpty()) {
+            response.setCode(400);
+            response.setMessage("Payload is empty");
+            return response;
+        }
+
+        for (PlantWiseFuelPriorityDto dto : payload) {
+            if (dto.getId() == null) {
+                skipped++;
+                continue;
+            }
+            if (dto.getFuelFkId() == null) {
+                skipped++;
+                continue;
+            }
+
+            int rows = repository.updatePlantFuelAvailability(
+                    dto.getId().toString(),
+                    dto.getFuelFkId().toString(),
+                    dto.getPriority(),
+                    dto.getQuantity(),
+                    dto.getRemarks());
+
+            if (rows > 0) {
+                updated++;
+            } else {
+                skipped++;
+            }
+        }
+
+        response.setCode(200);
+        response.setMessage("Plant fuel availability updated. Updated: " + updated + ", Skipped: " + skipped);
+        return response;
+    }
+
     private PlantWiseFuelPriorityDto toPlantWiseDto(PlantWiseFuelPriorityProjection p) {
         PlantWiseFuelPriorityDto dto = new PlantWiseFuelPriorityDto();
         if (p.getId() != null) {
@@ -47,10 +89,14 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
         dto.setPlantName(p.getPlantName());
         dto.setFuelName(p.getFuelName());
         dto.setFuelDisplayName(p.getFuelDisplayName());
+        if (p.getFuelFkId() != null) {
+            dto.setFuelFkId(UUID.fromString(p.getFuelFkId()));
+        }
         dto.setPriority(p.getPriority());
         dto.setQuantity(p.getQuantity());
         dto.setRemarks(p.getRemarks());
         dto.setAopYear(p.getAopYear());
         return dto;
     }
+
 }
