@@ -129,9 +129,10 @@ const BusinessDemandGrid = () => {
         PLANT_ID,
         AOP_YEAR,
       )
-      if (response && Array.isArray(response)) {
+      const data = Array.isArray(response) ? response : response?.data || []
+      if (data && Array.isArray(data)) {
         const MONTH_FIELDS = monthsConfig.map((m) => m.field)
-        const formattedData = response.map((item, index) => ({
+        const formattedData = data.map((item, index) => ({
           ...item,
           idFromApi: item.id,
           id: index,
