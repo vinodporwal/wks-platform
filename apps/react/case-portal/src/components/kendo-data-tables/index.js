@@ -4436,6 +4436,49 @@ const KendoDataTables = ({
                     )
                   }
 
+                  if (col?.type === 'checkbox') {
+                    return (
+                      <GridColumn
+                        locked={col.locked || false}
+                        key={col?.field}
+                        field={col?.field}
+                        title={col?.title || col?.headerName}
+                        width={setWidth(col?.minWidth || 150)}
+                        hidden={col?.hidden}
+                        editable={col?.editable ? true : false}
+                        headerClassName={isActive ? 'active-column' : ''}
+                        cells={{
+                          data: (props) => {
+                            const dataItem = props.dataItem || {}
+                            const val = !!dataItem[props.field]
+                            const isDisabled =
+                              col?.editable === false || READ_ONLY
+                            return (
+                              <td style={{ textAlign: 'center' }}>
+                                <Checkbox
+                                  checked={val}
+                                  onChange={(e) => {
+                                    const checked =
+                                      e?.value ?? e?.target?.checked ?? false
+                                    const changeEvent = {
+                                      dataItem,
+                                      field: props.field,
+                                      value: checked,
+                                    }
+                                    itemChange(changeEvent)
+                                  }}
+                                  disabled={isDisabled}
+                                />
+                              </td>
+                            )
+                          },
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
+
                   return (
                     <GridColumn
                       locked={col.locked || false}
