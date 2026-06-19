@@ -142,6 +142,9 @@ database/scripts/CPPNorms_*.sql
 database/scripts/CPPNorms_*.md
 database/scripts/CPP_*.sql
 apps/python/PPPython-script/
+apps/python/JMD/logs/
+apps/python/JMD/output/
+apps/python/JMD/**/*.pyc
 !apps/python/PPPython-script/
 apps/python/PPPython-script/**
 !apps/python/PPPython-script/**/*.py
