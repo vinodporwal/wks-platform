@@ -10,6 +10,7 @@ public interface CPPImportPowerProjection {
     String getPlantName();
     String getUtility();
     String getMaterial();
+    String getMaterialDisplayName();
     String getUom();
 
     BigDecimal getApr();

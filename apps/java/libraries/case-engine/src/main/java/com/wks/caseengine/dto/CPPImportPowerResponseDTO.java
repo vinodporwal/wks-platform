@@ -13,6 +13,7 @@ public class CPPImportPowerResponseDTO {
     private String plantName;
     private String utility;
     private String material;
+    private String materialDisplayName;
     private String uom;
 
     private BigDecimal apr;

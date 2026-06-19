@@ -92,6 +92,7 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
         dto.setPlantName(projection.getPlantName());
         dto.setUtility(projection.getUtility());
         dto.setMaterial(projection.getMaterial());
+        dto.setMaterialDisplayName(projection.getMaterialDisplayName());
         dto.setUom(projection.getUom());
 
         dto.setApr(projection.getApr());
