@@ -14,6 +14,7 @@ import com.wks.caseengine.dto.PlantReportDTO;
 import com.wks.caseengine.dto.PlantSafetyImprovementDTO;
 import com.wks.caseengine.dto.ProfitImprovementInitiativeDTO;
 import com.wks.caseengine.dto.ReliabilityImprovementDTO;
+import com.wks.caseengine.dto.SiteSafetyPerformanceTargetsDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.service.PlantReportService;
 
@@ -24,7 +25,7 @@ public class PlantReportController {
     @Autowired
     private PlantReportService plantReportService;
 
-    @GetMapping(value = "/plant-report")
+    @GetMapping(value = "/plant-report") // Sp_PlantSafetyPerformanceTargets
     public AOPMessageVM getPlantReport(@RequestParam String plantId, @RequestParam String aopYear) {
         return plantReportService.getPlantReport(plantId, aopYear);
     }
@@ -34,7 +35,7 @@ public class PlantReportController {
         return plantReportService.savePlantReport(plantReportDTOs);
     }
 
-    @GetMapping(value = "/plant-safety-improvement")
+    @GetMapping(value = "/plant-safety-improvement") 
     public AOPMessageVM getPlantSafetyImprovement(@RequestParam String plantId, @RequestParam String aopYear) {
         return plantReportService.getPlantSafetyImprovement(plantId, aopYear);
     }
@@ -62,5 +63,15 @@ public class PlantReportController {
     @PostMapping(value = "/reliability-improvement")
     public AOPMessageVM saveReliabilityImprovement(@RequestBody List<ReliabilityImprovementDTO> reliabilityImprovementDTOs) {
         return plantReportService.saveReliabilityImprovement(reliabilityImprovementDTOs);
+    }
+
+    @GetMapping(value = "/site-safety-performance") 
+    public AOPMessageVM getSiteSafetyPerformanceTargets(@RequestParam String siteId, @RequestParam String aopYear) {
+        return plantReportService.getSiteSafetyPerformanceTargets(siteId, aopYear);
+    }
+
+    @PostMapping(value = "/site-safety-performance")
+    public AOPMessageVM saveSiteSafetyPerformanceTargets(@RequestBody List<SiteSafetyPerformanceTargetsDTO> siteSafetyPerformanceTargetsDTOs) {
+        return plantReportService.saveSiteSafetyPerformanceTargets(siteSafetyPerformanceTargetsDTOs);
     }
 }

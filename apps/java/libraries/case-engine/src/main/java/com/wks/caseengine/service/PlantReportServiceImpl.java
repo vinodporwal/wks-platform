@@ -15,6 +15,7 @@ import com.wks.caseengine.dto.PlantReportDTO;
 import com.wks.caseengine.dto.PlantSafetyImprovementDTO;
 import com.wks.caseengine.dto.ProfitImprovementInitiativeDTO;
 import com.wks.caseengine.dto.ReliabilityImprovementDTO;
+import com.wks.caseengine.dto.SiteSafetyPerformanceTargetsDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.utility.Utility;
 
@@ -312,6 +313,84 @@ public class PlantReportServiceImpl implements PlantReportService {
                     dto.getOutcome(),
                     dto.getRecommendation(),
                     dto.getTargetDate(),
+                    dto.getRemark(),
+                    updatedBy,
+                    modifiedOn,
+                    dto.getId().toString());
+            }
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(null);
+            response.setMessage("Data saved successfully");
+            return response;
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Failed to save plant report data", ex);
+        }
+    }
+
+
+
+    @Override
+    public AOPMessageVM getSiteSafetyPerformanceTargets(String siteId, String aopYear) {
+        try {
+            String sql = "EXEC Sp_SiteSafetyPerformanceTargets @siteId = ?, @aopYear = ?";
+
+            List<SiteSafetyPerformanceTargetsDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
+                SiteSafetyPerformanceTargetsDTO.builder()
+                    .id(UUID.fromString(rs.getString("Id")))
+                    .kpiName(rs.getString("KPIName"))
+                    .uom(rs.getString("UOM"))
+                    .bestAchieved(rs.getDouble("BestAchieved"))
+                    .prevAOP(rs.getDouble("PrevAOP"))
+                    .prevActual(rs.getDouble("PrevActual"))
+                    .currentPlan(rs.getDouble("CurrentPlan"))
+                    .remark(rs.getString("Remark"))
+                    .aopYear(rs.getString("AOPYear"))
+                    .siteFkId(UUID.fromString(rs.getString("Site_FK_Id")))
+                    .isEditable(rs.getBoolean("IsEditable"))
+                    .isVisible(rs.getBoolean("IsVisible"))
+                    .displayOrder(rs.getInt("DisplayOrder"))
+                    .build(), siteId, aopYear);
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("Data", data);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setData(map);
+            response.setMessage("Data fetched successfully");
+            return response;
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    @Override
+    public AOPMessageVM saveSiteSafetyPerformanceTargets(List<SiteSafetyPerformanceTargetsDTO> siteSafetyPerformanceTargetsDTOs) {
+        try {
+            String updatedBy = Utility.getUserName();
+            Timestamp modifiedOn = new Timestamp(new Date().getTime());
+
+            String sql = "UPDATE SiteSafetyPerformanceTargets " +
+                         "SET BestAchieved = ?, PrevAOP = ?, PrevActual = ?, CurrentPlan = ?, " +
+                         "Remark = ?, UpdatedBy = ?, ModifiedOn = ? " +
+                         "WHERE Id = ?";
+
+            for (SiteSafetyPerformanceTargetsDTO dto : siteSafetyPerformanceTargetsDTOs) {
+                if (dto.getId() == null) {
+                    continue;
+                }
+
+                jdbcTemplate.update(sql,
+                    dto.getBestAchieved(),
+                    dto.getPrevAOP(),
+                    dto.getPrevActual(),
+                    dto.getCurrentPlan(),
                     dto.getRemark(),
                     updatedBy,
                     modifiedOn,
