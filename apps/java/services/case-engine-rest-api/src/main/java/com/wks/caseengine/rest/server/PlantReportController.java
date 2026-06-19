@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.wks.caseengine.dto.PlantReportDTO;
 import com.wks.caseengine.dto.PlantSafetyImprovementDTO;
+import com.wks.caseengine.dto.ProfitImprovementInitiativeDTO;
+import com.wks.caseengine.dto.ReliabilityImprovementDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.service.PlantReportService;
 
@@ -40,5 +42,25 @@ public class PlantReportController {
     @PostMapping(value = "/plant-safety-improvement")
     public AOPMessageVM savePlantSafetyImprovement(@RequestBody List<PlantSafetyImprovementDTO> plantSafetyImprovementDTOs) {
         return plantReportService.savePlantSafetyImprovement(plantSafetyImprovementDTOs);
+    }
+
+    @GetMapping(value = "/profit-improvement-initiative")
+    public AOPMessageVM getProfitImprovementInitiative(@RequestParam String plantId, @RequestParam String aopYear) {
+        return plantReportService.getProfitImprovementInitiative(plantId, aopYear);
+    }
+
+    @PostMapping(value = "/profit-improvement-initiative")
+    public AOPMessageVM saveProfitImprovementInitiative(@RequestBody List<ProfitImprovementInitiativeDTO> profitImprovementInitiativeDTOs) {
+        return plantReportService.saveProfitImprovementInitiative(profitImprovementInitiativeDTOs);
+    }
+
+    @GetMapping(value = "/reliability-improvement")
+    public AOPMessageVM getReliabilityImprovement(@RequestParam String plantId, @RequestParam String aopYear) {
+        return plantReportService.getReliabilityImprovement(plantId, aopYear);
+    }
+
+    @PostMapping(value = "/reliability-improvement")
+    public AOPMessageVM saveReliabilityImprovement(@RequestBody List<ReliabilityImprovementDTO> reliabilityImprovementDTOs) {
+        return plantReportService.saveReliabilityImprovement(reliabilityImprovementDTOs);
     }
 }
