@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -62,6 +64,22 @@ public class FuelPriorityController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("Error fetching plant wise fuel priority data", e);
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(500);
+            response.setMessage("Error: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    @PutMapping("/plant-fuel-availability")
+    public ResponseEntity<AOPMessageVM> updatePlantFuelAvailability(@RequestBody List<PlantWiseFuelPriorityDto> payload) {
+        logger.info("[PUT /plant-fuel-availability] Updating {} records", payload != null ? payload.size() : 0);
+        try {
+            AOPMessageVM response = service.updatePlantFuelAvailability(payload);
+            logger.info("[PUT /plant-fuel-availability] {}", response.getMessage());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("[PUT /plant-fuel-availability] Error updating plant fuel availability: {}", e.getMessage(), e);
             AOPMessageVM response = new AOPMessageVM();
             response.setCode(500);
             response.setMessage("Error: " + e.getMessage());
