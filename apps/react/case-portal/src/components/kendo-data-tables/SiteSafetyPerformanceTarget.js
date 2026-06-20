@@ -1,23 +1,15 @@
 import { useGridApiRef } from '@mui/x-data-grid'
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { useSelector } from 'react-redux'
-import { PlantAopReportApiService } from 'services/plant-aop-report-api-service'
 import { useSession } from 'SessionStoreContext'
-import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { validateFields } from 'utils/validationUtils'
 import KendoDataTables from './index'
-import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import AopTabs from 'components/AopTabs'
-import SafetyImprovementInitiative from './SafetyImprovementInitiative'
-import ProfitImprovementInitiative from './ProfitImprovementInitiative'
-import ReliabilityImprovementInitiative from './ReliabilityImprovementInitiative'
-import ValueFormatterProductionProductionNormBasis from 'utils/ValueFormatterProduction_ProductionNormBasis'
+import { SiteReportDataService } from 'services/SiteReportDataService'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
-import { number } from 'prop-types'
-import PlantTeam from './PlantTeam'
-const PlantAOPReport = ({ permissions }) => {
+
+const SiteSafetyPerformanceTarget = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
   const [modifiedCells, setModifiedCells] = React.useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -51,17 +43,11 @@ const PlantAOPReport = ({ permissions }) => {
 
   const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
 
-  const lowerVertName = vertName?.toLowerCase()
-  const lowerSiteName = SITE_NAME?.toLowerCase()
-  const lowerPlantName = PLANT_NAME?.toLowerCase()
-  const plantName = plantObject?.name
-  const siteName = siteObject?.name
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
   const apiRef = useGridApiRef()
-  const [rowsSlowdown, setRowsSlowdown] = useState()
 
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -75,32 +61,10 @@ const PlantAOPReport = ({ permissions }) => {
   const keycloak = useSession()
   const [rows, setRows] = useState()
   const [tabIndex, setTabIndex] = useState(0)
-  const defaultTabs = [
-    'Plant Safety Performance & Targets',
-    'Safety Improvement Initiative',
-    'Profit Improvement Initiative',
-    'Reliability Improvement Initiative',
-    'People Initiative',
-  ]
-  function getAopShortYears(aopYear) {
-    if (!aopYear) return { prev: '', next: '' }
-    const match = aopYear.match(/(\d{4})-(\d{2})/)
-    if (match) {
-      const prev = match[1].slice(-2)
-      const next = match[2]
-      return { prev, next }
-    }
-    const year = String(aopYear).slice(-2)
-    return { prev: year, next: String(Number(year) + 1).padStart(2, '0') }
-  }
-  const { prev, next } = getAopShortYears(AOP_YEAR)
-  const valueFormat = ValueFormatterProduction()
-
+  const valueFormat =  ValueFormatterProduction()
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-  const headerMap = generateHeaderNames(AOP_YEAR)
-  const IS_PE_PP_VERTICAL = lowerVertName === 'pe' || lowerVertName === 'pp'
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remark || '')
@@ -118,6 +82,9 @@ const PlantAOPReport = ({ permissions }) => {
     const year = String(aopYear).slice(-2)
     return { prev: year, next: String(Number(year) + 1).padStart(2, '0') }
   }
+
+  const { prev, next } = getAopShortYears(AOP_YEAR)
+
   const columns = [
     {
       field: 'id',
@@ -236,9 +203,9 @@ const PlantAOPReport = ({ permissions }) => {
     setModifiedCells({})
     setLoading(true)
     try {
-      const res = await PlantAopReportApiService.getPlantsafetyPerformance(
+      const res = await SiteReportDataService.getSitesafetyPerformance(
         keycloak,
-        PLANT_ID,
+        SITE_ID,
         AOP_YEAR,
       )
 
@@ -306,11 +273,10 @@ const PlantAOPReport = ({ permissions }) => {
         displayOrder: item.displayOrder ?? null,
       }))
 
-      const response =
-        await PlantAopReportApiService.savePlantsafetyPerformance(
-          keycloak,
-          payload,
-        )
+      const response = await SiteReportDataService.saveSitesafetyPerformance(
+        keycloak,
+        payload,
+      )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -373,7 +339,7 @@ const PlantAOPReport = ({ permissions }) => {
       downloadExcelBtn: false,
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
-      titleName: 'Plant Safety Performance & Targets',
+      titleName: 'Safety Improvement Initiative',
 
       uploadExcelBtn: false,
     },
@@ -383,50 +349,37 @@ const PlantAOPReport = ({ permissions }) => {
   return (
     <div>
       <LoaderBackdrop open={!!loading} />
-      {defaultTabs?.length > 1 && (
-        <AopTabs
-          tabIndex={tabIndex}
-          setTabIndex={setTabIndex}
-          tabs={defaultTabs}
-        />
-      )}
-      {tabIndex === 0 && (
-        <KendoDataTables
-          modifiedCells={modifiedCells}
-          setModifiedCells={setModifiedCells}
-          setRows={setRows}
-          columns={columns}
-          rows={rows}
-          fetchData={fetchData}
-          saveChanges={saveChanges}
-          paginationOptions={[100, 200, 300]}
-          snackbarData={snackbarData}
-          snackbarOpen={snackbarOpen}
-          apiRef={apiRef}
-          deleteId={deleteId}
-          open1={open1}
-          setDeleteId={setDeleteId}
-          setOpen1={setOpen1}
-          setSnackbarOpen={setSnackbarOpen}
-          setSnackbarData={setSnackbarData}
-          handleRemarkCellClick={handleRemarkCellClick}
-          remarkDialogOpen={remarkDialogOpen}
-          setRemarkDialogOpen={setRemarkDialogOpen}
-          currentRemark={currentRemark}
-          setCurrentRemark={setCurrentRemark}
-          currentRowId={currentRowId}
-          permissions={adjustedPermissions}
-          disableRedHighlight={true}
-          screenType='shutdown'
-        />
-      )}
 
-      {tabIndex === 1 && <SafetyImprovementInitiative />}
-      {tabIndex === 2 && <ProfitImprovementInitiative />}
-      {tabIndex === 3 && <ReliabilityImprovementInitiative />}
-      {tabIndex === 4 && <PlantTeam onlyPeopleInitiative />}
+      <KendoDataTables
+        modifiedCells={modifiedCells}
+        setModifiedCells={setModifiedCells}
+        setRows={setRows}
+        columns={columns}
+        rows={rows}
+        fetchData={fetchData}
+        saveChanges={saveChanges}
+        paginationOptions={[100, 200, 300]}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        apiRef={apiRef}
+        deleteId={deleteId}
+        open1={open1}
+        setDeleteId={setDeleteId}
+        setOpen1={setOpen1}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        handleRemarkCellClick={handleRemarkCellClick}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        permissions={adjustedPermissions}
+        disableRedHighlight={true}
+        screenType='shutdown'
+      />
     </div>
   )
 }
 
-export default PlantAOPReport
+export default SiteSafetyPerformanceTarget

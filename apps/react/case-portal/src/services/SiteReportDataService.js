@@ -26,6 +26,8 @@ export const SiteReportDataService = {
   saveMajorPeopleInitiative,
   getMCUCapacityUtilization,
   saveMCUCapacityUtilization,
+  getSitesafetyPerformance,
+  saveSitesafetyPerformance,
 }
 export async function getSiteTeamDetails(keycloak, SITE_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/site-team-transaction?siteId=${SITE_ID}&year=${AOP_YEAR}`
@@ -472,6 +474,40 @@ export async function saveMCUCapacityUtilization(
   data,
 ) {
   const url = `${Config.CaseEngineUrl}/task/mcu-capacity-utilization?aopYear=${AOP_YEAR}&siteId=${SITE_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error saving MCU Capacity Utilization data:', e)
+    return Promise.reject(e)
+  }
+}
+export async function getSitesafetyPerformance(keycloak, SITE_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/site-safety-performance?siteId=${SITE_ID}&aopYear=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error fetching MCU Capacity Utilization data:', e)
+    return Promise.reject(e)
+  }
+}
+export async function saveSitesafetyPerformance(keycloak, data) {
+  const url = `${Config.CaseEngineUrl}/task/site-safety-performance`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
