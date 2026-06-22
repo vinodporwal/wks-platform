@@ -39,7 +39,7 @@ export const UtilityPlantApiServiceV2 = {
 async function getFixedConsumptionData(keycloak, plantIds, financialYear) {
   const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
   const queryParams = plantIdArray.join(',')
-  const url = `${Config.CaseEngineUrl}/task/jmd/fixed-consumption?plantIds=${queryParams},23BCA1B3-56DD-4C15-A3D6-3C2C9A62E653&financialYear=${financialYear}`
+  const url = `${Config.CaseEngineUrl}/task/jmd/fixed-consumption?plantIds=${queryParams}&financialYear=${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
