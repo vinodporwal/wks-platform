@@ -3086,6 +3086,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		boolean filament = verticalName.equalsIgnoreCase("Filament");
 		boolean staple = verticalName.equalsIgnoreCase("Staple");
 		boolean chemical = verticalName.equalsIgnoreCase("Chemical");
+		boolean aromatics = verticalName.equalsIgnoreCase("Aromatics");
 		boolean monthDropdown= (verticalName.equalsIgnoreCase("PP") && (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("SEZ") || site.getName().equalsIgnoreCase("DTA")));
 		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
 		List<String> items = List.of(
@@ -3248,14 +3249,14 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	}
 
 	List<Map<String, Object>> shutdownDescriptionList = new ArrayList<>();
-	// for chemical plant fetch the drop down discription list for import validation
-	if(chemical) { 
+	//  fetch the drop down discription list for import validation
+	if(chemical || aromatics) { 
 		shutdownDescriptionList = (List<Map<String, Object>>) getShutdownDescription(String.valueOf(plantId)).getData();
 	}
 		for (ShutDownPlanDTO shutDownPlanDTO : shutDownPlanDTOList) {
 
-			// implemented desc validation for chemical
-			if(chemical) {  
+			// implemented desc validation as per drop down list
+			if(chemical || aromatics) {  
 				if (!isValidShutdownDescription(shutDownPlanDTO.getDiscription(), shutdownDescriptionList)) {
 					shutDownPlanDTO.setSaveStatus("Failed");
 					shutDownPlanDTO.setErrDescription("Invalid description. Please select a valid description");
@@ -3458,6 +3459,8 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 								changed = true;
 								plantMaintenanceTransaction.setLineFKId(UUID.fromString(shutDownPlanDTO.getLineId()));
 							}
+							// skip remark validation for aromatics
+							if(!aromatics) {
 							if (changed && (plantMaintenanceTransaction.getRemarks()
 									.equalsIgnoreCase(shutDownPlanDTO.getRemark()))) {
 								shutDownPlanDTO.setSaveStatus("Failed");
@@ -3465,6 +3468,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 								failedList.add(shutDownPlanDTO);
 								continue;
 							}
+						}
 							plantMaintenanceTransaction.setRemarks(shutDownPlanDTO.getRemark());
 							// Save updated record
 							plantMaintenanceTransactionRepository.save(plantMaintenanceTransaction);
