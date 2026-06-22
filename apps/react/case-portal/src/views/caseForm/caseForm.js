@@ -44,6 +44,10 @@ import { buildCreateUrl } from 'utils/util'
 import { accountStore } from './../../store'
 import html2pdf from "html2pdf.js/dist/html2pdf"
 
+import pdfMake from 'pdfmake/build/pdfmake'
+import pdfFonts from 'pdfmake/build/vfs_fonts'
+
+pdfMake.vfs = pdfFonts?.pdfMake?.vfs || pdfFonts?.vfs
 
 export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [caseDef, setCaseDef] = useState(null)
@@ -1448,12 +1452,37 @@ const handleFormChange = (submission) => {
     return matchingOption ? matchingOption.label : value // Fallback to value if no match is found
   }
 
+  const formatPdfValue = (value) => {
+    if (value === null || value === undefined || value === '') return 'N/A'
+    if (Array.isArray(value)) return value.join(', ')
+    return String(value)
+  }
+
+  const renderKeyValueGrid = (items) => {
+    return `
+    <div style="display: flex; flex-wrap: wrap; font-size: 11.5px; line-height: 1.35;">
+      ${items.map((item) => `
+        <div style="
+          box-sizing: border-box;
+          width: ${item.full ? '100%' : '50%'};
+          padding: 2px 6px 3px 0;
+          margin-bottom: 3px;
+          word-break: break-word;
+        ">
+          <span style="font-weight: bold;">${item.label}:</span>
+          <span>${formatPdfValue(item.value)}</span>
+        </div>
+      `).join('')}
+    </div>
+  `
+  }
+
   // Function to format data grids in a 2-column layout without colons in labels, skipping specific fields
   const formatDataGrid = (dataGrid, getLabel) => {
     if (!dataGrid || dataGrid.length === 0) return '<p>No data available</p>'
 
     const fieldsToSkip = [
-      // 'textField1',
+      'textField1',
       'RecommendationSubmit',
       'recommendationAssignedTo1',
       'deleteRowButton4',
@@ -1464,13 +1493,13 @@ const handleFormChange = (submission) => {
     return dataGrid
       .map((item) => {
         return `
-      <div style="display: flex; flex-wrap: wrap; border: 1px solid #ccc; padding: 10px; margin-bottom: 5px;">
+      <div style="display: flex; flex-wrap: wrap; border: 1px solid #ccc; padding: 5px; margin-bottom: 7px; page-break-inside: avoid; break-inside: avoid;">
         ${Object.entries(item)
             .map(([key, value]) =>
               fieldsToSkip.includes(key)
                 ? ''
                 : `
-            <div style="flex: 1 1 45%; border: 1px solid #ccc; margin: 5px; padding: 10px;">
+            <div style="flex: 0 0 calc(50% - 8px); max-width: calc(50% - 8px); box-sizing: border-box; border: 1px solid #ddd; margin: 3px; padding: 5px; font-size: 11.5px; line-height: 1.3; word-break: break-word;">
               <p style="font-weight: bold; margin: 0;">${getLabel(key)}</p>
               <p style="margin: 0;">
                 ${key === 'equipmentFunctionLocation' ? getEquipmentFunctionLocationLabel(value) : key === 'RecommendationConfirmSAP3' ? getSAPRequestLabel(value) : value || ''}
@@ -1621,6 +1650,404 @@ const handleFormChange = (submission) => {
     }
   }
 
+  const pdfText = (value) => {
+    if (value === null || value === undefined || value === '') return 'N/A'
+    if (Array.isArray(value)) return value.join(', ')
+    return String(value)
+  }
+
+  const pdfKeyValueCell = (label, value) => ({
+    text: [
+      { text: `${label}: `, bold: true },
+      { text: pdfText(value) },
+    ],
+    fontSize: 8.5,
+    margin: [3, 2, 3, 2],
+  })
+
+  const pdfKeyValueGrid = (items) => {
+    const rows = []
+    let i = 0
+
+    while (i < items.length) {
+      const first = items[i]
+
+      if (first.full) {
+        rows.push([
+          {
+            ...pdfKeyValueCell(first.label, first.value),
+            colSpan: 2,
+          },
+          {},
+        ])
+        i += 1
+        continue
+      }
+
+      const second = items[i + 1]
+
+      if (second && !second.full) {
+        rows.push([
+          pdfKeyValueCell(first.label, first.value),
+          pdfKeyValueCell(second.label, second.value),
+        ])
+        i += 2
+      } else {
+        rows.push([
+          pdfKeyValueCell(first.label, first.value),
+          { text: '', border: [false, false, false, false] },
+        ])
+        i += 1
+      }
+    }
+
+    return {
+      table: {
+        widths: ['50%', '50%'],
+        body: rows,
+      },
+      layout: 'noBorders',
+    }
+  }
+
+  const pdfSection = (title, body, unbreakable = true) => ({
+    unbreakable,
+    margin: [0, 0, 0, 7],
+    table: {
+      widths: ['*'],
+      body: [
+        [
+          {
+            text: title,
+            bold: true,
+            color: '#ffffff',
+            fillColor: '#333333',
+            fontSize: 10,
+            margin: [5, 3, 5, 3],
+          },
+        ],
+        [
+          {
+            stack: Array.isArray(body) ? body : [body],
+            margin: [5, 5, 5, 5],
+          },
+        ],
+      ],
+    },
+    layout: {
+      hLineColor: () => '#333333',
+      vLineColor: () => '#333333',
+      hLineWidth: () => 0.7,
+      vLineWidth: () => 0.7,
+      paddingLeft: () => 0,
+      paddingRight: () => 0,
+      paddingTop: () => 0,
+      paddingBottom: () => 0,
+    },
+  })
+
+  const pdfFaultCard = (item, getLabel, removeMainAsset = false) => {
+    const fieldsToSkip = [
+      'textField1',
+      'RecommendationSubmit',
+      'recommendationAssignedTo1',
+      'deleteRowButton4',
+      'RecommendationSubmit3',
+      'deleteRowButton5',
+    ]
+
+    const entries = Object.entries(item).filter(([key]) => {
+      const label = getLabel(key)
+      const isMainAsset =
+        removeMainAsset &&
+        label &&
+        label.replace(/\s+/g, '').toLowerCase() === 'mainasset'
+
+      return !fieldsToSkip.includes(key) && !isMainAsset
+    })
+
+    const rows = []
+
+    for (let i = 0; i < entries.length; i += 2) {
+      const [key1, value1] = entries[i]
+      const second = entries[i + 1]
+
+      const firstValue =
+        key1 === 'equipmentFunctionLocation'
+          ? getEquipmentFunctionLocationLabel(value1)
+          : key1 === 'RecommendationConfirmSAP3'
+            ? getSAPRequestLabel(value1)
+            : value1
+
+      const firstCell = {
+        stack: [
+          { text: getLabel(key1), bold: true, fontSize: 8.5 },
+          { text: pdfText(firstValue), fontSize: 8.5 },
+        ],
+        margin: [4, 3, 4, 3],
+      }
+
+      let secondCell = { text: '', border: [false, false, false, false] }
+
+      if (second) {
+        const [key2, value2] = second
+
+        const secondValue =
+          key2 === 'equipmentFunctionLocation'
+            ? getEquipmentFunctionLocationLabel(value2)
+            : key2 === 'RecommendationConfirmSAP3'
+              ? getSAPRequestLabel(value2)
+              : value2
+
+        secondCell = {
+          stack: [
+            { text: getLabel(key2), bold: true, fontSize: 8.5 },
+            { text: pdfText(secondValue), fontSize: 8.5 },
+          ],
+          margin: [4, 3, 4, 3],
+        }
+      }
+
+      rows.push([firstCell, secondCell])
+    }
+
+    return {
+      unbreakable: true,
+      margin: [0, 0, 0, 6],
+      table: {
+        widths: ['50%', '50%'],
+        body: rows,
+        dontBreakRows: true,
+      },
+      layout: {
+        hLineColor: () => '#dddddd',
+        vLineColor: () => '#dddddd',
+        hLineWidth: () => 0.6,
+        vLineWidth: () => 0.6,
+        paddingLeft: () => 0,
+        paddingRight: () => 0,
+        paddingTop: () => 0,
+        paddingBottom: () => 0,
+      },
+    }
+  }
+
+  const pdfDataGrid = (dataGrid, getLabel, removeMainAsset = false) => {
+    if (!dataGrid || dataGrid.length === 0) {
+      return [{ text: 'No data available', fontSize: 8.5 }]
+    }
+
+    return dataGrid.map((item) => pdfFaultCard(item, getLabel, removeMainAsset))
+  }
+
+
+  const generatePdfMakeDefinition = (aCase, structure, base64Map = {}) => {
+    const containerData = JSON.parse(
+      aCase.attributes.find((attr) => attr.name === 'container').value,
+    )
+
+    const labelMap = createLabelMapFromStructure(structure)
+    const getLabel = (key) => labelMap[key] || key || ''
+
+    const caseCauseCategoryLabel = getCategoryLabel(
+      containerData.caseCauseCategory,
+    )
+
+    const caseCauseDescriptionLabel = getCaseCauseDescriptionLabel(
+      containerData.caseCauseDescription,
+      containerData.caseCauseCategory,
+    )
+
+    const files = Array.isArray(containerData.file) ? containerData.file : []
+
+    const content = [
+      {
+        text: 'EED Case Management System',
+        alignment: 'center',
+        fontSize: 14,
+        margin: [0, 0, 0, 8],
+      },
+
+      pdfSection(
+        'Case Information',
+        pdfKeyValueGrid([
+          { label: getLabel('caseNo'), value: aCase.caseNo },
+          { label: getLabel('caseTitle'), value: containerData.caseTitle },
+          { label: getLabel('caseAssignedTo'), value: containerData.caseAssignedTo },
+          {
+            label: getLabel('faultCategory'),
+            value: getFaultCategoryLabel(containerData.faultCategory),
+          },
+          {
+            label: getLabel('caseDescription'),
+            value: containerData.caseDescription,
+            full: true,
+          },
+        ]),
+        true,
+      ),
+
+      pdfSection(
+        'Case Details',
+        pdfKeyValueGrid([
+          {
+            label: getLabel('createdOn'),
+            value: containerData.createdOn
+              ? new Date(containerData.createdOn).toLocaleDateString()
+              : 'N/A',
+          },
+          { label: getLabel('dueDate'), value: containerData?.dueDate || 'N/A' },
+          { label: getLabel('endDate'), value: containerData?.endDate || 'N/A' },
+          {
+            label: getLabel('caseStatus'),
+            value: getcaseStatusLabel(containerData.caseStatus),
+          },
+          {
+            label: getLabel('analysisTeam'),
+            value: containerData.analysisTeam,
+            full: true,
+          },
+        ]),
+        true,
+      ),
+
+      pdfSection(
+        'Associated Faults',
+        [
+          {
+            text: [
+              { text: `${getLabel('textField1')}: `, bold: true },
+              { text: pdfText(containerData.textField1) },
+            ],
+            fontSize: 8.5,
+            margin: [3, 0, 3, 5],
+          },
+          ...pdfDataGrid(containerData.dataGrid2, getLabel, true),
+        ],
+        false,
+      ),
+
+      pdfSection(
+        'Analysis',
+        [
+          pdfKeyValueGrid([
+            {
+              label: getLabel('caseCauseCategory'),
+              value: caseCauseCategoryLabel,
+            },
+            {
+              label: getLabel('caseCauseDescription'),
+              value: caseCauseDescriptionLabel,
+            },
+          ]),
+          {
+            text: [
+              { text: `${getLabel('analysisDesc')}: `, bold: true },
+              { text: pdfText(containerData.analysisDesc) },
+            ],
+            fontSize: 8.5,
+            margin: [3, 4, 3, 2],
+          },
+          {
+            text: [
+              { text: `${getLabel('diagnosis')}: `, bold: true },
+              { text: pdfText(containerData.diagnosis) },
+            ],
+            fontSize: 8.5,
+            margin: [3, 2, 3, 2],
+          },
+          ...files.map((file) => {
+            const isImage = file.type && file.type.startsWith('image/')
+            const imageSrc = base64Map[file.name]
+
+            if (isImage && imageSrc) {
+              return {
+                stack: [
+                  {
+                    text: file.name,
+                    fontSize: 8,
+                    color: '#555555',
+                    margin: [0, 5, 0, 2],
+                  },
+                  {
+                    image: imageSrc,
+                    fit: [500, 400],
+                    margin: [0, 0, 0, 5],
+                  },
+                ],
+              }
+            }
+
+            return {
+              text: file.name,
+              fontSize: 8.5,
+              margin: [0, 5, 0, 2],
+            }
+          }),
+        ],
+        true,
+      ),
+    ]
+
+    // if (containerData.RecommendationsRadio === 'yes') {
+    //   content.push(
+    //     pdfSection(
+    //       getLabel('dataGrid1'),
+    //       pdfDataGrid(containerData.dataGrid1, getLabel, false),
+    //       false,
+    //     ),
+    //   )
+    // }
+
+    if (containerData.RecommendationsRadio === 'yes') {
+      const recommendationSection = pdfSection(
+        getLabel('dataGrid1'),
+        pdfDataGrid(containerData.dataGrid1, getLabel, false),
+        false,
+      )
+
+      recommendationSection.pageBreak = 'before'
+
+      content.push(recommendationSection)
+    }
+
+    content.push(
+      pdfSection(
+        'Value Realization',
+        pdfKeyValueGrid([
+          {
+            label: getLabel('valueRealizationCategory'),
+            value: getValueRealizationCategoryLabel(
+              containerData.valueRealizationCategory,
+            ),
+          },
+          { label: getLabel('productionLoss'), value: containerData.productionLoss },
+          { label: getLabel('manHoursCost'), value: containerData.manHoursCost },
+          { label: getLabel('spareCost'), value: containerData.spareCost },
+          {
+            label: getLabel('totalValueCaptured'),
+            value: containerData.totalValueCaptured,
+          },
+          {
+            label: getLabel('valueRealizationConclusion'),
+            value: containerData.valueRealizationConclusion,
+            full: true,
+          },
+        ]),
+        true,
+      ),
+    )
+
+    return {
+      pageSize: 'A4',
+      pageMargins: [18, 16, 18, 18],
+      content,
+      defaultStyle: {
+        font: 'Roboto',
+      },
+    }
+  }
+
   // Print function
   const printCaseDetails = async () => {
     const containerData = JSON.parse(
@@ -1644,23 +2071,38 @@ const handleFormChange = (submission) => {
       })
     )
 
-    const printContent = generatePrintContent(aCase, formStructure, documents, base64Map);
+    // const printContent = generatePrintContent(aCase, formStructure, documents, base64Map);
 
-    const ssetName =
-      formData?.data?.container?.textField1 || "Asset";
-    const safeAssetName = ssetName.replace(/[^a-zA-Z0-9]/g, '_');  const fileName = `${aCase.caseNo}_${safeAssetName}.pdf`;  const element = document.createElement("div");
-    element.innerHTML = printContent;
+    // const ssetName =
+    //   formData?.data?.container?.textField1 || "Asset";
+    // const safeAssetName = ssetName.replace(/[^a-zA-Z0-9]/g, '_');  const fileName = `${aCase.caseNo}_${safeAssetName}.pdf`;  const element = document.createElement("div");
+    // element.innerHTML = printContent;
 
-    html2pdf()
-      .set({
-        filename: fileName,
-        margin: 10,
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-      })
-      .from(element)
-      .save();
+    // html2pdf()
+    //   .set({
+    //     filename: fileName,
+    //     margin: 8,
+    //     html2canvas: { scale: 2, useCORS: true },
+    //     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    //     pagebreak: {
+    //       mode: ['css', 'legacy'],
+    //       avoid: ['.pdf-section', '.fault-card', 'img']
+    //     }
+    //   })
+    //   .from(element)
+    //   .save();
+
+    const ssetName = formData?.data?.container?.textField1 || "Asset"
+    const safeAssetName = ssetName.replace(/[^a-zA-Z0-9]/g, '_')
+    const fileName = `${aCase.caseNo}_${safeAssetName}.pdf`
+
+    const docDefinition = generatePdfMakeDefinition(
+      aCase,
+      formStructure,
+      base64Map,
+    )
+
+    pdfMake.createPdf(docDefinition).download(fileName)
   };
 
   // const printCaseDetails = () => {
