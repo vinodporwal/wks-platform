@@ -107,17 +107,6 @@ const PlantAOPReport = ({ permissions }) => {
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
-  function getAopShortYears(aopYear) {
-    if (!aopYear) return { prev: '', next: '' }
-    const match = aopYear.match(/(\d{4})-(\d{2})/)
-    if (match) {
-      const prev = match[1].slice(-2)
-      const next = match[2]
-      return { prev, next }
-    }
-    const year = String(aopYear).slice(-2)
-    return { prev: year, next: String(Number(year) + 1).padStart(2, '0') }
-  }
   const columns = [
     {
       field: 'id',
@@ -252,7 +241,7 @@ const PlantAOPReport = ({ permissions }) => {
       if (res?.code === 200) {
         const mapped = (res?.data.Data || []).map((item, index) => ({
           ...item,
-          id:index,
+          id: index,
           idFromAPI: item.id,
           isEditable: item?.isEditable,
           remark: item.remark,
@@ -309,7 +298,7 @@ const PlantAOPReport = ({ permissions }) => {
         remark: item.remark,
         aopYear: AOP_YEAR,
         plantFkId: PLANT_ID,
-        masterId:item.masterId,
+        masterId: item.masterId,
       }))
 
       const response =
