@@ -1,6 +1,7 @@
 package com.wks.caseengine.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
@@ -31,8 +32,6 @@ import javax.sql.DataSource;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.FillPatternType;
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -1407,19 +1406,18 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 				}
 			}
-	// Unlocked style: month columns (1-12) and Remarks (13) in editable rows
-	CellStyle unlockedStyle = workbook.createCellStyle();
-	unlockedStyle.setLocked(false);
+	// Bordered unlocked style for month columns (1-12) in editable rows
+	CellStyle unlockedStyle = Utility.createBorderedUnlockedStyle(workbook);
+	// Bordered unlocked + wrap style for Remarks column (13) in editable rows
+	CellStyle unlockedWrapStyle = Utility.createBorderedWrapUnlockedStyle(workbook);
+	// Bordered locked style (no fill) for non-data columns in editable rows
+	CellStyle lockedDefaultStyle = Utility.createBorderedLockedNoFillStyle(workbook);
+	// Bordered locked grey style for all columns in non-editable (disabled) rows
+	CellStyle lockedGreyStyle = Utility.createBorderedLockedStyle(workbook);
+	// Bordered locked grey + wrap style for Remarks column in non-editable rows
+	CellStyle lockedGreyWrapStyle = Utility.createBorderedWrapLockedStyle(workbook);
 
-	// Locked style (no fill): non-data columns in editable rows (Particulars, Id, MaterialFKId)
-	CellStyle lockedDefaultStyle = workbook.createCellStyle();
-	lockedDefaultStyle.setLocked(true);
-
-	// Locked style with grey fill: all columns in non-editable (disabled) rows
-	CellStyle lockedGreyStyle = workbook.createCellStyle();
-	lockedGreyStyle.setLocked(true);
-	lockedGreyStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-	lockedGreyStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+	int remarksColIndex = 13;
 
 		for (List<Object> rowData : rows) {
 			Row row1 = sheet.createRow(currentRow++);
@@ -1446,17 +1444,39 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 					cell.setCellValue("");
 				}
 
+				boolean isRemarks = (col == remarksColIndex);
 				if (isCracker && !isAfterSave) {
-					cell.setCellStyle(isRowEditable ? unlockedStyle : lockedGreyStyle);
+					if (isRowEditable) {
+						cell.setCellStyle(isRemarks ? unlockedWrapStyle : unlockedStyle);
+					} else {
+						cell.setCellStyle(isRemarks ? lockedGreyWrapStyle : lockedGreyStyle);
+					}
+				} else {
+					if (isRemarks) {
+						cell.setCellStyle(unlockedWrapStyle);
+					} else if (col >= 1 && col <= 12) {
+						cell.setCellStyle(unlockedStyle);
+					} else {
+						cell.setCellStyle(lockedDefaultStyle);
+					}
 				}
 			}
 		}
-		sheet.setColumnHidden(14, true);
-		sheet.setColumnHidden(15, true);
-		if (isCracker && !isAfterSave) {
-			sheet.setColumnHidden(16, true);
-			
+
+	// Auto-size all visible columns; give Remarks a fixed wider width for lengthy text
+	for (int col = 0; col < innerHeaders.size(); col++) {
+		if (col == remarksColIndex) {
+			sheet.setColumnWidth(col, 40 * 256);
+		} else {
+			sheet.autoSizeColumn(col);
 		}
+	}
+
+	sheet.setColumnHidden(14, true);
+	sheet.setColumnHidden(15, true);
+	if (isCracker && !isAfterSave) {
+		sheet.setColumnHidden(16, true);
+	}
 			try {// (FileOutputStream fileOut = new FileOutputStream("output/generated.xlsx")) {
 
 				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -1519,16 +1539,18 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 			}
 
-		CellStyle lockedStyle = workbook.createCellStyle();
-		lockedStyle.setLocked(true);
-		CellStyle unlockedStyle = workbook.createCellStyle();
-		unlockedStyle.setLocked(false);
+	// Bordered unlocked style for month columns (1-12) in editable rows
+	CellStyle unlockedStyle = Utility.createBorderedUnlockedStyle(workbook);
+	// Bordered unlocked + wrap style for Remarks column (13) in editable rows
+	CellStyle unlockedWrapStyle = Utility.createBorderedWrapUnlockedStyle(workbook);
+	// Bordered locked style (no fill) for non-data columns in editable rows
+	CellStyle lockedDefaultStyle = Utility.createBorderedLockedNoFillStyle(workbook);
+	// Bordered locked grey style for all columns in non-editable (disabled) rows
+	CellStyle lockedGreyStyle = Utility.createBorderedLockedStyle(workbook);
+	// Bordered locked grey + wrap style for Remarks column in non-editable rows
+	CellStyle lockedGreyWrapStyle = Utility.createBorderedWrapLockedStyle(workbook);
 
-		// Locked style with grey fill: all columns in non-editable (disabled) rows
-	CellStyle lockedGreyStyle = workbook.createCellStyle();
-	lockedGreyStyle.setLocked(true);
-	lockedGreyStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-	lockedGreyStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+	int remarksColIndex = 13;
 
 		for (List<Object> rowData : rows) {
 			Row row1 = sheet.createRow(currentRow++);
@@ -1552,18 +1574,40 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 					cell.setCellValue("");
 				}
 
+				boolean isRemarks = (col == remarksColIndex);
 				if (isCracker) {
-					cell.setCellStyle(isRowEditable ? unlockedStyle : lockedGreyStyle);
+					if (isRowEditable) {
+						cell.setCellStyle(isRemarks ? unlockedWrapStyle : unlockedStyle);
+					} else {
+						cell.setCellStyle(isRemarks ? lockedGreyWrapStyle : lockedGreyStyle);
+					}
+				} else {
+					if (isRemarks) {
+						cell.setCellStyle(unlockedWrapStyle);
+					} else if (col >= 1 && col <= 12) {
+						cell.setCellStyle(unlockedStyle);
+					} else {
+						cell.setCellStyle(lockedDefaultStyle);
+					}
 				}
 			}
 		}
 
-		sheet.setColumnHidden(14, true);
-		sheet.setColumnHidden(15, true);
-		if (isCracker) {
-			sheet.setColumnHidden(16, true);
-			sheet.protectSheet("secret_password");
+	// Auto-size all visible columns; give Remarks a fixed wider width for lengthy text
+	for (int col = 0; col < innerHeaders.size(); col++) {
+		if (col == remarksColIndex) {
+			sheet.setColumnWidth(col, 40 * 256);
+		} else {
+			sheet.autoSizeColumn(col);
 		}
+	}
+
+	sheet.setColumnHidden(14, true);
+	sheet.setColumnHidden(15, true);
+	if (isCracker) {
+		sheet.setColumnHidden(16, true);
+		sheet.protectSheet("secret_password");
+	}
 
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			workbook.write(outputStream);
@@ -1996,6 +2040,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	}
 
 
+
 	private static String getStringCellValue(Cell cell, AOPMCCalculatedDataDTO dto) {
 	    try {
 	        if (cell == null || cell.getCellType() == CellType.BLANK) {
@@ -2188,6 +2233,9 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 	        Sites site = siteRepository.findById(plant.getSiteFkId())
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+			boolean pe = vertical.getName().equalsIgnoreCase("PE");
+			boolean meg = vertical.getName().equalsIgnoreCase("MEG");
 	        
 	        Optional<ExcelConfigurations> optExcelConfiguration = excelConfigurationsRepository
 	                .findByExcelIdAndVerticalFkIdAndSiteFkId("production_target", plant.getVerticalFKId(), plant.getSiteFkId());
@@ -2261,9 +2309,21 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	                    data.put(tableId, dataList);
 	                }
 	            }
-	            if(vertical.getName().equalsIgnoreCase("PE")) {
-	            	return excelUtilityService.generateFlexibleExcelPP(structure, data);
-	            }else {
+				// seperate export method to handle grid specific locking
+	            if(pe || meg) {
+					List<String> editableGrids = new ArrayList<>();
+					if(pe) {
+						editableGrids.add("proposedoperatingcapacity"); 
+					}
+
+					if(meg) {
+						editableGrids.addAll(Arrays.asList("DesignCapacity", "ProposedOperatingCapacity")); 
+					}
+	            	return excelUtilityService.generateFlexibleExcelPP(structure, data, editableGrids);
+
+	            }
+				
+				else {
 	            	return excelUtilityService.generateFlexibleExcel(structure, data);
 	            }
 	            

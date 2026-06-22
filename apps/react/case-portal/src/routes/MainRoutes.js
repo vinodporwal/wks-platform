@@ -150,6 +150,7 @@ import OverallAopConsumptionMerox from 'components/aop-phase-two/merox/overall-a
 import ProductionNormsBasisMerox from 'components/aop-phase-two/merox/production-norms-basis'
 import EtheleneStock from 'components/data-tables/Reports/EtheleneStock'
 // Vertical MEROX Ended
+
 // PCG
 import SteadyStateConsumptionPCG from 'components/aop-phase-two/pcg/steady-state-consumption'
 import OverallAopConsumptionPCG from 'components/aop-phase-two/pcg/overall-aop-consumption'
@@ -160,6 +161,7 @@ import ProductionNormsBasisPCG from 'components/aop-phase-two/pcg/production-nor
 import SteadyStateConsumptionRefUtil from 'components/aop-phase-two/refineryUtility/steady-state-consumption'
 import OverallAopConsumptionRefUtil from 'components/aop-phase-two/refineryUtility/overall-aop-consumption'
 import ProductionNormsBasisRefUtil from 'components/aop-phase-two/refineryUtility/production-norms-basis'
+import PlantAOPReport from 'components/kendo-data-tables/PlantAOPReport'
 // Vertical Refinery Utility Ended
 
 // Naphthasplitter
@@ -1340,6 +1342,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='site-aop-report'>
                 <SiteAOPReport />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'plant-aop-report',
+            element: (
+              <PrivateRoute routeId='plant-aop-report'>
+                <PlantAOPReport />
               </PrivateRoute>
             ),
           },

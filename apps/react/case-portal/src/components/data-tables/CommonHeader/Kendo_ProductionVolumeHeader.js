@@ -4,6 +4,7 @@ import production_coldefs_elastomer from '../../../assets/kendo_production_colde
 import production_coldefs_vcm_dmd_edc from '../../../assets/kendo_production_coldefs_vcm_dmd_edc.json'
 import production_coldefs_pp_hmd from '../../../assets/kendo_production_coldefs_pp_hmd.json'
 import { useSelector } from 'react-redux'
+import { shouldLockColumn } from 'utils/columnLockUtils'
 
 const getEnhancedProductionColDefs = ({ headerMap, valueFormat }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -70,6 +71,9 @@ const getEnhancedProductionColDefs = ({ headerMap, valueFormat }) => {
         isVisible: false,
         minWidth: 100,
       }
+    }
+    if (shouldLockColumn(col)) {
+      updatedCol.locked = true
     }
 
     return updatedCol

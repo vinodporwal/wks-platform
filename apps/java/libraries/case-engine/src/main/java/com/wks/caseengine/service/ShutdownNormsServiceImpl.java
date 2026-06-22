@@ -1833,10 +1833,11 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	                }
 
 	            
-	                if (!isRowEditable) {
+	                // if (!isRowEditable) {
 	                    
-	                    cell.setCellStyle(lockedGrayStyle);
-	                } else if (col >= 3 && col <= 14) {
+	                //     cell.setCellStyle(lockedGrayStyle);
+	                // } else
+						 if (col >= 3 && col <= 14) {
 	                    
 	                    int monthNumber = getMonthNumberFromColumnIndex(col);
 	                    
@@ -1856,6 +1857,10 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	        }
 
 	        
+	        for (int i = 0; i < innerHeaders.size(); i++) {
+	            sheet.autoSizeColumn(i);
+	        }
+
 	        sheet.setColumnHidden(16, true);
 	        sheet.setColumnHidden(17, true);
 	        

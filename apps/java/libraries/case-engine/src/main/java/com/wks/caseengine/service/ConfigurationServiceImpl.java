@@ -168,22 +168,13 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			List<Boolean> isEditable = new ArrayList<>();
 
 			Workbook workbook = new XSSFWorkbook();
-			CellStyle borderStyle = Utility.createBorderedStyle(workbook);
-			CellStyle boldStyle = Utility.createBoldStyle(workbook);
 			Sheet sheet = workbook.createSheet("Sheet1");
 			int currentRow = 0;
-			
 
 			List<List<Object>> rows = new ArrayList<>();
-			CellStyle lockedStyle = workbook.createCellStyle();
-			lockedStyle.setLocked(true);
-			lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-			lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			CellStyle lockedStyle = Utility.createBorderedLockedStyle(workbook);
+			CellStyle unlockedStyle = Utility.createBorderedUnlockedStyle(workbook);
 
-			CellStyle unlockedStyle = workbook.createCellStyle();
-			unlockedStyle.setLocked(false);
-			sheet.setDefaultColumnStyle(1, unlockedStyle);
-			
 			for (ConfigurationDTO dto : dtoList) {
 				if (dto.getConfigTypeName() != null && dto.getConfigTypeName().equalsIgnoreCase("ShutdownNorms")) {
 					continue;
@@ -309,18 +300,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		int remarkColIndex = hasCategory ? 16 : 15;
 		int totalCols = innerHeaders.size();
 
-		// Wrap styles for the remarks column — preserve locked/unlocked appearance
-		CellStyle wrapUnlockedStyle = workbook.createCellStyle();
-		wrapUnlockedStyle.setWrapText(true);
-		wrapUnlockedStyle.setVerticalAlignment(VerticalAlignment.TOP);
-		wrapUnlockedStyle.setLocked(false);
-
-		CellStyle wrapLockedStyle = workbook.createCellStyle();
-		wrapLockedStyle.setWrapText(true);
-		wrapLockedStyle.setVerticalAlignment(VerticalAlignment.TOP);
-		wrapLockedStyle.setLocked(true);
-		wrapLockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-		wrapLockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+		// Wrap styles for the remarks column — preserve locked/unlocked appearance with borders
+		CellStyle wrapUnlockedStyle = Utility.createBorderedWrapUnlockedStyle(workbook);
+		CellStyle wrapLockedStyle = Utility.createBorderedWrapLockedStyle(workbook);
 
 		// Fixed preferred width for remarks column (~50 characters × 256 units)
 		final int REMARK_CHARS = 50;
@@ -400,22 +382,13 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			List<Boolean> isEditable = new ArrayList<>();
 
 			Workbook workbook = new XSSFWorkbook();
-			CellStyle borderStyle = Utility.createBorderedStyle(workbook);
-			CellStyle boldStyle = Utility.createBoldStyle(workbook);
 			Sheet sheet = workbook.createSheet("Sheet1");
 			int currentRow = 0;
-			
 
 			List<List<Object>> rows = new ArrayList<>();
-			CellStyle lockedStyle = workbook.createCellStyle();
-			lockedStyle.setLocked(true);
-			lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-			lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			CellStyle lockedStyle = Utility.createBorderedLockedStyle(workbook);
+			CellStyle unlockedStyle = Utility.createBorderedUnlockedStyle(workbook);
 
-			CellStyle unlockedStyle = workbook.createCellStyle();
-			unlockedStyle.setLocked(false);
-			sheet.setDefaultColumnStyle(1, unlockedStyle);
-			
 			for (ConfigurationDTO dto : dtoList) {
 				
 				List<Object> list = new ArrayList<>();
@@ -3505,47 +3478,86 @@ continue;
 				}
 			}
 
-			List<String> innerHeaders = new ArrayList<>();
-			innerHeaders.add("Type");
-			innerHeaders.add("Particulars");
-			innerHeaders.add("UOM");
-			innerHeaders.add("Value");
-			innerHeaders.add("Remark");
+		List<String> innerHeaders = new ArrayList<>();
+		innerHeaders.add("Type");
+		innerHeaders.add("Particulars");
+		innerHeaders.add("UOM");
+		innerHeaders.add("Value");
+		innerHeaders.add("Remark");
+		innerHeaders.add("NormParameter_FK_Id");
 
-			
-			innerHeaders.add("NormParameter_FK_Id");
-			
+		final int REMARK_COL_INDEX = 4;
+		final int REMARK_COL_WIDTH_CHARS = 50;
 
-			List<List<String>> headers = new ArrayList<>();
-			headers.add(innerHeaders);
+		CellStyle dataStyle = Utility.createBorderedStyle(workbook);
+		CellStyle remarkStyle = Utility.createBorderedWrapUnlockedStyle(workbook);
 
-			for (List<String> headerRowData : headers) {
-				Row headerRow = sheet.createRow(currentRow++);
-				for (int col = 0; col < headerRowData.size(); col++) {
-					Cell cell = headerRow.createCell(col);
-					cell.setCellValue(headerRowData.get(col));
-					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
-				}
+		// Initialise max-width tracker with header label lengths
+		int[] maxColWidths = new int[innerHeaders.size()];
+		for (int i = 0; i < innerHeaders.size(); i++) {
+			maxColWidths[i] = innerHeaders.get(i).length();
+		}
+
+		List<List<String>> headers = new ArrayList<>();
+		headers.add(innerHeaders);
+
+		for (List<String> headerRowData : headers) {
+			Row headerRow = sheet.createRow(currentRow++);
+			for (int col = 0; col < headerRowData.size(); col++) {
+				Cell cell = headerRow.createCell(col);
+				cell.setCellValue(headerRowData.get(col));
+				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 			}
-			for (List<Object> rowData : rows) {
-				Row row = sheet.createRow(currentRow++);
-				for (int col = 0; col < rowData.size(); col++) {
-					Cell cell = row.createCell(col);
-					Object value = rowData.get(col);
+		}
 
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
-					} else if (value != null) {
-						cell.setCellValue(value.toString());
-					} else {
-						cell.setCellValue("");
+		for (List<Object> rowData : rows) {
+			Row row = sheet.createRow(currentRow++);
+			String remarkText = "";
+
+			for (int col = 0; col < rowData.size(); col++) {
+				Cell cell = row.createCell(col);
+				Object value = rowData.get(col);
+				String strValue = (value != null) ? value.toString() : "";
+
+				if (value instanceof Number) {
+					cell.setCellValue(((Number) value).doubleValue());
+				} else if (value instanceof Boolean) {
+					cell.setCellValue((Boolean) value);
+				} else if (value != null) {
+					cell.setCellValue(value.toString());
+				} else {
+					cell.setCellValue("");
+				}
+
+				if (col == REMARK_COL_INDEX) {
+					cell.setCellStyle(remarkStyle);
+					remarkText = strValue;
+				} else {
+					cell.setCellStyle(dataStyle);
+					if (col < maxColWidths.length) {
+						maxColWidths[col] = Math.max(maxColWidths[col], strValue.length());
 					}
-
 				}
 			}
-			sheet.setColumnHidden(5, true);
+
+			// Adjust row height so wrapped remark text is fully visible
+			if (!remarkText.isEmpty()) {
+				int lines = Math.max(1, (int) Math.ceil((double) remarkText.length() / REMARK_COL_WIDTH_CHARS));
+				row.setHeight((short) (lines * 300)); // ~15 points per line (300 twips)
+			}
+		}
+
+		// Set column widths: fixed larger width for Remark, content-based for others
+		for (int col = 0; col < innerHeaders.size(); col++) {
+			if (col == REMARK_COL_INDEX) {
+				sheet.setColumnWidth(col, REMARK_COL_WIDTH_CHARS * 256);
+			} else {
+				int charWidth = Math.max(10, Math.min(maxColWidths[col] + 4, 50));
+				sheet.setColumnWidth(col, charWidth * 256);
+			}
+		}
+
+		sheet.setColumnHidden(5, true);
 						try {
 
 				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

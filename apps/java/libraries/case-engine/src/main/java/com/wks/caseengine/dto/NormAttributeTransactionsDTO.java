@@ -24,4 +24,6 @@ public class NormAttributeTransactionsDTO {
 	private UUID maintenanceId;
 	private String description;
 	private String normParameterName;
+	private String saveStatus;
+	private String errDescription;
 }

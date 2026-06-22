@@ -10,11 +10,15 @@ import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.TextStyle;
 
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.DataFormat;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import jakarta.persistence.EntityManager;
@@ -259,7 +263,23 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			String pattern = "dd-MM-yyyy HH:mm";
 			SimpleDateFormat formatter = new SimpleDateFormat(pattern);
 			Workbook workbook = new XSSFWorkbook();
+
+			// dateTimeStyle with full cell borders
 			CellStyle dateTimeStyle = createDateTimeStyle(workbook, "dd-MM-yyyy HH:mm");
+			dateTimeStyle.setBorderBottom(BorderStyle.THIN);
+			dateTimeStyle.setBorderTop(BorderStyle.THIN);
+			dateTimeStyle.setBorderLeft(BorderStyle.THIN);
+			dateTimeStyle.setBorderRight(BorderStyle.THIN);
+
+			// Standard bordered style for all other data cells
+			CellStyle borderedStyle = Utility.createBorderedStyle(workbook);
+
+			// Remarks column: bordered + wrap text + top-aligned
+			CellStyle remarkWrapStyle = workbook.createCellStyle();
+			remarkWrapStyle.cloneStyleFrom(borderedStyle);
+			remarkWrapStyle.setWrapText(true);
+			remarkWrapStyle.setVerticalAlignment(VerticalAlignment.TOP);
+
 			Sheet sheet = workbook.createSheet("Sheet1");
 			int currentRow = 0;
 			List<List<Object>> rows = new ArrayList<>();
@@ -334,6 +354,16 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			List<List<String>> headers = new ArrayList<>();
 			headers.add(innerHeaders);
 
+			// Column index of Remarks and its preferred fixed width in characters
+			final int remarkColIndex = 6;
+			final int remarksFixedWidth = 50;
+
+			// Seed max widths with header text lengths
+			int[] maxColWidths = new int[innerHeaders.size()];
+			for (int i = 0; i < innerHeaders.size(); i++) {
+				maxColWidths[i] = innerHeaders.get(i).length();
+			}
+
 			for (List<String> headerRowData : headers) {
 				Row headerRow = sheet.createRow(currentRow++);
 				for (int col = 0; col < headerRowData.size(); col++) {
@@ -342,27 +372,66 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 				}
 			}
+
 			for (List<Object> rowData : rows) {
                 Row row = sheet.createRow(currentRow++);
+                int remarkLen = 0;
                 for (int col = 0; col < rowData.size(); col++) {
                     Cell cell = row.createCell(col);
                     Object value = rowData.get(col);
+                    String strVal = "";
 
                     if (value instanceof Date) {
                         cell.setCellValue((Date) value);
                         cell.setCellStyle(dateTimeStyle);
+                        strVal = formatter.format((Date) value);
                     } else if (value instanceof Number) {
                         cell.setCellValue(((Number) value).doubleValue());
+                        cell.setCellStyle(borderedStyle);
+                        strVal = value.toString();
                     } else if (value instanceof Boolean) {
                         cell.setCellValue((Boolean) value);
+                        cell.setCellStyle(borderedStyle);
+                        strVal = value.toString();
                     } else if (value != null) {
-                        cell.setCellValue(value.toString());
+                        strVal = value.toString();
+                        if (col == remarkColIndex) {
+                            cell.setCellValue(strVal);
+                            cell.setCellStyle(remarkWrapStyle);
+                            remarkLen = strVal.length();
+                        } else {
+                            cell.setCellValue(strVal);
+                            cell.setCellStyle(borderedStyle);
+                        }
                     } else {
                         cell.setCellValue("");
+                        cell.setCellStyle(col == remarkColIndex ? remarkWrapStyle : borderedStyle);
+                    }
+
+                    if (col != remarkColIndex) {
+                        maxColWidths[col] = Math.max(maxColWidths[col], strVal.length());
+                    }
+                }
+
+                // Expand row height to accommodate wrapped remark lines
+                if (remarkLen > 0) {
+                    int lines = (int) Math.ceil((double) remarkLen / remarksFixedWidth);
+                    if (lines > 1) {
+                        row.setHeightInPoints(lines * sheet.getDefaultRowHeightInPoints());
                     }
                 }
             }
-			
+
+			// Set column widths: content-driven for all columns, fixed for Remarks
+			for (int col = 0; col < maxColWidths.length; col++) {
+				if (col == remarkColIndex) {
+					sheet.setColumnWidth(col, remarksFixedWidth * 256);
+				} else {
+					int charWidth = Math.min(Math.max(maxColWidths[col] + 4, 10), 50);
+					sheet.setColumnWidth(col, charWidth * 256);
+				}
+			}
+
 			sheet.setColumnHidden(7, true);
 			sheet.setColumnHidden(8, true);
 			try {
@@ -4062,4 +4131,333 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
             throw new IllegalArgumentException("Unknown month: " + monthName, ex);
         }
     }
+
+	// ─── Slowdown Configuration Export ──────────────────────────────────────────
+
+	@Override
+	public byte[] slowdownConfigurationExport(String year, String plantId, boolean isAfterSave, List<NormAttributeTransactionsDTO> failedList) {
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			String procedureName = vertical.getName() + "_GetSlowdownNormConfiguration";
+
+			// SP column order: NormTypeName(0), NormParameter_FK_Id(1), DisplayName(2),
+			//                  UOM(3), IsEditable(4), Slowdown_cols(5+)
+			List<Object[]> dataRows  = getData(plantId, year, procedureName);
+			List<String>   colNames  = getColumnNames(procedureName, plantId, year);
+
+			// Build a lookup map: normParamId -> (fieldName -> failedDTO) for error file
+			Map<String, Map<String, NormAttributeTransactionsDTO>> failedLookup = new LinkedHashMap<>();
+			if (isAfterSave && failedList != null) {
+				for (NormAttributeTransactionsDTO dto : failedList) {
+			if (dto.getNormParameterFKId() != null) {
+					// Use lowercase so it matches the normalized SP-returned UUID
+					String key = dto.getNormParameterFKId().toString().toLowerCase();
+					failedLookup.computeIfAbsent(key, k -> new LinkedHashMap<>())
+								.put(dto.getDescription(), dto);
+					}
+				}
+			}
+
+			Workbook  workbook = new XSSFWorkbook();
+			Sheet     sheet    = workbook.createSheet("Slowdown Configuration");
+
+		// Column layout in Excel:
+		// 0: NormParameter_FK_Id  (hidden)
+		// 1: IsEditable           (hidden)
+		// 2: Particulars          (DisplayName)
+		// 3: Type                 (NormTypeName – display only)
+		// 4: UOM
+		// 5+: dynamic slowdown columns
+		// (5+n): Status           (only when isAfterSave=true)
+		// (5+n+1): Error Description (only when isAfterSave=true)
+		final int NORM_PARAM_COL    = 0;
+		final int IS_EDITABLE_COL   = 1;
+		final int PARTICULARS_COL   = 2;
+		final int TYPE_COL          = 3;
+		final int UOM_COL           = 4;
+		final int SLOWDOWN_START_COL = 5;
+
+		sheet.setColumnHidden(NORM_PARAM_COL,  true);
+		sheet.setColumnHidden(IS_EDITABLE_COL, true);
+
+		CellStyle headerStyle   = Utility.createBoldBorderedStyle(workbook);
+		CellStyle normalStyle   = Utility.createBorderedStyle(workbook);
+		CellStyle readOnlyStyle = createSlowdownConfigReadOnlyStyle(workbook);
+
+		// Build header row
+		List<String> headers = new ArrayList<>();
+		headers.add("NormParameter_FK_Id"); // col 0 – hidden
+		headers.add("IsEditable");           // col 1 – hidden
+		headers.add("Particulars");          // col 2
+		headers.add("Type");                 // col 3 – display only
+		headers.add("UOM");                  // col 4
+		// Slowdown columns start at SP index 5
+		for (int i = 5; i < colNames.size(); i++) {
+			headers.add(buildSlowdownColumnTitle(colNames.get(i)));
+		}
+		if (isAfterSave) {
+			headers.add("Status");
+			headers.add("Error Description");
+		}
+
+			int currentRow = 0;
+			Row headerRow = sheet.createRow(currentRow++);
+			for (int col = 0; col < headers.size(); col++) {
+				Cell cell = headerRow.createCell(col);
+				cell.setCellValue(headers.get(col));
+				if (col >= PARTICULARS_COL) {
+					cell.setCellStyle(headerStyle);
+				}
+			}
+
+			int dynamicColCount = colNames.size() - 5;
+
+	// Write data rows
+	for (Object[] row : dataRows) {
+		String normTypeName  = row[0] != null ? row[0].toString() : "";
+		// Normalize to lowercase so UUID lookup is case-insensitive (SQL Server may return uppercase)
+		String normParamId   = row[1] != null ? row[1].toString().trim().toLowerCase() : "";
+		String displayName   = row[2] != null ? row[2].toString() : "";
+		String uom           = row[3] != null ? row[3].toString() : "";
+		String isEditableRaw = row[4] != null ? row[4].toString() : "false";
+		boolean isEditable   = "true".equalsIgnoreCase(isEditableRaw) || "1".equals(isEditableRaw);
+		CellStyle rowStyle   = isEditable ? normalStyle : readOnlyStyle;
+
+		// Error file: skip rows that have no failures — only export failed records
+		if (isAfterSave && !failedLookup.containsKey(normParamId)) continue;
+
+		Row excelRow = sheet.createRow(currentRow++);
+
+			Cell normParamCell = excelRow.createCell(NORM_PARAM_COL);
+			normParamCell.setCellValue(normParamId);
+
+			Cell isEditableCell = excelRow.createCell(IS_EDITABLE_COL);
+			isEditableCell.setCellValue(isEditableRaw);
+
+			Cell particularsCell = excelRow.createCell(PARTICULARS_COL);
+			particularsCell.setCellValue(displayName);
+			particularsCell.setCellStyle(rowStyle);
+
+			Cell typeCell = excelRow.createCell(TYPE_COL);
+			typeCell.setCellValue(normTypeName);
+			typeCell.setCellStyle(rowStyle);
+
+			Cell uomCell = excelRow.createCell(UOM_COL);
+			uomCell.setCellValue(uom);
+			uomCell.setCellStyle(rowStyle);
+
+				for (int i = 5; i < colNames.size(); i++) {
+					int excelCol = SLOWDOWN_START_COL + (i - 5);
+					Cell dataCell = excelRow.createCell(excelCol);
+					Object value  = row[i];
+					if (value != null) {
+						try {
+							dataCell.setCellValue(Double.parseDouble(value.toString()));
+						} catch (NumberFormatException e) {
+							dataCell.setCellValue(value.toString());
+						}
+					}
+					dataCell.setCellStyle(rowStyle);
+				}
+
+				// Append Status and Error Description for failed rows
+				if (isAfterSave) {
+					int statusCol = SLOWDOWN_START_COL + dynamicColCount;
+					int errCol    = statusCol + 1;
+
+					Map<String, NormAttributeTransactionsDTO> rowFailures = failedLookup.get(normParamId);
+					if (rowFailures != null && !rowFailures.isEmpty()) {
+						// Collect unique error messages across all failed columns for this row
+						Set<String> statuses = new LinkedHashSet<>();
+						Set<String> errors   = new LinkedHashSet<>();
+						for (NormAttributeTransactionsDTO failedDto : rowFailures.values()) {
+							if (failedDto.getSaveStatus() != null) statuses.add(failedDto.getSaveStatus());
+							if (failedDto.getErrDescription() != null) errors.add(failedDto.getErrDescription());
+						}
+						excelRow.createCell(statusCol).setCellValue(String.join("; ", statuses));
+						excelRow.createCell(errCol).setCellValue(String.join("; ", errors));
+					} else {
+						excelRow.createCell(statusCol).setCellValue("");
+						excelRow.createCell(errCol).setCellValue("");
+					}
+				}
+			}
+
+			// Auto-size visible columns
+			for (int col = PARTICULARS_COL; col < headers.size(); col++) {
+				sheet.autoSizeColumn(col);
+			}
+
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			workbook.write(out);
+			workbook.close();
+			return out.toByteArray();
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to export slowdown configuration", e);
+		}
+	}
+
+	// ─── Slowdown Configuration Import ──────────────────────────────────────────
+
+	@Override
+	public AOPMessageVM importSlowdownConfigurationExcel(String year, String plantId, MultipartFile file) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			String procedureName = vertical.getName() + "_GetSlowdownNormConfiguration";
+
+			// Build title → fieldName map for slowdown columns (SP index 5+)
+			List<String> colNames = getColumnNames(procedureName, plantId, year);
+			Map<String, String> titleToField = new LinkedHashMap<>();
+			for (int i = 5; i < colNames.size(); i++) {
+				String fieldName = colNames.get(i);
+				titleToField.put(buildSlowdownColumnTitle(fieldName), fieldName);
+			}
+
+			List<NormAttributeTransactionsDTO> dtoList = new ArrayList<>();
+
+			try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+				Sheet sheet = workbook.getSheetAt(0);
+				FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+				DataFormatter dataFormatter = new DataFormatter();
+
+				Row headerRow = sheet.getRow(0);
+				if (headerRow == null) {
+					throw new RuntimeException("Excel is missing a header row");
+				}
+
+			// Read Excel column headers (row 0)
+			// Excel layout: 0=NormParameter_FK_Id, 1=IsEditable, 2=Particulars, 3=Type (display only), 4=UOM, 5+=slowdown titles
+				int totalCols = headerRow.getLastCellNum();
+				List<String> excelHeaders = new ArrayList<>();
+				for (int col = 0; col < totalCols; col++) {
+					Cell cell = headerRow.getCell(col);
+					excelHeaders.add(cell != null ? cell.getStringCellValue().trim() : "");
+				}
+
+				for (int rowIdx = 1; rowIdx <= sheet.getLastRowNum(); rowIdx++) {
+					Row row = sheet.getRow(rowIdx);
+					if (row == null) continue;
+
+					// Column 0: NormParameter_FK_Id
+					Cell normParamCell = row.getCell(0);
+					if (normParamCell == null) continue;
+					String normParamIdStr = normParamCell.getStringCellValue();
+					if (normParamIdStr == null || normParamIdStr.trim().isEmpty()) continue;
+					UUID normParamId;
+					try {
+						normParamId = UUID.fromString(normParamIdStr.trim());
+					} catch (IllegalArgumentException e) {
+						continue;
+					}
+
+					// Column 1: IsEditable — only process editable rows
+					Cell isEditableCell = row.getCell(1);
+					String isEditableStr = isEditableCell != null
+							? isEditableCell.getStringCellValue().trim() : "false";
+					boolean isEditable = "true".equalsIgnoreCase(isEditableStr) || "1".equals(isEditableStr);
+					if (!isEditable) continue;
+
+				// Columns 5+: dynamic slowdown values (col 3=Type is display-only, skipped)
+				for (int col = 5; col < excelHeaders.size(); col++) {
+						String headerTitle = excelHeaders.get(col);
+						String fieldName   = titleToField.get(headerTitle);
+						if (fieldName == null) continue;
+
+						Cell cell  = row.getCell(col);
+						String val = (cell != null) ? dataFormatter.formatCellValue(cell, evaluator).trim() : null;
+						if (val != null && val.isEmpty()) val = null;
+
+						NormAttributeTransactionsDTO dto = new NormAttributeTransactionsDTO();
+
+						if (val != null) {
+							try {
+								Double.parseDouble(val);
+							} catch (NumberFormatException e) {
+								// skip update and add the row in error file generation
+								dto.setSaveStatus("Failed");
+								dto.setErrDescription("Invalid non-numeric value found at row " + row.getRowNum()  + ": " + val);
+								dto.setNormParameterFKId(normParamId);
+								dto.setDescription(fieldName);
+						        dto.setAttributeValue(val);
+								dtoList.add(dto);
+								continue;
+							}
+						}
+
+						
+						dto.setNormParameterFKId(normParamId);
+						dto.setDescription(fieldName);
+						dto.setAttributeValue(val);
+						dtoList.add(dto);
+					}
+				}
+			}
+
+			// Process each DTO individually to collect per-record failures
+			List<NormAttributeTransactionsDTO> failedList = new ArrayList<>();
+			List<NormAttributeTransactionsDTO> successList = new ArrayList<>();
+
+			for (NormAttributeTransactionsDTO dto : dtoList) {
+				try {
+					if(dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) { 
+						failedList.add(dto);
+						continue;
+					}
+					saveSlowdownConfigurationData(plantId, year, Collections.singletonList(dto));
+					dto.setSaveStatus("Success");
+					successList.add(dto);
+				} catch (Exception ex) {
+					dto.setSaveStatus("Failed");
+					dto.setErrDescription(ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage());
+					failedList.add(dto);
+				}
+			}
+
+			if (!failedList.isEmpty()) {
+				byte[] fileByteArray = slowdownConfigurationExport(year, plantId, true, failedList);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+			return aopMessageVM;
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			aopMessageVM.setCode(500);
+			aopMessageVM.setMessage("Failed to import slowdown configuration: " + e.getMessage());
+			return aopMessageVM;
+		}
+	}
+
+	// ─── Helper: title generation identical to getShutdownDynamicColumns ────────
+
+	private static final List<String> MONTH_NAMES = Arrays.asList(
+		"January","February","March","April","May","June",
+		"July","August","September","October","November","December"
+	);
+	private static final Pattern MONTH_SUFFIX_PATTERN =
+		Pattern.compile("_(?i)(" + String.join("|", MONTH_NAMES) + ")$");
+
+	private String buildSlowdownColumnTitle(String fieldName) {
+		Matcher m = MONTH_SUFFIX_PATTERN.matcher(fieldName);
+		if (m.find()) {
+			return fieldName.replaceFirst("_(?=[^_]+$)", " (") + ")";
+		}
+		return fieldName;
+	}
+
+	private CellStyle createSlowdownConfigReadOnlyStyle(Workbook workbook) {
+		CellStyle style = Utility.createBorderedStyle(workbook);
+		style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+		style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+		return style;
+	}
 }

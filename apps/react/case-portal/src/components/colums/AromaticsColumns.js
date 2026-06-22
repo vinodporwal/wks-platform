@@ -6,6 +6,7 @@ export const SlowDownAromaticsColumns = [
     type: 'descLimit',
     widthT: 200,
     autoAdjust: false,
+    locked: true
   },
 
   {

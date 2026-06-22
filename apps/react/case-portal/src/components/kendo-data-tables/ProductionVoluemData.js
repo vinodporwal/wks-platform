@@ -163,7 +163,7 @@ const ProductionvolumeData = ({
   const [configurationExecutionDetails, setConfigurationExecutionDetails] =
     useState(null)
   const textNote = IS_PVC_HMD
-    ? '*MCU listed in the page represent Grade-mix MCU for Line 1 and Line 2 combined.'
+    ? 'K6711 MCU LISTED IN THE PAGE REPRESENT GRADE-MIX MCU FOR LINE1 and LINE2 COMBINED.'
     : ''
   const textNoteWhileSaving = IS_PP_SEZ ? 'Update MCU for All Line' : ''
   const handleRemarkCellClick = (row) => {
@@ -1227,7 +1227,8 @@ const ProductionvolumeData = ({
         IS_PVC_VMD ||
         IS_PVC_DMD ||
         IS_AROMATICS_SEZ_PX4 ||
-        IS_PVC_HMD
+        IS_PVC_HMD ||
+        VERTICAL_NAME === 'meg'
           ? false
           : true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Max Achieved Capacity`,
@@ -1259,7 +1260,8 @@ const ProductionvolumeData = ({
       IS_PP_SEZ ||
       IS_AROMATICS_SEZ_PX4 ||
       IS_PVC_DMD ||
-      IS_PVC_HMD
+      IS_PVC_HMD ||
+      VERTICAL_NAME === 'meg'
     ) {
       return true
     }
@@ -1276,6 +1278,7 @@ const ProductionvolumeData = ({
     IS_PVC_DMD,
     IS_PVC_HMD,
     IS_CRACKER_C2,
+    VERTICAL_NAME,
   ])
 
   const excelUploadBtnGrid2 = useMemo(() => {
@@ -1297,7 +1300,8 @@ const ProductionvolumeData = ({
       IS_AROMATICS_SEZ_PX4 ||
       IS_PVC_DMD ||
       IS_PVC_HMD ||
-      IS_CRACKER_C2
+      IS_CRACKER_C2 ||
+      VERTICAL_NAME === 'meg'
     ) {
       return true
     }
@@ -1314,6 +1318,7 @@ const ProductionvolumeData = ({
     IS_PVC_DMD,
     IS_PVC_HMD,
     IS_CRACKER_C2,
+    VERTICAL_NAME === 'meg',
   ])
   const adjustedPermissionsGrid2 = getAdjustedPermissions(
     {
@@ -1343,7 +1348,8 @@ const ProductionvolumeData = ({
         IS_CRACKER_DMD ||
         IS_PVC_DMD ||
         IS_PVC_HMD ||
-        IS_CRACKER_C2
+        IS_CRACKER_C2 ||
+        VERTICAL_NAME === 'meg'
           ? false
           : true,
       downloadExcelBtn: excelBtnGrid2,
@@ -1407,7 +1413,9 @@ const ProductionvolumeData = ({
         IS_PVC_DMD ||
         IS_AROMATICS_SEZ_PX4 ||
         IS_PVC_HMD ||
-        IS_PVC_VMD
+        IS_PVC_VMD ||
+        permissions?.hideDownloadExcel ||
+        VERTICAL_NAME === 'meg'
           ? false
           : true,
       uploadExcelBtn:
@@ -1418,7 +1426,9 @@ const ProductionvolumeData = ({
         IS_AROMATICS_SEZ_PX4 ||
         IS_PVC_HMD ||
         IS_PVC_VMD ||
-        IS_VCM_DMD_EDC
+        IS_VCM_DMD_EDC ||
+        permissions?.hideDownloadExcel ||
+        VERTICAL_NAME === 'meg'
           ? false
           : true,
 
@@ -1502,7 +1512,13 @@ const ProductionvolumeData = ({
           EXCEL_EXPORT_TITLE,
           LineName,
         )
-      } else if (IS_PE_PP || IS_PET || IS_PVC_VMD || IS_AROMATICS_SEZ_PX4) {
+      } else if (
+        IS_PE_PP ||
+        IS_PET ||
+        IS_PVC_VMD ||
+        IS_AROMATICS_SEZ_PX4 ||
+        VERTICAL_NAME === 'meg'
+      ) {
         await ProductionVolumeDataApiService.getProductionVolExcelCommon(
           keycloak,
           PLANT_ID,
@@ -1563,7 +1579,7 @@ const ProductionvolumeData = ({
     setLoading(true)
     try {
       let response
-      if (IS_PP_SEZ || IS_PP_DTA || IS_PP_HMD || IS_PVC_DMD || IS_PVC_HMD) {
+      if (IS_PP_SEZ || IS_PP_DTA || IS_PP_HMD || IS_PVC_DMD || IS_PVC_HMD || VERTICAL_NAME=='meg') {
         response =
           await ProductionVolumeDataApiService.saveProductionVolDataLineExcel(
             rawFile,

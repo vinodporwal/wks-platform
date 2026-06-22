@@ -22,6 +22,7 @@ export const BusinessDemandDataApiService = {
   saveBDLineData,
   businessDemandLineExport,
   businessDemandLineImport,
+  calculateBusinessDemand,
 }
 async function getBDData(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/business-demand?year=${AOP_YEAR}&plantId=${PLANT_ID}`
@@ -39,7 +40,7 @@ async function getBDData(keycloak, PLANT_ID, AOP_YEAR) {
   }
 }
 
-async function getBDLineData(keycloak, PLANT_ID, AOP_YEAR,LINE_ID) {
+async function getBDLineData(keycloak, PLANT_ID, AOP_YEAR, LINE_ID) {
   const url = `${Config.CaseEngineUrl}/task/business-demand-line?year=${AOP_YEAR}&plantId=${PLANT_ID}&lineId=${LINE_ID}`
   const headers = {
     Accept: 'application/json',
@@ -457,5 +458,27 @@ async function getModeSelectionData(keycloak, PLANT_ID, AOP_YEAR) {
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)
+  }
+}
+
+async function calculateBusinessDemand(PLANT_ID, AOP_YEAR, keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/calculate-business-demand?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const data = await resp.json()
+    return data
+  } catch (e) {
+    console.error('Error fetching calculation data:', e)
+    return Promise.reject(e)
   }
 }

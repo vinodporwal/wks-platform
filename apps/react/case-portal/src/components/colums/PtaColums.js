@@ -25,6 +25,7 @@ export const BusinessDemandPtaColumns = [
     editable: false,
     width: 125,
     minWidth: 100,
+    locked: true,
   },
   {
     field: 'april',
@@ -170,6 +171,7 @@ export const SlowDownPtaColumns = [
     widthT: 150,
     autoAdjust: false,
     minWidth: 200,
+    locked: true,
   },
 
   {
@@ -236,6 +238,7 @@ export const SlowDownPtadmdColumns = [
     widthT: 150,
     autoAdjust: false,
     minWidth: 200,
+    locked: true
   },
   {
     field: 'maintenanceId',

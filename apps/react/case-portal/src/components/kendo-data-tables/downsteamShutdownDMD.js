@@ -8,6 +8,7 @@ import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-s
 import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
 import { validateFields } from 'utils/validationUtils'
+import { shouldLockColumn } from 'utils/columnLockUtils'
 import KendoDataTables from './index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const DownsteamShutdownDMD = ({ viewOnly, permissions }) => {
@@ -273,6 +274,7 @@ const DownsteamShutdownDMD = ({ viewOnly, permissions }) => {
         editable: false,
         hidden: hiddenKeys.includes(col.field) ? true : col.hidden,
         widthT: 200,
+        locked: shouldLockColumn(col),
       }))
 
       setColumns(dynamicColumns)

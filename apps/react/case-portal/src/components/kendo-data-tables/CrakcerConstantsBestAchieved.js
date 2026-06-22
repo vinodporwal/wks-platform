@@ -510,6 +510,7 @@ const CrakcerConstantsBestAchieved = () => {
       title: 'Particulars',
       widthT: '200px',
       minWidth: 300,
+      locked: true,
     },
 
     {
@@ -517,6 +518,7 @@ const CrakcerConstantsBestAchieved = () => {
       title: 'UOM',
       minWidth: 60,
       editable: false,
+      locked: true,
     },
 
     {

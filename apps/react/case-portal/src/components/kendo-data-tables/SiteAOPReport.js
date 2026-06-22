@@ -28,6 +28,7 @@ import MajorPeopleInitiative from './MajorPeopleInitiative'
 import MCUCapacityUtilization from './MCUCapacityUtilization'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AopTabs from 'components/AopTabs'
+import SiteSafetyPerformanceTarget from './SiteSafetyPerformanceTarget'
 const SiteAOPReport = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -133,7 +134,7 @@ const SiteAOPReport = ({ permissions }) => {
     'Major Reliability Improvement',
     'Major People Initiative',
     'MCU Capacity Utilization (%)',
-    // 'Safety Performance & Targets',
+    'Safety Performance & Targets',
     // 'Contribution (Rs/ MT & Rs Crs.)',
     // 'Major Process Incidents',
     // 'Major Process Incidents FY26',
@@ -1137,8 +1138,9 @@ const SiteAOPReport = ({ permissions }) => {
       {tabIndex === 10 && <MajorPeopleInitiative />}
 
       {tabIndex === 11 && <MCUCapacityUtilization />}
+      {tabIndex=== 12 && <SiteSafetyPerformanceTarget/>}
 
-      {tabIndex === 12 && (
+      {tabIndex === 13 && (
         <KendoDataTablesReports
           columns={columns.safetyPerformance}
           rows={Rowssafety}
@@ -1162,7 +1164,7 @@ const SiteAOPReport = ({ permissions }) => {
           permissions={adjustedPermissionsslowdown}
         />
       )}
-      {tabIndex === 13 && (
+      {tabIndex === 14 && (
         <KendoDataTables
           columns={contributionColumns}
           rows={contribution}
@@ -1176,7 +1178,7 @@ const SiteAOPReport = ({ permissions }) => {
         />
       )}
 
-      {tabIndex === 14 && (
+      {tabIndex === 15 && (
         <KendoDataTables
           columns={majorProcessIncidentsFy26Columns}
           rows={majorProcessIncidentsFy26State}
@@ -1190,7 +1192,7 @@ const SiteAOPReport = ({ permissions }) => {
         />
       )}
 
-      {tabIndex === 15 && (
+      {tabIndex === 16 && (
         <KendoDataTables
           columns={columns.majorIncidents}
           rows={majorIncidents}
@@ -1212,7 +1214,7 @@ const SiteAOPReport = ({ permissions }) => {
         />
       )}
 
-      {tabIndex === 16 && (
+      {tabIndex === 17 && (
         <KendoDataTables
           columns={productionTphColumns}
           rows={productionTphState}
@@ -1226,7 +1228,7 @@ const SiteAOPReport = ({ permissions }) => {
         />
       )}
 
-      {tabIndex === 17 && (
+      {tabIndex === 18 && (
         <KendoDataTablesReports
           columns={columns.production}
           rows={production}
@@ -1240,7 +1242,7 @@ const SiteAOPReport = ({ permissions }) => {
         />
       )}
 
-      {tabIndex === 18 && (
+      {tabIndex === 19 && (
         <KendoDataTables
           columns={columns.conversionVariableCost}
           rows={conversionVariableCost}

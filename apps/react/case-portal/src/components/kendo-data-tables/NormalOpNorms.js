@@ -356,6 +356,7 @@ const NormalOpNormsScreen = () => {
       title: 'Particulars',
       widthT: 130,
       minWidth: 150,
+      locked: true,
     },
     {
       field: 'UOM',
@@ -363,6 +364,7 @@ const NormalOpNormsScreen = () => {
       widthT: 60,
       editable: false,
       minWidth: 80,
+      locked: true,
     },
     {
       field: 'Apr',
@@ -788,7 +790,7 @@ const NormalOpNormsScreen = () => {
       showCalculate: false,
       allAction: true,
       downloadExcelBtnFromUI: true,
-      ExcelName: `${lowerVertName}_Intermediate Values`,
+      ExcelName: `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Intermediate Values`,
     },
     isOldYear,
   )

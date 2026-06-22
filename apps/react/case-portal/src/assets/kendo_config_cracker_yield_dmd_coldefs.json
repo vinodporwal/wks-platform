@@ -3,6 +3,7 @@
     "field": "particulars",
     "title": "Particulars",
     "editable": false,
+    "locked": true,
     "widthT": 140,
     "fixedWidth": 140,
     "width": 140,

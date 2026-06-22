@@ -12,6 +12,7 @@ import { NormalOpNormVcmDmdColumns } from 'components/colums/VcmDmdColumns'
 import { verticalEnums } from 'enums/verticalEnums'
 import { useSelector } from 'react-redux'
 import { NormalOpNormChemicalColumns } from 'components/colums/ChemicalColums'
+import { shouldLockColumn } from 'utils/columnLockUtils'
 
 const colDefsCache = new Map()
 
@@ -47,19 +48,25 @@ const getNormalOpNormColDef = ({
   }
 
   const enhancedColDefs = cols.map((col) => {
+    let updatedCol = { ...col }
     if (!headerMap || headerMap[col.title] === undefined) {
-      return valueFormat ? { ...col, format: valueFormat } : col
+      if (valueFormat) updatedCol.format = valueFormat
+    } else {
+      updatedCol = {
+        ...updatedCol,
+        title: headerMap[col.title],
+        align: 'right',
+        format: valueFormat || '{0:#.###}',
+        type:
+          lowerVertName === 'pe' && lowerSiteName === 'hmd'
+            ? 'negativeNumber'
+            : 'number',
+      }
     }
-    return {
-      ...col,
-      title: headerMap[col.title],
-      align: 'right',
-      format: valueFormat || '{0:#.###}',
-      type:
-        lowerVertName === 'pe' && lowerSiteName === 'hmd'
-          ? 'negativeNumber'
-          : 'number',
+    if (shouldLockColumn(col)) {
+      updatedCol.locked = true
     }
+    return updatedCol
   })
 
   // if (lowerVertName === 'cracker' && lowerSiteName === 'c2') {
