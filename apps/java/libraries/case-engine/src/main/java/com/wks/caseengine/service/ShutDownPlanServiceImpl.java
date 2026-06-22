@@ -2238,7 +2238,9 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 		String verticalName = plantsService.findVerticalNameByPlantId(plantFKId);
-		boolean aromatics=vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("SEZ");
+		boolean aromaticsSez=vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("SEZ");
+		boolean pta = verticalName.equalsIgnoreCase("PTA");
+		boolean aromatics = vertical.getName().equalsIgnoreCase("AROMATICS");
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
@@ -2266,7 +2268,9 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 						dto.setSaveStatus("Failed");
 						dto.setErrDescription("Description is required.");
 						alreadyFailed = true;
-					} else if (!verticalName.equalsIgnoreCase("PTA")
+					} 
+					// skip the duplicate description validation for pta and aromatics
+					else if (!pta && !aromatics
 							&& validatedDescriptions.containsKey(dto.getDiscription().trim())) {
 						dto.setSaveStatus("Failed");
 						dto.setErrDescription(
@@ -2348,7 +2352,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 									}
 								}
 
-								else if ((verticalName.equalsIgnoreCase("PTA") || aromatics) && ldtStart != null) {
+								else if ((verticalName.equalsIgnoreCase("PTA") || aromaticsSez) && ldtStart != null) {
 									int conflictingIndex = -1;
 									for (TimeRangeWithIndex prevPeriod : validTimeRangesWithIndex) {
 										LocalDateTime prevLdtStart = prevPeriod.getStart();
@@ -2448,7 +2452,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 						}
 					}
 
-					if ((verticalName.equalsIgnoreCase("PTA") || aromatics)  && !alreadyFailed && ldtStart != null && ldtEnd != null) {
+					if ((verticalName.equalsIgnoreCase("PTA") || aromaticsSez)  && !alreadyFailed && ldtStart != null && ldtEnd != null) {
 						validTimeRangesWithIndex.add(new TimeRangeWithIndex(ldtStart, ldtEnd, currentRowIndex));
 					}
 
