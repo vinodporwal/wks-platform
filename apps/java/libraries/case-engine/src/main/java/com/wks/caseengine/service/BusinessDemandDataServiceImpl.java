@@ -636,7 +636,8 @@ public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId) {
 			List<Boolean> isEditable = new ArrayList<>();
 
 			if (!isAfterSave) {
-				 dtoList = (List<BusinessDemandDataDTO>) getBusinessDemandData(year,plantId).getData();
+				Map<String, Object> map = (Map<String, Object>) getBusinessDemandData(year,plantId).getData();
+				dtoList = (List<BusinessDemandDataDTO>) map.get("businessDemandDataDTOList");
 			}
 
 			Workbook workbook = new XSSFWorkbook();
@@ -2156,7 +2157,8 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 			List<BusinessDemandDataDTO> dtoList) {
 		try {
 			if (!isAfterSave) {
-				dtoList = (List<BusinessDemandDataDTO>) getBusinessDemandData(year, plantId).getData();
+				Map<String, Object> map = (Map<String, Object>) getBusinessDemandData(year, plantId).getData();
+				dtoList = (List<BusinessDemandDataDTO>) map.get("businessDemandDataDTOList");
 			}
 
 			Workbook workbook = new XSSFWorkbook();
