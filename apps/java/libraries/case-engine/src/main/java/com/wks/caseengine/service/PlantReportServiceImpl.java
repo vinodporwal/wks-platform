@@ -74,7 +74,7 @@ public class PlantReportServiceImpl implements PlantReportService {
                 if (dto.getId() == null) {
                    // insert logic 
 
-                   String insertSql = "INSERT INTO PlantSafetyPerformanceTargetsTransaction (Id, MasterId, BestAchieved, PrevAOP, PrevActual, CurrentPlan, Remark, UpdatedBy, CreatedOn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                   String insertSql = "INSERT INTO PlantSafetyPerformanceTargetsTransaction (Id, MasterId, BestAchieved, PrevAOP, PrevActual, CurrentPlan, Remark, plantFkId, UpdatedBy, CreatedOn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                    jdbcTemplate.update(insertSql,
                     UUID.randomUUID().toString(),
                     dto.getMasterId().toString(),
@@ -83,6 +83,7 @@ public class PlantReportServiceImpl implements PlantReportService {
                     dto.getPrevActual(),
                     dto.getCurrentPlan(),
                     dto.getRemark(),
+                    dto.getPlantFkId().toString(),
                     updatedBy,
                     new Timestamp(new Date().getTime()));
 
@@ -398,7 +399,7 @@ public class PlantReportServiceImpl implements PlantReportService {
             for (SiteSafetyPerformanceTargetsDTO dto : siteSafetyPerformanceTargetsDTOs) {
                 if (dto.getId() == null) {
                     // insert logic 
-                    String insertSql = "INSERT INTO SiteSafetyPerformanceTargetsTransaction (Id, MasterId, BestAchieved, PrevAOP, PrevActual, CurrentPlan, Remark, UpdatedBy, CreatedOn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    String insertSql = "INSERT INTO SiteSafetyPerformanceTargetsTransaction (Id, MasterId, BestAchieved, PrevAOP, PrevActual, CurrentPlan, Remark, siteFkId, UpdatedBy, CreatedOn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                     jdbcTemplate.update(insertSql,
                     UUID.randomUUID().toString(),
                     dto.getMasterId().toString(),
@@ -406,7 +407,10 @@ public class PlantReportServiceImpl implements PlantReportService {
                     dto.getPrevAOP(),
                     dto.getPrevActual(),
                     dto.getCurrentPlan(),
-                    dto.getRemark(), updatedBy, new Timestamp(new Date().getTime()));
+                    dto.getRemark(),
+                    dto.getSiteFkId().toString(),
+                    updatedBy,
+                    new Timestamp(new Date().getTime()));
                     
                     continue;
                 }
