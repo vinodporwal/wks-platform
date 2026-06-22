@@ -633,6 +633,7 @@ const SelectivityData = (props) => {
           IS_CHEMICAL_VMD_BENEZENEFPUBTA
           ? true
           : false,
+      calculateBtnText: IS_CHEMICAL_VMD_BENEZENEFPUBTA ? 'Fetch Values' : 'Calculate',
     },
     isOldYear,
   )

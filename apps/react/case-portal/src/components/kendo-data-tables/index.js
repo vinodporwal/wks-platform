@@ -2539,7 +2539,7 @@ const KendoDataTables = ({
                   }
                   className='btn-calculate'
                 >
-                  Calculate
+                  {permissions?.calculateBtnText || 'Calculate'}
                 </Button>
               )}
 
