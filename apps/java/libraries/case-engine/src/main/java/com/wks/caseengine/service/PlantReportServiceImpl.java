@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,8 +33,8 @@ public class PlantReportServiceImpl implements PlantReportService {
 
             List<PlantReportDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
                 PlantReportDTO.builder()
-                    .id(UUID.fromString(rs.getString("Id")))
-                    .masterId(UUID.fromString(rs.getString("MasterId")))
+                    .id(Optional.ofNullable(rs.getString("Id")).map(UUID::fromString).orElse(null))
+                    .masterId(Optional.ofNullable(rs.getString("MasterId")).map(UUID::fromString).orElse(null))
                     .kpiName(rs.getString("KPIName"))
                     .uom(rs.getString("UOM"))
                     .bestAchieved(rs.getDouble("BestAchieved"))
@@ -356,8 +357,8 @@ public class PlantReportServiceImpl implements PlantReportService {
 
             List<SiteSafetyPerformanceTargetsDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
                 SiteSafetyPerformanceTargetsDTO.builder()
-                    .id(UUID.fromString(rs.getString("Id")))
-                    .masterId(UUID.fromString(rs.getString("MasterId")))
+                    .id(Optional.ofNullable(rs.getString("Id")).map(UUID::fromString).orElse(null))
+                    .masterId(Optional.ofNullable(rs.getString("MasterId")).map(UUID::fromString).orElse(null))
                     .kpiName(rs.getString("KPIName"))
                     .uom(rs.getString("UOM"))
                     .bestAchieved(rs.getDouble("BestAchieved"))
