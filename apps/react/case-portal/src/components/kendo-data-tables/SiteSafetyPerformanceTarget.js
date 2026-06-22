@@ -94,6 +94,13 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
       isVisible: false,
     },
     {
+      field: 'masterId',
+      title: 'Master Id',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
+    {
       field: 'kpiName',
       title: 'KPI Name',
       editable: false,
@@ -212,7 +219,8 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
       if (res?.code === 200) {
         const mapped = (res?.data.Data || []).map((item, index) => ({
           ...item,
-          id: item.id,
+          id:index,
+          idFromAPI: item.id,
           isEditable: item?.isEditable,
           remark: item.remark,
           originalRemark: item.remark,
@@ -258,7 +266,7 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
       }
 
       const payload = data.map((item) => ({
-        id: item.id,
+        id: item.idFromAPI || null,
         kpiName: item.kpiName,
         uom: item.uom,
         bestAchieved: item.bestAchieved,
@@ -267,10 +275,8 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
         currentPlan: item.currentPlan,
         remark: item.remark,
         aopYear: AOP_YEAR,
-        plant_FK_Id: PLANT_ID,
-        isEditable: item.isEditable ?? true,
-        isVisible: item.isVisible ?? true,
-        displayOrder: item.displayOrder ?? null,
+        siteFkId: SITE_ID,
+        masterId:item.masterId,
       }))
 
       const response = await SiteReportDataService.saveSitesafetyPerformance(

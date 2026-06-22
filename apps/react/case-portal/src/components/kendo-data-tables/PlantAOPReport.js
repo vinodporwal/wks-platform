@@ -107,21 +107,17 @@ const PlantAOPReport = ({ permissions }) => {
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
-  function getAopShortYears(aopYear) {
-    if (!aopYear) return { prev: '', next: '' }
-    const match = aopYear.match(/(\d{4})-(\d{2})/)
-    if (match) {
-      const prev = match[1].slice(-2)
-      const next = match[2]
-      return { prev, next }
-    }
-    const year = String(aopYear).slice(-2)
-    return { prev: year, next: String(Number(year) + 1).padStart(2, '0') }
-  }
   const columns = [
     {
       field: 'id',
       title: 'Id',
+      editable: false,
+      hidden: true,
+      isVisible: false,
+    },
+    {
+      field: 'masterId',
+      title: 'Master Id',
       editable: false,
       hidden: true,
       isVisible: false,
@@ -245,7 +241,8 @@ const PlantAOPReport = ({ permissions }) => {
       if (res?.code === 200) {
         const mapped = (res?.data.Data || []).map((item, index) => ({
           ...item,
-          id: item.id,
+          id: index,
+          idFromAPI: item.id,
           isEditable: item?.isEditable,
           remark: item.remark,
           originalRemark: item.remark,
@@ -291,7 +288,7 @@ const PlantAOPReport = ({ permissions }) => {
       }
 
       const payload = data.map((item) => ({
-        id: item.id,
+        id: item.idFromAPI || null,
         kpiName: item.kpiName,
         uom: item.uom,
         bestAchieved: item.bestAchieved,
@@ -300,10 +297,8 @@ const PlantAOPReport = ({ permissions }) => {
         currentPlan: item.currentPlan,
         remark: item.remark,
         aopYear: AOP_YEAR,
-        plant_FK_Id: PLANT_ID,
-        isEditable: item.isEditable ?? true,
-        isVisible: item.isVisible ?? true,
-        displayOrder: item.displayOrder ?? null,
+        plantFkId: PLANT_ID,
+        masterId: item.masterId,
       }))
 
       const response =
