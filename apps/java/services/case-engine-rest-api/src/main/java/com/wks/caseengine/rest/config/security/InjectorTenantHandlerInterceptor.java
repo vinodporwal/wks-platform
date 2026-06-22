@@ -52,22 +52,43 @@ public class InjectorTenantHandlerInterceptor implements HandlerInterceptor {
 		BearerTokenHandlerInputResolver handler = new BearerTokenHandlerInputResolver();
 
 		Map<String, Object> params = handler.resolver(request, authentication);
-		if (params.isEmpty()) {
-			return;
-		}
 
-		String tenantId = (String) params.get("org");
+		String tenantId = params.isEmpty() ? null : (String) params.get("org");
+		String userId   = params.isEmpty() ? null : (String) params.get("sub");
+
+		// For APM iframe SSO users: JWT has no org claim, fall back to SSO session store
 		if (tenantId == null || tenantId.isBlank()) {
-			log.warn("Could't find tenantId by subdomain, it was expected to be filled but it is empty {}", tenantId);
+			String ssoSessionId = getCookieValue(request, "WKS_SSO_SESSION");
+			if (ssoSessionId != null) {
+				java.util.Map<String, String> sessionData = com.wks.api.security.SsoSessionStore.STORE.get(ssoSessionId);
+				if (sessionData != null) {
+					String sessionOrg    = sessionData.get("org");
+					String sessionUserId = sessionData.get("userId");
+					if (sessionOrg != null && !sessionOrg.isBlank()) {
+						log.info("InjectorTenantHandlerInterceptor: using org from SSO session: {}", sessionOrg);
+						tenantId = sessionOrg;
+					}
+					if ((userId == null || userId.isBlank()) && sessionUserId != null) {
+						userId = sessionUserId;
+					}
+				}
+			}
 		}
 
-		String userId = (String) params.get("sub");
-		if (userId == null || userId.isBlank()) {
-			log.error("Could't find userId by subdomain, it was expected to be filled but it is empty {}", userId);
+		if (tenantId == null || tenantId.isBlank()) {
+			log.warn("Could not find tenantId — request may fail");
 		}
 
 		tenantHolder.setTenantId(tenantId);
 		tenantHolder.setUserId(userId);
+	}
+
+	private String getCookieValue(HttpServletRequest request, String name) {
+		if (request.getCookies() == null) return null;
+		for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+			if (name.equals(cookie.getName())) return cookie.getValue();
+		}
+		return null;
 	}
 
 }

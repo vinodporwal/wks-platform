@@ -351,8 +351,8 @@ const createApmUrlBasedOnSelectedEvent = () => {
     const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
 	
 	let updFormData = formData.data;
-	updFormData.businessKey = data.businessKey;
-	updFormData.caseNo = data.businessKey;
+	// updFormData.businessKey = data.businessKey;
+	// updFormData.caseNo = data.businessKey;
 
     const caseAttributes = Object.keys(updFormData).map((key) => ({
       name: key,
@@ -374,11 +374,11 @@ const createApmUrlBasedOnSelectedEvent = () => {
          caseNo: null,
         businessKey: null,
         owner: {
-          id: keycloak.subject || '',
-          // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
-          name: keycloak.idTokenParsed.name || '',
-          email: keycloak.idTokenParsed.email || '',
-          phone: keycloak.idTokenParsed.phone || '',
+          // id: keycloak.subject || '',
+          id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
+          name: keycloak.idTokenParsed.name || 'Mayur More',
+          email: keycloak.idTokenParsed.email || 'Mayur.More@Honeywell.com',
+          phone: keycloak.idTokenParsed.phone || '123456',
         },
         attributes: caseAttributes,
         caseUrl: buildCreateUrl(window.location.href),

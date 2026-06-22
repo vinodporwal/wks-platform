@@ -40,29 +40,48 @@ public final class JwksIssuerAuthenticationManagerResolver
 		implements AuthenticationManagerResolver<HttpServletRequest> {
 
 	private String keycloakUrl;
+	private String defaultRealm;
 
 	private final Cache cache = new ConcurrentMapCache("jwkSet");
 
 	public JwksIssuerAuthenticationManagerResolver(String keycloakUrl) {
+		this(keycloakUrl, null);
+	}
+
+	public JwksIssuerAuthenticationManagerResolver(String keycloakUrl, String defaultRealm) {
 		super();
 		this.keycloakUrl = keycloakUrl;
+		this.defaultRealm = defaultRealm;
 	}
 
 	@Override
 	public AuthenticationManager resolve(HttpServletRequest request) {
+		jakarta.servlet.http.Cookie[] cookies = request.getCookies();
+		if (cookies != null) {
+			for (jakarta.servlet.http.Cookie cookie : cookies) {
+				if ("WKS_SSO_SESSION".equals(cookie.getName())) {
+					if (SsoSessionStore.STORE.containsKey(cookie.getValue())) {
+						log.debug("SSO session found, skipping JWK validation");
+						return authentication -> authentication;
+					}
+				}
+			}
+		}
 		String origin = request.getHeader("Origin");
-		return new ResolvingAuthenticationManager(new RequestProps(origin, keycloakUrl, cache));
+		return new ResolvingAuthenticationManager(new RequestProps(origin, keycloakUrl, defaultRealm, cache));
 	}
 
 	static class RequestProps {
 		String origin;
 		String keycloack;
+		String defaultRealm;
 		Cache cache;
 
-		public RequestProps(String origin, String keycloack, Cache cache) {
+		public RequestProps(String origin, String keycloack, String defaultRealm, Cache cache) {
 			super();
 			this.origin = origin;
 			this.keycloack = keycloack;
+			this.defaultRealm = defaultRealm;
 			this.cache = cache;
 		}
 	}
@@ -70,7 +89,6 @@ public final class JwksIssuerAuthenticationManagerResolver
 	static class ResolvingAuthenticationManager implements AuthenticationManager {
 
 		private Converter<BearerTokenAuthenticationToken, String> issuerConverter;
-
 		private RequestProps request;
 
 		public ResolvingAuthenticationManager(RequestProps request) {
@@ -94,7 +112,6 @@ public final class JwksIssuerAuthenticationManagerResolver
 
 			return authenticationManager.authenticate(authentication);
 		}
-
 	}
 
 	static class JwtClaimIssuerConverter implements Converter<BearerTokenAuthenticationToken, String> {
@@ -112,7 +129,7 @@ public final class JwksIssuerAuthenticationManagerResolver
 			}
 
 			try {
-				String realm = extractTenantIdFromToken(authentication);
+				String realm = extractRealmFromToken(authentication);
 				String issueUrl = String.format("%s/realms/%s/protocol/openid-connect/certs", request.keycloack, realm);
 				log.debug("issuer url {}", issueUrl);
 				return issueUrl;
@@ -121,11 +138,22 @@ public final class JwksIssuerAuthenticationManagerResolver
 			}
 		}
 
-		private String extractTenantIdFromToken(BearerTokenAuthenticationToken authentication) {
+		private String extractRealmFromToken(BearerTokenAuthenticationToken authentication) {
 			try {
 				String token = authentication.getToken();
 				JWTClaimsSet claims = JWTParser.parse(token).getJWTClaimsSet();
-				return (String) claims.getClaim("org");
+
+				// Use org claim (WKS standalone tokens)
+				String org = (String) claims.getClaim("org");
+				if (org != null && !org.isBlank()) return org;
+
+				// No org claim (e.g. APM tokens) — fall back to configured default realm
+				if (request.defaultRealm != null && !request.defaultRealm.isBlank()) {
+					log.debug("No org claim in token, using default realm: {}", request.defaultRealm);
+					return request.defaultRealm;
+				}
+
+				throw new RuntimeException("Token has no org claim and no default realm is configured");
 			} catch (ParseException e) {
 				throw new RuntimeException(e);
 			}
@@ -135,7 +163,6 @@ public final class JwksIssuerAuthenticationManagerResolver
 	static class JwtAuthenticationManagerResolver implements AuthenticationManagerResolver<String> {
 
 		private final Map<String, AuthenticationManager> authenticationManagers = new ConcurrentHashMap<>();
-
 		private Cache cache;
 
 		public JwtAuthenticationManagerResolver(Cache cache) {
@@ -155,7 +182,5 @@ public final class JwksIssuerAuthenticationManagerResolver
 
 			return authenticationManager;
 		}
-
 	}
-
 }

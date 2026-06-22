@@ -518,7 +518,7 @@ export const CaseList = ({ status, caseDefId }) => {
               ? JSON.parse(containerValue)
               : {}
 
-            return parsedContainer.textField1 || ''
+            return parsedContainer.mainAsset || parsedContainer.textField1 || ''
           } catch (error) {
             console.error('Error parsing mainAsset:', error)
             return ''
@@ -1060,7 +1060,7 @@ else {
           count={-1}
           page={0}
           labelRowsPerPage={
-            <div style={{ paddingTop: 15 }}>Rows per page:</div>
+            <span style={{ paddingTop: 15 }}>Rows per page:</span>
           }
           rowsPerPage={filter.limit}
           rowsPerPageOptions={[5, 10, 25, 50]}

@@ -5,14 +5,15 @@ import { SessionStoreProvider } from './SessionStoreContext'
 import { CaseService, RecordService, FormService } from 'services'
 import menuItemsDefs from './menu'
 import { RegisterInjectUserSession, RegisteOptions } from './plugins'
-import { accountStore, sessionStore } from './store'
+import { sessionStore } from './store'
 import './App.css'
-import formPayload from './createFormJSON.json'
+// import formPayload from './createFormJSON.json'
 import dtrPayload from './DTR.json'
 import rejectPayload from './Reject.json'
 import assetTrainCreateCasePayload from './AssetTrainCreateCase.json'
 import caseManagementPayload from './CaseManagement.json'
 import Config from './consts'
+import { useIframeSso } from './hooks/useIframeSso'
 
 const ScrollTop = lazy(() => import('./components/ScrollTop'))
 
@@ -23,47 +24,83 @@ const App = () => {
   const [casesDefinitions, setCasesDefinitions] = useState([])
   const [menu, setMenu] = useState({ items: [] })
   const [formChecked, setFormChecked] = useState(false)
- 
-  useEffect(() => {
-    localStorage.setItem('baseUrl', `${Config.CaseEngineUrl}`)
-    
-    const { keycloak } = sessionStore.bootstrap()
 
-    const storedToken = localStorage.getItem('keycloakToken')
-    if (storedToken) {
-      keycloak.token = storedToken;
+  const isInIframe = window.self !== window.top
+
+  // Iframe SSO flow: receive token from APM via postMessage
+  useIframeSso({
+    onSuccess: async (token) => {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+
+      // The APM token is not a Keycloak token — call our backend /sso/userinfo
+      // which uses the Keycloak admin client to look up the user profile
+      let userInfo = {}
+      try {
+        const res = await fetch(`${Config.CaseEngineUrl}/sso/userinfo`, {
+          credentials: 'include', // send the WKS_SSO_SESSION cookie set by /sso/login
+        })
+        if (res.ok) {
+          userInfo = await res.json()
+          console.log('SSO userinfo fetched from backend:', userInfo)
+        } else {
+          console.warn('SSO userinfo fetch failed, status:', res.status)
+        }
+      } catch (e) {
+        console.warn('SSO userinfo fetch error:', e)
+      }
+
+      const kcMock = {
+        token,
+        tokenParsed: payload,
+        idTokenParsed: { ...payload, ...userInfo }, // merge name, email, etc.
+        isTokenExpired: () => payload.exp * 1000 < Date.now(),
+        updateToken: () => Promise.resolve(false),
+      }
+      initApp(kcMock, true)
+    },
+    onFailure: (err) => {
+      console.error('SSO iframe login failed:', err)
+    },
+  })
+
+  function initApp(kc, authenticated) {
+    localStorage.setItem('baseUrl', `${Config.CaseEngineUrl}`)
+    setKeycloak(kc)
+    setAuthenticated(authenticated)
+
+    if (authenticated) {
+      localStorage.setItem('keycloakToken', kc.token)
+      localStorage.setItem('userId', kc.idTokenParsed.sub)
     }
 
-    // checkLoginIframe is disabled: the keycloak-js client and the Keycloak
-    // server can use different login-status-iframe protocols, which makes
-    // init() hang and leaves the app on a blank page after login. PKCE is
-    // enabled for the standard (public client) authorization-code flow.
-    keycloak.init({ onLoad: 'login-required', checkLoginIframe: false, pkceMethod: 'S256' }).then((authenticated) => {
-      if(!authenticated){
-        keycloak.login();
-      }
-      setKeycloak(keycloak)
-      setAuthenticated(authenticated)
+    buildMenuItems(kc)
+    RegisterInjectUserSession(kc)
+    RegisteOptions(kc)
 
-      if (authenticated) {
-        localStorage.setItem('keycloakToken', keycloak.token)
-        localStorage.setItem('keycloak', JSON.stringify(keycloak))
-        localStorage.setItem('userId', keycloak.idTokenParsed.sub)
-      }
+    if (!formChecked) {
+          // checkAndPostForm(keycloak);
+      checkAndPostDTR(kc)
+      checkAndPostReject(kc)
+      checkAndPostAssetTrainCreateCase(kc)
+      checkAndPostCaseManagement(kc)
+      setFormChecked(true)
+    }
+  }
 
-      buildMenuItems(keycloak)
-      RegisterInjectUserSession(keycloak)
-      RegisteOptions(keycloak)
-      forceLogoutIfUserNoMinimalRoleForSystem(keycloak)
+  useEffect(() => {
+    // Skip standard Keycloak init when inside iframe — SSO hook handles it
+    if (isInIframe) return
 
-      if (!formChecked) {
-          checkAndPostForm(keycloak);
-          checkAndPostDTR(keycloak);
-          checkAndPostReject(keycloak);
-          checkAndPostAssetTrainCreateCase(keycloak); 
-          checkAndPostCaseManagement(keycloak);
-          setFormChecked(true) // Ensure it runs only once per session
+    localStorage.setItem('baseUrl', `${Config.CaseEngineUrl}`)
+
+    const { keycloak } = sessionStore.bootstrap()
+
+    keycloak.init({ onLoad: 'login-required', checkLoginIframe: false }).then((authenticated) => {
+      if (!authenticated) {
+        keycloak.login()
+        return
       }
+      initApp(keycloak, authenticated)
     })
 
     keycloak.onAuthRefreshError = () => {
@@ -78,16 +115,11 @@ const App = () => {
             console.info('Token refreshed: ' + refreshed)
             RegisterInjectUserSession(keycloak)
             RegisteOptions(keycloak)
-
             localStorage.setItem('keycloakToken', keycloak.token)
           } else {
             console.info(
               'Token not refreshed, valid for ' +
-                Math.round(
-                  keycloak.tokenParsed.exp +
-                    keycloak.timeSkew -
-                    new Date().getTime() / 1000,
-                ) +
+                Math.round(keycloak.tokenParsed.exp + keycloak.timeSkew - new Date().getTime() / 1000) +
                 ' seconds',
             )
           }
@@ -99,15 +131,7 @@ const App = () => {
     }
   }, [])
 
-  async function forceLogoutIfUserNoMinimalRoleForSystem(keycloak) {
-    // if (!accountStore.hasAnyRole(keycloak)) {
-    //   console.log('User dont have required roles.');
-    //   localStorage.removeItem('keycloakToken')
-    //   return keycloak.logout({ redirectUri: window.location.origin })
-    // }
-  }
 
-  
    async function buildMenuItems(keycloak, userGroups = []) {
 
     const token = keycloak.tokenParsed;
@@ -120,12 +144,6 @@ const App = () => {
       items: [...menuItemsDefs.items],
     };
     console.log('menuItemsDefs', menuItemsDefs);
-
-    const isLinkCaseUrl = location.pathname.endsWith('/link');
-
-    if(isLinkCaseUrl) {
-      menu.items = menu.items.filter(item => item.id !== 'dashboard');
-    }
 
     // Hide the entire management menu group for users without management roles
     // if (!accountStore.isManagerUser(keycloak)) {
@@ -180,32 +198,32 @@ const App = () => {
     return setMenu(menu)
   }
 
-  async function checkAndPostForm(keycloak) {
-    if (localStorage.getItem('formCreated')) {
-      console.log('Form "XOM Case Management System" already exists.')
-      return
-    }
-    try {
-      // Use FormService to get all forms
-      const data = await FormService.getAll(keycloak)
+  // async function checkAndPostForm(keycloak) {
+  //   if (localStorage.getItem('formCreated')) {
+  //     console.log('Form "Case Management System" already exists.')
+  //     return
+  //   }
+  //   try {
+  //     // Use FormService to get all forms
+  //     const data = await FormService.getAll(keycloak)
 
-      // Check if "EED Case Management System" exists in the list
-      const formExists = data.some(
-        (form) => form.title === 'XOM Case Management System',
-      )
+  //     // Check if "EED Case Management System" exists in the list
+  //     const formExists = data.some(
+  //       (form) => form.title === 'Case Management System',
+  //     )
 
-      if (formExists) {
-        console.log('XOM Case Management System" already exists.')
-      } else {
-        console.log(
-          'Form "XOM Case Management System" does not exist. Creating form...',
-        )
-        await createForm(keycloak)
-      }
-    } catch (error) {
-      console.error('Error checking form existence:', error)
-    }
-  }
+  //     if (formExists) {
+  //       console.log('Case Management System" already exists.')
+  //     } else {
+  //       console.log(
+  //         'Form "Case Management System" does not exist. Creating form...',
+  //       )
+  //       await createForm(keycloak)
+  //     }
+  //   } catch (error) {
+  //     console.error('Error checking form existence:', error)
+  //   }
+  // }
 
   async function checkAndPostDTR(keycloak) {
   if (localStorage.getItem('dtrCreated')) {
@@ -326,20 +344,20 @@ async function checkAndPostCaseManagement(keycloak) {
 
 
 
-  async function createForm(keycloak) {
-    try {
-      // Use FormService to create a new form with the JSON payload
-      const response = await FormService.create(keycloak, formPayload)
+  // async function createForm(keycloak) {
+  //   try {
+  //     // Use FormService to create a new form with the JSON payload
+  //     const response = await FormService.create(keycloak, formPayload)
 
-      if (!response.ok) {
-        throw new Error('Failed to create form')
-      }
-      console.log('Form created successfully')
-      localStorage.setItem('formCreated', 'true')
-    } catch (error) {
-      console.error('Error creating form:', error)
-    }
-  }
+  //     if (!response.ok) {
+  //       throw new Error('Failed to create form')
+  //     }
+  //     console.log('Form created successfully')
+  //     localStorage.setItem('formCreated', 'true')
+  //   } catch (error) {
+  //     console.error('Error creating form:', error)
+  //   }
+  // }
 
 async function createDTR(keycloak) {
   try {
