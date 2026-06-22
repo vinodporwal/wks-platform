@@ -1,8 +1,8 @@
 package com.wks.caseengine.cpp.serviceimpl;
 
-import com.wks.caseengine.dto.CPPAssetCapacityResponseDto;
-import com.wks.caseengine.dto.AssetCapacityRequestDTO;
+import com.wks.caseengine.cpp.dto.AssetCapacityRequestDTO;
 import com.wks.caseengine.cpp.dto.CPPAssetCapacityProjection;
+import com.wks.caseengine.cpp.dto.CPPAssetCapacityResponseDto;
 import com.wks.caseengine.cpp.entity.CPPPowerAssetCapacity;
 import com.wks.caseengine.cpp.entity.CPPSteamAssetCapacity;
 import com.wks.caseengine.cpp.repository.CPPPowerAssetCapacityRepository;

@@ -1,6 +1,6 @@
 package com.wks.caseengine.rest.cpp;
 
-import com.wks.caseengine.dto.AssetCapacityRequestDTO;
+import com.wks.caseengine.cpp.dto.AssetCapacityRequestDTO;
 import com.wks.caseengine.cpp.service.JMDAssetCapacityService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import org.slf4j.Logger;

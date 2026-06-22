@@ -1,8 +1,8 @@
 package com.wks.caseengine.cpp.serviceimpl;
 
-import com.wks.caseengine.dto.CPPAssetPriorityResponseDto;
-import com.wks.caseengine.dto.AssetPriorityRequestDTO;
+import com.wks.caseengine.cpp.dto.AssetPriorityRequestDTO;
 import com.wks.caseengine.cpp.dto.CPPAssetPriorityProjection;
+import com.wks.caseengine.cpp.dto.CPPAssetPriorityResponseDto;
 import com.wks.caseengine.cpp.entity.CPPPowerAssetPriority;
 import com.wks.caseengine.cpp.entity.CPPSteamAssetPriority;
 import com.wks.caseengine.cpp.repository.CPPPowerAssetPriorityRepository;
