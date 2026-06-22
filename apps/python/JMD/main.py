@@ -40,6 +40,7 @@ from database.queries import (
     fetch_steam_asset_priority_all_months,
     fetch_steam_asset_capacity_all_months,
     fetch_steam_generation_assets,
+    fetch_steam_asset_operational_hours,
     fetch_plant_power_info,
     fetch_power_asset_capacity_all_months,
     fetch_process_demands,
@@ -391,10 +392,12 @@ def _print_new_schema_asset_snapshot(plant_id: str, month: int, year: int):
     power_caps = {r["asset_id"]: r for r in fetch_power_asset_capacity_all_months(plant_id, fy_year)}
     power_pri = {r["asset_id"]: r for r in fetch_asset_priority(plant_id, month, year)}
     steam_assets = fetch_steam_generation_assets(plant_id)
+    steam_hours = fetch_steam_asset_operational_hours(plant_id, month, year)
     steam_caps = {r["asset_id"]: r for r in fetch_steam_asset_capacity_all_months(plant_id, fy_year)}
     steam_pri = {r["asset_id"]: r for r in fetch_steam_asset_priority(plant_id, month, year)}
 
     hours_by_asset = {r["asset_id"]: r for r in hours}
+    steam_hours_by_asset = {r["asset_id"]: r for r in steam_hours}
 
     print(f"  Plant:    {plant.get('display_name') or plant.get('name') or plant_id}")
     print(f"  AOP Year: {power_info.get('summary', {}).get('aop_year', fy_label)}")
@@ -428,10 +431,11 @@ def _print_new_schema_asset_snapshot(plant_id: str, month: int, year: int):
     steam_hours_available = False
     for asset in steam_assets:
         asset_id = asset.get("asset_id", "")
+        hour_row = steam_hours_by_asset.get(asset_id, {})
         cap_row = steam_caps.get(asset_id, {})
         pri_row = steam_pri.get(asset_id, {})
         month_max = cap_row.get(f"{month_key}_Max")
-        op_hours = cap_row.get("operational_hours")
+        op_hours = hour_row.get("operational_hours")
         if op_hours is not None:
             steam_hours_available = True
         gen_mt = (float(op_hours) * float(month_max)) if (op_hours is not None and month_max is not None) else None

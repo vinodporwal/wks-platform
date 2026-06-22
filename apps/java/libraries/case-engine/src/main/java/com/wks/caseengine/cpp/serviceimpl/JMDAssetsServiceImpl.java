@@ -68,6 +68,157 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
                     repository.findOperationalHoursByPlantsAndYear(plantIds, financialYear);
             logger.info("[GET Service] Query returned {} records", projections.size());
 
+            // ── TIER 2: CARRY-FORWARD – clone from previous FY if requested FY is empty ──
+            if (projections.isEmpty()) {
+                logger.info("[GET Service] No records found for {}. Attempting carry-forward from previous financial year.", financialYear);
+                String previousYear = derivePreviousFinancialYear(financialYear);
+
+                if (previousYear != null) {
+                    logger.info("[GET Service] Looking for carry-forward source in financialYear: {}", previousYear);
+
+                    // Carry-forward Power assets
+                    for (UUID plantId : plantIds) {
+                        List<CPPAssetOperationalHours> prevPowerRecords = repository.findByPlantFkIdAndAopYear(plantId, previousYear);
+                        if (!prevPowerRecords.isEmpty()) {
+                            logger.info("[GET Service] Carrying forward {} power records for plantId: {} from {}", prevPowerRecords.size(), plantId, previousYear);
+                            List<CPPAssetOperationalHours> clones = new ArrayList<>();
+                            for (CPPAssetOperationalHours src : prevPowerRecords) {
+                                CPPAssetOperationalHours clone = new CPPAssetOperationalHours();
+                                clone.setId(UUID.randomUUID());
+                                clone.setAssetFkId(src.getAssetFkId());
+                                clone.setApr(src.getApr());
+                                clone.setMay(src.getMay());
+                                clone.setJun(src.getJun());
+                                clone.setJul(src.getJul());
+                                clone.setAug(src.getAug());
+                                clone.setSep(src.getSep());
+                                clone.setOct(src.getOct());
+                                clone.setNov(src.getNov());
+                                clone.setDec(src.getDec());
+                                clone.setJan(src.getJan());
+                                clone.setFeb(src.getFeb());
+                                clone.setMar(src.getMar());
+                                clone.setAopYear(financialYear);
+                                clone.setRemarks(src.getRemarks());
+                                clone.setSiteFkId(src.getSiteFkId());
+                                clone.setVerticalFkId(src.getVerticalFkId());
+                                clone.setPlantFkId(src.getPlantFkId());
+                                clone.setCreatedDate(LocalDateTime.now());
+                                clone.setModifiedDate(LocalDateTime.now());
+                                clones.add(clone);
+                            }
+                            repository.saveAll(clones);
+                            logger.info("[GET Service] Saved {} carry-forward power records for plantId: {}", clones.size(), plantId);
+                        }
+
+                        // Carry-forward Steam assets
+                        List<CPPSteamAssetsOperationalHours> prevSteamRecords = steamRepository.findByPlantFkIdAndAopYear(plantId, previousYear);
+                        if (!prevSteamRecords.isEmpty()) {
+                            logger.info("[GET Service] Carrying forward {} steam records for plantId: {} from {}", prevSteamRecords.size(), plantId, previousYear);
+                            List<CPPSteamAssetsOperationalHours> steamClones = new ArrayList<>();
+                            for (CPPSteamAssetsOperationalHours src : prevSteamRecords) {
+                                CPPSteamAssetsOperationalHours clone = new CPPSteamAssetsOperationalHours();
+                                clone.setId(UUID.randomUUID());
+                                clone.setSteamAssetFkId(src.getSteamAssetFkId());
+                                clone.setApr(src.getApr());
+                                clone.setMay(src.getMay());
+                                clone.setJun(src.getJun());
+                                clone.setJul(src.getJul());
+                                clone.setAug(src.getAug());
+                                clone.setSep(src.getSep());
+                                clone.setOct(src.getOct());
+                                clone.setNov(src.getNov());
+                                clone.setDec(src.getDec());
+                                clone.setJan(src.getJan());
+                                clone.setFeb(src.getFeb());
+                                clone.setMar(src.getMar());
+                                clone.setAopYear(financialYear);
+                                clone.setRemarks(src.getRemarks());
+                                clone.setSiteFkId(src.getSiteFkId());
+                                clone.setVerticalFkId(src.getVerticalFkId());
+                                clone.setPlantFkId(src.getPlantFkId());
+                                clone.setCreatedDate(LocalDateTime.now());
+                                clone.setUpdatedDate(LocalDateTime.now());
+                                steamClones.add(clone);
+                            }
+                            steamRepository.saveAll(steamClones);
+                            logger.info("[GET Service] Saved {} carry-forward steam records for plantId: {}", steamClones.size(), plantId);
+                        }
+                    }
+
+                    // Re-query after carry-forward attempt
+                    projections = repository.findOperationalHoursByPlantsAndYear(plantIds, financialYear);
+                    logger.info("[GET Service] After carry-forward, re-query returned {} records for {}", projections.size(), financialYear);
+                } else {
+                    logger.warn("[GET Service] Could not derive previous financial year from '{}'. Skipping carry-forward.", financialYear);
+                }
+            }
+
+            // ── TIER 3: ZERO-SEED – both FY and previous FY have no data → seed from asset tables ──
+            if (projections.isEmpty()) {
+                logger.info("[GET Service] No carry-forward data found. Seeding zero operational hours from asset tables for {}.", financialYear);
+
+                List<CPPAssetOperationalHoursProjection> assetProjections = repository.findAllAssetsForPlants(plantIds);
+                logger.info("[GET Service] Found {} assets in asset tables to zero-seed.", assetProjections.size());
+
+                if (!assetProjections.isEmpty()) {
+                    List<CPPAssetOperationalHours>          powerSeeds = new ArrayList<>();
+                    List<CPPSteamAssetsOperationalHours>    steamSeeds = new ArrayList<>();
+
+                    for (CPPAssetOperationalHoursProjection asset : assetProjections) {
+                        if ("Power".equals(asset.getAssetCategory())) {
+                            CPPAssetOperationalHours seed = new CPPAssetOperationalHours();
+                            seed.setId(UUID.randomUUID());
+                            seed.setAssetFkId(asset.getAssetFkId());
+                            seed.setApr(0.0);  seed.setMay(0.0);  seed.setJun(0.0);
+                            seed.setJul(0.0);  seed.setAug(0.0);  seed.setSep(0.0);
+                            seed.setOct(0.0);  seed.setNov(0.0);  seed.setDec(0.0);
+                            seed.setJan(0.0);  seed.setFeb(0.0);  seed.setMar(0.0);
+                            seed.setAopYear(financialYear);
+                            seed.setRemarks(null);
+                            seed.setSiteFkId(asset.getSiteFkId());
+                            seed.setVerticalFkId(asset.getVerticalFkId());
+                            seed.setPlantFkId(asset.getPlantFkId());
+                            seed.setCreatedDate(LocalDateTime.now());
+                            seed.setModifiedDate(LocalDateTime.now());
+                            powerSeeds.add(seed);
+                        } else if ("Steam".equals(asset.getAssetCategory())) {
+                            CPPSteamAssetsOperationalHours seed = new CPPSteamAssetsOperationalHours();
+                            seed.setId(UUID.randomUUID());
+                            seed.setSteamAssetFkId(asset.getAssetFkId());
+                            seed.setApr(0.0);  seed.setMay(0.0);  seed.setJun(0.0);
+                            seed.setJul(0.0);  seed.setAug(0.0);  seed.setSep(0.0);
+                            seed.setOct(0.0);  seed.setNov(0.0);  seed.setDec(0.0);
+                            seed.setJan(0.0);  seed.setFeb(0.0);  seed.setMar(0.0);
+                            seed.setAopYear(financialYear);
+                            seed.setRemarks(null);
+                            seed.setSiteFkId(asset.getSiteFkId());
+                            seed.setVerticalFkId(asset.getVerticalFkId());
+                            seed.setPlantFkId(asset.getPlantFkId());
+                            seed.setCreatedDate(LocalDateTime.now());
+                            seed.setUpdatedDate(LocalDateTime.now());
+                            steamSeeds.add(seed);
+                        }
+                    }
+
+                    if (!powerSeeds.isEmpty()) {
+                        repository.saveAll(powerSeeds);
+                        logger.info("[GET Service] Inserted {} zero-seeded power records for {}.", powerSeeds.size(), financialYear);
+                    }
+                    if (!steamSeeds.isEmpty()) {
+                        steamRepository.saveAll(steamSeeds);
+                        logger.info("[GET Service] Inserted {} zero-seeded steam records for {}.", steamSeeds.size(), financialYear);
+                    }
+
+                    // Final re-query to return the seeded data with real IDs
+                    projections = repository.findOperationalHoursByPlantsAndYear(plantIds, financialYear);
+                    logger.info("[GET Service] After zero-seed, re-query returned {} records for {}.", projections.size(), financialYear);
+                } else {
+                    logger.warn("[GET Service] No assets found in asset tables for plantIds: {}. Returning empty response.", plantIds);
+                }
+            }
+
+
             List<CPPAssetOperationalHoursResponseDto> allResults = projections.stream()
                     .map(this::mapToDto)
                     .collect(Collectors.toList());
@@ -99,6 +250,28 @@ public class JMDAssetsServiceImpl implements JMDAssetsService {
         }
 
         return aopMessageVM;
+    }
+
+    /**
+     * Derives the previous financial year string.
+     * Expected format: "YYYY-YY" (e.g. "2026-27" → "2025-26", "2025-26" → "2024-25").
+     * Returns null if the format is unrecognised.
+     */
+    private String derivePreviousFinancialYear(String financialYear) {
+        try {
+            // Format: "2026-27"
+            String[] parts = financialYear.split("-");
+            if (parts.length != 2) return null;
+            int startYear = Integer.parseInt(parts[0]);
+            int prevStart = startYear - 1;
+            int prevEnd = prevStart + 1;
+            // Build suffix as last 2 digits
+            String prevEndSuffix = String.format("%02d", prevEnd % 100);
+            return prevStart + "-" + prevEndSuffix;
+        } catch (Exception e) {
+            logger.warn("[GET Service] Could not parse financial year '{}': {}", financialYear, e.getMessage());
+            return null;
+        }
     }
 
     private CPPAssetOperationalHoursResponseDto mapToDto(CPPAssetOperationalHoursProjection projection) {

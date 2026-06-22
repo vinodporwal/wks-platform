@@ -34,6 +34,8 @@ from database.queries import (
     fetch_stg_extraction_lookup,
     fetch_hrsg_heat_rate_lookup,
     fetch_gt_heat_rate_lookup,
+    fetch_power_asset_capacity_all_months,
+    fetch_steam_asset_capacity_all_months,
     DataFetchError,
 )
 from plant_mapper import PLANT_REGISTRY
@@ -206,6 +208,9 @@ def run_month(plant_id: str, month: int, year: int, save_to_db: bool = True) -> 
     hrsg_df      = _fetch("hrsg_hr",      fetch_hrsg_heat_rate_lookup,              plant_id, month, year, default=None)
     gt_df        = _fetch("gt_hr",        fetch_gt_heat_rate_lookup,                plant_id, month, year, default=None)
 
+    power_caps   = _fetch("power_caps",   fetch_power_asset_capacity_all_months,    plant_id, fy_start, default=[])
+    steam_caps   = _fetch("steam_caps",   fetch_steam_asset_capacity_all_months,    plant_id, fy_start, default=[])
+
     reasons = warnings  # kept for backward-compat in result dict (non-fatal)
 
     result = {
@@ -216,6 +221,8 @@ def run_month(plant_id: str, month: int, year: int, save_to_db: bool = True) -> 
         "fy":             fy,
         "demands":        demands,
         "assets":         assets,
+        "power_caps":     power_caps,
+        "steam_caps":     steam_caps,
         "op_hours":       op_hours,
         "power_priority": power_pri,
         "steam_priority": steam_pri,

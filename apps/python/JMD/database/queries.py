@@ -780,6 +780,52 @@ def fetch_asset_operational_hours(plant_id: str, month: int, year: int) -> list:
         conn.close()
 
 
+def fetch_steam_asset_operational_hours(plant_id: str, month: int, year: int) -> list:
+    """
+    Fetch CPPSteamAssetsOperationalHours for all steam assets of a plant for a given month/year.
+    """
+    fy     = _fy_string(month, year)          # e.g. "2025-26"
+    mcol   = _MONTH_COL_TITLE[month]          # e.g. "Apr"
+
+    conn = get_connection()
+    cur  = conn.cursor()
+    try:
+        cur.execute(
+            f"""
+            SELECT
+                a.AssetId,
+                a.AssetName,
+                a.DisplayName,
+                a.AssetType,
+                oh.AOPYear,
+                oh.[{mcol}]          AS OperationalHours
+            FROM {T.CPP_STEAM_GENERATION_ASSET} a
+            LEFT JOIN {T.CPP_STEAM_ASSETS_OPERATIONAL_HOURS} oh
+                   ON oh.SteamAsset_FK_Id = a.AssetId
+                  AND oh.AOPYear = ?
+            WHERE a.{T.SGA_PLANT_FK} = ?
+            ORDER BY a.AssetName
+            """,
+            (fy, plant_id),
+        )
+        results = []
+        for row in cur.fetchall():
+            results.append({
+                "asset_id":            str(row[0]),
+                "asset_name":          row[1],
+                "display_name":        row[2] or "",
+                "asset_type":          row[3] or "",
+                "aop_year":            row[4] or fy,
+                "operational_hours":   float(row[5]) if row[5] is not None else None,
+            })
+        return results
+    except Exception as e:
+        logger.error("  [STEAM ASSET OPS HRS] Error: %s", e)
+        return []
+    finally:
+        conn.close()
+
+
 def fetch_asset_operational_hours_all_months(plant_id: str, year: int) -> list:
     """
     Fetch CPPAssetOperationalHours for all 12 months (full FY) for a plant.
