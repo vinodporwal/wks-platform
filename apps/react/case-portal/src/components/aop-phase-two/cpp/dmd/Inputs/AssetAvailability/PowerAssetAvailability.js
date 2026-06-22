@@ -41,7 +41,7 @@ const PowerAssetAvailability = ({ initialRows = [], onRefresh, externalLoading =
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Asset_Priority')
 
-  const PLANT_ID_LIST =  plantObject?.id;
+  const PLANT_ID_LIST = plantObject?.id;
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
 
@@ -414,7 +414,7 @@ const PowerAssetAvailability = ({ initialRows = [], onRefresh, externalLoading =
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={() => { }}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}
@@ -422,7 +422,7 @@ const PowerAssetAvailability = ({ initialRows = [], onRefresh, externalLoading =
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['plantName', 'assetType']}
+        groupBy={['assetType']}
       />
     </Box>
   )

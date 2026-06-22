@@ -389,30 +389,30 @@ const PowerGrid = ({ hoursRows = [], powerData = [], refreshData, snackbarOpen, 
   ]
 
   useEffect(() => {
-      try {
-        setModifiedCells({})
-        const powerResponse = powerData
-        const filteredData = powerResponse?.filter(
-          (row) => row.assetType !== 'Power_Dis',
-        )
-        const transformedData = transformApiResponseToGridFormat(
-          filteredData,
-          hoursRows,
-        )
-        const rowsWithIds = transformedData?.map((row, index) => ({
-          ...row,
-          id: row.id || index + 1,
-        }))
+    try {
+      setModifiedCells({})
+      const powerResponse = powerData
+      const filteredData = powerResponse?.filter(
+        (row) => row.assetType !== 'Power_Dis',
+      )
+      const transformedData = transformApiResponseToGridFormat(
+        filteredData,
+        hoursRows,
+      )
+      const rowsWithIds = transformedData?.map((row, index) => ({
+        ...row,
+        id: row.id || index + 1,
+      }))
 
-        setRows(rowsWithIds)
-        setOriginalRows(rowsWithIds)
-      } catch (error) {
-        console.error('Error fetching power grid data:', error)
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'Error fetching data', severity: 'error' })
-      } finally {
-        setLoading(false)
-      }
+      setRows(rowsWithIds)
+      setOriginalRows(rowsWithIds)
+    } catch (error) {
+      console.error('Error fetching power grid data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
+    } finally {
+      setLoading(false)
+    }
   }, [powerData, keycloak, PLANT_ID, AOP_YEAR, hoursRows])
 
   const permissions = {
@@ -620,7 +620,7 @@ const PowerGrid = ({ hoursRows = [], powerData = [], refreshData, snackbarOpen, 
           setSnackbarOpen={setSnackbarOpen}
           setSnackbarData={setSnackbarData}
           hoursRows={hoursRows}
-          groupBy={['plantName', 'assetType']}
+          groupBy={['assetType']}
         />
       </Stack>
     </Box>

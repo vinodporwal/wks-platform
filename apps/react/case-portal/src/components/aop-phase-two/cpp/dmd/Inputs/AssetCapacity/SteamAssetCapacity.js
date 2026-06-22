@@ -32,7 +32,7 @@ const SteamAssetCapacity = ({ initialRows = [], onRefresh, externalLoading = fal
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Steam_Asset_Capacity')
 
   // Multi-plant list
- const PLANT_ID_LIST =  plantObject?.id;
+  const PLANT_ID_LIST = plantObject?.id;
 
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [rows, setRows] = useState([])
@@ -658,7 +658,7 @@ const SteamAssetCapacity = ({ initialRows = [], onRefresh, externalLoading = fal
       )
 
       if (response?.code === 200) {
-          setSnackbarOpen(true)
+        setSnackbarOpen(true)
         setSnackbarData({
           message: 'Excel file imported successfully!',
           severity: 'success',
@@ -761,7 +761,7 @@ const SteamAssetCapacity = ({ initialRows = [], onRefresh, externalLoading = fal
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={() => { }}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}
@@ -770,7 +770,7 @@ const SteamAssetCapacity = ({ initialRows = [], onRefresh, externalLoading = fal
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         customItemChange={customItemChange}
-        groupBy={['plantName', 'assetType']}
+        groupBy={['assetType']}
       />
     </Box>
   )

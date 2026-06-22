@@ -377,7 +377,7 @@ const STGGrid = ({ hoursRows = [], steamData = [], refreshData, snackbarOpen, sn
   ]
 
   useEffect(() => {
-      try {
+    try {
       setModifiedCells({})
       const steamResponse = steamData
       const transformedData = transformApiResponseToGridFormat(
@@ -602,7 +602,7 @@ const STGGrid = ({ hoursRows = [], steamData = [], refreshData, snackbarOpen, sn
           snackbarOpen={snackbarOpen}
           setSnackbarOpen={setSnackbarOpen}
           setSnackbarData={setSnackbarData}
-          groupBy={['plantName', 'assetType']}
+          groupBy={['assetType']}
           hoursRows={hoursRows}
         />
       </Stack>

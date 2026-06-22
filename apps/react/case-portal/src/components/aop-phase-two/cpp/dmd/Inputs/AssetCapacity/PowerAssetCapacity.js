@@ -32,8 +32,8 @@ const PowerAssetCapacity = ({ initialRows = [], onRefresh, externalLoading = fal
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Power_Asset_Capacity')
 
   // Multi-plant list — same pattern as PowerAssetAvailability
-  
-  const PLANT_ID_LIST =  plantObject?.id;
+
+  const PLANT_ID_LIST = plantObject?.id;
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
@@ -663,7 +663,7 @@ const PowerAssetCapacity = ({ initialRows = [], onRefresh, externalLoading = fal
       )
 
       if (response?.code === 200) {
-          setSnackbarOpen(true)
+        setSnackbarOpen(true)
         setSnackbarData({
           message: 'Excel file imported successfully!',
           severity: 'success',
@@ -766,7 +766,7 @@ const PowerAssetCapacity = ({ initialRows = [], onRefresh, externalLoading = fal
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => {}}
+        setCurrentRowId={() => { }}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}
@@ -775,7 +775,7 @@ const PowerAssetCapacity = ({ initialRows = [], onRefresh, externalLoading = fal
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         customItemChange={customItemChange}
-        groupBy={['plantName', 'assetType']}
+        groupBy={['assetType']}
       />
     </Box>
   )
