@@ -33,6 +33,7 @@ public class PlantReportServiceImpl implements PlantReportService {
             List<PlantReportDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
                 PlantReportDTO.builder()
                     .id(UUID.fromString(rs.getString("Id")))
+                    .masterId(UUID.fromString(rs.getString("MasterId")))
                     .kpiName(rs.getString("KPIName"))
                     .uom(rs.getString("UOM"))
                     .bestAchieved(rs.getDouble("BestAchieved"))
@@ -67,17 +68,32 @@ public class PlantReportServiceImpl implements PlantReportService {
             String updatedBy = Utility.getUserName();
             Timestamp modifiedOn = new Timestamp(new Date().getTime());
 
-            String sql = "UPDATE PlantSafetyPerformanceTargets " +
+
+            for (PlantReportDTO dto : plantReportDTOs) {
+                if (dto.getId() == null) {
+                   // insert logic 
+
+                   String insertSql = "INSERT INTO PlantSafetyPerformanceTargetsTransaction (Id, MasterId, BestAchieved, PrevAOP, PrevActual, CurrentPlan, Remark, UpdatedBy, CreatedOn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                   jdbcTemplate.update(insertSql,
+                    UUID.randomUUID().toString(),
+                    dto.getMasterId().toString(),
+                    dto.getBestAchieved(),
+                    dto.getPrevAOP(),
+                    dto.getPrevActual(),
+                    dto.getCurrentPlan(),
+                    dto.getRemark(),
+                    updatedBy,
+                    new Timestamp(new Date().getTime()));
+
+                    continue;
+                }
+
+                String updateSql = "UPDATE PlantSafetyPerformanceTargetsTransaction " +
                          "SET BestAchieved = ?, PrevAOP = ?, PrevActual = ?, CurrentPlan = ?, " +
                          "Remark = ?, UpdatedBy = ?, ModifiedOn = ? " +
                          "WHERE Id = ?";
 
-            for (PlantReportDTO dto : plantReportDTOs) {
-                if (dto.getId() == null) {
-                    continue;
-                }
-
-                jdbcTemplate.update(sql,
+                jdbcTemplate.update(updateSql,
                     dto.getBestAchieved(),
                     dto.getPrevAOP(),
                     dto.getPrevActual(),
@@ -341,6 +357,7 @@ public class PlantReportServiceImpl implements PlantReportService {
             List<SiteSafetyPerformanceTargetsDTO> data = jdbcTemplate.query(sql, (rs, rowNum) ->
                 SiteSafetyPerformanceTargetsDTO.builder()
                     .id(UUID.fromString(rs.getString("Id")))
+                    .masterId(UUID.fromString(rs.getString("MasterId")))
                     .kpiName(rs.getString("KPIName"))
                     .uom(rs.getString("UOM"))
                     .bestAchieved(rs.getDouble("BestAchieved"))
@@ -376,17 +393,28 @@ public class PlantReportServiceImpl implements PlantReportService {
             String updatedBy = Utility.getUserName();
             Timestamp modifiedOn = new Timestamp(new Date().getTime());
 
-            String sql = "UPDATE SiteSafetyPerformanceTargets " +
-                         "SET BestAchieved = ?, PrevAOP = ?, PrevActual = ?, CurrentPlan = ?, " +
-                         "Remark = ?, UpdatedBy = ?, ModifiedOn = ? " +
-                         "WHERE Id = ?";
 
             for (SiteSafetyPerformanceTargetsDTO dto : siteSafetyPerformanceTargetsDTOs) {
                 if (dto.getId() == null) {
+                    // insert logic 
+                    String insertSql = "INSERT INTO SiteSafetyPerformanceTargetsTransaction (Id, MasterId, BestAchieved, PrevAOP, PrevActual, CurrentPlan, Remark, UpdatedBy, CreatedOn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    jdbcTemplate.update(insertSql,
+                    UUID.randomUUID().toString(),
+                    dto.getMasterId().toString(),
+                    dto.getBestAchieved(),
+                    dto.getPrevAOP(),
+                    dto.getPrevActual(),
+                    dto.getCurrentPlan(),
+                    dto.getRemark(), updatedBy, new Timestamp(new Date().getTime()));
+                    
                     continue;
                 }
 
-                jdbcTemplate.update(sql,
+                String updateSql = "UPDATE SiteSafetyPerformanceTargetsTransaction " +
+                "SET BestAchieved = ?, PrevAOP = ?, PrevActual = ?, CurrentPlan = ?, " +
+                "Remark = ?, UpdatedBy = ?, ModifiedOn = ? " +
+                "WHERE Id = ?";
+                jdbcTemplate.update(updateSql,
                     dto.getBestAchieved(),
                     dto.getPrevAOP(),
                     dto.getPrevActual(),

@@ -15,6 +15,7 @@ import lombok.AllArgsConstructor;
 public class SiteSafetyPerformanceTargetsDTO {
  
     private UUID id;
+    private UUID masterId;
     private String kpiName;
     private String uom;
     private Double bestAchieved;

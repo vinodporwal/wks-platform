@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 public class PlantReportDTO {
     
     private UUID id;
+    private UUID masterId;
     private String kpiName;
     private String uom;
     private Double bestAchieved;
