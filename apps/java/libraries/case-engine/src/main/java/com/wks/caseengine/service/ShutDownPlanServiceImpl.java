@@ -2440,7 +2440,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 					}
 					
 
-					if (!verticalName.equalsIgnoreCase("PTA") && !alreadyFailed && dto.getId() == null) {
+					if ((!pta && !aromatics ) && !alreadyFailed && dto.getId() == null) {
 						List<Object[]> obj = shutDownPlanRepository.findDiscriptionByPlantIdAndType("Shutdown",
 								plantFKId.toString(), year, dto.getDiscription());
 
