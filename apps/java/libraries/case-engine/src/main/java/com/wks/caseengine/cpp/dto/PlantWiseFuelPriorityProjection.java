@@ -5,8 +5,10 @@ public interface PlantWiseFuelPriorityProjection {
     String getPlantName();
     String getFuelName();
     String getFuelDisplayName();
+    String getFuelFkId();
     Integer getPriority();
     Integer getQuantity();
     String getRemarks();
     String getAopYear();
 }
+

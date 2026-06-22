@@ -13,8 +13,10 @@ public class PlantWiseFuelPriorityDto {
     private String plantName;
     private String fuelName;
     private String fuelDisplayName;
+    private UUID fuelFkId;
     private Integer priority;
     private Integer quantity;
     private String remarks;
     private String aopYear;
 }
+

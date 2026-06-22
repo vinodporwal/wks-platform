@@ -2066,8 +2066,7 @@ const AdvanceKendoTable = ({
         )
       }
       if (col?.type === 'select') {
-        // Change this to your multiselect field name
-        let allOptions = col.options
+        const isDynamic = !!col.dynamicOptions
 
         return (
           <GridColumn
@@ -2079,21 +2078,32 @@ const AdvanceKendoTable = ({
             editable={isEditable}
             cells={{
               edit: {
-                text: (cellProps) => (
-                  <SelectCellEditor
-                    {...cellProps}
-                    options={allOptions}
-                    textField='label'
-                    valueField='value'
-                    placeholder='Select...'
-                  />
-                ),
+                text: (cellProps) => {
+                  // Resolve options per-row here, where cellProps.dataItem is available
+                  const resolvedOptions = isDynamic
+                    ? col.getOptions(cellProps.dataItem)
+                    : col.options
+                  return (
+                    <SelectCellEditor
+                      {...cellProps}
+                      options={resolvedOptions}
+                      textField='label'
+                      valueField='value'
+                      placeholder='Select...'
+                    />
+                  )
+                },
               },
-              data: (props) =>
-                createSelectToolTipRenderer(
-                  allOptions,
+              data: (props) => {
+                // Resolve options per-row here, where props.dataItem is available
+                const resolvedOptions = isDynamic
+                  ? col.getOptions(props.dataItem)
+                  : col.options
+                return createSelectToolTipRenderer(
+                  resolvedOptions,
                   toolTipRenderer,
-                )({ ...props, displayMode: col.displayMode || 'label' }),
+                )({ ...props, displayMode: col.displayMode || 'label' })
+              },
               headerCell: col.subtitle
                 ? createHeaderWithSubtitle(col.subtitle)
                 : SimpleHeaderWithTooltip,
@@ -2533,7 +2543,7 @@ const AdvanceKendoTable = ({
                   onClick={handleAddRow}
                   disabled={isButtonDisabled || READ_ONLY}
                 >
-                  Add Item
+                  {permissions?.addBtnName || 'Add Item'}
                 </Button>
               )}
 
