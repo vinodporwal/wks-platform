@@ -12,7 +12,14 @@ import { validateFields } from 'utils/validationUtils'
 export default function ProfitImprovementInitiative() {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { year, verticalChange, yearChanged, oldYear, plantObject, siteObject } = dataGridStore
+  const {
+    year,
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantObject,
+    siteObject,
+  } = dataGridStore
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
   const thisYear = AOP_YEAR
@@ -65,18 +72,20 @@ export default function ProfitImprovementInitiative() {
         minWidth: 100,
       },
       {
+        field: 'recommendation',
+        title: 'Category',
+        editable: true,
+        hidden: false,
+        isVisible: true,
+      },
+      {
         field: 'outcome',
         title: 'Outcome',
         widthT: 80,
         editable: true,
         minWidth: 100,
       },
-      {
-        field: 'recommendation',
-        title: 'Recommendation',
-        editable: true,
-        minWidth: 100,
-      },
+
       {
         field: 'targetDate',
         title: 'Target Date',
@@ -96,7 +105,11 @@ export default function ProfitImprovementInitiative() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await PlantAopReportApiService.getProfitImprovementInitiative(keycloak, PLANT_ID, AOP_YEAR)
+      const res = await PlantAopReportApiService.getProfitImprovementInitiative(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
       if (res?.code === 200) {
         const mapped = (res?.data?.Data || []).map((item, index) => ({
@@ -170,10 +183,11 @@ export default function ProfitImprovementInitiative() {
         displayOrder: item.displayOrder ?? null,
       }))
 
-      const response = await PlantAopReportApiService.saveProfitImprovementInitiative(
-        keycloak,
-        payload,
-      )
+      const response =
+        await PlantAopReportApiService.saveProfitImprovementInitiative(
+          keycloak,
+          payload,
+        )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -190,7 +204,6 @@ export default function ProfitImprovementInitiative() {
           severity: 'error',
         })
       }
-
     } catch (e) {
       console.log(e)
       setSnackbarOpen(true)
@@ -203,15 +216,13 @@ export default function ProfitImprovementInitiative() {
     }
   }, [modifiedCells])
 
-
-  const handleCalculate = () => { }
+  const handleCalculate = () => {}
 
   const handleRemarkCellClick = useCallback((row) => {
     setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }, [])
-
 
   const getAdjustedPermissionsC = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -243,8 +254,6 @@ export default function ProfitImprovementInitiative() {
     isOldYear,
   )
 
-
-
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
@@ -268,8 +277,6 @@ export default function ProfitImprovementInitiative() {
         handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissionsC}
       />
-
-
 
       <Notification
         open={snackbarOpen}
