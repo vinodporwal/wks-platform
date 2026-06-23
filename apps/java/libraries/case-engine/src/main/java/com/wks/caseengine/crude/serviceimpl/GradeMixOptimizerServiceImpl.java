@@ -1,10 +1,17 @@
 package com.wks.caseengine.crude.serviceimpl;
 
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.sql.ResultSetMetaData;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+
+import org.springframework.jdbc.core.ResultSetExtractor;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -14,7 +21,6 @@ import com.wks.caseengine.dto.GradeMixOptimizerConstantDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.ScreenMapping;
-import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.AopCalculationRepository;
 import com.wks.caseengine.repository.PlantsRepository;
@@ -135,4 +141,115 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
 			throw new RuntimeException("Failed to execute stored procedure", e);
 		}
 	}
+
+    @Override
+    public AOPMessageVM getCalculatedProposedBusinessDemand(UUID plantId, String aopYear, String lineId) {
+
+        Plants plants = plantsRepository.findById(plantId).orElseThrow(() -> new RuntimeException("Plant not found"));
+        String verticalName = verticalRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
+        String siteName = siteRepository.findById(plants.getSiteFkId()).orElseThrow(() -> new RuntimeException("Site not found")).getName();
+
+        String procedureName = verticalName + "_" + siteName + "_GetCalculatedProposedBusinessDemand";
+
+        try {
+            Map<String, Object> databaseResults = fetchFromStoredProcedure(plantId.toString(), aopYear, lineId, procedureName);
+
+            List<Map<String, Object>> rows = (List<Map<String, Object>>) databaseResults.get("data");
+            List<Map<String, Object>> metadata = (List<Map<String, Object>>) databaseResults.get("metadata");
+
+            Map<String, Object> finalData = new HashMap<>();
+            finalData.put("data", rows);
+            finalData.put("columns", metadata);
+
+            AOPMessageVM aopMessageVM = new AOPMessageVM();
+            aopMessageVM.setData(finalData);
+            aopMessageVM.setCode(200);
+            aopMessageVM.setMessage("Data fetched successfully");
+            return aopMessageVM;
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Error fetching calculated proposed business demand", ex);
+        }
+    }
+
+    private Map<String, Object> fetchFromStoredProcedure(String plantId, String aopYear, String lineId, String procedureName) {
+        String sql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?, @lineId = ?";
+        return jdbcTemplate.query(sql, (ResultSetExtractor<Map<String, Object>>) rs -> {
+            List<Map<String, Object>> dataList = new ArrayList<>();
+            List<Map<String, Object>> metadataList = new ArrayList<>();
+            Set<String> numericFields = new HashSet<>();
+
+            ResultSetMetaData rsmd = rs.getMetaData();
+            int columnCount = rsmd.getColumnCount();
+
+            for (int i = 1; i <= columnCount; i++) {
+                String columnName = rsmd.getColumnLabel(i);
+                int sqlType = rsmd.getColumnType(i);
+
+                Map<String, Object> meta = new HashMap<>();
+                meta.put("field", columnName);
+                meta.put("title", columnName);
+                meta.put("type", getFrontendType(rsmd.getColumnTypeName(i)));
+                metadataList.add(meta);
+                if (isNumericType(sqlType)) {
+                    numericFields.add(columnName);
+                }
+            }
+            while (rs.next()) {
+                Map<String, Object> row = new LinkedHashMap<>();
+                for (int i = 1; i <= columnCount; i++) {
+                    String colName = rsmd.getColumnLabel(i);
+                    Object value = rs.getObject(i);
+                    row.put(colName, value == null ? (numericFields.contains(colName) ? 0 : "") : value);
+                }
+                dataList.add(row);
+            }
+
+            Map<String, Object> resultMap = new HashMap<>();
+            resultMap.put("data", dataList);
+            resultMap.put("metadata", metadataList);
+            return resultMap;
+        }, plantId, aopYear, lineId);
+    }
+
+    private boolean isNumericType(int sqlType) {
+        return sqlType == Types.INTEGER || sqlType == Types.DOUBLE ||
+               sqlType == Types.DECIMAL || sqlType == Types.FLOAT ||
+               sqlType == Types.NUMERIC || sqlType == Types.REAL;
+    }
+
+    private String getFrontendType(String sqlTypeName) {
+        if (sqlTypeName == null) {
+            return "string";
+        }
+        switch (sqlTypeName.toUpperCase()) {
+            case "VARCHAR":
+            case "NVARCHAR":
+            case "CHAR":
+                return "string";
+            case "INT":
+            case "TINYINT":
+            case "BIGINT":
+            case "SMALLINT":
+            case "DECIMAL":
+            case "FLOAT":
+            case "DOUBLE":
+            case "NUMERIC":
+            case "REAL":
+                return "number";
+            case "DATE":
+            case "DATETIME":
+            case "DATETIME2":
+            case "SMALLDATETIME":
+            case "TIME":
+                return "date";
+            case "BIT":
+                return "boolean";
+            case "UNIQUEIDENTIFIER":
+                return "string";
+            default:
+                return "string";
+        }
+    }
 }

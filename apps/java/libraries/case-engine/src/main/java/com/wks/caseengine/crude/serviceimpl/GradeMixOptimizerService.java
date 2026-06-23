@@ -9,4 +9,6 @@ public interface GradeMixOptimizerService {
     AOPMessageVM getGradeMixOptimizerConstants(UUID plantId, String aopYear);
 
     AOPMessageVM calculateBudgetOperationHours(UUID plantId, String aopYear);
+
+    AOPMessageVM getCalculatedProposedBusinessDemand(UUID plantId, String aopYear, String lineId);
 }

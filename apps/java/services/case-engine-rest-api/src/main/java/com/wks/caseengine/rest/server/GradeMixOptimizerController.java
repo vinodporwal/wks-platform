@@ -28,4 +28,9 @@ public class GradeMixOptimizerController {
     public AOPMessageVM calculateBudgetOperationHours(@RequestParam String plantId, @RequestParam String aopYear) {
         return gradeMixOptimizerService.calculateBudgetOperationHours(UUID.fromString(plantId), aopYear);
     }
+
+    @GetMapping("/calculated-proposed-business-demand")
+    public AOPMessageVM getCalculatedProposedBusinessDemand(@RequestParam String plantId, @RequestParam String aopYear, @RequestParam String lineId) {
+        return gradeMixOptimizerService.getCalculatedProposedBusinessDemand(UUID.fromString(plantId), aopYear, lineId);
+    }
 }
