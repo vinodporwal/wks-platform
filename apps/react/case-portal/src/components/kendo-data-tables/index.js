@@ -245,6 +245,7 @@ const KendoDataTables = ({
   customItemChange = null,
   configType,
   isEditable = false,
+  currentTabDisplayName,
 }) => {
   const _export = useRef(null)
 
@@ -306,7 +307,20 @@ const KendoDataTables = ({
   const lowerSiteName = SiteName?.toLowerCase()
   const isPEPP = ['pe', 'pp'].includes(lowerVertName)
   const IS_VCM_VERTICAL = ['vcm'].includes(lowerVertName)
+  const lowerPlantName = plantName?.toLowerCase()
 
+  const IS_CHEMICAL_VMD_BENZENE =
+    lowerVertName === 'chemical' &&
+    lowerSiteName === 'vmd' &&
+    lowerPlantName === 'benzene'
+
+  const RED_HIGHLIGHT_PRODUCT_NAMES = [
+    'C5 Cut to NCP',
+    'FC Column Bottom to RARFS',
+    'VA Stream to BZ',
+    'PYROLYSIS GASOLINE',
+    'Benzene Content in feed for PyGas',
+  ].map((n) => n.trim().toLowerCase())
   const toggleGrid = () => {
     setGridExpanded((prev) => !prev)
   }
@@ -1657,6 +1671,13 @@ const KendoDataTables = ({
     )
   }
 
+  const lowerCurrentTabDisplayName = currentTabDisplayName
+    ?.toLowerCase()
+    ?.trim()
+  const isConfigOrConstantTab =
+    lowerCurrentTabDisplayName === 'configuration' ||
+    configType === 'Configuration'
+
   const toolTipRenderer = (props) => {
     const value = props.dataItem[props.field]
     const month = props.field
@@ -1668,8 +1689,17 @@ const KendoDataTables = ({
         cell.month === month &&
         cell.NormParameter_FK_Id?.toLowerCase() === normId?.toLowerCase(),
     )
-
     const isRed = isRedFromAllRedCell
+
+    const isProductNameTarget =
+      props.field === 'productName' &&
+      isConfigOrConstantTab &&
+      IS_CHEMICAL_VMD_BENZENE &&
+      RED_HIGHLIGHT_PRODUCT_NAMES.includes(
+        String(value || '')
+          .trim()
+          .toLowerCase(),
+      )
 
     return (
       <td
@@ -1677,7 +1707,20 @@ const KendoDataTables = ({
         title={value}
         className={`${props.tdProps?.className || ''} ${isRed ? 'edited-cell' : ''}`.trim()}
       >
-        {props.children}
+        {isProductNameTarget ? (
+          <span
+            ref={(el) => {
+              if (el) {
+                el.style.setProperty('color', 'red', 'important')
+                el.style.setProperty('font-weight', 'bold', 'important')
+              }
+            }}
+          >
+            {props.children}
+          </span>
+        ) : (
+          props.children
+        )}
       </td>
     )
   }
