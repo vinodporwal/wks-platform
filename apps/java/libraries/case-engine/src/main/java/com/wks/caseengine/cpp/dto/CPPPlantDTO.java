@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CPPPlantDropdownDTO {
+public class CPPPlantDTO {
 
     /** Maps to Plants.Id */
     private UUID   plantId;

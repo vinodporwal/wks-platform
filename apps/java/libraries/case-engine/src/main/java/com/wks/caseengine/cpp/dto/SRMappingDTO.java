@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SRMappingByPlantDTO {
+public class SRMappingDTO {
 
     private UUID   id;
 

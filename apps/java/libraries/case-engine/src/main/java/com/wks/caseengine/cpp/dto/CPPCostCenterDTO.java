@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CPPCostCenterDropdownDTO {
+public class CPPCostCenterDTO {
 
     /** Maps to CostCenterId column. */
     private UUID   id;

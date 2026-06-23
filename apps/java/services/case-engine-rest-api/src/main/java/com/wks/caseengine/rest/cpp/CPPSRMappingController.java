@@ -15,7 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.cpp.dto.CPPSRMappingDTO;
 import com.wks.caseengine.cpp.dto.CPPSRMappingImportDTO;
-import com.wks.caseengine.cpp.dto.SRMappingByPlantDTO;
+import com.wks.caseengine.cpp.dto.SRMappingDTO;
 import com.wks.caseengine.cpp.entity.CPPSRMapping;
 import com.wks.caseengine.cpp.service.CPPSRMappingService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -94,7 +94,7 @@ public class CPPSRMappingController {
      */
     @PutMapping("/sr-mapping/by-plant")
     public ResponseEntity<AOPMessageVM> updateSRMappingsByPlant(
-            @RequestBody List<SRMappingByPlantDTO> dtoList) {
+            @RequestBody List<SRMappingDTO> dtoList) {
 
         AOPMessageVM response = service.updateSRMappingsByPlant(dtoList);
         int httpStatus = (response != null && response.getCode() == 200) ? 200 : 500;

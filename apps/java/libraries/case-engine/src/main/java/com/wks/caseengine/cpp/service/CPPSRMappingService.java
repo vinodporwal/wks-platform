@@ -6,11 +6,11 @@ import java.util.UUID;
 
 import org.springframework.web.multipart.MultipartFile;
 
-import com.wks.caseengine.cpp.dto.CPPCostCenterDropdownDTO;
-import com.wks.caseengine.cpp.dto.CPPPlantDropdownDTO;
+import com.wks.caseengine.cpp.dto.CPPCostCenterDTO;
+import com.wks.caseengine.cpp.dto.CPPPlantDTO;
 import com.wks.caseengine.cpp.dto.CPPSRMappingDTO;
 import com.wks.caseengine.cpp.dto.CPPSRMappingImportDTO;
-import com.wks.caseengine.cpp.dto.SRMappingByPlantDTO;
+import com.wks.caseengine.cpp.dto.SRMappingDTO;
 import com.wks.caseengine.cpp.entity.CPPSRMapping;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
@@ -56,5 +56,5 @@ public interface CPPSRMappingService {
      * Updates Sender-Receiver mappings in the CPP_SR_Mapping_Master table.
      * @param dtoList List of DTOs containing the updated fields.
      */
-    AOPMessageVM updateSRMappingsByPlant(List<SRMappingByPlantDTO> dtoList);
+    AOPMessageVM updateSRMappingsByPlant(List<SRMappingDTO> dtoList);
 }

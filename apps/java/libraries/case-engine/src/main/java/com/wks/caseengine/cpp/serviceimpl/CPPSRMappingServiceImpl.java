@@ -24,11 +24,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.wks.caseengine.cpp.dto.CPPCostCenterDropdownDTO;
-import com.wks.caseengine.cpp.dto.CPPPlantDropdownDTO;
+import com.wks.caseengine.cpp.dto.CPPCostCenterDTO;
+import com.wks.caseengine.cpp.dto.CPPPlantDTO;
 import com.wks.caseengine.cpp.dto.CPPSRMappingDTO;
 import com.wks.caseengine.cpp.dto.CPPSRMappingImportDTO;
-import com.wks.caseengine.cpp.dto.SRMappingByPlantDTO;
+import com.wks.caseengine.cpp.dto.SRMappingDTO;
 import com.wks.caseengine.cpp.entity.CPPSRMapping;
 import com.wks.caseengine.cpp.repository.CPPSRMappingRepository;
 import com.wks.caseengine.cpp.service.CPPSRMappingService;
@@ -332,10 +332,10 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
             List<Map<String, Object>> rows =
                     (List<Map<String, Object>>) result.get("#result-set-1");
 
-            List<SRMappingByPlantDTO> data = new ArrayList<>();
+            List<SRMappingDTO> data = new ArrayList<>();
             if (rows != null) {
                 for (Map<String, Object> row : rows) {
-                    SRMappingByPlantDTO dto = new SRMappingByPlantDTO();
+                    SRMappingDTO dto = new SRMappingDTO();
 
                     dto.setId                  (toUuid(row, "ID"));
 
@@ -399,7 +399,7 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
         logger.info("getCostCenters: plantIds={}", plantIds);
         AOPMessageVM response = new AOPMessageVM();
         try {
-            List<CPPCostCenterDropdownDTO> data;
+            List<CPPCostCenterDTO> data;
 
             boolean hasFilter = (plantIds != null && !plantIds.isBlank());
 
@@ -411,7 +411,7 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                              "ORDER BY CostCenterName";
 
                 data = db1JdbcTemplate.query(sql, (rs, rowNum) ->
-                        new CPPCostCenterDropdownDTO(
+                        new CPPCostCenterDTO(
                                 UUID.fromString(rs.getString("CostCenterId")),
                                 rs.getString("CostCenterName"),
                                 rs.getString("CostCenterCode")
@@ -434,7 +434,7 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                              "ORDER BY CostCenterName";
 
                 data = db1JdbcTemplate.query(sql, params.toArray(), (rs, rowNum) ->
-                        new CPPCostCenterDropdownDTO(
+                        new CPPCostCenterDTO(
                                 UUID.fromString(rs.getString("CostCenterId")),
                                 rs.getString("CostCenterName"),
                                 rs.getString("CostCenterCode")
@@ -476,9 +476,9 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                 plants = plantsRepository.findBySourceNameInAndIsActiveTrue(nameList);
             }
 
-            List<CPPPlantDropdownDTO> data = new ArrayList<>();
+            List<CPPPlantDTO> data = new ArrayList<>();
             for (Plants p : plants) {
-                data.add(new CPPPlantDropdownDTO(
+                data.add(new CPPPlantDTO(
                         p.getId(),
                         p.getDisplayName(),
                         p.getPlantCode()
@@ -502,7 +502,7 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
 
     @Override
     @Transactional
-    public AOPMessageVM updateSRMappingsByPlant(List<SRMappingByPlantDTO> dtoList) {
+    public AOPMessageVM updateSRMappingsByPlant(List<SRMappingDTO> dtoList) {
         logger.info("updateSRMappingsByPlant: updating {} records", dtoList == null ? 0 : dtoList.size());
         AOPMessageVM response = new AOPMessageVM();
         try {
