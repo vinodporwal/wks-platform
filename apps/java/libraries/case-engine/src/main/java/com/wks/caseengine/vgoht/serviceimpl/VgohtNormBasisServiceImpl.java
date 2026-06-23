@@ -384,6 +384,104 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	}
 
 	@Transactional
+	public AOPMessageVM saveMonthlyValues(
+			String year,
+			UUID plantFKId,
+			List<VgohtNormMonthlyDTO> dtoList,
+			String periodFrom,
+			String periodTo) {
+
+		try {
+
+			for (VgohtNormMonthlyDTO dto : dtoList) {
+
+				saveMonthlyValue(dto.getNormParameterFKId(), year, 4, dto.getApr(), dto.getRemarks());
+				saveMonthlyValue(dto.getNormParameterFKId(), year, 5, dto.getMay(), dto.getRemarks());
+				saveMonthlyValue(dto.getNormParameterFKId(), year, 6, dto.getJun(), dto.getRemarks());
+				saveMonthlyValue(dto.getNormParameterFKId(), year, 7, dto.getJul(), dto.getRemarks());
+				saveMonthlyValue(dto.getNormParameterFKId(), year, 8, dto.getAug(), dto.getRemarks());
+				saveMonthlyValue(dto.getNormParameterFKId(), year, 9, dto.getSep(), dto.getRemarks());
+				saveMonthlyValue(dto.getNormParameterFKId(), year, 10, dto.getOct(), dto.getRemarks());
+				saveMonthlyValue(dto.getNormParameterFKId(), year, 11, dto.getNov(), dto.getRemarks());
+				saveMonthlyValue(dto.getNormParameterFKId(), year, 12, dto.getDec(), dto.getRemarks());
+				saveMonthlyValue(dto.getNormParameterFKId(), year, 1, dto.getJan(), dto.getRemarks());
+				saveMonthlyValue(dto.getNormParameterFKId(), year, 2, dto.getFeb(), dto.getRemarks());
+				saveMonthlyValue(dto.getNormParameterFKId(), year, 3, dto.getMar(), dto.getRemarks());
+			}
+
+			AOPMessageVM response = new AOPMessageVM();
+			response.setCode(200);
+			response.setMessage("Monthly values saved successfully");
+
+			return response;
+
+		} catch (Exception e) {
+			throw new RuntimeException("Error saving monthly values", e);
+		}
+	}
+
+
+	private void saveMonthlyValue(
+			String normParameterId,
+			String year,
+			Integer month,
+			Double value,
+			String remarks) {
+
+		if (value == null) {
+			return;
+		}
+
+		String sql = """
+			MERGE INTO NormAttributeTransactions AS target
+			USING (
+				SELECT
+					:normParameterId AS NormParameter_FK_Id,
+					:year AS AuditYear,
+					:month AS AOPMonth
+			) AS source
+
+			ON target.NormParameter_FK_Id = source.NormParameter_FK_Id
+			AND target.AuditYear = source.AuditYear
+			AND target.AOPMonth = source.AOPMonth
+
+			WHEN MATCHED THEN
+				UPDATE SET
+					AttributeValue = :value,
+					Remarks = :remarks
+
+			WHEN NOT MATCHED THEN
+				INSERT (
+					Id,
+					NormParameter_FK_Id,
+					AuditYear,
+					AOPMonth,
+					AttributeValue,
+					Remarks
+				)
+				VALUES (
+					NEWID(),
+					:normParameterId,
+					:year,
+					:month,
+					:value,
+					:remarks
+				);
+			""";
+
+		Query query = entityManager.createNativeQuery(sql);
+
+		query.setParameter("normParameterId", normParameterId);
+		query.setParameter("year", year);
+		query.setParameter("month", month);
+		query.setParameter("value", value);
+		query.setParameter("remarks", remarks);
+
+		query.executeUpdate();
+	}
+
+	
+	@Transactional
 	public AOPMessageVM importMonthlyValues(
 			String year,
 			UUID plantFKId,
@@ -525,6 +623,56 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		vm.setMessage("Monthly values imported successfully");
 		return vm;
 	}
+
+	private void saveMonth(String normParameterId,
+                       String year,
+                       Integer month,
+                       Double value,
+                       String remarks) {
+
+    String sql = """
+        MERGE INTO NormAttributeTransactions AS target
+        USING (
+            SELECT :normParameterId AS NormParameter_FK_Id,
+                   :year AS AuditYear,
+                   :month AS AOPMonth
+        ) AS source
+        ON target.NormParameter_FK_Id = source.NormParameter_FK_Id
+        AND target.AuditYear = source.AuditYear
+        AND target.AOPMonth = source.AOPMonth
+
+        WHEN MATCHED THEN
+            UPDATE SET
+                AttributeValue = :value,
+                Remarks = :remarks
+
+        WHEN NOT MATCHED THEN
+            INSERT (
+                Id,
+                NormParameter_FK_Id,
+                AuditYear,
+                AOPMonth,
+                AttributeValue,
+                Remarks
+            )
+            VALUES (
+                NEWID(),
+                :normParameterId,
+                :year,
+                :month,
+                :value,
+                :remarks
+            );
+        """;
+
+    entityManager.createNativeQuery(sql)
+            .setParameter("normParameterId", normParameterId)
+            .setParameter("year", year)
+            .setParameter("month", month)
+            .setParameter("value", value)
+            .setParameter("remarks", remarks)
+            .executeUpdate();
+}
 	public AOPMessageVM getMonthlyValues(String year, UUID plantFKId) {
 
 		try {

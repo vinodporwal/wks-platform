@@ -95,6 +95,26 @@ public class VgohtNormBasisController {
         );
     }
 
+    @PostMapping(value = "/vgoht/norms-basis/constant/monthly")
+    public AOPMessageVM saveMonthlyValues(
+            @RequestParam String year,
+            @RequestParam UUID plantFKId,
+            @RequestBody List<VgohtNormMonthlyDTO> monthlyValuesList,
+            @RequestParam String periodFrom,
+            @RequestParam String periodTo) {
+
+        if (plantFKId == null || year == null || year.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        return vgohtNormBasisServiceImpl.saveMonthlyValues(
+                year,
+                plantFKId,
+                monthlyValuesList,
+                periodFrom,
+                periodTo);
+    }
+
     @PostMapping(value = "/mannual-entry/import", consumes = "multipart/form-data")
     public AOPMessageVM importMonthlyValues(
             @RequestParam String year,
