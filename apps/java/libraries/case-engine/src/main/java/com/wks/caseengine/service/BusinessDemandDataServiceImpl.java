@@ -125,7 +125,7 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 				obj=findByYearAndPlantId(year,UUID.fromString(plantId),procedureName);
 				Map<String, Object> map = new HashMap<>();
 
-				map.put("businessDemandDataDTOList", obj);
+				map.put("businessDemandDataDTOList", getBusinessDemand(obj));
 				map.put("aopCalculation", null);
 				AOPMessageVM aopMessageVM = new AOPMessageVM();
 				aopMessageVM.setCode(200);
