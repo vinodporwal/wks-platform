@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
-import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
-import AdvanceKendoTable from '../common/AdvanceKendoTable/index'
+import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/jmd/utilityPlantApiServiceV2'
+import { Box, Stack } from '@mui/material'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import SenderReceiverMappingJMD from './jmd/SenderReceiverMappingJMD'
+import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
+import { useDebounce } from 'hooks/useDebounce'
 const SenderReceiverMapping = () => {
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
@@ -20,38 +20,104 @@ const SenderReceiverMapping = () => {
 
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
+  const [plantsDropdown, setPlantsDropdown] = useState([])
+  const [costCentersDropdown, setCostCentersDropdown] = useState([])
 
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, siteObject, verticalObject, year } = dataGridStore
+  const {
+    verticalObject,
+    siteObject,
+    plantObject,
+    year,
+    screenTitle,
+    jmdSelectedPlants,
+  } = dataGridStore
   const PLANT_ID = plantObject?.id
+  const lowerSiteName = siteObject?.name?.toLowerCase()
   const AOP_YEAR = year?.selectedYear
 
-  const lowerVertName = verticalObject?.name?.toLowerCase()
-  const lowerSiteName = siteObject?.name?.toLowerCase()
-  const IS_CPP = lowerVertName === 'cpp'
+  const PLANT_ID_LIST = useMemo(
+    () =>
+      lowerSiteName === 'jmd'
+        ? jmdSelectedPlants?.map((plant) => plant.id) || []
+        : [PLANT_ID],
+    [jmdSelectedPlants, lowerSiteName, PLANT_ID],
+  )
 
-  useEffect(() => {
-    if (PLANT_ID && AOP_YEAR && lowerSiteName === 'nmd') {
-      fetchPlantRequirementData()
+  const cppPlantList = useMemo(
+    () =>
+      lowerSiteName === 'jmd'
+        ? jmdSelectedPlants?.map((plant) => ({
+            value: plant.id,
+            label: plant.name,
+          }))
+        : [
+            {
+              value: plantObject?.id,
+              label: plantObject?.name,
+            },
+          ],
+    [jmdSelectedPlants, plantObject, lowerSiteName],
+  )
+
+  // Fetch plants and cost centers for dropdowns
+  const fetchAssociatedFieldIds = useCallback(async () => {
+    try {
+      // Fetch plants for dropdown
+      const plantsResponse = await UtilityPlantApiServiceV2.getSRMappingPlants(
+        keycloak,
+        PLANT_ID_LIST,
+      )
+      const plantsData = plantsResponse?.data || []
+      const plantsOptions = plantsData.map((plant) => ({
+        value: plant.plantId.toLowerCase(),
+        label: plant.plantName || plant.plantCode || 'Unknown Plant',
+        code: plant.plantCode || '',
+        sourceName: plant.sourceName?.toLowerCase() || '', // ← keep sourceName for dynamic filtering
+      }))
+      setPlantsDropdown(plantsOptions)
+
+      // Fetch cost centers for dropdown
+      const costCentersResponse =
+        await UtilityPlantApiServiceV2.getSRMappingCostCenters(
+          keycloak,
+          PLANT_ID_LIST,
+        )
+      const costCentersData = costCentersResponse?.data || []
+      const costCentersOptions = costCentersData.map((cc) => ({
+        value: cc.id.toLowerCase(),
+        label: cc.costCenterName || '',
+        code: cc.costCenterCode || '',
+        cppPlantFkId: cc.cppPlantFkId.toLowerCase() || '',
+      }))
+      setCostCentersDropdown(costCentersOptions)
+    } catch (error) {
+      console.error('Error fetching dropdown options:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error loading dropdown options',
+        severity: 'error',
+      })
     }
-  }, [PLANT_ID, AOP_YEAR, lowerSiteName])
+  }, [keycloak, PLANT_ID_LIST])
 
-  const fetchPlantRequirementData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await UtilityPlantApiServiceV2.getSRMapping(
+      const res = await UtilityPlantApiServiceV2.getSRMappingByPlant(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
 
-      const apiRows = Array.isArray(res) ? res : res?.data
+      const apiRows = res?.data?.SRMappingResponse || res?.data || []
 
       if (!apiRows || apiRows.length === 0) {
         setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
+        setLoading(false)
         return
       }
 
@@ -63,18 +129,166 @@ const SenderReceiverMapping = () => {
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
-      console.error('Error fetching fixed consumption data:', error)
+      console.error('Error fetching SR mapping data:', error)
       setSnackbarOpen(true)
       setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
       setLoading(false)
     }
-  }
+  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+
+  useDebounce(
+    () => {
+      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+        fetchData()
+        fetchAssociatedFieldIds()
+        setModifiedCells({})
+      }
+    },
+    1000,
+    [PLANT_ID_LIST, AOP_YEAR, fetchData, fetchAssociatedFieldIds],
+  )
+
+  const getFilteredCostCenters = useCallback(
+    (dataItem) => {
+      const selectedCppPlantId = dataItem?.cppPlantId
+      if (!selectedCppPlantId) return []
+
+      // cppPlantId === sourceName in plantsDropdown (case-insensitive)
+      const filtered = costCentersDropdown.filter(
+        (cc) =>
+          cc.cppPlantFkId?.toLowerCase() === selectedCppPlantId?.toLowerCase(),
+      )
+
+      return filtered.length ? filtered : []
+    },
+    [costCentersDropdown],
+  )
+
+  const getFilteredPlants = useCallback(
+    (dataItem) => {
+      const selectedCppPlantId = dataItem?.cppPlantId
+      if (!selectedCppPlantId) return []
+
+      // Filter plants whose sourceName matches the selected cppPlantId (case-insensitive)
+      const filtered = plantsDropdown.filter(
+        (p) =>
+          p.sourceName?.toLowerCase() === selectedCppPlantId?.toLowerCase(),
+      )
+      return filtered.length ? filtered : []
+    },
+    [plantsDropdown],
+  )
 
   // Column definitions
   const columns = [
     {
-      field: 'receiverUtility',
+      field: 'cppPlantId',
+      title: 'CPP Plant',
+      widthT: 200,
+      minWidth: 200,
+      editable: true,
+      type: 'select',
+      searchable: true, // ← Enable search/filter
+      displayMode: 'label',
+      options: cppPlantList,
+    },
+
+    {
+      field: 'senderCostCenterId',
+      title: 'Sender Cost Center',
+      widthT: 200,
+      minWidth: 200,
+      type: 'select',
+      dynamicOptions: true,
+      displayMode: 'label',
+      getOptions: getFilteredCostCenters,
+      editable: true,
+    },
+    {
+      field: 'senderCostCenterCode',
+      title: 'Sender Cost Center Code',
+      widthT: 200,
+      minWidth: 200,
+      type: 'text',
+      editable: false,
+    },
+    {
+      field: 'senderPlantId',
+      title: 'Sender Plant',
+      widthT: 200,
+      minWidth: 200,
+      type: 'select',
+      dynamicOptions: true,
+      displayMode: 'label',
+      getOptions: getFilteredPlants,
+      editable: true,
+    },
+    {
+      field: 'senderPlantCode',
+      title: 'Sender Plant Code',
+      widthT: 200,
+      minWidth: 200,
+      type: 'text',
+      editable: false,
+    },
+    {
+      field: 'senderUtilityName',
+      title: 'Utility',
+      widthT: 150,
+      minWidth: 150,
+      type: 'text',
+      editable: true,
+    },
+    {
+      field: 'senderUtilityCode',
+      title: 'Utility Code',
+      widthT: 150,
+      minWidth: 150,
+      type: 'text',
+      editable: true,
+    },
+
+    {
+      field: 'receiverCostCenterId',
+      title: 'Receiver Cost Center',
+      widthT: 180,
+      minWidth: 180,
+      editable: true,
+      type: 'select',
+      dynamicOptions: true,
+      displayMode: 'label',
+      getOptions: getFilteredCostCenters,
+    },
+    {
+      field: 'receiverCostCenterCode',
+      title: 'Receiver Cost Center Code',
+      widthT: 200,
+      minWidth: 200,
+      type: 'text',
+      editable: false,
+    },
+    {
+      field: 'receiverPlantId',
+      title: 'Receiver Plant',
+      widthT: 200,
+      minWidth: 200,
+      type: 'select',
+      dynamicOptions: true,
+      displayMode: 'label',
+      getOptions: getFilteredPlants,
+      editable: true,
+    },
+    {
+      field: 'receiverPlantCode',
+      title: 'Receiver Plant Code',
+      widthT: 200,
+      minWidth: 200,
+      type: 'text',
+      editable: false,
+    },
+    {
+      field: 'receiverUtilityName',
       title: 'Receiver Utility',
       widthT: 150,
       minWidth: 150,
@@ -83,94 +297,30 @@ const SenderReceiverMapping = () => {
       hidden: false,
     },
     {
-      field: 'receiverUtilityId',
-      title: 'Receiver Utility ID',
+      field: 'receiverUtilityCode',
+      title: 'Receiver Utility Code',
       widthT: 180,
       minWidth: 180,
       type: 'text',
       editable: true,
       hidden: false,
     },
-    {
-      field: 'receiverCostCenter',
-      title: 'Receiver Cost Center',
-      widthT: 180,
-      minWidth: 180,
-      type: 'text',
-      editable: true,
-    },
-    {
-      field: 'receiverCostCenterId',
-      title: 'Receiver Cost Center ID',
-      widthT: 200,
-      minWidth: 200,
-      type: 'text',
-      editable: true,
-    },
-    {
-      field: 'receiverPlant',
-      title: 'Receiver Plant',
-      widthT: 200,
-      minWidth: 200,
-      type: 'text',
-      editable: true,
-    },
-    {
-      field: 'receiverPlantId',
-      title: 'Receiver Plant ID',
-      widthT: 200,
-      minWidth: 200,
-      type: 'text',
-      editable: true,
-    },
-    {
-      field: 'senderCostCenter',
-      title: 'Sender Cost Center',
-      widthT: 200,
-      minWidth: 200,
-      type: 'text',
-      editable: true,
-    },
-    {
-      field: 'senderCostCenterId',
-      title: 'Sender Cost Center ID',
-      widthT: 200,
-      minWidth: 200,
-      type: 'text',
-      editable: true,
-    },
-    {
-      field: 'senderPlant',
-      title: 'Sender Plant',
-      widthT: 200,
-      minWidth: 200,
-      type: 'text',
-      editable: true,
-    },
-    {
-      field: 'senderPlantId',
-      title: 'Sender Plant ID',
-      widthT: 200,
-      minWidth: 200,
-      type: 'text',
-      editable: true,
-    },
-    {
-      field: 'utility',
-      title: 'Utility',
-      widthT: 150,
-      minWidth: 150,
-      type: 'text',
-      editable: true,
-    },
-    {
-      field: 'utilityId',
-      title: 'Utility ID',
-      widthT: 150,
-      minWidth: 150,
-      type: 'text',
-      editable: true,
-    },
+    // {
+    //   field: 'materialActivity',
+    //   title: 'Material Activity',
+    //   widthT: 200,
+    //   minWidth: 200,
+    //   type: 'text',
+    //   editable: true,
+    // },
+    // {
+    //   field: 'materialUOM',
+    //   title: 'Material UOM',
+    //   widthT: 200,
+    //   minWidth: 200,
+    //   type: 'text',
+    //   editable: true,
+    // },
     {
       field: 'remarks',
       title: 'Remarks',
@@ -195,7 +345,8 @@ const SenderReceiverMapping = () => {
     showExport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Sender Receiver Mapping (Utility for Utility)',
+    titleName:
+      screenTitle?.title || 'Sender Receiver Mapping (Utility for Utility)',
   }
 
   const saveChanges = async () => {
@@ -216,7 +367,7 @@ const SenderReceiverMapping = () => {
       return {
         ...rest,
         aopYear: AOP_YEAR,
-        plantFkId: PLANT_ID,
+        plantFkId: PLANT_ID_LIST,
       }
     })
 
@@ -232,7 +383,7 @@ const SenderReceiverMapping = () => {
         severity: 'success',
       })
       setModifiedCells({})
-      await fetchPlantRequirementData()
+      await fetchData()
       return response
     } catch (error) {
       console.error('Error saving SR mapping:', error)
@@ -262,7 +413,7 @@ const SenderReceiverMapping = () => {
           message: response?.message || 'Excel file imported successfully!',
           severity: 'success',
         })
-        await fetchPlantRequirementData()
+        await fetchData()
         return
       }
 
@@ -293,7 +444,7 @@ const SenderReceiverMapping = () => {
               'Import failed with errors. Please check the downloaded file.',
             severity: 'error',
           })
-          await fetchPlantRequirementData()
+          await fetchData()
           return
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
@@ -333,7 +484,7 @@ const SenderReceiverMapping = () => {
     try {
       await UtilityPlantApiServiceV2.exportSRMappingExcel(
         keycloak,
-        PLANT_ID,
+        PLANT_ID_LIST,
         AOP_YEAR,
       )
       setSnackbarData({
@@ -356,58 +507,127 @@ const SenderReceiverMapping = () => {
     setRemarkDialogOpen(true)
   }
 
-  const renderBySite = () => {
-    switch (lowerSiteName) {
-      case 'jmd':
-        return <SenderReceiverMappingJMD />
-      // case 'hmd':
-      //   return <SenderReceiverMappingHMD />
-      case 'nmd':
-      default:
-        return (
-          <Stack sx={{ mt: 2 }}>
-            <AdvanceKendoTable
-              columns={columns}
-              rows={rows}
-              setRows={setRows}
-              modifiedCells={modifiedCells}
-              setModifiedCells={setModifiedCells}
-              title={permissions.showTitle ? permissions.titleName : ''}
-              permissions={permissions}
-              handleExport={handleExport}
-              handleExcelUpload={handleExcelUpload}
-              saveChanges={saveChanges}
-              fetchData={fetchPlantRequirementData}
-              snackbarData={snackbarData}
-              snackbarOpen={snackbarOpen}
-              setSnackbarOpen={setSnackbarOpen}
-              setSnackbarData={setSnackbarData}
-              customHeight={80}
-              paginationConfig={{
-                threshold: 100,
-                buttonCount: 5,
-                pageSizes: [10, 20, 50, 100],
-                defaultPageSize: 100,
-              }}
-              handleRemarkCellClick={handleRemarkCellClick}
-              remarkDialogOpen={remarkDialogOpen}
-              setRemarkDialogOpen={setRemarkDialogOpen}
-              currentRemark={currentRemark}
-              setCurrentRemark={setCurrentRemark}
-              currentRowId={currentRowId}
-              setCurrentRowId={() => {}}
-            />
-          </Stack>
-        )
+  // Custom handler for dropdown selections to auto-populate associated ID fields
+  const handleCustomItemChange = (e, setRows) => {
+    // Extract from the event - the structure shows dataItem, field, value are properties of e
+    const dataItem = e?.dataItem
+    const field = e?.field
+    const value = e?.value
+
+    // Handle senderPlantId dropdown change - auto-populate code field
+    if (field === 'senderPlantId' && value) {
+      const selectedPlant = plantsDropdown.find((p) => p.value === value)
+      const plantCode = selectedPlant?.code || ''
+
+      setRows((prevRows) =>
+        prevRows.map((row) =>
+          row.id === dataItem.id
+            ? {
+                ...row,
+                senderPlantId: value,
+                senderPlantCode: plantCode,
+              }
+            : row,
+        ),
+      )
+      return
+    }
+
+    // Handle receiverPlantCode dropdown change - auto-populate code field
+    if (field === 'receiverPlantId' && value) {
+      const selectedPlant = plantsDropdown.find((p) => p.value === value)
+      const plantCode = selectedPlant?.code || ''
+
+      setRows((prevRows) =>
+        prevRows.map((row) =>
+          row.id === dataItem.id
+            ? {
+                ...row,
+                receiverPlantId: value,
+                receiverPlantCode: plantCode,
+              }
+            : row,
+        ),
+      )
+      return
+    }
+
+    // Handle senderCostCenterId dropdown change - auto-populate code field
+    if (field === 'senderCostCenterId' && value) {
+      const selectedCC = costCentersDropdown.find((cc) => cc.value === value)
+      const ccCode = selectedCC?.code || ''
+
+      setRows((prevRows) =>
+        prevRows.map((row) =>
+          row.id === dataItem.id
+            ? {
+                ...row,
+                senderCostCenterId: value,
+                senderCostCenterCode: ccCode,
+              }
+            : row,
+        ),
+      )
+      return
+    }
+
+    // Handle receiverCostCenterId dropdown change - auto-populate code field
+    if (field === 'receiverCostCenterId' && value) {
+      const selectedCC = costCentersDropdown.find((cc) => cc.value === value)
+      const ccCode = selectedCC?.code || ''
+
+      setRows((prevRows) =>
+        prevRows.map((row) =>
+          row.id === dataItem.id
+            ? {
+                ...row,
+                receiverCostCenterId: value,
+                receiverCostCenterCode: ccCode,
+              }
+            : row,
+        ),
+      )
+      return
     }
   }
-
-  if (!IS_CPP) return null
 
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
-      {renderBySite()}
+      <Stack sx={{ mt: 2 }}>
+        <AdvanceKendoTable
+          columns={columns}
+          rows={rows}
+          setRows={setRows}
+          modifiedCells={modifiedCells}
+          setModifiedCells={setModifiedCells}
+          title={permissions.showTitle ? permissions.titleName : ''}
+          permissions={permissions}
+          handleExport={handleExport}
+          handleExcelUpload={handleExcelUpload}
+          saveChanges={saveChanges}
+          fetchData={fetchData}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          customHeight={80}
+          customItemChange={handleCustomItemChange}
+          paginationConfig={{
+            threshold: 100,
+            buttonCount: 5,
+            pageSizes: [10, 20, 50, 100],
+            defaultPageSize: 100,
+          }}
+          handleRemarkCellClick={handleRemarkCellClick}
+          remarkDialogOpen={remarkDialogOpen}
+          setRemarkDialogOpen={setRemarkDialogOpen}
+          currentRemark={currentRemark}
+          setCurrentRemark={setCurrentRemark}
+          currentRowId={currentRowId}
+          setCurrentRowId={() => {}}
+        />
+      </Stack>
     </Box>
   )
 }
