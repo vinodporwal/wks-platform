@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.cpp.dto.CPPSRMappingDTO;
 import com.wks.caseengine.cpp.dto.CPPSRMappingImportDTO;
+import com.wks.caseengine.cpp.dto.SRMappingDTO;
 import com.wks.caseengine.cpp.entity.CPPSRMapping;
 import com.wks.caseengine.cpp.service.CPPSRMappingService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -62,6 +63,79 @@ public class CPPSRMappingController {
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(outputStream.toByteArray());
+    }
+
+    // GET SR Mapping By Plant
+    /**
+     * GET /task/sr-mapping/by-plant
+     *
+     * Calls SP CPP_GetSRMappingByPlant.
+     * Returns sender-receiver mapping records for the given plant(s).
+     *
+     * @param plantIds      Required. Comma-separated Plant GUIDs.
+     *                      Example: "23BCA1B3-56DD-4C15-A3D6-3C2C9A62E653,48051DCF-8383-4240-A1B9-AB5D9CD196CA"
+     * @param financialYear Optional. Currently not used by the SP (defaults to NULL).
+     */
+    @GetMapping("/sr-mapping/by-plant")
+    public ResponseEntity<AOPMessageVM> getSRMappingByPlant(
+            @RequestParam String plantIds,
+            @RequestParam(required = false) String financialYear) {
+
+        AOPMessageVM response = service.getSRMappingByPlant(plantIds, financialYear);
+        int httpStatus = (response != null && response.getCode() == 200) ? 200 : 500;
+        return ResponseEntity.status(httpStatus).body(response);
+    }
+
+    // UPDATE SR Mapping By Plant
+    /**
+     * PUT /task/sr-mapping/by-plant
+     *
+     * Updates Sender-Receiver mapping records based on the provided DTOs.
+     */
+    @PutMapping("/sr-mapping/by-plant")
+    public ResponseEntity<AOPMessageVM> updateSRMappingsByPlant(
+            @RequestBody List<SRMappingDTO> dtoList) {
+
+        AOPMessageVM response = service.updateSRMappingsByPlant(dtoList);
+        int httpStatus = (response != null && response.getCode() == 200) ? 200 : 500;
+        return ResponseEntity.status(httpStatus).body(response);
+    }
+
+    // GET Cost Centers (dropdown)
+    /**
+     * GET /task/sr-mapping/cost-centers
+     *
+     * Returns CostCenterId, CostCenterName, CostCenterCode for active records.
+     *
+     * @param plantIds Optional. Comma-separated Plant GUIDs.
+     *                 If omitted, returns all active cost-centers.
+     */
+    @GetMapping("/sr-mapping/cost-centers")
+    public ResponseEntity<AOPMessageVM> getCostCenters(
+            @RequestParam(required = false) String plantIds) {
+
+        AOPMessageVM response = service.getCostCenters(plantIds);
+        int httpStatus = (response != null && response.getCode() == 200) ? 200 : 500;
+        return ResponseEntity.status(httpStatus).body(response);
+    }
+
+    // GET Plants (dropdown)
+    /**
+     * GET /task/sr-mapping/plants
+     *
+     * Returns plantId, plantName (DisplayName), plantCode for active Plants.
+     * Matches input source-names against the Plants.SourceName column.
+     *
+     * @param sourceNames Optional. Comma-separated SourceName values (e.g. "40NB,40NF").
+     *                    If omitted, all active plants are returned.
+     */
+    @GetMapping("/sr-mapping/plants")
+    public ResponseEntity<AOPMessageVM> getPlants(
+            @RequestParam(required = false) String sourceNames) {
+
+        AOPMessageVM response = service.getPlants(sourceNames);
+        int httpStatus = (response != null && response.getCode() == 200) ? 200 : 500;
+        return ResponseEntity.status(httpStatus).body(response);
     }
 
     // IMPORT
