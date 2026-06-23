@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
-import { ProductionNormsApiService } from 'components/aop-phase-two/services/vgoht/productionNormsApiService'
+import { ProductionNormsApiService } from 'components/aop-phase-two/services/merox/productionNormsApiService'
 import { useSession } from 'SessionStoreContext'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
@@ -85,8 +85,6 @@ const Constants = ({ startDate, endDate }) => {
 
       if (res?.data?.length === 0) {
         setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
 

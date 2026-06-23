@@ -20,6 +20,12 @@ export const InputApiService = {
   saveImportPowerCapacityExcel,
   exportImportPowerCapacityExcel,
 
+  // Used in: Inputs/components/AddImportPowerRowDialog.js
+  getImportProcurementPlants,
+  addSource,
+  updateSource,
+  deleteSource,
+
   // Used in: Inputs/AssetCapacity/PowerAssetCapacity.js & SteamAssetCapacity.js
   getAssetCapacities,
   saveAssetCapacities,
@@ -60,6 +66,21 @@ export const InputApiService = {
   saveFuelAvailabilityData,
   saveFuelAvailabilityExcel,
   exportFuelAvailabilityExcel,
+
+  // Used in: Inputs/FuelPriority/PlantFuelAvailability.js
+  getFuelMaster,
+  getFuelPriorityData,
+  saveFuelPriorityData,
+  importFuelPriorityExcel,
+  exportFuelPriorityExcel,
+
+  // Used in: Inputs/FuelPriority/AssetFuelPriority.js
+  getAssetFuelPriority,
+  saveAssetFuelPriority,
+
+  // Used in: Inputs/FuelPriority/AssetWiseCompatibleFuel.js
+  getCompatibleFuelAssets,
+  saveAssetCompatibleFuel,
 
   // Used in: Inputs/Fuel/JCBFuel.js
   getFuelAvailabilityDataJCB,
@@ -222,6 +243,25 @@ async function getImportPowerCapacity(keycloak, plantIds, aopYear) {
   }
 }
 
+async function getImportProcurementPlants(keycloak, cppPlant) {
+  const url = `${Config.CaseEngineUrl}/task/jmd/imported-power-plants/procurement-plants?cppPlant=${cppPlant}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
 async function saveImportPowerCapacity(keycloak, plantIds, aopYear, payload) {
   const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
   const queryParams = plantIdArray.join(',')
@@ -245,6 +285,86 @@ async function saveImportPowerCapacity(keycloak, plantIds, aopYear, payload) {
     return result || { success: true }
   } catch (e) {
     console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+// POST /task/jmd/imported-power-plans/source
+// Adds a new source row (without month values) for Import Power
+async function addSource(keycloak, sourceData) {
+  const url = `${Config.CaseEngineUrl}/task/jmd/imported-power-plans/source`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(sourceData)
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('Error adding source:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// PUT /task/jmd/imported-power-plans/source/{normParameterId}
+// Updates an existing source row
+async function updateSource(keycloak, normParameterId, updateData) {
+  const url = `${Config.CaseEngineUrl}/task/jmd/imported-power-plans/source/${normParameterId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(updateData)
+  try {
+    const resp = await fetch(url, {
+      method: 'PUT',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('Error updating source:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// DELETE /task/jmd/imported-power-plans/source/{normParameterId}?procurementPlant={uuid}
+// Deletes a source row from Import Power
+async function deleteSource(keycloak, normParameterId, procurementPlant) {
+  const url = `${Config.CaseEngineUrl}/task/jmd/imported-power-plans/source/${normParameterId}?procurementPlant=${procurementPlant}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    // Delete endpoints often return empty bodies, so we handle it gracefully
+    const text = await resp.text()
+    return text ? JSON.parse(text) : { success: true }
+  } catch (e) {
+    console.error('Error deleting source:', e)
     return await Promise.reject(e)
   }
 }
@@ -1111,4 +1231,197 @@ async function exportFuelAvailabilityExcelJCB(
     fileName: `JCB_Fuel_Availability_${financialYear}.xlsx`,
     method: 'GET',
   })
+}
+
+// ========================|| Fuel Priority APIs ||=====================================//
+
+async function getFuelMaster(keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/fuel-master`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result
+  } catch (e) {
+    console.error('Error fetching fuel master:', e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getFuelPriorityData(keycloak, plantIds, financialYear) {
+  const queryParams = Array.isArray(plantIds) ? plantIds.join(',') : plantIds
+  const url = `${Config.CaseEngineUrl}/task/plant-wise-fuel-priority/${queryParams}/${financialYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result
+  } catch (e) {
+    console.error('Error fetching fuel priority data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+async function saveFuelPriorityData(
+  keycloak,
+  plantIds,
+  financialYear,
+  payload,
+) {
+  const url = `${Config.CaseEngineUrl}/task/plant-fuel-availability`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, {
+      method: 'PUT',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('Error saving fuel priority data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+async function importFuelPriorityExcel(
+  file,
+  keycloak,
+  plantIds,
+  financialYear,
+) {
+  return saveExcelData(
+    file,
+    keycloak,
+    'plant-fuel-availability/import',
+    plantIds,
+    financialYear,
+  )
+}
+
+async function exportFuelPriorityExcel(
+  keycloak,
+  plantIds,
+  financialYear,
+  EXCEL_NAME,
+) {
+  return exportExcelData(keycloak, {
+    endpoint: `plant-fuel-availability/export`,
+    plantIds,
+    financialYear,
+    fileName: EXCEL_NAME,
+    method: 'GET',
+  })
+}
+
+// GET /task/asset-fuel-priority/{plantIds}/{financialYear}
+async function getAssetFuelPriority(keycloak, plantIds, financialYear) {
+  const queryParams = Array.isArray(plantIds) ? plantIds.join(',') : plantIds
+  const url = `${Config.CaseEngineUrl}/task/asset-fuel-priority/${queryParams}/${financialYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result
+  } catch (e) {
+    console.error('Error fetching asset fuel priority data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// PUT /task/asset-fuel-priority
+async function saveAssetFuelPriority(keycloak, payload) {
+  const url = `${Config.CaseEngineUrl}/task/asset-fuel-priority`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, { method: 'PUT', headers, body })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('Error saving asset fuel priority data:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// GET /task/compatible-fuel-assets?plantIds=...
+// Fetch all compatible fuel assets (power + steam) filtered by plant IDs
+async function getCompatibleFuelAssets(keycloak, plantIds) {
+  const queryParams = Array.isArray(plantIds) ? plantIds.join(',') : plantIds
+  const url = `${Config.CaseEngineUrl}/task/compatible-fuel-assets?plantIds=${queryParams}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result
+  } catch (e) {
+    console.error('Error fetching compatible fuel assets:', e)
+    return await Promise.reject(e)
+  }
+}
+
+// POST /task/compatible-fuel-assets
+// Update compatible fuel for assets (power + steam)
+async function saveAssetCompatibleFuel(keycloak, payload) {
+  const url = `${Config.CaseEngineUrl}/task/compatible-fuel-assets`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.error('Error saving compatible fuel assets:', e)
+    return await Promise.reject(e)
+  }
 }

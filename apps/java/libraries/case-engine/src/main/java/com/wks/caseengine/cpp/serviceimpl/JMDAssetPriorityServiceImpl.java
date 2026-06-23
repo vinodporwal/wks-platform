@@ -1,8 +1,8 @@
 package com.wks.caseengine.cpp.serviceimpl;
 
-import com.wks.caseengine.dto.CPPAssetPriorityResponseDto;
-import com.wks.caseengine.dto.AssetPriorityRequestDTO;
+import com.wks.caseengine.cpp.dto.AssetPriorityRequestDTO;
 import com.wks.caseengine.cpp.dto.CPPAssetPriorityProjection;
+import com.wks.caseengine.cpp.dto.CPPAssetPriorityResponseDto;
 import com.wks.caseengine.cpp.entity.CPPPowerAssetPriority;
 import com.wks.caseengine.cpp.entity.CPPSteamAssetPriority;
 import com.wks.caseengine.cpp.repository.CPPPowerAssetPriorityRepository;
@@ -53,6 +53,148 @@ public class JMDAssetPriorityServiceImpl implements JMDAssetPriorityService {
                     repository.findAssetPrioritiesByPlants(plantIds, aopYear);
             logger.info("[GET Service] Query returned {} records", projections.size());
 
+            // ── TIER 2: CARRY-FORWARD – clone from previous FY if requested FY is empty ──
+            if (projections.isEmpty()) {
+                logger.info("[GET Service] No records found for {}. Attempting carry-forward from previous financial year.", aopYear);
+                String previousYear = derivePreviousFinancialYear(aopYear);
+
+                if (previousYear != null) {
+                    logger.info("[GET Service] Looking for carry-forward source in financialYear: {}", previousYear);
+
+                    // Carry-forward Power assets
+                    for (UUID plantId : plantIds) {
+                        List<CPPPowerAssetPriority> prevPowerRecords = repository.findByPlantFkIdAndAopYear(plantId, previousYear);
+                        if (!prevPowerRecords.isEmpty()) {
+                            logger.info("[GET Service] Carrying forward {} power priority records for plantId: {} from {}", prevPowerRecords.size(), plantId, previousYear);
+                            List<CPPPowerAssetPriority> clones = new ArrayList<>();
+                            for (CPPPowerAssetPriority src : prevPowerRecords) {
+                                CPPPowerAssetPriority clone = new CPPPowerAssetPriority();
+                                clone.setId(UUID.randomUUID());
+                                clone.setAssetFkId(src.getAssetFkId());
+                                clone.setPlantFkId(src.getPlantFkId());
+                                clone.setApr(src.getApr());
+                                clone.setMay(src.getMay());
+                                clone.setJun(src.getJun());
+                                clone.setJul(src.getJul());
+                                clone.setAug(src.getAug());
+                                clone.setSep(src.getSep());
+                                clone.setOct(src.getOct());
+                                clone.setNov(src.getNov());
+                                clone.setDec(src.getDec());
+                                clone.setJan(src.getJan());
+                                clone.setFeb(src.getFeb());
+                                clone.setMar(src.getMar());
+                                clone.setAopYear(aopYear);
+                                clone.setRemarks(src.getRemarks());
+                                clone.setCreatedDate(LocalDateTime.now());
+                                clone.setUpdatedDate(LocalDateTime.now());
+                                clones.add(clone);
+                            }
+                            repository.saveAll(clones);
+                            logger.info("[GET Service] Saved {} carry-forward power priority records for plantId: {}", clones.size(), plantId);
+                        }
+
+                        // Carry-forward Steam assets
+                        List<CPPSteamAssetPriority> prevSteamRecords = steamRepository.findByPlantFkIdAndAopYear(plantId, previousYear);
+                        if (!prevSteamRecords.isEmpty()) {
+                            logger.info("[GET Service] Carrying forward {} steam priority records for plantId: {} from {}", prevSteamRecords.size(), plantId, previousYear);
+                            List<CPPSteamAssetPriority> steamClones = new ArrayList<>();
+                            for (CPPSteamAssetPriority src : prevSteamRecords) {
+                                CPPSteamAssetPriority clone = new CPPSteamAssetPriority();
+                                clone.setId(UUID.randomUUID());
+                                clone.setAssetFkId(src.getAssetFkId());
+                                clone.setPlantFkId(src.getPlantFkId());
+                                clone.setApr(src.getApr());
+                                clone.setMay(src.getMay());
+                                clone.setJun(src.getJun());
+                                clone.setJul(src.getJul());
+                                clone.setAug(src.getAug());
+                                clone.setSep(src.getSep());
+                                clone.setOct(src.getOct());
+                                clone.setNov(src.getNov());
+                                clone.setDec(src.getDec());
+                                clone.setJan(src.getJan());
+                                clone.setFeb(src.getFeb());
+                                clone.setMar(src.getMar());
+                                clone.setAopYear(aopYear);
+                                clone.setRemarks(src.getRemarks());
+                                clone.setCreatedDate(LocalDateTime.now());
+                                clone.setUpdatedDate(LocalDateTime.now());
+                                steamClones.add(clone);
+                            }
+                            steamRepository.saveAll(steamClones);
+                            logger.info("[GET Service] Saved {} carry-forward steam priority records for plantId: {}", steamClones.size(), plantId);
+                        }
+                    }
+
+                    // Re-query after carry-forward attempt
+                    projections = repository.findAssetPrioritiesByPlants(plantIds, aopYear);
+                    logger.info("[GET Service] After carry-forward, re-query returned {} records for {}", projections.size(), aopYear);
+                } else {
+                    logger.warn("[GET Service] Could not derive previous financial year from '{}'. Skipping carry-forward.", aopYear);
+                }
+            }
+
+            // ── TIER 3: ZERO-SEED – both FY and previous FY have no data → seed from asset tables ──
+            if (projections.isEmpty()) {
+                logger.info("[GET Service] No carry-forward data found. Seeding zero asset priorities from asset tables for {}.", aopYear);
+
+                List<CPPAssetPriorityProjection> assetProjections = repository.findAllAssetsForPlants(plantIds);
+                logger.info("[GET Service] Found {} assets in asset tables to zero-seed.", assetProjections.size());
+
+                if (!assetProjections.isEmpty()) {
+                    List<CPPPowerAssetPriority>  powerSeeds = new ArrayList<>();
+                    List<CPPSteamAssetPriority>  steamSeeds = new ArrayList<>();
+
+                    for (CPPAssetPriorityProjection asset : assetProjections) {
+                        if ("Power".equals(asset.getAssetCategory())) {
+                            CPPPowerAssetPriority seed = new CPPPowerAssetPriority();
+                            seed.setId(UUID.randomUUID());
+                            seed.setAssetFkId(asset.getAssetFkId());
+                            seed.setPlantFkId(asset.getPlantFkId());
+                            seed.setApr(0);  seed.setMay(0);  seed.setJun(0);
+                            seed.setJul(0);  seed.setAug(0);  seed.setSep(0);
+                            seed.setOct(0);  seed.setNov(0);  seed.setDec(0);
+                            seed.setJan(0);  seed.setFeb(0);  seed.setMar(0);
+                            seed.setAopYear(aopYear);
+                            seed.setRemarks(null);
+                            seed.setCreatedDate(LocalDateTime.now());
+                            seed.setUpdatedDate(LocalDateTime.now());
+                            powerSeeds.add(seed);
+                        } else if ("Steam".equals(asset.getAssetCategory())) {
+                            CPPSteamAssetPriority seed = new CPPSteamAssetPriority();
+                            seed.setId(UUID.randomUUID());
+                            seed.setAssetFkId(asset.getAssetFkId());
+                            seed.setPlantFkId(asset.getPlantFkId());
+                            seed.setApr(0);  seed.setMay(0);  seed.setJun(0);
+                            seed.setJul(0);  seed.setAug(0);  seed.setSep(0);
+                            seed.setOct(0);  seed.setNov(0);  seed.setDec(0);
+                            seed.setJan(0);  seed.setFeb(0);  seed.setMar(0);
+                            seed.setAopYear(aopYear);
+                            seed.setRemarks(null);
+                            seed.setCreatedDate(LocalDateTime.now());
+                            seed.setUpdatedDate(LocalDateTime.now());
+                            steamSeeds.add(seed);
+                        }
+                    }
+
+                    if (!powerSeeds.isEmpty()) {
+                        repository.saveAll(powerSeeds);
+                        logger.info("[GET Service] Inserted {} zero-seeded power priority records for {}.", powerSeeds.size(), aopYear);
+                    }
+                    if (!steamSeeds.isEmpty()) {
+                        steamRepository.saveAll(steamSeeds);
+                        logger.info("[GET Service] Inserted {} zero-seeded steam priority records for {}.", steamSeeds.size(), aopYear);
+                    }
+
+                    // Final re-query to return the seeded data with real IDs
+                    projections = repository.findAssetPrioritiesByPlants(plantIds, aopYear);
+                    logger.info("[GET Service] After zero-seed, re-query returned {} records for {}.", projections.size(), aopYear);
+                } else {
+                    logger.warn("[GET Service] No assets found in asset tables for plantIds: {}. Returning empty response.", plantIds);
+                }
+            }
+
             List<CPPAssetPriorityResponseDto> allResults = projections.stream()
                     .map(this::mapToDto)
                     .collect(Collectors.toList());
@@ -84,6 +226,26 @@ public class JMDAssetPriorityServiceImpl implements JMDAssetPriorityService {
         }
 
         return aopMessageVM;
+    }
+
+    /**
+     * Derives the previous financial year string.
+     * Expected format: "YYYY-YY" (e.g. "2026-27" → "2025-26", "2025-26" → "2024-25").
+     * Returns null if the format is unrecognised.
+     */
+    private String derivePreviousFinancialYear(String financialYear) {
+        try {
+            String[] parts = financialYear.split("-");
+            if (parts.length != 2) return null;
+            int startYear = Integer.parseInt(parts[0]);
+            int prevStart = startYear - 1;
+            int prevEnd = prevStart + 1;
+            String prevEndSuffix = String.format("%02d", prevEnd % 100);
+            return prevStart + "-" + prevEndSuffix;
+        } catch (Exception e) {
+            logger.warn("[GET Service] Could not parse financial year '{}': {}", financialYear, e.getMessage());
+            return null;
+        }
     }
 
     private CPPAssetPriorityResponseDto mapToDto(CPPAssetPriorityProjection projection) {

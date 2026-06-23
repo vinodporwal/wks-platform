@@ -1,4 +1,9 @@
 import { DropDownList } from '@progress/kendo-react-dropdowns'
+import {
+  filterBy,
+  FilterDescriptor,
+  CompositeFilterDescriptor,
+} from '@progress/kendo-data-query'
 import { useState, useEffect, useRef } from 'react'
 
 export const SelectCellEditor = ({
@@ -9,6 +14,7 @@ export const SelectCellEditor = ({
   textField = 'label',
   valueField = 'value',
   placeholder = 'Select...',
+  showClearOption = false,
 }) => {
   const storedValue = dataItem[field] ?? ''
   // Find the matching option object based on the stored value
@@ -23,12 +29,28 @@ export const SelectCellEditor = ({
     // It's a non-numeric string (e.g., 'Price', 'Amount'), return as-is
     return String(val)
   }
+
+  // Add clear option if enabled
+  const optionsWithClear = showClearOption
+    ? [{ [valueField]: '', [textField]: 'Clear' }, ...options]
+    : options
+
   const selectedOption =
-    options.find(
+    optionsWithClear.find(
       (opt) => normalizeValue(opt[valueField]) === normalizeValue(storedValue),
     ) || null
   const [localValue, setLocalValue] = useState(selectedOption)
+  const [filteredData, setFilteredData] = useState(optionsWithClear.slice())
   const inputRef = useRef(null)
+
+  const filterData = (filter) => {
+    const data = optionsWithClear.slice()
+    return filterBy(data, filter)
+  }
+
+  const handleFilterChange = (event) => {
+    setFilteredData(filterData(event.filter))
+  }
 
   // Autofocus when cell enters edit mode
   useEffect(() => {
@@ -50,11 +72,13 @@ export const SelectCellEditor = ({
   return (
     <DropDownList
       ref={inputRef}
-      data={options}
+      data={filteredData}
       textField={textField}
       dataItemKey={valueField}
       value={localValue}
       onChange={handleChange}
+      filterable
+      onFilterChange={handleFilterChange}
       className='dropdown-editor'
       style={{ width: '100%' }}
     />
