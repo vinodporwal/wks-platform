@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Collections;
+
 
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -380,6 +382,257 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 			throw new RuntimeException("Error importing yearly values: " + e.getMessage(), e);
 		}
 	}
+
+	@Transactional
+	public AOPMessageVM importMonthlyValues(
+			String year,
+			UUID plantFKId,
+			String periodFrom,
+			String periodTo,
+			MultipartFile file) {
+
+		try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+
+			Sheet sheet = workbook.getSheetAt(0);
+
+			if (sheet == null || sheet.getPhysicalNumberOfRows() == 0) {
+				throw new RuntimeException("Excel sheet is empty");
+			}
+
+			Row headerRow = sheet.getRow(0);
+			Map<String, Integer> headerMap = getHeaderMap(headerRow);
+
+			validateMonthlyHeaders(headerMap);
+
+			Map<String, String> parameterMap = getNormParameterMap(plantFKId);
+
+			List<VgohtNormConfigurationDTO> dtoList = new ArrayList<>();
+
+			for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+
+				Row row = sheet.getRow(i);
+
+				if (row == null) {
+					continue;
+				}
+
+				String parameterName =
+						getCellString(getCell(row, headerMap, "parameter"));
+
+				if (parameterName.isEmpty()) {
+					continue;
+				}
+
+				String normParameterId =
+						parameterMap.get(parameterName.toLowerCase());
+
+				if (normParameterId == null) {
+					throw new RuntimeException(
+							"Invalid Parameter at row " + (i + 1) + " : " + parameterName);
+				}
+
+				VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
+
+				dto.setNormParameterFKId(normParameterId);
+				dto.setProductName(parameterName);
+
+				dto.setApr(getCellDouble(getCell(row, headerMap, "apr")));
+				dto.setMay(getCellDouble(getCell(row, headerMap, "may")));
+				dto.setJun(getCellDouble(getCell(row, headerMap, "jun")));
+				dto.setJul(getCellDouble(getCell(row, headerMap, "jul")));
+				dto.setAug(getCellDouble(getCell(row, headerMap, "aug")));
+				dto.setSep(getCellDouble(getCell(row, headerMap, "sep")));
+				dto.setOct(getCellDouble(getCell(row, headerMap, "oct")));
+				dto.setNov(getCellDouble(getCell(row, headerMap, "nov")));
+				dto.setDec(getCellDouble(getCell(row, headerMap, "dec")));
+				dto.setJan(getCellDouble(getCell(row, headerMap, "jan")));
+				dto.setFeb(getCellDouble(getCell(row, headerMap, "feb")));
+				dto.setMar(getCellDouble(getCell(row, headerMap, "mar")));
+
+				dto.setRemarks(
+						getCellString(getCell(row, headerMap, "remarks")));
+
+				dtoList.add(dto);
+			}
+
+			return saveMonthlyValues(
+					year,
+					plantFKId,
+					dtoList,
+					periodFrom,
+					periodTo);
+
+		} catch (Exception e) {
+			throw new RuntimeException(
+					"Error importing monthly values : " + e.getMessage(), e);
+		}
+	}
+
+	private void validateMonthlyHeaders(Map<String, Integer> headerMap) {
+
+		List<String> requiredHeaders = new ArrayList<>();
+		Collections.addAll(requiredHeaders,
+				"parameter",
+				"apr",
+				"may",
+				"jun",
+				"jul",
+				"aug",
+				"sep",
+				"oct",
+				"nov",
+				"dec",
+				"jan",
+				"feb",
+				"mar",
+				"remarks"
+		);
+
+		for (String header : requiredHeaders) {
+
+			if (!headerMap.containsKey(header.toLowerCase())) {
+				throw new RuntimeException(
+						"Missing required column: " + header);
+			}
+		}
+	}
+
+	public AOPMessageVM saveMonthlyValues(
+			String year,
+			UUID plantFKId,
+			List<VgohtNormConfigurationDTO> dtoList,
+			String periodFrom,
+			String periodTo) {
+
+		for (VgohtNormConfigurationDTO dto : dtoList) {
+
+			saveMonth(dto.getNormParameterFKId(), year, 4, dto.getApr(), dto.getRemarks());
+			saveMonth(dto.getNormParameterFKId(), year, 5, dto.getMay(), dto.getRemarks());
+			saveMonth(dto.getNormParameterFKId(), year, 6, dto.getJun(), dto.getRemarks());
+			saveMonth(dto.getNormParameterFKId(), year, 7, dto.getJul(), dto.getRemarks());
+			saveMonth(dto.getNormParameterFKId(), year, 8, dto.getAug(), dto.getRemarks());
+			saveMonth(dto.getNormParameterFKId(), year, 9, dto.getSep(), dto.getRemarks());
+			saveMonth(dto.getNormParameterFKId(), year, 10, dto.getOct(), dto.getRemarks());
+			saveMonth(dto.getNormParameterFKId(), year, 11, dto.getNov(), dto.getRemarks());
+			saveMonth(dto.getNormParameterFKId(), year, 12, dto.getDec(), dto.getRemarks());
+			saveMonth(dto.getNormParameterFKId(), year, 1, dto.getJan(), dto.getRemarks());
+			saveMonth(dto.getNormParameterFKId(), year, 2, dto.getFeb(), dto.getRemarks());
+			saveMonth(dto.getNormParameterFKId(), year, 3, dto.getMar(), dto.getRemarks());
+		}
+
+		AOPMessageVM vm = new AOPMessageVM();
+		vm.setCode(200);
+		vm.setMessage("Monthly values imported successfully");
+		return vm;
+	}
+	public AOPMessageVM getMonthlyValues(String year, UUID plantFKId) {
+
+		try {
+
+			String sql = """
+				SELECT
+					NP.Id AS NormParameter_FK_Id,
+					NP.DisplayName,
+
+					MAX(CASE WHEN NAT.AOPMonth = 4 THEN NAT.AttributeValue END) AS Apr,
+					MAX(CASE WHEN NAT.AOPMonth = 5 THEN NAT.AttributeValue END) AS May,
+					MAX(CASE WHEN NAT.AOPMonth = 6 THEN NAT.AttributeValue END) AS Jun,
+					MAX(CASE WHEN NAT.AOPMonth = 7 THEN NAT.AttributeValue END) AS Jul,
+					MAX(CASE WHEN NAT.AOPMonth = 8 THEN NAT.AttributeValue END) AS Aug,
+					MAX(CASE WHEN NAT.AOPMonth = 9 THEN NAT.AttributeValue END) AS Sep,
+					MAX(CASE WHEN NAT.AOPMonth = 10 THEN NAT.AttributeValue END) AS Oct,
+					MAX(CASE WHEN NAT.AOPMonth = 11 THEN NAT.AttributeValue END) AS Nov,
+					MAX(CASE WHEN NAT.AOPMonth = 12 THEN NAT.AttributeValue END) AS Dec,
+					MAX(CASE WHEN NAT.AOPMonth = 1 THEN NAT.AttributeValue END) AS Jan,
+					MAX(CASE WHEN NAT.AOPMonth = 2 THEN NAT.AttributeValue END) AS Feb,
+					MAX(CASE WHEN NAT.AOPMonth = 3 THEN NAT.AttributeValue END) AS Mar,
+
+					MAX(NAT.Remarks) AS Remarks,
+					NP.UOM,
+					MAX(NPT.DisplayName) AS NormParameterTypeDisplayName,
+					NP.Type
+
+				FROM NormParameters NP
+				JOIN NormParameterType NPT
+					ON NP.NormParameterType_FK_Id = NPT.Id
+
+				LEFT JOIN NormAttributeTransactions NAT
+					ON NAT.NormParameter_FK_Id = NP.Id
+					AND NAT.AuditYear = :year
+
+				WHERE NP.Plant_FK_Id = :plantFKId
+					AND NPT.Name = 'Constant'
+
+				GROUP BY
+					NP.Id,
+					NP.DisplayName,
+					NP.DisplayOrder,
+					NP.UOM,
+					NP.Type
+
+				ORDER BY NP.DisplayOrder
+				""";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("year", year);
+			query.setParameter("plantFKId", plantFKId);
+
+			List<Object[]> resultList = query.getResultList();
+			List<VgohtNormConfigurationDTO> dtoList = new ArrayList<>();
+
+			for (Object[] row : resultList) {
+
+				VgohtNormConfigurationDTO dto = new VgohtNormConfigurationDTO();
+
+				dto.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
+				dto.setProductName(row[1] != null ? row[1].toString() : "");
+
+				dto.setApr(parseDouble(row[2]));
+				dto.setMay(parseDouble(row[3]));
+				dto.setJun(parseDouble(row[4]));
+				dto.setJul(parseDouble(row[5]));
+				dto.setAug(parseDouble(row[6]));
+				dto.setSep(parseDouble(row[7]));
+				dto.setOct(parseDouble(row[8]));
+				dto.setNov(parseDouble(row[9]));
+				dto.setDec(parseDouble(row[10]));
+				dto.setJan(parseDouble(row[11]));
+				dto.setFeb(parseDouble(row[12]));
+				dto.setMar(parseDouble(row[13]));
+
+				dto.setRemarks(row[14] != null ? row[14].toString() : "");
+				dto.setUOM(row[15] != null ? row[15].toString() : "");
+				dto.setTypeDisplayName(row[16] != null ? row[16].toString() : "");
+				dto.setType(row[17] != null ? row[17].toString() : "");
+
+				dtoList.add(dto);
+			}
+
+			AOPMessageVM response = new AOPMessageVM();
+			response.setCode(200);
+			response.setData(dtoList);
+			response.setMessage("Monthly values fetched successfully");
+
+			return response;
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to fetch monthly values", e);
+		}
+	}
+
+	public Double parseDouble(Object value) {
+
+		if (value == null) {
+			return 0.0;
+		}
+
+		try {
+			return Double.parseDouble(value.toString().trim());
+		} catch (Exception e) {
+			return 0.0;
+		}
+	}
+	
 	public AOPMessageVM getYearlyValues(String year, UUID plantFKId) {
 
 		try {
@@ -444,6 +697,80 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		} catch (Exception e) {
 			// System.out.println(e);
 			throw new RuntimeException("Failed to fetch yearly values", e);
+		}
+	}
+
+	public byte[] exportMonthlyValues(String year, UUID plantFKId) {
+
+		AOPMessageVM response = getMonthlyValues(year, plantFKId);
+
+		List<VgohtNormConfigurationDTO> data =
+				(List<VgohtNormConfigurationDTO>) response.getData();
+
+		try (Workbook workbook = new XSSFWorkbook();
+			ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+			Sheet sheet = workbook.createSheet("Norms Basis Monthly");
+
+			// Header
+			Row header = sheet.createRow(0);
+
+			header.createCell(0).setCellValue("Type");
+			header.createCell(1).setCellValue("Parameter");
+			header.createCell(2).setCellValue("UOM");
+
+			header.createCell(3).setCellValue("Apr");
+			header.createCell(4).setCellValue("May");
+			header.createCell(5).setCellValue("Jun");
+			header.createCell(6).setCellValue("Jul");
+			header.createCell(7).setCellValue("Aug");
+			header.createCell(8).setCellValue("Sep");
+			header.createCell(9).setCellValue("Oct");
+			header.createCell(10).setCellValue("Nov");
+			header.createCell(11).setCellValue("Dec");
+			header.createCell(12).setCellValue("Jan");
+			header.createCell(13).setCellValue("Feb");
+			header.createCell(14).setCellValue("Mar");
+
+			header.createCell(15).setCellValue("Remarks");
+
+			// Data
+			int rowIdx = 1;
+
+			for (VgohtNormConfigurationDTO dto : data) {
+
+				Row row = sheet.createRow(rowIdx++);
+
+				row.createCell(0).setCellValue(dto.getType());
+				row.createCell(1).setCellValue(dto.getProductName());
+				row.createCell(2).setCellValue(dto.getUOM());
+
+				row.createCell(3).setCellValue(dto.getApr());
+				row.createCell(4).setCellValue(dto.getMay());
+				row.createCell(5).setCellValue(dto.getJun());
+				row.createCell(6).setCellValue(dto.getJul());
+				row.createCell(7).setCellValue(dto.getAug());
+				row.createCell(8).setCellValue(dto.getSep());
+				row.createCell(9).setCellValue(dto.getOct());
+				row.createCell(10).setCellValue(dto.getNov());
+				row.createCell(11).setCellValue(dto.getDec());
+				row.createCell(12).setCellValue(dto.getJan());
+				row.createCell(13).setCellValue(dto.getFeb());
+				row.createCell(14).setCellValue(dto.getMar());
+
+				row.createCell(15).setCellValue(dto.getRemarks());
+			}
+
+			// Auto-size columns
+			for (int i = 0; i <= 15; i++) {
+				sheet.autoSizeColumn(i);
+			}
+
+			workbook.write(out);
+			return out.toByteArray();
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to export monthly values", e);
 		}
 	}
 
