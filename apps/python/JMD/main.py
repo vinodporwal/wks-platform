@@ -180,7 +180,7 @@ def _print_demand_capacity(dc: dict):
     print()
     print(f"  CAPACITY MATCH")
     print(sep2)
-    _STATUS_ICON = {"COVERED": "✓", "SHORTFALL": "✗", "NO_ASSETS": "?"}
+    _STATUS_ICON = {"COVERED": "OK", "SHORTFALL": "FAIL", "NO_ASSETS": "?"}
 
     # Power
     p = cm.get("power", {})
@@ -403,8 +403,8 @@ def _print_new_schema_asset_snapshot(plant_id: str, month: int, year: int):
     print(f"  AOP Year: {power_info.get('summary', {}).get('aop_year', fy_label)}")
 
     print(f"\n  POWER ASSETS")
-    print(f"  {'Asset':<25}  {'Type':<10}  {'Hours':>8}  {'Cap MW':>8}  {'Gen MWh':>10}  {'Prio':>5}")
-    print(f"  {'-'*25}  {'-'*10}  {'-'*8}  {'-'*8}  {'-'*10}  {'-'*5}")
+    print(f"  {'Asset':<25}  {'Type':<10}  {'Hours':>8}  {'Min MW':>8}  {'Max MW':>8}  {'Gen MWh':>10}  {'Prio':>5}")
+    print(f"  {'-'*25}  {'-'*10}  {'-'*8}  {'-'*8}  {'-'*8}  {'-'*10}  {'-'*5}")
     total_power_mwh = 0.0
     for asset in assets:
         asset_id = asset.get("asset_id", "")
@@ -412,21 +412,31 @@ def _print_new_schema_asset_snapshot(plant_id: str, month: int, year: int):
         cap_row = power_caps.get(asset_id, {})
         pri_row = power_pri.get(asset_id, {})
         op_hours = hour_row.get("operational_hours")
+        month_min = cap_row.get(f"{month_key}_Min")
+        if month_min is None:
+            month_min = cap_row.get("fixed_min")
+        if month_min is None:
+            month_min = 0.0
         month_max = cap_row.get(f"{month_key}_Max")
+        if month_max is None:
+            month_max = cap_row.get("fixed_max")
+        if month_max is None:
+            month_max = 0.0
         gen_mwh = (float(op_hours) * float(month_max)) if (op_hours is not None and month_max is not None) else 0.0
         total_power_mwh += gen_mwh
         print(
             f"  {asset.get('asset_name', ''):<25}  {(asset.get('asset_type') or '-'): <10}"
             f"  {_fmt(op_hours):>8}"
+            f"  {_fmt(month_min):>8}"
             f"  {_fmt(month_max):>8}"
             f"  {_fmt(gen_mwh):>10}"
             f"  {('N/A' if pri_row.get('priority') is None else str(pri_row.get('priority'))):>5}"
         )
-    print(f"  {'TOTAL':<25}  {'':10}  {'':8}  {'':8}  {_fmt(total_power_mwh):>10}  {'':5}")
+    print(f"  {'TOTAL':<25}  {'':10}  {'':8}  {'':8}  {'':8}  {_fmt(total_power_mwh):>10}  {'':5}")
 
     print(f"\n  STEAM ASSETS")
-    print(f"  {'Asset':<25}  {'Type':<10}  {'SteamType':<10}  {'Hours':>8}  {'Cap TPH':>8}  {'Gen MT':>10}  {'Prio':>5}")
-    print(f"  {'-'*25}  {'-'*10}  {'-'*10}  {'-'*8}  {'-'*8}  {'-'*10}  {'-'*5}")
+    print(f"  {'Asset':<25}  {'Type':<10}  {'SteamType':<10}  {'Hours':>8}  {'Min TPH':>8}  {'Max TPH':>8}  {'Gen MT':>10}  {'Prio':>5}")
+    print(f"  {'-'*25}  {'-'*10}  {'-'*10}  {'-'*8}  {'-'*8}  {'-'*8}  {'-'*10}  {'-'*5}")
     total_steam_mt = 0.0
     steam_hours_available = False
     for asset in steam_assets:
@@ -434,7 +444,16 @@ def _print_new_schema_asset_snapshot(plant_id: str, month: int, year: int):
         hour_row = steam_hours_by_asset.get(asset_id, {})
         cap_row = steam_caps.get(asset_id, {})
         pri_row = steam_pri.get(asset_id, {})
+        month_min = cap_row.get(f"{month_key}_Min")
+        if month_min is None:
+            month_min = cap_row.get("fixed_min")
+        if month_min is None:
+            month_min = 0.0
         month_max = cap_row.get(f"{month_key}_Max")
+        if month_max is None:
+            month_max = cap_row.get("fixed_max")
+        if month_max is None:
+            month_max = 0.0
         op_hours = hour_row.get("operational_hours")
         if op_hours is not None:
             steam_hours_available = True
@@ -445,12 +464,13 @@ def _print_new_schema_asset_snapshot(plant_id: str, month: int, year: int):
             f"  {asset.get('asset_name', ''):<25}  {(asset.get('asset_type') or '-'): <10}"
             f"  {(asset.get('steam_type') or '-'): <10}"
             f"  {_fmt(op_hours):>8}"
+            f"  {_fmt(month_min):>8}"
             f"  {_fmt(month_max):>8}"
             f"  {_fmt(gen_mt):>10}"
             f"  {('N/A' if pri_row.get('priority') is None else str(pri_row.get('priority'))):>5}"
         )
     steam_total_text = _fmt(total_steam_mt) if steam_hours_available else "N/A"
-    print(f"  {'TOTAL':<25}  {'':10}  {'':10}  {'':8}  {'':8}  {steam_total_text:>10}  {'':5}")
+    print(f"  {'TOTAL':<25}  {'':10}  {'':10}  {'':8}  {'':8}  {'':8}  {steam_total_text:>10}  {'':5}")
 
     print(f"\n  MONTHLY GENERATION SUMMARY")
     print(f"  {'Category':<20}  {'Generation':>14}  {'Unit':<8}")

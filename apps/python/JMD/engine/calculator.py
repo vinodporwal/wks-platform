@@ -41,6 +41,7 @@ from database.queries import (
 from plant_mapper import PLANT_REGISTRY
 from engine.demand_capacity import run_demand_capacity
 from engine.budget import calculate_budget
+from engine.dispatch_engine import dispatch_power, dispatch_steam
 
 logger = logging.getLogger(__name__)
 
@@ -246,40 +247,58 @@ def run_month(plant_id: str, month: int, year: int, save_to_db: bool = True) -> 
         logger.warning("  [CALC] demand_capacity skipped: %s", e)
         result["demand_capacity"] = None
 
-    # Full budget calculation: power dispatch + steam balance + USD iteration
+    # NEW: Standalone power dispatch (priority-based, all-at-min-first)
     try:
-        demands = {**(demands or {})}
-        budget = calculate_budget(
-            plant_id=plant_id,
-            plant_name=plant_name,
-            month=month,
-            year=year,
-            norms=norms or [],
-            hrsg_avail=hrsg_avail or [],
-            stg_extraction_df=stg_df,
-            demands=demands,
-            save_to_db=save_to_db,
-        )
-        result["budget"] = budget
-        result["budget_success"]     = budget.get("overall_success", False)
-        result["budget_converged"]   = budget.get("converged", False)
-        result["budget_iterations"]  = budget.get("iterations_used", 0)
-        result["final_dispatch"]     = budget.get("final_dispatch", [])
-        result["steam_result"]       = budget.get("steam_result")
-        result["hrsg_dispatch"]      = budget.get("hrsg_dispatch")
-        result["utility_consumption"]= budget.get("utility_consumption")
-        result["supplementary_firing_mt"] = budget.get("supplementary_firing_mt", 0)
+        result["power_dispatch"] = dispatch_power(plant_id, month, year)
     except Exception as e:
-        logger.warning("  [CALC] budget calculation skipped: %s", e)
-        result["budget"] = None
-        result["budget_success"] = False
+        logger.warning("  [CALC] power dispatch skipped: %s", e)
+        result["power_dispatch"] = None
 
+    # NEW: Standalone steam dispatch (priority-based, all-at-min-first, letdown + byproduct convergence)
+    if result["power_dispatch"]:
+        try:
+            result["new_steam_dispatch"] = dispatch_steam(plant_id, month, year, result["power_dispatch"])
+        except Exception as e:
+            logger.warning("  [CALC] steam dispatch skipped: %s", e)
+            result["new_steam_dispatch"] = None
+    else:
+        result["new_steam_dispatch"] = None
+
+    # OLD budget calculation (power dispatch + steam balance + USD iteration)
+    # Disabled — being replaced by new dispatch_engine.py step by step.
+    # Kept here for reference; will be removed once full replacement is complete.
+    # try:
+    #     demands = {**(demands or {})}
+    #     budget = calculate_budget(
+    #         plant_id=plant_id,
+    #         plant_name=plant_name,
+    #         month=month,
+    #         year=year,
+    #         norms=norms or [],
+    #         hrsg_avail=hrsg_avail or [],
+    #         stg_extraction_df=stg_df,
+    #         demands=demands,
+    #         save_to_db=save_to_db,
+    #     )
+    #     result["budget"] = budget
+    #     result["budget_success"]     = budget.get("overall_success", False)
+    #     result["budget_converged"]   = budget.get("converged", False)
+    #     result["budget_iterations"]  = budget.get("iterations_used", 0)
+    #     result["final_dispatch"]     = budget.get("final_dispatch", [])
+    #     result["steam_result"]       = budget.get("steam_result")
+    #     result["hrsg_dispatch"]      = budget.get("hrsg_dispatch")
+    #     result["utility_consumption"]= budget.get("utility_consumption")
+    #     result["supplementary_firing_mt"] = budget.get("supplementary_firing_mt", 0)
+    # except Exception as e:
+    #     logger.warning("  [CALC] budget calculation skipped: %s", e)
+    #     result["budget"] = None
+    #     result["budget_success"] = False
+
+    result["execution_time_seconds"] = round(time.time() - start, 2)
     logger.info(
-        "  [CALC] Done  %s/%s  (%.1fs)  assets=%d  norms=%d  budget=%s  iter=%d",
+        "  [CALC] Done  %s/%s  (%.1fs)  assets=%d  norms=%d",
         month, year, result["execution_time_seconds"],
         len(assets), len(norms),
-        "OK" if result.get("budget_success") else "FAIL",
-        result.get("budget_iterations", 0),
     )
     return result
 

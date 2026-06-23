@@ -801,12 +801,23 @@ Purpose:
 
 Responsibilities:
 * Repeatedly dispatch power, compute steam balances, inspect HRSG capacity, add supplementary firing, and recalculate U4U power until the model converges or stalls.
+* **Logging**: Prints highly detailed step-by-step tables (Power Dispatch, Steam Balance, U4U Matrix Solver Output, and Convergence Checks) mimicking the legacy NMD script logs.
+
+**Balancing Sequence:**
+1. **Power Dispatch**: Dispatches GTs and STGs to meet Base Demand + `previous_utility_aux_mwh`.
+2. **STG Extraction**: Calculates STG extraction and SHP inlet based on dispatched load.
+3. **Steam Balance**: Cascades LP → MP → HP to find total SHP demand for STG and PRDS.
+4. **HRSG Capacity**: Determines available Free Steam based on GT dispatch.
+5. **HRSG Dispatch**: Subtracts Free Steam from SHP Demand to find `net_shp_demand`. Dispatches supplementary firing to meet it.
+6. **Excess Steam Handling**: If HRSGs at MIN load over-produce steam, uses a Proportional Controller to increase STG override.
+7. **U4U Dynamic Calculation**: Uses a Gauss-Seidel matrix solver (`utility_calculator.py`) to resolve circular dependencies for U4U (BFW, DM, Air, CW).
+8. **Convergence Check**: Compares `current_u4u_power` vs `previous_u4u_power` against `0.02 MWh` tolerance.
 
 Key Classes:
 * None.
 
 Key Functions:
-* `_norm()`, `_u4u_power_mwh()`, `_u4u_bfw_m3()`, `_u4u_dm_m3()`, `_u4u_cw2_km3()`, `_u4u_air_nm3()`, `usd_iterate()`.
+* `usd_iterate()`.
 
 Inputs:
 * Plant ID, month/year, norms, HRSG availability, STG extraction data, and process/fixed demand values.
@@ -815,16 +826,16 @@ Outputs:
 * Convergence result, final dispatch, steam balances, HRSG dispatch, supplementary firing, and U4U power values.
 
 Dependencies:
-* `engine.power_dispatch`, `engine.steam_balance`, `database.queries.get_stg_extraction_for_load`.
+* `engine.power_dispatch`, `engine.steam_balance`, `engine.utility_calculator`.
 
 Called By:
 * `engine.budget`.
 
 Calls:
-* Power dispatch, steam balance helpers, and STG extraction lookup.
+* Power dispatch, steam balance helpers, STG extraction lookup, and the U4U solver.
 
 Business Significance:
-* Core optimization loop for matching electrical and steam demand.
+* Core optimization loop for matching electrical and steam demand while handling circular dependencies accurately.
 
 ## `apps/python/JMD/dta_cpp/__init__.py`
 

@@ -358,7 +358,7 @@ def calculate_shp_generation_capacity(hrsg_availability: dict, hrsg_config: list
         max_mt_hr = float(cfg.get("max_capacity_mt_hr", 90.0))
         fs_factor = avail.get("free_steam_factor") or 0.0
         gt_gross  = float(avail.get("gross_mwh", 0.0))
-        free_steam_mt = gt_gross * 1000 * float(fs_factor) if fs_factor else 0.0
+        free_steam_mt = gt_gross * float(fs_factor) if fs_factor else 0.0
 
         supp_min = min_mt_hr * hours
         supp_max = max_mt_hr * hours
