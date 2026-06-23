@@ -1458,7 +1458,7 @@ const AdvanceKendoTable = ({
                   onRemarkClick={isEditable ? handleRemarkCellClick : () => {}}
                 />
               ),
-              headerCell: SimpleHeaderWithTooltip
+              headerCell: SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
             headerClassName={isActive ? 'active-column' : ''}
@@ -1491,7 +1491,7 @@ const AdvanceKendoTable = ({
                   onRemarkClick={isEditable ? handleRemarkCellClick : () => {}}
                 />
               ),
-              headerCell: SimpleHeaderWithTooltip
+              headerCell: SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
             headerClassName={isActive ? 'active-column' : ''}
