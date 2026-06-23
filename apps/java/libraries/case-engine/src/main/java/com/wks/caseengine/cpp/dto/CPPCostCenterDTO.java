@@ -20,5 +20,4 @@ public class CPPCostCenterDTO {
 
     private String costCenterName;
     private String costCenterCode;
-    private String cppPlantFkId;
 }

@@ -78,10 +78,6 @@ export const InputApiService = {
   getAssetFuelPriority,
   saveAssetFuelPriority,
 
-  // Used in: Inputs/FuelPriority/AssetWiseCompatibleFuel.js
-  getCompatibleFuelAssets,
-  saveAssetCompatibleFuel,
-
   // Used in: Inputs/Fuel/JCBFuel.js
   getFuelAvailabilityDataJCB,
   saveFuelAvailabilityDataJCB,
@@ -1276,12 +1272,7 @@ async function getFuelPriorityData(keycloak, plantIds, financialYear) {
   }
 }
 
-async function saveFuelPriorityData(
-  keycloak,
-  plantIds,
-  financialYear,
-  payload,
-) {
+async function saveFuelPriorityData(keycloak, plantIds, financialYear, payload) {
   const url = `${Config.CaseEngineUrl}/task/plant-fuel-availability`
   const headers = {
     Accept: 'application/json',
@@ -1306,27 +1297,17 @@ async function saveFuelPriorityData(
   }
 }
 
-async function importFuelPriorityExcel(
-  file,
-  keycloak,
-  plantIds,
-  financialYear,
-) {
+async function importFuelPriorityExcel(file, keycloak, plantIds, financialYear) {
   return saveExcelData(
     file,
     keycloak,
     'plant-fuel-availability/import',
     plantIds,
-    financialYear,
+    financialYear
   )
 }
 
-async function exportFuelPriorityExcel(
-  keycloak,
-  plantIds,
-  financialYear,
-  EXCEL_NAME,
-) {
+async function exportFuelPriorityExcel(keycloak, plantIds, financialYear, EXCEL_NAME) {
   return exportExcelData(keycloak, {
     endpoint: `plant-fuel-availability/export`,
     plantIds,
@@ -1376,52 +1357,6 @@ async function saveAssetFuelPriority(keycloak, payload) {
     return result || { success: true }
   } catch (e) {
     console.error('Error saving asset fuel priority data:', e)
-    return await Promise.reject(e)
-  }
-}
-
-// GET /task/compatible-fuel-assets?plantIds=...
-// Fetch all compatible fuel assets (power + steam) filtered by plant IDs
-async function getCompatibleFuelAssets(keycloak, plantIds) {
-  const queryParams = Array.isArray(plantIds) ? plantIds.join(',') : plantIds
-  const url = `${Config.CaseEngineUrl}/task/compatible-fuel-assets?plantIds=${queryParams}`
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, { method: 'GET', headers })
-    if (!resp.ok) {
-      throw new Error(`HTTP error! Status: ${resp.status}`)
-    }
-    const result = await json(keycloak, resp)
-    return result
-  } catch (e) {
-    console.error('Error fetching compatible fuel assets:', e)
-    return await Promise.reject(e)
-  }
-}
-
-// POST /task/compatible-fuel-assets
-// Update compatible fuel for assets (power + steam)
-async function saveAssetCompatibleFuel(keycloak, payload) {
-  const url = `${Config.CaseEngineUrl}/task/compatible-fuel-assets`
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  const body = JSON.stringify(payload)
-  try {
-    const resp = await fetch(url, { method: 'POST', headers, body })
-    if (!resp.ok) {
-      throw new Error(`HTTP error! Status: ${resp.status}`)
-    }
-    const result = await json(keycloak, resp)
-    return result || { success: true }
-  } catch (e) {
-    console.error('Error saving compatible fuel assets:', e)
     return await Promise.reject(e)
   }
 }
