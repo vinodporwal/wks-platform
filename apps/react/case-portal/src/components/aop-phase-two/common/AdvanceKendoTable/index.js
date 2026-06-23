@@ -1458,6 +1458,7 @@ const AdvanceKendoTable = ({
                   onRemarkClick={isEditable ? handleRemarkCellClick : () => {}}
                 />
               ),
+              headerCell: SimpleHeaderWithTooltip
             }}
             columnMenu={ColumnMenuCheckboxFilter}
             headerClassName={isActive ? 'active-column' : ''}
@@ -1482,7 +1483,7 @@ const AdvanceKendoTable = ({
             title={col.title || col.headerName}
             width={setWidth(col?.minWidth || 120)}
             locked={col?.locked || false}
-            className={!isEditable ? 'non-editable-cell' : undefined}
+            className={!isEditable ? 'non-editable-cell' : ''}
             cells={{
               data: (cellProps) => (
                 <RemarkCell
@@ -1490,6 +1491,7 @@ const AdvanceKendoTable = ({
                   onRemarkClick={isEditable ? handleRemarkCellClick : () => {}}
                 />
               ),
+              headerCell: SimpleHeaderWithTooltip
             }}
             columnMenu={ColumnMenuCheckboxFilter}
             headerClassName={isActive ? 'active-column' : ''}
@@ -2006,7 +2008,10 @@ const AdvanceKendoTable = ({
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
             }
             headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
-            cells={col.cells}
+            cells={{
+              ...col.cells,
+              headerCell: SimpleHeaderWithTooltip,
+            }}
             columnMenu={ColumnMenuCheckboxFilter}
             filter='numeric'
             format={col.format}

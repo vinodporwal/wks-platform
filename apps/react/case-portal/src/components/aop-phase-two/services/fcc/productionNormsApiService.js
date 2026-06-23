@@ -22,6 +22,12 @@ export const ProductionNormsApiService = {
   // Generic Import/Export helpers
   saveExcelData,
   exportExcelData,
+
+  // Report Manual Entry APIs
+  getReportManualEntryData,
+  saveReportManualEntryData,
+  importReportManualEntryExcel,
+  exportReportManualEntryExcel,
 }
 
 // ========================|| Configuration APIs ||=====================================//
@@ -371,4 +377,115 @@ async function loadButtonNormCalculation(
     console.log(e)
     return await Promise.reject(e)
   }
+}
+
+// ========================|| Manual Entry APIs ||=====================================//
+/**
+ * Get Production Norms Manual Entry data
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @returns {Promise} Manual Entry data
+ */
+async function getReportManualEntryData(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/mannual-entry/monthly?year=${year}&plantFKId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Save Production Norms Manual Entry data
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} year - AOP Year`
+ * @param {string} plantId - Plant ID
+ * @param {Array} payload - Data to save
+ * @param {*} periodFrom
+ * @param {*} periodTo
+ * @returns {Promise} Save response
+ */
+async function saveReportManualEntryData(
+  keycloak,
+  year,
+  plantId,
+  payload,
+  periodFrom,
+  periodTo,
+) {
+  const url = `${Config.CaseEngineUrl}/task/mannual-entry/monthly?year=${year}&plantFKId=${plantId}&periodFrom=${periodFrom}&periodTo=${periodTo}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Import Report Manual Entry Excel file
+ * @param {File} file - Excel file
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @param {*} periodFrom
+ * @param {*} periodTo
+ * @returns {Promise} Import response
+ */
+async function importReportManualEntryExcel(
+  file,
+  keycloak,
+  plantId,
+  year,
+  periodFrom,
+  periodTo,
+) {
+  return saveExcelData(file, keycloak, 'mannual-entry/import', {
+    year: year,
+    plantFKId: plantId,
+    periodFrom: periodFrom,
+    periodTo: periodTo,
+  })
+}
+
+/**
+ * Export Report Manual Entry Excel file
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} year - AOP Year
+ * @returns {Promise} Export response
+ */
+async function exportReportManualEntryExcel(keycloak, plantId, year) {
+  return exportExcelData(
+    keycloak,
+    'mannual-entry/export',
+    { year: year, plantFKId: plantId },
+    `Production_Norms_Report_Manual_Entry_${year}.xlsx`,
+  )
 }
