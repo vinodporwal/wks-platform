@@ -129,7 +129,7 @@ const BusinessDemandGrid = () => {
         PLANT_ID,
         AOP_YEAR,
       )
-      const data = Array.isArray(response) ? response : response?.data || []
+      const data = response?.data?.businessDemandDataDTOList || []
       if (data && Array.isArray(data)) {
         const MONTH_FIELDS = monthsConfig.map((m) => m.field)
         const formattedData = data.map((item, index) => ({
