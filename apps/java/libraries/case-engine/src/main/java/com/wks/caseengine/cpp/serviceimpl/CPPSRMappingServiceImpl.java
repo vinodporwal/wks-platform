@@ -338,6 +338,9 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                     SRMappingDTO dto = new SRMappingDTO();
 
                     dto.setId                  (toUuid(row, "ID"));
+                    dto.setCppPlantId          (toUuid(row, "CPPPlantId"));
+                    dto.setSenderPlantId       (toUuid(row, "SenderPlantId"));
+                    dto.setReceiverPlantId     (toUuid(row, "ReceiverPlantId"));
 
                     dto.setSenderPlantName     (str(row, "SenderPlantName"));
                     dto.setSenderPlantCode     (str(row, "SenderPlantCode"));

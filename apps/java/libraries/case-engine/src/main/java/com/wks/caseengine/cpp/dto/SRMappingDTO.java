@@ -25,10 +25,12 @@ import lombok.NoArgsConstructor;
 public class SRMappingDTO {
 
     private UUID   id;
+    private UUID   cppPlantId;
 
     // ── Sender ──────────────────────────────────────────────────────────────
     private String senderPlantName;
     private String senderPlantCode;
+    private UUID   senderPlantId;
 
     private UUID   senderUtilityId;
     private String senderUtilityName;
@@ -41,6 +43,7 @@ public class SRMappingDTO {
     // ── Receiver ─────────────────────────────────────────────────────────────
     private String receiverPlantName;
     private String receiverPlantCode;
+    private UUID   receiverPlantId;
 
     private UUID   receiverUtilityId;
     private String receiverUtilityName;
