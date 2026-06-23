@@ -123,9 +123,13 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 			if(verticalName.equalsIgnoreCase("CRACKER") || verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("Elastomer")  || verticalName.equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("Staple") || vertical.getName().equalsIgnoreCase("Filament")) {
 				String procedureName=verticalName+"_GetBusinessDemand";
 				obj=findByYearAndPlantId(year,UUID.fromString(plantId),procedureName);
+				Map<String, Object> map = new HashMap<>();
+
+				map.put("businessDemandDataDTOList", getBusinessDemand(obj));
+				map.put("aopCalculation", null);
 				AOPMessageVM aopMessageVM = new AOPMessageVM();
 				aopMessageVM.setCode(200);
-				aopMessageVM.setData(getBusinessDemand(obj));
+				aopMessageVM.setData(map);
 				aopMessageVM.setMessage("Data fetched successfully");
 				return aopMessageVM;
 			}else {
@@ -818,7 +822,9 @@ sheet.setColumnHidden(17, true);
 			List<Boolean> isEditable = new ArrayList<>();
 
 			if (!isAfterSave) {
-				 dtoList = (List<BusinessDemandDataDTO>) getBusinessDemandLineData(year,plantId,lineId).getData();
+				Map<String, Object> map = (Map<String, Object>) getBusinessDemandLineData(year,plantId,lineId).getData();
+				 dtoList = (List<BusinessDemandDataDTO>) map.get("businessDemandDataDTOList");
+
 			}
 
 			Workbook workbook = new XSSFWorkbook();
@@ -1005,8 +1011,9 @@ sheet.setColumnHidden(17, true);
 					String sheetName = uniqueBusinessDemandSheetName(Utility.sanitizeSheetName(display),
 							usedSheetNames);
 					usedSheetNames.add(sheetName);
+				Map<String, Object> map = (Map<String, Object>) getBusinessDemandLineData(year,plantId,lineId).getData();
+				List<BusinessDemandDataDTO> lineDtos = (List<BusinessDemandDataDTO>) map.get("businessDemandDataDTOList");
 
-					List<BusinessDemandDataDTO> lineDtos = (List<BusinessDemandDataDTO>) getBusinessDemandLineData(year, plantId, lineId).getData();
 					writeBusinessDemandLineSheet(workbook, workbook.createSheet(sheetName), year, lineDtos);
 				}
 				if (usedSheetNames.isEmpty()) {
