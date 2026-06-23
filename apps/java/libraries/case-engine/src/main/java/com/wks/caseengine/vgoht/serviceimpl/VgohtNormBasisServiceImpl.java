@@ -709,7 +709,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 					AND NAT.AuditYear = :year
 
 				WHERE NP.Plant_FK_Id = :plantFKId
-					AND NPT.Name = 'Constant'
+					AND NPT.Name = 'Manual Entry'
 
 				GROUP BY
 					NP.Id,
