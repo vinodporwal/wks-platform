@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Collections;
+
 
 
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -387,13 +387,13 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	public AOPMessageVM saveMonthlyValues(
 			String year,
 			UUID plantFKId,
-			List<VgohtNormMonthlyDTO> dtoList,
+			List<VgohtNormConfigurationDTO> dtoList,
 			String periodFrom,
 			String periodTo) {
 
 		try {
 
-			for (VgohtNormMonthlyDTO dto : dtoList) {
+			for (VgohtNormConfigurationDTO dto : dtoList) {
 
 				saveMonthlyValue(dto.getNormParameterFKId(), year, 4, dto.getApr(), dto.getRemarks());
 				saveMonthlyValue(dto.getNormParameterFKId(), year, 5, dto.getMay(), dto.getRemarks());
@@ -553,7 +553,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 				dtoList.add(dto);
 			}
 
-			return saveMonthlyValues(
+			return saveMonthlyValue(
 					year,
 					plantFKId,
 					dtoList,
@@ -569,7 +569,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 	private void validateMonthlyHeaders(Map<String, Integer> headerMap) {
 
 		List<String> requiredHeaders = new ArrayList<>();
-		Collections.addAll(requiredHeaders,
+		java.util.Collections.addAll(requiredHeaders,
 				"parameter",
 				"apr",
 				"may",
@@ -595,7 +595,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		}
 	}
 
-	public AOPMessageVM saveMonthlyValues(
+	public AOPMessageVM saveMonthlyValue(
 			String year,
 			UUID plantFKId,
 			List<VgohtNormConfigurationDTO> dtoList,

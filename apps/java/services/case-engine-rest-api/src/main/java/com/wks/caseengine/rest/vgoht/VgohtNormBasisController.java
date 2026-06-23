@@ -95,11 +95,11 @@ public class VgohtNormBasisController {
         );
     }
 
-    @PostMapping(value = "/vgoht/norms-basis/constant/monthly")
+    @PostMapping(value = "/mannual-entry/monthly")
     public AOPMessageVM saveMonthlyValues(
             @RequestParam String year,
             @RequestParam UUID plantFKId,
-            @RequestBody List<VgohtNormMonthlyDTO> monthlyValuesList,
+            @RequestBody List<VgohtNormConfigurationDTO> monthlyValuesList,
             @RequestParam String periodFrom,
             @RequestParam String periodTo) {
 
