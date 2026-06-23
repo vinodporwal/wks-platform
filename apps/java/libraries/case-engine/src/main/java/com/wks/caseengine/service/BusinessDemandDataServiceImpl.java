@@ -123,9 +123,13 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 			if(verticalName.equalsIgnoreCase("CRACKER") || verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("Elastomer")  || verticalName.equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("Staple") || vertical.getName().equalsIgnoreCase("Filament")) {
 				String procedureName=verticalName+"_GetBusinessDemand";
 				obj=findByYearAndPlantId(year,UUID.fromString(plantId),procedureName);
+				Map<String, Object> map = new HashMap<>();
+
+				map.put("businessDemandDataDTOList", obj);
+				map.put("aopCalculation", null);
 				AOPMessageVM aopMessageVM = new AOPMessageVM();
 				aopMessageVM.setCode(200);
-				aopMessageVM.setData(getBusinessDemand(obj));
+				aopMessageVM.setData(map);
 				aopMessageVM.setMessage("Data fetched successfully");
 				return aopMessageVM;
 			}else {
