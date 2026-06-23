@@ -822,7 +822,9 @@ sheet.setColumnHidden(17, true);
 			List<Boolean> isEditable = new ArrayList<>();
 
 			if (!isAfterSave) {
-				 dtoList = (List<BusinessDemandDataDTO>) getBusinessDemandLineData(year,plantId,lineId).getData();
+				Map<String, Object> map = (Map<String, Object>) getBusinessDemandLineData(year,plantId,lineId).getData();
+				 dtoList = (List<BusinessDemandDataDTO>) map.get("businessDemandDataDTOList");
+
 			}
 
 			Workbook workbook = new XSSFWorkbook();
@@ -1009,8 +1011,9 @@ sheet.setColumnHidden(17, true);
 					String sheetName = uniqueBusinessDemandSheetName(Utility.sanitizeSheetName(display),
 							usedSheetNames);
 					usedSheetNames.add(sheetName);
+				Map<String, Object> map = (Map<String, Object>) getBusinessDemandLineData(year,plantId,lineId).getData();
+				List<BusinessDemandDataDTO> lineDtos = (List<BusinessDemandDataDTO>) map.get("businessDemandDataDTOList");
 
-					List<BusinessDemandDataDTO> lineDtos = (List<BusinessDemandDataDTO>) getBusinessDemandLineData(year, plantId, lineId).getData();
 					writeBusinessDemandLineSheet(workbook, workbook.createSheet(sheetName), year, lineDtos);
 				}
 				if (usedSheetNames.isEmpty()) {
