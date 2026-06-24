@@ -12,10 +12,10 @@ import lombok.NoArgsConstructor;
  * SP columns:
  *   ID,
  *   SenderPlantName,  SenderPlantCode,
- *   SenderUtilityId,  SenderUtilityName,  SenderUtilityCode,
+ *   SenderUtilityId,  SenderUtilityName,  SenderUtilityCode, SenderUtilityUOM,
  *   SenderCostCenterId, SenderCostCenterName, SenderCostCenterCode,
  *   ReceiverPlantName, ReceiverPlantCode,
- *   ReceiverUtilityId, ReceiverUtilityName, ReceiverUtilityCode,
+ *   ReceiverUtilityId, ReceiverUtilityName, ReceiverUtilityCode, ReceiverUtilityUOM,
  *   ReceiverCostCenterId, ReceiverCostCenterName, ReceiverCostCenterCode,
  *   Remarks
  */
@@ -35,6 +35,7 @@ public class SRMappingDTO {
     private UUID   senderUtilityId;
     private String senderUtilityName;
     private String senderUtilityCode;
+    private String senderUtilityUOM;
 
     private UUID   senderCostCenterId;
     private String senderCostCenterName;
@@ -48,6 +49,7 @@ public class SRMappingDTO {
     private UUID   receiverUtilityId;
     private String receiverUtilityName;
     private String receiverUtilityCode;
+    private String receiverUtilityUOM;
 
     private UUID   receiverCostCenterId;
     private String receiverCostCenterName;
