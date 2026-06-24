@@ -73,6 +73,7 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
         String sql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?";
         return jdbcTemplate.query(sql, (rs, rowNum) ->
             GradeMixOptimizerConstantDTO.builder()
+                .id(UUID.fromString(rs.getString("Id")))
                 .normParameterFkId(UUID.fromString(rs.getString("NormParameter_FK_Id")))
                 .jan(rs.getDouble("Jan"))
                 .feb(rs.getDouble("Feb"))
