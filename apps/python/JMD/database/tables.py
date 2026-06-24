@@ -41,6 +41,7 @@ class T:
 
     # ── Operational hours (wide-column, per FY) ────────────────────────────
     CPP_ASSET_OPERATIONAL_HOURS = "CPPAssetOperationalHours"
+    CPP_STEAM_ASSETS_OPERATIONAL_HOURS = "CPPSteamAssetsOperationalHours"
     CAOH_ASSET_FK               = "Asset_FK_Id"
     CAOH_YEAR_COL               = "AOPYear"
 

@@ -195,11 +195,19 @@ def segregate_demand(consumption: dict) -> dict:
     totals = {}
     for util, keys in _UTILITY_ROLLUP.items():
         components = {k: round(float(consumption.get(k, 0.0)), 2) for k in keys}
-        total_val  = sum(components.values())
-        # Pick unit from first key's meta
-        unit = _DEMAND_META.get(keys[0], ("", "", ""))[1]
+        
+        if util == "power":
+            comp_process = components.get("power_process", 0.0) / 1000.0
+            comp_fixed   = components.get("power_fixed", 0.0)
+            total_val    = round(comp_process + comp_fixed, 2)
+            unit         = "MWh"
+        else:
+            total_val  = sum(components.values())
+            # Pick unit from first key's meta
+            unit = _DEMAND_META.get(keys[0], ("", "", ""))[1]
+
         totals[util] = {
-            "total":      round(total_val, 2),
+            "total":      total_val,
             "unit":       unit,
             "components": components,
         }
@@ -211,7 +219,7 @@ def segregate_demand(consumption: dict) -> dict:
 # 3. Load asset capacity — DB assets first, JSON fallback
 # ---------------------------------------------------------------------------
 
-def load_asset_capacity(plant_id: str, db_assets: list, db_steam_assets: list) -> dict:
+def load_asset_capacity(plant_id: str, month: int, calc_result: dict) -> dict:
     """
     Build a unified asset capacity dict for the plant.
 
@@ -226,32 +234,75 @@ def load_asset_capacity(plant_id: str, db_assets: list, db_steam_assets: list) -
         }
     """
     pid = plant_id.upper()
+    
+    db_assets = calc_result.get("assets", [])
+    db_steam_assets = calc_result.get("steam_assets", [])
     has_db = bool(db_assets or db_steam_assets)
 
     if has_db:
         logger.debug("[DC] Using DB asset list for %s", pid)
-        # Normalise DB power assets — capacity_mw comes from CPPAssetOperationalHours max
+        power_caps = {r["asset_id"]: r for r in calc_result.get("power_caps", [])}
+        steam_caps = {r["asset_id"]: r for r in calc_result.get("steam_caps", [])}
+        op_hours = {r["asset_id"]: r for r in calc_result.get("op_hours", [])}
+        
+        month_key = _MONTH_NAMES.get(month, "Jan")[:3]
+        month_key_lower = month_key.lower()
+
+        # Normalise DB power assets
         power_assets = []
-        for a in (db_assets or []):
+        for a in db_assets:
+            a_id = a.get("asset_id")
+            c_row = power_caps.get(a_id, {})
+            h_row = op_hours.get(a_id, {})
+            
+            # Hours could be keyed as "Apr" or "apr" depending on fetch method
+            hrs = h_row.get(month_key)
+            if hrs is None:
+                hrs = h_row.get(month_key_lower)
+            if hrs is None:
+                hrs = h_row.get("operational_hours", 720)
+                
+            max_cap = c_row.get(f"{month_key}_Max", 0.0)
+            min_cap = c_row.get(f"{month_key}_Min", 0.0)
+            if max_cap is None: max_cap = 0.0
+            if min_cap is None: min_cap = 0.0
+            if hrs is None: hrs = 720.0
+
             power_assets.append({
                 "asset_name":      a.get("asset_name", a.get("AssetName", "")),
                 "type":            a.get("asset_type", a.get("AssetType", "")),
-                "capacity_mw":     float(a.get("max_capacity_mw", a.get("MaxOperatingCapacity") or 0)),
-                "min_mw":          float(a.get("min_capacity_mw", a.get("MinOperatingCapacity") or 0)),
-                "max_mw":          float(a.get("max_capacity_mw", a.get("MaxOperatingCapacity") or 0)),
-                "op_hours_month":  float(a.get("operational_hours", a.get("OperationalHours") or 720)),
+                "capacity_mw":     float(max_cap),
+                "min_mw":          float(min_cap),
+                "max_mw":          float(max_cap),
+                "op_hours_month":  float(hrs),
             })
 
         steam_assets = []
-        for a in (db_steam_assets or []):
+        for a in db_steam_assets:
+            a_id = a.get("asset_id")
+            c_row = steam_caps.get(a_id, {})
+            h_row = op_hours.get(a_id, {})  # Wait, steam op_hours might not be in op_hours, but let's try
+            
+            hrs = h_row.get(month_key)
+            if hrs is None:
+                hrs = h_row.get(month_key_lower)
+            if hrs is None:
+                hrs = h_row.get("operational_hours", 720)
+                
+            max_cap = c_row.get(f"{month_key}_Max", 0.0)
+            min_cap = c_row.get(f"{month_key}_Min", 0.0)
+            if max_cap is None: max_cap = 0.0
+            if min_cap is None: min_cap = 0.0
+            if hrs is None: hrs = 720.0
+
             steam_assets.append({
                 "asset_name":     a.get("asset_name", ""),
                 "type":           a.get("asset_type", ""),
                 "steam_type":     a.get("steam_type", ""),
-                "capacity_tph":   0.0,  # not in DB power asset table — use JSON supplement
-                "min_tph":        0.0,
-                "max_tph":        0.0,
-                "op_hours_month": 720,
+                "capacity_tph":   float(max_cap),
+                "min_tph":        float(min_cap),
+                "max_tph":        float(max_cap),
+                "op_hours_month": float(hrs),
             })
 
         return {
@@ -310,8 +361,7 @@ def match_capacity(demand_totals: dict, asset_capacity: dict, op_hours: int = 72
     results = {}
 
     # --- POWER ---
-    power_demand_kwh = demand_totals.get("power", {}).get("total", 0.0)
-    power_demand_mwh = round(power_demand_kwh / 1000.0, 2)
+    power_demand_mwh = demand_totals.get("power", {}).get("total", 0.0)
     power_assets     = asset_capacity.get("power_assets", [])
     results["power"] = _match_power(power_demand_mwh, power_assets)
 
@@ -513,14 +563,37 @@ def run_demand_capacity(plant_id: str, month: int, year: int, calc_result: dict)
     segregation = segregate_demand(consumption)
 
     # Step 3 — assets
-    db_assets       = calc_result.get("assets") or []
-    db_steam_assets = calc_result.get("steam_assets") or []
-    asset_cap       = load_asset_capacity(plant_id, db_assets, db_steam_assets)
+    asset_cap = load_asset_capacity(plant_id, month, calc_result)
     if asset_cap["source"] == "db":
         data_source = "db"
 
     # Step 4 — match
     capacity_match = match_capacity(segregation["totals"], asset_cap)
+
+    power_demand_mwh = capacity_match.get("power", {}).get("demand_mwh", 0)
+    power_avail_mwh = capacity_match.get("power", {}).get("available_mwh", 0)
+
+    steam_demand_mt = capacity_match.get("steam", {}).get("demand_mt", 0)
+    steam_avail_mt = capacity_match.get("steam", {}).get("available_mt", 0)
+
+    power_achievable = power_avail_mwh >= power_demand_mwh
+    steam_achievable = steam_avail_mt >= steam_demand_mt
+
+    logger.info("  [DC] ==================================================")
+    logger.info("  [DC] Power Demand vs Capacity Check:")
+    logger.info("  [DC] Demand: %.2f MWh, Available Capacity: %.2f MWh", power_demand_mwh, power_avail_mwh)
+    if power_achievable:
+        logger.info("  [DC] -> Power demand CAN be achieved with available assets.")
+    else:
+        logger.info("  [DC] -> Power demand CANNOT be achieved with available assets (SHORTFALL).")
+
+    logger.info("  [DC] Steam (SHP) Demand vs Capacity Check:")
+    logger.info("  [DC] Demand: %.2f MT, Available Capacity: %.2f MT", steam_demand_mt, steam_avail_mt)
+    if steam_achievable:
+        logger.info("  [DC] -> Steam demand CAN be achieved with available assets.")
+    else:
+        logger.info("  [DC] -> Steam demand CANNOT be achieved with available assets (SHORTFALL).")
+    logger.info("  [DC] ==================================================")
 
     # Summary
     statuses = [v.get("status") for v in capacity_match.values()]

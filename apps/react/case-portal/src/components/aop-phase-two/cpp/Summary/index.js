@@ -7,6 +7,7 @@ import MonthlyExecutionList from './MonthlyExecutionList'
 import AssetStatusList from './AssetStatusList'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import SummaryJMD from '../jmd/Summary/index'
+import SummaryDMD from '../dmd/Summary/index'
 
 const Summary = () => {
   const keycloak = useSession()
@@ -43,6 +44,8 @@ const Summary = () => {
     switch (lowerSiteName) {
       case 'jmd':
         return <SummaryJMD />
+      case 'dmd':
+        return <SummaryDMD />
       // case 'hmd':
       //   return <SummaryHMD />
       case 'nmd':

@@ -64,11 +64,21 @@ public interface PlantsRepository extends JpaRepository<Plants, UUID> {
 	List<Plants> findUniqueNamesPlantsByVerticalAndSite(@Param("verticalId") UUID verticalId, @Param("siteId") UUID siteId, @Param("screenCode") String screenCode);
 
 
-
 	
 	@Query(value = "SELECT p.* FROM Plants p " +
 				 "WHERE p.Vertical_FK_Id = :verticalId " +
 				 "AND p.Site_FK_Id = :siteId " , nativeQuery = true)
 	List<Plants> getPlantListForWorkflow(@Param("verticalId") UUID verticalId, @Param("siteId") UUID siteId);
-	
+
+	/**
+	 * Returns active Plants whose SourceName matches any value in the given list.
+	 * Used by the plants dropdown API filtered by source-names.
+	 */
+	List<Plants> findBySourceNameInAndIsActiveTrue(List<String> sourceNames);
+
+	/**
+	 * Returns all active Plants ordered by display name.
+	 * Used by the plants dropdown API when no filter is provided.
+	 */
+	List<Plants> findByIsActiveTrueOrderByDisplayNameAsc();
 }

@@ -14,6 +14,7 @@ import AopDesignBasis from './AopDesignBasis'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AopTabs from 'components/AopTabs'
 import AssetAvailability from './AssetAvailability/index'
+import Prices from '../../Inputs/Prices/index'
 
 const InputsDMD = () => {
   const keycloak = useSession()
@@ -87,7 +88,12 @@ const InputsDMD = () => {
         displayName: 'Fuel Availability',
         displaySequence: 7,
       },
-      // { id: 'export-availability',name:'exportAvailability', displayName: 'Export Availability', displaySequence: 6 },
+      {
+        id: 'prices',
+        name: 'prices',
+        displayName: 'Prices',
+        displaySequence: 8
+      },
     ]
     setTabObj(tabs)
   }, [])
@@ -165,6 +171,8 @@ const InputsDMD = () => {
         return <FixedNorms />
       case 'fuel-availability':
         return <Fuel />
+      case 'prices':
+        return <Prices />
       default:
         return null
     }

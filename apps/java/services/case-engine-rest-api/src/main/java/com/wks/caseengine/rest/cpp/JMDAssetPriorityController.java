@@ -1,7 +1,7 @@
 package com.wks.caseengine.rest.cpp;
 
+import com.wks.caseengine.cpp.dto.AssetPriorityRequestDTO;
 import com.wks.caseengine.cpp.service.JMDAssetPriorityService;
-import com.wks.caseengine.dto.AssetPriorityRequestDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
