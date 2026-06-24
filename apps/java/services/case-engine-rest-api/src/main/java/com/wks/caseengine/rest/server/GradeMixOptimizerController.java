@@ -1,15 +1,24 @@
 package com.wks.caseengine.rest.server;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.crude.serviceimpl.GradeMixOptimizerService;
+import com.wks.caseengine.dto.BudgetedOperatingHoursDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
 @RestController
@@ -32,5 +41,49 @@ public class GradeMixOptimizerController {
     @GetMapping("/calculated-proposed-business-demand")
     public AOPMessageVM getCalculatedProposedBusinessDemand(@RequestParam String plantId, @RequestParam String aopYear, @RequestParam String lineId) {
         return gradeMixOptimizerService.getCalculatedProposedBusinessDemand(UUID.fromString(plantId), aopYear, lineId);
+    }
+
+    @GetMapping("/budgeted-operating-hours-data")
+    public AOPMessageVM getBudgetedOperatingHoursData(@RequestParam String plantId, @RequestParam String aopYear, @RequestParam String lineId) {
+        return gradeMixOptimizerService.getBudgetedOperatingHoursData(UUID.fromString(plantId), aopYear, UUID.fromString(lineId));
+    }
+
+    @PostMapping("/budgeted-operating-hours-data")
+    public AOPMessageVM saveBudgetedOperatingHoursData(
+            @RequestParam String plantId,
+            @RequestParam String aopYear,
+            @RequestParam String lineId,
+            @RequestBody List<BudgetedOperatingHoursDTO> dtoList) {
+        return gradeMixOptimizerService.saveBudgetedOperatingHoursData(
+            UUID.fromString(plantId), aopYear, UUID.fromString(lineId), dtoList);
+    }
+
+    @GetMapping("/budgeted-operating-hours-export-excel")
+    public ResponseEntity<byte[]> exportBudgetedOperatingHoursExcel(
+            @RequestParam String plantId,
+            @RequestParam String aopYear) {
+        try {
+            byte[] excelBytes = gradeMixOptimizerService.exportBudgetedOperatingHoursExcel(
+                UUID.fromString(plantId), aopYear);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                .filename("budgeted-operating-hours.xlsx")
+                .build());
+            headers.setContentLength(excelBytes.length);
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(value = "/budgeted-operating-hours-import-excel", consumes = "multipart/form-data")
+    public AOPMessageVM importBudgetedOperatingHoursExcel(
+            @RequestParam String plantId,
+            @RequestParam String aopYear,
+            @RequestParam("file") MultipartFile file) {
+        return gradeMixOptimizerService.importBudgetedOperatingHoursExcel(
+            UUID.fromString(plantId), aopYear, file);
     }
 }

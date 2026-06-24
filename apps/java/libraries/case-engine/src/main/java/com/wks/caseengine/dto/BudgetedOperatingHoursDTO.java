@@ -1,5 +1,6 @@
 package com.wks.caseengine.dto;
 
+import java.util.Date;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
@@ -11,13 +12,18 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class GradeMixOptimizerConstantDTO {
+public class BudgetedOperatingHoursDTO {
+    
+   
 
-   // private UUID id;
-    private UUID normParameterFkId;
-    private Double jan;
-    private Double feb;
-    private Double mar;
+    private UUID id;
+    private UUID gradeId;
+    private String displayName;
+    private boolean isEditable;
+    private String uom;
+    private UUID plantId;
+    private String aopYear;
+    private UUID lineId;
     private Double apr;
     private Double may;
     private Double jun;
@@ -27,10 +33,10 @@ public class GradeMixOptimizerConstantDTO {
     private Double oct;
     private Double nov;
     private Double dec;
+    private Double jan;
+    private Double feb;
+    private Double mar;
     private String remarks;
-    private String auditYear;
-    private String uom;
-    private String normTypeName;
-    private boolean isEditable;
-    private String displayName;
+    private String modifiedBy;
+    private Date modifiedDateTime;
 }
