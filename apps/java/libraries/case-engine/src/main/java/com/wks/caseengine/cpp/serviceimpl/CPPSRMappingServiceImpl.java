@@ -338,12 +338,16 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                     SRMappingDTO dto = new SRMappingDTO();
 
                     dto.setId                  (toUuid(row, "ID"));
+                    dto.setCppPlantId          (toUuid(row, "CPPPlantId"));
+                    dto.setSenderPlantId       (toUuid(row, "SenderPlantId"));
+                    dto.setReceiverPlantId     (toUuid(row, "ReceiverPlantId"));
 
                     dto.setSenderPlantName     (str(row, "SenderPlantName"));
                     dto.setSenderPlantCode     (str(row, "SenderPlantCode"));
                     dto.setSenderUtilityId     (toUuid(row, "SenderUtilityId"));
                     dto.setSenderUtilityName   (str(row, "SenderUtilityName"));
                     dto.setSenderUtilityCode   (str(row, "SenderUtilityCode"));
+                    dto.setSenderUtilityUOM    (str(row, "SenderUtilityUOM"));
                     dto.setSenderCostCenterId  (toUuid(row, "SenderCostCenterId"));
                     dto.setSenderCostCenterName(str(row, "SenderCostCenterName"));
                     dto.setSenderCostCenterCode(str(row, "SenderCostCenterCode"));
@@ -353,6 +357,7 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                     dto.setReceiverUtilityId     (toUuid(row, "ReceiverUtilityId"));
                     dto.setReceiverUtilityName   (str(row, "ReceiverUtilityName"));
                     dto.setReceiverUtilityCode   (str(row, "ReceiverUtilityCode"));
+                    dto.setReceiverUtilityUOM    (str(row, "ReceiverUtilityUOM"));
                     dto.setReceiverCostCenterId  (toUuid(row, "ReceiverCostCenterId"));
                     dto.setReceiverCostCenterName(str(row, "ReceiverCostCenterName"));
                     dto.setReceiverCostCenterCode(str(row, "ReceiverCostCenterCode"));
@@ -503,7 +508,7 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
     @Override
     @Transactional
     public AOPMessageVM updateSRMappingsByPlant(List<SRMappingDTO> dtoList) {
-        logger.info("updateSRMappingsByPlant: updating {} records", dtoList == null ? 0 : dtoList.size());
+        logger.info("updateSRMappingsByPlant: processing {} records", dtoList == null ? 0 : dtoList.size());
         AOPMessageVM response = new AOPMessageVM();
         try {
             if (dtoList == null || dtoList.isEmpty()) {
@@ -512,26 +517,95 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                 return response;
             }
 
-            String sql = "UPDATE CPP_SR_Mapping_Master SET " +
-                         "Utility_NormParameter_FK_Id = ?, " +
-                         "Utility_CostCenter_FK_Id = ?, " +
-                         "Generation_NormParameter_FK_Id = ?, " +
-                         "Generation_CostCenter_FK_Id = ?, " +
-                         "Remarks = ?, " +
-                         "UpdatedDate = GETDATE() " +
-                         "WHERE ID = ?";
+            int processed = 0;
+            for (SRMappingDTO dto : dtoList) {
 
-            db1JdbcTemplate.batchUpdate(sql, dtoList, dtoList.size(), (ps, dto) -> {
-                ps.setObject(1, dto.getReceiverUtilityId() != null ? dto.getReceiverUtilityId().toString() : null);
-                ps.setObject(2, dto.getReceiverCostCenterId() != null ? dto.getReceiverCostCenterId().toString() : null);
-                ps.setObject(3, dto.getSenderUtilityId() != null ? dto.getSenderUtilityId().toString() : null);
-                ps.setObject(4, dto.getSenderCostCenterId() != null ? dto.getSenderCostCenterId().toString() : null);
-                ps.setString(5, dto.getRemarks());
-                ps.setObject(6, dto.getId() != null ? dto.getId().toString() : null);
-            });
+                // ── Step 1: Resolve Receiver Cost Center (Utility_CostCenter_FK_Id) ──────────
+                // Search CPPCostCentersMaster by receiverCostCenterName + receiverCostCenterCode + receiverPlantId.
+                // If found → reuse existing ID. If not found → insert a new record.
+                UUID resolvedReceiverCostCenterId = resolveOrCreateCostCenter(
+                        dto.getReceiverCostCenterName(),
+                        dto.getReceiverCostCenterCode(),
+                        dto.getReceiverPlantId()
+                );
+
+                // ── Step 2: Resolve Sender Cost Center (Generation_CostCenter_FK_Id) ─────────
+                // Search CPPCostCentersMaster by senderCostCenterName + senderCostCenterCode + senderPlantId.
+                UUID resolvedSenderCostCenterId = resolveOrCreateCostCenter(
+                        dto.getSenderCostCenterName(),
+                        dto.getSenderCostCenterCode(),
+                        dto.getSenderPlantId()
+                );
+
+                // ── Step 3: Resolve Receiver NormParameter (Utility_NormParameter_FK_Id) ─────
+                // NormType_FK_Id = 1 for receiver, Plant_FK_Id = receiverPlantId.
+                // Search by utility name + Plant_FK_Id + NormType. Reuse or create.
+                UUID resolvedReceiverUtilityId = resolveOrCreateNormParameter(
+                        dto.getReceiverUtilityName(),
+                        dto.getReceiverUtilityCode(),
+                        dto.getReceiverUtilityUOM(),
+                        dto.getReceiverPlantId(),
+                        1
+                );
+
+                // ── Step 4: Resolve Sender NormParameter (Generation_NormParameter_FK_Id) ────
+                // NormType_FK_Id = 2 for sender, Plant_FK_Id = senderPlantId.
+                UUID resolvedSenderUtilityId = resolveOrCreateNormParameter(
+                        dto.getSenderUtilityName(),
+                        dto.getSenderUtilityCode(),
+                        dto.getSenderUtilityUOM(),
+                        dto.getSenderPlantId(),
+                        2
+                );
+
+                // ── Step 5: Insert or Update CPP_SR_Mapping_Master ──────────────────────────
+                // If id is null/empty → INSERT new record; otherwise → UPDATE existing record.
+                if (dto.getId() == null) {
+                    // INSERT
+                    UUID newId = UUID.randomUUID();
+                    String insertSql = "INSERT INTO CPP_SR_Mapping_Master " +
+                            "(ID, CPP_Plant_FK_Id, Utility_NormParameter_FK_Id, Utility_CostCenter_FK_Id, " +
+                            " Generation_NormParameter_FK_Id, Generation_CostCenter_FK_Id, Remarks, IsActive, CreatedDate, UpdatedDate) " +
+                            "VALUES (?, ?, ?, ?, ?, ?, ?, 1, GETDATE(), GETDATE())";
+                    db1JdbcTemplate.update(insertSql,
+                            newId.toString(),
+                            dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()       : null,
+                            resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()       : null,
+                            resolvedReceiverCostCenterId   != null ? resolvedReceiverCostCenterId.toString()    : null,
+                            resolvedSenderUtilityId        != null ? resolvedSenderUtilityId.toString()         : null,
+                            resolvedSenderCostCenterId     != null ? resolvedSenderCostCenterId.toString()      : null,
+                            dto.getRemarks()
+                    );
+                    logger.info("updateSRMappingsByPlant: inserted new record ID={}", newId);
+
+                } else {
+                    // UPDATE
+                    String updateSql = "UPDATE CPP_SR_Mapping_Master SET " +
+                            "CPP_Plant_FK_Id = ?, " +
+                            "Utility_NormParameter_FK_Id = ?, " +
+                            "Utility_CostCenter_FK_Id = ?, " +
+                            "Generation_NormParameter_FK_Id = ?, " +
+                            "Generation_CostCenter_FK_Id = ?, " +
+                            "Remarks = ?, " +
+                            "UpdatedDate = GETDATE() " +
+                            "WHERE ID = ?";
+                    db1JdbcTemplate.update(updateSql,
+                            dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()       : null,
+                            resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()       : null,
+                            resolvedReceiverCostCenterId   != null ? resolvedReceiverCostCenterId.toString()    : null,
+                            resolvedSenderUtilityId        != null ? resolvedSenderUtilityId.toString()         : null,
+                            resolvedSenderCostCenterId     != null ? resolvedSenderCostCenterId.toString()      : null,
+                            dto.getRemarks(),
+                            dto.getId().toString()
+                    );
+                    logger.info("updateSRMappingsByPlant: updated record ID={}", dto.getId());
+                }
+
+                processed++;
+            }
 
             response.setCode(200);
-            response.setMessage(dtoList.size() + " record(s) updated successfully.");
+            response.setMessage(processed + " record(s) processed successfully.");
             response.setData(null);
 
         } catch (Exception e) {
@@ -540,5 +614,116 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
             response.setMessage("Error: " + e.getMessage());
         }
         return response;
+    }
+
+    /**
+     * Finds a matching record in CPPCostCentersMaster by (CostCenterName, CostCenterCode, CPP_Plant_FK_Id).
+     * - If a match is found  → returns the existing CostCenterId (no update, data unchanged).
+     * - If no match is found → inserts a new active record and returns the new UUID.
+     *
+     * @param name    CostCenterName  (e.g. "NG-Site Common" / "COMPRESSED AIR")
+     * @param code    CostCenterCode  (e.g. "RIL_10799000")
+     * @param plantId CPP_Plant_FK_Id (senderPlantId or receiverPlantId)
+     * @return resolved or newly created CostCenterId, or null if inputs are incomplete
+     */
+    private UUID resolveOrCreateCostCenter(String name, String code, UUID plantId) {
+        if (name == null || code == null || plantId == null) {
+            logger.warn("resolveOrCreateCostCenter: skipped due to null input (name={}, code={}, plantId={})", name, code, plantId);
+            return null;
+        }
+        try {
+            String searchSql = "SELECT TOP 1 CostCenterId FROM CPPCostCentersMaster " +
+                    "WHERE CostCenterName = ? AND CostCenterCode = ? AND CPP_Plant_FK_Id = ? AND IsActive = 1";
+            List<String> results = db1JdbcTemplate.queryForList(searchSql, String.class,
+                    name, code, plantId.toString());
+
+            if (!results.isEmpty()) {
+                UUID existingId = UUID.fromString(results.get(0));
+                logger.info("resolveOrCreateCostCenter: reusing existing ID={} for name='{}', code='{}', plant={}", existingId, name, code, plantId);
+                return existingId;
+            }
+
+            // Not found – create a new entry
+            UUID newId = UUID.randomUUID();
+            String insertSql = "INSERT INTO CPPCostCentersMaster " +
+                    "(CostCenterId, CostCenterName, CostCenterCode, DisplayName, IsActive, CPP_Plant_FK_Id) " +
+                    "VALUES (?, ?, ?, ?, 1, ?)";
+            db1JdbcTemplate.update(insertSql, newId.toString(), name, code, name, plantId.toString());
+            logger.info("resolveOrCreateCostCenter: created new ID={} for name='{}', code='{}', plant={}", newId, name, code, plantId);
+            return newId;
+
+        } catch (Exception e) {
+            logger.error("resolveOrCreateCostCenter error (name={}, code={}, plant={}): {}", name, code, plantId, e.getMessage(), e);
+            return null;
+        }
+    }
+
+    /**
+     * Finds a matching record in NormParameters by (Plant_FK_Id, NormType_FK_Id, Name/DisplayName).
+     * - If a match is found  → updates DisplayName, UOM, and SAPMaterialCode only (NormParameterType_FK_Id
+     *                          and CalculationType are left unchanged).
+     * - If no match is found → fetches NormParameterType_FK_Id where NormParameterType.Name = 'Configuration',
+     *                          then inserts a fully populated new record.
+     *
+     * @param utilityName utility name  (mapped to Name and DisplayName)
+     * @param utilityCode utility code  (mapped to SAPMaterialCode)
+     * @param uom         unit of measure (mapped to UOM)
+     * @param plantId     Plant_FK_Id   (receiverPlantId for receiver, senderPlantId for sender)
+     * @param normTypeId  NormType_FK_Id: 1 = receiver (Utility), 2 = sender (Generation)
+     * @return resolved or newly created NormParameter Id, or null if inputs are incomplete
+     */
+    private UUID resolveOrCreateNormParameter(String utilityName, String utilityCode, String uom, UUID plantId, int normTypeId) {
+        if (utilityName == null || plantId == null) {
+            logger.warn("resolveOrCreateNormParameter: skipped due to null input (name={}, plant={})", utilityName, plantId);
+            return null;
+        }
+        try {
+            // ── Search for an existing matching NormParameter ─────────────────────────────
+            String searchSql = "SELECT TOP 1 Id FROM NormParameters " +
+                    "WHERE Plant_FK_Id = ? AND NormType_FK_Id = ? AND (Name = ? OR DisplayName = ?)";
+            List<String> results = db1JdbcTemplate.queryForList(searchSql, String.class,
+                    plantId.toString(), normTypeId, utilityName, utilityName);
+
+            if (!results.isEmpty()) {
+                UUID existingId = UUID.fromString(results.get(0));
+                logger.info("resolveOrCreateNormParameter: reusing existing ID={} for name='{}', plant={}, normType={}", existingId, utilityName, plantId, normTypeId);
+                // Update only the display/sync fields; leave NormParameterType_FK_Id and CalculationType as-is.
+                String updateSql = "UPDATE NormParameters SET DisplayName = ?, UOM = ?, SAPMaterialCode = ? WHERE Id = ?";
+                db1JdbcTemplate.update(updateSql, utilityName, uom, utilityCode, existingId.toString());
+                return existingId;
+            }
+
+            // ── Lookup NormParameterType_FK_Id where Name = 'Configuration' ──────────────
+            String normParamTypeSql = "SELECT TOP 1 Id FROM NormParameterType WHERE Name = 'Configuration' AND IsActive = 1";
+            List<String> normParamTypeResults = db1JdbcTemplate.queryForList(normParamTypeSql, String.class);
+            String normParameterTypeFkId = normParamTypeResults.isEmpty() ? null : normParamTypeResults.get(0);
+            if (normParameterTypeFkId == null) {
+                logger.warn("resolveOrCreateNormParameter: NormParameterType 'Configuration' not found; NormParameterType_FK_Id will be NULL");
+            }
+
+            // ── Insert a new NormParameter record ─────────────────────────────────────────
+            UUID newId = UUID.randomUUID();
+            String insertSql = "INSERT INTO NormParameters " +
+                    "(Id, Name, DisplayName, UOM, Plant_FK_Id, NormType_FK_Id, NormParameterType_FK_Id, " +
+                    " SAPMaterialCode, ExecuteQuery, DependantAttributeId, Type, " +
+                    " IsHistorical, DisplayOrder, IsEditable, IsVisible, CalculationType) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, 1, 1, 1, 1, NULL)";
+            db1JdbcTemplate.update(insertSql,
+                    newId.toString(),
+                    utilityName,
+                    utilityName,
+                    uom,
+                    plantId.toString(),
+                    normTypeId,
+                    normParameterTypeFkId,
+                    utilityCode
+            );
+            logger.info("resolveOrCreateNormParameter: created new ID={} for name='{}', plant={}, normType={}, normParamType={}", newId, utilityName, plantId, normTypeId, normParameterTypeFkId);
+            return newId;
+
+        } catch (Exception e) {
+            logger.error("resolveOrCreateNormParameter error (name={}, plant={}, normType={}): {}", utilityName, plantId, normTypeId, e.getMessage(), e);
+            return null;
+        }
     }
 }
