@@ -432,8 +432,9 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
             System.out.println("saving new case details....");
             caseNo = CaseNoGenerator();
             caseData.setCaseNo(caseNo);
+            caseData.setBusinessKey(caseNo);
             //	caseData.setCaseUrl(caseData.getCaseUrl()+"&caseNo="+caseNo);
-            caseData.setCaseUrl(caseData.getCaseUrl()+"&caseNo="+ caseData.getBusinessKey());
+            caseData.setCaseUrl(caseData.getCaseUrl()+"&caseNo="+ caseNo);
 			// Inject the generated caseNo back into the container attribute JSON before saving
 			try {
 				ObjectMapper injectMapper = new ObjectMapper();

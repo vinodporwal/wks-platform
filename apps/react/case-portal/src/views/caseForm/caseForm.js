@@ -1218,7 +1218,7 @@ console.log('*****  taskId:  ', taskId);
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Case Information</h3>
         <div style="padding: 10px;">
-          <p><strong>${getLabel('caseNo')}</strong>: ${aCase.caseNo}</p>
+          <p><strong>${getLabel('caseNo')}</strong>: ${aCase.businessKey}</p>
           <p><strong>${getLabel('caseTitle')}</strong>: ${containerData.caseTitle}</p>
           <p><strong>${getLabel('caseAssignedTo')}</strong>: ${containerData.caseAssignedTo}</p>
           <p><strong>${getLabel('faultCategory')}</strong>: ${getFaultCategoryLabel(containerData.faultCategory)}</p>
@@ -1241,7 +1241,7 @@ console.log('*****  taskId:  ', taskId);
       <!-- Associated Faults -->
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Associated Faults</h3>
-        <p style="padding: 10px; margin: 0;"><strong>${getLabel('textField1')}</strong>: ${containerData.textField1}</p>
+        <p style="padding: 10px; margin: 0;"><strong>Main Asset</strong>: ${containerData.mainAsset || containerData.textField1 || 'N/A' }</p>
         ${formatDataGrid(containerData.dataGrid2, getLabel)}
       </div>
   `
