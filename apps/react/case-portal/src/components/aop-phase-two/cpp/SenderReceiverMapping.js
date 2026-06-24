@@ -560,6 +560,7 @@ const SenderReceiverMapping = () => {
                 ...row,
                 senderPlantId: value,
                 senderPlantCode: plantCode,
+                senderPlantName: selectedPlant?.label || '',
               }
             : row,
         ),
@@ -579,6 +580,7 @@ const SenderReceiverMapping = () => {
                 ...row,
                 receiverPlantId: value,
                 receiverPlantCode: plantCode,
+                receiverPlantName: selectedPlant?.label || '',
               }
             : row,
         ),
