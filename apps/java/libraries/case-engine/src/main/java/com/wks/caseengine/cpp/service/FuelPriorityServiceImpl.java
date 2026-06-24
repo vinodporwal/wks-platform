@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.cpp.dto.AssetFuelPriorityDto;
 import com.wks.caseengine.cpp.dto.AssetFuelPriorityProjection;
+import com.wks.caseengine.cpp.dto.CompatibleFuelAssetDto;
+import com.wks.caseengine.cpp.dto.CompatibleFuelAssetProjection;
 import com.wks.caseengine.cpp.dto.FuelMasterDto;
 import com.wks.caseengine.cpp.dto.FuelMasterProjection;
 import com.wks.caseengine.cpp.dto.PlantWiseFuelPriorityDto;
@@ -277,6 +279,80 @@ public class FuelPriorityServiceImpl implements FuelPriorityService {
 
         response.setCode(200);
         response.setMessage("Asset fuel priority updated. Updated: " + updated + ", Skipped: " + skipped);
+        return response;
+    }
+
+    @Override
+    public List<CompatibleFuelAssetDto> getCompatibleFuelAssets(String plantIds) {
+        if (plantIds == null || plantIds.trim().isEmpty()) {
+            return repository.getCompatibleFuelAssets()
+                    .stream().map(this::toCompatibleFuelAssetDto).toList();
+        }
+        return repository.getCompatibleFuelAssetsByPlants(plantIds)
+                .stream().map(this::toCompatibleFuelAssetDto).toList();
+    }
+
+    private CompatibleFuelAssetDto toCompatibleFuelAssetDto(CompatibleFuelAssetProjection p) {
+        CompatibleFuelAssetDto dto = new CompatibleFuelAssetDto();
+        if (p.getAssetId() != null) {
+            dto.setAssetId(UUID.fromString(p.getAssetId()));
+        }
+        dto.setAssetName(p.getAssetName());
+        dto.setAssetType(p.getAssetType());
+        if (p.getCppPlantFkId() != null) {
+            dto.setCppPlantFkId(UUID.fromString(p.getCppPlantFkId()));
+        }
+        dto.setPlantName(p.getPlantName());
+        dto.setAssetCategory(p.getAssetCategory());
+        dto.setCompatibleFuel(p.getCompatibleFuel());
+        return dto;
+    }
+
+    @Override
+    public AOPMessageVM updateCompatibleFuelAssets(List<CompatibleFuelAssetDto> payload) {
+        AOPMessageVM response = new AOPMessageVM();
+        int updated = 0;
+        int skipped = 0;
+
+        if (payload == null || payload.isEmpty()) {
+            response.setCode(400);
+            response.setMessage("Payload is empty");
+            return response;
+        }
+
+        for (CompatibleFuelAssetDto dto : payload) {
+            if (dto.getAssetId() == null) {
+                skipped++;
+                continue;
+            }
+            if (dto.getCompatibleFuel() == null || dto.getCompatibleFuel().trim().isEmpty()) {
+                skipped++;
+                continue;
+            }
+
+            int rows = 0;
+            if ("Power".equalsIgnoreCase(dto.getAssetCategory())) {
+                rows = repository.updatePowerAssetCompatibleFuel(
+                        dto.getAssetId().toString(),
+                        dto.getCompatibleFuel());
+            } else if ("Steam".equalsIgnoreCase(dto.getAssetCategory())) {
+                rows = repository.updateSteamAssetCompatibleFuel(
+                        dto.getAssetId().toString(),
+                        dto.getCompatibleFuel());
+            } else {
+                skipped++;
+                continue;
+            }
+
+            if (rows > 0) {
+                updated++;
+            } else {
+                skipped++;
+            }
+        }
+
+        response.setCode(200);
+        response.setMessage("Compatible fuel assets updated. Updated: " + updated + ", Skipped: " + skipped);
         return response;
     }
 
