@@ -56,5 +56,5 @@ public interface CPPSRMappingService {
      * Updates Sender-Receiver mappings in the CPP_SR_Mapping_Master table.
      * @param dtoList List of DTOs containing the updated fields.
      */
-    AOPMessageVM updateSRMappingsByPlant(List<SRMappingDTO> dtoList);
+    AOPMessageVM updateSRMappingsByPlant(List<SRMappingDTO> dtoList,String financialYear);
 }

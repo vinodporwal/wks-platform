@@ -510,8 +510,8 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
 
     @Override
     @Transactional
-    public AOPMessageVM updateSRMappingsByPlant(List<SRMappingDTO> dtoList) {
-        logger.info("updateSRMappingsByPlant: processing {} records", dtoList == null ? 0 : dtoList.size());
+    public AOPMessageVM updateSRMappingsByPlant(List<SRMappingDTO> dtoList, String financialYear) {
+        logger.info("updateSRMappingsByPlant: processing {} records, financialYear={}", dtoList == null ? 0 : dtoList.size(), financialYear);
         AOPMessageVM response = new AOPMessageVM();
         try {
             if (dtoList == null || dtoList.isEmpty()) {
@@ -613,9 +613,15 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
 
                 // ── Step 6: Sync NormsHeader (only for NMD sites) ────────────────────────────
                 // Check whether cppPlantId resolves to a site whose Name = 'NMD'.
-                // If yes, upsert the corresponding NormsHeader row.
+                // If a NEW NormsHeader row was inserted, its ID is returned for Step 7.
                 if (isNmdSite(dto.getCppPlantId())) {
-                    resolveOrUpdateNormsHeader(dto, srMappingId, resolvedReceiverUtilityId, resolvedSenderUtilityId);
+                    UUID newNormsHeaderId = resolveOrUpdateNormsHeader(dto, srMappingId, resolvedReceiverUtilityId, resolvedSenderUtilityId);
+
+                    // ── Step 7: Insert NormsMonthDetail (12 months) for new NormsHeader ───────
+                    // Only triggered when a new NormsHeader was created (not on update).
+                    if (newNormsHeaderId != null && financialYear != null && !financialYear.isBlank()) {
+                        insertNormsMonthDetails(newNormsHeaderId, financialYear);
+                    }
                 } else {
                     logger.info("updateSRMappingsByPlant: skipping NormsHeader – cppPlantId={} is not an NMD site", dto.getCppPlantId());
                 }
@@ -694,11 +700,17 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
      *   CPP_SR_Mapping_Master_Fk_Id ← srMappingId
      * </pre>
      */
-    private void resolveOrUpdateNormsHeader(SRMappingDTO dto, UUID srMappingId,
+    /**
+     * Creates or updates a NormsHeader row linked to the given CPP_SR_Mapping_Master record.
+     *
+     * @return the UUID of the newly inserted NormsHeader row, or {@code null} if the row already
+     *         existed and was updated (so that Step 7 only fires for new inserts).
+     */
+    private UUID resolveOrUpdateNormsHeader(SRMappingDTO dto, UUID srMappingId,
                                              UUID resolvedReceiverUtilityId, UUID resolvedSenderUtilityId) {
         if (srMappingId == null) {
             logger.warn("resolveOrUpdateNormsHeader: skipped – srMappingId is null");
-            return;
+            return null;
         }
         try {
             // Search for an existing NormsHeader row linked to this SR Mapping record
@@ -727,7 +739,7 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                 db1JdbcTemplate.update(updateSql,
                         dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,
                         dto.getReceiverUtilityName(),
-                        resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,
+                        dto.getReceiverUtilityCode(),
                         dto.getReceiverUtilityUOM(),
                         "Utilities",
                         dto.getSenderUtilityName(),
@@ -741,6 +753,7 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                         existingId.toString()
                 );
                 logger.info("resolveOrUpdateNormsHeader: updated NormsHeader Id={} for srMappingId={}", existingId, srMappingId);
+                return null; // No new row → Step 7 should NOT run
 
             } else {
                 // ── INSERT new row ────────────────────────────────────────────────────────────
@@ -755,7 +768,7 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                         newId.toString(),
                         dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,
                         dto.getReceiverUtilityName(),
-                        resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,
+                        dto.getReceiverUtilityCode(),
                         dto.getReceiverUtilityUOM(),
                         "Utilities",
                         dto.getSenderUtilityName(),
@@ -769,10 +782,83 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                         srMappingId.toString()
                 );
                 logger.info("resolveOrUpdateNormsHeader: inserted NormsHeader Id={} for srMappingId={}", newId, srMappingId);
+                return newId; // New row → Step 7 should insert NormsMonthDetail records
             }
 
         } catch (Exception e) {
             logger.error("resolveOrUpdateNormsHeader error for srMappingId={}: {}", srMappingId, e.getMessage(), e);
+            return null;
+        }
+    }
+
+    /**
+     * Inserts 12 NormsMonthDetail records (one per month) for a newly created NormsHeader.
+     *
+     * <p>The financial year string (e.g. "2025-26") is parsed to extract the base year (2025).
+     * All 12 {@code FinancialYearMonth} rows for that year are fetched and one
+     * {@code NormsMonthDetail} row is created per month.
+     *
+     * <p>Column defaults:
+     * <pre>
+     *   ScenarioType  = NULL
+     *   Norms         = 0
+     *   Quantity      = 0
+     *   Amount        = 0
+     *   Price         = 0
+     *   DisplayOrder  = 1
+     *   GenerationUOM = NULL
+     *   QTY           = 0
+     *   Remarks       = NULL
+     * </pre>
+     *
+     * @param normsHeaderId  the Id of the newly inserted NormsHeader row
+     * @param financialYear  financial year string, e.g. "2025-26"
+     */
+    private void insertNormsMonthDetails(UUID normsHeaderId, String financialYear) {
+        if (normsHeaderId == null || financialYear == null || financialYear.isBlank()) {
+            logger.warn("insertNormsMonthDetails: skipped – normsHeaderId={}, financialYear={}", normsHeaderId, financialYear);
+            return;
+        }
+        try {
+            // Parse base year from "2025-26" → 2025
+            int baseYear;
+            try {
+                baseYear = Integer.parseInt(financialYear.split("-")[0].trim());
+            } catch (NumberFormatException e) {
+                logger.error("insertNormsMonthDetails: could not parse year from financialYear='{}'", financialYear);
+                return;
+            }
+
+            // Fetch all FinancialYearMonth rows for the base year
+            String fymSql = "SELECT Id FROM FinancialYearMonth WHERE Year = ? ORDER BY Month";
+            List<String> fymIds = db1JdbcTemplate.queryForList(fymSql, String.class, baseYear);
+
+            if (fymIds.isEmpty()) {
+                logger.warn("insertNormsMonthDetails: no FinancialYearMonth records found for year={}", baseYear);
+                return;
+            }
+
+            String insertSql = "INSERT INTO NormsMonthDetail " +
+                    "(Id, NormsHeader_FK_Id, FinancialYearMonth_FK_Id, ScenarioType, " +
+                    " Norms, Quantity, Amount, Price, DisplayOrder, GenerationUOM, QTY, Remarks) " +
+                    "VALUES (?, ?, ?, NULL, 0, 0, 0, 0, 1, NULL, 0, NULL)";
+
+            for (String fymId : fymIds) {
+                UUID newDetailId = UUID.randomUUID();
+                db1JdbcTemplate.update(insertSql,
+                        newDetailId.toString(),
+                        normsHeaderId.toString(),
+                        fymId
+                );
+                logger.info("insertNormsMonthDetails: inserted NormsMonthDetail Id={} for NormsHeader={}, FinancialYearMonth={}",
+                        newDetailId, normsHeaderId, fymId);
+            }
+
+            logger.info("insertNormsMonthDetails: inserted {} month records for NormsHeader={}, year={}",
+                    fymIds.size(), normsHeaderId, baseYear);
+
+        } catch (Exception e) {
+            logger.error("insertNormsMonthDetails error for normsHeaderId={}: {}", normsHeaderId, e.getMessage(), e);
         }
     }
 
