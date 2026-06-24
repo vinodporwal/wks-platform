@@ -8,15 +8,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.wks.caseengine.cpp.dto.AssetFuelPriorityDto;
-import com.wks.caseengine.cpp.dto.CompatibleFuelAssetDto;
 import com.wks.caseengine.cpp.dto.FuelMasterDto;
 import com.wks.caseengine.cpp.dto.PlantWiseFuelPriorityDto;
 import com.wks.caseengine.cpp.service.FuelPriorityService;
@@ -121,44 +118,6 @@ public class FuelPriorityController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("[PUT /asset-fuel-priority] Error: {}", e.getMessage(), e);
-            AOPMessageVM response = new AOPMessageVM();
-            response.setCode(500);
-            response.setMessage("Error: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(response);
-        }
-    }
-
-    @GetMapping("/compatible-fuel-assets")
-    public ResponseEntity<AOPMessageVM> getCompatibleFuelAssets(@RequestParam(required = false) String plantIds) {
-        logger.info("[GET /compatible-fuel-assets] Fetching compatible fuel assets for plantIds: {}", plantIds);
-        try {
-            List<CompatibleFuelAssetDto> data = service.getCompatibleFuelAssets(plantIds);
-            logger.info("[GET /compatible-fuel-assets] Retrieved {} records", data.size());
-
-            AOPMessageVM response = new AOPMessageVM();
-            response.setCode(200);
-            response.setMessage("Success");
-            response.setData(data);
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            logger.error("[GET /compatible-fuel-assets] Error: {}", e.getMessage(), e);
-            AOPMessageVM response = new AOPMessageVM();
-            response.setCode(500);
-            response.setMessage("Error: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(response);
-        }
-    }
-
-    @PostMapping("/compatible-fuel-assets")
-    public ResponseEntity<AOPMessageVM> updateCompatibleFuelAssets(@RequestBody List<CompatibleFuelAssetDto> payload) {
-        logger.info("[POST /compatible-fuel-assets] Updating {} compatible fuel asset records", payload != null ? payload.size() : 0);
-        try {
-            AOPMessageVM response = service.updateCompatibleFuelAssets(payload);
-            logger.info("[POST /compatible-fuel-assets] {}", response.getMessage());
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            logger.error("[POST /compatible-fuel-assets] Error updating compatible fuel assets: {}", e.getMessage(), e);
             AOPMessageVM response = new AOPMessageVM();
             response.setCode(500);
             response.setMessage("Error: " + e.getMessage());

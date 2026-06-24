@@ -405,7 +405,7 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
 
             if (!hasFilter) {
                 // No filter — return all active cost-centers
-                String sql = "SELECT CostCenterId, CostCenterName, CostCenterCode, CPP_Plant_FK_Id as cppPlantFkId" +
+                String sql = "SELECT CostCenterId, CostCenterName, CostCenterCode " +
                              "FROM CPPCostCentersMaster " +
                              "WHERE IsActive = 1 " +
                              "ORDER BY CostCenterName";
@@ -414,8 +414,7 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                         new CPPCostCenterDTO(
                                 UUID.fromString(rs.getString("CostCenterId")),
                                 rs.getString("CostCenterName"),
-                                rs.getString("CostCenterCode"),
-                                rs.getString("cppPlantFkId")
+                                rs.getString("CostCenterCode")
                         ));
             } else {
                 // Split comma-separated GUIDs and build IN (...) clause
@@ -428,7 +427,7 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                     params.add(ids[i].trim());
                 }
 
-                String sql = "SELECT CostCenterId, CostCenterName, CostCenterCode, CPP_Plant_FK_Id as cppPlantFkId " +
+                String sql = "SELECT CostCenterId, CostCenterName, CostCenterCode " +
                              "FROM CPPCostCentersMaster " +
                              "WHERE IsActive = 1 " +
                              "AND CPP_Plant_FK_Id IN (" + inClause + ") " +
@@ -438,8 +437,7 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                         new CPPCostCenterDTO(
                                 UUID.fromString(rs.getString("CostCenterId")),
                                 rs.getString("CostCenterName"),
-                                rs.getString("CostCenterCode"),
-                                rs.getString("cppPlantFkId") 
+                                rs.getString("CostCenterCode")
                         ));
             }
 
@@ -483,8 +481,7 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                 data.add(new CPPPlantDTO(
                         p.getId(),
                         p.getDisplayName(),
-                        p.getPlantCode(),
-                        p.getSourceName()
+                        p.getPlantCode()
                 ));
             }
 

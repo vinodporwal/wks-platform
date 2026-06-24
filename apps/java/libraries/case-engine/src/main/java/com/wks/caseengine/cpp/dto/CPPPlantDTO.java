@@ -23,8 +23,4 @@ public class CPPPlantDTO {
 
     /** Maps to Plants.PlantCode */
     private String plantCode;
-
-
-    /** Maps to Plants.SourceName */
-    private String sourceName;
 }
