@@ -110,106 +110,109 @@ const FixedConsumptionDMD = () => {
   }))
 
   // Column definitions
-  const columns = useMemo(() => [
-    {
-      field: 'plant',
-      title: 'Plant',
-      widthT: 150,
-      minWidth: 150,
-      type: 'text',
-      editable: false,
-      hidden: false,
-    },
-    {
-      field: 'plantId',
-      title: 'Plant ID',
-      widthT: 120,
-      minWidth: 120,
-      type: 'text',
-      editable: false,
-      hidden: false,
-    },
-    {
-      field: 'costCenter',
-      title: 'Cost Center',
-      widthT: 150,
-      minWidth: 150,
-      type: 'text',
-      editable: false,
-      hidden: false,
-    },
-    {
-      field: 'costCenterId',
-      title: 'Cost Center ID',
-      widthT: 170,
-      minWidth: 170,
-      type: 'text',
-      editable: false,
-      hidden: false,
-    },
-    {
-      field: 'cppUtility',
-      title: 'CPP Utilities',
-      widthT: 150,
-      minWidth: 150,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'cppUtilityId',
-      title: 'CPP Utility IDs',
-      widthT: 170,
-      minWidth: 170,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'cppPlant',
-      title: 'CPP Plant',
-      widthT: 150,
-      minWidth: 150,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'cppPlantId',
-      title: 'CPP Plant ID',
-      widthT: 170,
-      minWidth: 170,
-      type: 'text',
-      editable: false,
-      hidden: false,
-    },
-    {
-      field: 'uom',
-      title: 'UOM',
-      widthT: 100,
-      minWidth: 100,
-      type: 'text',
-      editable: false,
-    },
+  const columns = useMemo(
+    () => [
+      {
+        field: 'plant',
+        title: 'Plant',
+        widthT: 150,
+        minWidth: 150,
+        type: 'text',
+        editable: false,
+        hidden: false,
+      },
+      {
+        field: 'plantId',
+        title: 'Plant ID',
+        widthT: 120,
+        minWidth: 120,
+        type: 'text',
+        editable: false,
+        hidden: false,
+      },
+      {
+        field: 'costCenter',
+        title: 'Cost Center',
+        widthT: 150,
+        minWidth: 150,
+        type: 'text',
+        editable: false,
+        hidden: false,
+      },
+      {
+        field: 'costCenterId',
+        title: 'Cost Center ID',
+        widthT: 170,
+        minWidth: 170,
+        type: 'text',
+        editable: false,
+        hidden: false,
+      },
+      {
+        field: 'cppUtility',
+        title: 'CPP Utilities',
+        widthT: 150,
+        minWidth: 150,
+        type: 'text',
+        editable: false,
+      },
+      {
+        field: 'cppUtilityId',
+        title: 'CPP Utility IDs',
+        widthT: 170,
+        minWidth: 170,
+        type: 'text',
+        editable: false,
+      },
+      {
+        field: 'cppPlant',
+        title: 'CPP Plant',
+        widthT: 150,
+        minWidth: 150,
+        type: 'text',
+        editable: false,
+      },
+      {
+        field: 'cppPlantId',
+        title: 'CPP Plant ID',
+        widthT: 170,
+        minWidth: 170,
+        type: 'text',
+        editable: false,
+        hidden: false,
+      },
+      {
+        field: 'uom',
+        title: 'UOM',
+        widthT: 100,
+        minWidth: 100,
+        type: 'text',
+        editable: false,
+      },
 
-    // Monthly columns - Apr → Mar (editable)
-    ...MONTH_COLUMNS,
+      // Monthly columns - Apr → Mar (editable)
+      ...MONTH_COLUMNS,
 
-    {
-      field: 'total',
-      title: 'Total',
-      widthT: 130,
-      minWidth: 130,
-      type: 'number1',
-      editable: false,
-      format: customFormatTwo,
-    },
-    {
-      field: 'remarks',
-      title: 'Remarks',
-      widthT: 250,
-      type: 'textarea',
-      editable: true,
-      minWidth: 250,
-    },
-  ], [headerMap])
+      {
+        field: 'total',
+        title: 'Total',
+        widthT: 130,
+        minWidth: 130,
+        type: 'number1',
+        editable: false,
+        format: customFormatTwo,
+      },
+      {
+        field: 'remarks',
+        title: 'Remarks',
+        widthT: 250,
+        type: 'textarea',
+        editable: true,
+        minWidth: 250,
+      },
+    ],
+    [headerMap],
+  )
 
   const fetchFixedConsumptionData = useCallback(async () => {
     setLoading(true)
@@ -469,7 +472,7 @@ const FixedConsumptionDMD = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => { }}
+        setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}

@@ -10,7 +10,11 @@ import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const PowerAssetCapacity = ({ initialRows = [], onRefresh, externalLoading = false }) => {
+const PowerAssetCapacity = ({
+  initialRows = [],
+  onRefresh,
+  externalLoading = false,
+}) => {
   const keycloak = useSession()
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
@@ -33,7 +37,7 @@ const PowerAssetCapacity = ({ initialRows = [], onRefresh, externalLoading = fal
 
   // Multi-plant list — same pattern as PowerAssetAvailability
 
-  const PLANT_ID_LIST = plantObject?.id;
+  const PLANT_ID_LIST = plantObject?.id
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
@@ -766,7 +770,7 @@ const PowerAssetCapacity = ({ initialRows = [], onRefresh, externalLoading = fal
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => { }}
+        setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}

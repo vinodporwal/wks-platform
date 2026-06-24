@@ -173,20 +173,24 @@ const GTHeatRate = ({ startDate, endDate, dateLoading }) => {
   }, [PLANT_ID, AOP_YEAR, selectedPlant, startDate, endDate])
 
   // Fetch plant list only when PLANT_ID and AOP_YEAR are defined and have changed
-  const prevPlantIdRef = useRef();
-  const prevYearRef = useRef();
+  const prevPlantIdRef = useRef()
+  const prevYearRef = useRef()
   useEffect(() => {
-    if (PLANT_ID && AOP_YEAR && (prevPlantIdRef.current !== PLANT_ID || prevYearRef.current !== AOP_YEAR)) {
-      getPlantList();
-      prevPlantIdRef.current = PLANT_ID;
-      prevYearRef.current = AOP_YEAR;
+    if (
+      PLANT_ID &&
+      AOP_YEAR &&
+      (prevPlantIdRef.current !== PLANT_ID || prevYearRef.current !== AOP_YEAR)
+    ) {
+      getPlantList()
+      prevPlantIdRef.current = PLANT_ID
+      prevYearRef.current = AOP_YEAR
     }
-  }, [PLANT_ID, AOP_YEAR]);
+  }, [PLANT_ID, AOP_YEAR])
 
   const getPlantList = async () => {
-    console.log("calledddd");
-    
-    setLoading(true)  
+    console.log('calledddd')
+
+    setLoading(true)
     try {
       const res = await InputApiService.getPlantList(
         keycloak,

@@ -12,7 +12,10 @@ const ShutdownAndOperational = () => {
   const [powerData, setPowerData] = useState([])
   const [steamData, setSteamData] = useState([])
   const [snackbarOpen, setSnackbarOpen] = useState(false)
-  const [snackbarData, setSnackbarData] = useState({ message: '', severity: '' })
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: '',
+  })
   const [loading, setLoading] = useState(false)
 
   const keycloak = useSession()
@@ -61,7 +64,7 @@ const ShutdownAndOperational = () => {
   }, [keycloak, PLANT_ID, AOP_YEAR])
 
   useEffect(() => {
-    if (AOP_YEAR && (PLANT_ID) && hoursRows.length) {
+    if (AOP_YEAR && PLANT_ID && hoursRows.length) {
       fetchData()
     }
   }, [AOP_YEAR, PLANT_ID, hoursRows, fetchData])
@@ -102,4 +105,3 @@ const ShutdownAndOperational = () => {
 }
 
 export default ShutdownAndOperational
-

@@ -92,7 +92,7 @@ const InputsDMD = () => {
         id: 'prices',
         name: 'prices',
         displayName: 'Prices',
-        displaySequence: 8
+        displaySequence: 8,
       },
     ]
     setTabObj(tabs)
@@ -208,4 +208,3 @@ const InputsDMD = () => {
 }
 
 export default InputsDMD
-

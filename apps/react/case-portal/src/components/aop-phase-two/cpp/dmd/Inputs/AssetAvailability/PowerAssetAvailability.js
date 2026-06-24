@@ -10,7 +10,11 @@ import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const PowerAssetAvailability = ({ initialRows = [], onRefresh, externalLoading = false }) => {
+const PowerAssetAvailability = ({
+  initialRows = [],
+  onRefresh,
+  externalLoading = false,
+}) => {
   const keycloak = useSession()
   // State management
 
@@ -41,7 +45,7 @@ const PowerAssetAvailability = ({ initialRows = [], onRefresh, externalLoading =
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Asset_Priority')
 
-  const PLANT_ID_LIST = plantObject?.id;
+  const PLANT_ID_LIST = plantObject?.id
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
 
@@ -414,7 +418,7 @@ const PowerAssetAvailability = ({ initialRows = [], onRefresh, externalLoading =
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => { }}
+        setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}

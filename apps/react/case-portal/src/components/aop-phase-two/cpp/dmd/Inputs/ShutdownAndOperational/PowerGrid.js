@@ -16,7 +16,17 @@ import {
 } from './utils'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const PowerGrid = ({ hoursRows = [], powerData = [], refreshData, snackbarOpen, snackbarData, setSnackbarOpen, setSnackbarData, loading, setLoading }) => {
+const PowerGrid = ({
+  hoursRows = [],
+  powerData = [],
+  refreshData,
+  snackbarOpen,
+  snackbarData,
+  setSnackbarOpen,
+  setSnackbarData,
+  loading,
+  setLoading,
+}) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -27,7 +37,7 @@ const PowerGrid = ({ hoursRows = [], powerData = [], refreshData, snackbarOpen, 
     verticalObject,
     siteObject,
   } = dataGridStore
-  const PLANT_ID = plantObject?.id;
+  const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Power_Operational_HRS')
 
@@ -478,14 +488,9 @@ const PowerGrid = ({ hoursRows = [], powerData = [], refreshData, snackbarOpen, 
     const gridFormatData = modifiedData.map(({ inEdit, ...rest }) => rest)
     const apiFormatData = transformGridFormatToApiFormat(gridFormatData)
     try {
-      await InputApiService.saveOperationHours(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        {
-          powerResponse: apiFormatData,
-        },
-      )
+      await InputApiService.saveOperationHours(keycloak, PLANT_ID, AOP_YEAR, {
+        powerResponse: apiFormatData,
+      })
       setModifiedCells({})
       setSnackbarOpen(true)
       setSnackbarData({

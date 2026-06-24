@@ -191,6 +191,7 @@ const Inputs = () => {
     switch (lowerSiteName) {
       case 'jmd':
         return <InputsJMD />
+      case 'hmd':
       case 'dmd':
         return <InputsDMD />
       // case 'hmd':

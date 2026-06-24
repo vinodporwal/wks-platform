@@ -16,11 +16,21 @@ import {
 } from './utils'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const STGGrid = ({ hoursRows = [], steamData = [], refreshData, snackbarOpen, snackbarData, setSnackbarOpen, setSnackbarData, loading, setLoading }) => {
+const STGGrid = ({
+  hoursRows = [],
+  steamData = [],
+  refreshData,
+  snackbarOpen,
+  snackbarData,
+  setSnackbarOpen,
+  setSnackbarData,
+  loading,
+  setLoading,
+}) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year, screenTitle, jmdSelectedPlants } = dataGridStore
-  const PLANT_ID = plantObject?.id;
+  const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Steam_Operational_HRS')
   // const PLANT_ID_LIST = useMemo(
@@ -462,14 +472,9 @@ const STGGrid = ({ hoursRows = [], steamData = [], refreshData, snackbarOpen, sn
     const gridFormatData = modifiedData.map(({ inEdit, ...rest }) => rest)
     const apiFormatData = transformGridFormatToApiFormat(gridFormatData)
     try {
-      await InputApiService.saveOperationHours(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        {
-          steamResponse: apiFormatData,
-        },
-      )
+      await InputApiService.saveOperationHours(keycloak, PLANT_ID, AOP_YEAR, {
+        steamResponse: apiFormatData,
+      })
       setModifiedCells({})
       setSnackbarOpen(true)
       setSnackbarData({

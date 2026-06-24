@@ -17,7 +17,6 @@ const AssetAvailability = () => {
   const [powerRows, setPowerRows] = useState([])
   const [steamRows, setSteamRows] = useState([])
   const [loading, setLoading] = useState(false)
-  
 
   const fetchAssetPriorityData = useCallback(async () => {
     if (!PLANT_ID_LIST || !AOP_YEAR) return
