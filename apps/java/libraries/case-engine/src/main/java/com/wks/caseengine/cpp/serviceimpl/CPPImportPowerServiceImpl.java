@@ -1,11 +1,20 @@
 package com.wks.caseengine.cpp.serviceimpl;
 
 import com.wks.caseengine.cpp.dto.CPPImportPowerProjection;
+import com.wks.caseengine.cpp.dto.CPPImportPowerResponseDTO;
+import com.wks.caseengine.cpp.dto.ImportProcurementPlantProjection;
 import com.wks.caseengine.cpp.entity.CPPImportPower;
 import com.wks.caseengine.cpp.repository.CPPImportPowerRepository;
 import com.wks.caseengine.cpp.service.CPPImportPowerService;
-import com.wks.caseengine.dto.CPPImportPowerResponseDTO;
+import com.wks.caseengine.dto.AddImportPowerSourceRequestDTO;
+import com.wks.caseengine.dto.ImportPowerProcurementPlantDTO;
+import com.wks.caseengine.dto.ImportPowerSourceDTO;
+import com.wks.caseengine.dto.UpdateImportPowerSourceRequestDTO;
+import com.wks.caseengine.entity.NormParameters;
+import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.NormParametersRepository;
+import com.wks.caseengine.repository.PlantsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +29,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -36,6 +47,12 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
 
     @Autowired
     private CPPImportPowerRepository repository;
+
+    @Autowired
+    private NormParametersRepository normParametersRepository;
+
+    @Autowired
+    private PlantsRepository plantsRepository;
 
     @Override
     public AOPMessageVM getImportedPowerPlans(List<UUID> plantIds, String aopYear) {
@@ -75,6 +92,7 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
         dto.setPlantName(projection.getPlantName());
         dto.setUtility(projection.getUtility());
         dto.setMaterial(projection.getMaterial());
+        dto.setMaterialDisplayName(projection.getMaterialDisplayName());
         dto.setUom(projection.getUom());
 
         dto.setApr(projection.getApr());
@@ -897,5 +915,307 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
             }
         }
         return null;
+    }
+
+    // ========================================
+    // ADD IMPORT POWER SOURCE
+    // ========================================
+
+    @Override
+    @Transactional
+    public AOPMessageVM addImportPowerSource(AddImportPowerSourceRequestDTO request) {
+        logger.info("[ADD Source] Adding import power source for CPP plant: {}, procurement plant: {}",
+                request.getCppPlant(), request.getProcurementPlant());
+
+        AOPMessageVM response = new AOPMessageVM();
+
+        try {
+            // --- Validation ---
+            if (request.getCppPlant() == null) {
+                response.setCode(400);
+                response.setMessage("cppPlant is required");
+                return response;
+            }
+            if (request.getProcurementPlant() == null) {
+                response.setCode(400);
+                response.setMessage("procurementPlant is required");
+                return response;
+            }
+            if (request.getName() == null || request.getName().isBlank()) {
+                response.setCode(400);
+                response.setMessage("name is required");
+                return response;
+            }
+            if (request.getAopYear() == null || request.getAopYear().isBlank()) {
+                response.setCode(400);
+                response.setMessage("aopYear is required");
+                return response;
+            }
+
+            // --- Step 1: Fetch CPP plant to get Site_FK_Id and Vertical_FK_Id ---
+            Optional<Plants> cppPlantOpt = plantsRepository.findById(request.getCppPlant());
+            if (cppPlantOpt.isEmpty()) {
+                response.setCode(404);
+                response.setMessage("CPP plant not found: " + request.getCppPlant());
+                return response;
+            }
+            Plants cppPlant = cppPlantOpt.get();
+            UUID siteFkId     = cppPlant.getSiteFkId();
+            UUID verticalFkId = cppPlant.getVerticalFKId();
+            logger.info("[ADD Source] Resolved site={}, vertical={} from CPP plant {}",
+                    siteFkId, verticalFkId, request.getCppPlant());
+
+            // --- Step 2: Create NormParameters entry ---
+            NormParameters norm = new NormParameters();
+            norm.setName(request.getName());
+            norm.setDisplayName(request.getDisplayName() != null ? request.getDisplayName() : request.getName());
+            norm.setUom(request.getUom());
+            norm.setSapMaterialCode(request.getSapCode());
+            norm.setType("Imported Power");
+            // Plant_FK_Id = procurement plant (mirrors existing NormParameters data pattern)
+            norm.setPlantFkId(request.getProcurementPlant());
+            // Fixed constants mirroring existing POWER import records in NormParameters
+            norm.setNormParameterTypeFkId(UUID.fromString("E9C9FCFB-C5C6-49D6-8017-6D1E4C46868E"));
+            norm.setNormTypeFKId(2);
+            norm.setIsVisible(true);
+            norm.setIsEditable(true);
+
+            NormParameters savedNorm = normParametersRepository.save(norm);
+            logger.info("[ADD Source] NormParameters created with Id: {}", savedNorm.getId());
+
+            // --- Step 3: Create CPPImportPower entry ---
+            CPPImportPower importPower = new CPPImportPower();
+            importPower.setNormParameterFkId(savedNorm.getId());
+            importPower.setImportPlantFkId(request.getProcurementPlant());
+            importPower.setCppPlantFkId(request.getCppPlant());
+            importPower.setSiteFkId(siteFkId);
+            importPower.setVerticalFkId(verticalFkId);
+            importPower.setAopYear(request.getAopYear());
+            importPower.setCreatedDate(LocalDateTime.now());
+            importPower.setUpdatedDate(LocalDateTime.now());
+            // All monthly values default to 0
+            BigDecimal zero = BigDecimal.ZERO;
+            importPower.setApr(zero); importPower.setMay(zero); importPower.setJun(zero);
+            importPower.setJul(zero); importPower.setAug(zero); importPower.setSep(zero);
+            importPower.setOct(zero); importPower.setNov(zero); importPower.setDec(zero);
+            importPower.setJan(zero); importPower.setFeb(zero); importPower.setMar(zero);
+
+            CPPImportPower savedImportPower = repository.save(importPower);
+            logger.info("[ADD Source] CPPImportPower created with Id: {}", savedImportPower.getId());
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("normParameterId", savedNorm.getId());
+            data.put("importPowerId", savedImportPower.getId());
+
+            response.setCode(200);
+            response.setMessage("Import power source added successfully");
+            response.setData(data);
+
+        } catch (Exception e) {
+            logger.error("[ADD Source] Error adding import power source: {}", e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Failed to add import power source: " + e.getMessage());
+            response.setData(null);
+        }
+
+        return response;
+    }
+
+    // ========================================
+    // UPDATE IMPORT POWER SOURCE
+    // ========================================
+
+    @Override
+    @Transactional
+    public AOPMessageVM updateImportPowerSource(UUID normParameterId, UpdateImportPowerSourceRequestDTO request) {
+        logger.info("[UPDATE Source] normParameterId={}, procurementPlant={}", normParameterId, request.getProcurementPlant());
+
+        AOPMessageVM response = new AOPMessageVM();
+
+        try {
+            if (normParameterId == null) {
+                response.setCode(400);
+                response.setMessage("normParameterId is required");
+                return response;
+            }
+            if (request.getProcurementPlant() == null) {
+                response.setCode(400);
+                response.setMessage("procurementPlant is required");
+                return response;
+            }
+
+            Optional<NormParameters> normOpt = normParametersRepository.findById(normParameterId);
+            if (normOpt.isEmpty()) {
+                response.setCode(404);
+                response.setMessage("NormParameter not found: " + normParameterId);
+                return response;
+            }
+
+            NormParameters norm = normOpt.get();
+
+            // Guard: ensure the record belongs to the given procurement plant
+            if (!request.getProcurementPlant().equals(norm.getPlantFkId())) {
+                response.setCode(403);
+                response.setMessage("NormParameter does not belong to the supplied procurementPlant");
+                return response;
+            }
+
+            // Apply only editable fields — Plant_FK_Id is intentionally NOT changed
+            if (request.getName() != null && !request.getName().isBlank()) {
+                norm.setName(request.getName());
+            }
+            if (request.getDisplayName() != null && !request.getDisplayName().isBlank()) {
+                norm.setDisplayName(request.getDisplayName());
+            }
+            if (request.getUom() != null) {
+                norm.setUom(request.getUom());
+            }
+            if (request.getSapCode() != null) {
+                norm.setSapMaterialCode(request.getSapCode());
+            }
+
+            NormParameters saved = normParametersRepository.save(norm);
+            logger.info("[UPDATE Source] NormParameters {} updated successfully", saved.getId());
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("normParameterId", saved.getId());
+            data.put("name", saved.getName());
+            data.put("displayName", saved.getDisplayName());
+            data.put("uom", saved.getUom());
+            data.put("sapCode", saved.getSapMaterialCode());
+
+            response.setCode(200);
+            response.setMessage("Import power source updated successfully");
+            response.setData(data);
+
+        } catch (Exception e) {
+            logger.error("[UPDATE Source] Error: {}", e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Failed to update import power source: " + e.getMessage());
+        }
+
+        return response;
+    }
+
+    // ========================================
+    // DELETE (SOFT) IMPORT POWER SOURCE
+    // ========================================
+
+    @Override
+    @Transactional
+    public AOPMessageVM deleteImportPowerSource(UUID normParameterId, UUID procurementPlant) {
+        logger.info("[DELETE Source] Soft-deleting normParameterId={}, procurementPlant={}",
+                normParameterId, procurementPlant);
+
+        AOPMessageVM response = new AOPMessageVM();
+
+        try {
+            if (normParameterId == null) {
+                response.setCode(400);
+                response.setMessage("normParameterId is required");
+                return response;
+            }
+            if (procurementPlant == null) {
+                response.setCode(400);
+                response.setMessage("procurementPlant is required");
+                return response;
+            }
+
+            Optional<NormParameters> normOpt = normParametersRepository.findById(normParameterId);
+            if (normOpt.isEmpty()) {
+                response.setCode(404);
+                response.setMessage("NormParameter not found: " + normParameterId);
+                return response;
+            }
+
+            NormParameters norm = normOpt.get();
+
+            // Guard: ensure the record belongs to the given procurement plant
+            if (!procurementPlant.equals(norm.getPlantFkId())) {
+                response.setCode(403);
+                response.setMessage("NormParameter does not belong to the supplied procurementPlant");
+                return response;
+            }
+
+            // Soft-delete: set isVisible = false (isVisible = 0 in DB)
+            norm.setIsVisible(false);
+            normParametersRepository.save(norm);
+            logger.info("[DELETE Source] NormParameters {} marked as not visible", normParameterId);
+
+            response.setCode(200);
+            response.setMessage("Import power source deleted successfully (soft delete)");
+
+        } catch (Exception e) {
+            logger.error("[DELETE Source] Error: {}", e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Failed to delete import power source: " + e.getMessage());
+        }
+
+        return response;
+    }
+
+    // ========================================
+    // GET IMPORT PROCUREMENT PLANTS WITH SOURCES
+    // ========================================
+
+    @Override
+    public AOPMessageVM getImportProcurementPlants(UUID cppPlantId) {
+        logger.info("[GET Procurement Plants] cppPlantId={}", cppPlantId);
+
+        AOPMessageVM response = new AOPMessageVM();
+
+        try {
+            if (cppPlantId == null) {
+                response.setCode(400);
+                response.setMessage("cppPlantId is required");
+                return response;
+            }
+
+            // Fetch flat rows from DB: one row per (procurementPlant, normParameter)
+            List<ImportProcurementPlantProjection> rows =
+                    repository.getProcurementPlantsWithSources(cppPlantId);
+
+            // Group flat rows into nested DTOs: one entry per procurement plant
+            Map<UUID, ImportPowerProcurementPlantDTO> plantMap = new LinkedHashMap<>();
+
+            for (ImportProcurementPlantProjection row : rows) {
+                UUID plantId = row.getProcurementPlantId();
+
+                // Create the plant entry if not yet seen
+                ImportPowerProcurementPlantDTO plantDTO = plantMap.computeIfAbsent(plantId, id -> {
+                    ImportPowerProcurementPlantDTO dto = new ImportPowerProcurementPlantDTO();
+                    dto.setProcurementPlantId(plantId);
+                    dto.setName(row.getPlantName());
+                    dto.setCppPlantId(row.getCppPlantId());
+                    return dto;
+                });
+
+                // Append source if a NormParameter row is present (LEFT JOIN may give nulls)
+                if (row.getNormParameterId() != null) {
+                    ImportPowerSourceDTO source = new ImportPowerSourceDTO();
+                    source.setNormParameterId(row.getNormParameterId());
+                    source.setName(row.getNormName());
+                    source.setDisplayName(row.getNormDisplayName());
+                    source.setSapCode(row.getSapCode());
+                    source.setUom(row.getUom());
+                    plantDTO.getSources().add(source);
+                }
+            }
+
+            List<ImportPowerProcurementPlantDTO> result = new ArrayList<>(plantMap.values());
+            logger.info("[GET Procurement Plants] Found {} procurement plant(s) for cppPlantId={}",
+                    result.size(), cppPlantId);
+
+            response.setCode(200);
+            response.setMessage("Procurement plants fetched successfully");
+            response.setData(result);
+
+        } catch (Exception e) {
+            logger.error("[GET Procurement Plants] Error: {}", e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Failed to fetch procurement plants: " + e.getMessage());
+        }
+
+        return response;
     }
 }

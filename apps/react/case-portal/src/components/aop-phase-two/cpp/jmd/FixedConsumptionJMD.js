@@ -334,6 +334,7 @@ const FixedConsumptionJMD = () => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+      await fetchFixedConsumptionData()
     } catch (error) {
       console.error('Error saving fixed consumption data:', error)
       setSnackbarOpen(true)

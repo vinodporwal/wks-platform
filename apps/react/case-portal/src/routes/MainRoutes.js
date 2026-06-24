@@ -144,6 +144,8 @@ import CausticSodaLyeBasis from 'components/data-tables/Reports/CausticSodaLyeBa
 import MaterialBalance from 'components/kendo-data-tables/MaterialBalance'
 import CatalystChecmicalsCalculation from 'components/kendo-data-tables/CatalystChecmicalsCalculation'
 import CausticSodaLyeBasisCatChem from 'components/data-tables/Reports/CausticSodaLyeBasisCatChem'
+import MaterialGroupedSelection from 'components/kendo-data-tables/MaterialGroupedSelection'
+
 // Vertical MEROX
 import SteadyStateConsumptionMerox from 'components/aop-phase-two/merox/steady-state-consumption'
 import OverallAopConsumptionMerox from 'components/aop-phase-two/merox/overall-aop-consumption'
@@ -627,6 +629,15 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='overall-aop-consumption'>
                 <OverallAopConsumption />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'material-grouped-selection',
+            element: (
+              <PrivateRoute routeId='material-grouped-selection'>
+                <MaterialGroupedSelection />
               </PrivateRoute>
             ),
           },

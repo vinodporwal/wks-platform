@@ -14,6 +14,7 @@ import AopDesignBasis from './AopDesignBasis'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AopTabs from 'components/AopTabs'
 import AssetAvailability from './AssetAvailability/index'
+import FuelPriority from './FuelPriority/index'
 
 const InputsJMD = () => {
   const keycloak = useSession()
@@ -86,6 +87,12 @@ const InputsJMD = () => {
         name: 'fuelAvailability',
         displayName: 'Fuel Availability',
         displaySequence: 7,
+      },
+      {
+        id: 'fuel-priority',
+        name: 'fuelPriority',
+        displayName: 'Fuel Priority',
+        displaySequence: 8,
       },
       // { id: 'export-availability',name:'exportAvailability', displayName: 'Export Availability', displaySequence: 6 },
     ]
@@ -165,6 +172,8 @@ const InputsJMD = () => {
         return <FixedNorms />
       case 'fuel-availability':
         return <Fuel />
+      case 'fuel-priority':
+        return <FuelPriority />
       default:
         return null
     }

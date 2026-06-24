@@ -1,6 +1,6 @@
 package com.wks.caseengine.cpp.service;
 
-import com.wks.caseengine.dto.AssetCapacityRequestDTO;
+import com.wks.caseengine.cpp.dto.AssetCapacityRequestDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import org.springframework.web.multipart.MultipartFile;
 
