@@ -278,7 +278,7 @@ const GradeMixOptimizer = ({ permissions }) => {
       downloadExcelBtn: false,
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
-      titleName: 'Grade Mix Optimizer',
+      titleName: 'Constant',
 
       uploadExcelBtn: false,
     },

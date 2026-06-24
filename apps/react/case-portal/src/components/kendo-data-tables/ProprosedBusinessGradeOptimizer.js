@@ -22,7 +22,14 @@ const CalculatedBusinessProposed = ({
   const screenName = 'Calculated Proposed Business Demand'
   const [modifiedCells, setModifiedCells] = React.useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { yearChanged, oldYear, plantObject, year } = dataGridStore
+  const {
+    yearChanged,
+    oldYear,
+    plantObject,
+    year,
+    siteObject,
+    verticalObject,
+  } = dataGridStore
 
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
@@ -48,7 +55,9 @@ const CalculatedBusinessProposed = ({
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-
+  const PLANT_NAME = plantObject?.name?.toUpperCase()
+  const SITE_NAME = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME = verticalObject?.name?.toUpperCase()
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remarks || '')
@@ -260,6 +269,8 @@ const CalculatedBusinessProposed = ({
       showTitleNameBusiness: true,
       titleName: screenName,
       uploadExcelBtn: false,
+      downloadExcelBtnFromUI: true,
+      ExcelName: `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}_${screenName}`,
     },
     isOldYear,
   )
