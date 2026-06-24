@@ -112,6 +112,8 @@ const ProductionvolumeData = ({
     siteObject?.name?.toLowerCase() == 'vmd'
   const IS_VCM_DMD_VCM = IS_VCM && SITE_NAME == 'dmd' && PLANT_NAME == 'vcm'
   const IS_AROMATICS_DTA = VERTICAL_NAME === 'aromatics' && SITE_NAME === 'dta'
+  const IS_AROMATICS_HMD = VERTICAL_NAME === 'aromatics' && SITE_NAME === 'hmd'
+  const IS_AROMATICS_PMD = VERTICAL_NAME === 'aromatics' && SITE_NAME === 'pmd'
   const IS_ELASTOMER_JMD = VERTICAL_NAME === 'elastomer' && SITE_NAME === 'jmd'
   // Check if it's PP VERTICAL | DTA SITE
   const IS_PP_DTA = VERTICAL_NAME === 'pp' && SITE_NAME === 'dta'
@@ -678,7 +680,10 @@ const ProductionvolumeData = ({
         ...item,
         remarks: item.remarks ? item.remarks.trim() : '',
       }))
-      setRowsPercentageSummary(nonEditableRows)
+      // For AROMATICS_HMD/PMD, percentage summary is based on MAX_ACHIEVED_CAPACITY (set in fetchMaxCapacityData)
+      if (!IS_AROMATICS_HMD && !IS_AROMATICS_PMD) {
+        setRowsPercentageSummary(nonEditableRows)
+      }
       setRows(formattedData)
       setRowsFormattedAndNonEditable(formattedDataNONEDITABLE)
       setLoading(false)
@@ -1046,6 +1051,15 @@ const ProductionvolumeData = ({
           isEditable: false,
         }))
         setRowsMaxCapacity(formatted)
+
+        // For AROMATICS_HMD/PMD, compute PERCENTAGE_SUMMARY from MAX_ACHIEVED_CAPACITY
+        if (IS_AROMATICS_HMD || IS_AROMATICS_PMD) {
+          const percentageFromMax = normalizeAllRows(formatted).map((item) => ({
+            ...item,
+            isEditable: false,
+          }))
+          setRowsPercentageSummary(percentageFromMax)
+        }
       } else {
         setRowsMaxCapacity([])
       }
