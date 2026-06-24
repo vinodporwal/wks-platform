@@ -345,7 +345,7 @@ const defs = {
         materialBalance: 'Material Balance',
         etheleneStock: 'Ethylene Stock in Cryo Tank',
         plantAOPReport: 'Plant AOP Report',
-        materialGroupedSelection: 'Grouped Selection',
+        materialGroupedSelection: 'Material Grouped Selection',
       },
     },
   },
