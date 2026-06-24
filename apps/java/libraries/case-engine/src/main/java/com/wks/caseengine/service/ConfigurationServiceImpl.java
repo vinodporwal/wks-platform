@@ -362,6 +362,184 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		return null;
 
 	}
+
+	@Override
+	public byte[] createManualEntryExcel(String year, UUID plantFKId, boolean isAfterSave, List<ConfigurationDTO> dtoList) {
+		try {
+			
+			if (!isAfterSave) {
+				dtoList = (List<ConfigurationDTO>) getConfigurationData(year, plantFKId,null).getData();
+			}
+			
+			List<Boolean> isEditable = new ArrayList<>();
+
+			Workbook workbook = new XSSFWorkbook();
+			Sheet sheet = workbook.createSheet("Sheet1");
+			int currentRow = 0;
+
+			List<List<Object>> rows = new ArrayList<>();
+				CellStyle lockedStyle = workbook.createCellStyle();
+				lockedStyle.setLocked(true);
+				lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+				lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+				CellStyle unlockedStyle = workbook.createCellStyle();
+				unlockedStyle.setLocked(false);
+				sheet.setDefaultColumnStyle(1, unlockedStyle);
+
+		for (ConfigurationDTO dto : dtoList) {
+			List<Object> list = new ArrayList<>();
+
+			list.add(dto.getConfigTypeDisplayName());
+			list.add(dto.getProductName());
+			list.add(dto.getUOM());
+			list.add(dto.getApr());
+		list.add(dto.getRemarks());
+
+			list.add(dto.getNormParameterFKId());
+			list.add(dto.getId());
+			isEditable.add(dto.getIsEditable());
+			
+			if (isAfterSave) {
+				list.add(dto.getSaveStatus());
+				list.add(dto.getErrDescription());
+			}
+				rows.add(list);
+			}
+
+		List<String> innerHeaders = new ArrayList<>();
+		
+		innerHeaders.add("Category");
+		innerHeaders.add("Particulars");
+		innerHeaders.add("UOM");
+		innerHeaders.add("Value");
+		innerHeaders.add("Remarks");
+
+		innerHeaders.add("NormParameterId");
+		innerHeaders.add("Id");
+
+		if (isAfterSave) {
+				innerHeaders.add("Status");
+				innerHeaders.add("Error Description");
+			}
+
+			List<List<String>> headers = new ArrayList<>();
+			headers.add(innerHeaders);
+
+			for (List<String> headerRowData : headers) {
+				Row headerRow = sheet.createRow(currentRow++);
+
+				for (int col = 0; col < headerRowData.size(); col++) {
+					Cell cell = headerRow.createCell(col);
+					cell.setCellValue(headerRowData.get(col));
+					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+				}
+			}
+			for (List<Object> rowData : rows) {
+				boolean isRowEditable = true;
+				if (isEditable.get(currentRow - 1) != null) {
+					isRowEditable = isEditable.get(currentRow - 1);
+				}
+
+				Row row = sheet.createRow(currentRow++);
+				for (int col = 0; col < rowData.size(); col++) {
+					Cell cell = row.createCell(col);
+					Object value = rowData.get(col);
+
+					if (value instanceof Number) {
+						cell.setCellValue(((Number) value).doubleValue()); 
+					} else if (value instanceof Boolean) {
+						cell.setCellValue((Boolean) value);
+					} else if (value != null) {
+						cell.setCellValue(value.toString());
+					} else {
+						cell.setCellValue("");
+					}
+					if (isRowEditable) {
+						cell.setCellStyle(unlockedStyle);
+					} else {
+						cell.setCellStyle(lockedStyle);
+					}
+
+				}
+			}
+
+		boolean hasCategory = true;
+		int remarkColIndex = 4;
+		int totalCols = innerHeaders.size();
+
+		
+		CellStyle wrapUnlockedStyle = workbook.createCellStyle();
+		wrapUnlockedStyle.setWrapText(true);
+		wrapUnlockedStyle.setVerticalAlignment(VerticalAlignment.TOP);
+		wrapUnlockedStyle.setLocked(false);
+
+		CellStyle wrapLockedStyle = workbook.createCellStyle();
+		wrapLockedStyle.setWrapText(true);
+		wrapLockedStyle.setVerticalAlignment(VerticalAlignment.TOP);
+		wrapLockedStyle.setLocked(true);
+		wrapLockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+		wrapLockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+		// Fixed preferred width for remarks column (~50 characters × 256 units)
+		final int REMARK_CHARS = 50;
+		sheet.setColumnWidth(remarkColIndex, REMARK_CHARS * 256);
+
+		// Apply wrap style to every data cell in remarks column and adjust row height
+		for (int rowIdx = 1; rowIdx < currentRow; rowIdx++) {
+			Row row = sheet.getRow(rowIdx);
+			if (row == null) continue;
+			Cell cell = row.getCell(remarkColIndex);
+			if (cell != null) {
+				boolean editable = isEditable.get(rowIdx - 1) == null || isEditable.get(rowIdx - 1);
+				cell.setCellStyle(editable ? wrapUnlockedStyle : wrapLockedStyle);
+				String cellValue = cell.getStringCellValue();
+				if (cellValue != null && !cellValue.isEmpty()) {
+					// Count wrapped lines: explicit newlines + lines that exceed column width
+					long explicitLines = cellValue.chars().filter(c -> c == '\n').count() + 1;
+					long wrappedLines = (long) Math.ceil((double) cellValue.length() / REMARK_CHARS);
+					int numLines = (int) Math.max(explicitLines, wrappedLines);
+					float neededHeight = numLines * 15.0f; // ~15pt per line
+					if (row.getHeightInPoints() < neededHeight) {
+						row.setHeightInPoints(neededHeight);
+					}
+				}
+			}
+		}
+
+		// Auto-size all columns based on content, skip the fixed-width remarks column
+		for (int col = 0; col < totalCols; col++) {
+			if (col != remarkColIndex) {
+				sheet.autoSizeColumn(col);
+			}
+		}
+
+	if (hasCategory) {
+		sheet.setColumnHidden(5, true);
+		sheet.setColumnHidden(6, true);
+	} else {
+		sheet.setColumnHidden(4, true);
+		sheet.setColumnHidden(5, true);
+	}
+
+		try {
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	} catch (Exception e) {
+		e.printStackTrace();
+	}
+	System.out.println("Ended the createExcel");
+	return null;
+
+	}
+	
 	
 	String getLastYear(String year) {
 		String startYearStr = year.split("-")[0];
@@ -2999,6 +3177,89 @@ continue;
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
+	}
+
+	@Override
+	public AOPMessageVM importManualEntryExcel(String year, UUID plantFKId, MultipartFile file) {
+		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+			throw new IllegalArgumentException("Invalid or empty Excel file.");
+		}
+		try {
+			
+			List<ConfigurationDTO> data = readManualEntryConfigurations(file.getInputStream(), plantFKId, year);
+			
+			List<ConfigurationDTO> failedRecords = saveConfigurationData(year, plantFKId.toString(), null, data, null, false);
+		
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (failedRecords != null && failedRecords.size() > 0) {
+				byte[] fileByteArray = createManualEntryExcel(year, plantFKId, true, failedRecords);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to import manual entry data", ex);
+		}
+	}
+
+	public List<ConfigurationDTO> readManualEntryConfigurations(InputStream inputStream, UUID plantFKId, String year) {
+		List<ConfigurationDTO> configList = new ArrayList<>();
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+
+			if (rowIterator.hasNext())
+				rowIterator.next(); // Skip header
+
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+				ConfigurationDTO dto = new ConfigurationDTO();
+				try {
+					// Col 0: Category
+					dto.setConfigTypeDisplayName(getStringCellValue(row.getCell(0), dto));
+					// Col 1: Particulars
+					dto.setProductName(getStringCellValue(row.getCell(1), dto));
+					// Col 2: UOM
+					dto.setUOM(getStringCellValue(row.getCell(2), dto));
+					dto.setAuditYear(year);
+					// Col 3: Value — apply to all months
+					Double value = getNumericCellValue(row.getCell(3), dto);
+					dto.setApr(value);
+					dto.setMay(value);
+					dto.setJun(value);
+					dto.setJul(value);
+					dto.setAug(value);
+					dto.setSep(value);
+					dto.setOct(value);
+					dto.setNov(value);
+					dto.setDec(value);
+					dto.setJan(value);
+					dto.setFeb(value);
+					dto.setMar(value);
+					// Col 4: Remarks
+					dto.setRemarks(getStringCellValue(row.getCell(4), dto));
+					// Col 5: NormParameterId (hidden)
+					dto.setNormParameterFKId(getStringCellValue(row.getCell(5), dto));
+					// Col 6: Id (hidden)
+					dto.setId(getStringCellValue(row.getCell(6), dto));
+				} catch (Exception e) {
+					e.printStackTrace();
+					dto.setErrDescription(e.getMessage());
+					dto.setSaveStatus("Failed");
+				}
+				configList.add(dto);
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to read manual entry data", e);
+		}
+		return configList;
 	}
 
 	public List<ConfigurationDTO> readConfigurations(InputStream inputStream, UUID plantFKId, String year) {

@@ -23,7 +23,7 @@ const INITIAL_FORM_DATA = {
   name: '',
   displayName: '',
   sapCode: '',
-  uom: '',
+  uom: 'MW',
 }
 
 const INITIAL_FORM_ERROR = {
