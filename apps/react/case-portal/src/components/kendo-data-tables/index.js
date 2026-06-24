@@ -11,6 +11,7 @@ import Notification from 'components/Utilities/Notification'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import PropaneDropdown from './Utilities-Kendo/PropaneDropdown'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
+import PublishIcon from '@mui/icons-material/Publish';
 import { useSelector } from 'react-redux'
 import YearDropdownEditor from './Utilities-Kendo/YearDropdownEditor'
 import CloseIcon from '@mui/icons-material/Close'
@@ -2654,6 +2655,7 @@ const KendoDataTables = ({
                   className='btn-save'
                   disabled={isReleaseDisabled || READ_ONLY}
                   onClick={handleRelease}
+                  startIcon={<PublishIcon sx={{ color: '#4A4DDA' }} />}
                 >
                   Release
                 </Button>
