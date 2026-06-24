@@ -323,6 +323,15 @@ async function createdSaveCase(keycloak, body) {
 async function saveCase(keycloak, body) {
   const url = `${Config.CaseEngineUrl}/case-definition/save-case`
 
+  const hardcodedOwner = {
+    id: '417136bb-d82a-4ae3-98b5-4bfc3ccbf07d',
+    name: 'demo demo',
+    email: 'demo@demo.com',
+  }
+
+  const parsedBody = typeof body === 'string' ? JSON.parse(body) : body
+  const bodyWithOwner = JSON.stringify({ ...parsedBody, owner: hardcodedOwner })
+
   try {
     //const bodyWithDates = {...body, lastUpdated: moment().toISOString()}; 
     const resp = await fetch(url, {
@@ -332,8 +341,7 @@ async function saveCase(keycloak, body) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${keycloak.token}`,
       },
-     // body: bodyWithDates,
-      body: body,
+      body: bodyWithOwner,
     })
     return json(keycloak, resp)
   } catch (err) {
