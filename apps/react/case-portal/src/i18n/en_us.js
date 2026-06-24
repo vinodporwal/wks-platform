@@ -131,8 +131,7 @@ const defs = {
     // causticSodaLyeBasis: 'Caustic Soda Lye Norms',
     causticSodaLyeBasisCatChem: 'Cat-Chem Calculation Dataset',
     plantAOPReport: 'Plant AOP Report',
-
-    //NEW SCREEN
+    gradeMixOptimizer: 'Grade Mix Optimizer',  
     materialGroupedSelection: 'Grouped Selection',
   },
   pages: {
@@ -346,6 +345,7 @@ const defs = {
         etheleneStock: 'Ethylene Stock in Cryo Tank',
         plantAOPReport: 'Plant AOP Report',
         materialGroupedSelection: 'Material Grouped Selection',
+        gradeMixOptimizer: 'Grade Mix Optimizer',
       },
     },
   },
