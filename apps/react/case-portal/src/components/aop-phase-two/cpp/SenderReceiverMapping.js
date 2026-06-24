@@ -366,7 +366,6 @@ const SenderReceiverMapping = () => {
     downloadExcelBtnFromUI: false,
     ExcelName: 'Sender Receiver Mapping',
     showImport: false,
-    downloadExcelBtnFromUI: false,
     showTitleNameBusiness: true,
     showTitle: true,
     titleName:
@@ -560,6 +559,7 @@ const SenderReceiverMapping = () => {
                 ...row,
                 senderPlantId: value,
                 senderPlantCode: plantCode,
+                senderPlantName: selectedPlant?.label || '',
               }
             : row,
         ),
@@ -579,6 +579,7 @@ const SenderReceiverMapping = () => {
                 ...row,
                 receiverPlantId: value,
                 receiverPlantCode: plantCode,
+                receiverPlantName: selectedPlant?.label || '',
               }
             : row,
         ),
