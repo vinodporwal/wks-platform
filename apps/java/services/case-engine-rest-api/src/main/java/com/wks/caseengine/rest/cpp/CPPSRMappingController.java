@@ -94,9 +94,10 @@ public class CPPSRMappingController {
      */
     @PutMapping("/sr-mapping/by-plant")
     public ResponseEntity<AOPMessageVM> updateSRMappingsByPlant(
-            @RequestBody List<SRMappingDTO> dtoList) {
+            @RequestBody List<SRMappingDTO> dtoList,
+            @RequestParam(required = false) String financialYear) {
 
-        AOPMessageVM response = service.updateSRMappingsByPlant(dtoList);
+        AOPMessageVM response = service.updateSRMappingsByPlant(dtoList, financialYear);
         int httpStatus = (response != null && response.getCode() == 200) ? 200 : 500;
         return ResponseEntity.status(httpStatus).body(response);
     }
