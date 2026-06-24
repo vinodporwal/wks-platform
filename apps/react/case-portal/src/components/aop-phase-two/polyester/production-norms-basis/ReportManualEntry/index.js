@@ -340,8 +340,6 @@ const ManualEntry = ({ startDate, endDate }) => {
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
-  console.log('originalRows', rows)
-  console.log('modifiedCells', modifiedCells)
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
