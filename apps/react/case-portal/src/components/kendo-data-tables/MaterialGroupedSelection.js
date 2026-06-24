@@ -9,7 +9,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { PlantAopReportApiService } from 'services/plant-aop-report-api-service'
 import { validateFields } from 'utils/validationUtils'
 
-export default function GroupSelection() {
+export default function MaterialGroupedSelection() {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -257,7 +257,7 @@ export default function GroupSelection() {
     }
   }, [modifiedCells])
 
-  const handleCalculate = () => {}
+  const handleCalculate = () => { }
 
   const handleRemarkCellClick = useCallback((row) => {
     setCurrentRemark(row.remark || '')

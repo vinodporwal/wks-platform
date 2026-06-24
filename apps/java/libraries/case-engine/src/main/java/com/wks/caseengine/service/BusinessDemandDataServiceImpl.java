@@ -1050,7 +1050,7 @@ sheet.setColumnHidden(17, true);
 
 	private void writeBusinessDemandLineSheet(Workbook workbook, Sheet sheet, String year,
 			List<BusinessDemandDataDTO> dtoList) {
-		final int REMARK_COL_INDEX = 14;
+		final int REMARK_COL_INDEX = 15;
 		final int REMARK_COL_WIDTH_CHARS = 50;
 		final short DEFAULT_ROW_HEIGHT_TWIPS = 300;
 		final short LINE_HEIGHT_TWIPS = 300;
@@ -1063,6 +1063,7 @@ sheet.setColumnHidden(17, true);
 
 	List<String> innerHeaders = new ArrayList<>();
 	innerHeaders.add("Particulars");
+	innerHeaders.add("Type");
 	innerHeaders.add("UOM");
 	innerHeaders.add(getMonth(year, 4));
 	innerHeaders.add(getMonth(year, 5));
@@ -1091,6 +1092,7 @@ sheet.setColumnHidden(17, true);
 		for (BusinessDemandDataDTO dto : dtoList) {
 			List<Object> rowData = new ArrayList<>();
 			rowData.add(dto.getDisplayName());
+			rowData.add(dto.getNormParameterTypeDisplayName());
 			rowData.add(dto.getUOM());
 			rowData.add(dto.getApril());
 			rowData.add(dto.getMay());
@@ -1140,14 +1142,14 @@ sheet.setColumnHidden(17, true);
 			}
 		}
 
-		for (int col = 0; col < 18; col++) {
-			if (col == REMARK_COL_INDEX || col == 15 || col == 16 || col == 17) continue;
+		for (int col = 0; col < 19; col++) {
+			if (col == REMARK_COL_INDEX || col == 16 || col == 17 || col == 18) continue;
 			sheet.autoSizeColumn(col);
 		}
 		sheet.setColumnWidth(REMARK_COL_INDEX, REMARK_COL_WIDTH_CHARS * 256);
-		sheet.setColumnHidden(15, true);
 		sheet.setColumnHidden(16, true);
 		sheet.setColumnHidden(17, true);
+		sheet.setColumnHidden(18, true);
 	}
 
 

@@ -59,6 +59,8 @@ const defs = {
     plantRequirement: 'Plant Requirement',
     fixedConsumption: 'Fixed Consumption',
     norms: 'Norms',
+    norms_qty_cost_report: 'Norms Quantity Cost Report',
+    utility_rate: 'Utility Rate',
     inputs: 'Inputs',
     summary: 'Summary',
     senderReceiverMapping: 'Sender Receiver Mapping',
@@ -129,6 +131,9 @@ const defs = {
     // causticSodaLyeBasis: 'Caustic Soda Lye Norms',
     causticSodaLyeBasisCatChem: 'Cat-Chem Calculation Dataset',
     plantAOPReport: 'Plant AOP Report',
+
+    //NEW SCREEN
+    materialGroupedSelection: 'Grouped Selection',
   },
   pages: {
     dashboard: {
@@ -340,6 +345,7 @@ const defs = {
         materialBalance: 'Material Balance',
         etheleneStock: 'Ethylene Stock in Cryo Tank',
         plantAOPReport: 'Plant AOP Report',
+        materialGroupedSelection: 'Grouped Selection',
       },
     },
   },

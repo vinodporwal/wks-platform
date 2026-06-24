@@ -3,6 +3,7 @@ package com.wks.caseengine.cpp.serviceimpl;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -12,16 +13,28 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.cpp.dto.CPPCostCenterDTO;
+import com.wks.caseengine.cpp.dto.CPPPlantDTO;
 import com.wks.caseengine.cpp.dto.CPPSRMappingDTO;
 import com.wks.caseengine.cpp.dto.CPPSRMappingImportDTO;
+import com.wks.caseengine.cpp.dto.SRMappingDTO;
 import com.wks.caseengine.cpp.entity.CPPSRMapping;
 import com.wks.caseengine.cpp.repository.CPPSRMappingRepository;
 import com.wks.caseengine.cpp.service.CPPSRMappingService;
+import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.utility.Utility;
 
 /**
@@ -30,7 +43,16 @@ import com.wks.caseengine.utility.Utility;
 @Service
 public class CPPSRMappingServiceImpl implements CPPSRMappingService {
 
+    private static final Logger logger = LoggerFactory.getLogger(CPPSRMappingServiceImpl.class);
+
     private final CPPSRMappingRepository repository;
+
+    @Autowired
+    @Qualifier("db1JdbcTemplate")
+    private JdbcTemplate db1JdbcTemplate;
+
+    @Autowired
+    private PlantsRepository plantsRepository;
 
     public CPPSRMappingServiceImpl(CPPSRMappingRepository repository) {
         this.repository = repository;
@@ -288,5 +310,238 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
 
             workbook.write(outputStream);
         }
+    }
+
+    // ── SR Mapping by Plant ───────────────────────────────────────────────────
+
+    @Override
+    public AOPMessageVM getSRMappingByPlant(String plantIds, String financialYear) {
+        logger.info("getSRMappingByPlant: plantIds={}, financialYear={}", plantIds, financialYear);
+        AOPMessageVM response = new AOPMessageVM();
+        try {
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(db1JdbcTemplate)
+                    .withProcedureName("CPP_GetSRMappingByPlant");
+
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("PlantIds",      plantIds)
+                    .addValue("FinancialYear", financialYear);
+
+            Map<String, Object> result = jdbcCall.execute(params);
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> rows =
+                    (List<Map<String, Object>>) result.get("#result-set-1");
+
+            List<SRMappingDTO> data = new ArrayList<>();
+            if (rows != null) {
+                for (Map<String, Object> row : rows) {
+                    SRMappingDTO dto = new SRMappingDTO();
+
+                    dto.setId                  (toUuid(row, "ID"));
+
+                    dto.setSenderPlantName     (str(row, "SenderPlantName"));
+                    dto.setSenderPlantCode     (str(row, "SenderPlantCode"));
+                    dto.setSenderUtilityId     (toUuid(row, "SenderUtilityId"));
+                    dto.setSenderUtilityName   (str(row, "SenderUtilityName"));
+                    dto.setSenderUtilityCode   (str(row, "SenderUtilityCode"));
+                    dto.setSenderCostCenterId  (toUuid(row, "SenderCostCenterId"));
+                    dto.setSenderCostCenterName(str(row, "SenderCostCenterName"));
+                    dto.setSenderCostCenterCode(str(row, "SenderCostCenterCode"));
+
+                    dto.setReceiverPlantName     (str(row, "ReceiverPlantName"));
+                    dto.setReceiverPlantCode     (str(row, "ReceiverPlantCode"));
+                    dto.setReceiverUtilityId     (toUuid(row, "ReceiverUtilityId"));
+                    dto.setReceiverUtilityName   (str(row, "ReceiverUtilityName"));
+                    dto.setReceiverUtilityCode   (str(row, "ReceiverUtilityCode"));
+                    dto.setReceiverCostCenterId  (toUuid(row, "ReceiverCostCenterId"));
+                    dto.setReceiverCostCenterName(str(row, "ReceiverCostCenterName"));
+                    dto.setReceiverCostCenterCode(str(row, "ReceiverCostCenterCode"));
+
+                    dto.setRemarks(str(row, "Remarks"));
+                    data.add(dto);
+                }
+            }
+
+            logger.info("getSRMappingByPlant: {} records returned", data.size());
+            response.setCode(200);
+            response.setMessage(data.size() + " record(s) found.");
+            response.setData(data);
+
+        } catch (Exception e) {
+            logger.error("getSRMappingByPlant error: {}", e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Error: " + e.getMessage());
+        }
+        return response;
+    }
+
+    /** Null-safe string from result-set row. */
+    private String str(Map<String, Object> row, String key) {
+        Object val = row.get(key);
+        return val != null ? val.toString() : null;
+    }
+
+    /** Null-safe UUID from result-set row. */
+    private UUID toUuid(Map<String, Object> row, String key) {
+        String val = str(row, key);
+        if (val == null || val.isBlank()) return null;
+        try { return UUID.fromString(val); }
+        catch (IllegalArgumentException e) {
+            logger.warn("Could not parse UUID for column {}: {}", key, val);
+            return null;
+        }
+    }
+
+    // ── Cost Center Dropdown ──────────────────────────────────────────────
+
+    @Override
+    public AOPMessageVM getCostCenters(String plantIds) {
+        logger.info("getCostCenters: plantIds={}", plantIds);
+        AOPMessageVM response = new AOPMessageVM();
+        try {
+            List<CPPCostCenterDTO> data;
+
+            boolean hasFilter = (plantIds != null && !plantIds.isBlank());
+
+            if (!hasFilter) {
+                // No filter — return all active cost-centers
+                String sql = "SELECT CostCenterId, CostCenterName, CostCenterCode, CPP_Plant_FK_Id as cppPlantFkId" +
+                             "FROM CPPCostCentersMaster " +
+                             "WHERE IsActive = 1 " +
+                             "ORDER BY CostCenterName";
+
+                data = db1JdbcTemplate.query(sql, (rs, rowNum) ->
+                        new CPPCostCenterDTO(
+                                UUID.fromString(rs.getString("CostCenterId")),
+                                rs.getString("CostCenterName"),
+                                rs.getString("CostCenterCode"),
+                                rs.getString("cppPlantFkId")
+                        ));
+            } else {
+                // Split comma-separated GUIDs and build IN (...) clause
+                String[] ids = plantIds.split(",");
+                List<Object> params = new ArrayList<>();
+                StringBuilder inClause = new StringBuilder();
+                for (int i = 0; i < ids.length; i++) {
+                    if (i > 0) inClause.append(",");
+                    inClause.append("?");
+                    params.add(ids[i].trim());
+                }
+
+                String sql = "SELECT CostCenterId, CostCenterName, CostCenterCode, CPP_Plant_FK_Id as cppPlantFkId " +
+                             "FROM CPPCostCentersMaster " +
+                             "WHERE IsActive = 1 " +
+                             "AND CPP_Plant_FK_Id IN (" + inClause + ") " +
+                             "ORDER BY CostCenterName";
+
+                data = db1JdbcTemplate.query(sql, params.toArray(), (rs, rowNum) ->
+                        new CPPCostCenterDTO(
+                                UUID.fromString(rs.getString("CostCenterId")),
+                                rs.getString("CostCenterName"),
+                                rs.getString("CostCenterCode"),
+                                rs.getString("cppPlantFkId") 
+                        ));
+            }
+
+            logger.info("getCostCenters: {} records returned", data.size());
+            response.setCode(200);
+            response.setMessage(data.size() + " record(s) found.");
+            response.setData(data);
+
+        } catch (Exception e) {
+            logger.error("getCostCenters error: {}", e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Error: " + e.getMessage());
+        }
+        return response;
+    }
+
+    // ── Plants Dropdown ──────────────────────────────────────────────────
+
+    @Override
+    public AOPMessageVM getPlants(String sourceNames) {
+        logger.info("getPlants: sourceNames={}", sourceNames);
+        AOPMessageVM response = new AOPMessageVM();
+        try {
+            List<Plants> plants;
+
+            boolean hasFilter = (sourceNames != null && !sourceNames.isBlank());
+
+            if (!hasFilter) {
+                // No filter — return all active plants
+                plants = plantsRepository.findByIsActiveTrueOrderByDisplayNameAsc();
+            } else {
+                // Split comma-separated SourceName values
+                String[] parts = sourceNames.split(",");
+                List<String> nameList = new ArrayList<>();
+                for (String s : parts) nameList.add(s.trim());
+                plants = plantsRepository.findBySourceNameInAndIsActiveTrue(nameList);
+            }
+
+            List<CPPPlantDTO> data = new ArrayList<>();
+            for (Plants p : plants) {
+                data.add(new CPPPlantDTO(
+                        p.getId(),
+                        p.getDisplayName(),
+                        p.getPlantCode(),
+                        p.getSourceName()
+                ));
+            }
+
+            logger.info("getPlants: {} records returned", data.size());
+            response.setCode(200);
+            response.setMessage(data.size() + " record(s) found.");
+            response.setData(data);
+
+        } catch (Exception e) {
+            logger.error("getPlants error: {}", e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Error: " + e.getMessage());
+        }
+        return response;
+    }
+
+    // ── Update Mappings ──────────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public AOPMessageVM updateSRMappingsByPlant(List<SRMappingDTO> dtoList) {
+        logger.info("updateSRMappingsByPlant: updating {} records", dtoList == null ? 0 : dtoList.size());
+        AOPMessageVM response = new AOPMessageVM();
+        try {
+            if (dtoList == null || dtoList.isEmpty()) {
+                response.setCode(400);
+                response.setMessage("No records provided for update.");
+                return response;
+            }
+
+            String sql = "UPDATE CPP_SR_Mapping_Master SET " +
+                         "Utility_NormParameter_FK_Id = ?, " +
+                         "Utility_CostCenter_FK_Id = ?, " +
+                         "Generation_NormParameter_FK_Id = ?, " +
+                         "Generation_CostCenter_FK_Id = ?, " +
+                         "Remarks = ?, " +
+                         "UpdatedDate = GETDATE() " +
+                         "WHERE ID = ?";
+
+            db1JdbcTemplate.batchUpdate(sql, dtoList, dtoList.size(), (ps, dto) -> {
+                ps.setObject(1, dto.getReceiverUtilityId() != null ? dto.getReceiverUtilityId().toString() : null);
+                ps.setObject(2, dto.getReceiverCostCenterId() != null ? dto.getReceiverCostCenterId().toString() : null);
+                ps.setObject(3, dto.getSenderUtilityId() != null ? dto.getSenderUtilityId().toString() : null);
+                ps.setObject(4, dto.getSenderCostCenterId() != null ? dto.getSenderCostCenterId().toString() : null);
+                ps.setString(5, dto.getRemarks());
+                ps.setObject(6, dto.getId() != null ? dto.getId().toString() : null);
+            });
+
+            response.setCode(200);
+            response.setMessage(dtoList.size() + " record(s) updated successfully.");
+            response.setData(null);
+
+        } catch (Exception e) {
+            logger.error("updateSRMappingsByPlant error: {}", e.getMessage(), e);
+            response.setCode(500);
+            response.setMessage("Error: " + e.getMessage());
+        }
+        return response;
     }
 }

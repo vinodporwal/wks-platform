@@ -34,4 +34,10 @@ public class Plants {
 
     @Column(name = "DisplayOrder")
     private Integer displayOrder;
+
+    @Column(name = "SourceName", length = 100)
+    private String sourceName;
+
+    @Column(name = "PlantCode", length = 50)
+    private String plantCode;
 }

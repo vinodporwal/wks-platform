@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.http.HttpStatus;
+
 import com.wks.caseengine.cpp.dto.JMDFixedConsumptionDto;
 import com.wks.caseengine.cpp.service.JMDFixedConsumptionService;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -103,20 +105,35 @@ public class JMDFixedConsumptionController {
     // IMPORT FIXED CONSUMPTION ENDPOINT
     // ========================================
 
-    @PostMapping("/jmd/fixed-consumption/import")
+    @PostMapping(value = "/jmd/fixed-consumption/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<AOPMessageVM> importFixedConsumption(
             @RequestParam List<UUID> plantIds,
             @RequestParam String financialYear,
             @RequestParam("file") MultipartFile file) {
 
-        logger.info("[POST /jmd/fixed-consumption/import] Request received - plantIds: {}, financialYear: {}, fileName: {}", 
-                plantIds, financialYear, file.getOriginalFilename());
+        logger.info("[POST /jmd/fixed-consumption/import] Request received - plantIds: {}, financialYear: {}, fileName: {}",
+                plantIds, financialYear, file != null ? file.getOriginalFilename() : "null");
 
-        AOPMessageVM response = jmdFixedConsumptionService.importFixedConsumption(plantIds, financialYear, file);
+        if (file == null || file.isEmpty()) {
+            AOPMessageVM errorResponse = new AOPMessageVM();
+            errorResponse.setCode(400);
+            errorResponse.setMessage("File is required");
+            errorResponse.setData(null);
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
 
-        logger.info("[POST /jmd/fixed-consumption/import] Response - code: {}, message: {}", 
-                response.getCode(), response.getMessage());
-
-        return ResponseEntity.ok(response);
+        try {
+            AOPMessageVM response = jmdFixedConsumptionService.importFixedConsumption(plantIds, financialYear, file);
+            logger.info("[POST /jmd/fixed-consumption/import] Response - code: {}, message: {}",
+                    response.getCode(), response.getMessage());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("[POST /jmd/fixed-consumption/import] Unexpected error: {}", e.getMessage(), e);
+            AOPMessageVM errorResponse = new AOPMessageVM();
+            errorResponse.setCode(500);
+            errorResponse.setMessage("Failed to import data: " + e.getMessage());
+            errorResponse.setData(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
     }
 }

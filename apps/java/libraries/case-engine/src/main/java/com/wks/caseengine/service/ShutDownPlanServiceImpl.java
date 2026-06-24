@@ -2238,7 +2238,9 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 		String verticalName = plantsService.findVerticalNameByPlantId(plantFKId);
-		boolean aromatics=vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("SEZ");
+		boolean aromaticsSez=vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("SEZ");
+		boolean pta = verticalName.equalsIgnoreCase("PTA");
+		boolean aromatics = vertical.getName().equalsIgnoreCase("AROMATICS");
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
@@ -2266,7 +2268,9 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 						dto.setSaveStatus("Failed");
 						dto.setErrDescription("Description is required.");
 						alreadyFailed = true;
-					} else if (!verticalName.equalsIgnoreCase("PTA")
+					} 
+					// skip the duplicate description validation for pta and aromatics
+					else if (!pta && !aromatics
 							&& validatedDescriptions.containsKey(dto.getDiscription().trim())) {
 						dto.setSaveStatus("Failed");
 						dto.setErrDescription(
@@ -2348,7 +2352,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 									}
 								}
 
-								else if ((verticalName.equalsIgnoreCase("PTA") || aromatics) && ldtStart != null) {
+								else if ((verticalName.equalsIgnoreCase("PTA") || aromaticsSez) && ldtStart != null) {
 									int conflictingIndex = -1;
 									for (TimeRangeWithIndex prevPeriod : validTimeRangesWithIndex) {
 										LocalDateTime prevLdtStart = prevPeriod.getStart();
@@ -2436,7 +2440,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 					}
 					
 
-					if (!verticalName.equalsIgnoreCase("PTA") && !alreadyFailed && dto.getId() == null) {
+					if ((!pta && !aromatics ) && !alreadyFailed && dto.getId() == null) {
 						List<Object[]> obj = shutDownPlanRepository.findDiscriptionByPlantIdAndType("Shutdown",
 								plantFKId.toString(), year, dto.getDiscription());
 
@@ -2448,7 +2452,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 						}
 					}
 
-					if ((verticalName.equalsIgnoreCase("PTA") || aromatics)  && !alreadyFailed && ldtStart != null && ldtEnd != null) {
+					if ((verticalName.equalsIgnoreCase("PTA") || aromaticsSez)  && !alreadyFailed && ldtStart != null && ldtEnd != null) {
 						validTimeRangesWithIndex.add(new TimeRangeWithIndex(ldtStart, ldtEnd, currentRowIndex));
 					}
 
@@ -3086,6 +3090,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		boolean filament = verticalName.equalsIgnoreCase("Filament");
 		boolean staple = verticalName.equalsIgnoreCase("Staple");
 		boolean chemical = verticalName.equalsIgnoreCase("Chemical");
+		boolean aromatics = verticalName.equalsIgnoreCase("Aromatics");
 		boolean monthDropdown= (verticalName.equalsIgnoreCase("PP") && (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("SEZ") || site.getName().equalsIgnoreCase("DTA")));
 		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
 		List<String> items = List.of(
@@ -3248,14 +3253,14 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 	}
 
 	List<Map<String, Object>> shutdownDescriptionList = new ArrayList<>();
-	// for chemical plant fetch the drop down discription list for import validation
-	if(chemical) { 
+	//  fetch the drop down discription list for import validation
+	if(chemical || aromatics) { 
 		shutdownDescriptionList = (List<Map<String, Object>>) getShutdownDescription(String.valueOf(plantId)).getData();
 	}
 		for (ShutDownPlanDTO shutDownPlanDTO : shutDownPlanDTOList) {
 
-			// implemented desc validation for chemical
-			if(chemical) {  
+			// implemented desc validation as per drop down list
+			if(chemical || aromatics) {  
 				if (!isValidShutdownDescription(shutDownPlanDTO.getDiscription(), shutdownDescriptionList)) {
 					shutDownPlanDTO.setSaveStatus("Failed");
 					shutDownPlanDTO.setErrDescription("Invalid description. Please select a valid description");
@@ -3458,6 +3463,8 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 								changed = true;
 								plantMaintenanceTransaction.setLineFKId(UUID.fromString(shutDownPlanDTO.getLineId()));
 							}
+							// skip remark validation for aromatics
+							if(!aromatics) {
 							if (changed && (plantMaintenanceTransaction.getRemarks()
 									.equalsIgnoreCase(shutDownPlanDTO.getRemark()))) {
 								shutDownPlanDTO.setSaveStatus("Failed");
@@ -3465,6 +3472,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 								failedList.add(shutDownPlanDTO);
 								continue;
 							}
+						}
 							plantMaintenanceTransaction.setRemarks(shutDownPlanDTO.getRemark());
 							// Save updated record
 							plantMaintenanceTransactionRepository.save(plantMaintenanceTransaction);

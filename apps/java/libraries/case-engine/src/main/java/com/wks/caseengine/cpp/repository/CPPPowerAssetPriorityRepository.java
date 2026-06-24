@@ -114,4 +114,110 @@ public interface CPPPowerAssetPriorityRepository extends JpaRepository<CPPPowerA
     List<CPPAssetPriorityProjection> findAssetPrioritiesByPlants(
         @Param("plantIds") List<UUID> plantIds,
         @Param("aopYear") String aopYear);
+
+    List<CPPPowerAssetPriority> findByPlantFkIdAndAopYear(UUID plantFkId, String aopYear);
+
+    /**
+     * Fetches all Power and Steam assets for the given plants directly from the asset tables,
+     * with NULL for all monthly priority values. Used to seed zero-priority records when no
+     * historical priority data exists for any financial year.
+     */
+    @Query(value = """
+        WITH AssetBase AS (
+            SELECT
+                CAST(NULL AS UNIQUEIDENTIFIER) AS id,
+                pga.AssetId                    AS assetFkId,
+                pga.CPPPLANT_FK_Id             AS plantFkId,
+                CAST(NULL AS INT)              AS apr,
+                CAST(NULL AS INT)              AS may,
+                CAST(NULL AS INT)              AS jun,
+                CAST(NULL AS INT)              AS jul,
+                CAST(NULL AS INT)              AS aug,
+                CAST(NULL AS INT)              AS sep,
+                CAST(NULL AS INT)              AS oct,
+                CAST(NULL AS INT)              AS nov,
+                CAST(NULL AS INT)              AS dec,
+                CAST(NULL AS INT)              AS jan,
+                CAST(NULL AS INT)              AS feb,
+                CAST(NULL AS INT)              AS mar,
+                CAST(NULL AS VARCHAR(500))     AS remarks,
+                CAST(NULL AS VARCHAR(19))      AS createdDate,
+                CAST(NULL AS VARCHAR(19))      AS modifiedDate,
+                pga.AssetName                  AS assetName,
+                pga.AssetType                  AS assetType,
+                pl.DisplayName                 AS plantName,
+                'Power'                        AS assetCategory,
+                pl.Site_FK_Id                  AS siteFkId,
+                pl.Vertical_FK_Id              AS verticalFkId,
+                0                              AS categoryOrder,
+                pga.DisplayName                AS sortDisplayName,
+                CASE
+                    WHEN CHARINDEX('-', pga.DisplayName) > 0
+                    THEN LEFT(pga.DisplayName, CHARINDEX('-', pga.DisplayName) - 1)
+                    ELSE pga.DisplayName
+                END AS namePrefix,
+                CASE
+                    WHEN CHARINDEX('-', pga.DisplayName) > 0
+                    THEN TRY_CAST(RIGHT(pga.DisplayName,
+                            LEN(pga.DisplayName) - CHARINDEX('-', pga.DisplayName)) AS INT)
+                    ELSE 0
+                END AS nameNumber
+            FROM PowerGenerationAssets pga WITH(NOLOCK)
+            LEFT JOIN Plants pl WITH(NOLOCK) ON pl.Id = pga.CPPPLANT_FK_Id
+            WHERE pga.CPPPLANT_FK_Id IN :plantIds
+
+            UNION ALL
+
+            SELECT
+                CAST(NULL AS UNIQUEIDENTIFIER) AS id,
+                sga.AssetId                    AS assetFkId,
+                sga.CPPPLANT_FK_Id             AS plantFkId,
+                CAST(NULL AS INT)              AS apr,
+                CAST(NULL AS INT)              AS may,
+                CAST(NULL AS INT)              AS jun,
+                CAST(NULL AS INT)              AS jul,
+                CAST(NULL AS INT)              AS aug,
+                CAST(NULL AS INT)              AS sep,
+                CAST(NULL AS INT)              AS oct,
+                CAST(NULL AS INT)              AS nov,
+                CAST(NULL AS INT)              AS dec,
+                CAST(NULL AS INT)              AS jan,
+                CAST(NULL AS INT)              AS feb,
+                CAST(NULL AS INT)              AS mar,
+                CAST(NULL AS VARCHAR(500))     AS remarks,
+                CAST(NULL AS VARCHAR(19))      AS createdDate,
+                CAST(NULL AS VARCHAR(19))      AS modifiedDate,
+                sga.AssetName                  AS assetName,
+                sga.AssetType                  AS assetType,
+                pl2.DisplayName                AS plantName,
+                'Steam'                        AS assetCategory,
+                pl2.Site_FK_Id                 AS siteFkId,
+                pl2.Vertical_FK_Id             AS verticalFkId,
+                1                              AS categoryOrder,
+                sga.DisplayName                AS sortDisplayName,
+                CASE
+                    WHEN CHARINDEX('-', sga.DisplayName) > 0
+                    THEN LEFT(sga.DisplayName, CHARINDEX('-', sga.DisplayName) - 1)
+                    ELSE sga.DisplayName
+                END AS namePrefix,
+                CASE
+                    WHEN CHARINDEX('-', sga.DisplayName) > 0
+                    THEN TRY_CAST(RIGHT(sga.DisplayName,
+                            LEN(sga.DisplayName) - CHARINDEX('-', sga.DisplayName)) AS INT)
+                    ELSE 0
+                END AS nameNumber
+            FROM [RIL.AOP].[dbo].[CPPSteamGenerationAsset] sga WITH(NOLOCK)
+            LEFT JOIN Plants pl2 WITH(NOLOCK) ON pl2.Id = sga.CPPPLANT_FK_Id
+            WHERE sga.CPPPLANT_FK_Id IN :plantIds
+        )
+        SELECT
+            id, assetFkId, plantFkId,
+            apr, may, jun, jul, aug, sep, oct, nov, dec, jan, feb, mar,
+            remarks, createdDate, modifiedDate,
+            assetName, assetType, plantName, assetCategory, siteFkId, verticalFkId
+        FROM AssetBase
+        ORDER BY categoryOrder, plantName, namePrefix, nameNumber, sortDisplayName
+        """, nativeQuery = true)
+    List<CPPAssetPriorityProjection> findAllAssetsForPlants(
+            @Param("plantIds") List<UUID> plantIds);
 }

@@ -95,6 +95,47 @@ public class VgohtNormBasisController {
         );
     }
 
+    @PostMapping(value = "/mannual-entry/monthly")
+    public AOPMessageVM saveMonthlyValues(
+            @RequestParam String year,
+            @RequestParam UUID plantFKId,
+            @RequestBody List<VgohtNormConfigurationDTO> monthlyValuesList,
+            @RequestParam String periodFrom,
+            @RequestParam String periodTo) {
+
+        if (plantFKId == null || year == null || year.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        return vgohtNormBasisServiceImpl.saveMonthlyValues(
+                year,
+                plantFKId,
+                monthlyValuesList,
+                periodFrom,
+                periodTo);
+    }
+
+    @PostMapping(value = "/mannual-entry/import", consumes = "multipart/form-data")
+    public AOPMessageVM importMonthlyValues(
+            @RequestParam String year,
+            @RequestParam UUID plantFKId,
+            @RequestParam(required = false) String periodFrom,
+            @RequestParam(required = false) String periodTo,
+            @RequestParam("file") MultipartFile file) {
+
+        if (plantFKId == null || year == null || year.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        return vgohtNormBasisServiceImpl.importMonthlyValues(
+                year,
+                plantFKId,
+                periodFrom,
+                periodTo,
+                file
+        );
+    }
+
     @GetMapping(value="/vgoht/norms-basis/constant")
     public AOPMessageVM getYearlyValues(@RequestParam String year, @RequestParam UUID plantFKId) {
         if (plantFKId == null || year == null || year.isEmpty()) {
@@ -102,6 +143,15 @@ public class VgohtNormBasisController {
         }
 
         return vgohtNormBasisServiceImpl.getYearlyValues(year, plantFKId);
+    }
+
+    @GetMapping(value="/mannual-entry/monthly")
+    public AOPMessageVM getMonthlyValues(@RequestParam String year, @RequestParam UUID plantFKId) {
+        if (plantFKId == null || year == null || year.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        }
+
+        return vgohtNormBasisServiceImpl.getMonthlyValues(year, plantFKId);
     }
 
     @GetMapping(value = "/vgoht/norms-basis/constant/export")
@@ -130,6 +180,33 @@ public class VgohtNormBasisController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @GetMapping(value = "/mannual-entry/export")
+    public ResponseEntity<byte[]> exportMonthlyValues(
+            @RequestParam String year,
+            @RequestParam UUID plantFKId) {
+
+        try {
+
+            byte[] excelBytes = vgohtNormBasisServiceImpl
+                    .exportMonthlyValues(year, plantFKId);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                    .filename("norms_basis_constant_monthly.xlsx")
+                    .build());
+
+            headers.setContentLength(excelBytes.length);
+
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }    
 
     @GetMapping(value="/vgoht/norms-basis/constant-sp")
 	public AOPMessageVM getConfigurationConstants(@RequestParam String year,@RequestParam String plantFKId) {

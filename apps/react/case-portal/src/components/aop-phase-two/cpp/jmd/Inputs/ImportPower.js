@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { Box } from '@mui/material'
+import { Box, Tooltip, IconButton } from '@mui/material'
+import EditIcon from '@mui/icons-material/Edit'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -10,6 +12,8 @@ import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { useDebounce } from 'hooks/useDebounce'
 import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
+import DeleteDialog from 'components/aop-phase-two/common/AdvanceKendoTable/components/DeleteDialog'
+import AddSourceDialog from './components/AddSourceDialog'
 
 const ImportPower = () => {
   const keycloak = useSession()
@@ -50,6 +54,12 @@ const ImportPower = () => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+  const [addRowDialogOpen, setAddRowDialogOpen] = useState(false)
+  // null = closed, object = row data to edit
+  const [editRowData, setEditRowData] = useState(null)
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [rowToDelete, setRowToDelete] = useState(null)
 
   // Column definitions — field names match CPPImportPowerResponseDTO
   const columns = [
@@ -240,7 +250,7 @@ const ImportPower = () => {
         AOP_YEAR,
       )
 
-      const importedPowerPlans = res?.data?.importedPowerPlans
+      let importedPowerPlans = res?.data?.importedPowerPlans
 
       if (!importedPowerPlans || importedPowerPlans.length === 0) {
         setRows([])
@@ -249,6 +259,11 @@ const ImportPower = () => {
         setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
+
+      importedPowerPlans = importedPowerPlans.map((row) => ({
+        ...row,
+        remarks: row.remarks || '',
+      }))
 
       // Calculate total row
       const totalRow = buildTotalRow(importedPowerPlans)
@@ -329,11 +344,58 @@ const ImportPower = () => {
     })
   }, [])
 
+  // ── Edit action cell ───────────────────────────────────────────────────────
+
+  const EditActionCell = ({ dataItem, tdProps }) => {
+    // Hide edit button for the Total row
+    if (dataItem?.isTotal) {
+      return <td {...tdProps} />
+    }
+    return (
+      <td
+        {...tdProps}
+        style={{
+          ...tdProps?.style,
+          textAlign: 'center',
+          verticalAlign: 'middle',
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Tooltip title='Edit Source'>
+            <IconButton
+              size='small'
+              onClick={() => {
+                setEditRowData(dataItem)
+                setAddRowDialogOpen(true)
+              }}
+            >
+              <EditIcon fontSize='small' />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title='Delete Source'>
+            <IconButton
+              size='small'
+              color='error'
+              onClick={() => {
+                setRowToDelete(dataItem)
+                setDeleteDialogOpen(true)
+              }}
+            >
+              <DeleteOutlineIcon fontSize='small' />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </td>
+    )
+  }
+
   // ── Permissions ────────────────────────────────────────────────────────────
 
   const permissions = {
     showAction: true,
-    addButton: false,
+    addButton: true,
+    addBtnName: 'Add Source',
     deleteButton: false,
     editButton: true,
     saveBtn: true,
@@ -505,6 +567,35 @@ const ImportPower = () => {
     setRemarkDialogOpen(true)
   }
 
+  // ── Delete ─────────────────────────────────────────────────────────────────
+
+  const handleConfirmDelete = async () => {
+    if (!rowToDelete) return
+
+    setDeleteDialogOpen(false)
+    setLoading(true)
+
+    try {
+      await InputApiService.deleteSource(keycloak, rowToDelete.normParameterFkId, rowToDelete.importPlantFkId)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Source deleted successfully!',
+        severity: 'success',
+      })
+      fetchImportPowerData()
+    } catch (error) {
+      console.error('Error deleting source:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to delete source. Please try again.',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+      setRowToDelete(null)
+    }
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -534,6 +625,29 @@ const ImportPower = () => {
         setSnackbarData={setSnackbarData}
         customItemChange={customItemChange}
         groupBy={['plantName']}
+        customAddRow={() => {
+          setEditRowData(null)
+          setAddRowDialogOpen(true)
+        }}
+        customActionCell={EditActionCell}
+      />
+
+      <AddSourceDialog
+        open={addRowDialogOpen}
+        onClose={() => {
+          setAddRowDialogOpen(false)
+          setEditRowData(null)
+        }}
+        onSuccess={fetchImportPowerData}
+        editRowData={editRowData}
+      />
+
+      <DeleteDialog
+        openDeleteDialogeBox={deleteDialogOpen}
+        setOpenDeleteDialogeBox={setDeleteDialogOpen}
+        deleteTheRecord={handleConfirmDelete}
+        message='Are you sure you want to delete this source?'
+        confirmButtonText='Delete'
       />
     </Box>
   )
