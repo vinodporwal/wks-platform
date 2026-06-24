@@ -354,7 +354,7 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
                         dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
                         dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
                         dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),
-                        dto.getRemarks(), modifiedBy, plantId.toString());
+                        dto.getRemarks(), modifiedBy, dto.getId().toString());
                 }
             }
             AOPMessageVM vm = new AOPMessageVM();
