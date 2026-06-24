@@ -49,12 +49,12 @@ const SenderReceiverMapping = () => {
     () =>
       lowerSiteName === 'jmd'
         ? jmdSelectedPlants?.map((plant) => ({
-            value: plant.id,
+            value: plant.id?.toLowerCase(),
             label: plant.name,
           }))
         : [
             {
-              value: plantObject?.id,
+              value: plantObject?.id?.toLowerCase(),
               label: plantObject?.name,
             },
           ],
@@ -125,6 +125,7 @@ const SenderReceiverMapping = () => {
         ...item,
         remarks: item?.remarks || '',
         id: item?.id || index + 1,
+        apiId: item?.id,
       }))
       setRows(formattedData)
       setOriginalRows(formattedData)
@@ -182,6 +183,13 @@ const SenderReceiverMapping = () => {
 
   // Column definitions
   const columns = [
+    {
+      field: 'apiId',
+      title: 'Id',
+      widthT: 200,
+      minWidth: 200,
+      hidden: false,
+    },
     {
       field: 'cppPlantId',
       title: 'CPP Plant',
@@ -248,6 +256,14 @@ const SenderReceiverMapping = () => {
       type: 'text',
       editable: true,
     },
+    {
+      field: 'senderUtilityUOM',
+      title: 'Utility UOM',
+      widthT: 150,
+      minWidth: 150,
+      type: 'text',
+      editable: true,
+    },
 
     {
       field: 'receiverCostCenterId',
@@ -305,6 +321,14 @@ const SenderReceiverMapping = () => {
       editable: true,
       hidden: false,
     },
+    {
+      field: 'receiverUtilityUOM',
+      title: 'Receiver Utility UOM',
+      widthT: 180,
+      minWidth: 180,
+      type: 'text',
+      editable: true,
+    },
     // {
     //   field: 'materialActivity',
     //   title: 'Material Activity',
@@ -341,8 +365,8 @@ const SenderReceiverMapping = () => {
     allAction: true,
     downloadExcelBtnFromUI: false,
     ExcelName: 'Sender Receiver Mapping',
-    showImport: true,
-    showExport: true,
+    showImport: false,
+    downloadExcelBtnFromUI: true,
     showTitleNameBusiness: true,
     showTitle: true,
     titleName:
@@ -367,23 +391,32 @@ const SenderReceiverMapping = () => {
       return {
         ...rest,
         aopYear: AOP_YEAR,
-        plantFkId: PLANT_ID_LIST,
+        // For new rows, omit id so backend treats as INSERT; for existing rows keep id for UPDATE
+        ...(isNew ? { id: null } : {}),
       }
     })
 
     try {
-      const response = await UtilityPlantApiServiceV2.saveSRMapping(
+      const response = await UtilityPlantApiServiceV2.updateSRMappingsByPlant(
         keycloak,
         payload,
       )
 
+      const isSuccess = response?.code === 200
+
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Successfully saved changes!',
-        severity: 'success',
+        message: isSuccess
+          ? response?.message || 'Successfully saved changes!'
+          : response?.message || 'Failed to save changes. Please try again.',
+        severity: isSuccess ? 'success' : 'error',
       })
-      setModifiedCells({})
-      await fetchData()
+
+      if (isSuccess) {
+        setModifiedCells({})
+        await fetchData()
+      }
+
       return response
     } catch (error) {
       console.error('Error saving SR mapping:', error)
