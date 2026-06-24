@@ -568,8 +568,8 @@ async function importSRMappingExcel(file, keycloak) {
 
 // Update (create/update) SR Mappings By Plant
 // Calls PUT /task/sr-mapping/by-plant
-async function updateSRMappingsByPlant(keycloak, payload) {
-  const url = `${Config.CaseEngineUrl}/task/sr-mapping/by-plant`
+async function updateSRMappingsByPlant(keycloak, payload, financialYear) {
+  const url = `${Config.CaseEngineUrl}/task/sr-mapping/by-plant?financialYear=${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

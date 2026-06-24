@@ -183,13 +183,13 @@ const SenderReceiverMapping = () => {
 
   // Column definitions
   const columns = [
-    {
-      field: 'apiId',
-      title: 'Id',
-      widthT: 200,
-      minWidth: 200,
-      hidden: false,
-    },
+    // {
+    //   field: 'apiId',
+    //   title: 'Id',
+    //   widthT: 200,
+    //   minWidth: 200,
+    //   hidden: false,
+    // },
     {
       field: 'cppPlantId',
       title: 'CPP Plant',
@@ -366,7 +366,7 @@ const SenderReceiverMapping = () => {
     downloadExcelBtnFromUI: false,
     ExcelName: 'Sender Receiver Mapping',
     showImport: false,
-    downloadExcelBtnFromUI: true,
+    downloadExcelBtnFromUI: false,
     showTitleNameBusiness: true,
     showTitle: true,
     titleName:
@@ -400,6 +400,7 @@ const SenderReceiverMapping = () => {
       const response = await UtilityPlantApiServiceV2.updateSRMappingsByPlant(
         keycloak,
         payload,
+        AOP_YEAR,
       )
 
       const isSuccess = response?.code === 200
