@@ -132,7 +132,8 @@ const defs = {
     causticSodaLyeBasisCatChem: 'Cat-Chem Calculation Dataset',
     plantAOPReport: 'Plant AOP Report',
     gradeMixOptimizer: 'Grade Mix Optimizer',  
-    materialGroupedSelection: 'Grouped Selection',
+    //NEW SCREEN
+    materialGroupedSelection: 'Material Grouped Selection',
   },
   pages: {
     dashboard: {

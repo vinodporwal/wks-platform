@@ -6,7 +6,6 @@ import { useSession } from 'SessionStoreContext'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { validateFields } from 'utils/validationUtils'
 import KendoDataTables from './index'
-import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
@@ -14,6 +13,7 @@ import CalculatedBusinessProposed from './ProprosedBusinessGradeOptimizer'
 import { DataService } from 'services/DataService'
 import AopTabs from 'components/AopTabs'
 import { Box } from '@mui/material'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 const BudgetOperatingHour = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -70,7 +70,7 @@ const BudgetOperatingHour = ({ permissions }) => {
   const keycloak = useSession()
   const [rows, setRows] = useState()
   const [tabIndex, setTabIndex] = useState(0)
-  const valueFormat = ValueFormatterConsumption()
+  const valueFormat = ValueFormatterProduction()
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
@@ -85,6 +85,7 @@ const BudgetOperatingHour = ({ permissions }) => {
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
+
   const columns = [
     {
       field: 'gradeId',
@@ -128,7 +129,7 @@ const BudgetOperatingHour = ({ permissions }) => {
       align: 'right',
       headerAlign: 'right',
       type: 'number',
-      format: '{0:#.##}',
+      format: valueFormat,
       minWidth: 100,
     },
     {
@@ -138,7 +139,7 @@ const BudgetOperatingHour = ({ permissions }) => {
       align: 'right',
       headerAlign: 'right',
       type: 'number',
-      format: '{0:#.##}',
+      format: valueFormat,
       minWidth: 100,
     },
     {
@@ -148,7 +149,7 @@ const BudgetOperatingHour = ({ permissions }) => {
       align: 'right',
       headerAlign: 'right',
       type: 'number',
-      format: '{0:#.##}',
+      format: valueFormat,
       minWidth: 100,
     },
     {
@@ -158,7 +159,7 @@ const BudgetOperatingHour = ({ permissions }) => {
       align: 'right',
       headerAlign: 'right',
       type: 'number',
-      format: '{0:#.##}',
+      format: valueFormat,
       minWidth: 100,
     },
     {
@@ -168,7 +169,7 @@ const BudgetOperatingHour = ({ permissions }) => {
       align: 'right',
       headerAlign: 'right',
       type: 'number',
-      format: '{0:#.##}',
+      format: valueFormat,
       minWidth: 100,
     },
     {
@@ -178,7 +179,7 @@ const BudgetOperatingHour = ({ permissions }) => {
       align: 'right',
       headerAlign: 'right',
       type: 'number',
-      format: '{0:#.##}',
+      format: valueFormat,
       minWidth: 100,
     },
     {
@@ -188,7 +189,7 @@ const BudgetOperatingHour = ({ permissions }) => {
       align: 'right',
       headerAlign: 'right',
       type: 'number',
-      format: '{0:#.##}',
+      format: valueFormat,
       minWidth: 100,
     },
     {
@@ -198,7 +199,7 @@ const BudgetOperatingHour = ({ permissions }) => {
       align: 'right',
       headerAlign: 'right',
       type: 'number',
-      format: '{0:#.##}',
+      format: valueFormat,
       minWidth: 100,
     },
     {
@@ -208,7 +209,7 @@ const BudgetOperatingHour = ({ permissions }) => {
       align: 'right',
       headerAlign: 'right',
       type: 'number',
-      format: '{0:#.##}',
+      format: valueFormat,
       minWidth: 100,
     },
     {
@@ -218,7 +219,7 @@ const BudgetOperatingHour = ({ permissions }) => {
       align: 'right',
       headerAlign: 'right',
       type: 'number',
-      format: '{0:#.##}',
+      format: valueFormat,
       minWidth: 100,
     },
     {
@@ -228,7 +229,7 @@ const BudgetOperatingHour = ({ permissions }) => {
       align: 'right',
       headerAlign: 'right',
       type: 'number',
-      format: '{0:#.##}',
+      format: valueFormat,
       minWidth: 100,
     },
     {
@@ -238,7 +239,7 @@ const BudgetOperatingHour = ({ permissions }) => {
       align: 'right',
       headerAlign: 'right',
       type: 'number',
-      format: '{0:#.##}',
+      format: valueFormat,
       minWidth: 100,
     },
     {
