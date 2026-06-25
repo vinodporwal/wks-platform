@@ -9,6 +9,12 @@ export const OptimizerDataApiService = {
   getGradewiseBudgetOperatingHours,
   saveGradeBudgetOperatingHours,
   calculateGradeMixBudgetOpeartingHours,
+  getVcmAvailabilityConstant,
+  getVmcTrade,
+  getVcmStockBalance,
+  VmcTradeExportExcel,
+  budgetOperatingLineExport,
+  budgetOperatingHourImport,
 }
 async function fetchModes(keycloak, PLANT_ID, AOP_YEAR, TYPE) {
   const url = `${Config.CaseEngineUrl}/task/modes?year=${AOP_YEAR}&plantId=${PLANT_ID}&type=${TYPE}`
@@ -41,7 +47,12 @@ async function getGradeMixOptimizerConstant(keycloak, PLANT_ID, AOP_YEAR) {
   }
 }
 
-async function saveGradeMixOptimizerConstant(PLANT_ID, payload, keycloak, AOP_YEAR) {
+async function saveGradeMixOptimizerConstant(
+  PLANT_ID,
+  payload,
+  keycloak,
+  AOP_YEAR,
+) {
   var url = `${Config.CaseEngineUrl}/task/production-norms?year=${AOP_YEAR}&plantFKId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',
@@ -61,7 +72,12 @@ async function saveGradeMixOptimizerConstant(PLANT_ID, payload, keycloak, AOP_YE
   }
 }
 
-async function getCalculatedProposedBusinessOptimizer(keycloak, PLANT_ID, AOP_YEAR, lineId) {
+async function getCalculatedProposedBusinessOptimizer(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  lineId,
+) {
   const url = `${Config.CaseEngineUrl}/task/calculated-proposed-business-demand?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}&lineId=${lineId}`
   const headers = {
     Accept: 'application/json',
@@ -76,7 +92,12 @@ async function getCalculatedProposedBusinessOptimizer(keycloak, PLANT_ID, AOP_YE
     return await Promise.reject(e)
   }
 }
-async function getGradewiseBudgetOperatingHours(keycloak, PLANT_ID, AOP_YEAR,lineId) {
+async function getGradewiseBudgetOperatingHours(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  lineId,
+) {
   const url = `${Config.CaseEngineUrl}/task/budgeted-operating-hours-data?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}&lineId=${lineId}`
   const headers = {
     Accept: 'application/json',
@@ -91,7 +112,13 @@ async function getGradewiseBudgetOperatingHours(keycloak, PLANT_ID, AOP_YEAR,lin
     return await Promise.reject(e)
   }
 }
-async function saveGradeBudgetOperatingHours(PLANT_ID, payload, keycloak, AOP_YEAR,lineId) {
+async function saveGradeBudgetOperatingHours(
+  PLANT_ID,
+  payload,
+  keycloak,
+  AOP_YEAR,
+  lineId,
+) {
   var url = `${Config.CaseEngineUrl}/task/budgeted-operating-hours-data?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}&lineId=${lineId}`
   const headers = {
     Accept: 'application/json',
@@ -110,7 +137,11 @@ async function saveGradeBudgetOperatingHours(PLANT_ID, payload, keycloak, AOP_YE
     return await Promise.reject(e)
   }
 }
-async function calculateGradeMixBudgetOpeartingHours(PLANT_ID, AOP_YEAR, keycloak) {
+async function calculateGradeMixBudgetOpeartingHours(
+  PLANT_ID,
+  AOP_YEAR,
+  keycloak,
+) {
   const url = `${Config.CaseEngineUrl}/task/calculate-budget-operation-hours?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',
@@ -129,5 +160,141 @@ async function calculateGradeMixBudgetOpeartingHours(PLANT_ID, AOP_YEAR, keycloa
   } catch (e) {
     console.error('Error fetching calculation data:', e)
     return Promise.reject(e)
+  }
+}
+async function getVcmAvailabilityConstant(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/vcm-availability-constant?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getVmcTrade(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/vcm-trade?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getVcmStockBalance(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/vcm-stock-balance?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function VmcTradeExportExcel(keycloak, PLANT_ID, AOP_YEAR, EXCEL_NAME) {
+  const url = `${Config.CaseEngineUrl}/task/business-demand-export-line?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}}`
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${EXCEL_NAME}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Optimizer Input Excel:', e)
+    return Promise.reject(e)
+  }
+}
+async function budgetOperatingLineExport(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_NAME,
+) {
+  const url = `${Config.CaseEngineUrl}/task/budgeted-operating-hours-export-excel?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${EXCEL_NAME}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Optimizer Input Excel:', e)
+    return Promise.reject(e)
+  }
+}
+async function budgetOperatingHourImport(file, keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/budgeted-operating-hours-import-excel?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp) // assuming `json()` handles response properly
+  } catch (e) {
+    console.error('Error importing Budget Operating Hours Excel:', e)
+    return await Promise.reject(e)
   }
 }

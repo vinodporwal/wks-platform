@@ -171,6 +171,7 @@ import SteadyStateConsumptionNS from 'components/aop-phase-two/naphthasplitter/s
 import OverallAopConsumptionNS from 'components/aop-phase-two/naphthasplitter/overall-aop-consumption'
 import ProductionNormsBasisNS from 'components/aop-phase-two/naphthasplitter/production-norms-basis'
 import GradeMixOptimizer from 'components/kendo-data-tables/GradeMixOptimizer'
+import VcmAvailability from 'components/kendo-data-tables/VcmAvailability'
 // Naphthasplitter Ended
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
@@ -638,6 +639,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='grade-mix-optimizer'>
                 <GradeMixOptimizer/>
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'vcm-availability',
+            element: (
+              <PrivateRoute routeId='vcm-availability'>
+                <VcmAvailability/>
               </PrivateRoute>
             ),
           },

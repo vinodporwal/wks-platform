@@ -131,9 +131,9 @@ const defs = {
     // causticSodaLyeBasis: 'Caustic Soda Lye Norms',
     causticSodaLyeBasisCatChem: 'Cat-Chem Calculation Dataset',
     plantAOPReport: 'Plant AOP Report',
-    gradeMixOptimizer: 'Grade Mix Optimizer',  
-    //NEW SCREEN
+    gradeMixOptimizer: 'Grade Mix Optimizer',
     materialGroupedSelection: 'Material Grouped Selection',
+    vcmAvailability: 'VCM Availability',
   },
   pages: {
     dashboard: {
@@ -347,6 +347,7 @@ const defs = {
         plantAOPReport: 'Plant AOP Report',
         materialGroupedSelection: 'Material Grouped Selection',
         gradeMixOptimizer: 'Grade Mix Optimizer',
+        vcmAvailability: 'VCM Availability',
       },
     },
   },
