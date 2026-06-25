@@ -626,6 +626,11 @@ const ImportPower = () => {
         setSnackbarData={setSnackbarData}
         customItemChange={customItemChange}
         groupBy={['plantName']}
+        customAddRow={() => {
+          setEditRowData(null)
+          setAddRowDialogOpen(true)
+        }}
+        customActionCell={EditActionCell}
       />
 
       <AddSourceDialog

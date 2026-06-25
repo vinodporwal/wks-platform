@@ -2095,6 +2095,8 @@ const AdvanceKendoTable = ({
                       textField='label'
                       valueField='value'
                       placeholder='Select...'
+                      searchable={col.searchable || false}
+                      showClearOption={col.showClearOption || false}
                     />
                   )
                 },

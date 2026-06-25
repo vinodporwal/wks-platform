@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Box } from '@mui/material'
 import { useSelector } from 'react-redux'
-import { ProductionNormsApiService } from 'components/aop-phase-two/services/polyester/productionNormsApiService'
+import { ProductionNormsApiService } from 'components/aop-phase-two/services/merox/productionNormsApiService'
 import { useSession } from 'SessionStoreContext'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
-import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
+import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { customValueFormatterPhaseTwo } from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 
@@ -188,12 +188,10 @@ const ManualEntry = ({ startDate, endDate }) => {
     const payload = modifiedData?.map((row) => ({
       ...row,
       id: row.idFromApi,
-      value: row.value || row.apr || 0,
+      apr: row.value || row.apr || 0,
       remarks: row.remarks || '',
     }))
     try {
-      console.log('Saving constants data:', payload)
-
       const response = await ProductionNormsApiService.saveManualEntryData(
         keycloak,
         AOP_YEAR,

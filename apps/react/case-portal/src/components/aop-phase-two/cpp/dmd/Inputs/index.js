@@ -20,7 +20,6 @@ const InputsDMD = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, siteObject, verticalObject, year } = dataGridStore
-
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
@@ -37,66 +36,93 @@ const InputsDMD = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  // Initialize tabs
   useEffect(() => {
-    const tabs = [
-      {
-        id: 'aop-design-basis',
-        name: 'aopDesignBasis',
-        displayName: 'AOP Design Basis',
-        displaySequence: 0,
-      },
-      {
-        id: 'purchase-power',
-        name: 'purchasePowerInput',
-        displayName: 'Purchase Power Input',
-        displaySequence: 1,
-      },
-      {
-        id: 'shutdown-operational',
-        name: 'shutdownOperationalHrs',
-        displayName: 'Shutdown and Operational Hrs.',
-        displaySequence: 2,
-      },
-      {
-        id: 'asset-priority',
-        name: 'assetPriority',
-        displayName: 'Asset Priority',
-        displaySequence: 3,
-      },
-      {
-        id: 'asset-capacity',
-        name: 'assetCapacity',
-        displayName: 'Asset Capacity',
-        displaySequence: 4,
-      },
-      {
-        id: 'heat-rate',
-        name: 'heatRate',
-        displayName: 'Heat Rate',
-        displaySequence: 5,
-      },
-      {
-        id: 'fixed-norms',
-        name: 'Norms',
-        displayName: 'Norms',
-        displaySequence: 6,
-      },
-      {
-        id: 'fuel-availability',
-        name: 'fuelAvailability',
-        displayName: 'Fuel Availability',
-        displaySequence: 7,
-      },
-      {
-        id: 'prices',
-        name: 'prices',
-        displayName: 'Prices',
-        displaySequence: 8,
-      },
-    ]
-    setTabObj(tabs)
-  }, [])
+    let tabs = [];
+
+    switch (siteObject?.name?.toLowerCase()) {
+      case 'dmd':
+        tabs = [
+          {
+            id: 'aop-design-basis',
+            name: 'aopDesignBasis',
+            displayName: 'AOP Design Basis',
+            displaySequence: 0,
+          },
+          {
+            id: 'purchase-power',
+            name: 'purchasePowerInput',
+            displayName: 'Purchase Power Input',
+            displaySequence: 1,
+          },
+          {
+            id: 'shutdown-operational',
+            name: 'shutdownOperationalHrs',
+            displayName: 'Shutdown and Operational Hrs.',
+            displaySequence: 2,
+          },
+          {
+            id: 'asset-priority',
+            name: 'assetPriority',
+            displayName: 'Asset Priority',
+            displaySequence: 3,
+          },
+          {
+            id: 'asset-capacity',
+            name: 'assetCapacity',
+            displayName: 'Asset Capacity',
+            displaySequence: 4,
+          },
+          {
+            id: 'heat-rate',
+            name: 'heatRate',
+            displayName: 'Heat Rate',
+            displaySequence: 5,
+          },
+          {
+            id: 'fixed-norms',
+            name: 'Norms',
+            displayName: 'Norms',
+            displaySequence: 6,
+          },
+          {
+            id: 'fuel-availability',
+            name: 'fuelAvailability',
+            displayName: 'Fuel Availability',
+            displaySequence: 7,
+          },
+          {
+            id: 'prices',
+            name: 'prices',
+            displayName: 'Prices',
+            displaySequence: 8,
+          },
+        ];
+        break;
+
+      case 'hmd':
+        tabs = [
+          {
+            id: 'aop-design-basis',
+            name: 'aopDesignBasis',
+            displayName: 'AOP Design Basis',
+            displaySequence: 0,
+          },
+          {
+            id: 'purchase-power',
+            name: 'purchasePowerInput',
+            displayName: 'Purchase Power Input',
+            displaySequence: 1,
+          },
+        ];
+        break;
+
+      default:
+        tabs = [];
+        break;
+    }
+
+    setTabObj(tabs);
+  }, [siteObject]);
 
   // Get current tab
   const currentTab = tabObj[tabIndex] || {}

@@ -16,8 +16,6 @@ import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable
 const Prices = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  console.log(dataGridStore?.siteObject?.name?.toLowerCase(), "dataGridStoreeeeeeee");
-
   const { plantObject, year, screenTitle } = dataGridStore
 
   const PLANT_ID = plantObject?.id
@@ -542,7 +540,7 @@ const Prices = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        setCurrentRowId={() => { }}
+        setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         handleExcelUpload={handleExcelUpload}
         handleExport={handleExport}
