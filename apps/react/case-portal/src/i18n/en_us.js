@@ -112,6 +112,11 @@ const defs = {
     pimsoutput: 'PIMS Output',
     workflowdesign: 'Workflow Design',
 
+    refineryAopBudget: 'Refinery AOP Budget',
+    plantCapacities: 'Plant Capacities',
+    shutdown: 'Shutdown',
+    slowdown: 'Slowdown',
+
     //SSRS
     normComparisonReport: 'Norm Comparison Report',
     packagingConsumables: 'Packaging Consumables',
@@ -131,9 +136,9 @@ const defs = {
     // causticSodaLyeBasis: 'Caustic Soda Lye Norms',
     causticSodaLyeBasisCatChem: 'Cat-Chem Calculation Dataset',
     plantAOPReport: 'Plant AOP Report',
-    gradeMixOptimizer: 'Grade Mix Optimizer',  
-    //NEW SCREEN
+    gradeMixOptimizer: 'Grade Mix Optimizer',
     materialGroupedSelection: 'Material Grouped Selection',
+    vcmAvailability: 'VCM Availability',
   },
   pages: {
     dashboard: {
@@ -340,6 +345,9 @@ const defs = {
         sapBasedRefNorms: 'SAP Based Reference Norms',
         specificConsumptionC3: 'Feed Availability',
         productionOptimizer: 'Production Optimizer',
+        plantCapacities: 'Plant Capacities',
+        shutdown: 'Shutdown',
+        slowdown: 'Slowdown',
 
         causticSodaLyeBasis: 'Caustic Soda Lye Norms',
         materialBalance: 'Material Balance',
@@ -347,6 +355,7 @@ const defs = {
         plantAOPReport: 'Plant AOP Report',
         materialGroupedSelection: 'Material Grouped Selection',
         gradeMixOptimizer: 'Grade Mix Optimizer',
+        vcmAvailability: 'VCM Availability',
       },
     },
   },

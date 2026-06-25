@@ -659,7 +659,7 @@ const ProductionvolumeData = ({
                 ? item.february * 24
                 : item.february || null,
               march: item.march ? item.march * 24 : item.march || null,
-              isEditable: IS_VCM_DMD_EDC ? false : item.isEditable ?? true,
+              isEditable: IS_VCM_DMD_EDC ? false : (item.isEditable ?? true),
             }),
           }
         },
@@ -738,7 +738,7 @@ const ProductionvolumeData = ({
     }
   }
 
-  function normalizeAllRows(grid) {
+  function normalizeAllRows(grid, maxCapacityGrid) {
     const monthKeys = [
       'april',
       'may',
@@ -754,20 +754,53 @@ const ProductionvolumeData = ({
       'march',
     ]
 
-    return grid?.map((row) => {
-      // 1. Find this row?s max month value
-      const vals = monthKeys?.map((k) => Number(row[k]))
-      const maxVal = Math.max(...vals)
-
-      // 2. Shallow-clone the entire row (carries over id, remarks, all FKs, etc.)
+    return grid?.map((row, index) => {
+      // Shallow-clone the entire row (carries over id, remarks, all FKs, etc.)
       const newRow = { ...row }
 
-      // 3. Overwrite only the month fields:
-      monthKeys.forEach((key) => {
-        const orig = Number(row[key] || 0)
-        const pct = maxVal ? (orig / maxVal) * 100 : 0
-        newRow[key] = Number(pct)
-      })
+      if (maxCapacityGrid) {
+        // Match row to corresponding max capacity row by materialFKId, normParametersFKId, or productName
+        const matchedMaxRow =
+          maxCapacityGrid?.find(
+            (maxRow) =>
+              (maxRow.materialFKId &&
+                row.materialFKId &&
+                maxRow.materialFKId.toLowerCase() ===
+                  row.materialFKId.toLowerCase()) ||
+              (maxRow.normParametersFKId &&
+                row.normParametersFKId &&
+                maxRow.normParametersFKId.toLowerCase() ===
+                  row.normParametersFKId.toLowerCase()) ||
+              (maxRow.productName &&
+                row.productName &&
+                maxRow.productName === row.productName),
+          ) || maxCapacityGrid?.[index]
+
+        monthKeys.forEach((key) => {
+          const orig = Number(row[key] || 0)
+          let pct = 0
+          if (matchedMaxRow) {
+            const maxVal = Number(matchedMaxRow[key] || 0)
+            pct = maxVal ? (orig / maxVal) * 100 : 0
+          } else {
+            // fallback to self-normalization if no match
+            const vals = monthKeys?.map((k) => Number(row[k]))
+            const selfMax = Math.max(...vals)
+            pct = selfMax ? (orig / selfMax) * 100 : 0
+          }
+          newRow[key] = Number(pct.toFixed(2))
+        })
+      } else {
+        // Self-normalization: compare each month against this row's max month value
+        const vals = monthKeys?.map((k) => Number(row[k]))
+        const maxVal = Math.max(...vals)
+
+        monthKeys.forEach((key) => {
+          const orig = Number(row[key] || 0)
+          const pct = maxVal ? (orig / maxVal) * 100 : 0
+          newRow[key] = Number(pct)
+        })
+      }
 
       return newRow
     })
@@ -1051,15 +1084,6 @@ const ProductionvolumeData = ({
           isEditable: false,
         }))
         setRowsMaxCapacity(formatted)
-
-        // For AROMATICS_HMD/PMD, compute PERCENTAGE_SUMMARY from MAX_ACHIEVED_CAPACITY
-        if (IS_AROMATICS_HMD || IS_AROMATICS_PMD) {
-          const percentageFromMax = normalizeAllRows(formatted).map((item) => ({
-            ...item,
-            isEditable: false,
-          }))
-          setRowsPercentageSummary(percentageFromMax)
-        }
       } else {
         setRowsMaxCapacity([])
       }
@@ -1078,6 +1102,24 @@ const ProductionvolumeData = ({
   useEffect(() => {
     fetchMaxCapacityData(unitMaxCapacity)
   }, [unitMaxCapacity, PLANT_ID, yearChanged, keycloak])
+
+  // For AROMATICS_HMD/PMD, compute PERCENTAGE_SUMMARY once both rows and maxCapacity are available
+  // (same approach as ProductionTarget uses for elastomer: production / maxCapacity * 100)
+  useEffect(() => {
+    if (
+      (IS_AROMATICS_HMD || IS_AROMATICS_PMD) &&
+      rows?.length > 0 &&
+      rowsMaxCapacity?.length > 0
+    ) {
+      const percentageFromMax = normalizeAllRows(rows, rowsMaxCapacity).map(
+        (item) => ({
+          ...item,
+          isEditable: false,
+        }),
+      )
+      setRowsPercentageSummary(percentageFromMax)
+    }
+  }, [rows, rowsMaxCapacity, IS_AROMATICS_HMD, IS_AROMATICS_PMD])
 
   const handleCalculateMeg = async () => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
@@ -1411,7 +1453,7 @@ const ProductionvolumeData = ({
       showUnit: permissions?.showUnit ?? false,
       saveWithRemark: permissions?.saveWithRemark ?? true,
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
-      saveBtn: IS_VCM_DMD_EDC ? false : permissions?.saveBtn ?? true,
+      saveBtn: IS_VCM_DMD_EDC ? false : (permissions?.saveBtn ?? true),
       units: ['TPH', 'TPD'],
       showCalculate: permissions?.hideSummary ? false : VERTICAL_NAME === 'meg',
       showRedCellsForOroductionTarget: VERTICAL_NAME == 'pta' ? true : false,
@@ -1593,7 +1635,14 @@ const ProductionvolumeData = ({
     setLoading(true)
     try {
       let response
-      if (IS_PP_SEZ || IS_PP_DTA || IS_PP_HMD || IS_PVC_DMD || IS_PVC_HMD || VERTICAL_NAME=='meg') {
+      if (
+        IS_PP_SEZ ||
+        IS_PP_DTA ||
+        IS_PP_HMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD ||
+        VERTICAL_NAME == 'meg'
+      ) {
         response =
           await ProductionVolumeDataApiService.saveProductionVolDataLineExcel(
             rawFile,

@@ -1,7 +1,7 @@
 /**
  * Determines whether a column is a description, particulars, name, or products column
  * that should be locked in Kendo grids on horizontal scroll.
- * 
+ *
  * @param {Object} col - The column configuration object.
  * @returns {boolean} True if the column should be locked, false otherwise.
  */
@@ -28,5 +28,5 @@ export const shouldLockColumn = (col) => {
     fieldLower === 'discriptiondrpdwn' ||
     fieldLower === 'uom' ||
     fieldLower === 'uom/mt'
-  );
+  )
 }

@@ -13,8 +13,10 @@ import { OptimizerDataApiService } from 'services/optimizer-api-service'
 import CalculatedBusinessProposed from './ProprosedBusinessGradeOptimizer'
 import BudgetOperatingHour from './BudgetOperatingHourGradeMix'
 import { DataService } from 'services/DataService'
+import VmcTrade from './VmcTrade'
+import VcmStockbalance from './VcmStockBalance'
 
-const GradeMixOptimizer = ({ permissions }) => {
+const VcmAvailability = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -69,7 +71,6 @@ const GradeMixOptimizer = ({ permissions }) => {
   const [currentRowId, setCurrentRowId] = useState(null)
   const keycloak = useSession()
   const [rows, setRows] = useState()
-  const [tabIndex, setTabIndex] = useState(0)
   const valueFormat = ValueFormatterConsumption()
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
@@ -133,7 +134,7 @@ const GradeMixOptimizer = ({ permissions }) => {
     setModifiedCells({})
     setLoading(true)
     try {
-      const res = await OptimizerDataApiService.getGradeMixOptimizerConstant(
+      const res = await OptimizerDataApiService.getVcmAvailabilityConstant(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -207,7 +208,7 @@ const GradeMixOptimizer = ({ permissions }) => {
         auditYear: AOP_YEAR,
         normParameterFKId: item.normParameterFkId || item.NormParameter_FK_Id,
         remarks: item.remarks,
-        id: null,
+        id: item.idFromApi || null,
       }))
 
       const response = await DataService.saveCatalystData(
@@ -243,10 +244,8 @@ const GradeMixOptimizer = ({ permissions }) => {
     }
   }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
   useEffect(() => {
-    if (tabIndex === 0) {
       fetchData()
-    }
-  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, tabIndex])
+  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -316,9 +315,10 @@ const GradeMixOptimizer = ({ permissions }) => {
         disableRedHighlight={true}
         screenType='shutdown'
       />
-      <BudgetOperatingHour permissions={permissions} />
+     <VmcTrade/>
+     <VcmStockbalance/>
     </div>
   )
 }
 
-export default GradeMixOptimizer
+export default VcmAvailability

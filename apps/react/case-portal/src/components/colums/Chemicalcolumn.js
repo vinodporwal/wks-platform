@@ -5,7 +5,7 @@ export const SlowDownChemicalhmdColumns = [
     editable: true,
     type: 'discriptionDrpdwn',
     minWidth: 200,
-    locked: true
+    locked: true,
   },
 
   {
@@ -63,7 +63,7 @@ export const ShutDownChemicalDropdownColumns = [
     editable: true,
     type: 'discriptionDrpdwn',
     minWidth: 200,
-    locked: true
+    locked: true,
   },
 
   {

@@ -120,7 +120,7 @@ const MonthwiseOperatingHours = () => {
       )
       if (res?.code === 200) {
         const hasGroupBy = (res?.data.monthwiseOperatingHoursList || []).some(
-          (item) => Object.prototype.hasOwnProperty.call(item, 'groupBy')
+          (item) => Object.prototype.hasOwnProperty.call(item, 'groupBy'),
         )
         if (hasGroupBy) {
           setGroupBy('groupBy')

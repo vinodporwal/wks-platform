@@ -12,7 +12,14 @@ import { validateFields } from 'utils/validationUtils'
 export default function ReliabilityImprovementInitiative() {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { year, verticalChange, yearChanged, oldYear, plantObject, siteObject } = dataGridStore
+  const {
+    year,
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantObject,
+    siteObject,
+  } = dataGridStore
   const AOP_YEAR = year?.selectedYear
   const PLANT_ID = plantObject?.id
   const SITE_NAME_NO_CASE = siteObject?.name?.toLowerCase()
@@ -96,7 +103,12 @@ export default function ReliabilityImprovementInitiative() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await PlantAopReportApiService.getReliabilityImprovementInitiative(keycloak, PLANT_ID, AOP_YEAR)
+      const res =
+        await PlantAopReportApiService.getReliabilityImprovementInitiative(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       if (res?.code === 200) {
         const mapped = (res?.data?.Data || []).map((item, index) => ({
           ...item,
@@ -169,10 +181,11 @@ export default function ReliabilityImprovementInitiative() {
         displayOrder: item.displayOrder ?? null,
       }))
 
-      const response = await PlantAopReportApiService.saveReliabilityImprovementInitiative(
-        keycloak,
-        payload,
-      )
+      const response =
+        await PlantAopReportApiService.saveReliabilityImprovementInitiative(
+          keycloak,
+          payload,
+        )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -189,7 +202,6 @@ export default function ReliabilityImprovementInitiative() {
           severity: 'error',
         })
       }
-
     } catch (e) {
       console.log(e)
       setSnackbarOpen(true)
@@ -202,17 +214,13 @@ export default function ReliabilityImprovementInitiative() {
     }
   }, [modifiedCells])
 
-
-  const handleCalculate = () => { }
+  const handleCalculate = () => {}
 
   const handleRemarkCellClick = useCallback((row) => {
     setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }, [])
-
-
-
 
   const getAdjustedPermissionsC = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -244,8 +252,6 @@ export default function ReliabilityImprovementInitiative() {
     isOldYear,
   )
 
-
-
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
@@ -269,8 +275,6 @@ export default function ReliabilityImprovementInitiative() {
         handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissionsC}
       />
-
-
 
       <Notification
         open={snackbarOpen}

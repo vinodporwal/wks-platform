@@ -24,7 +24,7 @@ export const BusinessDemandMegColumns = [
     editable: false,
     widthT: 150,
     minWidth: 120,
-    locked: true
+    locked: true,
   },
   {
     field: 'UOM',
@@ -32,7 +32,7 @@ export const BusinessDemandMegColumns = [
     editable: false,
     widthT: 80,
     minWidth: 100,
-    locked: true
+    locked: true,
   },
   {
     field: 'april',
@@ -182,7 +182,7 @@ export const SlowDownMegColumns = [
     widthT: 230,
     autoAdjust: false,
     minWidth: 200,
-    locked: true
+    locked: true,
   },
 
   {

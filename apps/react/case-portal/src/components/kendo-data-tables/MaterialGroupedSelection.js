@@ -72,9 +72,11 @@ export default function MaterialGroupedSelection() {
       {
         field: 'value',
         title: 'Value',
-        editable: true,
+        editable: false,
         type: 'number',
         minWidth: 100,
+        isEditable: false,
+        isDisabled: false,
       },
       {
         field: 'status',
@@ -92,103 +94,45 @@ export default function MaterialGroupedSelection() {
     [],
   )
 
-  const fetchData = useCallback(() => {
+  const fetchData = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    setModifiedCells({})
     setLoading(true)
-    const dummyData = [
-      {
-        id: 1,
-        idFromApi: 1,
-        particular: 'ISOPentane',
-        sapCode: '101',
-        value: null,
-        status: false,
-        groupName: 'Group-1',
-        isEditable: true,
-      },
-      {
-        id: 2,
-        idFromApi: 2,
-        particular: 'IOS_Pantane',
-        sapCode: '102',
-        value: 5.6,
-        status: true,
-        groupName: 'Group-1',
-        isEditable: true,
-      },
-      {
-        id: 3,
-        idFromApi: 3,
-        particular: 'ISO-Pantane',
-        sapCode: '103',
-        value: null,
-        status: false,
-        groupName: 'Group-1',
-        isEditable: true,
-      },
-      {
-        id: 4,
-        idFromApi: 4,
-        particular: 'Eth',
-        sapCode: '201',
-        value: null,
-        status: false,
-        groupName: 'Group-2',
-        isEditable: true,
-      },
-      {
-        id: 5,
-        idFromApi: 5,
-        particular: 'Ethylene',
-        sapCode: '202',
-        value: 2.458,
-        status: true,
-        groupName: 'Group-2',
-        isEditable: true,
-      },
-      {
-        id: 6,
-        idFromApi: 6,
-        particular: 'Ethy-101',
-        sapCode: '203',
-        value: null,
-        status: false,
-        groupName: 'Group-2',
-        isEditable: true,
-      },
-      {
-        id: 7,
-        idFromApi: 7,
-        particular: 'Power',
-        sapCode: '301',
-        value: null,
-        status: false,
-        groupName: 'Group-3',
-        isEditable: true,
-      },
-      {
-        id: 8,
-        idFromApi: 8,
-        particular: 'Power-1',
-        sapCode: '302',
-        value: 1.026,
-        status: true,
-        groupName: 'Group-3',
-        isEditable: true,
-      },
-      {
-        id: 9,
-        idFromApi: 9,
-        particular: 'PowerDis',
-        sapCode: '303',
-        value: null,
-        status: false,
-        groupName: 'Group-3',
-        isEditable: true,
-      },
-    ]
-    setRows(dummyData)
-    setLoading(false)
-  }, [])
+    try {
+      const res = await PlantAopReportApiService.getGroupedSelection(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      if (res?.code === 200) {
+        const rawData = Array.isArray(res?.data)
+          ? res.data
+          : res?.data?.Data || []
+        const mapped = rawData.map((item) => ({
+          ...item,
+          id: item.id,
+          idFromApi: item.id,
+          particular: item.displayName || item.name,
+          sapCode: item.sapMaterialCode,
+          value:
+            item.value !== null && item.value !== undefined && item.value !== ''
+              ? parseFloat(item.value)
+              : null,
+          status: item.status,
+          groupName: item.normParameterType,
+          isEditable: item.isEditable,
+        }))
+        setRows(mapped)
+      } else {
+        setRows([])
+      }
+    } catch (e) {
+      console.log(e)
+      setRows([])
+    } finally {
+      setLoading(false)
+    }
+  }, [keycloak, PLANT_ID, AOP_YEAR])
 
   useEffect(() => {
     fetchData()
@@ -237,14 +181,44 @@ export default function MaterialGroupedSelection() {
         return
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      const payload = data.map((item) => ({
+        id: item.idFromApi,
+        name: item.name,
+        displayName: item.displayName,
+        uom: item.uom,
+        value:
+          item.value !== null && item.value !== undefined
+            ? String(item.value)
+            : null,
+        status: !!item.status,
+        dependantAttributeId: item.dependantAttributeId || null,
+        normParameterTypeFkId: item.normParameterTypeFkId || null,
+        plantFkId: item.plantFkId || PLANT_ID,
+        isEditable: item.isEditable,
+        sapMaterialCode: item.sapCode || item.sapMaterialCode,
+        normParameterType: item.groupName || item.normParameterType,
+      }))
 
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Saved Successfully!',
-        severity: 'success',
-      })
-      setModifiedCells({})
+      const response = await PlantAopReportApiService.saveGroupedSelection(
+        keycloak,
+        payload,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Saved Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Save failed!',
+          severity: 'error',
+        })
+      }
     } catch (e) {
       console.log(e)
       setSnackbarOpen(true)
@@ -255,9 +229,9 @@ export default function MaterialGroupedSelection() {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells])
+  }, [modifiedCells, keycloak, PLANT_ID, fetchData])
 
-  const handleCalculate = () => { }
+  const handleCalculate = () => {}
 
   const handleRemarkCellClick = useCallback((row) => {
     setCurrentRemark(row.remark || '')
@@ -285,7 +259,7 @@ export default function MaterialGroupedSelection() {
       allAction: true,
       saveBtn: true,
       showTitleNameBusiness: true,
-      titleName: 'Group Selection',
+      titleName: 'Material Grouped Selection',
       adjustedPermissions: true,
       downloadExcelBtn: false,
       uploadExcelBtn: false,
@@ -302,7 +276,7 @@ export default function MaterialGroupedSelection() {
         rows={rows}
         setRows={setRows}
         columns={columns}
-        title='Group Selection'
+        title='Material Grouped Selection'
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
         remarkDialogOpen={remarkDialogOpen}

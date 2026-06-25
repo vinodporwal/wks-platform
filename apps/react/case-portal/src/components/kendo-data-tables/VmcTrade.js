@@ -1,7 +1,6 @@
 import { useGridApiRef } from '@mui/x-data-grid'
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { useSelector } from 'react-redux'
-import { PlantAopReportApiService } from 'services/plant-aop-report-api-service'
 import { useSession } from 'SessionStoreContext'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { validateFields } from 'utils/validationUtils'
@@ -9,12 +8,9 @@ import KendoDataTables from './index'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
-import CalculatedBusinessProposed from './ProprosedBusinessGradeOptimizer'
-import { DataService } from 'services/DataService'
-import AopTabs from 'components/AopTabs'
-import { Box } from '@mui/material'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
-const BudgetOperatingHour = ({ permissions }) => {
+import { DataService } from 'services/DataService'
+const VmcTrade = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -45,7 +41,7 @@ const BudgetOperatingHour = ({ permissions }) => {
   const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
   const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
 
-  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}`
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_'Vmc Trade'`
 
   const lowerVertName = vertName?.toLowerCase()
   const lowerSiteName = SITE_NAME?.toLowerCase()
@@ -69,16 +65,12 @@ const BudgetOperatingHour = ({ permissions }) => {
   const [currentRowId, setCurrentRowId] = useState(null)
   const keycloak = useSession()
   const [rows, setRows] = useState()
-  const [tabIndex, setTabIndex] = useState(0)
   const valueFormat = ValueFormatterProduction()
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-  const [tabs, setTabs] = useState([])
   const [lineDetails, setLineDetails] = useState([])
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const [aopCalculation, setAopCalculation] = useState([])
-  const [refreshSignal, setRefreshSignal] = useState(0)
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remarks || '')
@@ -104,13 +96,6 @@ const BudgetOperatingHour = ({ permissions }) => {
     {
       field: 'aopYear',
       title: 'AopYear',
-      editable: false,
-      hidden: true,
-      isVisible: false,
-    },
-    {
-      field: 'lineId',
-      title: 'LineId',
       editable: false,
       hidden: true,
       isVisible: false,
@@ -251,69 +236,29 @@ const BudgetOperatingHour = ({ permissions }) => {
     },
   ]
 
-  // --- Fetch the list of lines for this plant/year (NEW) ---
-  const fetchLineDetails = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
+
+    setModifiedCells({})
+    setLoading(true)
     try {
-      const response = await DataService.getLineDetails(
+      const res = await OptimizerDataApiService.getVmcTrade(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
       )
-      if (response?.code === 200 && Array.isArray(response?.data)) {
-        setLineDetails(response.data)
-        setTabs(response.data.map((line) => line.displayName))
-      } else {
-        setLineDetails([])
-        setTabs([])
-      }
-    } catch (err) {
-      console.error('Error fetching line details:', err)
-      setLineDetails([])
-      setTabs([])
-    }
-  }, [PLANT_ID, AOP_YEAR, keycloak])
-
-  useEffect(() => {
-    fetchLineDetails()
-  }, [fetchLineDetails])
-
-  // Reset to first tab whenever the plant/year changes so we don't stay
-  // on a stale tabIndex from a plant that had more lines
-  useEffect(() => {
-    setTabIndex(0)
-  }, [PLANT_ID, AOP_YEAR])
-
-  const fetchData = useCallback(async () => {
-    if (!PLANT_ID || !AOP_YEAR) return
-    const lineId = lineDetails[tabIndex]?.id
-    if (!lineId) return // wait until lineDetails has loaded
-    setModifiedCells({})
-    setLoading(true)
-    try {
-      const res =
-        await OptimizerDataApiService.getGradewiseBudgetOperatingHours(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-          lineId,
-        )
-
-      setAopCalculation(res?.data?.aopCalculation || [])
 
       if (res?.code === 200) {
-        const mapped = (res?.data.budgetedOperatingHoursData || []).map(
-          (item, index) => ({
-            ...item,
-            id: index,
-            idFromApi: item.id || null,
-            isEditable: item?.isEditable,
-            remarks: item.remarks,
-            originalRemark: item.remarks,
-            normParameterFkId: item.normParameterFkId,
-            uom: item.uom,
-          }),
-        )
+        const mapped = (res?.data || []).map((item, index) => ({
+          ...item,
+          id: index,
+          idFromApi: item.id ,
+          isEditable: item?.isEditable,
+          remarks: item.remarks,
+          originalRemark: item.remarks,
+          normParameterFkId: item.normParameterFkId,
+          uom: item.uom,
+        }))
         setRows(mapped)
       } else {
         setRows([])
@@ -324,7 +269,7 @@ const BudgetOperatingHour = ({ permissions }) => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, yearChanged, PLANT_ID, AOP_YEAR, lineDetails, tabIndex])
+  }, [keycloak, yearChanged, PLANT_ID, AOP_YEAR, lineDetails])
 
   const saveChanges = React.useCallback(async () => {
     try {
@@ -355,7 +300,7 @@ const BudgetOperatingHour = ({ permissions }) => {
       }
       var payload = []
       payload = data.map((item) => ({
-        apr: item.apr || item.ConstantValue || null,
+        apr: item.apr || null,
         may: item.may || null,
         jun: item.jun || null,
         jul: item.jul || null,
@@ -369,22 +314,19 @@ const BudgetOperatingHour = ({ permissions }) => {
         mar: item.mar || null,
         UOM: '',
         auditYear: AOP_YEAR,
-        gradeId:item.gradeId,
-        normParameterFkId: item.normParameterFkId || item.NormParameter_FK_Id,
+        normParameterFKId: item.normParameterFkId || item.NormParameter_FK_Id,
         remarks: item.remarks,
         id: item.idFromApi || null,
       }))
-      const lineId = lineDetails[tabIndex]?.id
-      const response =
-        await OptimizerDataApiService.saveGradeBudgetOperatingHours(
-          PLANT_ID,
-          payload,
-          keycloak,
-          AOP_YEAR,
-          lineId,
-        )
 
-      if (response?.code === 200) {
+      const response = await DataService.saveCatalystData(
+        PLANT_ID,
+        payload,
+        keycloak,
+        AOP_YEAR,
+      )
+
+      if (response) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Saved Successfully!',
@@ -409,61 +351,10 @@ const BudgetOperatingHour = ({ permissions }) => {
       setLoading(false)
     }
   }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
-  useEffect(() => {
-    if (tabIndex === 0) {
-      fetchData()
-    }
-  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, tabIndex])
 
   useEffect(() => {
-    if (lineDetails.length > 0 && lineDetails[tabIndex]) {
-      fetchData()
-    }
-  }, [
-    PLANT_ID,
-    AOP_YEAR,
-    oldYear,
-    yearChanged,
-    keycloak,
-    lineDetails,
-    tabIndex,
-  ])
-
-  const handleCalculate = async () => {
-    setLoading(true)
-    try {
-      const data =
-        await OptimizerDataApiService.calculateGradeMixBudgetOpeartingHours(
-          PLANT_ID,
-          AOP_YEAR,
-          keycloak,
-        )
-      if (data || data === 0 || data?.code === 200) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Data refreshed successfully!',
-          severity: 'success',
-        })
-        fetchData()
-        setRefreshSignal((prev) => prev + 1)
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Data Refresh Failed!',
-          severity: 'error',
-        })
-      }
-    } catch (error) {
-      console.error('Error saving refresh data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: error.message || 'An error occurred',
-        severity: 'error',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
+    fetchData()
+  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
 
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)
@@ -471,14 +362,17 @@ const BudgetOperatingHour = ({ permissions }) => {
       message: 'Excel download started!',
       severity: 'success',
     })
-    const EXCEL_NAME = `${EXCEL_EXPORT_TITLE}_Budget_Operating_Hours`
+
     try {
-      await OptimizerDataApiService.budgetOperatingLineExport(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        EXCEL_NAME,
-      )
+      let response
+    
+        response = await OptimizerDataApiService.VmcTradeExportExcel(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
+      
     } catch (error) {
       console.error('Error downloading Excel:', error)
       setSnackbarData({
@@ -487,78 +381,6 @@ const BudgetOperatingHour = ({ permissions }) => {
       })
     } finally {
       setSnackbarOpen(true)
-    }
-  }
-
-  const handleExcelUpload = (rawFile) => {
-    uploadBudgetOperatingHour(rawFile)
-  }
-
-  const uploadBudgetOperatingHour = async (rawFile) => {
-    setLoading(true)
-
-    try {
-      let response
-
-      response = await OptimizerDataApiService.budgetOperatingHourImport(
-        rawFile,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
-
-      if (response?.code === 200) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Uploaded Successfully!',
-          severity: 'success',
-        })
-        setModifiedCells({})
-        fetchData()
-      } else if (response?.code === 400 && response?.data) {
-        const byteCharacters = atob(response.data)
-        const byteNumbers = Array.from(byteCharacters, (char) =>
-          char.charCodeAt(0),
-        )
-        const byteArray = new Uint8Array(byteNumbers)
-
-        const blob = new Blob([byteArray], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        })
-
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.setAttribute('download', 'Error File - Budget Operating Hour.xlsx')
-        document.body.appendChild(link)
-        link.click()
-        link.remove()
-        window.URL.revokeObjectURL(url)
-
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Partial data saved. Error file downloaded.',
-          severity: 'warning',
-        })
-        fetchData()
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Upload Failed!',
-          severity: 'error',
-        })
-      }
-
-      return response
-    } catch (error) {
-      console.error('Error uploading xcel:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Unexpected error occurred!',
-        severity: 'error',
-      })
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -588,13 +410,12 @@ const BudgetOperatingHour = ({ permissions }) => {
       saveBtn: permissions?.saveBtn ?? true,
       customHeight: permissions?.customHeight,
       allAction: true,
-      downloadExcelBtn: true,
-      uploadExcelBtn:true,
+      downloadExcelBtn: false,
+      uploadExcelBtn: false,
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
-      titleName: 'Gradewise Monthwise Budgeted Operating Hours',
-      showCalculate: true,
-      showCalculateVisibility: aopCalculation.length > 0,
+      titleName: 'Vcm Trade',
+      showCalculate: false,
     },
     isOldYear,
   )
@@ -602,12 +423,6 @@ const BudgetOperatingHour = ({ permissions }) => {
   return (
     <div>
       <LoaderBackdrop open={!!loading} />
-      {/* Line tabs */}
-      {tabs.length > 0 && (
-        <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
-          <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
-        </Box>
-      )}
 
       <KendoDataTables
         modifiedCells={modifiedCells}
@@ -632,22 +447,14 @@ const BudgetOperatingHour = ({ permissions }) => {
         setRemarkDialogOpen={setRemarkDialogOpen}
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
-        handleCalculate={handleCalculate}
         currentRowId={currentRowId}
         permissions={adjustedPermissions}
-        downloadExcelForConfiguration={downloadExcelForConfiguration}
-        handleExcelUpload={handleExcelUpload}
         disableRedHighlight={true}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
         screenType='shutdown'
-      />
-      <CalculatedBusinessProposed
-        permissions={permissions}
-        lineDetails={lineDetails}
-        tabIndex={tabIndex}
-        refreshSignal={refreshSignal}
       />
     </div>
   )
 }
 
-export default BudgetOperatingHour
+export default VmcTrade

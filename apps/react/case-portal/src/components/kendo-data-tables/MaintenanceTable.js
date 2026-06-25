@@ -137,7 +137,6 @@ const MaintenanceTable = () => {
   }
 
   const fetchData = useCallback(async () => {
-
     if (!PLANT_ID || !AOP_YEAR) return
     setRows([])
     setLoading(true)
@@ -222,7 +221,8 @@ const MaintenanceTable = () => {
     }
   }, [PLANT_ID, AOP_YEAR, keycloak, dataConfig])
 
-  const needsLineDetails = IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD
+  const needsLineDetails =
+    IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD
 
   // Track whether line details have been loaded (to gate fetchData)
   const [lineDetailsReady, setLineDetailsReady] = useState(!needsLineDetails)
@@ -269,7 +269,14 @@ const MaintenanceTable = () => {
     } else {
       setLineDetailsReady(true)
     }
-  }, [PLANT_ID, AOP_YEAR, keycloak, yearChanged, needsLineDetails, fetchLineDetails])
+  }, [
+    PLANT_ID,
+    AOP_YEAR,
+    keycloak,
+    yearChanged,
+    needsLineDetails,
+    fetchLineDetails,
+  ])
 
   // Step 2: Fetch main data ONLY after line details are ready
   useEffect(() => {
@@ -279,7 +286,15 @@ const MaintenanceTable = () => {
       }, 200)
       return () => clearTimeout(timer)
     }
-  }, [lineDetailsReady, fetchData, oldYear, yearChanged, PLANT_ID, AOP_YEAR, tabIndex])
+  }, [
+    lineDetailsReady,
+    fetchData,
+    oldYear,
+    yearChanged,
+    PLANT_ID,
+    AOP_YEAR,
+    tabIndex,
+  ])
 
   // Helper to generate monthly fields
   const getMonthlyColumns = () => {
@@ -486,11 +501,11 @@ const MaintenanceTable = () => {
           allAction: true,
           downloadExcelBtnFromUI:
             IS_PP_DTA ||
-              IS_PP_SEZ ||
-              IS_PVC_DMD ||
-              IS_PP_HMD ||
-              IS_PVC_HMD ||
-              IS_PVC_VMD
+            IS_PP_SEZ ||
+            IS_PVC_DMD ||
+            IS_PP_HMD ||
+            IS_PVC_HMD ||
+            IS_PVC_VMD
               ? false
               : true,
           ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
@@ -500,11 +515,11 @@ const MaintenanceTable = () => {
 
           downloadExcelBtn:
             IS_PP_DTA ||
-              IS_PP_SEZ ||
-              IS_PVC_DMD ||
-              IS_PP_HMD ||
-              IS_PVC_HMD ||
-              IS_PVC_VMD
+            IS_PP_SEZ ||
+            IS_PVC_DMD ||
+            IS_PP_HMD ||
+            IS_PVC_HMD ||
+            IS_PVC_VMD
               ? true
               : false,
         },

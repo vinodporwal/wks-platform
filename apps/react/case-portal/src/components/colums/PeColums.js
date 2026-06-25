@@ -168,7 +168,7 @@ export const SlowDownPeColumns = [
     widthT: 200,
     autoAdjust: false,
     minWidth: 200,
-    locked: true
+    locked: true,
   },
 
   {
