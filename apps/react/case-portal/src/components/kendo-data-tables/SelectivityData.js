@@ -334,7 +334,7 @@ const SelectivityData = (props) => {
 
         if (IS_AROMATICS_PMD) {
           setSnackbarData({
-            message: 'Saved Successfully , Please load the data agian !',
+            message: 'Changes saved successfully. Please reload the data.',
             severity: 'info',
             autoHide: false
           })
