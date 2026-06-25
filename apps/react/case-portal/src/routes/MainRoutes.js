@@ -172,6 +172,10 @@ import OverallAopConsumptionNS from 'components/aop-phase-two/naphthasplitter/ov
 import ProductionNormsBasisNS from 'components/aop-phase-two/naphthasplitter/production-norms-basis'
 import GradeMixOptimizer from 'components/kendo-data-tables/GradeMixOptimizer'
 import VcmAvailability from 'components/kendo-data-tables/VcmAvailability'
+import PlantCapacities from 'components/aop-phase-two/refineryAopBudget/PlantCapacities'
+import ShutdownSchedule from 'components/aop-phase-two/refineryAopBudget/shutdown'
+import SlowdownSchedule from 'components/aop-phase-two/refineryAopBudget/slowdown'
+
 // Naphthasplitter Ended
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
@@ -340,6 +344,38 @@ export const MainRoutes = (
           },
         ],
         //TCS Ended],
+      },
+
+      {
+        path: 'refinery-aop-budget',
+        children: [
+          //TCS Started
+          {
+            path: 'plant-capacities',
+            element: (
+              <PrivateRoute routeId='plant-capacities'>
+                <PlantCapacities />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown',
+            element: (
+              <PrivateRoute routeId='shutdown'>
+                <ShutdownSchedule />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'slowdown',
+            element: (
+              <PrivateRoute routeId='slowdown'>
+                <SlowdownSchedule />
+              </PrivateRoute>
+            ),
+          },
+        ],
+        // REFINERY AOP BUDGET Ended],
       },
 
       {
@@ -634,11 +670,11 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
-           {
+          {
             path: 'grade-mix-optimizer',
             element: (
               <PrivateRoute routeId='grade-mix-optimizer'>
-                <GradeMixOptimizer/>
+                <GradeMixOptimizer />
               </PrivateRoute>
             ),
           },
@@ -646,7 +682,7 @@ export const MainRoutes = (
             path: 'vcm-availability',
             element: (
               <PrivateRoute routeId='vcm-availability'>
-                <VcmAvailability/>
+                <VcmAvailability />
               </PrivateRoute>
             ),
           },

@@ -112,6 +112,11 @@ const defs = {
     pimsoutput: 'PIMS Output',
     workflowdesign: 'Workflow Design',
 
+    refineryAopBudget: 'Refinery AOP Budget',
+    plantCapacities: 'Plant Capacities',
+    shutdown: 'Shutdown',
+    slowdown: 'Slowdown',
+
     //SSRS
     normComparisonReport: 'Norm Comparison Report',
     packagingConsumables: 'Packaging Consumables',
@@ -340,6 +345,9 @@ const defs = {
         sapBasedRefNorms: 'SAP Based Reference Norms',
         specificConsumptionC3: 'Feed Availability',
         productionOptimizer: 'Production Optimizer',
+        plantCapacities: 'Plant Capacities',
+        shutdown: 'Shutdown',
+        slowdown: 'Slowdown',
 
         causticSodaLyeBasis: 'Caustic Soda Lye Norms',
         materialBalance: 'Material Balance',
