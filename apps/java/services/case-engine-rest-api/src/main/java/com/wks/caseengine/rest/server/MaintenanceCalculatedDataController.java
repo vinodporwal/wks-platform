@@ -61,7 +61,7 @@ public class MaintenanceCalculatedDataController {
 	}
 
 	@GetMapping(value="/cat-chem-calculation")
-	public AOPMessageVM getMaintenanceCatChem(@RequestParam String plantId, @RequestParam String year, @RequestParam String gradeId){
+	public AOPMessageVM getMaintenanceCatChem(@RequestParam String plantId, @RequestParam String year, @RequestParam(required=false) String gradeId){
 		return maintenanceCalculatedDataService.getMaintenanceCatChem(plantId, year, gradeId);		
 	}
 	
@@ -73,6 +73,11 @@ public class MaintenanceCalculatedDataController {
 	@GetMapping(value="/maintenance-other-plants")
 	public AOPMessageVM getOtherPlants(@RequestParam String plantId, @RequestParam String year){
 		return maintenanceCalculatedDataService.getOtherPlants(plantId,year);		
+	}
+
+	@GetMapping(value="/percentage-deviations")
+	public AOPMessageVM getPercentageDeviations(@RequestParam String plantId, @RequestParam String aopYear){
+		return maintenanceCalculatedDataService.getPercentageDeviations(plantId, aopYear);
 	}
 	
 	@GetMapping(value = "/maintenance-export")
@@ -174,9 +179,8 @@ public class MaintenanceCalculatedDataController {
 	}
 	
 	@PostMapping(value="/budget-maintenance")
-	public AOPMessageVM updateBudgetMaintenance(@RequestBody List<BudgetMaintenanceDto> budgetMaintenanceDtos, @RequestParam String plantId, @RequestParam String year){
-		//return maintenanceCalculatedDataService.updateBudgetMaintenance(budgetMaintenanceDtos);		
-		return maintenanceCalculatedDataService.updateMaintenance(budgetMaintenanceDtos, plantId, year);		
+	public AOPMessageVM updateBudgetMaintenance(@RequestBody List<BudgetMaintenanceDto> budgetMaintenanceDtos){
+		return maintenanceCalculatedDataService.updateBudgetMaintenance(budgetMaintenanceDtos);		
 	}
 	
 	@GetMapping(value = "/budget-maintenance-export-excel")

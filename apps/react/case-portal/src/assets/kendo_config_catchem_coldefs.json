@@ -3,6 +3,7 @@
     "field": "particulars",
     "title": "Particulars",
     "editable": false,
+    "locked": true,
     "widthT": 220,
     "hidden": false,
     "minWidth": 120
@@ -11,6 +12,7 @@
     "field": "uom",
     "title": "UOM",
     "editable": false,
+    "locked": true,
     "widthT": 80,
     "minWidth": 80
   },

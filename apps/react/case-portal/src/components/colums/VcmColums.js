@@ -5,6 +5,7 @@ export const SlowDownVcmColumns = [
     editable: true,
     type: 'discriptionDrpdwn',
     minWidth: 200,
+    locked: true
   },
 
   {
@@ -60,6 +61,7 @@ export const SlowDownVcmhmdColumns = [
     editable: true,
     type: 'discriptionDrpdwn',
     minWidth: 200,
+    locked: true
   },
 
   {
@@ -117,6 +119,7 @@ export const SlowDownDmdVcmColumns = [
     title: 'Slowdown Desc',
     editable: true,
     minWidth: 200,
+    locked: true
   },
 
   {

@@ -25,6 +25,7 @@ export const BusinessDemandPtaColumns = [
     editable: false,
     width: 125,
     minWidth: 100,
+    locked: true,
   },
   {
     field: 'april',
@@ -170,6 +171,7 @@ export const SlowDownPtaColumns = [
     widthT: 150,
     autoAdjust: false,
     minWidth: 200,
+    locked: true,
   },
 
   {
@@ -236,6 +238,7 @@ export const SlowDownPtadmdColumns = [
     widthT: 150,
     autoAdjust: false,
     minWidth: 200,
+    locked: true
   },
   {
     field: 'maintenanceId',
@@ -516,7 +519,7 @@ export const ShutdownConsumptionPtaColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
-    minWidth: 120,
+    minWidth: 130,
   },
   {
     field: 'UOM',
@@ -582,7 +585,7 @@ export const ShutdownConsumptionPtadmdColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
-    minWidth: 100,
+    minWidth: 130,
   },
   {
     field: 'UOM',
@@ -649,7 +652,7 @@ export const SlowdownNormsPtaColumns = [
     headerName: 'Particulars',
     width: 120,
     editable: false,
-    minWidth: 100,
+    minWidth: 130,
   },
   {
     field: 'UOM',

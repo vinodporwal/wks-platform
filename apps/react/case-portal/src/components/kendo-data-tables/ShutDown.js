@@ -37,6 +37,7 @@ import { calculateMonthDuration } from './Utilities-Kendo/durationHelpers'
 import ElastomerShutDown from './ElastomerShutDown'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import PtaShutDown from './PtaShutdown'
+import { ShutDownAROMATICSHMDColumns } from 'components/colums/AromaticsColumns'
 const ShutDown = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -123,7 +124,10 @@ const ShutDown = ({ permissions }) => {
     lowerSiteName === 'hmd' &&
     (lowerPlantName === 'butadiene' ||
       lowerPlantName === 'mtbe' ||
-      lowerPlantName === 'butene')
+      lowerPlantName === 'butene' ||
+      lowerPlantName === 'pdeb')
+  const IS_AROMATIC_HMD =
+    lowerVertName === 'aromatics' && lowerSiteName === 'hmd'
   const DELETE_NOTE =
     'Warning: Please verify the shutdown consumption quantity before deleting the shutdown activity.'
 
@@ -387,7 +391,7 @@ const ShutDown = ({ permissions }) => {
         (d, i) => d && allDescriptions.indexOf(d) !== i,
       )
 
-      if (duplicate && lowerVertName !== 'pta') {
+      if (duplicate && lowerVertName !== 'pta' && !IS_AROMATIC_HMD) {
         rows.forEach((row) => {
           if ((row.discription || '').trim().toLowerCase() === duplicate) {
             row.isError = true
@@ -1030,7 +1034,7 @@ const ShutDown = ({ permissions }) => {
       try {
         let data = []
 
-        if (IS_PTA || IS_CHEMICAL_HMD_DROPDOWNDESC) {
+        if (IS_PTA || IS_CHEMICAL_HMD_DROPDOWNDESC || IS_AROMATIC_HMD) {
           data = await DataService.dropdownValuesDMD(
             keycloak,
             PLANT_ID,
@@ -1077,7 +1081,11 @@ const ShutDown = ({ permissions }) => {
       }
     }
 
-    if (lowerVertName == 'pta' || IS_CHEMICAL_HMD_DROPDOWNDESC)
+    if (
+      lowerVertName == 'pta' ||
+      IS_CHEMICAL_HMD_DROPDOWNDESC ||
+      IS_AROMATIC_HMD
+    )
       getAllDescriptionDrpdwn()
   }, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
 
@@ -1195,6 +1203,10 @@ const ShutDown = ({ permissions }) => {
           : IS_ELASTOMER_JMD_IIR
             ? ShutDown_Elastomer_JMD_IIR_Columns
             : []
+      case verticalEnums.AROMATICS:
+        return IS_AROMATIC_HMD
+          ? ShutDownAROMATICSHMDColumns
+          : ShutDownAllColumns
 
       default:
         return ShutDownAllColumns

@@ -10,7 +10,7 @@ import { useSelector } from 'react-redux'
 import { add } from 'lodash'
 import { validateFields } from 'utils/validationUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-export default function PlantTeam() {
+export default function PlantTeam({ onlyPeopleInitiative = false }) {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -165,55 +165,57 @@ export default function PlantTeam() {
     if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
     try {
-      // var res = await DataService.getMonthWiseSummary(keycloak)
-      const res = await DataService.getDataTeamPlant(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      let res
+      if (!onlyPeopleInitiative) {
+        res = await DataService.getDataTeamPlant(keycloak, PLANT_ID, AOP_YEAR)
+      }
+
       const res1 = await DataService.getPeopleInitiative(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
       )
 
-      if (res?.code === 200) {
-        const mapped = res?.data?.Data?.map((item, index) => ({
-          id: item.id || null,
-          idFromApi: item.id || null,
-          // serialNumber: index + 1,
-          serialNumber: index + 1,
-          function: item.functions,
-          jobRole: item.jobRole,
-          name: item.name,
-          age: item.age,
-          teamSize: item.teamSize,
-          remarks: item.remark,
-          isEditable: item?.isEditable,
-          originalRemark: item.remark,
-        }))
+      if (!onlyPeopleInitiative) {
+        if (res?.code === 200) {
+          const mapped = res?.data?.Data?.map((item, index) => ({
+            id: item.id || null,
+            idFromApi: item.id || null,
+            serialNumber: index + 1,
+            function: item.functions,
+            jobRole: item.jobRole,
+            name: item.name,
+            age: item.age,
+            teamSize: item.teamSize,
+            remarks: item.remark,
+            isEditable: item?.isEditable,
+            originalRemark: item.remark,
+          }))
+          setRows(mapped)
+        } else {
+          setRows([])
+        }
+      }
 
+      if (res1?.code === 200) {
         const peopleInitiativeMapped = res1?.data?.Data?.map((item, index) => ({
           ...item,
           id: item.id || null,
           idFromApi: item.id || null,
           serialNumber: index + 1,
         }))
-        setRows(mapped)
         setPeopleInitiativeRows(peopleInitiativeMapped)
       } else {
-        setRows([])
         setPeopleInitiativeRows([])
       }
     } catch (err) {
       console.error('fetchData error', err)
-      setRows([])
+      if (!onlyPeopleInitiative) setRows([])
       setPeopleInitiativeRows([])
     } finally {
       setLoading(false)
     }
-  }, [keycloak, yearChanged, plantID])
-
+  }, [keycloak, yearChanged, plantID, PLANT_ID, AOP_YEAR, onlyPeopleInitiative])
   useEffect(() => {
     fetchData()
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
@@ -594,29 +596,32 @@ export default function PlantTeam() {
     <Box>
       <LoaderBackdrop open={!!loading} />
 
-      <KendoDataTables
-        columns={columns}
-        rows={rows}
-        setRows={setRows}
-        title='Plant Team (Size)'
-        modifiedCells={modifiedCells}
-        setModifiedCells={setModifiedCells}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        setCurrentRowId={setCurrentRowId}
-        enableSaveAddBtn={enableSaveAddBtn}
-        saveChanges={saveChanges}
-        handleRemarkCellClick={handleRemarkCellClick}
-        deleteRowData={deleteRowData}
-        permissions={adjustedPermissionsC}
-        downloadExcelForConfiguration={() =>
-          downloadExcelForConfiguration('plantTeam')
-        }
-        handleExcelUpload={handleExcelUpload('plantTeam')}
-      />
+      {!onlyPeopleInitiative && (
+        <KendoDataTables
+          columns={columns}
+          rows={rows}
+          setRows={setRows}
+          title='Plant Team (Size)'
+          modifiedCells={modifiedCells}
+          setModifiedCells={setModifiedCells}
+          remarkDialogOpen={remarkDialogOpen}
+          setRemarkDialogOpen={setRemarkDialogOpen}
+          currentRemark={currentRemark}
+          setCurrentRemark={setCurrentRemark}
+          currentRowId={currentRowId}
+          setCurrentRowId={setCurrentRowId}
+          enableSaveAddBtn={enableSaveAddBtn}
+          saveChanges={saveChanges}
+          handleRemarkCellClick={handleRemarkCellClick}
+          deleteRowData={deleteRowData}
+          permissions={adjustedPermissionsC}
+          downloadExcelForConfiguration={() =>
+            downloadExcelForConfiguration('plantTeam')
+          }
+          handleExcelUpload={handleExcelUpload('plantTeam')}
+        />
+      )}
+
       <KendoDataTables
         columns={peopleInitiativeColumns}
         rows={peopleInitiativeRows}

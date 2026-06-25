@@ -24,6 +24,8 @@ export const MockSpecificConsumptionNormsIIAPI = {
     //BYPRODUCT
     //CatChem
     //RAWMATERIAL
+    const Title_Name =
+      lowerVertName === 'chemical' ? 'Parameters' : 'Raw Material'
     if (lowerVertName === 'meg') {
       switch (category) {
         case 'RAWMATERIAL':
@@ -1308,7 +1310,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               },
               {
                 field: 'material',
-                title: 'Raw material',
+                title: Title_Name,
                 editable: false,
                 widthT: 200,
               },
@@ -1488,7 +1490,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               },
               {
                 field: 'material',
-                title: 'Raw material',
+                title: Title_Name,
                 editable: false,
                 widthT: 200,
               },
@@ -1662,7 +1664,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               },
               {
                 field: 'material',
-                title: 'Raw material',
+                title: Title_Name,
                 editable: false,
                 widthT: 200,
               },
@@ -2356,7 +2358,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               },
               {
                 field: 'material',
-                title: 'Raw material',
+                title: Title_Name,
                 editable: false,
                 widthT: 200,
               },
@@ -2529,7 +2531,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               },
               {
                 field: 'material',
-                title: 'Material',
+                title: lowerVertName === 'chemical' ? 'Parameters' : 'Material',
                 editable: false,
                 widthT: 200,
               },

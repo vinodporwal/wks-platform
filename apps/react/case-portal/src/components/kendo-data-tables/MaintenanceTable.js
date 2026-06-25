@@ -137,6 +137,7 @@ const MaintenanceTable = () => {
   }
 
   const fetchData = useCallback(async () => {
+
     if (!PLANT_ID || !AOP_YEAR) return
     setRows([])
     setLoading(true)
@@ -189,7 +190,9 @@ const MaintenanceTable = () => {
       })
 
       // For PE/PP/PVC/PET: highlight months where Slowdown Hrs Equivalent to Shutdown < 0
-      const IS_SLOWDOWN_VERTICAL = ['pp', 'pe', 'pvc', 'pet'].includes(lowerVertName)
+      const IS_SLOWDOWN_VERTICAL = ['pp', 'pe', 'pvc', 'pet'].includes(
+        lowerVertName,
+      )
       if (IS_SLOWDOWN_VERTICAL) {
         const ROW_KEY = 'Slowdown Hrs Equivalent to Shutdown'
         const slowdownRow = formatted.find((r) => r.Name === ROW_KEY)
@@ -219,12 +222,13 @@ const MaintenanceTable = () => {
     }
   }, [PLANT_ID, AOP_YEAR, keycloak, dataConfig])
 
-  useEffect(() => {
-    fetchData()
-  }, [fetchData, oldYear, yearChanged, PLANT_ID, AOP_YEAR, lineDetails])
+  const needsLineDetails = IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD
+
+  // Track whether line details have been loaded (to gate fetchData)
+  const [lineDetailsReady, setLineDetailsReady] = useState(!needsLineDetails)
 
   // Fetch line details when component mounts or plantID/year changes
-  const fetchLineDetails = async () => {
+  const fetchLineDetails = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
 
     try {
@@ -236,6 +240,8 @@ const MaintenanceTable = () => {
 
       if (response?.code != 200) {
         setTabs([])
+        setLineDetails([])
+        setLineDetailsReady(true)
         return
       }
       if (response && Array.isArray(response?.data)) {
@@ -243,19 +249,37 @@ const MaintenanceTable = () => {
         // Update tabs based on the response
         const lineTabs = response?.data.map((line) => line.displayName)
         setTabs(lineTabs)
+        setLineDetailsReady(true)
       }
     } catch (err) {
       console.error('Error fetching line details:', err)
       // Fallback to default tabs if API fails
       setTabs([])
+      setLineDetails([])
+      setLineDetailsReady(true)
     }
-  }
+  }, [PLANT_ID, AOP_YEAR, keycloak])
 
+  // Step 1: Reset lineDetails and fetch line details first (for verticals that need it)
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD || IS_PVC_HMD) {
+    setLineDetails([])
+    if (needsLineDetails) {
+      setLineDetailsReady(false)
       fetchLineDetails()
+    } else {
+      setLineDetailsReady(true)
     }
-  }, [PLANT_ID, keycloak, yearChanged])
+  }, [PLANT_ID, AOP_YEAR, keycloak, yearChanged, needsLineDetails, fetchLineDetails])
+
+  // Step 2: Fetch main data ONLY after line details are ready
+  useEffect(() => {
+    if (lineDetailsReady) {
+      const timer = setTimeout(() => {
+        fetchData()
+      }, 200)
+      return () => clearTimeout(timer)
+    }
+  }, [lineDetailsReady, fetchData, oldYear, yearChanged, PLANT_ID, AOP_YEAR, tabIndex])
 
   // Helper to generate monthly fields
   const getMonthlyColumns = () => {
@@ -305,6 +329,7 @@ const MaintenanceTable = () => {
       editable: false,
       isEditable: false,
       minWidth: 300,
+      locked: true,
     },
     ...getMonthlyColumns(),
     isEditableField,
@@ -320,6 +345,7 @@ const MaintenanceTable = () => {
       editable: false,
       isEditable: false,
       minWidth: 200,
+      locked: true,
     },
     ...getMonthlyColumns(),
     isEditableField,
@@ -343,6 +369,7 @@ const MaintenanceTable = () => {
       widthT: nameWidthT,
       editable: false,
       minWidth: 200,
+      locked: true,
     },
     ...getMonthlyColumns(),
     isEditableField,
@@ -364,6 +391,7 @@ const MaintenanceTable = () => {
       widthT: nameWidthT,
       editable: false,
       minWidth: 200,
+      locked: true,
     },
     ...getMonthlyColumns(),
     isEditableField,

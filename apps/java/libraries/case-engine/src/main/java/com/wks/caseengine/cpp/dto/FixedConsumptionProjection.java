@@ -4,6 +4,7 @@ import java.util.UUID;
 
 public interface FixedConsumptionProjection {
 
+    UUID getId();
     String getPlantName();
     String getPlantCode();
     String getCostCenterName();

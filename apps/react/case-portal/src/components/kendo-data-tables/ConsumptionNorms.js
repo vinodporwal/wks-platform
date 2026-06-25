@@ -100,7 +100,7 @@ const ConsumptionNorms = () => {
   const { items: menuItems } = useMenuContext()
   const showReleaseButton = shouldShowReleaseButton(menuItems)
 
-  console.log('showReleaseButton', showReleaseButton)
+  // console.log('showReleaseButton', showReleaseButton)
 
   // const { setIsReleased } = dataGridStore
 
@@ -662,47 +662,47 @@ const ConsumptionNorms = () => {
       customHeight: defaultCustomHeight,
       showG:
         lowerVertName === 'pe' ||
-        lowerVertName === 'pp' ||
-        lowerVertName === 'pet' ||
-        IS_ELASTOMER_HMD_SBR ||
-        IS_ELASTOMER_JMD_HIIR ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_PVC_HMD
+          lowerVertName === 'pp' ||
+          lowerVertName === 'pet' ||
+          IS_ELASTOMER_HMD_SBR ||
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD
           ? true
           : false,
       marginBottom:
         lowerVertName === 'pe' ||
-        lowerVertName === 'pp' ||
-        lowerVertName === 'pet' ||
-        IS_ELASTOMER_HMD_SBR ||
-        IS_ELASTOMER_JMD_HIIR ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_PVC_HMD
+          lowerVertName === 'pp' ||
+          lowerVertName === 'pet' ||
+          IS_ELASTOMER_HMD_SBR ||
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD
           ? true
           : false,
       dropdownLabel: 'Grade',
       downloadExcelBtnFromUI:
         lowerVertName === 'pe' ||
-        lowerVertName === 'pp' ||
-        lowerVertName === 'pet' ||
-        IS_ELASTOMER_HMD_SBR ||
-        IS_ELASTOMER_JMD_HIIR ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_PVC_HMD
+          lowerVertName === 'pp' ||
+          lowerVertName === 'pet' ||
+          IS_ELASTOMER_HMD_SBR ||
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD
           ? false
           : true,
       downloadExcelBtn:
         lowerVertName === 'pe' ||
-        lowerVertName === 'pp' ||
-        lowerVertName === 'pet' ||
-        IS_ELASTOMER_HMD_SBR ||
-        IS_ELASTOMER_JMD_HIIR ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_PVC_HMD
+          lowerVertName === 'pp' ||
+          lowerVertName === 'pet' ||
+          IS_ELASTOMER_HMD_SBR ||
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD
           ? true
           : false,
       ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
@@ -747,6 +747,7 @@ const ConsumptionNorms = () => {
               handleCalculate={handleCalculate}
               handleRemarkCellClick={handleRemarkCellClick}
               // fetchData={fetchData}
+
               handleUnitChange={handleUnitChange}
               remarkDialogOpen={remarkDialogOpen}
               setRemarkDialogOpen={setRemarkDialogOpen}

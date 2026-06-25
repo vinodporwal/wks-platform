@@ -55,10 +55,16 @@ public class NormBasisServiceImpl implements NormBasisService {
     @Override
     public List<NormBasisDTO> getAllNormBasis(UUID plantId, String aopYear) {
         
-        List<NormBasisProjection> normBasisProjections = normBasisRepository.getAllNormBasis(plantId, aopYear);
-        List<NormBasisDTO> normBasisDTOs = normBasisProjections.stream()
-            .map(this::fromProjection)
-            .collect(Collectors.toList());
+      
+        Plants plant = plantsRepository.findById(plantId)
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+        String procedureName = vertical.getName()+"_"+"GetConfiguration_Constant";
+  
+
+        List<NormBasisDTO> normBasisDTOs = fetchNormBasisFromProcedure(plantId, aopYear, procedureName);
 
             //  String endYear = String.valueOf(Integer.parseInt(aopYear.substring(0, 4))  +1 );
             //     String normCycleStarts = endYear + "-" + "04" + "-" + "01"; 
@@ -130,6 +136,26 @@ public class NormBasisServiceImpl implements NormBasisService {
            
            return normBasisDTOs;
 
+    }
+
+    private List<NormBasisDTO> fetchNormBasisFromProcedure(UUID plantId, String aopYear, String procedureName) {
+        String sql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?";
+        return jdbcTemplate.query(sql, (rs, rowNum) ->
+            NormBasisDTO.builder()
+                .id(UUID.fromString(rs.getString("Id")))
+                .name(rs.getString("DisplayName"))
+                .displayName(rs.getString("DisplayName"))
+                .uom(rs.getString("UOM"))
+                .attributeValue(rs.getString("AttributeValue"))
+                .remarks(rs.getString("Remarks"))
+                .type(rs.getString("Type"))
+                .normParameterType(rs.getString("NormParameterType"))
+                .displayOrder(rs.getString("DisplayOrder"))
+                .isEditable(rs.getBoolean("IsEditable"))
+                .config(rs.getString("Config"))
+                .build(),
+            plantId.toString(), aopYear
+        );
     }
 
     private NormBasisDTO fromProjection(NormBasisProjection projection) {
@@ -278,13 +304,14 @@ private String executeNormCalculationProcedure(UUID plantId, String aopYear, UUI
 
 @Override
 public List<NormBasisDTO> getPIMSThroughput(UUID plantId, String aopYear) {
-    
-    List<NormBasisProjection> normBasisProjections = normBasisRepository.getPIMSThroughput(plantId, aopYear);
-    List<NormBasisDTO> normBasisDTOs = normBasisProjections.stream()
-        .map(this::fromProjection)
-        .collect(Collectors.toList());
 
-    return normBasisDTOs;
+    Plants plant = plantsRepository.findById(plantId)
+            .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+    String procedureName = vertical.getName() + "_GetPIMS_Throughput";
+
+    return fetchNormBasisFromProcedure(plantId, aopYear, procedureName);
 }
 
 

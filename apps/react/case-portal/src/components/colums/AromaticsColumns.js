@@ -6,6 +6,7 @@ export const SlowDownAromaticsColumns = [
     type: 'descLimit',
     widthT: 200,
     autoAdjust: false,
+    locked: true,
   },
 
   {
@@ -52,5 +53,50 @@ export const SlowDownAromaticsColumns = [
     editable: true,
     widthT: 230,
     autoAdjust: false,
+  },
+]
+export const ShutDownAROMATICSHMDColumns = [
+  {
+    field: 'discription',
+    title: 'Shutdown Desc',
+    editable: true,
+    type: 'discriptionDrpdwn',
+    minWidth: 200,
+    locked: true,
+  },
+
+  {
+    field: 'maintenanceId',
+    title: 'Maintenance ID',
+    editable: false,
+    hidden: true,
+    isVisible: false,
+  },
+  {
+    field: 'maintStartDateTime',
+    title: 'SD - From',
+    editable: true,
+  },
+  {
+    field: 'maintEndDateTime',
+    title: 'SD - To',
+    editable: true,
+  },
+  // {
+  //   field: 'monthly',
+  //   title: 'Month',
+  //   type: 'monthDropdownPEPP',
+  //   editable: true,
+  //   width: 150,
+  // },
+  {
+    field: 'durationInHrs',
+    title: 'Duration (hrs)',
+    editable: true,
+  },
+  {
+    field: 'remark',
+    title: 'Shutdown Basis',
+    editable: true,
   },
 ]

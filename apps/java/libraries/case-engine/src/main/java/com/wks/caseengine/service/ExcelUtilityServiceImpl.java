@@ -40,7 +40,12 @@ import com.wks.caseengine.utility.Utility;
 @Service
 public class ExcelUtilityServiceImpl implements ExcelUtilityService {
 	
-	public byte[] generateFlexibleExcelPP(Map<String, Object> structure, Map<String, List<List<Object>>> data) {
+	public byte[] generateFlexibleExcelPP(Map<String, Object> structure, Map<String, List<List<Object>>> data, List<String> editableGrids) {
+
+        Set<String> editableGridSet = editableGrids.stream()
+        .map(String::toLowerCase)
+        .collect(Collectors.toSet());
+
 	    try {
 	        Workbook workbook = new XSSFWorkbook();
 	        CellStyle boldBorderStyle = Utility.createBoldBorderedStyle(workbook);
@@ -78,8 +83,7 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
 	                
 	                List<Integer> hiddenColumnsList = (List<Integer>) table.get(ExcelConstants.HIDDEN_COLUMNS);
 
-	                boolean isProposedCap = "ProposedOperatingCapacity".equalsIgnoreCase(originalTemplateId) 
-	                                     || "ProposedOperatingCapacity".equalsIgnoreCase(tableId);
+	                boolean isEditableGrid =  editableGridSet.contains(tableId.toLowerCase());
 
 	                List<List<String>> headerTitles = (List<List<String>>) table.get(ExcelConstants.HEADERSTITLES);
 	                List<List<Object>> rows = data.get(tableId);
@@ -126,7 +130,7 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
 
 	                            boolean canEdit = false;
 	                            
-	                            if (isProposedCap && monthStartIndex != null) {
+	                            if (isEditableGrid && monthStartIndex != null) {
 	                                if (col >= monthStartIndex && col <= (monthStartIndex + 12)) {
 	                                    canEdit = true;
 	                                }

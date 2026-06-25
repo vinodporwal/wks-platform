@@ -144,11 +144,34 @@ import CausticSodaLyeBasis from 'components/data-tables/Reports/CausticSodaLyeBa
 import MaterialBalance from 'components/kendo-data-tables/MaterialBalance'
 import CatalystChecmicalsCalculation from 'components/kendo-data-tables/CatalystChecmicalsCalculation'
 import CausticSodaLyeBasisCatChem from 'components/data-tables/Reports/CausticSodaLyeBasisCatChem'
+import MaterialGroupedSelection from 'components/kendo-data-tables/MaterialGroupedSelection'
+
 // Vertical MEROX
 import SteadyStateConsumptionMerox from 'components/aop-phase-two/merox/steady-state-consumption'
 import OverallAopConsumptionMerox from 'components/aop-phase-two/merox/overall-aop-consumption'
 import ProductionNormsBasisMerox from 'components/aop-phase-two/merox/production-norms-basis'
+import EtheleneStock from 'components/data-tables/Reports/EtheleneStock'
 // Vertical MEROX Ended
+
+// PCG
+import SteadyStateConsumptionPCG from 'components/aop-phase-two/pcg/steady-state-consumption'
+import OverallAopConsumptionPCG from 'components/aop-phase-two/pcg/overall-aop-consumption'
+import ProductionNormsBasisPCG from 'components/aop-phase-two/pcg/production-norms-basis'
+// PCG Ended
+
+// Vertical Refinery Utility
+import SteadyStateConsumptionRefUtil from 'components/aop-phase-two/refineryUtility/steady-state-consumption'
+import OverallAopConsumptionRefUtil from 'components/aop-phase-two/refineryUtility/overall-aop-consumption'
+import ProductionNormsBasisRefUtil from 'components/aop-phase-two/refineryUtility/production-norms-basis'
+import PlantAOPReport from 'components/kendo-data-tables/PlantAOPReport'
+// Vertical Refinery Utility Ended
+
+// Naphthasplitter
+import SteadyStateConsumptionNS from 'components/aop-phase-two/naphthasplitter/steady-state-consumption'
+import OverallAopConsumptionNS from 'components/aop-phase-two/naphthasplitter/overall-aop-consumption'
+import ProductionNormsBasisNS from 'components/aop-phase-two/naphthasplitter/production-norms-basis'
+import GradeMixOptimizer from 'components/kendo-data-tables/GradeMixOptimizer'
+// Naphthasplitter Ended
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -610,6 +633,22 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+           {
+            path: 'grade-mix-optimizer',
+            element: (
+              <PrivateRoute routeId='grade-mix-optimizer'>
+                <GradeMixOptimizer/>
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'material-grouped-selection',
+            element: (
+              <PrivateRoute routeId='material-grouped-selection'>
+                <MaterialGroupedSelection />
+              </PrivateRoute>
+            ),
+          },
           //Vertical VGOHT Ended
           {
             path: 'quality-packaging-norms',
@@ -924,6 +963,85 @@ export const MainRoutes = (
             ),
           },
           //Vertical MEROX Ended
+
+          //Vertical PCG Started
+          {
+            path: 'production-norms-basis-pcg',
+            element: (
+              <PrivateRoute routeId='production-norms-basis-pcg'>
+                <ProductionNormsBasisPCG />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption-pcg',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption-pcg'>
+                <SteadyStateConsumptionPCG />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'overall-aop-consumption-pcg',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption-pcg'>
+                <OverallAopConsumptionPCG />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical PCG Ended
+          //Vertical Refinery utility Started
+          {
+            path: 'production-norms-basis-refinery',
+            element: (
+              <PrivateRoute routeId='production-norms-basis-refinery'>
+                <ProductionNormsBasisRefUtil />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption-refinery',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption-refinery'>
+                <SteadyStateConsumptionRefUtil />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'overall-aop-consumption-refinery',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption-refinery'>
+                <OverallAopConsumptionRefUtil />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical Refinery utility Ended
+          //Vertical Naphthasplitter Started
+          {
+            path: 'production-norms-basis-naphthasplitter',
+            element: (
+              <PrivateRoute routeId='production-norms-basis-naphthasplitter'>
+                <ProductionNormsBasisNS />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption-naphthasplitter',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption-naphthasplitter'>
+                <SteadyStateConsumptionNS />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'overall-aop-consumption-naphthasplitter',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption-naphthasplitter'>
+                <OverallAopConsumptionNS />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical Naphthasplitter Ended
         ],
       },
 
@@ -943,6 +1061,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='production-target-basis'>
                 <ProductionTargetBasis />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'ethelene-stock',
+            element: (
+              <PrivateRoute routeId='ethelene-stock'>
+                <EtheleneStock />
               </PrivateRoute>
             ),
           },
@@ -1235,6 +1361,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='site-aop-report'>
                 <SiteAOPReport />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'plant-aop-report',
+            element: (
+              <PrivateRoute routeId='plant-aop-report'>
+                <PlantAOPReport />
               </PrivateRoute>
             ),
           },

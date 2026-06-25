@@ -11,9 +11,10 @@ import com.wks.caseengine.dto.BusinessDemandMonthlyDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
 public interface BusinessDemandDataService {
-	public	List<BusinessDemandDataDTO> getBusinessDemandData(String year, String plantId);
+	public	AOPMessageVM getBusinessDemandData(String year, String plantId);
+	public AOPMessageVM calculateBusinessDemand(String year, String plantId);
 	public AOPMessageVM getBusinessDemand(String year, UUID plantFKId);
-	public List<BusinessDemandDataDTO> getBusinessDemandLineData(String year, String plantId, String lineId);
+	public AOPMessageVM getBusinessDemandLineData(String year, String plantId, String lineId);
 	public List<BusinessDemandDataDTO> getBusinessDemandAllData(String year, String plantId);
 	public AOPMessageVM getBusinessDemandMode(String year, UUID plantFKId);
 	AOPMessageVM loadPlantContribution(String year, String plantId);

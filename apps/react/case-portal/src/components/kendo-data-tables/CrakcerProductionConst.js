@@ -379,7 +379,10 @@ const CrakcerProductionConst = () => {
       showAction: false,
       allAction: true,
       showTitleNameBusiness: true,
-      titleName: 'Production Target Constraints',
+      titleName:
+        siteObject?.name?.toLowerCase() === 'c2'
+          ? 'Production Basis'
+          : 'Production Target Constraints',
       saveWithRemark: true,
       saveBtn: true,
       showCalculate: false,

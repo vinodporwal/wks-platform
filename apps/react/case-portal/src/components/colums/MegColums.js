@@ -24,6 +24,7 @@ export const BusinessDemandMegColumns = [
     editable: false,
     widthT: 150,
     minWidth: 120,
+    locked: true
   },
   {
     field: 'UOM',
@@ -31,6 +32,7 @@ export const BusinessDemandMegColumns = [
     editable: false,
     widthT: 80,
     minWidth: 100,
+    locked: true
   },
   {
     field: 'april',
@@ -180,6 +182,7 @@ export const SlowDownMegColumns = [
     widthT: 230,
     autoAdjust: false,
     minWidth: 200,
+    locked: true
   },
 
   {
@@ -267,7 +270,7 @@ export const NormalOpNormMegColumns = [
     field: 'productName',
     title: 'Particulars',
     widthT: 120,
-    minWidth: 120,
+    minWidth: 130,
   },
 
   {
@@ -275,7 +278,7 @@ export const NormalOpNormMegColumns = [
     title: 'UOM/MT',
     widthT: 80,
     editable: false,
-    minWidth: 100,
+    minWidth: 110,
   },
 
   {
@@ -642,7 +645,7 @@ export const ShutdownConsumptionMegColumns = [
     headerName: 'Particulars',
     widthT: 120,
     editable: false,
-    minWidth: 120,
+    minWidth: 130,
   },
   {
     field: 'UOM',

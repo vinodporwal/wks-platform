@@ -929,7 +929,9 @@ const ProductionTarget = ({ permissions }) => {
   const percentageTitle = IS_PE_PP
     ? 'Current MCU'
     : VERTICAL_NAME === 'cracker'
-      ? 'Max Achieved Capacity (Ethylene)'
+      ? SITE_NAME === 'c2'
+        ? 'Max Achieved Capacity (Ethylene+Propylene)'
+        : 'Max Achieved Capacity (Ethylene)'
       : 'Max Achieved Capacity'
   const adjustedPermissionsGrid1 = getAdjustedPermissions(
     {
@@ -984,9 +986,11 @@ const ProductionTarget = ({ permissions }) => {
       showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
 
       titleName:
-        VERTICAL_NAME === 'cracker'
-          ? 'Design Capacity (Ethylene)'
-          : 'Design Capacity',
+        VERTICAL_NAME === 'cracker' && SITE_NAME === 'c2'
+          ? 'Design Capacity (Ethylene+Propylene)'
+          : VERTICAL_NAME === 'cracker'
+            ? 'Design Capacity (Ethylene)'
+            : 'Design Capacity',
     },
     isOldYear,
   )

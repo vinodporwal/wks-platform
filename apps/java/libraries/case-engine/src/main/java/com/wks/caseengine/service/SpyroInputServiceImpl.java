@@ -139,8 +139,6 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 					map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 					map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 					map.put("isEditable", row[22]);
-					
-					map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
 					spyroInputDataList.add(map);
 				} else {
 					
@@ -165,7 +163,6 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 							map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 							map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 							map.put("isEditable", row[22]);
-							map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
 							spyroInputDataList.add(map); // Add the map to the list here
 						}
 					}
@@ -655,7 +652,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 
 				// if tableId is Optimizer Input, then skip the row
 
-Cell tableId = row.getCell(17);
+Cell tableId = row.getCell(16);
 String tableIdValue = null;
 if (tableId != null) {
 	try {
@@ -673,7 +670,7 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 
 
 
-				Cell tableIdCell = row.getCell(17, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+				Cell tableIdCell = row.getCell(16, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
 				if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
 					continue;
 				}
@@ -697,10 +694,9 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 					dto.setJan(getNumericCellValue(row.getCell(11), dto));
 					dto.setFeb(getNumericCellValue(row.getCell(12), dto));
 					dto.setMar(getNumericCellValue(row.getCell(13), dto));
-					// col 14 = weightAverage — display/export only, not imported
-					dto.setRemarks(getStringCellValue(row.getCell(15), dto));
-					dto.setNormParameterFKID(getStringCellValue(row.getCell(16), dto));
-					dto.setTableId(getStringCellValue(row.getCell(17), dto));
+					dto.setRemarks(getStringCellValue(row.getCell(14), dto));
+					dto.setNormParameterFKID(getStringCellValue(row.getCell(15), dto));
+					dto.setTableId(getStringCellValue(row.getCell(16), dto));
 
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -1373,8 +1369,15 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Input")) {
 		try {
 			// Columns: Id(0), VerticalId(1), SiteId(2), PlantId(3), DisplayOrder(4), Name(5), DisplayName(6)
 			// We add a dummy column at index 5 to shift Name to index 6 and DisplayName to index 7
+			Plants plant = plantsRepository.findById(plantId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+            Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+            String viewName = "vw" + vertical.getName() + "FuelDropdown";
 			String sql = "SELECT " + "Id, VerticalId, SiteId, PlantId, DisplayOrder, NULL as DummyType, Name, DisplayName "
-					 + "FROM vwCrackerFuelDropdown "
+					 + "FROM " + viewName
 					+ " ORDER BY DisplayOrder";
 
 			Query query = entityManager.createNativeQuery(sql);

@@ -126,6 +126,9 @@ const NormalOpNormsScreen = () => {
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+  const textNote = IS_PVC_HMD
+    ? '*Norm listed in the page represent Grade-mix Norms for Line 1 and Line 2 combined.'
+    : ''
 
   const fetchData = async (gradeId) => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -353,6 +356,7 @@ const NormalOpNormsScreen = () => {
       title: 'Particulars',
       widthT: 130,
       minWidth: 150,
+      locked: true,
     },
     {
       field: 'UOM',
@@ -360,6 +364,7 @@ const NormalOpNormsScreen = () => {
       widthT: 60,
       editable: false,
       minWidth: 80,
+      locked: true,
     },
     {
       field: 'Apr',
@@ -667,7 +672,16 @@ const NormalOpNormsScreen = () => {
         )
           fetchGradeDropdowns()
         fetchData(gradeId)
-        if (lowerVertName == 'meg') fetchDataIntermediateValues()
+        if (
+          lowerVertName === 'meg' ||
+          IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
+          IS_CHEMICAL_VMD_BUTADIENE ||
+          IS_CHEMICAL_HMD_BUTADIENE ||
+          IS_CHEMICAL_VMD_BENEZENEFPU ||
+          IS_VCM_HMD_VCM
+        ) {
+          fetchDataIntermediateValues()
+        }
         getNormTransactions()
       } else {
         setSnackbarOpen(true)
@@ -716,6 +730,7 @@ const NormalOpNormsScreen = () => {
       saveWithRemark: true,
       saveBtn: true,
       showCalculate: true,
+      showNote: IS_PVC_HMD ? true : false,
       downloadExcelBtnFromUI: false,
       showCheckbox: false,
       showG:
@@ -775,7 +790,7 @@ const NormalOpNormsScreen = () => {
       showCalculate: false,
       allAction: true,
       downloadExcelBtnFromUI: true,
-      ExcelName: `${lowerVertName}_Intermediate Values`,
+      ExcelName: `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Intermediate Values`,
     },
     isOldYear,
   )
@@ -968,6 +983,7 @@ const NormalOpNormsScreen = () => {
           gridName='main'
           shutdownMonths={shutdownMonths}
           slowdownMonths={slowdownMonths}
+          note={textNote}
         />
       )}
 

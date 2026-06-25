@@ -87,6 +87,9 @@ public class MonthwiseOperatingHoursServiceImpl implements MonthwiseOperatingHou
                 dto.setCreatedOn(row[11] != null ? (Date) row[11] : null);
                 dto.setModifiedOn(row[12] != null ? (Date) row[12] : null);
                 dto.setUpdatedBy(row[13] != null ? row[13].toString() : null);
+                if (row.length > 14) {
+                    dto.setGroupBy(row[14] != null ? row[14].toString() : null);
+                }
                 list.add(dto);
             }
 

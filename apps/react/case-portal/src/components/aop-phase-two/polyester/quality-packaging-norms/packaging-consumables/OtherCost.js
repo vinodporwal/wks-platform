@@ -11,13 +11,8 @@ import AdvanceKendoTable from '../../../common/AdvanceKendoTable'
 const OtherCost = ({ refreshTrigger }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const {
-    verticalChange,
-    oldYear,
-    plantObject,
-    year,
-    isReleased,
-  } = dataGridStore
+  const { verticalChange, oldYear, plantObject, year, isReleased } =
+    dataGridStore
 
   const PLANT_ID = plantObject?.id
   const PLANT_NAME = plantObject?.name
@@ -242,7 +237,9 @@ const OtherCost = ({ refreshTrigger }) => {
         fetchOtherCostsRows()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
-        const byteNumbers = Array.from(byteCharacters, (char) => char.charCodeAt(0))
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
         const byteArray = new Uint8Array(byteNumbers)
         const blob = new Blob([byteArray], {
           type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -310,12 +307,15 @@ const OtherCost = ({ refreshTrigger }) => {
     }
   }
 
-  const handleRemarkCellClick = useCallback((row) => {
-    if (READ_ONLY) return
-    setCurrentRemark(row.remark || '')
-    setCurrentRowId(row.id)
-    setRemarkDialogOpen(true)
-  }, [READ_ONLY])
+  const handleRemarkCellClick = useCallback(
+    (row) => {
+      if (READ_ONLY) return
+      setCurrentRemark(row.remark || '')
+      setCurrentRowId(row.id)
+      setRemarkDialogOpen(true)
+    },
+    [READ_ONLY],
+  )
 
   const permissions = {
     allAction: true,

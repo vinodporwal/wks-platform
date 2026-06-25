@@ -7,13 +7,19 @@ import {
   CircularProgress,
   Typography,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { useSession } from 'SessionStoreContext'
 
 import KendoDataTables from './index'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
+import { setIsReleased } from 'store/reducers/dataGridStore'
 import { validateFields } from 'utils/validationUtils'
 import { Grid, TextField } from '../../../node_modules/@mui/material/index'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
@@ -21,6 +27,9 @@ import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/ind
 import { AOPMaintenanceApiService } from 'services/aop-maintenance-api-service'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { DataService } from 'services/DataService'
+import { shouldShowReleaseButton } from 'utils/releaseButtonUtils'
+import { useMenuContext } from 'menu/menuProvider'
 export default function AopBudget() {
   const keycloak = useSession()
 
@@ -48,6 +57,7 @@ export default function AopBudget() {
     setDesignBasisAndDesignRemarksEdited2,
   ] = useState(false)
 
+  const dispatch = useDispatch()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -75,7 +85,15 @@ export default function AopBudget() {
   const lowerVertName = vertName?.toLowerCase()
   const headerMap = generateHeaderNames(AOP_YEAR)
   const thisYear = AOP_YEAR
+
+
+  const VERTICAL_NAME_U = verticalObject?.name?.toUpperCase()
   const SiteName = siteObject?.name
+  const SITE_NAME_U = siteObject?.name?.toUpperCase()
+  const PLANT_NAME_U = plantObject?.name?.toUpperCase()
+  const EXCEL_NAME = `${VERTICAL_NAME_U}_${SITE_NAME_U}_${AOP_YEAR}_Budget_Maintenance`
+
+
 
   // second grid states
   const [rowsP, setRowsP] = useState([])
@@ -89,6 +107,11 @@ export default function AopBudget() {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [openReleaseDialogBox, setOpenReleaseDialogBox] = useState(false)
+  const [isReleaseDisabled, setIsReleaseDisabled] = useState(true)
+
+  const { items: menuItems } = useMenuContext()
+  const showReleaseButton = shouldShowReleaseButton(menuItems)
   const oldYearLabel = useMemo(() => {
     if (!thisYear || !thisYear.includes('-')) return ''
     const [start, end] = thisYear.split('-').map(Number)
@@ -224,9 +247,8 @@ export default function AopBudget() {
   ]
 
   const columns = [
-    { field: 'idFromApi', title: 'ID', widthT: 50, minWidth: 50, hidden: true },
-    { field: 'plantName', title: 'Plant', widthT: 100, minWidth: 100 },
-    { field: 'costName', title: 'Cost', widthT: 100, minWidth: 100 },
+    { field: 'plantName', title: 'Plant', widthT: 130, minWidth: 130, locked: true },
+    { field: 'costName', title: 'Cost', widthT: 130, minWidth: 130, locked: true },
     {
       field: 'budgetType',
       title: 'Budget Type',
@@ -238,10 +260,10 @@ export default function AopBudget() {
     {
       field: 'percentChange',
       title: '% Change (+/-)',
-      widthT: 105,
+      widthT: 130,
       editable: true,
       type: 'percentChange',
-      minWidth: 100,
+      minWidth: 130,
     },
     // { field: 'symbol', title: '+VE/-VE', width: 120 },
     ...monthFields.map(
@@ -304,7 +326,7 @@ export default function AopBudget() {
         AOP_YEAR,
       )
 
-      const mapped = (resConsumption?.data || []).map((item, index) => {
+      const mapped = (resConsumption?.data || []).map((item) => {
         const allMonthsTotal = monthTotal?.reduce((sum, month) => {
           const value = parseFloat(item[month]) || 0
           return sum + value
@@ -312,8 +334,6 @@ export default function AopBudget() {
 
         return {
           ...item,
-          id: item.id || index, // Ensure there's an id for React key
-          idFromApi: item.id || null, // Keep original API id for reference
           plantName: item.plantName || '',
           IsEditable: item.isEditable,
           originalRemark: item.remark?.trim() || '',
@@ -340,8 +360,6 @@ export default function AopBudget() {
 
         return {
           ...item,
-          idFromApi: item.id || null,
-          id: index,
           plantName: item.plantName || item.plantName || '',
           IsEditable: item.isEditable,
           originalRemark: item.remark?.trim() || '',
@@ -414,21 +432,70 @@ export default function AopBudget() {
     plantID,
     keycloak,
   ])
-  const anyGridEdited = useMemo(
-    () =>
-      Object.keys(modifiedCells).length > 0 ||
-      Object.keys(modifiedCellsP).length > 0 ||
-      designBasisAndDesignRemarksEdited ||
-      designBasisAndDesignRemarksEdited2,
-    [
-      modifiedCells,
-      modifiedCellsP,
-      designBasisAndDesignRemarksEdited,
-      designBasisAndDesignRemarksEdited2,
-    ],
-  )
-  const handleCalculate = () => {}
-  const handleCalculateP = () => {}
+  const handleCalculate = () => { }
+  const handleCalculateP = () => { }
+
+  const getIsReleased = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    try {
+      const response = await DataService.getReleaseAOPStatus(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.data && Object.keys(response.data).length > 0) {
+        setIsReleaseDisabled(true)
+      } else {
+        setIsReleaseDisabled(false)
+      }
+    } catch (error) {
+      console.error('Error fetching release status:', error)
+    }
+  }
+
+  useEffect(() => {
+    getIsReleased()
+  }, [keycloak, AOP_YEAR, PLANT_ID])
+
+  const handleRelease = () => {
+    setOpenReleaseDialogBox(true)
+  }
+
+  const closeReleaseDialogBox = () => {
+    setOpenReleaseDialogBox(false)
+  }
+
+  const submitConfirmation = async () => {
+    setOpenReleaseDialogBox(false)
+    setLoading(true)
+    try {
+      const response = await DataService.releaseAOPReport(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Released Successfully!',
+        severity: 'success',
+      })
+      setIsReleaseDisabled(true)
+      let isReleased = 1
+      dispatch(setIsReleased({ isReleased }))
+    } catch (error) {
+      console.error('Error releasing report:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Release Failed!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleRemarkCellClick = useCallback((row) => {
     if (!row?.IsEditable || READ_ONLY) return
@@ -472,7 +539,7 @@ export default function AopBudget() {
       // downloadExcelBtnFromUI: true,
       downloadExcelBtn: false,
       uploadExcelBtn: false,
-      ExcelName: `${lowerVertName}_Monthly Procurement Budget`,
+      ExcelName: `${vertName}_${siteObject?.name}_${AOP_YEAR}_Budget_Maintenance`,
       constarins: ['+', '-'],
       resetButton: false,
       percentChangeLogic: true,
@@ -507,11 +574,12 @@ export default function AopBudget() {
       downloadExcelBtnFromUI: false,
       downloadExcelBtn: true,
       uploadExcelBtn: true,
-      ExcelName: `${lowerVertName}_Monthly Consumption Budget`,
+      ExcelName: `${vertName}_${siteObject?.name}_${AOP_YEAR}_Budget_Maintenance`,
       constarins: ['+', '-'],
       resetButton: false,
       percentChangeLogic: true,
       showResetButton: true,
+      showReleaseBtn: showReleaseButton ? true : false,
     },
     isOldYear,
   )
@@ -600,17 +668,11 @@ export default function AopBudget() {
         return
       }
 
-      const fieldsToOmit = ['isEditable', 'IsEditable', 'idFromApi']
+      const fieldsToOmit = ['isEditable', 'IsEditable']
 
       const allRows = [
-        ...consumptionData.map((row) => ({
-          ...omitFields(row, fieldsToOmit),
-          id: row.idFromApi,
-        })),
-        ...procurementData.map((row) => ({
-          ...omitFields(row, fieldsToOmit),
-          id: row.idFromApi,
-        })),
+        ...consumptionData.map((row) => omitFields(row, fieldsToOmit)),
+        ...procurementData.map((row) => omitFields(row, fieldsToOmit)),
       ]
 
       const prefixPlusForNumericPercent = (row) => {
@@ -646,15 +708,16 @@ export default function AopBudget() {
       setLoading(false)
     }
   }
+
+
   const downloadExcelForConfiguration = async () => {
     setLoading(true)
-    const EXCEL_NAME = `${vertName}_${SiteName}_${PLANT_NAME}_${AOP_YEAR}_Maintenance Budget_Export.xlsx`
     try {
       await AOPMaintenanceApiService.maintenaceExportdata(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
-        EXCEL_NAME,
+        EXCEL_NAME
       )
 
       setSnackbarData({ message: 'Export started!', severity: 'success' })
@@ -740,9 +803,9 @@ export default function AopBudget() {
     budgetMaintenanceExcelFile(rawFile)
   }
 
-  const resetRowData1 = async (paramsForDelete) => {}
+  const resetRowData1 = async (paramsForDelete) => { }
 
-  const resetRowData2 = async (paramsForDelete) => {}
+  const resetRowData2 = async (paramsForDelete) => { }
 
   return (
     <Box>
@@ -767,7 +830,7 @@ export default function AopBudget() {
               container
               alignItems='center'
               justifyContent='space-between'
-              // sx={{ marginBottom: 0.5 }}
+            // sx={{ marginBottom: 0.5 }}
             >
               <Grid item>
                 <div
@@ -800,7 +863,7 @@ export default function AopBudget() {
               container
               alignItems='center'
               justifyContent='space-between'
-              // sx={{ marginBottom: 0.5 }}
+            // sx={{ marginBottom: 0.5 }}
             >
               <Grid item>
                 <div
@@ -853,9 +916,11 @@ export default function AopBudget() {
         permissions={adjustedPermissionsC}
         groupBy='budgetType'
         resetRowData={resetRowData1}
-        summaryEdited={anyGridEdited}
+        summaryEdited={designBasisAndDesignRemarksEdited}
         resetDataChanges={resetDataChanges}
-        // setEditMode={setEditMode}
+        isReleaseDisabled={isReleaseDisabled}
+        handleRelease={handleRelease}
+      // setEditMode={setEditMode}
       />
 
       <KendoDataTables
@@ -879,10 +944,77 @@ export default function AopBudget() {
         permissions={adjustedPermissionsP}
         groupBy='budgetType'
         resetRowData={resetRowData2}
-        summaryEdited={anyGridEdited}
+        summaryEdited={designBasisAndDesignRemarksEdited2}
         // setEditMode={setEditMode}
         resetDataChanges={resetDataChanges}
       />
+      <Dialog
+        open={openReleaseDialogBox}
+        onClose={closeReleaseDialogBox}
+        disableScrollLock
+        PaperProps={{
+          sx: {
+            borderRadius: '20px',
+            p: 2,
+            width: 400,
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: 700,
+            fontSize: '1.2rem',
+
+            pb: 0.5,
+          }}
+        >
+          Confirm Release
+        </DialogTitle>
+
+        <DialogContent sx={{ pt: 1 }}>
+          <DialogContentText
+            sx={{
+              fontSize: '0.9rem',
+              color: '#4b5563',
+              lineHeight: 1.5,
+            }}
+          >
+            Please confirm that <b style={{ color: '#16a34a' }}>Production</b>
+            , <b style={{ color: '#16a34a' }}>Norms</b>, and{' '}
+            <b style={{ color: '#16a34a' }}>Reports</b> are verified before
+            releasing for review.
+          </DialogContentText>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 2, pb: 1.5, gap: 1 }}>
+          <Button
+            onClick={closeReleaseDialogBox}
+            variant='text'
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              color: '#6b7280',
+              '&:hover': { background: 'rgba(0,0,0,0.04)' },
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            onClick={submitConfirmation}
+            variant='contained'
+            className='btn-save'
+            sx={{
+              textTransform: 'none',
+              px: 2.5,
+            }}
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Notification
         open={snackbarOpen}
         message={snackbarData.message}

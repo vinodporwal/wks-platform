@@ -11,14 +11,8 @@ import AdvanceKendoTable from '../../../common/AdvanceKendoTable'
 const PackagingAndConsumables = ({ refreshTrigger, triggerRefresh }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const {
-    verticalChange,
-    oldYear,
-    plantObject,
-    siteObject,
-    year,
-    isReleased,
-  } = dataGridStore
+  const { verticalChange, oldYear, plantObject, siteObject, year, isReleased } =
+    dataGridStore
 
   const PLANT_ID = plantObject?.id
   const PLANT_NAME = plantObject?.name
@@ -208,12 +202,13 @@ const PackagingAndConsumables = ({ refreshTrigger, triggerRefresh }) => {
       }))
 
       setLoading(true)
-      const res = await QualityPackagingNormsApiService.savePackagingConsumables(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        packagingConsumbleDTOList,
-      )
+      const res =
+        await QualityPackagingNormsApiService.savePackagingConsumables(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          packagingConsumbleDTOList,
+        )
 
       if (res?.code === 200) {
         setSnackbarOpen(true)
@@ -277,12 +272,13 @@ const PackagingAndConsumables = ({ refreshTrigger, triggerRefresh }) => {
   const handleExcelUpload = async (rawFile) => {
     setLoading(true)
     try {
-      const response = await QualityPackagingNormsApiService.importPackagingConsumables(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        rawFile,
-      )
+      const response =
+        await QualityPackagingNormsApiService.importPackagingConsumables(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          rawFile,
+        )
       if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -293,7 +289,9 @@ const PackagingAndConsumables = ({ refreshTrigger, triggerRefresh }) => {
         fetchPackagingRows()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
-        const byteNumbers = Array.from(byteCharacters, (char) => char.charCodeAt(0))
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
         const byteArray = new Uint8Array(byteNumbers)
         const blob = new Blob([byteArray], {
           type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -361,12 +359,15 @@ const PackagingAndConsumables = ({ refreshTrigger, triggerRefresh }) => {
     }
   }
 
-  const handleRemarkCellClick = useCallback((row) => {
-    if (READ_ONLY) return
-    setCurrentRemark(row.remark || '')
-    setCurrentRowId(row.id)
-    setRemarkDialogOpen(true)
-  }, [READ_ONLY])
+  const handleRemarkCellClick = useCallback(
+    (row) => {
+      if (READ_ONLY) return
+      setCurrentRemark(row.remark || '')
+      setCurrentRowId(row.id)
+      setRemarkDialogOpen(true)
+    },
+    [READ_ONLY],
+  )
 
   const IS_ELASTOMER_HMD_SBR =
     lowerVertName === 'elastomer' &&
@@ -390,7 +391,9 @@ const PackagingAndConsumables = ({ refreshTrigger, triggerRefresh }) => {
     addButton: false,
     deleteButton: false,
     showCalculate: showCalculate,
-    calculateDisabled: !(calculationObject && Object.keys(calculationObject).length > 0),
+    calculateDisabled: !(
+      calculationObject && Object.keys(calculationObject).length > 0
+    ),
     showTitle: true,
   }
 

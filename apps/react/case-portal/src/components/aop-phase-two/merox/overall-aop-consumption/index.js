@@ -7,7 +7,7 @@ import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import ValueFormatterPhaseTwo, {
   customValueFormatterPhaseTwo,
 } from '../../common/ValueFormatterPhaseTwo'
-import { OverallAopConsumptionApiService } from 'components/aop-phase-two/services/merox/overallAopConsumptionApiService'
+import { OverallAopConsumptionApiService } from 'components/aop-phase-two/services/common/overallAopConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const OverallAopConsumption = () => {

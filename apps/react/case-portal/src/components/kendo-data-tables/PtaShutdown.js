@@ -8,6 +8,7 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { validateFields } from 'utils/validationUtils'
 import { verticalEnums } from 'enums/verticalEnums'
+import { shouldLockColumn } from 'utils/columnLockUtils'
 import KendoDataTables from './index'
 import { ShutDownPeColumns } from 'components/colums/ShutdownColumn'
 import { ShutDownPeColumnsldpe12 } from 'components/colums/ShutdownColumn'
@@ -654,6 +655,7 @@ const PtaShutDown = ({ permissions }) => {
               : true,
           type: col.type,
           hidden: hiddenFields.includes(col.field),
+          locked: shouldLockColumn(col),
           ...(col.field !== 'Particulars' &&
             col.field.toLowerCase() !== 'uom' && {
               format: '{0:0.000}',

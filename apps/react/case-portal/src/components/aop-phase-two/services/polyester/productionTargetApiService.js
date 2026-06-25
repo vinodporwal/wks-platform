@@ -164,7 +164,13 @@ async function saveProposedOperatingCapacity(keycloak, plantId, year, data) {
  * @param {string} excelExportTitle - Filename prefix
  * @returns {Promise}
  */
-async function exportProductionTarget(keycloak, plantId, year, type, excelExportTitle) {
+async function exportProductionTarget(
+  keycloak,
+  plantId,
+  year,
+  type,
+  excelExportTitle,
+) {
   let url = ''
   let filenameSuffix = ''
 

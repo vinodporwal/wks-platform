@@ -519,7 +519,7 @@ export default function HeaderContent({ keycloak, navigation }) {
       const isAllSelected = selectedPlantsJMD.length === allIds.length
 
       const nextIds = isAllSelected
-        ? [plants[0].id] // deselect all ? keep first
+        ? [plants[0].id] // deselect all → keep first
         : allIds // select all
 
       const nextObjs = nextIds
@@ -876,6 +876,8 @@ export default function HeaderContent({ keycloak, navigation }) {
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   fontFamily: "'Honeywell Sans Web',  'Inter', sans-serif",
+                  minWidth: 0,
+                  flexShrink: 1,
                 }}
                 title={screenTitleName}
               >
@@ -891,6 +893,9 @@ export default function HeaderContent({ keycloak, navigation }) {
                     borderRadius: '100px',
                     backgroundColor: '#ECEEFF',
                     border: '1px solid #41424D',
+                    flexShrink: 0,
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   <Typography
@@ -899,6 +904,7 @@ export default function HeaderContent({ keycloak, navigation }) {
                       fontWeight: 700,
                       color: '#41424D',
                       fontFamily: "'Honeywell Cond Web',  'Inter', sans-serif",
+                      whiteSpace: 'nowrap',
                     }}
                   >
                     {`${currentStep} Step`}
@@ -1096,7 +1102,7 @@ export default function HeaderContent({ keycloak, navigation }) {
               {headerLoading ? (
                 <DropdownSkeleton />
               ) : IS_CPP_JMD ? (
-                /* -- CPP-JMD: multi-select -- */
+                /* ── CPP-JMD: multi-select ── */
                 <FormControl size='small' variant='outlined'>
                   <Select
                     multiple
@@ -1215,7 +1221,7 @@ export default function HeaderContent({ keycloak, navigation }) {
                   </Select>
                 </FormControl>
               ) : (
-                /* -- All other sites: single-select (unchanged) -- */
+                /* ── All other sites: single-select (unchanged) ── */
                 <FormControl size='small'>
                   <Select
                     IconComponent={ArrowDropDownIcon}

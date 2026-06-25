@@ -146,10 +146,9 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 					map.put("oct", (row[19] == null || row[19].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[19].toString()));
 					map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 					map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
-				map.put("isEditable", row[22]);
-				map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
-				spyroOutputDataList.add(map); // Add the map to the list here
-			}else {
+					map.put("isEditable", row[22]);
+					spyroOutputDataList.add(map); // Add the map to the list here
+				}else {
 					
 					if (type.equalsIgnoreCase("Feeds")) {
 						if (types.contains(row[4].toString())) {
@@ -171,13 +170,12 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 							map.put("oct", (row[19] == null || row[19].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[19].toString()));
 							map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 							map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
-						map.put("isEditable", row[22]);
-						map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
-						spyroOutputDataList.add(map);
-					}}
-				
-				
-				    else if (type.equalsIgnoreCase("output")) {   
+							map.put("isEditable", row[22]);
+							spyroOutputDataList.add(map);
+						}}
+					
+					
+					    else if (type.equalsIgnoreCase("output")) {   
 							map.put("normParameterFKID", row[2]);
 							map.put("particulars", row[3]);
 							map.put("normParameterDisplayName", row[4]);
@@ -196,14 +194,13 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 							map.put("oct", (row[19] == null || row[19].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[19].toString()));
 							map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
 							map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
-						map.put("isEditable", row[22]);
-						map.put("Weighted Average",(row[26] == null || row[26].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[26].toString()));
-						spyroOutputDataList.add(map);
+							map.put("isEditable", row[22]);
+							spyroOutputDataList.add(map);
+						}
 					}
-				}
 
-					
-		}
+						
+			}
 
 			if(Mode.equalsIgnoreCase("Optimizer Output")) {
 				spyroOutputDataList = getBusinessDemandData(plantId, year);
@@ -2089,14 +2086,13 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 
 				while (rowIterator.hasNext()) {
 					Row row = rowIterator.next();
-				// tableId is now at col 17 (col 16 = weightAverage, display-only, skipped on import)
-				Cell tableIdCell = row.getCell(17, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+					Cell tableIdCell = row.getCell(16, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
                 	if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
                     	continue;
                 	}
 
 
-				Cell tableId = row.getCell(17);
+					Cell tableId = row.getCell(16);
 String tableIdValue = null;
 if (tableId != null) {
 	try {
@@ -2111,30 +2107,28 @@ if(tableIdValue != null && tableIdValue.equalsIgnoreCase("Optimizer Output")) {
 	continue;
 }
 
-				SpyroOutputDTO dto = new SpyroOutputDTO();
+					SpyroOutputDTO dto = new SpyroOutputDTO();
 
-				try {
-					
-					dto.setParticulars(getStringCellValue(row.getCell(0), dto));
-					dto.setUom(getStringCellValue(row.getCell(1), dto));
-					dto.setAuditYear(year);
-					dto.setApr(getNumericCellValue(row.getCell(2), dto));
-					dto.setMay(getNumericCellValue(row.getCell(3), dto));
-					dto.setJun(getNumericCellValue(row.getCell(4), dto));
-					dto.setJul(getNumericCellValue(row.getCell(5), dto));
-					dto.setAug(getNumericCellValue(row.getCell(6), dto));
-					dto.setSep(getNumericCellValue(row.getCell(7), dto));
-					dto.setOct(getNumericCellValue(row.getCell(8), dto));
-					dto.setNov(getNumericCellValue(row.getCell(9), dto));
-					dto.setDec(getNumericCellValue(row.getCell(10), dto));
-					dto.setJan(getNumericCellValue(row.getCell(11), dto));
-					dto.setFeb(getNumericCellValue(row.getCell(12), dto));
-					dto.setMar(getNumericCellValue(row.getCell(13), dto));
-					// col 14 = weightAverage — display/export only, not imported
-					dto.setRemarks(getStringCellValue(row.getCell(15), dto));
-					dto.setNormParameterFKID(getStringCellValue(row.getCell(16), dto));
-					
-					dto.setTableId(getStringCellValue(row.getCell(17), dto));
+					try {
+						
+						dto.setParticulars(getStringCellValue(row.getCell(0), dto));
+						dto.setUom(getStringCellValue(row.getCell(1), dto));
+						dto.setAuditYear(year);
+						dto.setApr(getNumericCellValue(row.getCell(2), dto));
+						dto.setMay(getNumericCellValue(row.getCell(3), dto));
+						dto.setJun(getNumericCellValue(row.getCell(4), dto));
+						dto.setJul(getNumericCellValue(row.getCell(5), dto));
+						dto.setAug(getNumericCellValue(row.getCell(6), dto));
+						dto.setSep(getNumericCellValue(row.getCell(7), dto));
+						dto.setOct(getNumericCellValue(row.getCell(8), dto));
+						dto.setNov(getNumericCellValue(row.getCell(9), dto));
+						dto.setDec(getNumericCellValue(row.getCell(10), dto));
+						dto.setJan(getNumericCellValue(row.getCell(11), dto));
+						dto.setFeb(getNumericCellValue(row.getCell(12), dto));
+						dto.setMar(getNumericCellValue(row.getCell(13), dto));
+						dto.setRemarks(getStringCellValue(row.getCell(14), dto));
+						dto.setNormParameterFKID(getStringCellValue(row.getCell(15), dto));
+						dto.setTableId(getStringCellValue(row.getCell(16), dto));
 
 					} catch (Exception e) {
 						e.printStackTrace();

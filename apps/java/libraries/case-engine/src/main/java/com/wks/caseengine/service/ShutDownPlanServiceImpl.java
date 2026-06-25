@@ -331,139 +331,154 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 			}
 			String pattern = "dd-MM-yyyy HH:mm";
 			SimpleDateFormat formatter = new SimpleDateFormat(pattern);
-			Workbook workbook = new XSSFWorkbook();
-			CellStyle dateTimeStyle = createDateTimeStyle(workbook, "dd-MM-yyyy HH:mm");
-			CellStyle decimalStyle = workbook.createCellStyle();
+		Workbook workbook = new XSSFWorkbook();
+		CellStyle dateTimeStyle = createDateTimeStyle(workbook, "dd-MM-yyyy HH:mm");
+		dateTimeStyle.setBorderTop(BorderStyle.THIN);
+		dateTimeStyle.setBorderBottom(BorderStyle.THIN);
+		dateTimeStyle.setBorderLeft(BorderStyle.THIN);
+		dateTimeStyle.setBorderRight(BorderStyle.THIN);
+		CellStyle decimalStyle = workbook.createCellStyle();
 	        decimalStyle.setDataFormat(workbook.createDataFormat().getFormat("0.00"));
-			Sheet sheet = workbook.createSheet("Sheet1");
-			int currentRow = 0;
-			List<List<Object>> rows = new ArrayList<>();
-			for (ShutDownPlanDTO dto : dtoList) {
-				List<Object> list = new ArrayList<>();
+		decimalStyle.setBorderTop(BorderStyle.THIN);
+		decimalStyle.setBorderBottom(BorderStyle.THIN);
+		decimalStyle.setBorderLeft(BorderStyle.THIN);
+		decimalStyle.setBorderRight(BorderStyle.THIN);
+		CellStyle borderedStyle = Utility.createBorderedStyle(workbook);
+		Sheet sheet = workbook.createSheet("Sheet1");
+		int currentRow = 0;
+		List<List<Object>> rows = new ArrayList<>();
+		for (ShutDownPlanDTO dto : dtoList) {
+			List<Object> list = new ArrayList<>();
 
-				try {
+			try {
 
-					Double durationObject = dto.getDurationInHrs();
-					double durationDouble = (durationObject != null) ? durationObject.doubleValue() : 0.0;
-					Double excelTimeValue = durationDouble / 24.0;
-					int hours = (int) durationDouble;
-					int minutes = (int) Math.round((durationDouble - hours) * 100);
-					String formattedDuration = String.format("%02d:%02d", hours, minutes);
+				Double durationObject = dto.getDurationInHrs();
+				double durationDouble = (durationObject != null) ? durationObject.doubleValue() : 0.0;
+				Double excelTimeValue = durationDouble / 24.0;
+				int hours = (int) durationDouble;
+				int minutes = (int) Math.round((durationDouble - hours) * 100);
+				String formattedDuration = String.format("%02d:%02d", hours, minutes);
 
-					list.add(dto.getDiscription());
+				list.add(dto.getDiscription());
 
-					Date startDate = dto.getMaintStartDateTime();
-					Date endDate = dto.getMaintEndDateTime();
-					if(vertical.getName().equalsIgnoreCase("PTA")) {
-						if (dto.getMaintStartDateTime() != null) {
-			                int monthNumber = dto.getMaintStartDateTime().toInstant()
-			                        .atZone(ZoneId.systemDefault()).toLocalDate().getMonthValue();
-			                dto.setMonth(getMonthName(monthNumber));
-			            }
-						list.add(dto.getMonth());
-		            }else {
-		            	list.add(startDate != null ? formatter.format(startDate) : null);
-						list.add(endDate != null ? formatter.format(endDate) : null);
+				Date startDate = dto.getMaintStartDateTime();
+				Date endDate = dto.getMaintEndDateTime();
+				if(vertical.getName().equalsIgnoreCase("PTA")) {
+					if (dto.getMaintStartDateTime() != null) {
+		                int monthNumber = dto.getMaintStartDateTime().toInstant()
+		                        .atZone(ZoneId.systemDefault()).toLocalDate().getMonthValue();
+		                dto.setMonth(getMonthName(monthNumber));
 		            }
-					if(vertical.getName().equalsIgnoreCase("PTA")) {
-						list.add(dto.getDurationInHrs());
-					}else {
-						list.add(formattedDuration);
-					}
-					
-					list.add(dto.getRemark());
-					list.add(dto.getId());
-					// list.add(productString);
+					list.add(dto.getMonth());
+	            }else {
+	            	list.add(startDate != null ? formatter.format(startDate) : null);
+					list.add(endDate != null ? formatter.format(endDate) : null);
+	            }
+				if(vertical.getName().equalsIgnoreCase("PTA")) {
+					list.add(dto.getDurationInHrs());
+				}else {
+					list.add(formattedDuration);
+				}
+				
+				list.add(dto.getRemark());
+				list.add(dto.getId());
+				// list.add(productString);
 
-					if (isAfterSave) {
-						list.add(dto.getSaveStatus());
-						list.add(dto.getErrDescription());
-					}
-
-				} catch (Exception e) {
-					list.clear();
-					list.add(dto.getDiscription());
-					// list.add(null);
-					list.add(null);
-					list.add(null);
-					list.add("00:00");
-					list.add(dto.getRemark());
-					list.add(dto.getId());
-					// list.add(dto.getProduct());
-
-					if (isAfterSave) {
-						list.add("Failed");
-						list.add("Processing Error: " + e.getMessage());
-					}
+				if (isAfterSave) {
+					list.add(dto.getSaveStatus());
+					list.add(dto.getErrDescription());
 				}
 
-				rows.add(list);
-			}
-			List<String> innerHeaders = new ArrayList<>();
+			} catch (Exception e) {
+				list.clear();
+				list.add(dto.getDiscription());
+				// list.add(null);
+				list.add(null);
+				list.add(null);
+				list.add("00:00");
+				list.add(dto.getRemark());
+				list.add(dto.getId());
+				// list.add(dto.getProduct());
 
-			innerHeaders.add("Shutdown Desc");
-			// innerHeaders.add("Particulars");
-			if(vertical.getName().equalsIgnoreCase("PTA")) {
-				innerHeaders.add("Month");
-			}else {
-				innerHeaders.add("SD-From");
-				innerHeaders.add("SD-To");
-			}
-			
-			innerHeaders.add("Duration (hrs)");
-			innerHeaders.add("Shutdown Basis");
-			innerHeaders.add("Id");
-			// innerHeaders.add("Product");
-			if (isAfterSave) {
-				innerHeaders.add("Status");
-				innerHeaders.add("Error Description");
-			}
-			List<List<String>> headers = new ArrayList<>();
-			headers.add(innerHeaders);
-
-			for (List<String> headerRowData : headers) {
-				Row headerRow = sheet.createRow(currentRow++);
-				for (int col = 0; col < headerRowData.size(); col++) {
-					Cell cell = headerRow.createCell(col);
-					cell.setCellValue(headerRowData.get(col));
-					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+				if (isAfterSave) {
+					list.add("Failed");
+					list.add("Processing Error: " + e.getMessage());
 				}
 			}
-			for (List<Object> rowData : rows) {
-				Row row = sheet.createRow(currentRow++);
-				for (int col = 0; col < rowData.size(); col++) {
-					Cell cell = row.createCell(col);
-					Object value = rowData.get(col);
 
-					if (value instanceof Date) {
-						cell.setCellValue((Date) value);
-						cell.setCellStyle(dateTimeStyle);
-					} else if (value instanceof Number) {
-						if(vertical.getName().equalsIgnoreCase("PTA")) {
-							if (col == 2) {
-		                        cell.setCellStyle(decimalStyle);
-		                    }
-						}
-						
-						cell.setCellValue(((Number) value).doubleValue());
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
-					} else if (value != null) {
-						cell.setCellValue(value.toString());
-					} else {
-						cell.setCellValue("");
-					}
-				}
+			rows.add(list);
 		}
+		List<String> innerHeaders = new ArrayList<>();
 
-		// Determine remark ("Shutdown Basis") column index based on vertical
-		int remarkColIndex = vertical.getName().equalsIgnoreCase("PTA") ? 3 : 4;
-		int totalCols = innerHeaders.size();
+		innerHeaders.add("Shutdown Desc");
+		// innerHeaders.add("Particulars");
+		if(vertical.getName().equalsIgnoreCase("PTA")) {
+			innerHeaders.add("Month");
+		}else {
+			innerHeaders.add("SD-From");
+			innerHeaders.add("SD-To");
+		}
+		
+		innerHeaders.add("Duration (hrs)");
+		innerHeaders.add("Shutdown Basis");
+		innerHeaders.add("Id");
+		// innerHeaders.add("Product");
+		if (isAfterSave) {
+			innerHeaders.add("Status");
+			innerHeaders.add("Error Description");
+		}
+		List<List<String>> headers = new ArrayList<>();
+		headers.add(innerHeaders);
 
-		// Wrap style for remark column — top-aligned with text wrapping enabled
-		CellStyle wrapStyle = workbook.createCellStyle();
-		wrapStyle.setWrapText(true);
-		wrapStyle.setVerticalAlignment(VerticalAlignment.TOP);
+		for (List<String> headerRowData : headers) {
+			Row headerRow = sheet.createRow(currentRow++);
+			for (int col = 0; col < headerRowData.size(); col++) {
+				Cell cell = headerRow.createCell(col);
+				cell.setCellValue(headerRowData.get(col));
+				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+			}
+		}
+		for (List<Object> rowData : rows) {
+			Row row = sheet.createRow(currentRow++);
+			for (int col = 0; col < rowData.size(); col++) {
+				Cell cell = row.createCell(col);
+				Object value = rowData.get(col);
+
+				if (value instanceof Date) {
+					cell.setCellValue((Date) value);
+					cell.setCellStyle(dateTimeStyle);
+				} else if (value instanceof Number) {
+					if(vertical.getName().equalsIgnoreCase("PTA")) {
+						if (col == 2) {
+	                        cell.setCellStyle(decimalStyle);
+	                    } else {
+	                    	cell.setCellStyle(borderedStyle);
+	                    }
+					} else {
+						cell.setCellStyle(borderedStyle);
+					}
+					cell.setCellValue(((Number) value).doubleValue());
+				} else if (value instanceof Boolean) {
+					cell.setCellStyle(borderedStyle);
+					cell.setCellValue((Boolean) value);
+				} else if (value != null) {
+					cell.setCellStyle(borderedStyle);
+					cell.setCellValue(value.toString());
+				} else {
+					cell.setCellStyle(borderedStyle);
+					cell.setCellValue("");
+				}
+			}
+	}
+
+	// Determine remark ("Shutdown Basis") column index based on vertical
+	int remarkColIndex = vertical.getName().equalsIgnoreCase("PTA") ? 3 : 4;
+	int totalCols = innerHeaders.size();
+
+	// Wrap style for remark column — top-aligned with text wrapping enabled
+	CellStyle wrapStyle = Utility.createBorderedStyle(workbook);
+	wrapStyle.setWrapText(true);
+	wrapStyle.setVerticalAlignment(VerticalAlignment.TOP);
 
 		// Fixed preferred width for remark column (~50 characters × 256 units)
 		final int REMARK_CHARS = 50;
@@ -2223,7 +2238,9 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 		String verticalName = plantsService.findVerticalNameByPlantId(plantFKId);
-		boolean aromatics=vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("SEZ");
+		boolean aromaticsSez=vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("SEZ");
+		boolean pta = verticalName.equalsIgnoreCase("PTA");
+		boolean aromatics = vertical.getName().equalsIgnoreCase("AROMATICS");
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
@@ -2251,7 +2268,9 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 						dto.setSaveStatus("Failed");
 						dto.setErrDescription("Description is required.");
 						alreadyFailed = true;
-					} else if (!verticalName.equalsIgnoreCase("PTA")
+					} 
+					// skip the duplicate description validation for pta and aromatics
+					else if (!pta && !aromatics
 							&& validatedDescriptions.containsKey(dto.getDiscription().trim())) {
 						dto.setSaveStatus("Failed");
 						dto.setErrDescription(
@@ -2333,7 +2352,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 									}
 								}
 
-								else if ((verticalName.equalsIgnoreCase("PTA") || aromatics) && ldtStart != null) {
+								else if ((verticalName.equalsIgnoreCase("PTA") || aromaticsSez) && ldtStart != null) {
 									int conflictingIndex = -1;
 									for (TimeRangeWithIndex prevPeriod : validTimeRangesWithIndex) {
 										LocalDateTime prevLdtStart = prevPeriod.getStart();
@@ -2421,7 +2440,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 					}
 					
 
-					if (!verticalName.equalsIgnoreCase("PTA") && !alreadyFailed && dto.getId() == null) {
+					if ((!pta && !aromatics ) && !alreadyFailed && dto.getId() == null) {
 						List<Object[]> obj = shutDownPlanRepository.findDiscriptionByPlantIdAndType("Shutdown",
 								plantFKId.toString(), year, dto.getDiscription());
 
@@ -2433,7 +2452,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 						}
 					}
 
-					if ((verticalName.equalsIgnoreCase("PTA") || aromatics)  && !alreadyFailed && ldtStart != null && ldtEnd != null) {
+					if ((verticalName.equalsIgnoreCase("PTA") || aromaticsSez)  && !alreadyFailed && ldtStart != null && ldtEnd != null) {
 						validTimeRangesWithIndex.add(new TimeRangeWithIndex(ldtStart, ldtEnd, currentRowIndex));
 					}
 
@@ -3068,6 +3087,10 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 		
 		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD");
+		boolean filament = verticalName.equalsIgnoreCase("Filament");
+		boolean staple = verticalName.equalsIgnoreCase("Staple");
+		boolean chemical = verticalName.equalsIgnoreCase("Chemical");
+		boolean aromatics = verticalName.equalsIgnoreCase("Aromatics");
 		boolean monthDropdown= (verticalName.equalsIgnoreCase("PP") && (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("SEZ") || site.getName().equalsIgnoreCase("DTA")));
 		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
 		List<String> items = List.of(
@@ -3093,7 +3116,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 			plantMaintenanceId = findIdByPlantIdAndMaintenanceTypeName(plantId, "Shutdown");
 		}
   // remark validation
-		if(site.getName().equalsIgnoreCase("JMD") && verticalName.equalsIgnoreCase("Elastomer")) {
+		if(site.getName().equalsIgnoreCase("JMD") && verticalName.equalsIgnoreCase("Elastomer") || filament || staple) {
          
 			for (ShutDownPlanDTO dto : shutDownPlanDTOList) { 
 				if(dto.getId() == null || dto.getId().isEmpty()) continue;
@@ -3131,7 +3154,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 						// || !Objects.equals(durationInHrs, dto.getDurationInHrs())
 						|| !Objects.equals( Math.round(durationInHrs * 100.0) / 100.0,
 						Math.round(dto.getDurationInHrs() * 100.0) / 100.0)
-						|| ( !elastomer && !monthName.equalsIgnoreCase(dto.getMonth()))
+						|| ( (!elastomer && !filament && !staple) && !monthName.equalsIgnoreCase(dto.getMonth()))
 					)) {
     
 					dto.setSaveStatus("Failed");
@@ -3143,7 +3166,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 			}
 		}
 		// Validate: sum of durationInHrs per month must not exceed total hours in that month
-		if(site.getName().equalsIgnoreCase("JMD") && verticalName.equalsIgnoreCase("Elastomer")) {
+		if(site.getName().equalsIgnoreCase("JMD") && verticalName.equalsIgnoreCase("Elastomer") || filament || staple) {
 
 		
 
@@ -3229,7 +3252,22 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		}
 	}
 
+	List<Map<String, Object>> shutdownDescriptionList = new ArrayList<>();
+	//  fetch the drop down discription list for import validation
+	if(chemical || aromatics) { 
+		shutdownDescriptionList = (List<Map<String, Object>>) getShutdownDescription(String.valueOf(plantId)).getData();
+	}
 		for (ShutDownPlanDTO shutDownPlanDTO : shutDownPlanDTOList) {
+
+			// implemented desc validation as per drop down list
+			if(chemical || aromatics) {  
+				if (!isValidShutdownDescription(shutDownPlanDTO.getDiscription(), shutdownDescriptionList)) {
+					shutDownPlanDTO.setSaveStatus("Failed");
+					shutDownPlanDTO.setErrDescription("Invalid description. Please select a valid description");
+					failedList.add(shutDownPlanDTO);
+					continue;
+				}
+			}
 			if (shutDownPlanDTO.getSaveStatus() != null
 					&& shutDownPlanDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
 
@@ -3244,7 +3282,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 				PlantMaintenanceTransaction plantMaintenanceTransaction = new PlantMaintenanceTransaction();
 				plantMaintenanceTransaction.setId(UUID.randomUUID());
 				plantMaintenanceTransaction.setPlantId(plantId);
-				if(verticalName.equalsIgnoreCase("PTA") || elastomer || monthDropdown) {
+				if(verticalName.equalsIgnoreCase("PTA") || elastomer || monthDropdown || filament || staple) {
 		            	if(shutDownPlanDTO.getMonth()!=null) {
 		            		shutDownPlanDTO.setMaintStartDateTime(getStartOfMonthDate(shutDownPlanDTO.getMonth(), year));
 		            		shutDownPlanDTO.setMaintEndDateTime(getEndOfMonthDate(shutDownPlanDTO.getMonth(), year));
@@ -3336,7 +3374,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 						if (plantMaintenance.isPresent()) {
 							PlantMaintenanceTransaction plantMaintenanceTransaction = plantMaintenance.get();
 							plantMaintenanceTransaction.setPlantId(plantId);
-							if(verticalName.equalsIgnoreCase("PTA") || elastomer || monthDropdown) {
+							if(verticalName.equalsIgnoreCase("PTA") || elastomer || monthDropdown || filament || staple) {
 				            	if(shutDownPlanDTO.getMonth()!=null) {
 				            		shutDownPlanDTO.setMaintStartDateTime(getStartOfMonthDate(shutDownPlanDTO.getMonth(), year));
 				            		shutDownPlanDTO.setMaintEndDateTime(getEndOfMonthDate(shutDownPlanDTO.getMonth(), year));
@@ -3371,7 +3409,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 							}
 							if (("ELASTOMER".equalsIgnoreCase(verticalName))
 									|| ("AROMATICS".equalsIgnoreCase(verticalName))
-									|| ("PTA".equalsIgnoreCase(verticalName))) {
+									|| ("PTA".equalsIgnoreCase(verticalName) || filament || staple)) {
 								if (plantMaintenanceTransaction
 										.getMaintForMonth() != (shutDownPlanDTO.getMaintStartDateTime().getMonth()
 												+ 1)) {
@@ -3407,7 +3445,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 							Date dtoEndDate = shutDownPlanDTO.getMaintEndDateTime();
 							if (!(entityEndDate != null && dtoEndDate != null
 									&& entityEndDate.compareTo(dtoEndDate) == 0)) {
-								if(!elastomer) {
+								if(!elastomer || !filament || !staple) {
 									changed = true;
 								}
 							}
@@ -3416,7 +3454,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 							Date dtoStartDate = shutDownPlanDTO.getMaintStartDateTime();
 							if (!(entityStartDate != null && dtoStartDate != null
 									&& entityStartDate.compareTo(dtoStartDate) == 0)) {
-								if(!elastomer) {
+								if(!elastomer || !filament || !staple) {
 									changed = true;
 								}
 							}
@@ -3425,6 +3463,8 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 								changed = true;
 								plantMaintenanceTransaction.setLineFKId(UUID.fromString(shutDownPlanDTO.getLineId()));
 							}
+							// skip remark validation for aromatics
+							if(!aromatics) {
 							if (changed && (plantMaintenanceTransaction.getRemarks()
 									.equalsIgnoreCase(shutDownPlanDTO.getRemark()))) {
 								shutDownPlanDTO.setSaveStatus("Failed");
@@ -3432,6 +3472,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 								failedList.add(shutDownPlanDTO);
 								continue;
 							}
+						}
 							plantMaintenanceTransaction.setRemarks(shutDownPlanDTO.getRemark());
 							// Save updated record
 							plantMaintenanceTransactionRepository.save(plantMaintenanceTransaction);
@@ -3926,6 +3967,14 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
+	}
+
+	private boolean isValidShutdownDescription(String description, List<Map<String, Object>> validDescriptions) {
+		if (description == null || description.trim().isEmpty()) {
+			return false;
+		}
+		return validDescriptions.stream()
+				.anyMatch(map -> description.equals(map.get("DisplayName")));
 	}
 
 	public List<Object[]> getDescriptionDropdownData(UUID verticalId, String viewName) {

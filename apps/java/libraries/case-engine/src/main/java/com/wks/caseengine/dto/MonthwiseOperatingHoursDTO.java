@@ -30,5 +30,6 @@ public class MonthwiseOperatingHoursDTO {
     private Date createdOn;
     private Date modifiedOn;
     private String updatedBy;
+    private String groupBy;
 }
 
