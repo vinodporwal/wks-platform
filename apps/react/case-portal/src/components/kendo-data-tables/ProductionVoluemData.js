@@ -738,7 +738,7 @@ const ProductionvolumeData = ({
     }
   }
 
-  function normalizeAllRows(grid) {
+  function normalizeAllRows(grid, maxCapacityGrid) {
     const monthKeys = [
       'april',
       'may',
@@ -754,20 +754,53 @@ const ProductionvolumeData = ({
       'march',
     ]
 
-    return grid?.map((row) => {
-      // 1. Find this row?s max month value
-      const vals = monthKeys?.map((k) => Number(row[k]))
-      const maxVal = Math.max(...vals)
-
-      // 2. Shallow-clone the entire row (carries over id, remarks, all FKs, etc.)
+    return grid?.map((row, index) => {
+      // Shallow-clone the entire row (carries over id, remarks, all FKs, etc.)
       const newRow = { ...row }
 
-      // 3. Overwrite only the month fields:
-      monthKeys.forEach((key) => {
-        const orig = Number(row[key] || 0)
-        const pct = maxVal ? (orig / maxVal) * 100 : 0
-        newRow[key] = Number(pct)
-      })
+      if (maxCapacityGrid) {
+        // Match row to corresponding max capacity row by materialFKId, normParametersFKId, or productName
+        const matchedMaxRow =
+          maxCapacityGrid?.find(
+            (maxRow) =>
+              (maxRow.materialFKId &&
+                row.materialFKId &&
+                maxRow.materialFKId.toLowerCase() ===
+                  row.materialFKId.toLowerCase()) ||
+              (maxRow.normParametersFKId &&
+                row.normParametersFKId &&
+                maxRow.normParametersFKId.toLowerCase() ===
+                  row.normParametersFKId.toLowerCase()) ||
+              (maxRow.productName &&
+                row.productName &&
+                maxRow.productName === row.productName),
+          ) || maxCapacityGrid?.[index]
+
+        monthKeys.forEach((key) => {
+          const orig = Number(row[key] || 0)
+          let pct = 0
+          if (matchedMaxRow) {
+            const maxVal = Number(matchedMaxRow[key] || 0)
+            pct = maxVal ? (orig / maxVal) * 100 : 0
+          } else {
+            // fallback to self-normalization if no match
+            const vals = monthKeys?.map((k) => Number(row[k]))
+            const selfMax = Math.max(...vals)
+            pct = selfMax ? (orig / selfMax) * 100 : 0
+          }
+          newRow[key] = Number(pct.toFixed(2))
+        })
+      } else {
+        // Self-normalization: compare each month against this row's max month value
+        const vals = monthKeys?.map((k) => Number(row[k]))
+        const maxVal = Math.max(...vals)
+
+        monthKeys.forEach((key) => {
+          const orig = Number(row[key] || 0)
+          const pct = maxVal ? (orig / maxVal) * 100 : 0
+          newRow[key] = Number(pct)
+        })
+      }
 
       return newRow
     })
@@ -1052,9 +1085,11 @@ const ProductionvolumeData = ({
         }))
         setRowsMaxCapacity(formatted)
 
-        // For AROMATICS_HMD/PMD, compute PERCENTAGE_SUMMARY from MAX_ACHIEVED_CAPACITY
+        // For AROMATICS_HMD/PMD, compute PERCENTAGE_SUMMARY as production / maxCapacity * 100
+        // (same approach as ProductionTarget uses for elastomer)
         if (IS_AROMATICS_HMD || IS_AROMATICS_PMD) {
-          const percentageFromMax = normalizeAllRows(formatted).map((item) => ({
+          const currentRows = rows || []
+          const percentageFromMax = normalizeAllRows(currentRows, formatted).map((item) => ({
             ...item,
             isEditable: false,
           }))
