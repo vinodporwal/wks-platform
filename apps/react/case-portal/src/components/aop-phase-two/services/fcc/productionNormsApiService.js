@@ -120,7 +120,7 @@ async function exportConfigurationExcel(keycloak, plantId, year) {
   return ImportExportApiService.exportExcelData(keycloak, {
     endpoint: `vgoht/production-norms/configuration/export/${plantId}/${year}`,
     queryParams: {},
-    fileName: `VGOHT_Production_Norms_Configuration_${year}.xlsx`,
+    fileName: `FCC_Production_Norms_Configuration_${year}.xlsx`,
     method: 'GET',
   })
 }
@@ -334,7 +334,7 @@ async function exportConstantsExcel(keycloak, plantId, year) {
     keycloak,
     'vgoht/norms-basis/constant/export',
     { year: year, plantFKId: plantId },
-    `VGOHT_Production_Norms_Constants_${year}.xlsx`,
+    `FCC_Production_Norms_Constants_${year}.xlsx`,
   )
 }
 
@@ -486,6 +486,6 @@ async function exportReportManualEntryExcel(keycloak, plantId, year) {
     keycloak,
     'mannual-entry/export',
     { year: year, plantFKId: plantId },
-    `Production_Norms_Report_Manual_Entry_${year}.xlsx`,
+    `FCC_Production_Norms_Report_Manual_Entry_${year}.xlsx`,
   )
 }

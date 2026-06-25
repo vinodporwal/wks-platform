@@ -170,6 +170,7 @@ import PlantAOPReport from 'components/kendo-data-tables/PlantAOPReport'
 import SteadyStateConsumptionNS from 'components/aop-phase-two/naphthasplitter/steady-state-consumption'
 import OverallAopConsumptionNS from 'components/aop-phase-two/naphthasplitter/overall-aop-consumption'
 import ProductionNormsBasisNS from 'components/aop-phase-two/naphthasplitter/production-norms-basis'
+import GradeMixOptimizer from 'components/kendo-data-tables/GradeMixOptimizer'
 // Naphthasplitter Ended
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
@@ -632,7 +633,14 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
-
+           {
+            path: 'grade-mix-optimizer',
+            element: (
+              <PrivateRoute routeId='grade-mix-optimizer'>
+                <GradeMixOptimizer/>
+              </PrivateRoute>
+            ),
+          },
           {
             path: 'material-grouped-selection',
             element: (

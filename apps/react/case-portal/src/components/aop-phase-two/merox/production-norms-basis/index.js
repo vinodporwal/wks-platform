@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import {
-  Box,
-  Stack,
-  Button,
-  CircularProgress,
-  Snackbar,
-  Alert,
-} from '../../../../../node_modules/@mui/material/index'
+import { Box, Stack } from '../../../../../node_modules/@mui/material/index'
 import TabSection from 'components/aop-phase-two/common/utilities/Tabs'
 import ConfigurationAccordian from '../../common/components/ConfigurationAccordian'
 import { useSelector } from 'react-redux'
@@ -14,11 +7,11 @@ import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import Configuration from './Configuration'
 import Constants from './Constants'
-import ReportManualEntry from './ReportManualEntry'
 import TabAccessApiService from 'components/aop-phase-two/services/common/tabAccessApiService'
 import PIMSThroughput from './PIMSThroughput'
 import { ProductionNormsApiService } from 'components/aop-phase-two/services/merox/productionNormsApiService'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
+import ManualEntry from './ManualEntry'
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
@@ -242,8 +235,8 @@ const ProductionNormsBasis = () => {
         return <Constants startDate={startDate} endDate={endDate} />
       case 'PIMS Throughput':
         return <PIMSThroughput startDate={startDate} endDate={endDate} />
-      case 'Report Manual Entry':
-        return <ReportManualEntry startDate={startDate} endDate={endDate} />
+      case 'Manual Entry':
+        return <ManualEntry startDate={startDate} endDate={endDate} />
       default:
         return null
     }
