@@ -3089,7 +3089,9 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD");
 		boolean filament = verticalName.equalsIgnoreCase("Filament");
 		boolean staple = verticalName.equalsIgnoreCase("Staple");
-		boolean chemical = verticalName.equalsIgnoreCase("Chemical");
+        boolean chemical = verticalName.equalsIgnoreCase("Chemical");
+		boolean aromaticsHmd = verticalName.equalsIgnoreCase("Aromatics") && site.getName().equalsIgnoreCase("HMD");
+		boolean descriptionValidation = chemical || aromaticsHmd;
 		boolean aromatics = verticalName.equalsIgnoreCase("Aromatics");
 		boolean monthDropdown= (verticalName.equalsIgnoreCase("PP") && (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("SEZ") || site.getName().equalsIgnoreCase("DTA")));
 		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
@@ -3254,13 +3256,13 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 
 	List<Map<String, Object>> shutdownDescriptionList = new ArrayList<>();
 	//  fetch the drop down discription list for import validation
-	if(chemical || aromatics) { 
+	if(descriptionValidation) { 
 		shutdownDescriptionList = (List<Map<String, Object>>) getShutdownDescription(String.valueOf(plantId)).getData();
 	}
 		for (ShutDownPlanDTO shutDownPlanDTO : shutDownPlanDTOList) {
 
 			// implemented desc validation as per drop down list
-			if(chemical || aromatics) {  
+			if(descriptionValidation) {  
 				if (!isValidShutdownDescription(shutDownPlanDTO.getDiscription(), shutdownDescriptionList)) {
 					shutDownPlanDTO.setSaveStatus("Failed");
 					shutDownPlanDTO.setErrDescription("Invalid description. Please select a valid description");
