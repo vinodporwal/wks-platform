@@ -1279,7 +1279,7 @@ def fetch_power_asset_capacity_all_months(plant_id: str, year: int) -> list:
                "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"]
 
     min_max_cols = ", ".join(
-        f"cap.[{m}_Min], cap.[{m}_Max]" for m in _months
+        f"cap.[{m}_Min], cap.[{m}_Max], cap.[{m}_Man_Load]" for m in _months
     )
 
     conn = get_connection()
@@ -1311,12 +1311,13 @@ def fetch_power_asset_capacity_all_months(plant_id: str, year: int) -> list:
                 "fixed_min":  float(row[4]) if row[4] is not None else None,
                 "fixed_max":  float(row[5]) if row[5] is not None else None,
             }
-            # Unpack Mon_Min / Mon_Max pairs starting at index 6
+            # Unpack Mon_Min / Mon_Max / Mon_Man_Load triplets starting at index 6
             col_idx = 6
             for m in _months:
                 cap_data[f"{m}_Min"] = float(row[col_idx])     if row[col_idx]     is not None else None
                 cap_data[f"{m}_Max"] = float(row[col_idx + 1]) if row[col_idx + 1] is not None else None
-                col_idx += 2
+                cap_data[f"{m}_Man_Load"] = int(row[col_idx + 2]) if row[col_idx + 2] is not None else 0
+                col_idx += 3
             results.append(cap_data)
         return results
     except Exception as e:
@@ -1337,7 +1338,7 @@ def fetch_steam_asset_capacity_all_months(plant_id: str, year: int) -> list:
                "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"]
 
     min_max_cols = ", ".join(
-        f"cap.[{m}_Min], cap.[{m}_Max]" for m in _months
+        f"cap.[{m}_Min], cap.[{m}_Max], cap.[{m}_Man_Load]" for m in _months
     )
 
     conn = get_connection()
@@ -1374,7 +1375,8 @@ def fetch_steam_asset_capacity_all_months(plant_id: str, year: int) -> list:
             for m in _months:
                 cap_data[f"{m}_Min"] = float(row[col_idx]) if row[col_idx] is not None else None
                 cap_data[f"{m}_Max"] = float(row[col_idx + 1]) if row[col_idx + 1] is not None else None
-                col_idx += 2
+                cap_data[f"{m}_Man_Load"] = int(row[col_idx + 2]) if row[col_idx + 2] is not None else 0
+                col_idx += 3
             results.append(cap_data)
         return results
     except Exception as e:

@@ -20,7 +20,6 @@ Designed to be reusable across all 5 CPP plants — parameterised by plant_id.
 import os
 import logging
 from collections import defaultdict
-import pandas as pd
 
 from database.queries import (
     fetch_process_demands,
@@ -33,6 +32,7 @@ from database.queries import (
     fetch_steam_asset_priority,
     fetch_steam_asset_capacity_all_months,
 )
+from engine.ods_norms_reader import ODSNormsReader
 
 logger = logging.getLogger(__name__)
 
@@ -57,176 +57,29 @@ def _month_key(month: int) -> str:
     return _MONTH_NAMES[month][:3]
 
 
-# ---------------------------------------------------------------------------
-# ODS Excel Norms Lookup Helper
-# ---------------------------------------------------------------------------
+def _get_steam_demands(plant_id: str, month: int, year: int, demands: dict = None) -> dict:
+    """
+    Build steam demand dict from pre-fetched demands or DB fallback.
 
-def _resolve_excel_path(plant_id: str) -> str:
-    try:
-        from plant_mapper import get_plant
-        plant_info = get_plant(plant_id)
-        short_code = plant_info.get("short_code", "c2").upper()
-    except Exception:
-        short_code = "C2"
+    Args:
+        plant_id:  CPP plant UUID
+        month:     1-12
+        year:      calendar year
+        demands:   pre-fetched merged demands dict from calculator. If provided,
+                   skips DB round-trip for process + fixed consumption.
+    """
+    if demands is not None:
+        return {
+            "lp_process": float(demands.get("lp_process", 0.0)),
+            "lp_fixed": float(demands.get("lp_fixed", 0.0)),
+            "mp_process": float(demands.get("mp_process", 0.0)),
+            "mp_fixed": float(demands.get("mp_fixed", 0.0)),
+            "hp_process": float(demands.get("hp_process", 0.0)),
+            "hp_fixed": float(demands.get("hp_fixed", 0.0)),
+            "shp_process": float(demands.get("shp_process", 0.0)),
+            "shp_fixed": float(demands.get("shp_fixed", 0.0)),
+        }
 
-    filenames = [f"{short_code}_JMD.ods", f"JMD_{short_code}.ods"]
-    for filename in filenames:
-        for path in [filename, f"../{filename}", f"engine/{filename}"]:
-            if os.path.exists(path):
-                return os.path.abspath(path)
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        for _ in range(3):
-            p = os.path.join(base_dir, filename)
-            if os.path.exists(p):
-                return p
-            base_dir = os.path.dirname(base_dir)
-    return "C2_JMD.ods"
-
-
-def _fetch_powergen_norms(plant_id: str, month: int, year: int) -> dict:
-    filepath = _resolve_excel_path(plant_id)
-    if not os.path.exists(filepath):
-        logger.warning(f"  [DISPATCH] Excel file not found: {filepath}")
-        return {}
-        
-    try:
-        df = pd.read_excel(filepath, engine='odf', header=None)
-        target_val = float(year) + float(month) / 100.0
-        
-        month_col_idx = None
-        row_1 = df.iloc[1].tolist()
-        for col_idx, val in enumerate(row_1):
-            try:
-                if pd.notna(val) and abs(float(val) - target_val) < 1e-5:
-                    month_col_idx = col_idx
-                    break
-            except (ValueError, TypeError):
-                continue
-                
-        if month_col_idx is None:
-            logger.warning(f"  [DISPATCH] Month {month}/{year} (value: {target_val}) not found in Excel columns")
-            return {}
-            
-        norms_map = {}
-        for idx in range(4, len(df)):
-            row = df.iloc[idx].tolist()
-            if len(row) <= month_col_idx:
-                continue
-            utility = str(row[2]).strip()
-            material = str(row[6]).strip()
-            
-            if utility == "POWERGEN" and material == "Power_Dis":
-                plant_name = str(row[0]).strip().upper()
-                norm_val = row[month_col_idx]
-                try:
-                    norm_val = float(norm_val) if pd.notna(norm_val) else 0.0
-                except (ValueError, TypeError):
-                    norm_val = 0.0
-                norms_map[plant_name] = norm_val
-                
-        return norms_map
-    except Exception as e:
-        logger.error(f"  [DISPATCH] Error reading norms from excel {filepath}: {e}")
-        return {}
-
-
-def _fetch_steam_norms(plant_id: str, month: int, year: int) -> dict:
-    filepath = _resolve_excel_path(plant_id)
-    if not os.path.exists(filepath):
-        logger.warning(f"  [DISPATCH] Excel file not found for steam norms: {filepath}")
-        return {}
-    try:
-        df = pd.read_excel(filepath, engine='odf', header=None)
-        target_val = float(year) + float(month) / 100.0
-        
-        month_col_idx = None
-        row_1 = df.iloc[1].tolist()
-        for col_idx, val in enumerate(row_1):
-            try:
-                if pd.notna(val) and abs(float(val) - target_val) < 1e-5:
-                    month_col_idx = col_idx
-                    break
-            except (ValueError, TypeError):
-                continue
-                
-        if month_col_idx is None:
-            logger.warning(f"  [DISPATCH] Month {month}/{year} (value: {target_val}) not found in Excel columns for steam norms")
-            return {}
-            
-        norms = {}
-        for idx in range(4, len(df)):
-            row = df.iloc[idx].tolist()
-            if len(row) <= month_col_idx:
-                continue
-            utility = str(row[2]).strip()
-            material = str(row[6]).strip()
-            norm_val = row[month_col_idx]
-            try:
-                norm_val = float(norm_val) if pd.notna(norm_val) else 0.0
-            except (ValueError, TypeError):
-                norm_val = 0.0
-                
-            # Match desuperheating norms
-            if utility == "LP Steam PRDS" and material == "MP Steam_Dis":
-                norms["LP_to_MP"] = norm_val
-            elif utility == "MP Steam PRDS SHP" and material == "HP Steam_Dis":
-                norms["MP_to_HP"] = norm_val
-            elif utility == "HP Steam PRDS" and material == "SHP Steam_Dis":
-                norms["HP_to_SHP"] = norm_val
-                
-        return norms
-    except Exception as e:
-        logger.error(f"  [DISPATCH] Error reading steam norms from excel {filepath}: {e}")
-        return {}
-
-
-def _fetch_hrsg_byproduct_norms(plant_id: str, month: int, year: int) -> dict:
-    filepath = _resolve_excel_path(plant_id)
-    if not os.path.exists(filepath):
-        logger.warning(f"  [DISPATCH] Excel file not found for byproduct norms: {filepath}")
-        return {}
-    try:
-        df = pd.read_excel(filepath, engine='odf', header=None)
-        target_val = float(year) + float(month) / 100.0
-        
-        month_col_idx = None
-        row_1 = df.iloc[1].tolist()
-        for col_idx, val in enumerate(row_1):
-            try:
-                if pd.notna(val) and abs(float(val) - target_val) < 1e-5:
-                    month_col_idx = col_idx
-                    break
-            except (ValueError, TypeError):
-                continue
-                
-        if month_col_idx is None:
-            logger.warning(f"  [DISPATCH] Month {month}/{year} (value: {target_val}) not found in Excel columns for byproduct norms")
-            return {}
-            
-        byproducts = {}
-        for idx in range(4, len(df)):
-            row = df.iloc[idx].tolist()
-            if len(row) <= month_col_idx:
-                continue
-            utility = str(row[2]).strip()
-            material = str(row[6]).strip()
-            
-            # Check if utility name has HRSG and material has LP STEAM
-            if "HRSG" in utility.upper() and "LP STEAM" in material.upper():
-                norm_val = row[month_col_idx]
-                try:
-                    norm_val = float(norm_val) if pd.notna(norm_val) else 0.0
-                except (ValueError, TypeError):
-                    norm_val = 0.0
-                byproducts[utility.upper()] = norm_val
-                
-        return byproducts
-    except Exception as e:
-        logger.error(f"  [DISPATCH] Error reading byproduct norms from excel {filepath}: {e}")
-        return {}
-
-
-def _get_steam_demands(plant_id: str, month: int, year: int) -> dict:
     process = fetch_process_demands(plant_id, month, year)
     fixed = fetch_fixed_consumption(plant_id, month, year)
     return {
@@ -301,6 +154,9 @@ def _build_asset_table(plant_id: str, month: int, year: int) -> list:
             max_mw = 0.0
         max_mw = float(max_mw)
 
+        # Mandatory load flag (1 = must dispatch at MIN, 0 = optional)
+        mandatory = int(cap_row.get(f"{mk}_Man_Load", 0) or 0)
+
         # Priority
         pri_row = pri_by_id.get(aid, {})
         priority = pri_row.get("priority")
@@ -316,6 +172,7 @@ def _build_asset_table(plant_id: str, month: int, year: int) -> list:
             "min_mw": min_mw,
             "max_mw": max_mw,
             "priority": priority,
+            "mandatory": mandatory,
             "min_mwh": min_mw * op_hours,
             "max_mwh": max_mw * op_hours,
         })
@@ -323,9 +180,16 @@ def _build_asset_table(plant_id: str, month: int, year: int) -> list:
     return result
 
 
-def _get_power_demand(plant_id: str, month: int, year: int) -> dict:
+def _get_power_demand(plant_id: str, month: int, year: int, demands: dict = None) -> dict:
     """
     Fetch and compute total power demand (process + fixed) in MWh.
+
+    Args:
+        plant_id:  CPP plant UUID
+        month:     1-12
+        year:      calendar year
+        demands:   pre-fetched merged demands dict from calculator. If provided,
+                   skips DB round-trip for process + fixed consumption.
 
     Returns:
         {
@@ -334,13 +198,16 @@ def _get_power_demand(plant_id: str, month: int, year: int) -> dict:
             "total_mwh": float,    # sum
         }
     """
-    process = fetch_process_demands(plant_id, month, year)
-    fixed = fetch_fixed_consumption(plant_id, month, year)
+    if demands is not None:
+        process_kwh = float(demands.get("power_process", 0.0))
+        fixed_mwh = float(demands.get("power_fixed", 0.0))
+    else:
+        process = fetch_process_demands(plant_id, month, year)
+        fixed = fetch_fixed_consumption(plant_id, month, year)
+        process_kwh = float(process.get("power_process", 0.0))
+        fixed_mwh = float(fixed.get("power_fixed", 0.0))
 
-    process_kwh = float(process.get("power_process", 0.0))
     process_mwh = process_kwh / 1000.0
-
-    fixed_mwh = float(fixed.get("power_fixed", 0.0))
 
     return {
         "process_mwh": round(process_mwh, 2),
@@ -355,9 +222,15 @@ def _dispatch_all_min_first(
     plant_id: str,
     month: int,
     year: int,
+    ods_reader: ODSNormsReader = None,
 ) -> list:
     """
-    Dispatch algorithm: all assets at MIN first, then ramp up by priority.
+    Dispatch algorithm (Option A with mandatory load):
+      1. Mandatory assets (Man_Load=1) start at MIN load.
+      2. If mandatory MIN < demand → bring in optional assets at MIN.
+      3. If all MIN < demand → ramp up by priority (1 = highest first).
+      4. Equal-priority assets share additional load equally (equal MW).
+      5. If all at MAX and still deficit → deficit logged.
 
     Args:
         assets: list of asset dicts from _build_asset_table
@@ -365,96 +238,116 @@ def _dispatch_all_min_first(
         plant_id: CPP plant UUID
         month: selected month
         year: selected year
+        ods_reader: pre-loaded ODSNormsReader for norms (avoids re-reading ODS)
 
     Returns:
         list of asset dicts with added keys:
             "dispatched_mw", "dispatched_mwh", "load_percent"
     """
-    # Work on copies
+    # Work on copies — start everyone at 0
     dispatch = []
     for a in assets:
         dispatch.append({
             **a,
-            "dispatched_mw": a["min_mw"],
-            "dispatched_mwh": a["min_mwh"],
+            "dispatched_mw": 0.0,
+            "dispatched_mwh": 0.0,
         })
 
-    total_min = sum(d["dispatched_mwh"] for d in dispatch)
+    # Step 1: Mandatory assets at MIN
+    total_gen = 0.0
+    for d in dispatch:
+        if d["mandatory"] == 1:
+            d["dispatched_mw"] = d["min_mw"]
+            d["dispatched_mwh"] = d["min_mwh"]
+            total_gen += d["dispatched_mwh"]
 
-    # Remaining demand after all at MIN (if MIN exceeds demand, remaining is 0)
-    remaining = max(0.0, demand_mwh - total_min)
+    remaining = max(0.0, demand_mwh - total_gen)
 
-    # Group assets by priority
-    priority_groups = defaultdict(list)
-    for i, d in enumerate(dispatch):
-        priority_groups[d["priority"]].append(i)
+    # Step 2: If mandatory MIN not enough, bring in optional assets at MIN
+    if remaining > 0:
+        for d in dispatch:
+            if d["mandatory"] == 0:
+                d["dispatched_mw"] = d["min_mw"]
+                d["dispatched_mwh"] = d["min_mwh"]
+                total_gen += d["dispatched_mwh"]
+        remaining = max(0.0, demand_mwh - total_gen)
 
-    # Ramp up in priority order (ascending = highest priority first)
-    for pri in sorted(priority_groups.keys()):
-        if remaining <= 0:
-            break
+    # Step 3: Ramp up by priority across all running assets
+    if remaining > 0:
+        priority_groups = defaultdict(list)
+        for i, d in enumerate(dispatch):
+            if d["dispatched_mwh"] > 0 or d["mandatory"] == 1:
+                priority_groups[d["priority"]].append(i)
 
-        group_indices = priority_groups[pri]
+        # Ramp up in priority order (ascending = highest priority first)
+        for pri in sorted(priority_groups.keys()):
+            if remaining <= 0:
+                break
 
-        # Calculate headroom per asset (how much MW each can still add)
-        group_headroom = []
-        for idx in group_indices:
-            d = dispatch[idx]
-            headroom_mw = d["max_mw"] - d["dispatched_mw"]
-            if headroom_mw > 0.001:
-                group_headroom.append((idx, headroom_mw, d["op_hours"]))
+            group_indices = priority_groups[pri]
 
-        if not group_headroom:
-            continue
+            # Calculate headroom per asset (how much MW each can still add)
+            group_headroom = []
+            for idx in group_indices:
+                d = dispatch[idx]
+                headroom_mw = d["max_mw"] - d["dispatched_mw"]
+                if headroom_mw > 0.001:
+                    group_headroom.append((idx, headroom_mw, d["op_hours"]))
 
-        # Total MWh headroom in this group
-        total_group_headroom_mwh = sum(h_mw * hrs for _, h_mw, hrs in group_headroom)
-        allocation_mwh = min(remaining, total_group_headroom_mwh)
+            if not group_headroom:
+                continue
 
-        if len(group_headroom) == 1:
-            # Single asset — give it everything
-            idx, headroom_mw, hrs = group_headroom[0]
-            add_mw = allocation_mwh / hrs
-            add_mw = min(add_mw, headroom_mw)
-            dispatch[idx]["dispatched_mw"] += add_mw
-            dispatch[idx]["dispatched_mwh"] = dispatch[idx]["dispatched_mw"] * hrs
-            remaining -= add_mw * hrs
-        else:
-            # Multiple assets with same priority → equal MW dispatch
-            # Iteratively allocate: target same MW, cap those that hit max
-            uncapped = [(idx, h_mw, hrs) for idx, h_mw, hrs in group_headroom]
-            remaining_to_allocate = allocation_mwh
+            # Total MWh headroom in this group
+            total_group_headroom_mwh = sum(h_mw * hrs for _, h_mw, hrs in group_headroom)
+            allocation_mwh = min(remaining, total_group_headroom_mwh)
 
-            while uncapped and remaining_to_allocate > 0.001:
-                # Target equal MW across all uncapped assets
-                total_hrs_uncapped = sum(hrs for _, _, hrs in uncapped)
-                if total_hrs_uncapped <= 0:
-                    break
-                target_additional_mw = remaining_to_allocate / total_hrs_uncapped
+            if len(group_headroom) == 1:
+                # Single asset — give it everything
+                idx, headroom_mw, hrs = group_headroom[0]
+                add_mw = allocation_mwh / hrs
+                add_mw = min(add_mw, headroom_mw)
+                dispatch[idx]["dispatched_mw"] += add_mw
+                dispatch[idx]["dispatched_mwh"] = dispatch[idx]["dispatched_mw"] * hrs
+                remaining -= add_mw * hrs
+            else:
+                # Multiple assets with same priority → equal MW dispatch
+                # Iteratively allocate: target same MW, cap those that hit max
+                uncapped = [(idx, h_mw, hrs) for idx, h_mw, hrs in group_headroom]
+                remaining_to_allocate = allocation_mwh
 
-                newly_capped = []
-                for idx, headroom_mw, hrs in uncapped:
-                    if target_additional_mw >= headroom_mw:
-                        # This asset hits its max
-                        dispatch[idx]["dispatched_mw"] += headroom_mw
-                        dispatch[idx]["dispatched_mwh"] = dispatch[idx]["dispatched_mw"] * hrs
-                        remaining_to_allocate -= headroom_mw * hrs
-                        newly_capped.append(idx)
+                while uncapped and remaining_to_allocate > 0.001:
+                    # Target equal MW across all uncapped assets
+                    total_hrs_uncapped = sum(hrs for _, _, hrs in uncapped)
+                    if total_hrs_uncapped <= 0:
+                        break
+                    target_additional_mw = remaining_to_allocate / total_hrs_uncapped
+
+                    newly_capped = []
+                    for idx, headroom_mw, hrs in uncapped:
+                        if target_additional_mw >= headroom_mw:
+                            # This asset hits its max
+                            dispatch[idx]["dispatched_mw"] += headroom_mw
+                            dispatch[idx]["dispatched_mwh"] = dispatch[idx]["dispatched_mw"] * hrs
+                            remaining_to_allocate -= headroom_mw * hrs
+                            newly_capped.append(idx)
+                        else:
+                            # This asset can take the target MW
+                            dispatch[idx]["dispatched_mw"] += target_additional_mw
+                            dispatch[idx]["dispatched_mwh"] = dispatch[idx]["dispatched_mw"] * hrs
+                            remaining_to_allocate -= target_additional_mw * hrs
+
+                    if newly_capped:
+                        uncapped = [(i, h, hrs) for i, h, hrs in uncapped if i not in newly_capped]
                     else:
-                        # This asset can take the target MW
-                        dispatch[idx]["dispatched_mw"] += target_additional_mw
-                        dispatch[idx]["dispatched_mwh"] = dispatch[idx]["dispatched_mw"] * hrs
-                        remaining_to_allocate -= target_additional_mw * hrs
+                        break  # All allocated
 
-                if newly_capped:
-                    uncapped = [(i, h, hrs) for i, h, hrs in uncapped if i not in newly_capped]
-                else:
-                    break  # All allocated
+                remaining -= (allocation_mwh - remaining_to_allocate)
 
-            remaining -= (allocation_mwh - remaining_to_allocate)
-
-    # Fetch POWERGEN norms from Excel for the given month/year
-    excel_norms = _fetch_powergen_norms(plant_id, month, year)
+    # Fetch POWERGEN norms from ODS reader (or fallback to cached reader)
+    if ods_reader is not None:
+        excel_norms = ods_reader.get_powergen_norms()
+    else:
+        excel_norms = ODSNormsReader.get_reader(plant_id, month, year).get_powergen_norms()
 
     # Calculate derived fields
     for d in dispatch:
@@ -503,6 +396,7 @@ def _dispatch_one_by_one(
     plant_id: str,
     month: int,
     year: int,
+    ods_reader: ODSNormsReader = None,
 ) -> list:
     """
     Dispatch algorithm: bring assets online one-by-one by priority.
@@ -512,7 +406,7 @@ def _dispatch_one_by_one(
     """
     # For now, fall back to all_min_first
     logger.warning("  [DISPATCH] one_by_one mode not yet implemented — falling back to all_min_first")
-    return _dispatch_all_min_first(assets, demand_mwh, plant_id, month, year)
+    return _dispatch_all_min_first(assets, demand_mwh, plant_id, month, year, ods_reader=ods_reader)
 
 
 # ---------------------------------------------------------------------------
@@ -535,18 +429,19 @@ def _log_dispatch_result(demand: dict, dispatch: list, month: int, year: int):
     logger.info("")
 
     # Step 1: MIN load table
-    logger.info("  Step 1: All assets at MIN load")
-    logger.info("  %-25s  %8s  %8s  %8s  %8s  %12s",
-                "Asset", "Priority", "Min MW", "Max MW", "Hours", "Min MWh")
-    logger.info("  %s  %s  %s  %s  %s  %s",
-                "-" * 25, "-" * 8, "-" * 8, "-" * 8, "-" * 8, "-" * 12)
+    logger.info("  Step 1: Mandatory assets at MIN load, then optional if needed")
+    logger.info("  %-25s  %8s  %4s  %8s  %8s  %8s  %12s",
+                "Asset", "Priority", "Man", "Min MW", "Max MW", "Hours", "Min MWh")
+    logger.info("  %s  %s  %s  %s  %s  %s  %s",
+                "-" * 25, "-" * 8, "-" * 4, "-" * 8, "-" * 8, "-" * 8, "-" * 12)
     total_min_mwh = 0.0
     for d in dispatch:
         total_min_mwh += d["min_mwh"]
-        logger.info("  %-25s  %8d  %8.2f  %8.2f  %8.2f  %12.2f",
-                     d["asset_name"], d["priority"],
+        man_flag = "Y" if d.get("mandatory", 0) == 1 else "-"
+        logger.info("  %-25s  %8d  %4s  %8.2f  %8.2f  %8.2f  %12.2f",
+                     d["asset_name"], d["priority"], man_flag,
                      d["min_mw"], d["max_mw"], d["op_hours"], d["min_mwh"])
-    logger.info("  %-25s  %8s  %8s  %8s  %8s  %12.2f", "TOTAL MIN GENERATION", "", "", "", "", total_min_mwh)
+    logger.info("  %-25s  %8s  %4s  %8s  %8s  %8s  %12.2f", "TOTAL MIN GENERATION", "", "", "", "", "", total_min_mwh)
     logger.info("")
 
     # Surplus / Deficit warning
@@ -590,6 +485,8 @@ def dispatch_power(
     month: int,
     year: int,
     dispatch_mode: str = "all_min_first",
+    demands: dict = None,
+    ods_reader: ODSNormsReader = None,
 ) -> dict:
     """
     Dispatch power generation assets for a JMD CPP plant/month.
@@ -599,6 +496,10 @@ def dispatch_power(
         month:          1-12
         year:           calendar year
         dispatch_mode:  "all_min_first" (default) or "one_by_one" (future)
+        demands:        pre-fetched merged demands dict from calculator. If provided,
+                        skips DB round-trip for process + fixed consumption.
+        ods_reader:     pre-loaded ODSNormsReader for norms. If None, a cached
+                        reader is used automatically.
 
     Returns:
         {
@@ -611,6 +512,10 @@ def dispatch_power(
             "assets":               list  (per-asset dispatch detail),
         }
     """
+    # Ensure we have an ODS reader (cached if not provided)
+    if ods_reader is None:
+        ods_reader = ODSNormsReader.get_reader(plant_id, month, year)
+
     # 1. Build asset table (available assets with capacity + priority)
     assets = _build_asset_table(plant_id, month, year)
     if not assets:
@@ -626,15 +531,15 @@ def dispatch_power(
             "message": "No available power assets",
         }
 
-    # 2. Fetch power demand
-    demand = _get_power_demand(plant_id, month, year)
+    # 2. Fetch power demand (use pre-fetched demands if available)
+    demand = _get_power_demand(plant_id, month, year, demands=demands)
     total_demand = demand["total_mwh"]
 
     # 3. Run dispatch
     if dispatch_mode == "one_by_one":
-        dispatch = _dispatch_one_by_one(assets, total_demand, plant_id, month, year)
+        dispatch = _dispatch_one_by_one(assets, total_demand, plant_id, month, year, ods_reader=ods_reader)
     else:
-        dispatch = _dispatch_all_min_first(assets, total_demand, plant_id, month, year)
+        dispatch = _dispatch_all_min_first(assets, total_demand, plant_id, month, year, ods_reader=ods_reader)
 
     # 4. Compute totals
     total_gen = sum(d["dispatched_mwh"] for d in dispatch)
@@ -694,13 +599,14 @@ def _log_steam_dispatch_result(demand_details: dict, dispatch: list, month: int,
 
     # Supplementary Firing Dispatch
     logger.info("  FINAL SUPPLEMENTARY FIRING DISPATCH")
-    logger.info("  %-25s  %8s  %10s  %10s  %8s  %14s  %14s  %8s",
-                "Asset", "Priority", "Min TPH", "Max TPH", "Hours", "Dispatched TPH", "Dispatched MT", "Load %")
-    logger.info("  %s  %s  %s  %s  %s  %s  %s  %s",
-                "-" * 25, "-" * 8, "-" * 10, "-" * 10, "-" * 8, "-" * 14, "-" * 14, "-" * 8)
+    logger.info("  %-25s  %8s  %4s  %10s  %10s  %8s  %14s  %14s  %8s",
+                "Asset", "Priority", "Man", "Min TPH", "Max TPH", "Hours", "Dispatched TPH", "Dispatched MT", "Load %")
+    logger.info("  %s  %s  %s  %s  %s  %s  %s  %s  %s",
+                "-" * 25, "-" * 8, "-" * 4, "-" * 10, "-" * 10, "-" * 8, "-" * 14, "-" * 14, "-" * 8)
     for d in dispatch:
-        logger.info("  %-25s  %8d  %10.2f  %10.2f  %8.2f  %14.2f  %14.2f  %7.1f%%",
-                     d["asset_name"], d["priority"],
+        man_flag = "Y" if d.get("mandatory", 0) == 1 else "-"
+        logger.info("  %-25s  %8d  %4s  %10.2f  %10.2f  %8.2f  %14.2f  %14.2f  %7.1f%%",
+                     d["asset_name"], d["priority"], man_flag,
                      d["min_tph"], d["max_tph"], d["op_hours"],
                      d["dispatched_tph"], d["dispatched_mt"], d["load_percent"])
                      
@@ -725,21 +631,38 @@ def dispatch_steam(
     year: int,
     power_result: dict,
     dispatch_mode: str = "all_min_first",
+    demands: dict = None,
+    ods_reader: ODSNormsReader = None,
 ) -> dict:
     """
     Dispatch steam generation assets (HRSGs + Aux Boilers) to meet SHP demand.
+
+    Args:
+        plant_id:       CPP plant UUID
+        month:          1-12
+        year:           calendar year
+        power_result:   result dict from dispatch_power() (for GT-HRSG interlinking)
+        dispatch_mode:  "all_min_first" (default) or "one_by_one" (future)
+        demands:        pre-fetched merged demands dict from calculator. If provided,
+                        skips DB round-trip for process + fixed consumption.
+        ods_reader:     pre-loaded ODSNormsReader for norms. If None, a cached
+                        reader is used automatically.
     """
     import re
-    # 1. Fetch demands
-    raw_demands = _get_steam_demands(plant_id, month, year)
+    # Ensure we have an ODS reader (cached if not provided)
+    if ods_reader is None:
+        ods_reader = ODSNormsReader.get_reader(plant_id, month, year)
+
+    # 1. Fetch demands (use pre-fetched demands if available)
+    raw_demands = _get_steam_demands(plant_id, month, year, demands=demands)
     
-    # 2. Fetch norms
-    letdown_norms = _fetch_steam_norms(plant_id, month, year)
+    # 2. Fetch norms from unified ODS reader
+    letdown_norms = ods_reader.get_steam_letdown_norms()
     lp_to_mp_norm = letdown_norms.get("LP_to_MP", 0.945)
     mp_to_hp_norm = letdown_norms.get("MP_to_HP", 0.900)
     hp_to_shp_norm = letdown_norms.get("HP_to_SHP", 0.936)
     
-    byproduct_norms = _fetch_hrsg_byproduct_norms(plant_id, month, year)
+    byproduct_norms = ods_reader.get_hrsg_byproduct_norms()
     
     # 3. Load DB assets, operational hours, priority, capacity
     steam_assets = fetch_steam_generation_assets(plant_id)
@@ -805,6 +728,9 @@ def dispatch_steam(
             if max_tph is None:
                 max_tph = 0.0
             max_tph = float(max_tph)
+
+            # Mandatory load flag (1 = must dispatch at MIN, 0 = optional)
+            mandatory = int(cap_row.get(f"{mk}_Man_Load", 0) or 0)
             
             dispatch_assets.append({
                 "asset_id": asset_id,
@@ -814,6 +740,7 @@ def dispatch_steam(
                 "min_tph": min_tph,
                 "max_tph": max_tph,
                 "priority": priority,
+                "mandatory": mandatory,
                 "dispatched_tph": 0.0,
                 "dispatched_mt": 0.0,
             })
@@ -858,79 +785,90 @@ def dispatch_steam(
             asset["dispatched_mt"] = 0.0
             
         if net_shp_to_dispatch > 0:
-            # Step A: Min load first
+            # Step A: Mandatory assets at MIN load first
             total_min_mt = 0.0
             for a in dispatch_assets:
-                if a["op_hours"] > 0:
+                if a["op_hours"] > 0 and a["mandatory"] == 1:
                     a["dispatched_tph"] = a["min_tph"]
                     a["dispatched_mt"] = a["min_tph"] * a["op_hours"]
                     total_min_mt += a["dispatched_mt"]
-                    
+
             if total_min_mt >= net_shp_to_dispatch:
-                # MIN load meets or exceeds demand. Keep at MIN load
+                # Mandatory MIN meets or exceeds demand. Keep at MIN load
                 pass
             else:
-                # Ramp up by priority
-                remaining = net_shp_to_dispatch - total_min_mt
-                
-                priority_groups = defaultdict(list)
-                for idx, a in enumerate(dispatch_assets):
-                    if a["op_hours"] > 0:
-                        priority_groups[a["priority"]].append(idx)
-                        
-                for pri in sorted(priority_groups.keys()):
-                    if remaining <= 0:
-                        break
-                    group_indices = priority_groups[pri]
+                # Step B: Bring in optional assets at MIN
+                for a in dispatch_assets:
+                    if a["op_hours"] > 0 and a["mandatory"] == 0:
+                        a["dispatched_tph"] = a["min_tph"]
+                        a["dispatched_mt"] = a["min_tph"] * a["op_hours"]
+                        total_min_mt += a["dispatched_mt"]
+
+                if total_min_mt >= net_shp_to_dispatch:
+                    # All MIN meets or exceeds demand. Keep at MIN load
+                    pass
+                else:
+                    # Step C: Ramp up by priority across all running assets
+                    remaining = net_shp_to_dispatch - total_min_mt
                     
-                    group_headroom = []
-                    for idx in group_indices:
-                        a = dispatch_assets[idx]
-                        headroom_tph = a["max_tph"] - a["dispatched_tph"]
-                        if headroom_tph > 0.001:
-                            group_headroom.append((idx, headroom_tph, a["op_hours"]))
-                            
-                    if not group_headroom:
-                        continue
+                    priority_groups = defaultdict(list)
+                    for idx, a in enumerate(dispatch_assets):
+                        if a["op_hours"] > 0 and (a["dispatched_mt"] > 0 or a["mandatory"] == 1):
+                            priority_groups[a["priority"]].append(idx)
                         
-                    total_group_headroom_mt = sum(h_tph * hrs for _, h_tph, hrs in group_headroom)
-                    allocation_mt = min(remaining, total_group_headroom_mt)
-                    
-                    if len(group_headroom) == 1:
-                        idx, headroom_tph, hrs = group_headroom[0]
-                        add_tph = allocation_mt / hrs
-                        add_tph = min(add_tph, headroom_tph)
-                        dispatch_assets[idx]["dispatched_tph"] += add_tph
-                        dispatch_assets[idx]["dispatched_mt"] = dispatch_assets[idx]["dispatched_tph"] * hrs
-                        remaining -= add_tph * hrs
-                    else:
-                        uncapped = [(idx, headroom_tph, hrs) for idx, headroom_tph, hrs in group_headroom]
-                        remaining_to_allocate = allocation_mt
+                    for pri in sorted(priority_groups.keys()):
+                        if remaining <= 0:
+                            break
+                        group_indices = priority_groups[pri]
                         
-                        while uncapped and remaining_to_allocate > 0.001:
-                            total_hrs_uncapped = sum(hrs for _, _, hrs in uncapped)
-                            if total_hrs_uncapped <= 0:
-                                break
-                            target_add_tph = remaining_to_allocate / total_hrs_uncapped
+                        group_headroom = []
+                        for idx in group_indices:
+                            a = dispatch_assets[idx]
+                            headroom_tph = a["max_tph"] - a["dispatched_tph"]
+                            if headroom_tph > 0.001:
+                                group_headroom.append((idx, headroom_tph, a["op_hours"]))
                             
-                            newly_capped = []
-                            for idx, headroom_tph, hrs in uncapped:
-                                if target_add_tph >= headroom_tph:
-                                    dispatch_assets[idx]["dispatched_tph"] += headroom_tph
-                                    dispatch_assets[idx]["dispatched_mt"] = dispatch_assets[idx]["dispatched_tph"] * hrs
-                                    remaining_to_allocate -= headroom_tph * hrs
-                                    newly_capped.append(idx)
-                                else:
-                                    dispatch_assets[idx]["dispatched_tph"] += target_add_tph
-                                    dispatch_assets[idx]["dispatched_mt"] = dispatch_assets[idx]["dispatched_tph"] * hrs
-                                    remaining_to_allocate -= target_add_tph * hrs
-                                    
-                            if newly_capped:
-                                uncapped = [(i, h, hrs) for i, h, hrs in uncapped if i not in newly_capped]
-                            else:
-                                break
+                        if not group_headroom:
+                            continue
+                            
+                        total_group_headroom_mt = sum(h_tph * hrs for _, h_tph, hrs in group_headroom)
+                        allocation_mt = min(remaining, total_group_headroom_mt)
+                        
+                        if len(group_headroom) == 1:
+                            idx, headroom_tph, hrs = group_headroom[0]
+                            add_tph = allocation_mt / hrs
+                            add_tph = min(add_tph, headroom_tph)
+                            dispatch_assets[idx]["dispatched_tph"] += add_tph
+                            dispatch_assets[idx]["dispatched_mt"] = dispatch_assets[idx]["dispatched_tph"] * hrs
+                            remaining -= add_tph * hrs
+                        else:
+                            uncapped = [(idx, headroom_tph, hrs) for idx, headroom_tph, hrs in group_headroom]
+                            remaining_to_allocate = allocation_mt
+                            
+                            while uncapped and remaining_to_allocate > 0.001:
+                                total_hrs_uncapped = sum(hrs for _, _, hrs in uncapped)
+                                if total_hrs_uncapped <= 0:
+                                    break
+                                target_add_tph = remaining_to_allocate / total_hrs_uncapped
                                 
-                        remaining -= (allocation_mt - remaining_to_allocate)
+                                newly_capped = []
+                                for idx, headroom_tph, hrs in uncapped:
+                                    if target_add_tph >= headroom_tph:
+                                        dispatch_assets[idx]["dispatched_tph"] += headroom_tph
+                                        dispatch_assets[idx]["dispatched_mt"] = dispatch_assets[idx]["dispatched_tph"] * hrs
+                                        remaining_to_allocate -= headroom_tph * hrs
+                                        newly_capped.append(idx)
+                                    else:
+                                        dispatch_assets[idx]["dispatched_tph"] += target_add_tph
+                                        dispatch_assets[idx]["dispatched_mt"] = dispatch_assets[idx]["dispatched_tph"] * hrs
+                                        remaining_to_allocate -= target_add_tph * hrs
+                                        
+                                if newly_capped:
+                                    uncapped = [(i, h, hrs) for i, h, hrs in uncapped if i not in newly_capped]
+                                else:
+                                    break
+                                    
+                            remaining -= (allocation_mt - remaining_to_allocate)
                         
         # Recalculate byproduct LP steam
         byproduct_lp_steam = 0.0

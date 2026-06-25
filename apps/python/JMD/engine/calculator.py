@@ -42,6 +42,7 @@ from plant_mapper import PLANT_REGISTRY
 from engine.demand_capacity import run_demand_capacity
 from engine.budget import calculate_budget
 from engine.dispatch_engine import dispatch_power, dispatch_steam
+from engine.ods_norms_reader import ODSNormsReader
 
 logger = logging.getLogger(__name__)
 
@@ -247,17 +248,29 @@ def run_month(plant_id: str, month: int, year: int, save_to_db: bool = True) -> 
         logger.warning("  [CALC] demand_capacity skipped: %s", e)
         result["demand_capacity"] = None
 
+    # Load ODS norms once — shared by power dispatch and steam dispatch
+    ods_reader = ODSNormsReader.get_reader(plant_id, month, year)
+    if ods_reader.is_available:
+        ods_reader.log_all_norms()
+
     # NEW: Standalone power dispatch (priority-based, all-at-min-first)
+    # Pass pre-fetched demands + shared ODS reader to avoid redundant DB/Excel reads
     try:
-        result["power_dispatch"] = dispatch_power(plant_id, month, year)
+        result["power_dispatch"] = dispatch_power(
+            plant_id, month, year, demands=demands, ods_reader=ods_reader,
+        )
     except Exception as e:
         logger.warning("  [CALC] power dispatch skipped: %s", e)
         result["power_dispatch"] = None
 
     # NEW: Standalone steam dispatch (priority-based, all-at-min-first, letdown + byproduct convergence)
+    # Pass pre-fetched demands + shared ODS reader to avoid redundant DB/Excel reads
     if result["power_dispatch"]:
         try:
-            result["new_steam_dispatch"] = dispatch_steam(plant_id, month, year, result["power_dispatch"])
+            result["new_steam_dispatch"] = dispatch_steam(
+                plant_id, month, year, result["power_dispatch"],
+                demands=demands, ods_reader=ods_reader,
+            )
         except Exception as e:
             logger.warning("  [CALC] steam dispatch skipped: %s", e)
             result["new_steam_dispatch"] = None
