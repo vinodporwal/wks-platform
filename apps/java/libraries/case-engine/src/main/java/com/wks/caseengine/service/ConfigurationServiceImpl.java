@@ -716,11 +716,13 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					catalystChangeOverDTO.setId((String) row[0]);
 					catalystChangeOverDTO.setParameter((String) row[1]);
 					catalystChangeOverDTO.setDate((Date) row[2]);
-					catalystChangeOverDTO.setRemarks((String) row[3]);
-					catalystChangeOverDTO.setPlantId((String) row[4]);
-					catalystChangeOverDTO.setAopYear((String) row[5]);
-					catalystChangeOverDTO.setModifiedBy((String) row[6]);
-					catalystChangeOverDTO.setModifiedOn((Date) row[7]);
+					catalystChangeOverDTO.setCatalystQuantity((Double) row[3]);
+					catalystChangeOverDTO.setRunLength((Integer) row[4]);
+					catalystChangeOverDTO.setRemarks((String) row[5]);
+					catalystChangeOverDTO.setPlantId((String) row[6]);
+					catalystChangeOverDTO.setAopYear((String) row[7]);
+					catalystChangeOverDTO.setModifiedBy((String) row[8]);
+					catalystChangeOverDTO.setModifiedOn((Date) row[9]);
 					catalystChangeOverDTOList.add(catalystChangeOverDTO);
 				}
 
@@ -776,10 +778,12 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 
 			if (dto.getId() == null || dto.getId().trim().isEmpty()) {
 
-				String sql = "INSERT INTO CatalystChangeOver (date, remarks, plantId, aopYear, modifiedBy, modifiedOn, parameter) "
-						+ "VALUES (:date, :remarks, :plantId, :aopYear, :modifiedBy, :modifiedOn, :parameter)";
+				String sql = "INSERT INTO CatalystChangeOver (date, catalystQuantity, runLength, remarks, plantId, aopYear, modifiedBy, modifiedOn, parameter) "
+						+ "VALUES (:date, :catalystQuantity, :runLength, :remarks, :plantId, :aopYear, :modifiedBy, :modifiedOn, :parameter)";
 				Query query = entityManager.createNativeQuery(sql);
 				query.setParameter("date", dto.getDate());
+				query.setParameter("catalystQuantity", dto.getCatalystQuantity());
+				query.setParameter("runLength", dto.getRunLength());
 				query.setParameter("remarks", dto.getRemarks());
 				query.setParameter("plantId", dto.getPlantId());
 				query.setParameter("aopYear", dto.getAopYear());
@@ -791,16 +795,20 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 			} else {
 
 				// ── 3. Remarks Validation for Parameter / Date Changes ──────────────
-				String selectSql = "SELECT parameter, date, remarks FROM CatalystChangeOver WHERE id = :id";
+				String selectSql = "SELECT parameter, date, catalystQuantity, runLength, remarks FROM CatalystChangeOver WHERE id = :id";
 				Query selectQuery = entityManager.createNativeQuery(selectSql);
 				selectQuery.setParameter("id", dto.getId());
 				Object[] existing = (Object[]) selectQuery.getSingleResult();
 
 				String existingParam    = existing[0] != null ? existing[0].toString().trim() : "";
 				java.sql.Date existingDateRaw = (java.sql.Date) existing[1];
-				String existingRemarks  = existing[2] != null ? existing[2].toString().trim() : "";
+				Double existingCatalystQuantity = (Double) existing[2];
+				Integer existingRunLength = (Integer) existing[3];
+				String existingRemarks  = existing[4] != null ? existing[4].toString().trim() : "";
 
 				boolean parameterChanged = !param.equals(existingParam);
+				boolean catalystQuantityChanged = dto.getCatalystQuantity() != existingCatalystQuantity;
+				boolean runLengthChanged = dto.getRunLength() != existingRunLength;
 				boolean dateChanged = false;
 				if (existingDateRaw != null) {
 					// LocalDate existingLocalDate = existingDateRaw.toInstant()
@@ -812,19 +820,21 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 					dateChanged = true;
 				}
 
-				if (parameterChanged || dateChanged) {
+				if (parameterChanged || dateChanged || catalystQuantityChanged || runLengthChanged) {
 					String incomingRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
 					if (incomingRemarks.equals(existingRemarks)) {
 						throw new IllegalArgumentException(
-							"Remarks must be updated when Parameter or Date is changed.");
+							"Please Update Remarks");
 					}
 				}
 
 				String sql = "UPDATE CatalystChangeOver "
-						+ "SET date = :date, remarks = :remarks, modifiedBy = :modifiedBy, modifiedOn = :modifiedOn, parameter = :parameter "
+						+ "SET date = :date, catalystQuantity = :catalystQuantity, runLength = :runLength, remarks = :remarks, modifiedBy = :modifiedBy, modifiedOn = :modifiedOn, parameter = :parameter "
 						+ "WHERE id = :id";
 				Query query = entityManager.createNativeQuery(sql);
 				query.setParameter("date", dto.getDate());
+				query.setParameter("catalystQuantity", dto.getCatalystQuantity());
+				query.setParameter("runLength", dto.getRunLength());
 				query.setParameter("remarks", dto.getRemarks());
 				query.setParameter("modifiedBy", modifiedBy);
 				query.setParameter("modifiedOn", new Date());

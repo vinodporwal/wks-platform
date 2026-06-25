@@ -19,6 +19,8 @@ public class CatalystChangeOverDTO {
     private String id;
     private String parameter;
     private Date date;
+    private double catalystQuantity;
+    private Integer runLength;
     private String remarks;
     private String plantId;
     private String aopYear;
