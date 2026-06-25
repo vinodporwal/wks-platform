@@ -520,34 +520,21 @@ async function saveAnalysis(keycloak, body) {
   }
 }
 
-// Fetch a case (or cases) by businessKey. Returns the same mapped shape as filterCase (data, paging).
+// Fetch a single case by businessKey using the dedicated GET /case/{businessKey} endpoint
 async function getCaseByBusinessKey(keycloak, caseDefId = '', businessKey) {
- 
   if (!businessKey) {
-    return Promise.resolve({ data: [], paging: {} })
+    return Promise.resolve(null)
   }
 
-  let url = `${Config.CaseEngineUrl}/case?businessKey=${encodeURIComponent(
-    businessKey,
-  )}`
-
-  if (caseDefId) {
-    url += `&caseDefinitionId=${caseDefId}`
-  }
-
-  // limit to 1 to be efficient
-  url += `&limit=1`
+  const url = `${Config.CaseEngineUrl}/case/${encodeURIComponent(businessKey)}`
 
   const headers = {
     Authorization: `Bearer ${keycloak.token}`,
   }
 
-  
-
   try {
     const resp = await fetch(url, { headers })
-    const data = await json(keycloak, resp)
-    return mapperToCase(data)
+    return json(keycloak, resp)
   } catch (e) {
     console.error('Error fetching case by businessKey:', e)
     return await Promise.reject(e)

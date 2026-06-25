@@ -427,10 +427,18 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
         // System.out.println("eventTrendUrl(): "+caseData.getEventTrendUrl());
         // System.out.println("eventReportUrl(): "+caseData.getEventReportUrl());
         System.out.println("eventTrendUrls(): "+caseData.getEventTrendUrls());
+        System.out.println("eventTrendUrls(): "+caseData.getEventTrendUrls());
         System.out.println("eventReportUrls(): "+caseData.getEventReportUrls());
+
         if(caseNo==null || caseNo.length()==0) {
             System.out.println("saving new case details....");
-            caseNo = CaseNoGenerator();
+            // caseNo = CaseNoGenerator();
+            if(caseData.getBusinessKey()!=null && !caseData.getBusinessKey().isEmpty()) {
+                caseNo = caseData.getBusinessKey();
+            } else {
+                caseNo = CaseNoGenerator();
+        }
+    
             caseData.setCaseNo(caseNo);
             caseData.setBusinessKey(caseNo);
             //	caseData.setCaseUrl(caseData.getCaseUrl()+"&caseNo="+caseNo);
@@ -449,6 +457,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
             System.out.println("Saving New Case Details....");
             caseData.setCreationDate(currentDate);
+            attributes.set(0, attribute);
+            caseData.setAttributes(attributes);
             caseDetails  = caseRepository.save(caseData);
           //  eventEnrichmentLinksService.createEventEnrichmentLinks("", caseDetails.getCaseUrl(), caseData.getEventIds().toString());
 
