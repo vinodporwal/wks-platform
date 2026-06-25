@@ -66,8 +66,8 @@ const getEnhancedProductionColDefs = ({ headerMap, valueFormat }) => {
     if (IS_VCM_DMD_EDC) {
       updatedCol = {
         ...updatedCol,
-        editable: false, 
-        isDisabled: true, 
+        editable: false,
+        isDisabled: true,
         isVisible: false,
         minWidth: 100,
       }

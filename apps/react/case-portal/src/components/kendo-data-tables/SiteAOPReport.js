@@ -1138,7 +1138,7 @@ const SiteAOPReport = ({ permissions }) => {
       {tabIndex === 10 && <MajorPeopleInitiative />}
 
       {tabIndex === 11 && <MCUCapacityUtilization />}
-      {tabIndex=== 12 && <SiteSafetyPerformanceTarget/>}
+      {tabIndex === 12 && <SiteSafetyPerformanceTarget />}
 
       {tabIndex === 13 && (
         <KendoDataTablesReports

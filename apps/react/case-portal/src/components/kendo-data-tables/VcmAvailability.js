@@ -244,7 +244,7 @@ const VcmAvailability = ({ permissions }) => {
     }
   }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
   useEffect(() => {
-      fetchData()
+    fetchData()
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
@@ -315,8 +315,8 @@ const VcmAvailability = ({ permissions }) => {
         disableRedHighlight={true}
         screenType='shutdown'
       />
-     <VmcTrade/>
-     <VcmStockbalance/>
+      <VmcTrade />
+      <VcmStockbalance />
     </div>
   )
 }

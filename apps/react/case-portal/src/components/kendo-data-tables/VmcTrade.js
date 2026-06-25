@@ -252,7 +252,7 @@ const VmcTrade = ({ permissions }) => {
         const mapped = (res?.data || []).map((item, index) => ({
           ...item,
           id: index,
-          idFromApi: item.id ,
+          idFromApi: item.id,
           isEditable: item?.isEditable,
           remarks: item.remarks,
           originalRemark: item.remarks,
@@ -365,14 +365,13 @@ const VmcTrade = ({ permissions }) => {
 
     try {
       let response
-    
-        response = await OptimizerDataApiService.VmcTradeExportExcel(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-          EXCEL_EXPORT_TITLE,
-        )
-      
+
+      response = await OptimizerDataApiService.VmcTradeExportExcel(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        EXCEL_EXPORT_TITLE,
+      )
     } catch (error) {
       console.error('Error downloading Excel:', error)
       setSnackbarData({

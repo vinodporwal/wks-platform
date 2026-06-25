@@ -243,12 +243,11 @@ const VcmStockbalance = ({ permissions }) => {
     setModifiedCells({})
     setLoading(true)
     try {
-      const res =
-        await OptimizerDataApiService.getVcmStockBalance(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
+      const res = await OptimizerDataApiService.getVcmStockBalance(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
       if (res?.code === 200) {
         const mapped = (res?.data || []).map((item, index) => ({
@@ -383,8 +382,8 @@ const VcmStockbalance = ({ permissions }) => {
       customHeight: permissions?.customHeight,
       allAction: true,
       downloadExcelBtn: false,
-      downloadExcelBtnFromUI:true,
-      ExcelName:`${EXCEL_EXPORT_TITLE}_VCM_Stock_Balance`,
+      downloadExcelBtnFromUI: true,
+      ExcelName: `${EXCEL_EXPORT_TITLE}_VCM_Stock_Balance`,
       uploadExcelBtn: false,
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,

@@ -368,7 +368,10 @@ const CatalystChecmicalsCalculation = () => {
         }
         setConsumptionColumns(
           consumptionRes?.data?.columns
-            ?.filter((col) => col.field !== 'Grade_FK_Id' && col.field !== 'Data_Source')
+            ?.filter(
+              (col) =>
+                col.field !== 'Grade_FK_Id' && col.field !== 'Data_Source',
+            )
             .map((col) => ({
               ...col,
               format: col.type === 'number' ? FORMATE_VALUE : undefined,

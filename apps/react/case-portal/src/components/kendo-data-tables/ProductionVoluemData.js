@@ -659,7 +659,7 @@ const ProductionvolumeData = ({
                 ? item.february * 24
                 : item.february || null,
               march: item.march ? item.march * 24 : item.march || null,
-              isEditable: IS_VCM_DMD_EDC ? false : item.isEditable ?? true,
+              isEditable: IS_VCM_DMD_EDC ? false : (item.isEditable ?? true),
             }),
           }
         },
@@ -1084,8 +1084,6 @@ const ProductionvolumeData = ({
           isEditable: false,
         }))
         setRowsMaxCapacity(formatted)
-
-
       } else {
         setRowsMaxCapacity([])
       }
@@ -1108,11 +1106,17 @@ const ProductionvolumeData = ({
   // For AROMATICS_HMD/PMD, compute PERCENTAGE_SUMMARY once both rows and maxCapacity are available
   // (same approach as ProductionTarget uses for elastomer: production / maxCapacity * 100)
   useEffect(() => {
-    if ((IS_AROMATICS_HMD || IS_AROMATICS_PMD) && rows?.length > 0 && rowsMaxCapacity?.length > 0) {
-      const percentageFromMax = normalizeAllRows(rows, rowsMaxCapacity).map((item) => ({
-        ...item,
-        isEditable: false,
-      }))
+    if (
+      (IS_AROMATICS_HMD || IS_AROMATICS_PMD) &&
+      rows?.length > 0 &&
+      rowsMaxCapacity?.length > 0
+    ) {
+      const percentageFromMax = normalizeAllRows(rows, rowsMaxCapacity).map(
+        (item) => ({
+          ...item,
+          isEditable: false,
+        }),
+      )
       setRowsPercentageSummary(percentageFromMax)
     }
   }, [rows, rowsMaxCapacity, IS_AROMATICS_HMD, IS_AROMATICS_PMD])
@@ -1449,7 +1453,7 @@ const ProductionvolumeData = ({
       showUnit: permissions?.showUnit ?? false,
       saveWithRemark: permissions?.saveWithRemark ?? true,
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
-      saveBtn: IS_VCM_DMD_EDC ? false : permissions?.saveBtn ?? true,
+      saveBtn: IS_VCM_DMD_EDC ? false : (permissions?.saveBtn ?? true),
       units: ['TPH', 'TPD'],
       showCalculate: permissions?.hideSummary ? false : VERTICAL_NAME === 'meg',
       showRedCellsForOroductionTarget: VERTICAL_NAME == 'pta' ? true : false,
@@ -1631,7 +1635,14 @@ const ProductionvolumeData = ({
     setLoading(true)
     try {
       let response
-      if (IS_PP_SEZ || IS_PP_DTA || IS_PP_HMD || IS_PVC_DMD || IS_PVC_HMD || VERTICAL_NAME=='meg') {
+      if (
+        IS_PP_SEZ ||
+        IS_PP_DTA ||
+        IS_PP_HMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD ||
+        VERTICAL_NAME == 'meg'
+      ) {
         response =
           await ProductionVolumeDataApiService.saveProductionVolDataLineExcel(
             rawFile,

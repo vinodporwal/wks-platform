@@ -576,7 +576,11 @@ const ImportPower = () => {
     setLoading(true)
 
     try {
-      await InputApiService.deleteSource(keycloak, rowToDelete.normParameterFkId, rowToDelete.importPlantFkId)
+      await InputApiService.deleteSource(
+        keycloak,
+        rowToDelete.normParameterFkId,
+        rowToDelete.importPlantFkId,
+      )
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Source deleted successfully!',

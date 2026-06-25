@@ -209,7 +209,7 @@ export const SlowDownElastomerColumns = [
     editable: true,
     widthT: 200,
     autoAdjust: false,
-    locked: true
+    locked: true,
   },
 
   {
@@ -267,7 +267,7 @@ export const SlowDown_Elastomer_JMD_Columns = [
     editable: true,
     widthT: 260,
     autoAdjust: false,
-    locked: true
+    locked: true,
   },
 
   {
@@ -327,7 +327,7 @@ export const SlowDownElastomerColumnsSBR = [
     widthT: 230,
     autoAdjust: false,
     minWidth: 100,
-    locked: true
+    locked: true,
   },
   {
     field: 'productName1',
@@ -402,7 +402,7 @@ export const SlowDownElastomerColumnsPBR3 = [
     widthT: 230,
     autoAdjust: false,
     minWidth: 100,
-    locked: true
+    locked: true,
   },
 
   {

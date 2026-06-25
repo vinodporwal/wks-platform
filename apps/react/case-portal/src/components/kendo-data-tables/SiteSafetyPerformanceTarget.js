@@ -61,7 +61,7 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
   const keycloak = useSession()
   const [rows, setRows] = useState()
   const [tabIndex, setTabIndex] = useState(0)
-  const valueFormat =  ValueFormatterProduction()
+  const valueFormat = ValueFormatterProduction()
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
@@ -219,7 +219,7 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
       if (res?.code === 200) {
         const mapped = (res?.data.Data || []).map((item, index) => ({
           ...item,
-          id:index,
+          id: index,
           idFromAPI: item.id,
           isEditable: item?.isEditable,
           remark: item.remark,
@@ -276,7 +276,7 @@ const SiteSafetyPerformanceTarget = ({ permissions }) => {
         remark: item.remark,
         aopYear: AOP_YEAR,
         siteFkId: SITE_ID,
-        masterId:item.masterId,
+        masterId: item.masterId,
       }))
 
       const response = await SiteReportDataService.saveSitesafetyPerformance(

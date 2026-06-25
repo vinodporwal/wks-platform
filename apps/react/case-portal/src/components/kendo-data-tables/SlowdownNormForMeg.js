@@ -243,16 +243,16 @@ const SlowdownNormForMeg = () => {
 
             editable:
               column.field === 'particulars' ||
-                column.field.toLowerCase() === 'uom'
+              column.field.toLowerCase() === 'uom'
                 ? false
                 : true,
 
             hidden: hiddenColumns.includes(column.field),
             ...(column.field !== 'particulars' &&
               column.field.toLowerCase() !== 'uom' && {
-              format: valueFormat,
-              type: 'negativeNumber',
-            }),
+                format: valueFormat,
+                type: 'negativeNumber',
+              }),
           }
           if (shouldLockColumn(col)) {
             col.locked = true

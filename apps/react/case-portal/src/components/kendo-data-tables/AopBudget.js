@@ -86,14 +86,11 @@ export default function AopBudget() {
   const headerMap = generateHeaderNames(AOP_YEAR)
   const thisYear = AOP_YEAR
 
-
   const VERTICAL_NAME_U = verticalObject?.name?.toUpperCase()
   const SiteName = siteObject?.name
   const SITE_NAME_U = siteObject?.name?.toUpperCase()
   const PLANT_NAME_U = plantObject?.name?.toUpperCase()
   const EXCEL_NAME = `${VERTICAL_NAME_U}_${SITE_NAME_U}_${AOP_YEAR}_Budget_Maintenance`
-
-
 
   // second grid states
   const [rowsP, setRowsP] = useState([])
@@ -942,7 +939,7 @@ export default function AopBudget() {
         resetDataChanges={resetDataChanges}
         isReleaseDisabled={isReleaseDisabled}
         handleRelease={handleRelease}
-      // setEditMode={setEditMode}
+        // setEditMode={setEditMode}
       />
 
       <KendoDataTables
@@ -1003,8 +1000,8 @@ export default function AopBudget() {
               lineHeight: 1.5,
             }}
           >
-            Please confirm that <b style={{ color: '#16a34a' }}>Production</b>
-            , <b style={{ color: '#16a34a' }}>Norms</b>, and{' '}
+            Please confirm that <b style={{ color: '#16a34a' }}>Production</b>,{' '}
+            <b style={{ color: '#16a34a' }}>Norms</b>, and{' '}
             <b style={{ color: '#16a34a' }}>Reports</b> are verified before
             releasing for review.
           </DialogContentText>

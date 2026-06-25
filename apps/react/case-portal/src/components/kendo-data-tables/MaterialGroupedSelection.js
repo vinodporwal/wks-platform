@@ -105,14 +105,19 @@ export default function MaterialGroupedSelection() {
         AOP_YEAR,
       )
       if (res?.code === 200) {
-        const rawData = Array.isArray(res?.data) ? res.data : (res?.data?.Data || [])
+        const rawData = Array.isArray(res?.data)
+          ? res.data
+          : res?.data?.Data || []
         const mapped = rawData.map((item) => ({
           ...item,
           id: item.id,
           idFromApi: item.id,
           particular: item.displayName || item.name,
           sapCode: item.sapMaterialCode,
-          value: item.value !== null && item.value !== undefined && item.value !== '' ? parseFloat(item.value) : null,
+          value:
+            item.value !== null && item.value !== undefined && item.value !== ''
+              ? parseFloat(item.value)
+              : null,
           status: item.status,
           groupName: item.normParameterType,
           isEditable: item.isEditable,
@@ -181,7 +186,10 @@ export default function MaterialGroupedSelection() {
         name: item.name,
         displayName: item.displayName,
         uom: item.uom,
-        value: item.value !== null && item.value !== undefined ? String(item.value) : null,
+        value:
+          item.value !== null && item.value !== undefined
+            ? String(item.value)
+            : null,
         status: !!item.status,
         dependantAttributeId: item.dependantAttributeId || null,
         normParameterTypeFkId: item.normParameterTypeFkId || null,
@@ -190,8 +198,6 @@ export default function MaterialGroupedSelection() {
         sapMaterialCode: item.sapCode || item.sapMaterialCode,
         normParameterType: item.groupName || item.normParameterType,
       }))
-
-
 
       const response = await PlantAopReportApiService.saveGroupedSelection(
         keycloak,
@@ -225,7 +231,7 @@ export default function MaterialGroupedSelection() {
     }
   }, [modifiedCells, keycloak, PLANT_ID, fetchData])
 
-  const handleCalculate = () => { }
+  const handleCalculate = () => {}
 
   const handleRemarkCellClick = useCallback((row) => {
     setCurrentRemark(row.remark || '')

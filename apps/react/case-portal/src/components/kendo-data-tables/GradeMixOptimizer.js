@@ -210,13 +210,12 @@ const GradeMixOptimizer = ({ permissions }) => {
         id: null,
       }))
 
-      const response =
-        await DataService.saveCatalystData(
-          PLANT_ID,
-          payload,
-          keycloak,
-          AOP_YEAR,
-        )
+      const response = await DataService.saveCatalystData(
+        PLANT_ID,
+        payload,
+        keycloak,
+        AOP_YEAR,
+      )
 
       if (response) {
         setSnackbarOpen(true)
