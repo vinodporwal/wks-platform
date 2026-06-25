@@ -207,7 +207,7 @@ const GradeMixOptimizer = ({ permissions }) => {
         auditYear: AOP_YEAR,
         normParameterFKId: item.normParameterFkId || item.NormParameter_FK_Id,
         remarks: item.remarks,
-        id: item.idFromApi || null,
+        id: null,
       }))
       console.log('payload', payload)
 
@@ -219,7 +219,7 @@ const GradeMixOptimizer = ({ permissions }) => {
           AOP_YEAR,
         )
 
-      if (response?.code === 200) {
+      if (response) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Saved Successfully!',
