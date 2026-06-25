@@ -611,7 +611,7 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
 
       
 
-        dto.setId(UUID.fromString(idStr));
+        dto.setId( idStr != null && !idStr.isEmpty() ? UUID.fromString(idStr) : null);
         String gradeIdStr = getCellString(row, headerIndex, "GradeId", fmt);
         dto.setGradeId(gradeIdStr != null && !gradeIdStr.isEmpty() ? UUID.fromString(gradeIdStr) : null);
 
