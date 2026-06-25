@@ -37,7 +37,7 @@ const InputsDMD = () => {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    let tabs = [];
+    let tabs = []
 
     switch (siteObject?.name?.toLowerCase()) {
       case 'dmd':
@@ -96,8 +96,8 @@ const InputsDMD = () => {
             displayName: 'Prices',
             displaySequence: 8,
           },
-        ];
-        break;
+        ]
+        break
 
       case 'hmd':
         tabs = [
@@ -113,16 +113,16 @@ const InputsDMD = () => {
             displayName: 'Purchase Power Input',
             displaySequence: 1,
           },
-        ];
-        break;
+        ]
+        break
 
       default:
-        tabs = [];
-        break;
+        tabs = []
+        break
     }
 
-    setTabObj(tabs);
-  }, [siteObject]);
+    setTabObj(tabs)
+  }, [siteObject])
 
   // Get current tab
   const currentTab = tabObj[tabIndex] || {}
