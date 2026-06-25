@@ -10,6 +10,7 @@ import { useSession } from 'SessionStoreContext'
 import KendoDataTables from './index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { validateFields } from 'utils/validationUtils'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 const CatalystChangeOver = ({
   permissions,
@@ -57,7 +58,7 @@ const CatalystChangeOver = ({
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-
+  const valueFormat = ValueFormatterProduction()
   const CatalystChangeOverColumns = [
     {
       field: 'id',
@@ -80,6 +81,25 @@ const CatalystChangeOver = ({
       title: 'Date',
       editable: true,
       fixedWidth: '200px',
+    },
+    {
+      field: 'catalystQuantity',
+      title: 'Catalyst Quality',
+      editable: true,
+      align: 'right',
+      headerAlign: 'right',
+      type: 'number',
+      format: valueFormat,
+      minWidth: 100,
+    },
+    {
+      field: 'runLength',
+      title: 'Runlength',
+      editable: true,
+      align: 'right',
+      headerAlign: 'right',
+      type: 'integerNumberOnly',
+      minWidth: 100,
     },
     {
       field: 'remarks',
@@ -506,6 +526,8 @@ const CatalystChangeOver = ({
           id: row?.idFromApi || null,
           parameter: row?.parameter,
           date: toLocalDateOnly(row?.date),
+          catalystQuantity: row?.catalystQuantity || 0,
+          runLength: row?.runLength || 0,
           remarks: row?.remarks || '',
           plantId: PLANT_ID,
           aopYear: AOP_YEAR,
