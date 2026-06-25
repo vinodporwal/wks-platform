@@ -2,18 +2,15 @@ import { useEffect, useState } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
-import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
+import { InputApiService } from 'components/aop-phase-two/services/cpp/jmd/inputApiService'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
-import AdvanceKendoTable from '../common/AdvanceKendoTable/index'
+import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import PlantRequirementJMD from './jmd/PlantRequirementJMD'
-import PlantRequirementDMD from './dmd/PlantRequirementDMD'
 
-const PlantRequirement = () => {
+const JCBFuel = () => {
   const keycloak = useSession()
-  // State management
 
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
@@ -23,27 +20,9 @@ const PlantRequirement = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const {
-    verticalChange,
-    yearChanged,
-    oldYear,
-    plantID,
-    plantObject,
-    siteObject,
-    verticalObject,
-    year,
-    screenTitle,
-  } = dataGridStore
+  const { plantObject, year, screenTitle } = dataGridStore
   const PLANT_ID = plantObject?.id
-  const SITE_ID = siteObject?.id
-  const VERTICAL_ID = verticalObject?.id
-  const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
-
-  const lowerVertName = verticalObject?.name?.toLowerCase()
-  const lowerSiteName = siteObject?.name?.toLowerCase()
-  const IS_CPP = lowerVertName === 'cpp'
-
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
   const [rows, setRows] = useState([])
@@ -52,58 +31,15 @@ const PlantRequirement = () => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
-  // Column definitions
   const columns = [
     {
-      field: 'processPlant',
-      title: 'Process Plant',
-      widthT: 150,
-      minWidth: 150,
+      field: 'fuel',
+      title: 'Fuel',
+      widthT: 250,
+      minWidth: 200,
       type: 'text',
       editable: false,
       hidden: false,
-    },
-    {
-      field: 'processPlantId',
-      title: 'Plant Code',
-      widthT: 120,
-      minWidth: 120,
-      type: 'text',
-      editable: false,
-      hidden: true,
-    },
-    {
-      field: 'cppUtility',
-      title: 'CPP Utilities',
-      widthT: 150,
-      minWidth: 150,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'cppUtilityId',
-      title: 'CPP Utility ID',
-      widthT: 170,
-      minWidth: 170,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'cppPlant',
-      title: 'CPP Plant',
-      widthT: 150,
-      minWidth: 150,
-      type: 'text',
-      editable: false,
-    },
-    {
-      field: 'cppPlantId',
-      title: 'CPP Plant ID',
-      widthT: 170,
-      minWidth: 170,
-      type: 'text',
-      editable: false,
-      hidden: true,
     },
     {
       field: 'uom',
@@ -114,8 +50,16 @@ const PlantRequirement = () => {
       editable: false,
     },
     {
+      field: 'fuelCategory',
+      title: 'Fuel Category',
+      widthT: 150,
+      minWidth: 150,
+      type: 'text',
+      editable: false,
+    },
+    {
       field: 'apr',
-      title: headerMap[4], // will be 'Apr-25' if AOP_YEAR is 2025-26
+      title: headerMap[4],
       editable: true,
       widthT: 100,
       minWidth: 100,
@@ -245,7 +189,6 @@ const PlantRequirement = () => {
       type: 'number1',
       format: valueFormat,
     },
-
     {
       field: 'remarks',
       title: 'Remarks',
@@ -257,19 +200,22 @@ const PlantRequirement = () => {
   ]
 
   useEffect(() => {
-    if (PLANT_ID && AOP_YEAR && lowerSiteName == 'nmd') {
-      fetchPlantRequirementData()
+    if (PLANT_ID && AOP_YEAR) {
+      fetchFuelAvailabilityData()
     }
-  }, [PLANT_ID, AOP_YEAR, lowerSiteName])
+  }, [PLANT_ID, AOP_YEAR])
 
-  const fetchPlantRequirementData = async () => {
+  const fetchFuelAvailabilityData = async () => {
     setLoading(true)
     try {
-      const res = await UtilityPlantApiServiceV2.getPlantRequirementData(
+      const res = await InputApiService.getFuelAvailabilityDataJCB(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
       )
+      // Fallback to default data if API returns empty
+      // const res = defaultData
+
       if (res?.length === 0) {
         setRows([])
         setSnackbarOpen(true)
@@ -277,16 +223,32 @@ const PlantRequirement = () => {
         return
       }
 
-      console.log('res', res)
+      console.log('Fuel Availability data:', res)
       const formattedData = res?.map((item, index) => ({
-        ...item,
-        remarks: item.remarks || '',
         id: item?.id || index + 1,
+        fuel: item.fuelName,
+        fuelCategory: item.fuelCategory,
+        uom: item.uom,
+        apr: item.apr,
+        may: item.may,
+        jun: item.jun,
+        jul: item.jul,
+        aug: item.aug,
+        sep: item.sep,
+        oct: item.oct,
+        nov: item.nov,
+        dec: item.dec,
+        jan: item.jan,
+        feb: item.feb,
+        mar: item.mar,
+        remarks: item.remarks || '',
+        cppId: item.cppId,
+        financialYear: item.financialYear,
       }))
       setRows(formattedData)
       setOriginalRows(formattedData)
     } catch (error) {
-      console.error('Error fetching fixed consumption data:', error)
+      console.error('Error fetching fuel availability data:', error)
       setSnackbarOpen(true)
       setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
@@ -294,7 +256,6 @@ const PlantRequirement = () => {
     }
   }
 
-  // Permissions (adjust as needed)
   const permissions = {
     showAction: true,
     addButton: false,
@@ -303,19 +264,18 @@ const PlantRequirement = () => {
     saveBtn: true,
     allAction: true,
     showExport: true,
-    ExcelName: `Plant Requirement - ${AOP_YEAR}`,
+    ExcelName: `Net Calorific Value - ${AOP_YEAR}`,
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: screenTitle?.title,
+    titleName: 'Net Calorific Value (NCV)',
   }
 
-  // Save handler with API call
   const saveChanges = async () => {
     setLoading(true)
 
     const modifiedData = Object.values(modifiedCells)
-    if (modifiedData.length == 0) {
+    if (modifiedData.length === 0) {
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'No Records to Save!',
@@ -325,9 +285,8 @@ const PlantRequirement = () => {
       return
     }
 
-    var rawData = Object.values(modifiedCells)
-    const data = rawData.filter((row) => row.inEdit)
-    if (data.length == 0) {
+    const data = modifiedData.filter((row) => row.inEdit)
+    if (data.length === 0) {
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'No Records to Save!',
@@ -337,7 +296,6 @@ const PlantRequirement = () => {
       return
     }
 
-    // Custom validation: If any row data is updated, remarks must be filled and different from original
     const fieldsToCheck = [
       'apr',
       'may',
@@ -356,7 +314,7 @@ const PlantRequirement = () => {
       data,
       originalRows,
       fieldsToCheck,
-      'processPlant',
+      'fuel',
     )
 
     if (validationError) {
@@ -369,20 +327,39 @@ const PlantRequirement = () => {
       return
     }
 
-    const payload = modifiedData
-    try {
-      // Transform modifiedCells into the format expected by the API
-      console.log('payload', payload)
+    // Map UI fields back to API format
+    const payload = modifiedData.map((item) => ({
+      id: item.id,
+      cppId: item.cppId || PLANT_ID,
+      fuelName: item.fuel,
+      fuelCategory: item.fuelCategory,
+      uom: item.uom,
+      apr: item.apr,
+      may: item.may,
+      jun: item.jun,
+      jul: item.jul,
+      aug: item.aug,
+      sep: item.sep,
+      oct: item.oct,
+      nov: item.nov,
+      dec: item.dec,
+      jan: item.jan,
+      feb: item.feb,
+      mar: item.mar,
+      financialYear: item.financialYear || AOP_YEAR,
+      remarks: item.remarks || '',
+    }))
 
-      // Call the API to save changes
-      const response = await UtilityPlantApiServiceV2.savePlantRequirementData(
+    try {
+      console.log('Saving fuel availability data:', payload)
+
+      const response = await InputApiService.saveFuelAvailabilityDataJCB(
         keycloak,
+        PLANT_ID,
         AOP_YEAR,
         payload,
       )
 
-      // Update the local state with the saved data
-      // setRows(updatedRows)
       setModifiedCells({})
       setSnackbarOpen(true)
       setSnackbarData({
@@ -390,7 +367,7 @@ const PlantRequirement = () => {
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error saving plant requirement data:', error)
+      console.error('Error saving fuel availability data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to save changes. Please try again.',
@@ -406,23 +383,20 @@ const PlantRequirement = () => {
 
     setLoading(true)
     try {
-      const response = await UtilityPlantApiServiceV2.savePlantRequirementExcel(
+      const response = await InputApiService.saveFuelAvailabilityExcelJCB(
         file,
         keycloak,
-        PLANT_ID,
-        AOP_YEAR,
       )
 
-      if (response?.code === 200) {
+      // Success case - code 0 means success
+      if (response?.code === 0) {
+        await fetchFuelAvailabilityData()
         setSnackbarOpen(true)
         setSnackbarData({
           message: response?.message || 'Excel file imported successfully!',
           severity: 'success',
         })
-        // Refresh data after import
-        await fetchPlantRequirementData()
       } else if (response?.code === 400 && response?.data) {
-        // Handle error response with Excel file download
         try {
           const base64Data = response.data
           const binaryString = window.atob(base64Data)
@@ -436,7 +410,7 @@ const PlantRequirement = () => {
           const url = window.URL.createObjectURL(blob)
           const link = document.createElement('a')
           link.href = url
-          link.download = `Plant_Requirement_Errors_${new Date().getTime()}.xlsx`
+          link.download = `Fuel_Availability_Errors_${new Date().getTime()}.xlsx`
           document.body.appendChild(link)
           link.click()
           document.body.removeChild(link)
@@ -449,8 +423,7 @@ const PlantRequirement = () => {
               'Import failed with errors. Please check the downloaded file.',
             severity: 'error',
           })
-          // Refresh data after import
-          await fetchPlantRequirementData()
+          await fetchFuelAvailabilityData()
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
@@ -486,7 +459,7 @@ const PlantRequirement = () => {
     })
 
     try {
-      await UtilityPlantApiServiceV2.exportPlantRequirementExcel(
+      await InputApiService.exportFuelAvailabilityExcelJCB(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -496,7 +469,7 @@ const PlantRequirement = () => {
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error exporting Plant Requirement data:', error)
+      console.error('Error exporting Fuel Availability data:', error)
       setSnackbarData({
         message: 'Excel download failed. Please try again.',
         severity: 'error',
@@ -504,67 +477,47 @@ const PlantRequirement = () => {
     }
   }
 
-  // Handle remark cell click
   const handleRemarkCellClick = (row) => {
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
 
-  const renderBySite = () => {
-    switch (lowerSiteName) {
-      case 'jmd':
-        return <PlantRequirementJMD />
-      case 'dmd':
-        return <PlantRequirementDMD />
-      // case 'hmd':
-      //   return <PlantRequirementHMD />
-      case 'nmd':
-      default:
-        return (
-          <AdvanceKendoTable
-            columns={columns}
-            rows={rows}
-            setRows={setRows}
-            modifiedCells={modifiedCells}
-            setModifiedCells={setModifiedCells}
-            title={permissions.showTitle ? permissions.titleName : ''}
-            permissions={permissions}
-            handleRemarkCellClick={handleRemarkCellClick}
-            remarkDialogOpen={remarkDialogOpen}
-            setRemarkDialogOpen={setRemarkDialogOpen}
-            currentRemark={currentRemark}
-            setCurrentRemark={setCurrentRemark}
-            currentRowId={currentRowId}
-            setCurrentRowId={() => {}}
-            saveChanges={saveChanges}
-            handleExcelUpload={handleExcelUpload}
-            handleExport={handleExport}
-            snackbarData={snackbarData}
-            snackbarOpen={snackbarOpen}
-            setSnackbarOpen={setSnackbarOpen}
-            setSnackbarData={setSnackbarData}
-            customHeight={80}
-            paginationConfig={{
-              threshold: 100,
-              buttonCount: 5,
-              pageSizes: [10, 20, 50, 100],
-              defaultPageSize: 100,
-            }}
-            groupBy={'processPlant'}
-          />
-        )
-    }
-  }
-
-  if (!IS_CPP) return null
-
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
-      {renderBySite()}
+      <AdvanceKendoTable
+        columns={columns}
+        rows={rows}
+        setRows={setRows}
+        modifiedCells={modifiedCells}
+        setModifiedCells={setModifiedCells}
+        title={permissions.showTitle ? permissions.titleName : ''}
+        permissions={permissions}
+        handleRemarkCellClick={handleRemarkCellClick}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        setCurrentRowId={() => {}}
+        saveChanges={saveChanges}
+        handleExcelUpload={handleExcelUpload}
+        handleExport={handleExport}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        // customHeight={60}
+        paginationConfig={{
+          threshold: 100,
+          buttonCount: 5,
+          pageSizes: [10, 20, 50, 100],
+          defaultPageSize: 100,
+        }}
+      />
     </Box>
   )
 }
 
-export default PlantRequirement
+export default JCBFuel

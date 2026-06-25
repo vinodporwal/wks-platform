@@ -2,16 +2,15 @@ import { useEffect, useState } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
-import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
+import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/jmd/utilityPlantApiServiceV2'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
-import AdvanceKendoTable from '../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import PlantRequirementJMD from './jmd/PlantRequirementJMD'
-import PlantRequirementDMD from './dmd/PlantRequirementDMD'
+import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
+import { generateExcelName } from 'components/aop-phase-two/common/utilities/excelNameUtil'
 
-const PlantRequirement = () => {
+const PlantRequirementDMD = () => {
   const keycloak = useSession()
   // State management
 
@@ -42,7 +41,9 @@ const PlantRequirement = () => {
 
   const lowerVertName = verticalObject?.name?.toLowerCase()
   const lowerSiteName = siteObject?.name?.toLowerCase()
-  const IS_CPP = lowerVertName === 'cpp'
+  const IS_CPP_JMD = lowerVertName === 'cpp' && lowerSiteName === 'jmd'
+  const IS_CPP_NMD = lowerVertName === 'cpp' && lowerSiteName === 'nmd'
+  const EXCEL_NAME = generateExcelName(dataGridStore, 'Plant_Requirement')
 
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
@@ -257,10 +258,10 @@ const PlantRequirement = () => {
   ]
 
   useEffect(() => {
-    if (PLANT_ID && AOP_YEAR && lowerSiteName == 'nmd') {
+    if (PLANT_ID && AOP_YEAR) {
       fetchPlantRequirementData()
     }
-  }, [PLANT_ID, AOP_YEAR, lowerSiteName])
+  }, [PLANT_ID, AOP_YEAR])
 
   const fetchPlantRequirementData = async () => {
     setLoading(true)
@@ -490,6 +491,7 @@ const PlantRequirement = () => {
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        EXCEL_NAME,
       )
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -511,60 +513,42 @@ const PlantRequirement = () => {
     setRemarkDialogOpen(true)
   }
 
-  const renderBySite = () => {
-    switch (lowerSiteName) {
-      case 'jmd':
-        return <PlantRequirementJMD />
-      case 'dmd':
-        return <PlantRequirementDMD />
-      // case 'hmd':
-      //   return <PlantRequirementHMD />
-      case 'nmd':
-      default:
-        return (
-          <AdvanceKendoTable
-            columns={columns}
-            rows={rows}
-            setRows={setRows}
-            modifiedCells={modifiedCells}
-            setModifiedCells={setModifiedCells}
-            title={permissions.showTitle ? permissions.titleName : ''}
-            permissions={permissions}
-            handleRemarkCellClick={handleRemarkCellClick}
-            remarkDialogOpen={remarkDialogOpen}
-            setRemarkDialogOpen={setRemarkDialogOpen}
-            currentRemark={currentRemark}
-            setCurrentRemark={setCurrentRemark}
-            currentRowId={currentRowId}
-            setCurrentRowId={() => {}}
-            saveChanges={saveChanges}
-            handleExcelUpload={handleExcelUpload}
-            handleExport={handleExport}
-            snackbarData={snackbarData}
-            snackbarOpen={snackbarOpen}
-            setSnackbarOpen={setSnackbarOpen}
-            setSnackbarData={setSnackbarData}
-            customHeight={80}
-            paginationConfig={{
-              threshold: 100,
-              buttonCount: 5,
-              pageSizes: [10, 20, 50, 100],
-              defaultPageSize: 100,
-            }}
-            groupBy={'processPlant'}
-          />
-        )
-    }
-  }
-
-  if (!IS_CPP) return null
-
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
-      {renderBySite()}
+      <AdvanceKendoTable
+        columns={columns}
+        rows={rows}
+        setRows={setRows}
+        modifiedCells={modifiedCells}
+        setModifiedCells={setModifiedCells}
+        title={permissions.showTitle ? permissions.titleName : ''}
+        permissions={permissions}
+        handleRemarkCellClick={handleRemarkCellClick}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        setCurrentRowId={() => {}}
+        saveChanges={saveChanges}
+        handleExcelUpload={handleExcelUpload}
+        handleExport={handleExport}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        customHeight={80}
+        paginationConfig={{
+          threshold: 100, // Show pagination if > 50 rows
+          buttonCount: 5,
+          pageSizes: [10, 20, 50, 100],
+          defaultPageSize: 100,
+        }}
+        groupBy={'processPlant'}
+      />
     </Box>
   )
 }
 
-export default PlantRequirement
+export default PlantRequirementDMD
