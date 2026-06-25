@@ -41,7 +41,7 @@ const VcmStockbalance = ({ permissions }) => {
   const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
   const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
 
-  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}`
 
   const lowerVertName = vertName?.toLowerCase()
   const lowerSiteName = SITE_NAME?.toLowerCase()
@@ -383,6 +383,8 @@ const VcmStockbalance = ({ permissions }) => {
       customHeight: permissions?.customHeight,
       allAction: true,
       downloadExcelBtn: false,
+      downloadExcelBtnFromUI:true,
+      ExcelName:`${EXCEL_EXPORT_TITLE}_VCM_Stock_Balance`,
       uploadExcelBtn: false,
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
