@@ -142,7 +142,7 @@ const GradeMixOptimizer = ({ permissions }) => {
         const mapped = (res?.data || []).map((item, index) => ({
           ...item,
           id: index,
-          idFromApi: item.id || item.id || index,
+          idFromApi: item.id || null,
           isEditable: item?.isEditable,
           remarks: item.remarks,
           originalRemark: item.remarks,

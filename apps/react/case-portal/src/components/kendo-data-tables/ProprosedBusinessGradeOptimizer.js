@@ -65,9 +65,6 @@ const CalculatedBusinessProposed = ({
     setRemarkDialogOpen(true)
   }
 
-  const saveApi =
-    OptimizerDataApiService.saveCalculatedProposedBusinessOptimizerConstant
-
   const monthKeyMap = {
     Jan: 1,
     Feb: 2,
@@ -150,73 +147,6 @@ const CalculatedBusinessProposed = ({
     tabIndex,
   ])
 
-  const saveChanges = React.useCallback(async () => {
-    if (!saveApi) {
-      console.error(
-        'CalculatedBusinessProposed: saveApi is undefined — check the method name on OptimizerDataApiService',
-      )
-      return
-    }
-    try {
-      setLoading(true)
-      const data = Object.values(modifiedCells)
-
-      if (data.length === 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
-        return
-      }
-
-      const requiredFields = []
-      const validationMessage = validateFields(data, requiredFields)
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({ message: validationMessage, severity: 'error' })
-        setLoading(false)
-        return
-      }
-
-      const lineId = lineDetails[tabIndex]?.id
-
-      const payload = data.map(({ id, ...valueFields }) => ({
-        ...valueFields,
-        auditYear: AOP_YEAR,
-        lineId,
-      }))
-
-      const response = await saveApi(PLANT_ID, payload, keycloak, AOP_YEAR)
-
-      if (response?.code === 200) {
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'Saved Successfully!', severity: 'success' })
-        setModifiedCells({})
-        fetchData()
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: response?.message || 'Save failed!',
-          severity: 'error',
-        })
-      }
-    } catch (error) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Unexpected error occurred!',
-        severity: 'error',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }, [
-    modifiedCells,
-    keycloak,
-    PLANT_ID,
-    AOP_YEAR,
-    fetchData,
-    lineDetails,
-    tabIndex,
-  ])
-
   // Re-fetch whenever the parent's selected tab (line) or lineDetails changes
   useEffect(() => {
     console.log('CHILD EFFECT FIRED', {
@@ -237,7 +167,11 @@ const CalculatedBusinessProposed = ({
     lineDetails,
     tabIndex,
   ])
-
+  useEffect(() => {
+    if (refreshSignal > 0 && lineDetails.length > 0 && lineDetails[tabIndex]) {
+      fetchData()
+    }
+  }, [refreshSignal])
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -288,7 +222,6 @@ const CalculatedBusinessProposed = ({
         columns={columns}
         rows={rows}
         fetchData={fetchData}
-        saveChanges={saveChanges}
         paginationOptions={[100, 200, 300]}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
