@@ -84,7 +84,7 @@ const CatalystChangeOver = ({
     },
     {
       field: 'catalystQuantity',
-      title: 'Catalyst Quality',
+      title: 'Catalyst Quantity',
       editable: true,
       align: 'right',
       headerAlign: 'right',
