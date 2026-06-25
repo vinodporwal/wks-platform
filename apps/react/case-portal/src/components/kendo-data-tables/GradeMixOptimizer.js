@@ -12,6 +12,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
 import CalculatedBusinessProposed from './ProprosedBusinessGradeOptimizer'
 import BudgetOperatingHour from './BudgetOperatingHourGradeMix'
+import { DataService } from 'services/DataService'
 
 const GradeMixOptimizer = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -204,14 +205,14 @@ const GradeMixOptimizer = ({ permissions }) => {
         mar: item.mar || null,
         UOM: '',
         auditYear: AOP_YEAR,
-        normParameterFkId: item.normParameterFkId || item.NormParameter_FK_Id,
+        normParameterFKId: item.normParameterFkId || item.NormParameter_FK_Id,
         remarks: item.remarks,
         id: item.idFromApi || null,
       }))
       console.log('payload', payload)
 
       const response =
-        await OptimizerDataApiService.saveGradeMixOptimizerConstant(
+        await DataService.saveCatalystData(
           PLANT_ID,
           payload,
           keycloak,
