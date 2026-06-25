@@ -26,10 +26,12 @@ export const UtilityPlantApiServiceV2 = {
 
   // SR Mapping APIs
   getSRMapping,
-  getSRMappingByPlant,
   saveSRMapping,
   importSRMappingExcel,
   exportSRMappingExcel,
+
+  updateSRMappingsByPlant,
+  getSRMappingByPlant,
   getSRMappingPlants,
   getSRMappingCostCenters,
 
@@ -561,6 +563,32 @@ async function importSRMappingExcel(file, keycloak) {
   } catch (e) {
     console.error(`Error importing SR Mapping Excel:`, e)
     return Promise.reject(e)
+  }
+}
+
+// Update (create/update) SR Mappings By Plant
+// Calls PUT /task/sr-mapping/by-plant
+async function updateSRMappingsByPlant(keycloak, payload, financialYear) {
+  const url = `${Config.CaseEngineUrl}/task/sr-mapping/by-plant?financialYear=${financialYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, {
+      method: 'PUT',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }
 

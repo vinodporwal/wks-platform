@@ -84,4 +84,7 @@ public interface ConfigurationService {
 
         public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigurationDTOList, String plantId, String aopYear);
 
+        public byte[] createManualEntryExcel(String year, UUID plantFKId, boolean isAfterSave, List<ConfigurationDTO> dtoList);
+
+        public AOPMessageVM importManualEntryExcel(String year, UUID plantFKId, MultipartFile file);
 }

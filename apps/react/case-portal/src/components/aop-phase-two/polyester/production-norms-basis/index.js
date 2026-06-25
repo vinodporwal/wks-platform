@@ -9,6 +9,7 @@ import TabAccessApiService from 'components/aop-phase-two/services/common/tabAcc
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import Configuration from './Configuration'
 import ProductionRange from './ProductionRange'
+import ReportManualEntry from './ReportManualEntry/index'
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
@@ -155,6 +156,14 @@ const ProductionNormsBasis = () => {
       case 'Configuration':
         return (
           <Configuration
+            startDate={startDate}
+            endDate={endDate}
+            refreshData={refreshData}
+          />
+        )
+      case 'Manual Entry':
+        return (
+          <ReportManualEntry
             startDate={startDate}
             endDate={endDate}
             refreshData={refreshData}
