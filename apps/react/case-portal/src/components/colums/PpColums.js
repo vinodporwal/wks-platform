@@ -171,7 +171,7 @@ export const SlowDownPpColumns = [
     widthT: 200,
     autoAdjust: false,
     minWidth: 200,
-    locked: true
+    locked: true,
   },
 
   {
@@ -248,7 +248,7 @@ export const SlowDownPpDtaColumns = [
     widthT: 150,
     autoAdjust: false,
     minWidth: 100,
-    locked: true
+    locked: true,
   },
 
   {

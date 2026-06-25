@@ -214,7 +214,12 @@ const NormalOpNormsScreenCracker = () => {
         minWidth: 150,
         locked: true,
       },
-      { field: 'materialDisplayName', title: 'Particulars', minWidth: 300, locked: true },
+      {
+        field: 'materialDisplayName',
+        title: 'Particulars',
+        minWidth: 300,
+        locked: true,
+      },
       {
         field: 'uom',
         title: 'UOM',
@@ -384,7 +389,14 @@ const NormalOpNormsScreenCracker = () => {
         minWidth: 300,
         locked: true,
       },
-      { field: 'uom', title: 'UOM', widthT: 80, editable: false, minWidth: 80, locked: true },
+      {
+        field: 'uom',
+        title: 'UOM',
+        widthT: 80,
+        editable: false,
+        minWidth: 80,
+        locked: true,
+      },
       ...MONTHS.map((m, i) => ({
         field: m,
         title: headerMap[monthIndexMap[m]] || m,
@@ -437,7 +449,14 @@ const NormalOpNormsScreenCracker = () => {
         minWidth: 300,
         locked: true,
       },
-      { field: 'uom', title: 'UOM', widthT: 80, editable: false, minWidth: 80, locked: true },
+      {
+        field: 'uom',
+        title: 'UOM',
+        widthT: 80,
+        editable: false,
+        minWidth: 80,
+        locked: true,
+      },
       ...MONTHS.map((m, i) => ({
         field: m,
         title: headerMap[monthIndexMap[m]] || m,

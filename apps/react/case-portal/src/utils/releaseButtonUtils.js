@@ -10,6 +10,11 @@ const collectItems = (nodes) =>
 export const shouldShowReleaseButton = (menuItems) => {
   // console.log('menuItems', menuItems)
 
+  // Always show release button on aop-budget page
+  if (window.location.pathname.includes('/functional-aop/aop-budget')) {
+    return true
+  }
+
   const planGroup = menuItems
     ?.flatMap((m) => m.children || [])
     ?.find((c) => c.id === 'production-norms-plan')

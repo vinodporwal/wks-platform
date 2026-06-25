@@ -238,7 +238,7 @@ export const SlowDownPtadmdColumns = [
     widthT: 150,
     autoAdjust: false,
     minWidth: 200,
-    locked: true
+    locked: true,
   },
   {
     field: 'maintenanceId',
