@@ -300,11 +300,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		int remarkColIndex = hasCategory ? 16 : 15;
 		int totalCols = innerHeaders.size();
 
-		// Wrap styles for the remarks column � preserve locked/unlocked appearance with borders
+		// Wrap styles for the remarks column — preserve locked/unlocked appearance with borders
 		CellStyle wrapUnlockedStyle = Utility.createBorderedWrapUnlockedStyle(workbook);
 		CellStyle wrapLockedStyle = Utility.createBorderedWrapLockedStyle(workbook);
 
-		// Fixed preferred width for remarks column (~50 characters � 256 units)
+		// Fixed preferred width for remarks column (~50 characters × 256 units)
 		final int REMARK_CHARS = 50;
 		sheet.setColumnWidth(remarkColIndex, REMARK_CHARS * 256);
 
@@ -481,7 +481,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		wrapLockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
 		wrapLockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-		// Fixed preferred width for remarks column (~50 characters � 256 units)
+		// Fixed preferred width for remarks column (~50 characters × 256 units)
 		final int REMARK_CHARS = 50;
 		sheet.setColumnWidth(remarkColIndex, REMARK_CHARS * 256);
 
@@ -716,11 +716,13 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					catalystChangeOverDTO.setId((String) row[0]);
 					catalystChangeOverDTO.setParameter((String) row[1]);
 					catalystChangeOverDTO.setDate((Date) row[2]);
-					catalystChangeOverDTO.setRemarks((String) row[3]);
-					catalystChangeOverDTO.setPlantId((String) row[4]);
-					catalystChangeOverDTO.setAopYear((String) row[5]);
-					catalystChangeOverDTO.setModifiedBy((String) row[6]);
-					catalystChangeOverDTO.setModifiedOn((Date) row[7]);
+					catalystChangeOverDTO.setCatalystQuantity((Double) row[3]);
+					catalystChangeOverDTO.setRunLength((Integer) row[4]);
+					catalystChangeOverDTO.setRemarks((String) row[5]);
+					catalystChangeOverDTO.setPlantId((String) row[6]);
+					catalystChangeOverDTO.setAopYear((String) row[7]);
+					catalystChangeOverDTO.setModifiedBy((String) row[8]);
+					catalystChangeOverDTO.setModifiedOn((Date) row[9]);
 					catalystChangeOverDTOList.add(catalystChangeOverDTO);
 				}
 
@@ -744,7 +746,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 @Transactional
 public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystChangeOverDTOList, String year) {
 	try {
-		// Parse AOP year range � format "YYYY-YY", e.g. "2024-25" ? Apr 1 2024 � Mar 31 2025
+		// Parse AOP year range – format "YYYY-YY", e.g. "2024-25" → Apr 1 2024 – Mar 31 2025
 		String[] yearParts = year.split("-");
 		int startYear = Integer.parseInt(yearParts[0].trim());
 		int endYear = startYear + 1;
@@ -756,14 +758,14 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 		for (CatalystChangeOverDTO dto : catalystChangeOverDTOList) {
 			String modifiedBy = Utility.getUserName();
 
-			// -- 1. Parameter Validation ---------------------------------------------
+			// ── 1. Parameter Validation ─────────────────────────────────────────────
 			String param = dto.getParameter() != null ? dto.getParameter().trim() : null;
 			if (param == null || !validParameters.contains(param)) {
 				throw new IllegalArgumentException(
 					"Invalid Parameter value '" + dto.getParameter() + "'. Allowed values are: DeH-15, DeH-201.");
 			}
 
-			// -- 2. Date Validation --------------------------------------------------
+			// ── 2. Date Validation ──────────────────────────────────────────────────
 			if (dto.getDate() == null) {
 				throw new IllegalArgumentException("Date is required.");
 			}
@@ -776,10 +778,12 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 
 			if (dto.getId() == null || dto.getId().trim().isEmpty()) {
 
-				String sql = "INSERT INTO CatalystChangeOver (date, remarks, plantId, aopYear, modifiedBy, modifiedOn, parameter) "
-						+ "VALUES (:date, :remarks, :plantId, :aopYear, :modifiedBy, :modifiedOn, :parameter)";
+				String sql = "INSERT INTO CatalystChangeOver (date, catalystQuantity, runLength, remarks, plantId, aopYear, modifiedBy, modifiedOn, parameter) "
+						+ "VALUES (:date, :catalystQuantity, :runLength, :remarks, :plantId, :aopYear, :modifiedBy, :modifiedOn, :parameter)";
 				Query query = entityManager.createNativeQuery(sql);
 				query.setParameter("date", dto.getDate());
+				query.setParameter("catalystQuantity", dto.getCatalystQuantity());
+				query.setParameter("runLength", dto.getRunLength());
 				query.setParameter("remarks", dto.getRemarks());
 				query.setParameter("plantId", dto.getPlantId());
 				query.setParameter("aopYear", dto.getAopYear());
@@ -790,17 +794,21 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 
 			} else {
 
-				// -- 3. Remarks Validation for Parameter / Date Changes --------------
-				String selectSql = "SELECT parameter, date, remarks FROM CatalystChangeOver WHERE id = :id";
+				// ── 3. Remarks Validation for Parameter / Date Changes ──────────────
+				String selectSql = "SELECT parameter, date, catalystQuantity, runLength, remarks FROM CatalystChangeOver WHERE id = :id";
 				Query selectQuery = entityManager.createNativeQuery(selectSql);
 				selectQuery.setParameter("id", dto.getId());
 				Object[] existing = (Object[]) selectQuery.getSingleResult();
 
 				String existingParam    = existing[0] != null ? existing[0].toString().trim() : "";
 				java.sql.Date existingDateRaw = (java.sql.Date) existing[1];
-				String existingRemarks  = existing[2] != null ? existing[2].toString().trim() : "";
+				Double existingCatalystQuantity = (Double) existing[2];
+				Integer existingRunLength = (Integer) existing[3];
+				String existingRemarks  = existing[4] != null ? existing[4].toString().trim() : "";
 
 				boolean parameterChanged = !param.equals(existingParam);
+				boolean catalystQuantityChanged = dto.getCatalystQuantity() != existingCatalystQuantity;
+				boolean runLengthChanged = dto.getRunLength() != existingRunLength;
 				boolean dateChanged = false;
 				if (existingDateRaw != null) {
 					// LocalDate existingLocalDate = existingDateRaw.toInstant()
@@ -812,19 +820,21 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 					dateChanged = true;
 				}
 
-				if (parameterChanged || dateChanged) {
+				if (parameterChanged || dateChanged || catalystQuantityChanged || runLengthChanged) {
 					String incomingRemarks = dto.getRemarks() != null ? dto.getRemarks().trim() : "";
 					if (incomingRemarks.equals(existingRemarks)) {
 						throw new IllegalArgumentException(
-							"Remarks must be updated when Parameter or Date is changed.");
+							"Please Update Remarks");
 					}
 				}
 
 				String sql = "UPDATE CatalystChangeOver "
-						+ "SET date = :date, remarks = :remarks, modifiedBy = :modifiedBy, modifiedOn = :modifiedOn, parameter = :parameter "
+						+ "SET date = :date, catalystQuantity = :catalystQuantity, runLength = :runLength, remarks = :remarks, modifiedBy = :modifiedBy, modifiedOn = :modifiedOn, parameter = :parameter "
 						+ "WHERE id = :id";
 				Query query = entityManager.createNativeQuery(sql);
 				query.setParameter("date", dto.getDate());
+				query.setParameter("catalystQuantity", dto.getCatalystQuantity());
+				query.setParameter("runLength", dto.getRunLength());
 				query.setParameter("remarks", dto.getRemarks());
 				query.setParameter("modifiedBy", modifiedBy);
 				query.setParameter("modifiedOn", new Date());
@@ -2503,7 +2513,7 @@ continue;
 			return null;
 		}
 
-		// Fiscal year format: "2026-27" ? Apr�Dec of start year, Jan�Mar of end year.
+		// Fiscal year format: "2026-27" → Apr–Dec of start year, Jan–Mar of end year.
 		// Parse start year from the portion before "-"; end year = start year + 1.
 		int startYear;
 		try {
@@ -2514,10 +2524,10 @@ continue;
 		}
 		int endYear = startYear + 1;
 
-		// Months Jan�Mar belong to endYear; Apr�Dec belong to startYear.
+		// Months Jan–Mar belong to endYear; Apr–Dec belong to startYear.
 		boolean isLeapEndYear = (endYear % 4 == 0) && (endYear % 100 != 0 || endYear % 400 == 0);
 
-		// maxDays array indexed Jan(0)�Dec(11); February uses endYear leap-year check.
+		// maxDays array indexed Jan(0)…Dec(11); February uses endYear leap-year check.
 		int[] maxDays = { 31, isLeapEndYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 		String[] monthNames = { "January", "February", "March", "April", "May", "June",
 				"July", "August", "September", "October", "November", "December" };
@@ -3229,7 +3239,7 @@ continue;
 					// Col 2: UOM
 					dto.setUOM(getStringCellValue(row.getCell(2), dto));
 					dto.setAuditYear(year);
-					// Col 3: Value � apply to all months
+					// Col 3: Value — apply to all months
 					Double value = getNumericCellValue(row.getCell(3), dto);
 					dto.setApr(value);
 					dto.setMay(value);
@@ -5266,7 +5276,7 @@ continue;
 		}
 	}
 
-	// --- Catalyst Change Over Export --------------------------------------------
+	// ─── Catalyst Change Over Export ────────────────────────────────────────────
 
 	@Override
 	@SuppressWarnings("unchecked")
@@ -5309,22 +5319,22 @@ continue;
 			for (CatalystChangeOverDTO dto : dtoList) {
 				Row row = sheet.createRow(currentRow++);
 
-				// Col 0 � Parameter
+				// Col 0 – Parameter
 				Cell paramCell = row.createCell(0);
 				paramCell.setCellValue(dto.getParameter() != null ? dto.getParameter() : "");
 				paramCell.setCellStyle(Utility.createBorderedStyle(workbook));
 
-				// Col 1 � Date
+				// Col 1 – Date
 				Cell dateCell = row.createCell(1);
 				dateCell.setCellValue(dto.getDate() != null ? sdf.format(dto.getDate()) : "");
 				dateCell.setCellStyle(Utility.createBorderedStyle(workbook));
 
-				// Col 2 � Remarks (wrapped text, auto row height)
+				// Col 2 – Remarks (wrapped text, auto row height)
 				Cell remarksCell = row.createCell(2);
 				remarksCell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
 				remarksCell.setCellStyle(wrapStyle);
 
-				// Col 3 � Id (hidden, used for import/update)
+				// Col 3 – Id (hidden, used for import/update)
 				Cell idCell = row.createCell(3);
 				idCell.setCellValue(dto.getId() != null ? dto.getId() : "");
 				idCell.setCellStyle(Utility.createBorderedStyle(workbook));
@@ -5343,7 +5353,7 @@ continue;
 				row.setHeight((short) -1);
 			}
 
-			// Dynamic column widths � fixed larger width for Remarks(2), auto-size for others
+			// Dynamic column widths – fixed larger width for Remarks(2), auto-size for others
 			int totalCols = isAfterSave ? 6 : 4;
 			for (int col = 0; col < totalCols; col++) {
 				if (col == 2) {
@@ -5367,7 +5377,7 @@ continue;
 		}
 	}
 
-	// --- Catalyst Change Over Import � Excel Reader ------------------------------
+	// ─── Catalyst Change Over Import – Excel Reader ──────────────────────────────
 
 	public List<CatalystChangeOverDTO> readCatalystChangeOverExcel(InputStream inputStream, String plantId,
 			String year) {
@@ -5386,14 +5396,14 @@ continue;
 				CatalystChangeOverDTO dto = new CatalystChangeOverDTO();
 
 				try {
-					// Col 0 � Parameter
+					// Col 0 – Parameter
 					Cell paramCell = row.getCell(0);
 					if (paramCell != null) {
 						paramCell.setCellType(CellType.STRING);
 						dto.setParameter(paramCell.getStringCellValue().trim());
 					}
 
-					// Col 1 � Date
+					// Col 1 – Date
 					Cell dateCell = row.getCell(1);
 					if (dateCell != null) {
 						if (dateCell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(dateCell)) {
@@ -5407,14 +5417,14 @@ continue;
 						}
 					}
 
-					// Col 2 � Remarks
+					// Col 2 – Remarks
 					Cell remarksCell = row.getCell(2);
 					if (remarksCell != null) {
 						remarksCell.setCellType(CellType.STRING);
 						dto.setRemarks(remarksCell.getStringCellValue().trim());
 					}
 
-					// Col 3 � Id (hidden; present means update, absent means insert)
+					// Col 3 – Id (hidden; present means update, absent means insert)
 					Cell idCell = row.getCell(3);
 					if (idCell != null) {
 						idCell.setCellType(CellType.STRING);
@@ -5439,7 +5449,7 @@ continue;
 		return resultList;
 	}
 
-	// --- Catalyst Change Over Import � API ---------------------------------------
+	// ─── Catalyst Change Over Import – API ───────────────────────────────────────
 
 	@Override
 	@Transactional

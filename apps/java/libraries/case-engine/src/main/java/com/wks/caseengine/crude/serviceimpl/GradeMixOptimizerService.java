@@ -20,7 +20,7 @@ public interface GradeMixOptimizerService {
 
     AOPMessageVM saveBudgetedOperatingHoursData(UUID plantId, String aopYear, UUID lineId, List<BudgetedOperatingHoursDTO> dtoList);
 
-    byte[] exportBudgetedOperatingHoursExcel(UUID plantId, String aopYear);
+    byte[] exportBudgetedOperatingHoursExcel(UUID plantId, String aopYear, boolean isAfterSave, List<BudgetedOperatingHoursDTO> dtoList);
 
     AOPMessageVM importBudgetedOperatingHoursExcel(UUID plantId, String aopYear, MultipartFile file);
 }

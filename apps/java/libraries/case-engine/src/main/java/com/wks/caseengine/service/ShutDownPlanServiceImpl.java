@@ -2239,7 +2239,9 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 		String verticalName = plantsService.findVerticalNameByPlantId(plantFKId);
 		boolean aromaticsSez=vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("SEZ");
-		boolean pta = verticalName.equalsIgnoreCase("PTA");
+		boolean aromaticsHmd = vertical.getName().equalsIgnoreCase("AROMATICS") && site.getName().equalsIgnoreCase("HMD");
+		boolean pta = vertical.getName().equalsIgnoreCase("PTA");
+		boolean skipduplicateDescValidation = pta || aromaticsHmd;
 		boolean aromatics = vertical.getName().equalsIgnoreCase("AROMATICS");
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 			Sheet sheet = workbook.getSheetAt(0);
@@ -2269,8 +2271,8 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 						dto.setErrDescription("Description is required.");
 						alreadyFailed = true;
 					} 
-					// skip the duplicate description validation for pta and aromatics
-					else if (!pta && !aromatics
+					// skip the duplicate description validation for pta and aromaticsHmd
+					else if (!skipduplicateDescValidation
 							&& validatedDescriptions.containsKey(dto.getDiscription().trim())) {
 						dto.setSaveStatus("Failed");
 						dto.setErrDescription(
@@ -2440,7 +2442,7 @@ public byte[] shutdownNonProductLineExport(String year, String plantId, String m
 					}
 					
 
-					if ((!pta && !aromatics ) && !alreadyFailed && dto.getId() == null) {
+					if ((!skipduplicateDescValidation) && !alreadyFailed && dto.getId() == null) {
 						List<Object[]> obj = shutDownPlanRepository.findDiscriptionByPlantIdAndType("Shutdown",
 								plantFKId.toString(), year, dto.getDiscription());
 
