@@ -1,20 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Box } from '@mui/material'
+import {
+  Box,
+  Backdrop,
+  CircularProgress,
+  Stack,
+  Typography,
+} from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useDispatch, useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
-import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
-import NestedKendoTable from '../common/NestedKendoTable/index'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/jmd/utilityPlantApiServiceV2'
 import { setIsReleased } from 'store/reducers/dataGridStore'
-import ReleaseDialog from '../common/components/ReleaseDialog'
-import { ReleaseAPIService } from '../services/common/releaseAPIService'
-import NormsJMD from './jmd/NormsJMD'
-import NormsDMD from './dmd/NormsDMD'
+import NestedKendoTable from 'components/aop-phase-two/common/NestedKendoTable/index'
+import ReleaseAPIService from 'components/aop-phase-two/services/common/releaseAPIService'
+import ReleaseDialog from 'components/aop-phase-two/common/components/ReleaseDialog'
 
-const Norms = () => {
+const NormsDMD = () => {
   const keycloak = useSession()
   // State management
   const dispatch = useDispatch()
@@ -45,7 +48,8 @@ const Norms = () => {
 
   const lowerVertName = verticalObject?.name?.toLowerCase()
   const lowerSiteName = siteObject?.name?.toLowerCase()
-  const IS_CPP = lowerVertName === 'cpp'
+  const IS_CPP_JMD = lowerVertName === 'cpp' && lowerSiteName === 'jmd'
+  const IS_CPP_NMD = lowerVertName === 'cpp' && lowerSiteName === 'nmd'
 
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterPhaseTwo()
@@ -661,11 +665,11 @@ const Norms = () => {
   const [calculationLoading, setCaculationLoading] = useState(false)
 
   useEffect(() => {
-    if (PLANT_ID && AOP_YEAR && lowerSiteName === 'nmd') {
+    if (PLANT_ID && AOP_YEAR) {
       fetchNormsData()
       setModifiedCells({})
     }
-  }, [PLANT_ID, AOP_YEAR, lowerSiteName])
+  }, [PLANT_ID, AOP_YEAR])
 
   const fetchNormsData = async () => {
     setLoading(true)
@@ -1042,61 +1046,55 @@ const Norms = () => {
     setRemarkDialogOpen(true)
   }
 
-  const renderBySite = () => {
-    switch (lowerSiteName) {
-      case 'jmd':
-        return <NormsJMD />
-
-      case 'dmd':
-        return <NormsDMD />
-      // case 'hmd':
-      //   return <NormsHMD />
-      case 'nmd':
-      default:
-        return (
-          <NestedKendoTable
-            columns={nestedColumns}
-            rows={rows}
-            setRows={setRows}
-            handleCalculate={handleCalculate}
-            modifiedCells={modifiedCells}
-            setModifiedCells={setModifiedCells}
-            title='Norms'
-            permissions={permissions}
-            handleRemarkCellClick={handleRemarkCellClick}
-            remarkDialogOpen={remarkDialogOpen}
-            setRemarkDialogOpen={setRemarkDialogOpen}
-            currentRemark={currentRemark}
-            setCurrentRemark={setCurrentRemark}
-            currentRowId={currentRowId}
-            setCurrentRowId={() => {}}
-            saveChanges={saveChanges}
-            handleExcelUpload={handleExcelUpload}
-            handleExport={handleExport}
-            snackbarData={snackbarData}
-            snackbarOpen={snackbarOpen}
-            setSnackbarOpen={setSnackbarOpen}
-            setSnackbarData={setSnackbarData}
-            customHeight={80}
-            groupBy={['generatingPlantName']}
-            handleRelease={handleRelease}
-            isReleaseDisabled={isReleaseDisabled}
-          />
-        )
-    }
-  }
-
-  if (!IS_CPP) return null
-
   return (
     <Box>
-      <LoaderBackdrop
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={!!loading || calculationLoading}
-        showMessage={calculationLoading}
-        message='Your data is being processed. This may take a few moments—thank you for your patience.'
+      >
+        <Stack
+          display='flex'
+          flexDirection='column'
+          alignItems='center'
+          justifyContent='center'
+        >
+          <CircularProgress color='inherit' />
+          {calculationLoading && (
+            <Typography variant='h5' sx={{ mt: 2 }}>
+              Your data is being processed. This may take a few moments—thank
+              you for your patience.
+            </Typography>
+          )}
+        </Stack>
+      </Backdrop>
+      <NestedKendoTable
+        columns={nestedColumns}
+        rows={rows}
+        setRows={setRows}
+        handleCalculate={handleCalculate}
+        modifiedCells={modifiedCells}
+        setModifiedCells={setModifiedCells}
+        title='Norms'
+        permissions={permissions}
+        handleRemarkCellClick={handleRemarkCellClick}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        setCurrentRowId={() => { }}
+        saveChanges={saveChanges}
+        handleExcelUpload={handleExcelUpload}
+        handleExport={handleExport}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        customHeight={80}
+        groupBy={['generatingPlantName', 'accountName']}
+        handleRelease={handleRelease}
+        isReleaseDisabled={isReleaseDisabled}
       />
-
-      {renderBySite()}
 
       <ReleaseDialog
         openReleaseDialogBox={openReleaseDialogBox}
@@ -1107,4 +1105,4 @@ const Norms = () => {
   )
 }
 
-export default Norms
+export default NormsDMD
