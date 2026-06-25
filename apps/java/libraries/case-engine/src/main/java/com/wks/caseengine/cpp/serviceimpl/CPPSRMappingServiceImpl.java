@@ -737,19 +737,19 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                         "IsActive = 1 " +
                         "WHERE Id = ?";
                 db1JdbcTemplate.update(updateSql,
-                        dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,
-                        dto.getReceiverUtilityName(),
-                        dto.getReceiverUtilityCode(),
-                        dto.getReceiverUtilityUOM(),
-                        "Utilities",
-                        dto.getSenderUtilityName(),
-                        dto.getSenderPlantName(),
-                        dto.getSenderPlantId()         != null ? dto.getSenderPlantId().toString()       : null,
-                        resolvedSenderUtilityId        != null ? resolvedSenderUtilityId.toString()      : null,
-                        dto.getSenderUtilityUOM(),
-                        dto.getSenderUtilityCode(),
-                        dto.getRemarks(),
-                        dto.getReceiverPlantCode(),
+                        dto.getSenderPlantId()            != null ? dto.getSenderPlantId().toString()          : null,  // Plant_FK_Id
+                        dto.getSenderUtilityName(),                                                               // UtilityName
+                        dto.getSenderUtilityCode(),                                                               // UtilityId
+                        dto.getSenderUtilityUOM(),                                                                // UtilityUOM
+                        "Utilities",                                                                              // AccountName
+                        dto.getReceiverUtilityName(),                                                             // MaterialName
+                        dto.getReceiverPlantName(),                                                               // IssuingPlantName
+                        dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,  // IssuingPlant_FK_Id
+                        resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,  // NormParameter_FK_Id
+                        dto.getReceiverUtilityUOM(),                                                              // IssuingUOM
+                        dto.getReceiverUtilityCode(),                                                             // MaterialId
+                        dto.getRemarks(),                                                                         // Remarks
+                        dto.getReceiverPlantCode(),                                                               // plantCode
                         existingId.toString()
                 );
                 logger.info("resolveOrUpdateNormsHeader: updated NormsHeader Id={} for srMappingId={}", existingId, srMappingId);
@@ -766,19 +766,19 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 1, ?, ?, ?, ?)";
                 db1JdbcTemplate.update(insertSql,
                         newId.toString(),
-                        dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,
-                        dto.getReceiverUtilityName(),
-                        dto.getReceiverUtilityCode(),
-                        dto.getReceiverUtilityUOM(),
-                        "Utilities",
-                        dto.getSenderUtilityName(),
-                        dto.getSenderPlantName(),
-                        dto.getSenderPlantId()         != null ? dto.getSenderPlantId().toString()       : null,
-                        resolvedSenderUtilityId        != null ? resolvedSenderUtilityId.toString()      : null,
-                        dto.getSenderUtilityUOM(),
-                        dto.getSenderUtilityCode(),
-                        dto.getRemarks(),
-                        dto.getReceiverPlantCode(),
+                        dto.getSenderPlantId()            != null ? dto.getSenderPlantId().toString()          : null,  // Plant_FK_Id
+                        dto.getSenderUtilityName(),                                                               // UtilityName
+                        dto.getSenderUtilityCode(),                                                               // UtilityId
+                        dto.getSenderUtilityUOM(),                                                                // UtilityUOM
+                        "Utilities",                                                                              // AccountName
+                        dto.getReceiverUtilityName(),                                                             // MaterialName
+                        dto.getReceiverPlantName(),                                                               // IssuingPlantName
+                        dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,  // IssuingPlant_FK_Id
+                        resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,  // NormParameter_FK_Id
+                        dto.getReceiverUtilityUOM(),                                                              // IssuingUOM
+                        dto.getReceiverUtilityCode(),                                                             // MaterialId
+                        dto.getRemarks(),                                                                         // Remarks
+                        dto.getReceiverPlantCode(),                                                               // plantCode
                         srMappingId.toString()
                 );
                 logger.info("resolveOrUpdateNormsHeader: inserted NormsHeader Id={} for srMappingId={}", newId, srMappingId);
@@ -820,21 +820,27 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
             return;
         }
         try {
-            // Parse base year from "2025-26" → 2025
-            int baseYear;
+            // Parse financial year "2025-26" → startYear=2025, endYear=2026
+            int startYear;
+            int endYear;
             try {
-                baseYear = Integer.parseInt(financialYear.split("-")[0].trim());
+                startYear = Integer.parseInt(financialYear.split("-")[0].trim());
+                endYear   = startYear + 1;
             } catch (NumberFormatException e) {
                 logger.error("insertNormsMonthDetails: could not parse year from financialYear='{}'", financialYear);
                 return;
             }
 
-            // Fetch all FinancialYearMonth rows for the base year
-            String fymSql = "SELECT Id FROM FinancialYearMonth WHERE Year = ? ORDER BY Month";
-            List<String> fymIds = db1JdbcTemplate.queryForList(fymSql, String.class, baseYear);
+            // Fetch the 12 FinancialYearMonth rows that span the financial year:
+            //   Apr–Dec of startYear  +  Jan–Mar of endYear
+            // Mirrors: WHERE (Year = @StartYear AND Month >= 4) OR (Year = @EndYear AND Month <= 3)
+            String fymSql = "SELECT Id FROM FinancialYearMonth " +
+                    "WHERE (Year = ? AND Month >= 4) OR (Year = ? AND Month <= 3) " +
+                    "ORDER BY Year, Month";
+            List<String> fymIds = db1JdbcTemplate.queryForList(fymSql, String.class, startYear, endYear);
 
             if (fymIds.isEmpty()) {
-                logger.warn("insertNormsMonthDetails: no FinancialYearMonth records found for year={}", baseYear);
+                logger.warn("insertNormsMonthDetails: no FinancialYearMonth records found for financialYear={}", financialYear);
                 return;
             }
 
@@ -854,8 +860,8 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                         newDetailId, normsHeaderId, fymId);
             }
 
-            logger.info("insertNormsMonthDetails: inserted {} month records for NormsHeader={}, year={}",
-                    fymIds.size(), normsHeaderId, baseYear);
+            logger.info("insertNormsMonthDetails: inserted {} month records for NormsHeader={}, financialYear={}",
+                    fymIds.size(), normsHeaderId, financialYear);
 
         } catch (Exception e) {
             logger.error("insertNormsMonthDetails error for normsHeaderId={}: {}", normsHeaderId, e.getMessage(), e);
