@@ -64,7 +64,7 @@ public class GradeMixOptimizerController {
             @RequestParam String aopYear) {
         try {
             byte[] excelBytes = gradeMixOptimizerService.exportBudgetedOperatingHoursExcel(
-                UUID.fromString(plantId), aopYear);
+                UUID.fromString(plantId), aopYear, false, null);
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType(
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
