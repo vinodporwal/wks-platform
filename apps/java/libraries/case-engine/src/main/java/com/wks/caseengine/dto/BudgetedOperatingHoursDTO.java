@@ -39,4 +39,7 @@ public class BudgetedOperatingHoursDTO {
     private String remarks;
     private String modifiedBy;
     private Date modifiedDateTime;
+    private String saveStatus;
+    private String errDescription;
+    private String lineName;
 }

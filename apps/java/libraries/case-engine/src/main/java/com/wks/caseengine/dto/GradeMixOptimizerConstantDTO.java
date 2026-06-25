@@ -13,7 +13,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class GradeMixOptimizerConstantDTO {
 
-   // private UUID id;
     private UUID normParameterFkId;
     private Double jan;
     private Double feb;

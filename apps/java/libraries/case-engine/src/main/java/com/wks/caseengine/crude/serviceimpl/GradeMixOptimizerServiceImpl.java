@@ -6,12 +6,14 @@ import java.sql.Types;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -88,7 +90,7 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
         String sql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?";
         return jdbcTemplate.query(sql, (rs, rowNum) ->
             GradeMixOptimizerConstantDTO.builder()
-              //  .id(rs.getString("Id") != null ? UUID.fromString(rs.getString("Id")) : null)
+              
                 .normParameterFkId(UUID.fromString(rs.getString("NormParameter_FK_Id")))
                 .jan(rs.getDouble("Jan"))
                 .feb(rs.getDouble("Feb"))
@@ -330,6 +332,8 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
             List<BudgetedOperatingHoursDTO> dtoList) {
         try {
             String modifiedBy = Utility.getUserName();
+            List<BudgetedOperatingHoursDTO> failedList = new ArrayList<>();
+
             for (BudgetedOperatingHoursDTO dto : dtoList) {
                 if (dto.getId() == null) {
                     String insertSql = "INSERT INTO GradewiseMonthWiseBudgetedOperatingHours " +
@@ -345,6 +349,13 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
                         dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar(),
                         dto.getRemarks(), modifiedBy);
                 } else {
+                    BudgetedOperatingHoursDTO existing = fetchExistingBudgetedOperatingHoursRecord(dto.getId());
+                    if (existing != null && isRemarkValidationFailed(existing, dto)) {
+                        dto.setSaveStatus("Failed");
+                        dto.setErrDescription("Please update remarks");
+                        failedList.add(dto);
+                        continue;
+                    }
                     String updateSql = "UPDATE GradewiseMonthWiseBudgetedOperatingHours " +
                         "SET April = ?, May = ?, June = ?, July = ?, August = ?, September = ?, " +
                         "October = ?, November = ?, December = ?, January = ?, February = ?, March = ?, " +
@@ -360,6 +371,7 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
             AOPMessageVM vm = new AOPMessageVM();
             vm.setCode(200);
             vm.setMessage("Budgeted operating hours data saved successfully");
+            vm.setData(failedList);
             return vm;
         } catch (Exception e) {
             throw new RuntimeException("Failed to save budgeted operating hours data", e);
@@ -367,17 +379,8 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
     }
 
     @Override
-    public byte[] exportBudgetedOperatingHoursExcel(UUID plantId, String aopYear) {
+    public byte[] exportBudgetedOperatingHoursExcel(UUID plantId, String aopYear, boolean isAfterSave, List<BudgetedOperatingHoursDTO> dtoList) {
         try {
-            Plants plants = plantsRepository.findById(plantId)
-                .orElseThrow(() -> new RuntimeException("Plant not found"));
-            String verticalName = verticalRepository.findById(plants.getVerticalFKId())
-                .orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
-            String siteName = siteRepository.findById(plants.getSiteFkId())
-                .orElseThrow(() -> new RuntimeException("Site not found")).getName();
-
-            String procedureName = verticalName + "_" + siteName + "_GetGradewiseMonthWiseBudgetedOperatingHours";
-            List<Map<String, Object>> lines = getLineDetailsForPlant(plantId, verticalName);
             List<String> dynamicMonthHeaders = getFinancialYearMonths(aopYear);
 
             try (Workbook workbook = new XSSFWorkbook();
@@ -386,65 +389,35 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
                 CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
                 CellStyle dataStyle = Utility.createBorderedStyle(workbook);
 
-                for (Map<String, Object> line : lines) {
-                    String lineId = getMapValue(line, "id");
-                    String displayName = getMapValue(line, "displayName");
-                    if (lineId == null || lineId.isEmpty()) {
-                        continue;
+                if (!isAfterSave) {
+                    Plants plants = plantsRepository.findById(plantId)
+                        .orElseThrow(() -> new RuntimeException("Plant not found"));
+                    String verticalName = verticalRepository.findById(plants.getVerticalFKId())
+                        .orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
+                  
+                    List<Map<String, Object>> lines = getLineDetailsForPlant(plantId, verticalName);
+
+                    for (Map<String, Object> line : lines) {
+                        String lineId = getMapValue(line, "id");
+                        String displayName = getMapValue(line, "displayName");
+                        if (lineId == null || lineId.isEmpty()) continue;
+
+                        Map<String, Object> data = (Map<String, Object>) getBudgetedOperatingHoursData(plantId, aopYear, UUID.fromString(lineId)).getData();
+                        List<BudgetedOperatingHoursDTO> budgetedOperatingHoursData = (List<BudgetedOperatingHoursDTO>) data.get("budgetedOperatingHoursData");
+
+                        writeSheet(workbook, displayName != null ? displayName : lineId,
+                            budgetedOperatingHoursData, dynamicMonthHeaders, headerStyle, dataStyle, false);
                     }
-
-                    List<BudgetedOperatingHoursDTO> data = fetchBudgetedOperatingHoursDataFromProcedure(
-                        plantId, aopYear, UUID.fromString(lineId), procedureName);
-
-                    String sheetName = Utility.sanitizeSheetName(displayName != null ? displayName : lineId);
-                    Sheet sheet = workbook.createSheet(sheetName);
-
-                    // Build headers: DisplayName, dynamic months, Remarks, Id (hidden), GradeId (hidden)
-                    List<String> headers = new ArrayList<>();
-                    headers.add("DisplayName");
-                    headers.addAll(dynamicMonthHeaders);
-                    headers.add("Remarks");
-                    headers.add("Id");
-                    headers.add("GradeId");
-
-                    Row headerRow = sheet.createRow(0);
-                    for (int col = 0; col < headers.size(); col++) {
-                        Cell cell = headerRow.createCell(col);
-                        cell.setCellValue(headers.get(col));
-                        cell.setCellStyle(headerStyle);
+                } else {
+                    // Error file: group failed records by lineName, one sheet per line
+                    Map<String, List<BudgetedOperatingHoursDTO>> byLine = new LinkedHashMap<>();
+                    for (BudgetedOperatingHoursDTO dto : dtoList) {
+                        String key = dto.getLineName() != null ? dto.getLineName() : "Unknown";
+                        byLine.computeIfAbsent(key, k -> new ArrayList<>()).add(dto);
                     }
-
-                    int rowIdx = 1;
-                    for (BudgetedOperatingHoursDTO dto : data) {
-                        Row row = sheet.createRow(rowIdx++);
-                        int col = 0;
-                        setCell(row.createCell(col++), dto.getDisplayName(), dataStyle);
-                        setCell(row.createCell(col++), dto.getApr(), dataStyle);
-                        setCell(row.createCell(col++), dto.getMay(), dataStyle);
-                        setCell(row.createCell(col++), dto.getJun(), dataStyle);
-                        setCell(row.createCell(col++), dto.getJul(), dataStyle);
-                        setCell(row.createCell(col++), dto.getAug(), dataStyle);
-                        setCell(row.createCell(col++), dto.getSep(), dataStyle);
-                        setCell(row.createCell(col++), dto.getOct(), dataStyle);
-                        setCell(row.createCell(col++), dto.getNov(), dataStyle);
-                        setCell(row.createCell(col++), dto.getDec(), dataStyle);
-                        setCell(row.createCell(col++), dto.getJan(), dataStyle);
-                        setCell(row.createCell(col++), dto.getFeb(), dataStyle);
-                        setCell(row.createCell(col++), dto.getMar(), dataStyle);
-                        setCell(row.createCell(col++), dto.getRemarks(), dataStyle);
-                        setCell(row.createCell(col++), dto.getId() != null ? dto.getId().toString() : "", dataStyle);
-                        setCell(row.createCell(col++), dto.getGradeId() != null ? dto.getGradeId().toString() : "", dataStyle);
-                    }
-
-                    // Auto-size visible columns, hide Id and GradeId columns
-                    int idColIdx = headers.indexOf("Id");
-                    int gradeIdColIdx = headers.indexOf("GradeId");
-                    for (int col = 0; col < headers.size(); col++) {
-                        if (col == idColIdx || col == gradeIdColIdx) {
-                            sheet.setColumnHidden(col, true);
-                        } else {
-                            sheet.autoSizeColumn(col);
-                        }
+                    for (Map.Entry<String, List<BudgetedOperatingHoursDTO>> entry : byLine.entrySet()) {
+                        writeSheet(workbook, entry.getKey(), entry.getValue(),
+                            dynamicMonthHeaders, headerStyle, dataStyle, true);
                     }
                 }
 
@@ -453,6 +426,67 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to export budgeted operating hours Excel", e);
+        }
+    }
+
+    private void writeSheet(Workbook workbook, String sheetLabel, List<BudgetedOperatingHoursDTO> data,
+            List<String> dynamicMonthHeaders, CellStyle headerStyle, CellStyle dataStyle, boolean includeErrorColumns) {
+
+        String sheetName = Utility.sanitizeSheetName(sheetLabel);
+        Sheet sheet = workbook.createSheet(sheetName);
+
+        List<String> headers = new ArrayList<>();
+        headers.add("DisplayName");
+        headers.addAll(dynamicMonthHeaders);
+        headers.add("Remarks");
+        headers.add("Id");
+        headers.add("GradeId");
+        if (includeErrorColumns) {
+            headers.add("Status");
+            headers.add("Error Description");
+        }
+
+        Row headerRow = sheet.createRow(0);
+        for (int col = 0; col < headers.size(); col++) {
+            Cell cell = headerRow.createCell(col);
+            cell.setCellValue(headers.get(col));
+            cell.setCellStyle(headerStyle);
+        }
+
+        int rowIdx = 1;
+        for (BudgetedOperatingHoursDTO dto : data) {
+            Row row = sheet.createRow(rowIdx++);
+            int col = 0;
+            setCell(row.createCell(col++), dto.getDisplayName(), dataStyle);
+            setCell(row.createCell(col++), dto.getApr(), dataStyle);
+            setCell(row.createCell(col++), dto.getMay(), dataStyle);
+            setCell(row.createCell(col++), dto.getJun(), dataStyle);
+            setCell(row.createCell(col++), dto.getJul(), dataStyle);
+            setCell(row.createCell(col++), dto.getAug(), dataStyle);
+            setCell(row.createCell(col++), dto.getSep(), dataStyle);
+            setCell(row.createCell(col++), dto.getOct(), dataStyle);
+            setCell(row.createCell(col++), dto.getNov(), dataStyle);
+            setCell(row.createCell(col++), dto.getDec(), dataStyle);
+            setCell(row.createCell(col++), dto.getJan(), dataStyle);
+            setCell(row.createCell(col++), dto.getFeb(), dataStyle);
+            setCell(row.createCell(col++), dto.getMar(), dataStyle);
+            setCell(row.createCell(col++), dto.getRemarks(), dataStyle);
+            setCell(row.createCell(col++), dto.getId() != null ? dto.getId().toString() : "", dataStyle);
+            setCell(row.createCell(col++), dto.getGradeId() != null ? dto.getGradeId().toString() : "", dataStyle);
+            if (includeErrorColumns) {
+                setCell(row.createCell(col++), dto.getSaveStatus() != null ? dto.getSaveStatus() : "", dataStyle);
+                setCell(row.createCell(col++), dto.getErrDescription() != null ? dto.getErrDescription() : "", dataStyle);
+            }
+        }
+
+        int idColIdx = headers.indexOf("Id");
+        int gradeIdColIdx = headers.indexOf("GradeId");
+        for (int col = 0; col < headers.size(); col++) {
+            if (col == idColIdx || col == gradeIdColIdx) {
+                sheet.setColumnHidden(col, true);
+            } else {
+                sheet.autoSizeColumn(col);
+            }
         }
     }
 
@@ -467,78 +501,233 @@ public class GradeMixOptimizerServiceImpl implements GradeMixOptimizerService {
             String verticalName = verticalRepository.findById(plants.getVerticalFKId())
                 .orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
 
-            // Build displayName -> lineId map for all lines
-            List<Map<String, Object>> lines = getLineDetailsForPlant(plantId, verticalName);
-            Map<String, String> displayNameToLineId = new HashMap<>();
-            for (Map<String, Object> line : lines) {
-                String lineId = getMapValue(line, "id");
-                String displayName = getMapValue(line, "displayName");
-                if (displayName != null && lineId != null) {
-                    displayNameToLineId.put(displayName.trim(), lineId);
-                }
-            }
+            Map<String, String> displayNameToLineId = buildDisplayNameToLineIdMap(plantId, verticalName);
+            List<String> dynamicMonthHeaders = getFinancialYearMonths(aopYear);
 
-            DataFormatter fmt = new DataFormatter();
+            ExcelParseResult parseResult = parseBudgetedOperatingHoursExcel(
+                workbook, displayNameToLineId, dynamicMonthHeaders, new DataFormatter());
+
+            List<BudgetedOperatingHoursDTO> validRecords = parseResult.validRecords;
+            List<BudgetedOperatingHoursDTO> failedRecords = parseResult.failedRecords;
+
             int totalSaved = 0;
-
-            for (int sheetIdx = 0; sheetIdx < workbook.getNumberOfSheets(); sheetIdx++) {
-                Sheet sheet = workbook.getSheetAt(sheetIdx);
-                if (sheet == null) continue;
-
-                String sheetName = sheet.getSheetName();
-                String lineId = displayNameToLineId.get(sheetName.trim());
-                if (lineId == null) continue;
-
-                Row headerRow = sheet.getRow(0);
-                if (headerRow == null) continue;
-
-                // Map header names to column indices
-                Map<String, Integer> headerIndex = new HashMap<>();
-                int lastCell = headerRow.getLastCellNum();
-                for (int c = 0; c < lastCell; c++) {
-                    Cell cell = headerRow.getCell(c);
-                    if (cell != null) {
-                        headerIndex.put(fmt.formatCellValue(cell).trim(), c);
-                    }
-                }
-
-                List<String> dynamicMonthHeaders = getFinancialYearMonths(aopYear);
-
-                int lastRow = sheet.getLastRowNum();
-                for (int r = 1; r <= lastRow; r++) {
-                    Row row = sheet.getRow(r);
-                    if (row == null) continue;
-
-                    String idStr = getCellString(row, headerIndex, "Id", fmt);
-                    String gradeIdStr = getCellString(row, headerIndex, "GradeId", fmt);
-                    String remarks = getCellString(row, headerIndex, "Remarks", fmt);
-
-                    BudgetedOperatingHoursDTO dto = new BudgetedOperatingHoursDTO();
-                    dto.setId(idStr != null && !idStr.isEmpty() ? UUID.fromString(idStr) : null);
-                    dto.setGradeId(gradeIdStr != null && !gradeIdStr.isEmpty() ? UUID.fromString(gradeIdStr) : null);
-                    dto.setRemarks(remarks);
-
-                    // Map dynamic month headers to DTO fields (April to March order)
-                    String[] monthFields = {"apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec", "jan", "feb", "mar"};
-                    for (int m = 0; m < dynamicMonthHeaders.size() && m < monthFields.length; m++) {
-                        String colHeader = dynamicMonthHeaders.get(m);
-                        double val = getCellDouble(row, headerIndex, colHeader, fmt);
-                        setDtoMonthValue(dto, monthFields[m], val);
-                    }
-
-                    List<BudgetedOperatingHoursDTO> singleDto = new ArrayList<>();
-                    singleDto.add(dto);
-                    saveBudgetedOperatingHoursData(plantId, aopYear, UUID.fromString(lineId), singleDto);
+            for (BudgetedOperatingHoursDTO dto : validRecords) {
+                try {
+                  List<BudgetedOperatingHoursDTO> failedList = (List<BudgetedOperatingHoursDTO>) saveBudgetedOperatingHoursData(plantId, aopYear, dto.getLineId(), List.of(dto)).getData();
+                  if (failedList != null && !failedList.isEmpty()) {
+                    failedRecords.addAll(failedList);
+                    continue;
+                  }
                     totalSaved++;
+                } catch (Exception e) {
+                    dto.setSaveStatus("Failed");
+                    dto.setErrDescription("Save failed: " + e.getMessage());
+                    failedRecords.add(dto);
                 }
             }
 
-            vm.setCode(200);
-            vm.setMessage("Import completed successfully. Records saved: " + totalSaved);
+            if (!failedRecords.isEmpty()) {
+                byte[] errorFileBytes = exportBudgetedOperatingHoursExcel(plantId, aopYear, true, failedRecords);
+                vm.setData(Base64.getEncoder().encodeToString(errorFileBytes));
+                vm.setCode(400);
+                vm.setMessage("Import partially completed. Records saved: " + totalSaved
+                    + ", failed: " + failedRecords.size());
+            } else {
+                vm.setCode(200);
+                vm.setMessage("Import completed successfully. Records saved: " + totalSaved);
+            }
             return vm;
         } catch (Exception e) {
             throw new RuntimeException("Failed to import budgeted operating hours Excel", e);
         }
+    }
+
+    /**
+     * Reads every sheet of the workbook, matches sheets to known line IDs, parses each data row
+     * into a {@link BudgetedOperatingHoursDTO}, and separates the results into valid and failed
+     * collections.
+     */
+    private ExcelParseResult parseBudgetedOperatingHoursExcel(
+            XSSFWorkbook workbook,
+            Map<String, String> displayNameToLineId,
+            List<String> dynamicMonthHeaders,
+            DataFormatter fmt) {
+
+        String[] monthFields = {"apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec", "jan", "feb", "mar"};
+        List<BudgetedOperatingHoursDTO> validRecords = new ArrayList<>();
+        List<BudgetedOperatingHoursDTO> failedRecords = new ArrayList<>();
+
+        for (int sheetIdx = 0; sheetIdx < workbook.getNumberOfSheets(); sheetIdx++) {
+            Sheet sheet = workbook.getSheetAt(sheetIdx);
+            if (sheet == null) continue;
+
+            String sheetName = sheet.getSheetName();
+            String lineId = displayNameToLineId.get(sheetName.trim());
+            if (lineId == null) continue;
+
+            Row headerRow = sheet.getRow(0);
+            if (headerRow == null) continue;
+
+            Map<String, Integer> headerIndex = buildHeaderIndex(headerRow, fmt);
+
+            int lastRow = sheet.getLastRowNum();
+            for (int r = 1; r <= lastRow; r++) {
+                Row row = sheet.getRow(r);
+                if (row == null) continue;
+
+                BudgetedOperatingHoursDTO dto = new BudgetedOperatingHoursDTO();
+                dto.setLineName(sheetName);
+                dto.setLineId(UUID.fromString(lineId));
+
+                try {
+                    populateDtoFromRow(dto, row, headerIndex, dynamicMonthHeaders, monthFields, fmt);
+                    validRecords.add(dto);
+                } catch (MissingIdException e) {
+                    dto.setSaveStatus("Failed");
+                    dto.setErrDescription(e.getMessage());
+                    failedRecords.add(dto);
+                } catch (Exception e) {
+                    dto.setSaveStatus("Failed");
+                    dto.setErrDescription("Row parse error: " + e.getMessage());
+                    failedRecords.add(dto);
+                }
+            }
+        }
+
+        return new ExcelParseResult(validRecords, failedRecords);
+    }
+
+    private void populateDtoFromRow(
+            BudgetedOperatingHoursDTO dto,
+            Row row,
+            Map<String, Integer> headerIndex,
+            List<String> dynamicMonthHeaders,
+            String[] monthFields,
+            DataFormatter fmt) {
+
+        String idStr = getCellString(row, headerIndex, "Id", fmt);
+        dto.setDisplayName(getCellString(row, headerIndex, "DisplayName", fmt));
+        dto.setRemarks(getCellString(row, headerIndex, "Remarks", fmt));
+
+      
+
+        dto.setId(UUID.fromString(idStr));
+        String gradeIdStr = getCellString(row, headerIndex, "GradeId", fmt);
+        dto.setGradeId(gradeIdStr != null && !gradeIdStr.isEmpty() ? UUID.fromString(gradeIdStr) : null);
+
+        for (int m = 0; m < dynamicMonthHeaders.size() && m < monthFields.length; m++) {
+            double val = getCellDouble(row, headerIndex, dynamicMonthHeaders.get(m), fmt);
+            setDtoMonthValue(dto, monthFields[m], val);
+        }
+    }
+
+    private Map<String, String> buildDisplayNameToLineIdMap(UUID plantId, String verticalName) {
+        List<Map<String, Object>> lines = getLineDetailsForPlant(plantId, verticalName);
+        Map<String, String> displayNameToLineId = new HashMap<>();
+        for (Map<String, Object> line : lines) {
+            String lineId = getMapValue(line, "id");
+            String displayName = getMapValue(line, "displayName");
+            if (displayName != null && lineId != null) {
+                displayNameToLineId.put(displayName.trim(), lineId);
+            }
+        }
+        return displayNameToLineId;
+    }
+
+    private static Map<String, Integer> buildHeaderIndex(Row headerRow, DataFormatter fmt) {
+        Map<String, Integer> headerIndex = new HashMap<>();
+        int lastCell = headerRow.getLastCellNum();
+        for (int c = 0; c < lastCell; c++) {
+            Cell cell = headerRow.getCell(c);
+            if (cell != null) {
+                headerIndex.put(fmt.formatCellValue(cell).trim(), c);
+            }
+        }
+        return headerIndex;
+    }
+
+    private static class ExcelParseResult {
+        final List<BudgetedOperatingHoursDTO> validRecords;
+        final List<BudgetedOperatingHoursDTO> failedRecords;
+
+        ExcelParseResult(List<BudgetedOperatingHoursDTO> validRecords, List<BudgetedOperatingHoursDTO> failedRecords) {
+            this.validRecords = validRecords;
+            this.failedRecords = failedRecords;
+        }
+    }
+
+    private static class MissingIdException extends RuntimeException {
+        MissingIdException(String message) {
+            super(message);
+        }
+    }
+
+    // ─── Remark validation helpers ────────────────────────────────────────────
+
+    /**
+     * Fetches a single existing record from the database by its primary key.
+     * Returns {@code null} if no record is found.
+     */
+    private BudgetedOperatingHoursDTO fetchExistingBudgetedOperatingHoursRecord(UUID id) {
+        String sql = "SELECT Id, GradeId, April, May, June, July, August, September, " +
+                     "October, November, December, January, February, March, Remarks " +
+                     "FROM GradewiseMonthWiseBudgetedOperatingHours WHERE Id = ?";
+        List<BudgetedOperatingHoursDTO> results = jdbcTemplate.query(sql, (rs, rowNum) ->
+            BudgetedOperatingHoursDTO.builder()
+                .id(rs.getString("Id") != null ? UUID.fromString(rs.getString("Id")) : null)
+                .gradeId(rs.getString("GradeId") != null ? UUID.fromString(rs.getString("GradeId")) : null)
+                .apr(rs.getDouble("April"))
+                .may(rs.getDouble("May"))
+                .jun(rs.getDouble("June"))
+                .jul(rs.getDouble("July"))
+                .aug(rs.getDouble("August"))
+                .sep(rs.getDouble("September"))
+                .oct(rs.getDouble("October"))
+                .nov(rs.getDouble("November"))
+                .dec(rs.getDouble("December"))
+                .jan(rs.getDouble("January"))
+                .feb(rs.getDouble("February"))
+                .mar(rs.getDouble("March"))
+                .remarks(rs.getString("Remarks"))
+                .build(),
+            id.toString()
+        );
+        return results.isEmpty() ? null : results.get(0);
+    }
+
+    /**
+     * Returns {@code true} when at least one monthly value (Apr–Mar) has changed
+     * but the remark remains the same as the existing record — meaning the update
+     * should be skipped until the user also provides an updated remark.
+     *
+     * <p>Returns {@code false} (allow update) when:
+     * <ul>
+     *   <li>No monthly values have changed, or</li>
+     *   <li>At least one monthly value has changed <em>and</em> the remark has also changed.</li>
+     * </ul>
+     */
+    private boolean isRemarkValidationFailed(BudgetedOperatingHoursDTO existing, BudgetedOperatingHoursDTO incoming) {
+        boolean monthlyChanged =
+            !Objects.equals(existing.getApr(), incoming.getApr()) ||
+            !Objects.equals(existing.getMay(), incoming.getMay()) ||
+            !Objects.equals(existing.getJun(), incoming.getJun()) ||
+            !Objects.equals(existing.getJul(), incoming.getJul()) ||
+            !Objects.equals(existing.getAug(), incoming.getAug()) ||
+            !Objects.equals(existing.getSep(), incoming.getSep()) ||
+            !Objects.equals(existing.getOct(), incoming.getOct()) ||
+            !Objects.equals(existing.getNov(), incoming.getNov()) ||
+            !Objects.equals(existing.getDec(), incoming.getDec()) ||
+            !Objects.equals(existing.getJan(), incoming.getJan()) ||
+            !Objects.equals(existing.getFeb(), incoming.getFeb()) ||
+            !Objects.equals(existing.getMar(), incoming.getMar());
+
+        if (!monthlyChanged) {
+            return false;
+        }
+
+        String existingRemark = existing.getRemarks() != null ? existing.getRemarks().trim() : "";
+        String incomingRemark = incoming.getRemarks() != null ? incoming.getRemarks().trim() : "";
+        return existingRemark.equals(incomingRemark);
     }
 
     // ─── Private helpers ─────────────────────────────────────────────────────
