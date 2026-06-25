@@ -234,10 +234,14 @@ const SelectivityData = (props) => {
       )
 
       if (response?.code == 200) {
-        setSnackbarData({
-          message: 'Saved Successfully!',
-          severity: 'success',
-        })
+
+        if (!IS_AROMATICS_PMD) {
+          setSnackbarData({
+            message: 'Saved Successfully!',
+            severity: 'success',
+          })
+        }
+
         setLoading(false)
         setSnackbarOpen(true)
         // setIsEdited(false)
@@ -327,11 +331,19 @@ const SelectivityData = (props) => {
 
       if (response) {
         setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Saved Successfully!',
-          severity: 'success',
-        })
 
+        if (IS_AROMATICS_PMD) {
+          setSnackbarData({
+            message: 'Saved Successfully , Please load the data agian !',
+            severity: 'info',
+            autoHide: false
+          })
+        } else {
+          setSnackbarData({
+            message: 'Saved Successfully!',
+            severity: 'success',
+          })
+        }
         setModifiedCells({})
         setLoading(false)
 

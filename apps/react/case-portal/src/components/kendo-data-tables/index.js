@@ -322,6 +322,19 @@ const KendoDataTables = ({
     'PYROLYSIS GASOLINE',
     'Benzene Content in feed for PyGas',
   ].map((n) => n.trim().toLowerCase())
+
+  const RED_HIGHLIGHT_PRODUCT_NAMES_STEADY_STATE_NORMS_NP = [
+    'Tatoray Hydrogen', 'PACOL HYDROGEN', 'PX Hydrogen'
+  ].map((n) => n.trim().toLowerCase())
+
+  const RED_HIGHLIGHT_PRODUCT_NAMES_STEADY_STATE_NORMS_LAB = [
+    'PX Hydrogen', 'HYDROGENT'
+  ].map((n) => n.trim().toLowerCase())
+
+
+  const RED_HIGHLIGHT_PRODUCT_NAMES_STEADY_STATE_NORMS = lowerPlantName == 'np' ? RED_HIGHLIGHT_PRODUCT_NAMES_STEADY_STATE_NORMS_NP : RED_HIGHLIGHT_PRODUCT_NAMES_STEADY_STATE_NORMS_LAB
+
+
   const toggleGrid = () => {
     setGridExpanded((prev) => !prev)
   }
@@ -1702,13 +1715,22 @@ const KendoDataTables = ({
           .toLowerCase(),
       )
 
+    const isProductNameTargetSSN =
+      props.field === 'productName' &&
+      permissions?.isShowColoredPartucilars &&
+      RED_HIGHLIGHT_PRODUCT_NAMES_STEADY_STATE_NORMS.includes(
+        String(value || '')
+          .trim()
+          .toLowerCase(),
+      )
+
     return (
       <td
         {...props.tdProps}
         title={value}
         className={`${props.tdProps?.className || ''} ${isRed ? 'edited-cell' : ''}`.trim()}
       >
-        {isProductNameTarget ? (
+        {isProductNameTarget || isProductNameTargetSSN ? (
           <span
             ref={(el) => {
               if (el) {

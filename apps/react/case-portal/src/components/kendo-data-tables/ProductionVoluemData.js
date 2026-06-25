@@ -1085,16 +1085,7 @@ const ProductionvolumeData = ({
         }))
         setRowsMaxCapacity(formatted)
 
-        // For AROMATICS_HMD/PMD, compute PERCENTAGE_SUMMARY as production / maxCapacity * 100
-        // (same approach as ProductionTarget uses for elastomer)
-        if (IS_AROMATICS_HMD || IS_AROMATICS_PMD) {
-          const currentRows = rows || []
-          const percentageFromMax = normalizeAllRows(currentRows, formatted).map((item) => ({
-            ...item,
-            isEditable: false,
-          }))
-          setRowsPercentageSummary(percentageFromMax)
-        }
+
       } else {
         setRowsMaxCapacity([])
       }
@@ -1113,6 +1104,18 @@ const ProductionvolumeData = ({
   useEffect(() => {
     fetchMaxCapacityData(unitMaxCapacity)
   }, [unitMaxCapacity, PLANT_ID, yearChanged, keycloak])
+
+  // For AROMATICS_HMD/PMD, compute PERCENTAGE_SUMMARY once both rows and maxCapacity are available
+  // (same approach as ProductionTarget uses for elastomer: production / maxCapacity * 100)
+  useEffect(() => {
+    if ((IS_AROMATICS_HMD || IS_AROMATICS_PMD) && rows?.length > 0 && rowsMaxCapacity?.length > 0) {
+      const percentageFromMax = normalizeAllRows(rows, rowsMaxCapacity).map((item) => ({
+        ...item,
+        isEditable: false,
+      }))
+      setRowsPercentageSummary(percentageFromMax)
+    }
+  }, [rows, rowsMaxCapacity, IS_AROMATICS_HMD, IS_AROMATICS_PMD])
 
   const handleCalculateMeg = async () => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return

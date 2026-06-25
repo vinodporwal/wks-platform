@@ -87,6 +87,7 @@ const NormalOpNormsScreen = () => {
   const isPEPP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const isPET = lowerVertName === 'pet'
   const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
+  const IS_AROMATICS_PMD = lowerVertName === 'aromatics' && lowerSiteName === 'pmd'
   const IS_VCM_VERTICAL = lowerVertName === 'vcm'
   const IS_ELASTOMER_HMD_SBR =
     VERTICAL_NAME_NO_CASE === 'ELASTOMER' &&
@@ -774,6 +775,7 @@ const NormalOpNormsScreen = () => {
       uploadExcelBtn: true,
       isHeight: lowerVertName !== 'meg' && rows?.length > 10,
       highlightShutdownConsumption: IS_VCM_VERTICAL ? true : false,
+      isShowColoredPartucilars: IS_AROMATICS_PMD ? true : false,
     },
     isOldYear,
   )

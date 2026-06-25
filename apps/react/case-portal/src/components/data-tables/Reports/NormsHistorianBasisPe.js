@@ -592,6 +592,8 @@ const NormsHistorianBasisPe = () => {
           <>
             {gridNames.map((name) => {
               const d = dataMap[name] || { rows: [], columns: [] }
+              // Hide grids with GRID_TYPE === 'GENERAL_NOTES'
+              if (d.rows?.[0]?.GRID_TYPE === 'GENERAL_NOTES') return null
               return (
                 <div key={name}>
                   <CustomAccordion defaultExpanded disableGutters>
