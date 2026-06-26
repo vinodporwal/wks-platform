@@ -48,7 +48,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               },
               {
                 field: 'material',
-                title: 'Raw material',
+                title: 'Particular',
                 editable: false,
                 widthT: 200,
               },
@@ -228,7 +228,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               },
               {
                 field: 'material',
-                title: 'Raw material',
+                title: 'Particular',
                 editable: false,
                 widthT: 200,
               },
@@ -402,7 +402,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               },
               {
                 field: 'material',
-                title: 'Raw material',
+                title: 'Particular',
                 editable: false,
                 widthT: 200,
               },
@@ -576,7 +576,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               },
               {
                 field: 'material',
-                title: 'Raw material',
+                title: 'Particular',
                 editable: false,
                 widthT: 200,
               },
@@ -750,7 +750,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               },
               {
                 field: 'material',
-                title: 'Raw material',
+                title: 'Particular',
                 editable: false,
                 widthT: 200,
               },
@@ -923,7 +923,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               },
               {
                 field: 'material',
-                title: 'Raw material',
+                title: 'Particular',
                 editable: false,
                 widthT: 200,
               },
@@ -1096,7 +1096,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               },
               {
                 field: 'material',
-                title: 'Raw material',
+                title: 'Particular',
                 widthT: 200,
                 editable: false,
               },
@@ -1310,7 +1310,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               },
               {
                 field: 'material',
-                title: Title_Name,
+                title: 'Particular',
                 editable: false,
                 widthT: 200,
               },
@@ -1490,7 +1490,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               },
               {
                 field: 'material',
-                title: Title_Name,
+                title: 'Particular',
                 editable: false,
                 widthT: 200,
               },
@@ -1664,7 +1664,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               },
               {
                 field: 'material',
-                title: Title_Name,
+                title: 'Particular',
                 editable: false,
                 widthT: 200,
               },
@@ -1838,7 +1838,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               },
               {
                 field: 'material',
-                title: 'Raw material',
+                title: 'Particular',
                 editable: false,
                 widthT: 200,
               },
@@ -2012,7 +2012,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               },
               {
                 field: 'material',
-                title: 'Raw material',
+                title: 'Particular',
                 editable: false,
                 widthT: 200,
               },
@@ -2185,7 +2185,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               },
               {
                 field: 'material',
-                title: 'Raw material',
+                title: 'Particular',
                 editable: false,
                 widthT: 200,
               },
@@ -2358,7 +2358,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
               },
               {
                 field: 'material',
-                title: Title_Name,
+                title: 'Particular',
                 editable: false,
                 widthT: 200,
               },

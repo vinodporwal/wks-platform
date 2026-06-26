@@ -5,8 +5,10 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -40,8 +42,10 @@ import com.wks.caseengine.cpp.dto.norm.NormsMonthValueDTO;
 import com.wks.caseengine.cpp.entity.NormsMonthDetail;
 import com.wks.caseengine.cpp.repository.NormsMonthDetailRepository;
 import com.wks.caseengine.cpp.service.NormBasedUtilityBudgetService;
+import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.AopCalculationRepository;
 import com.wks.caseengine.repository.FinancialYearMonthRepository;
 
 import jakarta.persistence.EntityManager;
@@ -64,6 +68,9 @@ public class NormBasedUtilityBudgetServiceImpl implements NormBasedUtilityBudget
 
     @Autowired
     private  FinancialYearMonthRepository fyRepo;
+
+    @Autowired
+    private AopCalculationRepository aopCalculationRepository;
     
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -279,9 +286,15 @@ public class NormBasedUtilityBudgetServiceImpl implements NormBasedUtilityBudget
 
             log.info("Successfully processed {} rows into DTO list", list.size());
 
+            Map<String, Object> map = new HashMap<>();
+            List<AopCalculation> aopCalculation = aopCalculationRepository
+					.findByPlantIdAndAopYearAndCalculationScreen(cppPlantId, financialYear, "cpp-norms");
+			map.put("aopCalculation", aopCalculation);
+            map.put("list", list);
+
             vm.setCode(200);
             vm.setMessage("Norm Based Utility Budget fetched successfully");
-            vm.setData(list);
+            vm.setData(map);
 
             log.info("=== Completed getNormBasedUtilityBudget successfully ===");
             return vm;

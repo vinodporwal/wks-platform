@@ -2,8 +2,10 @@ package com.wks.caseengine.cpp.serviceimpl;
 
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -32,9 +34,13 @@ import com.wks.caseengine.cpp.dto.SRMappingDTO;
 import com.wks.caseengine.cpp.entity.CPPSRMapping;
 import com.wks.caseengine.cpp.repository.CPPSRMappingRepository;
 import com.wks.caseengine.cpp.service.CPPSRMappingService;
+import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.AopCalculationRepository;
 import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.utility.Utility;
 
 /**
@@ -53,6 +59,12 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
 
     @Autowired
     private PlantsRepository plantsRepository;
+
+    @Autowired
+    private ScreenMappingRepository screenMappingRepository;
+
+    @Autowired
+    private AopCalculationRepository aopCalculationRepository;
 
     public CPPSRMappingServiceImpl(CPPSRMappingRepository repository) {
         this.repository = repository;
@@ -521,6 +533,7 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
             }
 
             int processed = 0;
+            Set<UUID> uniquePlantIds = new LinkedHashSet<>();
             for (SRMappingDTO dto : dtoList) {
 
                 // ── Step 1: Update Receiver Cost Center (Utility_CostCenter_FK_Id) ──────────
@@ -621,12 +634,33 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                     // Only triggered when a new NormsHeader was created (not on update).
                     if (newNormsHeaderId != null && financialYear != null && !financialYear.isBlank()) {
                         insertNormsMonthDetails(newNormsHeaderId, financialYear);
+
+                        // ── Step 8: Insert CPPNorms default row for new NormsHeader ─────────────
+                        insertCppNorms(newNormsHeaderId, financialYear);
                     }
                 } else {
                     logger.info("updateSRMappingsByPlant: skipping NormsHeader – cppPlantId={} is not an NMD site", dto.getCppPlantId());
                 }
 
                 processed++;
+                // Collect unique cppPlantId values for AopCalculation flag update
+                if (dto.getCppPlantId() != null) {
+                    uniquePlantIds.add(dto.getCppPlantId());
+                }
+            }
+            if (processed > 0 && !uniquePlantIds.isEmpty()) {
+                List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("cpp-sr-mapping");
+                for (UUID plantUUID : uniquePlantIds) {
+                    for (ScreenMapping screenMapping : screenMappingList) {
+                        AopCalculation aopCalculation = new AopCalculation();
+                        aopCalculation.setAopYear(financialYear);
+                        aopCalculation.setIsChanged(true);
+                        aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+                        aopCalculation.setPlantId(plantUUID);
+                        aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+                        aopCalculationRepository.save(aopCalculation);
+                    }
+                }
             }
 
             response.setCode(200);
@@ -737,19 +771,19 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                         "IsActive = 1 " +
                         "WHERE Id = ?";
                 db1JdbcTemplate.update(updateSql,
-                        dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,
-                        dto.getReceiverUtilityName(),
-                        dto.getReceiverUtilityCode(),
-                        dto.getReceiverUtilityUOM(),
-                        "Utilities",
-                        dto.getSenderUtilityName(),
-                        dto.getSenderPlantName(),
-                        dto.getSenderPlantId()         != null ? dto.getSenderPlantId().toString()       : null,
-                        resolvedSenderUtilityId        != null ? resolvedSenderUtilityId.toString()      : null,
-                        dto.getSenderUtilityUOM(),
-                        dto.getSenderUtilityCode(),
-                        dto.getRemarks(),
-                        dto.getReceiverPlantCode(),
+                        dto.getSenderPlantId()            != null ? dto.getSenderPlantId().toString()          : null,  // Plant_FK_Id
+                        dto.getSenderUtilityName(),                                                               // UtilityName
+                        dto.getSenderUtilityCode(),                                                               // UtilityId
+                        dto.getSenderUtilityUOM(),                                                                // UtilityUOM
+                        "Utilities",                                                                              // AccountName
+                        dto.getReceiverUtilityName(),                                                             // MaterialName
+                        dto.getReceiverPlantName(),                                                               // IssuingPlantName
+                        dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,  // IssuingPlant_FK_Id
+                        resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,  // NormParameter_FK_Id
+                        dto.getReceiverUtilityUOM(),                                                              // IssuingUOM
+                        dto.getReceiverUtilityCode(),                                                             // MaterialId
+                        dto.getRemarks(),                                                                         // Remarks
+                        dto.getReceiverPlantCode(),                                                               // plantCode
                         existingId.toString()
                 );
                 logger.info("resolveOrUpdateNormsHeader: updated NormsHeader Id={} for srMappingId={}", existingId, srMappingId);
@@ -766,19 +800,19 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 1, ?, ?, ?, ?)";
                 db1JdbcTemplate.update(insertSql,
                         newId.toString(),
-                        dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,
-                        dto.getReceiverUtilityName(),
-                        dto.getReceiverUtilityCode(),
-                        dto.getReceiverUtilityUOM(),
-                        "Utilities",
-                        dto.getSenderUtilityName(),
-                        dto.getSenderPlantName(),
-                        dto.getSenderPlantId()         != null ? dto.getSenderPlantId().toString()       : null,
-                        resolvedSenderUtilityId        != null ? resolvedSenderUtilityId.toString()      : null,
-                        dto.getSenderUtilityUOM(),
-                        dto.getSenderUtilityCode(),
-                        dto.getRemarks(),
-                        dto.getReceiverPlantCode(),
+                        dto.getSenderPlantId()            != null ? dto.getSenderPlantId().toString()          : null,  // Plant_FK_Id
+                        dto.getSenderUtilityName(),                                                               // UtilityName
+                        dto.getSenderUtilityCode(),                                                               // UtilityId
+                        dto.getSenderUtilityUOM(),                                                                // UtilityUOM
+                        "Utilities",                                                                              // AccountName
+                        dto.getReceiverUtilityName(),                                                             // MaterialName
+                        dto.getReceiverPlantName(),                                                               // IssuingPlantName
+                        dto.getReceiverPlantId()       != null ? dto.getReceiverPlantId().toString()    : null,  // IssuingPlant_FK_Id
+                        resolvedReceiverUtilityId      != null ? resolvedReceiverUtilityId.toString()    : null,  // NormParameter_FK_Id
+                        dto.getReceiverUtilityUOM(),                                                              // IssuingUOM
+                        dto.getReceiverUtilityCode(),                                                             // MaterialId
+                        dto.getRemarks(),                                                                         // Remarks
+                        dto.getReceiverPlantCode(),                                                               // plantCode
                         srMappingId.toString()
                 );
                 logger.info("resolveOrUpdateNormsHeader: inserted NormsHeader Id={} for srMappingId={}", newId, srMappingId);
@@ -820,21 +854,27 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
             return;
         }
         try {
-            // Parse base year from "2025-26" → 2025
-            int baseYear;
+            // Parse financial year "2025-26" → startYear=2025, endYear=2026
+            int startYear;
+            int endYear;
             try {
-                baseYear = Integer.parseInt(financialYear.split("-")[0].trim());
+                startYear = Integer.parseInt(financialYear.split("-")[0].trim());
+                endYear   = startYear + 1;
             } catch (NumberFormatException e) {
                 logger.error("insertNormsMonthDetails: could not parse year from financialYear='{}'", financialYear);
                 return;
             }
 
-            // Fetch all FinancialYearMonth rows for the base year
-            String fymSql = "SELECT Id FROM FinancialYearMonth WHERE Year = ? ORDER BY Month";
-            List<String> fymIds = db1JdbcTemplate.queryForList(fymSql, String.class, baseYear);
+            // Fetch the 12 FinancialYearMonth rows that span the financial year:
+            //   Apr–Dec of startYear  +  Jan–Mar of endYear
+            // Mirrors: WHERE (Year = @StartYear AND Month >= 4) OR (Year = @EndYear AND Month <= 3)
+            String fymSql = "SELECT Id FROM FinancialYearMonth " +
+                    "WHERE (Year = ? AND Month >= 4) OR (Year = ? AND Month <= 3) " +
+                    "ORDER BY Year, Month";
+            List<String> fymIds = db1JdbcTemplate.queryForList(fymSql, String.class, startYear, endYear);
 
             if (fymIds.isEmpty()) {
-                logger.warn("insertNormsMonthDetails: no FinancialYearMonth records found for year={}", baseYear);
+                logger.warn("insertNormsMonthDetails: no FinancialYearMonth records found for financialYear={}", financialYear);
                 return;
             }
 
@@ -854,11 +894,60 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                         newDetailId, normsHeaderId, fymId);
             }
 
-            logger.info("insertNormsMonthDetails: inserted {} month records for NormsHeader={}, year={}",
-                    fymIds.size(), normsHeaderId, baseYear);
+            logger.info("insertNormsMonthDetails: inserted {} month records for NormsHeader={}, financialYear={}",
+                    fymIds.size(), normsHeaderId, financialYear);
 
         } catch (Exception e) {
             logger.error("insertNormsMonthDetails error for normsHeaderId={}: {}", normsHeaderId, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Inserts a default CPPNorms row for a newly created NormsHeader.
+     *
+     * <p>Fixed defaults:
+     * <ul>
+     *   <li>NormType_FK_Id       = 6</li>
+     *   <li>All month norms      = 0 (Apr … Mar)</li>
+     *   <li>ApplyActualNormToAll = 1</li>
+     *   <li>CreatedBy / ModifiedBy = "SYSTEM"</li>
+     *   <li>CreatedDate / ModifiedDate = GETDATE()</li>
+     *   <li>Remarks = NULL</li>
+     *   <li>FinancialYear and AOPYear are both set to financialYear (they are always equal)</li>
+     * </ul>
+     *
+     * @param normsHeaderId the Id of the newly inserted NormsHeader row
+     * @param financialYear financial year string, e.g. "2025-26" (used for both FinancialYear and AOPYear)
+     */
+    private void insertCppNorms(UUID normsHeaderId, String financialYear) {
+        if (normsHeaderId == null || financialYear == null || financialYear.isBlank()) {
+            logger.warn("insertCppNorms: skipped – normsHeaderId={}, financialYear={}", normsHeaderId, financialYear);
+            return;
+        }
+        try {
+            UUID newId = UUID.randomUUID();
+            String insertSql = "INSERT INTO CPPNorms " +
+                    "(Id, NormsHeader_FK_Id, FinancialYear, AOPYear, NormType_FK_Id, " +
+                    " Apr_Norms, May_Norms, Jun_Norms, Jul_Norms, Aug_Norms, Sep_Norms, " +
+                    " Oct_Norms, Nov_Norms, Dec_Norms, Jan_Norms, Feb_Norms, Mar_Norms, " +
+                    " Remarks, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, ApplyActualNormToAll) " +
+                    "VALUES (?, ?, ?, ?, 6, " +
+                    " 0, 0, 0, 0, 0, 0, " +
+                    " 0, 0, 0, 0, 0, 0, " +
+                    " 'Add new record', 'SYSTEM', GETDATE(), 'SYSTEM', GETDATE(), 1)";
+
+            db1JdbcTemplate.update(insertSql,
+                    newId.toString(),
+                    normsHeaderId.toString(),
+                    financialYear,   // FinancialYear
+                    financialYear    // AOPYear (same value)
+            );
+
+            logger.info("insertCppNorms: inserted CPPNorms Id={} for NormsHeader={}, financialYear={}",
+                    newId, normsHeaderId, financialYear);
+
+        } catch (Exception e) {
+            logger.error("insertCppNorms error for normsHeaderId={}: {}", normsHeaderId, e.getMessage(), e);
         }
     }
 

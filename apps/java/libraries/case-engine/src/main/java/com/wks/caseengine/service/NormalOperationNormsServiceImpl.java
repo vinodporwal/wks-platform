@@ -2406,7 +2406,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			String viewName = "vwScrn" + vertical.getName() + "Grade";
 			// Validate or sanitize viewName before using it directly in the query to
 			// prevent SQL injection
-			String sql = "SELECT * FROM " + viewName
+			String sql = "SELECT * FROM " + "[" + viewName + "]" 
 					+ " WHERE FinancialYear = :financialYear AND Plant_FK_Id = :plantId";
 
 			Query query = entityManager.createNativeQuery(sql);

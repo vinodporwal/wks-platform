@@ -686,7 +686,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			String viewName = "vwScrn" + vertical.getName() + "ConsumptionAOPGrade";
 			// Validate or sanitize viewName before using it directly in the query to
 			// prevent SQL injection
-			String sql = "SELECT * FROM " + viewName
+			String sql = "SELECT * FROM " + "[" + viewName + "]"
 					+ " WHERE AOPYear = :financialYear AND Plant_FK_Id = :plantId";
 
 			Query query = entityManager.createNativeQuery(sql);

@@ -391,7 +391,12 @@ const ShutDown = ({ permissions }) => {
         (d, i) => d && allDescriptions.indexOf(d) !== i,
       )
 
-      if (duplicate && lowerVertName !== 'pta' && !IS_AROMATIC_HMD) {
+      if (
+        duplicate &&
+        lowerVertName !== 'pta' &&
+        !IS_AROMATIC_HMD &&
+        !IS_CHEMICAL_HMD_DROPDOWNDESC
+      ) {
         rows.forEach((row) => {
           if ((row.discription || '').trim().toLowerCase() === duplicate) {
             row.isError = true
