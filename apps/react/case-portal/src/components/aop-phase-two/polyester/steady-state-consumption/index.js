@@ -248,7 +248,7 @@ const SteadyStateConsumption = () => {
   const fetchData = useCallback(
     async (gradeId) => {
       if (!PLANT_ID || !AOP_YEAR) return
-      if (!gradeId) return
+      // if (!gradeId) return
 
       setLoading(true)
       setRows([])
@@ -256,7 +256,7 @@ const SteadyStateConsumption = () => {
         let response =
           await SteadyStateConsumptionApiService.getSteadyStateConsumptionByGrade(
             keycloak,
-            gradeId,
+            null,
             PLANT_ID,
             AOP_YEAR,
           )
@@ -292,16 +292,16 @@ const SteadyStateConsumption = () => {
     setAllRedCell([])
     setGrades([])
     setSelectedGradeId(null)
-    Promise.all([fetchGrades(), fetchNormTransactions()])
+    // Promise.all([fetchNormTransactions()])
   }, [PLANT_ID, AOP_YEAR])
 
   // Re-fetch data when selectedGradeId changes
   useEffect(() => {
-    if (selectedGradeId) {
-      fetchData(selectedGradeId)
-      fetchNormTransactions()
-    }
-  }, [selectedGradeId, fetchData, fetchNormTransactions])
+    // if (selectedGradeId) {
+    // }
+    fetchData()
+    fetchNormTransactions()
+  }, [fetchData, fetchNormTransactions])
 
   const saveChanges = useCallback(async () => {
     const modifiedData = Object.values(modifiedCells)
@@ -352,7 +352,7 @@ const SteadyStateConsumption = () => {
         verticalFkId: row.verticalFkId || null,
         unit: row.unit || null,
         normParameterTypeId: row.normParameterTypeId || null,
-        gradeId: row.gradeId || selectedGradeId || null,
+        gradeId: null,
       }))
 
       const response =
@@ -360,7 +360,7 @@ const SteadyStateConsumption = () => {
           PLANT_ID,
           payload,
           keycloak,
-          selectedGradeId,
+          null,
           AOP_YEAR,
         )
 
@@ -368,7 +368,7 @@ const SteadyStateConsumption = () => {
         setSnackbarOpen(true)
         setSnackbarData({ message: 'Saved Successfully!', severity: 'success' })
         setModifiedCells({})
-        await fetchData(selectedGradeId)
+        await fetchData()
         await fetchNormTransactions()
       } else {
         setSnackbarOpen(true)
@@ -377,7 +377,10 @@ const SteadyStateConsumption = () => {
     } catch (error) {
       console.error('Error saving steady state consumption:', error)
       setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error saving data!', severity: 'error' })
+      setSnackbarData({
+        message: 'Save failed, please try again!',
+        severity: 'error',
+      })
     } finally {
       setLoading(false)
     }
@@ -386,7 +389,6 @@ const SteadyStateConsumption = () => {
     PLANT_ID,
     AOP_YEAR,
     keycloak,
-    selectedGradeId,
     fetchData,
     fetchNormTransactions,
   ])
@@ -414,8 +416,8 @@ const SteadyStateConsumption = () => {
           message: 'Data refreshed successfully!',
           severity: 'success',
         })
-        await fetchGrades()
-        await fetchData(selectedGradeId)
+        // await fetchGrades()
+        await fetchData()
         await fetchNormTransactions()
       } else {
         setSnackbarOpen(true)
@@ -476,7 +478,7 @@ const SteadyStateConsumption = () => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
-          selectedGradeId,
+          null,
         )
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -485,7 +487,7 @@ const SteadyStateConsumption = () => {
           severity: 'success',
         })
         setModifiedCells({})
-        await fetchData(selectedGradeId)
+        await fetchData()
         await fetchNormTransactions()
       } else if (response?.code === 400 && response?.data) {
         // Partial save — download error file
@@ -495,7 +497,7 @@ const SteadyStateConsumption = () => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
-        await fetchData(selectedGradeId)
+        await fetchData()
         await fetchNormTransactions()
       } else {
         setSnackbarOpen(true)
@@ -541,7 +543,7 @@ const SteadyStateConsumption = () => {
     showTitle: true,
     titleName: 'Steady State Consumption (Norm/Quantity)',
     // Grade dropdown (showG → showDropdown: true for PE)
-    showDropdown: true,
+    showDropdown: false,
     remarksEditable: true,
     marginBottom: true,
   }

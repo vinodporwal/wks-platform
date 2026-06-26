@@ -147,7 +147,7 @@ const ShutdownConsumption = () => {
   const fetchData = useCallback(
     async (gradeId) => {
       if (!PLANT_ID || !AOP_YEAR) return
-      if (!gradeId) return
+      // if (!gradeId) return
 
       setLoading(true)
       setRows([])
@@ -157,7 +157,6 @@ const ShutdownConsumption = () => {
             keycloak,
             PLANT_ID,
             AOP_YEAR,
-            gradeId,
           )
 
         if (
@@ -176,8 +175,7 @@ const ShutdownConsumption = () => {
               isEditable: true,
             }),
           )
-          const convertedData = convertRowsByUnit(formattedData, selectedUnit)
-          setRows(convertedData)
+          setRows(formattedData)
         } else {
           setRows([])
         }
@@ -188,7 +186,7 @@ const ShutdownConsumption = () => {
         setLoading(false)
       }
     },
-    [keycloak, PLANT_ID, AOP_YEAR, selectedUnit],
+    [keycloak, PLANT_ID, AOP_YEAR],
   )
 
   // Initial load: fetch grades and data
@@ -197,16 +195,16 @@ const ShutdownConsumption = () => {
     setRows([])
     setGrades([])
     setSelectedGradeId(null)
-    fetchGrades()
+    fetchData()
   }, [PLANT_ID, AOP_YEAR])
 
   // Re-fetch data when selectedGradeId or selectedUnit changes
-  useEffect(() => {
-    setModifiedCells({})
-    if (selectedGradeId) {
-      fetchData(selectedGradeId)
-    }
-  }, [selectedGradeId, selectedUnit, fetchData])
+  // useEffect(() => {
+  //   setModifiedCells({})
+  //   if (selectedGradeId) {
+  //     fetchData(selectedGradeId)
+  //   }
+  // }, [selectedGradeId, selectedUnit, fetchData])
 
   const saveChanges = useCallback(async () => {
     try {
@@ -250,7 +248,7 @@ const ShutdownConsumption = () => {
         return
       }
 
-      const dataToSave = convertDataForSave(modifiedData, selectedUnit).map(
+      const dataToSave = modifiedData.map(
         (row) => ({
           april: row.april || null,
           may: row.may || null,
@@ -272,7 +270,7 @@ const ShutdownConsumption = () => {
           id: row.idFromApi || null,
           remark: row.remarks || null,
           remarks: row.remarks || null,
-          gradeFkId: selectedGradeId || null,
+          gradeFkId: null,
         }),
       )
 
@@ -292,7 +290,7 @@ const ShutdownConsumption = () => {
         })
         setModifiedCells({})
         dispatch(setIsBlocked(false))
-        fetchData(selectedGradeId)
+        fetchData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -303,18 +301,21 @@ const ShutdownConsumption = () => {
       setLoading(false)
     } catch (error) {
       console.error('Error saving shutdown consumption data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Save failed, please try again!',
+        severity: 'error',
+      })
       setLoading(false)
     }
   }, [
     modifiedCells,
-    selectedUnit,
     AOP_YEAR,
     PLANT_ID,
     siteObject,
     VERTICAL_ID,
     dispatch,
     fetchData,
-    selectedGradeId,
   ])
 
   const handleExport = async () => {
@@ -361,7 +362,7 @@ const ShutdownConsumption = () => {
           severity: 'success',
         })
         setModifiedCells({})
-        fetchData(selectedGradeId)
+        fetchData()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = Array.from(byteCharacters, (char) =>
@@ -385,7 +386,7 @@ const ShutdownConsumption = () => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
-        fetchData(selectedGradeId)
+        fetchData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -432,7 +433,7 @@ const ShutdownConsumption = () => {
     saveBtn: true,
     showCalculate: false,
     allAction: true,
-    showDropdown: true,
+    showDropdown: false,
     showExport: true,
     showImport: true,
     showTitleNameBusiness: true,
