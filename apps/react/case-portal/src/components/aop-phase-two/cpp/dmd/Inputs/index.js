@@ -1,38 +1,29 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
-import AopTabs from 'components/AopTabs'
-import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
+import { Box, Stack } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import ImportPower from './ImportPower'
-import AssetAvailability from './AssetAvailability'
-import AssetCapacity from './AssetCapacity'
+import AssetCapacity from './AssetCapacity/index'
 import ShutdownAndOperational from './ShutdownAndOperational/index'
-import { generateMockData, getColumnsForTab } from './InputUtility'
+import { generateMockData } from './InputUtility'
 import ExportAvailability from './ExportAvailability'
 import HeatRate from './HeatRate/index'
 import FixedNorms from './FixedNorms'
 import Fuel from './Fuel/index'
 import AopDesignBasis from './AopDesignBasis'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
-import InputsJMD from '../jmd/Inputs/index'
-import Prices from './Prices/index'
-import InputsDMD from '../dmd/Inputs/index'
+import AopTabs from 'components/AopTabs'
+import AssetAvailability from './AssetAvailability/index'
+import Prices from '../../Inputs/Prices/index'
 
-const Inputs = () => {
+const InputsDMD = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, siteObject, verticalObject, year } = dataGridStore
-
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
-
-  const lowerVertName = verticalObject?.name?.toLowerCase()
-  const lowerSiteName = siteObject?.name?.toLowerCase()
-  const IS_CPP = lowerVertName === 'cpp'
 
   // State management
   const [tabObj, setTabObj] = useState([])
@@ -45,67 +36,93 @@ const Inputs = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  // Initialize tabs
   useEffect(() => {
-    const tabs = [
-      {
-        id: 'aop-design-basis',
-        name: 'aopDesignBasis',
-        displayName: 'AOP Design Basis',
-        displaySequence: 0,
-      },
-      {
-        id: 'purchase-power',
-        name: 'purchasePowerInput',
-        displayName: 'Purchase Power Input',
-        displaySequence: 1,
-      },
-      {
-        id: 'shutdown-operational',
-        name: 'shutdownOperationalHrs',
-        displayName: 'Shutdown and Operational Hrs.',
-        displaySequence: 2,
-      },
-      {
-        id: 'asset-priority',
-        name: 'assetPriority',
-        displayName: 'Asset Priority',
-        displaySequence: 3,
-      },
-      {
-        id: 'asset-capacity',
-        name: 'assetCapacity',
-        displayName: 'Asset Capacity',
-        displaySequence: 4,
-      },
-      {
-        id: 'heat-rate',
-        name: 'heatRate',
-        displayName: 'Heat Rate',
-        displaySequence: 5,
-      },
-      {
-        id: 'fixed-norms',
-        name: 'Norms',
-        displayName: 'Norms',
-        displaySequence: 6,
-      },
-      {
-        id: 'fuel-availability',
-        name: 'fuelAvailability',
-        displayName: 'Fuel Availability',
-        displaySequence: 7,
-      },
-      {
-        id: 'prices',
-        name: 'prices',
-        displayName: 'Prices',
-        displaySequence: 8,
-      },
-      // { id: 'export-availability',name:'exportAvailability', displayName: 'Export Availability', displaySequence: 6 },
-    ]
+    let tabs = []
+
+    switch (siteObject?.name?.toLowerCase()) {
+      case 'dmd':
+        tabs = [
+          {
+            id: 'aop-design-basis',
+            name: 'aopDesignBasis',
+            displayName: 'AOP Design Basis',
+            displaySequence: 0,
+          },
+          {
+            id: 'purchase-power',
+            name: 'purchasePowerInput',
+            displayName: 'Purchase Power Input',
+            displaySequence: 1,
+          },
+          {
+            id: 'shutdown-operational',
+            name: 'shutdownOperationalHrs',
+            displayName: 'Shutdown and Operational Hrs.',
+            displaySequence: 2,
+          },
+          {
+            id: 'asset-priority',
+            name: 'assetPriority',
+            displayName: 'Asset Priority',
+            displaySequence: 3,
+          },
+          {
+            id: 'asset-capacity',
+            name: 'assetCapacity',
+            displayName: 'Asset Capacity',
+            displaySequence: 4,
+          },
+          {
+            id: 'heat-rate',
+            name: 'heatRate',
+            displayName: 'Heat Rate',
+            displaySequence: 5,
+          },
+          {
+            id: 'fixed-norms',
+            name: 'Norms',
+            displayName: 'Norms',
+            displaySequence: 6,
+          },
+          {
+            id: 'fuel-availability',
+            name: 'fuelAvailability',
+            displayName: 'Fuel Availability',
+            displaySequence: 7,
+          },
+          {
+            id: 'prices',
+            name: 'prices',
+            displayName: 'Prices',
+            displaySequence: 8,
+          },
+        ]
+        break
+
+      case 'hmd':
+        tabs = [
+          {
+            id: 'aop-design-basis',
+            name: 'aopDesignBasis',
+            displayName: 'AOP Design Basis',
+            displaySequence: 0,
+          },
+          {
+            id: 'purchase-power',
+            name: 'purchasePowerInput',
+            displayName: 'Purchase Power Input',
+            displaySequence: 1,
+          },
+        ]
+        break
+
+      default:
+        tabs = []
+        break
+    }
+
     setTabObj(tabs)
-  }, [])
+  }, [siteObject])
 
   // Get current tab
   const currentTab = tabObj[tabIndex] || {}
@@ -187,53 +204,33 @@ const Inputs = () => {
     }
   }
 
-  const renderBySite = () => {
-    switch (lowerSiteName) {
-      case 'jmd':
-        return <InputsJMD />
-      case 'hmd':
-      case 'dmd':
-        return <InputsDMD />
-      // case 'hmd':
-      //   return <InputsHMD />
-      case 'nmd':
-      default:
-        return (
-          <>
-            {/* Tabs - sticky below StepperNav */}
-            <Box
-              sx={{
-                position: 'sticky',
-                top: -1,
-                zIndex: 10,
-                backgroundColor: '#ffffff',
-                borderBottom: 1,
-                borderColor: 'divider',
-                mb: 1,
-              }}
-            >
-              <AopTabs
-                tabIndex={tabIndex}
-                setTabIndex={setTabIndex}
-                tabs={tabObj?.map((tab) => tab.displayName || tab.name) || []}
-              />
-            </Box>
-
-            {/* Tab Content */}
-            <Box>{renderTabContent()}</Box>
-          </>
-        )
-    }
-  }
-
-  if (!IS_CPP) return null
-
   return (
     <Box sx={{ p: 0 }}>
       <LoaderBackdrop open={!!loading} />
-      {renderBySite()}
+
+      {/* Tabs - sticky below StepperNav */}
+      <Box
+        sx={{
+          position: 'sticky',
+          top: -1,
+          zIndex: 10,
+          backgroundColor: '#ffffff',
+          borderBottom: 1,
+          borderColor: 'divider',
+          mb: 1,
+        }}
+      >
+        <AopTabs
+          tabIndex={tabIndex}
+          setTabIndex={setTabIndex}
+          tabs={tabObj?.map((tab) => tab.displayName || tab.name) || []}
+        />
+      </Box>
+
+      {/* Tab Content */}
+      <Box>{renderTabContent()}</Box>
     </Box>
   )
 }
 
-export default Inputs
+export default InputsDMD
