@@ -634,6 +634,9 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                     // Only triggered when a new NormsHeader was created (not on update).
                     if (newNormsHeaderId != null && financialYear != null && !financialYear.isBlank()) {
                         insertNormsMonthDetails(newNormsHeaderId, financialYear);
+
+                        // ── Step 8: Insert CPPNorms default row for new NormsHeader ─────────────
+                        insertCppNorms(newNormsHeaderId, financialYear);
                     }
                 } else {
                     logger.info("updateSRMappingsByPlant: skipping NormsHeader – cppPlantId={} is not an NMD site", dto.getCppPlantId());
@@ -896,6 +899,55 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
 
         } catch (Exception e) {
             logger.error("insertNormsMonthDetails error for normsHeaderId={}: {}", normsHeaderId, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Inserts a default CPPNorms row for a newly created NormsHeader.
+     *
+     * <p>Fixed defaults:
+     * <ul>
+     *   <li>NormType_FK_Id       = 6</li>
+     *   <li>All month norms      = 0 (Apr … Mar)</li>
+     *   <li>ApplyActualNormToAll = 1</li>
+     *   <li>CreatedBy / ModifiedBy = "SYSTEM"</li>
+     *   <li>CreatedDate / ModifiedDate = GETDATE()</li>
+     *   <li>Remarks = NULL</li>
+     *   <li>FinancialYear and AOPYear are both set to financialYear (they are always equal)</li>
+     * </ul>
+     *
+     * @param normsHeaderId the Id of the newly inserted NormsHeader row
+     * @param financialYear financial year string, e.g. "2025-26" (used for both FinancialYear and AOPYear)
+     */
+    private void insertCppNorms(UUID normsHeaderId, String financialYear) {
+        if (normsHeaderId == null || financialYear == null || financialYear.isBlank()) {
+            logger.warn("insertCppNorms: skipped – normsHeaderId={}, financialYear={}", normsHeaderId, financialYear);
+            return;
+        }
+        try {
+            UUID newId = UUID.randomUUID();
+            String insertSql = "INSERT INTO CPPNorms " +
+                    "(Id, NormsHeader_FK_Id, FinancialYear, AOPYear, NormType_FK_Id, " +
+                    " Apr_Norms, May_Norms, Jun_Norms, Jul_Norms, Aug_Norms, Sep_Norms, " +
+                    " Oct_Norms, Nov_Norms, Dec_Norms, Jan_Norms, Feb_Norms, Mar_Norms, " +
+                    " Remarks, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, ApplyActualNormToAll) " +
+                    "VALUES (?, ?, ?, ?, 6, " +
+                    " 0, 0, 0, 0, 0, 0, " +
+                    " 0, 0, 0, 0, 0, 0, " +
+                    " 'Add new record', 'SYSTEM', GETDATE(), 'SYSTEM', GETDATE(), 1)";
+
+            db1JdbcTemplate.update(insertSql,
+                    newId.toString(),
+                    normsHeaderId.toString(),
+                    financialYear,   // FinancialYear
+                    financialYear    // AOPYear (same value)
+            );
+
+            logger.info("insertCppNorms: inserted CPPNorms Id={} for NormsHeader={}, financialYear={}",
+                    newId, normsHeaderId, financialYear);
+
+        } catch (Exception e) {
+            logger.error("insertCppNorms error for normsHeaderId={}: {}", normsHeaderId, e.getMessage(), e);
         }
     }
 
