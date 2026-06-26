@@ -248,31 +248,29 @@ const ShutdownConsumption = () => {
         return
       }
 
-      const dataToSave = modifiedData.map(
-        (row) => ({
-          april: row.april || null,
-          may: row.may || null,
-          june: row.june || null,
-          july: row.july || null,
-          august: row.august || null,
-          september: row.september || null,
-          october: row.october || null,
-          november: row.november || null,
-          december: row.december || null,
-          january: row.january || null,
-          february: row.february || null,
-          march: row.march || null,
-          financialYear: AOP_YEAR,
-          plantFKId: PLANT_ID,
-          siteFKId: siteObject?.id,
-          materialFKId: row.materialFKId || row.normParametersFKId,
-          verticalFKId: VERTICAL_ID,
-          id: row.idFromApi || null,
-          remark: row.remarks || null,
-          remarks: row.remarks || null,
-          gradeFkId: null,
-        }),
-      )
+      const dataToSave = modifiedData.map((row) => ({
+        april: row.april || null,
+        may: row.may || null,
+        june: row.june || null,
+        july: row.july || null,
+        august: row.august || null,
+        september: row.september || null,
+        october: row.october || null,
+        november: row.november || null,
+        december: row.december || null,
+        january: row.january || null,
+        february: row.february || null,
+        march: row.march || null,
+        financialYear: AOP_YEAR,
+        plantFKId: PLANT_ID,
+        siteFKId: siteObject?.id,
+        materialFKId: row.materialFKId || row.normParametersFKId,
+        verticalFKId: VERTICAL_ID,
+        id: row.idFromApi || null,
+        remark: row.remarks || null,
+        remarks: row.remarks || null,
+        gradeFkId: null,
+      }))
 
       setLoading(true)
       const res = await ShutdownConsumptionApiService.saveShutdownConsumption(
