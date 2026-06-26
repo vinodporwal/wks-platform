@@ -201,6 +201,8 @@ export const dateFields = [
   'fromDate',
   'tentativeMonth',
   'ibrDueDate',
+  'exclusionStartDate',
+  'exclusionEndDate',
 ]
 export const monthMap = {
   january: 1,
@@ -1456,6 +1458,7 @@ const AdvanceKendoTable = ({
                   onRemarkClick={isEditable ? handleRemarkCellClick : () => {}}
                 />
               ),
+              headerCell: SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
             headerClassName={isActive ? 'active-column' : ''}
@@ -1480,7 +1483,7 @@ const AdvanceKendoTable = ({
             title={col.title || col.headerName}
             width={setWidth(col?.minWidth || 120)}
             locked={col?.locked || false}
-            className={!isEditable ? 'non-editable-cell' : undefined}
+            className={!isEditable ? 'non-editable-cell' : ''}
             cells={{
               data: (cellProps) => (
                 <RemarkCell
@@ -1488,6 +1491,7 @@ const AdvanceKendoTable = ({
                   onRemarkClick={isEditable ? handleRemarkCellClick : () => {}}
                 />
               ),
+              headerCell: SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
             headerClassName={isActive ? 'active-column' : ''}
@@ -1651,6 +1655,8 @@ const AdvanceKendoTable = ({
                         {...cellProps}
                         min={getResolvedValue(col.minValue, cellProps.dataItem)}
                         max={getResolvedValue(col.maxValue, cellProps.dataItem)}
+                        wholeNumberOnly={col.wholeNumberOnly === true}
+                        errorMessage={col.errorMessage}
                       />
                     ),
                   }
@@ -1811,6 +1817,8 @@ const AdvanceKendoTable = ({
                         {...cellProps}
                         min={getResolvedValue(col.minValue, cellProps.dataItem)}
                         max={getResolvedValue(col.maxValue, cellProps.dataItem)}
+                        wholeNumberOnly={col.wholeNumberOnly === true}
+                        errorMessage={col.errorMessage}
                       />
                     )
                   }
@@ -2004,7 +2012,10 @@ const AdvanceKendoTable = ({
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
             }
             headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
-            cells={col.cells}
+            cells={{
+              ...col.cells,
+              headerCell: SimpleHeaderWithTooltip,
+            }}
             columnMenu={ColumnMenuCheckboxFilter}
             filter='numeric'
             format={col.format}
@@ -2064,8 +2075,7 @@ const AdvanceKendoTable = ({
         )
       }
       if (col?.type === 'select') {
-        // Change this to your multiselect field name
-        let allOptions = col.options
+        const isDynamic = !!col.dynamicOptions
 
         return (
           <GridColumn
@@ -2077,21 +2087,34 @@ const AdvanceKendoTable = ({
             editable={isEditable}
             cells={{
               edit: {
-                text: (cellProps) => (
-                  <SelectCellEditor
-                    {...cellProps}
-                    options={allOptions}
-                    textField='label'
-                    valueField='value'
-                    placeholder='Select...'
-                  />
-                ),
+                text: (cellProps) => {
+                  // Resolve options per-row here, where cellProps.dataItem is available
+                  const resolvedOptions = isDynamic
+                    ? col.getOptions(cellProps.dataItem)
+                    : col.options
+                  return (
+                    <SelectCellEditor
+                      {...cellProps}
+                      options={resolvedOptions}
+                      textField='label'
+                      valueField='value'
+                      placeholder='Select...'
+                      searchable={col.searchable || false}
+                      showClearOption={col.showClearOption || false}
+                    />
+                  )
+                },
               },
-              data: (props) =>
-                createSelectToolTipRenderer(
-                  allOptions,
+              data: (props) => {
+                // Resolve options per-row here, where props.dataItem is available
+                const resolvedOptions = isDynamic
+                  ? col.getOptions(props.dataItem)
+                  : col.options
+                return createSelectToolTipRenderer(
+                  resolvedOptions,
                   toolTipRenderer,
-                )({ ...props, displayMode: col.displayMode || 'label' }),
+                )({ ...props, displayMode: col.displayMode || 'label' })
+              },
               headerCell: col.subtitle
                 ? createHeaderWithSubtitle(col.subtitle)
                 : SimpleHeaderWithTooltip,
@@ -2158,6 +2181,7 @@ const AdvanceKendoTable = ({
                     useCheckbox={col?.useCheckbox !== false}
                     trueLabel={col?.trueLabel || 'Yes'}
                     falseLabel={col?.falseLabel || 'No'}
+                    size={col?.size || 'medium'}
                   />
                 ),
               },
@@ -2531,7 +2555,7 @@ const AdvanceKendoTable = ({
                   onClick={handleAddRow}
                   disabled={isButtonDisabled || READ_ONLY}
                 >
-                  Add Item
+                  {permissions?.addBtnName || 'Add Item'}
                 </Button>
               )}
 

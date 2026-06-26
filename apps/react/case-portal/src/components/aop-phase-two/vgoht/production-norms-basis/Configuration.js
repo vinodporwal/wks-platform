@@ -209,11 +209,6 @@ const Configuration = () => {
 
       if (response?.code !== 200) {
         setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: response?.message || 'Failed to fetch data',
-          severity: 'error',
-        })
         setLoading(false)
         return
       }
@@ -223,8 +218,6 @@ const Configuration = () => {
 
       if (res.length === 0) {
         setRows([])
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No data found', severity: 'info' })
         setLoading(false)
         return
       }
@@ -239,8 +232,6 @@ const Configuration = () => {
       setOriginalRows(formattedData)
     } catch (error) {
       console.error('Error fetching configuration data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
       setLoading(false)
     }

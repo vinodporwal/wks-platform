@@ -60,10 +60,10 @@ const FixedConsumptionJMD = () => {
 
   // Fiscal-year month order: Apr → Mar
   const MONTH_TO_INDEX = {
-    apr: 4,
+    april: 4,
     may: 5,
-    jun: 6,
-    jul: 7,
+    june: 6,
+    july: 7,
     aug: 8,
     sep: 9,
     oct: 10,
@@ -88,10 +88,10 @@ const FixedConsumptionJMD = () => {
 
   // Month field names in fiscal year order
   const MONTH_FIELDS = [
-    'apr',
+    'april',
     'may',
-    'jun',
-    'jul',
+    'june',
+    'july',
     'aug',
     'sep',
     'oct',
@@ -299,25 +299,10 @@ const FixedConsumptionJMD = () => {
       return
     }
 
-    // Custom validation: If any row data is updated, remarks must be filled and different from original
-    const fieldsToCheck = [
-      'apr',
-      'may',
-      'jun',
-      'jul',
-      'aug',
-      'sep',
-      'oct',
-      'nov',
-      'dec',
-      'jan',
-      'feb',
-      'mar',
-    ]
     const validationError = validateRowDataWithRemarks(
       data,
       originalRows,
-      fieldsToCheck,
+      MONTH_FIELDS,
       'plant',
     )
 
@@ -349,6 +334,7 @@ const FixedConsumptionJMD = () => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+      await fetchFixedConsumptionData()
     } catch (error) {
       console.error('Error saving fixed consumption data:', error)
       setSnackbarOpen(true)

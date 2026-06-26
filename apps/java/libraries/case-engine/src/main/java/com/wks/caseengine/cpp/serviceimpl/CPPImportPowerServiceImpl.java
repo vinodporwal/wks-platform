@@ -1,12 +1,12 @@
 package com.wks.caseengine.cpp.serviceimpl;
 
 import com.wks.caseengine.cpp.dto.CPPImportPowerProjection;
+import com.wks.caseengine.cpp.dto.CPPImportPowerResponseDTO;
 import com.wks.caseengine.cpp.dto.ImportProcurementPlantProjection;
 import com.wks.caseengine.cpp.entity.CPPImportPower;
 import com.wks.caseengine.cpp.repository.CPPImportPowerRepository;
 import com.wks.caseengine.cpp.service.CPPImportPowerService;
 import com.wks.caseengine.dto.AddImportPowerSourceRequestDTO;
-import com.wks.caseengine.dto.CPPImportPowerResponseDTO;
 import com.wks.caseengine.dto.ImportPowerProcurementPlantDTO;
 import com.wks.caseengine.dto.ImportPowerSourceDTO;
 import com.wks.caseengine.dto.UpdateImportPowerSourceRequestDTO;
@@ -92,6 +92,7 @@ public class CPPImportPowerServiceImpl implements CPPImportPowerService {
         dto.setPlantName(projection.getPlantName());
         dto.setUtility(projection.getUtility());
         dto.setMaterial(projection.getMaterial());
+        dto.setMaterialDisplayName(projection.getMaterialDisplayName());
         dto.setUom(projection.getUom());
 
         dto.setApr(projection.getApr());

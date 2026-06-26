@@ -30,6 +30,11 @@ export const UtilityPlantApiServiceV2 = {
   importSRMappingExcel,
   exportSRMappingExcel,
 
+  updateSRMappingsByPlant,
+  getSRMappingByPlant,
+  getSRMappingPlants,
+  getSRMappingCostCenters,
+
   // Generic Excel Import/Export
   saveExcelData,
   exportExcelData,
@@ -39,7 +44,7 @@ export const UtilityPlantApiServiceV2 = {
 async function getFixedConsumptionData(keycloak, plantIds, financialYear) {
   const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
   const queryParams = plantIdArray.join(',')
-  const url = `${Config.CaseEngineUrl}/task/jmd/fixed-consumption?plantIds=${queryParams},23BCA1B3-56DD-4C15-A3D6-3C2C9A62E653&financialYear=${financialYear}`
+  const url = `${Config.CaseEngineUrl}/task/jmd/fixed-consumption?plantIds=${queryParams}&financialYear=${financialYear}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -465,8 +470,13 @@ async function exportNormsExcel(keycloak, PLANT_ID, AOP_YEAR) {
 }
 
 //====================|| SR Mapping APIs ||====================//
-async function getSRMapping(keycloak, plantFkId, aopYear) {
-  const url = `${Config.CaseEngineUrl}/task/sr-mapping?aopYear=${aopYear}&plantFkId=${plantFkId}`
+async function getSRMapping(keycloak, plantFkIds, aopYear) {
+  // Convert to array if single value passed
+  const plantIdArray = Array.isArray(plantFkIds) ? plantFkIds : [plantFkIds]
+  // Join array elements with comma
+  const queryParams = plantIdArray.map((id) => id).join(',')
+
+  const url = `${Config.CaseEngineUrl}/task/sr-mapping?aopYear=${aopYear}&plantFkId=${queryParams}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -508,9 +518,14 @@ async function saveSRMapping(keycloak, payload) {
   }
 }
 
-async function exportSRMappingExcel(keycloak, plantFkId, aopYear) {
+async function exportSRMappingExcel(keycloak, plantFkIds, aopYear) {
+  // Convert to array if single value passed
+  const plantIdArray = Array.isArray(plantFkIds) ? plantFkIds : [plantFkIds]
+  // Join array elements with comma
+  const queryParams = plantIdArray.map((id) => id).join(',')
+
   return exportExcelData(keycloak, {
-    endpoint: `sr-mapping/export?aopYear=${aopYear}&plantFkId=${plantFkId}`,
+    endpoint: `sr-mapping/export?aopYear=${aopYear}&plantFkId=${queryParams}`,
     queryParams: {},
     fileName: `CPP_SRMapping_${aopYear}.xlsx`,
     method: 'GET',
@@ -548,5 +563,105 @@ async function importSRMappingExcel(file, keycloak) {
   } catch (e) {
     console.error(`Error importing SR Mapping Excel:`, e)
     return Promise.reject(e)
+  }
+}
+
+// Update (create/update) SR Mappings By Plant
+// Calls PUT /task/sr-mapping/by-plant
+async function updateSRMappingsByPlant(keycloak, payload, financialYear) {
+  const url = `${Config.CaseEngineUrl}/task/sr-mapping/by-plant?financialYear=${financialYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, {
+      method: 'PUT',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+// Get SR Mapping By Plant (New endpoint)
+async function getSRMappingByPlant(keycloak, plantIds, financialYear) {
+  const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+  const queryParams = plantIdArray.map((id) => id).join(',')
+
+  const url = `${Config.CaseEngineUrl}/task/sr-mapping/by-plant?plantIds=${queryParams}${financialYear ? `&financialYear=${financialYear}` : ''}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+// Get Plants for SR Mapping Dropdown
+async function getSRMappingPlants(keycloak, sourceNames = null) {
+  const plantIdArray = Array.isArray(sourceNames) ? sourceNames : [sourceNames]
+  const queryParams = plantIdArray.map((id) => id).join(',')
+  let url = `${Config.CaseEngineUrl}/task/sr-mapping/plants`
+  if (sourceNames) {
+    url += `?sourceNames=${queryParams}`
+  }
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+// Get Cost Centers for SR Mapping Dropdown
+async function getSRMappingCostCenters(keycloak, plantIds = null) {
+  let url = `${Config.CaseEngineUrl}/task/sr-mapping/cost-centers`
+  if (plantIds) {
+    const plantIdArray = Array.isArray(plantIds) ? plantIds : [plantIds]
+    url += `?plantIds=${plantIdArray.map((id) => id).join(',')}`
+  }
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }

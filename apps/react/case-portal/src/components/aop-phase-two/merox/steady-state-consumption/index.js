@@ -8,7 +8,7 @@ import ValueFormatterPhaseTwo, {
   customValueFormatterPhaseTwo,
 } from '../../common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
-import { SteadyStateConsumptionApiService } from '../../services/merox/steadyStateConsumptionApiService'
+import { SteadyStateConsumptionApiService } from '../../services/common/steadyStateConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const SteadyStateConsumption = () => {

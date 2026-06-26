@@ -18,6 +18,7 @@ import AopDesignBasis from './AopDesignBasis'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import InputsJMD from '../jmd/Inputs/index'
 import Prices from './Prices/index'
+import InputsDMD from '../dmd/Inputs/index'
 
 const Inputs = () => {
   const keycloak = useSession()
@@ -190,6 +191,9 @@ const Inputs = () => {
     switch (lowerSiteName) {
       case 'jmd':
         return <InputsJMD />
+      case 'hmd':
+      case 'dmd':
+        return <InputsDMD />
       // case 'hmd':
       //   return <InputsHMD />
       case 'nmd':

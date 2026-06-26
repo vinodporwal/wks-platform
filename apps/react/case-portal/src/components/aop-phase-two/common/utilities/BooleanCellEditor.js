@@ -1,5 +1,21 @@
 import { useState, useEffect, useRef } from 'react'
 
+// Size presets for checkbox and toggle button
+const SIZE_MAP = {
+  small: {
+    checkbox: { width: '14px', height: '14px' },
+    button: { padding: '2px 8px', fontSize: '0.65rem', minWidth: '52px' },
+  },
+  medium: {
+    checkbox: { width: '18px', height: '18px' },
+    button: { padding: '4px 12px', fontSize: '0.75rem', minWidth: '70px' },
+  },
+  large: {
+    checkbox: { width: '22px', height: '22px' },
+    button: { padding: '6px 16px', fontSize: '0.875rem', minWidth: '90px' },
+  },
+}
+
 export const BooleanCellEditor = ({
   dataItem,
   field,
@@ -7,10 +23,13 @@ export const BooleanCellEditor = ({
   trueLabel = 'Yes',
   falseLabel = 'No',
   useCheckbox = true,
+  size = 'medium',
 }) => {
   const storedValue = dataItem[field] ?? false
   const [localValue, setLocalValue] = useState(storedValue)
   const isFirstRender = useRef(true)
+
+  const sizeStyles = SIZE_MAP[size] ?? SIZE_MAP.medium
 
   const handleChange = (e) => {
     const newValue = e.target.checked
@@ -47,9 +66,8 @@ export const BooleanCellEditor = ({
           onChange={handleChange}
           style={{
             cursor: 'pointer',
-            width: '18px',
-            height: '18px',
             accentColor: '#1976d2',
+            ...sizeStyles.checkbox,
           }}
         />
       </td>
@@ -62,19 +80,17 @@ export const BooleanCellEditor = ({
       <button
         onClick={handleToggleClick}
         style={{
-          padding: '4px 12px',
-          fontSize: '0.75rem',
           fontWeight: '500',
           backgroundColor: localValue ? '#4CAF50' : '#f44336',
           color: 'white',
           border: 'none',
           borderRadius: '3px',
           cursor: 'pointer',
-          minWidth: '70px',
           transition: 'background-color 0.2s',
+          ...sizeStyles.button,
         }}
       >
-        {localValue ? 'Yes' : 'No'}
+        {localValue ? trueLabel : falseLabel}
       </button>
     </td>
   )

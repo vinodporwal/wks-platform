@@ -9,6 +9,7 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import AdvanceKendoTable from '../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import PlantRequirementJMD from './jmd/PlantRequirementJMD'
+import PlantRequirementDMD from './dmd/PlantRequirementDMD'
 
 const PlantRequirement = () => {
   const keycloak = useSession()
@@ -514,6 +515,8 @@ const PlantRequirement = () => {
     switch (lowerSiteName) {
       case 'jmd':
         return <PlantRequirementJMD />
+      case 'dmd':
+        return <PlantRequirementDMD />
       // case 'hmd':
       //   return <PlantRequirementHMD />
       case 'nmd':

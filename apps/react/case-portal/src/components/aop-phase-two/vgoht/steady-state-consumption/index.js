@@ -211,11 +211,6 @@ const SteadyStateConsumption = () => {
       setOriginalRows(response1.data?.mcuNormsValueDTOList || [])
     } catch (error) {
       console.error('Error fetching steady state consumption data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Error fetching data',
-        severity: 'error',
-      })
     } finally {
       setLoading(false)
     }

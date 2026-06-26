@@ -9,6 +9,7 @@ import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/comm
 import AdvanceKendoTable from '../common/AdvanceKendoTable/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import FixedConsumptionJMD from './jmd/FixedConsumptionJMD'
+import FixedConsumptionDMD from './dmd/FixedConsumptionDMD'
 
 const FixedConsumption = () => {
   const keycloak = useSession()
@@ -508,6 +509,8 @@ const FixedConsumption = () => {
     switch (lowerSiteName) {
       case 'jmd':
         return <FixedConsumptionJMD />
+      case 'dmd':
+        return <FixedConsumptionDMD />
       // case 'hmd':
       //   return <FixedConsumptionHMD />
       case 'nmd':

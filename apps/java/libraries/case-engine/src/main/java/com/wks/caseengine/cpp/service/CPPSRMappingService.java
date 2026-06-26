@@ -6,9 +6,13 @@ import java.util.UUID;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.cpp.dto.CPPCostCenterDTO;
+import com.wks.caseengine.cpp.dto.CPPPlantDTO;
 import com.wks.caseengine.cpp.dto.CPPSRMappingDTO;
 import com.wks.caseengine.cpp.dto.CPPSRMappingImportDTO;
+import com.wks.caseengine.cpp.dto.SRMappingDTO;
 import com.wks.caseengine.cpp.entity.CPPSRMapping;
+import com.wks.caseengine.message.vm.AOPMessageVM;
 
 public interface CPPSRMappingService {
 
@@ -23,4 +27,34 @@ public interface CPPSRMappingService {
     void exportToExcel(OutputStream outputStream, String aopYear, UUID plantFkId) throws Exception;
 
     List<CPPSRMappingImportDTO> importFromExcel(MultipartFile file) throws Exception;
+
+    /**
+     * Returns sender-receiver mapping data by calling SP CPP_GetSRMappingByPlant.
+     *
+     * @param plantIds      comma-separated Plant GUIDs (e.g. "23BCA1B3-...,48051DCF-...")
+     * @param financialYear optional; pass null when not filtering by year
+     */
+    AOPMessageVM getSRMappingByPlant(String plantIds, String financialYear);
+
+    /**
+     * Returns cost-center dropdown data from CPPCostCentersMaster (IsActive = 1).
+     *
+     * @param plantIds optional comma-separated Plant GUIDs.
+     *                 If null or blank, all active cost-centers are returned.
+     */
+    AOPMessageVM getCostCenters(String plantIds);
+
+    /**
+     * Returns plants dropdown data from the Plants table (IsActive = true).
+     *
+     * @param sourceNames optional comma-separated SourceName values.
+     *                    If null or blank, all active plants are returned.
+     */
+    AOPMessageVM getPlants(String sourceNames);
+
+    /**
+     * Updates Sender-Receiver mappings in the CPP_SR_Mapping_Master table.
+     * @param dtoList List of DTOs containing the updated fields.
+     */
+    AOPMessageVM updateSRMappingsByPlant(List<SRMappingDTO> dtoList,String financialYear);
 }

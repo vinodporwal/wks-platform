@@ -5,7 +5,7 @@ import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import { customValueFormatterPhaseTwo } from '../../common/ValueFormatterPhaseTwo'
-import { OverallAopConsumptionApiService } from '../../services/pcg/overallAopConsumptionApiService'
+import { OverallAopConsumptionApiService } from '../../services/common/overallAopConsumptionApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const OverallAopConsumptionPCG = () => {
