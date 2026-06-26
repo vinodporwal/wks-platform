@@ -1655,6 +1655,8 @@ const AdvanceKendoTable = ({
                         {...cellProps}
                         min={getResolvedValue(col.minValue, cellProps.dataItem)}
                         max={getResolvedValue(col.maxValue, cellProps.dataItem)}
+                        wholeNumberOnly={col.wholeNumberOnly === true}
+                        errorMessage={col.errorMessage}
                       />
                     ),
                   }
@@ -1815,6 +1817,8 @@ const AdvanceKendoTable = ({
                         {...cellProps}
                         min={getResolvedValue(col.minValue, cellProps.dataItem)}
                         max={getResolvedValue(col.maxValue, cellProps.dataItem)}
+                        wholeNumberOnly={col.wholeNumberOnly === true}
+                        errorMessage={col.errorMessage}
                       />
                     )
                   }
@@ -2177,6 +2181,7 @@ const AdvanceKendoTable = ({
                     useCheckbox={col?.useCheckbox !== false}
                     trueLabel={col?.trueLabel || 'Yes'}
                     falseLabel={col?.falseLabel || 'No'}
+                    size={col?.size || 'medium'}
                   />
                 ),
               },

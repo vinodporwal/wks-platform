@@ -2,8 +2,10 @@ package com.wks.caseengine.cpp.serviceimpl;
 
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -32,9 +34,13 @@ import com.wks.caseengine.cpp.dto.SRMappingDTO;
 import com.wks.caseengine.cpp.entity.CPPSRMapping;
 import com.wks.caseengine.cpp.repository.CPPSRMappingRepository;
 import com.wks.caseengine.cpp.service.CPPSRMappingService;
+import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.AopCalculationRepository;
 import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.utility.Utility;
 
 /**
@@ -53,6 +59,12 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
 
     @Autowired
     private PlantsRepository plantsRepository;
+
+    @Autowired
+    private ScreenMappingRepository screenMappingRepository;
+
+    @Autowired
+    private AopCalculationRepository aopCalculationRepository;
 
     public CPPSRMappingServiceImpl(CPPSRMappingRepository repository) {
         this.repository = repository;
@@ -521,6 +533,7 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
             }
 
             int processed = 0;
+            Set<UUID> uniquePlantIds = new LinkedHashSet<>();
             for (SRMappingDTO dto : dtoList) {
 
                 // ── Step 1: Update Receiver Cost Center (Utility_CostCenter_FK_Id) ──────────
@@ -627,6 +640,24 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
                 }
 
                 processed++;
+                // Collect unique cppPlantId values for AopCalculation flag update
+                if (dto.getCppPlantId() != null) {
+                    uniquePlantIds.add(dto.getCppPlantId());
+                }
+            }
+            if (processed > 0 && !uniquePlantIds.isEmpty()) {
+                List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("cpp-sr-mapping");
+                for (UUID plantUUID : uniquePlantIds) {
+                    for (ScreenMapping screenMapping : screenMappingList) {
+                        AopCalculation aopCalculation = new AopCalculation();
+                        aopCalculation.setAopYear(financialYear);
+                        aopCalculation.setIsChanged(true);
+                        aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+                        aopCalculation.setPlantId(plantUUID);
+                        aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+                        aopCalculationRepository.save(aopCalculation);
+                    }
+                }
             }
 
             response.setCode(200);

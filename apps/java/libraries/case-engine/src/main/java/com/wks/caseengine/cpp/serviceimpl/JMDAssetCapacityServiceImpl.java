@@ -74,28 +74,40 @@ public class JMDAssetCapacityServiceImpl implements JMDAssetCapacityService {
                                 clone.setFixedMax(src.getFixedMax());
                                 clone.setAprMin(src.getAprMin());
                                 clone.setAprMax(src.getAprMax());
+                                clone.setAprManLoad(src.getAprManLoad());
                                 clone.setMayMin(src.getMayMin());
                                 clone.setMayMax(src.getMayMax());
+                                clone.setMayManLoad(src.getMayManLoad());
                                 clone.setJunMin(src.getJunMin());
                                 clone.setJunMax(src.getJunMax());
+                                clone.setJunManLoad(src.getJunManLoad());
                                 clone.setJulMin(src.getJulMin());
                                 clone.setJulMax(src.getJulMax());
+                                clone.setJulManLoad(src.getJulManLoad());
                                 clone.setAugMin(src.getAugMin());
                                 clone.setAugMax(src.getAugMax());
+                                clone.setAugManLoad(src.getAugManLoad());
                                 clone.setSepMin(src.getSepMin());
                                 clone.setSepMax(src.getSepMax());
+                                clone.setSepManLoad(src.getSepManLoad());
                                 clone.setOctMin(src.getOctMin());
                                 clone.setOctMax(src.getOctMax());
+                                clone.setOctManLoad(src.getOctManLoad());
                                 clone.setNovMin(src.getNovMin());
                                 clone.setNovMax(src.getNovMax());
+                                clone.setNovManLoad(src.getNovManLoad());
                                 clone.setDecMin(src.getDecMin());
                                 clone.setDecMax(src.getDecMax());
+                                clone.setDecManLoad(src.getDecManLoad());
                                 clone.setJanMin(src.getJanMin());
                                 clone.setJanMax(src.getJanMax());
+                                clone.setJanManLoad(src.getJanManLoad());
                                 clone.setFebMin(src.getFebMin());
                                 clone.setFebMax(src.getFebMax());
+                                clone.setFebManLoad(src.getFebManLoad());
                                 clone.setMarMin(src.getMarMin());
                                 clone.setMarMax(src.getMarMax());
+                                clone.setMarManLoad(src.getMarManLoad());
                                 clone.setAopYear(aopYear);
                                 clone.setRemarks(src.getRemarks());
                                 clone.setCreatedDate(LocalDateTime.now());
@@ -120,28 +132,40 @@ public class JMDAssetCapacityServiceImpl implements JMDAssetCapacityService {
                                 clone.setFixedMax(src.getFixedMax());
                                 clone.setAprMin(src.getAprMin());
                                 clone.setAprMax(src.getAprMax());
+                                clone.setAprManLoad(src.getAprManLoad());
                                 clone.setMayMin(src.getMayMin());
                                 clone.setMayMax(src.getMayMax());
+                                clone.setMayManLoad(src.getMayManLoad());
                                 clone.setJunMin(src.getJunMin());
                                 clone.setJunMax(src.getJunMax());
+                                clone.setJunManLoad(src.getJunManLoad());
                                 clone.setJulMin(src.getJulMin());
                                 clone.setJulMax(src.getJulMax());
+                                clone.setJulManLoad(src.getJulManLoad());
                                 clone.setAugMin(src.getAugMin());
                                 clone.setAugMax(src.getAugMax());
+                                clone.setAugManLoad(src.getAugManLoad());
                                 clone.setSepMin(src.getSepMin());
                                 clone.setSepMax(src.getSepMax());
+                                clone.setSepManLoad(src.getSepManLoad());
                                 clone.setOctMin(src.getOctMin());
                                 clone.setOctMax(src.getOctMax());
+                                clone.setOctManLoad(src.getOctManLoad());
                                 clone.setNovMin(src.getNovMin());
                                 clone.setNovMax(src.getNovMax());
+                                clone.setNovManLoad(src.getNovManLoad());
                                 clone.setDecMin(src.getDecMin());
                                 clone.setDecMax(src.getDecMax());
+                                clone.setDecManLoad(src.getDecManLoad());
                                 clone.setJanMin(src.getJanMin());
                                 clone.setJanMax(src.getJanMax());
+                                clone.setJanManLoad(src.getJanManLoad());
                                 clone.setFebMin(src.getFebMin());
                                 clone.setFebMax(src.getFebMax());
+                                clone.setFebManLoad(src.getFebManLoad());
                                 clone.setMarMin(src.getMarMin());
                                 clone.setMarMax(src.getMarMax());
+                                clone.setMarManLoad(src.getMarManLoad());
                                 clone.setAopYear(aopYear);
                                 clone.setRemarks(src.getRemarks());
                                 clone.setCreatedDate(LocalDateTime.now());
@@ -180,17 +204,29 @@ public class JMDAssetCapacityServiceImpl implements JMDAssetCapacityService {
                             seed.setAssetFkId(asset.getAssetFkId());
                             seed.setFixedMin(0.0);  seed.setFixedMax(0.0);
                             seed.setAprMin(0.0);  seed.setAprMax(0.0);
+                            seed.setAprManLoad(1);
                             seed.setMayMin(0.0);  seed.setMayMax(0.0);
+                            seed.setMayManLoad(1);
                             seed.setJunMin(0.0);  seed.setJunMax(0.0);
+                            seed.setJunManLoad(1);  
                             seed.setJulMin(0.0);  seed.setJulMax(0.0);
+                            seed.setJulManLoad(1);
                             seed.setAugMin(0.0);  seed.setAugMax(0.0);
+                            seed.setAugManLoad(1);
                             seed.setSepMin(0.0);  seed.setSepMax(0.0);
+                            seed.setSepManLoad(1);
                             seed.setOctMin(0.0);  seed.setOctMax(0.0);
+                            seed.setOctManLoad(1);
                             seed.setNovMin(0.0);  seed.setNovMax(0.0);
+                            seed.setNovManLoad(1);
                             seed.setDecMin(0.0);  seed.setDecMax(0.0);
+                            seed.setDecManLoad(1);
                             seed.setJanMin(0.0);  seed.setJanMax(0.0);
+                            seed.setJanManLoad(1);
                             seed.setFebMin(0.0);  seed.setFebMax(0.0);
+                            seed.setFebManLoad(1);
                             seed.setMarMin(0.0);  seed.setMarMax(0.0);
+                            seed.setMarManLoad(1);
                             seed.setAopYear(aopYear);
                             seed.setRemarks(null);
                             seed.setCreatedDate(LocalDateTime.now());
@@ -203,17 +239,29 @@ public class JMDAssetCapacityServiceImpl implements JMDAssetCapacityService {
                             seed.setAssetFkId(asset.getAssetFkId());
                             seed.setFixedMin(0.0);  seed.setFixedMax(0.0);
                             seed.setAprMin(0.0);  seed.setAprMax(0.0);
+                            seed.setAprManLoad(1);
                             seed.setMayMin(0.0);  seed.setMayMax(0.0);
+                            seed.setMayManLoad(1);
                             seed.setJunMin(0.0);  seed.setJunMax(0.0);
+                            seed.setJunManLoad(1);
                             seed.setJulMin(0.0);  seed.setJulMax(0.0);
+                            seed.setJulManLoad(1);
                             seed.setAugMin(0.0);  seed.setAugMax(0.0);
+                            seed.setAugManLoad(1);
                             seed.setSepMin(0.0);  seed.setSepMax(0.0);
+                            seed.setSepManLoad(1);
                             seed.setOctMin(0.0);  seed.setOctMax(0.0);
+                            seed.setOctManLoad(1);
                             seed.setNovMin(0.0);  seed.setNovMax(0.0);
+                            seed.setNovManLoad(1);
                             seed.setDecMin(0.0);  seed.setDecMax(0.0);
+                            seed.setDecManLoad(1);
                             seed.setJanMin(0.0);  seed.setJanMax(0.0);
+                            seed.setJanManLoad(1);
                             seed.setFebMin(0.0);  seed.setFebMax(0.0);
+                            seed.setFebManLoad(1);
                             seed.setMarMin(0.0);  seed.setMarMax(0.0);
+                            seed.setMarManLoad(1);
                             seed.setAopYear(aopYear);
                             seed.setRemarks(null);
                             seed.setCreatedDate(LocalDateTime.now());
@@ -284,28 +332,40 @@ public class JMDAssetCapacityServiceImpl implements JMDAssetCapacityService {
 
         dto.setAprMin(projection.getAprMin());
         dto.setAprMax(projection.getAprMax());
+        dto.setAprManLoad(projection.getAprManLoad());
         dto.setMayMin(projection.getMayMin());
         dto.setMayMax(projection.getMayMax());
+        dto.setMayManLoad(projection.getMayManLoad());
         dto.setJunMin(projection.getJunMin());
         dto.setJunMax(projection.getJunMax());
+        dto.setJunManLoad(projection.getJunManLoad());
         dto.setJulMin(projection.getJulMin());
         dto.setJulMax(projection.getJulMax());
+        dto.setJulManLoad(projection.getJulManLoad());
         dto.setAugMin(projection.getAugMin());
         dto.setAugMax(projection.getAugMax());
+        dto.setAugManLoad(projection.getAugManLoad());
         dto.setSepMin(projection.getSepMin());
         dto.setSepMax(projection.getSepMax());
+        dto.setSepManLoad(projection.getSepManLoad());
         dto.setOctMin(projection.getOctMin());
         dto.setOctMax(projection.getOctMax());
+        dto.setOctManLoad(projection.getOctManLoad());
         dto.setNovMin(projection.getNovMin());
         dto.setNovMax(projection.getNovMax());
+        dto.setNovManLoad(projection.getNovManLoad());
         dto.setDecMin(projection.getDecMin());
         dto.setDecMax(projection.getDecMax());
+        dto.setDecManLoad(projection.getDecManLoad());
         dto.setJanMin(projection.getJanMin());
         dto.setJanMax(projection.getJanMax());
+        dto.setJanManLoad(projection.getJanManLoad());
         dto.setFebMin(projection.getFebMin());
         dto.setFebMax(projection.getFebMax());
+        dto.setFebManLoad(projection.getFebManLoad());
         dto.setMarMin(projection.getMarMin());
         dto.setMarMax(projection.getMarMax());
+        dto.setMarManLoad(projection.getMarManLoad());
 
         dto.setAopYear(projection.getAopYear());
         dto.setRemarks(projection.getRemarks());
@@ -339,28 +399,40 @@ public class JMDAssetCapacityServiceImpl implements JMDAssetCapacityService {
                 if (!Objects.equals(dto.getFixedMax(), db.getFixedMax())) return true;
                 if (!Objects.equals(dto.getAprMin(), db.getAprMin())) return true;
                 if (!Objects.equals(dto.getAprMax(), db.getAprMax())) return true;
+                if (!Objects.equals(dto.getAprManLoad(), db.getAprManLoad())) return true;
                 if (!Objects.equals(dto.getMayMin(), db.getMayMin())) return true;
                 if (!Objects.equals(dto.getMayMax(), db.getMayMax())) return true;
+                if (!Objects.equals(dto.getMayManLoad(), db.getMayManLoad())) return true;
                 if (!Objects.equals(dto.getJunMin(), db.getJunMin())) return true;
                 if (!Objects.equals(dto.getJunMax(), db.getJunMax())) return true;
+                if (!Objects.equals(dto.getJunManLoad(), db.getJunManLoad())) return true;
                 if (!Objects.equals(dto.getJulMin(), db.getJulMin())) return true;
                 if (!Objects.equals(dto.getJulMax(), db.getJulMax())) return true;
+                if (!Objects.equals(dto.getJulManLoad(), db.getJulManLoad())) return true;
                 if (!Objects.equals(dto.getAugMin(), db.getAugMin())) return true;
                 if (!Objects.equals(dto.getAugMax(), db.getAugMax())) return true;
+                if (!Objects.equals(dto.getAugManLoad(), db.getAugManLoad())) return true;
                 if (!Objects.equals(dto.getSepMin(), db.getSepMin())) return true;
                 if (!Objects.equals(dto.getSepMax(), db.getSepMax())) return true;
+                if (!Objects.equals(dto.getSepManLoad(), db.getSepManLoad())) return true;
                 if (!Objects.equals(dto.getOctMin(), db.getOctMin())) return true;
                 if (!Objects.equals(dto.getOctMax(), db.getOctMax())) return true;
+                if (!Objects.equals(dto.getOctManLoad(), db.getOctManLoad())) return true;
                 if (!Objects.equals(dto.getNovMin(), db.getNovMin())) return true;
                 if (!Objects.equals(dto.getNovMax(), db.getNovMax())) return true;
+                if (!Objects.equals(dto.getNovManLoad(), db.getNovManLoad())) return true;
                 if (!Objects.equals(dto.getDecMin(), db.getDecMin())) return true;
                 if (!Objects.equals(dto.getDecMax(), db.getDecMax())) return true;
+                if (!Objects.equals(dto.getDecManLoad(), db.getDecManLoad())) return true;
                 if (!Objects.equals(dto.getJanMin(), db.getJanMin())) return true;
                 if (!Objects.equals(dto.getJanMax(), db.getJanMax())) return true;
+                if (!Objects.equals(dto.getJanManLoad(), db.getJanManLoad())) return true;
                 if (!Objects.equals(dto.getFebMin(), db.getFebMin())) return true;
                 if (!Objects.equals(dto.getFebMax(), db.getFebMax())) return true;
+                if (!Objects.equals(dto.getFebManLoad(), db.getFebManLoad())) return true;
                 if (!Objects.equals(dto.getMarMin(), db.getMarMin())) return true;
                 if (!Objects.equals(dto.getMarMax(), db.getMarMax())) return true;
+                if (!Objects.equals(dto.getMarManLoad(), db.getMarManLoad())) return true;
                 if (!Objects.equals(dto.getUom(), db.getUom())) return true;
                 if (!Objects.equals(dto.getRemarks(), db.getRemarks())) return true;
                 return false;
@@ -370,28 +442,40 @@ public class JMDAssetCapacityServiceImpl implements JMDAssetCapacityService {
                 if (!Objects.equals(dto.getFixedMax(), db.getFixedMax())) return true;
                 if (!Objects.equals(dto.getAprMin(), db.getAprMin())) return true;
                 if (!Objects.equals(dto.getAprMax(), db.getAprMax())) return true;
+                if (!Objects.equals(dto.getAprManLoad(), db.getAprManLoad())) return true;
                 if (!Objects.equals(dto.getMayMin(), db.getMayMin())) return true;
                 if (!Objects.equals(dto.getMayMax(), db.getMayMax())) return true;
+                if (!Objects.equals(dto.getMayManLoad(), db.getMayManLoad())) return true;
                 if (!Objects.equals(dto.getJunMin(), db.getJunMin())) return true;
                 if (!Objects.equals(dto.getJunMax(), db.getJunMax())) return true;
+                if (!Objects.equals(dto.getJunManLoad(), db.getJunManLoad())) return true;
                 if (!Objects.equals(dto.getJulMin(), db.getJulMin())) return true;
                 if (!Objects.equals(dto.getJulMax(), db.getJulMax())) return true;
+                if (!Objects.equals(dto.getJulManLoad(), db.getJulManLoad())) return true;
                 if (!Objects.equals(dto.getAugMin(), db.getAugMin())) return true;
                 if (!Objects.equals(dto.getAugMax(), db.getAugMax())) return true;
+                if (!Objects.equals(dto.getAugManLoad(), db.getAugManLoad())) return true;
                 if (!Objects.equals(dto.getSepMin(), db.getSepMin())) return true;
                 if (!Objects.equals(dto.getSepMax(), db.getSepMax())) return true;
+                if (!Objects.equals(dto.getSepManLoad(), db.getSepManLoad())) return true;
                 if (!Objects.equals(dto.getOctMin(), db.getOctMin())) return true;
                 if (!Objects.equals(dto.getOctMax(), db.getOctMax())) return true;
+                if (!Objects.equals(dto.getOctManLoad(), db.getOctManLoad())) return true;
                 if (!Objects.equals(dto.getNovMin(), db.getNovMin())) return true;
                 if (!Objects.equals(dto.getNovMax(), db.getNovMax())) return true;
+                if (!Objects.equals(dto.getNovManLoad(), db.getNovManLoad())) return true;
                 if (!Objects.equals(dto.getDecMin(), db.getDecMin())) return true;
                 if (!Objects.equals(dto.getDecMax(), db.getDecMax())) return true;
+                if (!Objects.equals(dto.getDecManLoad(), db.getDecManLoad())) return true;
                 if (!Objects.equals(dto.getJanMin(), db.getJanMin())) return true;
                 if (!Objects.equals(dto.getJanMax(), db.getJanMax())) return true;
+                if (!Objects.equals(dto.getJanManLoad(), db.getJanManLoad())) return true;
                 if (!Objects.equals(dto.getFebMin(), db.getFebMin())) return true;
                 if (!Objects.equals(dto.getFebMax(), db.getFebMax())) return true;
+                if (!Objects.equals(dto.getFebManLoad(), db.getFebManLoad())) return true;
                 if (!Objects.equals(dto.getMarMin(), db.getMarMin())) return true;
                 if (!Objects.equals(dto.getMarMax(), db.getMarMax())) return true;
+                if (!Objects.equals(dto.getMarManLoad(), db.getMarManLoad())) return true;
                 if (!Objects.equals(dto.getUom(), db.getUom())) return true;
                 if (!Objects.equals(dto.getRemarks(), db.getRemarks())) return true;
                 return false;
@@ -564,29 +648,41 @@ public class JMDAssetCapacityServiceImpl implements JMDAssetCapacityService {
         entity.setFixedMax(dto.getFixedMax());
         entity.setAprMin(dto.getAprMin());
         entity.setAprMax(dto.getAprMax());
+        entity.setAprManLoad(dto.getAprManLoad());
         entity.setMayMin(dto.getMayMin());
         entity.setMayMax(dto.getMayMax());
+        entity.setMayManLoad(dto.getMayManLoad());
         entity.setJunMin(dto.getJunMin());
         entity.setJunMax(dto.getJunMax());
+        entity.setJunManLoad(dto.getJunManLoad());
         entity.setJulMin(dto.getJulMin());
         entity.setJulMax(dto.getJulMax());
+        entity.setJulManLoad(dto.getJulManLoad());
         entity.setAugMin(dto.getAugMin());
         entity.setAugMax(dto.getAugMax());
+        entity.setAugManLoad(dto.getAugManLoad());
         entity.setSepMin(dto.getSepMin());
         entity.setSepMax(dto.getSepMax());
+        entity.setSepManLoad(dto.getSepManLoad());
         entity.setOctMin(dto.getOctMin());
         entity.setOctMax(dto.getOctMax());
+        entity.setOctManLoad(dto.getOctManLoad());
         entity.setNovMin(dto.getNovMin());
         entity.setNovMax(dto.getNovMax());
+        entity.setNovManLoad(dto.getNovManLoad());
         entity.setDecMin(dto.getDecMin());
         entity.setDecMax(dto.getDecMax());
+        entity.setDecManLoad(dto.getDecManLoad());
         entity.setJanMin(dto.getJanMin());
         entity.setJanMax(dto.getJanMax());
+        entity.setJanManLoad(dto.getJanManLoad());
         entity.setFebMin(dto.getFebMin());
         entity.setFebMax(dto.getFebMax());
+        entity.setFebManLoad(dto.getFebManLoad());
         entity.setMarMin(dto.getMarMin());
         entity.setMarMax(dto.getMarMax());
 
+        entity.setMarManLoad(dto.getMarManLoad());
         entity.setUom(dto.getUom());
         entity.setRemarks(dto.getRemarks());
 
@@ -609,28 +705,40 @@ public class JMDAssetCapacityServiceImpl implements JMDAssetCapacityService {
         entity.setFixedMax(dto.getFixedMax());
         entity.setAprMin(dto.getAprMin());
         entity.setAprMax(dto.getAprMax());
+        entity.setAprManLoad(dto.getAprManLoad());
         entity.setMayMin(dto.getMayMin());
         entity.setMayMax(dto.getMayMax());
+        entity.setMayManLoad(dto.getMayManLoad());
         entity.setJunMin(dto.getJunMin());
         entity.setJunMax(dto.getJunMax());
+        entity.setJunManLoad(dto.getJunManLoad());
         entity.setJulMin(dto.getJulMin());
         entity.setJulMax(dto.getJulMax());
+        entity.setJulManLoad(dto.getJulManLoad());
         entity.setAugMin(dto.getAugMin());
         entity.setAugMax(dto.getAugMax());
+        entity.setAugManLoad(dto.getAugManLoad());
         entity.setSepMin(dto.getSepMin());
         entity.setSepMax(dto.getSepMax());
+        entity.setSepManLoad(dto.getSepManLoad());
         entity.setOctMin(dto.getOctMin());
         entity.setOctMax(dto.getOctMax());
+        entity.setOctManLoad(dto.getOctManLoad());
         entity.setNovMin(dto.getNovMin());
         entity.setNovMax(dto.getNovMax());
+        entity.setNovManLoad(dto.getNovManLoad());
         entity.setDecMin(dto.getDecMin());
         entity.setDecMax(dto.getDecMax());
+        entity.setDecManLoad(dto.getDecManLoad());
         entity.setJanMin(dto.getJanMin());
         entity.setJanMax(dto.getJanMax());
+        entity.setJanManLoad(dto.getJanManLoad());
         entity.setFebMin(dto.getFebMin());
         entity.setFebMax(dto.getFebMax());
+        entity.setFebManLoad(dto.getFebManLoad());
         entity.setMarMin(dto.getMarMin());
         entity.setMarMax(dto.getMarMax());
+        entity.setMarManLoad(dto.getMarManLoad());
 
         entity.setUom(dto.getUom());
         entity.setRemarks(dto.getRemarks());
@@ -707,6 +815,7 @@ public class JMDAssetCapacityServiceImpl implements JMDAssetCapacityService {
         for (String month : months) {
             createCell(headerRow, col++, month + " Min", headerStyle);
             createCell(headerRow, col++, month + " Max", headerStyle);
+            createCell(headerRow, col++, month + " Man Load", headerStyle);
         }
 
         int remarksCol = col;
@@ -731,29 +840,41 @@ public class JMDAssetCapacityServiceImpl implements JMDAssetCapacityService {
             createCell(row, col++, dto.getUom(), dataStyle);
 
             setNumericCell(row, col++, dto.getAprMin(), dataStyle);
-            setNumericCell(row, col++, dto.getAprMax(), dataStyle);
+                setNumericCell(row, col++, dto.getAprMax(), dataStyle);
+            setNumericCell(row, col++, dto.getAprManLoad() != null ? dto.getAprManLoad().doubleValue() : 0.0, dataStyle);
             setNumericCell(row, col++, dto.getMayMin(), dataStyle);
             setNumericCell(row, col++, dto.getMayMax(), dataStyle);
+            setNumericCell(row, col++, dto.getMayManLoad() != null ? dto.getMayManLoad().doubleValue() : 0.0, dataStyle);
             setNumericCell(row, col++, dto.getJunMin(), dataStyle);
             setNumericCell(row, col++, dto.getJunMax(), dataStyle);
+            setNumericCell(row, col++, dto.getJunManLoad() != null ? dto.getJunManLoad().doubleValue() : 0.0, dataStyle);
             setNumericCell(row, col++, dto.getJulMin(), dataStyle);
             setNumericCell(row, col++, dto.getJulMax(), dataStyle);
+            setNumericCell(row, col++, dto.getJulManLoad() != null ? dto.getJulManLoad().doubleValue() : 0.0, dataStyle);
             setNumericCell(row, col++, dto.getAugMin(), dataStyle);
             setNumericCell(row, col++, dto.getAugMax(), dataStyle);
+            setNumericCell(row, col++, dto.getAugManLoad() != null ? dto.getAugManLoad().doubleValue() : 0.0, dataStyle);
             setNumericCell(row, col++, dto.getSepMin(), dataStyle);
             setNumericCell(row, col++, dto.getSepMax(), dataStyle);
+            setNumericCell(row, col++, dto.getSepManLoad() != null ? dto.getSepManLoad().doubleValue() : 0.0, dataStyle);
             setNumericCell(row, col++, dto.getOctMin(), dataStyle);
             setNumericCell(row, col++, dto.getOctMax(), dataStyle);
+            setNumericCell(row, col++, dto.getOctManLoad() != null ? dto.getOctManLoad().doubleValue() : 0.0, dataStyle);
             setNumericCell(row, col++, dto.getNovMin(), dataStyle);
             setNumericCell(row, col++, dto.getNovMax(), dataStyle);
+            setNumericCell(row, col++, dto.getNovManLoad() != null ? dto.getNovManLoad().doubleValue() : 0.0, dataStyle);
             setNumericCell(row, col++, dto.getDecMin(), dataStyle);
             setNumericCell(row, col++, dto.getDecMax(), dataStyle);
+            setNumericCell(row, col++, dto.getDecManLoad() != null ? dto.getDecManLoad().doubleValue() : 0.0, dataStyle);
             setNumericCell(row, col++, dto.getJanMin(), dataStyle);
             setNumericCell(row, col++, dto.getJanMax(), dataStyle);
+            setNumericCell(row, col++, dto.getJanManLoad() != null ? dto.getJanManLoad().doubleValue() : 0.0, dataStyle);
             setNumericCell(row, col++, dto.getFebMin(), dataStyle);
             setNumericCell(row, col++, dto.getFebMax(), dataStyle);
+            setNumericCell(row, col++, dto.getFebManLoad() != null ? dto.getFebManLoad().doubleValue() : 0.0, dataStyle);
             setNumericCell(row, col++, dto.getMarMin(), dataStyle);
             setNumericCell(row, col++, dto.getMarMax(), dataStyle);
+            setNumericCell(row, col++, dto.getMarManLoad() != null ? dto.getMarManLoad().doubleValue() : 0.0, dataStyle);
 
             createCell(row, col++, dto.getRemarks(), dataStyle);
             createCell(row, col++, dto.getId() != null ? dto.getId().toString() : "", dataStyle);
@@ -896,6 +1017,21 @@ public class JMDAssetCapacityServiceImpl implements JMDAssetCapacityService {
         if (dto.getRemarks() == null || dto.getRemarks().trim().isEmpty()) {
             return "Remarks field is mandatory and cannot be empty";
         }
+
+        // Validate ManLoad fields: only 0 (False) or 1 (True) allowed
+        String[] manLoadFields = {"Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"};
+        Integer[] manLoadValues = {
+            dto.getAprManLoad(), dto.getMayManLoad(), dto.getJunManLoad(), dto.getJulManLoad(),
+            dto.getAugManLoad(), dto.getSepManLoad(), dto.getOctManLoad(), dto.getNovManLoad(),
+            dto.getDecManLoad(), dto.getJanManLoad(), dto.getFebManLoad(), dto.getMarManLoad()
+        };
+        for (int i = 0; i < manLoadFields.length; i++) {
+            Integer val = manLoadValues[i];
+            if (val != null && val != 0 && val != 1) {
+                return "Invalid Man. Load value '" + val + "' for " + manLoadFields[i] + ". Only 0 (False) or 1 (True) is allowed.";
+            }
+        }
+
         try {
             String dbRemarks;
             if (isPower) {
@@ -951,28 +1087,40 @@ public class JMDAssetCapacityServiceImpl implements JMDAssetCapacityService {
 
                 dto.setAprMin(getCellDoubleValue(row, col++));
                 dto.setAprMax(getCellDoubleValue(row, col++));
+                dto.setAprManLoad(getCellIntValue(row, col++));
                 dto.setMayMin(getCellDoubleValue(row, col++));
                 dto.setMayMax(getCellDoubleValue(row, col++));
+                dto.setMayManLoad(getCellIntValue(row, col++));
                 dto.setJunMin(getCellDoubleValue(row, col++));
                 dto.setJunMax(getCellDoubleValue(row, col++));
+                dto.setJunManLoad(getCellIntValue(row, col++));
                 dto.setJulMin(getCellDoubleValue(row, col++));
                 dto.setJulMax(getCellDoubleValue(row, col++));
+                dto.setJulManLoad(getCellIntValue(row, col++));
                 dto.setAugMin(getCellDoubleValue(row, col++));
                 dto.setAugMax(getCellDoubleValue(row, col++));
+                dto.setAugManLoad(getCellIntValue(row, col++));
                 dto.setSepMin(getCellDoubleValue(row, col++));
                 dto.setSepMax(getCellDoubleValue(row, col++));
+                dto.setSepManLoad(getCellIntValue(row, col++));
                 dto.setOctMin(getCellDoubleValue(row, col++));
                 dto.setOctMax(getCellDoubleValue(row, col++));
+                dto.setOctManLoad(getCellIntValue(row, col++));
                 dto.setNovMin(getCellDoubleValue(row, col++));
                 dto.setNovMax(getCellDoubleValue(row, col++));
+                dto.setNovManLoad(getCellIntValue(row, col++));
                 dto.setDecMin(getCellDoubleValue(row, col++));
                 dto.setDecMax(getCellDoubleValue(row, col++));
+                dto.setDecManLoad(getCellIntValue(row, col++));
                 dto.setJanMin(getCellDoubleValue(row, col++));
                 dto.setJanMax(getCellDoubleValue(row, col++));
+                dto.setJanManLoad(getCellIntValue(row, col++));
                 dto.setFebMin(getCellDoubleValue(row, col++));
                 dto.setFebMax(getCellDoubleValue(row, col++));
+                dto.setFebManLoad(getCellIntValue(row, col++));
                 dto.setMarMin(getCellDoubleValue(row, col++));
                 dto.setMarMax(getCellDoubleValue(row, col++));
+                dto.setMarManLoad(getCellIntValue(row, col++));
 
                 dto.setRemarks(getCellValue(row, col++));
 
@@ -1035,6 +1183,9 @@ public class JMDAssetCapacityServiceImpl implements JMDAssetCapacityService {
                 cell = headerRow.createCell(col++);
                 cell.setCellValue(month + " Max");
                 cell.setCellStyle(headerStyle);
+                cell = headerRow.createCell(col++);
+                cell.setCellValue(month + " Man. Load");
+                cell.setCellStyle(headerStyle);
             }
 
             Cell cell = headerRow.createCell(col++);
@@ -1069,28 +1220,40 @@ public class JMDAssetCapacityServiceImpl implements JMDAssetCapacityService {
 
                 setNumericCell(row, col++, dto.getAprMin(), dataStyle);
                 setNumericCell(row, col++, dto.getAprMax(), dataStyle);
+                setNumericCell(row, col++, dto.getAprManLoad() != null ? dto.getAprManLoad().doubleValue() : null, dataStyle);
                 setNumericCell(row, col++, dto.getMayMin(), dataStyle);
                 setNumericCell(row, col++, dto.getMayMax(), dataStyle);
+                setNumericCell(row, col++, dto.getMayManLoad() != null ? dto.getMayManLoad().doubleValue() : null, dataStyle);
                 setNumericCell(row, col++, dto.getJunMin(), dataStyle);
                 setNumericCell(row, col++, dto.getJunMax(), dataStyle);
+                setNumericCell(row, col++, dto.getJunManLoad() != null ? dto.getJunManLoad().doubleValue() : null, dataStyle);
                 setNumericCell(row, col++, dto.getJulMin(), dataStyle);
                 setNumericCell(row, col++, dto.getJulMax(), dataStyle);
+                setNumericCell(row, col++, dto.getJulManLoad() != null ? dto.getJulManLoad().doubleValue() : null, dataStyle);
                 setNumericCell(row, col++, dto.getAugMin(), dataStyle);
                 setNumericCell(row, col++, dto.getAugMax(), dataStyle);
+                setNumericCell(row, col++, dto.getAugManLoad() != null ? dto.getAugManLoad().doubleValue() : null, dataStyle);
                 setNumericCell(row, col++, dto.getSepMin(), dataStyle);
                 setNumericCell(row, col++, dto.getSepMax(), dataStyle);
+                setNumericCell(row, col++, dto.getSepManLoad() != null ? dto.getSepManLoad().doubleValue() : null, dataStyle);
                 setNumericCell(row, col++, dto.getOctMin(), dataStyle);
                 setNumericCell(row, col++, dto.getOctMax(), dataStyle);
+                setNumericCell(row, col++, dto.getOctManLoad() != null ? dto.getOctManLoad().doubleValue() : null, dataStyle);
                 setNumericCell(row, col++, dto.getNovMin(), dataStyle);
                 setNumericCell(row, col++, dto.getNovMax(), dataStyle);
+                setNumericCell(row, col++, dto.getNovManLoad() != null ? dto.getNovManLoad().doubleValue() : null, dataStyle);
                 setNumericCell(row, col++, dto.getDecMin(), dataStyle);
                 setNumericCell(row, col++, dto.getDecMax(), dataStyle);
+                setNumericCell(row, col++, dto.getDecManLoad() != null ? dto.getDecManLoad().doubleValue() : null, dataStyle);
                 setNumericCell(row, col++, dto.getJanMin(), dataStyle);
                 setNumericCell(row, col++, dto.getJanMax(), dataStyle);
+                setNumericCell(row, col++, dto.getJanManLoad() != null ? dto.getJanManLoad().doubleValue() : null, dataStyle);
                 setNumericCell(row, col++, dto.getFebMin(), dataStyle);
                 setNumericCell(row, col++, dto.getFebMax(), dataStyle);
+                setNumericCell(row, col++, dto.getFebManLoad() != null ? dto.getFebManLoad().doubleValue() : null, dataStyle);
                 setNumericCell(row, col++, dto.getMarMin(), dataStyle);
                 setNumericCell(row, col++, dto.getMarMax(), dataStyle);
+                setNumericCell(row, col++, dto.getMarManLoad() != null ? dto.getMarManLoad().doubleValue() : null, dataStyle);
 
                 createCell(row, col++, dto.getRemarks(), dataStyle);
                 createCell(row, col++, dto.getId() != null ? dto.getId().toString() : "", dataStyle);
@@ -1099,8 +1262,22 @@ public class JMDAssetCapacityServiceImpl implements JMDAssetCapacityService {
                 createCell(row, col++, failureReason, errorStyle);
             }
 
+            int idColIndex = -1, assetFkIdColIndex = -1;
+            for (int i = 0; i < headerRow.getLastCellNum(); i++) {
+                Cell headerCell = headerRow.getCell(i);
+                if (headerCell != null) {
+                    String headerVal = headerCell.getStringCellValue();
+                    if ("id".equals(headerVal)) idColIndex = i;
+                    else if ("assetFkId".equals(headerVal)) assetFkIdColIndex = i;
+                }
+            }
+            if (idColIndex >= 0) sheet.setColumnHidden(idColIndex, true);
+            if (assetFkIdColIndex >= 0) sheet.setColumnHidden(assetFkIdColIndex, true);
+
             for (int i = 0; i < col; i++) {
-                sheet.autoSizeColumn(i);
+                if (!sheet.isColumnHidden(i)) {
+                    sheet.autoSizeColumn(i);
+                }
             }
 
             workbook.write(outputStream);
@@ -1151,6 +1328,25 @@ public class JMDAssetCapacityServiceImpl implements JMDAssetCapacityService {
                 }
             } catch (NumberFormatException e) {
                 logger.warn("[IMPORT] Cannot parse double from cell at index {}", cellIndex);
+            }
+        }
+        return null;
+    }
+
+    private Integer getCellIntValue(Row row, int cellIndex) {
+        Cell cell = row.getCell(cellIndex);
+        if (cell == null) return null;
+        if (cell.getCellType() == CellType.NUMERIC) {
+            return (int) cell.getNumericCellValue();
+        }
+        if (cell.getCellType() == CellType.STRING) {
+            try {
+                String val = cell.getStringCellValue().trim();
+                if (!val.isEmpty()) {
+                    return Integer.parseInt(val);
+                }
+            } catch (NumberFormatException e) {
+                logger.warn("[IMPORT] Cannot parse int from cell at index {}", cellIndex);
             }
         }
         return null;
