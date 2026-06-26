@@ -804,6 +804,13 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 				java.sql.Date existingDateRaw = (java.sql.Date) existing[1];
 				Double existingCatalystQuantity = (Double) existing[2];
 				Integer existingRunLength = (Integer) existing[3];
+				if (existingRunLength == null) {
+					existingRunLength = 0;
+				}
+
+				if(existingCatalystQuantity == null) {
+					existingCatalystQuantity = 0.0;
+				}
 				String existingRemarks  = existing[4] != null ? existing[4].toString().trim() : "";
 
 				boolean parameterChanged = !param.equals(existingParam);
