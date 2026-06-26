@@ -163,7 +163,7 @@ public class VcmAvailabilityServiceImpl implements VcmAvailabilityService {
 
     /**
      * Generates an Excel file for VCM Trade data.
-     * Columns: Particulars, UOM, [months Apr-Mar], Remarks, NormParameterId (hidden), Id (hidden).
+     * Columns: Particulars, [months Apr-Mar], Remarks, NormParameterId (hidden), Id (hidden).
      * When isAfterSave is true, two additional columns — Status and Error Description — are appended.
      */
     private byte[] createVcmTradeExcel(String year, boolean isAfterSave, List<ConfigurationDTO> dtoList) {
@@ -175,10 +175,9 @@ public class VcmAvailabilityServiceImpl implements VcmAvailabilityService {
             CellStyle wrapUnlockedStyle = Utility.createBorderedWrapUnlockedStyle(workbook);
             CellStyle wrapLockedStyle = Utility.createBorderedWrapLockedStyle(workbook);
 
-            // Build header list (same sequence as configuration export, minus "Type")
+            // Build header list (same sequence as configuration export, minus "Type" and "UOM")
             List<String> headers = new ArrayList<>();
             headers.add("Particulars");
-            headers.add("UOM");
             headers.addAll(Utility.getAcademicYearMonths(year));
             headers.add("Remarks");
             headers.add("NormParameterId");
@@ -208,7 +207,6 @@ public class VcmAvailabilityServiceImpl implements VcmAvailabilityService {
                 Row row = sheet.createRow(currentRow++);
                 int col = 0;
                 setCellValue(row.createCell(col++), dto.getProductName(), rowStyle);
-                setCellValue(row.createCell(col++), dto.getUOM(), rowStyle);
                 setCellValue(row.createCell(col++), dto.getApr(), rowStyle);
                 setCellValue(row.createCell(col++), dto.getMay(), rowStyle);
                 setCellValue(row.createCell(col++), dto.getJun(), rowStyle);
@@ -230,8 +228,8 @@ public class VcmAvailabilityServiceImpl implements VcmAvailabilityService {
                 }
             }
 
-            // Remarks column index: 0=Particulars, 1=UOM, 2-13=months(12), 14=Remarks
-            int remarkColIndex = 14;
+            // Remarks column index: 0=Particulars, 1-12=months(12), 13=Remarks
+            int remarkColIndex = 13;
             final int REMARK_CHARS = 50;
             sheet.setColumnWidth(remarkColIndex, REMARK_CHARS * 256);
 
@@ -255,9 +253,9 @@ public class VcmAvailabilityServiceImpl implements VcmAvailabilityService {
                 }
             }
 
-            // NormParameterId and Id columns are hidden (indices 15 and 16)
+            // NormParameterId and Id columns are hidden (indices 14 and 15)
+            sheet.setColumnHidden(14, true);
             sheet.setColumnHidden(15, true);
-            sheet.setColumnHidden(16, true);
 
             // Auto-size all visible columns except the fixed-width remarks column
             for (int col = 0; col < headers.size(); col++) {
@@ -277,8 +275,8 @@ public class VcmAvailabilityServiceImpl implements VcmAvailabilityService {
 
     /**
      * Reads an Excel file and maps each data row to a ConfigurationDTO.
-     * Column layout mirrors the VCM Trade export (without "Type"):
-     * 0=Particulars, 1=UOM, 2-13=months(Apr-Mar), 14=Remarks, 15=NormParameterId, 16=Id.
+     * Column layout mirrors the VCM Trade export (without "Type" and "UOM"):
+     * 0=Particulars, 1-12=months(Apr-Mar), 13=Remarks, 14=NormParameterId, 15=Id.
      */
     private List<ConfigurationDTO> readVcmTradeConfigurations(InputStream inputStream, String year) {
         List<ConfigurationDTO> configList = new ArrayList<>();
@@ -293,23 +291,22 @@ public class VcmAvailabilityServiceImpl implements VcmAvailabilityService {
                 ConfigurationDTO dto = new ConfigurationDTO();
                 try {
                     dto.setProductName(getVcmStringCellValue(row.getCell(0), dto));
-                    dto.setUOM(getVcmStringCellValue(row.getCell(1), dto));
                     dto.setAuditYear(year);
-                    dto.setApr(getVcmNumericCellValue(row.getCell(2), dto));
-                    dto.setMay(getVcmNumericCellValue(row.getCell(3), dto));
-                    dto.setJun(getVcmNumericCellValue(row.getCell(4), dto));
-                    dto.setJul(getVcmNumericCellValue(row.getCell(5), dto));
-                    dto.setAug(getVcmNumericCellValue(row.getCell(6), dto));
-                    dto.setSep(getVcmNumericCellValue(row.getCell(7), dto));
-                    dto.setOct(getVcmNumericCellValue(row.getCell(8), dto));
-                    dto.setNov(getVcmNumericCellValue(row.getCell(9), dto));
-                    dto.setDec(getVcmNumericCellValue(row.getCell(10), dto));
-                    dto.setJan(getVcmNumericCellValue(row.getCell(11), dto));
-                    dto.setFeb(getVcmNumericCellValue(row.getCell(12), dto));
-                    dto.setMar(getVcmNumericCellValue(row.getCell(13), dto));
-                    dto.setRemarks(getVcmStringCellValue(row.getCell(14), dto));
-                    dto.setNormParameterFKId(getVcmStringCellValue(row.getCell(15), dto));
-                    dto.setId(getVcmStringCellValue(row.getCell(16), dto));
+                    dto.setApr(getVcmNumericCellValue(row.getCell(1), dto));
+                    dto.setMay(getVcmNumericCellValue(row.getCell(2), dto));
+                    dto.setJun(getVcmNumericCellValue(row.getCell(3), dto));
+                    dto.setJul(getVcmNumericCellValue(row.getCell(4), dto));
+                    dto.setAug(getVcmNumericCellValue(row.getCell(5), dto));
+                    dto.setSep(getVcmNumericCellValue(row.getCell(6), dto));
+                    dto.setOct(getVcmNumericCellValue(row.getCell(7), dto));
+                    dto.setNov(getVcmNumericCellValue(row.getCell(8), dto));
+                    dto.setDec(getVcmNumericCellValue(row.getCell(9), dto));
+                    dto.setJan(getVcmNumericCellValue(row.getCell(10), dto));
+                    dto.setFeb(getVcmNumericCellValue(row.getCell(11), dto));
+                    dto.setMar(getVcmNumericCellValue(row.getCell(12), dto));
+                    dto.setRemarks(getVcmStringCellValue(row.getCell(13), dto));
+                    dto.setNormParameterFKId(getVcmStringCellValue(row.getCell(14), dto));
+                    dto.setId(getVcmStringCellValue(row.getCell(15), dto));
                 } catch (Exception e) {
                     e.printStackTrace();
                     dto.setErrDescription(e.getMessage());
