@@ -113,4 +113,40 @@ public class CPPSteamAssetCapacity {
 
     @Column(name = "UOM")
     private String uom;
+
+    @Column(name = "Apr_Man_Load")
+    private Integer aprManLoad;
+
+    @Column(name = "May_Man_Load")
+    private Integer mayManLoad;
+
+    @Column(name = "Jun_Man_Load")
+    private Integer junManLoad;
+
+    @Column(name = "Jul_Man_Load")
+    private Integer julManLoad;
+
+    @Column(name = "Aug_Man_Load")
+    private Integer augManLoad;
+
+    @Column(name = "Sep_Man_Load")
+    private Integer sepManLoad;
+
+    @Column(name = "Oct_Man_Load")
+    private Integer octManLoad;
+
+    @Column(name = "Nov_Man_Load")
+    private Integer novManLoad;
+
+    @Column(name = "Dec_Man_Load")
+    private Integer decManLoad;
+
+    @Column(name = "Jan_Man_Load")
+    private Integer janManLoad;
+
+    @Column(name = "Feb_Man_Load")
+    private Integer febManLoad;
+
+    @Column(name = "Mar_Man_Load")
+    private Integer marManLoad;
 }

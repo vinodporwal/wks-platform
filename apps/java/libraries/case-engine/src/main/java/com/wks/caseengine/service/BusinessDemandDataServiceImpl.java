@@ -2030,7 +2030,7 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 					+ "Year, Plant_FK_Id, NormParameters_FK_Id, AvgTPH, NormTypeDisplayOrder, "
 					+ "NormParameterTypeId, NormParameterTypeName, NormParameterTypeDisplayName, "
 					+ "CreatedOn, ModifiedOn, UpdatedBy, IsDeleted, MaterialDisplayOrder, "
-					+ "Site_FK_Id, Vertical_FK_Id,isEditable,isVisible,UOM,DisplayName " + "FROM " + viewName + " "
+					+ "Site_FK_Id, Vertical_FK_Id,isEditable,isVisible,UOM,DisplayName " + "FROM " + "[" + viewName + "]" + " "
 					+ "WHERE (Year = :year AND Year IS NOT NULL) " + "AND Plant_FK_Id = :plantFkId "
 					+ "ORDER BY NormTypeDisplayOrder, MaterialDisplayOrder";
 
