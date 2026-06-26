@@ -39,6 +39,19 @@ public class CPPAssetCapacityResponseDto {
     private Double marMin;
     private Double marMax;
 
+    private Integer aprManLoad;
+    private Integer mayManLoad;
+    private Integer junManLoad;
+    private Integer julManLoad;
+    private Integer augManLoad;
+    private Integer sepManLoad;
+    private Integer octManLoad;
+    private Integer novManLoad;
+    private Integer decManLoad;
+    private Integer janManLoad;
+    private Integer febManLoad;
+    private Integer marManLoad;
+
     private String aopYear;
     private String remarks;
     private String uom;
