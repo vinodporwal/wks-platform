@@ -1453,7 +1453,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	public List<Object[]> getShutdownConsumptionData(String plantId, String aopYear,String storedProcedure) {
 		try {
 			
-			String sql = "EXEC " + storedProcedure
+			String sql = "EXEC " + "[" + storedProcedure + "]"
 					+ " @plantId = :plantId, @FinYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);
@@ -1478,7 +1478,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			
 			 String storedProcedure = verticalName + "_" + site.getName() + "_ShutdownConsumtion";
 			
-			String sql = "EXEC " + storedProcedure
+			String sql = "EXEC " + "[" + storedProcedure + "]"
 					+ " @plantId = :plantId, @aopYear = :aopYear, @siteId = :siteId, @verticalId = :verticalId";
 
 			Query query = entityManager.createNativeQuery(sql);
