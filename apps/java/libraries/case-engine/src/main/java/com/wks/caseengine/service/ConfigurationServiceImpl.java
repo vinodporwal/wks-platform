@@ -814,8 +814,8 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 				String existingRemarks  = existing[4] != null ? existing[4].toString().trim() : "";
 
 				boolean parameterChanged = !param.equals(existingParam);
-				boolean catalystQuantityChanged = dto.getCatalystQuantity() != existingCatalystQuantity;
-				boolean runLengthChanged = dto.getRunLength() != existingRunLength;
+				boolean catalystQuantityChanged = !Objects.equals(dto.getCatalystQuantity(), existingCatalystQuantity);
+				boolean runLengthChanged = !Objects.equals(dto.getRunLength(), existingRunLength);
 				boolean dateChanged = false;
 				if (existingDateRaw != null) {
 					// LocalDate existingLocalDate = existingDateRaw.toInstant()
@@ -856,12 +856,11 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 		aopMessageVM.setMessage("Data saved successfully");
 		aopMessageVM.setData(catalystChangeOverDTOList);
 		return aopMessageVM;
-	} catch (IllegalArgumentException e) {
-		throw new RestInvalidArgumentException(e.getMessage(), e);
-	} catch (Exception ex) {
-		ex.printStackTrace();
-		throw new RuntimeException("Failed to save CatalystChangeOver data", ex);
+	} 
+	catch (IllegalArgumentException e) {
+		throw new IllegalArgumentException(e.getMessage(), e);
 	}
+	
 
 }
 
@@ -5515,10 +5514,14 @@ continue;
 				}
 				try {
 					saveCatalystChangeOver(Collections.singletonList(dto), year);
-				} catch (Exception e) {
+				} 
+				catch (IllegalArgumentException e) {
 					dto.setSaveStatus("Failed");
-					dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Save failed");
+					dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Invalid argument");
 					failedRecords.add(dto);
+				}
+				catch (Exception e) {
+					throw new RestInvalidArgumentException("Failed to import Catalyst ChangeOver data", e);
 				}
 			}
 
