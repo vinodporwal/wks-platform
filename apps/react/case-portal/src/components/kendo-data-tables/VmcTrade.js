@@ -41,7 +41,7 @@ const VmcTrade = ({ permissions }) => {
   const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
   const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
 
-  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_'Vmc Trade'`
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_'VCM Trade'`
 
   const lowerVertName = vertName?.toLowerCase()
   const lowerSiteName = SITE_NAME?.toLowerCase()
@@ -485,7 +485,7 @@ const VmcTrade = ({ permissions }) => {
       uploadExcelBtn: true,
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
-      titleName: 'Vcm Trade',
+      titleName: 'VCM Trade',
       showCalculate: false,
     },
     isOldYear,

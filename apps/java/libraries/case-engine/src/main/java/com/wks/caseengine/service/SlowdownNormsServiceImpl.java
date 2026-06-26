@@ -500,10 +500,10 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
                     if (col >= MONTH_COL_START && col <= MONTH_COL_END) {
                         int monthNumber = ACADEMIC_MONTH_ORDER[col - MONTH_COL_START];
                         if (editableMonths != null && !editableMonths.contains(monthNumber)) {
-                            // Month is not in the allowed list → always locked
+                            // Month is not in the allowed list ? always locked
                             cellStyle = lockedStyle;
                         } else {
-                            // No restriction or month is allowed → follow row editability
+                            // No restriction or month is allowed ? follow row editability
                             cellStyle = rowStyle;
                         }
                     } else {
@@ -1085,8 +1085,8 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 			}
 		}
 
-		// Column index (0-based) → month number mapping for the 12 month columns
-		// Cols 3–11: Apr(4)–Dec(12); Cols 12–14: Jan(1)–Mar(3)
+		// Column index (0-based) ? month number mapping for the 12 month columns
+		// Cols 3�11: Apr(4)�Dec(12); Cols 12�14: Jan(1)�Mar(3)
 		Map<Integer, Integer> colToMonth = new HashMap<>();
 		colToMonth.put(3,  4);  // April
 		colToMonth.put(4,  5);  // May
@@ -1902,7 +1902,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	        return results;
 	    }
 
-	// ─── Export: Slowdown Norms Configuration ────────────────────────────────
+	// --- Export: Slowdown Norms Configuration --------------------------------
 
 	@Override
 	@SuppressWarnings("unchecked")
@@ -1912,7 +1912,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			String procedureName = vertical.getName() + "_GetSlowdownConsumption";
 
-			// Column definitions (field → title) from the dynamic-columns API
+			// Column definitions (field ? title) from the dynamic-columns API
 			AOPMessageVM columnsVM = getSlowdownNormsDynamicColumns(year, UUID.fromString(plantId));
 			List<Map<String, String>> columnDefs = (List<Map<String, String>>) columnsVM.getData();
 
@@ -1920,7 +1920,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 			List<String> spColumnNames = getColumnNames(procedureName, plantId, year);
 			List<Object[]> spRows = getData(plantId, year, procedureName);
 
-			// SP column-name → index map for fast lookup
+			// SP column-name ? index map for fast lookup
 			Map<String, Integer> colIndexMap = new LinkedHashMap<>();
 			for (int i = 0; i < spColumnNames.size(); i++) {
 				colIndexMap.put(spColumnNames.get(i), i);
@@ -1936,7 +1936,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 					.filter(col -> !fixedFields.contains(col.get("field")))
 					.collect(Collectors.toList());
 
-		// ── Build workbook ──────────────────────────────────────────────
+		// -- Build workbook ----------------------------------------------
 		Workbook workbook = new XSSFWorkbook();
 		Sheet sheet = workbook.createSheet("Slowdown Norms");
 
@@ -2004,7 +2004,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 
 		CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
 
-		// ── Identify the Remark column among dynamic columns ──
+		// -- Identify the Remark column among dynamic columns --
 		// (matched by field or title containing "remark", case-insensitive)
 		int remarkDynIdx = -1;
 		for (int i = 0; i < dynamicCols.size(); i++) {
@@ -2021,7 +2021,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 		//         Col 2 Particulars | Col 3 Type | Col 4 UOM | Col 5+ dynamic slowdown columns
 		final int remarkSheetCol = remarkDynIdx >= 0 ? 5 + remarkDynIdx : -1;
 
-		// ── Header row ──
+		// -- Header row --
 		Row headerRow = sheet.createRow(0);
 
 		Cell h0 = headerRow.createCell(0);
@@ -2050,7 +2050,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 			hCell.setCellStyle(headerStyle);
 		}
 
-		// ── Data rows ──
+		// -- Data rows --
 		Integer isEditableIdx  = colIndexMap.get("IsEditable");
 		Integer normParamIdx   = colIndexMap.get("NormParameter_FK_Id");
 		Integer displayNameIdx = colIndexMap.get("DisplayName");
@@ -2075,38 +2075,38 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 
 			Row dataRow = sheet.createRow(rowIdx++);
 
-			// Col 0 – NormParameter_FK_Id (hidden)
+			// Col 0 � NormParameter_FK_Id (hidden)
 			Cell c0 = dataRow.createCell(0);
 			c0.setCellValue(spRow[normParamIdx] != null ? spRow[normParamIdx].toString() : "");
 			c0.setCellStyle(hiddenStyle);
 
-			// Col 1 – IsEditable (hidden)
+			// Col 1 � IsEditable (hidden)
 			Cell c1 = dataRow.createCell(1);
 			c1.setCellValue(String.valueOf(isEditable));
 			c1.setCellStyle(hiddenStyle);
 
-			// Col 2 – Particulars (DisplayName – always read-only)
+			// Col 2 � Particulars (DisplayName � always read-only)
 			String particularsVal = spRow[displayNameIdx] != null ? spRow[displayNameIdx].toString() : "";
 			Cell c2 = dataRow.createCell(2);
 			c2.setCellValue(particularsVal);
 			c2.setCellStyle(lockedStyle);
 			maxColChars[2] = Math.max(maxColChars[2], particularsVal.length());
 
-			// Col 3 – Type (NormTypeName – always read-only)
+			// Col 3 � Type (NormTypeName � always read-only)
 			String typeVal = normTypeNameIdx != null && spRow[normTypeNameIdx] != null ? spRow[normTypeNameIdx].toString() : "";
 			Cell c3 = dataRow.createCell(3);
 			c3.setCellValue(typeVal);
 			c3.setCellStyle(lockedStyle);
 			maxColChars[3] = Math.max(maxColChars[3], typeVal.length());
 
-			// Col 4 – UOM (always read-only)
+			// Col 4 � UOM (always read-only)
 			String uomVal = uomIdx != null && spRow[uomIdx] != null ? spRow[uomIdx].toString() : "";
 			Cell c4 = dataRow.createCell(4);
 			c4.setCellValue(uomVal);
 			c4.setCellStyle(lockedStyle);
 			maxColChars[4] = Math.max(maxColChars[4], uomVal.length());
 
-		// Col 5+ – dynamic slowdown columns
+		// Col 5+ � dynamic slowdown columns
 		boolean rowHasWrappedContent = false;
 		for (int i = 0; i < dynamicCols.size(); i++) {
 			String field    = dynamicCols.get(i).get("field");
@@ -2144,12 +2144,12 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 			}
 		}
 
-		// ── Column widths ──
+		// -- Column widths --
 		// Hidden metadata columns
 		sheet.setColumnHidden(0, true);
 		sheet.setColumnHidden(1, true);
 
-		// Remark column: fixed generous width (≈ 60 characters)
+		// Remark column: fixed generous width (� 60 characters)
 		if (remarkSheetCol >= 0) {
 			sheet.setColumnWidth(remarkSheetCol, 60 * 256);
 		}
@@ -2175,7 +2175,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 		}
 	}
 
-	// ─── Import: Slowdown Norms Configuration ────────────────────────────────
+	// --- Import: Slowdown Norms Configuration --------------------------------
 
 	@Override
 	@SuppressWarnings("unchecked")
@@ -2203,12 +2203,12 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 
 				Sheet sheet = workbook.getSheetAt(0);
 
-				// Row 0 is the header – start from row 1
+				// Row 0 is the header � start from row 1
 				for (int rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++) {
 					Row row = sheet.getRow(rowNum);
 					if (row == null) continue;
 
-					// Col 0 – NormParameter_FK_Id (hidden)
+					// Col 0 � NormParameter_FK_Id (hidden)
 					String normParamIdStr = getCellStringValue(row.getCell(0));
 					if (normParamIdStr == null || normParamIdStr.trim().isEmpty()) continue;
 
@@ -2219,12 +2219,12 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 						continue; // skip rows with invalid UUID
 					}
 
-					// Col 1 – IsEditable (hidden) – skip non-editable rows
+					// Col 1 � IsEditable (hidden) � skip non-editable rows
 					String isEditableStr = getCellStringValue(row.getCell(1));
 					boolean isEditable = "true".equalsIgnoreCase(isEditableStr != null ? isEditableStr.trim() : "");
 					if (!isEditable) continue;
 
-				// Col 5+ – dynamic slowdown column values (Col 3 = Type is read-only, Col 4 = UOM)
+				// Col 5+ � dynamic slowdown column values (Col 3 = Type is read-only, Col 4 = UOM)
 				for (int i = 0; i < dynamicFields.size(); i++) {
 					Cell cell = row.getCell(5 + i);
 						if (cell == null) continue;
@@ -2256,7 +2256,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 		}
 	}
 
-	// ─── Private helpers ─────────────────────────────────────────────────────
+	// --- Private helpers -----------------------------------------------------
 
 	private boolean resolveIsEditable(Object[] spRow, Integer isEditableIdx) {
 		if (isEditableIdx == null || spRow[isEditableIdx] == null) return true;
