@@ -58,9 +58,15 @@ const AddSourceDialog = ({ open, onClose, onSuccess, editRowData = null }) => {
   const [procurementPlantOptions, setProcurementPlantOptions] = useState([])
 
   // Read plant list, year, and role flags from the global store
-  const { jmdSelectedPlants, year, oldYear, isReleased } = useSelector(
-    (state) => state.dataGridStore,
-  )
+  const {
+    jmdSelectedPlants,
+    year,
+    oldYear,
+    isReleased,
+    plantObject,
+    siteObject,
+  } = useSelector((state) => state.dataGridStore)
+  const plantObjectNew = [plantObject]
 
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_RELEASED = isReleased
@@ -68,7 +74,11 @@ const AddSourceDialog = ({ open, onClose, onSuccess, editRowData = null }) => {
   const AOP_YEAR = year?.selectedYear
 
   const cppPlantOptions = useMemo(() => {
-    const options = (jmdSelectedPlants || []).map((plant) => ({
+    const options = (
+      siteObject?.name?.toLowerCase() === 'dmd'
+        ? plantObjectNew
+        : jmdSelectedPlants || []
+    ).map((plant) => ({
       value: plant.id,
       label: plant.name || plant.id,
     }))
@@ -81,7 +91,7 @@ const AddSourceDialog = ({ open, onClose, onSuccess, editRowData = null }) => {
       }
     }
     return options
-  }, [jmdSelectedPlants, isEditMode, editRowData])
+  }, [jmdSelectedPlants, isEditMode, editRowData, plantObject])
 
   // Fetch procurement plants whenever cppPlant changes
   useEffect(() => {

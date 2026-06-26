@@ -515,6 +515,7 @@ const PlantRequirement = () => {
     switch (lowerSiteName) {
       case 'jmd':
         return <PlantRequirementJMD />
+      case 'hmd':
       case 'dmd':
         return <PlantRequirementDMD />
       // case 'hmd':
@@ -536,7 +537,7 @@ const PlantRequirement = () => {
             currentRemark={currentRemark}
             setCurrentRemark={setCurrentRemark}
             currentRowId={currentRowId}
-            setCurrentRowId={() => {}}
+            setCurrentRowId={() => { }}
             saveChanges={saveChanges}
             handleExcelUpload={handleExcelUpload}
             handleExport={handleExport}
