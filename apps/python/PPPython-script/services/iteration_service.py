@@ -198,6 +198,10 @@ def calculate_utility_consumption(
         gt3_gross_mwh=gt3_gross_mwh,
         stg_gross_mwh=stg_gross_mwh,
         shp_from_hrsg_mt=shp_from_hrsg_mt,
+        cw1_total_km3=total_cw1_km3,
+        cw2_total_km3=total_cw2_km3,
+        dm_total_m3=total_dm_m3,
+        bfw_total_m3=total_bfw_m3,
     )
     total_air_nm3 = air_process_nm3 + air_fixed_nm3 + u4u_air.get("total_nm3", 0.0)
 
@@ -229,6 +233,9 @@ def calculate_utility_consumption(
     return {
         "bfw": {
             "for_hrsg_m3": round(u4u_bfw.get("hrsg_m3", 0.0), 2),
+            "for_hrsg1_m3": round(u4u_bfw.get("hrsg1_m3", 0.0), 2),
+            "for_hrsg2_m3": round(u4u_bfw.get("hrsg2_m3", 0.0), 2),
+            "for_hrsg3_m3": round(u4u_bfw.get("hrsg3_m3", 0.0), 2),
             "for_hp_prds_m3": round(u4u_bfw.get("hp_prds_m3", 0.0), 2),
             "for_mp_prds_m3": round(u4u_bfw.get("mp_prds_m3", 0.0), 2),
             "for_lp_prds_m3": round(u4u_bfw.get("lp_prds_m3", 0.0), 2),
@@ -255,9 +262,12 @@ def calculate_utility_consumption(
             "total_km3": round(total_cw_km3, 2),
         },
         "compressed_air": {
-            "for_stg_nm3": round(0.0, 2),
-            "for_gt_nm3": round(0.0, 2),
+            "for_stg_nm3": round(u4u_air.get("stg_nm3", 0.0), 2),
+            "for_gt_nm3": round(u4u_air.get("gt_nm3", 0.0), 2),
             "for_hrsg_nm3": round(u4u_air.get("hrsg_nm3", 0.0), 2),
+            "for_hrsg1_nm3": round(u4u_air.get("hrsg1_nm3", 0.0), 2),
+            "for_hrsg2_nm3": round(u4u_air.get("hrsg2_nm3", 0.0), 2),
+            "for_hrsg3_nm3": round(u4u_air.get("hrsg3_nm3", 0.0), 2),
             "for_lp_extraction_nm3": round(0.0, 2),
             "for_mp_extraction_nm3": round(0.0, 2),
             "total_nm3": round(total_air_nm3, 2),
@@ -1433,6 +1443,21 @@ def usd_iterate(
         lp_from_stg_mt = steam_balance.get("lp_balance", {}).get("lp_from_stg", 0.0)
         mp_from_stg_mt = steam_balance.get("mp_balance", {}).get("mp_from_stg", 0.0)
 
+        # Extract per-HRSG SHP output for dynamic BFW norm lookup
+        _hrsg_dispatch_list_bfw = hrsg_dispatch_result.get("hrsg_dispatch", []) if hrsg_dispatch_result else []
+        _shp_hrsg1_bfw = 0.0
+        _shp_hrsg2_bfw = 0.0
+        _shp_hrsg3_bfw = 0.0
+        for _h in _hrsg_dispatch_list_bfw:
+            _hname = _h.get("name", "").upper().replace("-", "").replace(" ", "")
+            _shp_mt = _h.get("total_shp_mt", 0.0)
+            if "HRSG1" in _hname:
+                _shp_hrsg1_bfw = _shp_mt
+            elif "HRSG2" in _hname:
+                _shp_hrsg2_bfw = _shp_mt
+            elif "HRSG3" in _hname:
+                _shp_hrsg3_bfw = _shp_mt
+
         bfw_process = 0.0
         bfw_fixed = 300.0
         u4u_bfw = calculate_u4u_bfw(
@@ -1442,8 +1467,39 @@ def usd_iterate(
             hp_from_prds_mt=hp_from_prds_mt,
             mp_from_prds_mt=mp_from_prds_mt,
             lp_from_prds_mt=lp_from_prds_mt,
+            shp_from_hrsg1_mt=_shp_hrsg1_bfw,
+            shp_from_hrsg2_mt=_shp_hrsg2_bfw,
+            shp_from_hrsg3_mt=_shp_hrsg3_bfw,
         )
         bfw_total_estimate = bfw_fixed + bfw_process + u4u_bfw.get("total_m3", 0.0)
+
+        # ── BFW breakdown logging (dynamic norm verification) ──────────
+        print(f"\n  [BFW U4U BREAKDOWN] (Iteration {iteration})")
+        print(f"  +----------------------------------------+----------------+")
+        print(f"  | BFW Consumer                           |    BFW M3      |")
+        print(f"  +----------------------------------------+----------------+")
+        print(f"  | HRSG1 (SHP)                            | {u4u_bfw.get('hrsg1_m3', 0.0):>14.2f} |")
+        print(f"  | HRSG2 (SHP)                            | {u4u_bfw.get('hrsg2_m3', 0.0):>14.2f} |")
+        print(f"  | HRSG3 (SHP)                            | {u4u_bfw.get('hrsg3_m3', 0.0):>14.2f} |")
+        print(f"  | HRSG Total                             | {u4u_bfw.get('hrsg_m3', 0.0):>14.2f} |")
+        print(f"  | HP PRDS                                | {u4u_bfw.get('hp_prds_m3', 0.0):>14.2f} |")
+        print(f"  | MP PRDS                                | {u4u_bfw.get('mp_prds_m3', 0.0):>14.2f} |")
+        print(f"  | LP PRDS                                | {u4u_bfw.get('lp_prds_m3', 0.0):>14.2f} |")
+        # Print any extra dynamically discovered BFW consumers
+        _known_bfw_keys = {'hrsg_m3', 'hrsg1_m3', 'hrsg2_m3', 'hrsg3_m3',
+                           'hp_prds_m3', 'mp_prds_m3', 'lp_prds_m3', 'total_m3'}
+        _extra_found = False
+        for _bk, _bv in u4u_bfw.items():
+            if _bk not in _known_bfw_keys and _bk.endswith('_m3'):
+                if not _extra_found:
+                    print(f"  | --- Dynamic (from DB) ---              |                |")
+                    _extra_found = True
+                _display = _bk.replace('_m3', '').replace('_', ' ').title()
+                print(f"  | {_display:<38} | {_bv:>14.2f} |")
+        print(f"  +----------------------------------------+----------------+")
+        print(f"  | TOTAL BFW (U4U)                        | {u4u_bfw.get('total_m3', 0.0):>14.2f} |")
+        print(f"  | TOTAL BFW (with fixed {bfw_fixed:.0f})              | {bfw_total_estimate:>14.2f} |")
+        print(f"  +----------------------------------------+----------------+")
 
         u4u_dm = calculate_u4u_dm(month=month, year=year, bfw_total_m3=bfw_total_estimate)
         dm_total_estimate = dm_process + dm_fixed + u4u_dm.get("total_m3", 0.0)
@@ -1475,8 +1531,40 @@ def usd_iterate(
             gt3_gross_mwh=gt3_gross,
             stg_gross_mwh=stg_gross_mwh,
             shp_from_hrsg_mt=total_shp_from_hrsg,
+            shp_from_hrsg1_mt=_shp_hrsg1_bfw,
+            shp_from_hrsg2_mt=_shp_hrsg2_bfw,
+            shp_from_hrsg3_mt=_shp_hrsg3_bfw,
+            cw1_total_km3=cw1_total_estimate,
+            cw2_total_km3=cw2_total_estimate,
+            dm_total_m3=dm_total_estimate,
+            bfw_total_m3=bfw_total_estimate,
         )
         air_total_estimate = air_fixed + air_process + u4u_air.get("total_nm3", 0.0)
+
+        # ── Compressed Air breakdown logging (dynamic norm verification) ──
+        print(f"\n  [AIR U4U BREAKDOWN] (Iteration {iteration})")
+        print(f"  +----------------------------------------+----------------+")
+        print(f"  | Air Consumer                           |    Air NM3     |")
+        print(f"  +----------------------------------------+----------------+")
+        print(f"  | GT (total)                             | {u4u_air.get('gt_nm3', 0.0):>14.2f} |")
+        print(f"  | STG                                    | {u4u_air.get('stg_nm3', 0.0):>14.2f} |")
+        print(f"  | HRSG1 (SHP)                            | {u4u_air.get('hrsg1_nm3', 0.0):>14.2f} |")
+        print(f"  | HRSG2 (SHP)                            | {u4u_air.get('hrsg2_nm3', 0.0):>14.2f} |")
+        print(f"  | HRSG3 (SHP)                            | {u4u_air.get('hrsg3_nm3', 0.0):>14.2f} |")
+        print(f"  | HRSG Total                             | {u4u_air.get('hrsg_nm3', 0.0):>14.2f} |")
+        _known_air_keys = {'gt_nm3', 'stg_nm3', 'hrsg_nm3', 'hrsg1_nm3', 'hrsg2_nm3', 'hrsg3_nm3', 'total_nm3'}
+        _extra_air_found = False
+        for _ak, _av in u4u_air.items():
+            if _ak not in _known_air_keys and _ak.endswith('_nm3'):
+                if not _extra_air_found:
+                    print(f"  | --- Dynamic (from DB) ---              |                |")
+                    _extra_air_found = True
+                _display = _ak.replace('_nm3', '').replace('_', ' ').title()
+                print(f"  | {_display:<38} | {_av:>14.2f} |")
+        print(f"  +----------------------------------------+----------------+")
+        print(f"  | TOTAL AIR (U4U)                        | {u4u_air.get('total_nm3', 0.0):>14.2f} |")
+        print(f"  | TOTAL AIR (with process {air_process:.0f})     | {air_total_estimate:>14.2f} |")
+        print(f"  +----------------------------------------+----------------+")
 
         # Oxygen and Effluent (process values)
         oxygen_total = oxygen_process

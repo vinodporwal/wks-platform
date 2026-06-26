@@ -55,6 +55,15 @@ def extract_bfw_balance_data(month: int, year: int, calculation_result: dict) ->
     u4u_items.append({'name': 'MP PRDS', 'quantity': mp_prds_bfw, 'norm': mp_prds_norm})
     u4u_items.append({'name': 'LP PRDS', 'quantity': lp_prds_bfw, 'norm': lp_prds_norm})
     
+    # Dynamically include any extra BFW items discovered from DB
+    _known_bfw_keys = {'hrsg1_m3', 'hrsg2_m3', 'hrsg3_m3', 'hp_prds_m3', 'mp_prds_m3', 'lp_prds_m3', 'total_m3'}
+    for key, val in bfw_data.items():
+        if key in _known_bfw_keys:
+            continue
+        if key.startswith('extra_') and key.endswith('_m3'):
+            display_name = key.replace('extra_', '').replace('_m3', '').replace('_', ' ').title()
+            u4u_items.append({'name': display_name, 'quantity': val, 'norm': 0.0})
+    
     # Process and Fixed demands (from database)
     process_items = get_plant_wise_demand(month, year, 'Boiler Feed Water')
     fixed_items = get_fixed_consumption_details(month, year, 'Boiler Feed Water')

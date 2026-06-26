@@ -36,6 +36,7 @@ THE CIRCULAR DEPENDENCY:
 """
 
 from database.connection import get_connection
+from services.norm_lookup_service import get_all_norms_for_material
 
 # ============================================================
 # UTILITY NORMS - FROM NORMS SHEET (April 2025)
@@ -692,10 +693,24 @@ def calculate_utilities_from_dispatch(
     Returns:
         dict with detailed utility breakdown
     """
-    hrsg_bfw_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'HRSG2_SHP STEAM', 'Boiler Feed Water', NORM_HRSG_BFW_M3_PER_MT)
+    hrsg1_bfw_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'HRSG1_SHP STEAM', 'Boiler Feed Water', NORM_HRSG_BFW_M3_PER_MT)
+    hrsg2_bfw_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'HRSG2_SHP STEAM', 'Boiler Feed Water', NORM_HRSG_BFW_M3_PER_MT)
+    hrsg3_bfw_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'HRSG3_SHP STEAM', 'Boiler Feed Water', NORM_HRSG_BFW_M3_PER_MT)
     hp_prds_bfw_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'HP Steam PRDS', 'Boiler Feed Water', NORM_HP_PRDS_BFW_M3_PER_MT)
     mp_prds_bfw_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'MP Steam PRDS SHP', 'Boiler Feed Water', NORM_MP_PRDS_BFW_M3_PER_MT)
     lp_prds_bfw_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'LP Steam PRDS', 'Boiler Feed Water', NORM_LP_PRDS_BFW_M3_PER_MT)
+
+    # Compressed Air norms from DB (per-unit: NM3 per MT/KM3/M3)
+    _air_rows_db = get_all_norms_for_material(
+        month, year, "COMPRESSED AIR", plant_name="NMD - Utility Plant",
+    ) if month and year else []
+    _air_norms_db: dict[str, float] = {}
+    for _ar in _air_rows_db:
+        _au = (_ar.get("utility_name") or "").strip().upper()
+        _an = _ar.get("norm")
+        if _an is not None:
+            _air_norms_db[_au] = float(_an)
+
     bfw_dm_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'Boiler Feed Water', 'D M Water', NORM_BFW_DM_WATER_M3_PER_M3)
     bfw_lp_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'Boiler Feed Water', 'LP Steam_Dis', NORM_BFW_LP_STEAM_MT_PER_M3)
     bfw_power_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'Boiler Feed Water', 'Power_Dis', NORM_BFW_POWER_KWH_PER_M3)
@@ -847,29 +862,52 @@ def calculate_utilities_from_dispatch(
     air_gt2 = NORM_GT2_COMPRESSED_AIR_NM3_FIXED if gt2_available and gt2_gross_mwh > 0 else 0
     air_gt3 = NORM_GT3_COMPRESSED_AIR_NM3_FIXED if gt3_available and gt3_gross_mwh > 0 else 0
     air_stg = NORM_STG_COMPRESSED_AIR_NM3_FIXED if stg_gross_mwh > 0 else 0
-    
-    # HRSG - Fixed per month when operating
-    air_hrsg1 = NORM_HRSG_COMPRESSED_AIR_NM3_FIXED if hrsg1_available and shp_from_hrsg1 > 0 else 0
-    air_hrsg2 = NORM_HRSG_COMPRESSED_AIR_NM3_FIXED if hrsg2_available and shp_from_hrsg2 > 0 else 0
-    air_hrsg3 = NORM_HRSG_COMPRESSED_AIR_NM3_FIXED if hrsg3_available and shp_from_hrsg3 > 0 else 0
-    
-    # Cooling Water Plants - Fixed per month
-    air_cw1 = NORM_CW1_COMPRESSED_AIR_NM3_FIXED
-    air_cw2 = NORM_CW2_COMPRESSED_AIR_NM3_FIXED
-    
+
+    # HRSG - per-unit norms from DB (NM3 per MT SHP), fallback to fixed monthly
+    hrsg1_air_norm_db = _air_norms_db.get("HRSG1_SHP STEAM")
+    hrsg2_air_norm_db = _air_norms_db.get("HRSG2_SHP STEAM")
+    hrsg3_air_norm_db = _air_norms_db.get("HRSG3_SHP STEAM")
+
+    if hrsg1_air_norm_db is not None:
+        air_hrsg1 = shp_from_hrsg1 * hrsg1_air_norm_db if hrsg1_available and shp_from_hrsg1 > 0 else 0
+    else:
+        air_hrsg1 = NORM_HRSG_COMPRESSED_AIR_NM3_FIXED if hrsg1_available and shp_from_hrsg1 > 0 else 0
+    if hrsg2_air_norm_db is not None:
+        air_hrsg2 = shp_from_hrsg2 * hrsg2_air_norm_db if hrsg2_available and shp_from_hrsg2 > 0 else 0
+    else:
+        air_hrsg2 = NORM_HRSG_COMPRESSED_AIR_NM3_FIXED if hrsg2_available and shp_from_hrsg2 > 0 else 0
+    if hrsg3_air_norm_db is not None:
+        air_hrsg3 = shp_from_hrsg3 * hrsg3_air_norm_db if hrsg3_available and shp_from_hrsg3 > 0 else 0
+    else:
+        air_hrsg3 = NORM_HRSG_COMPRESSED_AIR_NM3_FIXED if hrsg3_available and shp_from_hrsg3 > 0 else 0
+
+    # Cooling Water Plants - per-unit norms from DB (NM3 per KM3), fallback to fixed
+    cw1_air_norm_db = _air_norms_db.get("COOLING WATER 1")
+    cw2_air_norm_db = _air_norms_db.get("COOLING WATER 2")
+
+    if cw1_air_norm_db is not None:
+        air_cw1 = total_cw1 * cw1_air_norm_db
+    else:
+        air_cw1 = NORM_CW1_COMPRESSED_AIR_NM3_FIXED
+    if cw2_air_norm_db is not None:
+        air_cw2 = total_cw2 * cw2_air_norm_db
+    else:
+        air_cw2 = NORM_CW2_COMPRESSED_AIR_NM3_FIXED
+
     # Plant compressed air (utility plants only)
     air_plant = air_gt1 + air_gt2 + air_gt3 + air_stg + air_hrsg1 + air_hrsg2 + air_hrsg3 + air_cw1 + air_cw2
-    
+
     # Total compressed air = Plant + Process + Fixed consumption
+    # (extra dynamic items added after BFW/DM totals are known, see below)
     total_compressed_air = air_plant + air_process_nm3 + air_fixed_nm3
     
     # =========================================================
     # 4. BFW CONSUMPTION (M³)
     # =========================================================
-    # HRSG BFW
-    bfw_hrsg1 = shp_from_hrsg1 * hrsg_bfw_norm if hrsg1_available else 0
-    bfw_hrsg2 = shp_from_hrsg2 * hrsg_bfw_norm if hrsg2_available else 0
-    bfw_hrsg3 = shp_from_hrsg3 * hrsg_bfw_norm if hrsg3_available else 0
+    # HRSG BFW - per-HRSG norms from DB
+    bfw_hrsg1 = shp_from_hrsg1 * hrsg1_bfw_norm if hrsg1_available else 0
+    bfw_hrsg2 = shp_from_hrsg2 * hrsg2_bfw_norm if hrsg2_available else 0
+    bfw_hrsg3 = shp_from_hrsg3 * hrsg3_bfw_norm if hrsg3_available else 0
     
     # PRDS BFW
     bfw_hp_prds = hp_from_prds * hp_prds_bfw_norm
@@ -877,7 +915,66 @@ def calculate_utilities_from_dispatch(
     bfw_lp_prds = lp_from_prds * lp_prds_bfw_norm
     
     total_bfw = bfw_hrsg1 + bfw_hrsg2 + bfw_hrsg3 + bfw_hp_prds + bfw_mp_prds + bfw_lp_prds
-    
+
+    # Dynamically fetch any additional BFW norms from DB that aren't
+    # already covered by HRSG1/2/3 or PRDS above.
+    extra_bfw_items: dict[str, float] = {}
+    if month and year:
+        _known_bfw_utils = {
+            "HRSG1_SHP STEAM", "HRSG2_SHP STEAM", "HRSG3_SHP STEAM",
+            "HP Steam PRDS", "MP Steam PRDS SHP", "LP Steam PRDS",
+        }
+        _bfw_rows = get_all_norms_for_material(
+            month, year, "Boiler Feed Water", plant_name="NMD - Utility Plant",
+        )
+        for _row in _bfw_rows:
+            _uname = (_row.get("utility_name") or "").strip().upper()
+            _norm = _row.get("norm")
+            if _norm is None:
+                continue
+            if _uname in {u.upper() for u in _known_bfw_utils}:
+                continue
+            # Try to match an extra utility to a generation quantity
+            _qty = 0.0
+            if "HRSG1" in _uname:
+                _qty = shp_from_hrsg1 if hrsg1_available else 0.0
+            elif "HRSG2" in _uname:
+                _qty = shp_from_hrsg2 if hrsg2_available else 0.0
+            elif "HRSG3" in _uname:
+                _qty = shp_from_hrsg3 if hrsg3_available else 0.0
+            elif "HP" in _uname and "PRDS" in _uname:
+                _qty = hp_from_prds
+            elif "MP" in _uname and "PRDS" in _uname:
+                _qty = mp_from_prds
+            elif "LP" in _uname and "PRDS" in _uname:
+                _qty = lp_from_prds
+            if _qty > 0:
+                _consumption = _qty * _norm
+                total_bfw += _consumption
+                extra_bfw_items[_row["utility_name"]] = round(_consumption, 2)
+
+    # BFW breakdown logging for verification
+    print(f"\n  [BFW CONSUMPTION BREAKDOWN] (utility_service)")
+    print(f"  +----------------------------------------+----------------+----------------+")
+    print(f"  | BFW Consumer                           |    BFW M3      |    Norm        |")
+    print(f"  +----------------------------------------+----------------+----------------+")
+    if hrsg1_available:
+        print(f"  | HRSG1 (SHP={shp_from_hrsg1:.1f} MT)              | {bfw_hrsg1:>14.2f} | {hrsg1_bfw_norm:>14.4f} |")
+    if hrsg2_available:
+        print(f"  | HRSG2 (SHP={shp_from_hrsg2:.1f} MT)              | {bfw_hrsg2:>14.2f} | {hrsg2_bfw_norm:>14.4f} |")
+    if hrsg3_available:
+        print(f"  | HRSG3 (SHP={shp_from_hrsg3:.1f} MT)              | {bfw_hrsg3:>14.2f} | {hrsg3_bfw_norm:>14.4f} |")
+    print(f"  | HP PRDS (HP={hp_from_prds:.1f} MT)               | {bfw_hp_prds:>14.2f} | {hp_prds_bfw_norm:>14.4f} |")
+    print(f"  | MP PRDS (MP={mp_from_prds:.1f} MT)               | {bfw_mp_prds:>14.2f} | {mp_prds_bfw_norm:>14.4f} |")
+    print(f"  | LP PRDS (LP={lp_from_prds:.1f} MT)               | {bfw_lp_prds:>14.2f} | {lp_prds_bfw_norm:>14.4f} |")
+    if extra_bfw_items:
+        print(f"  | --- Dynamic (from DB) ---              |                |                |")
+        for _ename, _eval in extra_bfw_items.items():
+            print(f"  | {_ename:<38} | {_eval:>14.2f} | {'(dynamic)':>14} |")
+    print(f"  +----------------------------------------+----------------+----------------+")
+    print(f"  | TOTAL BFW                              | {total_bfw:>14.2f} |                |")
+    print(f"  +----------------------------------------+----------------+----------------+")
+
     # =========================================================
     # 5. DM WATER CONSUMPTION (M³)
     # =========================================================
@@ -885,6 +982,65 @@ def calculate_utilities_from_dispatch(
     
     # Total DM water = BFW requirement + Process consumption + Fixed consumption
     total_dm_water = dm_for_bfw + dm_process_m3 + dm_fixed_m3
+
+    # =========================================================
+    # 3b. EXTRA COMPRESSED AIR (dynamic from DB)
+    # =========================================================
+    # Now that BFW and DM Water totals are known, process any additional
+    # compressed air norms from the DB that weren't covered by HRSG/CW above.
+    extra_air_items: dict[str, float] = {}
+    _known_air_utils = {
+        "HRSG1_SHP STEAM", "HRSG2_SHP STEAM", "HRSG3_SHP STEAM",
+        "COOLING WATER 1", "COOLING WATER 2",
+    }
+    _air_qty_map = {
+        "D M WATER": total_dm_water,
+        "BOILER FEED WATER": total_bfw,
+    }
+    for _uname_upper, _norm_val in _air_norms_db.items():
+        if _uname_upper in _known_air_utils:
+            continue
+        _qty = _air_qty_map.get(_uname_upper, 0.0)
+        if _qty > 0 and _norm_val > 0:
+            _consumption = _qty * _norm_val
+            total_compressed_air += _consumption
+            # Store with original-case name for display
+            for _ar in _air_rows_db:
+                if (_ar.get("utility_name") or "").strip().upper() == _uname_upper:
+                    extra_air_items[_ar["utility_name"]] = round(_consumption, 2)
+                    break
+
+    # Compressed Air breakdown logging for verification
+    print(f"\n  [COMPRESSED AIR BREAKDOWN] (utility_service)")
+    print(f"  +----------------------------------------+----------------+----------------+")
+    print(f"  | Air Consumer                           |    Air NM3     |    Norm        |")
+    print(f"  +----------------------------------------+----------------+----------------+")
+    print(f"  | GT1 (fixed)                            | {air_gt1:>14.2f} | {'(fixed)':>14} |")
+    print(f"  | GT2 (fixed)                            | {air_gt2:>14.2f} | {'(fixed)':>14} |")
+    print(f"  | GT3 (fixed)                            | {air_gt3:>14.2f} | {'(fixed)':>14} |")
+    print(f"  | STG (fixed)                            | {air_stg:>14.2f} | {'(fixed)':>14} |")
+    if hrsg1_available:
+        _h1n = f"{hrsg1_air_norm_db:.4f}" if hrsg1_air_norm_db is not None else "(fixed)"
+        print(f"  | HRSG1 (SHP={shp_from_hrsg1:.1f} MT)              | {air_hrsg1:>14.2f} | {_h1n:>14} |")
+    if hrsg2_available:
+        _h2n = f"{hrsg2_air_norm_db:.4f}" if hrsg2_air_norm_db is not None else "(fixed)"
+        print(f"  | HRSG2 (SHP={shp_from_hrsg2:.1f} MT)              | {air_hrsg2:>14.2f} | {_h2n:>14} |")
+    if hrsg3_available:
+        _h3n = f"{hrsg3_air_norm_db:.4f}" if hrsg3_air_norm_db is not None else "(fixed)"
+        print(f"  | HRSG3 (SHP={shp_from_hrsg3:.1f} MT)              | {air_hrsg3:>14.2f} | {_h3n:>14} |")
+    _cw1n = f"{cw1_air_norm_db:.6f}" if cw1_air_norm_db is not None else "(fixed)"
+    _cw2n = f"{cw2_air_norm_db:.6f}" if cw2_air_norm_db is not None else "(fixed)"
+    print(f"  | CW1 (total={total_cw1:.1f} KM3)             | {air_cw1:>14.2f} | {_cw1n:>14} |")
+    print(f"  | CW2 (total={total_cw2:.1f} KM3)             | {air_cw2:>14.2f} | {_cw2n:>14} |")
+    if extra_air_items:
+        print(f"  | --- Dynamic (from DB) ---              |                |                |")
+        for _ename, _eval in extra_air_items.items():
+            print(f"  | {_ename:<38} | {_eval:>14.2f} | {'(dynamic)':>14} |")
+    print(f"  +----------------------------------------+----------------+----------------+")
+    print(f"  | Process Air                            | {air_process_nm3:>14.2f} |                |")
+    print(f"  | Fixed Air                              | {air_fixed_nm3:>14.2f} |                |")
+    print(f"  | TOTAL COMPRESSED AIR                   | {total_compressed_air:>14.2f} |                |")
+    print(f"  +----------------------------------------+----------------+----------------+")
     
     # =========================================================
     # 6. RAW WATER CONSUMPTION (M³)
@@ -1000,6 +1156,16 @@ def calculate_utilities_from_dispatch(
             "process_nm3": round(air_process_nm3, 2),
             "fixed_nm3": round(air_fixed_nm3, 2),
             "total_nm3": round(total_compressed_air, 2),
+            # Norms actually used (for budget table display)
+            "hrsg1_air_norm": hrsg1_air_norm_db if hrsg1_air_norm_db is not None else NORM_HRSG_COMPRESSED_AIR_NM3_FIXED,
+            "hrsg2_air_norm": hrsg2_air_norm_db if hrsg2_air_norm_db is not None else NORM_HRSG_COMPRESSED_AIR_NM3_FIXED,
+            "hrsg3_air_norm": hrsg3_air_norm_db if hrsg3_air_norm_db is not None else NORM_HRSG_COMPRESSED_AIR_NM3_FIXED,
+            "cw1_air_norm": cw1_air_norm_db if cw1_air_norm_db is not None else NORM_CW1_COMPRESSED_AIR_NM3_FIXED,
+            "cw2_air_norm": cw2_air_norm_db if cw2_air_norm_db is not None else NORM_CW2_COMPRESSED_AIR_NM3_FIXED,
+            "bfw_air_norm": _air_norms_db.get("BOILER FEED WATER", 0.0),
+            "dm_air_norm": _air_norms_db.get("D M WATER", NORM_DM_COMPRESSED_AIR_NM3_PER_M3),
+            **{f"extra_{k.lower().replace(' ', '_').replace('/', '_')}_nm3": v for k, v in extra_air_items.items()},
+            **{f"extra_{k.lower().replace(' ', '_').replace('/', '_')}_norm": _air_norms_db.get(k, 0.0) for k, v in extra_air_items.items()},
         },
         # BFW
         "bfw": {
@@ -1010,6 +1176,7 @@ def calculate_utilities_from_dispatch(
             "mp_prds_m3": round(bfw_mp_prds, 2),
             "lp_prds_m3": round(bfw_lp_prds, 2),
             "total_m3": round(total_bfw, 2),
+            **{f"extra_{k.lower().replace(' ', '_').replace('/', '_')}_m3": v for k, v in extra_bfw_items.items()},
         },
         # DM Water
         "dm_water": {
@@ -1332,18 +1499,22 @@ def generate_utility_output_table(
                 "Steam_MT": hrsg1_shp,
                 "Natural_Gas_MMBTU": ng.get("hrsg1_mmbtu", 0),
                 "BFW_M3": bfw.get("hrsg1_m3", 0),
+                "Compressed_Air_NM3": air.get("hrsg1_nm3", 0),
+                "Compressed_Air_Norm": air.get("hrsg1_air_norm", 0),
             },
             "HRSG2_SHP STEAM": {
                 "Steam_MT": utilities.get("shp_from_hrsg2", 0),
                 "Natural_Gas_MMBTU": ng.get("hrsg2_mmbtu", 0),
                 "BFW_M3": bfw.get("hrsg2_m3", 0),
                 "Compressed_Air_NM3": air.get("hrsg2_nm3", 0),
+                "Compressed_Air_Norm": air.get("hrsg2_air_norm", 0),
             },
             "HRSG3_SHP STEAM": {
                 "Steam_MT": utilities.get("shp_from_hrsg3", 0),
                 "Natural_Gas_MMBTU": ng.get("hrsg3_mmbtu", 0),
                 "BFW_M3": bfw.get("hrsg3_m3", 0),
                 "Compressed_Air_NM3": air.get("hrsg3_nm3", 0),
+                "Compressed_Air_Norm": air.get("hrsg3_air_norm", 0),
             },
             "LP Steam PRDS": {
                 "Steam_MT": lp_prds,
@@ -1718,7 +1889,9 @@ def print_nmd_budget_format(
     NORM_BFW_HP_PRDS = 0.0768
     NORM_SHP_HP_PRDS = 0.9232
     NORM_BFW_HRSG = 1.0240
-    NORM_AIR_HRSG = 453600.0  # Fixed
+    NORM_AIR_HRSG1 = air.get('hrsg1_air_norm', 453600.0)  # From DB or fallback
+    NORM_AIR_HRSG2 = air.get('hrsg2_air_norm', 453600.0)  # From DB or fallback
+    NORM_AIR_HRSG3 = air.get('hrsg3_air_norm', 453600.0)  # From DB or fallback
     NORM_LP_CREDIT_HRSG = -0.0504
     NORM_BFW_LP_PRDS = 0.2500
     NORM_MP_LP_PRDS = 0.7500
@@ -1731,13 +1904,14 @@ def print_nmd_budget_format(
     NORM_CW2_AIR = 175.0  # Fixed
     NORM_POWER_AIR = 0.1650
     NORM_WATER_CW1 = 11.0500
-    NORM_AIR_CW1 = 1650.0  # Fixed
+    NORM_AIR_CW1 = air.get('cw1_air_norm', 1650.0)  # From DB or fallback
     NORM_POWER_CW1 = 245.0000
     NORM_WATER_CW2 = 11.5000
-    NORM_AIR_CW2 = 1650.0  # Fixed
+    NORM_AIR_CW2 = air.get('cw2_air_norm', 1650.0)  # From DB or fallback
     NORM_POWER_CW2 = 250.0000
     NORM_POWER_DM = 1.2100
-    NORM_AIR_DM = 0.0770
+    NORM_AIR_BFW = air.get('bfw_air_norm', 0.0)  # From DB or 0 if no norm
+    NORM_AIR_DM = air.get('dm_air_norm', 0.0770)  # From DB or fallback
     NORM_CONDENSATE_DM = 0.2030
     NORM_WATER_DM = 1.0500
     NORM_POWER_EFFLUENT = 3.5400
@@ -1894,6 +2068,8 @@ def print_nmd_budget_format(
     print(f"{'':<25} {'Utilities':<20} {'Cooling Water 2':<25} {'KM3':<8} {fmt_qty(total_bfw)} {bfw_ref_qty:>18,.2f} {NORM_CW2_BFW:>10.2f} {NORM_CW2_BFW:>20,.2f} {EXPECTED['bfw_cw']:>20,.2f} {NORM_CW2_BFW - EXPECTED['bfw_cw']:>18,.2f} {calc_pct(NORM_CW2_BFW, EXPECTED['bfw_cw'])}")
     print(f"{'':<25} {'':<20} {'D M Water':<25} {'M3':<8} {fmt_qty(total_bfw)} {bfw_ref_qty:>18,.2f} {NORM_BFW_DM:>10.4f} {bfw_dm:>20,.2f} {EXPECTED['bfw_dm']:>20,.2f} {bfw_dm - EXPECTED['bfw_dm']:>18,.2f} {calc_pct(bfw_dm, EXPECTED['bfw_dm'])}")
     print(f"{'':<25} {'':<20} {'LP Steam_Dis':<25} {'MT':<8} {fmt_qty(total_bfw)} {bfw_ref_qty:>18,.2f} {NORM_LP_BFW:>10.4f} {bfw_lp:>20,.2f} {EXPECTED['bfw_lp']:>20,.2f} {bfw_lp - EXPECTED['bfw_lp']:>18,.2f} {calc_pct(bfw_lp, EXPECTED['bfw_lp'])}")
+    bfw_air = air.get('extra_boiler_feed_water_nm3', 0)
+    print(f"{'':<25} {'Utilities':<20} {'COMPRESSED AIR':<25} {'NM3':<8} {fmt_qty(total_bfw)} {bfw_ref_qty:>18,.2f} {NORM_AIR_BFW:>10.4f} {bfw_air:>20,.2f} {EXPECTED.get('bfw_air', 0):>20,.2f} {bfw_air - EXPECTED.get('bfw_air', 0):>18,.2f} {calc_pct(bfw_air, EXPECTED.get('bfw_air', 0))}")
     print(f"{'':<25} {'':<20} {'Power_Dis':<25} {'KWH':<8} {fmt_qty(total_bfw)} {bfw_ref_qty:>18,.2f} {NORM_POWER_BFW:>10.4f} {bfw_power:>20,.2f} {EXPECTED['bfw_power']:>20,.2f} {bfw_power - EXPECTED['bfw_power']:>18,.2f} {calc_pct(bfw_power, EXPECTED['bfw_power'])}")
     
     # ========================================
@@ -1919,7 +2095,8 @@ def print_nmd_budget_format(
     print(f"\n{'NMD - Utility Plant':<25} {'Cooling Water 1':<20} {'':<25} {'KM3':<8}")
     print(f"{'':<25} {'Raw Material':<20} {'SULPHURIC ACID':<25} {'MT':<8} {fmt_qty(cw1_km3)} {cw1_ref_qty:>18,.2f} {NORM_SULPHURIC_ACID_CW1:>10.7f} {cw1_sulphuric_acid:>20,.2f} {EXPECTED['cw1_sulphuric_acid']:>20,.2f} {cw1_sulphuric_acid - EXPECTED['cw1_sulphuric_acid']:>18,.2f} {calc_pct(cw1_sulphuric_acid, EXPECTED['cw1_sulphuric_acid'])}")
     print(f"{'':<25} {'':<20} {'Water':<25} {'M3':<8} {fmt_qty(cw1_km3)} {cw1_ref_qty:>18,.2f} {NORM_WATER_CW1:>10.4f} {cw1_water:>20,.2f} {EXPECTED['cw1_water']:>20,.2f} {cw1_water - EXPECTED['cw1_water']:>18,.2f} {calc_pct(cw1_water, EXPECTED['cw1_water'])}")
-    print(f"{'':<25} {'Utilities':<20} {'COMPRESSED AIR':<25} {'NM3':<8} {fmt_qty(cw1_km3)} {cw1_ref_qty:>18,.2f} {NORM_AIR_CW1:>10.0f} {NORM_AIR_CW1:>20,.2f} {EXPECTED['cw1_air']:>20,.2f} {NORM_AIR_CW1 - EXPECTED['cw1_air']:>18,.2f} {calc_pct(NORM_AIR_CW1, EXPECTED['cw1_air'])}")
+    cw1_air = air.get('cw1_nm3', 0)
+    print(f"{'':<25} {'Utilities':<20} {'COMPRESSED AIR':<25} {'NM3':<8} {fmt_qty(cw1_km3)} {cw1_ref_qty:>18,.2f} {NORM_AIR_CW1:>10.4f} {cw1_air:>20,.2f} {EXPECTED['cw1_air']:>20,.2f} {cw1_air - EXPECTED['cw1_air']:>18,.2f} {calc_pct(cw1_air, EXPECTED['cw1_air'])}")
     print(f"{'':<25} {'':<20} {'Power_Dis':<25} {'KWH':<8} {fmt_qty(cw1_km3)} {cw1_ref_qty:>18,.2f} {NORM_POWER_CW1:>10.4f} {cw1_power:>20,.2f} {EXPECTED['cw1_power']:>20,.2f} {cw1_power - EXPECTED['cw1_power']:>18,.2f} {calc_pct(cw1_power, EXPECTED['cw1_power'])}")
     
     # ========================================
@@ -1934,7 +2111,8 @@ def print_nmd_budget_format(
     print(f"\n{'NMD - Utility Plant':<25} {'Cooling Water 2':<20} {'':<25} {'KM3':<8}")
     print(f"{'':<25} {'Raw Material':<20} {'SULPHURIC ACID':<25} {'MT':<8} {fmt_qty(cw2_km3)} {cw2_ref_qty:>18,.2f} {NORM_SULPHURIC_ACID_CW2:>10.7f} {cw2_sulphuric_acid:>20,.2f} {EXPECTED['cw2_sulphuric_acid']:>20,.2f} {cw2_sulphuric_acid - EXPECTED['cw2_sulphuric_acid']:>18,.2f} {calc_pct(cw2_sulphuric_acid, EXPECTED['cw2_sulphuric_acid'])}")
     print(f"{'':<25} {'':<20} {'Water':<25} {'M3':<8} {fmt_qty(cw2_km3)} {cw2_ref_qty:>18,.2f} {NORM_WATER_CW2:>10.4f} {cw2_water:>20,.2f} {EXPECTED['cw2_water']:>20,.2f} {cw2_water - EXPECTED['cw2_water']:>18,.2f} {calc_pct(cw2_water, EXPECTED['cw2_water'])}")
-    print(f"{'':<25} {'Utilities':<20} {'COMPRESSED AIR':<25} {'NM3':<8} {fmt_qty(cw2_km3)} {cw2_ref_qty:>18,.2f} {NORM_AIR_CW2:>10.0f} {NORM_AIR_CW2:>20,.2f} {EXPECTED['cw2_air']:>20,.2f} {NORM_AIR_CW2 - EXPECTED['cw2_air']:>18,.2f} {calc_pct(NORM_AIR_CW2, EXPECTED['cw2_air'])}")
+    cw2_air = air.get('cw2_nm3', 0)
+    print(f"{'':<25} {'Utilities':<20} {'COMPRESSED AIR':<25} {'NM3':<8} {fmt_qty(cw2_km3)} {cw2_ref_qty:>18,.2f} {NORM_AIR_CW2:>10.4f} {cw2_air:>20,.2f} {EXPECTED['cw2_air']:>20,.2f} {cw2_air - EXPECTED['cw2_air']:>18,.2f} {calc_pct(cw2_air, EXPECTED['cw2_air'])}")
     print(f"{'':<25} {'':<20} {'Power_Dis':<25} {'KWH':<8} {fmt_qty(cw2_km3)} {cw2_ref_qty:>18,.2f} {NORM_POWER_CW2:>10.4f} {cw2_power:>20,.2f} {EXPECTED['cw2_power']:>20,.2f} {cw2_power - EXPECTED['cw2_power']:>18,.2f} {calc_pct(cw2_power, EXPECTED['cw2_power'])}")
 
 
@@ -1945,7 +2123,7 @@ def print_nmd_budget_format(
     total_dm = dm.get("total_m3", 0)
     dm_water = total_dm * NORM_WATER_DM
     dm_power = total_dm * NORM_POWER_DM
-    dm_air = total_dm * NORM_AIR_DM
+    dm_air = air.get('extra_d_m_water_nm3', total_dm * NORM_AIR_DM)
     dm_condensate = total_dm * NORM_CONDENSATE_DM
     # DM Water - Catalyst & Chemicals
     dm_caustic = total_dm * NORM_CAUSTIC_DM
@@ -2004,7 +2182,7 @@ def print_nmd_budget_format(
     hrsg1_ref_qty = calc_ref_qty(EXPECTED['hrsg1_ng'], NORM_NG_HRSG1) if NORM_NG_HRSG1 != 0 else 0
     print(f"{'':<25} {'':<20} {'NATURAL GAS':<25} {'MMBTU':<8} {fmt_qty(hrsg1_shp)} {hrsg1_ref_qty:>18,.2f} {NORM_NG_HRSG1:>10.4f} {hrsg1_ng:>20,.2f} {EXPECTED['hrsg1_ng']:>20,.2f} {hrsg1_ng - EXPECTED['hrsg1_ng']:>18,.2f} {calc_pct(hrsg1_ng, EXPECTED['hrsg1_ng'])}")
     print(f"{'':<25} {'':<20} {'Boiler Feed Water':<25} {'M3':<8} {fmt_qty(hrsg1_shp)} {hrsg1_ref_qty:>18,.2f} {NORM_BFW_HRSG:>10.4f} {hrsg1_bfw:>20,.2f} {EXPECTED['hrsg1_bfw']:>20,.2f} {hrsg1_bfw - EXPECTED['hrsg1_bfw']:>18,.2f} {calc_pct(hrsg1_bfw, EXPECTED['hrsg1_bfw'])}")
-    print(f"{'':<25} {'':<20} {'COMPRESSED AIR':<25} {'NM3':<8} {fmt_qty(hrsg1_shp)} {hrsg1_ref_qty:>18,.2f} {NORM_AIR_HRSG:>10.0f} {hrsg1_air_calc:>20,.2f} {EXPECTED['hrsg1_air']:>20,.2f} {hrsg1_air_calc - EXPECTED['hrsg1_air']:>18,.2f} {calc_pct(hrsg1_air_calc, EXPECTED['hrsg1_air'])}")
+    print(f"{'':<25} {'':<20} {'COMPRESSED AIR':<25} {'NM3':<8} {fmt_qty(hrsg1_shp)} {hrsg1_ref_qty:>18,.2f} {NORM_AIR_HRSG1:>10.4f} {hrsg1_air_calc:>20,.2f} {EXPECTED['hrsg1_air']:>20,.2f} {hrsg1_air_calc - EXPECTED['hrsg1_air']:>18,.2f} {calc_pct(hrsg1_air_calc, EXPECTED['hrsg1_air'])}")
     print(f"{'':<25} {'':<20} {'LP Steam_Dis':<25} {'MT':<8} {fmt_qty(hrsg1_shp)} {hrsg1_ref_qty:>18,.2f} {NORM_LP_CREDIT_HRSG:>10.4f} {hrsg1_lp_credit:>20,.2f} {EXPECTED['hrsg1_lp']:>20,.2f} {hrsg1_lp_credit - EXPECTED['hrsg1_lp']:>18,.2f} {calc_pct(hrsg1_lp_credit, EXPECTED['hrsg1_lp'])}")
     
     # ========================================
@@ -2026,7 +2204,7 @@ def print_nmd_budget_format(
     print(f"{'':<25} {'':<20} {'NATURAL GAS':<25} {'MMBTU':<8} {fmt_qty(hrsg2_shp)} {hrsg2_ref_qty:>18,.2f} {NORM_NG_HRSG2:>10.4f} {hrsg2_ng:>20,.2f} {EXPECTED['hrsg2_ng']:>20,.2f} {hrsg2_ng - EXPECTED['hrsg2_ng']:>18,.2f} {calc_pct(hrsg2_ng, EXPECTED['hrsg2_ng'])}")
     print(f"{'':<25} {'':<20} {'Water':<25} {'M3':<8} {fmt_qty(hrsg2_shp)} {hrsg2_ref_qty:>18,.2f} {NORM_WATER_HRSG:>10.7f} {hrsg2_water:>20,.2f} {EXPECTED['hrsg2_water']:>20,.2f} {hrsg2_water - EXPECTED['hrsg2_water']:>18,.2f} {calc_pct(hrsg2_water, EXPECTED['hrsg2_water'])}")
     print(f"{'':<25} {'Utilities':<20} {'Boiler Feed Water':<25} {'M3':<8} {fmt_qty(hrsg2_shp)} {hrsg2_ref_qty:>18,.2f} {NORM_BFW_HRSG:>10.4f} {hrsg2_bfw:>20,.2f} {EXPECTED['hrsg2_bfw']:>20,.2f} {hrsg2_bfw - EXPECTED['hrsg2_bfw']:>18,.2f} {calc_pct(hrsg2_bfw, EXPECTED['hrsg2_bfw'])}")
-    print(f"{'':<25} {'':<20} {'COMPRESSED AIR':<25} {'NM3':<8} {fmt_qty(hrsg2_shp)} {hrsg2_ref_qty:>18,.2f} {NORM_AIR_HRSG:>10.0f} {hrsg2_air_calc:>20,.2f} {EXPECTED['hrsg2_air']:>20,.2f} {hrsg2_air_calc - EXPECTED['hrsg2_air']:>18,.2f} {calc_pct(hrsg2_air_calc, EXPECTED['hrsg2_air'])}")
+    print(f"{'':<25} {'':<20} {'COMPRESSED AIR':<25} {'NM3':<8} {fmt_qty(hrsg2_shp)} {hrsg2_ref_qty:>18,.2f} {NORM_AIR_HRSG2:>10.4f} {hrsg2_air_calc:>20,.2f} {EXPECTED['hrsg2_air']:>20,.2f} {hrsg2_air_calc - EXPECTED['hrsg2_air']:>18,.2f} {calc_pct(hrsg2_air_calc, EXPECTED['hrsg2_air'])}")
     print(f"{'':<25} {'':<20} {'LP Steam_Dis':<25} {'MT':<8} {fmt_qty(hrsg2_shp)} {hrsg2_ref_qty:>18,.2f} {NORM_LP_CREDIT_HRSG:>10.4f} {hrsg2_lp_credit:>20,.2f} {EXPECTED['hrsg2_lp']:>20,.2f} {hrsg2_lp_credit - EXPECTED['hrsg2_lp']:>18,.2f} {calc_pct(hrsg2_lp_credit, EXPECTED['hrsg2_lp'])}")
     
     # ========================================
@@ -2048,7 +2226,7 @@ def print_nmd_budget_format(
     print(f"{'':<25} {'':<20} {'NATURAL GAS':<25} {'MMBTU':<8} {fmt_qty(hrsg3_shp)} {hrsg3_ref_qty:>18,.2f} {NORM_NG_HRSG3:>10.4f} {hrsg3_ng:>20,.2f} {EXPECTED['hrsg3_ng']:>20,.2f} {hrsg3_ng - EXPECTED['hrsg3_ng']:>18,.2f} {calc_pct(hrsg3_ng, EXPECTED['hrsg3_ng'])}")
     print(f"{'':<25} {'':<20} {'Water':<25} {'M3':<8} {fmt_qty(hrsg3_shp)} {hrsg3_ref_qty:>18,.2f} {NORM_WATER_HRSG:>10.7f} {hrsg3_water:>20,.2f} {EXPECTED['hrsg3_water']:>20,.2f} {hrsg3_water - EXPECTED['hrsg3_water']:>18,.2f} {calc_pct(hrsg3_water, EXPECTED['hrsg3_water'])}")
     print(f"{'':<25} {'Utilities':<20} {'Boiler Feed Water':<25} {'M3':<8} {fmt_qty(hrsg3_shp)} {hrsg3_ref_qty:>18,.2f} {NORM_BFW_HRSG:>10.4f} {hrsg3_bfw:>20,.2f} {EXPECTED['hrsg3_bfw']:>20,.2f} {hrsg3_bfw - EXPECTED['hrsg3_bfw']:>18,.2f} {calc_pct(hrsg3_bfw, EXPECTED['hrsg3_bfw'])}")
-    print(f"{'':<25} {'':<20} {'COMPRESSED AIR':<25} {'NM3':<8} {fmt_qty(hrsg3_shp)} {hrsg3_ref_qty:>18,.2f} {NORM_AIR_HRSG:>10.0f} {hrsg3_air_calc:>20,.2f} {EXPECTED['hrsg3_air']:>20,.2f} {hrsg3_air_calc - EXPECTED['hrsg3_air']:>18,.2f} {calc_pct(hrsg3_air_calc, EXPECTED['hrsg3_air'])}")
+    print(f"{'':<25} {'':<20} {'COMPRESSED AIR':<25} {'NM3':<8} {fmt_qty(hrsg3_shp)} {hrsg3_ref_qty:>18,.2f} {NORM_AIR_HRSG3:>10.4f} {hrsg3_air_calc:>20,.2f} {EXPECTED['hrsg3_air']:>20,.2f} {hrsg3_air_calc - EXPECTED['hrsg3_air']:>18,.2f} {calc_pct(hrsg3_air_calc, EXPECTED['hrsg3_air'])}")
     print(f"{'':<25} {'':<20} {'LP Steam_Dis':<25} {'MT':<8} {fmt_qty(hrsg3_shp)} {hrsg3_ref_qty:>18,.2f} {NORM_LP_CREDIT_HRSG:>10.4f} {hrsg3_lp_credit:>20,.2f} {EXPECTED['hrsg3_lp']:>20,.2f} {hrsg3_lp_credit - EXPECTED['hrsg3_lp']:>18,.2f} {calc_pct(hrsg3_lp_credit, EXPECTED['hrsg3_lp'])}")
 
 

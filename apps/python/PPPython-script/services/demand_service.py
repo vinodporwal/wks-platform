@@ -14,7 +14,7 @@ This service calculates the complete demand breakdown for:
 """
 
 from database.connection import get_connection
-from services.norm_lookup_service import get_month_norm
+from services.norm_lookup_service import get_month_norm, get_all_norms_for_material
 
 def _norm(
     month: int,
@@ -179,29 +179,134 @@ def calculate_u4u_bfw(
     hp_from_prds_mt: float = 0.0,
     mp_from_prds_mt: float = 0.0,
     lp_from_prds_mt: float = 0.0,
+    shp_from_hrsg1_mt: float = 0.0,
+    shp_from_hrsg2_mt: float = 0.0,
+    shp_from_hrsg3_mt: float = 0.0,
 ) -> dict:
     """
     Calculate U4U BFW consumption from steam generation.
-    """
-    bfw_hrsg_norm = _norm(month, year, "NMD - Utility Plant", "HRSG2_SHP STEAM", "Boiler Feed Water")
-    bfw_hp_prds_norm = _norm(month, year, "NMD - Utility Plant", "HP Steam PRDS", "Boiler Feed Water")
-    bfw_mp_prds_norm = _norm(month, year, "NMD - Utility Plant", "MP Steam PRDS SHP", "Boiler Feed Water")
-    bfw_lp_prds_norm = _norm(month, year, "NMD - Utility Plant", "LP Steam PRDS", "Boiler Feed Water")
 
-    bfw_hrsg = shp_from_hrsg_mt * bfw_hrsg_norm
-    bfw_hp_prds = hp_from_prds_mt * bfw_hp_prds_norm
-    bfw_mp_prds = mp_from_prds_mt * bfw_mp_prds_norm
-    bfw_lp_prds = lp_from_prds_mt * bfw_lp_prds_norm
-    
-    total_bfw = bfw_hrsg + bfw_hp_prds + bfw_mp_prds + bfw_lp_prds
-    
-    return {
-        "hrsg_m3": round(bfw_hrsg, 2),
-        "hp_prds_m3": round(bfw_hp_prds, 2),
-        "mp_prds_m3": round(bfw_mp_prds, 2),
-        "lp_prds_m3": round(bfw_lp_prds, 2),
+    Dynamically fetches all norms where MaterialName='Boiler Feed Water' from
+    the database and maps each UtilityName to the corresponding generation
+    quantity.  This replaces the previous hardcoded approach that only looked
+    up HRSG2_SHP STEAM, HP Steam PRDS, MP Steam PRDS SHP and LP Steam PRDS.
+
+    Backward-compatible return keys (hrsg_m3, hp_prds_m3, mp_prds_m3,
+    lp_prds_m3, total_m3) are always present.  Per-HRSG keys
+    (hrsg1_m3, hrsg2_m3, hrsg3_m3) are added when per-HRSG quantities are
+    supplied.  Any additional utilities discovered in the DB are included
+    with a key derived from the UtilityName.
+    """
+    # ── generation-quantity map (DB UtilityName → quantity) ──────────
+    generation_map: dict[str, float] = {
+        "HRSG1_SHP STEAM": shp_from_hrsg1_mt,
+        "HRSG2_SHP STEAM": shp_from_hrsg2_mt,
+        "HRSG3_SHP STEAM": shp_from_hrsg3_mt,
+        "HP Steam PRDS": hp_from_prds_mt,
+        "MP Steam PRDS SHP": mp_from_prds_mt,
+        "LP Steam PRDS": lp_from_prds_mt,
+    }
+
+    # ── dynamic fetch of all BFW norms from DB ───────────────────────
+    bfw_rows = get_all_norms_for_material(
+        month, year, "Boiler Feed Water", plant_name="NMD - Utility Plant",
+    )
+
+    total_bfw = 0.0
+    per_hrsg: dict[str, float] = {}          # key → consumption
+    prds_breakdown: dict[str, float] = {}
+    extra_breakdown: dict[str, float] = {}
+
+    for row in bfw_rows:
+        util_name = row["utility_name"] or ""
+        norm = row["norm"]
+        if norm is None:
+            continue
+
+        # Try to match the UtilityName to a generation quantity
+        matched_qty = None
+        for map_key, qty in generation_map.items():
+            if _norm_key_match(map_key, util_name):
+                matched_qty = qty
+                break
+
+        if matched_qty is not None and matched_qty > 0:
+            consumption = matched_qty * norm
+            total_bfw += consumption
+            _store_bfw_breakdown(
+                util_name, consumption, per_hrsg, prds_breakdown, extra_breakdown,
+            )
+
+    # ── fallback: per-HRSG quantities not supplied ───────────────────
+    # If no per-HRSG consumption was recorded but a total shp_from_hrsg_mt
+    # was passed, apply the first HRSG norm found to the total (old behavior).
+    if not per_hrsg and shp_from_hrsg_mt > 0:
+        for row in bfw_rows:
+            util_name = row["utility_name"] or ""
+            if "HRSG" in util_name.upper() and row["norm"] is not None:
+                consumption = shp_from_hrsg_mt * row["norm"]
+                total_bfw += consumption
+                per_hrsg[util_name] = consumption
+                break  # only one HRSG norm to avoid double-counting
+
+    # ── assemble backward-compatible result ──────────────────────────
+    hrsg_total = sum(per_hrsg.values())
+    result: dict = {
+        "hrsg_m3": round(hrsg_total, 2),
+        "hp_prds_m3": round(prds_breakdown.get("HP Steam PRDS", 0.0), 2),
+        "mp_prds_m3": round(prds_breakdown.get("MP Steam PRDS SHP", 0.0), 2),
+        "lp_prds_m3": round(prds_breakdown.get("LP Steam PRDS", 0.0), 2),
         "total_m3": round(total_bfw, 2),
     }
+
+    # Add per-HRSG keys
+    for key, val in per_hrsg.items():
+        result[_hrsg_key(key)] = round(val, 2)
+
+    # Add any extra dynamically discovered utilities
+    for key, val in extra_breakdown.items():
+        result[_extra_key(key)] = round(val, 2)
+
+    return result
+
+
+def _norm_key_match(map_key: str, util_name: str) -> bool:
+    """Case-insensitive match between a generation-map key and a DB UtilityName."""
+    return map_key.strip().upper() == util_name.strip().upper()
+
+
+def _store_bfw_breakdown(
+    util_name: str,
+    consumption: float,
+    per_hrsg: dict,
+    prds_breakdown: dict,
+    extra_breakdown: dict,
+) -> None:
+    """Route a BFW consumption value to the appropriate breakdown bucket."""
+    upper = util_name.strip().upper()
+    if "HRSG" in upper:
+        per_hrsg[util_name] = per_hrsg.get(util_name, 0.0) + consumption
+    elif "PRDS" in upper:
+        prds_breakdown[util_name] = prds_breakdown.get(util_name, 0.0) + consumption
+    else:
+        extra_breakdown[util_name] = extra_breakdown.get(util_name, 0.0) + consumption
+
+
+def _hrsg_key(util_name: str) -> str:
+    """Convert a DB UtilityName like 'HRSG2_SHP STEAM' to a dict key like 'hrsg2_m3'."""
+    upper = util_name.strip().upper()
+    for i in (1, 2, 3):
+        if f"HRSG{i}" in upper:
+            return f"hrsg{i}_m3"
+    return "hrsg_m3"
+
+
+def _extra_key(util_name: str) -> str:
+    """Convert an arbitrary DB UtilityName to a snake_case dict key with _m3 suffix."""
+    key = util_name.strip().lower().replace(" ", "_").replace("/", "_")
+    if not key.endswith("_m3"):
+        key += "_m3"
+    return key
 
 
 def calculate_u4u_dm(month: int, year: int, bfw_total_m3: float = 0.0) -> dict:
@@ -255,15 +360,33 @@ def calculate_u4u_air(
     gt3_gross_mwh: float = 0.0,
     stg_gross_mwh: float = 0.0,
     shp_from_hrsg_mt: float = 0.0,
+    shp_from_hrsg1_mt: float = 0.0,
+    shp_from_hrsg2_mt: float = 0.0,
+    shp_from_hrsg3_mt: float = 0.0,
+    cw1_total_km3: float = 0.0,
+    cw2_total_km3: float = 0.0,
+    dm_total_m3: float = 0.0,
+    bfw_total_m3: float = 0.0,
 ) -> dict:
     """
-    Calculate U4U Compressed Air consumption from power plants.
+    Calculate U4U Compressed Air consumption from power plants and utilities.
+
+    Dynamically fetches all norms where MaterialName='COMPRESSED AIR' from
+    the database (NMD - Utility Plant) and maps each UtilityName to the
+    corresponding generation quantity.  GT/STG norms are fetched from their
+    respective power plant entries.
+
+    Backward-compatible return keys (gt_nm3, stg_nm3, hrsg_nm3, total_nm3)
+    are always present.  Per-HRSG keys (hrsg1_nm3, hrsg2_nm3, hrsg3_nm3)
+    are added when per-HRSG quantities are supplied.  Any additional
+    utilities discovered in the DB are included with a key derived from
+    the UtilityName.
     """
+    # GT/STG norms from respective power plants
     gt1_air_norm = _norm(month, year, "NMD - Power Plant 1", "POWERGEN", "COMPRESSED AIR", issuing_plant_name="NMD - Utility Plant")
     gt2_air_norm = _norm(month, year, "NMD - Power Plant 2", "POWERGEN", "COMPRESSED AIR", issuing_plant_name="NMD - Utility Plant")
     gt3_air_norm = _norm(month, year, "NMD - Power Plant 3", "POWERGEN", "COMPRESSED AIR", issuing_plant_name="NMD - Utility Plant")
     stg_air_norm = _norm(month, year, "NMD - STG Power Plant", "POWERGEN", "COMPRESSED AIR", issuing_plant_name="NMD - Utility Plant")
-    hrsg_air_norm = _norm(month, year, "NMD - Utility Plant", "HRSG2_SHP STEAM", "COMPRESSED AIR")
 
     air_gt = (
         (gt1_gross_mwh * 1000 * gt1_air_norm)
@@ -271,14 +394,81 @@ def calculate_u4u_air(
         + (gt3_gross_mwh * 1000 * gt3_air_norm)
     )
     air_stg = stg_gross_mwh * 1000 * stg_air_norm
-    air_hrsg = shp_from_hrsg_mt * hrsg_air_norm
-    
-    return {
+
+    # ── generation-quantity map (DB UtilityName → quantity) ──────────
+    generation_map: dict[str, float] = {
+        "HRSG1_SHP STEAM": shp_from_hrsg1_mt,
+        "HRSG2_SHP STEAM": shp_from_hrsg2_mt,
+        "HRSG3_SHP STEAM": shp_from_hrsg3_mt,
+        "Cooling Water 1": cw1_total_km3,
+        "Cooling Water 2": cw2_total_km3,
+        "D M Water": dm_total_m3,
+        "Boiler Feed Water": bfw_total_m3,
+    }
+
+    # ── dynamic fetch of all compressed air norms from DB ───────────
+    air_rows = get_all_norms_for_material(
+        month, year, "COMPRESSED AIR", plant_name="NMD - Utility Plant",
+    )
+
+    per_hrsg: dict[str, float] = {}
+    extra_breakdown: dict[str, float] = {}
+
+    for row in air_rows:
+        util_name = row["utility_name"] or ""
+        norm = row["norm"]
+        if norm is None:
+            continue
+
+        matched_qty = None
+        for map_key, qty in generation_map.items():
+            if _norm_key_match(map_key, util_name):
+                matched_qty = qty
+                break
+
+        if matched_qty is not None and matched_qty > 0:
+            consumption = matched_qty * norm
+            upper = util_name.strip().upper()
+            if "HRSG" in upper:
+                per_hrsg[util_name] = per_hrsg.get(util_name, 0.0) + consumption
+            else:
+                extra_breakdown[util_name] = extra_breakdown.get(util_name, 0.0) + consumption
+
+    # ── fallback: per-HRSG quantities not supplied ───────────────────
+    if not per_hrsg and shp_from_hrsg_mt > 0:
+        for row in air_rows:
+            util_name = row["utility_name"] or ""
+            if "HRSG" in util_name.upper() and row["norm"] is not None:
+                consumption = shp_from_hrsg_mt * row["norm"]
+                per_hrsg[util_name] = consumption
+                break
+
+    # ── assemble backward-compatible result ──────────────────────────
+    hrsg_total = sum(per_hrsg.values())
+    extra_total = sum(extra_breakdown.values())
+    result: dict = {
         "gt_nm3": round(air_gt, 2),
         "stg_nm3": round(air_stg, 2),
-        "hrsg_nm3": round(air_hrsg, 2),
-        "total_nm3": round(air_gt + air_stg + air_hrsg, 2),
+        "hrsg_nm3": round(hrsg_total, 2),
+        "total_nm3": round(air_gt + air_stg + hrsg_total + extra_total, 2),
     }
+
+    for key, val in per_hrsg.items():
+        upper = key.strip().upper()
+        hrsg_key = "hrsg_nm3"
+        for i in (1, 2, 3):
+            if f"HRSG{i}" in upper:
+                hrsg_key = f"hrsg{i}_nm3"
+                break
+        result[hrsg_key] = round(val, 2)
+
+    for key, val in extra_breakdown.items():
+        extra_key = key.strip().lower().replace(" ", "_").replace("/", "_")
+        if not extra_key.endswith("_nm3"):
+            extra_key += "_nm3"
+        result[extra_key] = round(val, 2)
+
+    return result
 
 
 def calculate_u4u_lp_steam(

@@ -36,7 +36,7 @@ from services.fixed_consumption_service import (
 # LOG OUTPUT CONFIGURATION
 # ============================================================
 # Change this path to your desired log folder
-LOG_FOLDER = r"C:\Users\shrik\Desktop\Project\fork repo\development\PP python-script repo\PPPython-script\logs"
+LOG_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
 
 class TeeOutput:
     """Captures output to both console and a string buffer for logging."""
