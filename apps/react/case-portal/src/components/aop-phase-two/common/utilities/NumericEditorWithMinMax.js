@@ -7,6 +7,8 @@ export const NumericEditorWithMinMax = ({
   onChange,
   min,
   max,
+  wholeNumberOnly = false,
+  errorMessage,
 }) => {
   // Resolve nested field paths (e.g., 'april.min' -> dataItem.april.min)
   const getNestedValue = (obj, fieldPath) => {
@@ -26,8 +28,9 @@ export const NumericEditorWithMinMax = ({
   const handleChange = (e) => {
     let val = e.target.value
 
-    // Allow only numeric (including decimal and negative)
-    if (val === '' || /^-?\d*(\.\d*)?$/.test(val)) {
+    // Allow only whole numbers if wholeNumberOnly, otherwise allow decimals/negatives
+    const pattern = wholeNumberOnly ? /^\d*$/ : /^-?\d*(\.\d*)?$/
+    if (val === '' || pattern.test(val)) {
       setLocalValue(val)
 
       // Validate against min/max if provided
@@ -35,9 +38,9 @@ export const NumericEditorWithMinMax = ({
       if (val !== '') {
         const num = parseFloat(val)
         if (min !== undefined && num < min) {
-          errorMsg = `Please enter a number between ${min} to ${max}`
+          errorMsg = errorMessage || `Please enter a number between ${min} to ${max}`
         } else if (max !== undefined && num > max) {
-          errorMsg = `Please enter a number between ${min} to ${max}`
+          errorMsg = errorMessage || `Please enter a number between ${min} to ${max}`
         }
       }
       setError(errorMsg)

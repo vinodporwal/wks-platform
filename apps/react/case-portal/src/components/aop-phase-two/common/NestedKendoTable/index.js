@@ -1336,6 +1336,19 @@ const NestedKendoTable = ({
                       {rows?.length || 0} {rows?.length === 1 ? 'Row' : 'Rows'}
                     </Typography>
                   </Box>
+
+                  {permissions.note && (
+                    <Typography
+                      sx={{
+                        fontSize: '16px',
+                        fontWeight: 700,
+                        color: 'red',
+                        fontFamily: "'Honeywell Cond Web', 'Inter', sans-serif",
+                      }}
+                    >
+                      Note :{permissions?.note || ''}
+                    </Typography>
+                  )}
                 </Typography>
               ) : (
                 /* Only toggle icon when showTitleNameBusiness is false */

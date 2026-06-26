@@ -80,6 +80,13 @@ const NormsHistorianBasis = () => {
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
+
+  const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
+  const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
+
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+  
   const [loading, setLoading] = useState(false)
   const [showGrids, setShowGrids] = useState({})
 
@@ -265,7 +272,7 @@ const NormsHistorianBasis = () => {
     }
   }
 
-  const fileName = `${VERTICAL_NAME}-Norms Historian Basis.xlsx`
+  const fileName = `${EXCEL_EXPORT_TITLE}-Norms Historian Basis-${AOP_YEAR}.xlsx`
 
   const handleUnitChange = (unit) => {
     setLoading(true)

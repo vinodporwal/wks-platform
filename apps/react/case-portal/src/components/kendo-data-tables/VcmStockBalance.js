@@ -387,7 +387,7 @@ const VcmStockbalance = ({ permissions }) => {
       uploadExcelBtn: false,
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
-      titleName: 'Vcm Stock Balance',
+      titleName: 'VCM Stock Balance',
       showCalculate: false,
     },
     isOldYear,

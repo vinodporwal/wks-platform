@@ -36,6 +36,19 @@ public interface CPPAssetCapacityProjection {
     Double getMarMin();
     Double getMarMax();
 
+    Integer getAprManLoad();
+    Integer getMayManLoad();
+    Integer getJunManLoad();
+    Integer getJulManLoad();
+    Integer getAugManLoad();
+    Integer getSepManLoad();
+    Integer getOctManLoad();
+    Integer getNovManLoad();
+    Integer getDecManLoad();
+    Integer getJanManLoad();
+    Integer getFebManLoad();
+    Integer getMarManLoad();
+
     String getAopYear();
     String getRemarks();
     String getUom();

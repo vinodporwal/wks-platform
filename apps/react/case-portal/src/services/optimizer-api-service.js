@@ -15,6 +15,7 @@ export const OptimizerDataApiService = {
   VmcTradeExportExcel,
   budgetOperatingLineExport,
   budgetOperatingHourImport,
+  VcmTradeImportExcel,
 }
 async function fetchModes(keycloak, PLANT_ID, AOP_YEAR, TYPE) {
   const url = `${Config.CaseEngineUrl}/task/modes?year=${AOP_YEAR}&plantId=${PLANT_ID}&type=${TYPE}`
@@ -208,7 +209,7 @@ async function getVcmStockBalance(keycloak, PLANT_ID, AOP_YEAR) {
   }
 }
 async function VmcTradeExportExcel(keycloak, PLANT_ID, AOP_YEAR, EXCEL_NAME) {
-  const url = `${Config.CaseEngineUrl}/task/business-demand-export-line?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}}`
+  const url = `${Config.CaseEngineUrl}/task/vcm-trade-export?year=${AOP_YEAR}&plantId=${PLANT_ID}`
 
   const headers = {
     'Content-Type': 'application/json',
@@ -295,6 +296,27 @@ async function budgetOperatingHourImport(file, keycloak, PLANT_ID, AOP_YEAR) {
     return json(keycloak, resp) // assuming `json()` handles response properly
   } catch (e) {
     console.error('Error importing Budget Operating Hours Excel:', e)
+    return await Promise.reject(e)
+  }
+}
+async function VcmTradeImportExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/vcm-trade-import?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp) // assuming `json()` handles response properly
+  } catch (e) {
+    console.error('Error importing Vcm Trade Excel:', e)
     return await Promise.reject(e)
   }
 }
