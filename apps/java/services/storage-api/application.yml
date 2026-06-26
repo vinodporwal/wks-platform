@@ -29,7 +29,7 @@ driver.storage.endpoint.bucket.prefix:
 driver.storage.accesskey: ${MINIO_ROOT_USER:minio}
 driver.storage.secretkey: ${MINIO_ROOT_PASSWORD:#minio00#}
 driver.storage.uploads.backend.protocol: https
-driver.storage.uploads.backend.port: 8905
+driver.storage.uploads.backend.port: 9000
 driver.storage.uploads.backend.url: ${MINIO_HOST_EXTERNAL:localhost}
 driver.storage.uploads.file.min.size:  1024
 driver.storage.uploads.file.max.size:  20000000

@@ -3,19 +3,60 @@ import Config from '../../consts'
 import MemoryTokenManager from '../MemoryTokenManager'
 
 export class StorageService {
-  async uploadFile(storage, file, fileName, dir, evt) {
-    if(!dir){
-      dir = 'cases'
+  // Modify the file name to include a timestamp
+  async modifyFileName(fileName){
+    const lastDotIndex = fileName.lastIndexOf('.');
+    const baseName = (lastDotIndex === -1) ? fileName : fileName.substring(0, lastDotIndex);
+    const extension = (lastDotIndex === -1) ? '' : fileName.substring(lastDotIndex);
+
+    // Get the current timestamp
+    const now = new Date();
+    const timestamp = now.toISOString().replace(/[-:T]/g, '').slice(0, 14);
+
+    // Construct the new file name with the timestamp
+    const modifiedFileName = baseName + '_' + timestamp + extension;
+
+    return modifiedFileName;
+  }
+
+  // Upload a file
+  async uploadFile(storage, file, fileName, dir = 'cases', evt) {
+    try {
+      // Ensure directory is set
+      dir = dir || 'cases';
+
+      // Modify the file name
+      const modifiedFileName = await this.modifyFileName(file.name);
+
+      // Create updated file metadata object
+      const updatedFile = {
+        name: modifiedFileName, // Modified file name
+        size: file.size,        // Retain 'size'
+        type: file.type,        // Retain 'type'
+        originalFile: file      // Store the original file if needed
+      };
+
+      // Call the assumed `minio().uploadFile()` method (ensure minio() is imported/defined)
+      return minio().uploadFile(updatedFile, dir, evt);
+    } catch (err) {
+      console.error('Error uploading file:', err);
+      throw err;
     }
-    return minio().uploadFile(file, dir, evt)
   }
 
+  // Placeholder for deleteFile method
   async deleteFile() {
-    //do something
+    // Implement deletion logic here
   }
 
-  async downloadFile(file) {
-    return minio().downloadFile(file)
+  // Download a file
+  async downloadFile(file){
+    try {
+      return minio().downloadFile(file);
+    } catch (err) {
+      console.error('Error downloading file:', err);
+      throw err;
+    }
   }
 }
 
@@ -104,7 +145,7 @@ export function minio() {
           }
 
           form.append('content-type', file.type)
-          form.append('file', file)
+          form.append('file', file.originalFile)
 
           return doUpload(data.url, form)
         })
