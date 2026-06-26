@@ -5292,8 +5292,9 @@ continue;
 			Sheet sheet = workbook.createSheet("CatalystChangeOver");
 			int currentRow = 0;
 
-			// Columns: Parameter(0), Date(1), Remarks(2), Id(3-hidden)
-			List<String> headerNames = new ArrayList<>(Arrays.asList("Parameter", "Date", "Remarks", "Id"));
+			// Columns: Parameter(0), Date(1), Catalyst Quantity(2), Runlength(3), Remarks(4), Id(5-hidden)
+			List<String> headerNames = new ArrayList<>(
+					Arrays.asList("Parameter", "Date", "Catalyst Quantity", "Runlength", "Remarks", "Id"));
 			if (isAfterSave) {
 				headerNames.add("Status");
 				headerNames.add("Error Description");
@@ -5329,22 +5330,32 @@ continue;
 				dateCell.setCellValue(dto.getDate() != null ? sdf.format(dto.getDate()) : "");
 				dateCell.setCellStyle(Utility.createBorderedStyle(workbook));
 
-				// Col 2 – Remarks (wrapped text, auto row height)
-				Cell remarksCell = row.createCell(2);
+				// Col 2 – Catalyst Quantity
+				Cell catalystQtyCell = row.createCell(2);
+				catalystQtyCell.setCellValue(dto.getCatalystQuantity());
+				catalystQtyCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+				// Col 3 – Runlength
+				Cell runLengthCell = row.createCell(3);
+				runLengthCell.setCellValue(dto.getRunLength() != null ? dto.getRunLength() : 0);
+				runLengthCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+				// Col 4 – Remarks (wrapped text, auto row height)
+				Cell remarksCell = row.createCell(4);
 				remarksCell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
 				remarksCell.setCellStyle(wrapStyle);
 
-				// Col 3 – Id (hidden, used for import/update)
-				Cell idCell = row.createCell(3);
+				// Col 5 – Id (hidden, used for import/update)
+				Cell idCell = row.createCell(5);
 				idCell.setCellValue(dto.getId() != null ? dto.getId() : "");
 				idCell.setCellStyle(Utility.createBorderedStyle(workbook));
 
 				if (isAfterSave) {
-					Cell statusCell = row.createCell(4);
+					Cell statusCell = row.createCell(6);
 					statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
 					statusCell.setCellStyle(Utility.createBorderedStyle(workbook));
 
-					Cell errCell = row.createCell(5);
+					Cell errCell = row.createCell(7);
 					errCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
 					errCell.setCellStyle(Utility.createBorderedStyle(workbook));
 				}
@@ -5353,10 +5364,10 @@ continue;
 				row.setHeight((short) -1);
 			}
 
-			// Dynamic column widths – fixed larger width for Remarks(2), auto-size for others
-			int totalCols = isAfterSave ? 6 : 4;
+			// Dynamic column widths – fixed larger width for Remarks(4), auto-size for others
+			int totalCols = isAfterSave ? 8 : 6;
 			for (int col = 0; col < totalCols; col++) {
-				if (col == 2) {
+				if (col == 4) {
 					sheet.setColumnWidth(col, 15000); // ~60 characters wide for Remarks
 				} else {
 					sheet.autoSizeColumn(col);
@@ -5364,7 +5375,7 @@ continue;
 			}
 
 			// Hide the Id column from end-users
-			sheet.setColumnHidden(3, true);
+			sheet.setColumnHidden(5, true);
 
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			workbook.write(outputStream);
@@ -5417,15 +5428,43 @@ continue;
 						}
 					}
 
-					// Col 2 – Remarks
-					Cell remarksCell = row.getCell(2);
+					// Col 2 – Catalyst Quantity
+					Cell catalystQtyCell = row.getCell(2);
+					if (catalystQtyCell != null) {
+						if (catalystQtyCell.getCellType() == CellType.NUMERIC) {
+							dto.setCatalystQuantity(catalystQtyCell.getNumericCellValue());
+						} else {
+							catalystQtyCell.setCellType(CellType.STRING);
+							String qtyStr = catalystQtyCell.getStringCellValue().trim();
+							if (!qtyStr.isEmpty()) {
+								dto.setCatalystQuantity(Double.parseDouble(qtyStr));
+							}
+						}
+					}
+
+					// Col 3 – Runlength
+					Cell runLengthCell = row.getCell(3);
+					if (runLengthCell != null) {
+						if (runLengthCell.getCellType() == CellType.NUMERIC) {
+							dto.setRunLength((int) runLengthCell.getNumericCellValue());
+						} else {
+							runLengthCell.setCellType(CellType.STRING);
+							String rlStr = runLengthCell.getStringCellValue().trim();
+							if (!rlStr.isEmpty()) {
+								dto.setRunLength(Integer.parseInt(rlStr));
+							}
+						}
+					}
+
+					// Col 4 – Remarks
+					Cell remarksCell = row.getCell(4);
 					if (remarksCell != null) {
 						remarksCell.setCellType(CellType.STRING);
 						dto.setRemarks(remarksCell.getStringCellValue().trim());
 					}
 
-					// Col 3 – Id (hidden; present means update, absent means insert)
-					Cell idCell = row.getCell(3);
+					// Col 5 – Id (hidden; present means update, absent means insert)
+					Cell idCell = row.getCell(5);
 					if (idCell != null) {
 						idCell.setCellType(CellType.STRING);
 						String idVal = idCell.getStringCellValue().trim();
