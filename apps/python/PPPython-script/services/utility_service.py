@@ -93,6 +93,7 @@ NORM_DM_WATER_M3_PER_M3 = 1.05
 NORM_DM_POWER_KWH_PER_M3 = 1.21
 NORM_DM_COMPRESSED_AIR_NM3_PER_M3 = 0.077
 NORM_DM_RET_CONDENSATE_M3_PER_M3 = 0.203
+NORM_DM_COOLING_WATER_2_KM3_PER_M3 = 0.0  # Default 0; will be fetched from DB if available
 
 # Effluent Treated - per M³ treated
 NORM_EFFLUENT_POWER_KWH_PER_M3 = 3.54
@@ -716,6 +717,7 @@ def calculate_utilities_from_dispatch(
     bfw_power_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'Boiler Feed Water', 'Power_Dis', NORM_BFW_POWER_KWH_PER_M3)
     dm_power_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'D M Water', 'Power_Dis', NORM_DM_POWER_KWH_PER_M3)
     dm_water_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'D M Water', 'Water', NORM_DM_WATER_M3_PER_M3)
+    dm_cw2_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'D M Water', 'Cooling Water 2', NORM_DM_COOLING_WATER_2_KM3_PER_M3)
     cw1_power_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'Cooling Water 1', 'Power_Dis', NORM_CW1_POWER_KWH_PER_KM3)
     cw2_power_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'Cooling Water 2', 'Power_Dis', NORM_CW2_POWER_KWH_PER_KM3)
     air_power_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'COMPRESSED AIR', 'Power_Dis', NORM_AIR_POWER_KWH_PER_NM3)
@@ -983,6 +985,11 @@ def calculate_utilities_from_dispatch(
     # Total DM water = BFW requirement + Process consumption + Fixed consumption
     total_dm_water = dm_for_bfw + dm_process_m3 + dm_fixed_m3
 
+    # DM Water → Cooling Water 2 U4U consumption (dynamic from DB)
+    cw2_dm = total_dm_water * dm_cw2_norm
+    total_cw2 += cw2_dm
+    total_cooling_water += cw2_dm
+
     # =========================================================
     # 3b. EXTRA COMPRESSED AIR (dynamic from DB)
     # =========================================================
@@ -1137,6 +1144,7 @@ def calculate_utilities_from_dispatch(
             "cw2_bfw_km3": round(cw2_bfw, 2),
             "cw2_air_km3": round(cw2_air, 2),
             "cw2_oxygen_km3": round(cw2_oxygen, 2),
+            "cw2_dm_km3": round(cw2_dm, 2),
             "cw2_process_km3": round(cw2_process_km3, 2),
             "cw2_fixed_km3": round(cw2_fixed_km3, 2),
             "cw2_total_km3": round(total_cw2, 2),
@@ -1184,6 +1192,7 @@ def calculate_utilities_from_dispatch(
             "process_m3": round(dm_process_m3, 2),
             "fixed_m3": round(dm_fixed_m3, 2),
             "total_m3": round(total_dm_water, 2),
+            "cw2_norm": dm_cw2_norm,
         },
         # Raw Water
         "raw_water": {
@@ -1271,6 +1280,7 @@ def print_utility_summary(utilities: dict):
     if cw.get("cw2_bfw_km3", 0) > 0: print(f"  {'BFW Plant':<20} {cw['cw2_bfw_km3']:>15,.2f}")
     if cw.get("cw2_air_km3", 0) > 0: print(f"  {'Compressed Air':<20} {cw['cw2_air_km3']:>15,.2f}")
     if cw.get("cw2_oxygen_km3", 0) > 0: print(f"  {'Oxygen Plant':<20} {cw['cw2_oxygen_km3']:>15,.2f}")
+    if cw.get("cw2_dm_km3", 0) > 0: print(f"  {'DM Water Plant':<20} {cw['cw2_dm_km3']:>15,.2f}")
     if cw.get("cw2_process_km3", 0) > 0: print(f"  {'Process Plants':<20} {cw['cw2_process_km3']:>15,.2f}")
     print(f"  {'-'*35}")
     print(f"  {'CW2 TOTAL':<20} {cw.get('cw2_total_km3', 0):>15,.2f}")
@@ -1679,6 +1689,7 @@ def print_nmd_budget_format(
         # DM Water
         "dm_water": 149936.32,
         "dm_air": 10995.33,
+        "dm_cw2": 0.0,
         "dm_power": 172783.76,
         "dm_condensate": 28987.69,
         # Effluent
@@ -1912,6 +1923,7 @@ def print_nmd_budget_format(
     NORM_POWER_DM = 1.2100
     NORM_AIR_BFW = air.get('bfw_air_norm', 0.0)  # From DB or 0 if no norm
     NORM_AIR_DM = air.get('dm_air_norm', 0.0770)  # From DB or fallback
+    NORM_CW2_DM = dm.get('cw2_norm', 0.0)  # From DB or 0 if no norm
     NORM_CONDENSATE_DM = 0.2030
     NORM_WATER_DM = 1.0500
     NORM_POWER_EFFLUENT = 3.5400
@@ -2124,6 +2136,7 @@ def print_nmd_budget_format(
     dm_water = total_dm * NORM_WATER_DM
     dm_power = total_dm * NORM_POWER_DM
     dm_air = air.get('extra_d_m_water_nm3', total_dm * NORM_AIR_DM)
+    dm_cw2 = total_dm * NORM_CW2_DM
     dm_condensate = total_dm * NORM_CONDENSATE_DM
     # DM Water - Catalyst & Chemicals
     dm_caustic = total_dm * NORM_CAUSTIC_DM
@@ -2142,6 +2155,8 @@ def print_nmd_budget_format(
     print(f"{'':<25} {'':<20} {'SODIUM CHLORIDE':<25} {'MT':<8} {fmt_qty(total_dm)} {dm_ref_qty:>18,.2f} {NORM_SODIUM_CHLORIDE_DM:>10.7f} {dm_sodium_chloride:>20,.2f} {EXPECTED['dm_sodium_chloride']:>20,.2f} {dm_sodium_chloride - EXPECTED['dm_sodium_chloride']:>18,.2f} {calc_pct(dm_sodium_chloride, EXPECTED['dm_sodium_chloride'])}")
     print(f"{'':<25} {'Raw Material':<20} {'HYDRO CHLORIC ACID':<25} {'MT':<8} {fmt_qty(total_dm)} {dm_ref_qty:>18,.2f} {NORM_HCL_DM:>10.7f} {dm_hcl:>20,.2f} {EXPECTED['dm_hcl']:>20,.2f} {dm_hcl - EXPECTED['dm_hcl']:>18,.2f} {calc_pct(dm_hcl, EXPECTED['dm_hcl'])}")
     print(f"{'':<25} {'':<20} {'Water':<25} {'M3':<8} {fmt_qty(total_dm)} {dm_ref_qty:>18,.2f} {NORM_WATER_DM:>10.4f} {dm_water:>20,.2f} {EXPECTED['dm_water']:>20,.2f} {dm_water - EXPECTED['dm_water']:>18,.2f} {calc_pct(dm_water, EXPECTED['dm_water'])}")
+    if NORM_CW2_DM > 0:
+        print(f"{'':<25} {'Utilities':<20} {'Cooling Water 2':<25} {'KM3':<8} {fmt_qty(total_dm)} {dm_ref_qty:>18,.2f} {NORM_CW2_DM:>10.4f} {dm_cw2:>20,.2f} {EXPECTED.get('dm_cw2', 0):>20,.2f} {dm_cw2 - EXPECTED.get('dm_cw2', 0):>18,.2f} {calc_pct(dm_cw2, EXPECTED.get('dm_cw2', 0))}")
     print(f"{'':<25} {'Utilities':<20} {'COMPRESSED AIR':<25} {'NM3':<8} {fmt_qty(total_dm)} {dm_ref_qty:>18,.2f} {NORM_AIR_DM:>10.4f} {dm_air:>20,.2f} {EXPECTED['dm_air']:>20,.2f} {dm_air - EXPECTED['dm_air']:>18,.2f} {calc_pct(dm_air, EXPECTED['dm_air'])}")
     print(f"{'':<25} {'':<20} {'Power_Dis':<25} {'KWH':<8} {fmt_qty(total_dm)} {dm_ref_qty:>18,.2f} {NORM_POWER_DM:>10.4f} {dm_power:>20,.2f} {EXPECTED['dm_power']:>20,.2f} {dm_power - EXPECTED['dm_power']:>18,.2f} {calc_pct(dm_power, EXPECTED['dm_power'])}")
     print(f"{'':<25} {'':<20} {'Ret steam condensate':<25} {'M3':<8} {fmt_qty(total_dm)} {dm_ref_qty:>18,.2f} {NORM_CONDENSATE_DM:>10.4f} {dm_condensate:>20,.2f} {EXPECTED['dm_condensate']:>20,.2f} {dm_condensate - EXPECTED['dm_condensate']:>18,.2f} {calc_pct(dm_condensate, EXPECTED['dm_condensate'])}")
