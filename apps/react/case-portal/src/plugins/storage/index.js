@@ -124,9 +124,9 @@ export function minio() {
         })
       }
 
-      let goUploadToFileUrl = `${Config.StorageUrl}/files/${dir}/uploads/${file.name}?content-type=${file.type}`
+      let goUploadToFileUrl = `${Config.StorageUrl}/storage/files/${dir}/uploads/${file.name}?content-type=${file.type}`
       if (!dir) {
-        goUploadToFileUrl = `${Config.StorageUrl}/files/uploads/${file.name}?content-type=${file.type}`
+        goUploadToFileUrl = `${Config.StorageUrl}/storage/files/uploads/${file.name}?content-type=${file.type}`
       }
 
       return fetch(goUploadToFileUrl, createHeaders())
@@ -151,9 +151,9 @@ export function minio() {
         })
     },
     downloadFile(file) {
-      let getObjectForUrl = `${Config.StorageUrl}/files1/${file.dir}/downloads/${file.name}?content-type=${file.type}`
+      let getObjectForUrl = `${Config.StorageUrl}/storage/files1/${file.dir}/downloads/${file.name}?content-type=${file.type}`
       if (!file.dir) {
-        getObjectForUrl = `${Config.StorageUrl}/files1/downloads/${file.name}?content-type=${file.type}`
+        getObjectForUrl = `${Config.StorageUrl}/storage/files1/downloads/${file.name}?content-type=${file.type}`
       }
 
       return {url:getObjectForUrl};

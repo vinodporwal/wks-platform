@@ -52,9 +52,9 @@ function upload({ dir, file, progress, keycloak }) {
     })
   }
 
-  let goUploadToFileUrl = `${Config.StorageUrl}/files/${dir}/uploads/${file.name}?content-type=${file.type}`
+  let goUploadToFileUrl = `${Config.StorageUrl}/storage/files/${dir}/uploads/${file.name}?content-type=${file.type}`
   if (!dir) {
-    goUploadToFileUrl = `${Config.StorageUrl}/files/uploads/${file.name}?content-type=${file.type}`
+    goUploadToFileUrl = `${Config.StorageUrl}/storage/files/uploads/${file.name}?content-type=${file.type}`
   }
 
   return fetch(goUploadToFileUrl, createHeaders(keycloak))
@@ -84,9 +84,9 @@ async function download(file, keycloak) {
   // if (!file.dir) {
   //   getObjectForUrl = `${Config.StorageUrl}/storage/files1/cases/downloads/${file.name}?content-type=${file.type}`
   // }
-  let getObjectForUrl = `${Config.StorageUrl}/files/${file.dir}/downloads/${file.name}?content-type=${file.type}`
+  let getObjectForUrl = `${Config.StorageUrl}/storage/files1/${file.dir}/downloads/${file.name}?content-type=${file.type}`
   if (!file.dir) {
-    getObjectForUrl = `${Config.StorageUrl}/files/cases/downloads/${file.name}?content-type=${file.type}`
+    getObjectForUrl = `${Config.StorageUrl}/storage/files1/cases/downloads/${file.name}?content-type=${file.type}`
   }
 
   try {

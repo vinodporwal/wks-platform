@@ -33,34 +33,34 @@ public class FilesController {
 	@Autowired
 	private StorageServiceFactory factory;
 
-	@GetMapping(value = "/files/{dir}/downloads/{fileName}", produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = "/storage/files/{dir}/downloads/{fileName}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<DownloadFileUrl> downloadFileWithDir(@PathVariable(required = true) String dir,
 			@PathVariable(required = true) String fileName,
 			@RequestParam(name = "content-type", required = true) String contentType) {
 		return ResponseEntity.ok(downloadService().createPresignedObjectUrl(dir, fileName, contentType));
 	}
 
-	@GetMapping(value = "/files1/{dir}/downloads/{fileName}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+	@GetMapping(value = "/storage/files1/{dir}/downloads/{fileName}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
 	public ResponseEntity<?> downloadFileWithDir1(@PathVariable(required = true) String dir, @PathVariable(required = true) String fileName, @RequestParam(name = "content-type", required = true) String contentType) {
 		System.out.println("ratnesh controller line 46");
 		return downloadService().downloadObj(dir, fileName, contentType);
 	}
 
 
-	@GetMapping(value = "/files/downloads/{fileName}", produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = "/storage/files/downloads/{fileName}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<DownloadFileUrl> downloadFile(@PathVariable(required = true) String fileName,
 			@RequestParam(name = "content-type", required = true) String contentType) {
 		return ResponseEntity.ok(downloadService().createPresignedObjectUrl(fileName, contentType));
 	}
 
-	@GetMapping(value = "/files/{dir}/uploads/{fileName}", produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = "/storage/files/{dir}/uploads/{fileName}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<UploadFileUrl> uploadWithDir(@PathVariable(required = true) String dir,
 			@PathVariable(required = true) String fileName,
 			@RequestParam(name = "content-type", required = true) String contentType) {
 		return ResponseEntity.ok(uploadService().createPresignedPostFormData(dir, fileName, contentType));
 	}
 
-	@GetMapping(value = "/files/uploads/{fileName}", produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = "/storage/files/uploads/{fileName}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<UploadFileUrl> upload(@PathVariable(required = true) String fileName,
 			@RequestParam(name = "content-type", required = true) String contentType) {
 		return ResponseEntity.ok(uploadService().createPresignedPostFormData(fileName, contentType));
