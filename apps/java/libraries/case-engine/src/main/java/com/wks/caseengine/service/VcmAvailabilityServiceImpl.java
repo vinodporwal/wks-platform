@@ -3,8 +3,10 @@ package com.wks.caseengine.service;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -21,8 +23,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.VcmAvailabilityConstantDTO;
+import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.ScreenMapping;
+import com.wks.caseengine.repository.AopCalculationRepository;
 import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -46,9 +52,17 @@ public class VcmAvailabilityServiceImpl implements VcmAvailabilityService {
     @Autowired
     private ConfigurationService configurationService;
 
+    @Autowired
+    private AopCalculationRepository aopCalculationRepository;
+
+    @Autowired
+    private ScreenMappingRepository screenMappingRepository;
+
 
     @Override
     public AOPMessageVM getVcmStockBalance(UUID plantId, String year) {
+
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
 
         Plants plants = plantsRepository.findById(plantId).orElseThrow(() -> new RuntimeException("Plant not found"));
         String verticalName = verticalRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
@@ -56,11 +70,18 @@ public class VcmAvailabilityServiceImpl implements VcmAvailabilityService {
         
         String procedureName = verticalName + "_" + siteName + "_GetVCMStockBalance";
         List<VcmAvailabilityConstantDTO> vcmAvailabilityConstants = fetchVcmAvailabilityConstantsFromProcedure(plantId, year, procedureName);
-        return AOPMessageVM.builder()
-            .code(200)
-            .message("VCM availability constants fetched successfully")
-            .data(vcmAvailabilityConstants)
-            .build();
+
+        Map<String, Object> map = new HashMap<>();
+
+        List<AopCalculation> aopCalculation = aopCalculationRepository
+                .findByPlantIdAndAopYearAndCalculationScreen(plantId, year, "vcm-stock-balance");
+        map.put("vcmStockBalance", vcmAvailabilityConstants);
+        map.put("aopCalculation", aopCalculation);
+
+        aopMessageVM.setCode(200);
+        aopMessageVM.setData(map);
+        aopMessageVM.setMessage("VCM stock balance fetched successfully");
+        return aopMessageVM;
     }
     
     public List<VcmAvailabilityConstantDTO> fetchVcmAvailabilityConstantsFromProcedure(UUID plantId, String year, String procedureName) {
@@ -388,4 +409,50 @@ public class VcmAvailabilityServiceImpl implements VcmAvailabilityService {
         }
         return null;
     }
+
+    @Override
+    public AOPMessageVM calculateVcmStockBalance(UUID plantId, String aopYear) {
+        
+        Plants plants = plantsRepository.findById(plantId).orElseThrow(() -> new RuntimeException("Plant not found"));
+        String verticalName = verticalRepository.findById(plants.getVerticalFKId()).orElseThrow(() -> new RuntimeException("Vertical not found")).getName();
+        String siteName = siteRepository.findById(plants.getSiteFkId()).orElseThrow(() -> new RuntimeException("Site not found")).getName();
+
+        String procedureName = verticalName + "_" + siteName + "_CalculateVCMStockBalance";
+
+        Integer result = executeVcmStockBalanceCalculationSP(String.valueOf(plantId), aopYear, procedureName);
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Calculate SP Executed successfully");
+		aopMessageVM.setData(result);
+		
+		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(plantId, aopYear,
+				"vcm-stock-balance");
+                
+		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("vcm-stock-balance");
+		for (ScreenMapping screenMapping : screenMappingList) {
+			AopCalculation aopCalculation = new AopCalculation();
+			aopCalculation.setAopYear(aopYear);
+			aopCalculation.setIsChanged(true);
+			aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+			aopCalculation.setPlantId(plantId);
+			aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+			aopCalculationRepository.save(aopCalculation);
+		}
+		return aopMessageVM;
+    }
+
+    
+	public Integer executeVcmStockBalanceCalculationSP( String plantId, String aopYear, String procedureName) {
+		try {
+
+			String callSql = "{call " + "[" + procedureName + "]" + "(?, ?)}";
+
+
+			return jdbcTemplate.update(callSql, plantId, aopYear);
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to execute stored procedure", e);
+		}
+	}
+
 }
