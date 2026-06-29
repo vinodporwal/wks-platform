@@ -27,6 +27,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.repository.query.Param;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,6 +91,9 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 	
 	@Autowired
 	private NormAttributeTransactionsRepository normAttributeTransactionsRepository;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@Override
 	public AOPMessageVM getShutdownHistory(String plantId, String year) {
@@ -924,4 +928,81 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 		return dtoList;
 	}
 
+	@Override
+	@Transactional(readOnly = true)
+	public AOPMessageVM getShutdownHistoryConfig(String plantId, String year) {
+
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<Map<String, Object>> shutdownHistoryConfigList = new ArrayList<>();
+
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String procedureName = vertical.getName() + "_" + site.getName() + "_GetShutdownHistoryConfig";
+
+			List<Object[]> results = getData(plantId, year, procedureName);
+
+			for (Object[] row : results) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("Id", row[0] != null ? row[0].toString() : null);
+				map.put("ShutdownType", row[1] != null ? row[1].toString() : null);
+				map.put("FromDate", row[2]);
+				map.put("ToDate", row[3]);
+				map.put("Remarks", row[4]);
+				map.put("AopYear", row[5]);
+				map.put("Plant_FK_Id", row[6] != null ? row[6].toString() : null);
+				map.put("ModifiedOn", row[7]);
+				map.put("ModifiedBy", row[8]);
+				map.put("IsEditable", row[9]);
+				map.put("IsVisible", row[10]);
+
+				shutdownHistoryConfigList.add(map);
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(shutdownHistoryConfigList);
+			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Override
+	public AOPMessageVM saveShutdownHistoryConfig(String plantId, String year, List<Map<String, Object>> shutdownHistoryConfigList) {
+		String modifiedBy = Utility.getUserName();
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+
+			for (Map<String, Object> shutdownHistoryConfig : shutdownHistoryConfigList) {
+				String Id = shutdownHistoryConfig.get("Id") != null ? shutdownHistoryConfig.get("Id").toString() : null;
+			
+				if(Id == null || Id.isEmpty()) { 
+
+					jdbcTemplate.update("INSERT INTO ShutdownHistoryConfig (Id, ShutdownType, FromDate, ToDate, Remarks, AopYear, Plant_FK_Id, IsEditable, IsVisible) VALUES (NewId(), ?, ?, ?, ?, ?, ?, 1, 1)", shutdownHistoryConfig.get("ShutdownType"), shutdownHistoryConfig.get("FromDate"), shutdownHistoryConfig.get("ToDate"), shutdownHistoryConfig.get("Remarks"), shutdownHistoryConfig.get("AopYear"), shutdownHistoryConfig.get("Plant_FK_Id"));
+
+					continue;
+				}
+
+					jdbcTemplate.update("UPDATE ShutdownHistoryConfig SET ShutdownType = ?, FromDate = ?, ToDate = ?, Remarks = ?, ModifiedBy = ?, ModifiedOn = ? WHERE Id = ?", shutdownHistoryConfig.get("ShutdownType"), shutdownHistoryConfig.get("FromDate"), shutdownHistoryConfig.get("ToDate"), shutdownHistoryConfig.get("Remarks"), modifiedBy, new Date(), Id);
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data saved successfully");
+			return aopMessageVM;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to save data", ex);
+		}
+	}
 }

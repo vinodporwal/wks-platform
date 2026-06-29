@@ -45,6 +45,16 @@ public class ShutdownHistoryController {
 		 return  shutdownHistoryService.getShutdownHistoryPTA(plantId,year);
 	}
 
+	@GetMapping(value="/shutdown-history-config")
+	public AOPMessageVM getShutdownHistoryConfig(@RequestParam String plantId,@RequestParam String year){
+		 return  shutdownHistoryService.getShutdownHistoryConfig(plantId,year);
+	}
+
+	@PostMapping(value="/shutdown-history-config")
+	public AOPMessageVM saveShutdownHistoryConfig(@RequestParam String plantId,@RequestParam String year, @RequestBody List<Map<String, Object>> shutdownHistoryConfigList){
+		return shutdownHistoryService.saveShutdownHistoryConfig(plantId,year,shutdownHistoryConfigList);
+	}
+
 	@GetMapping(value = "/shutdown-history-pta-export-excel")
 	public ResponseEntity<byte[]> exportShutdownHistoryPTAExcel(@RequestParam String plantId,
 			@RequestParam String year) {
