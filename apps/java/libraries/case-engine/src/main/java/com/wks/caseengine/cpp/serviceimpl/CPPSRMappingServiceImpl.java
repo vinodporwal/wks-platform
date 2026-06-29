@@ -637,6 +637,9 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
 
                         // ── Step 8: Insert CPPNorms default row for new NormsHeader ─────────────
                         insertCppNorms(newNormsHeaderId, financialYear);
+
+                        // ── Step 9: Insert CPPMonthWisePrice default row for new NormsHeader ───
+                        insertCppMonthWisePrice(newNormsHeaderId, financialYear);
                     }
                 } else {
                     logger.info("updateSRMappingsByPlant: skipping NormsHeader – cppPlantId={} is not an NMD site", dto.getCppPlantId());
@@ -948,6 +951,55 @@ public class CPPSRMappingServiceImpl implements CPPSRMappingService {
 
         } catch (Exception e) {
             logger.error("insertCppNorms error for normsHeaderId={}: {}", normsHeaderId, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Inserts a default CPPMonthWisePrice row for a newly created NormsHeader.
+     *
+     * <p>Fixed defaults:
+     * <ul>
+     *   <li>All month prices       = 0 (Apr … Mar)</li>
+     *   <li>Remarks                = "Added new norms"</li>
+     *   <li>PriceSource            = "Calculation"</li>
+     *   <li>ValueType              = "Calculation"</li>
+     *   <li>ModifiedBy             = "SYSTEM"</li>
+     *   <li>CreatedDate / UpdatedDate = GETDATE()</li>
+     *   <li>FinancialYear and AOPYear are both set to financialYear (they are always equal)</li>
+     * </ul>
+     *
+     * @param normsHeaderId the Id of the newly inserted NormsHeader row
+     * @param financialYear financial year string, e.g. "2025-26" (used for both FinancialYear and AOPYear)
+     */
+    private void insertCppMonthWisePrice(UUID normsHeaderId, String financialYear) {
+        if (normsHeaderId == null || financialYear == null || financialYear.isBlank()) {
+            logger.warn("insertCppMonthWisePrice: skipped – normsHeaderId={}, financialYear={}", normsHeaderId, financialYear);
+            return;
+        }
+        try {
+            UUID newId = UUID.randomUUID();
+            String insertSql = "INSERT INTO CPPMonthWisePrice " +
+                    "(Id, NormsHeader_FK_Id, FinancialYear, AOPYear, " +
+                    " Apr_Price, May_Price, Jun_Price, Jul_Price, Aug_Price, Sep_Price, " +
+                    " Oct_Price, Nov_Price, Dec_Price, Jan_Price, Feb_Price, Mar_Price, " +
+                    " Remarks, PriceSource, CreatedDate, UpdatedDate, ModifiedBy, ValueType) " +
+                    "VALUES (?, ?, ?, ?, " +
+                    " 0, 0, 0, 0, 0, 0, " +
+                    " 0, 0, 0, 0, 0, 0, " +
+                    " 'Added new norms', 'Calculation', GETDATE(), GETDATE(), 'SYSTEM', 'Calculation')";
+
+            db1JdbcTemplate.update(insertSql,
+                    newId.toString(),
+                    normsHeaderId.toString(),
+                    financialYear,   // FinancialYear
+                    financialYear    // AOPYear (same value)
+            );
+
+            logger.info("insertCppMonthWisePrice: inserted CPPMonthWisePrice Id={} for NormsHeader={}, financialYear={}",
+                    newId, normsHeaderId, financialYear);
+
+        } catch (Exception e) {
+            logger.error("insertCppMonthWisePrice error for normsHeaderId={}: {}", normsHeaderId, e.getMessage(), e);
         }
     }
 

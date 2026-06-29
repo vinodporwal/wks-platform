@@ -219,7 +219,7 @@ public class BudgetCalculatorService {
 
                         // After successful calculation, delete the AopCalculation flag
                         // so the UI no longer shows the "recalculate" warning
-                        //clearAopCalculationFlag(request);
+                        clearAopCalculationFlag(request);
 
                         return result;
                     } catch (JsonSyntaxException e) {
