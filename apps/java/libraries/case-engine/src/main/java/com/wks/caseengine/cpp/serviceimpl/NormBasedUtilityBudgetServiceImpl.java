@@ -1171,11 +1171,21 @@ public class NormBasedUtilityBudgetServiceImpl implements NormBasedUtilityBudget
         try {
             AOPMessageVM result = getNormBasedUtilityBudget(cppPlantId, financialYear);
             List<NormBasedUtilityBudgetResponseDTO> dtoList = new ArrayList<>();
-            if (result.getData() instanceof List) {
+            Object data = result.getData();
+            if (data instanceof List) {
                 @SuppressWarnings("unchecked")
-                List<NormBasedUtilityBudgetResponseDTO> data =
-                        (List<NormBasedUtilityBudgetResponseDTO>) result.getData();
-                dtoList = data;
+                List<NormBasedUtilityBudgetResponseDTO> dataList =
+                        (List<NormBasedUtilityBudgetResponseDTO>) data;
+                dtoList = dataList;
+            } else if (data instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> map = (Map<String, Object>) data;
+                Object listObj = map.get("list");
+                if (listObj instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<NormBasedUtilityBudgetResponseDTO> dataList = (List<NormBasedUtilityBudgetResponseDTO>) listObj;
+                    dtoList = dataList;
+                }
             }
 
             Workbook workbook = new XSSFWorkbook();
@@ -1278,6 +1288,10 @@ public class NormBasedUtilityBudgetServiceImpl implements NormBasedUtilityBudget
             Cell normHeaderIdCell = subHeaderRow.createCell(col++);
             normHeaderIdCell.setCellValue("normHeaderId");
             normHeaderIdCell.setCellStyle(headerStyle);
+
+            if (dtoList.isEmpty()) {
+                log.warn("exportNormBasedUtilityBudgetDetailed: no data available to export for plant {} year {}", cppPlantId, financialYear);
+            }
 
             for (NormBasedUtilityBudgetResponseDTO dto : dtoList) {
                 Row row = sheet.createRow(currentRow++);
