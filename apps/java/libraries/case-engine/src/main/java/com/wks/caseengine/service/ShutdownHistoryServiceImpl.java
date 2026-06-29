@@ -1005,4 +1005,19 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 			throw new RuntimeException("Failed to save data", ex);
 		}
 	}
+
+	@Override
+	@Transactional
+	public AOPMessageVM deleteShutdownHistoryConfig(String id) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			jdbcTemplate.update("DELETE FROM ShutdownHistoryConfig WHERE Id = ?", id);
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data deleted successfully");
+			return aopMessageVM;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to delete data", ex);
+		}
+	}
 }

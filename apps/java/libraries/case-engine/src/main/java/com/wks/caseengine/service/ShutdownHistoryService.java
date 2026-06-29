@@ -36,4 +36,6 @@ public interface ShutdownHistoryService {
 
 	public AOPMessageVM saveShutdownHistoryConfig(List<Map<String, Object>> shutdownHistoryConfigList);
 
+	public AOPMessageVM deleteShutdownHistoryConfig(String id);
+
 }
