@@ -1140,6 +1140,12 @@ public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigu
 				ConfigurationDTO configurationDTO = new ConfigurationDTO();
 				configurationDTO.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
 
+				// for meg set jan to dec values to null if the values are not present in DB. for others set to zero
+						if(verticalName.equalsIgnoreCase("MEG")) {  
+                           
+							setJanToDecValuesForMEG(configurationDTO, row);
+						}
+						else {
 				configurationDTO.setJan(
 						(row[1] != null && !row[1].toString().trim().isEmpty())
 								? Double.parseDouble(row[1].toString().trim())
@@ -1177,6 +1183,8 @@ public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigu
 				configurationDTO.setDec((row[12] != null && !row[12].toString().trim().isEmpty())
 						? Double.parseDouble(row[12].toString())
 						: 0.0);
+
+				}
 				configurationDTO.setRemarks((row[13] != null ? row[13].toString() : ""));
 
 				if(isChemical || isChemicalVmd) {
@@ -1229,6 +1237,48 @@ public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigu
 			ex.printStackTrace();
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
+	}
+
+	public void setJanToDecValuesForMEG(ConfigurationDTO configurationDTO, Object[] row) { 
+
+		configurationDTO.setJan(
+			(row[1] != null && !row[1].toString().trim().isEmpty())
+					? Double.parseDouble(row[1].toString().trim())
+					: null); 
+	configurationDTO.setFeb(
+			(row[2] != null && !row[2].toString().trim().isEmpty()) ? Double.parseDouble(row[2].toString())
+					: null);
+	configurationDTO.setMar(
+			(row[3] != null && !row[3].toString().trim().isEmpty()) ? Double.parseDouble(row[3].toString())
+					: null);
+	configurationDTO.setApr(
+			(row[4] != null && !row[4].toString().trim().isEmpty()) ? Double.parseDouble(row[4].toString())
+					: null);
+	configurationDTO.setMay(
+			(row[5] != null && !row[5].toString().trim().isEmpty()) ? Double.parseDouble(row[5].toString())
+					: null);
+	configurationDTO.setJun(
+			(row[6] != null && !row[6].toString().trim().isEmpty()) ? Double.parseDouble(row[6].toString())
+					: null);
+	configurationDTO.setJul(
+			(row[7] != null && !row[7].toString().trim().isEmpty()) ? Double.parseDouble(row[7].toString())
+					: null);
+	configurationDTO.setAug(
+			(row[8] != null && !row[8].toString().trim().isEmpty()) ? Double.parseDouble(row[8].toString())
+					: null);
+	configurationDTO.setSep(
+			(row[9] != null && !row[9].toString().trim().isEmpty()) ? Double.parseDouble(row[9].toString())
+					: null);
+	configurationDTO.setOct((row[10] != null && !row[10].toString().trim().isEmpty())
+			? Double.parseDouble(row[10].toString())
+			: null);
+	configurationDTO.setNov((row[11] != null && !row[11].toString().trim().isEmpty())
+			? Double.parseDouble(row[11].toString())
+			: null);
+	configurationDTO.setDec((row[12] != null && !row[12].toString().trim().isEmpty())
+			? Double.parseDouble(row[12].toString())
+			: null);
+		
 	}
 
 	@Override
@@ -1302,6 +1352,11 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 				ConfigurationDTO configurationDTO = new ConfigurationDTO();
 				configurationDTO.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
 
+				// for meg set jan to dec values to null if  not present in DB. for others set to zero
+				if(verticalName.equalsIgnoreCase("MEG")) {  
+					setJanToDecValuesForMEG(configurationDTO, row);
+				}
+				else {
 				configurationDTO.setJan(
 						(row[1] != null && !row[1].toString().trim().isEmpty())
 								? Double.parseDouble(row[1].toString().trim())
@@ -1339,6 +1394,8 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 				configurationDTO.setDec((row[12] != null && !row[12].toString().trim().isEmpty())
 						? Double.parseDouble(row[12].toString())
 						: 0.0);
+
+				}
 				configurationDTO.setRemarks((row[13] != null ? row[13].toString() : ""));
 
 				if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || (verticalName.equalsIgnoreCase("PTA")) || (verticalName.equalsIgnoreCase("AROMATICS")) || (verticalName.equalsIgnoreCase("ELASTOMER")) || pvc) {
@@ -1893,6 +1950,7 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 			Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			boolean meg = vertical.getName().equalsIgnoreCase("MEG");
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<Map<String, Object>> configurationConstantsList = new ArrayList<>();
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
@@ -1919,7 +1977,12 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 				map.put("Name", row[2]);
 				map.put("DisplayName", row[3]);
 				map.put("UOM", row[4]);
-				map.put("ConstantValue", (row[5] != null) ? Double.parseDouble(row[5].toString()) : 0.0);
+				if(meg) { 
+					map.put("ConstantValue", (row[5] != null) ? Double.parseDouble(row[5].toString()) : null);
+				}
+				else {
+					map.put("ConstantValue", (row[5] != null) ? Double.parseDouble(row[5].toString()) : 0.0);
+				}
 				map.put("AuditYear", row[6]);
 				map.put("Remarks", row[7]);
 				boolean isEditable;
@@ -3167,12 +3230,11 @@ continue;
 
 		try {
 
-			System.out.println("started Read configuration in importExcel");
+			
 			List<ConfigurationDTO> data = readConfigurations(file.getInputStream(), plantFKId, year);
-			System.out.println("Ended Read configuration in importExcel");
-			System.out.println("Started Save configuration in importExcel");
+			
 			List<ConfigurationDTO> failedRecords = saveConfigurationData(year, plantFKId.toString(),version, data,calculation,isMinMax);
-			System.out.println("Ended Save configuration in importExcel");
+			
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
 				byte[] fileByteArray = createExcel(year, plantFKId,reportTypes,version, true, failedRecords);
