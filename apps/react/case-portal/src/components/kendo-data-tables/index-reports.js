@@ -134,27 +134,27 @@ const KendoDataTablesReports = ({
   columns,
   loading = false,
   permissions = {},
-  setSnackbarOpen = () => {},
+  setSnackbarOpen = () => { },
   snackbarData = { message: '', severity: 'info' },
   snackbarOpen = false,
-  setRemarkDialogOpen = () => {},
+  setRemarkDialogOpen = () => { },
   currentRemark = '',
-  setCurrentRemark = () => {},
+  setCurrentRemark = () => { },
   currentRowId = null,
-  setModifiedCells = () => {},
+  setModifiedCells = () => { },
   remarkDialogOpen = false,
-  saveChanges = () => {},
-  fetchData = () => {},
-  deleteRowData = () => {},
-  handleCalculate = () => {},
-  handleUnitChange = () => {},
-  handleRemarkCellClick = () => {},
-  handleExport = () => {},
-  handleExcelUpload = () => {},
+  saveChanges = () => { },
+  fetchData = () => { },
+  deleteRowData = () => { },
+  handleCalculate = () => { },
+  handleUnitChange = () => { },
+  handleRemarkCellClick = () => { },
+  handleExport = () => { },
+  handleExcelUpload = () => { },
   groupBy = null,
   grades = [],
-  handleGradeChange = () => {},
-  handleRelease = () => {},
+  handleGradeChange = () => { },
+  handleRelease = () => { },
   isReleaseDisabled = true,
   supressGridHeight = false,
 }) => {
@@ -258,11 +258,11 @@ const KendoDataTablesReports = ({
   )
   const initialGroup = groupBy
     ? [
-        {
-          field: groupBy,
-          dir: undefined,
-        },
-      ]
+      {
+        field: groupBy,
+        dir: undefined,
+      },
+    ]
     : []
 
   const handleEditChange = useCallback((e) => {
@@ -285,8 +285,11 @@ const KendoDataTablesReports = ({
   }
   const itemChange = useCallback(
     (e) => {
+
+
       const { dataItem, field, value } = e
       const itemId = dataItem.id
+
 
       // Ignore group header expand/collapse events — they are not real edits
       if (!field || dataItem?.items) {
@@ -294,6 +297,7 @@ const KendoDataTablesReports = ({
       }
 
       setIsRowEdited(true)
+
 
       setRows((prev) =>
         prev.map((r) => {
@@ -540,6 +544,7 @@ const KendoDataTablesReports = ({
         aria-sort={ariaSort}
         title={props.title}
         style={{
+          ...restThProps?.style,
           fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
         }}
       >
@@ -579,6 +584,7 @@ const KendoDataTablesReports = ({
       if (col.children) {
         return (
           <GridColumn
+            locked={col.locked || false}
             key={col.title || idx}
             title={col.title}
             // headerClassName={`center-group-header ${isActive ? 'active-column' : ''} ${headerColorClass} ${budgetDividerClass}`}
@@ -592,6 +598,7 @@ const KendoDataTablesReports = ({
       if (['aopRemarks', 'remarks', 'remark', 'Remark'].includes(col.field)) {
         return (
           <GridColumn
+            locked={col.locked || false}
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
@@ -615,6 +622,7 @@ const KendoDataTablesReports = ({
       if (col.field === 'particular' || col.type === 'text') {
         return (
           <GridColumn
+            locked={col.locked || false}
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
@@ -634,6 +642,7 @@ const KendoDataTablesReports = ({
       if (dateFields.includes(col.field)) {
         return (
           <GridColumn
+            locked={col.locked || false}
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
@@ -654,6 +663,7 @@ const KendoDataTablesReports = ({
       if (col.field.includes('durationInHrs')) {
         return (
           <GridColumn
+            locked={col.locked || false}
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
@@ -673,6 +683,7 @@ const KendoDataTablesReports = ({
       if (col.type === 'numberNonGrey') {
         return (
           <GridColumn
+            locked={col.locked || false}
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
@@ -698,15 +709,16 @@ const KendoDataTablesReports = ({
       if (col.type === 'number') {
         return (
           <GridColumn
+            locked={col.locked || false}
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
             width={setWidth(
               col?.fixedWidth ||
-                col?.width ||
-                col?.widthT ||
-                col?.minWidth ||
-                130,
+              col?.width ||
+              col?.widthT ||
+              col?.minWidth ||
+              130,
             )}
             hidden={col.hidden}
             className={'k-number-right-disabled'}
@@ -727,6 +739,7 @@ const KendoDataTablesReports = ({
       if (col.type === 'number1') {
         return (
           <GridColumn
+            locked={col.locked || false}
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
@@ -749,6 +762,7 @@ const KendoDataTablesReports = ({
 
       return (
         <GridColumn
+          locked={col.locked || false}
           key={col.field}
           field={col.field}
           title={col.title || col.headerName}
@@ -1048,7 +1062,7 @@ const KendoDataTablesReports = ({
                     (rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility)
+                      !permissions?.showCalculateVisibility)
                   }
                 >
                   Calculate
@@ -1135,12 +1149,14 @@ const KendoDataTablesReports = ({
               pageable={
                 rows?.length > 100
                   ? {
-                      buttonCount: 4,
-                      pageSizes: [10, 50, 100],
-                    }
+                    buttonCount: 4,
+                    pageSizes: [10, 50, 100],
+                  }
                   : false
               }
+
               onRowClick={handleRowClick}
+              lockGroups={true}
             >
               {renderColumns(
                 columns.filter((col) => !hiddenFields.includes(col.field)),
@@ -1162,6 +1178,7 @@ const KendoDataTablesReports = ({
                   }}
                 />
               )}
+
             </Grid>
           </Tooltip>
         </div>

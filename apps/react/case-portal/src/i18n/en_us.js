@@ -122,6 +122,8 @@ const defs = {
     packagingConsumables: 'Packaging Consumables',
     dashboard: 'AOP Dashboard',
     proposedNorms: 'Proposed AOP Consumption (Norm/Quantity)',
+    proposedAop: 'Proposed AOP',
+    proposedAOP: 'Proposed AOP',
     qualitypackaging: 'Quality & Packaging Norms',
     qualityPackagingBasis: 'Quality & Packaging Basis',
     // New Data Sets
@@ -339,6 +341,8 @@ const defs = {
         packagingConsumables: 'Packaging Consumables',
         dashboard: 'AOP Dashboard',
         proposedNorms: 'Proposed AOP Consumption (Norm/Quantity)',
+        proposedAop: 'Proposed AOP',
+        proposedAOP: 'Proposed AOP',
         qualitypackaging: 'Quality & Packaging Norms',
         ethyleneBalance: 'Ethylene Balance',
         propyleneBalance: 'Propylene Balance',
