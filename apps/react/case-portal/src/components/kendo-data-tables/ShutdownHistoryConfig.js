@@ -11,6 +11,7 @@ import { OptimizerDataApiService } from 'services/optimizer-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { DataService } from 'services/DataService'
 import { DtaDataService } from 'services/DtaDataservice'
+
 const ShutdownHistoryConfig = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -73,8 +74,22 @@ const ShutdownHistoryConfig = ({ permissions }) => {
   const [lineDetails, setLineDetails] = useState([])
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [allDescriptionDrpdwn, setAllDescriptionDrpdwn] = useState([])
+  const [startDate, setStartDate] = useState(null)
+  const [endDate, setEndDate] = useState(null)
+
+  const isValidDate = (d) => d instanceof Date && !isNaN(d)
+
+  function formatDateDDMMYYYY(date) {
+    if (!(date instanceof Date) || isNaN(date)) return ''
+    const d = date.getDate().toString().padStart(2, '0')
+    const m = (date.getMonth() + 1).toString().padStart(2, '0')
+    const y = date.getFullYear()
+    return `${d}/${m}/${y}`
+  }
+
   const IS_AROMATIC_HMD =
     lowerVertName === 'aromatics' && lowerSiteName === 'hmd'
+
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.Remarks || '')
@@ -91,7 +106,6 @@ const ShutdownHistoryConfig = ({ permissions }) => {
       minWidth: 200,
       locked: true,
     },
-
     {
       field: 'maintenanceId',
       title: 'Maintenance ID',
@@ -100,13 +114,13 @@ const ShutdownHistoryConfig = ({ permissions }) => {
       isVisible: false,
     },
     {
-      field: 'maintStartDateTime',
-      title: 'SD - From',
+      field: 'StartDate',
+      title: 'Start Date',
       editable: true,
     },
     {
-      field: 'maintEndDateTime',
-      title: 'SD - To',
+      field: 'EndDate',
+      title: 'End Date',
       editable: true,
     },
     {
@@ -115,6 +129,7 @@ const ShutdownHistoryConfig = ({ permissions }) => {
       editable: true,
     },
   ]
+
   useEffect(() => {
     if (!PLANT_ID || !AOP_YEAR) return
 
@@ -149,6 +164,30 @@ const ShutdownHistoryConfig = ({ permissions }) => {
     if (IS_AROMATIC_HMD) getAllDescriptionDrpdwn()
   }, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
 
+  // Financial-year date bounds, clamped to an absolute 2021-07-01 .. 2028-06-30 window
+  useEffect(() => {
+    const fetchConfigDates = async () => {
+      try {
+        const data = await DataService.getConfigurationExecutionDetails(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+        const data1 = data?.data
+        const startObj = data1?.find((item) => item.Name === 'StartDate')
+        const endObj = data1?.find((item) => item.Name === 'EndDate')
+        const start = startObj ? new Date(startObj.AttributeValue) : null
+        const end = endObj ? new Date(endObj.AttributeValue) : null
+        setStartDate(isValidDate(start) ? start : null)
+        setEndDate(isValidDate(end) ? end : null)
+      } catch (e) {
+        setStartDate(null)
+        setEndDate(null)
+      }
+    }
+    if (PLANT_ID && AOP_YEAR) fetchConfigDates()
+  }, [PLANT_ID, AOP_YEAR, keycloak])
+
   const fetchData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
 
@@ -171,8 +210,8 @@ const ShutdownHistoryConfig = ({ permissions }) => {
             id: index,
             idFromApi: item.Id,
             isEditable: item?.IsEditable,
-            maintStartDateTime: item.FromDate,
-            maintEndDateTime: item.ToDate,
+            StartDate: item.FromDate ? new Date(item.FromDate) : null,
+            EndDate: item.ToDate ? new Date(item.ToDate) : null,
             Remarks: item.Remarks,
             discription: descriptionObj
               ? descriptionObj.displayName
@@ -192,13 +231,14 @@ const ShutdownHistoryConfig = ({ permissions }) => {
     }
   }, [keycloak, yearChanged, PLANT_ID, AOP_YEAR, allDescriptionDrpdwn])
 
-  function addTimeOffset(dateTime) {
-    if (!dateTime) return null
-    const date = new Date(dateTime)
-    date.setUTCHours(date.getUTCHours() + 5)
-    date.setUTCMinutes(date.getUTCMinutes() + 30)
-    return date
+  // Date-only formatter for the payload (no time component since picker is dd/mm/yyyy only)
+  function formatDateForPayload(date) {
+    if (!date) return null
+    const d = date instanceof Date ? date : new Date(date)
+    if (isNaN(d)) return null
+    return d.toLocaleDateString('en-CA') // yyyy-mm-dd
   }
+
   const saveChanges = React.useCallback(async () => {
     try {
       setLoading(true)
@@ -227,48 +267,74 @@ const ShutdownHistoryConfig = ({ permissions }) => {
         return
       }
 
+      let hasDateError = false
+
       for (const record of data) {
-        // Date required validation (before checking time order)
-        const dateRequiredRows = new Set()
-        for (const record of data) {
-          const startMissing = !record.maintStartDateTime
-          const endMissing = !record.maintEndDateTime
+        const sDate =
+          record.StartDate instanceof Date
+            ? record.StartDate
+            : new Date(record.StartDate)
+        const eDate =
+          record.EndDate instanceof Date
+            ? record.EndDate
+            : new Date(record.EndDate)
 
-          if (startMissing || endMissing) {
-            record.isError = true
-            dateRequiredRows.add(record.id)
-          }
-        }
-
-        if (dateRequiredRows.size > 0) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Start Date and End Date are required for all records.',
-            severity: 'error',
-          })
-          return
-        }
-
+        // required check
         if (
-          record.maintStartDateTime &&
-          record.maintEndDateTime &&
-          record.maintStartDateTime.getTime() >=
-            record.maintEndDateTime.getTime()
+          !record.StartDate ||
+          !record.EndDate ||
+          isNaN(sDate) ||
+          isNaN(eDate)
         ) {
+          record.isError = true
+          hasDateError = true
+          continue
+        }
+
+        // start must be before (or same day as, since this is date-only) end
+        if (sDate.getTime() > eDate.getTime()) {
           record.isError = true
           setSnackbarOpen(true)
           setSnackbarData({
-            message: `Start time must be before end time for "${record.discription || 'this record'}".`,
+            message: `Start date must be before or same as end date for "${record.discription || 'this record'}".`,
             severity: 'error',
           })
+          setLoading(false)
           return
         }
+
+        // must fall within the configured financial-year window
+        if (
+          startDate &&
+          endDate &&
+          (sDate < startDate ||
+            sDate > endDate ||
+            eDate < startDate ||
+            eDate > endDate)
+        ) {
+          record.isError = true
+          hasDateError = true
+        }
       }
+
+      if (hasDateError) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message:
+            startDate && endDate
+              ? `Dates must be between ${formatDateDDMMYYYY(startDate)} and ${formatDateDDMMYYYY(endDate)} for selected year.`
+              : 'Start Date and End Date are required for all records.',
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+
       var payload = []
       payload = data.map((item) => ({
         ShutdownType: item.discription || item.discriptionDrpdwn,
-        FromDate: addTimeOffset(item.maintStartDateTime),
-        ToDate: addTimeOffset(item.maintEndDateTime),
+        FromDate: formatDateForPayload(item.StartDate),
+        ToDate: formatDateForPayload(item.EndDate),
         AopYear: AOP_YEAR,
         Id: item.idFromApi || null,
         Remarks: item.Remarks || 'null',
@@ -284,7 +350,7 @@ const ShutdownHistoryConfig = ({ permissions }) => {
         payload,
       )
 
-      if (response) {
+      if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Saved Successfully!',
@@ -308,7 +374,16 @@ const ShutdownHistoryConfig = ({ permissions }) => {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
+  }, [
+    modifiedCells,
+    keycloak,
+    PLANT_ID,
+    AOP_YEAR,
+    fetchData,
+    startDate,
+    endDate,
+  ])
+
   useEffect(() => {
     fetchData()
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
@@ -330,7 +405,10 @@ const ShutdownHistoryConfig = ({ permissions }) => {
       }
 
       if (idFromApi) {
-        await DtaDataService.deleteShutdownHistoryConfigData(idFromApi, keycloak)
+        await DtaDataService.deleteShutdownHistoryConfigData(
+          idFromApi,
+          keycloak,
+        )
         setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
         setSnackbarOpen(true)
         setSnackbarData({
@@ -345,6 +423,102 @@ const ShutdownHistoryConfig = ({ permissions }) => {
       console.error('Error deleting Record', error)
     }
   }
+
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      let response
+      response = await DtaDataService.exportShutdownHistoryConfig(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        EXCEL_EXPORT_TITLE,
+      )
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
+  const importShutdownHistoryConfig = async (rawFile) => {
+    setLoading(true)
+
+    try {
+      const response = await DtaDataService.ImportShutdownHistoryConfig(
+        rawFile,
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File - Shutdown History Config.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error uploading Excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleExcelUpload = (rawFile) => {
+    importShutdownHistoryConfig(rawFile)
+  }
+
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -374,10 +548,10 @@ const ShutdownHistoryConfig = ({ permissions }) => {
       saveBtn: permissions?.saveBtn ?? true,
       customHeight: permissions?.customHeight,
       allAction: true,
-      downloadExcelBtn: false,
-      downloadExcelBtnFromUI: true,
+      downloadExcelBtn: true,
+      downloadExcelBtnFromUI: false,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Shutdown History Config`,
-      uploadExcelBtn: false,
+      uploadExcelBtn: true,
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
       titleName: 'Shutdown History Config',
@@ -416,9 +590,13 @@ const ShutdownHistoryConfig = ({ permissions }) => {
         setCurrentRemark={setCurrentRemark}
         allDescriptionDrpdwn={allDescriptionDrpdwn}
         currentRowId={currentRowId}
+        startDate={startDate}
+        endDate={endDate}
         permissions={adjustedPermissions}
+        handleExcelUpload={handleExcelUpload}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
         disableRedHighlight={true}
-        screenType='shutdown'
+        screenType='AromaticsShutdownHistoryConfig'
       />
     </div>
   )

@@ -2986,6 +2986,45 @@ const KendoDataTables = ({
                   }
 
                   if (dateFields1.includes(col?.field)) {
+                    if (
+                      screenType === 'AromaticsShutdownHistoryConfig' &&
+                      lowerVertName === 'aromatics'
+                    ) {
+                      return (
+                        <GridColumn
+                          locked={col.locked || false}
+                          key={col?.field}
+                          field={col?.field}
+                          title={col?.title || col?.headerName}
+                          width={setWidth(col?.minWidth || 150)}
+                          cells={{
+                            edit: {
+                              date: (props) => (
+                                <DateOnlyPicker
+                                  {...props}
+                                  min={startDate}
+                                  max={endDate}
+                                />
+                              ),
+                            },
+                            data: (props) => (
+                              <RedHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ),
+                            headerCell: SimpleHeaderWithTooltip,
+                          }}
+                          format={'{0:dd-MM-yyyy}'}
+                          editor='date'
+                          hidden={col?.hidden}
+                          filter='date'
+                          columnMenu={ColumnMenuCheckboxFilterDate}
+                        />
+                      )
+                    }
                     return (
                       <GridColumn
                         locked={col.locked || false}
