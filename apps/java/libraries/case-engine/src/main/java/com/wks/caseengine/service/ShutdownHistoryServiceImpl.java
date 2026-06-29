@@ -4,7 +4,9 @@ import java.io.ByteArrayOutputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
@@ -1018,6 +1020,282 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			throw new RuntimeException("Failed to delete data", ex);
+		}
+	}
+
+	// ─── Shutdown History Config – Export Excel ───────────────────────────────────
+
+	@Override
+	public byte[] createShutdownHistoryConfigExcel(String plantId, String year) {
+		try {
+			AOPMessageVM result = getShutdownHistoryConfig(plantId, year);
+			@SuppressWarnings("unchecked")
+			List<Map<String, Object>> dataList = (List<Map<String, Object>>) result.getData();
+
+			try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+				CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+				CellStyle borderStyle = Utility.createBorderedStyle(workbook);
+
+				// Visible columns (cols 0-3) then hidden identity columns (cols 4-6)
+				List<String> allHeaders = Arrays.asList(
+						"Shutdown Type", "SD - From", "SD - To", "Remark",
+						"Id", "AopYear", "Plant_FK_Id");
+				int hiddenFromCol = 4;
+
+				Sheet sheet = workbook.createSheet("Shutdown History Config");
+				Row headerRow = sheet.createRow(0);
+				for (int i = 0; i < allHeaders.size(); i++) {
+					Cell cell = headerRow.createCell(i);
+					cell.setCellValue(allHeaders.get(i));
+					cell.setCellStyle(headerStyle);
+				}
+
+				SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+				int rowIdx = 1;
+				for (Map<String, Object> item : dataList) {
+					Row row = sheet.createRow(rowIdx++);
+
+					// Col 0 – Shutdown Type
+					Cell c0 = row.createCell(0);
+					c0.setCellValue(item.get("ShutdownType") != null ? item.get("ShutdownType").toString() : "");
+					c0.setCellStyle(borderStyle);
+
+					// Col 1 – SD - From
+					Cell c1 = row.createCell(1);
+					c1.setCellValue(formatShutdownConfigDate(item.get("FromDate"), sdf));
+					c1.setCellStyle(borderStyle);
+
+					// Col 2 – SD - To
+					Cell c2 = row.createCell(2);
+					c2.setCellValue(formatShutdownConfigDate(item.get("ToDate"), sdf));
+					c2.setCellStyle(borderStyle);
+
+					// Col 3 – Remark
+					Cell c3 = row.createCell(3);
+					c3.setCellValue(item.get("Remarks") != null ? item.get("Remarks").toString() : "");
+					c3.setCellStyle(borderStyle);
+
+					// Col 4 – Id (hidden, used during import for updates)
+					Cell c4 = row.createCell(4);
+					c4.setCellValue(item.get("Id") != null ? item.get("Id").toString() : "");
+					c4.setCellStyle(borderStyle);
+
+					// Col 5 – AopYear (hidden)
+					Cell c5 = row.createCell(5);
+					c5.setCellValue(item.get("AopYear") != null ? item.get("AopYear").toString() : "");
+					c5.setCellStyle(borderStyle);
+
+					// Col 6 – Plant_FK_Id (hidden)
+					Cell c6 = row.createCell(6);
+					c6.setCellValue(item.get("Plant_FK_Id") != null ? item.get("Plant_FK_Id").toString() : "");
+					c6.setCellStyle(borderStyle);
+				}
+
+				for (int i = 0; i < hiddenFromCol; i++) {
+					sheet.autoSizeColumn(i);
+				}
+				for (int i = hiddenFromCol; i < allHeaders.size(); i++) {
+					sheet.autoSizeColumn(i);
+					sheet.setColumnHidden(i, true);
+				}
+
+				workbook.write(baos);
+				return baos.toByteArray();
+			}
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to export shutdown history config", ex);
+		}
+	}
+
+	private String formatShutdownConfigDate(Object dateVal, SimpleDateFormat sdf) {
+		if (dateVal == null) return "";
+		if (dateVal instanceof java.util.Date) return sdf.format((java.util.Date) dateVal);
+		return dateVal.toString();
+	}
+
+	// ─── Shutdown History Config – Import Excel ───────────────────────────────────
+
+	@Override
+	@Transactional
+	public AOPMessageVM importShutdownHistoryConfigExcel(MultipartFile file) {
+		if (file.isEmpty() || (file.getOriginalFilename() != null && !file.getOriginalFilename().endsWith(".xlsx"))) {
+			throw new IllegalArgumentException("Invalid or empty Excel file.");
+		}
+		try {
+			List<String> headers = Arrays.asList(
+					"Shutdown Type", "SD - From", "SD - To", "Remark", "Id", "AopYear", "Plant_FK_Id");
+
+			List<Map<String, Object>> validPayload = new ArrayList<>();
+			List<String[]> failedRawRows = new ArrayList<>();
+			List<String> failedErrors = new ArrayList<>();
+
+			try (XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream())) {
+				Sheet sheet = workbook.getSheetAt(0);
+				if (sheet == null) {
+					throw new IllegalArgumentException("Workbook has no sheets");
+				}
+				DataFormatter fmt = new DataFormatter();
+				int lastRow = sheet.getLastRowNum();
+
+				for (int r = 1; r <= lastRow; r++) {
+					Row row = sheet.getRow(r);
+					if (row == null) continue;
+
+					String shutdownType = getShutdownConfigCellStr(row, 0, fmt);
+					String sdFrom      = getShutdownConfigCellStr(row, 1, fmt);
+					String sdTo        = getShutdownConfigCellStr(row, 2, fmt);
+					String remark      = getShutdownConfigCellStr(row, 3, fmt);
+					String id          = getShutdownConfigCellStr(row, 4, fmt);
+					String aopYear     = getShutdownConfigCellStr(row, 5, fmt);
+					String plantFkId   = getShutdownConfigCellStr(row, 6, fmt);
+
+					String[] rawValues = { shutdownType, sdFrom, sdTo, remark, id, aopYear, plantFkId };
+
+					boolean allEmpty = true;
+					for (String v : rawValues) {
+						if (v != null && !v.isEmpty()) { allEmpty = false; break; }
+					}
+					if (allEmpty) continue;
+
+					// Fall back to request parameters when hidden columns are absent
+					// if (aopYear.isEmpty())   aopYear   = year;
+					// if (plantFkId.isEmpty()) plantFkId = plantId;
+
+					String err = null;
+					if (shutdownType.isEmpty()) {
+						err = "Shutdown Type is required";
+					}
+
+					if (err != null) {
+						failedRawRows.add(rawValues);
+						failedErrors.add(err);
+					} else {
+					Map<String, Object> item = new LinkedHashMap<>();
+					item.put("Id",           id.isEmpty() ? null : id);
+					item.put("ShutdownType", shutdownType);
+					item.put("FromDate",     sdFrom.isEmpty() ? null : parseShutdownConfigDate(sdFrom));
+					item.put("ToDate",       sdTo.isEmpty()   ? null : parseShutdownConfigDate(sdTo));
+					item.put("Remarks",      remark);
+					item.put("AopYear",      aopYear);
+					item.put("Plant_FK_Id",  plantFkId);
+					validPayload.add(item);
+					}
+				}
+			}
+
+			if (validPayload.isEmpty() && failedRawRows.isEmpty()) {
+				AOPMessageVM vm = new AOPMessageVM();
+				vm.setCode(400);
+				vm.setMessage("No data rows found in file");
+				return vm;
+			}
+
+			if (!failedRawRows.isEmpty()) {
+				byte[] errBytes = buildShutdownHistoryConfigErrorExcel(headers, failedRawRows, failedErrors);
+				AOPMessageVM vm = new AOPMessageVM();
+				vm.setCode(400);
+				vm.setMessage("Validation failed for " + failedRawRows.size() + " row(s); no data was saved");
+				vm.setData(Base64.getEncoder().encodeToString(errBytes));
+				return vm;
+			}
+
+			// Save each record; collect per-row failures
+			List<String[]> saveFailedRawRows = new ArrayList<>();
+			List<String> saveFailedErrors = new ArrayList<>();
+
+			for (Map<String, Object> item : validPayload) {
+				try {
+					saveShutdownHistoryConfig(Collections.singletonList(item));
+				} catch (IllegalArgumentException e) {
+					String errMsg = e.getMessage() != null ? e.getMessage() : "Invalid argument";
+					saveFailedRawRows.add(shutdownConfigPayloadToRaw(item));
+					saveFailedErrors.add(errMsg);
+				} catch (Exception e) {
+					throw new RuntimeException("Failed to import shutdown history config data", e);
+				}
+			}
+
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (!saveFailedRawRows.isEmpty()) {
+				byte[] errBytes = buildShutdownHistoryConfigErrorExcel(headers, saveFailedRawRows, saveFailedErrors);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved. " + saveFailedRawRows.size() + " row(s) failed.");
+				aopMessageVM.setData(Base64.getEncoder().encodeToString(errBytes));
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid argument", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to import shutdown history config", ex);
+		}
+	}
+
+	private String getShutdownConfigCellStr(Row row, int col, DataFormatter fmt) {
+		Cell cell = row.getCell(col);
+		return cell == null ? "" : fmt.formatCellValue(cell).trim();
+	}
+
+	private java.sql.Date parseShutdownConfigDate(String dateStr) {
+		if (dateStr == null || dateStr.isEmpty()) return null;
+		try {
+			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+			sdf.setLenient(false);
+			return new java.sql.Date(sdf.parse(dateStr).getTime());
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	private String[] shutdownConfigPayloadToRaw(Map<String, Object> item) {
+		return new String[] {
+			item.get("ShutdownType") != null ? item.get("ShutdownType").toString() : "",
+			item.get("FromDate")     != null ? item.get("FromDate").toString()     : "",
+			item.get("ToDate")       != null ? item.get("ToDate").toString()       : "",
+			item.get("Remarks")      != null ? item.get("Remarks").toString()      : "",
+			item.get("Id")           != null ? item.get("Id").toString()           : "",
+			item.get("AopYear")      != null ? item.get("AopYear").toString()      : "",
+			item.get("Plant_FK_Id")  != null ? item.get("Plant_FK_Id").toString()  : ""
+		};
+	}
+
+	private byte[] buildShutdownHistoryConfigErrorExcel(List<String> headers, List<String[]> failedRows,
+			List<String> errors) {
+		try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+			Sheet sheet = workbook.createSheet("Errors");
+			CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+
+			Row headerRow = sheet.createRow(0);
+			for (int i = 0; i < headers.size(); i++) {
+				Cell cell = headerRow.createCell(i);
+				cell.setCellValue(headers.get(i));
+				cell.setCellStyle(headerStyle);
+			}
+			Cell errHeaderCell = headerRow.createCell(headers.size());
+			errHeaderCell.setCellValue("errDescription");
+			errHeaderCell.setCellStyle(headerStyle);
+
+			for (int r = 0; r < failedRows.size(); r++) {
+				Row excelRow = sheet.createRow(r + 1);
+				String[] vals = failedRows.get(r);
+				for (int c = 0; c < headers.size(); c++) {
+					excelRow.createCell(c).setCellValue(vals[c] != null ? vals[c] : "");
+				}
+				excelRow.createCell(headers.size()).setCellValue(errors.get(r));
+			}
+
+			for (int i = 0; i <= headers.size(); i++) {
+				sheet.autoSizeColumn(i);
+			}
+			workbook.write(baos);
+			return baos.toByteArray();
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to build error workbook", e);
 		}
 	}
 }

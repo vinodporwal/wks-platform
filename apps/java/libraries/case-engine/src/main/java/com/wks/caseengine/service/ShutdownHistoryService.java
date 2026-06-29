@@ -38,4 +38,8 @@ public interface ShutdownHistoryService {
 
 	public AOPMessageVM deleteShutdownHistoryConfig(String id);
 
+	byte[] createShutdownHistoryConfigExcel(String plantId, String year);
+
+	AOPMessageVM importShutdownHistoryConfigExcel(MultipartFile file);
+
 }
