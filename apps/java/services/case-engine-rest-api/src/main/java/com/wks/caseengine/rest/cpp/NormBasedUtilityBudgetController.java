@@ -184,6 +184,10 @@ public class NormBasedUtilityBudgetController {
             @RequestParam String financialYear) {
 
         byte[] excelFile = normBasedUtilityBudgetService.exportNormBasedUtilityBudgetDetailed(cppPlantId, financialYear);
+        if (excelFile == null) {
+            log.error("exportNormBasedUtilityBudgetDetailed: service returned null for plant {} year {}", cppPlantId, financialYear);
+            return ResponseEntity.status(500).body(new byte[0]);
+        }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
