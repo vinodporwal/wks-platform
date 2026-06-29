@@ -124,7 +124,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				objList = getShutdownConsumptionData( plantId,year, storedProcedure);
 				return getShutdownGradeData(objList, plantId, year,gradeId);
 			}
-			else if ((vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("AROMATICS") || vertical.getName().equalsIgnoreCase("ELASTOMER") || vertical.getName().equalsIgnoreCase("MEG") || vertical.getName().equalsIgnoreCase("PTA")) && (!withGrade)) {
+			else if ((vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("AROMATICS") || vertical.getName().equalsIgnoreCase("ELASTOMER") || vertical.getName().equalsIgnoreCase("MEG") || vertical.getName().equalsIgnoreCase("PTA")) || vertical.getName().equalsIgnoreCase("Staple") && (!withGrade)) {
 				//objList = getShutdownNormsMEG(year, plant.getId(), "vwScrnShutdownNorms");
 				// view converted to sp
 				String storedProcedure = verticalName + "_" + site.getName() + "_GetShutdownnorms";
@@ -1453,7 +1453,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	public List<Object[]> getShutdownConsumptionData(String plantId, String aopYear,String storedProcedure) {
 		try {
 			
-			String sql = "EXEC " + storedProcedure
+			String sql = "EXEC " + "[" + storedProcedure + "]"
 					+ " @plantId = :plantId, @FinYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);
@@ -1478,7 +1478,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			
 			 String storedProcedure = verticalName + "_" + site.getName() + "_ShutdownConsumtion";
 			
-			String sql = "EXEC " + storedProcedure
+			String sql = "EXEC " + "[" + storedProcedure + "]"
 					+ " @plantId = :plantId, @aopYear = :aopYear, @siteId = :siteId, @verticalId = :verticalId";
 
 			Query query = entityManager.createNativeQuery(sql);

@@ -2749,7 +2749,7 @@ continue;
 					+ "    MAX(NAT.AuditYear) AS AuditYear, " + "    MAX(NP.UOM) AS UOM, "
 					+ "    NP.ConfigTypeDisplayName AS ConfigTypeDisplayName, "
 					+ "    NP.TypeDisplayName AS TypeDisplayName, " + "    NP.ConfigTypeName AS ConfigTypeName, "
-					+ "    NP.TypeName AS TypeName, MAX(NP.DisplayName) " + "FROM " + viewName + " NP "
+					+ "    NP.TypeName AS TypeName, MAX(NP.DisplayName) " + "FROM " + "[" + viewName + "]" + " NP "
 					+ "JOIN NormParameterType NPT ON NP.NormParameterType_FK_Id = NPT.Id "
 					+ "LEFT JOIN NormAttributeTransactions NAT ON NAT.NormParameter_FK_Id = NP.NormParameter_FK_Id "
 					+ "    AND NAT.AuditYear = :year " + "WHERE (NPT.Name = 'Configuration'  OR NPT.Name = 'Constant') "
@@ -2969,7 +2969,7 @@ continue;
 	public List<Object[]> findByYearAndPlantFkIdMEG(String aopYear, UUID plantId, String procedureName) {
 		try {
 
-			String sql = "EXEC " + procedureName
+			String sql = "EXEC " + "[" + procedureName + "]"
 					+ " @plantId = :plantId, @aopYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);

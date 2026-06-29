@@ -215,10 +215,10 @@ const OverallAopConsumption = () => {
   const fetchData = useCallback(
     async (selectedGrade) => {
       if (!PLANT_ID || !AOP_YEAR) return
-      if (!selectedGrade) {
-        setRows([])
-        return
-      }
+      // if (!selectedGrade) {
+      //   setRows([])
+      //   return
+      // }
       setLoading(true)
       try {
         const response =
@@ -226,7 +226,7 @@ const OverallAopConsumption = () => {
             keycloak,
             PLANT_ID,
             AOP_YEAR,
-            selectedGrade,
+            null,
           )
         if (response?.code === 200) {
           setCalculationObject(response?.data?.aopCalculation || {})
@@ -265,18 +265,14 @@ const OverallAopConsumption = () => {
   )
 
   // Initial load
-  useEffect(() => {
-    fetchGradeDropdowns()
-  }, [fetchGradeDropdowns])
+  // useEffect(() => {
+  //   fetchGradeDropdowns()
+  // }, [fetchGradeDropdowns])
 
   // Fetch data on grade change
   useEffect(() => {
-    if (gradeId) {
-      fetchData(gradeId)
-    } else {
-      setRows([])
-    }
-  }, [gradeId, fetchData])
+    fetchData()
+  }, [fetchData])
 
   const saveChanges = useCallback(async () => {
     try {
@@ -340,7 +336,7 @@ const OverallAopConsumption = () => {
         })
         setModifiedCells({})
         dispatch(setIsBlocked(false))
-        fetchData(gradeId)
+        fetchData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -350,6 +346,11 @@ const OverallAopConsumption = () => {
       }
     } catch (error) {
       console.error('Error saving overall consumption data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Save failed, please try again!',
+        severity: 'error',
+      })
     } finally {
       setLoading(false)
     }
@@ -358,7 +359,6 @@ const OverallAopConsumption = () => {
     keycloak,
     PLANT_ID,
     AOP_YEAR,
-    gradeId,
     fetchData,
     dispatch,
     siteObject,
@@ -380,7 +380,7 @@ const OverallAopConsumption = () => {
           message: 'Data refreshed successfully!',
           severity: 'success',
         })
-        fetchGradeDropdownsAfterCalc()
+        fetchData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -484,7 +484,7 @@ const OverallAopConsumption = () => {
       calculationObject && Object.keys(calculationObject).length > 0
     ),
     allAction: true,
-    showDropdown: true,
+    showDropdown: false,
     showExport: true,
     showImport: false,
     showTitleNameBusiness: true,
