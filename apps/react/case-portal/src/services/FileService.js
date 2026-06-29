@@ -73,7 +73,7 @@ function upload({ dir, file, progress, keycloak }) {
       }
 
       form.append('content-type', file.type)
-      form.append('file', file.originalFile)
+      form.append('file', file.originalFile || file)
 
       return doUpload(data.url, form)
     })
