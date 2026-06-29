@@ -52,7 +52,7 @@ public class ShutdownHistoryController {
 
 	@PostMapping(value="/shutdown-history-config")
 	public AOPMessageVM saveShutdownHistoryConfig(@RequestBody List<Map<String, Object>> shutdownHistoryConfigList){
-		return shutdownHistoryService.saveShutdownHistoryConfig(shutdownHistoryConfigList);
+		return shutdownHistoryService.saveShutdownHistoryConfig(shutdownHistoryConfigList, null, null);
 	}
 
 	@DeleteMapping(value="/shutdown-history-config")
@@ -142,9 +142,9 @@ public class ShutdownHistoryController {
 	}
 
 	@PostMapping(value = "/shutdown-history-config-import-excel", consumes = "multipart/form-data")
-	public AOPMessageVM importShutdownHistoryConfigExcel(
+	public AOPMessageVM importShutdownHistoryConfigExcel( @RequestParam String plantId, @RequestParam String year,
 			@RequestParam("file") MultipartFile file) {
-		return shutdownHistoryService.importShutdownHistoryConfigExcel(file);
+		return shutdownHistoryService.importShutdownHistoryConfigExcel(file, plantId, year);
 	}
 
 	@PostMapping(value="/shutdown-history-pta")

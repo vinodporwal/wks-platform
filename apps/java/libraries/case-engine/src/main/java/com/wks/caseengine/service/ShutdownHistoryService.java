@@ -34,12 +34,12 @@ public interface ShutdownHistoryService {
 
 	public AOPMessageVM getShutdownHistoryConfig(String plantId, String year);
 
-	public AOPMessageVM saveShutdownHistoryConfig(List<Map<String, Object>> shutdownHistoryConfigList);
+	public AOPMessageVM saveShutdownHistoryConfig(List<Map<String, Object>> shutdownHistoryConfigList, List<String[]> saveFailedRawRows, List<String> saveFailedErrors);
 
 	public AOPMessageVM deleteShutdownHistoryConfig(String id);
 
 	byte[] createShutdownHistoryConfigExcel(String plantId, String year);
 
-	AOPMessageVM importShutdownHistoryConfigExcel(MultipartFile file);
+	AOPMessageVM importShutdownHistoryConfigExcel(MultipartFile file, String plantId, String year);
 
 }
