@@ -83,6 +83,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
                 .lastFY(rs.getDouble("LastFY"))
                 .sysGrn(rs.getDouble("SysGrn"))
                 .proposed(rs.getDouble("Proposed"))
+                .remarks(rs.getString("Remarks"))
                 .plantId(rs.getString("PlantId") != null ? UUID.fromString(rs.getString("PlantId")) : null)
                 .aopYear(rs.getString("AopYear"))
                 .gradeId(rs.getString("GradeId") != null ? UUID.fromString(rs.getString("GradeId")) : null)
@@ -108,12 +109,13 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
                
                     String updateSql = "UPDATE MCUNormsValueGrade " +
                         "SET April = ?, May = ?, June = ?, July = ?, August = ?, September = ?, " +
-                        "October = ?, November = ?, December = ?, January = ?, February = ?, March = ?, " +
+                        "October = ?, November = ?, December = ?, January = ?, February = ?, March = ?, Remarks = ? " +
                         "WHERE Material_FK_Id = ? and Grade_FK_Id = ? and FinancialYear = ?";
                     jdbcTemplate.update(updateSql,
                         dto.getProposed(), dto.getProposed(), dto.getProposed(), dto.getProposed(),
                         dto.getProposed(), dto.getProposed(), dto.getProposed(), dto.getProposed(),
                         dto.getProposed(), dto.getProposed(), dto.getProposed(), dto.getProposed(),
+                        dto.getRemarks(),
                         dto.getNormParameterId(), dto.getGradeId(), dto.getAopYear());
                 
             }

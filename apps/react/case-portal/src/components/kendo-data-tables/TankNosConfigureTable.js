@@ -133,6 +133,7 @@ const TankNosConfigureTable = ({ permissions }) => {
         editable: false,
         widthT: 100,
         minWidth: 300,
+        locked: true
       },
       {
         field: 'volume',

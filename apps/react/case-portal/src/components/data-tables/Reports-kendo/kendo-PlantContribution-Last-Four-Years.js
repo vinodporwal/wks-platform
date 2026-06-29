@@ -203,14 +203,8 @@ export default function PlantContributionLastFourYears() {
               ...item,
               id: index,
               actualId: item?.id,
-              isEditable:
-                key === 'OtherVariableCost' && index >= arr.length - 2
-                  ? false
-                  : true,
-              isdisable:
-                key === 'OtherVariableCost' && index >= arr.length - 2
-                  ? true
-                  : false,
+              isEditable: false,
+              isdisable: true,
               isBold,
             }
           })
@@ -413,7 +407,7 @@ export default function PlantContributionLastFourYears() {
                 remarksEditable: true,
                 showCalculate: false,
                 saveBtnForRemark: true,
-                saveBtn: true,
+                saveBtn: false,
                 showWorkFlowBtns: true,
                 showTitle: true,
               }}

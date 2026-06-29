@@ -22,6 +22,7 @@ public class ProposedAOPDTO {
     private Double lastFY;
     private Double sysGrn;
     private Double proposed;
+    private String remarks;
     private UUID plantId;
     private String aopYear;
     private UUID gradeId;

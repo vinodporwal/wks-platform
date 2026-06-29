@@ -78,6 +78,7 @@ import TcsInput from 'components/aop-phase-two/tcs/TcsInput/index'
 import WorkflowDiagram from 'components/aop-phase-two/tcs/workflow-diagram/index'
 import AopDashboard from 'components/kendo-data-tables/AopDashboard'
 import ProposedConsumptionNorms from 'components/kendo-data-tables/ProposedConsumptionNorms'
+import ProposedAOP from 'components/kendo-data-tables/ProposedAOP'
 import Summary from 'components/aop-phase-two/cpp/Summary/index'
 import SenderReceiverMapping from 'components/aop-phase-two/cpp/SenderReceiverMapping'
 import ProductionNormsBasis from 'components/aop-phase-two/vgoht/production-norms-basis/index'
@@ -511,6 +512,17 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+
+          {
+            path: 'proposed-aop',
+            element: (
+              <PrivateRoute routeId='proposed-aop'>
+                <ProposedAOP />
+              </PrivateRoute>
+            ),
+          },
+
+
           {
             path: 'packaging-consumables',
             element: (
