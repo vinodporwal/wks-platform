@@ -34,6 +34,6 @@ public interface ShutdownHistoryService {
 
 	public AOPMessageVM getShutdownHistoryConfig(String plantId, String year);
 
-	public AOPMessageVM saveShutdownHistoryConfig(String plantId, String year, List<Map<String, Object>> shutdownHistoryConfigList);
+	public AOPMessageVM saveShutdownHistoryConfig(List<Map<String, Object>> shutdownHistoryConfigList);
 
 }

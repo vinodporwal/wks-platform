@@ -980,7 +980,7 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 	}
 
 	@Override
-	public AOPMessageVM saveShutdownHistoryConfig(String plantId, String year, List<Map<String, Object>> shutdownHistoryConfigList) {
+	public AOPMessageVM saveShutdownHistoryConfig(List<Map<String, Object>> shutdownHistoryConfigList) {
 		String modifiedBy = Utility.getUserName();
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
