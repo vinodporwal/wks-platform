@@ -128,9 +128,13 @@ const NormalOpNormsScreen = () => {
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+  const IS_AROMATICS_PMD_LAB_OR_NP =
+    IS_AROMATICS_PMD && (lowerPlantName === 'lab' || lowerPlantName === 'np')
   const textNote = IS_PVC_HMD
     ? '*Norm listed in the page represent Grade-mix Norms for Line 1 and Line 2 combined.'
-    : ''
+    : IS_AROMATICS_PMD_LAB_OR_NP
+      ? '*Highlighted materials Norms data fetched from the MX plant. Click on the Calculate button to refresh the data.'
+      : ''
 
   const fetchData = async (gradeId) => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -732,37 +736,37 @@ const NormalOpNormsScreen = () => {
       saveWithRemark: true,
       saveBtn: true,
       showCalculate: true,
-      showNote: IS_PVC_HMD ? true : false,
+      showNote: IS_PVC_HMD || IS_AROMATICS_PMD_LAB_OR_NP,
       downloadExcelBtnFromUI: false,
       showCheckbox: false,
       showG:
         isPEPP ||
-        isPET ||
-        IS_ELASTOMER_HMD_SBR ||
-        IS_ELASTOMER_JMD_HIIR ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_PVC_HMD
+          isPET ||
+          IS_ELASTOMER_HMD_SBR ||
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD
           ? true
           : false,
       marginBottom:
         isPEPP ||
-        isPET ||
-        IS_ELASTOMER_HMD_SBR ||
-        IS_ELASTOMER_JMD_HIIR ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_PVC_HMD
+          isPET ||
+          IS_ELASTOMER_HMD_SBR ||
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD
           ? true
           : false,
       dropdownLabel:
         isPEPP ||
-        isPET ||
-        IS_ELASTOMER_HMD_SBR ||
-        IS_ELASTOMER_JMD_HIIR ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_PVC_HMD
+          isPET ||
+          IS_ELASTOMER_HMD_SBR ||
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD
           ? 'Grade'
           : 'Mode',
       showCalculateVisibility:
@@ -996,32 +1000,32 @@ const NormalOpNormsScreen = () => {
         IS_CHEMICAL_HMD_BUTADIENE ||
         IS_CHEMICAL_VMD_BENEZENEFPU ||
         IS_VCM_HMD_VCM) && (
-        <Box sx={{ width: '100%', marginTop: 1 }}>
-          <CustomAccordion defaultExpanded disableGutters>
-            <CustomAccordionSummary
-              aria-controls='grid-content'
-              id='grid-header'
-            >
-              <Typography component='span' className='grid-title'>
-                Intermediate Values
-              </Typography>
-            </CustomAccordionSummary>
-            <CustomAccordionDetails>
-              <Box sx={{ width: '100%', margin: 0 }}>
-                <KendoDataTables
-                  title='Intermediate Values'
-                  columns={colDefsIntermediateValues}
-                  setRows={setRowsIntermediateValues}
-                  rows={rowsIntermediateValues}
-                  paginationOptions={[100, 200, 300]}
-                  permissions={adjustedPermissionsIV}
-                  groupBy='NormTypeName'
-                />
-              </Box>
-            </CustomAccordionDetails>
-          </CustomAccordion>
-        </Box>
-      )}
+          <Box sx={{ width: '100%', marginTop: 1 }}>
+            <CustomAccordion defaultExpanded disableGutters>
+              <CustomAccordionSummary
+                aria-controls='grid-content'
+                id='grid-header'
+              >
+                <Typography component='span' className='grid-title'>
+                  Intermediate Values
+                </Typography>
+              </CustomAccordionSummary>
+              <CustomAccordionDetails>
+                <Box sx={{ width: '100%', margin: 0 }}>
+                  <KendoDataTables
+                    title='Intermediate Values'
+                    columns={colDefsIntermediateValues}
+                    setRows={setRowsIntermediateValues}
+                    rows={rowsIntermediateValues}
+                    paginationOptions={[100, 200, 300]}
+                    permissions={adjustedPermissionsIV}
+                    groupBy='NormTypeName'
+                  />
+                </Box>
+              </CustomAccordionDetails>
+            </CustomAccordion>
+          </Box>
+        )}
 
       {true && lowerVertName === 'cracker' && <NormalOpNormsScreenCracker />}
     </div>

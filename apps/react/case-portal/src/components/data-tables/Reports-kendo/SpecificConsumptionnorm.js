@@ -103,9 +103,9 @@ export default function SpecificConsumptionNorm() {
           title: 'Particular',
           editable: false,
           flex: 1,
-          widthT: 250,
+          fixedWidth: 250,
         },
-        { field: 'UOM', title: 'UOM', editable: false, widthT: 100 },
+        { field: 'UOM', title: 'UOM', editable: false, fixedWidth: 200 },
       ]
     }
     return columnsFromBackend
@@ -200,7 +200,7 @@ export default function SpecificConsumptionNorm() {
               columns={rpt.columns || []}
               rows={rpt.rows || []}
               title={title}
-              setRows={() => {}}
+              setRows={() => { }}
               permissions={{
                 textAlignment: 'center',
                 showCalculate: false,
@@ -228,7 +228,7 @@ export default function SpecificConsumptionNorm() {
               columns={normColumns}
               rows={norms}
               title={normsTitle}
-              setRows={() => {}}
+              setRows={() => { }}
               permissions={{
                 textAlignment: 'center',
                 showCalculate: false,

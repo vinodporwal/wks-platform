@@ -65,6 +65,7 @@ const VcmStockbalance = ({ permissions }) => {
   const [currentRowId, setCurrentRowId] = useState(null)
   const keycloak = useSession()
   const [rows, setRows] = useState()
+  const [aopCalculation, setAopCalculation] = useState([])
   const valueFormat = ValueFormatterProduction()
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
@@ -228,13 +229,13 @@ const VcmStockbalance = ({ permissions }) => {
       format: valueFormat,
       minWidth: 100,
     },
-    {
-      field: 'remarks',
-      title: 'Remark',
-      editable: true,
-      widthT: 300,
-      minWidth: 120,
-    },
+    // {
+    //   field: 'remarks',
+    //   title: 'Remark',
+    //   editable: true,
+    //   widthT: 300,
+    //   minWidth: 120,
+    // },
   ]
 
   const fetchData = useCallback(async () => {
@@ -250,23 +251,26 @@ const VcmStockbalance = ({ permissions }) => {
       )
 
       if (res?.code === 200) {
-        const mapped = (res?.data || []).map((item, index) => ({
+        const mapped = (res?.data?.vcmStockBalance || []).map((item, index) => ({
           ...item,
           id: index,
           idFromApi: item.id,
-          isEditable: item?.isEditable,
+          isEditable: false,
           remarks: item.remarks,
           originalRemark: item.remarks,
           normParameterFkId: item.normParameterFkId,
           uom: item.uom,
         }))
         setRows(mapped)
+        setAopCalculation(res?.data?.aopCalculation || [])
       } else {
         setRows([])
+        setAopCalculation([])
       }
     } catch (err) {
       console.error('Error fetching data:', err)
       setRows([])
+      setAopCalculation([])
     } finally {
       setLoading(false)
     }
@@ -352,6 +356,41 @@ const VcmStockbalance = ({ permissions }) => {
       setLoading(false)
     }
   }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
+  const handleCalculate = useCallback(async () => {
+    setRows([])
+    setLoading(true)
+    try {
+      const data = await OptimizerDataApiService.calculateVcmStockBalance(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (data?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: data?.message || 'Data Refresh Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [keycloak, PLANT_ID, AOP_YEAR, fetchData])
+
   useEffect(() => {
     fetchData()
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
@@ -377,8 +416,8 @@ const VcmStockbalance = ({ permissions }) => {
     {
       showAction: permissions?.showAction ?? true,
       showUnit: permissions?.showUnit ?? false,
-      saveWithRemark: permissions?.saveWithRemark ?? true,
-      saveBtn: permissions?.saveBtn ?? true,
+      saveWithRemark: false,
+      saveBtn: false,
       customHeight: permissions?.customHeight,
       allAction: true,
       downloadExcelBtn: false,
@@ -388,7 +427,8 @@ const VcmStockbalance = ({ permissions }) => {
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
       titleName: 'VCM Stock Balance',
-      showCalculate: false,
+      showCalculate: true,
+      showCalculateVisibility: aopCalculation && aopCalculation.length > 0,
     },
     isOldYear,
   )
@@ -405,6 +445,7 @@ const VcmStockbalance = ({ permissions }) => {
         rows={rows}
         fetchData={fetchData}
         saveChanges={saveChanges}
+        handleCalculate={handleCalculate}
         paginationOptions={[100, 200, 300]}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}

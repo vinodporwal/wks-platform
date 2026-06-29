@@ -843,6 +843,14 @@
   z-index: 3 !important;
 }
 
+/* Ensure active column styling takes precedence on sticky/locked column headers */
+.kendo-data-grid .k-grid-header th.active-column.k-grid-header-sticky,
+.kendo-data-grid .k-grid-header th.active-column[aria-haspopup].k-grid-header-sticky {
+  background-color: #cdeafd !important;
+  color: #00796b !important;
+  border-bottom: 2px solid #790000 !important;
+}
+
 /* Locked data cells — solid background prevents row bleed-through */
 .kendo-data-grid .k-grid-content td.k-grid-content-sticky {
   background-color: #ffffff !important;
