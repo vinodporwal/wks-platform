@@ -1527,6 +1527,7 @@ const KendoDataTables = ({
       </td>
     )
   }
+
   const RedHighlightCell = (props) => {
     const {
       dataItem,
@@ -1540,6 +1541,7 @@ const KendoDataTables = ({
     const rowId = dataItem.id
     const value = dataItem[field]
     const isBoldFromCells = dataItem?.boldCells?.includes(field)
+
     if (disableRedHighlight) {
       return (
         <td
@@ -1557,14 +1559,28 @@ const KendoDataTables = ({
       field,
     )
 
-    const month = field
-    const normId = dataItem.materialFkId || dataItem.NormParameter_FK_Id
+    const fieldMonthNumber = fieldToMonthNumber[field?.toLowerCase()]
 
-    const isRedFromAllRedCell = allRedCell?.some(
-      (cell) =>
-        cell.month === month &&
-        cell.NormParameter_FK_Id?.toLowerCase() === normId?.toLowerCase(),
-    )
+    const normId =
+      dataItem.materialFKId ||
+      dataItem.materialFkId ||
+      dataItem.NormParameter_FK_Id
+
+    const isRedFromAllRedCell = allRedCell?.some((cell) => {
+      const cellMonthNumber =
+        typeof cell.month === 'number'
+          ? cell.month
+          : fieldToMonthNumber[String(cell.month).toLowerCase()]
+
+      const cellNormId = (
+        cell.NormParameter_FK_Id || cell.normParameterFKId
+      )?.toLowerCase()
+
+      return (
+        cellMonthNumber === fieldMonthNumber &&
+        cellNormId === normId?.toLowerCase()
+      )
+    })
 
     const shouldHighlight = isEdited || isRedFromAllRedCell
 
