@@ -1412,7 +1412,7 @@ const ProductionNorms = ({ permissions }) => {
       saveBtn: permissions?.saveBtn ?? false,
       units: lowerVertName == 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
       downloadExcelBtnFromUI:
-        lowerVertName === 'vcm' ? false : !permissions?.hideExportBtn,
+        lowerVertName === 'vcm' || lowerVertName === 'meg' ? false : !permissions?.hideExportBtn,
       ExcelName: `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_${AOP_YEAR}_Month wise Production plan (By Products)`,
 
       customHeight: permissions?.customHeight,
