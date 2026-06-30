@@ -614,6 +614,98 @@ class ODSNormsReader:
                 flat[producer][c["material"]] = c["norm"]
         return flat
 
+    def get_bpc_generation_quantities(self) -> dict:
+        """
+        Return BPC generation quantities per producer from the ODS file.
+
+        For each producer (utility), picks any material row with non-zero norm
+        and non-zero quantity, then BPC_gen_qty = quantity / norm.
+
+        For multi-asset producers like POWERGEN, keys by source_plant (asset name).
+        For single-asset producers, keys by utility name.
+
+        Returns:
+            {"JMD - C2-GTG 1": 54100000.0, "AUXBOIL7_SHP STEAM": 62820.0, ...}
+        """
+        if not self.is_available:
+            return {}
+
+        result: dict = {}
+
+        for _, row in self._iter_data_rows():
+            utility = str(row[_COL_UTILITY]).strip()
+            account = str(row[_COL_ACCOUNT]).strip()
+            material = str(row[_COL_MATERIAL]).strip()
+
+            if account not in ("Utilities", "Raw Material"):
+                continue
+            if not utility or utility == "nan" or not material or material == "nan":
+                continue
+            if utility == "Total" or material == "Total":
+                continue
+
+            utility_plant = str(row[_COL_UTILITY_PLANT]).strip() if pd.notna(row[_COL_UTILITY_PLANT]) else ""
+            norm_val = self._get_norm_val(row)
+            qty_val = self._get_quantity_val(row)
+
+            if norm_val == 0 or qty_val == 0:
+                continue
+
+            gen_qty = qty_val / norm_val
+
+            if utility == "POWERGEN":
+                key = utility_plant
+            else:
+                key = utility
+
+            if key and key not in result:
+                result[key] = gen_qty
+
+        return result
+
+    def get_bpc_quantities(self) -> dict:
+        """
+        Return BPC quantities per producer+material from the ODS file.
+
+        For multi-asset producers like POWERGEN, keys by source_plant (asset name).
+        For single-asset producers, keys by utility name.
+
+        Returns:
+            {"JMD - C2-GTG 1": {"SynGas(Unshift)": 328541.30, "Power_Dis": 101533.57, ...},
+             "AUXBOIL7_SHP STEAM": {"SynGas(Unshift)": 247872.88, "Boiler Feed Water": 87041.85, ...}}
+        """
+        if not self.is_available:
+            return {}
+
+        result: dict = {}
+
+        for _, row in self._iter_data_rows():
+            utility = str(row[_COL_UTILITY]).strip()
+            account = str(row[_COL_ACCOUNT]).strip()
+            material = str(row[_COL_MATERIAL]).strip()
+
+            if account not in ("Utilities", "Raw Material"):
+                continue
+            if not utility or utility == "nan" or not material or material == "nan":
+                continue
+            if utility == "Total" or material == "Total":
+                continue
+
+            utility_plant = str(row[_COL_UTILITY_PLANT]).strip() if pd.notna(row[_COL_UTILITY_PLANT]) else ""
+            qty_val = self._get_quantity_val(row)
+
+            if utility == "POWERGEN":
+                key = utility_plant
+            else:
+                key = utility
+
+            if key:
+                if key not in result:
+                    result[key] = {}
+                result[key][material] = qty_val
+
+        return result
+
     def get_asset_consumption(self, asset_name: str, consumed_utility: str = None) -> float:
         """
         Quick lookup: get the consumption norm of a specific utility by a specific asset.

@@ -43,6 +43,7 @@ from engine.demand_capacity import run_demand_capacity
 from engine.budget import calculate_budget
 from engine.dispatch_engine import dispatch_power, dispatch_steam
 from engine.ods_norms_reader import ODSNormsReader
+from engine.u4u_iteration_loop import U4UIterationLoop
 
 logger = logging.getLogger(__name__)
 
@@ -253,29 +254,30 @@ def run_month(plant_id: str, month: int, year: int, save_to_db: bool = True) -> 
     if ods_reader.is_available:
         ods_reader.log_all_norms()
 
-    # NEW: Standalone power dispatch (priority-based, all-at-min-first)
-    # Pass pre-fetched demands + shared ODS reader to avoid redundant DB/Excel reads
+    # U4U Iteration Loop — iteratively dispatches power + steam and calculates
+    # U4U consumption cascades until convergence (0.01% tolerance on all utilities).
+    # This replaces the standalone power/steam dispatch calls above.
     try:
-        result["power_dispatch"] = dispatch_power(
-            plant_id, month, year, demands=demands, ods_reader=ods_reader,
+        u4u_loop = U4UIterationLoop(
+            plant_id=plant_id,
+            month=month,
+            year=year,
+            initial_demands=demands,
+            ods_reader=ods_reader,
         )
+        u4u_result = u4u_loop.run()
+        result["u4u_iteration"] = u4u_result
+        result["power_dispatch"] = u4u_result.get("final_power_result")
+        result["new_steam_dispatch"] = u4u_result.get("final_steam_result")
+        result["u4u_converged"] = u4u_result.get("converged", False)
+        result["u4u_iterations"] = u4u_result.get("iterations_used", 0)
     except Exception as e:
-        logger.warning("  [CALC] power dispatch skipped: %s", e)
+        logger.warning("  [CALC] U4U iteration loop failed: %s", e)
+        result["u4u_iteration"] = None
         result["power_dispatch"] = None
-
-    # NEW: Standalone steam dispatch (priority-based, all-at-min-first, letdown + byproduct convergence)
-    # Pass pre-fetched demands + shared ODS reader to avoid redundant DB/Excel reads
-    if result["power_dispatch"]:
-        try:
-            result["new_steam_dispatch"] = dispatch_steam(
-                plant_id, month, year, result["power_dispatch"],
-                demands=demands, ods_reader=ods_reader,
-            )
-        except Exception as e:
-            logger.warning("  [CALC] steam dispatch skipped: %s", e)
-            result["new_steam_dispatch"] = None
-    else:
         result["new_steam_dispatch"] = None
+        result["u4u_converged"] = False
+        result["u4u_iterations"] = 0
 
     # OLD budget calculation (power dispatch + steam balance + USD iteration)
     # Disabled — being replaced by new dispatch_engine.py step by step.

@@ -40,6 +40,33 @@ logger = logging.getLogger(__name__)
 # Hardcoded for now; will be replaced by per-load lookup from CPP_GTHeatRate table
 DEFAULT_FREE_STEAM_FACTOR = 1.97
 
+# ---------------------------------------------------------------------------
+# Steam Spinning Margin (TPH) — per plant
+# Hardcoded for now; will be replaced by DB table lookup per plant.
+# After dispatch, total headroom (orig_max_tph - dispatched_tph) across all
+# running assets must be >= this value.
+# ---------------------------------------------------------------------------
+STEAM_SPINNING_MARGIN_TPH = {
+    "F6D82E68-C3B6-494F-9905-48F19DC611E3": 0.0,  # DTA-PCG-CPP
+    "2DFEE33F-4CFD-4887-B9DD-53388AA95271": 0.0,  # SEZ-CPP
+    "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45": 0.0,  # SEZ-PCG-CPP
+    "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A": 0.0,  # DTA-CPP
+    "BA558F95-8A3F-4769-9C78-FF7B6C639DDF": 250.0,  # C2-CPP
+}
+
+# ---------------------------------------------------------------------------
+# Power Spinning Margin — per plant enablement
+# True = reserve capacity equal to most efficient asset's fixed_max
+# False = no spinning margin (default)
+# ---------------------------------------------------------------------------
+POWER_SPINNING_MARGIN_ENABLED = {
+    "F6D82E68-C3B6-494F-9905-48F19DC611E3": False,  # DTA-PCG-CPP
+    "2DFEE33F-4CFD-4887-B9DD-53388AA95271": False,  # SEZ-CPP
+    "D2C7FBAD-7E00-4642-B3B2-5A768FAC8D45": False,  # SEZ-PCG-CPP
+    "A4AF8441-73AD-4F9F-BCF4-6734E8202F7A": False,  # DTA-CPP
+    "BA558F95-8A3F-4769-9C78-FF7B6C639DDF": True,   # C2-CPP
+}
+
 _MONTH_NAMES = {
     1: "January", 2: "February", 3: "March", 4: "April",
     5: "May",     6: "June",     7: "July",   8: "August",
@@ -164,6 +191,8 @@ def _build_asset_table(plant_id: str, month: int, year: int) -> list:
             priority = 999  # unset priority → lowest
         priority = int(priority)
 
+        fixed_max_mw = float(cap_row.get("fixed_max", 0) or 0)
+
         result.append({
             "asset_id": aid,
             "asset_name": aname,
@@ -171,6 +200,7 @@ def _build_asset_table(plant_id: str, month: int, year: int) -> list:
             "op_hours": op_hours,
             "min_mw": min_mw,
             "max_mw": max_mw,
+            "fixed_max_mw": fixed_max_mw,
             "priority": priority,
             "mandatory": mandatory,
             "min_mwh": min_mw * op_hours,
@@ -413,7 +443,7 @@ def _dispatch_one_by_one(
 # Logging helpers
 # ---------------------------------------------------------------------------
 
-def _log_dispatch_result(demand: dict, dispatch: list, month: int, year: int):
+def _log_dispatch_result(demand: dict, dispatch: list, month: int, year: int, spinning_margin: float = 0.0):
     """Print the full dispatch result to the log in a structured table format."""
     total_demand = demand["total_mwh"]
     total_gen = sum(d["dispatched_mwh"] for d in dispatch)
@@ -473,6 +503,20 @@ def _log_dispatch_result(demand: dict, dispatch: list, month: int, year: int):
                      d.get("aux_power_norm", 0.0), d.get("aux_power", 0.0))
     logger.info("  %-25s  %8s  %14s  %14.2f  %8s  %12s  %14.2f  %14s  %14.2f",
                 "TOTAL", "", "", total_gen, "", "", total_free_steam, "", total_aux_power)
+    # Spinning margin post-dispatch verification
+    if spinning_margin > 0:
+        working = [d for d in dispatch if d["op_hours"] > 0]
+        total_headroom = sum(d.get("orig_max_mw", d["max_mw"]) - d["dispatched_mw"] for d in working)
+        if total_headroom >= spinning_margin:
+            logger.info("")
+            logger.info("  ✓ POWER SPINNING MARGIN OK: %.2f MW reserved (required: %.2f MW)", total_headroom, spinning_margin)
+        else:
+            logger.warning("")
+            logger.warning("  " + "!" * 76)
+            logger.warning("  !  *** POWER SPINNING MARGIN VIOLATION ***")
+            logger.warning("  !  Required: %.2f MW  |  Available headroom: %.2f MW  |  Shortfall: %.2f MW", spinning_margin, total_headroom, spinning_margin - total_headroom)
+            logger.warning("  !  Assets are dispatched beyond effective max — margin NOT maintained!")
+            logger.warning("  " + "!" * 76)
     logger.info("  %s", sep)
 
 
@@ -535,6 +579,9 @@ def dispatch_power(
     demand = _get_power_demand(plant_id, month, year, demands=demands)
     total_demand = demand["total_mwh"]
 
+    # 2b. Apply spinning margin — reduces effective_max_mw per asset
+    power_spinning_margin = _apply_power_spinning_margin(assets, plant_id)
+
     # 3. Run dispatch
     if dispatch_mode == "one_by_one":
         dispatch = _dispatch_one_by_one(assets, total_demand, plant_id, month, year, ods_reader=ods_reader)
@@ -547,7 +594,7 @@ def dispatch_power(
     deficit = round(max(0.0, total_demand - total_gen), 2)
 
     # 5. Log the result
-    _log_dispatch_result(demand, dispatch, month, year)
+    _log_dispatch_result(demand, dispatch, month, year, power_spinning_margin)
 
     total_free_steam = round(sum(d.get("free_steam_mt", 0) for d in dispatch), 2)
     total_aux = round(sum(d.get("aux_power", 0.0) for d in dispatch), 2)
@@ -558,6 +605,7 @@ def dispatch_power(
         "total_generation_mwh": round(total_gen, 2),
         "total_free_steam_mt": total_free_steam,
         "total_aux_power_mwh": total_aux,
+        "spinning_margin_mw": power_spinning_margin,
         "surplus_mwh": surplus,
         "deficit_mwh": deficit,
         "dispatch_mode": dispatch_mode,
@@ -570,7 +618,7 @@ def dispatch_power(
     }
 
 
-def _log_steam_dispatch_result(demand_details: dict, dispatch: list, month: int, year: int, free_steam: float):
+def _log_steam_dispatch_result(demand_details: dict, dispatch: list, month: int, year: int, free_steam: float, spinning_margin: float = 0.0):
     """Print the full steam dispatch result to the log in a structured table format."""
     total_demand = demand_details["shp_net"]
     total_gen = sum(d["dispatched_mt"] for d in dispatch) + free_steam
@@ -622,6 +670,21 @@ def _log_steam_dispatch_result(demand_details: dict, dispatch: list, month: int,
         logger.info("  ⚠ DEFICIT: Steam generation deficit of %.2f MT", deficit)
     else:
         logger.info("  ✓ Steam demand met exactly")
+
+    # Spinning margin post-dispatch verification
+    if spinning_margin > 0:
+        working = [d for d in dispatch if d["op_hours"] > 0]
+        total_headroom = sum(d.get("orig_max_tph", d["max_tph"]) - d["dispatched_tph"] for d in working)
+        if total_headroom >= spinning_margin:
+            logger.info("")
+            logger.info("  ✓ STEAM SPINNING MARGIN OK: %.2f TPH reserved (required: %.2f TPH)", total_headroom, spinning_margin)
+        else:
+            logger.warning("")
+            logger.warning("  " + "!" * 76)
+            logger.warning("  !  *** STEAM SPINNING MARGIN VIOLATION ***")
+            logger.warning("  !  Required: %.2f TPH  |  Available headroom: %.2f TPH  |  Shortfall: %.2f TPH", spinning_margin, total_headroom, spinning_margin - total_headroom)
+            logger.warning("  !  Assets are dispatched beyond effective max — margin NOT maintained!")
+            logger.warning("  " + "!" * 76)
     logger.info("  %s", sep)
 
 
@@ -745,6 +808,9 @@ def dispatch_steam(
                 "dispatched_mt": 0.0,
             })
             
+    # 3b. Apply steam spinning margin — reduces effective_max_tph per asset
+    steam_spinning_margin = _apply_spinning_margin(dispatch_assets, plant_id)
+
     # 4. Convergence loop (5 iterations)
     byproduct_lp_steam = 0.0
     demand_details = {}
@@ -895,7 +961,7 @@ def dispatch_steam(
         a["max_tph"] = round(a["max_tph"], 2)
         
     # Log results
-    _log_steam_dispatch_result(demand_details, dispatch_assets, month, year, free_steam)
+    _log_steam_dispatch_result(demand_details, dispatch_assets, month, year, free_steam, steam_spinning_margin)
     
     total_supp_gen = round(sum(a["dispatched_mt"] for a in dispatch_assets), 2)
     total_steam_gen = round(total_supp_gen + free_steam, 2)
@@ -916,6 +982,214 @@ def dispatch_steam(
             else "Demand met"
         ),
     }
+
+
+def _apply_spinning_margin(dispatch_assets: list, plant_id: str) -> float:
+    """
+    Compute effective_max_tph for each working asset by proportionally
+    reducing max_tph to reserve spinning margin headroom.
+
+    Returns the configured margin value (0.0 if none).
+
+    Edge cases handled:
+    - effective_max < min_tph → cap at min_tph, redistribute excess to others
+    - total max <= margin → warn, no reduction applied
+    - no working assets → warn
+    """
+    margin = STEAM_SPINNING_MARGIN_TPH.get(plant_id, 0.0)
+
+    for a in dispatch_assets:
+        a["orig_max_tph"] = a["max_tph"]
+        a["effective_max_tph"] = a["max_tph"]
+
+    if margin <= 0:
+        return 0.0
+
+    working = [a for a in dispatch_assets if a["op_hours"] > 0]
+    if not working:
+        logger.warning("")
+        logger.warning("!" * 78)
+        logger.warning("!  SPINNING MARGIN: No working assets — cannot reserve %.2f TPH margin", margin)
+        logger.warning("!" * 78)
+        logger.warning("")
+        return margin
+
+    total_max = sum(a["max_tph"] for a in working)
+    if total_max <= margin:
+        logger.warning("")
+        logger.warning("!" * 78)
+        logger.warning("!  SPINNING MARGIN: Total max capacity (%.2f TPH) <= margin (%.2f TPH) — cannot reserve", total_max, margin)
+        logger.warning("!" * 78)
+        logger.warning("")
+        return margin
+
+    # Iterative proportional reduction with min_tph floor
+    remaining_margin = margin
+    remaining = working[:]
+
+    while remaining_margin > 0.01 and remaining:
+        sub_total = sum(a["max_tph"] for a in remaining)
+        if sub_total <= 0:
+            break
+
+        newly_capped = []
+        for a in remaining:
+            share = remaining_margin * a["max_tph"] / sub_total
+            eff = a["max_tph"] - share
+            if eff < a["min_tph"]:
+                a["effective_max_tph"] = a["min_tph"]
+                newly_capped.append(a)
+            else:
+                a["effective_max_tph"] = eff
+
+        if newly_capped:
+            absorbed = sum(a["max_tph"] - a["min_tph"] for a in newly_capped)
+            remaining_margin -= absorbed
+            remaining = [a for a in remaining if a not in newly_capped]
+            for a in remaining:
+                a["effective_max_tph"] = a["max_tph"]  # reset for next iteration
+        else:
+            remaining_margin = 0
+
+    # Log the margin configuration
+    logger.info("")
+    logger.info("  SPINNING MARGIN CONFIG")
+    logger.info("  Required margin: %.2f TPH", margin)
+    logger.info("  %-25s  %10s  %10s  %10s", "Asset", "Max TPH", "Eff Max", "Reserve")
+    logger.info("  %s  %s  %s  %s", "-" * 25, "-" * 10, "-" * 10, "-" * 10)
+    total_reserved = 0.0
+    for a in working:
+        reserve = a["orig_max_tph"] - a["effective_max_tph"]
+        total_reserved += reserve
+        logger.info("  %-25s  %10.2f  %10.2f  %10.2f",
+                     a["asset_name"], a["orig_max_tph"], a["effective_max_tph"], reserve)
+    logger.info("  %-25s  %10s  %10s  %10.2f", "TOTAL RESERVED", "", "", total_reserved)
+
+    if remaining_margin > 0.01:
+        logger.warning("")
+        logger.warning("!" * 78)
+        logger.warning("!  SPINNING MARGIN SHORTFALL: Cannot reserve full %.2f TPH — shortfall of %.2f TPH", margin, remaining_margin)
+        logger.warning("!" * 78)
+        logger.warning("")
+    else:
+        logger.info("  → Margin of %.2f TPH successfully reserved", margin)
+    logger.info("")
+
+    return margin
+
+
+def _apply_power_spinning_margin(dispatch_assets: list, plant_id: str) -> float:
+    """
+    Compute effective_max_mw for each working asset by:
+    1. Finding the most efficient asset (highest fixed_max_mw)
+    2. Excluding it from margin contribution
+    3. Proportionally reducing other assets to reserve its capacity
+
+    Returns the margin value (0.0 if disabled or no margin needed).
+
+    Edge cases handled:
+    - Only 1 working asset → warn, no margin
+    - All assets same capacity → pick highest priority as most efficient
+    - effective_max < min_mw → cap at min_mw, redistribute excess
+    - total max of others <= margin → warn, no reduction applied
+    """
+    enabled = POWER_SPINNING_MARGIN_ENABLED.get(plant_id, False)
+
+    for a in dispatch_assets:
+        a["orig_max_mw"] = a["max_mw"]
+        a["effective_max_mw"] = a["max_mw"]
+
+    if not enabled:
+        return 0.0
+
+    working = [a for a in dispatch_assets if a["op_hours"] > 0]
+    if not working:
+        logger.warning("")
+        logger.warning("!" * 78)
+        logger.warning("!  POWER SPINNING MARGIN: No working assets — cannot reserve margin")
+        logger.warning("!" * 78)
+        logger.warning("")
+        return 0.0
+
+    if len(working) == 1:
+        logger.warning("")
+        logger.warning("!" * 78)
+        logger.warning("!  POWER SPINNING MARGIN: Only 1 working asset — cannot reserve margin")
+        logger.warning("!" * 78)
+        logger.warning("")
+        return 0.0
+
+    # Find most efficient asset (highest fixed_max_mw, tie-break by highest priority)
+    most_efficient = max(working, key=lambda a: (a["fixed_max_mw"], -a["priority"]))
+    margin = most_efficient["fixed_max_mw"]
+
+    # Assets to reduce (exclude most efficient)
+    to_reduce = [a for a in working if a != most_efficient]
+
+    total_max_others = sum(a["max_mw"] for a in to_reduce)
+    if total_max_others <= margin:
+        logger.warning("")
+        logger.warning("!" * 78)
+        logger.warning("!  POWER SPINNING MARGIN: Total max of other assets (%.2f MW) <= margin (%.2f MW) — cannot reserve", total_max_others, margin)
+        logger.warning("!" * 78)
+        logger.warning("")
+        return margin
+
+    # Iterative proportional reduction with min_mw floor
+    remaining_margin = margin
+    remaining = to_reduce[:]
+
+    while remaining_margin > 0.01 and remaining:
+        sub_total = sum(a["max_mw"] for a in remaining)
+        if sub_total <= 0:
+            break
+
+        newly_capped = []
+        for a in remaining:
+            share = remaining_margin * a["max_mw"] / sub_total
+            eff = a["max_mw"] - share
+            if eff < a["min_mw"]:
+                a["effective_max_mw"] = a["min_mw"]
+                newly_capped.append(a)
+            else:
+                a["effective_max_mw"] = eff
+
+        if newly_capped:
+            absorbed = sum(a["max_mw"] - a["min_mw"] for a in newly_capped)
+            remaining_margin -= absorbed
+            remaining = [a for a in remaining if a not in newly_capped]
+            for a in remaining:
+                a["effective_max_mw"] = a["max_mw"]  # reset for next iteration
+        else:
+            remaining_margin = 0
+
+    # Log the margin configuration
+    logger.info("")
+    logger.info("  POWER SPINNING MARGIN CONFIG")
+    logger.info("  Most efficient asset: %s (fixed_max = %.2f MW)", most_efficient["asset_name"], margin)
+    logger.info("  Required margin: %.2f MW", margin)
+    logger.info("  %-25s  %10s  %10s  %10s", "Asset", "Max MW", "Eff Max", "Reserve")
+    logger.info("  %s  %s  %s  %s", "-" * 25, "-" * 10, "-" * 10, "-" * 10)
+    total_reserved = 0.0
+    for a in working:
+        reserve = a["orig_max_mw"] - a["effective_max_mw"]
+        total_reserved += reserve
+        eff_marker = " (excluded)" if a == most_efficient else ""
+        logger.info("  %-25s  %10.2f  %10.2f  %10.2f%s",
+                     a["asset_name"], a["orig_max_mw"], a["effective_max_mw"], reserve, eff_marker)
+    logger.info("  %-25s  %10s  %10s  %10.2f", "TOTAL RESERVED", "", "", total_reserved)
+
+    if remaining_margin > 0.01:
+        logger.warning("")
+        logger.warning("!" * 78)
+        logger.warning("!  POWER SPINNING MARGIN SHORTFALL: Cannot reserve full %.2f MW — shortfall of %.2f MW", margin, remaining_margin)
+        logger.warning("!" * 78)
+        logger.warning("")
+    else:
+        logger.info("  → Margin of %.2f MW successfully reserved", margin)
+    logger.info("")
+
+    return margin
 
 
 def _find_linked_gt_asset(hrsg_name: str, power_assets: list) -> dict:

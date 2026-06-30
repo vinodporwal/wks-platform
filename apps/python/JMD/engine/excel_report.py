@@ -251,6 +251,128 @@ def _write_assets(ws, result: dict):
     _auto_width(ws)
 
 
+def _write_u4u_consumption(ws, result: dict):
+    """Write detailed U4U consumption table — one row per producer+material."""
+    ws.title = "U4U Consumption"
+    u4u = result.get("u4u_iteration") or {}
+    records = u4u.get("final_detail_records", [])
+    if not records:
+        ws.cell(row=1, column=1).value = "No U4U data"
+        return
+
+    headers = [
+        "Utility Plant", "Utility", "UOM", "Gen Qty", "BPC Gen Qty", "Gen Diff %",
+        "Account", "Material", "Material UOM", "Norm",
+        "Quantity", "BPC Quantity", "Qty Diff %",
+    ]
+    _header_row(ws, 1, 1, headers)
+
+    # Build BPC lookup from u4u result
+    bpc_gen = u4u.get("final_bpc_gen_quantities", {})
+    bpc_qty = u4u.get("final_bpc_quantities", {})
+
+    for r, rec in enumerate(records, start=2):
+        p = rec["producer"]
+        bg = bpc_gen.get(p, 0.0)
+        bq = (bpc_qty.get(p) or {}).get(rec["material"], 0.0)
+        gen_diff = _pct_diff(rec["generation"], bg)
+        qty_diff = _pct_diff(rec["quantity"], bq)
+        _data_row(ws, r, [
+            p,
+            rec.get("producer_utility", ""),
+            rec.get("producer_uom", ""),
+            round(rec["generation"], 2),
+            round(bg, 2),
+            round(gen_diff, 2),
+            rec.get("account", ""),
+            rec.get("material", ""),
+            rec.get("material_uom", ""),
+            round(rec.get("norm", 0.0), 6),
+            round(rec["quantity"], 2),
+            round(bq, 2),
+            round(qty_diff, 2),
+        ])
+
+    # Freeze header + auto filter
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}{len(records) + 1}"
+    _auto_width(ws)
+
+
+def _write_u4u_summary(ws, result: dict):
+    """Write per-utility summary comparison — one row per generation utility."""
+    ws.title = "U4U Summary"
+    u4u = result.get("u4u_iteration") or {}
+    records = u4u.get("final_detail_records", [])
+    if not records:
+        ws.cell(row=1, column=1).value = "No U4U data"
+        return
+
+    bpc_gen = u4u.get("final_bpc_gen_quantities", {})
+
+    # Aggregate per producer
+    producer_summary: dict = {}
+    for rec in records:
+        p = rec["producer"]
+        if p not in producer_summary:
+            producer_summary[p] = {
+                "utility": rec.get("producer_utility", ""),
+                "uom": rec.get("producer_uom", ""),
+                "generation": rec["generation"],
+                "bpc_gen": bpc_gen.get(p, 0.0),
+                "material_count": 0,
+                "total_u4u_qty": 0.0,
+                "materials": [],
+            }
+        producer_summary[p]["material_count"] += 1
+        producer_summary[p]["total_u4u_qty"] += rec["quantity"]
+        producer_summary[p]["materials"].append(rec.get("material", ""))
+
+    headers = [
+        "Utility Plant", "Utility", "UOM", "Gen Qty", "BPC Gen Qty",
+        "Gen Diff %", "# Materials", "Total U4U Qty", "Materials Consumed",
+    ]
+    _header_row(ws, 1, 1, headers)
+
+    for r, p in enumerate(sorted(producer_summary.keys()), start=2):
+        s = producer_summary[p]
+        gen_diff = _pct_diff(s["generation"], s["bpc_gen"])
+        fill = _SUB_FILL if r % 2 == 0 else None
+        _data_row(ws, r, [
+            p,
+            s["utility"],
+            s["uom"],
+            round(s["generation"], 2),
+            round(s["bpc_gen"], 2),
+            round(gen_diff, 2),
+            s["material_count"],
+            round(s["total_u4u_qty"], 2),
+            ", ".join(s["materials"]),
+        ], fill=fill)
+
+    # Totals row
+    total_row = len(producer_summary) + 2
+    total_gen = sum(s["generation"] for s in producer_summary.values())
+    total_bpc = sum(s["bpc_gen"] for s in producer_summary.values())
+    total_u4u = sum(s["total_u4u_qty"] for s in producer_summary.values())
+    _data_row(ws, total_row, [
+        "TOTAL", "", "", round(total_gen, 2), round(total_bpc, 2),
+        "", sum(s["material_count"] for s in producer_summary.values()),
+        round(total_u4u, 2), "",
+    ], bold=True, fill=_TOTAL_FILL)
+
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}{total_row}"
+    _auto_width(ws)
+
+
+def _pct_diff(actual: float, bpc: float) -> float:
+    """Calculate percentage difference between actual and BPC value."""
+    if bpc == 0:
+        return 0.0
+    return (actual - bpc) / bpc * 100.0
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -290,6 +412,8 @@ def write_month_report(result: dict, output_folder: str) -> str:
     _write_demands(wb.create_sheet(), result)
     _write_import_power(wb.create_sheet(), result)
     _write_norms(wb.create_sheet(), result)
+    _write_u4u_summary(wb.create_sheet(), result)
+    _write_u4u_consumption(wb.create_sheet(), result)
 
     wb.save(filepath)
     logger.info("  [EXCEL] Month report saved: %s", filepath)
