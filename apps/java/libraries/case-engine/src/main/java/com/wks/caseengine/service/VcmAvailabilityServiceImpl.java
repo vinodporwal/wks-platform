@@ -33,6 +33,12 @@ import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.utility.Utility;
+import java.sql.ResultSetMetaData;
+import java.sql.Types;
+import org.springframework.jdbc.core.ResultSetExtractor;
+import java.util.LinkedHashMap;
+import java.util.Set;
+import java.util.HashSet;
 
 @Service
 public class VcmAvailabilityServiceImpl implements VcmAvailabilityService {
@@ -69,13 +75,13 @@ public class VcmAvailabilityServiceImpl implements VcmAvailabilityService {
         String siteName = siteRepository.findById(plants.getSiteFkId()).orElseThrow(() -> new RuntimeException("Site not found")).getName();
         
         String procedureName = verticalName + "_" + siteName + "_GetVCMStockBalance";
-        List<VcmAvailabilityConstantDTO> vcmAvailabilityConstants = fetchVcmAvailabilityConstantsFromProcedure(plantId, year, procedureName);
+        Map<String, Object> vcmStockBalance = fetchDynamicDataFromStoredProcedure(plantId.toString(), year, procedureName);
 
         Map<String, Object> map = new HashMap<>();
 
         List<AopCalculation> aopCalculation = aopCalculationRepository
                 .findByPlantIdAndAopYearAndCalculationScreen(plantId, year, "vcm-stock-balance");
-        map.put("vcmStockBalance", vcmAvailabilityConstants);
+        map.put("vcmStockBalance", vcmStockBalance);
         map.put("aopCalculation", aopCalculation);
 
         aopMessageVM.setCode(200);
@@ -454,5 +460,85 @@ public class VcmAvailabilityServiceImpl implements VcmAvailabilityService {
 			throw new RuntimeException("Failed to execute stored procedure", e);
 		}
 	}
+
+    private Map<String, Object> fetchDynamicDataFromStoredProcedure(String plantId, String aopYear, String procedureName) {
+        String sql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?";
+        return jdbcTemplate.query(sql, (ResultSetExtractor<Map<String, Object>>) rs -> {
+            List<Map<String, Object>> dataList = new ArrayList<>();
+            List<Map<String, Object>> metadataList = new ArrayList<>();
+            Set<String> numericFields = new HashSet<>();
+
+            ResultSetMetaData rsmd = rs.getMetaData();
+            int columnCount = rsmd.getColumnCount();
+
+            for (int i = 1; i <= columnCount; i++) {
+                String columnName = rsmd.getColumnLabel(i);
+                int sqlType = rsmd.getColumnType(i);
+
+                Map<String, Object> meta = new HashMap<>();
+                meta.put("field", columnName);
+                meta.put("title", columnName);
+                meta.put("type", getFrontendType(rsmd.getColumnTypeName(i)));
+                metadataList.add(meta);
+                if (isNumericType(sqlType)) {
+                    numericFields.add(columnName);
+                }
+            }
+            while (rs.next()) {
+                Map<String, Object> row = new LinkedHashMap<>();
+                for (int i = 1; i <= columnCount; i++) {
+                    String colName = rsmd.getColumnLabel(i);
+                    Object value = rs.getObject(i);
+                    row.put(colName, value == null ? (numericFields.contains(colName) ? 0 : "") : value);
+                }
+                dataList.add(row);
+            }
+
+            Map<String, Object> resultMap = new HashMap<>();
+            resultMap.put("data", dataList);
+            resultMap.put("metadata", metadataList);
+            return resultMap;
+        }, plantId, aopYear);
+    }
+
+    private boolean isNumericType(int sqlType) {
+        return sqlType == Types.INTEGER || sqlType == Types.DOUBLE ||
+               sqlType == Types.DECIMAL || sqlType == Types.FLOAT ||
+               sqlType == Types.NUMERIC || sqlType == Types.REAL;
+    }
+
+    private String getFrontendType(String sqlTypeName) {
+        if (sqlTypeName == null) {
+            return "string";
+        }
+        switch (sqlTypeName.toUpperCase()) {
+            case "VARCHAR":
+            case "NVARCHAR":
+            case "CHAR":
+                return "string";
+            case "INT":
+            case "TINYINT":
+            case "BIGINT":
+            case "SMALLINT":
+            case "DECIMAL":
+            case "FLOAT":
+            case "DOUBLE":
+            case "NUMERIC":
+            case "REAL":
+                return "number";
+            case "DATE":
+            case "DATETIME":
+            case "DATETIME2":
+            case "SMALLDATETIME":
+            case "TIME":
+                return "date";
+            case "BIT":
+                return "boolean";
+            case "UNIQUEIDENTIFIER":
+                return "string";
+            default:
+                return "string";
+        }
+    }
 
 }
