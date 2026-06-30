@@ -1876,7 +1876,7 @@ public void slowdownConsumptionUpdateTracker(NormAttributeTransactionsDTO dto, D
 
 	String rawDesc = dto.getDescription();
 				int month=extractMonthNumber(rawDesc);
-				String cleanDesc = stripTrailingSuffix(rawDesc);
+				//String cleanDesc = stripTrailingSuffix(rawDesc);
 
 				jdbcTemplate.update(
 					"INSERT INTO NormsTransactionsSlowdownConfiguration " +
@@ -1885,7 +1885,7 @@ public void slowdownConsumptionUpdateTracker(NormAttributeTransactionsDTO dto, D
 					plantFkId,
 					aopYear,
 					dto.getNormParameterFKId(),   
-					cleanDesc,
+					rawDesc,
 					newval,
 					1
 					
