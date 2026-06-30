@@ -256,7 +256,7 @@ const BusinessDemand = ({ permissions }) => {
             expanded: false,
             UOM:
               IS_VCM_VERTICAL ||
-              (lowerVertName === 'chemical' && !IS_CHEMICAL_VMD_BENZEN)
+                (lowerVertName === 'chemical' && !IS_CHEMICAL_VMD_BENZEN)
                 ? '%'
                 : item?.UOM,
             ...(IS_CRACKER_HMD && { avg }),
@@ -637,57 +637,57 @@ const BusinessDemand = ({ permissions }) => {
       isTotalFooterActive:
         // IS_VCM_VERTICAL ||
         IS_PE_PP_VERTICAL ||
-        // FOR PTA IT IS NOT REQUIRED
-        // IS_PTA_VERTICAL ||
-        IS_PET_VERTICAL ||
-        IS_PVC_VERTICAL ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_ELASTOMER_VERTICAL ||
-        (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD)
+          // FOR PTA IT IS NOT REQUIRED
+          // IS_PTA_VERTICAL ||
+          IS_PET_VERTICAL ||
+          IS_PVC_VERTICAL ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_ELASTOMER_VERTICAL ||
+          (lowerVertName === 'chemical' && !IS_CHEMICAL_JMD)
           ? true
           : false,
 
       downloadExcelBtn:
         IS_CRACKER_VERTICAL ||
-        IS_PE_PP_VERTICAL ||
-        IS_PET_VERTICAL ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_PVC_HMD ||
-        IS_ELASTOMER_HMD ||
-        lowerVertName === 'meg'
+          IS_PE_PP_VERTICAL ||
+          IS_PET_VERTICAL ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD ||
+          IS_ELASTOMER_HMD ||
+          lowerVertName === 'meg'
           ? true
           : false,
       uploadExcelBtn:
         IS_CRACKER_VERTICAL ||
-        IS_PE_PP_VERTICAL ||
-        IS_PET_VERTICAL ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_PVC_HMD ||
-        IS_ELASTOMER_HMD ||
-        lowerVertName === 'meg'
+          IS_PE_PP_VERTICAL ||
+          IS_PET_VERTICAL ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD ||
+          IS_ELASTOMER_HMD ||
+          lowerVertName === 'meg'
           ? true
           : false,
 
       downloadExcelBtnFromUI:
         IS_CRACKER_VERTICAL ||
-        IS_PE_PP_VERTICAL ||
-        IS_PET_VERTICAL ||
-        IS_PVC_VMD ||
-        IS_PVC_DMD ||
-        IS_PVC_HMD ||
-        IS_ELASTOMER_JMD ||
-        IS_ELASTOMER_HMD ||
-        lowerVertName === 'meg'
+          IS_PE_PP_VERTICAL ||
+          IS_PET_VERTICAL ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD ||
+          IS_PVC_HMD ||
+          IS_ELASTOMER_JMD ||
+          IS_ELASTOMER_HMD ||
+          lowerVertName === 'meg'
           ? false
           : true,
 
       // Enables ON/OFF dropdown for rows where UOM === 'ON/OFF'
       enableOnOffDropdown: IS_CRACKER_HMD,
-      showCalculate: IS_PVC_HMD,
-      showCalculateVisibility: IS_PVC_HMD && aopCalculation.length > 0,
+      showCalculate: IS_PVC_HMD || IS_PVC_DMD,
+      showCalculateVisibility: (IS_PVC_HMD || IS_PVC_DMD) && aopCalculation.length > 0,
     },
     isOldYear,
   )

@@ -14,7 +14,7 @@ import { DataService } from 'services/DataService'
 import AopTabs from 'components/AopTabs'
 import { Box } from '@mui/material'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
-const BudgetOperatingHour = ({ permissions }) => {
+const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -369,7 +369,7 @@ const BudgetOperatingHour = ({ permissions }) => {
         mar: item.mar || null,
         UOM: '',
         auditYear: AOP_YEAR,
-        gradeId: item.gradeId,
+        gradeId:item.gradeId,
         normParameterFkId: item.normParameterFkId || item.NormParameter_FK_Id,
         remarks: item.remarks,
         id: item.idFromApi || null,
@@ -428,6 +428,12 @@ const BudgetOperatingHour = ({ permissions }) => {
     lineDetails,
     tabIndex,
   ])
+
+  useEffect(() => {
+    if (saveTrigger > 0) {
+      fetchData()
+    }
+  }, [saveTrigger, fetchData])
 
   const handleCalculate = async () => {
     setLoading(true)
@@ -589,7 +595,7 @@ const BudgetOperatingHour = ({ permissions }) => {
       customHeight: permissions?.customHeight,
       allAction: true,
       downloadExcelBtn: true,
-      uploadExcelBtn: true,
+      uploadExcelBtn:true,
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
       titleName: 'Gradewise Monthwise Budgeted Operating Hours',

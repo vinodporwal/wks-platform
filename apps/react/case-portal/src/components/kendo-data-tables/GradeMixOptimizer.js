@@ -70,6 +70,7 @@ const GradeMixOptimizer = ({ permissions }) => {
   const keycloak = useSession()
   const [rows, setRows] = useState()
   const [tabIndex, setTabIndex] = useState(0)
+  const [saveTrigger, setSaveTrigger] = useState(0)
   const valueFormat = ValueFormatterConsumption()
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
@@ -225,6 +226,7 @@ const GradeMixOptimizer = ({ permissions }) => {
         })
         setModifiedCells({})
         fetchData()
+        setSaveTrigger((prev) => prev + 1)
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -316,7 +318,7 @@ const GradeMixOptimizer = ({ permissions }) => {
         disableRedHighlight={true}
         screenType='shutdown'
       />
-      <BudgetOperatingHour permissions={permissions} />
+      <BudgetOperatingHour permissions={permissions} saveTrigger={saveTrigger} />
     </div>
   )
 }
