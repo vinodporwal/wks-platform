@@ -110,6 +110,12 @@ const defs = {
     pimsoutput: 'PIMS Output',
     workflowdesign: 'Workflow Design',
 
+    refineryAopBudget: 'Refinery AOP Budget',
+    shutdownSlowdownActivity: 'Shutdown/Slowdown Activity',
+    plantCapacities: 'Plant Capacities',
+    shutdown: 'Shutdown',
+    slowdown: 'Slowdown',
+
     //SSRS
     normComparisonReport: 'Norm Comparison Report',
     packagingConsumables: 'Packaging Consumables',

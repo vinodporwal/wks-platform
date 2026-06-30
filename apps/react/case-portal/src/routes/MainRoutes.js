@@ -126,6 +126,9 @@ import SpecificConsumptionCalculation from 'components/kendo-data-tables/Specifi
 import ProductionOptimizer from 'components/kendo-data-tables/ProductionOptimizer'
 import CausticSodaLyeBasis from 'components/data-tables/Reports/CausticSodaLyeBasis'
 import MaterialBalance from 'components/kendo-data-tables/MaterialBalance'
+import PlantCapacities from 'components/aop-phase-two/refineryAopBudget/PlantCapacities'
+import ShutdownSchedule from 'components/aop-phase-two/refineryAopBudget/shutdown'
+import SlowdownSchedule from 'components/aop-phase-two/refineryAopBudget/slowdown'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -293,6 +296,38 @@ export const MainRoutes = (
           },
         ],
         //TCS Ended],
+      },
+
+      {
+        path: 'refinery-aop-budget',
+        children: [
+          //TCS Started
+          {
+            path: 'plant-capacities',
+            element: (
+              <PrivateRoute routeId='plant-capacities'>
+                <PlantCapacities />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown',
+            element: (
+              <PrivateRoute routeId='shutdown'>
+                <ShutdownSchedule />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'slowdown',
+            element: (
+              <PrivateRoute routeId='slowdown'>
+                <SlowdownSchedule />
+              </PrivateRoute>
+            ),
+          },
+        ],
+        // REFINERY AOP BUDGET Ended],
       },
 
       {
