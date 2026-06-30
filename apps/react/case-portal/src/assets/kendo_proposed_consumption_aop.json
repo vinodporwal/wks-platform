@@ -4,14 +4,16 @@
     "title": "Particulars",
     "editable": false,
     "isDisabled": true,
-    "fixedWidth": 160
+    "fixedWidth": 160,
+    "locked": true
   },
   {
     "field": "UOM",
     "title": "UOM",
     "editable": false,
     "isDisabled": true,
-    "fixedWidth": 50
+    "fixedWidth": 50,
+    "locked": true
   },
   {
     "title": "April",
