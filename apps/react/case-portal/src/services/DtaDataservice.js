@@ -606,7 +606,7 @@ export async function ImportShutdownHistoryConfig(
   plantId,
   year,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/shutdown-history-config-import-excel`
+  const url = `${Config.CaseEngineUrl}/task/shutdown-history-config-import-excel?year=${year}&plantId=${plantId}`
   const formData = new FormData()
   formData.append('file', file)
   const headers = {
