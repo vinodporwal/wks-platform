@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.springframework.transaction.annotation.Transactional;
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.FillPatternType;
@@ -758,7 +759,22 @@ public class AOPServiceImpl implements AOPService {
 	        Workbook workbook = new XSSFWorkbook();
 	        Sheet sheet = workbook.createSheet("Sheet1");
 
+	        Font boldFont = workbook.createFont();
+	        boldFont.setBold(true);
+
+	        CellStyle headerStyle = workbook.createCellStyle();
+	        headerStyle.setFont(boldFont);
+	        headerStyle.setBorderTop(BorderStyle.THIN);
+	        headerStyle.setBorderBottom(BorderStyle.THIN);
+	        headerStyle.setBorderLeft(BorderStyle.THIN);
+	        headerStyle.setBorderRight(BorderStyle.THIN);
+
 	        CellStyle normalStyle = workbook.createCellStyle();
+	        normalStyle.setBorderTop(BorderStyle.THIN);
+	        normalStyle.setBorderBottom(BorderStyle.THIN);
+	        normalStyle.setBorderLeft(BorderStyle.THIN);
+	        normalStyle.setBorderRight(BorderStyle.THIN);
+
 	        CellStyle totalRowStyle = workbook.createCellStyle();
 	        totalRowStyle.cloneStyleFrom(normalStyle);
 	        totalRowStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
@@ -766,44 +782,42 @@ public class AOPServiceImpl implements AOPService {
 
 	        int currentRow = 0;
 
-	        // (Ensure your header writing is here)
 	        List<String> innerHeaders = new ArrayList<>();
 	        innerHeaders.add("Products");
 	        innerHeaders.add("UOM");
-	        innerHeaders.add(getMonth(year,4));
-	        innerHeaders.add(getMonth(year,5));
-	        innerHeaders.add(getMonth(year,6));
-	        innerHeaders.add(getMonth(year,7));
-	        innerHeaders.add(getMonth(year,8));
-	        innerHeaders.add(getMonth(year,9));
-	        innerHeaders.add(getMonth(year,10));
-	        innerHeaders.add(getMonth(year,11));
-	        innerHeaders.add(getMonth(year,12));
-	        innerHeaders.add(getMonth(year,1));
-	        innerHeaders.add(getMonth(year,2));
-	        innerHeaders.add(getMonth(year,3));
+	        innerHeaders.add(getMonth(year, 4));
+	        innerHeaders.add(getMonth(year, 5));
+	        innerHeaders.add(getMonth(year, 6));
+	        innerHeaders.add(getMonth(year, 7));
+	        innerHeaders.add(getMonth(year, 8));
+	        innerHeaders.add(getMonth(year, 9));
+	        innerHeaders.add(getMonth(year, 10));
+	        innerHeaders.add(getMonth(year, 11));
+	        innerHeaders.add(getMonth(year, 12));
+	        innerHeaders.add(getMonth(year, 1));
+	        innerHeaders.add(getMonth(year, 2));
+	        innerHeaders.add(getMonth(year, 3));
 	        innerHeaders.add("Total");
-	       
+
 	        if (isAfterSave) {
 	            innerHeaders.add("Status");
 	            innerHeaders.add("Error Description");
 	        }
-	        Row headerRow = sheet.createRow(currentRow++);
-	        Font boldFont = workbook.createFont();
-	        boldFont.setBold(true);
 
-	        CellStyle boldStyle = workbook.createCellStyle();
-	        boldStyle.setFont(boldFont);
-	        for (int col = 0; col < innerHeaders.size(); col++) {
+	        int numCols = innerHeaders.size();
+	        int[] maxColWidths = new int[numCols];
+
+	        Row headerRow = sheet.createRow(currentRow++);
+	        for (int col = 0; col < numCols; col++) {
 	            Cell cell = headerRow.createCell(col);
 	            cell.setCellValue(innerHeaders.get(col));
-	            cell.setCellStyle(boldStyle);
+	            cell.setCellStyle(headerStyle);
+	            maxColWidths[col] = innerHeaders.get(col).length();
 	        }
-
 
 	        int dataRowCount = dtoList.size();
 	        for (int i = 0; i < dataRowCount; i++) {
-	        	AOPDTO dto = dtoList.get(i);
+	            AOPDTO dto = dtoList.get(i);
 	            Row row = sheet.createRow(currentRow++);
 	            List<Object> rowData = new ArrayList<>();
 	            rowData.add(dto.getDisplayName());
@@ -811,11 +825,10 @@ public class AOPServiceImpl implements AOPService {
 	            Optional<NormParameters> opt = normParametersRepository.findById(materialId);
 
 	            String uom = opt
-	                .map(NormParameters::getUom)     // if present, get the UOM
-	                .orElse("DEFAULT_UOM");         // fallback if not present or UOM is null
+	                .map(NormParameters::getUom)
+	                .orElse("DEFAULT_UOM");
 
 	            rowData.add(uom);
-
 	            rowData.add(dto.getApril());
 	            rowData.add(dto.getMay());
 	            rowData.add(dto.getJune());
@@ -828,28 +841,42 @@ public class AOPServiceImpl implements AOPService {
 	            rowData.add(dto.getJan());
 	            rowData.add(dto.getFeb());
 	            rowData.add(dto.getMarch());
-	            rowData.add(dto.getApril()+dto.getMay()+dto.getJune()+dto.getJuly()+dto.getAug()+dto.getSep()+dto.getOct()+dto.getNov()
-	           +dto.getDec()+ dto.getJan()+dto.getFeb()+dto.getMarch());
-	            
+	            rowData.add(dto.getApril() + dto.getMay() + dto.getJune() + dto.getJuly() + dto.getAug()
+	                + dto.getSep() + dto.getOct() + dto.getNov() + dto.getDec()
+	                + dto.getJan() + dto.getFeb() + dto.getMarch());
+
 	            if (isAfterSave) {
 	                rowData.add(dto.getSaveStatus());
 	                rowData.add(dto.getErrDescription());
 	            }
-     
+
 	            for (int col = 0; col < rowData.size(); col++) {
 	                Cell cell = row.createCell(col);
 	                Object value = rowData.get(col);
+	                String cellStr;
 	                if (value instanceof Number) {
 	                    cell.setCellValue(((Number) value).doubleValue());
+	                    cellStr = value.toString();
 	                } else if (value instanceof Boolean) {
 	                    cell.setCellValue((Boolean) value);
+	                    cellStr = value.toString();
 	                } else if (value != null) {
 	                    cell.setCellValue(value.toString());
+	                    cellStr = value.toString();
 	                } else {
 	                    cell.setCellValue("");
+	                    cellStr = "";
 	                }
 	                cell.setCellStyle(normalStyle);
+	                if (col < numCols) {
+	                    maxColWidths[col] = Math.max(maxColWidths[col], cellStr.length());
+	                }
 	            }
+	        }
+
+	        for (int col = 0; col < numCols; col++) {
+	            int width = Math.min((maxColWidths[col] + 4) * 256, 255 * 256);
+	            sheet.setColumnWidth(col, width);
 	        }
 
 	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -861,6 +888,207 @@ public class AOPServiceImpl implements AOPService {
 	    }
 	    return null;
 	}
+	@SuppressWarnings("unchecked")
+	public byte[] exportAOPDataCombined(String plantId, String year, boolean isAfterSave,
+	        List<AOPDTO> productionDtoList, List<AOPDTO> byProductsDtoList) {
+	    try {
+	        if (!isAfterSave) {
+	            AOPMessageVM productionVM = getAOPData(plantId, year, "Production");
+	            Map<String, Object> productionMap = (Map<String, Object>) productionVM.getData();
+	            productionDtoList = (List<AOPDTO>) productionMap.get("aopDTOList");
+
+	            AOPMessageVM byProductsVM = getAOPData(plantId, year, "ByProducts");
+	            Map<String, Object> byProductsMap = (Map<String, Object>) byProductsVM.getData();
+	            byProductsDtoList = (List<AOPDTO>) byProductsMap.get("aopDTOList");
+	        }
+
+	        Workbook workbook = new XSSFWorkbook();
+	        Sheet sheet = workbook.createSheet("Sheet1");
+
+        Font boldFont = workbook.createFont();
+        boldFont.setBold(true);
+
+        CellStyle titleStyle = workbook.createCellStyle();
+        titleStyle.setFont(boldFont);
+        titleStyle.setFillForegroundColor(IndexedColors.LIGHT_CORNFLOWER_BLUE.getIndex());
+        titleStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        titleStyle.setBorderTop(BorderStyle.THIN);
+        titleStyle.setBorderBottom(BorderStyle.THIN);
+        titleStyle.setBorderLeft(BorderStyle.THIN);
+        titleStyle.setBorderRight(BorderStyle.THIN);
+        titleStyle.setLocked(true);
+
+        CellStyle headerStyle = workbook.createCellStyle();
+        headerStyle.setFont(boldFont);
+        headerStyle.setFillForegroundColor(IndexedColors.GREY_40_PERCENT.getIndex());
+        headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        headerStyle.setBorderTop(BorderStyle.THIN);
+        headerStyle.setBorderBottom(BorderStyle.THIN);
+        headerStyle.setBorderLeft(BorderStyle.THIN);
+        headerStyle.setBorderRight(BorderStyle.THIN);
+        headerStyle.setLocked(true);
+
+        CellStyle normalStyle = workbook.createCellStyle();
+        normalStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        normalStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        normalStyle.setBorderTop(BorderStyle.THIN);
+        normalStyle.setBorderBottom(BorderStyle.THIN);
+        normalStyle.setBorderLeft(BorderStyle.THIN);
+        normalStyle.setBorderRight(BorderStyle.THIN);
+        normalStyle.setLocked(true);
+
+	        List<String> columnHeaders = new ArrayList<>();
+	        columnHeaders.add("Products");
+	        columnHeaders.add("UOM");
+	        columnHeaders.add(getMonth(year, 4));
+	        columnHeaders.add(getMonth(year, 5));
+	        columnHeaders.add(getMonth(year, 6));
+	        columnHeaders.add(getMonth(year, 7));
+	        columnHeaders.add(getMonth(year, 8));
+	        columnHeaders.add(getMonth(year, 9));
+	        columnHeaders.add(getMonth(year, 10));
+	        columnHeaders.add(getMonth(year, 11));
+	        columnHeaders.add(getMonth(year, 12));
+	        columnHeaders.add(getMonth(year, 1));
+	        columnHeaders.add(getMonth(year, 2));
+	        columnHeaders.add(getMonth(year, 3));
+	        columnHeaders.add("Total");
+
+	        if (isAfterSave) {
+	            columnHeaders.add("Status");
+	            columnHeaders.add("Error Description");
+	        }
+
+	        int numCols = columnHeaders.size();
+	        int[] maxColWidths = new int[numCols];
+	        for (int i = 0; i < numCols; i++) {
+	            maxColWidths[i] = columnHeaders.get(i).length();
+	        }
+
+	        int currentRow = 0;
+
+	        // Section 1 — Month Wise Production Plan
+	        Row titleRow1 = sheet.createRow(currentRow++);
+	        Cell titleCell1 = titleRow1.createCell(0);
+	        titleCell1.setCellValue("Month Wise Production Plan");
+	        titleCell1.setCellStyle(titleStyle);
+
+	        Row headerRow1 = sheet.createRow(currentRow++);
+	        for (int col = 0; col < numCols; col++) {
+	            Cell cell = headerRow1.createCell(col);
+	            cell.setCellValue(columnHeaders.get(col));
+	            cell.setCellStyle(headerStyle);
+	        }
+
+	        currentRow = writeDataRows(sheet, productionDtoList, currentRow, normalStyle, isAfterSave, numCols, maxColWidths);
+
+	        // Two blank rows for readability
+	        currentRow += 2;
+
+	        // Section 2 — By Products
+	        Row titleRow2 = sheet.createRow(currentRow++);
+	        Cell titleCell2 = titleRow2.createCell(0);
+	        titleCell2.setCellValue("By Products");
+	        titleCell2.setCellStyle(titleStyle);
+
+	        Row headerRow2 = sheet.createRow(currentRow++);
+	        for (int col = 0; col < numCols; col++) {
+	            Cell cell = headerRow2.createCell(col);
+	            cell.setCellValue(columnHeaders.get(col));
+	            cell.setCellStyle(headerStyle);
+	        }
+
+	        currentRow = writeDataRows(sheet, byProductsDtoList, currentRow, normalStyle, isAfterSave, numCols, maxColWidths);
+
+        for (int col = 0; col < numCols; col++) {
+            int width = Math.min((maxColWidths[col] + 4) * 256, 255 * 256);
+            sheet.setColumnWidth(col, width);
+        }
+
+        sheet.protectSheet("");
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        workbook.write(outputStream);
+        workbook.close();
+        return outputStream.toByteArray();
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    return null;
+}
+
+	private int writeDataRows(Sheet sheet, List<AOPDTO> dtoList, int startRow, CellStyle normalStyle,
+	        boolean isAfterSave, int numCols, int[] maxColWidths) {
+	    int currentRow = startRow;
+	    if (dtoList == null) {
+	        return currentRow;
+	    }
+	    for (AOPDTO dto : dtoList) {
+	        Row row = sheet.createRow(currentRow++);
+	        List<Object> rowData = new ArrayList<>();
+	        rowData.add(dto.getDisplayName());
+
+	        String uom = "";
+	        if (dto.getMaterialFKId() != null) {
+	            Optional<NormParameters> opt = normParametersRepository.findById(UUID.fromString(dto.getMaterialFKId()));
+	            uom = opt.map(NormParameters::getUom).orElse("");
+	        }
+	        rowData.add(uom);
+
+	        rowData.add(dto.getApril());
+	        rowData.add(dto.getMay());
+	        rowData.add(dto.getJune());
+	        rowData.add(dto.getJuly());
+	        rowData.add(dto.getAug());
+	        rowData.add(dto.getSep());
+	        rowData.add(dto.getOct());
+	        rowData.add(dto.getNov());
+	        rowData.add(dto.getDec());
+	        rowData.add(dto.getJan());
+	        rowData.add(dto.getFeb());
+	        rowData.add(dto.getMarch());
+
+	        double total = safeValue(dto.getApril()) + safeValue(dto.getMay()) + safeValue(dto.getJune())
+	            + safeValue(dto.getJuly()) + safeValue(dto.getAug()) + safeValue(dto.getSep())
+	            + safeValue(dto.getOct()) + safeValue(dto.getNov()) + safeValue(dto.getDec())
+	            + safeValue(dto.getJan()) + safeValue(dto.getFeb()) + safeValue(dto.getMarch());
+	        rowData.add(total);
+
+	        if (isAfterSave) {
+	            rowData.add(dto.getSaveStatus());
+	            rowData.add(dto.getErrDescription());
+	        }
+
+	        for (int col = 0; col < rowData.size(); col++) {
+	            Cell cell = row.createCell(col);
+	            Object value = rowData.get(col);
+	            String cellStr;
+	            if (value instanceof Number) {
+	                cell.setCellValue(((Number) value).doubleValue());
+	                cellStr = value.toString();
+	            } else if (value instanceof Boolean) {
+	                cell.setCellValue((Boolean) value);
+	                cellStr = value.toString();
+	            } else if (value != null) {
+	                cell.setCellValue(value.toString());
+	                cellStr = value.toString();
+	            } else {
+	                cell.setCellValue("");
+	                cellStr = "";
+	            }
+	            cell.setCellStyle(normalStyle);
+	            if (col < numCols) {
+	                maxColWidths[col] = Math.max(maxColWidths[col], cellStr.length());
+	            }
+	        }
+	    }
+	    return currentRow;
+	}
+
+	private double safeValue(Double val) {
+	    return val != null ? val : 0.0;
+	}
+
 	public String getMonth(String year, int month) {
 	    
 	    if (year == null || !year.matches("\\d{4}-\\d{2}")) {

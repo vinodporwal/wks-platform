@@ -14,6 +14,7 @@ public interface AOPService {
 	public AOPMessageVM getMonthlyProductionCombined(String plantId, String year);
 	
 	public byte[] exportAOPData(String plantId, String year,String type,boolean isAfterSave,List<AOPDTO> dtoList);
+    public byte[] exportAOPDataCombined(String plantId, String year, boolean isAfterSave, List<AOPDTO> productionDtoList, List<AOPDTO> byProductsDtoList);
     public AOPMessageVM calculateData(String plantId, String year);
     public List<Map<String, String>> getAOPYears();
     public AOPMessageVM getAOPYearStatus();
