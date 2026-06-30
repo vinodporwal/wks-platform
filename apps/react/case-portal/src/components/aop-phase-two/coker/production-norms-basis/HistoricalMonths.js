@@ -11,7 +11,7 @@ import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
 import { ProductionNormsApiService } from '../../services/coker/productionNormsApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-const ManualEntry = () => {
+const HistoricalMonths = ({ startDate, endDate }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year } = dataGridStore
@@ -275,7 +275,7 @@ const ManualEntry = () => {
     showImport: false,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Pigging/Non-Pigging-Next AOP',
+    titleName: 'Pigging - NP/P-4/P-5/NR',
     showDropdown: false,
     remarksEditable: true,
   }
@@ -317,4 +317,4 @@ const ManualEntry = () => {
   )
 }
 
-export default ManualEntry
+export default HistoricalMonths

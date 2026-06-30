@@ -81,10 +81,16 @@ async function saveShutdownConsumption(keycloak, plantId, year, payload) {
  * @param {Object} keycloak - Keycloak session object
  * @param {string} plantId - Plant ID
  * @param {string} year - AOP Year
+ * @param {string} excelName - excel Name
  * @returns {Promise<Blob>} Excel file blob
  */
-async function exportShutdownConsumption(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/shutdown-consumption-export?plantId=${plantId}&aopYear=${year}`
+async function exportShutdownConsumption(
+  keycloak,
+  plantId,
+  year,
+  excelName = 'SHUTDOWN_CONSUMPTION',
+) {
+  const url = `${Config.CaseEngineUrl}/task/shutdown-consumption-export?plantId=${plantId}&year=${year}`
   const headers = {
     Authorization: `Bearer ${keycloak.token}`,
   }
@@ -93,7 +99,16 @@ async function exportShutdownConsumption(keycloak, plantId, year) {
     if (!resp.ok) {
       throw new Error(`Export failed: ${resp.statusText}`)
     }
-    return await resp.blob()
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${excelName}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+    return
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)
@@ -109,11 +124,11 @@ async function exportShutdownConsumption(keycloak, plantId, year) {
  * @returns {Promise} Import response
  */
 async function importShutdownConsumption(keycloak, plantId, year, file) {
-  const url = `${Config.CaseEngineUrl}/task/shutdown-consumption-import`
+  const url = `${Config.CaseEngineUrl}/task/import-shutdown-consumption`
   const formData = new FormData()
   formData.append('file', file)
   formData.append('plantId', plantId)
-  formData.append('aopYear', year)
+  formData.append('year', year)
   const headers = {
     Authorization: `Bearer ${keycloak.token}`,
   }
