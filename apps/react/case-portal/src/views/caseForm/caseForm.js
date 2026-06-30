@@ -1632,18 +1632,16 @@ console.log('*****  taskId:  ', taskId);
                     {isFormData && (
                       <Form
                         form={form.structure}
-                         submission={formData}
-                    //   submission={{ ...formData, processExistsForBusinessKey }}
-                        // options={{
-                        //   readOnly: isCaseViewer,
-                        //   fileService: new StorageService(),
-                        // }}
-                        // onSubmit={(submission) => {
-                        //   console.log('Validation passed:', true)
-                        //   console.log('Form data:', submission)
-
-                        //   onSave(submission)
-                        // }}
+                         submission={{ ...formData, processExistsForBusinessKey }}
+                        options={{
+                          readOnly: isCaseViewer,
+                          fileService: new StorageService(),
+                        }}
+                        onSubmit={(submission) => {
+                          console.log('Validation passed:', true)
+                          console.log('Form data:', submission)
+                          onSave(submission)
+                        }}
                         onCustomEvent={(event) => {
                           console.log("in caseForm : onCustomEvent.........");
                           console.log('event: ', event)
