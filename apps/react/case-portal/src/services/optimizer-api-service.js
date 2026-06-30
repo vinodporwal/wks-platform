@@ -16,6 +16,7 @@ export const OptimizerDataApiService = {
   budgetOperatingLineExport,
   budgetOperatingHourImport,
   VcmTradeImportExcel,
+  calculateVcmStockBalance,
 }
 async function fetchModes(keycloak, PLANT_ID, AOP_YEAR, TYPE) {
   const url = `${Config.CaseEngineUrl}/task/modes?year=${AOP_YEAR}&plantId=${PLANT_ID}&type=${TYPE}`
@@ -320,3 +321,26 @@ async function VcmTradeImportExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
+
+async function calculateVcmStockBalance(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/calculate-vcm-stock-balance?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const data = await resp.json()
+    return data
+  } catch (e) {
+    console.error('Error calculating VCM stock balance:', e)
+    return Promise.reject(e)
+  }
+}
+

@@ -113,6 +113,7 @@ const defs = {
     workflowdesign: 'Workflow Design',
 
     refineryAopBudget: 'Refinery AOP Budget',
+    shutdownSlowdownActivity: 'Shutdown/Slowdown Activity',
     plantCapacities: 'Plant Capacities',
     shutdown: 'Shutdown',
     slowdown: 'Slowdown',

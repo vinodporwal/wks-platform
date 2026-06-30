@@ -179,6 +179,11 @@ export default function HeaderContent({ keycloak, navigation }) {
     '/user-management',
     '/user-form',
   ].includes(location.pathname)
+  const Hide_Dropdown = [
+    '/refinery-aop-budget/plant-capacities',
+    '/refinery-aop-budget/shutdown',
+    '/refinery-aop-budget/slowdown',
+  ].includes(location.pathname)
 
   // Individual dropdown visibility ? extends HIDE_DASHBOARD_DROPDOWN with utils.js config
   const hideVertical =
@@ -864,7 +869,7 @@ export default function HeaderContent({ keycloak, navigation }) {
             overflow: 'hidden',
           }}
         >
-          {!HIDE_DASHBOARD_DROPDOWN && (
+          {!(HIDE_DASHBOARD_DROPDOWN || Hide_Dropdown) && (
             <React.Fragment>
               <Typography
                 variant='h6'
@@ -1040,7 +1045,7 @@ export default function HeaderContent({ keycloak, navigation }) {
           )}
 
           {/* Site */}
-          {!HIDE_DASHBOARD_DROPDOWN && (
+          {!(HIDE_DASHBOARD_DROPDOWN || Hide_Dropdown) && (
             <Box sx={dropdownContainerStyle}>
               {headerLoading ? (
                 <DropdownSkeleton />
@@ -1097,7 +1102,7 @@ export default function HeaderContent({ keycloak, navigation }) {
           )}
 
           {/* Plant */}
-          {!HIDE_DASHBOARD_DROPDOWN && (
+          {!(HIDE_DASHBOARD_DROPDOWN || Hide_Dropdown) && (
             <Box sx={dropdownContainerStyle}>
               {headerLoading ? (
                 <DropdownSkeleton />
