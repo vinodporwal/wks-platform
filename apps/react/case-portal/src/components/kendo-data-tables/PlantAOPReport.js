@@ -84,14 +84,21 @@ const PlantAOPReport = ({ permissions }) => {
   ]
   function getAopShortYears(aopYear) {
     if (!aopYear) return { prev: '', next: '' }
+
     const match = aopYear.match(/(\d{4})-(\d{2})/)
     if (match) {
-      const prev = match[1].slice(-2)
-      const next = match[2]
+      const startYear = Number(match[1])
+      const endYearShort = match[2] 
+
+      const next = `${startYear}-${endYearShort}`
+      const prev = `${startYear - 1}-${String(startYear).slice(-2)}` 
+
       return { prev, next }
     }
-    const year = String(aopYear).slice(-2)
-    return { prev: year, next: String(Number(year) + 1).padStart(2, '0') }
+    const year = Number(aopYear)
+    const next = `${year}-${String(year + 1).slice(-2)}`
+    const prev = `${year - 1}-${String(year).slice(-2)}`
+    return { prev, next }
   }
   const { prev, next } = getAopShortYears(AOP_YEAR)
   const valueFormat = ValueFormatterProduction()
