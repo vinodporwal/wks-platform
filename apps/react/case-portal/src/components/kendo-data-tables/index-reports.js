@@ -544,6 +544,7 @@ const KendoDataTablesReports = ({
         aria-sort={ariaSort}
         title={props.title}
         style={{
+          ...restThProps?.style,
           fontFamily: "'Honeywell Sans Web', 'Inter', Arial, sans-serif",
         }}
       >
@@ -583,6 +584,7 @@ const KendoDataTablesReports = ({
       if (col.children) {
         return (
           <GridColumn
+            locked={col.locked || false}
             key={col.title || idx}
             title={col.title}
             // headerClassName={`center-group-header ${isActive ? 'active-column' : ''} ${headerColorClass} ${budgetDividerClass}`}
@@ -596,6 +598,7 @@ const KendoDataTablesReports = ({
       if (['aopRemarks', 'remarks', 'remark', 'Remark'].includes(col.field)) {
         return (
           <GridColumn
+            locked={col.locked || false}
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
@@ -619,6 +622,7 @@ const KendoDataTablesReports = ({
       if (col.field === 'particular' || col.type === 'text') {
         return (
           <GridColumn
+            locked={col.locked || false}
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
@@ -638,6 +642,7 @@ const KendoDataTablesReports = ({
       if (dateFields.includes(col.field)) {
         return (
           <GridColumn
+            locked={col.locked || false}
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
@@ -658,6 +663,7 @@ const KendoDataTablesReports = ({
       if (col.field.includes('durationInHrs')) {
         return (
           <GridColumn
+            locked={col.locked || false}
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
@@ -677,6 +683,7 @@ const KendoDataTablesReports = ({
       if (col.type === 'numberNonGrey') {
         return (
           <GridColumn
+            locked={col.locked || false}
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
@@ -702,6 +709,7 @@ const KendoDataTablesReports = ({
       if (col.type === 'number') {
         return (
           <GridColumn
+            locked={col.locked || false}
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
@@ -731,6 +739,7 @@ const KendoDataTablesReports = ({
       if (col.type === 'number1') {
         return (
           <GridColumn
+            locked={col.locked || false}
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
@@ -753,6 +762,7 @@ const KendoDataTablesReports = ({
 
       return (
         <GridColumn
+          locked={col.locked || false}
           key={col.field}
           field={col.field}
           title={col.title || col.headerName}
@@ -1144,7 +1154,9 @@ const KendoDataTablesReports = ({
                   }
                   : false
               }
+
               onRowClick={handleRowClick}
+              lockGroups={true}
             >
               {renderColumns(
                 columns.filter((col) => !hiddenFields.includes(col.field)),
@@ -1166,6 +1178,7 @@ const KendoDataTablesReports = ({
                   }}
                 />
               )}
+
             </Grid>
           </Tooltip>
         </div>

@@ -51,6 +51,12 @@ const AnnualAOPCostDynamic = () => {
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
 
+  const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
+  const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
+
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+
   const timeoutIdsRef = useRef([])
   const isMountedRef = useRef(true)
   // export control (dynamic ExcelExport mount)
@@ -367,7 +373,7 @@ const AnnualAOPCostDynamic = () => {
     return v
   }
 
-  const fileName = `${VERTICAL_NAME}-AnnualAOPCost.xlsx`
+  const fileName = `${EXCEL_EXPORT_TITLE}-AnnualAOPCost-${AOP_YEAR}.xlsx`
 
   const exportAllGrids = useCallback(() => {
     const sheets = gridNames

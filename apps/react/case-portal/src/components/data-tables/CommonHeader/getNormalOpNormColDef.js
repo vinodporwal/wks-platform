@@ -58,9 +58,10 @@ const getNormalOpNormColDef = ({
         align: 'right',
         format: valueFormat || '{0:#.###}',
         type:
-          lowerVertName === 'pe' && lowerSiteName === 'hmd'
+          col.type ||
+          (lowerVertName === 'pe' && lowerSiteName === 'hmd'
             ? 'negativeNumber'
-            : 'number',
+            : 'number'),
       }
     }
     if (shouldLockColumn(col)) {

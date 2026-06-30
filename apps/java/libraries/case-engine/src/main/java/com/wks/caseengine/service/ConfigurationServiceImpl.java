@@ -804,11 +804,18 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 				java.sql.Date existingDateRaw = (java.sql.Date) existing[1];
 				Double existingCatalystQuantity = (Double) existing[2];
 				Integer existingRunLength = (Integer) existing[3];
+				if (existingRunLength == null) {
+					existingRunLength = 0;
+				}
+
+				if(existingCatalystQuantity == null) {
+					existingCatalystQuantity = 0.0;
+				}
 				String existingRemarks  = existing[4] != null ? existing[4].toString().trim() : "";
 
 				boolean parameterChanged = !param.equals(existingParam);
-				boolean catalystQuantityChanged = dto.getCatalystQuantity() != existingCatalystQuantity;
-				boolean runLengthChanged = dto.getRunLength() != existingRunLength;
+				boolean catalystQuantityChanged = !Objects.equals(dto.getCatalystQuantity(), existingCatalystQuantity);
+				boolean runLengthChanged = !Objects.equals(dto.getRunLength(), existingRunLength);
 				boolean dateChanged = false;
 				if (existingDateRaw != null) {
 					// LocalDate existingLocalDate = existingDateRaw.toInstant()
@@ -849,12 +856,11 @@ public AOPMessageVM saveCatalystChangeOver(List<CatalystChangeOverDTO> catalystC
 		aopMessageVM.setMessage("Data saved successfully");
 		aopMessageVM.setData(catalystChangeOverDTOList);
 		return aopMessageVM;
-	} catch (IllegalArgumentException e) {
-		throw new RestInvalidArgumentException(e.getMessage(), e);
-	} catch (Exception ex) {
-		ex.printStackTrace();
-		throw new RuntimeException("Failed to save CatalystChangeOver data", ex);
+	} 
+	catch (IllegalArgumentException e) {
+		throw new IllegalArgumentException(e.getMessage(), e);
 	}
+	
 
 }
 
@@ -1134,6 +1140,12 @@ public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigu
 				ConfigurationDTO configurationDTO = new ConfigurationDTO();
 				configurationDTO.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
 
+				// for meg set jan to dec values to null if the values are not present in DB. for others set to zero
+						if(verticalName.equalsIgnoreCase("MEG")) {  
+                           
+							setJanToDecValuesForMEG(configurationDTO, row);
+						}
+						else {
 				configurationDTO.setJan(
 						(row[1] != null && !row[1].toString().trim().isEmpty())
 								? Double.parseDouble(row[1].toString().trim())
@@ -1171,6 +1183,8 @@ public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigu
 				configurationDTO.setDec((row[12] != null && !row[12].toString().trim().isEmpty())
 						? Double.parseDouble(row[12].toString())
 						: 0.0);
+
+				}
 				configurationDTO.setRemarks((row[13] != null ? row[13].toString() : ""));
 
 				if(isChemical || isChemicalVmd) {
@@ -1223,6 +1237,48 @@ public AOPMessageVM saveTankConfiguration(List<TankConfigurationDTO> tankConfigu
 			ex.printStackTrace();
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
+	}
+
+	public void setJanToDecValuesForMEG(ConfigurationDTO configurationDTO, Object[] row) { 
+
+		configurationDTO.setJan(
+			(row[1] != null && !row[1].toString().trim().isEmpty())
+					? Double.parseDouble(row[1].toString().trim())
+					: null); 
+	configurationDTO.setFeb(
+			(row[2] != null && !row[2].toString().trim().isEmpty()) ? Double.parseDouble(row[2].toString())
+					: null);
+	configurationDTO.setMar(
+			(row[3] != null && !row[3].toString().trim().isEmpty()) ? Double.parseDouble(row[3].toString())
+					: null);
+	configurationDTO.setApr(
+			(row[4] != null && !row[4].toString().trim().isEmpty()) ? Double.parseDouble(row[4].toString())
+					: null);
+	configurationDTO.setMay(
+			(row[5] != null && !row[5].toString().trim().isEmpty()) ? Double.parseDouble(row[5].toString())
+					: null);
+	configurationDTO.setJun(
+			(row[6] != null && !row[6].toString().trim().isEmpty()) ? Double.parseDouble(row[6].toString())
+					: null);
+	configurationDTO.setJul(
+			(row[7] != null && !row[7].toString().trim().isEmpty()) ? Double.parseDouble(row[7].toString())
+					: null);
+	configurationDTO.setAug(
+			(row[8] != null && !row[8].toString().trim().isEmpty()) ? Double.parseDouble(row[8].toString())
+					: null);
+	configurationDTO.setSep(
+			(row[9] != null && !row[9].toString().trim().isEmpty()) ? Double.parseDouble(row[9].toString())
+					: null);
+	configurationDTO.setOct((row[10] != null && !row[10].toString().trim().isEmpty())
+			? Double.parseDouble(row[10].toString())
+			: null);
+	configurationDTO.setNov((row[11] != null && !row[11].toString().trim().isEmpty())
+			? Double.parseDouble(row[11].toString())
+			: null);
+	configurationDTO.setDec((row[12] != null && !row[12].toString().trim().isEmpty())
+			? Double.parseDouble(row[12].toString())
+			: null);
+		
 	}
 
 	@Override
@@ -1296,6 +1352,11 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 				ConfigurationDTO configurationDTO = new ConfigurationDTO();
 				configurationDTO.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
 
+				// for meg set jan to dec values to null if  not present in DB. for others set to zero
+				if(verticalName.equalsIgnoreCase("MEG")) {  
+					setJanToDecValuesForMEG(configurationDTO, row);
+				}
+				else {
 				configurationDTO.setJan(
 						(row[1] != null && !row[1].toString().trim().isEmpty())
 								? Double.parseDouble(row[1].toString().trim())
@@ -1333,6 +1394,8 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 				configurationDTO.setDec((row[12] != null && !row[12].toString().trim().isEmpty())
 						? Double.parseDouble(row[12].toString())
 						: 0.0);
+
+				}
 				configurationDTO.setRemarks((row[13] != null ? row[13].toString() : ""));
 
 				if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || (verticalName.equalsIgnoreCase("PTA")) || (verticalName.equalsIgnoreCase("AROMATICS")) || (verticalName.equalsIgnoreCase("ELASTOMER")) || pvc) {
@@ -1887,6 +1950,7 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 			Plants plant = plantsRepository.findById(UUID.fromString(plantFKId)).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			boolean meg = vertical.getName().equalsIgnoreCase("MEG");
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<Map<String, Object>> configurationConstantsList = new ArrayList<>();
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
@@ -1913,7 +1977,12 @@ else if(verticalName.equalsIgnoreCase("AROMATICS") && !(site.getName().equalsIgn
 				map.put("Name", row[2]);
 				map.put("DisplayName", row[3]);
 				map.put("UOM", row[4]);
-				map.put("ConstantValue", (row[5] != null) ? Double.parseDouble(row[5].toString()) : 0.0);
+				if(meg) { 
+					map.put("ConstantValue", (row[5] != null) ? Double.parseDouble(row[5].toString()) : null);
+				}
+				else {
+					map.put("ConstantValue", (row[5] != null) ? Double.parseDouble(row[5].toString()) : 0.0);
+				}
 				map.put("AuditYear", row[6]);
 				map.put("Remarks", row[7]);
 				boolean isEditable;
@@ -2740,7 +2809,7 @@ continue;
 					+ "    MAX(NAT.AuditYear) AS AuditYear, " + "    MAX(NP.UOM) AS UOM, "
 					+ "    NP.ConfigTypeDisplayName AS ConfigTypeDisplayName, "
 					+ "    NP.TypeDisplayName AS TypeDisplayName, " + "    NP.ConfigTypeName AS ConfigTypeName, "
-					+ "    NP.TypeName AS TypeName, MAX(NP.DisplayName) " + "FROM " + viewName + " NP "
+					+ "    NP.TypeName AS TypeName, MAX(NP.DisplayName) " + "FROM " + "[" + viewName + "]" + " NP "
 					+ "JOIN NormParameterType NPT ON NP.NormParameterType_FK_Id = NPT.Id "
 					+ "LEFT JOIN NormAttributeTransactions NAT ON NAT.NormParameter_FK_Id = NP.NormParameter_FK_Id "
 					+ "    AND NAT.AuditYear = :year " + "WHERE (NPT.Name = 'Configuration'  OR NPT.Name = 'Constant') "
@@ -2960,7 +3029,7 @@ continue;
 	public List<Object[]> findByYearAndPlantFkIdMEG(String aopYear, UUID plantId, String procedureName) {
 		try {
 
-			String sql = "EXEC " + procedureName
+			String sql = "EXEC " + "[" + procedureName + "]"
 					+ " @plantId = :plantId, @aopYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);
@@ -3161,12 +3230,11 @@ continue;
 
 		try {
 
-			System.out.println("started Read configuration in importExcel");
+			
 			List<ConfigurationDTO> data = readConfigurations(file.getInputStream(), plantFKId, year);
-			System.out.println("Ended Read configuration in importExcel");
-			System.out.println("Started Save configuration in importExcel");
+			
 			List<ConfigurationDTO> failedRecords = saveConfigurationData(year, plantFKId.toString(),version, data,calculation,isMinMax);
-			System.out.println("Ended Save configuration in importExcel");
+			
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
 				byte[] fileByteArray = createExcel(year, plantFKId,reportTypes,version, true, failedRecords);
@@ -5292,8 +5360,9 @@ continue;
 			Sheet sheet = workbook.createSheet("CatalystChangeOver");
 			int currentRow = 0;
 
-			// Columns: Parameter(0), Date(1), Remarks(2), Id(3-hidden)
-			List<String> headerNames = new ArrayList<>(Arrays.asList("Parameter", "Date", "Remarks", "Id"));
+			// Columns: Parameter(0), Date(1), Catalyst Quantity(2), Runlength(3), Remarks(4), Id(5-hidden)
+			List<String> headerNames = new ArrayList<>(
+					Arrays.asList("Parameter", "Date", "Catalyst Quantity", "Runlength", "Remarks", "Id"));
 			if (isAfterSave) {
 				headerNames.add("Status");
 				headerNames.add("Error Description");
@@ -5329,22 +5398,32 @@ continue;
 				dateCell.setCellValue(dto.getDate() != null ? sdf.format(dto.getDate()) : "");
 				dateCell.setCellStyle(Utility.createBorderedStyle(workbook));
 
-				// Col 2 – Remarks (wrapped text, auto row height)
-				Cell remarksCell = row.createCell(2);
+				// Col 2 – Catalyst Quantity
+				Cell catalystQtyCell = row.createCell(2);
+				catalystQtyCell.setCellValue(dto.getCatalystQuantity());
+				catalystQtyCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+				// Col 3 – Runlength
+				Cell runLengthCell = row.createCell(3);
+				runLengthCell.setCellValue(dto.getRunLength() != null ? dto.getRunLength() : 0);
+				runLengthCell.setCellStyle(Utility.createBorderedStyle(workbook));
+
+				// Col 4 – Remarks (wrapped text, auto row height)
+				Cell remarksCell = row.createCell(4);
 				remarksCell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
 				remarksCell.setCellStyle(wrapStyle);
 
-				// Col 3 – Id (hidden, used for import/update)
-				Cell idCell = row.createCell(3);
+				// Col 5 – Id (hidden, used for import/update)
+				Cell idCell = row.createCell(5);
 				idCell.setCellValue(dto.getId() != null ? dto.getId() : "");
 				idCell.setCellStyle(Utility.createBorderedStyle(workbook));
 
 				if (isAfterSave) {
-					Cell statusCell = row.createCell(4);
+					Cell statusCell = row.createCell(6);
 					statusCell.setCellValue(dto.getSaveStatus() != null ? dto.getSaveStatus() : "");
 					statusCell.setCellStyle(Utility.createBorderedStyle(workbook));
 
-					Cell errCell = row.createCell(5);
+					Cell errCell = row.createCell(7);
 					errCell.setCellValue(dto.getErrDescription() != null ? dto.getErrDescription() : "");
 					errCell.setCellStyle(Utility.createBorderedStyle(workbook));
 				}
@@ -5353,10 +5432,10 @@ continue;
 				row.setHeight((short) -1);
 			}
 
-			// Dynamic column widths – fixed larger width for Remarks(2), auto-size for others
-			int totalCols = isAfterSave ? 6 : 4;
+			// Dynamic column widths – fixed larger width for Remarks(4), auto-size for others
+			int totalCols = isAfterSave ? 8 : 6;
 			for (int col = 0; col < totalCols; col++) {
-				if (col == 2) {
+				if (col == 4) {
 					sheet.setColumnWidth(col, 15000); // ~60 characters wide for Remarks
 				} else {
 					sheet.autoSizeColumn(col);
@@ -5364,7 +5443,7 @@ continue;
 			}
 
 			// Hide the Id column from end-users
-			sheet.setColumnHidden(3, true);
+			sheet.setColumnHidden(5, true);
 
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			workbook.write(outputStream);
@@ -5417,15 +5496,43 @@ continue;
 						}
 					}
 
-					// Col 2 – Remarks
-					Cell remarksCell = row.getCell(2);
+					// Col 2 – Catalyst Quantity
+					Cell catalystQtyCell = row.getCell(2);
+					if (catalystQtyCell != null) {
+						if (catalystQtyCell.getCellType() == CellType.NUMERIC) {
+							dto.setCatalystQuantity(catalystQtyCell.getNumericCellValue());
+						} else {
+							catalystQtyCell.setCellType(CellType.STRING);
+							String qtyStr = catalystQtyCell.getStringCellValue().trim();
+							if (!qtyStr.isEmpty()) {
+								dto.setCatalystQuantity(Double.parseDouble(qtyStr));
+							}
+						}
+					}
+
+					// Col 3 – Runlength
+					Cell runLengthCell = row.getCell(3);
+					if (runLengthCell != null) {
+						if (runLengthCell.getCellType() == CellType.NUMERIC) {
+							dto.setRunLength((int) runLengthCell.getNumericCellValue());
+						} else {
+							runLengthCell.setCellType(CellType.STRING);
+							String rlStr = runLengthCell.getStringCellValue().trim();
+							if (!rlStr.isEmpty()) {
+								dto.setRunLength(Integer.parseInt(rlStr));
+							}
+						}
+					}
+
+					// Col 4 – Remarks
+					Cell remarksCell = row.getCell(4);
 					if (remarksCell != null) {
 						remarksCell.setCellType(CellType.STRING);
 						dto.setRemarks(remarksCell.getStringCellValue().trim());
 					}
 
-					// Col 3 – Id (hidden; present means update, absent means insert)
-					Cell idCell = row.getCell(3);
+					// Col 5 – Id (hidden; present means update, absent means insert)
+					Cell idCell = row.getCell(5);
 					if (idCell != null) {
 						idCell.setCellType(CellType.STRING);
 						String idVal = idCell.getStringCellValue().trim();
@@ -5469,10 +5576,14 @@ continue;
 				}
 				try {
 					saveCatalystChangeOver(Collections.singletonList(dto), year);
-				} catch (Exception e) {
+				} 
+				catch (IllegalArgumentException e) {
 					dto.setSaveStatus("Failed");
-					dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Save failed");
+					dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "Invalid argument");
 					failedRecords.add(dto);
+				}
+				catch (Exception e) {
+					throw new RestInvalidArgumentException("Failed to import Catalyst ChangeOver data", e);
 				}
 			}
 

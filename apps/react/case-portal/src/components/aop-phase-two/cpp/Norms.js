@@ -12,6 +12,7 @@ import { setIsReleased } from 'store/reducers/dataGridStore'
 import ReleaseDialog from '../common/components/ReleaseDialog'
 import { ReleaseAPIService } from '../services/common/releaseAPIService'
 import NormsJMD from './jmd/NormsJMD'
+import NormsDMD from './dmd/NormsDMD'
 
 const Norms = () => {
   const keycloak = useSession()
@@ -658,6 +659,7 @@ const Norms = () => {
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [calculationLoading, setCaculationLoading] = useState(false)
+  const [aopCalaculation, setAopCalaculation] = useState([])
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR && lowerSiteName === 'nmd') {
@@ -675,13 +677,13 @@ const Norms = () => {
         AOP_YEAR,
       )
 
-      if (res?.data?.length === 0) {
+      if (res?.data?.list?.length === 0) {
         setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
-      let tempRes = res?.data
+      let tempRes = res?.data?.list
         ?.filter((item) => item?.accountName !== 'Stores & Spares')
         .map((item, index) => {
           return {
@@ -694,6 +696,7 @@ const Norms = () => {
       setRows(tempRes)
       setCalculateBtnEnabled(true)
       setOriginalRows(tempRes)
+      setAopCalaculation(res?.data?.aopCalculation || [])
     } catch (error) {
       console.error('Error fetching fixed consumption data:', error)
       setSnackbarOpen(true)
@@ -722,8 +725,12 @@ const Norms = () => {
       ExcelName: `Norms - ${AOP_YEAR}`,
       showReleaseBtn: true,
       isReleaseDisabled: isReleaseDisabled,
+      note:
+        aopCalaculation?.length > 0
+          ? ' Please calculate again there are some utilities updated.'
+          : '',
     }
-  }, [calculateBtnEnabled, isReleaseDisabled])
+  }, [calculateBtnEnabled, isReleaseDisabled, aopCalaculation])
 
   const getIsReleased = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -1045,6 +1052,9 @@ const Norms = () => {
     switch (lowerSiteName) {
       case 'jmd':
         return <NormsJMD />
+
+      case 'dmd':
+        return <NormsDMD />
       // case 'hmd':
       //   return <NormsHMD />
       case 'nmd':

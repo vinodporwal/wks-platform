@@ -1557,14 +1557,36 @@ const KendoDataTables = ({
       field,
     )
 
-    const month = field
-    const normId = dataItem.materialFkId || dataItem.NormParameter_FK_Id
+    const normId =
+      dataItem.materialFKId ||
+      dataItem.materialFkId ||
+      dataItem.NormParameter_FK_Id
 
-    const isRedFromAllRedCell = allRedCell?.some(
-      (cell) =>
-        cell.month === month &&
-        cell.NormParameter_FK_Id?.toLowerCase() === normId?.toLowerCase(),
-    )
+    const fieldMonthNumber = fieldToMonthNumber[field?.toLowerCase()]
+
+    const isRedFromAllRedCell = allRedCell?.some((cell) => {
+      const cellNormId = (
+        cell.NormParameter_FK_Id || cell.normParameterFKId
+      )?.toLowerCase()
+
+      if (!cellNormId || !normId || cellNormId !== normId.toLowerCase()) {
+        return false
+      }
+
+      // MEG-style cells carry a ColumnName that matches the dynamic field name directly
+      const cellColumnName = cell.ColumnName || cell.columnName
+      if (cellColumnName != null) {
+        return cellColumnName === field
+      }
+
+      // Normal-op-norms-style cells carry a numeric/string month
+      const cellMonthNumber =
+        typeof cell.month === 'number'
+          ? cell.month
+          : fieldToMonthNumber[String(cell.month).toLowerCase()]
+
+      return cellMonthNumber === fieldMonthNumber
+    })
 
     const shouldHighlight = isEdited || isRedFromAllRedCell
 

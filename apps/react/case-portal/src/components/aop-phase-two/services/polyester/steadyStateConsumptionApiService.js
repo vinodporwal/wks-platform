@@ -103,7 +103,7 @@ async function saveSteadyStateConsumptionByGrade(
   AOP_YEAR,
 ) {
   const queryParams = new URLSearchParams({ year: AOP_YEAR, plantId: PLANT_ID })
-  queryParams.append('gradeId', gradeId)
+  if (gradeId) queryParams.append('gradeId', gradeId)
   const url = `${Config.CaseEngineUrl}/task/steady-state-norms?${queryParams.toString()}`
   const headers = {
     Accept: 'application/json',

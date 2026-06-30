@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.sql.DataSource;
 
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+import com.wks.caseengine.repository.AopCalculationRepository;
 
 /**
  * Service to execute Python Budget Calculator via SQL Server stored procedure.
@@ -32,6 +34,9 @@ public class BudgetCalculatorService {
     @Autowired
     @Qualifier("db1DataSource")
     private DataSource dataSource;
+
+    @Autowired
+    private AopCalculationRepository aopCalculationRepository;
 
     private final Gson gson = new Gson();
 
@@ -211,6 +216,11 @@ public class BudgetCalculatorService {
                     try {
                         Map<String, Object> result = gson.fromJson(jsonOutput, Map.class);
                         logger.info("Full year budget calculation completed successfully");
+
+                        // After successful calculation, delete the AopCalculation flag
+                        // so the UI no longer shows the "recalculate" warning
+                        clearAopCalculationFlag(request);
+
                         return result;
                     } catch (JsonSyntaxException e) {
                         logger.error("Failed to parse JSON output: {}", e.getMessage());
@@ -308,4 +318,29 @@ public class BudgetCalculatorService {
             "error", "Log management via API is deprecated. Check server logs folder."
         );
     }
+
+    /**
+     * Deletes the AopCalculation flag for the given plant and year
+     * so the UI no longer shows the "recalculate" warning.
+     * @param request Map containing the cpp_plant_id and financial_year
+     */
+    private void clearAopCalculationFlag(Map<String, Object> request) {
+        String cppPlantId = (String) request.get("cpp_plant_id");
+        String rawYear = (String) request.get("financial_year");
+        if (cppPlantId != null && !cppPlantId.isBlank()
+                && rawYear != null && !rawYear.isBlank()) {
+            try {
+                // Convert "2026" ? "2026-27" to match DB format
+                int startYear = Integer.parseInt(rawYear.trim());
+                String aopYear = startYear + "-" + String.format("%02d", (startYear + 1) % 100);
+                UUID plantUUID = UUID.fromString(cppPlantId.trim());
+                aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(
+                    plantUUID, aopYear, "cpp-norms");
+                logger.info("Cleared AopCalculation flag for plantId={}, year={}", plantUUID, aopYear);
+            } catch (IllegalArgumentException ex) {
+                logger.warn("Invalid cpp_plant_id '{}' or financial_year '{}', skipping AopCalculation cleanup", cppPlantId, rawYear);
+            }
+        }
+    }
 }
+
