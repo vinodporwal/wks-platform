@@ -19,13 +19,19 @@ public interface PlantReportService {
 
     AOPMessageVM savePlantSafetyImprovement(List<PlantSafetyImprovementDTO> plantSafetyImprovementDTOs);
 
+    AOPMessageVM deletePlantSafetyImprovement(String id);
+
     AOPMessageVM getProfitImprovementInitiative(String plantId, String aopYear);
 
     AOPMessageVM saveProfitImprovementInitiative(List<ProfitImprovementInitiativeDTO> profitImprovementInitiativeDTOs);
 
+    AOPMessageVM deleteProfitImprovementInitiative(String id);
+
     AOPMessageVM getReliabilityImprovement(String plantId, String aopYear);
 
     AOPMessageVM saveReliabilityImprovement(List<ReliabilityImprovementDTO> reliabilityImprovementDTOs);
+
+    AOPMessageVM deleteReliabilityImprovement(String id);
 
     AOPMessageVM getSiteSafetyPerformanceTargets(String siteId, String aopYear);
 
