@@ -55,7 +55,7 @@ const SlowdownNormForMeg = () => {
   const [modifiedCells, setModifiedCells] = useState({})
   const [calculationResults, setCalculationResults] = useState([])
   const valueFormat = ValueFormatterConsumption()
-
+  const [allRedCell, setAllRedCell] = useState([])
   // Small helper so call sites read cleanly, but it just drives snackbarData/snackbarOpen.
   const showSnackbar = useCallback((message, severity = 'info') => {
     setSnackbarOpen(true)
@@ -71,7 +71,12 @@ const SlowdownNormForMeg = () => {
           PLANT_ID,
           year: AOP_YEAR,
         })
-
+      const normalized = data?.SlowdownConfiguration.map((obj) => ({
+        ...obj,
+        normParameterFKId: obj.NormParameter_FK_Id.toUpperCase(),
+        columnName: obj.ColumnName,
+      }))
+      setAllRedCell(normalized)
       const formattedRows =
         data?.resultList?.map((item, index) => {
           const parsedItem = Object.entries(item).reduce(
@@ -396,6 +401,7 @@ const SlowdownNormForMeg = () => {
         groupBy='Particulars'
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         handleExcelUpload={handleExcelUpload}
+        allRedCell={allRedCell}
       />
     </div>
   )
