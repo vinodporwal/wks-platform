@@ -423,9 +423,9 @@ const PlantAOPReport = ({ permissions }) => {
         />
       )}
 
-      {tabIndex === 1 && <SafetyImprovementInitiative />}
-      {tabIndex === 2 && <ProfitImprovementInitiative />}
-      {tabIndex === 3 && <ReliabilityImprovementInitiative />}
+      {tabIndex === 1 && <SafetyImprovementInitiative permissions={permissions} />}
+      {tabIndex === 2 && <ProfitImprovementInitiative permissions={permissions} />}
+      {tabIndex === 3 && <ReliabilityImprovementInitiative permissions={permissions} />}
       {tabIndex === 4 && <PlantTeam onlyPeopleInitiative />}
     </div>
   )

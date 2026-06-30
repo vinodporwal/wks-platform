@@ -9,7 +9,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { PlantAopReportApiService } from 'services/plant-aop-report-api-service'
 import { validateFields } from 'utils/validationUtils'
 
-export default function ReliabilityImprovementInitiative() {
+export default function ReliabilityImprovementInitiative({ permissions }) {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -94,7 +94,7 @@ export default function ReliabilityImprovementInitiative() {
         field: 'remark',
         title: 'Remark',
         widthT: 60,
-        editable: false,
+        editable: true,
         minWidth: 100,
       },
     ],
@@ -154,7 +154,13 @@ export default function ReliabilityImprovementInitiative() {
         return
       }
       // adjust to whichever fields are actually mandatory on this grid
-      const requiredFields = ['remark']
+      const requiredFields = [
+        'initiativeDescription',
+        'recommendation',
+        'outcome',
+        'targetDate',
+        'remark',
+      ]
 
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
@@ -175,10 +181,10 @@ export default function ReliabilityImprovementInitiative() {
         targetDate: toLocalDateString(item.targetDate),
         remark: item.remark,
         aopYear: AOP_YEAR,
-        plant_FK_Id: PLANT_ID,
-        isEditable: item.isEditable ?? true,
-        isVisible: item.isVisible ?? true,
-        displayOrder: item.displayOrder ?? null,
+        plantFkId: PLANT_ID,
+        isEditable: (item.isEditable === '' || item.isEditable === undefined || item.isEditable === null) ? true : !!item.isEditable,
+        isVisible: (item.isVisible === '' || item.isVisible === undefined || item.isVisible === null) ? true : !!item.isVisible,
+        displayOrder: (item.displayOrder === '' || item.displayOrder === undefined || item.displayOrder === null) ? 0 : Number(item.displayOrder),
       }))
 
       const response =
@@ -212,9 +218,50 @@ export default function ReliabilityImprovementInitiative() {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells])
+  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
 
-  const handleCalculate = () => {}
+  const deleteRowData = async (paramsForDelete) => {
+    setLoading(true)
+    try {
+      const { idFromApi, id } = paramsForDelete
+      const deleteId = id
+
+      if (!idFromApi) {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+      }
+
+      if (idFromApi) {
+        await PlantAopReportApiService.deleteReliabilityImprovementInitiative(
+          keycloak,
+          idFromApi,
+        )
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Deleted Successfully!',
+          severity: 'success',
+        })
+      }
+
+      // Remove from modifiedCells so we don't save a deleted row
+      setModifiedCells((prev) => {
+        const next = { ...prev }
+        delete next[deleteId]
+        return next
+      })
+    } catch (error) {
+      console.error('Error deleting:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Delete failed!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCalculate = () => { }
 
   const handleRemarkCellClick = useCallback((row) => {
     setCurrentRemark(row.remark || '')
@@ -241,6 +288,8 @@ export default function ReliabilityImprovementInitiative() {
     {
       allAction: true,
       saveBtn: true,
+      addButton: permissions?.addButton ?? true,
+      deleteButton: permissions?.deleteButton ?? true,
       showTitleNameBusiness: true,
       titleName: 'Reliability Improvement Initiative',
       adjustedPermissions: true,
@@ -249,7 +298,7 @@ export default function ReliabilityImprovementInitiative() {
       uploadExcelBtn: false,
       ExcelName: `${lowerVertName}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Plant_AOP_Report_Reliability_Improvement_Initiative`,
     },
-    isOldYear,
+    IS_OLD_YEAR,
   )
 
   return (
@@ -271,6 +320,7 @@ export default function ReliabilityImprovementInitiative() {
         setCurrentRowId={setCurrentRowId}
         enableSaveAddBtn={enableSaveAddBtn}
         saveChanges={saveChanges}
+        deleteRowData={deleteRowData}
         handleCalculate={handleCalculate}
         handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissionsC}

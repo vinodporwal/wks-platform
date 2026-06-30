@@ -88,7 +88,7 @@ const PlantAOPReport = ({ permissions }) => {
     {
       field: 'initiativeDescription',
       title: 'Initiative Description',
-      editable: false,
+      editable: true,
       hidden: false,
       isVisible: true,
     },
@@ -156,13 +156,6 @@ const PlantAOPReport = ({ permissions }) => {
       isVisible: false,
     },
     {
-      field: 'isEditable',
-      title: 'Is Editable',
-      editable: false,
-      hidden: true,
-      isVisible: false,
-    },
-    {
       field: 'isVisible',
       title: 'Is Visible',
       editable: false,
@@ -191,7 +184,8 @@ const PlantAOPReport = ({ permissions }) => {
       if (res?.code === 200) {
         const mapped = (res?.data.Data || []).map((item, index) => ({
           ...item,
-          id: item.id,
+          id: index,
+          idFromApi: item.id || null,
           isEditable: item?.isEditable,
           remark: item.remark,
           originalRemark: item.remark,
@@ -232,7 +226,13 @@ const PlantAOPReport = ({ permissions }) => {
       }
 
       // adjust to whichever fields are actually mandatory on this grid
-      const requiredFields = ['initiativeDescription', 'remark']
+      const requiredFields = [
+        'initiativeDescription',
+        'recommendation',
+        'outcome',
+        'targetDate',
+        'remark',
+      ]
 
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
@@ -246,17 +246,17 @@ const PlantAOPReport = ({ permissions }) => {
       }
 
       const payload = data.map((item) => ({
-        id: item.id,
+        id: item.idFromApi || null,
         initiativeDescription: item.initiativeDescription,
         outcome: item.outcome,
         recommendation: item.recommendation,
         targetDate: toLocalDateString(item.targetDate),
         remark: item.remark,
         aopYear: AOP_YEAR,
-        plant_FK_Id: PLANT_ID,
-        isEditable: item.isEditable ?? true,
-        isVisible: item.isVisible ?? true,
-        displayOrder: item.displayOrder ?? null,
+        plantFkId: PLANT_ID,
+        isEditable: (item.isEditable === '' || item.isEditable === undefined || item.isEditable === null) ? true : !!item.isEditable,
+        isVisible: (item.isVisible === '' || item.isVisible === undefined || item.isVisible === null) ? true : !!item.isVisible,
+        displayOrder: (item.displayOrder === '' || item.displayOrder === undefined || item.displayOrder === null) ? 0 : Number(item.displayOrder),
       }))
 
       const response =
@@ -298,6 +298,40 @@ const PlantAOPReport = ({ permissions }) => {
     }
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, tabIndex])
 
+  const deleteRowData = async (paramsForDelete) => {
+    setLoading(true)
+    try {
+      const { idFromApi, id } = paramsForDelete
+      const deleteId = id
+
+      if (!idFromApi) {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+      }
+
+      if (idFromApi) {
+        await PlantAopReportApiService.deleteSafetyImprovementInitiative(
+          keycloak,
+          idFromApi,
+        )
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Deleted Successfully!',
+          severity: 'success',
+        })
+      }
+    } catch (error) {
+      console.error('Error deleting:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Delete failed!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -319,6 +353,8 @@ const PlantAOPReport = ({ permissions }) => {
   const adjustedPermissions = getAdjustedPermissions(
     {
       showAction: permissions?.showAction ?? true,
+      addButton: permissions?.addButton ?? true,
+      deleteButton: permissions?.deleteButton ?? true,
       showUnit: permissions?.showUnit ?? false,
       saveWithRemark: permissions?.saveWithRemark ?? true,
       saveBtn: permissions?.saveBtn ?? true,
@@ -346,6 +382,7 @@ const PlantAOPReport = ({ permissions }) => {
         rows={rows}
         fetchData={fetchData}
         saveChanges={saveChanges}
+        deleteRowData={deleteRowData}
         paginationOptions={[100, 200, 300]}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
