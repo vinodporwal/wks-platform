@@ -16,6 +16,7 @@ public class NaphthaQualityDTO {
 
     private String section;
     private String name;
+    private Integer displayOrder;
     private Double max;
     private Double min;
     private Double months;

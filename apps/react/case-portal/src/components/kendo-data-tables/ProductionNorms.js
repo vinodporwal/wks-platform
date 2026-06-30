@@ -1221,33 +1221,41 @@ const ProductionNorms = ({ permissions }) => {
     }
   }, [PLANT_ID, AOP_YEAR, selectedUnitIIR])
 
-  // const downloadExcelForConfiguration = async () => {
-  //     setSnackbarOpen(true)
-  //     setSnackbarData({
-  //       message: 'Excel download started!',
-  //       severity: 'success',
-  //     })
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
 
-  //     try {
-  //       let response
-  //       if ( lowerVertName === 'pta') {
-  //         response = await ProductionNormsApiService.MonthwiseProductionExport(
-  //           keycloak,
-  //           PLANT_ID,
-  //           AOP_YEAR,
-  //           'Production',
-  //         )
-  //       }
-  //     } catch (error) {
-  //       console.error('Error downloading Excel:', error)
-  //       setSnackbarData({
-  //         message: 'Failed to download Excel.',
-  //         severity: 'error',
-  //       })
-  //     } finally {
-  //       setSnackbarOpen(true)
-  //     }
-  //   }
+    try {
+      let response
+      if (lowerVertName === 'pta') {
+        response = await ProductionNormsApiService.MonthwiseProductionExport(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          'Production',
+          `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_${AOP_YEAR}_Month wise Production`
+        )
+      } else if (lowerVertName === 'meg') {
+        response = await ProductionNormsApiService.MonthwiseProductionExportCombined(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_${AOP_YEAR}_Month wise Production`
+        )
+      }
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -1319,10 +1327,13 @@ const ProductionNorms = ({ permissions }) => {
             lowerVertName === 'cracker' ||
             lowerVertName === 'chemical'
               ? true
-              : !permissions?.hideExportBtn,
-          // downloadExcelBtn: lowerVertName === 'pta'
-          // ? true
-          // : false,
+              : (lowerVertName === 'meg')
+                ? false
+                : !permissions?.hideExportBtn,
+          downloadExcelBtn:
+            lowerVertName === 'meg'
+              ? true
+              : false,
 
           ExcelName: `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_Month wise Production plan`,
           unitForExcelToadd:
@@ -1500,7 +1511,7 @@ const ProductionNorms = ({ permissions }) => {
         setEditResetKey={setEditResetKey}
         totalRowConfiguration={totalRowConfiguration}
         // groupBy={IS_ELASTOMER_JMD ? 'Particulars' : null}
-        // downloadExcelForConfiguration={downloadExcelForConfiguration}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
         note={
           !permissions?.hideNoteText &&
           lowerVertName !== 'cracker' &&

@@ -65,4 +65,9 @@ public class VcmAvailabilityController {
         ) {
         return vcmAvailabilityService.importVcmTrade(plantId, year, file);
     }
+
+    @GetMapping("/calculate-vcm-stock-balance")
+    public AOPMessageVM calculateVcmStockBalance(@RequestParam UUID plantId, @RequestParam String year) {
+        return vcmAvailabilityService.calculateVcmStockBalance(plantId, year);
+    }
 }

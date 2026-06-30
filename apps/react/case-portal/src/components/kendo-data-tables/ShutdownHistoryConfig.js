@@ -1,7 +1,6 @@
 import { useGridApiRef } from '@mui/x-data-grid'
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { useSelector } from 'react-redux'
-import { PlantAopReportApiService } from 'services/plant-aop-report-api-service'
 import { useSession } from 'SessionStoreContext'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { validateFields } from 'utils/validationUtils'
@@ -9,12 +8,11 @@ import KendoDataTables from './index'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
-import CalculatedBusinessProposed from './ProprosedBusinessGradeOptimizer'
-import { DataService } from 'services/DataService'
-import AopTabs from 'components/AopTabs'
-import { Box } from '@mui/material'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
-const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
+import { DataService } from 'services/DataService'
+import { DtaDataService } from 'services/DtaDataservice'
+
+const ShutdownHistoryConfig = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -69,251 +67,158 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
   const [currentRowId, setCurrentRowId] = useState(null)
   const keycloak = useSession()
   const [rows, setRows] = useState()
-  const [tabIndex, setTabIndex] = useState(0)
   const valueFormat = ValueFormatterProduction()
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
-  const [tabs, setTabs] = useState([])
   const [lineDetails, setLineDetails] = useState([])
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const [aopCalculation, setAopCalculation] = useState([])
-  const [refreshSignal, setRefreshSignal] = useState(0)
+  const [allDescriptionDrpdwn, setAllDescriptionDrpdwn] = useState([])
+  const [startDate, setStartDate] = useState(null)
+  const [endDate, setEndDate] = useState(null)
+
+  const isValidDate = (d) => d instanceof Date && !isNaN(d)
+
+  function formatDateDDMMYYYY(date) {
+    if (!(date instanceof Date) || isNaN(date)) return ''
+    const d = date.getDate().toString().padStart(2, '0')
+    const m = (date.getMonth() + 1).toString().padStart(2, '0')
+    const y = date.getFullYear()
+    return `${d}/${m}/${y}`
+  }
+
+  const IS_AROMATIC_HMD =
+    lowerVertName === 'aromatics' && lowerSiteName === 'hmd'
+
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
-    setCurrentRemark(row.remarks || '')
+    setCurrentRemark(row.Remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
 
   const columns = [
     {
-      field: 'gradeId',
-      title: 'GradeId',
+      field: 'discription',
+      title: 'Shutdown Type',
+      editable: true,
+      type: 'discriptionDrpdwn',
+      minWidth: 200,
+      locked: true,
+    },
+    {
+      field: 'maintenanceId',
+      title: 'Maintenance ID',
       editable: false,
       hidden: true,
       isVisible: false,
     },
     {
-      field: 'plantId',
-      title: 'PlantId',
-      editable: false,
-      hidden: true,
-      isVisible: false,
-    },
-    {
-      field: 'aopYear',
-      title: 'AopYear',
-      editable: false,
-      hidden: true,
-      isVisible: false,
-    },
-    {
-      field: 'lineId',
-      title: 'LineId',
-      editable: false,
-      hidden: true,
-      isVisible: false,
-    },
-    {
-      field: 'displayName',
-      title: 'Particulars',
-      editable: false,
-      widthT: 300,
-      minWidth: 150,
-    },
-    {
-      field: 'apr',
-      title: headerMap[4] || 'April',
+      field: 'StartDate',
+      title: 'Start Date',
       editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
     },
     {
-      field: 'may',
-      title: headerMap[5],
+      field: 'EndDate',
+      title: 'End Date',
       editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
     },
     {
-      field: 'jun',
-      title: headerMap[6],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'jul',
-      title: headerMap[7],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'aug',
-      title: headerMap[8],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'sep',
-      title: headerMap[9],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'oct',
-      title: headerMap[10],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'nov',
-      title: headerMap[11],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'dec',
-      title: headerMap[12],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'jan',
-      title: headerMap[1],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'feb',
-      title: headerMap[2],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'mar',
-      title: headerMap[3],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'remarks',
+      field: 'Remarks',
       title: 'Remark',
       editable: true,
-      widthT: 300,
-      minWidth: 120,
     },
   ]
 
-  // --- Fetch the list of lines for this plant/year (NEW) ---
-  const fetchLineDetails = useCallback(async () => {
+  useEffect(() => {
     if (!PLANT_ID || !AOP_YEAR) return
+
+    const getAllDescriptionDrpdwn = async () => {
+      try {
+        let data = []
+
+        if (IS_AROMATIC_HMD) {
+          data = await DataService.dropdownValuesDMD(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+        } else {
+          data = await DataService.dropdownValues(keycloak, PLANT_ID, AOP_YEAR)
+        }
+
+        let descriptionObjList = []
+        {
+          descriptionObjList = data?.data.map((product) => ({
+            id: product.Name,
+            name: product.Name,
+            displayName: product.DisplayName,
+          }))
+        }
+        setAllDescriptionDrpdwn(descriptionObjList)
+      } catch (error) {
+        console.error('Error fetching products', error)
+      }
+    }
+
+    if (IS_AROMATIC_HMD) getAllDescriptionDrpdwn()
+  }, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
+
+  // Financial-year date bounds, clamped to an absolute 2021-07-01 .. 2028-06-30 window
+  useEffect(() => {
+    const fetchConfigDates = async () => {
+      try {
+        const data = await DataService.getConfigurationExecutionDetails(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+        const data1 = data?.data
+        const startObj = data1?.find((item) => item.Name === 'StartDate')
+        const endObj = data1?.find((item) => item.Name === 'EndDate')
+        const start = startObj ? new Date(startObj.AttributeValue) : null
+        const end = endObj ? new Date(endObj.AttributeValue) : null
+        setStartDate(isValidDate(start) ? start : null)
+        setEndDate(isValidDate(end) ? end : null)
+      } catch (e) {
+        setStartDate(null)
+        setEndDate(null)
+      }
+    }
+    if (PLANT_ID && AOP_YEAR) fetchConfigDates()
+  }, [PLANT_ID, AOP_YEAR, keycloak])
+
+  const fetchData = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    setModifiedCells({})
+    setLoading(true)
     try {
-      const response = await DataService.getLineDetails(
+      const res = await DtaDataService.getShutdownHistoryConfigData(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
       )
-      if (response?.code === 200 && Array.isArray(response?.data)) {
-        setLineDetails(response.data)
-        setTabs(response.data.map((line) => line.displayName))
-      } else {
-        setLineDetails([])
-        setTabs([])
-      }
-    } catch (err) {
-      console.error('Error fetching line details:', err)
-      setLineDetails([])
-      setTabs([])
-    }
-  }, [PLANT_ID, AOP_YEAR, keycloak])
-
-  useEffect(() => {
-    fetchLineDetails()
-  }, [fetchLineDetails])
-
-  // Reset to first tab whenever the plant/year changes so we don't stay
-  // on a stale tabIndex from a plant that had more lines
-  useEffect(() => {
-    setTabIndex(0)
-  }, [PLANT_ID, AOP_YEAR])
-
-  const fetchData = useCallback(async () => {
-    if (!PLANT_ID || !AOP_YEAR) return
-    const lineId = lineDetails[tabIndex]?.id
-    if (!lineId) return // wait until lineDetails has loaded
-    setModifiedCells({})
-    setLoading(true)
-    try {
-      const res =
-        await OptimizerDataApiService.getGradewiseBudgetOperatingHours(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-          lineId,
-        )
-
-      setAopCalculation(res?.data?.aopCalculation || [])
 
       if (res?.code === 200) {
-        const mapped = (res?.data.budgetedOperatingHoursData || []).map(
-          (item, index) => ({
+        const mapped = (res?.data || []).map((item, index) => {
+          const descriptionObj = allDescriptionDrpdwn.find(
+            (p) => p.name === item.ShutdownType,
+          )
+          return {
             ...item,
             id: index,
-            idFromApi: item.id || null,
-            isEditable: item?.isEditable,
-            remarks: item.remarks,
-            originalRemark: item.remarks,
-            normParameterFkId: item.normParameterFkId,
-            uom: item.uom,
-          }),
-        )
+            idFromApi: item.Id,
+            isEditable: item?.IsEditable,
+            StartDate: item.FromDate ? new Date(item.FromDate) : null,
+            EndDate: item.ToDate ? new Date(item.ToDate) : null,
+            Remarks: item.Remarks,
+            discription: descriptionObj
+              ? descriptionObj.displayName
+              : item.ShutdownType, // fallback so something shows if no dropdown match yet
+            originalRemark: item.Remarks,
+          }
+        })
         setRows(mapped)
       } else {
         setRows([])
@@ -324,7 +229,15 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, yearChanged, PLANT_ID, AOP_YEAR, lineDetails, tabIndex])
+  }, [keycloak, yearChanged, PLANT_ID, AOP_YEAR, allDescriptionDrpdwn])
+
+  // Date-only formatter for the payload (no time component since picker is dd/mm/yyyy only)
+  function formatDateForPayload(date) {
+    if (!date) return null
+    const d = date instanceof Date ? date : new Date(date)
+    if (isNaN(d)) return null
+    return d.toLocaleDateString('en-CA') // yyyy-mm-dd
+  }
 
   const saveChanges = React.useCallback(async () => {
     try {
@@ -341,7 +254,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
       }
 
       // adjust to whichever fields are actually mandatory on this grid
-      const requiredFields = ['remarks']
+      const requiredFields = ['Remarks']
 
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
@@ -353,36 +266,89 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
         setLoading(false)
         return
       }
+
+      let hasDateError = false
+
+      for (const record of data) {
+        const sDate =
+          record.StartDate instanceof Date
+            ? record.StartDate
+            : new Date(record.StartDate)
+        const eDate =
+          record.EndDate instanceof Date
+            ? record.EndDate
+            : new Date(record.EndDate)
+
+        // required check
+        if (
+          !record.StartDate ||
+          !record.EndDate ||
+          isNaN(sDate) ||
+          isNaN(eDate)
+        ) {
+          record.isError = true
+          hasDateError = true
+          continue
+        }
+
+        // start must be before (or same day as, since this is date-only) end
+        if (sDate.getTime() > eDate.getTime()) {
+          record.isError = true
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: `Start date must be before or same as end date for "${record.discription || 'this record'}".`,
+            severity: 'error',
+          })
+          setLoading(false)
+          return
+        }
+
+        // must fall within the configured financial-year window
+        if (
+          startDate &&
+          endDate &&
+          (sDate < startDate ||
+            sDate > endDate ||
+            eDate < startDate ||
+            eDate > endDate)
+        ) {
+          record.isError = true
+          hasDateError = true
+        }
+      }
+
+      if (hasDateError) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message:
+            startDate && endDate
+              ? `Dates must be between ${formatDateDDMMYYYY(startDate)} and ${formatDateDDMMYYYY(endDate)} for selected year.`
+              : 'Start Date and End Date are required for all records.',
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+
       var payload = []
       payload = data.map((item) => ({
-        apr: item.apr || item.ConstantValue || null,
-        may: item.may || null,
-        jun: item.jun || null,
-        jul: item.jul || null,
-        aug: item.aug || null,
-        sep: item.sep || null,
-        oct: item.oct || null,
-        nov: item.nov || null,
-        dec: item.dec || null,
-        jan: item.jan || null,
-        feb: item.feb || null,
-        mar: item.mar || null,
-        UOM: '',
-        auditYear: AOP_YEAR,
-        gradeId:item.gradeId,
-        normParameterFkId: item.normParameterFkId || item.NormParameter_FK_Id,
-        remarks: item.remarks,
+        ShutdownType: item.discription || item.discriptionDrpdwn,
+        FromDate: formatDateForPayload(item.StartDate),
+        ToDate: formatDateForPayload(item.EndDate),
+        AopYear: AOP_YEAR,
+        Id: item.idFromApi || null,
+        Remarks: item.Remarks || 'null',
+        Plant_FK_Id: PLANT_ID,
+        //normParameterFKId: item.normParameterFkId || item.NormParameter_FK_Id,
         id: item.idFromApi || null,
       }))
-      const lineId = lineDetails[tabIndex]?.id
-      const response =
-        await OptimizerDataApiService.saveGradeBudgetOperatingHours(
-          PLANT_ID,
-          payload,
-          keycloak,
-          AOP_YEAR,
-          lineId,
-        )
+
+      const response = await DtaDataService.saveShutdownHistoryConfig(
+        keycloak,
+        AOP_YEAR,
+        PLANT_ID,
+        payload,
+      )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -408,66 +374,53 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
-  useEffect(() => {
-    if (tabIndex === 0) {
-      fetchData()
-    }
-  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, tabIndex])
-
-  useEffect(() => {
-    if (lineDetails.length > 0 && lineDetails[tabIndex]) {
-      fetchData()
-    }
   }, [
+    modifiedCells,
+    keycloak,
     PLANT_ID,
     AOP_YEAR,
-    oldYear,
-    yearChanged,
-    keycloak,
-    lineDetails,
-    tabIndex,
+    fetchData,
+    startDate,
+    endDate,
   ])
 
   useEffect(() => {
-    if (saveTrigger > 0) {
-      fetchData()
-    }
-  }, [saveTrigger, fetchData])
+    fetchData()
+  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
 
-  const handleCalculate = async () => {
+  const deleteRowData = async (paramsForDelete) => {
     setLoading(true)
+
     try {
-      const data =
-        await OptimizerDataApiService.calculateGradeMixBudgetOpeartingHours(
-          PLANT_ID,
-          AOP_YEAR,
+      const { idFromApi, id } = paramsForDelete
+      const deleteId = id
+
+      if (!idFromApi) {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setModifiedCells((prev) => {
+          const newModifiedCells = { ...prev }
+          delete newModifiedCells[deleteId]
+          return newModifiedCells
+        })
+      }
+
+      if (idFromApi) {
+        await DtaDataService.deleteShutdownHistoryConfigData(
+          idFromApi,
           keycloak,
         )
-      if (data || data === 0 || data?.code === 200) {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Data refreshed successfully!',
+          message: 'Record Deleted successfully!',
           severity: 'success',
         })
         fetchData()
-        setRefreshSignal((prev) => prev + 1)
       } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Data Refresh Failed!',
-          severity: 'error',
-        })
+        setLoading(false)
       }
     } catch (error) {
-      console.error('Error saving refresh data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: error.message || 'An error occurred',
-        severity: 'error',
-      })
-    } finally {
-      setLoading(false)
+      console.error('Error deleting Record', error)
     }
   }
 
@@ -477,13 +430,14 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
       message: 'Excel download started!',
       severity: 'success',
     })
-    const EXCEL_NAME = `${EXCEL_EXPORT_TITLE}_Budget_Operating_Hours`
+
     try {
-      await OptimizerDataApiService.budgetOperatingLineExport(
+      let response
+      response = await DtaDataService.exportShutdownHistoryConfig(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
-        EXCEL_NAME,
+        EXCEL_EXPORT_TITLE,
       )
     } catch (error) {
       console.error('Error downloading Excel:', error)
@@ -495,18 +449,11 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
       setSnackbarOpen(true)
     }
   }
-
-  const handleExcelUpload = (rawFile) => {
-    uploadBudgetOperatingHour(rawFile)
-  }
-
-  const uploadBudgetOperatingHour = async (rawFile) => {
+  const importShutdownHistoryConfig = async (rawFile) => {
     setLoading(true)
 
     try {
-      let response
-
-      response = await OptimizerDataApiService.budgetOperatingHourImport(
+      const response = await DtaDataService.ImportShutdownHistoryConfig(
         rawFile,
         keycloak,
         PLANT_ID,
@@ -516,7 +463,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
       if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Uploaded Successfully!',
+          message: response?.message || 'Uploaded Successfully!',
           severity: 'success',
         })
         setModifiedCells({})
@@ -535,7 +482,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute('download', 'Error File - Budget Operating Hour.xlsx')
+        link.setAttribute('download', 'Error File - Shutdown History Config.xlsx')
         document.body.appendChild(link)
         link.click()
         link.remove()
@@ -557,7 +504,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
 
       return response
     } catch (error) {
-      console.error('Error uploading xcel:', error)
+      console.error('Error uploading Excel:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Unexpected error occurred!',
@@ -566,6 +513,10 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleExcelUpload = (rawFile) => {
+    importShutdownHistoryConfig(rawFile)
   }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
@@ -589,18 +540,22 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
   const adjustedPermissions = getAdjustedPermissions(
     {
       showAction: permissions?.showAction ?? true,
+      addButton: permissions?.addButton ?? true,
+      deleteButton: permissions?.deleteButton ?? true,
+      editButton: permissions?.editButton ?? false,
       showUnit: permissions?.showUnit ?? false,
       saveWithRemark: permissions?.saveWithRemark ?? true,
       saveBtn: permissions?.saveBtn ?? true,
       customHeight: permissions?.customHeight,
       allAction: true,
       downloadExcelBtn: true,
-      uploadExcelBtn:true,
+      downloadExcelBtnFromUI: false,
+      ExcelName: `${EXCEL_EXPORT_TITLE}_Shutdown History Config`,
+      uploadExcelBtn: true,
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
-      titleName: 'Gradewise Monthwise Budgeted Operating Hours',
-      showCalculate: true,
-      showCalculateVisibility: aopCalculation.length > 0,
+      titleName: 'Shutdown History Config',
+      showCalculate: false,
     },
     isOldYear,
   )
@@ -608,12 +563,6 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
   return (
     <div>
       <LoaderBackdrop open={!!loading} />
-      {/* Line tabs */}
-      {tabs.length > 0 && (
-        <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
-          <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
-        </Box>
-      )}
 
       <KendoDataTables
         modifiedCells={modifiedCells}
@@ -636,24 +585,21 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
         handleRemarkCellClick={handleRemarkCellClick}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}
+        deleteRowData={deleteRowData}
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
-        handleCalculate={handleCalculate}
+        allDescriptionDrpdwn={allDescriptionDrpdwn}
         currentRowId={currentRowId}
+        startDate={startDate}
+        endDate={endDate}
         permissions={adjustedPermissions}
-        downloadExcelForConfiguration={downloadExcelForConfiguration}
         handleExcelUpload={handleExcelUpload}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
         disableRedHighlight={true}
-        screenType='shutdown'
-      />
-      <CalculatedBusinessProposed
-        permissions={permissions}
-        lineDetails={lineDetails}
-        tabIndex={tabIndex}
-        refreshSignal={refreshSignal}
+        screenType='AromaticsShutdownHistoryConfig'
       />
     </div>
   )
 }
 
-export default BudgetOperatingHour
+export default ShutdownHistoryConfig

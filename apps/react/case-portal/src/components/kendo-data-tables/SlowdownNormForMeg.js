@@ -7,6 +7,7 @@ import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { ConsumptionNormsApiService } from 'services/consumption-norms-api-service'
 import { shouldLockColumn } from 'utils/columnLockUtils'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+
 const SlowdownNormForMeg = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -39,129 +40,27 @@ const SlowdownNormForMeg = () => {
 
   const [isLoading, setIsLoading] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [notification, setNotification] = useState({
-    open: false,
-    message: '',
-    severity: 'info',
-  })
 
+  // Single source of truth for the snackbar/notification UI.
+  // (Removed the old `notification` / showNotification / closeNotification
+  // state — it was never rendered anywhere, which is why saves appeared silent.)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
 
   const [tableRows, setTableRows] = useState([])
   const [columnDefinitions, setColumnDefinitions] = useState([])
   const [modifiedCells, setModifiedCells] = useState({})
-  const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [calculationResults, setCalculationResults] = useState([])
   const valueFormat = ValueFormatterConsumption()
-  const showNotification = useCallback((message, severity = 'info') => {
-    setNotification({
-      open: true,
-      message,
-      severity,
-    })
+  const [allRedCell, setAllRedCell] = useState([])
+  // Small helper so call sites read cleanly, but it just drives snackbarData/snackbarOpen.
+  const showSnackbar = useCallback((message, severity = 'info') => {
+    setSnackbarOpen(true)
+    setSnackbarData({ message, severity })
   }, [])
-
-  const closeNotification = useCallback(() => {
-    setNotification((prev) => ({ ...prev, open: false }))
-  }, [])
-
-  const saveSlowdownConfiguration = useCallback(
-    async (payload) => {
-      setIsLoading(true)
-      try {
-        const response =
-          await SlowdownNormForMegServices.updateSlowdownNormsForMeg({
-            keycloak,
-            PLANT_ID,
-            year: AOP_YEAR,
-            payload,
-          })
-
-        if (response?.code === 200) {
-          showNotification('Saved Successfully!', 'success')
-          setModifiedCells({})
-          await fetchSlowdownNormsColumns()
-        } else {
-          showNotification('Data Save Failed!', 'error')
-        }
-
-        return response
-      } catch (error) {
-        console.error('Error saving data:', error)
-        showNotification('Data Save Failed!', 'error')
-        throw error
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    [keycloak, PLANT_ID, AOP_YEAR, showNotification],
-  )
-
-  const handleSaveChanges = useCallback(async () => {
-    try {
-      const modifiedData = Object.values(modifiedCells)
-
-      if (modifiedData.length === 0) {
-        showNotification('No Records to Save!', 'info')
-        return
-      }
-
-      const sanitizedData = modifiedData.map((item) => ({
-        ...item,
-        normParameterFKId: item.NormParameter_FK_Id,
-        NormParameter_FK_Id: undefined,
-        inEdit: undefined,
-        particulars: undefined,
-        id: undefined,
-        aopYear: undefined,
-        normParameterDisplayName: undefined,
-        plantId: undefined,
-        DisplayName: undefined,
-        NormTypeName: undefined,
-        srNo: undefined,
-        isEditable: undefined,
-        IsEditable: undefined,
-        Particulars: undefined,
-        uom: undefined,
-        UOM: undefined,
-      }))
-
-      await saveSlowdownConfiguration(sanitizedData)
-    } catch (error) {
-      console.error('Error in handleSaveChanges:', error)
-    }
-  }, [modifiedCells, saveSlowdownConfiguration, showNotification])
-
-  const handleCalculateData = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const response =
-        await SlowdownNormForMegServices.getSlowdownNormsCalculateForMeg({
-          keycloak,
-          PLANT_ID,
-          year: AOP_YEAR,
-        })
-
-      if (response) {
-        showNotification('Data refreshed successfully!', 'success')
-        await fetchSlowdownNormsColumns()
-
-        await fetchSlowdownNormsData()
-      } else {
-        showNotification('Data Refresh Failed!', 'error')
-      }
-
-      return response
-    } catch (error) {
-      console.error('Error refreshing data:', error)
-      showNotification('Data Refresh Failed!', 'error')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [keycloak, PLANT_ID, AOP_YEAR, showNotification])
 
   const fetchSlowdownNormsData = useCallback(async () => {
     setIsLoading(true)
@@ -172,7 +71,12 @@ const SlowdownNormForMeg = () => {
           PLANT_ID,
           year: AOP_YEAR,
         })
-
+      const normalized = data?.SlowdownConfiguration.map((obj) => ({
+        ...obj,
+        normParameterFKId: obj.NormParameter_FK_Id.toUpperCase(),
+        columnName: obj.ColumnName,
+      }))
+      setAllRedCell(normalized)
       const formattedRows =
         data?.resultList?.map((item, index) => {
           const parsedItem = Object.entries(item).reduce(
@@ -243,16 +147,16 @@ const SlowdownNormForMeg = () => {
 
             editable:
               column.field === 'particulars' ||
-                column.field.toLowerCase() === 'uom'
+              column.field.toLowerCase() === 'uom'
                 ? false
                 : true,
 
             hidden: hiddenColumns.includes(column.field),
             ...(column.field !== 'particulars' &&
               column.field.toLowerCase() !== 'uom' && {
-              format: valueFormat,
-              type: 'negativeNumber',
-            }),
+                format: valueFormat,
+                type: 'negativeNumber',
+              }),
           }
           if (shouldLockColumn(col)) {
             col.locked = true
@@ -275,12 +179,115 @@ const SlowdownNormForMeg = () => {
     }
   }, [keycloak, PLANT_ID, AOP_YEAR, fetchSlowdownNormsData])
 
+  const saveSlowdownConfiguration = useCallback(
+    async (payload) => {
+      setIsLoading(true)
+      try {
+        const response =
+          await SlowdownNormForMegServices.updateSlowdownNormsForMeg({
+            keycloak,
+            PLANT_ID,
+            year: AOP_YEAR,
+            payload,
+          })
+
+        if (response?.code === 200) {
+          showSnackbar('Saved Successfully!', 'success')
+          setModifiedCells({})
+          await fetchSlowdownNormsColumns()
+        } else {
+          showSnackbar('Data Save Failed!', 'error')
+        }
+
+        return response
+      } catch (error) {
+        console.error('Error saving data:', error)
+        showSnackbar('Data Save Failed!', 'error')
+        throw error
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [keycloak, PLANT_ID, AOP_YEAR, showSnackbar, fetchSlowdownNormsColumns],
+  )
+
+  const handleSaveChanges = useCallback(async () => {
+    try {
+      const modifiedData = Object.values(modifiedCells)
+
+      if (modifiedData.length === 0) {
+        showSnackbar('No Records to Save!', 'info')
+        return
+      }
+
+      const sanitizedData = modifiedData.map((item) => ({
+        ...item,
+        normParameterFKId: item.NormParameter_FK_Id,
+        NormParameter_FK_Id: undefined,
+        inEdit: undefined,
+        particulars: undefined,
+        id: undefined,
+        aopYear: undefined,
+        normParameterDisplayName: undefined,
+        plantId: undefined,
+        DisplayName: undefined,
+        NormTypeName: undefined,
+        srNo: undefined,
+        isEditable: undefined,
+        IsEditable: undefined,
+        Particulars: undefined,
+        uom: undefined,
+        UOM: undefined,
+      }))
+
+      await saveSlowdownConfiguration(sanitizedData)
+    } catch (error) {
+      console.error('Error in handleSaveChanges:', error)
+      showSnackbar('Unexpected error occurred!', 'error')
+    }
+  }, [modifiedCells, saveSlowdownConfiguration, showSnackbar])
+
+  // NOTE: the old duplicate `saveChanges` (React.useCallback, referencing
+  // undefined `payload`, `fetchData`, `PlantAopReportApiService`) has been
+  // removed — it was dead code left over from copy/paste and was never wired
+  // to the grid (the grid uses `handleSaveChanges` via the `saveChanges` prop below).
+
+  const handleCalculateData = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const response =
+        await SlowdownNormForMegServices.getSlowdownNormsCalculateForMeg({
+          keycloak,
+          PLANT_ID,
+          year: AOP_YEAR,
+        })
+
+      if (response) {
+        showSnackbar('Data refreshed successfully!', 'success')
+        await fetchSlowdownNormsColumns()
+        await fetchSlowdownNormsData()
+      } else {
+        showSnackbar('Data Refresh Failed!', 'error')
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error refreshing data:', error)
+      showSnackbar('Data Refresh Failed!', 'error')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [
+    keycloak,
+    PLANT_ID,
+    AOP_YEAR,
+    showSnackbar,
+    fetchSlowdownNormsColumns,
+    fetchSlowdownNormsData,
+  ])
+
   const downloadExcelForConfiguration = async () => {
-    setSnackbarOpen(true)
-    setSnackbarData({
-      message: 'Excel download started!',
-      severity: 'success',
-    })
+    showSnackbar('Excel download started!', 'success')
     const ExcelName = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}_${SCREEN_NAME}`
     try {
       await ConsumptionNormsApiService.slowdownconsumptionExportMEG(
@@ -291,12 +298,7 @@ const SlowdownNormForMeg = () => {
       )
     } catch (error) {
       console.error('Error downloading Excel:', error)
-      setSnackbarData({
-        message: 'Failed to download Excel.',
-        severity: 'error',
-      })
-    } finally {
-      setSnackbarOpen(true)
+      showSnackbar('Failed to download Excel.', 'error')
     }
   }
 
@@ -304,20 +306,16 @@ const SlowdownNormForMeg = () => {
     setLoading(true)
 
     try {
-      let response
-      response = await ConsumptionNormsApiService.ExcelSlowdownConsumptionMEG(
-        rawFile,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      const response =
+        await ConsumptionNormsApiService.ExcelSlowdownConsumptionMEG(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
       if (response?.code === 200) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Uploaded Successfully!',
-          severity: 'success',
-        })
+        showSnackbar('Uploaded Successfully!', 'success')
         setModifiedCells({})
         fetchSlowdownNormsColumns()
       } else if (response?.code === 400 && response?.data) {
@@ -340,28 +338,16 @@ const SlowdownNormForMeg = () => {
         link.remove()
         window.URL.revokeObjectURL(url)
 
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Partial data saved. Error file downloaded.',
-          severity: 'warning',
-        })
+        showSnackbar('Partial data saved. Error file downloaded.', 'warning')
         fetchSlowdownNormsColumns()
       } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Upload Failed!',
-          severity: 'error',
-        })
+        showSnackbar('Upload Failed!', 'error')
       }
 
       return response
     } catch (error) {
       console.error('Error uploading Excel:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Unexpected error occurred!',
-        severity: 'error',
-      })
+      showSnackbar('Unexpected error occurred!', 'error')
     } finally {
       setLoading(false)
     }
@@ -415,6 +401,7 @@ const SlowdownNormForMeg = () => {
         groupBy='Particulars'
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         handleExcelUpload={handleExcelUpload}
+        allRedCell={allRedCell}
       />
     </div>
   )

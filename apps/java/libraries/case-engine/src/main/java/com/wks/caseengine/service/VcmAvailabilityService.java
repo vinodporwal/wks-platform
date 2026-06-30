@@ -18,4 +18,6 @@ public interface VcmAvailabilityService {
 
     AOPMessageVM importVcmTrade(UUID plantId, String year, MultipartFile file);
 
+    AOPMessageVM calculateVcmStockBalance(UUID plantId, String aopYear);
+
 }

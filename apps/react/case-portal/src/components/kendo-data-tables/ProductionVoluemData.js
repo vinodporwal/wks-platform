@@ -1508,7 +1508,9 @@ const ProductionvolumeData = ({
             : 'Proposed Operating Capacity (Ethylene)'
           : IS_VCM
             ? 'Steady State Operating Capacity'
-            : 'Proposed Operating Capacity',
+            : VERTICAL_NAME === 'meg'
+              ? 'Proposed Operating Capacity / Production Volume Target (PVT)'
+              : 'Proposed Operating Capacity',
       showNoteWhileSaving: IS_PP_SEZ ? true : false,
     },
     isOldYear,

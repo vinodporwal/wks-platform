@@ -1112,12 +1112,19 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 				    aOPMCCalculatedData.setRemarks(aOPMCCalculatedDataDTO.getRemarks());
 				    saved = aOPMCCalculatedDataRepository.save(aOPMCCalculatedData);
 				} 
-				else if (!remarksChanged && changed) {
+
+			 if (!remarksChanged && changed) {
 				    // If other data changed but remarks remain the same as the database, fail the validation
 				    aOPMCCalculatedDataDTO.setErrDescription("Please add/update remark");
 				    aOPMCCalculatedDataDTO.setSaveStatus("Failed");
 				    failedList.add(aOPMCCalculatedDataDTO);
+					continue;
 				}
+            // update even if only remark is chnged	
+				aOPMCCalculatedData.setRemarks(aOPMCCalculatedDataDTO.getRemarks());
+				saved = aOPMCCalculatedDataRepository.save(aOPMCCalculatedData);
+				outerChanged = true;	
+				
 
 				if (saved != null && saved.getId() == null) {
 					aOPMCCalculatedDataDTO

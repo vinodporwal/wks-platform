@@ -686,8 +686,8 @@ const BusinessDemand = ({ permissions }) => {
 
       // Enables ON/OFF dropdown for rows where UOM === 'ON/OFF'
       enableOnOffDropdown: IS_CRACKER_HMD,
-      showCalculate: IS_PVC_HMD,
-      showCalculateVisibility: IS_PVC_HMD && aopCalculation.length > 0,
+      showCalculate: IS_PVC_HMD || IS_PVC_DMD,
+      showCalculateVisibility: (IS_PVC_HMD || IS_PVC_DMD) && aopCalculation.length > 0,
     },
     isOldYear,
   )

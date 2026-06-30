@@ -10,6 +10,23 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { DataService } from 'services/DataService'
+
+const monthKeyMap = {
+  Jan: 1,
+  Feb: 2,
+  Mar: 3,
+  Apr: 4,
+  May: 5,
+  Jun: 6,
+  Jul: 7,
+  Aug: 8,
+  Sep: 9,
+  Oct: 10,
+  Nov: 11,
+  Dec: 12,
+}
+const HIDDEN_FIELDS = ['Id', 'NormParameter_FK_Id', 'AuditYear', 'UOM', 'NormTypeName', 'IsEditable']
+
 const VcmStockbalance = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -46,7 +63,6 @@ const VcmStockbalance = ({ permissions }) => {
   const lowerVertName = vertName?.toLowerCase()
   const lowerSiteName = SITE_NAME?.toLowerCase()
   const lowerPlantName = PLANT_NAME?.toLowerCase()
-  const plantName = plantObject?.name
   const siteName = siteObject?.name
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
@@ -65,6 +81,8 @@ const VcmStockbalance = ({ permissions }) => {
   const [currentRowId, setCurrentRowId] = useState(null)
   const keycloak = useSession()
   const [rows, setRows] = useState()
+  const [columns, setColumns] = useState([])
+  const [aopCalculation, setAopCalculation] = useState([])
   const valueFormat = ValueFormatterProduction()
   const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
@@ -79,164 +97,6 @@ const VcmStockbalance = ({ permissions }) => {
     setRemarkDialogOpen(true)
   }
 
-  const columns = [
-    {
-      field: 'gradeId',
-      title: 'GradeId',
-      editable: false,
-      hidden: true,
-      isVisible: false,
-    },
-    {
-      field: 'plantId',
-      title: 'PlantId',
-      editable: false,
-      hidden: true,
-      isVisible: false,
-    },
-    {
-      field: 'aopYear',
-      title: 'AopYear',
-      editable: false,
-      hidden: true,
-      isVisible: false,
-    },
-    {
-      field: 'displayName',
-      title: 'Particulars',
-      editable: false,
-      widthT: 300,
-      minWidth: 150,
-    },
-    {
-      field: 'apr',
-      title: headerMap[4] || 'April',
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'may',
-      title: headerMap[5],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'jun',
-      title: headerMap[6],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'jul',
-      title: headerMap[7],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'aug',
-      title: headerMap[8],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'sep',
-      title: headerMap[9],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'oct',
-      title: headerMap[10],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'nov',
-      title: headerMap[11],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'dec',
-      title: headerMap[12],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'jan',
-      title: headerMap[1],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'feb',
-      title: headerMap[2],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'mar',
-      title: headerMap[3],
-      editable: true,
-      align: 'right',
-      headerAlign: 'right',
-      type: 'number',
-      format: valueFormat,
-      minWidth: 100,
-    },
-    {
-      field: 'remarks',
-      title: 'Remark',
-      editable: true,
-      widthT: 300,
-      minWidth: 120,
-    },
-  ]
-
   const fetchData = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
 
@@ -248,25 +108,65 @@ const VcmStockbalance = ({ permissions }) => {
         PLANT_ID,
         AOP_YEAR,
       )
-
+      setAopCalculation(res?.data?.aopCalculation || [])
       if (res?.code === 200) {
-        const mapped = (res?.data || []).map((item, index) => ({
-          ...item,
-          id: index,
-          idFromApi: item.id,
-          isEditable: item?.isEditable,
-          remarks: item.remarks,
-          originalRemark: item.remarks,
-          normParameterFkId: item.normParameterFkId,
-          uom: item.uom,
-        }))
+        const apiColumns = res?.data?.vcmStockBalance?.metadata || []
+        const apiRows = res?.data?.vcmStockBalance?.data || []
+
+        const dynamicColumns = apiColumns
+          .filter((col) => !HIDDEN_FIELDS.includes(col.field))
+          .map((col) => {
+            const isMonthColumn = !!monthKeyMap[col.field]
+            const isParticular = col.field === 'DisplayName'
+            return {
+              field: col.field,
+              title: col.title,
+              editable: false,
+              align: isMonthColumn ? 'right' : 'left',
+              headerAlign: isMonthColumn ? 'right' : 'left',
+              type: isMonthColumn ? 'number' : 'text',
+              format: isMonthColumn ? valueFormat : undefined,
+              fixWidth: isParticular ? 200 : 100,
+              minWidth: isParticular ? 200 : 100,
+
+            }
+          })
+
+        const mapped = apiRows.map((item, index) => {
+          const newItem = { ...item }
+          Object.keys(monthKeyMap).forEach((month) => {
+            if (newItem[month] !== undefined && newItem[month] !== null && newItem[month] !== '') {
+              const parsedVal = parseFloat(newItem[month])
+              if (!isNaN(parsedVal)) {
+                newItem[month] = parsedVal
+              }
+            }
+          })
+          return {
+            ...newItem,
+            id: index,
+            idFromApi: item.Id || item.id,
+            isEditable: false,
+            remarks: item.Remarks || item.remarks,
+            originalRemark: item.Remarks || item.remarks,
+            normParameterFkId: item.NormParameter_FK_Id || item.normParameterFkId,
+            uom: item.UOM || item.uom,
+          }
+        })
+
+        setColumns(dynamicColumns)
         setRows(mapped)
+        setAopCalculation(res?.data?.aopCalculation || [])
       } else {
         setRows([])
+        setColumns([])
+        setAopCalculation([])
       }
     } catch (err) {
       console.error('Error fetching data:', err)
       setRows([])
+      setColumns([])
+      setAopCalculation([])
     } finally {
       setLoading(false)
     }
@@ -352,6 +252,41 @@ const VcmStockbalance = ({ permissions }) => {
       setLoading(false)
     }
   }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
+  const handleCalculate = useCallback(async () => {
+    setRows([])
+    setLoading(true)
+    try {
+      const data = await OptimizerDataApiService.calculateVcmStockBalance(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (data?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: data?.message || 'Data Refresh Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [keycloak, PLANT_ID, AOP_YEAR, fetchData])
+
   useEffect(() => {
     fetchData()
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
@@ -377,8 +312,8 @@ const VcmStockbalance = ({ permissions }) => {
     {
       showAction: permissions?.showAction ?? true,
       showUnit: permissions?.showUnit ?? false,
-      saveWithRemark: permissions?.saveWithRemark ?? true,
-      saveBtn: permissions?.saveBtn ?? true,
+      saveWithRemark: false,
+      saveBtn: false,
       customHeight: permissions?.customHeight,
       allAction: true,
       downloadExcelBtn: false,
@@ -388,7 +323,8 @@ const VcmStockbalance = ({ permissions }) => {
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
       titleName: 'VCM Stock Balance',
-      showCalculate: false,
+      showCalculate: true,
+      showCalculateVisibility: aopCalculation && aopCalculation.length > 0,
     },
     isOldYear,
   )
@@ -405,6 +341,7 @@ const VcmStockbalance = ({ permissions }) => {
         rows={rows}
         fetchData={fetchData}
         saveChanges={saveChanges}
+        handleCalculate={handleCalculate}
         paginationOptions={[100, 200, 300]}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
