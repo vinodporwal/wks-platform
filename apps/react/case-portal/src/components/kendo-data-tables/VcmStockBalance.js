@@ -112,7 +112,7 @@ const VcmStockbalance = ({ permissions }) => {
     {
       field: 'apr',
       title: headerMap[4] || 'April',
-      editable: true,
+      editable: false,
       align: 'right',
       headerAlign: 'right',
       type: 'number',
@@ -122,7 +122,7 @@ const VcmStockbalance = ({ permissions }) => {
     {
       field: 'may',
       title: headerMap[5],
-      editable: true,
+      editable: false,
       align: 'right',
       headerAlign: 'right',
       type: 'number',
@@ -132,7 +132,7 @@ const VcmStockbalance = ({ permissions }) => {
     {
       field: 'jun',
       title: headerMap[6],
-      editable: true,
+      editable: false,
       align: 'right',
       headerAlign: 'right',
       type: 'number',
@@ -142,7 +142,7 @@ const VcmStockbalance = ({ permissions }) => {
     {
       field: 'jul',
       title: headerMap[7],
-      editable: true,
+      editable: false,
       align: 'right',
       headerAlign: 'right',
       type: 'number',
@@ -152,7 +152,7 @@ const VcmStockbalance = ({ permissions }) => {
     {
       field: 'aug',
       title: headerMap[8],
-      editable: true,
+      editable: false,
       align: 'right',
       headerAlign: 'right',
       type: 'number',
@@ -162,7 +162,7 @@ const VcmStockbalance = ({ permissions }) => {
     {
       field: 'sep',
       title: headerMap[9],
-      editable: true,
+      editable: false,
       align: 'right',
       headerAlign: 'right',
       type: 'number',
@@ -172,7 +172,7 @@ const VcmStockbalance = ({ permissions }) => {
     {
       field: 'oct',
       title: headerMap[10],
-      editable: true,
+      editable: false,
       align: 'right',
       headerAlign: 'right',
       type: 'number',
@@ -182,7 +182,7 @@ const VcmStockbalance = ({ permissions }) => {
     {
       field: 'nov',
       title: headerMap[11],
-      editable: true,
+      editable: false,
       align: 'right',
       headerAlign: 'right',
       type: 'number',
@@ -192,7 +192,7 @@ const VcmStockbalance = ({ permissions }) => {
     {
       field: 'dec',
       title: headerMap[12],
-      editable: true,
+      editable: false,
       align: 'right',
       headerAlign: 'right',
       type: 'number',
@@ -202,7 +202,7 @@ const VcmStockbalance = ({ permissions }) => {
     {
       field: 'jan',
       title: headerMap[1],
-      editable: true,
+      editable: false,
       align: 'right',
       headerAlign: 'right',
       type: 'number',
@@ -212,7 +212,7 @@ const VcmStockbalance = ({ permissions }) => {
     {
       field: 'feb',
       title: headerMap[2],
-      editable: true,
+      editable: false,
       align: 'right',
       headerAlign: 'right',
       type: 'number',
@@ -222,20 +222,21 @@ const VcmStockbalance = ({ permissions }) => {
     {
       field: 'mar',
       title: headerMap[3],
-      editable: true,
+      editable: false,
       align: 'right',
       headerAlign: 'right',
       type: 'number',
       format: valueFormat,
       minWidth: 100,
     },
-    // {
-    //   field: 'remarks',
-    //   title: 'Remark',
-    //   editable: true,
-    //   widthT: 300,
-    //   minWidth: 120,
-    // },
+    {
+      field: 'remarks',
+      title: 'Remark',
+      editable: false,
+      hidden: true,
+      widthT: 300,
+      minWidth: 120,
+    },
   ]
 
   const fetchData = useCallback(async () => {
@@ -249,7 +250,7 @@ const VcmStockbalance = ({ permissions }) => {
         PLANT_ID,
         AOP_YEAR,
       )
-
+      setAopCalculation(res?.data?.aopCalculation || [])
       if (res?.code === 200) {
         const mapped = (res?.data?.vcmStockBalance || []).map((item, index) => ({
           ...item,
