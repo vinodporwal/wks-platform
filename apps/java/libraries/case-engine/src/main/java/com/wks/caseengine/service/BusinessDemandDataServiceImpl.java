@@ -2385,7 +2385,7 @@ public AOPMessageVM importExcelLineWise(String year, UUID plantFKId, MultipartFi
 			// Title row
 			Row titleRow = sheet.createRow(startRow++);
 			Cell titleCell = titleRow.createCell(0);
-			titleCell.setCellValue("Proposed Operating Capacity");
+			titleCell.setCellValue("Proposed Operating Capacity / Production Volume Target (PVT)");
 			titleCell.setCellStyle(boldLockedGreyStyle);
 
 			// Header row – Particulars + 12 academic-year months; NO Remarks column
