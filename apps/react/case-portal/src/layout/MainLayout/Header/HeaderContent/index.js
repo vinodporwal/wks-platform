@@ -989,7 +989,11 @@ export default function HeaderContent({ keycloak, navigation }) {
           </Box>
 
           {/* Vertical */}
-          {!(HIDE_VERTICAL_DROPDOWN || HIDE_DASHBOARD_DROPDOWN) && (
+          {!(
+            HIDE_VERTICAL_DROPDOWN ||
+            HIDE_DASHBOARD_DROPDOWN ||
+            Hide_Dropdown
+          ) && (
             <Box sx={dropdownContainerStyle}>
               {headerLoading ? (
                 <DropdownSkeleton />
