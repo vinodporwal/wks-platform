@@ -293,7 +293,6 @@ const NormalOpNormsScreen = () => {
       const promises = [fetchData(gradeId), getNormTransactions()]
 
       if (
-        lowerVertName === 'meg' ||
         IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
         IS_CHEMICAL_VMD_BUTADIENE ||
         IS_VCM_HMD_VCM ||
@@ -604,7 +603,15 @@ const NormalOpNormsScreen = () => {
           }
 
           fetchData(gradeId)
-          if (lowerVertName == 'meg') fetchDataIntermediateValues()
+          if (
+            IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
+            IS_CHEMICAL_VMD_BUTADIENE ||
+            IS_VCM_HMD_VCM ||
+            IS_CHEMICAL_HMD_BUTADIENE ||
+            IS_CHEMICAL_VMD_BENEZENEFPU
+          ) {
+            fetchDataIntermediateValues()
+          }
           getNormTransactions()
         } else {
           setSnackbarOpen(true)
@@ -994,8 +1001,7 @@ const NormalOpNormsScreen = () => {
         />
       )}
 
-      {(lowerVertName === 'meg' ||
-        IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
+      {(IS_CHEMICAL_JMD_MTBEANDBUATNE1 ||
         IS_CHEMICAL_VMD_BUTADIENE ||
         IS_CHEMICAL_HMD_BUTADIENE ||
         IS_CHEMICAL_VMD_BENEZENEFPU ||
