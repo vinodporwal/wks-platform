@@ -88,10 +88,10 @@ const PlantAOPReport = ({ permissions }) => {
     const match = aopYear.match(/(\d{4})-(\d{2})/)
     if (match) {
       const startYear = Number(match[1])
-      const endYearShort = match[2] 
+      const endYearShort = match[2]
 
       const next = `${startYear}-${endYearShort}`
-      const prev = `${startYear - 1}-${String(startYear).slice(-2)}` 
+      const prev = `${startYear - 1}-${String(startYear).slice(-2)}`
 
       return { prev, next }
     }
@@ -423,9 +423,15 @@ const PlantAOPReport = ({ permissions }) => {
         />
       )}
 
-      {tabIndex === 1 && <SafetyImprovementInitiative permissions={permissions} />}
-      {tabIndex === 2 && <ProfitImprovementInitiative permissions={permissions} />}
-      {tabIndex === 3 && <ReliabilityImprovementInitiative permissions={permissions} />}
+      {tabIndex === 1 && (
+        <SafetyImprovementInitiative permissions={permissions} />
+      )}
+      {tabIndex === 2 && (
+        <ProfitImprovementInitiative permissions={permissions} />
+      )}
+      {tabIndex === 3 && (
+        <ReliabilityImprovementInitiative permissions={permissions} />
+      )}
       {tabIndex === 4 && <PlantTeam onlyPeopleInitiative />}
     </div>
   )

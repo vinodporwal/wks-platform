@@ -1236,15 +1236,16 @@ const ProductionNorms = ({ permissions }) => {
           PLANT_ID,
           AOP_YEAR,
           'Production',
-          `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_${AOP_YEAR}_Month wise Production`
+          `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_${AOP_YEAR}_Month wise Production`,
         )
       } else if (lowerVertName === 'meg') {
-        response = await ProductionNormsApiService.MonthwiseProductionExportCombined(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-          `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_${AOP_YEAR}_Month wise Production`
-        )
+        response =
+          await ProductionNormsApiService.MonthwiseProductionExportCombined(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_${AOP_YEAR}_Month wise Production`,
+          )
       }
     } catch (error) {
       console.error('Error downloading Excel:', error)
@@ -1289,12 +1290,12 @@ const ProductionNorms = ({ permissions }) => {
             lowerVertName === 'cracker' ||
             lowerVertName === 'chemical'
               ? true
-              : permissions?.showUnit ?? true,
+              : (permissions?.showUnit ?? true),
           saveWithRemark: permissions?.saveWithRemark ?? true,
 
           showCalculate: IS_ELASTOMER_JMD
             ? false
-            : permissions?.showCalculate ?? true,
+            : (permissions?.showCalculate ?? true),
 
           allAction: permissions?.allAction ?? true,
           showNote: true,
@@ -1306,14 +1307,14 @@ const ProductionNorms = ({ permissions }) => {
 
           showCalculateVisibility:
             calculationObject && Object.keys(calculationObject).length > 0
-              ? permissions?.showCalculate ?? true
+              ? (permissions?.showCalculate ?? true)
               : false,
           saveBtn:
             IS_ELASTOMER_JMD_IIR ||
             IS_CHEMICAL_VMD_ACRYLONITRILE ||
             IS_CHEMICAL_NMD
               ? true
-              : permissions?.saveBtn ?? false,
+              : (permissions?.saveBtn ?? false),
           units:
             lowerVertName === 'cracker'
               ? ['MT/Month', 'TPH']
@@ -1327,13 +1328,10 @@ const ProductionNorms = ({ permissions }) => {
             lowerVertName === 'cracker' ||
             lowerVertName === 'chemical'
               ? true
-              : (lowerVertName === 'meg')
+              : lowerVertName === 'meg'
                 ? false
                 : !permissions?.hideExportBtn,
-          downloadExcelBtn:
-            lowerVertName === 'meg'
-              ? true
-              : false,
+          downloadExcelBtn: lowerVertName === 'meg' ? true : false,
 
           ExcelName: `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_Month wise Production plan`,
           unitForExcelToadd:
@@ -1407,12 +1405,14 @@ const ProductionNorms = ({ permissions }) => {
       allAction: permissions?.allAction ?? true,
       showCalculateVisibility:
         calculationObject && Object.keys(calculationObject).length > 0
-          ? permissions?.showCalculate ?? true
+          ? (permissions?.showCalculate ?? true)
           : false,
       saveBtn: permissions?.saveBtn ?? false,
       units: lowerVertName == 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
       downloadExcelBtnFromUI:
-        lowerVertName === 'vcm' || lowerVertName === 'meg' ? false : !permissions?.hideExportBtn,
+        lowerVertName === 'vcm' || lowerVertName === 'meg'
+          ? false
+          : !permissions?.hideExportBtn,
       ExcelName: `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_${AOP_YEAR}_Month wise Production plan (By Products)`,
 
       customHeight: permissions?.customHeight,

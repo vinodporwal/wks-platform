@@ -25,7 +25,14 @@ const monthKeyMap = {
   Nov: 11,
   Dec: 12,
 }
-const HIDDEN_FIELDS = ['Id', 'NormParameter_FK_Id', 'AuditYear', 'UOM', 'NormTypeName', 'IsEditable']
+const HIDDEN_FIELDS = [
+  'Id',
+  'NormParameter_FK_Id',
+  'AuditYear',
+  'UOM',
+  'NormTypeName',
+  'IsEditable',
+]
 
 const VcmStockbalance = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -128,14 +135,17 @@ const VcmStockbalance = ({ permissions }) => {
               format: isMonthColumn ? valueFormat : undefined,
               fixWidth: isParticular ? 200 : 100,
               minWidth: isParticular ? 200 : 100,
-
             }
           })
 
         const mapped = apiRows.map((item, index) => {
           const newItem = { ...item }
           Object.keys(monthKeyMap).forEach((month) => {
-            if (newItem[month] !== undefined && newItem[month] !== null && newItem[month] !== '') {
+            if (
+              newItem[month] !== undefined &&
+              newItem[month] !== null &&
+              newItem[month] !== ''
+            ) {
               const parsedVal = parseFloat(newItem[month])
               if (!isNaN(parsedVal)) {
                 newItem[month] = parsedVal
@@ -149,7 +159,8 @@ const VcmStockbalance = ({ permissions }) => {
             isEditable: false,
             remarks: item.Remarks || item.remarks,
             originalRemark: item.Remarks || item.remarks,
-            normParameterFkId: item.NormParameter_FK_Id || item.normParameterFkId,
+            normParameterFkId:
+              item.NormParameter_FK_Id || item.normParameterFkId,
             uom: item.UOM || item.uom,
           }
         })

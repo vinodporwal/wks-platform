@@ -149,7 +149,13 @@ async function monthlyOtherProduction(keycloak, PLANT_ID, AOP_YEAR) {
   }
 }
 
-export async function MonthwiseProductionExport(keycloak, plantId, year, type, fileName) {
+export async function MonthwiseProductionExport(
+  keycloak,
+  plantId,
+  year,
+  type,
+  fileName,
+) {
   const url = `${Config.CaseEngineUrl}/task/monthly-production-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&type=${encodeURIComponent(type)}`
   const headers = {
     'Content-Type': 'application/json',
@@ -168,7 +174,9 @@ export async function MonthwiseProductionExport(keycloak, plantId, year, type, f
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = fileName ? `${fileName}.xlsx` : 'vcm_Month wise Production plan.xlsx'
+    a.download = fileName
+      ? `${fileName}.xlsx`
+      : 'vcm_Month wise Production plan.xlsx'
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -179,7 +187,12 @@ export async function MonthwiseProductionExport(keycloak, plantId, year, type, f
   }
 }
 
-export async function MonthwiseProductionExportCombined(keycloak, plantId, year, fileName) {
+export async function MonthwiseProductionExportCombined(
+  keycloak,
+  plantId,
+  year,
+  fileName,
+) {
   const url = `${Config.CaseEngineUrl}/task/monthly-production-export-combined?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
   const headers = {
     'Content-Type': 'application/json',
@@ -198,13 +211,18 @@ export async function MonthwiseProductionExportCombined(keycloak, plantId, year,
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = fileName ? `${fileName}.xlsx` : 'MEG_Month wise Production plan.xlsx'
+    a.download = fileName
+      ? `${fileName}.xlsx`
+      : 'MEG_Month wise Production plan.xlsx'
     document.body.appendChild(a)
     a.click()
     a.remove()
     window.URL.revokeObjectURL(urlBlob)
   } catch (e) {
-    console.error('Error exporting Month wise Production plan Excel (Combined):', e)
+    console.error(
+      'Error exporting Month wise Production plan Excel (Combined):',
+      e,
+    )
     return Promise.reject(e)
   }
 }
