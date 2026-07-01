@@ -10,7 +10,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { DataService } from 'services/DataService'
-const VmcTrade = ({ permissions }) => {
+const VmcTrade = ({ permissions, refreshSignal, refreshParent }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -334,6 +334,9 @@ const VmcTrade = ({ permissions }) => {
         })
         setModifiedCells({})
         fetchData()
+        if (refreshParent) {
+          refreshParent()
+        }
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -350,11 +353,17 @@ const VmcTrade = ({ permissions }) => {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
+  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData, refreshParent])
 
   useEffect(() => {
     fetchData()
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
+
+  useEffect(() => {
+    if (refreshSignal > 0) {
+      fetchData()
+    }
+  }, [refreshSignal, fetchData])
 
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)
@@ -408,6 +417,9 @@ const VmcTrade = ({ permissions }) => {
         })
         setModifiedCells({})
         fetchData()
+        if (refreshParent) {
+          refreshParent()
+        }
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = Array.from(byteCharacters, (char) =>
@@ -434,6 +446,9 @@ const VmcTrade = ({ permissions }) => {
           severity: 'warning',
         })
         fetchData()
+        if (refreshParent) {
+          refreshParent()
+        }
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
