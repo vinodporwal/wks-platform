@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -997,30 +998,49 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 			saveFailedRawRows = new ArrayList<>();
 			saveFailedErrors = new ArrayList<>();
 		}
-		try {
+	try {
 
-		for (Map<String, Object> shutdownHistoryConfig : shutdownHistoryConfigList) {
-			String Id = shutdownHistoryConfig.get("Id") != null ? shutdownHistoryConfig.get("Id").toString() : null;
+	for (Map<String, Object> shutdownHistoryConfig : shutdownHistoryConfigList) {
+		String Id = shutdownHistoryConfig.get("Id") != null ? shutdownHistoryConfig.get("Id").toString() : null;
 
-			validateShutdownHistoryDateRange(shutdownHistoryConfig, saveFailedRawRows, saveFailedErrors);
-
-			if(Id == null || Id.isEmpty()) { 
-
-				jdbcTemplate.update("INSERT INTO ShutdownHistoryConfig (Id, ShutdownType, FromDate, ToDate, Remarks, AopYear, Plant_FK_Id, IsEditable, IsVisible) VALUES (NewId(), ?, ?, ?, ?, ?, ?, 1, 1)", shutdownHistoryConfig.get("ShutdownType"), shutdownHistoryConfig.get("FromDate"), shutdownHistoryConfig.get("ToDate"), shutdownHistoryConfig.get("Remarks"), shutdownHistoryConfig.get("AopYear"), shutdownHistoryConfig.get("Plant_FK_Id"));
-
-				continue;
-			}
-
-				jdbcTemplate.update("UPDATE ShutdownHistoryConfig SET ShutdownType = ?, FromDate = ?, ToDate = ?, Remarks = ?, ModifiedBy = ?, ModifiedOn = ? WHERE Id = ?", shutdownHistoryConfig.get("ShutdownType"), shutdownHistoryConfig.get("FromDate"), shutdownHistoryConfig.get("ToDate"), shutdownHistoryConfig.get("Remarks"), modifiedBy, new Date(), Id);
-		}
-			aopMessageVM.setCode(200);
-			aopMessageVM.setMessage("Data saved successfully");
-			return aopMessageVM;
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			throw new RuntimeException("Failed to save data", ex);
-		}
+	String dateRangeValidationError = validateShutdownHistoryDateRange(shutdownHistoryConfig);
+	if(dateRangeValidationError != null) {
+		saveFailedRawRows.add(shutdownConfigPayloadToRaw(shutdownHistoryConfig));
+		saveFailedErrors.add(dateRangeValidationError);
+		continue;
 	}
+
+		if(Id == null || Id.isEmpty()) { 
+
+			jdbcTemplate.update("INSERT INTO ShutdownHistoryConfig (Id, ShutdownType, FromDate, ToDate, Remarks, AopYear, Plant_FK_Id, IsEditable, IsVisible) VALUES (NewId(), ?, ?, ?, ?, ?, ?, 1, 1)", shutdownHistoryConfig.get("ShutdownType"), shutdownHistoryConfig.get("FromDate"), shutdownHistoryConfig.get("ToDate"), shutdownHistoryConfig.get("Remarks"), shutdownHistoryConfig.get("AopYear"), shutdownHistoryConfig.get("Plant_FK_Id"));
+
+			continue;
+		}
+
+		String remarkValidationError = validateRemark(Id, shutdownHistoryConfig);
+		if (remarkValidationError != null) {
+			saveFailedRawRows.add(shutdownConfigPayloadToRaw(shutdownHistoryConfig));
+			saveFailedErrors.add(remarkValidationError);
+			continue;
+		}
+
+			jdbcTemplate.update("UPDATE ShutdownHistoryConfig SET ShutdownType = ?, FromDate = ?, ToDate = ?, Remarks = ?, ModifiedBy = ?, ModifiedOn = ? WHERE Id = ?", shutdownHistoryConfig.get("ShutdownType"), shutdownHistoryConfig.get("FromDate"), shutdownHistoryConfig.get("ToDate"), shutdownHistoryConfig.get("Remarks"), modifiedBy, new Date(), Id);
+	}
+
+		if (!saveFailedErrors.isEmpty()) {
+			aopMessageVM.setCode(400);
+			aopMessageVM.setMessage(String.join("; ", saveFailedErrors));
+			return aopMessageVM;
+		}
+
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data saved successfully");
+		return aopMessageVM;
+	} catch (Exception ex) {
+		ex.printStackTrace();
+		throw new RuntimeException("Failed to save data", ex);
+	}
+}
 
 	@Override
 	@Transactional
@@ -1275,17 +1295,57 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 	}
 
 	
-	private void validateShutdownHistoryDateRange(Map<String, Object> shutdownHistoryConfig, List<String[]> saveFailedRawRows, List<String> saveFailedErrors) {
+	private String validateRemark(String id, Map<String, Object> incoming) {
+		try {
+			List<Map<String, Object>> rows = jdbcTemplate.queryForList(
+					"SELECT ShutdownType, FromDate, ToDate, Remarks FROM ShutdownHistoryConfig WHERE Id = ?", id);
+
+			if (rows.isEmpty()) {
+				return null;
+			}
+
+			Map<String, Object> existing = rows.get(0);
+
+			String existingShutdownType = existing.get("ShutdownType") != null ? existing.get("ShutdownType").toString() : "";
+			String existingRemarks      = existing.get("Remarks")      != null ? existing.get("Remarks").toString()      : "";
+
+			LocalDate existingFromDate = parseToLocalDate(existing.get("FromDate"));
+			LocalDate existingToDate   = parseToLocalDate(existing.get("ToDate"));
+
+			String incomingShutdownType = incoming.get("ShutdownType") != null ? incoming.get("ShutdownType").toString() : "";
+			String incomingRemarks      = incoming.get("Remarks")      != null ? incoming.get("Remarks").toString()      : "";
+
+			LocalDate incomingFromDate = parseToLocalDate(incoming.get("FromDate"));
+			LocalDate incomingToDate   = parseToLocalDate(incoming.get("ToDate"));
+
+			boolean shutdownTypeChanged    = !existingShutdownType.equals(incomingShutdownType);
+			boolean fromDateChanged        = !Objects.equals(existingFromDate, incomingFromDate);
+			boolean toDateChanged          = !Objects.equals(existingToDate, incomingToDate);
+			boolean anyBusinessFieldChanged = shutdownTypeChanged || fromDateChanged || toDateChanged;
+			boolean remarkChanged           = !existingRemarks.equals(incomingRemarks);
+
+			if (anyBusinessFieldChanged && !remarkChanged) {
+				return "Remarks must be updated when ShutdownType, FromDate, or ToDate is changed";
+			}
+
+			return null;
+
+		} catch (Exception ex) {
+			return null;
+		}
+	}
+
+	private String validateShutdownHistoryDateRange(Map<String, Object> shutdownHistoryConfig) {
 		String aopYear   = shutdownHistoryConfig.get("AopYear")      != null ? shutdownHistoryConfig.get("AopYear").toString()      : null;
 		String plantFkId = shutdownHistoryConfig.get("Plant_FK_Id")  != null ? shutdownHistoryConfig.get("Plant_FK_Id").toString()  : null;
 
 		if (aopYear == null || aopYear.isEmpty() || plantFkId == null || plantFkId.isEmpty()) {
-			return;
+			return "AopYear and Plant_FK_Id are required";
 		}
 
 		AOPMessageVM configResult = configurationService.getConfigurationExecution(aopYear, plantFkId);
 		if (configResult == null || configResult.getData() == null) {
-			return;
+			return "Configuration not found";
 		}
 
 		@SuppressWarnings("unchecked")
@@ -1312,29 +1372,25 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 		}
 
 		if (startDate == null || endDate == null) {
-			return;
+			return "Start date or end date is not found in configuration";
 		}
 
 		LocalDate fromDate = parseToLocalDate(shutdownHistoryConfig.get("FromDate"));
 		LocalDate toDate   = parseToLocalDate(shutdownHistoryConfig.get("ToDate"));
 
 		if (fromDate != null && (fromDate.isBefore(startDate) || fromDate.isAfter(endDate))) {
-			saveFailedRawRows.add(shutdownConfigPayloadToRaw(shutdownHistoryConfig));
-			saveFailedErrors.add("FromDate (" + fromDate + ") is outside the allowed date range [" + startDate + " to " + endDate + "]");
-			return;
+			return "FromDate (" + fromDate + ") is outside the allowed date range [" + startDate + " to " + endDate + "]";
 		}
 
 		if (toDate != null && (toDate.isBefore(startDate) || toDate.isAfter(endDate))) {
-			saveFailedRawRows.add(shutdownConfigPayloadToRaw(shutdownHistoryConfig));
-			saveFailedErrors.add("ToDate (" + toDate + ") is outside the allowed date range [" + startDate + " to " + endDate + "]");
-			return;
+			return "ToDate (" + toDate + ") is outside the allowed date range [" + startDate + " to " + endDate + "]";
 		}
 
 		if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
-			saveFailedRawRows.add(shutdownConfigPayloadToRaw(shutdownHistoryConfig));
-			saveFailedErrors.add("FromDate (" + fromDate + ") must not be after ToDate (" + toDate + ").");
-			return;
+			return "FromDate (" + fromDate + ") must not be after ToDate (" + toDate + ").";
 		}
+
+		return null;
 	}
 
 	
