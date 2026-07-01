@@ -476,15 +476,19 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			dateTimeStyle.setBorderTop(BorderStyle.THIN);
 			dateTimeStyle.setBorderLeft(BorderStyle.THIN);
 			dateTimeStyle.setBorderRight(BorderStyle.THIN);
+			dateTimeStyle.setLocked(false);
 
 			CellStyle borderedStyle = Utility.createBorderedStyle(workbook);
+			borderedStyle.setLocked(false);
 
 			CellStyle remarkWrapStyle = workbook.createCellStyle();
 			remarkWrapStyle.cloneStyleFrom(borderedStyle);
 			remarkWrapStyle.setWrapText(true);
 			remarkWrapStyle.setVerticalAlignment(VerticalAlignment.TOP);
+			remarkWrapStyle.setLocked(false);
 
 			CellStyle lockedBorderedStyle = createSlowdownConfigReadOnlyStyle(workbook);
+			lockedBorderedStyle.setLocked(true);
 
 			Sheet sheet = workbook.createSheet("Sheet1");
 			sheet.protectSheet("");
