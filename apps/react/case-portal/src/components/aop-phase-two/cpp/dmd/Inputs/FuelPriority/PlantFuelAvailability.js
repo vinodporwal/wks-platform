@@ -484,7 +484,7 @@ const PlantFuelAvailability = ({ fuelOptions, setFuelOptions, setPlantFuelMap })
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['assetType']}
+        groupBy={['plantName']}
       />
     </Box>
   )
