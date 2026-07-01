@@ -23,4 +23,9 @@ public class CokerConfigurationController {
             @RequestParam String type, @RequestParam(required = false) String version) {
         return configurationService.getConfigurationData(year, plantFKId, type, version);
     }
+
+    @GetMapping(value = "/historical-pigging-status")
+    public AOPMessageVM getHistoricalPiggingStatus(@RequestParam String plantId, @RequestParam String aopYear) {
+        return configurationService.getHistoricalPiggingStatus(plantId, aopYear);
+    }
 }
