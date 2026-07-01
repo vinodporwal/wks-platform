@@ -184,7 +184,8 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	            dto.setProductName(row[24] != null ? row[24].toString() : null);
 	            dto.setMaterialDisplayName(row[24] != null ? row[24].toString() : null);
 				if(isFromview && row.length > 25) {
-					dto.setIsEditable(row[25] != null && "1".equals(row[25].toString()));
+					dto.setIsEditable(row[25] != null && 
+						("1".equals(row[25].toString()) || Boolean.TRUE.equals(row[25])));
 				}
 				if(isCracker && row.length > 28) {
 					dto.setIsEditable(row[28] != null ? Boolean.parseBoolean(row[28].toString()) : true);
