@@ -369,7 +369,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
         mar: item.mar || null,
         UOM: '',
         auditYear: AOP_YEAR,
-        gradeId:item.gradeId,
+        gradeId: item.gradeId,
         normParameterFkId: item.normParameterFkId || item.NormParameter_FK_Id,
         remarks: item.remarks,
         id: item.idFromApi || null,
@@ -392,6 +392,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
         })
         setModifiedCells({})
         fetchData()
+        setRefreshSignal((prev) => prev + 1)
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -408,7 +409,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
+  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData, setRefreshSignal])
   useEffect(() => {
     if (tabIndex === 0) {
       fetchData()
@@ -595,7 +596,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
       customHeight: permissions?.customHeight,
       allAction: true,
       downloadExcelBtn: true,
-      uploadExcelBtn:true,
+      uploadExcelBtn: true,
       showNoteWhileDeleting: false,
       showTitleNameBusiness: true,
       titleName: 'Gradewise Monthwise Budgeted Operating Hours',
