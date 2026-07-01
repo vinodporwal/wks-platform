@@ -26,7 +26,7 @@ services:
             - mongodb
             - camunda
         env_file:
-            - case-engine-rest-api
+            - case-engine-rest-api.env
         environment:
             - CAMUNDA_VERSION=camunda7
             - CAMUNDA_BASE_URL=${CAMUNDA_BASE_URL}
