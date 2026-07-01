@@ -90,7 +90,7 @@ async function exportShutdownConsumption(
   year,
   excelName = 'SHUTDOWN_CONSUMPTION',
 ) {
-  const url = `${Config.CaseEngineUrl}/task/shutdown-consumption-export?plantId=${plantId}&year=${year}`
+  const url = `${Config.CaseEngineUrl}/task/export-shutdown-consumption?plantId=${plantId}&year=${year}`
   const headers = {
     Authorization: `Bearer ${keycloak.token}`,
   }
