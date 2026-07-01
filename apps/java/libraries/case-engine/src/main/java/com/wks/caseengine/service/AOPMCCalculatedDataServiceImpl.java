@@ -915,7 +915,12 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                 dto.setRemarks(row[16] != null ? row[16].toString() : " ");
 
 				if(isFromview && row.length > 21) {
-					dto.setIsEditable(row[21] != null && "1".equals(row[21].toString()));
+					//dto.setIsEditable(row[21] != null && "1".equals(row[21].toString()));
+					dto.setIsEditable(
+						row[21] != null &&
+						("1".equals(row[21].toString()) || Boolean.TRUE.equals(row[21]))
+					);
+					
 				}
 
                 if(vertical.getName().equalsIgnoreCase("CRACKER")) {

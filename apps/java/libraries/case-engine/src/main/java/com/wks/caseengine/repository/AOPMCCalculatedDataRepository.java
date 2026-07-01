@@ -44,7 +44,7 @@ public interface AOPMCCalculatedDataRepository extends JpaRepository<AOPMCCalcul
 	List<Object[]> getMaxAchievedCapacityData(@Param("year") String year, @Param("plantId") String plantId);
 	
 	
-	@Query(value = "SELECT TOP (1000) [Id], [Material_FK_Id], [MaterialDisplayName], [April], [May], [June], [July], [August], [September], [October], [November], [December], [January], [February], [March], [FinancialYear], [Remarks], [CreatedOn], [ModifiedOn], [UpdatedBy],[PlantId], [isEditable] FROM [dbo].[vwAOPMCValuesDesignCapacity] WHERE PlantId = :plantId AND FinancialYear = :year",
+	@Query(value = "SELECT TOP (1000) [Id], [Material_FK_Id], [MaterialDisplayName], [April], [May], [June], [July], [August], [September], [October], [November], [December], [January], [February], [March], [FinancialYear], [Remarks], [CreatedOn], [ModifiedOn], [UpdatedBy],[PlantId], [IsEditable] FROM [dbo].[vwAOPMCValuesDesignCapacity] WHERE PlantId = :plantId AND FinancialYear = :year",
     nativeQuery = true)
 	List<Object[]> getDesignCapacityData(@Param("year") String year, @Param("plantId") String plantId);
 
