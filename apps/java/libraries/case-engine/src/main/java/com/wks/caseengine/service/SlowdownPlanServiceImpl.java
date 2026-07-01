@@ -256,6 +256,18 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
     }
 	
 	public byte[] slowdownRateExport(String year, String plantId,String maintenanceTypeName, boolean isAfterSave, List<ShutDownPlanDTO> dtoList) {
+
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+		.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+        Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+       Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+	   boolean meg = vertical.getName().equalsIgnoreCase("MEG");
+
+	   // seperate export method to disable ramp-up and ramp-down cells
+	   if(meg) {
+		return slowdownRateExportRamp(year, plantId, maintenanceTypeName, isAfterSave, dtoList);
+	   }
 		try {
 			if (!isAfterSave) {
 				 dtoList = findSlowdownDetailsByPlantIdAndType(UUID.fromString(plantId),maintenanceTypeName, year); 
@@ -436,6 +448,203 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			sheet.setColumnHidden(8, true);
 			try {
 
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+				workbook.write(outputStream);
+				workbook.close();
+				return outputStream.toByteArray();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public byte[] slowdownRateExportRamp(String year, String plantId, String maintenanceTypeName, boolean isAfterSave, List<ShutDownPlanDTO> dtoList) {
+		try {
+			if (!isAfterSave) {
+				dtoList = findSlowdownDetailsByPlantIdAndType(UUID.fromString(plantId), maintenanceTypeName, year);
+			}
+			String pattern = "dd-MM-yyyy HH:mm";
+			SimpleDateFormat formatter = new SimpleDateFormat(pattern);
+			Workbook workbook = new XSSFWorkbook();
+
+			CellStyle dateTimeStyle = createDateTimeStyle(workbook, "dd-MM-yyyy HH:mm");
+			dateTimeStyle.setBorderBottom(BorderStyle.THIN);
+			dateTimeStyle.setBorderTop(BorderStyle.THIN);
+			dateTimeStyle.setBorderLeft(BorderStyle.THIN);
+			dateTimeStyle.setBorderRight(BorderStyle.THIN);
+
+			CellStyle borderedStyle = Utility.createBorderedStyle(workbook);
+
+			CellStyle remarkWrapStyle = workbook.createCellStyle();
+			remarkWrapStyle.cloneStyleFrom(borderedStyle);
+			remarkWrapStyle.setWrapText(true);
+			remarkWrapStyle.setVerticalAlignment(VerticalAlignment.TOP);
+
+			CellStyle lockedBorderedStyle = createSlowdownConfigReadOnlyStyle(workbook);
+
+			Sheet sheet = workbook.createSheet("Sheet1");
+			int currentRow = 0;
+			List<List<Object>> rows = new ArrayList<>();
+			List<String> rowTypes = new ArrayList<>();
+
+			for (ShutDownPlanDTO dto : dtoList) {
+				List<Object> list = new ArrayList<>();
+				String formattedDuration = "";
+				String formattedStartDate = "";
+				String formattedEndDate = "";
+				try {
+					Double durationObject = dto.getDurationInHrs();
+					if (durationObject != null) {
+						double durationDouble = durationObject.doubleValue();
+						int hours = (int) durationDouble;
+						int minutes = (int) Math.round((durationDouble - hours) * 100);
+						formattedDuration = String.format("%02d:%02d", hours, minutes);
+					}
+				} catch (Exception e) {
+					formattedDuration = "Invalid Duration";
+				}
+
+				list.add(dto.getDiscription());
+
+				try {
+					if (dto.getMaintStartDateTime() != null) {
+						formattedStartDate = formatter.format(dto.getMaintStartDateTime());
+					}
+				} catch (Exception e) {
+					formattedStartDate = "Invalid Start Date";
+				}
+				list.add(formattedStartDate);
+
+				try {
+					if (dto.getMaintEndDateTime() != null) {
+						formattedEndDate = formatter.format(dto.getMaintEndDateTime());
+					}
+				} catch (Exception e) {
+					formattedEndDate = "Invalid End Date";
+				}
+				list.add(formattedEndDate);
+
+				list.add(formattedDuration);
+				list.add(dto.getRateEOE());
+				list.add(dto.getRateEO());
+				list.add(dto.getRemark());
+				list.add(dto.getId());
+				list.add(dto.getProduct());
+
+				if (isAfterSave) {
+					list.add(dto.getSaveStatus());
+					list.add(dto.getErrDescription());
+				}
+
+				rows.add(list);
+				rowTypes.add(dto.getType());
+			}
+
+			List<String> innerHeaders = new ArrayList<>();
+			innerHeaders.add("Slowdown Desc");
+			innerHeaders.add("SD-From");
+			innerHeaders.add("SD-To");
+			innerHeaders.add("Duration (hrs)");
+			innerHeaders.add("EOE Production Rate");
+			innerHeaders.add("EO Production Rate");
+			innerHeaders.add("Remarks");
+			innerHeaders.add("Id");
+			innerHeaders.add("Product");
+			if (isAfterSave) {
+				innerHeaders.add("Status");
+				innerHeaders.add("Error Description");
+			}
+			List<List<String>> headers = new ArrayList<>();
+			headers.add(innerHeaders);
+
+			final int remarkColIndex = 6;
+			final int sdFromColIndex = 1;
+			final int sdToColIndex = 2;
+			final int remarksFixedWidth = 50;
+
+			int[] maxColWidths = new int[innerHeaders.size()];
+			for (int i = 0; i < innerHeaders.size(); i++) {
+				maxColWidths[i] = innerHeaders.get(i).length();
+			}
+
+			for (List<String> headerRowData : headers) {
+				Row headerRow = sheet.createRow(currentRow++);
+				for (int col = 0; col < headerRowData.size(); col++) {
+					Cell cell = headerRow.createCell(col);
+					cell.setCellValue(headerRowData.get(col));
+					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+				}
+			}
+
+			int dataRowIndex = 0;
+			for (List<Object> rowData : rows) {
+				Row row = sheet.createRow(currentRow++);
+				String rowType = rowTypes.get(dataRowIndex++);
+				int remarkLen = 0;
+				for (int col = 0; col < rowData.size(); col++) {
+					Cell cell = row.createCell(col);
+					Object value = rowData.get(col);
+					String strVal = "";
+
+					boolean isLockedCol = ("ramp-down".equalsIgnoreCase(rowType) && col == sdToColIndex)
+							|| ("ramp-up".equalsIgnoreCase(rowType) && col == sdFromColIndex);
+
+					if (value instanceof Date) {
+						cell.setCellValue((Date) value);
+						cell.setCellStyle(isLockedCol ? lockedBorderedStyle : dateTimeStyle);
+						strVal = formatter.format((Date) value);
+					} else if (value instanceof Number) {
+						cell.setCellValue(((Number) value).doubleValue());
+						cell.setCellStyle(isLockedCol ? lockedBorderedStyle : borderedStyle);
+						strVal = value.toString();
+					} else if (value instanceof Boolean) {
+						cell.setCellValue((Boolean) value);
+						cell.setCellStyle(isLockedCol ? lockedBorderedStyle : borderedStyle);
+						strVal = value.toString();
+					} else if (value != null) {
+						strVal = value.toString();
+						if (col == remarkColIndex) {
+							cell.setCellValue(strVal);
+							cell.setCellStyle(remarkWrapStyle);
+							remarkLen = strVal.length();
+						} else {
+							cell.setCellValue(strVal);
+							cell.setCellStyle(isLockedCol ? lockedBorderedStyle : borderedStyle);
+						}
+					} else {
+						cell.setCellValue("");
+						cell.setCellStyle(isLockedCol ? lockedBorderedStyle : (col == remarkColIndex ? remarkWrapStyle : borderedStyle));
+					}
+
+					if (col != remarkColIndex) {
+						maxColWidths[col] = Math.max(maxColWidths[col], strVal.length());
+					}
+				}
+
+				if (remarkLen > 0) {
+					int lines = (int) Math.ceil((double) remarkLen / remarksFixedWidth);
+					if (lines > 1) {
+						row.setHeightInPoints(lines * sheet.getDefaultRowHeightInPoints());
+					}
+				}
+			}
+
+			for (int col = 0; col < maxColWidths.length; col++) {
+				if (col == remarkColIndex) {
+					sheet.setColumnWidth(col, remarksFixedWidth * 256);
+				} else {
+					int charWidth = Math.min(Math.max(maxColWidths[col] + 4, 10), 50);
+					sheet.setColumnWidth(col, charWidth * 256);
+				}
+			}
+
+			sheet.setColumnHidden(7, true);
+			sheet.setColumnHidden(8, true);
+			try {
 				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 				workbook.write(outputStream);
 				workbook.close();
