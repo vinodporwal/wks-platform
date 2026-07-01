@@ -184,10 +184,10 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	            dto.setProductName(row[24] != null ? row[24].toString() : null);
 	            dto.setMaterialDisplayName(row[24] != null ? row[24].toString() : null);
 				if(isFromview && row.length > 25) {
-					dto.setIsEditable(row[25] != null ? Boolean.parseBoolean(row[25].toString()) : false);	
+					dto.setIsEditable(row[25] != null && "1".equals(row[25].toString()));
 				}
 				if(isCracker && row.length > 28) {
-					dto.setIsEditable(row[28] != null ? Boolean.parseBoolean(row[28].toString()) : true);
+					dto.setIsEditable(row[28] != null && "1".equals(row[28].toString()));
 				}
 
 	            
@@ -915,13 +915,13 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                 dto.setRemarks(row[16] != null ? row[16].toString() : " ");
 
 				if(isFromview && row.length > 21) {
-					dto.setIsEditable(row[21] != null ? Boolean.parseBoolean(row[21].toString()) : false);
+					dto.setIsEditable(row[21] != null && "1".equals(row[21].toString()));
 				}
 
                 if(vertical.getName().equalsIgnoreCase("CRACKER")) {
                 	dto.setNormType(row[21] != null ? row[21].toString() : " ");
 					if(row.length > 22) {
-						dto.setIsEditable(row[22] != null ? Boolean.parseBoolean(row[22].toString()) : true);
+						dto.setIsEditable(row[22] != null && "1".equals(row[22].toString()));
 					}
                 }
                 aOPMCCalculatedDataDTOList.add(dto);
