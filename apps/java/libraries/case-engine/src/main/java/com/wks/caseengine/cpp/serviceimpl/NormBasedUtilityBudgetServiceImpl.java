@@ -882,11 +882,21 @@ public class NormBasedUtilityBudgetServiceImpl implements NormBasedUtilityBudget
         try {
             if (!isAfterSave) {
                 AOPMessageVM result = getNormBasedUtilityBudget(cppPlantId, financialYear);
-                if (result.getData() instanceof List) {
+                Object data = result.getData();
+                if (data instanceof List) {
                     @SuppressWarnings("unchecked")
-                    List<NormBasedUtilityBudgetResponseDTO> data =
-                            (List<NormBasedUtilityBudgetResponseDTO>) result.getData();
-                    dtoList = data;
+                    List<NormBasedUtilityBudgetResponseDTO> dataList =
+                            (List<NormBasedUtilityBudgetResponseDTO>) data;
+                    dtoList = dataList;
+                } else if (data instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> map = (Map<String, Object>) data;
+                    Object listObj = map.get("list");
+                    if (listObj instanceof List) {
+                        @SuppressWarnings("unchecked")
+                        List<NormBasedUtilityBudgetResponseDTO> dataList = (List<NormBasedUtilityBudgetResponseDTO>) listObj;
+                        dtoList = dataList;
+                    }
                 }
             }
 
