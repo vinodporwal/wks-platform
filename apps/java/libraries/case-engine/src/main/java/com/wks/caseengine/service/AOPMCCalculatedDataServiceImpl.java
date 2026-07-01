@@ -187,7 +187,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 					dto.setIsEditable(row[25] != null && "1".equals(row[25].toString()));
 				}
 				if(isCracker && row.length > 28) {
-					dto.setIsEditable(row[28] != null && "1".equals(row[28].toString()));
+					dto.setIsEditable(row[28] != null ? Boolean.parseBoolean(row[28].toString()) : true);
 				}
 
 	            
@@ -921,7 +921,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                 if(vertical.getName().equalsIgnoreCase("CRACKER")) {
                 	dto.setNormType(row[21] != null ? row[21].toString() : " ");
 					if(row.length > 22) {
-						dto.setIsEditable(row[22] != null && "1".equals(row[22].toString()));
+						dto.setIsEditable(row[22] != null ? Boolean.parseBoolean(row[22].toString()) : true);
 					}
                 }
                 aOPMCCalculatedDataDTOList.add(dto);
