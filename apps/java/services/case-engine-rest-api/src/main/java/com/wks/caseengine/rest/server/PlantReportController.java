@@ -3,6 +3,7 @@ package com.wks.caseengine.rest.server;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -45,6 +46,11 @@ public class PlantReportController {
         return plantReportService.savePlantSafetyImprovement(plantSafetyImprovementDTOs);
     }
 
+    @DeleteMapping(value = "/plant-safety-improvement")
+    public AOPMessageVM deletePlantSafetyImprovement(@RequestParam String id) {
+        return plantReportService.deletePlantSafetyImprovement(id);
+    }
+
     @GetMapping(value = "/profit-improvement-initiative")
     public AOPMessageVM getProfitImprovementInitiative(@RequestParam String plantId, @RequestParam String aopYear) {
         return plantReportService.getProfitImprovementInitiative(plantId, aopYear);
@@ -55,6 +61,11 @@ public class PlantReportController {
         return plantReportService.saveProfitImprovementInitiative(profitImprovementInitiativeDTOs);
     }
 
+    @DeleteMapping(value = "/profit-improvement-initiative")
+    public AOPMessageVM deleteProfitImprovementInitiative(@RequestParam String id) {
+        return plantReportService.deleteProfitImprovementInitiative(id);
+    }
+
     @GetMapping(value = "/reliability-improvement")
     public AOPMessageVM getReliabilityImprovement(@RequestParam String plantId, @RequestParam String aopYear) {
         return plantReportService.getReliabilityImprovement(plantId, aopYear);
@@ -63,6 +74,11 @@ public class PlantReportController {
     @PostMapping(value = "/reliability-improvement")
     public AOPMessageVM saveReliabilityImprovement(@RequestBody List<ReliabilityImprovementDTO> reliabilityImprovementDTOs) {
         return plantReportService.saveReliabilityImprovement(reliabilityImprovementDTOs);
+    }
+
+    @DeleteMapping(value = "/reliability-improvement")
+    public AOPMessageVM deleteReliabilityImprovement(@RequestParam String id) {
+        return plantReportService.deleteReliabilityImprovement(id);
     }
 
     @GetMapping(value = "/site-safety-performance") 

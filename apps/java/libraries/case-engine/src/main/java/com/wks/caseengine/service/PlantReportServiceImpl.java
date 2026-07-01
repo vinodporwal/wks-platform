@@ -162,18 +162,27 @@ public class PlantReportServiceImpl implements PlantReportService {
             String updatedBy = Utility.getUserName();
             Timestamp modifiedOn = new Timestamp(new Date().getTime());
 
-            String sql = "UPDATE PlantSafetyImprovementInitiatives " +
-                         "SET InitiativeDescription = ?, Outcome = ?, Recommendation = ?, TargetDate = ?, " +
+            String updateSql = "UPDATE PlantSafetyImprovementInitiatives " +
+                         "SET Outcome = ?, Recommendation = ?, TargetDate = ?, " +
                          "Remark = ?, UpdatedBy = ?, ModifiedOn = ? " +
                          "WHERE Id = ?";
 
             for (PlantSafetyImprovementDTO dto : plantSafetyImprovementDTOs) {
                 if (dto.getId() == null) {
+                    // insert logic 
+                    String insertSql = "INSERT INTO PlantSafetyImprovementInitiatives (Id, InitiativeDescription, Outcome, Recommendation, TargetDate, Remark, AOPYear, Plant_FK_Id, CreatedOn, UpdatedBy, isEditable, isVisible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    jdbcTemplate.update(insertSql,
+                    UUID.randomUUID().toString(),
+                    dto.getInitiativeDescription(),
+                    dto.getOutcome(),
+                    dto.getRecommendation(),
+                    dto.getTargetDate(),
+                    dto.getRemark(), dto.getAopYear(), dto.getPlantFkId().toString(), new Timestamp(new Date().getTime()), updatedBy, 1, 1);
+                    
                     continue;
                 }
 
-                jdbcTemplate.update(sql,
-                    dto.getInitiativeDescription(),
+                jdbcTemplate.update(updateSql,
                     dto.getOutcome(),
                     dto.getRecommendation(),
                     dto.getTargetDate(),
@@ -192,6 +201,17 @@ public class PlantReportServiceImpl implements PlantReportService {
         } catch (Exception ex) {
             ex.printStackTrace();
             throw new RuntimeException("Failed to save plant report data", ex);
+        }
+    }
+
+    @Override
+    public AOPMessageVM deletePlantSafetyImprovement(String id) {
+        try {
+            String deleteSql = "DELETE FROM PlantSafetyImprovementInitiatives WHERE Id = ?";
+            jdbcTemplate.update(deleteSql, id);
+            return new AOPMessageVM(200, "Data deleted successfully", null);
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to delete plant safety improvement data", ex);
         }
     }
 
@@ -239,15 +259,27 @@ public class PlantReportServiceImpl implements PlantReportService {
             String updatedBy = Utility.getUserName();
             Timestamp modifiedOn = new Timestamp(new Date().getTime());
 
-            String sql = "UPDATE ProfitImprovementInitiative " +
-                         "SET InitiativeDescription = ?, Outcome = ?, Recommendation = ?, TargetDate = ?, " +
-                         "Remark = ?, UpdatedBy = ?, ModifiedOn = ? " +
-                         "WHERE Id = ?";
+            
 
             for (ProfitImprovementInitiativeDTO dto : profitImprovementInitiativeDTOs) {
                 if (dto.getId() == null) {
+
+                    // insert logic 
+                    String insertSql = "INSERT INTO ProfitImprovementInitiative (Id, InitiativeDescription, Outcome, Recommendation, TargetDate, Remark, AOPYear, Plant_FK_Id, CreatedOn, UpdatedBy, isEditable, isVisible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    jdbcTemplate.update(insertSql,
+                    UUID.randomUUID().toString(),
+                    dto.getInitiativeDescription(),
+                    dto.getOutcome(),
+                    dto.getRecommendation(),
+                    dto.getTargetDate(),
+                    dto.getRemark(), dto.getAopYear(), dto.getPlantFkId().toString(), new Timestamp(new Date().getTime()), updatedBy, 1, 1);
                     continue;
                 }
+
+                String sql = "UPDATE ProfitImprovementInitiative " +
+                         "SET InitiativeDescription = ?, Outcome = ?, Recommendation = ?, TargetDate = ?, " +
+                         "Remark = ?, UpdatedBy = ?, ModifiedOn = ? " +
+                         "WHERE Id = ?";
 
                 jdbcTemplate.update(sql,
                     dto.getInitiativeDescription(),
@@ -272,6 +304,16 @@ public class PlantReportServiceImpl implements PlantReportService {
         }
     }
 
+    @Override
+    public AOPMessageVM deleteProfitImprovementInitiative(String id) {
+        try {
+            String deleteSql = "DELETE FROM ProfitImprovementInitiative WHERE Id = ?";
+            jdbcTemplate.update(deleteSql, id);
+            return new AOPMessageVM(200, "Data deleted successfully", null);
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to delete profit improvement initiative data", ex);
+        }
+    }
 
     @Override
     public AOPMessageVM getReliabilityImprovement(String plantId, String aopYear) {
@@ -317,15 +359,26 @@ public class PlantReportServiceImpl implements PlantReportService {
             String updatedBy = Utility.getUserName();
             Timestamp modifiedOn = new Timestamp(new Date().getTime());
 
-            String sql = "UPDATE ReliabilityImprovementIntiative " +
-                         "SET InitiativeDescription = ?, Outcome = ?, Recommendation = ?, TargetDate = ?, " +
-                         "Remark = ?, UpdatedBy = ?, ModifiedOn = ? " +
-                         "WHERE Id = ?";
+            
 
             for (ReliabilityImprovementDTO dto : reliabilityImprovementDTOs) {
                 if (dto.getId() == null) {
+                    // insert logic 
+                    String insertSql = "INSERT INTO ReliabilityImprovementIntiative (Id, InitiativeDescription, Outcome, Recommendation, TargetDate, Remark, AOPYear, Plant_FK_Id, CreatedOn, UpdatedBy, isEditable, isVisible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    jdbcTemplate.update(insertSql,
+                    UUID.randomUUID().toString(),
+                    dto.getInitiativeDescription(),
+                    dto.getOutcome(),
+                    dto.getRecommendation(),
+                    dto.getTargetDate(),
+                    dto.getRemark(), dto.getAopYear(), dto.getPlantFkId().toString(), new Timestamp(new Date().getTime()), updatedBy, 1, 1);
                     continue;
                 }
+
+                String sql = "UPDATE ReliabilityImprovementIntiative " +
+                         "SET InitiativeDescription = ?, Outcome = ?, Recommendation = ?, TargetDate = ?, " +
+                         "Remark = ?, UpdatedBy = ?, ModifiedOn = ? " +
+                         "WHERE Id = ?";
 
                 jdbcTemplate.update(sql,
                     dto.getInitiativeDescription(),
@@ -350,7 +403,16 @@ public class PlantReportServiceImpl implements PlantReportService {
         }
     }
 
-
+    @Override
+    public AOPMessageVM deleteReliabilityImprovement(String id) {
+        try {
+            String deleteSql = "DELETE FROM ReliabilityImprovementIntiative WHERE Id = ?";
+            jdbcTemplate.update(deleteSql, id);
+            return new AOPMessageVM(200, "Data deleted successfully", null);
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to delete reliability improvement initiative data", ex);
+        }
+    }
 
     @Override
     public AOPMessageVM getSiteSafetyPerformanceTargets(String siteId, String aopYear) {
