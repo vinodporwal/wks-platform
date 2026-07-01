@@ -616,7 +616,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                    + "April, May, June, July, August, September, October, November, December, "
                    + "January, February, March, "
                    + "FinancialYear, Remarks, CreatedOn, ModifiedOn, MCUVersion, UpdatedBy, "
-                   + "Vertical_FK_Id, NormParameterDisplayOrder, ProductName, isEditable "
+                   + "Vertical_FK_Id, NormParameterDisplayOrder, ProductName, IsEditable "
                    + "FROM " + viewName + " " 
                    + "WHERE PLANT_FK_ID = :plantId "
                    + "AND FinancialYear = :year "
