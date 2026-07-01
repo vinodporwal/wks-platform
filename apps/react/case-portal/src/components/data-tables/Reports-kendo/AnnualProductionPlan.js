@@ -350,7 +350,7 @@ const AnnualProductionPlan = () => {
           idFromApi: item?.id,
           id: index,
           sno: index + 1,
-          isEditable: true,
+          isEditable: type === 'OperatingHrs' ? false : true,
           inEdit: false,
           periodFrom: item?.periodFrom
             ? moment(item.periodFrom, 'DD-MMM-YY').toDate()
@@ -804,7 +804,7 @@ const AnnualProductionPlan = () => {
         rows={rowsOperatingHrs}
         columns={columnsOperatingHrs}
         permissions={{
-          saveBtn: !isOldYear,
+          saveBtn: false,
           allAction: true,
           showReportTitle: true,
         }}

@@ -100,12 +100,12 @@ const MonthwiseOperatingHours = () => {
       format: valueFormatter,
       isDisabled: false,
     },
-    // {
-    //   field: 'remarks',
-    //   title: 'Remarks',
-    //   widthT: 200,
-    //   editable: true,
-    // },
+    {
+      field: 'remarks',
+      title: 'Remarks',
+      widthT: 200,
+      editable: true,
+    },
   ]
 
   const [groupBy, setGroupBy] = useState(null)
@@ -134,7 +134,7 @@ const MonthwiseOperatingHours = () => {
             id: item.id,
             originalRemark: item.remarks,
             _month: item.month,
-            isEditable: false,
+            isEditable: true,
           }),
         )
         setRows(formattedData)
@@ -238,7 +238,7 @@ const MonthwiseOperatingHours = () => {
           textAlignment: 'center',
           remarksEditable: true,
           showCalculate: false,
-          saveBtn: false,
+          saveBtn: true,
           showWorkFlowBtns: true,
           showTitle: true,
           showTitleNameBusiness: true,
