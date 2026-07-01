@@ -35,9 +35,10 @@ const HistoricalMonths = ({ startDate, endDate }) => {
   const valueFormat = customValueFormatterPhaseTwo(5)
 
   const selectOptions = [
-    { value: '4.0', label: 'P-4' },
-    { value: '5.0', label: 'P-5' },
-    { value: '1.0', label: 'NP' },
+    { value: 'P-4', label: 'P-4' },
+    { value: 'P-5', label: 'P-5' },
+    { value: 'NP', label: 'NP' },
+    { value: 'NR', label: 'NR' },
   ]
 
   const baseColumns = [
@@ -107,6 +108,7 @@ const HistoricalMonths = ({ startDate, endDate }) => {
           'normParameterFKId',
           'remark',
           'remarks',
+          'Remarks',
           'inEdit',
           'productName',
         ]
@@ -130,7 +132,7 @@ const HistoricalMonths = ({ startDate, endDate }) => {
       const dataWithEditFlag = manualEntryData.map((row, index) => ({
         ...row,
         productName: row.Particulars,
-        remarks: row.remarks || row.remark,
+        remarks: row.Remarks || row.remark,
         id: index + 1,
         idFromApi: row.id || null,
         inEdit: false,
@@ -203,12 +205,8 @@ const HistoricalMonths = ({ startDate, endDate }) => {
       })
       return {
         ...monthData,
-        UOM: row.UOM || '',
-        auditYear: row.auditYear || '',
-        normParameterFKId: row.normParameterFKId || '',
         id: row.idFromApi || null,
-        remarks: row?.remarks,
-        remark: row?.remarks,
+        Remarks: row?.remarks,
       }
     })
 
