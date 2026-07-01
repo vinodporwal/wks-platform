@@ -3,7 +3,6 @@ import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
-import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import ValueFormatterPhaseTwo, {
   customValueFormatterPhaseTwo,
 } from '../../common/ValueFormatterPhaseTwo'
@@ -31,9 +30,9 @@ const HistoricalMonths = ({ startDate, endDate }) => {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [dynamicColumns, setDynamicColumns] = useState([])
 
   const valueFormat = customValueFormatterPhaseTwo(5)
-  const headerMap = generateHeaderNames(AOP_YEAR)
 
   const selectOptions = [
     { value: '4.0', label: 'P-4' },
@@ -41,26 +40,10 @@ const HistoricalMonths = ({ startDate, endDate }) => {
     { value: '1.0', label: 'NP' },
   ]
 
-  const monthColumns = [
-    { field: 'apr', headerIndex: 4 },
-    { field: 'may', headerIndex: 5 },
-    { field: 'jun', headerIndex: 6 },
-    { field: 'jul', headerIndex: 7 },
-    { field: 'aug', headerIndex: 8 },
-    { field: 'sep', headerIndex: 9 },
-    { field: 'oct', headerIndex: 10 },
-    { field: 'nov', headerIndex: 11 },
-    { field: 'dec', headerIndex: 12 },
-    { field: 'jan', headerIndex: 1 },
-    { field: 'feb', headerIndex: 2 },
-    { field: 'mar', headerIndex: 3 },
-  ]
-
-  const columns = [
+  const baseColumns = [
     {
       field: 'id',
       title: 'Id',
-      // widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
@@ -70,7 +53,6 @@ const HistoricalMonths = ({ startDate, endDate }) => {
     {
       field: 'productName',
       title: 'Particulars',
-      // widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
@@ -79,28 +61,16 @@ const HistoricalMonths = ({ startDate, endDate }) => {
     {
       field: 'TypeDisplayName',
       title: 'Type',
-      // widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
       locked: true,
       hidden: true,
     },
-    ...monthColumns.map((month) => ({
-      field: month.field,
-      title: headerMap[month.headerIndex],
-      // widthT: 100,
-      minWidth: 120,
-      type: 'select',
-      options: selectOptions,
-      displayMode: 'label',
-      editable: true,
-      format: valueFormat,
-    })),
+    ...dynamicColumns,
     {
       field: 'remarks',
       title: 'Remarks',
-      // widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: true,
@@ -117,21 +87,52 @@ const HistoricalMonths = ({ startDate, endDate }) => {
     setLoading(true)
     try {
       // Fetch manual entry data from backend API
-      const response = await ProductionNormsApiService.getManualEntry(
+      const response = await ProductionNormsApiService.getHistoricalMonths(
         keycloak,
         AOP_YEAR,
         PLANT_ID,
-        'Manual Entry', // type parameter
       )
 
       // Extract data from response - API returns { data: [...], code: 200, message: '...' }
-      const manualEntryData =
-        // dummyManualEntryObject
-        response?.data || []
+      const manualEntryData = response?.data || []
+
+      // Derive month column keys dynamically from the first row of response data
+      if (manualEntryData.length > 0) {
+        const EXCLUDED_KEYS = [
+          'Particulars',
+          'id',
+          'TypeDisplayName',
+          'UOM',
+          'auditYear',
+          'normParameterFKId',
+          'remark',
+          'remarks',
+          'inEdit',
+          'productName',
+        ]
+        const monthKeys = Object.keys(manualEntryData[0]).filter(
+          (key) => !EXCLUDED_KEYS.includes(key),
+        )
+        const generatedMonthCols = monthKeys.map((key) => ({
+          field: key,
+          title: key,
+          minWidth: 120,
+          type: 'select',
+          options: selectOptions,
+          displayMode: 'label',
+          editable: true,
+          format: valueFormat,
+        }))
+        setDynamicColumns(generatedMonthCols)
+      }
 
       // Add inEdit flag to each row for edit tracking
-      const dataWithEditFlag = manualEntryData.map((row) => ({
+      const dataWithEditFlag = manualEntryData.map((row, index) => ({
         ...row,
+        productName: row.Particulars,
+        remarks: row.remarks || row.remark,
+        id: index + 1,
+        idFromApi: row.id || null,
         inEdit: false,
       }))
 
@@ -174,63 +175,46 @@ const HistoricalMonths = ({ startDate, endDate }) => {
       return
     }
 
-    const fieldsToCheck = [
-      'apr',
-      'may',
-      'jun',
-      'jul',
-      'aug',
-      'sep',
-      'oct',
-      'nov',
-      'dec',
-      'jan',
-      'feb',
-      'mar',
-    ]
-    // const validationError = validateRowDataWithRemarks(
-    //   data,
-    //   originalRows,
-    //   fieldsToCheck,
-    //   'productName',
-    // )
+    const monthKeys = dynamicColumns.map((col) => col.field)
 
-    // if (validationError) {
-    //   setSnackbarOpen(true)
-    //   setSnackbarData({
-    //     message: validationError,
-    //     severity: 'error',
-    //   })
-    //   setLoading(false)
-    //   return
-    // }
-    console.log('data', data)
+    const fieldsToCheck = ['remarks']
+    const validationError = validateRowDataWithRemarks(
+      data,
+      originalRows,
+      fieldsToCheck,
+      'productName',
+    )
 
-    // Convert dropdown values and send only required fields
-    const convertedData = data.map((row) => ({
-      apr: row.apr,
-      may: row.may,
-      jun: row.jun,
-      jul: row.jul,
-      aug: row.aug,
-      sep: row.sep,
-      oct: row.oct,
-      nov: row.nov,
-      dec: row.dec,
-      jan: row.jan,
-      feb: row.feb,
-      mar: row.mar,
-      UOM: row.UOM || '',
-      auditYear: row.auditYear || '',
-      normParameterFKId: row.normParameterFKId || '',
-      id: row.id || null,
-      remarks: `Updated on-${new Date().toLocaleString()}`,
-    }))
+    if (validationError) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: validationError,
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
 
-    console.log('convertedData', convertedData)
+    // Build payload dynamically using month keys from API response
+    const convertedData = data.map((row) => {
+      const monthData = {}
+      monthKeys.forEach((key) => {
+        monthData[key] = row[key]
+      })
+      return {
+        ...monthData,
+        UOM: row.UOM || '',
+        auditYear: row.auditYear || '',
+        normParameterFKId: row.normParameterFKId || '',
+        id: row.idFromApi || null,
+        remarks: row?.remarks,
+        remark: row?.remarks,
+      }
+    })
+
     try {
       // Call the API to save manual entry data
-      await ProductionNormsApiService.saveManualEntry(
+      await ProductionNormsApiService.saveHistoricalMonths(
         keycloak,
         AOP_YEAR,
         PLANT_ID,
@@ -285,7 +269,7 @@ const HistoricalMonths = ({ startDate, endDate }) => {
       <LoaderBackdrop open={!!loading} />
 
       <AdvanceKendoTable
-        columns={columns}
+        columns={baseColumns}
         rows={rows}
         setRows={setRows}
         modifiedCells={modifiedCells}

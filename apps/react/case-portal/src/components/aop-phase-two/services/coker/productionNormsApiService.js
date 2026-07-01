@@ -23,6 +23,10 @@ export const ProductionNormsApiService = {
   getManualEntry,
   saveManualEntry,
 
+  // Historical Months
+  getHistoricalMonths,
+  saveHistoricalMonths,
+
   // Generic Import/Export helpers
   saveExcelData,
   exportExcelData,
@@ -423,6 +427,65 @@ async function saveManualEntry(
   version = '',
 ) {
   const url = `${Config.CaseEngineUrl}/task/production-norms?year=${year}&plantFKId=${plantFKId}${version ? `&version=${version}` : ''}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+// ========================|| Historical Months API ||=====================================//
+/**
+ * Get Historical Months data for Production Norms
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} aopYear - AOP Year
+ * @param {string} plantId - Plant ID
+ * @returns {Promise} Manual entry data
+ */
+async function getHistoricalMonths(keycloak, aopYear, plantId) {
+  const url = `${Config.CaseEngineUrl}/task/historical-pigging-status?aopYear=${aopYear}&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Save Historical Months data for Production Norms
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} year - AOP Year
+ * @param {string} plantFKId - Plant ID
+ * @param {Array} payload - Data to save (list of ConfigurationDTO)
+ * @returns {Promise} Save response
+ */
+async function saveHistoricalMonths(keycloak, year, plantId, payload) {
+  const url = `${Config.CaseEngineUrl}/task/historical-pigging-status?aopYear=${year}&plantId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
