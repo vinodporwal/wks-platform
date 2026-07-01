@@ -18,6 +18,7 @@ import VcmStockbalance from './VcmStockBalance'
 
 const VcmAvailability = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
+  const [refreshSignal, setRefreshSignal] = useState(0)
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -226,6 +227,7 @@ const VcmAvailability = ({ permissions }) => {
         })
         setModifiedCells({})
         fetchData()
+        setRefreshSignal((prev) => prev + 1)
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -242,7 +244,7 @@ const VcmAvailability = ({ permissions }) => {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
+  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData, setRefreshSignal])
   useEffect(() => {
     fetchData()
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
@@ -315,8 +317,11 @@ const VcmAvailability = ({ permissions }) => {
         disableRedHighlight={true}
         screenType='shutdown'
       />
-      <VmcTrade />
-      <VcmStockbalance />
+      <VmcTrade refreshSignal={refreshSignal} refreshParent={fetchData} />
+      <VcmStockbalance
+        refreshSignal={refreshSignal}
+        refreshParent={fetchData}
+      />
     </div>
   )
 }

@@ -34,7 +34,7 @@ const HIDDEN_FIELDS = [
   'IsEditable',
 ]
 
-const VcmStockbalance = ({ permissions }) => {
+const VcmStockbalance = ({ permissions, refreshSignal, refreshParent }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -246,6 +246,9 @@ const VcmStockbalance = ({ permissions }) => {
         })
         setModifiedCells({})
         fetchData()
+        if (refreshParent) {
+          refreshParent()
+        }
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -262,7 +265,7 @@ const VcmStockbalance = ({ permissions }) => {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
+  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData, refreshParent])
   const handleCalculate = useCallback(async () => {
     setRows([])
     setLoading(true)
@@ -280,6 +283,9 @@ const VcmStockbalance = ({ permissions }) => {
           severity: 'success',
         })
         fetchData()
+        if (refreshParent) {
+          refreshParent()
+        }
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -296,11 +302,17 @@ const VcmStockbalance = ({ permissions }) => {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID, AOP_YEAR, fetchData])
+  }, [keycloak, PLANT_ID, AOP_YEAR, fetchData, refreshParent])
 
   useEffect(() => {
     fetchData()
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
+
+  useEffect(() => {
+    if (refreshSignal > 0) {
+      fetchData()
+    }
+  }, [refreshSignal, fetchData])
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
