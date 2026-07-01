@@ -807,7 +807,7 @@ const SlowdownSchedule = ({ permissions }) => {
       field: 'tentativeMonths',
       title: 'Tentative Month',
       type: 'select',
-      options:monthOptions,
+      options: monthOptions,
       editable: true, // yellow - EPS Team
       minWidth: 160,
     },

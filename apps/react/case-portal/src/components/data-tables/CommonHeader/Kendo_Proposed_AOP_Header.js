@@ -13,50 +13,48 @@ const normalizeCol = (col, valueFormat) => {
   return newCol
 }
 
-const getEnhancedColDefsProposedAOP = ({
-  valueFormat,
-}) => {
+const getEnhancedColDefsProposedAOP = ({ valueFormat }) => {
   const colDefs = [
     {
       field: 'productName',
       title: 'Particulars',
       editable: false,
       fixedWidth: 250,
-      locked: true
+      locked: true,
     },
     {
       field: 'UOM',
       title: 'UOM',
       editable: false,
-      fixedWidth: 100
+      fixedWidth: 100,
     },
     {
       field: 'lastFY',
       title: 'Last FY',
       editable: false,
       type: 'number',
-      fixedWidth: 150
+      fixedWidth: 150,
     },
     {
       field: 'sysGrn',
       title: 'Sys Gen',
       editable: false,
       type: 'number',
-      fixedWidth: 150
+      fixedWidth: 150,
     },
     {
       field: 'proposed',
       title: 'Proposed',
       editable: true,
       type: 'numberNonGrey',
-      fixedWidth: 150
+      fixedWidth: 150,
     },
     {
       field: 'remarks',
       title: 'Remarks',
       editable: true,
-      fixedWidth: 200
-    }
+      fixedWidth: 200,
+    },
   ]
   return colDefs.map((c) => normalizeCol(c, valueFormat))
 }

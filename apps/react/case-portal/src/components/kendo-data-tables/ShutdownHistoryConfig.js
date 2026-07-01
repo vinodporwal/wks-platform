@@ -482,7 +482,10 @@ const ShutdownHistoryConfig = ({ permissions }) => {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute('download', 'Error File - Shutdown History Config.xlsx')
+        link.setAttribute(
+          'download',
+          'Error File - Shutdown History Config.xlsx',
+        )
         document.body.appendChild(link)
         link.click()
         link.remove()

@@ -182,9 +182,24 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
         remark: item.remark,
         aopYear: AOP_YEAR,
         plantFkId: PLANT_ID,
-        isEditable: (item.isEditable === '' || item.isEditable === undefined || item.isEditable === null) ? true : !!item.isEditable,
-        isVisible: (item.isVisible === '' || item.isVisible === undefined || item.isVisible === null) ? true : !!item.isVisible,
-        displayOrder: (item.displayOrder === '' || item.displayOrder === undefined || item.displayOrder === null) ? 0 : Number(item.displayOrder),
+        isEditable:
+          item.isEditable === '' ||
+          item.isEditable === undefined ||
+          item.isEditable === null
+            ? true
+            : !!item.isEditable,
+        isVisible:
+          item.isVisible === '' ||
+          item.isVisible === undefined ||
+          item.isVisible === null
+            ? true
+            : !!item.isVisible,
+        displayOrder:
+          item.displayOrder === '' ||
+          item.displayOrder === undefined ||
+          item.displayOrder === null
+            ? 0
+            : Number(item.displayOrder),
       }))
 
       const response =
@@ -261,7 +276,7 @@ export default function ReliabilityImprovementInitiative({ permissions }) {
     }
   }
 
-  const handleCalculate = () => { }
+  const handleCalculate = () => {}
 
   const handleRemarkCellClick = useCallback((row) => {
     setCurrentRemark(row.remark || '')

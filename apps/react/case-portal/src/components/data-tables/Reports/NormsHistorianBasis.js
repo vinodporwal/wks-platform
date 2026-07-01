@@ -86,7 +86,7 @@ const NormsHistorianBasis = () => {
   const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
 
   const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
-  
+
   const [loading, setLoading] = useState(false)
   const [showGrids, setShowGrids] = useState({})
 

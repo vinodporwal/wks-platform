@@ -343,4 +343,3 @@ async function calculateVcmStockBalance(keycloak, PLANT_ID, AOP_YEAR) {
     return Promise.reject(e)
   }
 }
-

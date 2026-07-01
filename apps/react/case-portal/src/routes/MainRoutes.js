@@ -522,7 +522,6 @@ export const MainRoutes = (
             ),
           },
 
-
           {
             path: 'packaging-consumables',
             element: (

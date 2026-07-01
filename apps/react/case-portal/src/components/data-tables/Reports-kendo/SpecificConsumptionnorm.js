@@ -200,7 +200,7 @@ export default function SpecificConsumptionNorm() {
               columns={rpt.columns || []}
               rows={rpt.rows || []}
               title={title}
-              setRows={() => { }}
+              setRows={() => {}}
               permissions={{
                 textAlignment: 'center',
                 showCalculate: false,
@@ -228,7 +228,7 @@ export default function SpecificConsumptionNorm() {
               columns={normColumns}
               rows={norms}
               title={normsTitle}
-              setRows={() => { }}
+              setRows={() => {}}
               permissions={{
                 textAlignment: 'center',
                 showCalculate: false,

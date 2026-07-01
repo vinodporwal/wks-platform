@@ -39,7 +39,9 @@ const ProposedAOP = () => {
   const AOP_YEAR = year?.selectedYear
   const SCREEN_NAME = screenTitle?.title || 'Proposed AOP'
 
-  const isPEPP = verticalObject?.name?.toLowerCase() === 'pe' || verticalObject?.name?.toLowerCase() === 'pp'
+  const isPEPP =
+    verticalObject?.name?.toLowerCase() === 'pe' ||
+    verticalObject?.name?.toLowerCase() === 'pp'
   const isPET = verticalObject?.name?.toLowerCase() === 'pet'
 
   const isOldYear = false
@@ -147,11 +149,12 @@ const ProposedAOP = () => {
 
   const fetchGradeDropdowns = async () => {
     try {
-      const response = await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      const response =
+        await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
       if (response?.code === 200) {
         setGrades(response?.data || [])
@@ -176,11 +179,12 @@ const ProposedAOP = () => {
   const fetchGradeDropdownsAfterCalc = async () => {
     try {
       setGrades([])
-      const response = await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      const response =
+        await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
       if (response?.code === 200) {
         setGrades(response?.data || [])
