@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.LinkedHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -203,8 +205,63 @@ public class CokerConfigurationServiceImpl implements CokerConfigurationService 
         }
     }
 
-    
-    
+    @Override
+    public AOPMessageVM saveHistoricalPiggingStatus(String plantId, String aopYear,
+            List<Map<String, Object>> payload) {
+
+         Set<String> NON_MONTH_KEYS = Set.of("Particulars", "Remarks");
+
+        try {
+            int totalUpdated = 0;
+
+            for (Map<String, Object> row : payload) {
+                for (Map.Entry<String, Object> entry : row.entrySet()) {
+                    String key = entry.getKey();
+                    String piggingStatus = null;
+                    String monthName = null;
+                    int fullYear = 0;
+                    if(!NON_MONTH_KEYS.contains(key)) {
+                     piggingStatus = entry.getValue() != null ? entry.getValue().toString() : null;
+                    String[] parts = key.split("-");
+                    if (parts.length != 2) {
+                        continue;
+                    }
+
+                     monthName = parts[0];
+                    int yy = Integer.parseInt(parts[1]);
+                     fullYear = (yy >= 50) ? (1900 + yy) : (2000 + yy);
+
+                     String sql = "UPDATE HistoricalPigging SET Pigging_Status = ? WHERE Year = ? AND MonthName = ?";
+                     int updated = jdbcTemplate.update(sql, piggingStatus, fullYear, monthName);
+                     totalUpdated += updated;
+                }
+                   // update remarks for all entries
+                 else if("Remarks".equalsIgnoreCase(key))  {
+                      String sql = "UPDATE HistoricalPigging SET Remarks = ?";
+
+                      int updated = jdbcTemplate.update(sql, entry.getValue());
+                 }
+                  
+                }
+            }
+
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("rowsUpdated", totalUpdated);
+
+            AOPMessageVM response = new AOPMessageVM();
+            response.setCode(200);
+            response.setMessage("Historical Pigging Status updated successfully");
+            response.setData(result);
+            return response;
+
+        } catch (IllegalArgumentException e) {
+            throw new RestInvalidArgumentException("Invalid argument for Historical Pigging Status", e);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Failed to save Historical Pigging Status", ex);
+        }
+    }
+
     public List<Map<String, Object>> executeStoredProcedure(String spName, Object... params) {
         String placeholders = String.join(", ", Collections.nCopies(params.length, "?"));
         String sql = "EXEC " + spName + " " + placeholders;

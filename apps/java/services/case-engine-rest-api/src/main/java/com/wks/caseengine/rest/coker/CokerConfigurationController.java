@@ -1,9 +1,13 @@
 package com.wks.caseengine.rest.coker;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,5 +31,11 @@ public class CokerConfigurationController {
     @GetMapping(value = "/historical-pigging-status")
     public AOPMessageVM getHistoricalPiggingStatus(@RequestParam String plantId, @RequestParam String aopYear) {
         return configurationService.getHistoricalPiggingStatus(plantId, aopYear);
+    }
+
+    @PostMapping(value = "/historical-pigging-status")
+    public AOPMessageVM saveHistoricalPiggingStatus(@RequestParam String plantId, @RequestParam String aopYear,
+            @RequestBody List<Map<String, Object>> payload) {
+        return configurationService.saveHistoricalPiggingStatus(plantId, aopYear, payload);
     }
 }
