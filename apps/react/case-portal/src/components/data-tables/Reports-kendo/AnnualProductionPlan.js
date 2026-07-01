@@ -149,7 +149,7 @@ const AnnualProductionPlan = () => {
     {
       field: 'activity',
       headerName: 'Calculation of Operating hours',
-      editable: true,
+      editable: false,
       flex: 1,
       minWidth: 350,
     },
@@ -161,7 +161,7 @@ const AnnualProductionPlan = () => {
     {
       field: 'rateValue',
       headerName: 'Value',
-      editable: true,
+      editable: false,
       flex: 1,
       align: 'right',
       widthT: 150,
@@ -171,7 +171,7 @@ const AnnualProductionPlan = () => {
     {
       field: 'uom',
       headerName: 'Hours',
-      editable: true,
+      editable: false,
       flex: 1,
       align: 'right',
       widthT: 120,
