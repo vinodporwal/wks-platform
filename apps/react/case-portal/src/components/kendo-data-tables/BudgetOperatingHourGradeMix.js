@@ -392,6 +392,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
         })
         setModifiedCells({})
         fetchData()
+        setRefreshSignal((prev) => prev + 1)
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -408,7 +409,7 @@ const BudgetOperatingHour = ({ permissions, saveTrigger }) => {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
+  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData, setRefreshSignal])
   useEffect(() => {
     if (tabIndex === 0) {
       fetchData()
