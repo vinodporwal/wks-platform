@@ -86,14 +86,6 @@ const HistoricalMonths = ({ startDate, endDate }) => {
       locked: true,
       hidden: true,
     },
-    // {
-    //   field: 'UOM',
-    //   title: 'UOM',
-    //   // widthT: 100,
-    //   minWidth: 100,
-    //   type: 'text',
-    //   editable: false,
-    // },
     ...monthColumns.map((month) => ({
       field: month.field,
       title: headerMap[month.headerIndex],
@@ -105,6 +97,14 @@ const HistoricalMonths = ({ startDate, endDate }) => {
       editable: true,
       format: valueFormat,
     })),
+    {
+      field: 'remarks',
+      title: 'Remarks',
+      // widthT: 250,
+      minWidth: 200,
+      type: 'text',
+      editable: true,
+    },
   ]
 
   useEffect(() => {
