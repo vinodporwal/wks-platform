@@ -15,6 +15,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import AopTabs from 'components/AopTabs'
 import AssetAvailability from './AssetAvailability/index'
 import Prices from '../../Inputs/Prices/index'
+import FuelPriority from './FuelPriority/index'
 
 const InputsDMD = () => {
   const keycloak = useSession()
@@ -37,7 +38,7 @@ const InputsDMD = () => {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    let tabs = [];
+    let tabs = []
 
     switch (siteObject?.name?.toLowerCase()) {
       case 'dmd':
@@ -91,13 +92,19 @@ const InputsDMD = () => {
             displaySequence: 7,
           },
           {
+            id: 'fuel-priority',
+            name: 'fuelPriority',
+            displayName: 'Fuel Priority',
+            displaySequence: 8,
+          },
+          {
             id: 'prices',
             name: 'prices',
             displayName: 'Prices',
-            displaySequence: 8,
+            displaySequence: 9,
           },
-        ];
-        break;
+        ]
+        break
 
       case 'hmd':
         tabs = [
@@ -113,16 +120,40 @@ const InputsDMD = () => {
             displayName: 'Purchase Power Input',
             displaySequence: 1,
           },
-        ];
-        break;
+          {
+            id: 'shutdown-operational',
+            name: 'shutdownOperationalHrs',
+            displayName: 'Shutdown and Operational Hrs.',
+            displaySequence: 2,
+          },
+          {
+            id: 'asset-priority',
+            name: 'assetPriority',
+            displayName: 'Asset Priority',
+            displaySequence: 3,
+          },
+          {
+            id: 'asset-capacity',
+            name: 'assetCapacity',
+            displayName: 'Asset Capacity',
+            displaySequence: 4,
+          },
+          {
+            id: 'heat-rate',
+            name: 'heatRate',
+            displayName: 'Heat Rate',
+            displaySequence: 5,
+          },
+        ]
+        break
 
       default:
-        tabs = [];
-        break;
+        tabs = []
+        break
     }
 
-    setTabObj(tabs);
-  }, [siteObject]);
+    setTabObj(tabs)
+  }, [siteObject])
 
   // Get current tab
   const currentTab = tabObj[tabIndex] || {}
@@ -197,6 +228,8 @@ const InputsDMD = () => {
         return <FixedNorms />
       case 'fuel-availability':
         return <Fuel />
+      case 'fuel-priority':
+        return <FuelPriority />
       case 'prices':
         return <Prices />
       default:

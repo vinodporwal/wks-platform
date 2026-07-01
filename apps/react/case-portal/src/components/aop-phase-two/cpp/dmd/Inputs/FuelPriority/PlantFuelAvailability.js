@@ -33,10 +33,12 @@ const PlantFuelAvailability = ({ fuelOptions, setFuelOptions, setPlantFuelMap })
   const AOP_YEAR = year?.selectedYear
   const EXCEL_NAME = generateExcelName(dataGridStore, 'Fuel_Priority')
   const customFormat = customValueFormatterPhaseTwo(0)
-  const PLANT_ID_LIST = useMemo(
-    () => jmdSelectedPlants?.map((plant) => plant.id) || [],
-    [jmdSelectedPlants],
-  )
+  // const PLANT_ID_LIST = useMemo(
+  //   () => jmdSelectedPlants?.map((plant) => plant.id) || [],
+  //   [jmdSelectedPlants],
+  // )
+
+  const PLANT_ID = plantObject?.id
 
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
@@ -163,7 +165,7 @@ const PlantFuelAvailability = ({ fuelOptions, setFuelOptions, setPlantFuelMap })
     try {
       const res = await InputApiService.getFuelPriorityData(
         keycloak,
-        PLANT_ID_LIST,
+        PLANT_ID,
         AOP_YEAR,
       )
       const rawList = res?.data?.FuelPriority ?? res?.data ?? res
@@ -180,7 +182,6 @@ const PlantFuelAvailability = ({ fuelOptions, setFuelOptions, setPlantFuelMap })
           remarks: item.remarks || '',
         }),
       )
-      console.log("tempResssssssssss", tempRes)
       setRows(tempRes)
       setOriginalRows(tempRes)
     } catch (error) {
@@ -190,17 +191,17 @@ const PlantFuelAvailability = ({ fuelOptions, setFuelOptions, setPlantFuelMap })
     } finally {
       setLoading(false)
     }
-  }, [keycloak, PLANT_ID_LIST, AOP_YEAR])
+  }, [keycloak, PLANT_ID, AOP_YEAR])
 
   useDebounce(
     () => {
-      if (PLANT_ID_LIST?.length && AOP_YEAR) {
+      if (PLANT_ID && AOP_YEAR) {
         fetchFuelPriorityData()
         setModifiedCells({})
       }
     },
     1000,
-    [PLANT_ID_LIST, AOP_YEAR, fetchFuelPriorityData],
+    [PLANT_ID, AOP_YEAR, fetchFuelPriorityData],
   )
 
   const debounceTimerRef = useRef(null)
@@ -336,7 +337,7 @@ const PlantFuelAvailability = ({ fuelOptions, setFuelOptions, setPlantFuelMap })
 
       const response = await InputApiService.saveFuelPriorityData(
         keycloak,
-        PLANT_ID_LIST,
+        PLANT_ID,
         AOP_YEAR,
         payload,
       )
@@ -368,7 +369,7 @@ const PlantFuelAvailability = ({ fuelOptions, setFuelOptions, setPlantFuelMap })
       const response = await InputApiService.importFuelPriorityExcel(
         file,
         keycloak,
-        PLANT_ID_LIST,
+        PLANT_ID,
         AOP_YEAR,
       )
 
@@ -435,7 +436,7 @@ const PlantFuelAvailability = ({ fuelOptions, setFuelOptions, setPlantFuelMap })
     try {
       await InputApiService.exportFuelPriorityExcel(
         keycloak,
-        PLANT_ID_LIST,
+        PLANT_ID,
         AOP_YEAR,
         EXCEL_NAME,
       )
@@ -483,7 +484,7 @@ const PlantFuelAvailability = ({ fuelOptions, setFuelOptions, setPlantFuelMap })
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['plantName']}
+        groupBy={['assetType']}
       />
     </Box>
   )

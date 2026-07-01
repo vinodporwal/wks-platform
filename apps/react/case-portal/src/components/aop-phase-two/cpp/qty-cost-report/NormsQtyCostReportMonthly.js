@@ -247,7 +247,7 @@ const NormsQtyCostReport = () => {
         setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
-      let tempRes = res?.data
+      let tempRes = res?.data?.list
         ?.filter((item) => item?.accountName !== 'Stores & Spares')
         .map((item, index) => {
           return {
@@ -540,7 +540,7 @@ const NormsQtyCostReport = () => {
           currentRemark={currentRemark}
           setCurrentRemark={setCurrentRemark}
           currentRowId={currentRowId}
-          setCurrentRowId={() => {}}
+          setCurrentRowId={() => { }}
           saveChanges={saveChanges}
           handleExcelUpload={handleExcelUpload}
           handleExport={handleExport}
