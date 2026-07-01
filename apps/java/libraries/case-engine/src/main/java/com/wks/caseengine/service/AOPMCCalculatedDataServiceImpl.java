@@ -2697,8 +2697,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	        // Metadata columns often used by the utility for styling or logic
 	        row.add(tableId);
 	        
-	        // Add editable flag from repository if needed, or default to true
-	        row.add(true); 
+        row.add(dto.getIsEditable() != null ? dto.getIsEditable() : true);
 	        
 	        dataList.add(row);
 	    }

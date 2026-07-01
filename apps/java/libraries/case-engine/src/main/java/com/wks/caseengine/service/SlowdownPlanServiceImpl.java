@@ -487,6 +487,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			CellStyle lockedBorderedStyle = createSlowdownConfigReadOnlyStyle(workbook);
 
 			Sheet sheet = workbook.createSheet("Sheet1");
+			sheet.protectSheet("");
 			int currentRow = 0;
 			List<List<Object>> rows = new ArrayList<>();
 			List<String> rowTypes = new ArrayList<>();

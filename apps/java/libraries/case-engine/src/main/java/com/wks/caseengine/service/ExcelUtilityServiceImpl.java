@@ -120,6 +120,12 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
 	                if (rows != null) {
 	                    for (List<Object> rowData : rows) {
 	                        Row row = sheet.createRow(currentRow++);
+
+	                        // Per-row editable flag is the last element appended by populateRowsFromDTOs.
+	                        // When isEditable == false the entire row must stay locked.
+	                        Object editableFlagObj = rowData.get(rowData.size() - 1);
+	                        boolean rowIsEditable = !Boolean.FALSE.equals(editableFlagObj);
+
 	                        for (int col = 0; col < rowData.size() - 1; col++) {
 	                            Cell cell = row.createCell(col);
 	                            Object value = rowData.get(col);
@@ -129,8 +135,8 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
 	                            else cell.setCellValue(value != null ? value.toString() : "");
 
 	                            boolean canEdit = false;
-	                            
-	                            if (isEditableGrid && monthStartIndex != null) {
+
+	                            if (rowIsEditable && isEditableGrid && monthStartIndex != null) {
 	                                if (col >= monthStartIndex && col <= (monthStartIndex + 12)) {
 	                                    canEdit = true;
 	                                }
