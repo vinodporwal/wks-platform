@@ -272,8 +272,11 @@ const NormalOpNormsScreen = () => {
           ...obj,
           normParameterFKId: obj.normParameterFKId.toUpperCase(),
         }))
-        setAllRedCell(normalized)
-        // setAllRedCell([])
+        if (lowerVertName === 'meg') {
+          setAllRedCell(normalized)
+        } else {
+          setAllRedCell([])
+        }
       }
     } catch (error) {
       console.error('Error fetching data:', error)
