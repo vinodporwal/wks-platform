@@ -26,6 +26,7 @@ export const ProductionNormsApiService = {
   // Historical Months
   getHistoricalMonths,
   saveHistoricalMonths,
+  calculateHistoricalMonths,
 
   // Generic Import/Export helpers
   saveExcelData,
@@ -501,6 +502,35 @@ async function saveHistoricalMonths(keycloak, year, plantId, payload) {
     if (!resp.ok) {
       throw new Error(`HTTP error! Status: ${resp.status}`)
     }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+/**
+ * Calculate Historical Months data for Production Norms
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} aopYear - AOP Year
+ * @param {string} plantId - Plant ID
+ * @returns {Promise} Calculate response
+ */
+async function calculateHistoricalMonths(keycloak, plantId, aopYear) {
+  const baseUrl = `${Config.CaseEngineUrl}/task/calculate-historical-pigging-status`
+  const queryParams = new URLSearchParams({
+    aopYear,
+    plantId,
+  })
+
+  const url = `${baseUrl}?${queryParams.toString()}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)

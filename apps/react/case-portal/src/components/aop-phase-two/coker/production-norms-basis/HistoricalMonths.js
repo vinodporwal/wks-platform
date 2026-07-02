@@ -246,6 +246,56 @@ const HistoricalMonths = ({ startDate, endDate }) => {
     setRemarkDialogOpen(true)
   }
 
+  const handleCalculate = async () => {
+    setLoading(true)
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Calculating...',
+      severity: 'info',
+    })
+
+    try {
+      const response = await ProductionNormsApiService.calculateHistoricalMonths(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 422) {
+        setTimeout(() => {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: response.message || 'Validation error occurred.',
+            severity: 'error',
+            autoHide: false,
+          })
+        }, 500)
+      } else if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Calculation completed successfully!',
+          severity: 'success',
+        })
+        await fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Calculation failed. Please try again.',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error calculating steady state consumption:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Calculation failed. Please try again.',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const permissions = {
     showAction: true,
     addButton: false,
@@ -260,6 +310,7 @@ const HistoricalMonths = ({ startDate, endDate }) => {
     titleName: 'Pigging - NP/P-4/P-5/NR',
     showDropdown: false,
     remarksEditable: true,
+    showCalculate: true,
   }
 
   return (
@@ -286,6 +337,7 @@ const HistoricalMonths = ({ startDate, endDate }) => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
+        handleCalculate={handleCalculate}
         // groupBy={['normParameterTypeDisplayName']}
         customHeight={70}
         paginationConfig={{
