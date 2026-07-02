@@ -407,7 +407,7 @@ const OverallAopConsumption = () => {
       severity: 'success',
     })
     try {
-      const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME || 'PE'}_${SITE_NAME || 'NMD'}_${PLANT_NAME || ''}`
+      const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}`
       await OverallAopConsumptionApiService.exportOverallAopConsumption(
         keycloak,
         PLANT_ID,

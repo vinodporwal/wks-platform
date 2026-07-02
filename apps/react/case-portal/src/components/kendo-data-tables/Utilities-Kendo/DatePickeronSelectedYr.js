@@ -56,6 +56,19 @@ const DateTimePickerEditor = ({ dataItem, field, onChange }) => {
     )
   }
 
+  const isDisabled =
+    (isStart && dataItem?.type === 'ramp-down') ||
+    (isEnd && dataItem?.type === 'ramp-up')
+
+  console.log('DatePickeronSelectedYr:', {
+    field,
+    type: dataItem?.type,
+    isStart,
+    isEnd,
+    isDisabled,
+    dataItem
+  })
+
   return (
     <td>
       <DateTimePicker
@@ -70,6 +83,7 @@ const DateTimePickerEditor = ({ dataItem, field, onChange }) => {
         enableMouseWheel={false}
         steps={{ hour: 1, minute: 1, second: 0 }}
         className='input-editor'
+        disabled={isDisabled}
       />
     </td>
   )

@@ -5,10 +5,13 @@ export const PlantAopReportApiService = {
   savePlantsafetyPerformance,
   getSafetyImprovementInitiative,
   saveSafetyImprovementInitiative,
+  deleteSafetyImprovementInitiative,
   getProfitImprovementInitiative,
   saveProfitImprovementInitiative,
+  deleteProfitImprovementInitiative,
   getReliabilityImprovementInitiative,
   saveReliabilityImprovementInitiative,
+  deleteReliabilityImprovementInitiative,
   getGroupedSelection,
   saveGroupedSelection,
 }
@@ -86,6 +89,28 @@ async function saveSafetyImprovementInitiative(
     return Promise.reject(e)
   }
 }
+async function deleteSafetyImprovementInitiative(keycloak, id) {
+  const url = `${Config.CaseEngineUrl}/task/plant-safety-improvement?id=${encodeURIComponent(id)}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to delete data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error deleting data:', e)
+    return Promise.reject(e)
+  }
+}
 
 async function getProfitImprovementInitiative(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/profit-improvement-initiative?aopYear=${AOP_YEAR}&plantId=${PLANT_ID}`
@@ -118,6 +143,28 @@ async function saveProfitImprovementInitiative(keycloak, payload) {
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)
+    return Promise.reject(e)
+  }
+}
+async function deleteProfitImprovementInitiative(keycloak, id) {
+  const url = `${Config.CaseEngineUrl}/task/profit-improvement-initiative?id=${encodeURIComponent(id)}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to delete data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error deleting data:', e)
     return Promise.reject(e)
   }
 }
@@ -157,6 +204,28 @@ async function saveReliabilityImprovementInitiative(keycloak, payload) {
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)
+    return Promise.reject(e)
+  }
+}
+async function deleteReliabilityImprovementInitiative(keycloak, id) {
+  const url = `${Config.CaseEngineUrl}/task/reliability-improvement?id=${encodeURIComponent(id)}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to delete data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error deleting data:', e)
     return Promise.reject(e)
   }
 }

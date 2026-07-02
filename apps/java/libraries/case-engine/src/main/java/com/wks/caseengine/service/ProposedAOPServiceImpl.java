@@ -59,7 +59,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
         Map<String, Object> map = new HashMap<>();
 
 			List<AopCalculation> aopCalculation = aopCalculationRepository
-					.findByPlantIdAndAopYearAndCalculationScreen(plantId, aopYear, "configuration");
+					.findByPlantIdAndAopYearAndCalculationScreen(plantId, aopYear, "proposed-aop");
 			map.put("proposedAOP", proposedAOP);
 			map.put("aopCalculation", aopCalculation);
         return AOPMessageVM.builder()

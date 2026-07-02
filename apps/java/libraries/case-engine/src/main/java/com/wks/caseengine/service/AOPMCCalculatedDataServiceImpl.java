@@ -149,10 +149,12 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	            view = "vwAOPMCValues";
 	        }
 	        List<Object[]> obj=null;
+			boolean isFromview = false;
 	        if(vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("CRACKER") || (vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD"))) {
 	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
 	        }else {
 	        	  obj = getDataMCUValuesAllData(year, plantId, view);
+				  isFromview = true;
 	        }
 	       
 	        List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList = new ArrayList<>();
@@ -181,6 +183,10 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	            dto.setVerticalFKId(row[22] != null ? row[22].toString() : null);
 	            dto.setProductName(row[24] != null ? row[24].toString() : null);
 	            dto.setMaterialDisplayName(row[24] != null ? row[24].toString() : null);
+				if(isFromview && row.length > 25) {
+					dto.setIsEditable(row[25] != null && 
+						("1".equals(row[25].toString()) || Boolean.TRUE.equals(row[25])));
+				}
 				if(isCracker && row.length > 28) {
 					dto.setIsEditable(row[28] != null ? Boolean.parseBoolean(row[28].toString()) : true);
 				}
@@ -611,7 +617,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                    + "April, May, June, July, August, September, October, November, December, "
                    + "January, February, March, "
                    + "FinancialYear, Remarks, CreatedOn, ModifiedOn, MCUVersion, UpdatedBy, "
-                   + "Vertical_FK_Id, NormParameterDisplayOrder, ProductName "
+                   + "Vertical_FK_Id, NormParameterDisplayOrder, ProductName, IsEditable "
                    + "FROM " + viewName + " " 
                    + "WHERE PLANT_FK_ID = :plantId "
                    + "AND FinancialYear = :year "
@@ -871,6 +877,8 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 
 			boolean isCracker = vertical.getName().equalsIgnoreCase("CRACKER");
 
+			boolean isFromview = false;
+
         	 if(vertical.getName().equalsIgnoreCase("CRACKER")) {
         		 String procedureName=vertical.getName()+"_GetAOPMCValuesDesignCapacity";
  	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
@@ -882,6 +890,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
 	        }else {
  	        	 obj = aOPMCCalculatedDataRepository.getDesignCapacityData(year, plantId);
+				 isFromview = true;
  	        }
             
             List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList = new ArrayList<>();
@@ -905,6 +914,16 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                 dto.setMarch(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
                 
                 dto.setRemarks(row[16] != null ? row[16].toString() : " ");
+
+				if(isFromview && row.length > 21) {
+					//dto.setIsEditable(row[21] != null && "1".equals(row[21].toString()));
+					dto.setIsEditable(
+						row[21] != null &&
+						("1".equals(row[21].toString()) || Boolean.TRUE.equals(row[21]))
+					);
+					
+				}
+
                 if(vertical.getName().equalsIgnoreCase("CRACKER")) {
                 	dto.setNormType(row[21] != null ? row[21].toString() : " ");
 					if(row.length > 22) {
@@ -2678,8 +2697,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	        // Metadata columns often used by the utility for styling or logic
 	        row.add(tableId);
 	        
-	        // Add editable flag from repository if needed, or default to true
-	        row.add(true); 
+        row.add(dto.getIsEditable() != null ? dto.getIsEditable() : true);
 	        
 	        dataList.add(row);
 	    }

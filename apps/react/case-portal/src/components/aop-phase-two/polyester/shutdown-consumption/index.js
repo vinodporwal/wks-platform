@@ -262,10 +262,10 @@ const ShutdownConsumption = () => {
         february: row.february || null,
         march: row.march || null,
         financialYear: AOP_YEAR,
-        plantFKId: PLANT_ID,
-        siteFKId: siteObject?.id,
-        materialFKId: row.materialFKId || row.normParametersFKId,
-        verticalFKId: VERTICAL_ID,
+        plantFkId: PLANT_ID,
+        siteFkId: siteObject?.id,
+        materialFkId: row.materialFkId || row.normParametersFkId,
+        verticalFkId: VERTICAL_ID,
         id: row.idFromApi || null,
         remark: row.remarks || null,
         remarks: row.remarks || null,
@@ -323,10 +323,12 @@ const ShutdownConsumption = () => {
       severity: 'success',
     })
     try {
+      const Excel_Name = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_Shutdown_Norms_${AOP_YEAR}`
       await ShutdownConsumptionApiService.exportShutdownConsumption(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        Excel_Name,
       )
       setSnackbarOpen(true)
       setSnackbarData({

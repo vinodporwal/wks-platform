@@ -11,7 +11,7 @@ import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
 import { ProductionNormsApiService } from '../../services/coker/productionNormsApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
-const ManualEntry = () => {
+const HistoricalMonths = ({ startDate, endDate }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { plantObject, year } = dataGridStore
@@ -86,14 +86,6 @@ const ManualEntry = () => {
       locked: true,
       hidden: true,
     },
-    // {
-    //   field: 'UOM',
-    //   title: 'UOM',
-    //   // widthT: 100,
-    //   minWidth: 100,
-    //   type: 'text',
-    //   editable: false,
-    // },
     ...monthColumns.map((month) => ({
       field: month.field,
       title: headerMap[month.headerIndex],
@@ -105,6 +97,14 @@ const ManualEntry = () => {
       editable: true,
       format: valueFormat,
     })),
+    {
+      field: 'remarks',
+      title: 'Remarks',
+      // widthT: 250,
+      minWidth: 200,
+      type: 'text',
+      editable: true,
+    },
   ]
 
   useEffect(() => {
@@ -275,7 +275,7 @@ const ManualEntry = () => {
     showImport: false,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Pigging/Non-Pigging-Next AOP',
+    titleName: 'Pigging - NP/P-4/P-5/NR',
     showDropdown: false,
     remarksEditable: true,
   }
@@ -317,4 +317,4 @@ const ManualEntry = () => {
   )
 }
 
-export default ManualEntry
+export default HistoricalMonths

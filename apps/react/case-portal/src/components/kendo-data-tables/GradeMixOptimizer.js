@@ -318,7 +318,10 @@ const GradeMixOptimizer = ({ permissions }) => {
         disableRedHighlight={true}
         screenType='shutdown'
       />
-      <BudgetOperatingHour permissions={permissions} saveTrigger={saveTrigger} />
+      <BudgetOperatingHour
+        permissions={permissions}
+        saveTrigger={saveTrigger}
+      />
     </div>
   )
 }

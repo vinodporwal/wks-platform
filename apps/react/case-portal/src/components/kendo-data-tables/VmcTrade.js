@@ -10,7 +10,7 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { DataService } from 'services/DataService'
-const VmcTrade = ({ permissions }) => {
+const VmcTrade = ({ permissions, refreshSignal, refreshParent }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -334,6 +334,9 @@ const VmcTrade = ({ permissions }) => {
         })
         setModifiedCells({})
         fetchData()
+        if (refreshParent) {
+          refreshParent()
+        }
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -350,11 +353,17 @@ const VmcTrade = ({ permissions }) => {
     } finally {
       setLoading(false)
     }
-  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData])
+  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData, refreshParent])
 
   useEffect(() => {
     fetchData()
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
+
+  useEffect(() => {
+    if (refreshSignal > 0) {
+      fetchData()
+    }
+  }, [refreshSignal, fetchData])
 
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)
@@ -384,76 +393,82 @@ const VmcTrade = ({ permissions }) => {
   }
 
   const handleExcelUpload = (rawFile) => {
-      uploadVcmTradeData(rawFile)
-    }
-  
-    const uploadVcmTradeData = async (rawFile) => {
-      setLoading(true)
-  
-      try {
-        let response
-  
-        response = await OptimizerDataApiService.VcmTradeImportExcel(
-          rawFile,
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-  
-        if (response?.code === 200) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Uploaded Successfully!',
-            severity: 'success',
-          })
-          setModifiedCells({})
-          fetchData()
-        } else if (response?.code === 400 && response?.data) {
-          const byteCharacters = atob(response.data)
-          const byteNumbers = Array.from(byteCharacters, (char) =>
-            char.charCodeAt(0),
-          )
-          const byteArray = new Uint8Array(byteNumbers)
-  
-          const blob = new Blob([byteArray], {
-            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          })
-  
-          const url = window.URL.createObjectURL(blob)
-          const link = document.createElement('a')
-          link.href = url
-          link.setAttribute('download', 'Error File - Budget Operating Hour.xlsx')
-          document.body.appendChild(link)
-          link.click()
-          link.remove()
-          window.URL.revokeObjectURL(url)
-  
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Partial data saved. Error file downloaded.',
-            severity: 'warning',
-          })
-          fetchData()
-        } else {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Upload Failed!',
-            severity: 'error',
-          })
-        }
-  
-        return response
-      } catch (error) {
-        console.error('Error uploading xcel:', error)
+    uploadVcmTradeData(rawFile)
+  }
+
+  const uploadVcmTradeData = async (rawFile) => {
+    setLoading(true)
+
+    try {
+      let response
+
+      response = await OptimizerDataApiService.VcmTradeImportExcel(
+        rawFile,
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Unexpected error occurred!',
+          message: 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+        if (refreshParent) {
+          refreshParent()
+        }
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File - Budget Operating Hour.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        fetchData()
+        if (refreshParent) {
+          refreshParent()
+        }
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Upload Failed!',
           severity: 'error',
         })
-      } finally {
-        setLoading(false)
       }
+
+      return response
+    } catch (error) {
+      console.error('Error uploading xcel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
     }
+  }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions

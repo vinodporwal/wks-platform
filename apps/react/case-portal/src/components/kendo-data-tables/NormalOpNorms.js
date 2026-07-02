@@ -272,8 +272,11 @@ const NormalOpNormsScreen = () => {
           ...obj,
           normParameterFKId: obj.normParameterFKId.toUpperCase(),
         }))
-        setAllRedCell(normalized)
-        // setAllRedCell([])
+        if (lowerVertName === 'meg') {
+          setAllRedCell(normalized)
+        } else {
+          setAllRedCell([])
+        }
       }
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -748,32 +751,32 @@ const NormalOpNormsScreen = () => {
       showCheckbox: false,
       showG:
         isPEPP ||
-          isPET ||
-          IS_ELASTOMER_HMD_SBR ||
-          IS_ELASTOMER_JMD_HIIR ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD
+        isPET ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       marginBottom:
         isPEPP ||
-          isPET ||
-          IS_ELASTOMER_HMD_SBR ||
-          IS_ELASTOMER_JMD_HIIR ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD
+        isPET ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? true
           : false,
       dropdownLabel:
         isPEPP ||
-          isPET ||
-          IS_ELASTOMER_HMD_SBR ||
-          IS_ELASTOMER_JMD_HIIR ||
-          IS_PVC_VMD ||
-          IS_PVC_DMD ||
-          IS_PVC_HMD
+        isPET ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD ||
+        IS_PVC_HMD
           ? 'Grade'
           : 'Mode',
       showCalculateVisibility:
@@ -1006,32 +1009,32 @@ const NormalOpNormsScreen = () => {
         IS_CHEMICAL_HMD_BUTADIENE ||
         IS_CHEMICAL_VMD_BENEZENEFPU ||
         IS_VCM_HMD_VCM) && (
-          <Box sx={{ width: '100%', marginTop: 1 }}>
-            <CustomAccordion defaultExpanded disableGutters>
-              <CustomAccordionSummary
-                aria-controls='grid-content'
-                id='grid-header'
-              >
-                <Typography component='span' className='grid-title'>
-                  Intermediate Values
-                </Typography>
-              </CustomAccordionSummary>
-              <CustomAccordionDetails>
-                <Box sx={{ width: '100%', margin: 0 }}>
-                  <KendoDataTables
-                    title='Intermediate Values'
-                    columns={colDefsIntermediateValues}
-                    setRows={setRowsIntermediateValues}
-                    rows={rowsIntermediateValues}
-                    paginationOptions={[100, 200, 300]}
-                    permissions={adjustedPermissionsIV}
-                    groupBy='NormTypeName'
-                  />
-                </Box>
-              </CustomAccordionDetails>
-            </CustomAccordion>
-          </Box>
-        )}
+        <Box sx={{ width: '100%', marginTop: 1 }}>
+          <CustomAccordion defaultExpanded disableGutters>
+            <CustomAccordionSummary
+              aria-controls='grid-content'
+              id='grid-header'
+            >
+              <Typography component='span' className='grid-title'>
+                Intermediate Values
+              </Typography>
+            </CustomAccordionSummary>
+            <CustomAccordionDetails>
+              <Box sx={{ width: '100%', margin: 0 }}>
+                <KendoDataTables
+                  title='Intermediate Values'
+                  columns={colDefsIntermediateValues}
+                  setRows={setRowsIntermediateValues}
+                  rows={rowsIntermediateValues}
+                  paginationOptions={[100, 200, 300]}
+                  permissions={adjustedPermissionsIV}
+                  groupBy='NormTypeName'
+                />
+              </Box>
+            </CustomAccordionDetails>
+          </CustomAccordion>
+        </Box>
+      )}
 
       {true && lowerVertName === 'cracker' && <NormalOpNormsScreenCracker />}
     </div>

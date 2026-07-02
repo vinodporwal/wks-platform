@@ -142,6 +142,7 @@ const defs = {
     gradeMixOptimizer: 'Grade Mix Optimizer',
     materialGroupedSelection: 'Material Grouped Selection',
     vcmAvailability: 'VCM Availability',
+    otherDocumentUpload: 'Other Document Upload',
   },
   pages: {
     dashboard: {
@@ -361,6 +362,7 @@ const defs = {
         materialGroupedSelection: 'Material Grouped Selection',
         gradeMixOptimizer: 'Grade Mix Optimizer',
         vcmAvailability: 'VCM Availability',
+        otherDocumentUpload: 'Other Document Upload',
       },
     },
   },

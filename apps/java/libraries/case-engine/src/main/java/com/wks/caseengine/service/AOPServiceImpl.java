@@ -939,7 +939,6 @@ public class AOPServiceImpl implements AOPService {
 
 	        List<String> columnHeaders = new ArrayList<>();
 	        columnHeaders.add("Products");
-	        columnHeaders.add("UOM");
 	        columnHeaders.add(getMonth(year, 4));
 	        columnHeaders.add(getMonth(year, 5));
 	        columnHeaders.add(getMonth(year, 6));
@@ -967,7 +966,7 @@ public class AOPServiceImpl implements AOPService {
 
 	        int currentRow = 0;
 
-	        // Section 1 — Month Wise Production Plan
+	        // Section 1 â€” Month Wise Production Plan
 	        Row titleRow1 = sheet.createRow(currentRow++);
 	        Cell titleCell1 = titleRow1.createCell(0);
 	        titleCell1.setCellValue("Month Wise Production Plan");
@@ -985,7 +984,7 @@ public class AOPServiceImpl implements AOPService {
 	        // Two blank rows for readability
 	        currentRow += 2;
 
-	        // Section 2 — By Products
+	        // Section 2 â€” By Products
 	        Row titleRow2 = sheet.createRow(currentRow++);
 	        Cell titleCell2 = titleRow2.createCell(0);
 	        titleCell2.setCellValue("By Products");
@@ -1027,13 +1026,6 @@ public class AOPServiceImpl implements AOPService {
 	        Row row = sheet.createRow(currentRow++);
 	        List<Object> rowData = new ArrayList<>();
 	        rowData.add(dto.getDisplayName());
-
-	        String uom = "";
-	        if (dto.getMaterialFKId() != null) {
-	            Optional<NormParameters> opt = normParametersRepository.findById(UUID.fromString(dto.getMaterialFKId()));
-	            uom = opt.map(NormParameters::getUom).orElse("");
-	        }
-	        rowData.add(uom);
 
 	        rowData.add(dto.getApril());
 	        rowData.add(dto.getMay());
