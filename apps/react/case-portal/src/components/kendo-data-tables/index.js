@@ -1549,9 +1549,7 @@ const KendoDataTables = ({
     const isDisabled =
       (isEnd && type === 'ramp-down') || (isStart && type === 'ramp-up')
 
-    if (isDisabled) {
-      console.log('SimpleHighlightCell - Disabled:', { field, type, dataItem })
-    }
+
 
     return (
       <td
@@ -2952,79 +2950,21 @@ const KendoDataTables = ({
                           title={col?.title || col?.headerName}
                           cells={{
                             edit: {
-                              date: (props) => {
-                                const { dataItem, field } = props
-                                const isStart = field === 'maintStartDateTime'
-                                const isEnd = field === 'maintEndDateTime'
-                                const type = dataItem?.type
-                                const isDisabled =
-                                  (isEnd && type === 'ramp-down') ||
-                                  (isStart && type === 'ramp-up')
-                                if (isDisabled) {
-                                  return (
-                                    <SimpleHighlightCell
-                                      {...props}
-                                      customModifiedCells={customModifiedCells}
-                                      highlight={
-                                        permissions?.highlightDate || false
-                                      }
-                                    />
-                                  )
-                                }
-                                return (
-                                  <DatePickerNoLimit
-                                    {...props}
-                                    min={startDate}
-                                    max={endDate}
-                                  />
-                                )
-                              },
-                            },
-                            data: (props) => {
-                              const { dataItem, field } = props
-                              const isStart = field === 'maintStartDateTime'
-                              const isEnd = field === 'maintEndDateTime'
-                              const type = dataItem?.type
-                              const isCellDisabled =
-                                (isEnd && type === 'ramp-down') ||
-                                (isStart && type === 'ramp-up')
-
-                              if (isCellDisabled) {
-                                const raw = dataItem[field]
-                                const display = raw
-                                  ? new Date(raw).toLocaleString('en-GB', {
-                                      day: '2-digit',
-                                      month: '2-digit',
-                                      year: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                    })
-                                  : ''
-                                return (
-                                  <td
-                                    onClick={(e) => e.stopPropagation()}
-                                    style={{
-                                      backgroundColor: '#f0f0f0',
-                                      color: '#888',
-                                      cursor: 'not-allowed',
-                                    }}
-                                    title={display}
-                                  >
-                                    {display}
-                                  </td>
-                                )
-                              }
-
-                              return (
-                                <SimpleHighlightCell
+                              date: (props) => (
+                                <DatePickerNoLimit
                                   {...props}
-                                  customModifiedCells={customModifiedCells}
-                                  highlight={
-                                    permissions?.highlightDate || false
-                                  }
+                                  min={startDate}
+                                  max={endDate}
                                 />
-                              )
+                              ),
                             },
+                            data: (props) => (
+                              <SimpleHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                highlight={permissions?.highlightDate || false} // Add this permission
+                              />
+                            ),
                             headerCell: SimpleHeaderWithTooltip,
                           }}
                           format={
@@ -3041,6 +2981,7 @@ const KendoDataTables = ({
                           }
                           editor='date'
                           hidden={col?.hidden}
+                          // columnMenu={DateColumnMenu}
                           filter='date'
                           columnMenu={ColumnMenuCheckboxFilterDate}
                           width={setWidth(col?.minWidth || 150)}
@@ -3052,7 +2993,6 @@ const KendoDataTables = ({
                         />
                       )
                     }
-
                     return (
                       <GridColumn
                         locked={col.locked || false}
