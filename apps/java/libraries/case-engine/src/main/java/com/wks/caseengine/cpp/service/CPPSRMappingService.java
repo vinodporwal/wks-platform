@@ -57,4 +57,21 @@ public interface CPPSRMappingService {
      * @param dtoList List of DTOs containing the updated fields.
      */
     AOPMessageVM updateSRMappingsByPlant(List<SRMappingDTO> dtoList,String financialYear);
+
+    /**
+     * Deletes the CPP_SR_Mapping_Master record identified by {@code id} and all its
+     * dependent child records, in the correct FK order:
+     * <ol>
+     *   <li>Find all NormsHeader rows via CPP_SR_Mapping_Master_Fk_Id = id</li>
+     *   <li>Delete NormsMonthDetail   WHERE NormsHeader_FK_Id IN (...)</li>
+     *   <li>Delete CPPNorms           WHERE NormsHeader_FK_Id IN (...)</li>
+     *   <li>Delete CPPMonthWisePrice  WHERE NormsHeader_FK_Id IN (...)</li>
+     *   <li>Delete NormsHeader        WHERE CPP_SR_Mapping_Master_Fk_Id = id</li>
+     *   <li>Delete CPP_SR_Mapping_Master WHERE ID = id</li>
+     * </ol>
+     *
+     * @param id UUID of the CPP_SR_Mapping_Master record to delete.
+     * @return AOPMessageVM with code 200 on success, 404 if not found, 500 on error.
+     */
+    AOPMessageVM deleteSRMapping(UUID id);
 }
