@@ -83,13 +83,13 @@ const OverallAopConsumption = () => {
   ]
 
   const columns = [
-    // {
-    //   field: 'Particulars',
-    //   title: 'Type',
-    //   editable: false,
-    //   hidden: true,
-    //   minWidth: 100,
-    // },
+    {
+      field: 'Particulars',
+      title: 'Type',
+      editable: false,
+      hidden: true,
+      minWidth: 100,
+    },
     {
       field: 'productName',
       title: 'Particulars',
@@ -245,7 +245,7 @@ const OverallAopConsumption = () => {
                 originalRemark: item.aopRemarks?.trim() || null,
                 id: index,
                 isEditable: true,
-                Particulars: item.normParameterTypeDisplayName || 'Type',
+                Particulars: item.normParameterTypeDisplayName || '',
                 avgOfAllMonths,
               }
             },

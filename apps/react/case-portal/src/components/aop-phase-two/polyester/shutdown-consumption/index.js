@@ -95,6 +95,13 @@ const ShutdownConsumption = () => {
       minWidth: 120,
     },
     {
+      field: 'normParameterTypeDisplayName',
+      title: 'Type',
+      editable: false,
+      hidden: true,
+      minWidth: 120,
+    },
+    {
       field: 'productName',
       title: 'Particulars',
       editable: false,
@@ -468,6 +475,7 @@ const ShutdownConsumption = () => {
       setSnackbarOpen={setSnackbarOpen}
       snackbarData={snackbarData}
       setSnackbarData={setSnackbarData}
+      groupBy={['normParameterTypeDisplayName']}
     />
   )
 }
