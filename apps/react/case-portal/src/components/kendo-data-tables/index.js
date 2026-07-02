@@ -519,6 +519,19 @@ const KendoDataTables = ({
       </td>
     )
   }
+  const formatTo12Hr = (raw) => {
+    if (!raw) return ''
+    const d = new Date(raw)
+    const dd = String(d.getDate()).padStart(2, '0')
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const yyyy = d.getFullYear()
+    let hours = d.getHours()
+    const minutes = String(d.getMinutes()).padStart(2, '0')
+    const ampm = hours >= 12 ? 'PM' : 'AM'
+    hours = hours % 12 || 12
+    const hh = String(hours).padStart(2, '0')
+    return `${dd}-${mm}-${yyyy} ${hh}:${minutes} ${ampm}`
+  }
 
   const handleEditChange = useCallback((e) => {
     setEdit(e.edit)
@@ -3044,16 +3057,8 @@ const KendoDataTables = ({
                               (isStart && type === 'ramp-up')
 
                             if (isCellDisabled) {
-                              const raw = dataItem[field]
-                              const display = raw
-                                ? new Date(raw).toLocaleString('en-GB', {
-                                    day: '2-digit',
-                                    month: '2-digit',
-                                    year: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })
-                                : ''
+                              // ✅ formatTo12Hr instead of toLocaleString('en-GB')
+                              const display = formatTo12Hr(dataItem[field])
                               return (
                                 <td
                                   onClick={(e) => e.stopPropagation()}
