@@ -100,12 +100,12 @@ const MonthwiseOperatingHours = () => {
       format: valueFormatter,
       isDisabled: false,
     },
-    // {
-    //   field: 'remarks',
-    //   title: 'Remarks',
-    //   widthT: 200,
-    //   editable: true,
-    // },
+    {
+      field: 'remarks',
+      title: 'Remarks',
+      widthT: 200,
+      editable: true,
+    },
   ]
 
   const [groupBy, setGroupBy] = useState(null)

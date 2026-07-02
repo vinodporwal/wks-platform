@@ -173,6 +173,7 @@ import OverallAopConsumptionNS from 'components/aop-phase-two/naphthasplitter/ov
 import ProductionNormsBasisNS from 'components/aop-phase-two/naphthasplitter/production-norms-basis'
 import GradeMixOptimizer from 'components/kendo-data-tables/GradeMixOptimizer'
 import VcmAvailability from 'components/kendo-data-tables/VcmAvailability'
+import OtherDocumentUpload from 'components/kendo-data-tables/OtherDocumentUpload'
 import PlantCapacities from 'components/aop-phase-two/refineryAopBudget/PlantCapacities'
 import ShutdownSchedule from 'components/aop-phase-two/refineryAopBudget/shutdown'
 import SlowdownSchedule from 'components/aop-phase-two/refineryAopBudget/slowdown'
@@ -372,6 +373,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='slowdown'>
                 <SlowdownSchedule />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'other-document-upload',
+            element: (
+              <PrivateRoute routeId='other-document-upload'>
+                <OtherDocumentUpload />
               </PrivateRoute>
             ),
           },

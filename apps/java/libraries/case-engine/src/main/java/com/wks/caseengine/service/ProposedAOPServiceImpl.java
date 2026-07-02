@@ -59,7 +59,7 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
         Map<String, Object> map = new HashMap<>();
 
 			List<AopCalculation> aopCalculation = aopCalculationRepository
-					.findByPlantIdAndAopYearAndCalculationScreen(plantId, aopYear, "configuration");
+					.findByPlantIdAndAopYearAndCalculationScreen(plantId, aopYear, "proposed-aop");
 			map.put("proposedAOP", proposedAOP);
 			map.put("aopCalculation", aopCalculation);
         return AOPMessageVM.builder()
@@ -145,9 +145,9 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		aopMessageVM.setData(result);
 		
 		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(plantId, aopYear,
-				"configuration");
+				"proposed-aop");
                 
-		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("configuration");
+		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("proposed-aop");
 		for (ScreenMapping screenMapping : screenMappingList) {
 			AopCalculation aopCalculation = new AopCalculation();
 			aopCalculation.setAopYear(aopYear);
