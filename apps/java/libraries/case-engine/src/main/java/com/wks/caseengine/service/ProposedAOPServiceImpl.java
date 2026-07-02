@@ -145,9 +145,9 @@ public class ProposedAOPServiceImpl implements ProposedAOPService {
 		aopMessageVM.setData(result);
 		
 		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(plantId, aopYear,
-				"configuration");
+				"proposed-aop");
                 
-		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("configuration");
+		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("proposed-aop");
 		for (ScreenMapping screenMapping : screenMappingList) {
 			AopCalculation aopCalculation = new AopCalculation();
 			aopCalculation.setAopYear(aopYear);

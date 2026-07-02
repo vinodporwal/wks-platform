@@ -1,34 +1,25 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
+import { useGridApiRef } from '@mui/x-data-grid'
 import { FileService } from 'services'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import { getRoleName } from 'services/role-service'
 import {
   Box,
-  Button,
   Typography,
-  Grid,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
   Snackbar,
   Alert,
   LinearProgress,
   Card,
   CardContent,
 } from '@mui/material'
-import {
-  CloudUpload as CloudUploadIcon,
-  Delete as DeleteIcon,
-  Download as DownloadIcon,
-  InsertDriveFile as FileIcon,
-} from '@mui/icons-material'
+import '../../kendo-data-grid.css'
+import { CloudUpload as CloudUploadIcon } from '@mui/icons-material'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import KendoDataTables from './index'
+import { ReportDataService } from 'services/ReportDataService'
 
 const OtherDocumentUpload = ({ permissions }) => {
   const [loading, setLoading] = useState(false)
@@ -36,64 +27,177 @@ const OtherDocumentUpload = ({ permissions }) => {
   const [isUploading, setIsUploading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const [rows, setRows] = useState([])
+
+
+
+
+
+
+  const [columns, setColumns] = useState([])
+
+  const [modifiedCells, setModifiedCells] = useState({})
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
+  const [open1, setOpen1] = useState(false)
+
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
-  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const apiRef = useGridApiRef()
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
-    verticalChange,
-    yearChanged,
-    oldYear,
     plantObject,
-    siteObject,
-    verticalObject,
     year,
-    screenTitle,
-    isReleased,
+    oldYear,
+    yearChanged,
+    verticalObject,
+    siteObject,
   } = dataGridStore
 
   const PLANT_ID = plantObject?.id
-  const PLANT_NAME = plantObject?.name
-  const SITE_ID = siteObject?.id
-  const SITE_NAME = siteObject?.name
-  const VERTICAL_ID = verticalObject?.id
-  const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
-  const vertName = verticalChange?.selectedVertical
-  const SCREEN_NAME = screenTitle?.title
-
-  const keycloak = useSession()
+  const VERTICAL_ID = verticalObject?.id
   const IS_OLD_YEAR = oldYear?.oldYear
+  const keycloak = useSession()
+
+  const valueFormat = ValueFormatterProduction()
+
+  const { isReleased } = dataGridStore
   const IS_RELEASED = isReleased
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+  const isOldYear = false
+
+  const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
+  const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
+
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Season_Month`
+
+  const handleRemarkCellClick = (row) => {
+    if (READ_ONLY) return
+    setCurrentRemark(row.remarks || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
+
+  useEffect(() => {
+    setModifiedCells({})
+    fetchData()
+  }, [oldYear, yearChanged, keycloak, PLANT_ID, AOP_YEAR])
+
+  const getAdjustedPermissions = (permissions, isOldYear) => {
+    if (isOldYear != 1) return permissions
+    return {
+      ...permissions,
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      downloadExcelBtn: false,
+      uploadExcelBtn: false,
+      editButton: false,
+      showUnit: false,
+      saveWithRemark: false,
+      saveBtn: true,
+      isOldYear: isOldYear,
+      allAction: false,
+    }
+  }
+
+  const adjustedPermissionsManual = getAdjustedPermissions(
+    {
+      showAction: true,
+      allAction: true,
+      downloadExcelBtnFromUI: false,
+      ExcelName: `${EXCEL_EXPORT_TITLE}`,
+      showTitleNameBusiness: true,
+      titleName: 'Document List',
+    },
+    IS_OLD_YEAR,
+  )
+
+  const fetchData = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    setModifiedCells({})
+    try {
+      setLoading(true)
+      // const response = await ReportDataService.getMonthlyProductionReportData(
+      //   keycloak,
+      //   PLANT_ID,
+      //   AOP_YEAR,
+      // )
+
+
+
+      // const formattedData = response?.data?.data?.map((row, index) => ({
+      //   ...row,
+      //   id: row.id || index,
+      //   isEditable: false,
+      // }))
+
+      // setRows(formattedData || [])
+      const hardcodedColumns = [
+        {
+          field: 'name',
+          title: 'Document Name',
+          editable: false,
+          minWidth: 200,
+        },
+        {
+          field: 'uploadedAt',
+          title: 'Date Time',
+          editable: false,
+          minWidth: 180,
+        },
+        {
+          field: 'uploadedBy',
+          title: 'Uploaded By',
+          editable: false,
+          minWidth: 180,
+        },
+        {
+          field: 'size',
+          title: 'Size',
+          editable: false,
+          minWidth: 180,
+        },
+        {
+          field: 'type',
+          title: 'Type',
+          editable: false,
+          minWidth: 120,
+        },
+        {
+          field: 'action',
+          title: 'Action',
+          editable: false,
+          minWidth: 100,
+          isActionColumn: true,
+        },
+      ]
+
+      setColumns(hardcodedColumns)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      // setSnackbarOpen(true)
+      // setSnackbarData({
+      //   message: 'Error fetching data',
+      //   severity: 'error',
+      // })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // LocalStorage Key based on current Context
   const getStorageKey = useCallback(() => {
     return `other_docs_${PLANT_ID || 'default'}_${AOP_YEAR || 'default'}_${VERTICAL_ID || 'default'}`
   }, [PLANT_ID, AOP_YEAR, VERTICAL_ID])
 
-  // Fetch / Load documents
-  const fetchData = useCallback(() => {
-    if (!PLANT_ID || !AOP_YEAR) {
-      setRows([])
-      return
-    }
-    try {
-      const key = getStorageKey()
-      const stored = localStorage.getItem(key)
-      if (stored) {
-        setRows(JSON.parse(stored))
-      } else {
-        setRows([])
-      }
-    } catch (error) {
-      console.error('Error fetching documents list:', error)
-      setRows([])
-    }
-  }, [PLANT_ID, AOP_YEAR, getStorageKey])
+
 
   useEffect(() => {
     fetchData()
@@ -240,10 +344,10 @@ const OtherDocumentUpload = ({ permissions }) => {
 
   return (
     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <LoaderBackdrop open={!!loading && !isUploading} />
+
 
       {/* Header Context Display */}
-      <Paper
+      {/* <Paper
         elevation={0}
         sx={{
           p: 2.5,
@@ -286,7 +390,7 @@ const OtherDocumentUpload = ({ permissions }) => {
             </Box>
           </Grid>
         </Grid>
-      </Paper>
+      </Paper> */}
 
       {/* Drag & Drop Upload Component */}
       {!READ_ONLY && (
@@ -354,79 +458,37 @@ const OtherDocumentUpload = ({ permissions }) => {
         </Box>
       )}
 
-      {/* Uploaded Documents Table */}
-      <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
-        <Table>
-          <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
-            <TableRow>
-              <TableCell width="60px"></TableCell>
-              <TableCell sx={{ fontWeight: '600' }}>Document Name</TableCell>
-              <TableCell sx={{ fontWeight: '600' }}>Size</TableCell>
-              <TableCell sx={{ fontWeight: '600' }}>Type</TableCell>
-              <TableCell sx={{ fontWeight: '600' }}>Uploaded Date</TableCell>
-              <TableCell sx={{ fontWeight: '600' }}>Uploaded By</TableCell>
-              <TableCell align="right" sx={{ fontWeight: '600', pr: 3 }}>
-                Actions
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                  <Typography variant="body1" color="textSecondary">
-                    No documents uploaded yet for {PLANT_NAME || 'this plant'} in {AOP_YEAR || 'this year'}.
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  sx={{
-                    '&:hover': {
-                      backgroundColor: '#fafafa',
-                    },
-                  }}
-                >
-                  <TableCell align="center">
-                    <FileIcon color="action" />
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: '500' }}>{row.name}</TableCell>
-                  <TableCell>{formatBytes(row.size)}</TableCell>
-                  <TableCell>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        backgroundColor: '#e3f2fd',
-                        color: '#0d47a1',
-                        px: 1,
-                        py: 0.5,
-                        borderRadius: 1,
-                        fontWeight: '600',
-                      }}
-                    >
-                      {row.type ? row.type.split('/')[1] || row.type : 'N/A'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>{row.uploadedAt}</TableCell>
-                  <TableCell>{row.uploadedBy}</TableCell>
-                  <TableCell align="right" sx={{ pr: 2 }}>
-                    <IconButton color="primary" onClick={() => handleDownload(row)} title="Download Document">
-                      <DownloadIcon />
-                    </IconButton>
-                    {!READ_ONLY && (
-                      <IconButton color="error" onClick={() => handleDelete(row.id)} title="Delete Document">
-                        <DeleteIcon />
-                      </IconButton>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <Box>
+
+        <Box>
+          <KendoDataTables
+            modifiedCells={modifiedCells}
+            setModifiedCells={setModifiedCells}
+            setRows={setRows}
+            columns={columns}
+            rows={rows}
+            paginationOptions={[100, 200, 300]}
+            snackbarData={snackbarData}
+            snackbarOpen={snackbarOpen}
+            apiRef={apiRef}
+            open1={open1}
+            setOpen1={setOpen1}
+            setSnackbarOpen={setSnackbarOpen}
+            setSnackbarData={setSnackbarData}
+            handleRemarkCellClick={handleRemarkCellClick}
+            fetchData={fetchData}
+            remarkDialogOpen={remarkDialogOpen}
+            setRemarkDialogOpen={setRemarkDialogOpen}
+            currentRemark={currentRemark}
+            setCurrentRemark={setCurrentRemark}
+            currentRowId={currentRowId}
+            permissions={adjustedPermissionsManual}
+            plantID={PLANT_ID}
+          />
+        </Box>
+      </Box>
+
+
 
       {/* Snackbar Alert */}
       <Snackbar open={snackbarOpen} autoHideDuration={4000} onClose={handleSnackbarClose}>
