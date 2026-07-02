@@ -6,7 +6,7 @@ import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import ValueFormatterPhaseTwo, {
   customValueFormatterPhaseTwo,
 } from '../../common/ValueFormatterPhaseTwo'
-import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
+import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { ProductionNormsApiService } from '../../services/coker/productionNormsApiService'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
@@ -178,15 +178,14 @@ const HistoricalMonths = ({ startDate, endDate }) => {
     }
 
     const monthKeys = dynamicColumns.map((col) => col.field)
-
-    const fieldsToCheck = ['remarks']
+    const fieldsToCheck = monthKeys
     const validationError = validateRowDataWithRemarks(
       data,
       originalRows,
       fieldsToCheck,
       'productName',
+      'remarks'
     )
-
     if (validationError) {
       setSnackbarOpen(true)
       setSnackbarData({
