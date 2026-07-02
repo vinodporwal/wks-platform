@@ -56,19 +56,6 @@ const DateTimePickerEditor = ({ dataItem, field, onChange }) => {
     )
   }
 
-  const isDisabled =
-    (isStart && dataItem?.type === 'ramp-down') ||
-    (isEnd && dataItem?.type === 'ramp-up')
-
-  console.log('DatePickeronSelectedYr:', {
-    field,
-    type: dataItem?.type,
-    isStart,
-    isEnd,
-    isDisabled,
-    dataItem
-  })
-
   return (
     <td>
       <DateTimePicker
