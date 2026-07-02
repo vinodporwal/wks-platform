@@ -189,28 +189,28 @@ const KendoDataTables = ({
   typeRank = {},
   permissions = {},
   errorRows = new Set(),
-  setSnackbarOpen = () => {},
+  setSnackbarOpen = () => { },
   snackbarData = { message: '', severity: 'info', duration: 3000 },
   snackbarOpen = false,
-  setRemarkDialogOpen = () => {},
+  setRemarkDialogOpen = () => { },
   currentRemark = '',
-  setCurrentRemark = () => {},
+  setCurrentRemark = () => { },
   currentRowId = null,
-  NormParameterIdCell = () => {},
-  setModifiedCells = () => {},
+  NormParameterIdCell = () => { },
+  setModifiedCells = () => { },
   remarkDialogOpen = false,
-  handleDeleteSelected = (selectedItems) => {},
-  saveChanges = () => {},
-  deleteRowData = () => {},
-  handleAddPlantSite = () => {},
-  handleCalculate = () => {},
-  handleLoad = () => {},
-  fetchData = () => {},
-  handleUnitChange = () => {},
-  handleYearChange = () => {},
-  handleGradeChange = () => {},
-  handleRemarkCellClick = () => {},
-  calculatebtnClicked = () => {},
+  handleDeleteSelected = (selectedItems) => { },
+  saveChanges = () => { },
+  deleteRowData = () => { },
+  handleAddPlantSite = () => { },
+  handleCalculate = () => { },
+  handleLoad = () => { },
+  fetchData = () => { },
+  handleUnitChange = () => { },
+  handleYearChange = () => { },
+  handleGradeChange = () => { },
+  handleRemarkCellClick = () => { },
+  calculatebtnClicked = () => { },
   selectedUsers = [],
   groupBy = null,
   totalRowConfiguration = null,
@@ -224,13 +224,13 @@ const KendoDataTables = ({
   allDescriptionDrpdwn = [],
   allMonths = [],
   selectMode,
-  setSelectMode = () => {},
-  handleExcelUpload = () => {},
-  downloadExcelForConfiguration = () => {},
-  onLoad = () => {},
+  setSelectMode = () => { },
+  handleExcelUpload = () => { },
+  downloadExcelForConfiguration = () => { },
+  onLoad = () => { },
   disableRedHighlight = false,
   showThreeColors = false,
-  resetDataChanges = () => {},
+  resetDataChanges = () => { },
   noteOnSaveDialogeBox = '',
   deleteNoteOnDeleteDialogeBox = '',
   shutdownMonths = [],
@@ -242,7 +242,7 @@ const KendoDataTables = ({
   mcuMaxCapValues = [],
   key = [],
   isReleaseDisabled = true,
-  handleRelease = () => {},
+  handleRelease = () => { },
   customItemChange = null,
   configType,
   isEditable = false,
@@ -444,12 +444,12 @@ const KendoDataTables = ({
 
   const initialGroup = groupBy
     ? [
-        {
-          field: groupBy,
-          aggregates: totalRowConfiguration,
-          dir: undefined,
-        },
-      ]
+      {
+        field: groupBy,
+        aggregates: totalRowConfiguration,
+        dir: undefined,
+      },
+    ]
     : []
 
   const MyFooterCustomCell = (props) => {
@@ -1513,6 +1513,17 @@ const KendoDataTables = ({
       customModifiedCells?.[rowId] && checkField in customModifiedCells[rowId]
     )
     const isBoldFromCells = dataItem?.boldCells?.includes(field)
+
+    const isStart = field === 'maintStartDateTime'
+    const isEnd = field === 'maintEndDateTime'
+    const type = dataItem?.type
+    const isDisabled =
+      (isStart && type === 'ramp-down') || (isEnd && type === 'ramp-up')
+
+    if (isDisabled) {
+      console.log('SimpleHighlightCell - Disabled:', { field, type, dataItem })
+    }
+
     return (
       <td
         {...tdProps}
@@ -1521,13 +1532,15 @@ const KendoDataTables = ({
         style={{
           fontWeight:
             !(highlight && isEdited) && isBoldFromCells ? 'bold' : undefined,
+          backgroundColor: isDisabled ? '#f0f0f0' : undefined,
+          color: isDisabled ? '#888' : undefined,
+          cursor: isDisabled ? 'not-allowed' : undefined,
         }}
       >
         {children}
       </td>
     )
   }
-
   const RedHighlightCell = (props) => {
     const {
       dataItem,
@@ -1541,7 +1554,6 @@ const KendoDataTables = ({
     const rowId = dataItem.id
     const value = dataItem[field]
     const isBoldFromCells = dataItem?.boldCells?.includes(field)
-
     if (disableRedHighlight) {
       return (
         <td
@@ -2431,7 +2443,7 @@ const KendoDataTables = ({
                         },
                       },
                     }}
-                    // disabled={rows?.length === 0}
+                  // disabled={rows?.length === 0}
                   >
                     <MenuItem value='' disabled className='menu-item-style'>
                       UOM
@@ -2559,7 +2571,7 @@ const KendoDataTables = ({
                   onClick={excelExport}
                   // disabled={READ_ONLY || rows?.length === 0}
                   disabled={rows?.length === 0}
-                  //ANY ONE CAN EXPORT
+                //ANY ONE CAN EXPORT
                 >
                   Export
                 </Button>
@@ -2628,7 +2640,7 @@ const KendoDataTables = ({
                     (rows?.length === 0
                       ? false
                       : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility)
+                      !permissions?.showCalculateVisibility)
                   }
                   className='btn-calculate'
                 >
@@ -2758,21 +2770,21 @@ const KendoDataTables = ({
                 groupable={
                   permissions?.isTotalFooterActive
                     ? {
-                        enabled: false,
-                        footer: 'visible',
-                        showGroupPanel: false,
-                      }
+                      enabled: false,
+                      footer: 'visible',
+                      showGroupPanel: false,
+                    }
                     : {
-                        enabled: false,
-                        footer: 'none',
-                        showGroupPanel: false,
-                      }
+                      enabled: false,
+                      footer: 'none',
+                      showGroupPanel: false,
+                    }
                 }
                 cells={
                   permissions?.isTotalFooterActive
                     ? {
-                        groupFooter: MyFooterCustomCell,
-                      }
+                      groupFooter: MyFooterCustomCell,
+                    }
                     : undefined
                 }
                 allRedCell={allRedCell}
@@ -2783,9 +2795,9 @@ const KendoDataTables = ({
                     ? false
                     : rows?.length > 100
                       ? {
-                          buttonCount: 4,
-                          pageSizes: [10, 50, 100],
-                        }
+                        buttonCount: 4,
+                        pageSizes: [10, 50, 100],
+                      }
                       : false
                 }
                 sortable={true}
@@ -2911,13 +2923,31 @@ const KendoDataTables = ({
                           title={col?.title || col?.headerName}
                           cells={{
                             edit: {
-                              date: (props) => (
-                                <DatePickerNoLimit
-                                  {...props}
-                                  min={startDate}
-                                  max={endDate}
-                                />
-                              ),
+                              date: (props) => {
+                                const { dataItem, field } = props
+                                const isStart = field === 'maintStartDateTime'
+                                const isEnd = field === 'maintEndDateTime'
+                                const type = dataItem?.type
+                                const isDisabled =
+                                  (isStart && type === 'ramp-down') ||
+                                  (isEnd && type === 'ramp-up')
+                                if (isDisabled) {
+                                  return (
+                                    <SimpleHighlightCell
+                                      {...props}
+                                      customModifiedCells={customModifiedCells}
+                                      highlight={permissions?.highlightDate || false}
+                                    />
+                                  )
+                                }
+                                return (
+                                  <DatePickerNoLimit
+                                    {...props}
+                                    min={startDate}
+                                    max={endDate}
+                                  />
+                                )
+                              },
                             },
                             data: (props) => (
                               <SimpleHighlightCell
@@ -2962,16 +2992,36 @@ const KendoDataTables = ({
                         title={col?.title || col?.headerName}
                         cells={{
                           edit: {
-                            date: [
-                              'fromDate',
-                              'toDate',
-                              'periodTo',
-                              'periodFrom',
-                              'toDateReport',
-                              'fromDateReport',
-                            ].includes(col?.field)
-                              ? DateOnlyPicker
-                              : DateTimePickerEditor,
+                            date: (props) => {
+                              const { dataItem, field } = props
+                              const isStart = field === 'maintStartDateTime'
+                              const isEnd = field === 'maintEndDateTime'
+                              const type = dataItem?.type
+                              const isDisabled =
+                                (isStart && type === 'ramp-down') ||
+                                (isEnd && type === 'ramp-up')
+                              if (isDisabled) {
+                                return (
+                                  <SimpleHighlightCell
+                                    {...props}
+                                    customModifiedCells={customModifiedCells}
+                                    highlight={permissions?.highlightDate || false}
+                                  />
+                                )
+                              }
+                              return [
+                                'fromDate',
+                                'toDate',
+                                'periodTo',
+                                'periodFrom',
+                                'toDateReport',
+                                'fromDateReport',
+                              ].includes(col?.field) ? (
+                                <DateOnlyPicker {...props} />
+                              ) : (
+                                <DateTimePickerEditor {...props} />
+                              )
+                            },
                           },
                           data: (props) => (
                             <SimpleHighlightCell
